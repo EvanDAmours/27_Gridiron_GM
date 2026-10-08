@@ -13,7 +13,8 @@
     "dev": "vite",
     "build": "vite build",
     "build:pages": "vite build && node scripts/postbuild-pages.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "react": "^19.2.4",
