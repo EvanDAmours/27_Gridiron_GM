@@ -162,7 +162,8 @@ test("old saves get a staff, ranks, and keep their old reports", () => {
   assert.equal(sc.major.name, "Old Scout");
   assert.equal(sc.major.group, "QB");
   assert.notEqual(sc.minor.group, "QB");
-  assert.equal(sc.pts, SCOUT_PTS_START + 5);
+  const roadWarrior = sc.major?.trait === "workhorse" || sc.minor?.trait === "workhorse";
+  assert.equal(sc.pts, SCOUT_PTS_START + 5 + (roadWarrior ? 1 : 0));
   const [a, b, c] = ["p", "p", "p"].map((_, i) => d.dc[2026].find((x) => x.id === [p1, p2, p3][i].id));
   assert.equal(a.scout.exact, true);
   assert.equal(a.scout.ePot, 88);
