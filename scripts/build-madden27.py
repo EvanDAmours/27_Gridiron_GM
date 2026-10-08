@@ -97,7 +97,7 @@ def contract(pos, ovr, age, years_pro):
 # then checked against NFL consensus (the lists below raise anyone the numbers undersell).
 TIERS = ["late", "normal", "star", "superstar", "generational"]
 GENERATIONAL = {"Arvell Reese", "Abdul Carter", "Brock Bowers", "Jahmyr Gibbs", "Bijan Robinson", "Jaxon Smith-Njigba",
-                "Puka Nacua", "Malik Nabers", "Travis Hunter", "Caleb Williams", "Will Anderson Jr"}
+                "Puka Nacua", "Malik Nabers", "Travis Hunter", "Caleb Williams", "Will Anderson Jr", "Patrick Mahomes"}
 SUPERSTAR = {"Jeremiyah Love", "Caleb Downs", "Drake Maye", "Jayden Daniels", "Christian Gonzalez", "Penei Sewell",
              "Kyle Hamilton", "Derek Stingley Jr", "Trent McDuffie", "Devon Witherspoon", "Jalen Carter", "Jared Verse",
              "Tetairoa McMillan", "Joe Alt", "Cooper DeJean", "Quinyon Mitchell", "Mason Graham", "De'Von Achane", "Ashton Jeanty",
