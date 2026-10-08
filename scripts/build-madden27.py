@@ -151,6 +151,7 @@ for p in eap:
         "name": f'{p["firstName"]} {p["lastName"]}', "pos": pos, "mpos": p["position"]["id"], "ovr": p["overallRating"], "age": p["age"],
         "ht": p["height"], "wt": p["weight"], "college": p["college"] or "", "num": p["jerseyNum"], "yp": p["yearsPro"],
         "arch": (p.get("archetype") or {}).get("label", "").split(" - ")[0], "dev": dev,
+        "xf": next((a["label"] for a in p.get("playerAbilities") or [] if a["type"]["id"] == "xFactor"), None),
         "spd": s["speed"], "str": s["strength"], "agi": s["agility"], "acc": s["acceleration"], "jmp": s["jumping"], "end": s["stamina"],
         "attrs": ATTRS[pos](s), "sal": sal, "yrs": yrs,
     })
@@ -173,6 +174,8 @@ for label, meta in TEAMS.items():
 json.dump({"source": "EA SPORTS Madden NFL 27 ratings (Week 3)", "season": SEASON, "teams": out}, open("src/data/madden27.json", "w"), separators=(",", ":"))
 from collections import Counter
 print("development:", dict(Counter(x["dev"] for t in out for x in t["roster"] + t["ps"])))
+xfs = [x for t in out for x in t["roster"] + t["ps"] if x["xf"]]
+print(f"X-Factors: {len(xfs)}; all Superstar or better: {all(x['dev'] in ('superstar', 'generational') for x in xfs)}")
 for tier in ("generational", "superstar"):
     print(f"{tier}:", ", ".join(f'{x["name"]} ({t["ab"]})' for t in out for x in t["roster"] + t["ps"] if x["dev"] == tier))
 missing = [n for n in GENERATIONAL | SUPERSTAR | STAR if not any(x["name"] == n for t in out for x in t["roster"] + t["ps"])]
