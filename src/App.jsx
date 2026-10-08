@@ -171,7 +171,7 @@ function calcSOS(teamId,sched,teams){const played=sched.filter(g=>g.played&&(g.h
 
 
 // A Madden 27 player as a full game player: real name, size, ratings and position skills.
-function realPlayer(d){const p=genPlayer(d.pos,d.age,d.ovr);const pot=cl(d.age<=22?d.ovr+R(5,12):d.age<=25?d.ovr+R(1,6):d.ovr,d.ovr,99);
+function realPlayer(d){const p=genPlayer(d.pos,d.age,d.ovr);const devLift=d.age<=26?({generational:8,superstar:5,star:2}[d.dev]||0):0;const pot=cl((d.age<=22?d.ovr+R(5,12):d.age<=25?d.ovr+R(1,6):d.ovr)+devLift,d.ovr,99);
   Object.assign(p,{name:d.name,ht_:d.ht,wt:d.wt,spd:d.spd,str:d.str,agi:d.agi,acc:d.acc,jmp:d.jmp,end:d.end,posAttrs:d.attrs,salary:d.sal,contract:d.yrs,pot,truePot:pot,scoutedOvr:d.ovr,scoutedPot:pot,num:d.num,arch:d.arch,src:'m27',
     tradeVal:d.ovr+Math.round((pot-d.ovr)*.5)-(d.age>30?(d.age-30)*3:0),bio:{...p.bio,college:d.college||p.bio.college}});if(d.dev)p.dev=d.dev;return p;}
 function initTeams(ui){return TEAMS.map((t,i)=>({...t,id:i,isUser:i===ui,roster:M27.teams[i].roster.map(realPlayer),ps:M27.teams[i].ps.map(realPlayer),ir:[],w:0,l:0,t:0,pf:0,pa:0,morale:50,streak:0,gmRep:50,chemistry:75,strat:pick(["balanced","pass-heavy","run-heavy","defensive"]),gmStyle:i===ui?'user':pick(['rebuilder','win-now','analytics']),coach:{oc:genCoach("OC"),dc:genCoach("DC"),st:genCoach("ST")}}));}
@@ -1041,7 +1041,7 @@ setDc(ndc);setSp("combine");setTab("draft");sm("Combine complete!");};
 if(p.age+1>=34&&Math.random()<0.30){no=Math.max(no-1,40);}
 else if(p.age+1>=30&&Math.random()<0.15){no=Math.max(no-1,40);}
 // MOVE 8: breakout seasons
-if(p.age<=24&&['star','superstar'].includes(devOf(p))&&Math.random()<0.12){no=Math.min(no+3,99);}
+if(p.age<=24&&['star','superstar','generational'].includes(devOf(p))&&Math.random()<0.12){no=Math.min(no+3,99);}
 else if(p.age<=24&&devOf(p)==='normal'&&Math.random()<0.05){no=Math.min(no+2,99);}
 // v13: Grinder personality +10% dev bonus
 if(p.personality==='Grinder'&&p.age<=28&&Math.random()<0.10){no=Math.min(no+1,99);}

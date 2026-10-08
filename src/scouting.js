@@ -442,6 +442,7 @@ export function comparable(teams, p, ePot) {
 // ---------- Development traits ----------
 
 export const DEV_TRAITS = {
+  generational: { name: "Generational", desc: "A once-in-a-generation talent: grows the fastest and keeps raising his ceiling." },
   superstar: { name: "Superstar", desc: "Develops very fast and often blows past his projected ceiling." },
   star: { name: "Star", desc: "Develops faster than most and tends to beat his projection." },
   normal: { name: "Normal", desc: "Develops on a typical curve." },
@@ -452,6 +453,7 @@ export const DEV_TRAITS = {
 export function rollDev(id, pot = 75) {
   const x = stream(`${id}|dev`).next();
   const lift = clamp((pot - 78) / 100, -0.06, 0.1);
+  if (x < 0.006 + lift * 0.08) return "generational";
   if (x < 0.04 + lift * 0.4) return "superstar";
   if (x < 0.2 + lift) return "star";
   if (x < 0.38 + lift) return "late";
@@ -464,6 +466,7 @@ export const devOf = (p) => p.dev || rollDev(p.id, p.truePot ?? p.pot);
 export function devGrowth(p, age) {
   const d = devOf(p);
   if (age > 26) return { ovr: 0, pot: 0 };
+  if (d === "generational") return { ovr: rint(2, 3), pot: rint(1, 3) };
   if (d === "superstar") return { ovr: rint(1, 2), pot: rint(0, 2) };
   if (d === "star") return { ovr: rint(0, 1), pot: rint(0, 1) };
   if (d === "late") return age <= 22 ? { ovr: -rint(0, 1), pot: 0 } : { ovr: rint(1, 2), pot: rint(0, 1) };
@@ -588,7 +591,7 @@ export function interviewProspect(sc, sp, p) {
   if (p.scout?.intv) return { ok: false, msg: "You've already interviewed him.", sc, p };
   if ((sc.interviewsLeft ?? 0) <= 0) return { ok: false, msg: "You've used all your interview slots.", sc, p };
   const r = stream(`${p.id}|intv`);
-  const v = ({ superstar: 90, star: 85, normal: 77, late: 73 }[devOf(p)] ?? 77) + r.gauss(0, 3.5);
+  const v = ({ generational: 94, superstar: 90, star: 85, normal: 77, late: 73 }[devOf(p)] ?? 77) + r.gauss(0, 3.5);
   const intv = { grade: potGrade(v), note: r.pick(INTERVIEW_NOTES[v >= 85 ? "high" : v >= 77 ? "mid" : "low"]) };
   return { ok: true, msg: `Interview with ${p.name}: work ethic ${intv.grade}.`, sc: { ...sc, interviewsLeft: sc.interviewsLeft - 1 }, p: { ...p, scout: { ...(p.scout || { lvl: 0 }), intv } } };
 }
@@ -597,7 +600,7 @@ export function interviewProspect(sc, sp, p) {
 
 // AI teams blend their own scouts' (noisy) read with the consensus board, so they mostly follow
 // the board and the sleepers your scouts find can still be there.
-const DEV_EYE = { superstar: 1.2, star: 0.6, late: -0.3 };
+const DEV_EYE = { generational: 2, superstar: 1.2, star: 0.6, late: -0.3 };
 export function aiDraftScore(p, gmStyle) {
   const potW = gmStyle === "win-now" ? 0.6 : gmStyle === "rebuilder" ? 0.85 : 0.78;
   const own = (p.truePot + (p.aiNoise || 0)) * potW + p.trueOvr * (1 - potW) + (DEV_EYE[devOf(p)] || 0) + (gmStyle === "rebuilder" && p.age <= 21 ? 0.6 : 0) - (p.pos === "K" ? 6 : 0);

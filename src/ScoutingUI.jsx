@@ -37,7 +37,7 @@ export function GradeChip({ g, small, title }) {
   return <span title={title} style={{ display: "inline-block", minWidth: small ? 22 : 28, textAlign: "center", padding: small ? "0 4px" : "1px 6px", borderRadius: 4, fontWeight: 800, fontSize: small ? 10 : 12, background: c + "22", color: c }}>{g}</span>;
 }
 
-const DEV_STYLE = { superstar: ["#f5c542", "#8a6d1d"], star: ["#60a5fa", "#1e3a5f"], normal: ["#94a3b8", C.bd], late: ["#c4b5fd", "#6d5bd0"] };
+const DEV_STYLE = { generational: ["#f472b6", "#9d174d"], superstar: ["#f5c542", "#8a6d1d"], star: ["#60a5fa", "#1e3a5f"], normal: ["#94a3b8", C.bd], late: ["#c4b5fd", "#6d5bd0"] };
 export function DevChip({ dev, hint = "Development trait unknown. Your major scout reveals it with a full workup." }) {
   if (!dev) return <span title={hint} style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 999, border: `1px dashed ${C.bd}`, color: "#475569", whiteSpace: "nowrap" }}>Dev ?</span>;
   const [c, b] = DEV_STYLE[dev];

@@ -3,9 +3,11 @@
 Inputs (downloaded into a work dir you pass as the first argument):
   m27.json              every player from https://www.ea.com/games/madden-nfl/ratings (all pages,
                         the __NEXT_DATA__ ratingDetails.items lists)
+  roster2026.csv        nflverse roster_2026.csv (draft slots), from
+                        https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv
 Usage: python3 scripts/build-madden27.py /tmp/m27
 """
-import json, random, sys
+import csv, hashlib, json, random, re, sys, unicodedata
 from collections import defaultdict
 
 SEASON = 2026
@@ -89,14 +91,62 @@ def contract(pos, ovr, age, years_pro):
     if years_pro <= 3: return round(min(value, 0.8 + value * 0.22), 1), max(1, 4 - years_pro)
     return round(value, 1), (rng.randint(1, 2) if age >= 31 else rng.randint(1, 5) if ovr >= 80 else rng.randint(1, 3))
 
+# ---------- Development traits ----------
+# EA's data has no development field, so young players are tiered from what it does have: how
+# good he already is for his age, his X-Factor / Superstar abilities and his draft pedigree,
+# then checked against NFL consensus (the lists below raise anyone the numbers undersell).
+TIERS = ["late", "normal", "star", "superstar", "generational"]
+GENERATIONAL = {"Arvell Reese", "Abdul Carter", "Brock Bowers", "Jahmyr Gibbs", "Bijan Robinson", "Jaxon Smith-Njigba",
+                "Puka Nacua", "Malik Nabers", "Travis Hunter", "Caleb Williams"}
+SUPERSTAR = {"Jeremiyah Love", "Caleb Downs", "Drake Maye", "Jayden Daniels", "Will Anderson Jr", "Christian Gonzalez", "Penei Sewell",
+             "Kyle Hamilton", "Derek Stingley Jr", "Trent McDuffie", "Devon Witherspoon", "Jalen Carter", "Jared Verse",
+             "Tetairoa McMillan", "Joe Alt", "Cooper DeJean", "Quinyon Mitchell", "Mason Graham", "De'Von Achane", "Ashton Jeanty",
+             "Rueben Bain Jr", "David Bailey", "Sonny Styles", "Fernando Mendoza", "Brian Thomas Jr", "Nick Emmanwori",
+             "Will Campbell", "Ja'Marr Chase", "Aidan Hutchinson"}
+STAR = {"C.J. Stroud", "Marvin Harrison Jr", "Bo Nix", "Cam Ward", "Jaxson Dart", "Jalon Walker", "Mykel Williams", "Jihaad Campbell",
+        "Emeka Egbuka", "Omarion Hampton", "Kelvin Banks Jr", "Carnell Tate", "Jordyn Tyson", "Mansoor Delane", "Jermod McCoy",
+        "Keldric Faulk", "Kadyn Proctor", "Spencer Fano", "Francis Mauigoa", "Ty Simpson", "Olaivavega Ioane", "Kenyon Sadiq",
+        "Peter Woods", "Garrett Wilson", "Jahdae Barron"}
+
+def key(name):
+    n = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+    n = re.sub(r"\b(jr|sr|ii|iii|iv|v)\b\.?", "", n)
+    return re.sub(r"[^a-z]", "", n)
+picks = {}
+for r in csv.DictReader(open(f"{src}/roster2026.csv")):
+    if (r.get("draft_number") or "").isdigit(): picks[(key(r["full_name"]), r["college"].split(";")[0].strip().lower())] = int(r["draft_number"])
+pick_by_name = {}
+for (k, _), n in picks.items(): pick_by_name.setdefault(k, n)
+
+def at_least(t, floor): return t if TIERS.index(t) >= TIERS.index(floor) else floor
+
+def dev_trait(p):
+    name = f'{p["firstName"]} {p["lastName"]}'
+    ab = [a["type"]["id"] for a in p.get("playerAbilities") or []]
+    age, ovr, yp = p["age"], p["overallRating"], p["yearsPro"]
+    pick = picks.get((key(name), (p["college"] or "").lower()), pick_by_name.get(key(name), 999))
+    if age > 25:  # his growth years are mostly behind him
+        t = "superstar" if "xFactor" in ab else "star" if ab else "normal"
+    else:
+        score = ovr + 2.2 * (25 - age) + (3 if "xFactor" in ab else 1.5 if ab else 0)
+        if yp <= 2: score += 3 if pick <= 5 else 2 if pick <= 15 else 1 if pick <= 32 else 0
+        t = "generational" if score >= 101 else "superstar" if score >= 94 else "star" if score >= 87 else "normal"
+        if yp <= 1 and pick <= 5: t = at_least(t, "superstar")
+        elif yp <= 2 and pick <= 32: t = at_least(t, "star")
+        # A raw, overlooked youngster is sometimes a late bloomer (fixed per player).
+        if t == "normal" and age <= 23 and ovr < 70 and pick > 100 and int(hashlib.md5(name.encode()).hexdigest(), 16) % 4 == 0: t = "late"
+    if name in GENERATIONAL: t = "generational"
+    elif name in SUPERSTAR: t = at_least(t, "superstar")
+    elif name in STAR: t = at_least(t, "star")
+    return t
+
 teams = defaultdict(list)
 for p in eap:
     pos = POS.get(p["position"]["id"])
     if not pos or not p.get("team"): continue
     s = {k: v["value"] for k, v in p["stats"].items()}
     sal, yrs = contract(pos, p["overallRating"], p["age"], p["yearsPro"])
-    dev = "superstar" if any(a["type"]["id"] == "xFactor" for a in p.get("playerAbilities") or []) else \
-          "star" if p.get("playerAbilities") else None
+    dev = dev_trait(p)
     teams[p["team"]["label"]].append({
         "name": f'{p["firstName"]} {p["lastName"]}', "pos": pos, "mpos": p["position"]["id"], "ovr": p["overallRating"], "age": p["age"],
         "ht": p["height"], "wt": p["weight"], "college": p["college"] or "", "num": p["jerseyNum"], "yp": p["yearsPro"],
@@ -121,5 +171,11 @@ for label, meta in TEAMS.items():
     out.append({"city": city, "name": name, "ab": ab, "c": c, "d": d, "clr": clr, "ac": ac, "roster": keep, "ps": squad})
     print(f"{ab:4} {len(keep)} +{len(squad)} PS  payroll ${sum(x['sal'] for x in keep):.0f}M  top {keep[0]['name']} {keep[0]['ovr']}")
 json.dump({"source": "EA SPORTS Madden NFL 27 ratings (Week 3)", "season": SEASON, "teams": out}, open("src/data/madden27.json", "w"), separators=(",", ":"))
+from collections import Counter
+print("development:", dict(Counter(x["dev"] for t in out for x in t["roster"] + t["ps"])))
+for tier in ("generational", "superstar"):
+    print(f"{tier}:", ", ".join(f'{x["name"]} ({t["ab"]})' for t in out for x in t["roster"] + t["ps"] if x["dev"] == tier))
+missing = [n for n in GENERATIONAL | SUPERSTAR | STAR if not any(x["name"] == n for t in out for x in t["roster"] + t["ps"])]
+if missing: print("not on a roster:", missing)
 pay = [sum(x["sal"] for x in t["roster"]) for t in out]
 print(f"payroll min ${min(pay):.0f}M avg ${sum(pay)/len(pay):.0f}M max ${max(pay):.0f}M")
