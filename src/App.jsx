@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { C, oC, pC, PA_LABELS, Bdg, Btn, PN, Face } from "./ui.jsx";
+import M27 from "./data/madden27.json";
 import { newScouting, refreshScoutPool, creditWeeks, startScoutingYear, loadScouting, rankClass, csRank, combineInvites, runCombine, aiDraftScore, pickGrade, pickTake, classGrade, autoPickFrom, devOf, devGrowth } from "./scouting.js";
 import { ScoutingPage, Board, YourList, TopProspects, BuzzFeed, DraftGrades, ProspectModal, DevChip, potText } from "./ScoutingUI.jsx";
 const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
@@ -18,40 +19,8 @@ const COL=["Alabama","Ohio State","Georgia","LSU","Clemson","Michigan","Notre Da
 const POS=["QB","RB","WR","TE","LT","LG","C","RG","RT","DL","LB","CB","S","K"];
 const PP={QB:{h:74.5,hs:1.8,w:220,ws:12,hR:[71,78],wR:[200,245]},RB:{h:70,hs:1.5,w:210,ws:10,hR:[66,73],wR:[185,235]},WR:{h:73,hs:2,w:195,ws:12,hR:[68,77],wR:[170,225]},TE:{h:76,hs:1.5,w:250,ws:10,hR:[73,79],wR:[235,270]},LT:{h:77,hs:1.2,w:320,ws:10,hR:[75,79],wR:[308,345]},LG:{h:76.5,hs:1.2,w:316,ws:12,hR:[74,78],wR:[298,340]},C:{h:75.5,hs:1.2,w:304,ws:10,hR:[73,78],wR:[288,322]},RG:{h:76.5,hs:1.2,w:316,ws:12,hR:[74,78],wR:[298,340]},RT:{h:77,hs:1.2,w:320,ws:10,hR:[75,79],wR:[308,345]},DL:{h:76,hs:1.5,w:290,ws:18,hR:[73,79],wR:[255,340]},LB:{h:74,hs:1.3,w:240,ws:10,hR:[72,76],wR:[225,265]},CB:{h:71,hs:1.8,w:190,ws:8,hR:[68,75],wR:[175,210]},S:{h:72,hs:1.5,w:205,ws:8,hR:[70,75],wR:[190,220]},K:{h:72,hs:1.5,w:195,ws:10,hR:[69,75],wR:[180,215]}};
 const CA={QB:{f:4.85,b:18,v:32,br:112,t:7.1,s:4.35},RB:{f:4.52,b:20,v:35,br:120,t:7.0,s:4.2},WR:{f:4.48,b:14,v:36,br:122,t:6.9,s:4.15},TE:{f:4.7,b:20,v:33,br:116,t:7.1,s:4.3},LT:{f:5.22,b:26,v:28,br:104,t:7.65,s:4.72},LG:{f:5.18,b:27,v:28,br:105,t:7.58,s:4.68},C:{f:5.12,b:26,v:29,br:106,t:7.55,s:4.65},RG:{f:5.18,b:27,v:28,br:105,t:7.58,s:4.68},RT:{f:5.22,b:26,v:28,br:104,t:7.65,s:4.72},DL:{f:4.9,b:25,v:31,br:112,t:7.3,s:4.5},LB:{f:4.65,b:22,v:34,br:118,t:7.0,s:4.25},CB:{f:4.45,b:14,v:37,br:124,t:6.85,s:4.1},S:{f:4.5,b:16,v:36,br:121,t:6.95,s:4.15},K:{f:4.9,b:15,v:30,br:108,t:7.2,s:4.4}};
-const TEAMS=[
-  {city:"New York",name:"Titans",ab:"NYT",c:"AFC",d:"East",clr:"#1a3a5c",ac:"#c4a235"},
-  {city:"Los Angeles",name:"Sharks",ab:"LAS",c:"NFC",d:"West",clr:"#0d7377",ac:"#ff6b35"},
-  {city:"Chicago",name:"Blaze",ab:"CHB",c:"NFC",d:"North",clr:"#c41e3a",ac:"#ffd700"},
-  {city:"Houston",name:"Outlaws",ab:"HOU",c:"AFC",d:"South",clr:"#2d1b4e",ac:"#e74c3c"},
-  {city:"Phoenix",name:"Scorpions",ab:"PHX",c:"NFC",d:"West",clr:"#d35400",ac:"#2c3e50"},
-  {city:"Philadelphia",name:"Ironworks",ab:"PHI",c:"NFC",d:"East",clr:"#004953",ac:"#a8d8ea"},
-  {city:"San Antonio",name:"Marshals",ab:"SAM",c:"AFC",d:"South",clr:"#1b2838",ac:"#c0392b"},
-  {city:"San Diego",name:"Waves",ab:"SDW",c:"AFC",d:"West",clr:"#2980b9",ac:"#f39c12"},
-  {city:"Dallas",name:"Mustangs",ab:"DAL",c:"NFC",d:"East",clr:"#003366",ac:"#c0c0c0"},
-  {city:"Austin",name:"Armadillos",ab:"AUS",c:"NFC",d:"South",clr:"#bf5700",ac:"#333f48"},
-  {city:"Jacksonville",name:"Gators",ab:"JAX",c:"AFC",d:"South",clr:"#006778",ac:"#d7a22a"},
-  {city:"Columbus",name:"Sentinels",ab:"COL",c:"AFC",d:"North",clr:"#bb0000",ac:"#666"},
-  {city:"Charlotte",name:"Hornets",ab:"CLT",c:"NFC",d:"South",clr:"#1d428a",ac:"#00788c"},
-  {city:"Indianapolis",name:"Engines",ab:"IND",c:"AFC",d:"South",clr:"#002244",ac:"#a2aaad"},
-  {city:"Seattle",name:"Storm",ab:"SEA",c:"NFC",d:"West",clr:"#002244",ac:"#69be28"},
-  {city:"Denver",name:"Altitude",ab:"DEN",c:"AFC",d:"West",clr:"#002244",ac:"#fb4f14"},
-  {city:"Nashville",name:"Bandicoots",ab:"NSH",c:"AFC",d:"South",clr:"#4b2d82",ac:"#ffc72c"},
-  {city:"Oklahoma City",name:"Thunder",ab:"OKC",c:"NFC",d:"North",clr:"#007ac1",ac:"#ef6020"},
-  {city:"Portland",name:"Timbers",ab:"POR",c:"NFC",d:"West",clr:"#004812",ac:"#ebab38"},
-  {city:"Las Vegas",name:"Aces",ab:"LVA",c:"AFC",d:"West",clr:"#1a1a2e",ac:"#e94560"},
-  {city:"Miami",name:"Hurricanes",ab:"MIA",c:"AFC",d:"East",clr:"#f37021",ac:"#005778"},
-  {city:"Atlanta",name:"Phoenixes",ab:"ATL",c:"NFC",d:"South",clr:"#a71930",ac:"#13274f"},
-  {city:"Baltimore",name:"Knights",ab:"BAL",c:"AFC",d:"North",clr:"#241773",ac:"#9e7c0c"},
-  {city:"Detroit",name:"Motors",ab:"DET",c:"NFC",d:"North",clr:"#0076b6",ac:"#b0b7bc"},
-  {city:"Minneapolis",name:"Frost",ab:"MIN",c:"NFC",d:"North",clr:"#4f2683",ac:"#ffc62f"},
-  {city:"Green Bay",name:"Wolves",ab:"GBW",c:"NFC",d:"North",clr:"#203731",ac:"#ffb612"},
-  {city:"Kansas City",name:"Royals",ab:"KCR",c:"AFC",d:"West",clr:"#e31837",ac:"#ffb81c"},
-  {city:"Pittsburgh",name:"Steel",ab:"PIT",c:"AFC",d:"North",clr:"#101820",ac:"#ffb612"},
-  {city:"Tampa Bay",name:"Captains",ab:"TBB",c:"NFC",d:"South",clr:"#d50a0a",ac:"#34302b"},
-  {city:"New Orleans",name:"Mystics",ab:"NOS",c:"NFC",d:"South",clr:"#101820",ac:"#d3bc8d"},
-  {city:"Cleveland",name:"Hounds",ab:"CLE",c:"AFC",d:"North",clr:"#311d00",ac:"#ff3c00"},
-  {city:"Cincinnati",name:"Cats",ab:"CIN",c:"AFC",d:"North",clr:"#fb4f14",ac:"#000"},
-];
+// The 32 NFL clubs, with rosters and ratings from EA SPORTS Madden NFL 27 (see scripts/build-madden27.py).
+const TEAMS=M27.teams.map(({roster,ps,...t})=>t);
 const PA={QB:["armStr","accuracy","pocketAwr","decisions","mobility","touch","readDef"],RB:["vision","elusiveness","breakTkl","passBlock","receiving","burst","balance","stiffArm"],WR:["routeRun","catching","separation","release","bodyCtrl","yac","deepSpd","catchTraffic"],TE:["blocking","receiving","routeRun","redZone","passBlock","yac","seaming","toughness"],LT:["passBlock","footwork","anchor","awareness","handUse","reach","agility","toughness"],LG:["runBlock","anchor","pulling","passBlock","footwork","strength","drive","toughness"],C:["awareness","snapping","passBlock","runBlock","footwork","leadership","anchor","athleticism"],RG:["runBlock","anchor","pulling","passBlock","footwork","strength","drive","toughness"],RT:["passBlock","anchor","footwork","runBlock","handUse","power","reach","toughness"],DL:["passRush","runStop","handUse","motor","getOff","bullRush","swim","spin"],LB:["tackling","coverage","blitzing","runFit","instincts","pursuit","shedBlock","zoneAwr"],CB:["manCov","zoneCov","press","ballSkills","tackling","recovery","footwork","playRec"],S:["range","runSupport","coverage","tackling","ballHawk","blitzing","comms","versatility"],K:["legStr","accuracy","clutch","distance","hangTime","consistency","coldWx","pressure"]};
 const STRS={QB:["Elite pocket presence","Exceptional arm talent","Reads defenses pre-snap","Natural leader","Anticipation throws","Deep ball accuracy","Quick release","High football IQ","Extends plays","Poised under pressure","Pro-ready mechanics"],RB:["Explosive first step","Excellent vision","Breaks arm tackles","Elite lateral agility","Reliable pass catcher","Powerful short yardage","Patient runner","Home run speed"],WR:["Creates separation","Reliable hands","Elite speed","Contested catch ability","Precise route runner","Dangerous after catch","Deep threat","Body control on sideline"],TE:["Mismatch weapon","Reliable blocker","Red zone threat","Routes like a receiver","Soft hands in traffic","Versatile inline/flexed"],LT:["Blindside protector","Elite pass set","Handles speed rushers","Quick feet in space","Longest reach in class"],LG:["Devastating run blocker","Nasty finisher","Gets to second level","Pulls well","Pancakes defenders"],C:["Makes protection calls","Crisp snaps under pressure","NFL-ready football IQ","Handles nose tackles","Natural leader"],RG:["Physical interior blocker","Strong at the point","Handles bull rush","Reliable run blocker","Consistent performer"],RT:["Solid right tackle","Sets the edge","Handles power rushers","Nasty in the run game","Versatile starter"],DL:["Explosive first step","Violent hands","Collapses pocket","Relentless motor","Pass rush repertoire","Stout vs run"],LB:["Sideline-to-sideline range","Downhill thumper","Coverage ability","Blitz timing","Wrap-up tackler","QB of defense"],CB:["Lockdown man coverage","Elite ball skills","Mirror ability","Recovery speed","Press technique"],S:["Rangey centerfielder","Hard-hitting enforcer","Box/deep versatility","Ball-hawk instincts","Closing speed"],K:["Ice water veins","50+ yard leg","Consistent mechanics","Clutch performer"]};
 const WKNS={QB:["Holds ball too long","Inconsistent footwork","Limited mobility","Telegraphs throws"],RB:["Struggles pass protection","Fumble-prone","Limited route tree","Below-average speed"],WR:["Drops on contested catches","Limited blocking","Gets jammed at line","Body catcher"],TE:["Liability in pass protection","Limited speed","Drops in traffic"],LT:["Struggles vs speed edge rushers","Anchor breaks on bull rush","Beaten around the arc"],LG:["Limited in pass pro","Slow to recover on stunts","Penalty-prone"],C:["Smaller frame","Displaced by big nose tackles","Limited pulling range"],RG:["Limited in pass pro","Slow to recover on stunts","Penalty-prone"],RT:["Inconsistent anchor","Struggles with length rushers","Technical faults in pass set"],DL:["Washed out by double teams","Inconsistent motor","Limited pass rush moves"],LB:["Liability in coverage","Bad angles","Slow to shed blocks"],CB:["Grabby when beaten","Bites on double moves","Inconsistent tackling"],S:["Poor man coverage","Bad angles","Overaggressive"],K:["Struggles beyond 50","Inconsistent in wind"]};
@@ -200,8 +169,11 @@ const MEDIA_HEADLINES=['{player} on pace for a record-breaking season','{team} o
 function calcSOS(teamId,sched,teams){const played=sched.filter(g=>g.played&&(g.h===teamId||g.a===teamId));if(!played.length)return 50;const oppIds=played.map(g=>g.h===teamId?g.a:g.h);const avgWp=oppIds.reduce((s,id)=>{const t=teams[id];const gp=(t?.w||0)+(t?.l||0)+(t?.t||0);return s+(gp>0?(t?.w||0)/gp:0.5);},0)/oppIds.length;return Math.round(avgWp*100);}
 
 
-function genRoster(){const r=[];const ct={QB:3,RB:4,WR:5,TE:3,LT:2,LG:2,C:1,RG:2,RT:2,DL:6,LB:5,CB:4,S:3,K:1};for(const[pos,n]of Object.entries(ct))for(let i=0;i<n;i++){const p=genPlayer(pos);r.push(p);}return r;}
-function initTeams(ui){return TEAMS.map((t,i)=>({...t,id:i,isUser:i===ui,roster:genRoster(),ps:[],ir:[],w:0,l:0,t:0,pf:0,pa:0,morale:50,streak:0,gmRep:50,chemistry:75,strat:pick(["balanced","pass-heavy","run-heavy","defensive"]),gmStyle:i===ui?'user':pick(['rebuilder','win-now','analytics']),coach:{oc:genCoach("OC"),dc:genCoach("DC"),st:genCoach("ST")}}));}
+// A Madden 27 player as a full game player: real name, size, ratings and position skills.
+function realPlayer(d){const p=genPlayer(d.pos,d.age,d.ovr);const pot=cl(d.age<=22?d.ovr+R(5,12):d.age<=25?d.ovr+R(1,6):d.ovr,d.ovr,99);
+  Object.assign(p,{name:d.name,ht_:d.ht,wt:d.wt,spd:d.spd,str:d.str,agi:d.agi,acc:d.acc,jmp:d.jmp,end:d.end,posAttrs:d.attrs,salary:d.sal,contract:d.yrs,pot,truePot:pot,scoutedOvr:d.ovr,scoutedPot:pot,num:d.num,arch:d.arch,src:'m27',
+    tradeVal:d.ovr+Math.round((pot-d.ovr)*.5)-(d.age>30?(d.age-30)*3:0),bio:{...p.bio,college:d.college||p.bio.college}});if(d.dev)p.dev=d.dev;return p;}
+function initTeams(ui){return TEAMS.map((t,i)=>({...t,id:i,isUser:i===ui,roster:M27.teams[i].roster.map(realPlayer),ps:M27.teams[i].ps.map(realPlayer),ir:[],w:0,l:0,t:0,pf:0,pa:0,morale:50,streak:0,gmRep:50,chemistry:75,strat:pick(["balanced","pass-heavy","run-heavy","defensive"]),gmStyle:i===ui?'user':pick(['rebuilder','win-now','analytics']),coach:{oc:genCoach("OC"),dc:genCoach("DC"),st:genCoach("ST")}}));}
 // Assign bye weeks 5-14 to each team (paired so week always has even active teams)
 function genByeWeeks(ids){const byes={};const sh=[...ids].sort(()=>Math.random()-.5);const pairs=Math.floor(sh.length/2);for(let i=0;i<sh.length;i+=2){const bw=5+Math.min(9,Math.floor((i/2)*10/pairs));byes[sh[i]]=bw;if(sh[i+1]!==undefined)byes[sh[i+1]]=bw;}return byes;}
 // 18-week schedule: each team plays 17 games (1 bye in weeks 5-14)
