@@ -39,6 +39,16 @@ function pickW(rand, list) {
 // One team's side of a game: its starters, who touches the ball, and its modifiers.
 // order(pos): healthy players in depth order. snaps: id -> %. mod: game-day modifiers in points.
 // lean: extra pass tendency (-0.15..0.15).
+// Who gets home on a sack: edge rushers take about half a team's sacks, interior tackles and
+// linebackers most of the rest, DBs a few (a 95-rated edge gets ~1.6x an average one's share).
+// Madden's position (mpos) says which; without it, body weight tells an edge (~250-285 lbs)
+// from a tackle (~295+).
+function rushRole(p) {
+  if (p.pos === "DL") return p.mpos ? (p.mpos === "DT" ? 0.6 : 1) : (p.wt || 280) >= 292 ? 0.6 : 1;
+  if (p.pos === "LB") return p.mpos === "SAM" ? 0.5 : 0.25;
+  return 0.08;
+}
+
 export function makeSide({ team, order, snaps, mod = 0, lean = 0 }) {
   const u = unitRatings(order);
   const on = (pos) => order(pos).filter((p) => (snaps[p.id] || 0) > 0);
@@ -50,7 +60,7 @@ export function makeSide({ team, order, snaps, mod = 0, lean = 0 }) {
   const qb = on("QB")[0] || order("QB")[0];
   const defs = [];
   for (const pos of ["DL", "LB", "CB", "S"]) on(pos).forEach((p, i) => defs.push([p, (TK[pos][i] ?? 0.01) * share(p) * q(p, 0.01)]));
-  const rushW = defs.map(([p, w]) => [p, (p.pos === "DL" ? 1 : p.pos === "LB" ? 0.35 : 0.04) * w * q(p, 0.05)]);
+  const rushW = defs.map(([p, w]) => [p, rushRole(p) * w * q(p, 0.025)]);
   const covW = defs.map(([p, w]) => [p, (p.pos === "CB" ? 1.4 : p.pos === "S" ? 1.1 : p.pos === "LB" ? 0.35 : 0.05) * w * q(p, 0.035)]);
   const tackleW = defs.map(([p, w]) => [p, w]);
   const k = on("K")[0] || order("K")[0];
