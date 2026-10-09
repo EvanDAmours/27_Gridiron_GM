@@ -18,7 +18,7 @@ import TrainingCamp from "./TrainingCamp.jsx";
 import HomeScreen from "./HomeScreen.jsx";
 import { terms as talkTerms, yearlyAsk, maxYears } from "./negotiation.js";
 import { playerValue, pickValue as chartPickValue, evaluateTrade } from "./trade.js";
-import { unitRatings, simDrives, boxScore, overtime, HOME_EDGE } from "./gamesim.js";
+import { makeSide, createGame, step as playStep, playGame } from "./playsim.js";
 import PlayoffBracket from "./PlayoffBracket.jsx";
 import { makeBracket, nextRound, ROUND_NAMES } from "./playoffs.js";
 import { runFocusWeeks } from "./development.js";
@@ -280,7 +280,11 @@ function addS(t,s){for(const[k,v]of Object.entries(s))if(typeof v==="number")t[k
 function teamStr(t){const r=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);if(!r.length)return 50;const st={QB:1,RB:1,WR:3,TE:1,LT:1,LG:1,C:1,RG:1,RT:1,DL:4,LB:3,CB:2,S:2,K:1};const dO=window._gmDepthOrder||{};const a=[];for(const[pos,n]of Object.entries(st)){const order=dO[pos]||[];const ap=r.filter(p=>p.pos===pos);const ordered=[];order.forEach(id=>{const p=ap.find(x=>x.id===id);if(p)ordered.push(p);});ap.filter(p=>!order.includes(p.id)).sort((x,y)=>y.ovr-x.ovr).forEach(p=>ordered.push(p));a.push(...ordered.slice(0,n));}const base=a.length?a.reduce((s,p)=>s+p.ovr,0)/a.length:50;const chemBonus=((t.chemistry||75)-75)*0.2;let depthPenalty=0;for(const[pos,n]of Object.entries(st)){const available=r.filter(p=>p.pos===pos);if(available.length===0)depthPenalty+=1.5;else if(available.length<=n)depthPenalty+=0.5;}const cyBoost=a.reduce((s,p)=>s+(p.contract===1?2:0),0)/Math.max(a.length,1);const avgFit=a.length?a.reduce((s,p)=>s+(p.fit||70),0)/a.length:70;const coreBonus=a.filter(p=>p.role==='core').length*0.5;
   return base+chemBonus-depthPenalty+cyBoost+(avgFit-70)*0.05+(t._fqbBonus||0)+(t._rivBonus||0)+coreBonus+((t._schemeTransWks||0)>0?-3:0);}
 function rollGameWeather(){const r=Math.random();return r<0.70?'clear':r<0.85?'rain':r<0.95?'wind':'snow';}
-function simGame(ht,at,hPlan,aPlan,wxOverride){
+// Live-game box score in the shape the live screen shows (yards, TDs, tackles...).
+function liveView(box){const out={h:{},a:{}};for(const side of["h","a"])for(const[id,l]of Object.entries(box[side]||{}))out[side][id]={name:l.name,pos:l.pos,passYds:l.passYds||0,rushYds:l.rushYds||0,recYds:l.recYds||0,td:(l.passTD||0)+(l.rushTD||0)+(l.recTD||0),comp:l.comp||0,att:l.att||0,rec:l.rec||0,tkl:l.tkl||0,sack:l.sacks||0,int:l.ints||0,rushAtt:l.rushAtt||0};return out;}
+// The shared setup for quick sims and live games: each side's depth chart, snap shares and
+// game-day modifiers (coaches, schemes, game plan, morale, weather, matchups, difficulty).
+function gameSetup(ht,at,hPlan,aPlan,wxOverride){
 const wx=wxOverride||rollGameWeather();
   const hOC=ht.coach?.oc?(ht.coach.oc.rating-60)*.1:0,hDC=ht.coach?.dc?(ht.coach.dc.rating-60)*.1:0;
   const aOC=at.coach?.oc?(at.coach.oc.rating-60)*.1:0,aDC=at.coach?.dc?(at.coach.dc.rating-60)*.1:0;
@@ -291,7 +295,7 @@ const wx=wxOverride||rollGameWeather();
   const aOM=offB[aPlan?.off]||offB.balanced,aDM=defB[aPlan?.def]||{m:0,s:0};
   const hMorB=((ht.morale||50)-50)*0.06,aMorB=((at.morale||50)-50)*0.06;
   const wxM=wx==='snow'?-4:wx==='rain'?-2:wx==='wind'?-1:0;
-  // Everything that used to add points now tilts each drive's odds (2.5 points ≈ 1 unit of edge).
+  // Everything that tilts a game, in points for each offense (the engine turns it into play-by-play odds).
   const _pmAvg=arr=>arr.length?arr.reduce((s,p)=>s+p.ovr,0)/arr.length:70;
   const _grp=(t,ps)=>t.roster.filter(p=>ps.includes(p.pos)&&!p.injured);
   const _hRush=_pmAvg(_grp(ht,['DL','LB']))-_pmAvg(_grp(at,['LT','LG','C','RG','RT'])),_aRush=_pmAvg(_grp(at,['DL','LB']))-_pmAvg(_grp(ht,['LT','LG','C','RG','RT']));
@@ -303,20 +307,28 @@ const wx=wxOverride||rollGameWeather();
   const _ord=t=>{const _healthy=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const _dO=t.isUser?(window._gmDepthOrder||{}):{};return pos=>{const ap=_healthy.filter(p=>p.pos===pos);const o=(_dO[pos]||[]).map(id=>ap.find(p=>p.id===id)).filter(Boolean);return[...o,...ap.filter(p=>!o.includes(p)).sort(byDepth)];};};
   const hOrd=_ord(ht),aOrd=_ord(at);
   const hSnaps=teamSnaps(hOrd,ht.isUser?(window._gmPlayingTime||{}):{}),aSnaps=teamSnaps(aOrd,at.isUser?(window._gmPlayingTime||{}):{});
-  const hU=unitRatings(hOrd),aU=unitRatings(aOrd);
-  const hr=simDrives(hU,aU,HOME_EDGE+hMod/2.5),ar=simDrives(aU,hU,aMod/2.5);
-  if(hr.pts===ar.pts){const ot=overtime(hU,aU,HOME_EDGE+(hMod-aMod)/2.5);if(ot){const w=ot.side==="h"?hr:ar;w.pts+=ot.pts;if(ot.pts===3){w.fgA++;w.fgM++;}else{if(Math.random()<.6)w.passTD++;else w.rushTD++;}}}
-  const boxH={},boxA={};
-  [[ht,hOrd,hSnaps,hr,ar,boxH],[at,aOrd,aSnaps,ar,hr,boxA]].forEach(([t,ord,snaps,own,opp,box])=>{
-    const lines=boxScore(ord,snaps,own,opp);
-    t.roster.forEach(p=>{if(p.injured||p.holdout)return;const _sh=snaps[p.id]||0;if(_sh<=0)return;
-      const gs={...(lines[p.id]||{})};if(p.pos==="QB"&&gs.att)gs.rate=qbRate(gs.comp,gs.att,gs.passYds,gs.passTD,gs.passInt);
-      p.ss.gp=(p.ss.gp||0)+1;if(_sh>=50)p.ss.gs=(p.ss.gs||0)+1;
-      if(Object.keys(gs).length){addS(p.ss,gs);if(p.pos==="QB"&&p.ss.att>0)p.ss.rate=qbRate(p.ss.comp,p.ss.att,p.ss.passYds,p.ss.passTD,p.ss.passInt);p.gl.push({...gs,gp:1});box[p.id]={...gs,name:p.name,pos:p.pos};}
-      const injMult=(p.fragile?1.5:1)*(p.traits?.includes('Injury Prone')?2.5:p.traits?.includes('Ironman')?0:1);if(Math.random()<.025*injMult*Math.max(.15,_sh/100)){p.injured=true;p.injCount=(p.injCount||0)+1;p.fragile=p.injCount>=2;const injCauses=['high-impact collision','awkward landing','non-contact','blocked low','tackled from behind','turf contact','pile-up'];p.injType=`${pick(["Hamstring","Ankle","Knee (MCL)","Shoulder","Concussion","Quad","Calf","Back"])} (${pick(injCauses)})`;const sevRoll=Math.random();if(sevRoll<0.4){p.injSev="minor";p.injRecWks=R(1,2);}else if(sevRoll<0.8){p.injSev="moderate";p.injRecWks=R(3,5);}else{p.injSev="major";p.injRecWks=R(6,8);}p.injWk=p.injRecWks;}
-    });
+  // Play-calling tendency: the game plan, plus the coordinator's scheme (Air Raid throws more, Power Run runs more).
+  const lean=(t,pl)=>(pl?.off==="pass_heavy"?0.07:pl?.off==="run_heavy"?-0.07:0)+(0.42-schemeRunPct(t))*0.5;
+  return{wx,hSnaps,aSnaps,home:makeSide({team:ht,order:hOrd,snaps:hSnaps,mod:hMod,lean:lean(ht,hPlan)}),away:makeSide({team:at,order:aOrd,snaps:aSnaps,mod:aMod,lean:lean(at,aPlan)})};
+}
+// After the final whistle: season stats, games played/started and injury checks for one team.
+// Returns the box score lines (with QB ratings) for the schedule.
+function applyGame(t,snaps,lines){
+  const box={};
+  t.roster.forEach(p=>{if(p.injured||p.holdout)return;const _sh=snaps[p.id]||0;if(_sh<=0&&!lines[p.id])return;
+    const gs={...(lines[p.id]||{})};delete gs.name;delete gs.pos;if(p.pos==="QB"&&gs.att)gs.rate=qbRate(gs.comp||0,gs.att,gs.passYds||0,gs.passTD||0,gs.passInt||0);
+    p.ss.gp=(p.ss.gp||0)+1;if(_sh>=50)p.ss.gs=(p.ss.gs||0)+1;
+    if(Object.keys(gs).length){addS(p.ss,gs);if(p.pos==="QB"&&p.ss.att>0)p.ss.rate=qbRate(p.ss.comp,p.ss.att,p.ss.passYds,p.ss.passTD,p.ss.passInt);p.gl.push({...gs,gp:1});box[p.id]={...gs,name:p.name,pos:p.pos};}
+    const injMult=(p.fragile?1.5:1)*(p.traits?.includes('Injury Prone')?2.5:p.traits?.includes('Ironman')?0:1);if(Math.random()<.025*injMult*Math.max(.15,_sh/100)){p.injured=true;p.injCount=(p.injCount||0)+1;p.fragile=p.injCount>=2;const injCauses=['high-impact collision','awkward landing','non-contact','blocked low','tackled from behind','turf contact','pile-up'];p.injType=`${pick(["Hamstring","Ankle","Knee (MCL)","Shoulder","Concussion","Quad","Calf","Back"])} (${pick(injCauses)})`;const sevRoll=Math.random();if(sevRoll<0.4){p.injSev="minor";p.injRecWks=R(1,2);}else if(sevRoll<0.8){p.injSev="moderate";p.injRecWks=R(3,5);}else{p.injSev="major";p.injRecWks=R(6,8);}p.injWk=p.injRecWks;}
   });
-  return{hsc:hr.pts,asc:ar.pts,boxH,boxA,wx};
+  return box;
+}
+// Sim a game start to finish on the play-by-play engine. dry: a preview that changes nothing.
+function simGame(ht,at,hPlan,aPlan,wxOverride,opts={}){
+  const su=gameSetup(ht,at,hPlan,aPlan,wxOverride);
+  const g=playGame(createGame(su.home,su.away,{playoff:!!opts.playoff}));
+  if(opts.dry)return{hsc:g.score.h,asc:g.score.a,boxH:g.box.h,boxA:g.box.a,wx:su.wx,game:g};
+  return{hsc:g.score.h,asc:g.score.a,boxH:applyGame(ht,su.hSnaps,g.box.h),boxA:applyGame(at,su.aSnaps,g.box.a),wx:su.wx};
 }
 // ═══════════ SCOUTS ═══════════
 
@@ -344,63 +356,6 @@ function capSpace(t){return+(CAP_CEILING-capHit(t)).toFixed(1);}
 
 // ═══════════ LIVE PLAY GEN ═══════════
 // uCall: undefined=auto | "run_inside"|"run_outside"|"run_screen"|"scramble"|"pass_quick"|"pass_medium"|"pass_deep"|"pass_rpo"
-function genLivePlay(offTeam,defTeam,yard,down,toGo,uCall,qteBonus=1){
-  const qb=offTeam.roster.filter(p=>p.pos==="QB"&&!p.injured).sort((a,b)=>b.ovr-a.ovr)[0];
-  const rbs=offTeam.roster.filter(p=>p.pos==="RB"&&!p.injured).sort((a,b)=>b.ovr-a.ovr);
-  const wrs=offTeam.roster.filter(p=>p.pos==="WR"&&!p.injured).sort((a,b)=>b.ovr-a.ovr);
-  const tes=offTeam.roster.filter(p=>p.pos==="TE"&&!p.injured).sort((a,b)=>b.ovr-a.ovr);
-  const dls=defTeam.roster.filter(p=>["DL","LB"].includes(p.pos)&&!p.injured).sort((a,b)=>b.ovr-a.ovr);
-  const dbs=defTeam.roster.filter(p=>["CB","S"].includes(p.pos)&&!p.injured).sort((a,b)=>b.ovr-a.ovr);
-  const k=offTeam.roster.filter(p=>p.pos==="K"&&!p.injured).sort((a,b)=>b.ovr-a.ovr)[0];
-  if(!qb)return{text:"No QB available.",yards:0,type:"inc",player:null,newDown:down+1,td:false,turnover:false};
-  const rb=rbs[0]||qb;const wr=pick(wrs.length?wrs:[qb]);const te=tes[0]||wr;
-  const dl=pick(dls.length?dls:[{name:"Defender",ovr:55,id:"x"}]);
-  const db=pick(dbs.length?dbs:[{name:"DB",ovr:55,id:"x"}]);
-  if(uCall==="punt")return{text:"Team punts away.",yards:0,type:"punt",player:null,newDown:1,td:false,turnover:true};
-  if(uCall==="fg"){const made=k?Math.random()<cl(.65+(k.ovr-50)*.005,.3,.95):false;return{text:made?`${k?.name||"K"} kicks... GOOD! 3 points!`:`${k?.name||"K"}'s kick is NO GOOD.`,yards:0,type:made?"fg":"fg_miss",player:k||null,newDown:1,td:false,turnover:!made,score:made?3:0};}
-  // Penalty 5%
-  if(Math.random()<.05){const pens=["False start, offense. 5-yard penalty.","Holding, offense. 10-yard penalty.","Pass interference, defense. Auto first down.","Offsides, defense. 5-yard penalty."];const pen=pick(pens);const offP=pen.includes("offense");return{text:`🚩 ${pen}`,yards:offP?-5:5,type:"penalty",player:null,newDown:offP?down:1,td:false,turnover:false};}
-  // 4th down
-  if(down===4){if(yard>=58&&k){const made=Math.random()<cl(.65+(k.ovr-50)*.005,.3,.95);return{text:made?`${k.name} kicks... GOOD! 3 points!`:`${k.name}'s kick is NO GOOD.`,yards:0,type:made?"fg":"fg_miss",player:k,newDown:1,td:false,turnover:!made,score:made?3:0};}return{text:"Team punts away.",yards:0,type:"punt",player:null,newDown:1,td:false,turnover:true};}
-  // Determine play type from user call
-  const isScramble=uCall==="scramble";
-  const isScreen=uCall==="run_screen";
-  const isRun=isScramble||isScreen||(uCall?uCall.startsWith("run_"):Math.random()<schemeRunPct(offTeam));
-  const passV=uCall&&uCall.startsWith("pass_")?uCall.slice(5):null;
-  if(isRun){
-    const runner=isScramble?qb:rb;const oM=(runner.ovr-55)/100;const sB=(runner.spd-60)/150;
-    let yds,dir;
-    if(isScramble){const mob=(qb.posAttrs?.mobility||qb.ovr)/100;yds=Math.round(cl(G(3+mob*8,4),-3,qb.spd>75?R(10,35):12));dir="scrambles";}
-    else if(isScreen){yds=Math.round(cl(G(5+oM*4,4),-2,rb.spd>82?R(15,45):22));dir="screen";}
-    else if(uCall==="run_outside"){yds=Math.round(cl(G(3.5+oM*2+sB*6,3.5),-4,runner.spd>85?R(15,65):20));dir=pick(["around right end","around left end","on a sweep"]);}
-    else{yds=Math.round(cl(G(3.8+oM*3+sB*4,3),-4,runner.spd>85?R(15,65):18));dir=pick(["up the middle","off left tackle","off right tackle"]);}
-    yds=Math.round(yds*qteBonus);const isTD=yard+yds>=100;const fum=Math.random()<(isScramble?.03:.02);
-    let text=fum?`${runner.name} FUMBLES! Ball is loose!`:isTD?(isScramble?`🏈 TOUCHDOWN! ${runner.name} scrambles in for the score!`:isScreen?`🏈 TOUCHDOWN! ${runner.name} takes the screen ${100-yard} yards!`:`🏈 TOUCHDOWN! ${runner.name} scores from ${100-yard} yards out!`):(isScramble?`${runner.name} scrambles for ${Math.abs(yds)} ${yds>=0?"yards":"yard loss"}.`:isScreen?`${runner.name} catches the screen for ${Math.abs(yds)} ${yds>=0?"yards":"yard loss"}.`:`${runner.name} runs ${dir} for ${Math.abs(yds)} ${yds>=0?"yards":"yard loss"}.`);
-    return{text,yards:fum?0:yds,type:isTD?"td":fum?"fumble":"run",player:runner,newDown:yds>=toGo?1:down+1,td:isTD,turnover:fum,score:isTD?7:0};}
-  // Pass — risk modifiers from call type; OL quality reduces sack chance
-  const olStarters=offTeam.roster.filter(p=>['LT','LG','C','RG','RT'].includes(p.pos)&&!p.injured).sort((a,b)=>b.ovr-a.ovr).slice(0,5);
-  const olOvr=olStarters.length?olStarters.reduce((s,p)=>s+p.ovr,0)/olStarters.length:70;
-  let sackCh=cl(.08-(qb.ovr-55)*.002+dl.ovr*.0015-(olOvr-70)*.0012,.02,.2);
-  let intCh=cl(.04-(qb.ovr-55)*.001+db.ovr*.001,.01,.12);
-  if(passV==="quick"){sackCh*=.5;intCh*=.4;}
-  if(passV==="deep"){sackCh*=.7;intCh*=1.8;}
-  if(qteBonus>1.1){sackCh*=.5;intCh*=.5;}
-  if(qteBonus<0.8){sackCh*=1.8;intCh*=1.8;}
-  if(Math.random()<sackCh){const loss=R(3,12);return{text:`${dl.name} SACKS ${qb.name} for a loss of ${loss}!`,yards:-loss,type:"sack",player:dl,defPlay:true,newDown:down+1,td:false,turnover:false};}
-  if(Math.random()<intCh)return{text:`INTERCEPTED! ${db.name} picks off ${qb.name}!`,yards:0,type:"int",player:db,defPlay:true,newDown:1,td:false,turnover:true};
-  const tgt=passV==="rpo"?(Math.random()<.45?rb:wr):Math.random()<.55?wr:(te||wr);
-  let compCh=cl(.58+(qb.ovr-50)*.004+(tgt.ovr-50)*.002,.35,.82);
-  if(passV==="quick")compCh=cl(compCh*1.18,.5,.9);
-  if(passV==="deep")compCh=cl(compCh*.72,.25,.7);
-  compCh=cl(compCh*qteBonus,.2,.96);
-  if(Math.random()>compCh)return{text:`${qb.name}'s pass to ${tgt.name} falls incomplete.`,yards:0,type:"inc",player:qb,newDown:down+1,td:false,turnover:false};
-  const spdB=(tgt.spd-60)/80;
-  const deep=passV==="deep"||(passV!=="quick"&&passV!=="medium"&&passV!=="rpo"&&Math.random()<.18+spdB*.1);
-  const yds=deep?Math.round(cl(G(28+spdB*12,10),12,tgt.spd>85?R(40,75):55)):Math.round(cl(G(passV==="quick"?5:8+(tgt.ovr-55)*.08,passV==="quick"?2:4),1,22));
-  const isTD=yard+yds>=100;const depthStr=deep?"DEEP":"short";
-  let text=isTD?`🏈 TOUCHDOWN! ${qb.name} hits ${tgt.name} ${depthStr} for the score!`:`${qb.name} connects with ${tgt.name} ${depthStr} for ${yds} yards.`;
-  return{text,yards:yds,type:isTD?"td":"pass",player:tgt,passer:qb,newDown:yds>=toGo?1:down+1,td:isTD,turnover:false,score:isTD?7:0};
-}
 
 // ═══════════ COLORS & LABELS ═══════════
 const sL=k=>({passYds:"PYDS",passTD:"PTD",passInt:"INT",comp:"CMP",att:"ATT",rushYds:"RYDS",rushAtt:"RATT",rushTD:"RTD",recYds:"RECYDS",rec:"REC",recTD:"RECTD",tgt:"TGT",tkl:"TKL",ast:"AST",sacks:"SCK",tfl:"TFL",ints:"INT",ff:"FF",pd:"PD",qbH:"QBH",fgM:"FGM",fgA:"FGA",xpM:"XPM",xpA:"XPA",pts:"PTS",lng:"LNG",sk:"SK",skYds:"SKY",rate:"RTG",gp:"GP",gs:"GS",fum:"FUM",av:"AV"}[k]||k);
@@ -654,7 +609,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   const[dynastyShareOpen,setDynastyShareOpen]=useState(false);
   const[proAnnual,setProAnnual]=useState(()=>localStorage.getItem('gm_pro_annual')==='1');
   const[draftAnalyst,setDraftAnalyst]=useState(null);const[draftAnalystLoading,setDraftAnalystLoading]=useState(false);
-  const timerRef=useRef(null);const liveRef=useRef(null);const logEndRef=useRef(null);const liveQteDirRef=useRef(1);
+  const timerRef=useRef(null);const liveRef=useRef(null);const liveGameRef=useRef(null);const logEndRef=useRef(null);const liveQteDirRef=useRef(1);
   const sm=useCallback(m=>{setMsg(m);setTimeout(()=>setMsg(""),3500);},[]);
   const ut=useMemo(()=>teams[ui],[teams,ui]);
   const _aiTradeMode=useMemo(()=>{if(sp!=='regular'||wk<10||wk>11)return null;const modes={};teams.forEach((t,i)=>{if(i===ui)return;modes[i]=t.w>=6?'buyer':t.w<=4?'seller':'neutral';});return modes;},[teams,wk,sp,ui]);
@@ -665,7 +620,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   const restructureContract=(pid)=>{const nt=[...teams];const p=nt[ui].roster.find(r=>r.id===pid);if(!p||p.contract<=1)return sm('Cannot restructure — ≤1yr left');const relief=+(p.salary*0.3).toFixed(1);const deadCapIncrease=+(p.salary*0.3).toFixed(1);p.salary=+(p.salary-relief).toFixed(1);nt[ui].deadCap=(nt[ui].deadCap||0)+deadCapIncrease;setTeams(nt);setRestructModal(null);setDeadCapLog(prev=>[{name:p.name,pos:p.pos,amt:deadCapIncrease,reason:'Restructure',wk},...prev].slice(0,20));setLog(l=>[`🔀 RESTRUCTURED: ${p.name} — cap relief $${relief}M, $${deadCapIncrease}M dead cap added`,...l.slice(0,149)]);sm(`Restructured ${p.name} — $${relief}M cap relief`);};
   const startSpeedrun=()=>{setSpeedrun({start:Date.now(),championships:0,target:3});sm('🏃 SPEEDRUN: Race to 3 championships!');};
   const specializeCoach=(role,spec)=>{if(scPts<5)return sm('Need 5 SP!');const nt=[...teams];const c=nt[ui].coach?.[role];if(!c)return;c.spec=spec;c.rating=Math.min(99,c.rating+3);setTeams(nt);setScPts(s=>s-5);setCoachSpec(prev=>({...prev,[role]:spec}));setLog(l=>[`🎓 COACH SPEC: ${c.name} (${role.toUpperCase()}) → ${spec} (+3 RTG)`,...l.slice(0,149)]);sm(`${c.name} specialized in ${spec}`);};
-  const watchSpectator=(game)=>{const nlog=[];const ht2=teams[game.h],at2=teams[game.a];let hs2=0,as2=0;for(let i=0;i<12;i++){const isH=Math.random()<0.5;const yds=R(3,18);if(isH){hs2+=Math.floor(yds/3);nlog.push(`${TEAMS[game.h].ab}: ${yds}yd run → ${hs2}-${as2}`);}else{as2+=Math.floor(yds/3);nlog.push(`${TEAMS[game.a].ab}: ${yds}yd pass → ${hs2}-${as2}`);}}const fr=simGame(ht2,at2);setSpectatorGame({game,hs:fr.hsc,as:fr.asc});setSpectatorLog(nlog);};
+  const watchSpectator=(game)=>{const nlog=[];const ht2=teams[game.h],at2=teams[game.a];let hs2=0,as2=0;for(let i=0;i<12;i++){const isH=Math.random()<0.5;const yds=R(3,18);if(isH){hs2+=Math.floor(yds/3);nlog.push(`${TEAMS[game.h].ab}: ${yds}yd run → ${hs2}-${as2}`);}else{as2+=Math.floor(yds/3);nlog.push(`${TEAMS[game.a].ab}: ${yds}yd pass → ${hs2}-${as2}`);}}const fr=simGame(ht2,at2,null,null,null,{dry:true});setSpectatorGame({game,hs:fr.hsc,as:fr.asc});setSpectatorLog(nlog);};
   const faShowcase=(p)=>{if(!p.combine)p={...p,combine:genCombine(p.pos,p.ovr)};setFa(prev=>prev.map(f=>f.id===p.id?{...f,combine:p.combine,showcased:true}:f));setFaCombine({...p,combine:p.combine||genCombine(p.pos,p.ovr)});sm(`${p.name} Pro Day showcase revealed!`);};
   const genNewspaper=(headline,subline,type='general')=>{setNewspaper({headline,subline,type,date:`Wk${wk} ${yr}`,team:ut?.ab||'??'});};
   const CITY_OPTS=["New York","Los Angeles","Chicago","Houston","Dallas","Seattle","Denver","Miami","Boston","Atlanta","Phoenix","Detroit"];
@@ -837,79 +792,47 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   // Commit live sim result to game state when game ends
   useEffect(()=>{
     if(!liveDone||!liveSim)return;
-    if(liveSim.playoff){const bH={},bA={};Object.entries(liveStats.h||{}).forEach(([pid,st])=>{bH[pid]={...st};});Object.entries(liveStats.a||{}).forEach(([pid,st])=>{bA[pid]={...st};});simPR({h:liveSim.h,a:liveSim.a,hs:liveScore.h,as:liveScore.a,boxH:bH,boxA:bA});return;}
+    const L=liveGameRef.current;if(!L)return;
+    // The engine's full box score: season stats and injury checks for both teams.
+    const nt=[...teams];
+    const bH=applyGame(nt[liveSim.h],L.hSnaps,L.g.box.h),bA=applyGame(nt[liveSim.a],L.aSnaps,L.g.box.a);
+    liveGameRef.current=null;
+    if(liveSim.playoff){simPR({h:liveSim.h,a:liveSim.a,hs:liveScore.h,as:liveScore.a,boxH:bH,boxA:bA});return;}
     const ns=[...sched];const gi=ns.findIndex(g=>!g.played&&g.h===liveSim.h&&g.a===liveSim.a&&g.wk===liveSim.wk);
     if(gi<0)return;
-    const bH={},bA={};
-    Object.entries(liveStats.h||{}).forEach(([pid,s])=>{bH[pid]={...s};});
-    Object.entries(liveStats.a||{}).forEach(([pid,s])=>{bA[pid]={...s};});
     ns[gi]={...ns[gi],played:true,hs:liveScore.h,as:liveScore.a,boxH:bH,boxA:bA};
-    const nt=[...teams];
     if(liveScore.h>liveScore.a){nt[liveSim.h].w++;nt[liveSim.a].l++;}
     else if(liveScore.a>liveScore.h){nt[liveSim.a].w++;nt[liveSim.h].l++;}
     else{nt[liveSim.h].t++;nt[liveSim.a].t++;}
     nt[liveSim.h].pf+=liveScore.h;nt[liveSim.h].pa+=liveScore.a;
     nt[liveSim.a].pf+=liveScore.a;nt[liveSim.a].pa+=liveScore.h;
     {const isH=liveSim.h===ui;const livUs=isH?liveScore.h:liveScore.a;const livThem=isH?liveScore.a:liveScore.h;const livWon=livUs>livThem;const livTie=livUs===livThem;const nStr=livWon?Math.max(0,nt[ui].streak||0)+1:livTie?0:Math.min(0,nt[ui].streak||0)-1;nt[ui].streak=nStr;const sB=Math.abs(nStr)>=3?2:0;nt[ui].morale=cl((nt[ui].morale||50)+(livWon?4+sB:livTie?0:-(4+sB)),0,100);}
-    // SIL: live stat write-back — add live box stats into p.ss for user's team
-    {const _lus=liveSim.h===ui?"h":"a";Object.entries(liveStats[_lus]||{}).forEach(([pid,st])=>{const p=nt[ui].roster.find(r=>r.id===pid);if(p&&p.ss){addS(p.ss,{passYds:st.passYds||0,rushYds:st.rushYds||0,recYds:st.recYds||0,td:st.td||0,gp:1});if(p.pos==="QB"&&p.ss.att>0)p.ss.rate=qbRate(p.ss.comp||0,p.ss.att||0,p.ss.passYds||0,p.ss.passTD||0,p.ss.passInt||0);}});}
     setSched(ns);setTeams(nt);
     const isH=liveSim.h===ui;const us=isH?liveScore.h:liveScore.a;const them=isH?liveScore.a:liveScore.h;
     const oppAb=TEAMS[isH?liveSim.a:liveSim.h].ab;
     if(liveSim.h===ui||liveSim.a===ui)setLog(pr=>[...pr,`Wk${liveSim.wk}: ${us>them?"W":"L"} ${us}-${them} vs ${oppAb} (LIVE)`]);
   },[liveDone]);
 
+  // One play of the live game, on the same engine as quick sims.
   function advanceLivePlay(uCall,qteBonus=1){
     if(!liveSim||liveDone)return;
-    const hTeam=teams[liveSim.h],aTeam=teams[liveSim.a];
-    const offTeam=livePoss==="h"?hTeam:aTeam,defTeam=livePoss==="h"?aTeam:hTeam;
-    const isUserPoss=liveCallMode&&livePoss===(liveSim.h===ui?"h":"a");
+    const L=liveGameRef.current;if(!L||L.g.done)return;
+    const g=L.g;const userSide=liveSim.h===ui?"h":"a";
+    const isUserPoss=liveCallMode&&g.poss===userSide;
     if(isUserPoss&&uCall===undefined){setLiveAwaitingCall(true);return;}
     if(isUserPoss)setLiveAwaitingCall(false);
-    const play=genLivePlay(offTeam,defTeam,liveYard,liveDown,liveToGo,uCall,qteBonus);
-    setLastLivePlay(play);
-    const nLog=[...liveLog,{qtr:liveQtr,text:play.text,type:play.type,poss:livePoss}];
-    const ns={...liveScore};let ny=liveYard+play.yards;let nd=play.newDown;let ntg=nd===1?10:liveToGo;let np=livePoss;let nq=liveQtr;
-    // Update stats
-    const nst=JSON.parse(JSON.stringify(liveStats));
-    if(play.player&&play.player.id!=="x"){
-      const side=play.defPlay?(livePoss==="h"?"a":"h"):livePoss;
-      const pid=play.player.id;
-      if(!nst[side][pid])nst[side][pid]={name:play.player.name,pos:play.player.pos,passYds:0,rushYds:0,recYds:0,td:0,comp:0,att:0,rec:0,tkl:0,sack:0,int:0,rushAtt:0};
-      const ps=nst[side][pid];
-      if(play.type==="run"||(play.type==="td"&&!play.passer)){ps.rushYds+=play.yards;ps.rushAtt++;}
-      if(play.type==="pass"||(play.type==="td"&&play.passer)){ps.rec++;ps.recYds+=play.yards;}
-      if(play.type==="sack")ps.sack++;
-      if(play.type==="int")ps.int++;
-      if(play.td)ps.td++;
-      if(play.passer&&play.passer.id!=="x"){
-        const qside=livePoss;const qid=play.passer.id;
-        if(!nst[qside][qid])nst[qside][qid]={name:play.passer.name,pos:"QB",passYds:0,rushYds:0,recYds:0,td:0,comp:0,att:0,rec:0,tkl:0,sack:0,int:0,rushAtt:0};
-        nst[qside][qid].comp++;nst[qside][qid].att++;nst[qside][qid].passYds+=play.yards;
-      }
-      if(play.type==="inc"||play.type==="int"){
-        const qside=livePoss;const qid=qb_id(offTeam);
-        if(qid&&!nst[qside][qid])nst[qside][qid]={name:offTeam.roster.find(p=>p.id===qid)?.name||"QB",pos:"QB",passYds:0,rushYds:0,recYds:0,td:0,comp:0,att:0,rec:0,tkl:0,sack:0,int:0,rushAtt:0};
-        if(qid&&nst[qside][qid])nst[qside][qid].att++;
-      }
-    }
-    if(play.score)ns[livePoss]+=play.score;
-    if(play.td||play.turnover||play.type==="punt"||play.type==="fg"||play.type==="fg_miss"){np=livePoss==="h"?"a":"h";ny=25;nd=1;ntg=10;}
-    else if(nd>4){np=livePoss==="h"?"a":"h";ny=Math.max(5,100-ny);nd=1;ntg=10;}
-    else ny=cl(ny,1,99);
-    const nPlay=livePlay+1;
-    if(nPlay%12===0)nq=Math.min(4,liveQtr+1);
-    if(nPlay>=70||nq>4){
-      let best=null,bestVal=0;
-      for(const side of["h","a"])for(const[,ps]of Object.entries(nst[side]||{})){const val=(ps.passYds||0)+(ps.rushYds||0)+(ps.recYds||0)+(ps.td||0)*30+(ps.sack||0)*15+(ps.int||0)*25;if(val>bestVal){bestVal=val;best={...ps,side};}}
-      setLivePOG(best);setLiveDone(true);track('live_game_finish');
-    }
-    // v34: live momentum update
-    const _userSide=liveSim.h===ui?"h":"a";const _momDelta=play.td?(livePoss===_userSide?15:-12):play.turnover?(livePoss===_userSide?-12:12):play.yards>=15?(livePoss===_userSide?6:-4):play.yards<0?(livePoss===_userSide?-4:4):0;setLiveMomentum(m=>cl(m+_momDelta,0,100));
-    setLiveLog(nLog);setLiveStats(nst);setLiveScore(ns);setLiveYard(ny);setLivePoss(np);setLiveDown(nd);setLiveToGo(ntg);setLiveQtr(nq);setLivePlay(nPlay);setFourthChoice(null);
+    const offSide=g.poss;
+    const ev=playStep(g,uCall,qteBonus);
+    if(!ev)return;
+    setLastLivePlay(ev);
+    const view=liveView(g.box);
+    setLiveLog(l=>[...l,{qtr:ev.qtr>4?"OT":ev.qtr,text:ev.text+(ev.note&&ev.note!=="Final."?` — ${ev.note}`:""),type:ev.td?"td":ev.type,poss:offSide}]);
+    setLiveStats(view);setLiveScore({...g.score});setLiveYard(g.yard);setLivePoss(g.poss);setLiveDown(g.down);setLiveToGo(g.toGo);setLiveQtr(g.ot?5:g.qtr);setLivePlay(n=>n+1);setFourthChoice(null);
+    const _momDelta=ev.td?(offSide===userSide?15:-12):(ev.turnover||ev.type==="int"||ev.type==="fumble")?(offSide===userSide?-12:12):ev.yards>=15?(offSide===userSide?6:-4):ev.yards<0?(offSide===userSide?-4:4):0;setLiveMomentum(m=>cl(m+_momDelta,0,100));
+    if(g.done){let best=null,bestVal=0;for(const side of["h","a"])for(const ps of Object.values(view[side]||{})){const val=(ps.passYds||0)+(ps.rushYds||0)+(ps.recYds||0)+(ps.td||0)*30+(ps.sack||0)*15+(ps.int||0)*25;if(val>bestVal){bestVal=val;best={...ps,side};}}setLivePOG(best);setLiveDone(true);track('live_game_finish');}
   }
-  function qb_id(t){const qb=t.roster.filter(p=>p.pos==="QB"&&!p.injured).sort((a,b)=>b.ovr-a.ovr)[0];return qb?.id;}
-  function startLiveSim(game){setLiveSim(game);setLiveLog([]);setLiveStats({h:{},a:{}});setLiveScore({h:0,a:0});setLiveMomentum(50);setLiveQtr(1);setLiveYard(25);setLivePoss("h");setLiveDown(1);setLiveToGo(10);setLivePlay(0);setLiveDone(false);setLivePaused(false);setLivePOG(null);setLastLivePlay(null);setLiveAwaitingCall(false);setLivePhase(null);setLivePendingCall(null);setLiveQteBar(50);setLiveRecTargets([]);setShowLiveEnd(false);setTab("livesim");track('live_game_start');}
+
+  function startLiveSim(game){window._gmDepthOrder=depthOrder;window._gmPlayingTime=playingTime;const _plan=id=>id===ui?gamePlan:{off:'balanced',def:'balanced'};const su=gameSetup(teams[game.h],teams[game.a],_plan(game.h),_plan(game.a),null);const g=createGame(su.home,su.away,{playoff:!!game.playoff});liveGameRef.current={g,hSnaps:su.hSnaps,aSnaps:su.aSnaps};setLiveSim(game);setLiveLog([]);setLiveStats({h:{},a:{}});setLiveScore({h:0,a:0});setLiveMomentum(50);setLiveQtr(1);setLiveYard(g.yard);setLivePoss(g.poss);setLiveDown(1);setLiveToGo(10);setLivePlay(0);setLiveDone(false);setLivePaused(false);setLivePOG(null);setLastLivePlay(null);setLiveAwaitingCall(false);setLivePhase(null);setLivePendingCall(null);setLiveQteBar(50);setLiveRecTargets([]);setShowLiveEnd(false);setTab("livesim");track('live_game_start');}
 
   // FEATURE 13: Draft Pick Trade generator
   const genDraftPickTrade=()=>{const picks=draftPicks;const idx=draftIdx;if(idx>=picks.length)return;const cur=picks[idx];if(cur.owner!==ui)return;const aiTms=teams.map((_,i)=>i).filter(i=>i!==ui);const aiTm=aiTms[R(0,aiTms.length-1)];const theirPick=draftPicks.find(pk=>pk.owner===aiTm&&pk.overall>cur.overall+16);const theirP=teams[aiTm].roster.filter(p=>p.ovr>=65&&p.ovr<=78).sort((a,b)=>b.ovr-a.ovr)[0];if(!theirPick&&!theirP)return;setDraftPickTrade({pick:cur,aiTm,aiTmName:teams[aiTm]?.name||TEAMS[aiTm]?.name,offeredPlayer:theirP||null,offeredPick:theirPick||null});};
@@ -1066,7 +989,7 @@ if(nw>=18){setSp("playoffs");const seedConf=(conf)=>{const ct=nt.filter(t=>TEAMS
   const simAll=()=>{if(sp!=="regular")return;let cw=wk;const nt=teams.map(t=>({...t,roster:t.roster.map(p=>({...p,ss:{...p.ss},gl:[...p.gl]}))}));const ns=[...sched];const rl=[];while(cw<18){cw++;ns.filter(g=>g.wk===cw&&!g.played).forEach(g=>{const gi=ns.indexOf(g);const r=simGame(nt[g.h],nt[g.a],g.h===ui?gamePlan:{off:'balanced',def:'balanced'},g.a===ui?gamePlan:{off:'balanced',def:'balanced'});ns[gi]={...g,played:true,hs:r.hsc,as:r.asc,boxH:r.boxH,boxA:r.boxA};nt[g.h].pf+=r.hsc;nt[g.h].pa+=r.asc;nt[g.a].pf+=r.asc;nt[g.a].pa+=r.hsc;if(r.hsc>r.asc){nt[g.h].w++;nt[g.a].l++;}else if(r.asc>r.hsc){nt[g.a].w++;nt[g.h].l++;}else{nt[g.h].t++;nt[g.a].t++;}if(g.h===ui||g.a===ui){const ih=g.h===ui;const us=ih?r.hsc:r.asc;const them=ih?r.asc:r.hsc;const opp=ih?nt[g.a]:nt[g.h];rl.push(`${us>them?"W":"L"} ${us}-${them} vs ${opp.ab}`);const won=us>them;const tie=us===them;const nStr=won?Math.max(0,nt[ui].streak||0)+1:tie?0:Math.min(0,nt[ui].streak||0)-1;nt[ui].streak=nStr;const sB=Math.abs(nStr)>=3?2:0;nt[ui].morale=cl((nt[ui].morale||50)+(won?4+sB:tie?0:-(4+sB)),0,100);}});nt.forEach(t=>t.roster.forEach(p=>{if(p.injured){p.injWk--;if(p.injWk<=0){p.injured=false;p.injWk=0;p.injType="";}}}));}nt.forEach(t=>t.roster.forEach(p=>{p.av=calcAV(p);}));setScPts(pr=>pr+(18-wk)*2);const _lab=runFocusWeeks(nt[ui].roster,devFocus,Math.max(0,18-wk));_lab.forEach(({p})=>{p.tradeVal=tradeValue(p);});if(_lab.length)setLog(l=>[..._lab.map(({p,g})=>`🔬 DEV FOCUS: ${p.name} (${p.pos}) +${g} OVR → ${p.ovr}`),...l.slice(0,149)]);setTeams(nt);setSched(ns);setWk(18);setScouting(s=>s&&creditWeeks(s,18));setLog(p=>[...p,...rl]);setSp("playoffs");track('season_simmed');const seedConf2=(conf)=>{const ct=nt.filter(t=>TEAMS[t.id]?.c===conf);const divs={};ct.forEach(t=>{const dk=TEAMS[t.id]?.d||'X';(divs[dk]||(divs[dk]=[])).push(t);});Object.values(divs).forEach(d=>d.sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)));const dw=Object.values(divs).map(d=>d[0]).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa));const wc=ct.filter(t=>!dw.find(d=>d.id===t.id)).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)).slice(0,3);return[...dw,...wc].map(t=>t.id);};const af2=seedConf2('AFC'),nf2=seedConf2('NFC');setWeekResult({season:true,playoffs:[...af2,...nf2].includes(ui)});setPb(makeBracket(af2,nf2));setTab("playoffs");setShowRecapCard(true);setDynastyShareOpen(true);sm("Season complete! Recap card ready.");};
   // One playoff round. live: the result of your game if you played it on the field.
   const simPR=(live)=>{if(!pb||pb.ch!=null)return;const nt=[...teams];const rr=[];
-    pb.m.forEach(([a,b])=>{const mine=live&&live.h===a&&live.a===b;const r=mine?{hsc:live.hs,asc:live.as,boxH:live.boxH,boxA:live.boxA}:simGame(nt[a],nt[b]);
+    pb.m.forEach(([a,b])=>{const mine=live&&live.h===a&&live.a===b;const r=mine?{hsc:live.hs,asc:live.as,boxH:live.boxH,boxA:live.boxA}:simGame(nt[a],nt[b],null,null,null,{playoff:true});
       // Playoff games can't end tied: overtime goes to a field goal.
       let hs=r.hsc,as=r.asc;if(hs===as){if(Math.random()<0.55)hs+=3;else as+=3;}
       rr.push({h:a,a:b,hs,as,w:hs>as?a:b,boxH:r.boxH,boxA:r.boxA});});
@@ -1197,7 +1120,7 @@ track('season_reset');
 sm(`${ns} season!`);};
   const startSeason=()=>{setWeekResult(null);setSp("regular");setWk(0);setTab("roster");sm("Season begins!");};
   // ═══ OPTION D: PRESEASON GAME SIM ═══
-  const simPreseasonGame=()=>{const nt=[...teams];const ut=nt[ui];const oppIdx=(ui+1)%nt.length;const opp=nt[oppIdx];const g=simGame(ut,opp,gamePlan,{off:'balanced',def:'balanced'});const starters=ut.roster.filter(p=>!p.injured).sort((a,b)=>b.ovr-a.ovr);const statLines=[];const posWinners={};starters.forEach(p=>{const s=simPG(p);const hasStats=s.passYds||s.rushYds||s.recYds||s.tkl||s.sacks;if(!hasStats)return;statLines.push({id:p.id,name:p.name,pos:p.pos,ovr:p.ovr,...s});if(!posWinners[p.pos]||s.grade>posWinners[p.pos].grade)posWinners[p.pos]={id:p.id,name:p.name,pos:p.pos,ovr:p.ovr,grade:s.grade||'C'};});// Dev bonus: top performer per position group gets +1 devG
+  const simPreseasonGame=()=>{const nt=[...teams];const ut=nt[ui];const oppIdx=(ui+1)%nt.length;const opp=nt[oppIdx];const g=simGame(ut,opp,gamePlan,{off:'balanced',def:'balanced'},null,{dry:true});const starters=ut.roster.filter(p=>!p.injured).sort((a,b)=>b.ovr-a.ovr);const statLines=[];const posWinners={};starters.forEach(p=>{const s=simPG(p);const hasStats=s.passYds||s.rushYds||s.recYds||s.tkl||s.sacks;if(!hasStats)return;statLines.push({id:p.id,name:p.name,pos:p.pos,ovr:p.ovr,...s});if(!posWinners[p.pos]||s.grade>posWinners[p.pos].grade)posWinners[p.pos]={id:p.id,name:p.name,pos:p.pos,ovr:p.ovr,grade:s.grade||'C'};});// Dev bonus: top performer per position group gets +1 devG
   const devBonuses=[];['QB','RB','WR','TE'].forEach(pos=>{const grp=statLines.filter(s=>s.pos===pos).sort((a,b)=>{const gv={'A+':8,'A':7,'B+':6,'B':5,'C':4,'D':3,'F':2};return(gv[b.grade]||3)-(gv[a.grade]||3);});if(!grp.length)return;const top=grp[0];const pl=nt[ui].roster.find(r=>r.id===top.id);if(pl&&pl.age<=27){pl.devG=(pl.devG||0)+1;if(pl.devG>=3&&pl.ovr<99){pl.ovr=Math.min(99,pl.ovr+1);pl.devG=0;}devBonuses.push({name:top.name,pos:pos,grade:top.grade});}});// Injury risk
   if(preseasonRisk)starters.slice(0,22).forEach(p=>{if(Math.random()<0.05){p.injured=true;p.injWk=wk;p.injType="Minor";p.injRecWks=1;p.injDue=wk+1;}});const result={us:g.hsc,them:g.asc,opp:opp.ab,statLines:statLines.slice(0,8),posWinners,devBonuses};setPreseasonGames(pr=>[...pr,result]);setPsReport(result);setTeams(nt);setLog(l=>[`🏈 Preseason: ${g.hsc}-${g.asc} vs ${opp.ab} — ${devBonuses.length} dev bonus${devBonuses.length!==1?'es':''}${preseasonRisk?' (injury risk ON)':''}`, ...l.slice(0,149)]);sm(`Preseason ${g.hsc>g.asc?'WIN':'LOSS'}: ${g.hsc}–${g.asc} vs ${opp.ab}`);};
   // ═══ v18.0 GM FEATURES ═══
