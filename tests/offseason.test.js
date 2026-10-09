@@ -57,3 +57,23 @@ test("the best free agents sign where they'd start; cut-down day trims AI clubs 
   assert.ok(r.teams.slice(1).every((t) => t.roster.length === ROSTER_TARGET || (t.roster.length >= 48 && capSpace(t) < 15)));
   assert.ok(r.teams.slice(1).every((t) => t.roster.length <= ROSTER_TARGET), "never more than 53");
 });
+
+test("AI clubs keep their young stars; veterans and cap-strapped stars reach the market", async () => {
+  const { keepChance } = await import("../src/offseason.js");
+  assert.ok(keepChance({ pos: "DL", ovr: 94, age: 24 }) >= 0.95, "Will Anderson-type stays");
+  assert.ok(keepChance({ pos: "TE", ovr: 99, age: 26 }) >= 0.95, "Trey McBride-type stays");
+  assert.ok(keepChance({ pos: "QB", ovr: 92, age: 30 }) >= 0.95, "QBs age later");
+  assert.ok(keepChance({ pos: "DL", ovr: 95, age: 35 }) <= 0.25, "aging stars often hit the market");
+  // A young star on a club right at the cap: the club makes cap casualties to keep him.
+  const star = { id: "s", pos: "DL", ovr: 95, age: 24, contract: 1, salary: 5 };
+  const filler = Array.from({ length: 50 }, (_, k) => ({ id: `f${k}`, pos: "WR", ovr: 70, age: 27, contract: 3, salary: 5 }));
+  let kept = 0;
+  for (let n = 0; n < 50; n++) {
+    const r = openFreeAgency([{ id: 0, roster: [] }, { id: 1, roster: [star, ...filler.map((f) => ({ ...f }))] }], 0, 2026, rand, { cap: 301.2 });
+    if (r.teams[1].roster.some((p) => p.id === "s")) kept++;
+  }
+  assert.ok(kept >= 45, `kept ${kept}/50`);
+  // Truly cap-strapped (every dollar committed to non-stars): he reaches the market.
+  const broke = openFreeAgency([{ id: 0, roster: [] }, { id: 1, roster: [star, ...filler.map((f) => ({ ...f, salary: 5.9 }))] }], 0, 2026, rand, { cap: 301.2 });
+  assert.ok(broke.pool.some((p) => p.id === "s"));
+});

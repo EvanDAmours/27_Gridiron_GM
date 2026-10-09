@@ -28,12 +28,29 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
     // AI clubs re-sign best players first, and only what fits under the cap (with room for
     // coaches and the draft class).
     let payroll = roster.reduce((s, p) => s + (p.salary || 0), 0);
-    for (const p of expiring.sort((a, b) => b.ovr - a.ovr)) {
-      // Clubs keep most of their elite players (extension or the tag), but plenty of good
-      // starters reach the market, like every real March.
-      const keep = p.ovr >= 92 && p.age <= 31 ? 0.7 : p.ovr >= 85 && p.age <= 30 ? 0.45 : p.ovr >= 78 && p.age <= 28 ? 0.35 : 0;
+    // Franchise players first (QBs ahead of everyone), then by rating, so a club never spends
+    // its room on lesser starters and loses its young star.
+    const core = (p) => (keepChance(p) >= 0.95 ? (p.pos === "QB" ? 2 : 1) : 0);
+    for (const p of expiring.sort((a, b) => core(b) - core(a) || b.ovr - a.ovr)) {
+      const keep = keepChance(p);
       const salary = +Math.max(p.salary || 1, askingPrice(p) * (0.95 + rand() * 0.15)).toFixed(1); // market, not a small raise
-      if (i !== ui && rand() < keep && payroll + salary <= cap - room) {
+      // A young franchise player is kept even if it means cap casualties: the club cuts its
+      // priciest non-core contracts (up to five) to make room, as real teams do before tagging; it
+      // refills the roster in free agency and the draft. A club that still can't fit him is truly
+      // cap-strapped and he walks.
+      // For a franchise player the club also gives up its cap cushion (restructures, as real
+      // teams do for a young QB); everyone else has to fit with room to spare.
+      const limit = keep >= 0.95 ? cap : cap - room;
+      if (i !== ui && keep >= 0.95 && payroll + salary > limit) {
+        const cuts = roster.filter((q) => q.ovr < 80).sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, 5);
+        for (const q of cuts) {
+          if (payroll + salary <= limit || roster.length <= 30) break;
+          roster.splice(roster.indexOf(q), 1);
+          payroll -= q.salary || 0;
+          pool.push({ ...q, contract: 0, cy, formerTeam: i, gl: [], av: 0 });
+        }
+      }
+      if (i !== ui && rand() < keep && payroll + salary <= limit) {
         roster.push({ ...p, contract: roll(rand, 2, 4), salary, cy });
         payroll += salary;
         resigned.push({ p, team: i });
@@ -48,6 +65,17 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
   });
   pool.sort((a, b) => b.ovr - a.ovr);
   return { teams: out, pool, mine, resigned, retired };
+}
+
+// How likely an AI club is to keep its own player whose deal is up. Young stars almost never
+// reach the market (extension or the tag); the market gets veterans, mid-tier starters and the
+// stars of clubs that can't fit them under the cap. QBs age about three years later.
+export function keepChance(p) {
+  const a = p.pos === "QB" ? p.age - 3 : p.age;
+  if (p.ovr >= 88) return a <= 28 ? 0.98 : a <= 30 ? 0.85 : a <= 32 ? 0.5 : 0.25;
+  if (p.ovr >= 82) return a <= 27 ? 0.85 : a <= 29 ? 0.65 : a <= 31 ? 0.35 : 0.15;
+  if (p.ovr >= 76) return a <= 26 ? 0.6 : a <= 29 ? 0.35 : 0.1;
+  return 0;
 }
 
 // What a player asks for on a new deal: a share of the salary cap set by his position and
