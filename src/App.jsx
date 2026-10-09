@@ -12,6 +12,7 @@ import FreeAgency from "./FreeAgency.jsx";
 import RosterTable from "./RosterView.jsx";
 import SchedulePage from "./SchedulePage.jsx";
 import { playerValue, pickValue as chartPickValue, evaluateTrade } from "./trade.js";
+import { unitRatings, simDrives, boxScore, overtime, HOME_EDGE } from "./gamesim.js";
 import PlayoffBracket from "./PlayoffBracket.jsx";
 import { makeBracket, nextRound, ROUND_NAMES } from "./playoffs.js";
 import { runFocusWeeks } from "./development.js";
@@ -271,41 +272,44 @@ function addS(t,s){for(const[k,v]of Object.entries(s))if(typeof v==="number")t[k
 function teamStr(t){const r=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);if(!r.length)return 50;const st={QB:1,RB:1,WR:3,TE:1,LT:1,LG:1,C:1,RG:1,RT:1,DL:4,LB:3,CB:2,S:2,K:1};const dO=window._gmDepthOrder||{};const a=[];for(const[pos,n]of Object.entries(st)){const order=dO[pos]||[];const ap=r.filter(p=>p.pos===pos);const ordered=[];order.forEach(id=>{const p=ap.find(x=>x.id===id);if(p)ordered.push(p);});ap.filter(p=>!order.includes(p.id)).sort((x,y)=>y.ovr-x.ovr).forEach(p=>ordered.push(p));a.push(...ordered.slice(0,n));}const base=a.length?a.reduce((s,p)=>s+p.ovr,0)/a.length:50;const chemBonus=((t.chemistry||75)-75)*0.2;let depthPenalty=0;for(const[pos,n]of Object.entries(st)){const available=r.filter(p=>p.pos===pos);if(available.length===0)depthPenalty+=1.5;else if(available.length<=n)depthPenalty+=0.5;}const cyBoost=a.reduce((s,p)=>s+(p.contract===1?2:0),0)/Math.max(a.length,1);const avgFit=a.length?a.reduce((s,p)=>s+(p.fit||70),0)/a.length:70;const coreBonus=a.filter(p=>p.role==='core').length*0.5;
   return base+chemBonus-depthPenalty+cyBoost+(avgFit-70)*0.05+(t._fqbBonus||0)+(t._rivBonus||0)+coreBonus+((t._schemeTransWks||0)>0?-3:0);}
 function rollGameWeather(){const r=Math.random();return r<0.70?'clear':r<0.85?'rain':r<0.95?'wind':'snow';}
-function simGame(ht,at,hPlan,aPlan,wxOverride){const hs=teamStr(ht)+2.5,as=teamStr(at);const wx=wxOverride||rollGameWeather();
+function simGame(ht,at,hPlan,aPlan,wxOverride){
+const wx=wxOverride||rollGameWeather();
   const hOC=ht.coach?.oc?(ht.coach.oc.rating-60)*.1:0,hDC=ht.coach?.dc?(ht.coach.dc.rating-60)*.1:0;
   const aOC=at.coach?.oc?(at.coach.oc.rating-60)*.1:0,aDC=at.coach?.dc?(at.coach.dc.rating-60)*.1:0;
   const hFit=getOCFit(ht)+getDCFit(ht),aFit=getOCFit(at)+getDCFit(at);
   const offB={run_heavy:{m:-1.2,s:-2},balanced:{m:0,s:0},pass_heavy:{m:1.5,s:2.5}};
   const defB={conservative:{m:-1.5,s:-2},aggressive:{m:-2.2,s:2.5},prevent:{m:-0.5,s:-3}};
-  const hOM=offB[hPlan?.off]||offB.balanced,hDM=defB[hPlan?.def]||defB.conservative;
-  const aOM=offB[aPlan?.off]||offB.balanced,aDM=defB[aPlan?.def]||defB.conservative;
+  const hOM=offB[hPlan?.off]||offB.balanced,hDM=defB[hPlan?.def]||{m:0,s:0};
+  const aOM=offB[aPlan?.off]||offB.balanced,aDM=defB[aPlan?.def]||{m:0,s:0};
   const hMorB=((ht.morale||50)-50)*0.06,aMorB=((at.morale||50)-50)*0.06;
   const wxM=wx==='snow'?-4:wx==='rain'?-2:wx==='wind'?-1:0;
-  let hsc=Math.max(3,Math.round(G(22+(hs-60)*.35+hOC-aDC+hFit*.5+hOM.m+aDM.m+hMorB+wxM,Math.max(3,7+hOM.s+aDM.s))));
-  let asc=Math.max(3,Math.round(G(22+(as-60)*.35+aOC-hDC+aFit*.5+aOM.m+hDM.m+aMorB+wxM,Math.max(3,7+aOM.s+hDM.s))));
-  hsc=Math.min(hsc,52);asc=Math.min(asc,52);
-  // Positional matchup engine: DL/LB pressure vs OL; DB coverage vs WR/TE
+  // Everything that used to add points now tilts each drive's odds (2.5 points ≈ 1 unit of edge).
   const _pmAvg=arr=>arr.length?arr.reduce((s,p)=>s+p.ovr,0)/arr.length:70;
-  const _htDL=ht.roster.filter(p=>['DL','LB'].includes(p.pos)&&!p.injured),_htOL=ht.roster.filter(p=>['LT','LG','C','RG','RT'].includes(p.pos)&&!p.injured),_htDB=ht.roster.filter(p=>['CB','S'].includes(p.pos)&&!p.injured),_htWR=ht.roster.filter(p=>['WR','TE'].includes(p.pos)&&!p.injured);
-  const _atDL=at.roster.filter(p=>['DL','LB'].includes(p.pos)&&!p.injured),_atOL=at.roster.filter(p=>['LT','LG','C','RG','RT'].includes(p.pos)&&!p.injured),_atDB=at.roster.filter(p=>['CB','S'].includes(p.pos)&&!p.injured),_atWR=at.roster.filter(p=>['WR','TE'].includes(p.pos)&&!p.injured);
-  const _hRush=_pmAvg(_htDL)-_pmAvg(_atOL),_aRush=_pmAvg(_atDL)-_pmAvg(_htOL);
-  if(_hRush>5)hsc=Math.min(hsc+0.8,52);if(_aRush>5)asc=Math.min(asc+0.8,52);
-  const _hCov=_pmAvg(_htDB)-_pmAvg(_atWR),_aCov=_pmAvg(_atDB)-_pmAvg(_htWR);
-  if(_hCov>5)asc=Math.max(3,asc-1);else if(_hCov<-5)asc=Math.min(asc+1,52);
-  if(_aCov>5)hsc=Math.max(3,hsc-1);else if(_aCov<-5)hsc=Math.min(hsc+1,52);
-  // v14: 2-pt conversion strategy — 15% chance of +1 score when enabled
-  if(hPlan?.twoPoint&&Math.random()<0.15)hsc=Math.min(hsc+1,52);
-  if(aPlan?.twoPoint&&Math.random()<0.15)asc=Math.min(asc+1,52);
-  // v21: Playbook Designer — full 3-play book gives coordinated +1 score
-  if((hPlan?.playbook?.length||0)>=3)hsc=Math.min(hsc+1,52);
-  if((aPlan?.playbook?.length||0)>=3)asc=Math.min(asc+1,52);
+  const _grp=(t,ps)=>t.roster.filter(p=>ps.includes(p.pos)&&!p.injured);
+  const _hRush=_pmAvg(_grp(ht,['DL','LB']))-_pmAvg(_grp(at,['LT','LG','C','RG','RT'])),_aRush=_pmAvg(_grp(at,['DL','LB']))-_pmAvg(_grp(ht,['LT','LG','C','RG','RT']));
+  const _hCov=_pmAvg(_grp(ht,['CB','S']))-_pmAvg(_grp(at,['WR','TE'])),_aCov=_pmAvg(_grp(at,['CB','S']))-_pmAvg(_grp(ht,['WR','TE']));
+  const _hClash=SCHEME_CLASH[ht.coach?.oc?.scheme]?.[at.coach?.dc?.scheme]||0,_aClash=SCHEME_CLASH[at.coach?.oc?.scheme]?.[ht.coach?.dc?.scheme]||0;
+  const _dda=typeof window!=='undefined'?(window._gmDDA||0):0;
+  let hMod=hOC-aDC+hFit*.5+hOM.m+aDM.m+hMorB+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+((hPlan?.playbook?.length||0)>=3?1:0)+_hClash+(ht.isUser?_dda:0);
+  let aMod=aOC-hDC+aFit*.5+aOM.m+hDM.m+aMorB+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+((aPlan?.playbook?.length||0)>=3?1:0)+_aClash+(at.isUser?_dda:0);
+  const _ord=t=>{const _healthy=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const _dO=t.isUser?(window._gmDepthOrder||{}):{};return pos=>{const ap=_healthy.filter(p=>p.pos===pos);const o=(_dO[pos]||[]).map(id=>ap.find(p=>p.id===id)).filter(Boolean);return[...o,...ap.filter(p=>!o.includes(p)).sort(byDepth)];};};
+  const hOrd=_ord(ht),aOrd=_ord(at);
+  const hSnaps=teamSnaps(hOrd,ht.isUser?(window._gmPlayingTime||{}):{}),aSnaps=teamSnaps(aOrd,at.isUser?(window._gmPlayingTime||{}):{});
+  const hU=unitRatings(hOrd),aU=unitRatings(aOrd);
+  const hr=simDrives(hU,aU,HOME_EDGE+hMod/2.5),ar=simDrives(aU,hU,aMod/2.5);
+  if(hr.pts===ar.pts){const ot=overtime(hU,aU,HOME_EDGE+(hMod-aMod)/2.5);if(ot){const w=ot.side==="h"?hr:ar;w.pts+=ot.pts;if(ot.pts===3){w.fgA++;w.fgM++;}else{if(Math.random()<.6)w.passTD++;else w.rushTD++;}}}
   const boxH={},boxA={};
-  [ht,at].forEach((t,ti)=>{const box=ti===0?boxH:boxA;const _healthy=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const _dO=t.isUser?(window._gmDepthOrder||{}):{};const _order=pos=>{const ap=_healthy.filter(p=>p.pos===pos);const o=(_dO[pos]||[]).map(id=>ap.find(p=>p.id===id)).filter(Boolean);return[...o,...ap.filter(p=>!o.includes(p)).sort(byDepth)];};const _snaps=teamSnaps(_order,t.isUser?(window._gmPlayingTime||{}):{});t.roster.forEach(p=>{if(p.injured||p.holdout)return;const _sh=_snaps[p.id]||0;const gs=simPG(p,_sh);if(!Object.keys(gs).length){if(_sh>0){p.ss.gp=(p.ss.gp||0)+1;if(_sh>=50)p.ss.gs=(p.ss.gs||0)+1;}return;}p.ss.gp=(p.ss.gp||0)+1;if(_sh>=50)p.ss.gs=(p.ss.gs||0)+1;addS(p.ss,gs);if(p.pos==="QB"&&p.ss.att>0)p.ss.rate=qbRate(p.ss.comp,p.ss.att,p.ss.passYds,p.ss.passTD,p.ss.passInt);p.gl.push({...gs,gp:1});box[p.id]={...gs,name:p.name,pos:p.pos};const injMult=(p.fragile?1.5:1)*(p.traits?.includes('Injury Prone')?2.5:p.traits?.includes('Ironman')?0:1);if(Math.random()<.025*injMult*Math.max(.15,_sh/100)){p.injured=true;p.injCount=(p.injCount||0)+1;p.fragile=p.injCount>=2;const injCauses=['high-impact collision','awkward landing','non-contact','blocked low','tackled from behind','turf contact','pile-up'];p.injType=`${pick(["Hamstring","Ankle","Knee (MCL)","Shoulder","Concussion","Quad","Calf","Back"])} (${pick(injCauses)})`;const sevRoll=Math.random();if(sevRoll<0.4){p.injSev="minor";p.injRecWks=R(1,2);}else if(sevRoll<0.8){p.injSev="moderate";p.injRecWks=R(3,5);}else{p.injSev="major";p.injRecWks=R(6,8);}p.injWk=p.injRecWks;}});});
-  const _hClash=SCHEME_CLASH[ht.coach?.oc?.scheme]?.[at.coach?.dc?.scheme]||0;const _aClash=SCHEME_CLASH[at.coach?.oc?.scheme]?.[ht.coach?.dc?.scheme]||0;hsc=cl(hsc+_hClash,3,52);asc=cl(asc+_aClash,3,52);
-  // I-12: DDA via window var
-  if(typeof window!=='undefined'&&window._gmDDA){if(ht.isUser)hsc=cl(hsc+(window._gmDDA||0),3,52);if(at.isUser)asc=cl(asc+(window._gmDDA||0),3,52);}
-  return{hsc,asc,boxH,boxA,wx};}
-
+  [[ht,hOrd,hSnaps,hr,ar,boxH],[at,aOrd,aSnaps,ar,hr,boxA]].forEach(([t,ord,snaps,own,opp,box])=>{
+    const lines=boxScore(ord,snaps,own,opp);
+    t.roster.forEach(p=>{if(p.injured||p.holdout)return;const _sh=snaps[p.id]||0;if(_sh<=0)return;
+      const gs={...(lines[p.id]||{})};if(p.pos==="QB"&&gs.att)gs.rate=qbRate(gs.comp,gs.att,gs.passYds,gs.passTD,gs.passInt);
+      p.ss.gp=(p.ss.gp||0)+1;if(_sh>=50)p.ss.gs=(p.ss.gs||0)+1;
+      if(Object.keys(gs).length){addS(p.ss,gs);if(p.pos==="QB"&&p.ss.att>0)p.ss.rate=qbRate(p.ss.comp,p.ss.att,p.ss.passYds,p.ss.passTD,p.ss.passInt);p.gl.push({...gs,gp:1});box[p.id]={...gs,name:p.name,pos:p.pos};}
+      const injMult=(p.fragile?1.5:1)*(p.traits?.includes('Injury Prone')?2.5:p.traits?.includes('Ironman')?0:1);if(Math.random()<.025*injMult*Math.max(.15,_sh/100)){p.injured=true;p.injCount=(p.injCount||0)+1;p.fragile=p.injCount>=2;const injCauses=['high-impact collision','awkward landing','non-contact','blocked low','tackled from behind','turf contact','pile-up'];p.injType=`${pick(["Hamstring","Ankle","Knee (MCL)","Shoulder","Concussion","Quad","Calf","Back"])} (${pick(injCauses)})`;const sevRoll=Math.random();if(sevRoll<0.4){p.injSev="minor";p.injRecWks=R(1,2);}else if(sevRoll<0.8){p.injSev="moderate";p.injRecWks=R(3,5);}else{p.injSev="major";p.injRecWks=R(6,8);}p.injWk=p.injRecWks;}
+    });
+  });
+  return{hsc:hr.pts,asc:ar.pts,boxH,boxA,wx};
+}
 // ═══════════ SCOUTS ═══════════
 
 // ═══════════ COACHING ═══════════
