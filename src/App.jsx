@@ -511,7 +511,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   const[tradeHistory,setTradeHistory]=useState([]);
   const[breakoutAlerts,setBreakoutAlerts]=useState([]);
   // v38: Depth Chart & Playing Time
-  const[depthOrder,setDepthOrder]=useState({});const[rosterView,setRosterView]=useState("players");const[depthView,setDepthView]=useState("field");const[menuOpen,setMenuOpen]=useState(false);const[theme,setTheme]=useState(getTheme);const[playingTime,setPlayingTime]=useState({});
+  const[depthOrder,setDepthOrder]=useState({});const[rosterView,setRosterView]=useState("players");const[depthView,setDepthView]=useState("field");const[menuOpen,setMenuOpen]=useState(false);const[rosterTeam,setRosterTeam]=useState(null);const[theme,setTheme]=useState(getTheme);const[playingTime,setPlayingTime]=useState({});
   // v7.0 new features
   const[awards,setAwards]=useState([]);
   const[draftClassRating,setDraftClassRating]=useState('Average');
@@ -1609,7 +1609,27 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     </div>}
 
     {/* ROSTER */}
-    {tab==="roster"&&ut&&<div>
+    {/* Any club's roster: pick a team (other clubs are read-only) */}
+    {tab==="roster"&&ut&&<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+      <span style={{fontSize:14,color:C.mt,fontWeight:700}}>View roster</span>
+      <select value={rosterTeam==null?ui:rosterTeam} onChange={e=>{const v=+e.target.value;setRosterTeam(v===ui?null:v);}} aria-label="Team roster to view" style={{background:C.cd,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:6,padding:"7px 10px",fontSize:15,fontWeight:700}}>
+        <option value={ui}>Your team: {ut.city} {ut.name}</option>
+        {["AFC","NFC"].map(cf=><optgroup key={cf} label={cf}>{teams.map((t,i)=>({t,i})).filter(({t,i})=>t.c===cf&&i!==ui).sort((a,b)=>(a.t.d||"").localeCompare(b.t.d||"")||a.t.city.localeCompare(b.t.city)).map(({t,i})=><option key={i} value={i}>{t.c} {t.d} · {t.city} {t.name}</option>)}</optgroup>)}
+      </select>
+      {rosterTeam!=null&&rosterTeam!==ui&&<Btn onClick={()=>setRosterTeam(null)} bg={C.bd} c={C.tx} style={{fontSize:13,padding:"6px 12px"}}>← Back to my team</Btn>}
+    </div>}
+    {tab==="roster"&&ut&&rosterTeam!=null&&rosterTeam!==ui&&teams[rosterTeam]&&(()=>{const ot=teams[rosterTeam];return<div>
+      <div style={{display:"flex",alignItems:"center",gap:"8px 18px",flexWrap:"wrap",marginBottom:12}}>
+        <span style={{display:"inline-flex",alignItems:"center",gap:10}}><TeamLogo t={ot} sz={44}/><span style={{fontSize:24,fontWeight:900}}>{ot.city} {ot.name}</span></span>
+        <span style={{fontSize:15,color:C.mt}}>Roster <b style={{fontSize:20,color:C.tx}}>{ot.roster.length}</b>/53</span>
+        <span style={{fontSize:15,color:C.mt}}>Cap space <b style={{fontSize:20,color:capSpace(ot)>=0?C.gn:C.rd}}>${capSpace(ot).toFixed(1)}M</b></span>
+        <span style={{fontSize:15,color:C.mt}}>Record <b style={{fontSize:20,color:C.tx}}>{ot.w}-{ot.l}{ot.t?`-${ot.t}`:""}</b></span>
+        {(ot.ir||[]).length>0&&<span style={{fontSize:15,color:C.mt}}>IR <b style={{fontSize:20,color:C.rd}}>{ot.ir.length}</b></span>}
+      </div>
+      <div style={{fontSize:13,color:C.mt,marginBottom:8}}>Their depth chart and contracts. Development traits stay hidden for other clubs' players. Tap a player for his card or to start a trade.</div>
+      <RosterTable players={[...ot.roster,...(ot.ir||[])]} depth={depthSlots(ot.roster,{})} setSel={setSel} devOf={()=>null}/>
+    </div>;})()}
+    {tab==="roster"&&ut&&(rosterTeam==null||rosterTeam===ui)&&<div>
       <div style={{display:"flex",alignItems:"center",gap:"8px 18px",flexWrap:"wrap",marginBottom:12}}>
         <span style={{display:"inline-flex",alignItems:"center",gap:10}}><TeamLogo t={ut} sz={44}/><span style={{fontSize:24,fontWeight:900}}>{ut.city} {ut.name}</span></span>
         <span style={{fontSize:15,color:C.mt}}>Roster <b style={{fontSize:20,color:ut.roster.length>53?C.rd:"#fff"}}>{ut.roster.length}</b>/53</span>

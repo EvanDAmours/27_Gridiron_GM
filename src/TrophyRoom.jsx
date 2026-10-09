@@ -6,7 +6,7 @@ import React, { useEffect, useState } from "react";
 import { C, TeamLogo } from "./ui.jsx";
 import { SUPER_BOWLS, sbName, sbNumber } from "./data/superbowls.js";
 
-const AWARDS = [["mvp", "MVP", "Most Valuable Player"], ["opoy", "OPOY", "Offensive Player of the Year"], ["dpoy", "DPOY", "Defensive Player of the Year"]];
+const AWARDS = [["mvp", "MVP", "Most Valuable Player"], ["opoy", "OPOY", "Offensive Player of the Year"], ["dpoy", "DPOY", "Defensive Player of the Year"], ["oroy", "OROY", "Offensive Rookie of the Year"], ["droy", "DROY", "Defensive Rookie of the Year"]];
 
 // Shared gradients, defined once for every trophy on the page.
 function Defs() {
@@ -89,11 +89,29 @@ const Helmet = ({ shell, stripe, mask, label, flip }) => (
   </svg>
 );
 
+// Rookie of the Year: a rising star on a slim column (silver and blue for offense, gold and red
+// for defense).
+const starPts = (cx, cy, R, r) => Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + (i * Math.PI) / 5, d = i % 2 ? r : R; return `${(cx + d * Math.cos(a)).toFixed(1)},${(cy + d * Math.sin(a)).toFixed(1)}`; }).join(" ");
+const RookieStar = ({ fill, metal, accent, label }) => (
+  <svg viewBox="0 0 100 240" width="100%" height="100%">
+    <polygon points={starPts(50, 74, 30, 13)} fill={fill} stroke={accent} strokeWidth="1.6" strokeLinejoin="round" />
+    <polygon points={starPts(50, 74, 15, 6.5)} fill="#ffffff" opacity=".35" />
+    <circle cx="50" cy="74" r="4" fill={accent} />
+    <path d="M44 104 L56 104 L53 98 L47 98 Z" fill={metal} />
+    <rect x="45" y="104" width="10" height="90" fill={metal} />
+    <rect x="45" y="140" width="10" height="4" fill={accent} />
+    <path d="M36 204 L64 204 L58 194 L42 194 Z" fill={metal} />
+    <Plinth label={label} band={accent} />
+  </svg>
+);
+
 const SHAPES = {
   lombardi: (t) => <Lombardi label={t.short} />,
   mvp: () => <Mvp />,
   opoy: () => <Helmet shell="url(#tr-silverBall)" stripe="#2563eb" mask="#94a3b8" label="OPOY" />,
   dpoy: () => <Helmet shell="url(#tr-goldBall)" stripe="#dc2626" mask="#7c5a10" label="DPOY" flip />,
+  oroy: () => <RookieStar fill="url(#tr-silverBall)" metal="url(#tr-silver)" accent="#2563eb" label="OROY" />,
+  droy: () => <RookieStar fill="url(#tr-goldBall)" metal="url(#tr-gold)" accent="#dc2626" label="DROY" />,
 };
 const LAYERS = [-3, -2, -1, 0, 1, 2, 3];
 
@@ -191,7 +209,7 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
           <div style={{ fontSize: 15, color: C.mt }}>{full} · hover or tap a trophy to see who won it</div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {[["Super Bowls", lombardis.length], ["MVP", count("mvp")], ["OPOY", count("opoy")], ["DPOY", count("dpoy")]].map(([l, v]) => (
+          {[["Super Bowls", lombardis.length], ["MVP", count("mvp")], ["OPOY", count("opoy")], ["DPOY", count("dpoy")], ["OROY", count("oroy")], ["DROY", count("droy")]].map(([l, v]) => (
             <div key={l} style={{ textAlign: "center", minWidth: 70, padding: "6px 10px", borderRadius: 8, background: C.cd, border: `1px solid ${v ? "#d4a01766" : C.bd}` }}>
               <div style={{ fontSize: 22, fontWeight: 900, color: v ? "#fde68a" : C.mt }}>{v}</div>
               <div style={{ fontSize: 12, fontWeight: 800, color: C.mt, letterSpacing: 0.5 }}>{l.toUpperCase()}</div>
@@ -200,7 +218,7 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
         </div>
       </div>
       <Shelf title="Super Bowl Championships" items={lombardis} empty="No Super Bowls yet. Win one and the Lombardi Trophy goes here." perRow={perRow} on={on} setOn={setOn} />
-      <Shelf title="Player Awards" items={mine} empty="Win MVP, Offensive or Defensive Player of the Year with you as GM and the trophy goes here." perRow={perRow} on={on} setOn={setOn} start={lombardis.length} />
+      <Shelf title="Player Awards" items={mine} empty="Win MVP, Offensive or Defensive Player of the Year, or a Rookie of the Year award with you as GM and the trophy goes here." perRow={perRow} on={on} setOn={setOn} start={lombardis.length} />
     </div>
   );
 }
