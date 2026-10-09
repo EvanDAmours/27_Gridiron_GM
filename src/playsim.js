@@ -9,6 +9,7 @@
 //
 // Tuned to the modern NFL: ~22-23 points a team, ~63 offensive plays, ~215 passing and ~115
 // rushing yards, ~64% completions, ~2.4 sacks and ~1.2 giveaways a game.
+import { retRating } from "./special.js";
 import { unitRatings } from "./gamesim.js";
 import { dlAsPlayed } from "./dline.js";
 import { getLeagueYear } from "./cap.js";
@@ -92,8 +93,11 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season 
   const covW = defs.map(([p, w]) => [p, (p.pos === "CB" ? 1.4 : p.pos === "S" ? 1.1 : p.pos === "LB" ? 0.35 : 0.05) * w * q(p, 0.035)]);
   const tackleW = defs.map(([p, w]) => [p, w]);
   const k = on("K")[0] || order("K")[0];
+  // Special teams: the returners, and the coverage units (the special teams coach).
+  const kr = order("KR")?.[0], pr = order("PR")?.[0];
+  const stCov = team?.coach?.st?.rating ?? 70;
   const passLean = clamp(0.6 + (u.pass - u.run) * 0.008 + lean, 0.45, 0.75);
-  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70 };
+  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov };
 }
 
 const emptyTeam = () => ({ plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
@@ -148,9 +152,43 @@ function newPossession(g, yard) {
   g.down = 1; g.toGo = Math.min(10, 100 - g.yard);
   g.stats[g.poss].drives++;
 }
-function kickoff(g) { // after a score, under the 2025 kickoff rules: touchbacks come out to the 35
-  const rand = g.rand;
-  newPossession(g, rand() < 0.55 ? 35 : clamp(Math.round(29 + gauss(rand) * 8), 10, 60));
+// Kickoff after a score (2025 rules: touchbacks come out to the 35, and most kicks are returned).
+// The return depends on the returner and the kicking team's coverage; a great returner breaks a
+// long one now and then, and once in a while takes it all the way. ev: the scoring play, which
+// gets the return added to its text when it's worth telling.
+function kickoff(g, ev, depth = 0) {
+  const rand = g.rand, kick = g.poss, recv = other(kick);
+  const R = g.sides[recv], K = g.sides[kick];
+  newPossession(g, 35);
+  if (rand() < 0.3 || !R) return; // touchback
+  const r = R.krR ?? 80, catchAt = Math.round(rand() * 8);
+  let spot = 28.5 + (r - 85) * 0.25 - ((K?.stCov ?? 70) - 70) * 0.06 + gauss(rand) * 6;
+  if (rand() < 0.026 * Math.exp((r - 85) / 8)) spot += 20 + rand() * 65; // breaks one (a typical club's returner is about an 85)
+  spot = Math.round(clamp(spot, catchAt + 5, 100));
+  const p = R.kr, l = line(g, recv, p);
+  add(l, "kr", 1);
+  if (rand() < 0.005) { // muffed or stripped: the kicking team recovers
+    add(l, "krYds", spot - catchAt); add(l, "fum", 1); g.stats[recv].fumLost++;
+    newPossession(g, 100 - spot);
+    if (ev) ev.text += ` ${p?.name || "The returner"} FUMBLES the kickoff, and the kicking team recovers!`;
+    return;
+  }
+  if (spot >= 100) return returnTD(g, ev, recv, p, l, "krYds", "krTD", 100 - catchAt, "kickoff", depth);
+  add(l, "krYds", spot - catchAt);
+  g.yard = spot; g.toGo = 10;
+  if (ev && spot - catchAt >= 40) ev.text += ` ${p?.name || "The returner"} brings the kickoff back ${spot - catchAt} yards to the ${spot > 50 ? `opponents' ${100 - spot}` : `${spot}`}.`;
+}
+// A kick or punt returned all the way.
+function returnTD(g, ev, recv, p, l, ydsKey, tdKey, yds, what, depth) {
+  add(l, ydsKey, yds); add(l, tdKey, 1); add(l, "pts", 6);
+  g.stats[recv].tds++;
+  let pts = 6;
+  const kl = line(g, recv, g.sides[recv].k);
+  add(kl, "xpA", 1);
+  if (g.rand() < 0.955) { add(kl, "xpM", 1); add(kl, "pts", 1); pts++; }
+  scored(g, recv, pts);
+  if (ev) { ev.text += ` 🔥 ${p?.name || "The returner"} takes the ${what} back ${yds} yards for a TOUCHDOWN!`; ev.retTD = recv; }
+  if (!g.done && depth < 3) kickoff(g, ev, depth + 1);
 }
 
 // Spend time on the clock and roll the quarter / half / game when it runs out.
@@ -231,17 +269,51 @@ export function step(g, call, bonus = 1) {
     if (made) { add(kl, "fgM", 1); add(kl, "pts", 3); kl.lng = Math.max(kl.lng || 0, fgDist); st.fgM++; ev.score = 3; scored(g, off, 3); ev.text = `${o.k?.name || "Kicker"}'s ${fgDist}-yard field goal is GOOD.`; }
     else ev.text = `${o.k?.name || "Kicker"}'s ${fgDist}-yard try is NO GOOD.`;
     ev.note = tick(g, 6);
-    if (!g.done) { if (made) kickoff(g); else newPossession(g, Math.max(20, 100 - (g.yard - 7))); }
+    if (!g.done) { if (made) kickoff(g, ev); else newPossession(g, Math.max(20, 100 - (g.yard - 7))); }
     return ev;
   }
   if (decision === "punt") {
-    const net = Math.round(clamp(41 + gauss(rand) * 8, 20, 65));
-    const spot = g.yard + net;
+    // The punt: its distance (the punter's leg), then the return (the returner against the
+    // coverage team). Punts deep in their territory are mostly fair caught or downed.
+    const pp = o.p, pl = pp ? line(g, off, pp) : null;
+    const pow = o.pPow ?? 75, acc = o.pAcc ?? 75;
+    const gross = Math.round(clamp(45.5 + (pow - 75) * 0.22 + gauss(rand) * 7, 22, 72));
+    const land = g.yard + gross;
     st.punts++;
+    if (pl) { add(pl, "punts", 1); add(pl, "puntYds", Math.min(gross, 100 - g.yard)); }
     ev.type = "punt"; ev.turnover = false;
-    ev.text = spot >= 100 ? "Punt into the end zone — touchback." : `Punt, ${net} yards net.`;
     ev.note = tick(g, 8);
-    if (!g.done) newPossession(g, spot >= 100 ? 20 : 100 - spot);
+    // Near the goal line a good punter pins it inside the 10 instead of sailing it into the end zone.
+    const pinned = land >= 90 && rand() < 0.35 + (acc - 75) * 0.012;
+    if (land >= 100 && !pinned) {
+      ev.text = `Punt of ${100 - g.yard} yards into the end zone, touchback.`;
+      if (!g.done) newPossession(g, 20);
+      return ev;
+    }
+    const spot = pinned && land >= 100 ? 92 + Math.round(rand() * 6) : land; // where it's caught or downed
+    let ret = 0;
+    const r = d.prR ?? 80, p = d.pr, rl = line(g, def, p);
+    if (rand() < (spot >= 88 ? 0.12 : 0.55)) {
+      ret = Math.round(Math.max(0, 8 + (r - 85) * 0.22 - ((o.stCov ?? 70) - 70) * 0.05 + gauss(rand) * 5.5));
+      if (rand() < 0.024 * Math.exp((r - 85) / 8)) ret += 15 + Math.round(rand() * 60); // breaks one
+      add(rl, "pr", 1);
+      if (rand() < 0.008) { // muffed: the punting team recovers
+        add(rl, "fum", 1); g.stats[def].fumLost++;
+        ev.text = `Punt, ${gross} yards. ${p?.name || "The returner"} MUFFS it, and the punting team recovers!`;
+        if (!g.done) { g.yard = clamp(spot, 1, 99); g.down = 1; g.toGo = Math.min(10, 100 - g.yard); g.stats[off].drives++; }
+        return ev;
+      }
+      if (100 - spot + ret >= 100) {
+        ev.text = `Punt, ${gross} yards.`;
+        if (!g.done) { newPossession(g, 99); returnTD(g, ev, def, p, rl, "prYds", "prTD", spot, "punt", 0); }
+        return ev;
+      }
+      add(rl, "prYds", ret);
+    }
+    const recvYard = 100 - spot + ret;
+    if (pl && recvYard <= 20) add(pl, "in20", 1);
+    ev.text = ret >= 20 ? `Punt, ${gross} yards. ${p?.name || "The returner"} brings it back ${ret} yards!` : ret > 0 ? `Punt, ${gross} yards, returned ${ret}.` : `Punt, ${gross} yards${recvYard <= 10 ? `, downed at the ${recvYard}` : ", fair catch"}.`;
+    if (!g.done) newPossession(g, recvYard);
     return ev;
   }
 
@@ -377,7 +449,7 @@ export function step(g, call, bonus = 1) {
     }
     ev.score = pts; scored(g, off, pts);
     ev.note = tick(g, 6);
-    if (!g.done) kickoff(g);
+    if (!g.done) kickoff(g, ev);
     return ev;
   }
   if (type === "fumble") {

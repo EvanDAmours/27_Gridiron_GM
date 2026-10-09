@@ -2,6 +2,7 @@
 // snap shares. Pure (no React), so the game engine and the tests can use it.
 import { snapOrdered } from "./snaps.js";
 import { DL_SLOTS, dlOrder } from "./dline.js";
+import { returnerOrder } from "./special.js";
 
 // Starters per position: the same counts the game sim plays with.
 export const STARTERS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1 };
@@ -13,6 +14,7 @@ export const byDepth = (a, b) => (a.dk ?? 99) - (b.dk ?? 99) || b.ovr - a.ovr;
 // Your order for a position (anyone you haven't placed goes behind, by default order). Pass your
 // snap shares and the players getting the most snaps move to the front: snap share decides who starts.
 export function depthOrderFor(roster, depthOrder, pos, snaps) {
+  if (pos === "KR" || pos === "PR") return returnerOrder(roster, depthOrder, pos); // kick / punt returner
   const players = roster.filter((p) => p.pos === pos);
   const order = ((depthOrder || {})[pos] || []).map((id) => players.find((p) => p.id === id)).filter(Boolean);
   const base = [...order, ...players.filter((p) => !order.includes(p)).sort(byDepth)];

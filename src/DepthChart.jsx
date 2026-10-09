@@ -5,7 +5,13 @@ import { C, oC, pC, Btn, Face } from "./ui.jsx";
 import { DL_SLOTS, slotKind, dlOvrAt, naturalDL } from "./dline.js";
 
 export { STARTERS, byDepth, depthOrderFor, depthSlots } from "./depth.js";
-import { STARTERS, depthOrderFor } from "./depth.js";
+import { STARTERS as STARTERS0, depthOrderFor } from "./depth.js";
+import { retRating } from "./special.js";
+
+// Kick and punt returners: any receiver, back or defensive back, rated as a returner.
+const RET = { KR: "kick returner", PR: "punt returner" };
+const STARTERS = { ...STARTERS0, KR: 1, PR: 1 };
+const shown = (p, pos) => (RET[pos] ? retRating(p) : p.ovr);
 
 // Spots on the field (x, y in % of the field). Offense drives up the screen; the defense faces it.
 const SETS = {
@@ -25,7 +31,7 @@ const SETS = {
       ["LB", 0, 30, 38], ["LB", 1, 50, 36], ["LB", 2, 70, 38], ["S", 0, 33, 14], ["S", 1, 67, 14],
     ],
   },
-  special: { label: "Special teams", los: 46, spots: [["K", 0, 50, 70]] },
+  special: { label: "Special teams", los: 46, spots: [["K", 0, 50, 70], ["KR", 0, 35, 10], ["PR", 0, 65, 10]] },
 };
 
 function Field({ los, children }) {
@@ -46,7 +52,7 @@ function Field({ los, children }) {
 function Spot({ p: p0, pos, idx, x, y, on, onClick }) {
   const label = pos === "DL" ? DL_SLOTS[idx] : STARTERS[pos] > 1 ? `${pos}${idx + 1}` : pos;
   // A lineman shows his rating at this spot (edge or tackle).
-  const p = p0 && pos === "DL" ? { ...p0, ovr: dlOvrAt(p0, slotKind(idx)) } : p0;
+  const p = p0 && pos === "DL" ? { ...p0, ovr: dlOvrAt(p0, slotKind(idx)) } : p0 && RET[pos] ? { ...p0, ovr: retRating(p0) } : p0;
   return (
     <button onClick={onClick} title={p ? `${label}: ${p.name} (${p.ovr})` : `${label}: empty`} style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%,-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "transparent", border: 0, cursor: "pointer", padding: 0, width: 74 }}>
       <span style={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: p ? "#0b1220" : "#0b122099", border: `3px solid ${on ? "#facc15" : p?.injured ? C.rd : pC(pos)}`, boxShadow: on ? "0 0 0 3px #facc1566" : "0 2px 6px #0008", color: p ? oC(p.ovr) : C.mt, fontWeight: 900, fontSize: 15 }}>{p ? p.ovr : "—"}</span>
@@ -126,9 +132,10 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
             <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.5 }}>Pick a spot on the field to see everyone at that position and change the starter.</div>
           ) : (
             <>
-              <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 6 }}>{pick[0] === "DL" ? DL_SLOTS[pick[1]] : STARTERS[pick[0]] > 1 ? `${pick[0]}${pick[1] + 1}` : pick[0]} <span style={{ fontSize: 12, color: C.mt, fontWeight: 600 }}>· {pick[0] === "DL" ? (slotKind(pick[1]) === "EDGE" ? "edge rusher" : "defensive tackle") : `${STARTERS[pick[0]]} starter${STARTERS[pick[0]] > 1 ? "s" : ""}`}</span></div>
+              <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 6 }}>{pick[0] === "DL" ? DL_SLOTS[pick[1]] : STARTERS[pick[0]] > 1 ? `${pick[0]}${pick[1] + 1}` : pick[0]} <span style={{ fontSize: 12, color: C.mt, fontWeight: 600 }}>· {pick[0] === "DL" ? (slotKind(pick[1]) === "EDGE" ? "edge rusher" : "defensive tackle") : RET[pick[0]] ? RET[pick[0]] : `${STARTERS[pick[0]]} starter${STARTERS[pick[0]] > 1 ? "s" : ""}`}</span></div>
               {!chosen.length && <div style={{ color: C.mt, fontSize: 13 }}>Nobody on the roster plays {pick[0]}.</div>}
               {PARTNER[pick[0]] && setPositions && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>Tackles and guards play either side. Starting a {PARTNER[pick[0]]} here swaps the two.</div>}
+              {RET[pick[0]] && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>Any receiver, back or defensive back can return. The number is his return rating (speed, acceleration, agility and a knack for it). A great returner flips field position and breaks a long one now and then, and it doesn't have to be a starter: a fast backup is a weapon here.</div>}
               {pick[0] === "DL" && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>Any lineman can play {slotKind(pick[1]) === "EDGE" ? "edge" : "tackle"} here. The number is his rating at this spot; edge rushers lose some inside and run stuffers lose some outside (his natural rating after the slash).</div>}
               {CROSS[pick[0]] && onMovePos && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>{["CB", "S"].includes(pick[0]) ? "Corners and safeties can switch." : "Linemen can move along the line."} Moving a player here changes his position; the Move button shows his rating at {pick[0]}. Moving him back restores his old rating.</div>}
               {chosen.map(({ p, at, i, move }) => {
@@ -140,9 +147,9 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
                     <Face s={p.face} sz={26} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => setSel(p)}>{p.name}</div>
-                      <div style={{ fontSize: 11, color: C.mt }}>{p.pos === "DL" && <b style={{ color: naturalDL(p) === "DT" ? "#fb923c" : "#f472b6", marginRight: 4 }}>{naturalDL(p)}</b>}Age {p.age}{p.injured ? <span style={{ color: C.rd, fontWeight: 700 }}> · injured</span> : ""}</div>
+                      <div style={{ fontSize: 11, color: C.mt }}>{RET[pick[0]] && <b style={{ marginRight: 4 }}>{p.pos} {p.ovr}</b>}{p.pos === "DL" && <b style={{ color: naturalDL(p) === "DT" ? "#fb923c" : "#f472b6", marginRight: 4 }}>{naturalDL(p)}</b>}Age {p.age}{p.injured ? <span style={{ color: C.rd, fontWeight: 700 }}> · injured</span> : ""}</div>
                     </div>
-                    {(() => { const v = p.pos === "DL" && pick[0] === "DL" ? dlOvrAt(p, slotKind(pick[1])) : p.ovr; return <b title={v !== p.ovr ? `${p.ovr} at his natural spot` : undefined} style={{ fontSize: 16, color: oC(v), minWidth: 26, textAlign: "right" }}>{v}{v !== p.ovr && <span style={{ fontSize: 10, color: C.mt, fontWeight: 600 }}> /{p.ovr}</span>}</b>; })()}
+                    {(() => { const v = p.pos === "DL" && pick[0] === "DL" ? dlOvrAt(p, slotKind(pick[1])) : shown(p, pick[0]); return <b title={RET[pick[0]] ? `Return rating (${p.pos} ${p.ovr} OVR)` : v !== p.ovr ? `${p.ovr} at his natural spot` : undefined} style={{ fontSize: 16, color: oC(v), minWidth: 26, textAlign: "right" }}>{v}{v !== p.ovr && !RET[pick[0]] && <span style={{ fontSize: 10, color: C.mt, fontWeight: 600 }}> /{p.ovr}</span>}</b>; })()}
                     {move ? <Btn onClick={() => moveIn(pick[0], pick[1], p)} bg="#7c3aed" c="#ede9fe" style={{ fontSize: 11, padding: "3px 6px", width: 56 }} title={`Move him to ${pick[0]}: ${previewPos ? previewPos(p, pick[0]) : "?"} OVR there`}>Move {previewPos ? previewPos(p, pick[0]) : ""}</Btn>
                       : here ? <span style={{ fontSize: 11, color: "#facc15", fontWeight: 700, width: 56, textAlign: "center" }}>Here</span>
                       : <Btn onClick={() => (at === pick[0] ? place(pick[0], pick[1], p) : switchSide(pick[0], p))} bg={C.bl} style={{ fontSize: 11, padding: "3px 8px", width: 56 }}>Start</Btn>}

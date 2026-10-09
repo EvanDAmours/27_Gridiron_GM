@@ -258,4 +258,11 @@ export const PATCH_NOTES = [
     "Your class is graded and ranked against the other 31, and a Class Grades table shows every team's haul. Filter the full pick list by your picks, hits only, or any team.",
     "Past drafts are kept: pick any earlier year to see the whole class again, with a Now column showing what each player has become.",
   ] },
+  { v: "1.70", date: "2026-10-09", title: "Special Teams: Kick and Punt Returners", notes: [
+    "Kickoffs and punts are now real plays: every return is run by your kick or punt returner against the other team's coverage unit (their special teams coach). A great returner flips field position, breaks a long one now and then, and sometimes takes it to the house. Muffs and fumbles happen too.",
+    "Return ratings are real: every player carries his Madden 27 Kick Return rating (KaVontae Turpin 95, Marcus Jones 94, Brenen Thompson 92...). Draft prospects are rated from their speed, acceleration and agility plus a knack of their own, so a late-round receiver who can't run routes can still be a weapon on returns, just like real life.",
+    "Depth Chart > Special teams has KR and PR spots: pick anyone from your receivers, backs and defensive backs. By default teams use their best returner but spare their stars a little, so a fast backup often wins the job.",
+    "Return stats: kick and punt returns, yards and touchdowns go in the box score, season and career stats, and a new Returns tab on the Stats page. The player card shows his return rating and return numbers.",
+    "Tuned to the NFL: about 26 yards a kick return and 9-10 a punt return, with roughly 10 kickoff and 6 punt return touchdowns across the league each season.",
+  ] },
 ];
