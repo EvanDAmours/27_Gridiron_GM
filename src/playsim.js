@@ -11,6 +11,7 @@
 // rushing yards, ~64% completions, ~2.4 sacks and ~1.2 giveaways a game.
 import { unitRatings } from "./gamesim.js";
 import { dlAsPlayed } from "./dline.js";
+import { getLeagueYear } from "./cap.js";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const gauss = (rand) => { let u = 0, v = 0; while (!u) u = rand(); while (!v) v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
@@ -26,7 +27,7 @@ export const POINTS_PER_EDGE = 2.5;
 // rating point above 75 adds ~1.5% to a player's share, so an elite WR1 sees ~30% of the
 // targets (a good one ~25%) and an elite back ~75% of the carries.
 const TALENT = 0.015;
-const TGT_RATE = { WR: [0.25, 0.22, 0.19, 0.18, 0.18], TE: [0.21, 0.17, 0.15], RB: [0.13, 0.12, 0.1] };
+const TGT_RATE = { WR: [0.23, 0.21, 0.19, 0.18, 0.18], TE: [0.21, 0.17, 0.15], RB: [0.13, 0.12, 0.1] };
 const TK = { DL: [0.07, 0.07, 0.06, 0.06, 0.03, 0.02], LB: [0.14, 0.12, 0.08, 0.03], CB: [0.07, 0.06, 0.03], S: [0.09, 0.08, 0.02] };
 
 function pickW(rand, list) {
@@ -50,10 +51,28 @@ function rushRole(p) {
   return 0.08;
 }
 
-export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0 }) {
-  // The defensive line plays at its spots: edges at LE/RE, tackles inside, each rated for his spot.
-  const dl = dlAsPlayed(depth("DL"));
-  const order = (pos) => (pos === "DL" ? dl : depth(pos));
+// A player's form for the season: most play to their rating, give or take a point or two; now
+// and then one has a career year (or a down one). Fixed per player and season, so a hot year
+// stays hot, and it's what lets a record fall once in a while instead of never (or every year).
+const hash = (s) => {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  // Finish with a full avalanche so near-identical ids (p1, p2...) land far apart.
+  h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
+  return h >>> 0;
+};
+export function seasonForm(id, season) {
+  const u = (hash(`${id}|${season}|a`) + 1) / 4294967297, v = (hash(`${id}|${season}|b`) + 1) / 4294967297;
+  const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  return clamp(Math.round(z * 3), -8, 8);
+}
+
+export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season = getLeagueYear() }) {
+  // Everyone plays at his rating plus his form this season; the defensive line at its spots
+  // (edges at LE/RE, tackles inside, each rated for his spot).
+  const formed = (list) => list.map((p) => { const f = seasonForm(p.id, season); return f ? { ...p, ovr: clamp((p.ovr || 70) + f, 30, 105), form: f } : p; });
+  const memo = {};
+  const order = (pos) => (memo[pos] ||= pos === "DL" ? dlAsPlayed(formed(depth("DL"))) : formed(depth(pos)));
   const u = unitRatings(order);
   const on = (pos) => order(pos).filter((p) => (snaps[p.id] || 0) > 0);
   const share = (p) => (snaps[p.id] || 0) / 100;
@@ -68,7 +87,7 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0 }) {
   const qb = on("QB")[0] || order("QB")[0];
   const defs = [];
   for (const pos of ["DL", "LB", "CB", "S"]) on(pos).forEach((p, i) => defs.push([p, (TK[pos][i] ?? 0.01) * share(p) * q(p, 0.01)]));
-  const rushW = defs.map(([p, w]) => [p, rushRole(p) * w * q(p, 0.018)]);
+  const rushW = defs.map(([p, w]) => [p, rushRole(p) * w * q(p, 0.012)]);
   const covW = defs.map(([p, w]) => [p, (p.pos === "CB" ? 1.4 : p.pos === "S" ? 1.1 : p.pos === "LB" ? 0.35 : 0.05) * w * q(p, 0.035)]);
   const tackleW = defs.map(([p, w]) => [p, w]);
   const k = on("K")[0] || order("K")[0];
@@ -261,7 +280,7 @@ export function step(g, call, bonus = 1) {
       carrier = qb; type = "run"; desc = `${qb?.name || "QB"} scrambles for ${yards}.`;
     } else {
       // Once a receiver has had a big day the ball spreads around (no 15-catch games every week).
-      const busy = ([p, w]) => { const n = g.box[off][p.id]?.tgt || 0; return [p, n <= 8 ? w : w * Math.exp(-(n - 8) / 4)]; };
+      const busy = ([p, w]) => { const n = g.box[off][p.id]?.tgt || 0, s0 = 8 + Math.max(0, p.form || 0) * 0.5; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 4)]; };
       const target = screen ? (o.rushers[0]?.[0] || pickW(rand, o.receivers.map(busy))) : pickW(rand, o.receivers.map(busy));
       const tl = line(g, off, target);
       add(qbl, "att", 1); add(tl, "tgt", 1); st.passAtt++;
@@ -281,7 +300,7 @@ export function step(g, call, bonus = 1) {
       const compP = clamp(0.645 + passE * 0.018 + ((target?.ovr || 75) - 75) * 0.0025 + (deep ? -0.22 : quick ? 0.08 : 0) + (screen ? 0.18 : 0), 0.3, 0.9);
       if (rand() < compP) {
         const mean = screen ? 5.5 : deep ? 24 : quick ? 6.5 : 10.3;
-        yards = Math.round((2 + expo(rand, mean - 2 + passE * 0.45 + ((target?.ovr || 75) - 75) * 0.05)) * (bonus || 1));
+        yards = Math.round((2 + expo(rand, mean - 2 + passE * 0.45 + ((target?.ovr || 75) - 75) * 0.055 + Math.max(0, (target?.ovr || 75) - 90) * 0.08)) * (bonus || 1));
         if (screen && rand() < 0.15) yards = -Math.round(rand() * 3);
         completed = true; carrier = target; type = "pass";
         add(qbl, "comp", 1); add(tl, "rec", 1); st.comp++;
@@ -297,10 +316,11 @@ export function step(g, call, bonus = 1) {
     const keeper = call === "scramble" || (!call && (qb?.spd || 60) >= 80 && rand() < 0.1);
     // A back's share tapers off as his carries pile up in a game (fatigue): a workhorse gets ~20-24,
     // and the season record (416) stays out of reach.
-    const tired = ([p, w]) => { const n = g.box[off][p.id]?.rushAtt || 0; return [p, n <= 12 ? w : w * Math.exp(-(n - 12) / 4)]; };
+    // A back in the form of his life gets fed a few more before the staff spells him.
+    const tired = ([p, w]) => { const n = g.box[off][p.id]?.rushAtt || 0, s0 = 12 + Math.max(0, p.form || 0) * 0.75; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 4)]; };
     carrier = keeper ? qb : pickW(rand, o.rushers.map(tired)) || qb;
     const outside = call === "run_outside";
-    const mean = 3.65 + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.02 + (keeper ? 0.6 : 0);
+    const mean = 3.6 + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.03 + (keeper ? 0.6 : 0);
     const breakaway = rand() < clamp(0.04 + ((carrier?.spd || 80) - 82) * 0.003 + runE * 0.005 + (outside ? 0.025 : 0), 0.015, 0.12);
     yards = breakaway ? Math.round(mean + 5 + expo(rand, 11)) : Math.round(clamp(mean - 0.6 + gauss(rand) * (outside ? 3.6 : 2.8), -4, 14));
     if (yards > 0) yards = Math.round(yards * (bonus || 1));
