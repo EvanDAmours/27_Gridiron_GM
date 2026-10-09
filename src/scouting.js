@@ -351,7 +351,7 @@ export function projection(pos, pot) {
 
 export function riskLabel(eOvr, ePot) {
   const gap = ePot - eOvr;
-  return gap >= 14 ? "High-upside project" : gap >= 7 ? "Needs some development" : "Pro-ready";
+  return eOvr >= 72 && gap < 10 ? "Pro-ready" : gap >= 14 ? "High-upside project" : eOvr < 64 ? "Developmental depth" : "Needs some development";
 }
 
 // What a scout writes when a tool stands out, good or bad.

@@ -286,4 +286,12 @@ export const PATCH_NOTES = [
     "The Draft Recap marks every gem (💎 Hidden gem), so you can see who found them and who missed.",
     "Classes already made in your franchise get their gems at the Combine.",
   ] },
+  { v: "1.74", date: "2026-10-09", title: "League-Ready Rookies and Scouting Crews", notes: [
+    "Draft prospects in the early rounds now come in close to league ready, like real NFL rookies: first-rounders average about 77 OVR (top-10 picks around 81), second-rounders about 71, third-rounders about 68. A second-round tight end can step in and take real snaps. Late-rounders are still low-ceiling depth.",
+    "Ceilings didn't change: a prospect's potential is the same as before, he just starts closer to it (younger and higher-ceiling prospects are rawer, some are more polished).",
+    "Your current franchise's upcoming draft classes are updated too: unscouted prospects get the new, higher starting ratings (nobody goes down).",
+    "Scouting crews: stack several good scouts on one position group and they see through the board. They flag that group's hidden gems as 💎 sleepers and spot Superstar and Generational development traits before you spend a point. With four good DB scouts, about 9 in 10 DB sleepers get flagged and almost every special DB trait is spotted early. A single scout still only gets the occasional 👀 hunch.",
+    "The 'Pro-ready' label now means it: a prospect who can play now, not a low-ceiling late-rounder. Low-rated, low-ceiling prospects are labeled 'Developmental depth'.",
+    "AI teams no longer cut their fresh draft picks first on cut-down day: a young player's upside counts when they decide who to keep.",
+  ] },
 ];

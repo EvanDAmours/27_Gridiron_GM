@@ -11,7 +11,7 @@ import { makeSide, createGame, playGame } from "./playsim.js";
 import { DATA_TO_DOLLARS, leagueCap } from "./cap.js";
 import { teamSnaps } from "./snaps.js";
 import { nflSchedule, divisionPlaces } from "./schedule.js";
-import { aiDraftScore, devOf, rankClass, plantGems } from "./scouting.js";
+import { aiDraftScore, devOf, rankClass, plantGems, gemGap } from "./scouting.js";
 
 export const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 export const Rf=(a,b)=>Math.random()*(b-a)+a;
@@ -160,6 +160,11 @@ export function genPlayer(pos,age,ovrO,isDraft){
 // AI clubs' trade calls live in tradeOffers.js.
 
 
+// Draft classes made before rookies came in closer to league ready (old saves pre-build three):
+// raise each unscouted prospect's current rating to the new shape, never lowering anyone. Skips
+// the class being drafted right now. Returns a new dc object.
+export function reshapeDC(dc,yr,sp,draftIdx){const out={};for(const[k,cls]of Object.entries(dc||{})){if(!Array.isArray(cls)||cls.some(p=>p.ovrV)||(+k===yr&&sp==="draft"&&draftIdx>0)){out[k]=cls;continue;}
+  out[k]=cls.map(p=>{if(p.scout?.lvl>0)return{...p,ovrV:2};const pt=p.truePot-gemGap(p);const room=Math.round(({20:15,21:13,22:11,23:9,24:7}[p.age]||11)*cl(0.33+(pt-64)*0.027,0.3,1.35)*Rf(0.6,1.4));const now=Math.max(p.trueOvr||p.ovr||55,cl(pt-room,55,pt));return{...p,ovr:now,trueOvr:now,ovrV:2};});}return out;}
 export function genDC(yr,dcr){
   const dc=[];const posW=[];const w={QB:4,RB:6,WR:9,TE:4,LT:2,LG:2,C:1,RG:2,RT:2,DL:8,LB:7,CB:6,S:5,K:1,P:1};
   for(const[p,n]of Object.entries(w))for(let i=0;i<n;i++)posW.push(p);
@@ -171,7 +176,7 @@ export function genDC(yr,dcr){
   // for real snaps, like NFL rookies), and late-rounders are low-ceiling depth.
   for(let i=0;i<240;i++){const pos=pick(posW);const age=prospectAge();const raw=cl(Gc(55,14,32,92),dcrAdj.fl,dcrAdj.cap);const pt=cl(raw+R(0,20),raw,99);
     const room=Math.round(({20:15,21:13,22:11,23:9,24:7}[age]||11)*cl(0.33+(pt-64)*0.027,0.3,1.35)*Rf(0.6,1.4));const now=cl(pt-room,55,pt);
-    const p=genPlayer(pos,age,now,true);p.pot=p.truePot=pt;p.scoutedPot=cl(pt+R(-12,12),pt-5,99);p.tradeVal=playerValue({pos,age,ovr:now,pot:pt});p.draftYear=yr;p.bio.backstory=`From ${pick(BSTORY_CITY)}, ${p.name.split(' ')[0]} ${pick(BSTORY_ARC)}. ${pick(BSTORY_TRAIT)}`;dc.push(p);}
+    const p=genPlayer(pos,age,now,true);p.pot=p.truePot=pt;p.scoutedPot=cl(pt+R(-12,12),pt-5,99);p.tradeVal=playerValue({pos,age,ovr:now,pot:pt});p.ovrV=2;p.draftYear=yr;p.bio.backstory=`From ${pick(BSTORY_CITY)}, ${p.name.split(' ')[0]} ${pick(BSTORY_ARC)}. ${pick(BSTORY_TRAIT)}`;dc.push(p);}
   if(dcr==='Elite'){const top=dc[0];if(top&&top.trueOvr<90){top.ovr=90;top.trueOvr=90;}}
   return plantGems(rankClass(dc),yr);
 }

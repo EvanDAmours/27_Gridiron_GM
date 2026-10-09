@@ -8,6 +8,8 @@ import { freshDeal } from "./bonus.js";
 import { optionEligible, aiTakesOption, optionPrice, tagPrice } from "./contracts.js";
 
 // Fewest players a club carries at each position.
+// How much a club wants to keep a player: his rating, plus half his remaining upside while he's young.
+const keepScore = (p) => (p.ovr || 0) + (p.age <= 24 ? Math.max(0, (p.pot ?? p.ovr) - p.ovr) * 0.5 : 0);
 export const ROSTER_MIN = { QB: 2, RB: 3, WR: 5, TE: 3, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 7, LB: 5, CB: 5, S: 4, K: 1, P: 1 };
 export const ROSTER_TARGET = 53;
 
@@ -216,9 +218,10 @@ export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random 
         sign(t, i, k); have++;
       }
     }
-    // Cut-down day: AI clubs release their lowest-rated players beyond 53 (never below a minimum).
+    // Cut-down day: AI clubs release their lowest-rated players beyond 53 (never below a minimum),
+    // counting a young player's upside so fresh draft picks aren't the first to go.
     while (t.roster.length > ROSTER_TARGET) {
-      const spare = [...t.roster].sort((a, b) => a.ovr - b.ovr).find((p) => t.roster.filter((q) => q.pos === p.pos).length > ROSTER_MIN[p.pos]);
+      const spare = [...t.roster].sort((a, b) => keepScore(a) - keepScore(b)).find((p) => t.roster.filter((q) => q.pos === p.pos).length > ROSTER_MIN[p.pos]);
       if (!spare) break;
       t.roster.splice(t.roster.indexOf(spare), 1);
       pool.push({ ...spare, contract: 0, formerTeam: i });
@@ -238,7 +241,7 @@ export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random 
   // Last pass: an AI club still over the cap releases its priciest depth players (never below 48).
   teams.forEach((t, i) => {
     while (i !== ui && capSpace(t) < 0 && t.roster.length > 48) {
-      const cut = [...t.roster].sort((a, b) => a.ovr - b.ovr).slice(0, 15).sort((a, b) => (b.salary || 0) - (a.salary || 0))[0];
+      const cut = [...t.roster].sort((a, b) => keepScore(a) - keepScore(b)).slice(0, 15).sort((a, b) => (b.salary || 0) - (a.salary || 0))[0];
       t.roster.splice(t.roster.indexOf(cut), 1);
       pool.push({ ...cut, contract: 0, formerTeam: i });
     }

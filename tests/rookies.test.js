@@ -27,3 +27,13 @@ test("ceilings stay where they were: still room to grow", () => {
   for (let r = 1; r <= 7; r++) assert.ok(mean(pot[r]) - mean(ovr[r]) >= 3, `R${r} gap ${mean(pot[r]) - mean(ovr[r])}`);
   assert.ok(mean(pot[1]) >= 84 && mean(pot[1]) <= 92, `R1 pot ${mean(pot[1])}`);
 });
+
+import { reshapeDC } from "../src/league.js";
+test("old saves' draft classes are reshaped once, never lowering anyone", () => {
+  const cls = genDC(2080).map((p) => ({ ...p, ovr: 60, trueOvr: 60, ovrV: undefined }));
+  const dc = reshapeDC({ 2080: cls }, 2079, "regular", 0);
+  assert.ok(dc[2080].every((p, i) => p.trueOvr >= 60 && p.ovrV === 2 && p.truePot === cls[i].truePot));
+  assert.ok(mean(dc[2080].map((p) => p.trueOvr)) > 63);
+  assert.strictEqual(reshapeDC(dc, 2079, "regular", 0)[2080], dc[2080]);
+  assert.strictEqual(reshapeDC({ 2080: cls }, 2080, "draft", 5)[2080], cls);
+});
