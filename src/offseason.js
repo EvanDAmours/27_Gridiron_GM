@@ -3,6 +3,8 @@
 // season every roster is topped up from the real players still on the market. No player is
 // ever invented here.
 
+import { leagueCap, leagueMin } from "./cap.js";
+
 // Fewest players a club carries at each position.
 export const ROSTER_MIN = { QB: 2, RB: 3, WR: 5, TE: 3, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 7, LB: 5, CB: 5, S: 4, K: 1 };
 export const ROSTER_TARGET = 53;
@@ -13,7 +15,7 @@ const roll = (rand, a, b) => a + Math.floor(rand() * (b - a + 1));
 // run out either get re-signed (AI clubs keep most of their core) or hit the market. Players
 // 36+ or rated under 45 retire instead. Everyone touched is stamped cy = yr + 1 so the season
 // rollover does not count the year twice.
-export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = 200, room = 12 } = {}) {
+export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = leagueCap(), room = cap * 0.06 } = {}) {
   const cy = yr + 1;
   const pool = [], mine = [], resigned = [], retired = [];
   const out = teams.map((t, i) => {
@@ -27,8 +29,9 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = 200, r
     // coaches and the draft class).
     let payroll = roster.reduce((s, p) => s + (p.salary || 0), 0);
     for (const p of expiring.sort((a, b) => b.ovr - a.ovr)) {
-      // Stars nearly always get a new deal (or the tag); good young starters usually do.
-      const keep = p.ovr >= 90 && p.age <= 33 ? 0.92 : p.ovr >= 80 && p.age <= 31 ? 0.75 : p.ovr >= 72 && p.age <= 27 ? 0.55 : 0;
+      // Clubs keep most of their elite players (extension or the tag), but plenty of good
+      // starters reach the market, like every real March.
+      const keep = p.ovr >= 92 && p.age <= 31 ? 0.7 : p.ovr >= 85 && p.age <= 30 ? 0.45 : p.ovr >= 78 && p.age <= 28 ? 0.35 : 0;
       const salary = +Math.max(p.salary || 1, askingPrice(p) * (0.95 + rand() * 0.15)).toFixed(1); // market, not a small raise
       if (i !== ui && rand() < keep && payroll + salary <= cap - room) {
         roster.push({ ...p, contract: roll(rand, 2, 4), salary, cy });
@@ -47,15 +50,17 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = 200, r
   return { teams: out, pool, mine, resigned, retired };
 }
 
-// What a player asks for on a new deal: market value for his position and rating, as a share
-// of the game's $200M cap that tracks the real NFL (a top QB takes ~21%, a top receiver or
-// pass rusher ~14%, down to kickers), less once he's past his prime (QBs age four years later).
-const MARKET = { QB: 42, DL: 29, WR: 29, LT: 21, CB: 18, RT: 17, LB: 15, S: 15, TE: 14, LG: 14, RG: 14, RB: 13, C: 10, K: 4 };
-export const askingPrice = (p) => {
-  const value = 0.8 + (MARKET[p.pos] ?? 14) * Math.max(0, (p.ovr - 60) / 39) ** 1.3;
+// What a player asks for on a new deal: a share of the salary cap set by his position and
+// rating, from real contracts. A 99 earns the top of his position's market (QB ~23.5% of the
+// cap, elite WR or pass rusher ~15%, down to kickers ~2%); an 88 gets ~87% of that, an 80 half,
+// a 70 a tenth, and anyone below starter level the minimum. Less once he's past his prime (QBs
+// age four years later). cap: the cap for the league year the deal starts.
+export const TOP_SHARE = { QB: 0.235, WR: 0.15, DL: 0.15, LT: 0.115, CB: 0.11, RT: 0.09, LB: 0.09, S: 0.085, TE: 0.08, LG: 0.08, RG: 0.08, RB: 0.07, C: 0.07, K: 0.02 };
+const curve = (ovr) => Math.min(1, 1 / (1 + Math.exp(-(ovr - 80) / 4.5)) / 0.985);
+export const askingPrice = (p, cap = leagueCap()) => {
   const a = p.pos === "QB" ? p.age - 4 : p.age;
   const age = a >= 34 ? 0.5 : a >= 32 ? 0.7 : a >= 30 ? 0.85 : 1;
-  return +Math.max(0.8, value * age).toFixed(1);
+  return +Math.max(cap * 0.0033, cap * (TOP_SHARE[p.pos] ?? 0.08) * curve(p.ovr) * age).toFixed(1);
 };
 
 // The position a club most needs: furthest below its minimum, then the weakest starter.
@@ -128,7 +133,7 @@ export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random 
   const signed = [];
   const sign = (t, i, k) => {
     const [p] = pool.splice(k, 1);
-    const deal = { ...p, salary: capSpace(t) >= askingPrice(p) ? askingPrice(p) : 0.8, contract: roll(rand, 1, 2), cy, formerTeam: undefined };
+    const deal = { ...p, salary: capSpace(t) >= askingPrice(p) ? askingPrice(p) : leagueMin(), contract: roll(rand, 1, 2), cy, formerTeam: undefined };
     t.roster.push(deal);
     signed.push({ p: deal, team: i });
   };

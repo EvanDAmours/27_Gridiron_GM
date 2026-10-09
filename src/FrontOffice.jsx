@@ -2,6 +2,7 @@
 import React from "react";
 import { C, oC, Bdg, Face } from "./ui.jsx";
 import { depthOrderFor } from "./DepthChart.jsx";
+import { capFor } from "./cap.js";
 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "14px 16px", marginBottom: 12 };
@@ -77,11 +78,11 @@ export default function FrontOffice({ team, yr, cap, floor, capSpace, capHit, re
           <div style={card}>
             <div style={label}>FUTURE CAP</div>
             {committed.map((c) => {
-              const free = cap - c.v;
+              const capY = capFor(c.yr), free = capY - c.v; // the cap keeps rising each year
               return (
                 <div key={c.yr} style={{ marginTop: 10 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15 }}><b>{c.yr}</b><span><span style={{ color: C.mt }}>committed</span> {money(c.v)} · <b style={{ color: free >= 0 ? C.gn : C.rd }}>{money(free)} free</b></span></div>
-                  <Meter v={(c.v / cap) * 100} color="#3b82f6" />
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15 }}><span><b>{c.yr}</b> <span style={{ color: C.mt, fontSize: 13 }}>cap {money(capY)}</span></span><span><span style={{ color: C.mt }}>committed</span> {money(c.v)} · <b style={{ color: free >= 0 ? C.gn : C.rd }}>{money(free)} free</b></span></div>
+                  <Meter v={(c.v / capY) * 100} color="#3b82f6" />
                 </div>
               );
             })}

@@ -1,11 +1,11 @@
 // Scouting and draft screens: the Big Board (always in consensus order), your own list, the
 // Combine, your scouting staff, and the prospect profile. Game state comes in as `g`.
 import React, { useState } from "react";
-import { C, oC, PA_LABELS, Bdg, Btn, PN, Face } from "./ui.jsx";
+import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo } from "./ui.jsx";
 import {
   prospectRead, scoutProspect, interviewProspect, coverage, csRank, riskLabel, gradeTone,
   SCOUT_GROUPS, SCOUT_ROLES, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
-  staffWindowOpen, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, scoutGroup, isSmallSchool,
+  staffWindowOpen, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, scoutGroup, isSmallSchool, devOf,
 } from "./scouting.js";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K"];
@@ -498,6 +498,82 @@ export function PickTracker({ g }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+const ATHLETIC = { spd: "Speed", acc: "Acceleration", agi: "Agility", str: "Strength", jmp: "Jumping", end: "Endurance" };
+// A player's three best ratings: position skills and athletic traits together.
+export function topRatings(p, n = 3) {
+  const all = [...Object.entries(p.posAttrs || {}).map(([k, v]) => [PA_LABELS[k] || k, v]), ...Object.entries(ATHLETIC).filter(([k]) => typeof p[k] === "number").map(([k, l]) => [l, p[k]])];
+  return all.sort((a, b) => b[1] - a[1]).slice(0, n);
+}
+
+// The moment you make a pick: who you got, his development trait and his three best ratings.
+export function DraftReveal({ pick, team, onClose }) {
+  const p = pick.p;
+  const dev = devOf(p);
+  const [fg, bg] = DEV_STYLE[dev] || DEV_STYLE.normal;
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(2,6,15,.86)", zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Your draft pick" style={{ width: "100%", maxWidth: 460, borderRadius: 16, overflow: "hidden", border: `2px solid ${fg}`, background: "#0b1220", boxShadow: `0 0 70px ${fg}44`, animation: "drPop .45s cubic-bezier(.2,.9,.3,1.3) both" }}>
+        <style>{"@keyframes drPop { from { opacity: 0; transform: scale(.7) } to { opacity: 1; transform: none } } @keyframes drFlip { from { opacity: 0; transform: rotateX(90deg) } to { opacity: 1; transform: none } }"}</style>
+        <div style={{ padding: "16px 20px 12px", background: `linear-gradient(135deg, ${team.clr}cc, #0b1220)`, textAlign: "center" }}>
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: "#ffffffb0" }}>ROUND {pick.rd} · PICK #{pick.overall}</div>
+          <div style={{ fontSize: 13, color: "#ffffffb0", marginTop: 2 }}>The {team.city} {team.name} select</div>
+          <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.15, marginTop: 6 }}>{p.name}</div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", alignItems: "center", marginTop: 6, fontSize: 15, color: "#e2e8f0" }}><Bdg pos={p.pos} />{p.bio?.college || p.college || ""}{p.age ? ` · Age ${p.age}` : ""}</div>
+        </div>
+        <div style={{ padding: "14px 20px 18px" }}>
+          <div style={{ textAlign: "center", padding: "12px 10px", borderRadius: 12, border: `2px solid ${bg}`, background: `${fg}14`, animation: "drFlip .5s .35s ease-out both" }}>
+            <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 2, color: C.mt }}>DEVELOPMENT TRAIT</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: fg, margin: "2px 0" }}>{DEV_TRAITS[dev]?.name || dev}</div>
+            <div style={{ fontSize: 14, color: "#cbd5e1" }}>{DEV_TRAITS[dev]?.desc}</div>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            {topRatings(p).map(([l, v], i) => (
+              <div key={l} style={{ flex: 1, textAlign: "center", padding: "10px 4px", borderRadius: 10, background: C.cd, border: `1px solid ${C.bd}`, animation: `drFlip .4s ${0.6 + i * 0.15}s ease-out both` }}>
+                <div style={{ fontSize: 26, fontWeight: 900, color: oC(v) }}>{v}</div>
+                <div style={{ fontSize: 13, color: "#cbd5e1", fontWeight: 700 }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 12, fontSize: 15 }}>
+            <span style={{ color: C.mt }}>OVR <b style={{ color: oC(p.ovr), fontSize: 18 }}>{p.ovr}</b></span>
+            <span style={{ color: C.mt }}>POT <b style={{ color: C.bl, fontSize: 18 }}>{p.pot}</b></span>
+            {pick.grade && <span style={{ color: C.mt }}>Grade <b style={{ color: C.gd, fontSize: 18 }}>{pick.grade}</b></span>}
+          </div>
+          {pick.take && <div style={{ fontSize: 14, color: "#94a3b8", textAlign: "center", marginTop: 8, fontStyle: "italic" }}>{pick.take}</div>}
+          <Btn onClick={onClose} bg={C.gn} style={{ width: "100%", marginTop: 14, fontSize: 16, padding: "10px 0", fontWeight: 900 }}>Continue the draft</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Who's on the clock and who picks next, so you can see a trade partner coming.
+export function DraftQueue({ picks, idx, teams, ui, n = 12 }) {
+  const next = picks.slice(idx, idx + n);
+  if (!next.length) return null;
+  const mine = picks.slice(idx).find((pk) => pk.owner === ui);
+  return (
+    <div style={{ ...panel, padding: "12px 12px 8px" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 900, letterSpacing: 1, color: "#e2e8f0" }}>UP NEXT</span>
+        {mine && <span style={{ marginLeft: "auto", fontSize: 13, color: mine === next[0] ? C.gn : C.mt, fontWeight: 700 }}>{mine === next[0] ? "You're on the clock" : `Your pick in ${picks.indexOf(mine) - idx}`}</span>}
+      </div>
+      {next.map((pk, i) => {
+        const t = teams[pk.owner], me = pk.owner === ui;
+        return (
+          <div key={pk.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 6px", borderRadius: 8, marginBottom: 2, background: i === 0 ? `${t.clr}55` : me ? `${C.gn}1f` : "transparent", border: `1px solid ${i === 0 ? "#ffffff40" : me ? C.gn : "transparent"}` }}>
+            <span style={{ width: 54, fontSize: 12, fontWeight: 800, color: i === 0 ? "#fff" : C.mt, fontVariantNumeric: "tabular-nums" }}>R{pk.rd} #{pk.overall}</span>
+            <TeamLogo t={t} sz={24} />
+            <span style={{ flex: 1, fontSize: 14, fontWeight: me || i === 0 ? 800 : 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.city} {t.name}{me ? " (you)" : ""}</span>
+            {i === 0 && <span style={{ fontSize: 11, fontWeight: 900, color: "#facc15", letterSpacing: 1 }}>ON THE CLOCK</span>}
+            {pk.orig != null && pk.orig !== pk.owner && <span title={`From ${teams[pk.orig]?.name}`} style={{ fontSize: 11, color: C.mt }}>via {teams[pk.orig]?.ab}</span>}
+          </div>
+        );
+      })}
     </div>
   );
 }

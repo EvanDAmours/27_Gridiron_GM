@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { openFreeAgency, aiSignings, fillRosters, ROSTER_MIN, ROSTER_TARGET } from "../src/offseason.js";
+import { leagueCap } from "../src/cap.js";
 
 let seed = 7;
 const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -12,7 +13,7 @@ function league() {
     roster: POS.flatMap((pos) => Array.from({ length: ROSTER_MIN[pos] + 1 }, () => ({ id: `p${id++}`, pos, ovr: 50 + Math.floor(rand() * 45), age: 22 + Math.floor(rand() * 14), contract: 1 + Math.floor(rand() * 4), salary: 2 }))),
   }));
 }
-const capSpace = (t) => 200 - t.roster.reduce((s, p) => s + p.salary, 0);
+const capSpace = (t) => leagueCap() - t.roster.reduce((s, p) => s + p.salary, 0);
 
 test("free agency: contracts lose a year, expiring players re-sign, retire or hit the market", () => {
   const teams = league();
@@ -52,5 +53,7 @@ test("the best free agents sign where they'd start; cut-down day trims AI clubs 
   assert.ok(s.some(({ p }) => p.id === "star"), "a 99 QB gets signed");
   r.teams[1].roster.push(...Array.from({ length: 20 }, (_, k) => ({ id: `x${k}`, pos: "WR", ovr: 40, age: 25, contract: 2, salary: 1 })));
   fillRosters(r.teams, r.pool, 0, { capSpace, cy: 2027, rand });
-  assert.ok(r.teams.slice(1).every((t) => t.roster.length === ROSTER_TARGET));
+  // 53 each, unless a club had to trim to get back under the cap (never below 48).
+  assert.ok(r.teams.slice(1).every((t) => t.roster.length === ROSTER_TARGET || (t.roster.length >= 48 && capSpace(t) < 15)));
+  assert.ok(r.teams.slice(1).every((t) => t.roster.length <= ROSTER_TARGET), "never more than 53");
 });
