@@ -222,4 +222,9 @@ export const PATCH_NOTES = [
     "Home-field advantage trimmed: home teams win about 55% of games, like the NFL.",
     "Points, yards, sacks and turnovers per game are unchanged.",
   ] },
+  { v: "1.64", date: "2026-10-09", title: "Record Book and Record Watch", notes: [
+    "New Record Book (in the menu): every single-season record, starting from the NFL's real marks (Peyton Manning's 5,477 yards and 55 TDs, Eric Dickerson's 2,105, Calvin Johnson's 1,964 and more). When someone in your league beats one, he takes it, and his name stays until someone beats him.",
+    "Record Watch: anyone on pace to break a record shows up in the Record Book and in Top Stories, with what he has so far and his pace.",
+    "When a record falls it leads Top Stories, goes in the league log, and (for your players) pops up on screen. Every record your league breaks is kept in a history list.",
+  ] },
 ];

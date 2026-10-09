@@ -79,7 +79,7 @@ try {
   await page.locator("button", { hasText: "Giants" }).first().click();
   await page.waitForTimeout(1200);
   await healthy("new game"); log("new game");
-  for (const tab of ["Roster", "Depth Chart", "Schedule", "Scouting", "Trade", "Free Agency", "Trophy Room", "Game Info", "Home"]) {
+  for (const tab of ["Roster", "Depth Chart", "Schedule", "Scouting", "Trade", "Free Agency", "Trophy Room", "Record Book", "Game Info", "Home"]) {
     await dismiss();
     const t = page.locator(`button:text-is("${tab}")`);
     if (await t.count()) { await t.first().click(); await page.waitForTimeout(400); await healthy(tab); }
