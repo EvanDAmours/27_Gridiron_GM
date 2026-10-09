@@ -5,7 +5,7 @@ import { devOf, DEV_TRAITS } from "./scouting.js";
 import { OFFENSE, DEFENSE, focusChance, perSeason } from "./development.js";
 import { DevChip } from "./ScoutingUI.jsx";
 
-const initials = (n) => n.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+const initials = (n) => String(n || "").split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
 function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
   const p = players.find((x) => x.id === focus?.[side]);
@@ -33,7 +33,7 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
       )}
       <select value={p?.id || ""} onChange={(e) => setFocus((f) => ({ ...f, [side]: e.target.value || null }))} aria-label={`${label} development focus`} style={{ width: "100%", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
         <option value="">— choose {label.toLowerCase()} —</option>
-        {options.map((x) => <option key={x.id} value={x.id}>{x.name} ({x.pos}, {x.ovr} OVR, {DEV_TRAITS[devOf(x)].name.toUpperCase()}) · ~{perSeason(x)}/season</option>)}
+        {options.map((x) => <option key={x.id} value={x.id}>{x.name} ({x.pos}, {x.ovr} OVR, {(DEV_TRAITS[devOf(x)]?.name || "Normal").toUpperCase()}) · ~{perSeason(x)}/season</option>)}
       </select>
     </div>
   );
