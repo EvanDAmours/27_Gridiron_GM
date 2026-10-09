@@ -54,7 +54,7 @@ const ri = (rand, a, b) => a + Math.floor(rand() * (b - a + 1));
 // The last age of a player's prime, by position: running backs wear down first, then receivers,
 // corners and linebackers around 30; linemen and tight ends last longer, quarterbacks into their
 // mid-30s and kickers longest.
-export const PRIME_END = { RB: 27, WR: 29, CB: 29, LB: 29, S: 30, DL: 30, TE: 30, LT: 32, LG: 32, C: 32, RG: 32, RT: 32, QB: 34, K: 36 };
+export const PRIME_END = { RB: 27, WR: 29, CB: 29, LB: 29, S: 30, DL: 30, TE: 30, LT: 32, LG: 32, C: 32, RG: 32, RT: 32, QB: 34, K: 36, P: 36 };
 export const primeEnd = (p) => PRIME_END[p.pos] ?? 30;
 // Years past his prime (negative while he's in or before it).
 export const yearsPastPrime = (p, age = p.age) => age - primeEnd(p);

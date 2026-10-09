@@ -120,7 +120,7 @@ export function leagueTradeBlock(teams, ui) {
     const depth = {};
     for (const pos of Object.keys(STARTERS)) depth[pos] = t.roster.filter((p) => p.pos === pos).sort((a, b) => b.ovr - a.ovr);
     for (const p of t.roster) {
-      if (p === qb1 || p.injured || p.ftag || p.ovr < 68 || p.pos === "K" || isFranchisePlayer(p)) continue;
+      if (p === qb1 || p.injured || p.ftag || p.ovr < 68 || p.pos === "K" || p.pos === "P" || isFranchisePlayer(p)) continue;
       const rank = (depth[p.pos] || []).indexOf(p);
       const backup = rank >= (STARTERS[p.pos] || 1);
       let why = null;

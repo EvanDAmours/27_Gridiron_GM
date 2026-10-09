@@ -322,6 +322,7 @@ const NOUN = { RB: "running back", WR: "receiver", TE: "tight end", LT: "tackle"
 export function projection(pos, pot) {
   if (pos === "QB") return pot >= 90 ? "Franchise quarterback" : pot >= 84 ? "Starting quarterback" : pot >= 78 ? "Bridge starter" : pot >= 72 ? "Backup quarterback" : "Camp arm";
   if (pos === "K") return pot >= 88 ? "Pro Bowl kicker" : pot >= 78 ? "Starting kicker" : "Camp leg";
+  if (pos === "P") return pot >= 86 ? "Pro Bowl punter" : pot >= 76 ? "Starting punter" : "Camp leg";
   const n = NOUN[pos] || "player";
   return pot >= 90 ? `Pro Bowl ${n}` : pot >= 84 ? "Day-one starter" : pot >= 78 ? `Starting ${n}` : pot >= 72 ? `Rotational ${n}` : pot >= 67 ? "Depth / special teams" : "Long shot";
 }
@@ -407,9 +408,11 @@ const ATTR_NOTES = {
   consistency: ["Repeatable, consistent mechanics", "Inconsistent mechanics"],
   coldWx: ["Unbothered by cold and wind", "Struggles in bad weather"],
   pressure: ["Thrives under pressure", "Tightens up under pressure"],
+  power: ["Booming punts that flip the field", "Short punts give up field position"],
+  coffin: ["Pins returners inside the 10", "Sails punts into the end zone"],
 };
 const KICKER_NOTES = { accuracy: ["Splits the uprights consistently", "Sprays kicks from mid-range"] };
-const noteFor = (pos, k) => (pos === "K" && KICKER_NOTES[k]) || ATTR_NOTES[k] || [`Strong ${k}`, `Weak ${k}`];
+const noteFor = (pos, k) => ((pos === "K" || pos === "P") && KICKER_NOTES[k]) || ATTR_NOTES[k] || [`Strong ${k}`, `Weak ${k}`];
 
 // Tool grades, projected to his NFL ceiling: today's skill plus the growth the scout expects.
 function skillReads(p, sd, growth, r) {
@@ -503,13 +506,13 @@ export function rankClass(cls) {
     p.aiNoise ??= gauss(0, 3);
     p.scout ||= { lvl: 0 };
     // Kickers rarely go early, however talented.
-    p.cons ||= { score: p.truePot * 0.78 + p.trueOvr * 0.22 - (p.pos === "K" ? 6 : 0) + stream(`${p.id}|cs`).gauss(0, 2.4) };
+    p.cons ||= { score: p.truePot * 0.78 + p.trueOvr * 0.22 - (p.pos === "K" || p.pos === "P" ? 6 : 0) + stream(`${p.id}|cs`).gauss(0, 2.4) };
   }
   [...cls].sort((a, b) => b.cons.score - a.cons.score).forEach((p, i) => (p.cons.mid = i + 1));
   return sortByRank(cls);
 }
 export const csRank = (p) => p.cons?.final ?? p.cons?.mid ?? 999;
-export const csScore = (p) => p.cons?.fscore ?? p.cons?.score ?? p.truePot * 0.78 + p.trueOvr * 0.22 - (p.pos === "K" ? 6 : 0);
+export const csScore = (p) => p.cons?.fscore ?? p.cons?.score ?? p.truePot * 0.78 + p.trueOvr * 0.22 - (p.pos === "K" || p.pos === "P" ? 6 : 0);
 export const sortByRank = (cls) => cls.sort((a, b) => csRank(a) - csRank(b));
 
 // ---------- The Combine ----------
@@ -623,7 +626,7 @@ export function interviewProspect(sc, sp, p) {
 const DEV_EYE = { generational: 2, superstar: 1.2, star: 0.6, late: -0.3 };
 export function aiDraftScore(p, gmStyle) {
   const potW = gmStyle === "win-now" ? 0.6 : gmStyle === "rebuilder" ? 0.85 : 0.78;
-  const own = (p.truePot + (p.aiNoise || 0)) * potW + p.trueOvr * (1 - potW) + (DEV_EYE[devOf(p)] || 0) + (gmStyle === "rebuilder" && p.age <= 21 ? 0.6 : 0) - (p.pos === "K" ? 6 : 0);
+  const own = (p.truePot + (p.aiNoise || 0)) * potW + p.trueOvr * (1 - potW) + (DEV_EYE[devOf(p)] || 0) + (gmStyle === "rebuilder" && p.age <= 21 ? 0.6 : 0) - (p.pos === "K" || p.pos === "P" ? 6 : 0);
   const trust = gmStyle === "analytics" ? 0.65 : 0.5;
   return own * trust + csScore(p) * (1 - trust) + gauss(0, 1.2);
 }

@@ -8,7 +8,7 @@ import { freshDeal } from "./bonus.js";
 import { optionEligible, aiTakesOption, optionPrice, tagPrice } from "./contracts.js";
 
 // Fewest players a club carries at each position.
-export const ROSTER_MIN = { QB: 2, RB: 3, WR: 5, TE: 3, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 7, LB: 5, CB: 5, S: 4, K: 1 };
+export const ROSTER_MIN = { QB: 2, RB: 3, WR: 5, TE: 3, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 7, LB: 5, CB: 5, S: 4, K: 1, P: 1 };
 export const ROSTER_TARGET = 53;
 
 const roll = (rand, a, b) => a + Math.floor(rand() * (b - a + 1));
@@ -98,7 +98,7 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
 // they have to.
 export function isFranchisePlayer(p) {
   const a = p.pos === "QB" ? p.age - 3 : p.age;
-  if (p.pos === "K") return false;
+  if (p.pos === "K" || p.pos === "P") return false;
   if (p.ovr >= 90 && a <= 29) return true;
   return p.ovr >= 86 && a <= 27 && (p.xf || p.dev === "superstar" || p.dev === "generational");
 }
@@ -123,7 +123,7 @@ export function keepChance(p) {
 // cap, elite WR or pass rusher ~15%, down to kickers ~2%); an 88 gets ~87% of that, an 80 half,
 // a 70 a tenth, and anyone below starter level the minimum. Less once he's past his prime (QBs
 // age four years later). cap: the cap for the league year the deal starts.
-export const TOP_SHARE = { QB: 0.235, WR: 0.15, DL: 0.15, LT: 0.115, CB: 0.11, RT: 0.09, LB: 0.09, S: 0.085, TE: 0.08, LG: 0.08, RG: 0.08, RB: 0.07, C: 0.07, K: 0.02 };
+export const TOP_SHARE = { QB: 0.235, WR: 0.15, DL: 0.15, LT: 0.115, CB: 0.11, RT: 0.09, LB: 0.09, S: 0.085, TE: 0.08, LG: 0.08, RG: 0.08, RB: 0.07, C: 0.07, K: 0.02, P: 0.015 };
 const curve = (ovr) => Math.min(1, 1 / (1 + Math.exp(-(ovr - 80) / 4.5)) / 0.985);
 export const askingPrice = (p, cap = leagueCap()) => {
   const a = p.pos === "QB" ? p.age - 4 : p.age;
@@ -167,7 +167,7 @@ export function aiSignings(teams, pool, ui, { perTeam = 2, minOvr = 60, capSpace
 }
 
 // Starters per position, for judging whether a free agent would start somewhere.
-export const STARTS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1 };
+export const STARTS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1, P: 1 };
 const startBar = (t, pos) => {
   const r = t.roster.filter((p) => p.pos === pos).map((p) => p.ovr).sort((a, b) => b - a);
   return r[STARTS[pos] - 1] ?? 0;

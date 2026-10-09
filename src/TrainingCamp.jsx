@@ -13,7 +13,7 @@ const title = (t, sub) => (
 const row = { display: "flex", alignItems: "center", gap: 10, padding: "8px 2px", borderBottom: `1px solid ${C.bd}55`, fontSize: 15 };
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const ATTRS = [["ovr", "Overall"], ["spd", "Speed"], ["str", "Strength"], ["agi", "Agility"], ["acc", "Acceleration"]];
-const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K"];
+const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
 
 export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk, onSimGame, onReport, onDevCamp, onTrain, battlesDone, onBattle, otcFocus, onOtc, onExtend, setSel }) {
   const roster = team.roster;

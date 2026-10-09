@@ -265,4 +265,10 @@ export const PATCH_NOTES = [
     "Return stats: kick and punt returns, yards and touchdowns go in the box score, season and career stats, and a new Returns tab on the Stats page. The player card shows his return rating and return numbers.",
     "Tuned to the NFL: about 26 yards a kick return and 9-10 a punt return, with roughly 10 kickoff and 6 punt return touchdowns across the league each season.",
   ] },
+  { v: "1.71", date: "2026-10-09", title: "Special Teams: Punters", notes: [
+    "Punters are a real position now. Every club has its real punter with his Madden 27 ratings (Michael Dickson 85, Rigoberto Sanchez 83, A.J. Cole 81...), on the Depth Chart's special teams view next to the kicker and returners.",
+    "Punting matters: a better punter kicks it farther and pins more punts inside the 10 instead of sailing them into the end zone. Punter stats (punts, yards, inside the 20) go in the box score and season stats, with punting leaders on the Stats page under Kicking.",
+    "Punters show up in free agency, the draft (a few each class) and trades like any other position, and AI teams keep one on the roster.",
+    "Existing franchises: every team gets its real punter (aged to your season). If your roster is already at 53, yours is waiting for you in free agency; until you sign a punter, your kicker punts, and not well.",
+  ] },
 ];

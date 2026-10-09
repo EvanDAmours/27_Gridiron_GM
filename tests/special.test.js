@@ -37,3 +37,29 @@ test("a great returner gains more on returns than a poor one", () => {
   const good = tally(95), bad = tally(55);
   assert.ok(good > bad + 4, `${good} vs ${bad}`);
 });
+
+import { initTeams, initialFA, addPunters } from "../src/league.js";
+
+test("every club starts with its real punter, rosters stay at 53", () => {
+  const teams = initTeams(0);
+  assert.ok(teams.every((t) => t.roster.filter((p) => p.pos === "P").length === 1));
+  assert.ok(teams.every((t) => t.roster.length <= 53));
+  assert.equal(teams.find((t) => t.ab === "SEA").roster.find((p) => p.pos === "P").name, "Michael Dickson");
+  const fa = initialFA();
+  assert.ok(fa.some((p) => p.pos === "P"));
+  assert.ok(fa.length > 51);
+});
+
+test("older saves get their punters", () => {
+  const teams = initTeams(3).map((t) => ({ ...t, roster: t.roster.filter((p) => p.pos !== "P") }));
+  const d = { yr: 2028, ui: 3, teams, fa: [] };
+  addPunters(d);
+  assert.ok(d.teams.every((t, i) => i === 3 || t.roster.some((p) => p.pos === "P")));
+  assert.ok(d.teams.every((t, i) => i === 3 || t.roster.length <= 53));
+  const mine = d.teams[3].roster.some((p) => p.pos === "P") || d.fa.some((p) => p.pos === "P" && p.formerTeam === 3);
+  assert.ok(mine);
+  assert.equal(d.teams.find((t) => t.ab === "SEA").roster.find((p) => p.pos === "P").age, 32);
+  const again = d.teams.map((t) => t.roster.length);
+  addPunters(d);
+  assert.deepEqual(d.teams.map((t) => t.roster.length), again);
+});

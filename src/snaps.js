@@ -2,12 +2,12 @@
 // and nobody plays more than 100%. Your own settings are fixed first; the rest of the budget goes
 // to the other players at that position by depth, the way NFL rotations actually look (no
 // backup QB snaps, almost no backup O-line snaps, a real rotation on the defensive line).
-export const SNAP_SLOTS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1 };
+export const SNAP_SLOTS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1, P: 1 };
 // Typical share by depth rank (each list adds up to the position's budget).
 const DEFAULT = {
   QB: [100], RB: [65, 30, 5], WR: [95, 90, 75, 30, 10], TE: [75, 20, 5],
   LT: [100], LG: [100], C: [100], RG: [100], RT: [100],
-  DL: [85, 85, 80, 75, 45, 30], LB: [100, 95, 70, 25, 10], CB: [95, 90, 15], S: [100, 95, 5], K: [100],
+  DL: [85, 85, 80, 75, 45, 30], LB: [100, 95, 70, 25, 10], CB: [95, 90, 15], S: [100, 95, 5], K: [100], P: [100],
 };
 export const snapBudget = (pos) => (SNAP_SLOTS[pos] || 1) * 100;
 

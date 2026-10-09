@@ -7,9 +7,9 @@ import { capFor } from "./cap.js";
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "14px 16px", marginBottom: 12 };
 const label = { fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.mt };
-const GROUPS = [["QB", ["QB"], "#f97316"], ["OL", ["LT", "LG", "C", "RG", "RT"], "#3b82f6"], ["WR", ["WR"], "#22c55e"], ["TE", ["TE"], "#a78bfa"], ["RB", ["RB"], "#fbbf24"], ["DL", ["DL"], "#ef4444"], ["LB", ["LB"], "#f472b6"], ["DB", ["CB", "S"], "#06b6d4"], ["K", ["K"], "#64748b"]];
-const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K"];
-const STARTERS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1 };
+const GROUPS = [["QB", ["QB"], "#f97316"], ["OL", ["LT", "LG", "C", "RG", "RT"], "#3b82f6"], ["WR", ["WR"], "#22c55e"], ["TE", ["TE"], "#a78bfa"], ["RB", ["RB"], "#fbbf24"], ["DL", ["DL"], "#ef4444"], ["LB", ["LB"], "#f472b6"], ["DB", ["CB", "S"], "#06b6d4"], ["ST", ["K", "P"], "#64748b"]];
+const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
+const STARTERS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1, P: 1 };
 
 function Meter({ v, color }) {
   return <div style={{ height: 8, background: C.bg, borderRadius: 4, marginTop: 8 }}><div style={{ width: `${Math.max(0, Math.min(100, v))}%`, height: "100%", background: color, borderRadius: 4 }} /></div>;

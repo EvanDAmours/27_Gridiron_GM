@@ -4,7 +4,7 @@
 // for a strong development trait or an X-Factor. Draft picks sit on the same scale: the #1
 // overall pick is worth roughly a young 90-rated star at a premium position.
 
-export const POS_MULT = { QB: 1.8, DL: 1.15, LT: 1.1, WR: 1.05, CB: 1.0, RT: 0.95, TE: 0.8, LB: 0.8, S: 0.8, C: 0.7, LG: 0.65, RG: 0.65, RB: 0.6, K: 0.2 };
+export const POS_MULT = { QB: 1.8, DL: 1.15, LT: 1.1, WR: 1.05, CB: 1.0, RT: 0.95, TE: 0.8, LB: 0.8, S: 0.8, C: 0.7, LG: 0.65, RG: 0.65, RB: 0.6, K: 0.2, P: 0.15 };
 const DEV_MULT = { generational: 1.2, superstar: 1.1, star: 1.04 };
 
 function ageMult(age, pos) {

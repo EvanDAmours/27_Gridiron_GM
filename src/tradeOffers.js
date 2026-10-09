@@ -3,7 +3,7 @@
 // only interests a winning club looking for a cheap backup. It never pays more than the player
 // is worth (a first-round pick is not on the table for a backup).
 
-const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K"];
+const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
 export const MAX_OVERPAY = 1.15; // the most an offer can be worth, as a multiple of your player
 const MIN_FAIR = 0.75; // and the least
 
@@ -20,7 +20,7 @@ export function clubMode(t) {
 // Would this club trade for him at all?
 export function wantsPlayer(t, p) {
   const mode = clubMode(t);
-  const old = p.pos === "QB" ? 31 : p.pos === "K" ? 34 : 29;
+  const old = p.pos === "QB" ? 31 : p.pos === "K" || p.pos === "P" ? 34 : 29;
   if (mode === "rebuild") return p.age <= (p.pos === "QB" ? 27 : 26);
   // A veteran quarterback is a contender's backup plan; nobody else calls about one.
   if (p.pos === "QB" && p.age >= old) return mode === "contend";

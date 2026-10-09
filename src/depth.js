@@ -5,7 +5,7 @@ import { DL_SLOTS, dlOrder } from "./dline.js";
 import { returnerOrder } from "./special.js";
 
 // Starters per position: the same counts the game sim plays with.
-export const STARTERS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1 };
+export const STARTERS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1, P: 1 };
 
 // Default pecking order: the club's real (ESPN) depth chart rank "dk" for this season, then rating.
 // That only seeds the chart: once you order a position or set snap shares, yours win.

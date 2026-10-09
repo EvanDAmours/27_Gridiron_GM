@@ -5,10 +5,11 @@ import { makeSide, createGame, step, playGame } from "../src/playsim.js";
 import { teamSnaps } from "../src/snaps.js";
 
 const M = JSON.parse(readFileSync(new URL("../src/data/madden27.json", import.meta.url)));
+const SP = JSON.parse(readFileSync(new URL("../src/data/special.json", import.meta.url)));
 let seed = 1;
 const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 const teams = M.teams.map((t, ti) => {
-  const roster = t.roster.map((p, i) => ({ ...p, id: `${ti}-${i}` }));
+  const roster = [...t.roster, ...SP.punters.filter((p) => p.team === t.ab).slice(0, 1)].map((p, i) => ({ ...p, id: `${ti}-${i}`, ...(p.pos === "P" ? { posAttrs: p.attrs } : {}) }));
   const order = (pos) => roster.filter((p) => p.pos === pos).sort((a, b) => (a.dk ?? 99) - (b.dk ?? 99) || b.ovr - a.ovr);
   return { ab: t.ab, roster, side: makeSide({ team: t, order, snaps: teamSnaps(order, {}) }) };
 });
@@ -53,7 +54,7 @@ test("the box score adds up to the score", () => {
       assert.equal(sum("rec"), st.comp); assert.equal(sum("comp"), st.comp); assert.equal(sum("passInt"), st.ints);
       assert.equal(Object.values(g.box[o]).reduce((t, l) => t + (l.ints || 0), 0), st.ints, "the other defense has the picks");
       assert.equal(sum("passTD"), sum("recTD"));
-      const tds = sum("passTD") + sum("rushTD");
+      const tds = sum("passTD") + sum("rushTD") + sum("krTD") + sum("prTD");
       const kicks = sum("fgM") * 3 + sum("xpM");
       const extra = g.score[s] - tds * 6 - kicks; // two-point tries and safeties
       assert.ok(extra >= 0 && extra % 2 === 0, `score ${g.score[s]} vs ${tds} TD and ${kicks} kicking points`);

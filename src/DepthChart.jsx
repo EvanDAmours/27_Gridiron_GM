@@ -31,7 +31,7 @@ const SETS = {
       ["LB", 0, 30, 38], ["LB", 1, 50, 36], ["LB", 2, 70, 38], ["S", 0, 33, 14], ["S", 1, 67, 14],
     ],
   },
-  special: { label: "Special teams", los: 46, spots: [["K", 0, 50, 70], ["KR", 0, 35, 10], ["PR", 0, 65, 10]] },
+  special: { label: "Special teams", los: 46, spots: [["K", 0, 40, 70], ["P", 0, 60, 70], ["KR", 0, 35, 10], ["PR", 0, 65, 10]] },
 };
 
 function Field({ los, children }) {

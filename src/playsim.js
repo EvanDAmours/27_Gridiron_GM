@@ -95,9 +95,12 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season 
   const k = on("K")[0] || order("K")[0];
   // Special teams: the returners, and the coverage units (the special teams coach).
   const kr = order("KR")?.[0], pr = order("PR")?.[0];
+  // The punter (a kicker punts, badly, if a club has none).
+  const p = on("P")[0] || order("P")?.[0];
+  const pOvr = p ? p.ovr || 75 : 60, pPow = p ? p.posAttrs?.power ?? 93 : 85, pAcc = p ? p.posAttrs?.accuracy ?? 82 : 65;
   const stCov = team?.coach?.st?.rating ?? 70;
   const passLean = clamp(0.6 + (u.pass - u.run) * 0.008 + lean, 0.45, 0.75);
-  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov };
+  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, p, pOvr, pPow, pAcc };
 }
 
 const emptyTeam = () => ({ plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
@@ -276,15 +279,16 @@ export function step(g, call, bonus = 1) {
     // The punt: its distance (the punter's leg), then the return (the returner against the
     // coverage team). Punts deep in their territory are mostly fair caught or downed.
     const pp = o.p, pl = pp ? line(g, off, pp) : null;
-    const pow = o.pPow ?? 75, acc = o.pAcc ?? 75;
-    const gross = Math.round(clamp(45.5 + (pow - 75) * 0.22 + gauss(rand) * 7, 22, 72));
+    // Distance from his rating and leg (league average: a 77 punter with a 93 leg, ~46 yards).
+    const acc = o.pAcc ?? 82;
+    const gross = Math.round(clamp(47 + ((o.pOvr ?? 77) - 77) * 0.3 + ((o.pPow ?? 93) - 93) * 0.15 + gauss(rand) * 7, 22, 72));
     const land = g.yard + gross;
     st.punts++;
     if (pl) { add(pl, "punts", 1); add(pl, "puntYds", Math.min(gross, 100 - g.yard)); }
     ev.type = "punt"; ev.turnover = false;
     ev.note = tick(g, 8);
     // Near the goal line a good punter pins it inside the 10 instead of sailing it into the end zone.
-    const pinned = land >= 90 && rand() < 0.35 + (acc - 75) * 0.012;
+    const pinned = land >= 90 && rand() < 0.4 + (acc - 82) * 0.015;
     if (land >= 100 && !pinned) {
       ev.text = `Punt of ${100 - g.yard} yards into the end zone, touchback.`;
       if (!g.done) newPossession(g, 20);
