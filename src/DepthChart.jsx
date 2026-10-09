@@ -72,7 +72,10 @@ function Spot({ p, pos, idx, x, y, on, onClick }) {
   );
 }
 
-export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill }) {
+// Tackles and guards play either side: LT and RT share one pool, LG and RG another.
+export const PARTNER = { LT: "RT", RT: "LT", LG: "RG", RG: "LG" };
+
+export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions }) {
   const [side, setSide] = useState("offense");
   const [pick, setPick] = useState(null); // [pos, idx]
   const set = SETS[side];
@@ -83,7 +86,19 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
     [ids[idx], ids[from]] = [ids[from], ids[idx]];
     setDepthOrder((d) => ({ ...d, [pos]: ids }));
   };
-  const chosen = pick && order(pick[0]);
+  // Start a lineman from the other side here: he flips over, and the starter he
+  // replaces takes his old spot on the other side.
+  const switchSide = (pos, player) => {
+    const other = PARTNER[pos];
+    const cur = order(pos)[0];
+    const here = order(pos).map((p) => p.id).filter((id) => id !== cur?.id);
+    const there = order(other).map((p) => (p.id === player.id ? cur?.id : p.id)).filter(Boolean);
+    setPositions({ [player.id]: pos, ...(cur ? { [cur.id]: other } : {}) });
+    setDepthOrder((d) => ({ ...d, [pos]: [player.id, ...here], [other]: there }));
+  };
+  const rowLabel = (pos, i) => (i < STARTERS[pos] ? (STARTERS[pos] > 1 ? `${pos}${i + 1}` : `${pos}1`) : `${pos} #${i + 1}`);
+  // Everyone who could line up here: for tackles and guards, both sides of the line.
+  const chosen = pick && [...order(pick[0]).map((p, i) => ({ p, at: pick[0], i })), ...(PARTNER[pick[0]] && setPositions ? order(PARTNER[pick[0]]).map((p, i) => ({ p, at: PARTNER[pick[0]], i })) : [])];
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
@@ -108,12 +123,13 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
             <>
               <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 6 }}>{STARTERS[pick[0]] > 1 ? `${pick[0]}${pick[1] + 1}` : pick[0]} <span style={{ fontSize: 12, color: C.mt, fontWeight: 600 }}>· {STARTERS[pick[0]]} starter{STARTERS[pick[0]] > 1 ? "s" : ""}</span></div>
               {!chosen.length && <div style={{ color: C.mt, fontSize: 13 }}>Nobody on the roster plays {pick[0]}.</div>}
-              {chosen.map((p, i) => {
-                const here = i === pick[1];
-                const starter = i < STARTERS[pick[0]];
+              {PARTNER[pick[0]] && setPositions && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>Tackles and guards play either side. Starting a {PARTNER[pick[0]]} here swaps the two.</div>}
+              {chosen.map(({ p, at, i }) => {
+                const here = at === pick[0] && i === pick[1];
+                const starter = i < STARTERS[at];
                 return (
-                  <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 4px", borderBottom: `1px solid ${C.bd}`, background: here ? "#facc1514" : "transparent" }}>
-                    <span style={{ width: 34, fontSize: 12, fontWeight: 800, color: starter ? C.gn : C.mt }}>{starter ? (STARTERS[pick[0]] > 1 ? `${pick[0]}${i + 1}` : `${pick[0]}1`) : `#${i + 1}`}</span>
+                  <div key={`${at}${p.id}`} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 4px", borderBottom: `1px solid ${C.bd}`, background: here ? "#facc1514" : "transparent" }}>
+                    <span style={{ width: 44, fontSize: 12, fontWeight: 800, color: starter ? C.gn : C.mt }}>{at === pick[0] && !starter ? `#${i + 1}` : rowLabel(at, i)}</span>
                     <Face s={p.face} sz={26} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => setSel(p)}>{p.name}</div>
@@ -121,7 +137,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
                     </div>
                     <b style={{ fontSize: 16, color: oC(p.ovr), minWidth: 26, textAlign: "right" }}>{p.ovr}</b>
                     {here ? <span style={{ fontSize: 11, color: "#facc15", fontWeight: 700, width: 56, textAlign: "center" }}>Here</span>
-                      : <Btn onClick={() => place(pick[0], pick[1], p)} bg={C.bl} style={{ fontSize: 11, padding: "3px 8px", width: 56 }}>Start</Btn>}
+                      : <Btn onClick={() => (at === pick[0] ? place(pick[0], pick[1], p) : switchSide(pick[0], p))} bg={C.bl} style={{ fontSize: 11, padding: "3px 8px", width: 56 }}>Start</Btn>}
                   </div>
                 );
               })}
