@@ -1,7 +1,7 @@
 // The trade screen, laid out like the original Gridiron GM: pick a team, tick players and
 // picks on two big roster tables, and the summary tells you plainly whether they'd take it.
 import React, { useState } from "react";
-import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
+import { C, oC, Bdg, Btn, Face, TeamLogo } from "./ui.jsx";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K"];
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
@@ -15,7 +15,7 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
   return (
     <div style={{ flex: "1 1 420px", minWidth: 0, background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
-        <span style={{ width: 40, height: 40, borderRadius: 8, background: `linear-gradient(135deg,${team.clr},${team.ac})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, color: "#fff", fontSize: 14 }}>{team.ab}</span>
+        <TeamLogo t={team} sz={40} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color }}>{title}</div>
           <div style={{ fontSize: 18, fontWeight: 900 }}>{team.city} {team.name} <span style={{ fontSize: 14, color: C.mt, fontWeight: 600 }}>{team.w}-{team.l}{team.t ? `-${team.t}` : ""}</span></div>

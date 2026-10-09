@@ -9,3 +9,15 @@ export const PA_LABELS={armStr:"Arm Str",accuracy:"Accuracy",pocketAwr:"Pocket",
 export const Bdg=({pos})=><span style={{background:pC(pos),color:"#fff",padding:"1px 5px",borderRadius:3,fontSize:11,fontWeight:800}}>{pos}</span>;
 export const Btn=({children,onClick,disabled,bg,c:co,style:st})=><button onClick={onClick} disabled={disabled} style={{background:bg||C.bl,color:co||"#fff",border:"none",padding:"4px 10px",borderRadius:4,fontWeight:700,fontSize:13,cursor:disabled?"default":"pointer",opacity:disabled?.5:1,...(st||{})}}>{children}</button>;
 export const PN=({p,setSel,style:st})=><span onClick={e=>{e.stopPropagation();setSel(p);}} style={{cursor:"pointer",fontWeight:600,textDecoration:"none",...(st||{})}} onMouseOver={e=>e.target.style.textDecoration="underline"} onMouseOut={e=>e.target.style.textDecoration="none"}>{p.name}</span>;
+
+// Team logos, loaded from ESPN's public logo CDN (NFL marks belong to the NFL and its clubs).
+// If a logo can't load, the team's colors and abbreviation stand in.
+const ESPN_AB = { WAS: "wsh" };
+export const logoUrl = (ab) => `https://a.espncdn.com/i/teamlogos/nfl/500/${ESPN_AB[ab] || String(ab || "").toLowerCase()}.png`;
+export function TeamLogo({ t, sz = 40 }) {
+  const [bad, setBad] = React.useState(false);
+  if (!t) return null;
+  const box = { width: sz, height: sz, flexShrink: 0, borderRadius: Math.round(sz / 5), display: "inline-flex", alignItems: "center", justifyContent: "center" };
+  if (bad) return <span style={{ ...box, background: `linear-gradient(135deg,${t.clr},${t.ac})`, fontWeight: 900, fontSize: Math.max(9, Math.round(sz / 3)), color: "#fff" }}>{t.ab}</span>;
+  return <img src={logoUrl(t.ab)} alt={`${t.city || ""} ${t.name || t.ab}`.trim()} title={`${t.city || ""} ${t.name || ""}`.trim()} width={sz} height={sz} loading="lazy" onError={() => setBad(true)} style={{ ...box, objectFit: "contain" }} />;
+}

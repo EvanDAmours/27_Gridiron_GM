@@ -1,7 +1,7 @@
 // The playoff bracket: each conference's Wild Card, Divisional and Championship rounds, and
 // the Super Bowl in the middle. Played games show scores; the next round shows who's up.
 import React from "react";
-import { C, Btn } from "./ui.jsx";
+import { C, Btn, TeamLogo } from "./ui.jsx";
 import { ROUND_NAMES, seedLabel } from "./playoffs.js";
 
 function Game({ teams, pb, g, ui, onBox }) {
@@ -12,7 +12,7 @@ function Game({ teams, pb, g, ui, onBox }) {
     const won = played && g.w === id, lost = played && g.w !== id;
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 8px", opacity: lost ? 0.5 : 1 }}>
-        <span style={{ width: 30, height: 30, borderRadius: 6, background: `linear-gradient(135deg,${t.clr},${t.ac})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "#fff", flexShrink: 0 }}>{t.ab}</span>
+        <TeamLogo t={t} sz={30} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: won ? 900 : 700, color: id === ui ? C.gn : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
           <div style={{ fontSize: 11, color: C.mt }}>{seedLabel(pb, id).split(" ")[1]} · {t.w}-{t.l}{t.t ? `-${t.t}` : ""}{home && !played ? " · home" : ""}</div>

@@ -1,7 +1,7 @@
 // The big result card shown after you sim: did you win, the score, your record and
 // standing, who starred, and the rest of the week's scores.
 import React from "react";
-import { C, Btn } from "./ui.jsx";
+import { C, Btn, TeamLogo } from "./ui.jsx";
 
 const fmtRec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const pct = (t) => (t.w + t.t * 0.5) / Math.max(1, t.w + t.l + t.t);
@@ -98,7 +98,7 @@ export default function WeekResult({ result, teams, ui, sched, onClose, onBox, o
   const champs = result.playoff && result.champ === ui;
   const Side = ({ t, pts, win }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-      <span style={{ width: 54, height: 54, borderRadius: 10, flexShrink: 0, background: `linear-gradient(135deg,${t.clr},${t.ac})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 16, color: "#fff" }}>{t.ab}</span>
+      <TeamLogo t={t} sz={54} />
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 13, color: C.mt, whiteSpace: "nowrap" }}>{t.city}</div>
         <div style={{ fontSize: 22, fontWeight: 900, whiteSpace: "nowrap" }}>{t.name}</div>
