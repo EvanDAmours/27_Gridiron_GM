@@ -1,54 +1,15 @@
 // Free agency, laid out like the trade screen: one big sortable table of real free agents, your
-// cap and needs up top, and a contract offer (years and money) when you go to sign someone.
+// cap and needs up top, and a real negotiation (years and money) when you go to sign someone.
 import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
 import { askingPrice } from "./offseason.js";
+import Negotiate from "./Negotiate.jsx";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K"];
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 
-// Per-year price for a deal of `yrs` years: veterans want more to commit long, young players
-// take a little less for security.
-export const yearlyAsk = (p, yrs) => +(askingPrice(p) * (1 + (yrs - 2) * (p.age >= 30 ? 0.06 : -0.03))).toFixed(1);
-const maxYears = (p) => (p.age >= 33 ? 1 : p.age >= 30 ? 3 : 5);
-
-function Offer({ p, cap, onSign, onClose }) {
-  const [yrs, setYrs] = useState(Math.min(2, maxYears(p)));
-  const per = yearlyAsk(p, yrs);
-  const after = cap - per;
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 14, padding: 20, width: "100%", maxWidth: 460 }}>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 14 }}>
-          <Face s={p.face} sz={52} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 24, fontWeight: 900 }}>{p.name}</div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 15, color: "#cbd5e1" }}><Bdg pos={p.pos} /> Age {p.age}</div>
-          </div>
-          <div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</div><div style={{ fontSize: 12, color: C.mt }}>OVR</div></div>
-        </div>
-        <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 8 }}>CONTRACT LENGTH</div>
-        <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-          {[1, 2, 3, 4, 5].map((y) => (
-            <button key={y} disabled={y > maxYears(p)} onClick={() => setYrs(y)} style={{ flex: 1, padding: "10px 0", fontSize: 17, fontWeight: 800, borderRadius: 8, cursor: y > maxYears(p) ? "not-allowed" : "pointer", opacity: y > maxYears(p) ? 0.3 : 1, background: yrs === y ? C.bl : C.bg, color: "#fff", border: `1px solid ${yrs === y ? C.bl : C.bd}` }}>{y} yr</button>
-          ))}
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-          <div style={{ background: C.bg, borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 12, color: C.mt }}>Per year</div><div style={{ fontSize: 24, fontWeight: 900 }}>{money(per)}</div></div>
-          <div style={{ background: C.bg, borderRadius: 8, padding: "10px 12px" }}><div style={{ fontSize: 12, color: C.mt }}>Total</div><div style={{ fontSize: 24, fontWeight: 900 }}>{money(per * yrs)}</div></div>
-        </div>
-        <div style={{ fontSize: 15, marginBottom: 16 }}>Cap space after signing: <b style={{ color: after >= 0 ? C.gn : C.rd }}>{money(after)}</b></div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Btn onClick={onClose} bg={C.bd} c="#cbd5e1" style={{ flex: 1, fontSize: 16, padding: "11px 0" }}>Cancel</Btn>
-          <Btn onClick={() => onSign(p, per, yrs)} disabled={after < 0} bg={C.gn} style={{ flex: 2, fontSize: 16, padding: "11px 0", fontWeight: 900 }}>{after < 0 ? "Not enough cap space" : `Sign ${p.name.split(" ").slice(-1)[0]}`}</Btn>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, onSign, setSel, open, extras }) {
+export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSel, open, extras, talkFor, termsFor, onTalk }) {
   const [pos, setPos] = useState("ALL");
   const [q, setQ] = useState("");
   const [needOnly, setNeedOnly] = useState(false);
@@ -110,7 +71,7 @@ export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, onSig
                     <td style={{ ...td, fontWeight: 900, fontSize: 18, color: oC(p.ovr) }}>{p.ovr}</td>
                     <td className="fa-hide" style={{ ...td, color: oC(p.pot || p.ovr) }}>{p.pot || p.ovr}</td>
                     <td style={{ ...td, whiteSpace: "nowrap", color: ask <= cap ? "#e2e8f0" : C.rd }}>{money(ask)}<span className="fa-hide" style={{ color: C.mt, fontSize: 12 }}>/yr</span></td>
-                    <td style={{ ...td, textAlign: "right" }}><Btn onClick={() => setOffer(p)} bg={C.gn} style={{ fontSize: 14, padding: "6px 14px" }}>Sign</Btn></td>
+                    <td style={{ ...td, textAlign: "right" }}>{talkFor(p).walked ? <span style={{ fontSize: 13, color: C.rd, fontWeight: 700 }}>Not interested</span> : <Btn onClick={() => setOffer(p)} bg={C.gn} style={{ fontSize: 14, padding: "6px 14px" }}>Negotiate</Btn>}</td>
                   </tr>
                 );
               })}
@@ -121,7 +82,7 @@ export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, onSig
         {rows.length > n && <div style={{ textAlign: "center", marginTop: 10 }}><Btn onClick={() => setN(n + 50)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 14, padding: "6px 14px" }}>Show more ({rows.length - n} left)</Btn></div>}
       </div>
       {extras}
-      {offer && <Offer p={offer} cap={cap} onClose={() => setOffer(null)} onSign={(p, per, yrs) => { onSign(p, per, yrs); setOffer(null); }} />}
+      {offer && <Negotiate p={offer} mode="fa" cap={cap} t={termsFor(offer, "fa")} talk={talkFor(offer)} onResult={(r, o) => onTalk(offer, "fa", r, o)} onClose={() => setOffer(null)} rivalName={(id) => teams[id] && `${teams[id].city} ${teams[id].name}`} />}
     </div>
   );
 }

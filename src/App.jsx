@@ -12,6 +12,9 @@ import FreeAgency from "./FreeAgency.jsx";
 import RosterTable from "./RosterView.jsx";
 import SchedulePage from "./SchedulePage.jsx";
 import FrontOffice from "./FrontOffice.jsx";
+import Negotiate from "./Negotiate.jsx";
+import Resign from "./Resign.jsx";
+import { terms as talkTerms, yearlyAsk, maxYears } from "./negotiation.js";
 import { playerValue, pickValue as chartPickValue, evaluateTrade } from "./trade.js";
 import { unitRatings, simDrives, boxScore, overtime, HOME_EDGE } from "./gamesim.js";
 import PlayoffBracket from "./PlayoffBracket.jsx";
@@ -462,7 +465,7 @@ export default function GridironGM(){
   const[faCoaches,setFaCoaches]=useState([]);
   const[trTm,setTrTm]=useState(null);const[trOff,setTrOff]=useState({g:[],r:[],gPk:[],rPk:[]});
   const[draftPicks,setDraftPicks]=useState([]);const[draftIdx,setDraftIdx]=useState(0);const[draftLog,setDraftLog]=useState([]);
-  const[draftTimer,setDraftTimer]=useState(120);const[draftActive,setDraftActive]=useState(false);const[draftPaused,setDraftPaused]=useState(false);const[draftSpeed,setDraftSpeed]=useState(()=>{try{return localStorage.getItem("gm_draft_speed")||"Normal";}catch{return "Normal";}});
+  const[draftTimer,setDraftTimer]=useState(120);const[draftActive,setDraftActive]=useState(false);const[draftPaused,setDraftPaused]=useState(false);const[talks,setTalks]=useState({});const[resignTalk,setResignTalk]=useState(null);const[draftSpeed,setDraftSpeed]=useState(()=>{try{return localStorage.getItem("gm_draft_speed")||"Normal";}catch{return "Normal";}});
   const[rPosF,setRPosF]=useState("ALL");const[faPosF,setFaPosF]=useState("ALL");
 const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]=useState(false);const[showPS,setShowPS]=useState(false);const[showIR,setShowIR]=useState(false);const[preseasonGames,setPreseasonGames]=useState([]);
   const[trProp,setTrProp]=useState(null);const[gamePlan,setGamePlan]=useState({off:'balanced',def:'balanced',twoPoint:false});const[byeMap,setByeMap]=useState({});
@@ -1210,6 +1213,17 @@ sm(`${ns} season!`);};
   // F9: Hot/Cold Streak display — computed from last 3 games
   const getStreakLabel=(t)=>{const played=sched.filter(g=>g.played&&(g.h===t.id||g.a===t.id)).slice(-3);if(!played.length)return null;const wins=played.filter(g=>g.h===t.id?g.hs>g.as:g.as>g.hs).length;return wins>=3?'🔥 HOT':wins===0?'🧊 COLD':null;};
   const signP=p=>{const _atmBonus=stadiumAtm>=80?0.1:stadiumAtm>=60?0.05:stadiumAtm<30?-0.10:0;if(p.ovr>=80&&Math.random()<Math.max(0.1,0.4-_atmBonus)){const aiT=teams[R(0,teams.length-1)];const aiOff=+(((p.ovr/99)*Rf(5,12))+Rf(0.5,2)).toFixed(1);setFaBid({player:p,aiTeamName:aiT.name,aiOffer:aiOff,userOffer:+(p.ovr/99*Rf(4,10)).toFixed(1)});return;}const nt=[...teams];const sal=Math.round((p.ovr/99)*Rf(2,10)*100)/100;if(capSpace(nt[ui])<sal){sm("Not enough cap space!");return;}const np={...p,salary:sal,contract:R(1,3),ss:emptySS(p.pos),gl:[],scoutLvl:2};nt[ui].roster.push(np);if(p.ovr>=75)nt[ui].morale=cl((nt[ui].morale||50)+3,0,100);if(p.ovr>=85){setFanSat(fs=>cl(fs+5,0,100));setFanSatLog(l=>[{delta:5,reason:'Star signed',wk},...l.slice(0,9)]);}setTeams(nt);setFa(pr=>pr.filter(f=>f.id!==p.id));if(p.ovr>=70)setFaGainedVal(v=>v+p.ovr*Math.max(1,p.contract||1));track('fa_signed');sm(`Signed ${np.name} — $${sal}M/yr`);};
+  // ── Negotiations (re-sign week and free agency) ──
+  const talkKey=p=>`${yr}:${p.id}`;
+  const talkFor=p=>talks[talkKey(p)]||{};
+  const termsFor=(p,mode)=>{const k=talkKey(p);if(talks[k]?.t)return talks[k].t;const ask=yearlyAsk(p,2);const rivals=teams.filter(t=>t.id!==ui&&capSpace(t)>=ask).map(t=>t.id);const loyalty=cl(((ut?.morale||50)-50)/50,0,1)*0.5+((ut?.w||0)>(ut?.l||0)?0.5:0);return talkTerms(p,{yr,mode,loyalty,rivals});};
+  const resignPlayer=(p,sal,yrs)=>{const nt=[...teams];nt[ui]={...nt[ui],roster:nt[ui].roster.map(x=>x.id===p.id?{...x,salary:sal,contract:yrs+1,resigned:{yr,sal,yrs}}:x)};setTeams(nt);setLog(l=>[`✍️ Re-signed ${p.name} (${p.pos} ${p.ovr}) — ${yrs} yr${yrs>1?"s":""}, $${sal}M/yr`,...l.slice(0,149)]);sm(`${p.name} re-signed!`);};
+  const onTalk=(p,mode,resp,offer)=>{const k=talkKey(p);const t=termsFor(p,mode);
+    setTalks(m=>({...m,[k]:{t,tries:resp.tries,last:resp,walked:resp.result==="walk"||resp.result==="lost",signed:resp.result==="accept"}}));
+    if(resp.result==="accept"){if(mode==="resign")resignPlayer(p,offer.sal,offer.yrs);else signContract(p,offer.sal,offer.yrs);}
+    else if(resp.result==="lost"){const nt=[...teams];const tid=resp.team;nt[tid]={...nt[tid],roster:[...nt[tid].roster,{...p,salary:resp.sal,contract:Math.min(maxYears(p),3),cy:sp==="freeagency"||sp==="draft"?yr+1:p.cy,formerTeam:undefined}]};setTeams(nt);setFa(f=>f.filter(x=>x.id!==p.id));setLog(l=>[`📰 ${p.name} (${p.pos} ${p.ovr}) chose the ${TEAMS[tid]?.name} — $${resp.sal}M/yr`,...l.slice(0,149)]);}
+    else if(resp.result==="walk"&&mode==="resign")setLog(l=>[`🚪 ${p.name} broke off talks — he'll test free agency`,...l.slice(0,149)]);};
+  const startResign=()=>{setWeekResult(null);setSp("resign");setTab("freeagency");sm("Re-sign week: talk to your expiring players before free agency opens");};
   // Sign a free agent to the contract you offered on the Free Agency screen.
   const signContract=(p,sal,yrs)=>{const nt=[...teams];if(capSpace(nt[ui])<sal){sm("Not enough cap space!");return;}const np={...p,salary:sal,contract:yrs,cy:sp==="freeagency"||sp==="draft"?yr+1:p.cy,formerTeam:undefined,ss:p.ss||emptySS(p.pos),gl:[],scoutLvl:2};nt[ui]={...nt[ui],roster:[...nt[ui].roster,np]};if(p.ovr>=75)nt[ui].morale=cl((nt[ui].morale||50)+3,0,100);if(p.ovr>=85){setFanSat(fs=>cl(fs+5,0,100));setFanSatLog(l=>[{delta:5,reason:'Star signed',wk},...l.slice(0,9)]);}setTeams(nt);setFa(pr=>pr.filter(f=>f.id!==p.id));if(p.ovr>=70)setFaGainedVal(v=>v+p.ovr*yrs);track('fa_signed');setLog(l=>[`✍️ Signed ${p.name} (${p.pos} ${p.ovr}) — ${yrs} yr${yrs>1?"s":""}, $${sal}M/yr`,...l.slice(0,149)]);sm(`Signed ${p.name} — ${yrs} yr, $${sal}M/yr`);};
   const releaseP=(pid,skipVote,skipWarn)=>{const nt=[...teams];const idx=nt[ui].roster.findIndex(p=>p.id===pid);if(idx<0)return;const p=nt[ui].roster[idx];const dead=+(p.salary*(p.contract>1?0.5:0)).toFixed(1);if(!skipWarn&&dead>=2){setCutWarnPending({pid,name:p.name,pos:p.pos,dead,ovr:p.ovr,salary:p.salary,contract:p.contract});return;}if(!skipVote&&p.ovr>=82&&(p.conf||60)>=70){setLrVotePending({pid,name:p.name,pos:p.pos,action:'release'});return;}nt[ui].roster.splice(idx,1);nt[ui].deadCap=(nt[ui].deadCap||0)+dead;if(dead>0)setDeadCapLog(l=>[{name:p.name,pos:p.pos,amt:dead,yr,wk,reason:'release'},...l.slice(0,29)]);if(p.ovr>=80)setFanSat(fs=>cl(fs-5,0,100));if(p.ovr>=78)nt[ui].chemistry=cl((nt[ui].chemistry||75)-3,0,100);setTeams(nt);if(sp==='regular'){setWaivers(pr=>[{...p,contract:0,waiverWk:wk},...pr]);setSel(null);sm(`Released ${p.name} → WAIVERS (wk ${wk})${dead>0?` — $${dead}M dead cap`:""}`);setLog(l=>[`Released ${p.name} → WAIVERS (wk ${wk})`,...l.slice(0,149)]);}else{if(p.ovr>=70)setFaLostVal(v=>v+p.ovr*Math.max(1,p.contract||1));setFa(pr=>[{...p,contract:0},...pr]);setSel(null);sm(`Released ${p.name}${dead>0?` — $${dead}M dead cap`:""}`);}};;
@@ -1333,7 +1347,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
   const TAB_LABEL={dashboard:"Home",roster:"Roster",depth:"Depth Chart",schedule:"Schedule",standings:"Standings",stats:"Stats",scouting:"Scouting",draft:"Draft",trade:"Trade",freeagency:"Free Agency",coaching:"Coaching",playoffs:"Playoffs",hub:"League",log:"Log",livesim:"⚡ Live Game",god:"God Mode",dev:"Balance"};
   if(liveSim)TABS.push("livesim");
   if(godMode)TABS.push("god","dev");
-  const phaseFlow=sp==="regular"?`Wk ${wk}/18`:sp==="playoffs"?"Playoffs":sp==="combine"?"Combine":sp==="draft"?"Draft":sp==="freeagency"?"Free Agency":"Preseason";
+  const phaseFlow=sp==="regular"?`Wk ${wk}/18`:sp==="playoffs"?"Playoffs":sp==="combine"?"Combine":sp==="draft"?"Draft":sp==="resign"?"Re-sign Week":sp==="freeagency"?"Free Agency":"Preseason";
 
   return(<div style={{minHeight:"100vh",background:C.bg,fontFamily:C.f,color:C.tx,display:"flex",flexDirection:"column",fontSize:'clamp(12px,1.6vw,14px)'}}>
     {/* INNO I75: injury toasts */}
@@ -1471,7 +1485,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         {sp==="playoffs"&&pb&&pb.ch==null&&pb.seeds&&(()=>{const _m=pb.m.find(([h,a])=>h===ui||a===ui);return liveSim&&!liveDone?<Btn onClick={()=>setTab("livesim")} bg={C.rd}>● Live game</Btn>:_m?<Btn onClick={()=>startLiveSim({wk:`P${pb.rd}`,h:_m[0],a:_m[1],playoff:true})} bg={C.gn}>▶ Play {ROUND_NAMES[pb.rd]}</Btn>:null;})()}
         {sp==="playoffs"&&pb&&pb.ch==null&&<Btn onClick={()=>simPR()} bg={C.gd} c="#000">Sim Round</Btn>}
         {sp==="playoffs"&&pb?.ch!=null&&<Btn onClick={goToCombine} bg="#7c3aed">→ Combine</Btn>}
-        {sp==="combine"&&<Btn onClick={startFreeAgency} bg={C.gd} c="#000">→ Free Agency</Btn>}
+        {sp==="combine"&&<Btn onClick={startResign} bg={C.gd} c="#000">→ Re-sign Week</Btn>}{sp==="resign"&&<Btn onClick={startFreeAgency} bg={C.gd} c="#000">→ Free Agency</Btn>}
         {sp==="draft"&&draftActive&&<><Btn onClick={()=>setDraftPaused(p=>!p)} bg={draftPaused?"#22c55e":"#f97316"}>{draftPaused?"▶ Resume":"⏸ Pause"}</Btn><Btn onClick={()=>setDraftSpeed(s=>{const n=DRAFT_SPEEDS[(DRAFT_SPEEDS.indexOf(s)+1)%DRAFT_SPEEDS.length];try{localStorage.setItem("gm_draft_speed",n);}catch{}return n;})} bg={C.bd} title="How long each AI team takes to pick">Speed: {draftSpeed}</Btn>{curPick&&curPick.owner!==ui&&draftPicks.slice(draftIdx).some(pk=>pk.owner===ui)&&<Btn onClick={()=>simEntireDraft(true)} bg={C.gn}>⏩ Sim to my pick</Btn>}<Btn onClick={()=>simEntireDraft()} bg="#6366f1">⏭ Sim Draft</Btn></>}
         {sp==="freeagency"&&(draftPicks.length>0&&draftIdx>=draftPicks.length?<Btn onClick={newSeason} bg={C.gn}>→ Next Season</Btn>:<Btn onClick={leaveFreeAgency} bg={C.gd} c="#000">→ Draft</Btn>)}
         {sp==="draft"&&!draftActive&&draftPicks.length>0&&draftIdx>=draftPicks.length&&<Btn onClick={newSeason} bg={C.gn}>→ Next Season</Btn>}
@@ -1508,8 +1522,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     </div>}
     <div style={{display:"flex",flexWrap:"nowrap",background:"#0f172a",borderBottom:`1px solid ${C.bd}`,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>{TABS.map(t=><button key={t} onClick={()=>setTab(t)} style={{background:tab===t?"#1e293b":"transparent",color:tab===t?"#fff":"#94a3b8",border:"none",borderBottom:tab===t?`3px solid ${C.gn}`:"3px solid transparent",padding:isMobile?"9px 11px":"10px 14px",fontSize:isMobile?13:14,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>{TAB_LABEL[t]||t}</button>)}</div>
     {(()=>{
-      const stageList=[{k:'preseason',lbl:'PRE'},{k:'reg',lbl:'SEASON',weeks:18},{k:'playoffs',lbl:'PLAYOFFS'},{k:'combine',lbl:'COMBINE'},{k:'freeagency',lbl:'FREE AGENCY'},{k:'draft',lbl:'DRAFT'}];
-      const curIdx=sp==='preseason'?0:sp==='regular'?1:sp==='playoffs'?2:sp==='combine'?3:sp==='freeagency'?4:5;
+      const stageList=[{k:'preseason',lbl:'PRE'},{k:'reg',lbl:'SEASON',weeks:18},{k:'playoffs',lbl:'PLAYOFFS'},{k:'combine',lbl:'COMBINE'},{k:'resign',lbl:'RE-SIGN'},{k:'freeagency',lbl:'FREE AGENCY'},{k:'draft',lbl:'DRAFT'}];
+      const curIdx=sp==='preseason'?0:sp==='regular'?1:sp==='playoffs'?2:sp==='combine'?3:sp==='resign'?4:sp==='freeagency'?5:6;
       const byeWk=byeMap[ui];
       const wkBoxes=[];
       for(let wi=1;wi<=18;wi++){
@@ -2115,7 +2129,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     </div>}
 
     {/* FREE AGENCY */}
-    {tab==="freeagency"&&<FreeAgency fa={fa} team={ut} teams={teams} ui={ui} needs={[...new Set(getTeamNeed(ut?.roster||[]))]} capSpace={capSpace} onSign={signContract} setSel={setSel} open={sp==="freeagency"} extras={
+    {tab==="freeagency"&&sp==="resign"&&ut&&(()=>{const _next=CAP_CEILING-capHit(ut)+ut.roster.filter(p=>p.contract===1).reduce((s,p)=>s+(p.salary||0),0);return<><Resign team={ut} yr={yr} nextSpace={_next} talkFor={talkFor} onNegotiate={setResignTalk} setSel={setSel}/>{resignTalk&&<Negotiate p={ut.roster.find(x=>x.id===resignTalk.id)||resignTalk} mode="resign" cap={_next} t={termsFor(resignTalk,"resign")} talk={talkFor(resignTalk)} onResult={(r,o)=>onTalk(resignTalk,"resign",r,o)} onClose={()=>setResignTalk(null)}/>}</>;})()}
+    {tab==="freeagency"&&sp!=="resign"&&<FreeAgency fa={fa} team={ut} teams={teams} ui={ui} needs={[...new Set(getTeamNeed(ut?.roster||[]))]} capSpace={capSpace} talkFor={talkFor} termsFor={termsFor} onTalk={onTalk} setSel={setSel} open={sp==="freeagency"} extras={
       <details style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:8,padding:"10px 14px",marginTop:12}}><summary style={{cursor:"pointer",fontSize:15,fontWeight:700,color:"#cbd5e1"}}>More: {waivers.length?`waiver wire (${waivers.length}), `:""}market rates, bargains, FA showcase</summary><div style={{marginTop:10}}>
       <div style={{marginBottom:8}}><button onClick={()=>faShowcase()} style={{fontSize:11,padding:'2px 8px',background:'#1a0d2e',color:'#c4b5fd',border:'1px solid #7c3aed55',borderRadius:3,cursor:'pointer',whiteSpace:'nowrap'}}>🎪 FA Showcase</button></div>
       {/* v17: Position Market Rates */}

@@ -40,8 +40,14 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random) {
   return { teams: out, pool, mine, resigned, retired };
 }
 
-// What a free agent costs to sign: his last salary, scaled to his rating, never under $0.8M.
-export const askingPrice = (p) => +Math.max(0.8, Math.min((p.salary || 1) * 1.1, 1 + 25 * Math.max(0, (p.ovr - 60) / 39) ** 2.2)).toFixed(1);
+// What a player asks for on a new deal: market value for his position and rating (the game's
+// $200M cap scale), less once he's past 30. Never under $0.8M.
+const MARKET = { QB: 34, DL: 21, WR: 20, LT: 18, CB: 16, RT: 15, LB: 12, S: 11, TE: 11, LG: 11, RG: 11, C: 10, RB: 9, K: 4 };
+export const askingPrice = (p) => {
+  const value = 1 + (MARKET[p.pos] ?? 12) * Math.max(0, (p.ovr - 60) / 39) ** 1.6;
+  const age = p.age >= 34 ? 0.5 : p.age >= 32 ? 0.7 : p.age >= 30 ? 0.85 : 1;
+  return +Math.max(0.8, value * age).toFixed(1);
+};
 
 // The position a club most needs: furthest below its minimum, then the weakest starter.
 function needs(t) {
