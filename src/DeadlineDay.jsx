@@ -3,7 +3,7 @@
 // offers coming in, and the board lists who's buying and who's selling.
 import React, { useEffect, useState } from "react";
 import { C, oC, Bdg, Btn, TeamLogo } from "./ui.jsx";
-import { DEADLINE_HOURS, LAST_HOUR, marketBoard } from "./deadline.js";
+import { DEADLINE_HOURS, LAST_HOUR, marketBoard, leagueTradeBlock } from "./deadline.js";
 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const KIND = {
@@ -84,7 +84,50 @@ function Offer({ o, teams, pickValue, onAccept, onDecline, setSel, hour }) {
   );
 }
 
-export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, onAdvance, onFinish, onAccept, onDecline, onOpenTrade, onClose, setSel }) {
+const POSITIONS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S"];
+
+// Roughly what he'd cost, in draft-pick terms.
+function costIn(p, pickValue) {
+  const v = p.tradeVal || 0;
+  for (let rd = 1; rd <= 7; rd++) if (v >= pickValue({ rd, overall: 16 + (rd - 1) * 32 }) * 0.85) return rd === 1 ? "a 1st or more" : `about a ${["", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th"][rd]}`;
+  return "a late pick";
+}
+
+// The league's trade block: who's available, why, and a button to call about him.
+function TradeBlock({ teams, ui, needs, pickValue, onInquire, setSel, closed }) {
+  const [needOnly, setNeedOnly] = useState(false);
+  const [pos, setPos] = useState("ALL");
+  const all = leagueTradeBlock(teams, ui);
+  const list = all.filter((x) => (!needOnly || needs.includes(x.p.pos)) && (pos === "ALL" || x.p.pos === pos));
+  const btn = (on) => ({ background: on ? `${C.bl}33` : C.bg, border: `1px solid ${on ? C.bl : C.bd}`, color: on ? "#bfdbfe" : "#cbd5e1", borderRadius: 6, padding: "4px 10px", fontSize: 13, fontWeight: 700, cursor: "pointer" });
+  return (
+    <>
+      <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <button onClick={() => setNeedOnly((v) => !v)} style={btn(needOnly)} title={`Your needs: ${needs.join(", ") || "none"}`}>Your needs{needs.length ? ` (${needs.slice(0, 4).join(", ")})` : ""}</button>
+        <select value={pos} onChange={(e) => setPos(e.target.value)} style={{ ...btn(pos !== "ALL"), padding: "4px 6px" }}>
+          <option value="ALL">All positions</option>{POSITIONS.map((x) => <option key={x} value={x}>{x}</option>)}
+        </select>
+        <span style={{ fontSize: 12, color: C.mt, marginLeft: "auto" }}>{list.length} available</span>
+      </div>
+      <div style={{ maxHeight: 520, overflowY: "auto" }}>
+        {list.slice(0, 60).map(({ p, ti, why }) => (
+          <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 2px", borderBottom: `1px solid ${C.bd}66` }}>
+            <TeamLogo t={teams[ti]} sz={24} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 14, fontWeight: 800 }}><Bdg pos={p.pos} /><span onClick={() => setSel(p)} style={{ cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>{needs.includes(p.pos) && <span title="A position you need" style={{ fontSize: 10, color: C.gn, fontWeight: 900 }}>NEED</span>}</div>
+              <div style={{ fontSize: 11, color: C.mt }}>{teams[ti].ab} · age {p.age} · {money(p.salary)}{p.contract ? `, ${p.contract} yr${p.contract > 1 ? "s" : ""}` : ""} · {why} · asking {costIn(p, pickValue)}</div>
+            </div>
+            <b style={{ fontSize: 16, color: oC(p.ovr), minWidth: 24, textAlign: "right" }}>{p.ovr}</b>
+            <Btn onClick={() => onInquire(p, ti)} disabled={closed} bg="#1d4ed8" style={{ fontSize: 12, padding: "4px 9px" }}>Inquire</Btn>
+          </div>
+        ))}
+        {!list.length && <div style={{ fontSize: 14, color: C.mt }}>{needOnly ? "Nobody at your positions of need is on the block." : "Nobody's on the block."}</div>}
+      </div>
+    </>
+  );
+}
+
+export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, needs = [], onInquire, onAdvance, onFinish, onAccept, onDecline, onOpenTrade, onClose, setSel }) {
   const [auto, setAuto] = useState(false);
   const me = teams[ui];
   const { buyers, sellers } = marketBoard(teams, ui);
@@ -153,6 +196,10 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, on
               {!dl.deals.length && <div style={{ fontSize: 14, color: C.mt }}>A quiet deadline: no trades between other clubs.</div>}
             </div>
           )}
+        </div>
+        <div style={panel}>
+          <div style={head}>TRADE BLOCK</div>
+          <TradeBlock teams={teams} ui={ui} needs={needs} pickValue={pickValue} onInquire={onInquire} setSel={setSel} closed={dl.done} />
         </div>
         <div style={panel}>
           <div style={head}>BUYERS</div>

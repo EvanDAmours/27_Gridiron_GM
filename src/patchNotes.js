@@ -200,4 +200,10 @@ export const PATCH_NOTES = [
     "New Sim to Deadline button (top bar, Home screen and dashboard) during the regular season: sims every game through week 9 and takes you straight to Trade Deadline Day.",
     "While deadline day is under way, the Home screen's main button takes you back to the deadline desk.",
   ] },
+  { v: "1.60", date: "2026-10-09", title: "Deadline Trade Block", notes: [
+    "Deadline Day has a league-wide Trade Block next to Your Phone: everyone clubs are shopping, and why. Rebuilding teams make their veterans available, clubs shop expiring deals and depth they don't need, and franchise players and starting quarterbacks are never listed.",
+    "Each player shows his team, age, contract and a rough asking price in draft-pick terms. Inquire opens the trade screen with that team picked and the player already in the deal.",
+    "A Your Needs button (like Free Agency and Scouting) narrows the block to your positions of need, plus a position filter.",
+    "The trade screen shows the deadline clock and a button back to the deadline desk while the day is on.",
+  ] },
 ];

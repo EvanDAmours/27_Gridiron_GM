@@ -34,3 +34,17 @@ test("sim all runs the whole day without calls to you", () => {
   assert.ok(r.state.done);
   assert.ok(r.state.deals.length >= 1, "the contender made a deal at the deadline");
 });
+
+test("the trade block: sellers' veterans, expiring deals and surplus depth; never franchise players or starting QBs", async () => {
+  const { leagueTradeBlock } = await import("../src/deadline.js");
+  const teams = league();
+  teams[2].roster.push(mk("young-star", "WR", 92, 24), { ...mk("exp", "CB", 76, 27), contract: 1 });
+  teams[1].roster.push(mk("depthwr", "WR", 78, 26));
+  const block = leagueTradeBlock(teams, 0);
+  const ids = block.map((x) => x.p.id);
+  assert.ok(ids.includes("vetwr") && ids.includes("vetcb"), "a rebuilding club's veterans");
+  assert.ok(!ids.includes("rqb") && !ids.includes("cqb"), "no starting quarterbacks");
+  assert.ok(!ids.includes("young-star"), "no franchise players");
+  assert.ok(!ids.includes("u1"), "nobody from your own team");
+  assert.ok(block.every((x, i) => i === 0 || block[i - 1].p.ovr >= x.p.ovr), "best first");
+});

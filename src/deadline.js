@@ -106,3 +106,29 @@ export function runDeadline(teams, picks, ui, opts) {
   while (!s.done) { const r = advanceDeadline(s, teams, p, ui, { ...opts, genOffer: null }); s = r.state; p = r.picks; }
   return { state: s, picks: p };
 }
+
+// Who's available: the league's trade block, the way clubs really shop players at the deadline.
+// Rebuilding clubs make their veterans available; every club shops expiring deals it won't
+// re-sign and depth it doesn't need. Franchise players and starting quarterbacks are never on it.
+// Returns [{ p, ti, why }], best first.
+export function leagueTradeBlock(teams, ui) {
+  const out = [];
+  teams.forEach((t, ti) => {
+    if (ti === ui) return;
+    const mode = clubMode(t);
+    const qb1 = [...t.roster].filter((p) => p.pos === "QB").sort((a, b) => b.ovr - a.ovr)[0];
+    const depth = {};
+    for (const pos of Object.keys(STARTERS)) depth[pos] = t.roster.filter((p) => p.pos === pos).sort((a, b) => b.ovr - a.ovr);
+    for (const p of t.roster) {
+      if (p === qb1 || p.injured || p.ftag || p.ovr < 68 || p.pos === "K" || isFranchisePlayer(p)) continue;
+      const rank = (depth[p.pos] || []).indexOf(p);
+      const backup = rank >= (STARTERS[p.pos] || 1);
+      let why = null;
+      if (mode === "rebuild" && p.age >= 27 && p.ovr >= 70) why = "Rebuilding: veterans available";
+      else if (mode !== "contend" && (p.contract || 0) <= 1 && p.age >= 26 && p.ovr >= 72) why = "Expiring contract";
+      else if (backup && p.ovr >= (mode === "contend" ? 75 : 72)) why = `Surplus at ${p.pos}`;
+      if (why) out.push({ p, ti, why });
+    }
+  });
+  return out.sort((a, b) => b.p.ovr - a.p.ovr);
+}
