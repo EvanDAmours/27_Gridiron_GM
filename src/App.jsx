@@ -15,6 +15,7 @@ import FrontOffice from "./FrontOffice.jsx";
 import Negotiate from "./Negotiate.jsx";
 import Resign from "./Resign.jsx";
 import TrainingCamp from "./TrainingCamp.jsx";
+import HomeScreen from "./HomeScreen.jsx";
 import { terms as talkTerms, yearlyAsk, maxYears } from "./negotiation.js";
 import { playerValue, pickValue as chartPickValue, evaluateTrade } from "./trade.js";
 import { unitRatings, simDrives, boxScore, overtime, HOME_EDGE } from "./gamesim.js";
@@ -1538,13 +1539,18 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       const byeWk=byeMap[ui];
       const wkBoxes=[];
       for(let wi=1;wi<=18;wi++){
-        const isDone=sp==="regular"?wk>=wi:curIdx>1;
+        // Each week shows your result: ✓ win, ✗ loss, T tie, B bye.
+        const g=sched.find(x=>x.wk===wi&&x.played&&(x.h===ui||x.a===ui));
+        const us=g?(g.h===ui?g.hs:g.as):0,them=g?(g.h===ui?g.as:g.hs):0;
+        const res=g?(us>them?"W":us<them?"L":"T"):null;
         const isCur=sp==="regular"&&wk+1===wi;
-        const isBye=byeWk===wi;
-        const bg=isDone?C.gn:isBye?"#7c3aed44":isCur?"#22c55e66":"#1e293b";
-        const bdr=isDone?C.gn:isBye?"#7c3aed":isCur?C.gn:C.bd;
-        const lbl=isDone?"✓":isBye?"B":isCur?String(wi):"";
-        wkBoxes.push(<div key={wi} style={{width:12,height:12,borderRadius:2,background:bg,border:"1px solid "+bdr,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:isBye&&!isDone?"#a78bfa":"#fff"}}>{lbl}</div>);
+        const isBye=byeWk===wi&&!g;
+        const byeDone=isBye&&(sp!=="regular"&&sp!=="preseason"||wk>=wi);
+        const bg=res==="W"?C.gn:res==="L"?C.rd:res==="T"?"#64748b":isBye?"#7c3aed44":isCur?"#22c55e33":"#1e293b";
+        const bdr=res==="W"?C.gn:res==="L"?C.rd:res==="T"?"#94a3b8":isBye?"#7c3aed":isCur?C.gn:C.bd;
+        const lbl=res==="W"?"✓":res==="L"?"✗":res==="T"?"T":isBye?"B":isCur?String(wi):"";
+        const tip=g?`Week ${wi}: ${res} ${us}-${them} ${g.h===ui?"vs":"@"} ${teams[g.h===ui?g.a:g.h]?.ab||""}`:isBye?`Week ${wi}: bye`:`Week ${wi}`;
+        wkBoxes.push(<div key={wi} title={tip} style={{width:12,height:12,borderRadius:2,background:bg,border:"1px solid "+bdr,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:900,color:isBye&&!byeDone?"#a78bfa":"#fff"}}>{lbl}</div>);
       }
       return(<div style={{background:"#080f1e",borderBottom:"1px solid #1e293b",padding:"3px 12px",display:"flex",alignItems:"center",gap:0,overflowX:"auto"}}>
         {stageList.map((s,si)=>{
@@ -1568,7 +1574,25 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     {weekResult&&tab!=="livesim"&&<WeekResult result={weekResult} teams={teams} ui={ui} sched={sched} onClose={()=>setWeekResult(null)} onBox={setBoxView}/>}
     {/* DASHBOARD */}
     {tab==="dashboard"&&ut&&<div>
-      <div style={{fontSize:20,fontWeight:900,marginBottom:10,color:'#e2e8f0'}}>GM Dashboard</div>
+      {(()=>{const go=(t,sub)=>{setTab(t);if(sub)setRosterView(sub);};
+        const _ng=sp==="regular"?sched.find(g=>g.wk===wk+1&&!g.played&&(g.h===ui||g.a===ui)):null;
+        const first={preseason:{label:"Training Camp",sub:"Camp work and mini games to improve your roster before the season",onClick:()=>go("roster","camp")},regular:{label:"Weekly Strategy",sub:"Set your game plan for this week's opponent",onClick:()=>go("schedule")},playoffs:{label:"Playoff Bracket",sub:"The road to the Super Bowl",onClick:()=>go("playoffs")},combine:{label:"Scouting",sub:"Combine results, interviews and your big board",onClick:()=>go("scouting")},resign:{label:"Re-sign Players",sub:"Only you can talk to your expiring players this week",onClick:()=>go("freeagency")},freeagency:{label:"Free Agency",sub:"Negotiate with the players on the market",onClick:()=>go("freeagency")},draft:{label:"NFL Draft",sub:"Make your picks",onClick:()=>go("draft")}}[sp];
+        const rest=[["Weekly Strategy","schedule"],["Manage Roster","roster"],["Depth Chart","depth"],["Manage Staff","coaching"],["Trades","trade"],["Free Agency","freeagency"],["Scouting","scouting"],["Standings","standings"]].map(([label,t])=>({label,onClick:()=>go(t,t==="roster"?"players":null)}));
+        const menu=[...(first?[first]:[]),...rest.filter(m=>m.label!==first?.label)];
+        const primary=[];
+        if(liveSim&&!liveDone)primary.push({label:"● Back to the live game",onClick:()=>setTab("livesim")});
+        else if(sp==="preseason")primary.push({label:"Start Season",onClick:startSeason});
+        else if(sp==="regular"){if(_ng)primary.push({label:`▶ Play Week ${wk+1}`,onClick:()=>startLiveSim(_ng)});primary.push({label:_ng?"Sim Week":"Advance Week",onClick:simWk});}
+        else if(sp==="playoffs"&&pb){const m=pb.ch==null&&pb.m.find(([h,a])=>h===ui||a===ui);if(m)primary.push({label:`▶ Play ${ROUND_NAMES[pb.rd]}`,onClick:()=>startLiveSim({wk:`P${pb.rd}`,h:m[0],a:m[1],playoff:true})});primary.push(pb.ch==null?{label:`Sim ${ROUND_NAMES[pb.rd]}`,onClick:()=>simPR()}:{label:"→ Combine",onClick:goToCombine});}
+        else if(sp==="combine")primary.push({label:"→ Re-sign Week",onClick:startResign});
+        else if(sp==="resign")primary.push({label:"→ Free Agency",onClick:startFreeAgency});
+        else if(sp==="freeagency")primary.push(draftPicks.length>0&&draftIdx>=draftPicks.length?{label:"→ Next Season",onClick:newSeason}:{label:"→ Draft",onClick:leaveFreeAgency});
+        else if(sp==="draft")primary.push(draftActive?{label:"Go to the draft",onClick:()=>go("draft")}:{label:"→ Next Season",onClick:newSeason});
+        const NEWS=/📰|💰|🤝|TRADE|Trade|signs|chose|Re-signed|re-signed|injur|INJUR|🏆|HOLDOUT|DRAFT|Draft|Combine|COMBINE|free agen|Free agen|retire/;
+        const news=log.filter(l=>typeof l==="string"&&NEWS.test(l)).slice(0,3).map(text=>({text:text.replace(/^[^A-Za-z0-9]+/,""),team:teams.find(t=>text.includes(t.name)&&t.id!==ui)||teams.find(t=>text.includes(t.name))}));
+        const messages=ut.roster.filter(p=>p.holdout&&!p.holdoutStone).length+ut.roster.filter(p=>p.tradeRequest).length+(aiOffer?1:0)+(capSpace(ut)<0?1:0);
+        return<HomeScreen teams={teams} ui={ui} sched={sched} wk={wk} sp={sp} yr={yr} pb={pb} byeMap={byeMap} news={news} messages={messages} menu={menu} primary={primary} onNav={t=>setTab(t)}/>;})()}
+      <div style={{fontSize:13,fontWeight:800,letterSpacing:1.5,color:C.mt,margin:'4px 0 8px'}}>TEAM SNAPSHOT</div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:8}}>
         {/* Team Status */}
         <div style={{background:C.cd,borderRadius:8,padding:'12px 14px',border:`1px solid ${C.bd}`}}>
