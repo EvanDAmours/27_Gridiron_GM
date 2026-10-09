@@ -156,7 +156,7 @@ for p in eap:
         "attrs": ATTRS[pos](s), "sal": sal, "yrs": yrs,
     })
 
-out = []
+out, fa = [], []
 for label, meta in TEAMS.items():
     ps = sorted(teams[label], key=lambda x: -x["ovr"])
     keep = []
@@ -168,10 +168,13 @@ for label, meta in TEAMS.items():
     pay = sum(x["sal"] for x in keep)
     f = 195 / pay if pay > 195 else 125 / pay if pay < 125 else 1
     for x in keep + squad: x["sal"] = round(max(0.5, x["sal"] * f), 1)
+    # Real players who miss the 53 and the practice squad start the game as free agents.
+    for x in rest:
+        if x not in squad: x["sal"], x["yrs"] = round(max(0.8, x["sal"] * 0.6), 1), 0; fa.append(x)
     city, name, ab, c, d, clr, ac = meta
     out.append({"city": city, "name": name, "ab": ab, "c": c, "d": d, "clr": clr, "ac": ac, "roster": keep, "ps": squad})
-    print(f"{ab:4} {len(keep)} +{len(squad)} PS  payroll ${sum(x['sal'] for x in keep):.0f}M  top {keep[0]['name']} {keep[0]['ovr']}")
-json.dump({"source": "EA SPORTS Madden NFL 27 ratings (Week 3)", "season": SEASON, "teams": out}, open("src/data/madden27.json", "w"), separators=(",", ":"))
+    print(f"{ab:4} {len(keep)} +{len(squad)} PS +{len([x for x in rest if x not in squad])} FA  payroll ${sum(x['sal'] for x in keep):.0f}M  top {keep[0]['name']} {keep[0]['ovr']}")
+json.dump({"source": "EA SPORTS Madden NFL 27 ratings (Week 3)", "season": SEASON, "teams": out, "fa": sorted(fa, key=lambda x: -x["ovr"])}, open("src/data/madden27.json", "w"), separators=(",", ":"))
 from collections import Counter
 print("development:", dict(Counter(x["dev"] for t in out for x in t["roster"] + t["ps"])))
 xfs = [x for t in out for x in t["roster"] + t["ps"] if x["xf"]]
