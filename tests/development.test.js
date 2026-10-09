@@ -63,3 +63,12 @@ test("milestones and league leads pay off", () => {
   assert.equal(vet.ovr, 2); assert.equal(vet.dev, null);
   assert.deepEqual(awardGrowth({}, undefined, "normal"), { ovr: 0, dev: null, notes: [] });
 });
+
+test("players age by position: backs decline first, quarterbacks and kickers last", () => {
+  const at = (pos, age) => avg(() => seasonGrowth({ pos, age, ovr: 85, pot: 85 }, 1));
+  assert.ok(at("RB", 29) < -1.5, `RB at 29: ${at("RB", 29)}`);
+  assert.ok(at("QB", 29) > -0.5, `QB at 29: ${at("QB", 29)}`);
+  assert.ok(at("WR", 31) < at("LT", 31), "receivers fade before tackles");
+  assert.ok(at("QB", 34) > at("RB", 34) + 2);
+  assert.ok(at("K", 35) > -0.5, "kickers kick into their late 30s");
+});

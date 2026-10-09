@@ -166,4 +166,14 @@ export const PATCH_NOTES = [
     "To fit one under the cap a club cuts other contracts first, and if that still isn't enough it tags him anyway. Aging stars can still reach the market.",
     "Fixed: players who opted out of the last year of their deal disappeared from the league. They now become free agents, and AI franchise players never opt out.",
   ] },
+  { v: "1.55", date: "2026-10-09", title: "Real League Business", notes: [
+    "Fixed: the game signed free agents to your team on its own (a $35M Jayden Daniels as a backup QB). Your roster is never filled for you now; if you're short at a position you get a warning instead. The salary-floor auto-signing is gone too.",
+    "AI clubs always keep their young starting quarterback.",
+    "AI teams pay real market prices when they re-sign or sign players (some paths paid a random $2-8M).",
+    "Trades keep the player's contract, like the NFL (some trades rewrote his salary).",
+    "Real AI-to-AI trades: contenders buy veterans from rebuilding teams for picks or young players, up to the week 9 deadline. They show on the league wire and really move players and picks. The fake wire headlines are gone.",
+    "Players age by position: running backs start to decline at 28, receivers, corners and linebackers around 30, linemen at 33, quarterbacks at 35 and kickers later still. Retirement follows the same curve.",
+    "Franchise tag in Re-sign Week: keep any expiring player one more year at the average of the top five salaries at his position. One a year. AI clubs tag franchise players they can't fit long-term.",
+    "Fifth-year options: first-round picks finishing year four of their rookie deal can be kept one more year at a set price. Real players carry their real draft slot. AI clubs pick up options on first-rounders who became starters.",
+  ] },
 ];

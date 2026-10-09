@@ -51,22 +51,33 @@ const ri = (rand, a, b) => a + Math.floor(rand() * (b - a + 1));
 // The off-season OVR change from age and playing time. Young players who start grow far faster
 // than the same player on the bench (about 1.4x the growth at a full share, 0.4x with no snaps);
 // a prime-age starter can still tick up, and a veteran who sat gets a little rusty.
+// The last age of a player's prime, by position: running backs wear down first, then receivers,
+// corners and linebackers around 30; linemen and tight ends last longer, quarterbacks into their
+// mid-30s and kickers longest.
+export const PRIME_END = { RB: 27, WR: 29, CB: 29, LB: 29, S: 30, DL: 30, TE: 30, LT: 32, LG: 32, C: 32, RG: 32, RT: 32, QB: 34, K: 36 };
+export const primeEnd = (p) => PRIME_END[p.pos] ?? 30;
+// Years past his prime (negative while he's in or before it).
+export const yearsPastPrime = (p, age = p.age) => age - primeEnd(p);
+
 export function seasonGrowth(p, share, rand = Math.random) {
   const ovr = p.ovr, pot = p.pot ?? ovr;
-  if (p.age < 27) {
+  const end = primeEnd(p);
+  if (p.age < Math.min(27, end - 2)) {
     let g = ri(rand, -1, Math.round((pot - ovr) / 4) + 2);
     if (g > 0) g = Math.round(g * (0.4 + share));
     if (share >= 0.75 && ovr < pot && rand() < 0.5) g += 1;
     if (share < 0.1 && rand() < 0.3) g -= 1;
     return g;
   }
-  if (p.age <= 30) {
+  if (p.age <= end) {
     let g = ri(rand, -2, 2);
     if (share >= 0.75 && rand() < 0.35) g += 1;
     if (share < 0.1 && rand() < 0.35) g -= 1;
     return g;
   }
-  return -ri(rand, 1, p.age > 34 ? 5 : 3);
+  // Past his prime: the decline speeds up the further past it he is.
+  const over = p.age - end;
+  return -ri(rand, over >= 3 ? 2 : 1, over >= 4 ? 5 : over >= 2 ? 4 : 3);
 }
 
 // Development-trait growth, scaled by playing time (a generational talent still needs the field).

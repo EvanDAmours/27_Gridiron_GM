@@ -96,3 +96,18 @@ test("AI clubs never let a franchise player walk, even when cap-strapped", async
     assert.ok(!r.pool.some((p) => p.id === "chase"));
   }
 });
+
+test("your roster is never filled for you, and AI clubs keep their young starting QB", async () => {
+  const { fillRosters, shortGaps, openFreeAgency } = await import("../src/offseason.js");
+  const mine = { roster: [{ id: "q1", pos: "QB", ovr: 80, age: 28, salary: 30 }] };
+  const ai = { roster: [] };
+  const pool = [{ id: "jd", name: "Jayden Daniels", pos: "QB", ovr: 84, age: 25 }, { id: "q9", pos: "QB", ovr: 60, age: 30 }];
+  fillRosters([mine, ai], pool, 0, { capSpace: () => 100, cy: 2027 });
+  assert.equal(mine.roster.length, 1, "nothing signed to your team");
+  assert.ok(shortGaps(mine).some((g) => g.pos === "QB" && g.have === 1));
+  // An AI club's young starter with an expiring deal stays, even with no cap room.
+  const qb = { id: "jd", pos: "QB", ovr: 82, age: 25, contract: 1, salary: 5 };
+  const filler = Array.from({ length: 50 }, (_, k) => ({ id: `f${k}`, pos: "WR", ovr: 70, age: 27, contract: 3, salary: 5.9 }));
+  const r = openFreeAgency([{ roster: [] }, { roster: [qb, ...filler] }], 0, 2026, () => 0.99, { cap: 301.2 });
+  assert.ok(r.teams[1].roster.some((p) => p.id === "jd"));
+});

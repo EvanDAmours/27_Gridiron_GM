@@ -4,6 +4,7 @@
 // ever invented here.
 
 import { leagueCap, leagueMin } from "./cap.js";
+import { optionEligible, aiTakesOption, optionPrice, tagPrice } from "./contracts.js";
 
 // Fewest players a club carries at each position.
 export const ROSTER_MIN = { QB: 2, RB: 3, WR: 5, TE: 3, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 7, LB: 5, CB: 5, S: 4, K: 1 };
@@ -23,15 +24,31 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
     for (const p of t.roster) {
       const left = (p.contract || 0) - 1;
       if (left > 0) roster.push({ ...p, contract: left, cy });
-      else expiring.push(p);
+      else expiring.push(p.ftag ? { ...p, ftag: undefined } : p); // a tag lasts one year
     }
     // AI clubs re-sign best players first, and only what fits under the cap (with room for
     // coaches and the draft class).
     let payroll = roster.reduce((s, p) => s + (p.salary || 0), 0);
+    let tagged = false; // one franchise tag per club
     // Franchise players first (QBs ahead of everyone), then by rating, so a club never spends
     // its room on lesser starters and loses its young star.
-    const core = (p) => (isFranchisePlayer(p) ? 3 : 0) + (keepChance(p) >= 0.95 ? (p.pos === "QB" ? 2 : 1) : 0);
+    // The club's starting quarterback (its best, counting the expiring ones) is kept like a
+    // franchise player while he's a real starter and not old.
+    const qb1 = [...t.roster, ...expiring].filter((p) => p.pos === "QB").sort((a, b) => b.ovr - a.ovr)[0];
+    const isCore = (p) => isFranchisePlayer(p) || (p === qb1 && p.ovr >= 76 && p.age <= 34);
+    const core = (p) => (isCore(p) ? 3 : 0) + (keepChance(p) >= 0.95 ? (p.pos === "QB" ? 2 : 1) : 0);
     for (const p of expiring.sort((a, b) => core(b) - core(a) || b.ovr - a.ovr)) {
+      // A first-round pick finishing his rookie deal: the club picks up his fifth-year option
+      // if he became a solid starter (a set price, one more year).
+      if (i !== ui && optionEligible(p, yr) && aiTakesOption(p) && !isFranchisePlayer(p)) {
+        const salary = optionPrice(teams, p, cap);
+        if (payroll + salary <= cap) {
+          roster.push({ ...p, contract: 1, salary, opt5: true, cy });
+          payroll += salary;
+          resigned.push({ p, team: i, how: "option" });
+          continue;
+        }
+      }
       const keep = keepChance(p);
       const salary = +Math.max(p.salary || 1, askingPrice(p) * (0.95 + rand() * 0.15)).toFixed(1); // market, not a small raise
       // A young franchise player is kept even if it means cap casualties: the club cuts its
@@ -40,12 +57,12 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
       // cap-strapped and he walks.
       // For a franchise player the club also gives up its cap cushion (restructures, as real
       // teams do for a young QB); everyone else has to fit with room to spare.
-      const limit = keep >= 0.95 ? cap : cap - room;
+      const limit = keep >= 0.95 || isCore(p) ? cap : cap - room;
       // A franchise player goes further: the club cuts whoever it takes (never another franchise
       // player), and if he still doesn't fit it tags him anyway and sorts the cap out later.
-      const star = isFranchisePlayer(p);
-      if (i !== ui && keep >= 0.95 && payroll + salary > limit) {
-        const cuts = roster.filter((q) => (star ? !isFranchisePlayer(q) && q.ovr < p.ovr : q.ovr < 80)).sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, star ? 12 : 5);
+      const star = isCore(p);
+      if (i !== ui && (keep >= 0.95 || star) && payroll + salary > limit) {
+        const cuts = roster.filter((q) => (star ? !isCore(q) && q.ovr < p.ovr : q.ovr < 80)).sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, star ? 12 : 5);
         for (const q of cuts) {
           if (payroll + salary <= limit || roster.length <= 30) break;
           roster.splice(roster.indexOf(q), 1);
@@ -54,9 +71,13 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
         }
       }
       if (i !== ui && (star || (rand() < keep && payroll + salary <= limit))) {
-        roster.push({ ...p, contract: roll(rand, 2, 4), salary, cy });
-        payroll += salary;
-        resigned.push({ p, team: i });
+        // A franchise player who still doesn't fit a long-term deal gets the franchise tag.
+        const tag = star && payroll + salary > limit && !tagged;
+        const deal = tag ? { ...p, contract: 1, salary: tagPrice(teams, p, cap), ftag: true, tagYr: yr, cy } : { ...p, contract: roll(rand, 2, 4), salary, cy };
+        if (tag) tagged = true;
+        roster.push(deal);
+        payroll += deal.salary;
+        resigned.push({ p, team: i, how: tag ? "tag" : "deal" });
         continue;
       }
       if (p.age >= 36 || p.ovr < 45) { retired.push({ p, team: i }); continue; }
@@ -80,6 +101,9 @@ export function isFranchisePlayer(p) {
   if (p.ovr >= 90 && a <= 29) return true;
   return p.ovr >= 86 && a <= 27 && (p.xf || p.dev === "superstar" || p.dev === "generational");
 }
+
+// Positions where a roster is below its minimum: [{ pos, have, min }].
+export const shortGaps = (t) => Object.entries(ROSTER_MIN).map(([pos, min]) => ({ pos, min, have: (t.roster || []).filter((p) => p.pos === pos).length })).filter((g) => g.have < g.min);
 
 // How likely an AI club is to keep its own player whose deal is up. Young stars almost never
 // reach the market (extension or the tag); the market gets veterans, mid-tier starters and the
@@ -170,8 +194,9 @@ export function starterSignings(teams, pool, ui, { minOvr = 72, perTeam = 2, cap
   return signed;
 }
 
-// Before the season: every club reaches its position minimums, and AI clubs fill out to 53,
-// all from the real players left in the pool (cheapest deals if money is tight).
+// Before the season: every AI club reaches its position minimums and fills out to 53, all from
+// the real players left in the pool (cheapest deals if money is tight). Your roster is yours:
+// it's never filled for you (shortGaps says where you're short).
 export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random } = {}) {
   const signed = [];
   const sign = (t, i, k) => {
@@ -181,6 +206,7 @@ export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random 
     signed.push({ p: deal, team: i });
   };
   teams.forEach((t, i) => {
+    if (i === ui) return;
     for (const [pos, min] of Object.entries(ROSTER_MIN)) {
       let have = t.roster.filter((p) => p.pos === pos).length;
       while (have < min) {
@@ -189,7 +215,6 @@ export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random 
         sign(t, i, k); have++;
       }
     }
-    if (i === ui) return;
     // Cut-down day: AI clubs release their lowest-rated players beyond 53 (never below a minimum).
     while (t.roster.length > ROSTER_TARGET) {
       const spare = [...t.roster].sort((a, b) => a.ovr - b.ovr).find((p) => t.roster.filter((q) => q.pos === p.pos).length > ROSTER_MIN[p.pos]);
