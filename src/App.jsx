@@ -105,6 +105,7 @@ function genCombine(pos,ovr){const a=CA[pos];if(!a)return null;const oM=(ovr-60)
 function genProDay(pos,ovr){const c=genCombine(pos,ovr);if(!c)return null;return{fortyYd:Math.round((c.fortyYd+Rf(-.05,.05))*100)/100,bench:Math.max(0,c.bench+R(-2,3)),vert:Math.max(15,c.vert+R(-2,2)),broad:Math.max(80,c.broad+R(-3,4)),threeCone:Math.round((c.threeCone+Rf(-.08,.08))*100)/100,shuttle:Math.round((c.shuttle+Rf(-.05,.05))*100)/100};}
 function combToPhys(c){if(!c)return{spd:60,str:60,agi:60,end:60,acc:60,jmp:60};return{spd:cl(Math.round(80-(c.fortyYd-4.4)*30),30,99),str:cl(Math.round(40+c.bench*2.2),30,99),agi:cl(Math.round(80-(c.threeCone-6.8)*25),30,99),jmp:cl(Math.round(20+c.vert*1.8),30,99),acc:cl(Math.round(80-(c.shuttle-4.1)*30),30,99),end:cl(Gc(70,8,40,99),40,99)};}
 function genPAttrs(pos,ovr){const at={};(PA[pos]||[]).forEach(a=>{at[a]=cl(Gc(ovr,8,30,99),30,99);});return at;}
+const SCREENS=new Set(['dashboard','roster','depth','schedule','standings','stats','scouting','draft','trade','freeagency','coaching','playoffs','hub','trophies','log','livesim','god','dev']);
 function emptySS(pos){const b={gp:0,gs:0};if(pos==="QB")return{...b,comp:0,att:0,passYds:0,passTD:0,passInt:0,sk:0,skYds:0,rushAtt:0,rushYds:0,rushTD:0,fum:0,rate:0};if(pos==="RB")return{...b,rushAtt:0,rushYds:0,rushTD:0,rec:0,tgt:0,recYds:0,recTD:0,fum:0};if(pos==="WR")return{...b,tgt:0,rec:0,recYds:0,recTD:0,rushAtt:0,rushYds:0};if(pos==="TE")return{...b,tgt:0,rec:0,recYds:0,recTD:0};if(pos==="DL")return{...b,tkl:0,ast:0,sacks:0,tfl:0,ff:0,qbH:0,pd:0};if(pos==="LB")return{...b,tkl:0,ast:0,sacks:0,tfl:0,ints:0,ff:0,pd:0};if(pos==="CB")return{...b,tkl:0,ast:0,ints:0,pd:0,ff:0};if(pos==="S")return{...b,tkl:0,ast:0,ints:0,pd:0,sacks:0,ff:0};if(pos==="K")return{...b,fgM:0,fgA:0,xpM:0,xpA:0,pts:0,lng:0};return{...b};}
 
 // College stats generation based on years played
@@ -740,6 +741,8 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   useEffect(()=>{if(liveDone)setShowLiveEnd(true);},[liveDone]);
   useEffect(()=>{window._gmDepthOrder=depthOrder;},[depthOrder]);
   useEffect(()=>{window._gmPlayingTime=playingTime;},[playingTime]);
+  // Never leave a blank screen: a finished live game or an unknown tab falls back to Home.
+  useEffect(()=>{if((tab==='livesim'&&!liveSim)||!SCREENS.has(tab))setTab('dashboard');},[tab,liveSim]);
   // Draft timer
   useEffect(()=>{
     if(!draftActive||sp!=="draft"||draftPaused)return;
@@ -859,7 +862,7 @@ if(difficulty==='casual'){setScPts(s=>s+4);}if(difficulty==='hardcore'){setLog(l
 initGmContract();genTodayChallenge();// v34: login streak SP bonus
 const _sb=loginStreak>=7?2:loginStreak>=3?1:0;if(_sb>0){setScPts(s=>s+_sb);setStreakBonus(_sb);}sm(`Welcome, GM! Owner: ${_op} | Difficulty: ${difficulty}`);track('franchise_start');};
   // Leaving a finished live game: finish the rest of the week (regular season) and show the result card.
-  const finishLive=()=>{setShowLiveEnd(false);const reg=liveSim&&!liveSim.playoff&&sp==="regular";setLiveSim(null);setTab(reg?"home":"playoffs");if(reg)simWk();};
+  const finishLive=()=>{setShowLiveEnd(false);const reg=liveSim&&!liveSim.playoff&&sp==="regular";setLiveSim(null);setTab(reg?"dashboard":"playoffs");if(reg)simWk();};
   const simWk=()=>{if(sp!=="regular")return;if(liveSim&&!liveDone){sm("Finish your live game first.");setTab("livesim");return;}window._gmDepthOrder=depthOrder;window._gmPlayingTime=playingTime;const nw=wk+1;const nt=[...teams];nt.forEach(t=>t.roster.forEach(p=>{if(!p.holdoutStone)p.holdout=false;}));// v12: AI-AI trade history
 const _aiTrHistory=[];nt.forEach((t,i)=>{if(i!==ui&&Math.random()<0.10){const pos1=pick(POS),pos2=pick(POS);_aiTrHistory.push({wk:nw,giveNames:[pos1],getNames:[pos2],desc:`${t.ab} traded ${pos1} for ${pos2}`});}});if(_aiTrHistory.length)setTradeHistory(h=>[..._aiTrHistory,...h].slice(0,20));
 // v12: cap floor auto-sign
