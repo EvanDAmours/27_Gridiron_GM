@@ -452,6 +452,56 @@ export function DraftGrades({ g }) {
 
 // ---------- The scouting tab ----------
 
+// Scouting points left, big enough to read at a glance.
+export function ScoutPtsBadge({ pts = 0 }) {
+  const on = pts > 0;
+  return (
+    <div title="Spend them on scouting reports and workups" style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "8px 16px", borderRadius: 12, background: on ? `linear-gradient(135deg, ${C.gd}33, #0b1220)` : C.cd, border: `2px solid ${on ? C.gd : C.bd}` }}>
+      <span style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, color: on ? C.gd : C.mt, fontVariantNumeric: "tabular-nums" }}>{pts}</span>
+      <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1, lineHeight: 1.25, color: on ? "#fde68a" : C.mt }}>SCOUTING<br />POINT{pts === 1 ? "" : "S"} LEFT</span>
+    </div>
+  );
+}
+
+// Your picks in this year's draft, round by round. Picks you've used gray out and show who you took.
+export function PickTracker({ g }) {
+  const picks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr)).sort((a, b) => a.overall - b.overall);
+  const made = new Map((g.draftLog || []).map((d) => [d.id, d]));
+  const left = picks.filter((pk) => !made.has(pk.id)).length;
+  return (
+    <div style={{ ...panel, marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
+        <span style={{ fontSize: 17, fontWeight: 900 }}>Your picks</span>
+        <span style={{ fontSize: 15, color: left ? C.gn : C.mt, fontWeight: 800 }}>{left} of {picks.length} left</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(118px, 1fr))", gap: 8 }}>
+        {[1, 2, 3, 4, 5, 6, 7].map((rd) => {
+          const mine = picks.filter((pk) => pk.rd === rd);
+          const open = mine.filter((pk) => !made.has(pk.id)).length;
+          return (
+            <div key={rd} style={{ borderRadius: 10, padding: "8px 10px", background: open ? `${C.bl}1f` : "#0b1220", border: `1px solid ${open ? C.bl : C.bd}`, opacity: mine.length ? 1 : 0.55 }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1, color: open ? "#bfdbfe" : C.mt }}>ROUND {rd}</span>
+                <span style={{ fontSize: 22, fontWeight: 900, color: open ? "#fff" : C.mt }}>{mine.length}</span>
+              </div>
+              {!mine.length && <div style={{ fontSize: 13, color: C.mt }}>No pick</div>}
+              {mine.map((pk) => {
+                const d = made.get(pk.id);
+                return (
+                  <div key={pk.id} style={{ fontSize: 13, marginTop: 4, color: d ? C.mt : "#e2e8f0", fontWeight: d ? 500 : 800 }}>
+                    <span style={{ textDecoration: d ? "line-through" : "none" }}>{g.sp === "draft" ? `#${pk.overall}` : `Pick ${pk.num || "—"}`}</span>
+                    {d ? <div style={{ fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>✓ {d.player?.name || d.name || "Used"}{d.player?.pos ? ` · ${d.player.pos}` : ""}</div> : null}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function ScoutingPage({ g }) {
   const hasCombine = (g.dc[g.yr] || []).some((p) => tested(p) && p.combine);
   const [view, setView] = useState(g.sp === "combine" ? "combine" : "board");
@@ -462,7 +512,7 @@ export function ScoutingPage({ g }) {
     <div>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
         <span style={{ fontSize: 22, fontWeight: 900 }}>{g.sp === "combine" ? `${g.yr} NFL Combine` : `${g.yr} Draft Class`}</span>
-        <span style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: `${C.gd}22`, color: C.gd, fontWeight: 700 }} title="Spend them on scouting reports">Scouting pts: {g.scouting?.pts || 0}</span>
+        <span style={{ marginLeft: "auto" }}><ScoutPtsBadge pts={g.scouting?.pts || 0} /></span>
         {g.sp === "combine" && <span style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: "#7c3aed33", color: "#c4b5fd", fontWeight: 700 }}>Interviews: {g.scouting?.interviewsLeft || 0}</span>}
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
@@ -539,7 +589,7 @@ export function ProspectProfile({ g, p }) {
         <div style={{ ...muted, margin: "6px 0" }}>{explain(read, p)}</div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
           <ScoutButton g={g} p={p} read={read} />
-          <span style={muted}>{g.scouting?.pts || 0} scouting point{g.scouting?.pts === 1 ? "" : "s"} left</span>
+          <span style={{ fontSize: 17, fontWeight: 900, color: (g.scouting?.pts || 0) > 0 ? C.gd : C.mt }}>{g.scouting?.pts || 0} scouting point{g.scouting?.pts === 1 ? "" : "s"} left</span>
         </div>
       </div>
 

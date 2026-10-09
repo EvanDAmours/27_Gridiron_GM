@@ -29,7 +29,7 @@ import { runFocusWeeks, seasonSnapShare, seasonGrowth, traitGrowthScale, seasonA
 import { teamSnaps, positionSnaps, snapBudget, snapOrdered } from "./snaps.js";
 import { nflSchedule, divisionPlaces } from "./schedule.js";
 import { newScouting, refreshScoutPool, creditWeeks, startScoutingYear, loadScouting, rankClass, csRank, combineInvites, runCombine, aiDraftScore, pickGrade, pickTake, classGrade, autoPickFrom, devOf, devGrowth } from "./scouting.js";
-import { ScoutingPage, Board, YourList, BuzzFeed, DraftGrades, ProspectModal, DevChip, potText } from "./ScoutingUI.jsx";
+import { ScoutingPage, Board, YourList, BuzzFeed, DraftGrades, ProspectModal, DevChip, potText, ScoutPtsBadge, PickTracker } from "./ScoutingUI.jsx";
 const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 const Rf=(a,b)=>Math.random()*(b-a)+a;
 const pick=a=>a[R(0,a.length-1)];
@@ -1985,6 +1985,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
           {!_mine&&_nx&&<Btn onClick={()=>simEntireDraft(true)} bg={C.gn} style={{fontSize:16,padding:"10px 18px",fontWeight:900}}>⏩ Sim to my pick</Btn>}
           {_mine&&<div style={{textAlign:"right"}}><div style={{fontSize:36,fontWeight:900,color:draftTimer<=10?C.rd:C.gd,fontVariantNumeric:"tabular-nums"}}>{Math.floor(draftTimer/60)}:{String(draftTimer%60).padStart(2,"0")}</div><div style={{fontSize:12,color:"#fffa"}}>TIME LEFT</div></div>}
         </div>);})()}
+      {/* Scouting points and your picks, round by round */}
+      <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"flex-start"}}><div style={{flex:"0 0 auto",marginBottom:12}}><ScoutPtsBadge pts={scoutG.scouting?.pts||0}/></div><div style={{flex:"1 1 560px",minWidth:0}}><PickTracker g={scoutG}/></div></div>
       {sp==="draft"&&draftActive&&curPick&&<>
         {curPick.owner===ui&&(draftAnalyst||draftAnalystLoading)&&<div style={{background:'#0a1520',border:'1px solid #3b82f644',borderRadius:5,padding:'7px 10px',marginBottom:6,display:'flex',gap:8,alignItems:'flex-start'}}><span style={{fontSize:16,flexShrink:0}}>🎙️</span><div style={{flex:1}}><div style={{fontSize:10,color:'#3b82f6',fontWeight:800,letterSpacing:2,marginBottom:2}}>DRAFT ANALYST</div>{draftAnalystLoading?<div style={{fontSize:12,color:'#64748b',fontStyle:'italic'}}>Analyzing class…</div>:<div style={{fontSize:12,color:'#e2e8f0',fontStyle:'italic',lineHeight:1.4}}>"{draftAnalyst}"</div>}</div></div>}
         {curPick.owner===ui&&<div style={{marginBottom:10,background:C.cd,border:`1px solid ${C.gn}`,borderRadius:10,padding:'12px 14px'}}>
