@@ -33,6 +33,14 @@ export function repairSave(d) {
     t.ir = fixList(t.ir, fixes, `${t.ab || i} injured reserve`);
   });
   d.fa = fixList(d.fa, fixes, "free agents");
+  // The log is lines of text; an old farewell feature put records in it, which can't be drawn.
+  if (Array.isArray(d.log)) {
+    const bad = d.log.filter((l) => typeof l !== "string").length;
+    if (bad) {
+      d.log = d.log.map((l) => (typeof l === "string" ? l : l && typeof l.msg === "string" ? `🎖️ ${l.msg}` : null)).filter(Boolean);
+      fixes.push(`${bad} log entries`);
+    }
+  }
   if (Array.isArray(d.sched)) d.sched = d.sched.filter((g) => g && typeof g === "object");
   if (Array.isArray(d.draftPicks)) d.draftPicks = d.draftPicks.filter((pk) => pk && typeof pk === "object");
   return { d, fixes };

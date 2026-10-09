@@ -438,7 +438,9 @@ export default function GridironGM(){
   const[dc,setDc]=useState({});const[fa,setFa]=useState([]);const[waivers,setWaivers]=useState([]);
   const[pb,setPb]=useState(null);const[msg,setMsg]=useState("");
   const[sc,setSc]=useState("ovr");const[sd,setSd]=useState(-1);const[sel,setSel]=useState(null);
-  const[log,setLog]=useState([]);const[champs,setChamps]=useState([]);const[sf,setSf]=useState("passing");
+  const[log,setLogRaw]=useState([]);
+  // The league log only ever holds lines of text (a record would crash the screens that list it).
+  const setLog=u=>setLogRaw(prev=>{const n=typeof u==='function'?u(prev||[]):u;return(n||[]).map(x=>typeof x==='string'?x:x&&typeof x.msg==='string'?x.msg:null).filter(Boolean);});const[champs,setChamps]=useState([]);const[sf,setSf]=useState("passing");
   const[scouting,setScouting]=useState(null);const[devFocus,setDevFocus]=useState({off:null,def:null});const[weekResult,setWeekResult]=useState(null);const[scPts,setScPts]=useState(10);
   const[faCoaches,setFaCoaches]=useState([]);
   const[trTm,setTrTm]=useState(null);const[trOff,setTrOff]=useState({g:[],r:[],gPk:[],rPk:[]});
@@ -1083,7 +1085,8 @@ setConductEvent(null);setMvpRaceLeader(null);
 // v13.0: reset RFA tenders
 setRfaTenders([]);
 // INNO I77: veteran farewell — detect retirees before resetting
-{const _retireCands=teams[ui].roster.filter(p=>(p.age>37&&p.ovr>=80)||(p.age>34&&p.ovr>=85));_retireCands.forEach(p=>{if(p.ovr>=80&&p.age>=33){const _fw={type:'veteran_farewell',name:p.name,pos:p.pos,ovr:p.ovr,seasons:yr,wk,msg:`${p.name} (${p.pos}, OVR ${p.ovr}) has retired after ${yr} seasons. A franchise legend.`};setLog(prev=>[_fw,...(prev||[])]);if(p.ovr>=85)setFanSat(prev=>Math.min(100,(prev||50)+2));}// v36: HOF Induction Ceremony — trigger for franchise legends
+// Farewells for your veteran stars who actually retired this off-season (gone from the roster, not in free agency).
+{const _still=new Set(nt[ui].roster.map(r=>r.id)),_onMarket=new Set((fa||[]).map(f=>f.id));const _retireCands=teams[ui].roster.filter(p=>((p.age>37&&p.ovr>=80)||(p.age>34&&p.ovr>=85))&&!_still.has(p.id)&&!_onMarket.has(p.id));_retireCands.forEach(p=>{if(p.ovr>=80&&p.age>=33){const _fw=`🎖️ ${p.name} (${p.pos}, ${p.ovr} OVR) retires at ${p.age + 1}. A franchise legend.`;setLog(prev=>[_fw,...(prev||[])]);if(p.ovr>=85)setFanSat(prev=>Math.min(100,(prev||50)+2));}// v36: HOF Induction Ceremony — trigger for franchise legends
 if((p.ovr>=88||(p.av||0)>=70)&&p.age>=33)setHofModal({name:p.name,pos:p.pos,ovr:p.ovr,age:p.age,av:p.av||0,seasons:yr-2026,face:p.face,clr:ut?.clr||'#1a3a5c',team:`${ut?.city||''} ${ut?.name||''}`});});}
 // v32: save leaderboard + offseason grades + GM contract eval
 saveToLeaderboard();evaluateGmContract();if(sp==='freeagency')calcOffszGrades();
