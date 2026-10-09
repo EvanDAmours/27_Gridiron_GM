@@ -25,6 +25,7 @@ import { makeBracket, nextRound, ROUND_NAMES } from "./playoffs.js";
 import { seasonAwardWinners, tagRookieYears, pastRookieAwards } from "./awards.js";
 import { leagueCap, leagueFloor, leagueMin, setLeagueYear, capYearFor, capFor, rookieSalary, DATA_TO_DOLLARS, migrateCap } from "./cap.js";
 import TrophyRoom from "./TrophyRoom.jsx";
+import GameInfo from "./GameInfo.jsx";
 import ScreenBoundary from "./Boundary.jsx";
 import { MOBILE, DESKTOP_URL, MOBILE_URL } from "./mobile.js";
 import { MobileNav, MoreSheet } from "./MobileShell.jsx";
@@ -113,7 +114,7 @@ function genCombine(pos,ovr){const a=CA[pos];if(!a)return null;const oM=(ovr-60)
 function genProDay(pos,ovr){const c=genCombine(pos,ovr);if(!c)return null;return{fortyYd:Math.round((c.fortyYd+Rf(-.05,.05))*100)/100,bench:Math.max(0,c.bench+R(-2,3)),vert:Math.max(15,c.vert+R(-2,2)),broad:Math.max(80,c.broad+R(-3,4)),threeCone:Math.round((c.threeCone+Rf(-.08,.08))*100)/100,shuttle:Math.round((c.shuttle+Rf(-.05,.05))*100)/100};}
 function combToPhys(c){if(!c)return{spd:60,str:60,agi:60,end:60,acc:60,jmp:60};return{spd:cl(Math.round(80-(c.fortyYd-4.4)*30),30,99),str:cl(Math.round(40+c.bench*2.2),30,99),agi:cl(Math.round(80-(c.threeCone-6.8)*25),30,99),jmp:cl(Math.round(20+c.vert*1.8),30,99),acc:cl(Math.round(80-(c.shuttle-4.1)*30),30,99),end:cl(Gc(70,8,40,99),40,99)};}
 function genPAttrs(pos,ovr){const at={};(PA[pos]||[]).forEach(a=>{at[a]=cl(Gc(ovr,8,30,99),30,99);});return at;}
-const SCREENS=new Set(['dashboard','roster','depth','schedule','standings','stats','scouting','draft','trade','freeagency','coaching','playoffs','hub','trophies','log','livesim','god','dev']);
+const SCREENS=new Set(['dashboard','roster','depth','schedule','standings','stats','scouting','draft','trade','freeagency','coaching','playoffs','hub','trophies','log','gameinfo','livesim','god','dev']);
 // Game clock as m:ss.
 const gameClock=s=>{const t=Math.max(0,Math.round(s||0));return`${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;};
 function emptySS(pos){const b={gp:0,gs:0};if(pos==="QB")return{...b,comp:0,att:0,passYds:0,passTD:0,passInt:0,sk:0,skYds:0,rushAtt:0,rushYds:0,rushTD:0,fum:0,rate:0};if(pos==="RB")return{...b,rushAtt:0,rushYds:0,rushTD:0,rec:0,tgt:0,recYds:0,recTD:0,fum:0};if(pos==="WR")return{...b,tgt:0,rec:0,recYds:0,recTD:0,rushAtt:0,rushYds:0};if(pos==="TE")return{...b,tgt:0,rec:0,recYds:0,recTD:0};if(pos==="DL")return{...b,tkl:0,ast:0,sacks:0,tfl:0,ff:0,qbH:0,pd:0};if(pos==="LB")return{...b,tkl:0,ast:0,sacks:0,tfl:0,ints:0,ff:0,pd:0};if(pos==="CB")return{...b,tkl:0,ast:0,ints:0,pd:0,ff:0};if(pos==="S")return{...b,tkl:0,ast:0,ints:0,pd:0,sacks:0,ff:0};if(pos==="K")return{...b,fgM:0,fgA:0,xpM:0,xpA:0,pts:0,lng:0};return{...b};}
@@ -1314,8 +1315,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
 </div></div>);
   if(phase==="teamSelect")return(<div style={{minHeight:"100vh",background:C.bg,fontFamily:C.f,color:C.tx,padding:24}}><h2 style={{textAlign:"center",fontSize:20,fontWeight:800,marginBottom:8}}>Choose Your Team</h2>{/* I46: Difficulty preset */}<div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 14px 0'}}>{[['Casual','casual','#22c55e','225M cap, no fires, +4SP start'],['Standard','standard','#3b82f6','Normal rules'],['Hardcore','hardcore','#ef4444','160M cap, owner fires early']].map(([lbl,key,clr,sub])=>(<div key={key} onClick={()=>setDifficulty(key)} style={{cursor:'pointer',padding:'6px 10px',borderRadius:4,border:`1px solid ${difficulty===key?clr:'#334155'}`,background:difficulty===key?clr+'22':'#0d1424',minWidth:90}}><div style={{fontSize:13,fontWeight:700,color:difficulty===key?clr:'#94a3b8'}}>{lbl}</div><div style={{fontSize:11,color:'#475569'}}>{sub}</div></div>))}</div><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:6,maxWidth:900,margin:"0 auto"}}>{TEAMS.map((t,i)=><button key={i} onClick={()=>startGame(i)} style={{background:`linear-gradient(135deg,${t.clr}cc,${t.clr})`,border:`2px solid ${t.ac}33`,borderRadius:8,padding:"10px 8px",cursor:"pointer",textAlign:"left",color:"#fff",display:"flex",alignItems:"center",gap:10}}><span style={{background:"#ffffffe6",borderRadius:10,padding:3,display:"inline-flex"}}><TeamLogo t={t} sz={44}/></span><span><div style={{fontSize:11,textTransform:"uppercase",letterSpacing:2,opacity:.7}}>{t.city}</div><div style={{fontSize:14,fontWeight:800}}>{t.name}</div><div style={{fontSize:11,color:t.ac,fontWeight:700,marginTop:2}}>{t.ab} • {t.c} {t.d}</div></span></button>)}</div></div>);
 
-  const TABS=["dashboard","roster","depth","schedule","standings","stats","scouting","draft","trade","freeagency","coaching","playoffs","hub","trophies","log"];
-  const TAB_LABEL={dashboard:"Home",roster:"Roster",depth:"Depth Chart",schedule:"Schedule",standings:"Standings",stats:"Stats",scouting:"Scouting",draft:"Draft",trade:"Trade",freeagency:"Free Agency",coaching:"Coaching",playoffs:"Playoffs",hub:"League",trophies:"Trophy Room",log:"Log",livesim:"⚡ Live Game",god:"God Mode",dev:"Balance"};
+  const TABS=["dashboard","roster","depth","schedule","standings","stats","scouting","draft","trade","freeagency","coaching","playoffs","hub","trophies","log","gameinfo"];
+  const TAB_LABEL={dashboard:"Home",roster:"Roster",depth:"Depth Chart",schedule:"Schedule",standings:"Standings",stats:"Stats",scouting:"Scouting",draft:"Draft",trade:"Trade",freeagency:"Free Agency",coaching:"Coaching",playoffs:"Playoffs",hub:"League",trophies:"Trophy Room",log:"Log",gameinfo:"Game Info",livesim:"⚡ Live Game",god:"God Mode",dev:"Balance"};
   if(liveSim)TABS.push("livesim");
   if(godMode)TABS.push("god","dev");
   const phaseFlow=sp==="regular"?`Wk ${wk}/18`:sp==="playoffs"?"Playoffs":sp==="combine"?"Combine":sp==="draft"?"Draft":sp==="resign"?"Re-sign Week":sp==="freeagency"?"Free Agency":"Preseason";
@@ -1458,6 +1459,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
           {<Btn onClick={()=>setShowRecapCard(true)} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Season Recap Card">📊 Season recap</Btn>}
           <Btn onClick={()=>{setLeaderboardOpen(true);loadLeaderboard();}} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Leaderboard">🏅 Leaderboard</Btn>
           <Btn onClick={()=>setTab("trophies")} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Trophy Room">🏆 Trophy room</Btn>
+          <Btn onClick={()=>setTab("gameinfo")} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Game Info: patch notes">📝 Game info</Btn>
           <Btn onClick={()=>setMultiOpen(true)} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Multiplayer">👥 Multiplayer</Btn>
           {proUnlocked&&<span style={{fontSize:10,background:'#f59e0b',color:'#000',borderRadius:3,padding:'1px 5px',fontWeight:900,letterSpacing:1}}>PRO</span>}
           <Btn onClick={()=>setGodMode(g=>!g)} bg={godMode?"#7f1d1d":"#1e293b"} c={godMode?"#fca5a5":"#94a3b8"} style={{padding:"3px 7px",fontSize:11}} title={proUnlocked?"God Mode (Pro)":"God Mode — Upgrade to Pro"}>⚡ God mode</Btn>
@@ -1528,7 +1530,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       {(()=>{const go=(t,sub)=>{setTab(t);if(sub)setRosterView(sub);};
         const _ng=sp==="regular"?sched.find(g=>g.wk===wk+1&&!g.played&&(g.h===ui||g.a===ui)):null;
         const first={preseason:{label:"Training Camp",t:"roster",sub:"Camp work and mini games to improve your roster before the season",onClick:()=>go("roster","camp")},regular:{label:"Schedule",t:"schedule",sub:"Your games, this week's game plan and the playoff picture",onClick:()=>go("schedule")},playoffs:{label:"Playoff Bracket",t:"playoffs",sub:"The road to the Super Bowl",onClick:()=>go("playoffs")},combine:{label:"Scouting",t:"scouting",sub:"Combine results, interviews and your big board",onClick:()=>go("scouting")},resign:{label:"Re-sign Players",t:"freeagency",sub:"Only you can talk to your expiring players this week",onClick:()=>go("freeagency")},freeagency:{label:"Free Agency",t:"freeagency",sub:"Negotiate with the players on the market",onClick:()=>go("freeagency")},draft:{label:"NFL Draft",t:"draft",sub:"Make your picks",onClick:()=>go("draft")}}[sp];
-        const rest=[["Schedule","schedule"],["Manage Roster","roster"],["Depth Chart","depth"],["Standings","standings"],["Stats","stats"],["Scouting","scouting"],["Draft","draft"],["Trades","trade"],["Free Agency","freeagency"],["Manage Staff","coaching"],["Playoffs","playoffs"],["League","hub"],["Trophy Room","trophies"],["Log","log"],...(liveSim&&!liveDone?[["⚡ Live Game","livesim"]]:[])].map(([label,t])=>({label,t,onClick:()=>go(t,t==="roster"?"players":null)}));
+        const rest=[["Schedule","schedule"],["Manage Roster","roster"],["Depth Chart","depth"],["Standings","standings"],["Stats","stats"],["Scouting","scouting"],["Draft","draft"],["Trades","trade"],["Free Agency","freeagency"],["Manage Staff","coaching"],["Playoffs","playoffs"],["League","hub"],["Trophy Room","trophies"],["Log","log"],["Game Info","gameinfo"],...(liveSim&&!liveDone?[["⚡ Live Game","livesim"]]:[])].map(([label,t])=>({label,t,onClick:()=>go(t,t==="roster"?"players":null)}));
         const menu=[...(first?[first]:[]),...rest.filter(m=>m.label!==first?.label&&!(first&&first.t===m.t&&m.t!=="roster"))];
         const primary=[];
         if(liveSim&&!liveDone)primary.push({label:"● Back to the live game",onClick:()=>setTab("livesim")});
@@ -2320,6 +2322,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     </div>}
 
     {/* LOG */}
+    {tab==="gameinfo"&&<GameInfo/>}
     {tab==="trophies"&&ut&&<TrophyRoom team={ut} ui={ui} teams={teams} champs={champs} awards={awards}/>}
     {tab==="log"&&<div style={{maxWidth:550}}>
     {/* INNO I71: achievements panel */}

@@ -1,0 +1,159 @@
+// Every change to the game, oldest first. The Game Info tab shows them newest first.
+// { v: version, date, title, notes: [what changed, in plain words] }
+export const PATCH_NOTES = [
+  { v: "1.1", date: "2026-10-08", title: "The Scouting Overhaul", notes: [
+    "Hire a major scout and a minor scout, each covering a position group (QB, RB, receivers & TE, OL, DL, LB, DB). The major scout's full workup reveals exact ratings and the development trait.",
+    "Scouting points are their own budget: 8 to start each season, 1 per regular-season week and 4 more at the Combine. A report costs 1 point, a full workup 2 more.",
+    "Reports grade every skill at the prospect's projected ceiling, with strengths, a concern and an NFL comparable.",
+    "Consensus Big Board: preseason rankings, then final rankings after the Combine. Your own ranking lives in Your List, and the draft clock auto-picks from it.",
+    "A real Combine: the top 180 are invited and graded against their position; everyone else gets a pro day. Risers, fallers, draft news and interviews.",
+    "Development traits (Superstar, Star, Normal, Late bloomer) shape how young players grow.",
+    "AI clubs draft off their own read plus the consensus board, and analysts grade every pick and every class.",
+  ] },
+  { v: "1.2", date: "2026-10-08", title: "Real NFL Teams", notes: [
+    "All 32 real NFL teams in their real divisions and colors.",
+    "Every club starts with its EA SPORTS Madden NFL 27 roster: real names, ages, sizes, colleges and ratings, plus a practice squad.",
+  ] },
+  { v: "1.3", date: "2026-10-08", title: "Cleaner Layout and a Field-View Depth Chart", notes: [
+    "The depth chart is drawn on a field with every starter in his spot. Tap a spot to choose the starter.",
+    "A larger, readable roster table, plain tab names and one Menu for secondary buttons.",
+    "Fixed: roster sorting was upside down, and Sim All ignored your depth chart.",
+  ] },
+  { v: "1.4", date: "2026-10-08", title: "Open Access", notes: ["Removed the preview password screen."] },
+  { v: "1.5", date: "2026-10-08", title: "Generational Talents", notes: [
+    "New top development tier: Generational, the fastest growth in the game.",
+    "Every real player gets a deliberate trait from his age, rating, EA abilities and draft slot. Will Anderson Jr., Patrick Mahomes, Malik Nabers and other franchise players are Generational.",
+    "Player cards show development at every age.",
+  ] },
+  { v: "1.6", date: "2026-10-08", title: "X-Factors", notes: ["All 49 Madden 27 X-Factor players carry their ability, shown with a gold XF tag and on the player card."] },
+  { v: "1.7", date: "2026-10-08", title: "Fewer Popups, Fair Trade Values", notes: [
+    "Removed the weekly press conference and locker-room speech popups.",
+    "Elite players, X-Factors and Superstars now cost what they're worth in trades.",
+    "Trade Deadline Frenzy only offers rentals, priced in draft picks you actually own.",
+  ] },
+  { v: "1.8", date: "2026-10-08", title: "Development Focus", notes: ["Put one offensive and one defensive player in the lab. Each week they can gain a point of OVR, faster for young players with better development traits."] },
+  { v: "1.9", date: "2026-10-09", title: "Week Result Card", notes: [
+    "A big result card after every sim: win or loss, the score, your record, your top performers and every other score that week.",
+    "LT/RT and LG/RG share one pool on the depth chart, so you can flip tackles and guards.",
+    "Removed the Media Day popup.",
+  ] },
+  { v: "1.10", date: "2026-10-09", title: "Real NFL Schedule Formula and Snap Counts", notes: [
+    "Schedules follow the NFL formula: division home-and-away, rotating divisions, same-place games, one bye, week 18 all divisional.",
+    "Snap shares add up (100% per starting spot) and stats follow snaps, so backups only play the snaps they get.",
+  ] },
+  { v: "1.11", date: "2026-10-09", title: "Live Games and NFL Playoffs", notes: [
+    "Live games show all 22 starters lined up in formation.",
+    "Seven-seed playoffs with a first-round bye and reseeding, played one round at a time. Your playoff games can be played live.",
+  ] },
+  { v: "1.12", date: "2026-10-09", title: "The NFL Off-Season", notes: [
+    "The off-season runs Playoffs, Combine, Free Agency, Draft, then the next season.",
+    "Free agents are real players, and undrafted free agents come from the draft class.",
+    "Draft speed setting (Slow, Normal, Fast).",
+    "Saves are compressed, so autosave no longer silently stops mid-season.",
+  ] },
+  { v: "1.13", date: "2026-10-09", title: "Larger Scouting Screens", notes: ["The Big Board is a plain, large table with one Scout button, and everything fits on phones."] },
+  { v: "1.14", date: "2026-10-09", title: "Live Game and Draft Layout", notes: [
+    "The live field sits beside the play-by-play, so you can watch and read at once.",
+    "The draft has a big on-the-clock banner, best available, recent picks and your needs.",
+  ] },
+  { v: "1.15", date: "2026-10-09", title: "New Trade Screen", notes: [
+    "Side-by-side rosters with checkboxes, picks, a value meter, cap space after and \"What would make this work?\"",
+    "Fixed: AI clubs accepted lopsided trades in your favor.",
+  ] },
+  { v: "1.16", date: "2026-10-09", title: "Madden-Style Trade Values", notes: ["Trade value climbs steeply with rating and depends on position, age, development and X-Factor. AI clubs want to win the deal, especially for their stars and franchise QB."] },
+  { v: "1.17", date: "2026-10-09", title: "Free Agency Screen and Team Logos", notes: [
+    "One sortable free-agent table with asking prices and a needs filter. Signing opens a real contract offer.",
+    "NFL team logos throughout the game.",
+  ] },
+  { v: "1.18", date: "2026-10-09", title: "Real Depth Charts", notes: ["Every team's starters come from its real ESPN depth chart."] },
+  { v: "1.19", date: "2026-10-09", title: "Clean Roster Page", notes: ["Roster, practice squad, injured reserve and front office as clear tabs, with one table grouped by position in depth order."] },
+  { v: "1.20", date: "2026-10-09", title: "Schedule Page", notes: ["Your 18 weeks in one list with scores and box scores, the playoff tree, and the whole league's schedule week by week."] },
+  { v: "1.21", date: "2026-10-09", title: "Live Game Freeze Fix", notes: ["Fixed: live games froze when play-calling was turned off mid-drive."] },
+  { v: "1.22", date: "2026-10-09", title: "Realistic Scoring", notes: ["Games are decided drive by drive and tuned to NFL scoring. Box scores add up to the final score."] },
+  { v: "1.23", date: "2026-10-09", title: "Front Office Page", notes: ["Big cards for cap space, morale and chemistry, where the money goes, future cap commitments and expiring contracts."] },
+  { v: "1.24", date: "2026-10-09", title: "Sim to My Pick", notes: ["A draft button that sims the AI picks and stops when you're on the clock."] },
+  { v: "1.25", date: "2026-10-09", title: "Player Card Scroll Fix", notes: ["Fixed: the player card jumped back to the top every second while the draft clock ran."] },
+  { v: "1.26", date: "2026-10-09", title: "Re-Sign Week and Negotiations", notes: [
+    "A new off-season phase where only you can talk to your expiring players.",
+    "Real negotiations: lowball and he rejects, get close and he counters. Rival bidders in free agency can outbid you.",
+  ] },
+  { v: "1.27", date: "2026-10-09", title: "Whole-Number Scores", notes: ["Scores are always whole numbers, and old saves are cleaned up."] },
+  { v: "1.28", date: "2026-10-09", title: "Holdouts That Sit", notes: [
+    "Refusing a holdout's demand now benches him until he reports. The Stonewall button no longer crashes.",
+    "Demands follow market value.",
+  ] },
+  { v: "1.29", date: "2026-10-09", title: "Training Camp", notes: [
+    "A Training Camp tab with preseason games, camp focus, rookie dev camp, position battles and contract extensions.",
+    "Fixed: rookie dev camp could be clicked over and over to push a rookie to 99.",
+  ] },
+  { v: "1.30", date: "2026-10-09", title: "Contracts Priced to the Cap", notes: [
+    "C.J. Stroud is 90 OVR.",
+    "Asking prices follow real NFL cap shares, and stars coming off rookie deals get paid.",
+    "AI clubs only make cap cuts when they're actually over the cap, and keep their rosters full.",
+  ] },
+  { v: "1.31", date: "2026-10-09", title: "Franchise Home Screen", notes: [
+    "A Madden-style home screen: this week's matchup, team ratings, play and sim buttons and the league's top stories.",
+    "The season bar marks every week as a win, loss, tie or bye.",
+  ] },
+  { v: "1.32", date: "2026-10-09", title: "Everything in the Home Menu", notes: ["Every page is in the Home screen's left menu. Weekly Strategy is now Schedule."] },
+  { v: "1.33", date: "2026-10-09", title: "Play-by-Play Engine", notes: [
+    "Quick sims and live games run the same play-by-play engine: downs, field position, a real clock, 4th-down decisions, field goals by distance, penalties and overtime.",
+    "Better offenses score more and better defenses get more stops. Stars get the ball like stars.",
+  ] },
+  { v: "1.34", date: "2026-10-09", title: "Real 2026 Schedule and the Trophy Room", notes: [
+    "Your first season uses the NFL's real 2026 schedule.",
+    "Slow, Normal and Fast speeds for live games.",
+    "Snap share decides who starts. ESPN depth only sets each team's opening chart.",
+    "Players grow faster with more snaps. Milestones (10 sacks, 1,400 yards...) and league leaders earn OVR or a development upgrade.",
+    "The Trophy Room: every real Super Bowl your franchise has won, plus the trophies won with you as GM, as turning 3D trophies.",
+  ] },
+  { v: "1.35", date: "2026-10-09", title: "Blank Screen Fix", notes: ["Fixed: closing the week result after a live game left a blank screen."] },
+  { v: "1.36", date: "2026-10-09", title: "Game Clock", notes: ["Live games show the quarter and time left like a scoreboard, and every play is stamped with the game time."] },
+  { v: "1.37", date: "2026-10-09", title: "Top Stories and Injury Report", notes: [
+    "Top stories are written after every week from the real results, on the Home screen beside an Injury Report tab.",
+    "Removed the Pro GM link and the storyline generator from League.",
+  ] },
+  { v: "1.38", date: "2026-10-09", title: "Scouting Points Badge and Pick Tracker", notes: ["Your scouting points show as a big badge. The draft screen lists your picks in each round and grays them out once used."] },
+  { v: "1.39", date: "2026-10-09", title: "Real Salary Cap", notes: [
+    "The cap is the NFL's real $301.2M in 2026 and rises every year. Contracts are priced as a share of the cap.",
+    "Free agency opens with real stars on the market.",
+    "Draft: an Up Next queue, and a reveal card showing your pick's development trait and three best ratings.",
+  ] },
+  { v: "1.40", date: "2026-10-09", title: "Clubs Keep Their Young Stars", notes: ["AI clubs keep young stars (like Will Anderson Jr. or Trey McBride) unless they're truly cap-strapped. Aging stars and veterans make up the market."] },
+  { v: "1.41", date: "2026-10-09", title: "Draft-Day Trades and Mock Draft", notes: [
+    "While you're on the clock, teams call to move up. Offers follow the classic value chart, with extra picks this year or next. You can only trade down.",
+    "A Mock Draft view shows where the experts project players to go.",
+  ] },
+  { v: "1.42", date: "2026-10-09", title: "Double Coverage Scouting", notes: ["Both scouts can work the same position group for sharper reads there."] },
+  { v: "1.43", date: "2026-10-09", title: "Light Mode", notes: ["Switch between light and dark mode from the Menu."] },
+  { v: "1.44", date: "2026-10-09", title: "Season Awards Card", notes: [
+    "Right after the Super Bowl: the champion, the Super Bowl MVP, MVP, OPOY, DPOY and both Rookies of the Year.",
+    "Fixed: awards won during Sim All didn't reach the Trophy Room.",
+  ] },
+  { v: "1.45", date: "2026-10-09", title: "Rookie Trophies and League Rosters", notes: [
+    "Offensive and Defensive Rookie of the Year trophies in the Trophy Room.",
+    "View any team's roster from the Roster page.",
+  ] },
+  { v: "1.46", date: "2026-10-09", title: "Crash Recovery", notes: [
+    "Saves are repaired as they load.",
+    "A crash in one screen stays in that screen instead of taking down the game.",
+    "The game backs up your save before every phase change.",
+  ] },
+  { v: "1.47", date: "2026-10-09", title: "Next Season Crash Fix", notes: ["Fixed: the game crashed at Next Season when a veteran star retired."] },
+  { v: "1.48", date: "2026-10-09", title: "Realistic Sacks and Injuries", notes: [
+    "Season sack leaders land around 15-19 instead of 25+.",
+    "Fixed: injuries could last all season. A 6-week injury now means six missed games, and players come back from IR.",
+  ] },
+  { v: "1.49", date: "2026-10-09", title: "Rookie of the Year Fix", notes: ["Fixed: from season two on, no one counted as a rookie, so both Rookie of the Year awards went unawarded."] },
+  { v: "1.50", date: "2026-10-09", title: "Mobile Mode", notes: ["A phone layout with a bottom tab bar and a More sheet with every screen. It shares saves with the desktop site."] },
+  { v: "1.51", date: "2026-10-09", title: "First-Season Rookies", notes: [
+    "Fixed: the 2026 season had no Rookie of the Year awards. The real 2026 NFL rookies are now marked as rookies.",
+    "Older saves are repaired, and a missing award from last season is filled in.",
+  ] },
+  { v: "1.52", date: "2026-10-09", title: "Bigger Scouting Staff and Game Info", notes: [
+    "Your scouting staff now has two major scouts and two minor scouts, so you can cover four position groups and see more of the class deep into the draft.",
+    "Stack scouts on one group for even sharper reads there.",
+    "Existing saves get a second major and minor scout on groups nobody covers yet.",
+    "New Game Info tab with these patch notes.",
+  ] },
+];

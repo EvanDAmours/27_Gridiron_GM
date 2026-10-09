@@ -1,4 +1,4 @@
-// Scouting: your scouting staff (a major and a minor scout), what they can tell you about
+// Scouting: your scouting staff (two major and two minor scouts), what they can tell you about
 // draft prospects, the consensus big board, the NFL Combine, development traits, and the
 // analysts' instant grades on draft day.
 //
@@ -60,10 +60,19 @@ const OL = new Set(["LT", "LG", "C", "RG", "RT"]);
 export const scoutGroup = (pos) =>
   pos === "QB" ? "QB" : pos === "RB" ? "RB" : pos === "WR" || pos === "TE" ? "REC" : OL.has(pos) ? "OL" : pos === "DL" ? "DL" : pos === "LB" ? "LB" : pos === "CB" || pos === "S" ? "DB" : "ST";
 
+const MAJOR_DESC = "Covers one position group in depth: sharp reports, exact ratings after a full workup, and development traits.";
+const MINOR_DESC = "Covers a group more loosely: a general idea of every prospect there and rougher reports. No development traits.";
 export const SCOUT_ROLES = {
-  major: { name: "Major scout", short: "Major", desc: "Covers one position group in depth: sharp reports, exact ratings after a full workup, and development traits." },
-  minor: { name: "Minor scout", short: "Minor", desc: "Covers a different group more loosely: a general idea of every prospect there and rougher reports. No development traits." },
+  major: { name: "Major scout", short: "Major", desc: MAJOR_DESC },
+  major2: { name: "Second major scout", short: "Major 2", desc: MAJOR_DESC },
+  minor: { name: "Minor scout", short: "Minor", desc: MINOR_DESC },
+  minor2: { name: "Second minor scout", short: "Minor 2", desc: MINOR_DESC },
 };
+// Your four jobs on the staff, and the kind of scout each one is.
+export const SCOUT_SLOTS = ["major", "major2", "minor", "minor2"];
+export const slotKind = (slot) => (slot.startsWith("major") ? "major" : "minor");
+export const staffOf = (sc) => SCOUT_SLOTS.map((k) => sc?.[k]).filter(Boolean);
+const staffHas = (sc, trait) => staffOf(sc).some((x) => x.trait === trait);
 
 export const SCOUT_TRAITS = {
   workhorse: { name: "Road warrior", desc: "+1 scouting point every 4 weeks of the season." },
@@ -114,7 +123,9 @@ export function refreshScoutPool(sc, year, faceFn) {
 export function newScouting(year, faceFn, list = { yr: year, ids: [] }) {
   const sc = {
     major: makeScout(`${year}|staff|major|${Math.random()}`, "QB", 70, faceFn),
+    major2: makeScout(`${year}|staff|major2|${Math.random()}`, "DL", 68, faceFn),
     minor: makeScout(`${year}|staff|minor|${Math.random()}`, "DB", 64, faceFn),
+    minor2: makeScout(`${year}|staff|minor2|${Math.random()}`, "REC", 62, faceFn),
     pool: [],
     poolN: Math.floor(Math.random() * 1e6),
     pts: SCOUT_PTS_START,
@@ -128,20 +139,17 @@ export function newScouting(year, faceFn, list = { yr: year, ids: [] }) {
 // Staff changes happen in the preseason and after the draft, not while the scouts are on the road.
 export const staffWindowOpen = (sp) => sp === "preseason" || sp === "freeagency";
 const ON_ROAD = "Your scouts are on the road. You can change your staff in free agency or the preseason.";
-const otherRole = (role) => (role === "major" ? "minor" : "major");
 
 export function hireScout(sc, sp, scoutId, role) {
   if (!staffWindowOpen(sp)) return { ok: false, msg: ON_ROAD, sc };
   const s = (sc.pool || []).find((x) => x.id === scoutId);
   if (!s || !SCOUT_ROLES[role]) return { ok: false, msg: "That scout isn't available.", sc };
-  // Both scouts can work the same group: double coverage reads it sharper and leaves the rest of
-  // the class to the front office.
-  const other = sc[otherRole(role)];
-  const double = other && other.group === s.group;
+  // Scouts can share a group: more eyes read it sharper and leave more of the class to the front office.
+  const same = SCOUT_SLOTS.filter((k) => k !== role && sc[k]?.group === s.group).length;
   const old = sc[role];
   const pool = sc.pool.filter((x) => x.id !== s.id);
   if (old) pool.push(old);
-  const msg = `${s.name} is your new ${SCOUT_ROLES[role].name.toLowerCase()} (${SCOUT_GROUPS[s.group].toLowerCase()}).${double ? ` Both your scouts now work ${SCOUT_GROUPS[s.group].toLowerCase()}: sharper reads there, and the front office covers everyone else.` : ""}`;
+  const msg = `${s.name} is your new ${SCOUT_ROLES[role].name.toLowerCase()} (${SCOUT_GROUPS[s.group].toLowerCase()}).${same ? ` ${same + 1} of your scouts now work ${SCOUT_GROUPS[s.group].toLowerCase()}: sharper reads there, and fewer groups covered.` : ""}`;
   return { ok: true, msg, sc: { ...sc, [role]: s, pool } };
 }
 
@@ -154,7 +162,7 @@ export function releaseScout(sc, sp, role) {
 
 export function swapScoutRoles(sc, sp) {
   if (!staffWindowOpen(sp)) return { ok: false, msg: ON_ROAD, sc };
-  return { ok: true, msg: "Your scouts have switched roles.", sc: { ...sc, major: sc.minor || null, minor: sc.major || null } };
+  return { ok: true, msg: "Your major and minor scouts have switched roles.", sc: { ...sc, major: sc.minor || null, minor: sc.major || null, major2: sc.minor2 || null, minor2: sc.major2 || null } };
 }
 
 // A point for every week of the regular season played up to `wk` (a sim that skips ahead
@@ -162,7 +170,7 @@ export function swapScoutRoles(sc, sp) {
 export function creditWeeks(sc, wk) {
   const paid = sc.wkPaid || 0;
   if (wk <= paid) return sc;
-  const workhorse = sc.major?.trait === "workhorse" || sc.minor?.trait === "workhorse";
+  const workhorse = staffHas(sc, "workhorse");
   let pts = sc.pts || 0;
   for (let w = paid + 1; w <= wk; w++) {
     pts += SCOUT_PTS_WEEKLY;
@@ -179,22 +187,24 @@ export const startScoutingYear = (sc, year) => ({ ...sc, pts: SCOUT_PTS_START, w
 const OFFICE_EVAL = 60;
 
 // Which of your scouts covers a prospect: "major", "minor", or "office" (nobody, so the front
-// office's generalists handle it). With both scouts on one group the major scout leads and the
-// minor scout is a second opinion (`second`).
+// office's generalists handle it). With several scouts on one group the best major scout leads and
+// the rest are second opinions (`second` is the next one, `others` all of them).
 export function coverage(sc, p) {
   const g = scoutGroup(p.pos);
-  if (sc?.major?.group === g && sc?.minor?.group === g) return { role: "major", scout: sc.major, second: sc.minor };
-  if (sc?.major?.group === g) return { role: "major", scout: sc.major };
-  if (sc?.minor?.group === g) return { role: "minor", scout: sc.minor };
-  return { role: "office", scout: null };
+  const on = SCOUT_SLOTS.filter((k) => sc?.[k]?.group === g).map((k) => ({ kind: slotKind(k), scout: sc[k] }))
+    .sort((a, b) => (a.kind === b.kind ? b.scout.eval - a.scout.eval : a.kind === "major" ? -1 : 1));
+  if (!on.length) return { role: "office", scout: null };
+  const others = on.slice(1).map((x) => x.scout);
+  return { role: on[0].kind, scout: on[0].scout, ...(others.length ? { second: others[0], others } : {}) };
 }
 
-// second: another scout on the same group. Two sets of eyes read better than the best one
-// alone, and either scout's specialty counts.
+// second: another scout (or a list of them) on the same group. More eyes read better than the
+// best one alone, and anyone's specialty counts.
 export function scoutEval(scout, p, second) {
   if (!scout) return OFFICE_EVAL;
-  let e = second ? Math.max(scout.eval, second.eval) + 6 : scout.eval;
-  const has = (t) => scout.trait === t || second?.trait === t;
+  const more = [].concat(second || []);
+  let e = more.length ? Math.max(scout.eval, ...more.map((x) => x.eval)) + 6 + 2 * (more.length - 1) : scout.eval;
+  const has = (t) => scout.trait === t || more.some((x) => x.trait === t);
   if (has("sharp")) e += 8;
   if (has("smallschool") && isSmallSchool(p)) e += 12;
   return clamp(e, 40, 99);
@@ -217,7 +227,7 @@ export function scoutCost(p) {
 
 // Would this report on the prospect reveal his development trait?
 function seesDev(cov, lvl) {
-  if (cov.role === "major") return lvl >= 2 || cov.scout.trait === "projector" || cov.second?.trait === "projector";
+  if (cov.role === "major") return lvl >= 2 || [cov.scout, ...(cov.others || [])].some((x) => x.trait === "projector");
   if (cov.role === "minor") return lvl >= 2 && cov.scout.trait === "projector";
   return false;
 }
@@ -225,7 +235,7 @@ function seesDev(cov, lvl) {
 // File a report on a prospect. Returns a new prospect object; the caller swaps it into the class.
 function fileReport(sc, p, lvl, teams) {
   const cov = coverage(sc, p);
-  const ev = scoutEval(cov.scout, p, cov.second);
+  const ev = scoutEval(cov.scout, p, cov.others);
   const sd = readSd(cov.role, lvl, ev);
   const r = stream(`${p.id}|${cov.scout?.id || "office"}|${lvl}`);
   const n = (s) => (s ? clamp(r.gauss(0, s), -1.6 * s, 1.6 * s) : 0);
@@ -241,7 +251,7 @@ function fileReport(sc, p, lvl, teams) {
     sd,
     exact: sd === 0,
     by: cov.role,
-    who: cov.second ? `${cov.scout.name} & ${cov.second.name}` : cov.scout?.name || "Your front office",
+    who: cov.others ? [cov.scout, ...cov.others].map((x) => x.name).join(" & ") : cov.scout?.name || "Your front office",
     dev: seesDev(cov, lvl) ? devOf(p) : prev.dev || null,
     skills,
     notes: notesFor(p, skills, r),
@@ -264,7 +274,7 @@ export function scoutProspect(sc, sp, p, teams, classYr, draftYr) {
 export function generalIdea(sc, p) {
   const cov = coverage(sc, p);
   if (cov.role === "office") return null;
-  const sd = readSd(cov.role, 0, scoutEval(cov.scout, p, cov.second));
+  const sd = readSd(cov.role, 0, scoutEval(cov.scout, p, cov.others));
   const r = stream(`${p.id}|${cov.scout.id}|gen`);
   const pot = p.truePot + clamp(r.gauss(0, sd), -1.6 * sd, 1.6 * sd);
   return { pot, grade: potGrade(pot), tier: projection(p.pos, pot), by: cov.role, who: cov.scout.name };
@@ -282,6 +292,7 @@ export function prospectRead(sc, p) {
     cov: cov.role,
     scout: cov.scout,
     second: cov.second || null,
+    others: cov.others || [],
     ovr: has ? (s.exact ? `${s.eOvr}` : `~${s.eOvr}`) : "??",
     pot: has ? (s.exact ? `${s.ePot}` : `~${s.ePot}`) : gen ? gen.grade : "??",
     ovrV: has ? s.eOvr : null,
@@ -566,8 +577,8 @@ export function runCombine(sc, cls, { quiet = false } = {}) {
   }
   [...cls].sort((a, b) => b.cons.fscore - a.cons.fscore).forEach((p, i) => (p.cons.final = i + 1));
   sortByRank(cls);
-  const bonus = quiet ? 0 : SCOUT_PTS_COMBINE + (sc.major?.trait === "combine" || sc.minor?.trait === "combine" ? 3 : 0);
-  const interviews = COMBINE_INTERVIEWS + (sc.major?.trait === "character" || sc.minor?.trait === "character" ? 2 : 0);
+  const bonus = quiet ? 0 : SCOUT_PTS_COMBINE + (staffHas(sc, "combine") ? 3 : 0);
+  const interviews = COMBINE_INTERVIEWS + (staffHas(sc, "character") ? 2 : 0);
   return { sc: { ...sc, pts: (sc.pts || 0) + bonus, interviewsLeft: interviews }, buzz: combineBuzz(cls, invited, events), events, bonus, interviews };
 }
 
@@ -697,7 +708,13 @@ export function loadScouting(d, faceFn) {
     sc = { ...sc, pts: SCOUT_PTS_START, wkPaid: 0 };
     sc = creditWeeks(sc, wk);
   }
-  sc = { major: null, minor: null, pool: [], pts: 0, wkPaid: 0, interviewsLeft: 0, ...sc };
+  // Saves from the two-scout days get a second major and a second minor scout on groups nobody covers yet.
+  if (!("major2" in sc) && !("minor2" in sc)) {
+    const free = HIRE_GROUPS.filter((g) => !staffOf(sc).some((x) => x.group === g));
+    const salt = `${d.yr || 2026}|staff2|${sc.poolN || 0}`;
+    sc = { ...sc, major2: makeScout(`${salt}|major2`, free[0] || "DL", 68, faceFn), minor2: makeScout(`${salt}|minor2`, free[1] || "REC", 62, faceFn) };
+  }
+  sc = { major: null, major2: null, minor: null, minor2: null, pool: [], pts: 0, wkPaid: 0, interviewsLeft: 0, ...sc };
   if (!sc.list || sc.list.yr !== d.yr) sc.list = { yr: d.yr, ids: sc.list?.yr === d.yr ? sc.list.ids : [] };
   // Saved mid-Combine from before the overhaul: grade what's there and open the interviews.
   const cur = dc[d.yr];
@@ -710,7 +727,7 @@ export function loadScouting(d, faceFn) {
 
 // What an old-style report becomes: exact for old full scouting, a front-office estimate otherwise.
 function fileReportQuiet(p, exact, teams) {
-  const office = { major: null, minor: null };
+  const office = {};
   const np = fileReport(office, p, exact ? 2 : 1, teams || []);
   if (exact) {
     np.scout = { ...np.scout, eOvr: p.trueOvr, ePot: p.truePot, sd: 0, exact: true };

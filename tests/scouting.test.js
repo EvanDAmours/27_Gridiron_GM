@@ -20,10 +20,10 @@ function prospect(pos = POS[n % POS.length], ovr = 60 + (n % 20), pot = ovr + (n
 const fakeCombine = (p) => ({ fortyYd: 4.4 + (p.id.length % 5) * 0.05, bench: 20, vert: 34, broad: 120, threeCone: 6.9, shuttle: 4.2 });
 const teams = [{ ab: "NYG", roster: [{ id: "v1", name: "Vet QB", pos: "QB", ovr: 80, posAttrs: { armStr: 82, accuracy: 79, pocketAwr: 77, decisions: 80 }, spd: 60 }] }];
 
-test("a new staff covers two different groups and has points to spend", () => {
+test("a new staff has two major and two minor scouts on four different groups, and points to spend", () => {
   const sc = newScouting(2026);
-  assert.ok(sc.major && sc.minor);
-  assert.notEqual(sc.major.group, sc.minor.group);
+  assert.ok(sc.major && sc.minor && sc.major2 && sc.minor2);
+  assert.equal(new Set([sc.major, sc.major2, sc.minor, sc.minor2].map((x) => x.group)).size, 4);
   assert.equal(sc.pts, SCOUT_PTS_START);
   assert.equal(sc.pool.length, 14);
 });
@@ -45,7 +45,7 @@ test("staff changes only in the preseason and free agency; both scouts can work 
 });
 
 test("points arrive weekly, catch up after a sim-all, and reset each year", () => {
-  let sc = { ...newScouting(2026), major: null, minor: null };
+  let sc = { ...newScouting(2026), major: null, minor: null, major2: null, minor2: null };
   sc = creditWeeks(sc, 3);
   assert.equal(sc.pts, SCOUT_PTS_START + 3);
   sc = creditWeeks(sc, 18);
@@ -164,7 +164,8 @@ test("old saves get a staff, ranks, and keep their old reports", () => {
   assert.equal(sc.major.name, "Old Scout");
   assert.equal(sc.major.group, "QB");
   assert.notEqual(sc.minor.group, "QB");
-  const roadWarrior = sc.major?.trait === "workhorse" || sc.minor?.trait === "workhorse";
+  const roadWarrior = [sc.major, sc.major2, sc.minor, sc.minor2].some((x) => x?.trait === "workhorse");
+  assert.ok(sc.major2 && sc.minor2, "old saves get the second major and minor scouts");
   assert.equal(sc.pts, SCOUT_PTS_START + 5 + (roadWarrior ? 1 : 0));
   const [a, b, c] = ["p", "p", "p"].map((_, i) => d.dc[2026].find((x) => x.id === [p1, p2, p3][i].id));
   assert.equal(a.scout.exact, true);
@@ -192,4 +193,22 @@ test("double coverage reads a group sharper than one scout and leaves the rest t
   assert.equal(c.role, "major"); assert.equal(c.second.id, "b");
   assert.ok(scoutEval(c.scout, cb, c.second) > Math.max(major.eval, minor.eval));
   assert.equal(coverage(sc, wr).role, "office");
+});
+
+test("second major and minor scouts: each covers its own group, and stacking three on one group reads sharpest", async () => {
+  const { coverage, scoutEval, hireScout } = await import("../src/scouting.js");
+  const mk = (id, group, ev) => ({ id, name: id, group, eval: ev, trait: null });
+  const sc = { major: mk("a", "QB", 70), major2: mk("b", "DB", 72), minor: mk("c", "OL", 66), minor2: mk("d", "DB", 80) };
+  const cb = { pos: "CB", bio: {} };
+  assert.equal(coverage(sc, { pos: "QB", bio: {} }).role, "major");
+  assert.equal(coverage(sc, { pos: "LT", bio: {} }).role, "minor");
+  const c = coverage(sc, cb);
+  assert.equal(c.role, "major"); assert.equal(c.scout.id, "b"); assert.equal(c.second.id, "d");
+  const three = { ...sc, major: mk("a", "DB", 70) };
+  const c3 = coverage(three, cb);
+  assert.equal(c3.others.length, 2);
+  assert.ok(scoutEval(c3.scout, cb, c3.others) > scoutEval(c.scout, cb, c.others));
+  const fresh = newScouting(2026);
+  const r = hireScout(fresh, "preseason", fresh.pool[0].id, "minor2");
+  assert.ok(r.ok); assert.equal(r.sc.minor2.id, fresh.pool[0].id);
 });
