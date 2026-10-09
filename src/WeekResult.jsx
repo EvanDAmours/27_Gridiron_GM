@@ -28,6 +28,26 @@ function topLines(box) {
   return lines.sort((a, b) => b.score - a.score).slice(0, 3);
 }
 
+function Others({ list, teams, onBox }) {
+  return (
+    <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.bd}` }}>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>AROUND THE LEAGUE</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {list.map((x, i) => {
+          const hw = x.hs > x.as, aw = x.as > x.hs;
+          return (
+            <button key={i} onClick={() => onBox(x)} style={{ background: C.bg, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "4px 8px", fontSize: 13, color: C.tx, cursor: "pointer" }}>
+              <span style={{ fontWeight: aw ? 800 : 400, color: aw ? "#fff" : C.mt }}>{teams[x.a]?.ab} {x.as}</span>
+              <span style={{ color: C.mt }}> @ </span>
+              <span style={{ fontWeight: hw ? 800 : 400, color: hw ? "#fff" : C.mt }}>{teams[x.h]?.ab} {x.hs}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function WeekResult({ result, teams, ui, sched, onClose, onBox, onTeam }) {
   if (!result) return null;
   const me = teams[ui];
@@ -47,6 +67,17 @@ export default function WeekResult({ result, teams, ui, sched, onClose, onBox, o
   }
 
   const g = result.game;
+  if (!g && result.playoff) {
+    const champ = result.champ != null ? teams[result.champ] : null;
+    return (
+      <div style={{ ...card, borderColor: champ ? C.gd : C.bd }}>
+        {close}
+        <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.mt }}>{result.round.toUpperCase()}</div>
+        <div style={{ fontSize: 36, fontWeight: 900, color: result.bye ? "#a78bfa" : "#cbd5e1" }}>{result.bye ? "FIRST-ROUND BYE" : champ ? `${champ.city} ${champ.name} win it all` : "Playoff results"}</div>
+        {(result.others || []).length > 0 && <Others list={result.others} teams={teams} onBox={onBox} />}
+      </div>
+    );
+  }
   if (!g) {
     return (
       <div style={card}>
@@ -63,7 +94,8 @@ export default function WeekResult({ result, teams, ui, sched, onClose, onBox, o
   const outcome = us > them ? "WIN" : us < them ? "LOSS" : "TIE";
   const col = outcome === "WIN" ? C.gn : outcome === "LOSS" ? C.rd : C.gd;
   const stars = topLines(home ? g.boxH : g.boxA);
-  const others = (sched || []).filter((x) => x.wk === result.wk && x.played && x !== g && x.h !== ui && x.a !== ui);
+  const others = result.others || (sched || []).filter((x) => x.wk === result.wk && x.played && x !== g && x.h !== ui && x.a !== ui);
+  const champs = result.playoff && result.champ === ui;
   const Side = ({ t, pts, win }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
       <span style={{ width: 54, height: 54, borderRadius: 10, flexShrink: 0, background: `linear-gradient(135deg,${t.clr},${t.ac})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 16, color: "#fff" }}>{t.ab}</span>
@@ -78,11 +110,11 @@ export default function WeekResult({ result, teams, ui, sched, onClose, onBox, o
     <div style={{ ...card, borderColor: col, boxShadow: `0 0 0 1px ${col}55, 0 10px 30px #0008` }}>
       {close}
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.mt }}>WEEK {result.wk} · {home ? "HOME" : "AWAY"}</span>
+        <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.mt }}>{result.playoff ? result.round.toUpperCase() : `WEEK ${result.wk}`} · {result.round === "Super Bowl" ? "NEUTRAL SITE" : home ? "HOME" : "AWAY"}</span>
         <span style={{ fontSize: 15, color: "#cbd5e1" }}>{fmtRec(me)} · {divPlace(teams, me)}</span>
       </div>
       <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap", marginTop: 6 }}>
-        <div style={{ fontSize: 64, fontWeight: 900, fontStyle: "italic", color: col, lineHeight: 1, minWidth: 190 }}>{outcome}</div>
+        <div style={{ fontSize: champs ? 44 : 64, fontWeight: 900, fontStyle: "italic", color: champs ? C.gd : col, lineHeight: 1, minWidth: 190 }}>{champs ? "SUPER BOWL CHAMPIONS" : result.playoff && outcome === "LOSS" ? "ELIMINATED" : outcome}</div>
         <div style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
           <Side t={me} pts={us} win={us >= them} />
           <Side t={opp} pts={them} win={them >= us} />
@@ -94,23 +126,7 @@ export default function WeekResult({ result, teams, ui, sched, onClose, onBox, o
           <div style={{ marginTop: 8 }}><Btn onClick={() => onBox(g)} bg={C.bl} style={{ fontSize: 13 }}>Box score</Btn></div>
         </div>
       </div>
-      {others.length > 0 && (
-        <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.bd}` }}>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>AROUND THE LEAGUE</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {others.map((x, i) => {
-              const hw = x.hs > x.as, aw = x.as > x.hs;
-              return (
-                <button key={i} onClick={() => onBox(x)} style={{ background: C.bg, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "4px 8px", fontSize: 13, color: C.tx, cursor: "pointer" }}>
-                  <span style={{ fontWeight: aw ? 800 : 400, color: aw ? "#fff" : C.mt }}>{teams[x.a]?.ab} {x.as}</span>
-                  <span style={{ color: C.mt }}> @ </span>
-                  <span style={{ fontWeight: hw ? 800 : 400, color: hw ? "#fff" : C.mt }}>{teams[x.h]?.ab} {x.hs}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {others.length > 0 && <Others list={others} teams={teams} onBox={onBox} />}
     </div>
   );
 }
