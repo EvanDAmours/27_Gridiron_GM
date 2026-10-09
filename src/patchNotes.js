@@ -209,6 +209,7 @@ export const PATCH_NOTES = [
   { v: "1.61", date: "2026-10-09", title: "Career Years", notes: [
     "Every player has a form for each season: most play right to their rating, give or take a point or two, but now and then one has a career year (or a down year). It's fixed for the season, so a hot player stays hot, and a fresh roll comes the next year.",
     "A star in the form of his life gets fed: a hot back gets a few more carries before he's spelled, a hot receiver a few more targets, and elite players turn their chances into bigger plays.",
+    "Heavy workloads wear backs down: past about 18 carries in a game a back averages a little less, so even the best back in football on every snap breaks the rushing record only about one season in six.",
     "Record-breaking seasons happen again, just not every year: over 30 simulated seasons a single-season record (rushing, receiving or passing yards, receptions, TD passes or sacks) fell in about 1 season in 6 or 7, spread across different records. Typical league leaders stay in real-NFL ranges, and per-game league averages are unchanged.",
   ] },
 ];

@@ -317,11 +317,13 @@ export function step(g, call, bonus = 1) {
     // A back's share tapers off as his carries pile up in a game (fatigue): a workhorse gets ~20-24,
     // and the season record (416) stays out of reach.
     // A back in the form of his life gets fed a few more before the staff spells him.
-    const tired = ([p, w]) => { const n = g.box[off][p.id]?.rushAtt || 0, s0 = 12 + Math.max(0, p.form || 0) * 0.75; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 4)]; };
+    const tired = ([p, w]) => { const n = g.box[off][p.id]?.rushAtt || 0, s0 = 12 + Math.max(0, p.form || 0) * 0.5; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 4)]; };
     carrier = keeper ? qb : pickW(rand, o.rushers.map(tired)) || qb;
     const outside = call === "run_outside";
-    const mean = 3.6 + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.03 + (keeper ? 0.6 : 0);
-    const breakaway = rand() < clamp(0.04 + ((carrier?.spd || 80) - 82) * 0.003 + runE * 0.005 + (outside ? 0.025 : 0), 0.015, 0.12);
+    // Heavy workloads wear a back down: past ~18 carries in a game he averages a little less.
+    const load = carrier && !keeper ? Math.max(0, (g.box[off][carrier.id]?.rushAtt || 0) - 18) : 0;
+    const mean = 3.65 + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.022 + (keeper ? 0.6 : 0) - load * 0.06;
+    const breakaway = rand() < clamp(0.04 + ((carrier?.spd || 80) - 82) * 0.0018 - load * 0.003 + runE * 0.005 + (outside ? 0.025 : 0), 0.015, 0.12);
     yards = breakaway ? Math.round(mean + 5 + expo(rand, 11)) : Math.round(clamp(mean - 0.6 + gauss(rand) * (outside ? 3.6 : 2.8), -4, 14));
     if (yards > 0) yards = Math.round(yards * (bonus || 1));
     const cl = line(g, off, carrier);
