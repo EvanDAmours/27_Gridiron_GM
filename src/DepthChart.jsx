@@ -2,25 +2,29 @@
 // a 4-3 defense, and the kicker. Tap a spot to choose who starts there.
 import React, { useState } from "react";
 import { C, oC, pC, Btn, Face } from "./ui.jsx";
+import { snapOrdered } from "./snaps.js";
 
 // Starters per position: the same counts the game sim plays with.
 export const STARTERS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1 };
 
-// Your order for a position, with anyone you haven't placed behind them by OVR.
 // Default pecking order: the club's real (ESPN) depth chart rank "dk" for this season, then rating.
+// That only seeds the chart: once you order a position or set snap shares, yours win.
 export const byDepth = (a, b) => (a.dk ?? 99) - (b.dk ?? 99) || b.ovr - a.ovr;
 
-export function depthOrderFor(roster, depthOrder, pos) {
+// Your order for a position (anyone you haven't placed goes behind, by default order). Pass your
+// snap shares and the players getting the most snaps move to the front: snap share decides who starts.
+export function depthOrderFor(roster, depthOrder, pos, snaps) {
   const players = roster.filter((p) => p.pos === pos);
-  const order = (depthOrder[pos] || []).map((id) => players.find((p) => p.id === id)).filter(Boolean);
-  return [...order, ...players.filter((p) => !order.includes(p)).sort(byDepth)];
+  const order = ((depthOrder || {})[pos] || []).map((id) => players.find((p) => p.id === id)).filter(Boolean);
+  const base = [...order, ...players.filter((p) => !order.includes(p)).sort(byDepth)];
+  return snaps ? snapOrdered(pos, base, snaps) : base;
 }
 
 // Where each player sits: "QB1", "WR3", or "QB #2" for backups.
-export function depthSlots(roster, depthOrder) {
+export function depthSlots(roster, depthOrder, snaps) {
   const out = {};
   for (const pos of Object.keys(STARTERS)) {
-    depthOrderFor(roster, depthOrder, pos).forEach((p, i) => {
+    depthOrderFor(roster, depthOrder, pos, snaps).forEach((p, i) => {
       const starter = i < STARTERS[pos];
       out[p.id] = { starter, label: starter ? (STARTERS[pos] > 1 ? `${pos}${i + 1}` : `${pos}1`) : `${pos} #${i + 1}` };
     });
@@ -78,16 +82,20 @@ function Spot({ p, pos, idx, x, y, on, onClick }) {
 // Tackles and guards play either side: LT and RT share one pool, LG and RG another.
 export const PARTNER = { LT: "RT", RT: "LT", LG: "RG", RG: "LG" };
 
-export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions }) {
+export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps }) {
   const [side, setSide] = useState("offense");
   const [pick, setPick] = useState(null); // [pos, idx]
   const set = SETS[side];
-  const order = (pos) => depthOrderFor(roster, depthOrder, pos);
+  const order = (pos) => depthOrderFor(roster, depthOrder, pos, snaps);
+  // Choosing a starter here is your call: it clears snap shares you set at that position, so
+  // the new order takes over.
+  const clearSnaps = (...ps) => setSnaps && setSnaps((s) => { const n = { ...s }; for (const pos of ps) for (const p of roster) if (p.pos === pos) delete n[p.id]; return n; });
   const place = (pos, idx, player) => {
     const ids = order(pos).map((p) => p.id);
     const from = ids.indexOf(player.id);
     [ids[idx], ids[from]] = [ids[from], ids[idx]];
     setDepthOrder((d) => ({ ...d, [pos]: ids }));
+    clearSnaps(pos);
   };
   // Start a lineman from the other side here: he flips over, and the starter he
   // replaces takes his old spot on the other side.
@@ -98,6 +106,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
     const there = order(other).map((p) => (p.id === player.id ? cur?.id : p.id)).filter(Boolean);
     setPositions({ [player.id]: pos, ...(cur ? { [cur.id]: other } : {}) });
     setDepthOrder((d) => ({ ...d, [pos]: [player.id, ...here], [other]: there }));
+    clearSnaps(pos, other);
   };
   const rowLabel = (pos, i) => (i < STARTERS[pos] ? (STARTERS[pos] > 1 ? `${pos}${i + 1}` : `${pos}1`) : `${pos} #${i + 1}`);
   // Everyone who could line up here: for tackles and guards, both sides of the line.

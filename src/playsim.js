@@ -55,15 +55,15 @@ export function makeSide({ team, order, snaps, mod = 0, lean = 0 }) {
   const tackleW = defs.map(([p, w]) => [p, w]);
   const k = on("K")[0] || order("K")[0];
   const passLean = clamp(0.6 + (u.pass - u.run) * 0.008 + lean, 0.45, 0.75);
-  return { team, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70 };
+  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70 };
 }
 
 const emptyTeam = () => ({ plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
 
-export function createGame(home, away, { playoff = false, rand = Math.random } = {}) {
+export function createGame(home, away, { playoff = false, neutral = false, rand = Math.random } = {}) {
   const first = rand() < 0.5 ? "h" : "a";
   const g = {
-    sides: { h: home, a: away }, playoff, rand,
+    sides: { h: home, a: away }, playoff, neutral, rand,
     poss: first, firstPoss: first, yard: 25, down: 1, toGo: 10, qtr: 1, clock: 900,
     score: { h: 0, a: 0 }, done: false, ot: false, otScored: false, plays: 0,
     box: { h: {}, a: {} }, stats: { h: emptyTeam(), a: emptyTeam() },
@@ -90,7 +90,7 @@ const z = (v, k) => (v - LEAGUE[k][0]) / LEAGUE[k][1];
 // Matchup edges for the team with the ball (passing and running), in edge units.
 function edges(g) {
   const o = g.sides[g.poss], d = g.sides[other(g.poss)];
-  const extra = o.mod / POINTS_PER_EDGE + (g.poss === "h" ? HOME_EDGE : 0);
+  const extra = o.mod / POINTS_PER_EDGE + (g.poss === "h" && !g.neutral ? HOME_EDGE : 0);
   return { o, d, passE: (z(o.u.pass, "pass") - z(d.u.passD, "passD")) * SENSITIVITY + extra, runE: (z(o.u.run, "run") - z(d.u.runD, "runD")) * SENSITIVITY + extra, rushE: z(d.u.rush, "rush") - z(o.u.ol, "ol") };
 }
 

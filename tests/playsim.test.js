@@ -77,3 +77,11 @@ test("live play-by-play: calls work, games end, playoff games never tie", () => 
   assert.ok(g.done, "the game finishes");
   for (let i = 0; i < 300; i++) { const p = play(i % 32, (i * 5 + 3) % 32 === i % 32 ? (i + 1) % 32 : (i * 5 + 3) % 32, { playoff: true }); assert.notEqual(p.score.h, p.score.a); }
 });
+
+test("benching a starter at 0% hands his snaps to the next man up", async () => {
+  const { positionSnaps, snapOrdered } = await import("../src/snaps.js");
+  const qbs = [{ id: "w" }, { id: "m" }, { id: "d" }];
+  assert.deepEqual(positionSnaps("QB", qbs, { w: 0 }), { w: 0, m: 100, d: 0 });
+  assert.deepEqual(snapOrdered("QB", qbs, { d: 100 }).map((p) => p.id), ["d", "w", "m"]);
+  assert.deepEqual(snapOrdered("QB", qbs).map((p) => p.id), ["w", "m", "d"]);
+});

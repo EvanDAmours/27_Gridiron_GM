@@ -40,3 +40,84 @@ export function runFocusWeeks(roster, focus, weeks) {
   }
   return out;
 }
+
+// ---------- Playing time and milestones ----------
+
+// Share of his team's snaps a player took this season, 0-1 (applyGame adds each game's % to ss.snp).
+export const seasonSnapShare = (p, games = 17) => Math.min(1, (p.ss?.snp || 0) / (games * 100));
+
+const ri = (rand, a, b) => a + Math.floor(rand() * (b - a + 1));
+
+// The off-season OVR change from age and playing time. Young players who start grow far faster
+// than the same player on the bench (about 1.4x the growth at a full share, 0.4x with no snaps);
+// a prime-age starter can still tick up, and a veteran who sat gets a little rusty.
+export function seasonGrowth(p, share, rand = Math.random) {
+  const ovr = p.ovr, pot = p.pot ?? ovr;
+  if (p.age < 27) {
+    let g = ri(rand, -1, Math.round((pot - ovr) / 4) + 2);
+    if (g > 0) g = Math.round(g * (0.4 + share));
+    if (share >= 0.75 && ovr < pot && rand() < 0.5) g += 1;
+    if (share < 0.1 && rand() < 0.3) g -= 1;
+    return g;
+  }
+  if (p.age <= 30) {
+    let g = ri(rand, -2, 2);
+    if (share >= 0.75 && rand() < 0.35) g += 1;
+    if (share < 0.1 && rand() < 0.35) g -= 1;
+    return g;
+  }
+  return -ri(rand, 1, p.age > 34 ? 5 : 3);
+}
+
+// Development-trait growth, scaled by playing time (a generational talent still needs the field).
+export const traitGrowthScale = (share) => 0.5 + share * 0.5;
+
+// Big statistical seasons. Each one reached is worth +1 OVR (two at most).
+export const MILESTONES = [
+  { key: "passYds", pos: ["QB"], at: 4500, label: "4,500 passing yards" },
+  { key: "passTD", pos: ["QB"], at: 35, label: "35 TD passes" },
+  { key: "rushYds", pos: ["RB", "QB"], at: 1400, label: "1,400 rushing yards" },
+  { key: "rushTD", pos: ["RB"], at: 14, label: "14 rushing TDs" },
+  { key: "recYds", pos: ["WR"], at: 1400, label: "1,400 receiving yards" },
+  { key: "recYds", pos: ["TE"], at: 1000, label: "1,000 receiving yards" },
+  { key: "recTD", pos: ["WR", "TE"], at: 12, label: "12 TD catches" },
+  { key: "sacks", pos: ["DL", "LB"], at: 10, label: "10 sacks" },
+  { key: "tkl", pos: ["LB", "S"], at: 130, label: "130 tackles" },
+  { key: "ints", pos: ["CB", "S", "LB"], at: 6, label: "6 interceptions" },
+];
+// League leaders. Leading the NFL in one of these earns a development-trait upgrade (or +1 OVR
+// once a player is past the age where traits matter).
+export const LEADERS = [
+  { key: "passYds", label: "passing yards" }, { key: "passTD", label: "TD passes" },
+  { key: "rushYds", label: "rushing yards" }, { key: "rushTD", label: "rushing TDs" },
+  { key: "recYds", label: "receiving yards" }, { key: "rec", label: "receptions" }, { key: "recTD", label: "TD catches" },
+  { key: "sacks", label: "sacks" }, { key: "ints", label: "interceptions" }, { key: "tkl", label: "tackles" },
+];
+const NEXT_TRAIT = { late: "star", normal: "star", star: "superstar" };
+
+// Who earned what this season across the league: id -> { hits: [labels], leads: [labels] }.
+export function seasonAwards(teams) {
+  const all = teams.flatMap((t) => t.roster || []);
+  const out = {};
+  const get = (p) => (out[p.id] ||= { hits: [], leads: [] });
+  for (const m of MILESTONES) for (const p of all) if (m.pos.includes(p.pos) && (p.ss?.[m.key] || 0) >= m.at) get(p).hits.push(m.label);
+  for (const l of LEADERS) {
+    let best = null;
+    for (const p of all) if ((p.ss?.[l.key] || 0) > (best?.ss?.[l.key] || 0)) best = p;
+    if (best) get(best).leads.push(`led the NFL in ${l.label} (${best.ss[l.key]})`);
+  }
+  return out;
+}
+
+// What a player's season earns him. devTrait: his trait now (devOf). Returns { ovr, dev, notes }.
+export function awardGrowth(p, award, devTrait) {
+  if (!award) return { ovr: 0, dev: null, notes: [] };
+  let ovr = Math.min(2, award.hits.length), dev = null;
+  const notes = [...award.hits];
+  if (award.leads.length) {
+    notes.push(...award.leads);
+    if (p.age <= 26 && NEXT_TRAIT[devTrait]) dev = NEXT_TRAIT[devTrait];
+    else ovr += 1;
+  }
+  return { ovr, dev, notes };
+}

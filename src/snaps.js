@@ -21,12 +21,13 @@ export function positionSnaps(pos, players, overrides = {}) {
   const scale = fixedSum > budget ? budget / fixedSum : 1;
   for (const p of fixed) out[p.id] = Math.floor(Math.min(100, Math.max(0, overrides[p.id])) * scale);
   fixedSum = fixed.reduce((s, p) => s + out[p.id], 0);
-  // Everyone else shares what's left, weighted by where they sit on the depth chart.
+  // Everyone else shares what's left, weighted by where they sit among the players you haven't
+  // set (bench your QB1 at 0% and the next QB in line takes his snaps).
   const free = players.filter((p) => overrides[p.id] == null);
   const base = DEFAULT[pos] || [100];
   const weight = (i) => base[i] ?? 0;
   let left = budget - fixedSum;
-  const wts = free.map((p) => weight(players.indexOf(p)));
+  const wts = free.map((p, i) => weight(i));
   let open = free.map((p, i) => i).filter((i) => wts[i] > 0);
   for (const p of free) out[p.id] = 0;
   // Hand out the remainder in proportion, capping anyone who hits 100%.
@@ -46,7 +47,7 @@ export function positionSnaps(pos, players, overrides = {}) {
     open = next;
   }
   // Rounding leftovers go to the top of the depth chart.
-  for (const p of free) { if (left <= 0) break; if (wts[players.indexOf(p)] > 0) { const add = Math.min(left, 100 - out[p.id]); out[p.id] += add; left -= add; } }
+  for (const [i, p] of free.entries()) { if (left <= 0) break; if (wts[i] > 0) { const add = Math.min(left, 100 - out[p.id]); out[p.id] += add; left -= add; } }
   return out;
 }
 
@@ -55,4 +56,11 @@ export function teamSnaps(order, overrides = {}) {
   const out = {};
   for (const pos of Object.keys(SNAP_SLOTS)) Object.assign(out, positionSnaps(pos, order(pos), overrides));
   return out;
+}
+
+// A position's players with whoever gets the most snaps first. Your snap settings decide who
+// starts; players you haven't set keep their depth-chart order (ties never reshuffle).
+export function snapOrdered(pos, players, overrides = {}) {
+  const s = positionSnaps(pos, players, overrides);
+  return players.map((p, i) => [p, i]).sort((a, b) => (s[b[0].id] || 0) - (s[a[0].id] || 0) || a[1] - b[1]).map((x) => x[0]);
 }

@@ -1,7 +1,7 @@
 // The front office at a glance: money, morale and the shape of the roster, in big readable cards.
 import React from "react";
 import { C, oC, Bdg, Face } from "./ui.jsx";
-import { byDepth } from "./DepthChart.jsx";
+import { depthOrderFor } from "./DepthChart.jsx";
 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "14px 16px", marginBottom: 12 };
@@ -24,7 +24,7 @@ function Stat({ title, value, color, sub, meter }) {
   );
 }
 
-export default function FrontOffice({ team, yr, cap, floor, capSpace, capHit, resignAsk, setSel, depthOrder, children }) {
+export default function FrontOffice({ team, yr, cap, floor, capSpace, capHit, resignAsk, setSel, depthOrder, snaps, children }) {
   const roster = team.roster || [];
   const space = capSpace(team), payroll = capHit(team);
   const morale = team.morale || 50, chem = team.chemistry || 75, rep = team.gmRep || 50;
@@ -37,11 +37,7 @@ export default function FrontOffice({ team, yr, cap, floor, capSpace, capHit, re
   const top = [...roster].sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, 8);
   const committed = [1, 2, 3].map((k) => ({ yr: yr + k, v: roster.filter((p) => (p.contract || 0) > k).reduce((s, p) => s + (p.salary || 0), 0) }));
   const expiring = roster.filter((p) => p.contract === 1).sort((a, b) => b.ovr - a.ovr);
-  const order = (pos) => {
-    const ps = roster.filter((p) => p.pos === pos && !p.injured);
-    const o = ((depthOrder || {})[pos] || []).map((id) => ps.find((p) => p.id === id)).filter(Boolean);
-    return [...o, ...ps.filter((p) => !o.includes(p)).sort(byDepth)];
-  };
+  const order = (pos) => depthOrderFor(roster.filter((p) => !p.injured), depthOrder, pos, snaps);
   const td = { padding: "8px 6px", borderBottom: `1px solid ${C.bd}55`, fontSize: 15 };
 
   return (

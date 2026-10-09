@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { focusChance, perSeason, runFocusWeeks } from "../src/development.js";
+import { focusChance, perSeason, runFocusWeeks, seasonGrowth, seasonSnapShare, seasonAwards, awardGrowth } from "../src/development.js";
 
 const player = (o) => ({ id: "p" + Math.random(), pos: "DL", age: 22, ovr: 80, pot: 90, dev: "superstar", ...o });
 
@@ -30,4 +30,36 @@ test("injured or missing players don't train", () => {
   const p = player({ injured: true });
   assert.deepEqual(runFocusWeeks([p], { off: p.id, def: "gone" }, 17), []);
   assert.equal(p.ovr, 80);
+});
+
+const seq = (vals) => { let i = 0; return () => vals[i++ % vals.length]; };
+const avg = (f, n = 4000) => { let s = 0; for (let i = 0; i < n; i++) s += f(); return s / n; };
+
+test("young players who play develop faster than the same player on the bench", () => {
+  const p = { age: 22, ovr: 70, pot: 86 };
+  const starter = avg(() => seasonGrowth(p, 1)), bench = avg(() => seasonGrowth(p, 0));
+  assert.ok(starter > bench + 2, `starter ${starter} vs bench ${bench}`);
+});
+
+test("snap share counts the team's games", () => {
+  assert.equal(seasonSnapShare({ ss: { snp: 1700 } }), 1);
+  assert.equal(seasonSnapShare({ ss: { snp: 850 } }), 0.5);
+  assert.equal(seasonSnapShare({ ss: {} }), 0);
+});
+
+test("milestones and league leads pay off", () => {
+  const teams = [{ roster: [
+    { id: "a", pos: "DL", age: 24, ss: { sacks: 14 } },
+    { id: "b", pos: "DL", age: 31, ss: { sacks: 11 } },
+    { id: "c", pos: "WR", age: 25, ss: { recYds: 900 } },
+  ] }];
+  const aw = seasonAwards(teams);
+  assert.deepEqual(aw.a.hits, ["10 sacks"]);
+  assert.ok(aw.a.leads[0].includes("sacks"));
+  assert.ok(aw.c.leads.length && !aw.c.hits.length); // only receiver: leads but no milestone
+  const young = awardGrowth(teams[0].roster[0], aw.a, "normal");
+  assert.equal(young.ovr, 1); assert.equal(young.dev, "star");
+  const vet = awardGrowth({ age: 31 }, { hits: ["10 sacks"], leads: ["led the NFL in sacks (11)"] }, "normal");
+  assert.equal(vet.ovr, 2); assert.equal(vet.dev, null);
+  assert.deepEqual(awardGrowth({}, undefined, "normal"), { ovr: 0, dev: null, notes: [] });
 });

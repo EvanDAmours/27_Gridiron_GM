@@ -1,18 +1,18 @@
 // The franchise hub, laid out like Madden's: a menu on the left, this week's matchup in the
 // middle (week strip, both logos, team ratings), and top stories on the right.
 import React from "react";
-import { C, TeamLogo, Btn } from "./ui.jsx";
+import { C, TeamLogo, Btn, kickoff } from "./ui.jsx";
 import { unitRatings } from "./gamesim.js";
-import { byDepth } from "./DepthChart.jsx";
+import { depthOrderFor } from "./DepthChart.jsx";
 import { ROUND_NAMES } from "./playoffs.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const PHASE = { preseason: "Preseason", combine: "Offseason: NFL Combine", resign: "Offseason: Re-sign Week", freeagency: "Offseason: Free Agency", draft: "Offseason: NFL Draft" };
 
-// Madden-style team ratings from each club's healthy starters.
-export function teamRatings(t) {
+// Madden-style team ratings from each club's healthy starters (yours by your depth chart and snaps).
+export function teamRatings(t, depthOrder, snaps) {
   const healthy = (t.roster || []).filter((p) => !p.injured && !p.holdout);
-  const u = unitRatings((pos) => healthy.filter((p) => p.pos === pos).sort(byDepth));
+  const u = unitRatings((pos) => depthOrderFor(healthy, depthOrder, pos, snaps));
   const off = Math.round(u.pass * 0.6 + u.run * 0.4), def = Math.round(u.passD * 0.6 + u.runD * 0.4);
   return { ovr: Math.round(off * 0.5 + def * 0.5), off, def };
 }
@@ -44,7 +44,7 @@ function Side({ t, rating, other, align }) {
   );
 }
 
-export default function HomeScreen({ teams, ui, sched, wk, sp, yr, pb, byeMap, news, messages, menu, primary, onNav }) {
+export default function HomeScreen({ teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, messages, menu, primary, onNav }) {
   const me = teams[ui];
   const inSeason = sp === "regular" || sp === "preseason";
   const nextWk = sp === "preseason" ? 1 : wk + 1;
@@ -60,7 +60,8 @@ export default function HomeScreen({ teams, ui, sched, wk, sp, yr, pb, byeMap, n
   // Week strip: last week, this week, and the next few.
   const strip = inSeason ? Array.from({ length: 5 }, (_, i) => Math.max(1, Math.min(14, nextWk - 1)) + i).filter((w) => w <= 18) : [];
   const away = game && teams[game.a], home = game && teams[game.h];
-  const ra = away && teamRatings(away), rh = home && teamRatings(home);
+  const mine = (t) => (t === me ? [depthOrder, playingTime] : []);
+  const ra = away && teamRatings(away, ...mine(away)), rh = home && teamRatings(home, ...mine(home));
   const bg = `radial-gradient(ellipse at 50% 35%, ${me.clr}55, transparent 60%), linear-gradient(160deg, #0b2a33, #050b12 70%)`;
   return (
     <div style={{ borderRadius: 14, overflow: "hidden", background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, position: "relative" }}>
@@ -111,7 +112,7 @@ export default function HomeScreen({ teams, ui, sched, wk, sp, yr, pb, byeMap, n
                 <div style={{ fontSize: 36, fontWeight: 900, color: "#e2e8f0" }}>AT</div>
                 <span className="hm-logo"><TeamLogo t={home} sz={150} /></span>
               </div>
-              <div style={{ textAlign: "center", fontSize: 15, color: "#cbd5e1", marginBottom: 14 }}>{sp === "playoffs" && pb?.rd === 4 ? "Super Bowl · neutral site" : `1:00 PM · ${home.city}`}</div>
+              <div style={{ textAlign: "center", fontSize: 15, color: "#cbd5e1", marginBottom: 14 }}>{sp === "playoffs" && pb?.rd === 4 ? "Super Bowl · neutral site" : game.date ? `${kickoff(game)} · ${game.venue}${game.intl ? `, ${game.city}` : ""}` : `1:00 PM · ${home.city}`}</div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
                 <Side t={away} rating={ra} other={rh} align="left" />
                 <Side t={home} rating={rh} other={ra} align="right" />

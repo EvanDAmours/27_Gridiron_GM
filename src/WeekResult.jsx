@@ -110,7 +110,7 @@ export default function WeekResult({ result, teams, ui, sched, onClose, onBox, o
     <div style={{ ...card, borderColor: col, boxShadow: `0 0 0 1px ${col}55, 0 10px 30px #0008` }}>
       {close}
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.mt }}>{result.playoff ? result.round.toUpperCase() : `WEEK ${result.wk}`} · {result.round === "Super Bowl" ? "NEUTRAL SITE" : home ? "HOME" : "AWAY"}</span>
+        <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.mt }}>{result.playoff ? result.round.toUpperCase() : `WEEK ${result.wk}`} · {result.round === "Super Bowl" || g.neutral ? `NEUTRAL SITE${g.intl ? ` · ${(g.city || "").toUpperCase()}` : ""}` : home ? "HOME" : "AWAY"}</span>
         <span style={{ fontSize: 15, color: "#cbd5e1" }}>{fmtRec(me)} · {divPlace(teams, me)}</span>
       </div>
       <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap", marginTop: 6 }}>

@@ -1,7 +1,7 @@
 // The schedule: your 17 games and bye week as one clean list, the playoff tree under it (live
 // once the playoffs start, projected before), and every week's league games in a second tab.
 import React, { useState } from "react";
-import { C, Btn, TeamLogo } from "./ui.jsx";
+import { C, Btn, TeamLogo, kickoff } from "./ui.jsx";
 import PlayoffBracket from "./PlayoffBracket.jsx";
 import { nflSeeds, makeBracket } from "./playoffs.js";
 
@@ -39,12 +39,12 @@ function MySchedule({ g }) {
                 <td style={{ ...td, color: isNext ? C.gn : C.mt, fontWeight: 800, width: 64, whiteSpace: "nowrap" }}>WK {week}</td>
                 <td style={td}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ color: C.mt, fontWeight: 700, width: 22 }}>{home ? "vs" : "@"}</span>
+                    <span style={{ color: C.mt, fontWeight: 700, width: 22 }}>{game.neutral ? "vs" : home ? "vs" : "@"}</span>
                     <TeamLogo t={opp} sz={34} />
                     <span>
                       <span style={{ fontWeight: 800 }}>{opp.city} {opp.name}</span>
                       <span style={{ display: "block", fontSize: 13, color: C.mt }}>
-                        {rec(opp)}{opp.c === me.c && opp.d === me.d ? " · Division" : ""}{rivalId === opp.id ? " · Rival" : ""}{game.intl ? " · International" : ""}
+                        {rec(opp)}{opp.c === me.c && opp.d === me.d ? " · Division" : ""}{rivalId === opp.id ? " · Rival" : ""}{game.intl ? ` · ${game.city}` : ""}{!game.played && game.date ? ` · ${kickoff(game)}` : ""}
                       </span>
                     </span>
                   </span>
@@ -101,7 +101,7 @@ function LeagueSchedule({ g }) {
               {side(x.a, x.played ? x.as : null, aw)}
               {side(x.h, x.played ? x.hs : null, hw)}
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 13, color: C.mt }}>
-                <span>{x.played ? "FINAL" : `@ ${teams[x.h].name}`}{x.intl ? " · International" : ""}</span>
+                <span>{x.played ? "FINAL" : x.date ? kickoff(x) : `@ ${teams[x.h].name}`}{x.intl ? ` · ${x.city}` : ""}</span>
                 <span style={{ marginLeft: "auto" }}>
                   {x.played && (x.boxH || x.boxA) && <Btn onClick={() => onBox(x)} bg={C.bd} c="#e2e8f0" style={{ fontSize: 13, padding: "5px 10px" }}>Box score</Btn>}
                   {!x.played && !mine && sp === "regular" && week === wk + 1 && onWatch && <Btn onClick={() => onWatch(x)} bg={C.bd} c="#7dd3fc" style={{ fontSize: 13, padding: "5px 10px" }}>Watch</Btn>}
