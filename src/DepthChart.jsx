@@ -7,10 +7,13 @@ import { C, oC, pC, Btn, Face } from "./ui.jsx";
 export const STARTERS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1 };
 
 // Your order for a position, with anyone you haven't placed behind them by OVR.
+// Default pecking order: the club's real (ESPN) depth chart rank "dk" for this season, then rating.
+export const byDepth = (a, b) => (a.dk ?? 99) - (b.dk ?? 99) || b.ovr - a.ovr;
+
 export function depthOrderFor(roster, depthOrder, pos) {
   const players = roster.filter((p) => p.pos === pos);
   const order = (depthOrder[pos] || []).map((id) => players.find((p) => p.id === id)).filter(Boolean);
-  return [...order, ...players.filter((p) => !order.includes(p)).sort((a, b) => b.ovr - a.ovr)];
+  return [...order, ...players.filter((p) => !order.includes(p)).sort(byDepth)];
 }
 
 // Where each player sits: "QB1", "WR3", or "QB #2" for backups.

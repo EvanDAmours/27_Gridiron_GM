@@ -1,6 +1,7 @@
 // The live-game field: both teams' starters lined up in formation at the line of scrimmage,
 // redrawn (and slid into place) after every play. Offense drives left to right.
 import React from "react";
+import { byDepth } from "./DepthChart.jsx";
 
 const FORMATION = {
   // [pos, depth index, yards behind (-) / past (+) the line, yards from the middle].
@@ -15,14 +16,14 @@ const xOf = (yard) => EZ + (yard / 100) * (W - 2 * EZ);
 const yOf = (lat) => H / 2 + lat * (H / 53.3);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-// A team's healthy starters at each position, in depth-chart order (yours) or by OVR.
+// A team's healthy starters at each position, in depth-chart order.
 function starters(team, depth) {
   const healthy = (team?.roster || []).filter((p) => !p.injured && !p.holdout && !p.suspended);
   const by = {};
   for (const pos of ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S"]) {
     const ap = healthy.filter((p) => p.pos === pos);
     const o = ((depth && depth[pos]) || []).map((id) => ap.find((p) => p.id === id)).filter(Boolean);
-    by[pos] = [...o, ...ap.filter((p) => !o.includes(p)).sort((a, b) => b.ovr - a.ovr)];
+    by[pos] = [...o, ...ap.filter((p) => !o.includes(p)).sort(byDepth)];
   }
   return by;
 }

@@ -5,9 +5,10 @@ Inputs (downloaded into a work dir you pass as the first argument):
                         the __NEXT_DATA__ ratingDetails.items lists)
   roster2026.csv        nflverse roster_2026.csv (draft slots), from
                         https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_2026.csv
+  depth/<ABBR>.json     ESPN depth charts (optional), from scripts/fetch-espn-depth.py
 Usage: python3 scripts/build-madden27.py /tmp/m27
 """
-import csv, hashlib, json, random, re, sys, unicodedata
+import csv, hashlib, json, os, random, re, sys, unicodedata
 from collections import defaultdict
 
 SEASON = 2026
@@ -156,12 +157,44 @@ for p in eap:
         "attrs": ATTRS[pos](s), "sal": sal, "yrs": yrs,
     })
 
+# ---------- Depth charts ----------
+# ESPN's depth chart sets each club's pecking order: everyone on it makes the 53, starting
+# offensive linemen play the spot ESPN lists them at, and each player gets a depth rank "dk"
+# at his position (0 = starter). Within a depth level (ESPN's 3-4 OLBs, nickel backs and the
+# like don't map one-to-one onto the game's spots) the better-rated player goes first.
+ESPN_AB = {"WAS": "WSH"}
+OLS = {"LT", "LG", "C", "RG", "RT"}
+def espn_depth(ab, players):
+    f = f"{src}/depth/{ESPN_AB.get(ab, ab)}.json"
+    if not os.path.exists(f): return {}
+    by = {}
+    for p in players: by.setdefault(key(p["name"]), p)
+    level = {}
+    for chart in json.load(open(f))["depthchart"]:
+        for slot, v in chart["positions"].items():
+            if slot in ("pr", "kr", "h", "ls", "p"): continue
+            for lvl, a in enumerate(v["athletes"]):
+                p = by.get(key(a["displayName"]))
+                if not p: continue
+                lvl += 5 if slot == "fb" else 0  # a fullback backs up the running backs
+                sp = v["position"]["abbreviation"]
+                if lvl == 0 and sp in OLS and p["pos"] in OLS: p["pos"] = sp
+                level[id(p)] = min(level.get(id(p), 99), lvl)
+    return level
+
 out, fa = [], []
+depth_hits = 0
 for label, meta in TEAMS.items():
-    ps = sorted(teams[label], key=lambda x: -x["ovr"])
+    level = espn_depth(meta[2], teams[label])
+    depth_hits += len(level)
+    # Depth-chart players first, then by rating.
+    ps = sorted(teams[label], key=lambda x: (id(x) not in level, -x["ovr"]))
     keep = []
     for pos, n in NEED.items(): keep += [x for x in ps if x["pos"] == pos][:n]
     keep += [x for x in ps if x not in keep][: ROSTER - len(keep)]
+    for pos in NEED:
+        ranked = sorted([x for x in keep if x["pos"] == pos and id(x) in level], key=lambda x: (level[id(x)], -x["ovr"]))
+        for i, x in enumerate(ranked): x["dk"] = i
     rest = [x for x in ps if x not in keep]
     squad = sorted([x for x in rest if x["yp"] <= 3], key=lambda x: -x["ovr"])[:PS]
     # Keep every club playable: between $125M and $195M to start under the game's $200M cap.
@@ -174,7 +207,8 @@ for label, meta in TEAMS.items():
     city, name, ab, c, d, clr, ac = meta
     out.append({"city": city, "name": name, "ab": ab, "c": c, "d": d, "clr": clr, "ac": ac, "roster": keep, "ps": squad})
     print(f"{ab:4} {len(keep)} +{len(squad)} PS +{len([x for x in rest if x not in squad])} FA  payroll ${sum(x['sal'] for x in keep):.0f}M  top {keep[0]['name']} {keep[0]['ovr']}")
-json.dump({"source": "EA SPORTS Madden NFL 27 ratings (Week 3)", "season": SEASON, "teams": out, "fa": sorted(fa, key=lambda x: -x["ovr"])}, open("src/data/madden27.json", "w"), separators=(",", ":"))
+print(f"ESPN depth charts matched {depth_hits} players")
+json.dump({"source": "EA SPORTS Madden NFL 27 ratings (Week 3); depth charts from ESPN", "season": SEASON, "teams": out, "fa": sorted(fa, key=lambda x: -x["ovr"])}, open("src/data/madden27.json", "w"), separators=(",", ":"))
 from collections import Counter
 print("development:", dict(Counter(x["dev"] for t in out for x in t["roster"] + t["ps"])))
 xfs = [x for t in out for x in t["roster"] + t["ps"] if x["xf"]]
