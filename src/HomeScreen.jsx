@@ -92,7 +92,7 @@ function Injuries({ teams, ui, onNav }) {
   );
 }
 
-export default function HomeScreen({ teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav }) {
+export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav }) {
   const me = teams[ui];
   const [panel, setPanel] = useState("stories");
   const inSeason = sp === "regular" || sp === "preseason";
@@ -117,7 +117,7 @@ export default function HomeScreen({ teams, ui, depthOrder, playingTime, sched, 
       <style>{"@media (max-width: 760px) { .hm-main { order: -1; padding: 12px !important } .hm-menu, .hm-side { max-width: none !important; border: 0 !important } .hm-logo > * { width: clamp(72px, 26vw, 150px) !important; height: clamp(72px, 26vw, 150px) !important } }"}</style>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 0 }}>
         {/* Menu */}
-        <div className="hm-menu" style={{ flex: "1 1 220px", maxWidth: 300, padding: 18, borderRight: `1px solid #ffffff14`, display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+        <div className="hm-menu" style={{ flex: "1 1 220px", maxWidth: 300, padding: 18, borderRight: `1px solid #ffffff14`, display: mobile ? "none" : "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
           <div style={{ fontSize: 18, fontWeight: 800, paddingBottom: 8, borderBottom: "1px solid #ffffff22", marginBottom: 8 }}>Menu</div>
           {menu.map((m, i) => (
             <button key={m.label} onClick={m.onClick} style={{ textAlign: "left", background: i === 0 ? "#00000055" : "transparent", border: i === 0 ? "1px solid #f97316" : "1px solid transparent", borderRadius: 8, padding: i === 0 ? "10px 12px" : "6px 12px", color: "#fff", cursor: "pointer" }}>

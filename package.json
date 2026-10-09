@@ -14,7 +14,9 @@
     "build": "vite build",
     "build:pages": "vite build && node scripts/postbuild-pages.mjs",
     "preview": "vite preview",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "build:mobile": "VITE_MOBILE=1 vite build --outDir dist-mobile --emptyOutDir",
+    "build:pages:all": "VITE_APP_BASE_PATH=/27_Gridiron_GM/ npm run build:pages && VITE_APP_BASE_PATH=/27_Gridiron_GM/mobile/ npm run build:mobile && rm -rf dist/mobile && cp -r dist-mobile dist/mobile"
   },
   "dependencies": {
     "lz-string": "^1.5.0",
