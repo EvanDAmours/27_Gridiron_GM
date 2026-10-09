@@ -106,6 +106,8 @@ function genProDay(pos,ovr){const c=genCombine(pos,ovr);if(!c)return null;return
 function combToPhys(c){if(!c)return{spd:60,str:60,agi:60,end:60,acc:60,jmp:60};return{spd:cl(Math.round(80-(c.fortyYd-4.4)*30),30,99),str:cl(Math.round(40+c.bench*2.2),30,99),agi:cl(Math.round(80-(c.threeCone-6.8)*25),30,99),jmp:cl(Math.round(20+c.vert*1.8),30,99),acc:cl(Math.round(80-(c.shuttle-4.1)*30),30,99),end:cl(Gc(70,8,40,99),40,99)};}
 function genPAttrs(pos,ovr){const at={};(PA[pos]||[]).forEach(a=>{at[a]=cl(Gc(ovr,8,30,99),30,99);});return at;}
 const SCREENS=new Set(['dashboard','roster','depth','schedule','standings','stats','scouting','draft','trade','freeagency','coaching','playoffs','hub','trophies','log','livesim','god','dev']);
+// Game clock as m:ss.
+const gameClock=s=>{const t=Math.max(0,Math.round(s||0));return`${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;};
 function emptySS(pos){const b={gp:0,gs:0};if(pos==="QB")return{...b,comp:0,att:0,passYds:0,passTD:0,passInt:0,sk:0,skYds:0,rushAtt:0,rushYds:0,rushTD:0,fum:0,rate:0};if(pos==="RB")return{...b,rushAtt:0,rushYds:0,rushTD:0,rec:0,tgt:0,recYds:0,recTD:0,fum:0};if(pos==="WR")return{...b,tgt:0,rec:0,recYds:0,recTD:0,rushAtt:0,rushYds:0};if(pos==="TE")return{...b,tgt:0,rec:0,recYds:0,recTD:0};if(pos==="DL")return{...b,tkl:0,ast:0,sacks:0,tfl:0,ff:0,qbH:0,pd:0};if(pos==="LB")return{...b,tkl:0,ast:0,sacks:0,tfl:0,ints:0,ff:0,pd:0};if(pos==="CB")return{...b,tkl:0,ast:0,ints:0,pd:0,ff:0};if(pos==="S")return{...b,tkl:0,ast:0,ints:0,pd:0,sacks:0,ff:0};if(pos==="K")return{...b,fgM:0,fgA:0,xpM:0,xpA:0,pts:0,lng:0};return{...b};}
 
 // College stats generation based on years played
@@ -511,7 +513,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   const[pressConf,setPressConf]=useState({active:false,q:0,answered:false});
   // Live sim
   const[liveSim,setLiveSim]=useState(null);const[liveLog,setLiveLog]=useState([]);
-  const[liveScore,setLiveScore]=useState({h:0,a:0});const[liveQtr,setLiveQtr]=useState(1);
+  const[liveScore,setLiveScore]=useState({h:0,a:0});const[liveQtr,setLiveQtr]=useState(1);const[liveClock,setLiveClock]=useState(900);
   const[liveYard,setLiveYard]=useState(25);const[livePoss,setLivePoss]=useState("h");
   const[liveDown,setLiveDown]=useState(1);const[liveToGo,setLiveToGo]=useState(10);
   const[livePlay,setLivePlay]=useState(0);const[liveDone,setLiveDone]=useState(false);
@@ -838,13 +840,13 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
     if(!ev)return;
     setLastLivePlay(ev);
     const view=liveView(g.box);
-    setLiveLog(l=>[...l,{qtr:ev.qtr>4?"OT":ev.qtr,text:ev.text+(ev.note&&ev.note!=="Final."?` — ${ev.note}`:""),type:ev.td?"td":ev.type,poss:offSide}]);
-    setLiveStats(view);setLiveScore({...g.score});setLiveYard(g.yard);setLivePoss(g.poss);setLiveDown(g.down);setLiveToGo(g.toGo);setLiveQtr(g.ot?5:g.qtr);setLivePlay(n=>n+1);setFourthChoice(null);
+    setLiveLog(l=>[...l,{qtr:ev.qtr>4?"OT":ev.qtr,clock:ev.clock,text:ev.text+(ev.note&&ev.note!=="Final."?` — ${ev.note}`:""),type:ev.td?"td":ev.type,poss:offSide}]);
+    setLiveStats(view);setLiveScore({...g.score});setLiveYard(g.yard);setLivePoss(g.poss);setLiveDown(g.down);setLiveToGo(g.toGo);setLiveQtr(g.ot?5:g.qtr);setLiveClock(g.done?0:g.clock);setLivePlay(n=>n+1);setFourthChoice(null);
     const _momDelta=ev.td?(offSide===userSide?15:-12):(ev.turnover||ev.type==="int"||ev.type==="fumble")?(offSide===userSide?-12:12):ev.yards>=15?(offSide===userSide?6:-4):ev.yards<0?(offSide===userSide?-4:4):0;setLiveMomentum(m=>cl(m+_momDelta,0,100));
     if(g.done){let best=null,bestVal=0;for(const side of["h","a"])for(const ps of Object.values(view[side]||{})){const val=(ps.passYds||0)+(ps.rushYds||0)+(ps.recYds||0)+(ps.td||0)*30+(ps.sack||0)*15+(ps.int||0)*25;if(val>bestVal){bestVal=val;best={...ps,side};}}setLivePOG(best);setLiveDone(true);track('live_game_finish');}
   }
 
-  function startLiveSim(game){window._gmDepthOrder=depthOrder;window._gmPlayingTime=playingTime;const _plan=id=>id===ui?gamePlan:{off:'balanced',def:'balanced'};const su=gameSetup(teams[game.h],teams[game.a],_plan(game.h),_plan(game.a),null);const g=createGame(su.home,su.away,{playoff:!!game.playoff,neutral:!!game.neutral||game.wk==='P4'});liveGameRef.current={g,hSnaps:su.hSnaps,aSnaps:su.aSnaps};setLiveSim(game);setLiveLog([]);setLiveStats({h:{},a:{}});setLiveScore({h:0,a:0});setLiveMomentum(50);setLiveQtr(1);setLiveYard(g.yard);setLivePoss(g.poss);setLiveDown(1);setLiveToGo(10);setLivePlay(0);setLiveDone(false);setLivePaused(false);setLivePOG(null);setLastLivePlay(null);setLiveAwaitingCall(false);setLivePhase(null);setLivePendingCall(null);setLiveQteBar(50);setLiveRecTargets([]);setShowLiveEnd(false);setTab("livesim");track('live_game_start');}
+  function startLiveSim(game){window._gmDepthOrder=depthOrder;window._gmPlayingTime=playingTime;const _plan=id=>id===ui?gamePlan:{off:'balanced',def:'balanced'};const su=gameSetup(teams[game.h],teams[game.a],_plan(game.h),_plan(game.a),null);const g=createGame(su.home,su.away,{playoff:!!game.playoff,neutral:!!game.neutral||game.wk==='P4'});liveGameRef.current={g,hSnaps:su.hSnaps,aSnaps:su.aSnaps};setLiveSim(game);setLiveLog([]);setLiveStats({h:{},a:{}});setLiveScore({h:0,a:0});setLiveMomentum(50);setLiveQtr(1);setLiveClock(g.clock);setLiveYard(g.yard);setLivePoss(g.poss);setLiveDown(1);setLiveToGo(10);setLivePlay(0);setLiveDone(false);setLivePaused(false);setLivePOG(null);setLastLivePlay(null);setLiveAwaitingCall(false);setLivePhase(null);setLivePendingCall(null);setLiveQteBar(50);setLiveRecTargets([]);setShowLiveEnd(false);setTab("livesim");track('live_game_start');}
 
   // FEATURE 13: Draft Pick Trade generator
   const genDraftPickTrade=()=>{const picks=draftPicks;const idx=draftIdx;if(idx>=picks.length)return;const cur=picks[idx];if(cur.owner!==ui)return;const aiTms=teams.map((_,i)=>i).filter(i=>i!==ui);const aiTm=aiTms[R(0,aiTms.length-1)];const theirPick=draftPicks.find(pk=>pk.owner===aiTm&&pk.overall>cur.overall+16);const theirP=teams[aiTm].roster.filter(p=>p.ovr>=65&&p.ovr<=78).sort((a,b)=>b.ovr-a.ovr)[0];if(!theirPick&&!theirP)return;setDraftPickTrade({pick:cur,aiTm,aiTmName:teams[aiTm]?.name||TEAMS[aiTm]?.name,offeredPlayer:theirP||null,offeredPick:theirPick||null});};
@@ -2145,14 +2147,14 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
 
     {/* LIVE SIM */}
     {tab==="livesim"&&liveSim&&<div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6,marginBottom:6}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:14,height:14,borderRadius:3,background:TEAMS[liveSim.h].clr}}/><span style={{fontWeight:900,fontSize:16}}>{teams[liveSim.h]?.ab}</span><span style={{fontWeight:900,fontSize:20,color:C.gd}}>{liveScore.h}</span></div>
           <span style={{color:C.mt,fontSize:13}}>vs</span>
-          <div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontWeight:900,fontSize:20,color:C.gd}}>{liveScore.a}</span><span style={{fontWeight:900,fontSize:16}}>{teams[liveSim.a]?.ab}</span><div style={{width:14,height:14,borderRadius:3,background:TEAMS[liveSim.a].clr}}/></div>
+          <div style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}><span style={{fontWeight:900,fontSize:20,color:C.gd}}>{liveScore.a}</span><span style={{fontWeight:900,fontSize:16}}>{teams[liveSim.a]?.ab}</span><div style={{width:14,height:14,borderRadius:3,background:TEAMS[liveSim.a].clr}}/></div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:4}}>
-          <span style={{fontSize:12,padding:"2px 6px",borderRadius:8,background:liveDone?`${C.gd}22`:`${C.gn}22`,color:liveDone?C.gd:C.gn,fontWeight:700}}>Q{liveQtr}{liveDone?" FINAL":""}</span>
+          <div title="Quarter and time left" style={{display:"flex",alignItems:"center",gap:8,background:"#05080f",border:`1px solid ${liveDone?C.gd:"#334155"}`,borderRadius:8,padding:"3px 10px"}}><span style={{fontSize:13,fontWeight:900,color:liveDone?C.gd:"#e2e8f0",letterSpacing:1}}>{liveDone?"FINAL":liveQtr>4?"OT":`Q${liveQtr}`}</span>{!liveDone&&<span style={{fontSize:20,fontWeight:900,color:"#facc15",fontVariantNumeric:"tabular-nums",fontFamily:"ui-monospace, SFMono-Regular, Menlo, monospace"}}>{gameClock(liveClock)}</span>}</div>
           {!liveDone&&<Btn onClick={()=>{setLiveCallMode(m=>!m);setLiveAwaitingCall(false);setLivePhase(null);setFourthChoice(null);}} bg={liveCallMode?`${C.gn}33`:C.bd} c={liveCallMode?C.gn:C.mt} style={{padding:"3px 8px",border:`1px solid ${liveCallMode?C.gn:C.bd}`,fontSize:11}}>🎮{liveCallMode?" ON":" OFF"}</Btn>}
           {/* v34: broadcast mode toggle */}{!liveDone&&<Btn onClick={()=>setLiveBroadcastMode(b=>!b)} bg={liveBroadcastMode?'#7c3aed':C.bd} c={liveBroadcastMode?'#e9d5ff':C.mt} style={{padding:"3px 8px",fontSize:11}}>📺{liveBroadcastMode?" BCAST":" BCAST"}</Btn>}
           {!liveDone&&<Btn onClick={()=>setLiveSpeed(v=>{const ks=Object.keys(LIVE_SPEEDS);const n=ks[(ks.indexOf(v)+1)%ks.length];try{localStorage.setItem('gm_live_speed',n);}catch{}return n;})} bg={C.bd} c="#e2e8f0" style={{padding:"3px 10px",fontSize:12}} title="Time between plays">⏱ {liveSpeed}</Btn>}
@@ -2260,7 +2262,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
           {liveLog.length>0&&(()=>{const e=liveLog[liveLog.length-1];return<div style={{fontSize:17,fontWeight:800,lineHeight:1.35,color:e.type==="td"?C.gn:e.type==="int"||e.type==="fumble"?C.rd:"#fff",paddingBottom:8,marginBottom:6,borderBottom:`1px solid ${C.bd}`}}><div style={{fontSize:11,color:C.mt,letterSpacing:1.5,fontWeight:800}}>LAST PLAY · Q{e.qtr}</div>{e.text}</div>;})()}
           <div style={{fontSize:11,fontWeight:800,color:C.mt,letterSpacing:1.5,marginBottom:3}}>PLAY-BY-PLAY</div>
           <div style={{flex:1,overflowY:"auto",fontSize:14}}>
-        {/* v34: broadcast mode log styling */}{liveLog.map((e,i)=>{const _userPoss=e.poss===(liveSim.h===ui?"h":"a");const _clr=e.type==="td"?C.gn:e.type==="int"||e.type==="fumble"?C.rd:_userPoss?C.tx:C.mt;return liveBroadcastMode?<div key={i} style={{padding:"3px 6px",fontSize:12,background:e.type==="td"?`${C.gn}11`:e.type==="int"||e.type==="fumble"?`${C.rd}11`:'transparent',borderLeft:e.type==="td"?`3px solid ${C.gn}`:e.type==="int"||e.type==="fumble"?`3px solid ${C.rd}`:'3px solid transparent',color:_clr,fontWeight:e.type==="td"?800:400,lineHeight:1.4}}><span style={{color:'#475569',fontSize:10,marginRight:4}}>Q{e.qtr}</span>{e.text}</div>:<div key={i} style={{padding:"2px 4px",fontSize:12,borderLeft:`3px solid ${e.type==="td"?C.gn:e.type==="int"||e.type==="fumble"?C.rd:e.type==="fg"?C.gd:e.type==="sack"?"#f97316":"transparent"}`,marginBottom:1,color:e.type==="td"?C.gn:e.type==="int"?C.rd:"#cbd5e1"}}><span style={{color:C.mt,fontSize:10}}>Q{e.qtr} </span>{e.text}</div>;})}
+        {/* v34: broadcast mode log styling */}{liveLog.map((e,i)=>{const _userPoss=e.poss===(liveSim.h===ui?"h":"a");const _clr=e.type==="td"?C.gn:e.type==="int"||e.type==="fumble"?C.rd:_userPoss?C.tx:C.mt;return liveBroadcastMode?<div key={i} style={{padding:"3px 6px",fontSize:12,background:e.type==="td"?`${C.gn}11`:e.type==="int"||e.type==="fumble"?`${C.rd}11`:'transparent',borderLeft:e.type==="td"?`3px solid ${C.gn}`:e.type==="int"||e.type==="fumble"?`3px solid ${C.rd}`:'3px solid transparent',color:_clr,fontWeight:e.type==="td"?800:400,lineHeight:1.4}}><span style={{color:'#475569',fontSize:10,marginRight:4,fontVariantNumeric:'tabular-nums'}}>{e.qtr==='OT'?'OT':`Q${e.qtr}`} {gameClock(e.clock)}</span>{e.text}</div>:<div key={i} style={{padding:"2px 4px",fontSize:12,borderLeft:`3px solid ${e.type==="td"?C.gn:e.type==="int"||e.type==="fumble"?C.rd:e.type==="fg"?C.gd:e.type==="sack"?"#f97316":"transparent"}`,marginBottom:1,color:e.type==="td"?C.gn:e.type==="int"?C.rd:"#cbd5e1"}}><span style={{color:C.mt,fontSize:10,fontVariantNumeric:'tabular-nums'}}>{e.qtr==='OT'?'OT':`Q${e.qtr}`} {gameClock(e.clock)} </span>{e.text}</div>;})}
             <div ref={logEndRef}/>
           </div>
         </div>
