@@ -41,7 +41,7 @@ function pickW(rand, list) {
 // order(pos): healthy players in depth order. snaps: id -> %. mod: game-day modifiers in points.
 // lean: extra pass tendency (-0.15..0.15).
 // Who gets home on a sack: edge rushers take about half a team's sacks, interior tackles and
-// linebackers most of the rest, DBs a few (a 95-rated edge gets ~1.6x an average one's share).
+// linebackers most of the rest, DBs a few (a 95-rated edge gets ~1.4x an average one's share).
 // The spot he's playing says which (LE/RE edge, DT1/DT2 inside); else Madden's position (mpos),
 // else body weight (an edge ~250-285 lbs, a tackle ~295+).
 function rushRole(p) {
@@ -60,11 +60,15 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0 }) {
   const q = (p, k) => Math.exp(((p.ovr || 70) - 75) * k);
   const receivers = [];
   for (const pos of ["WR", "TE", "RB"]) on(pos).forEach((p, i) => receivers.push([p, (TGT_RATE[pos][i] ?? 0.1) * share(p) * q(p, TALENT)]));
+  // Backs by snaps and talent; the next back up always spells the starter now and then, even
+  // when the starter plays every snap (nobody carries 25+ times every week).
   const rushers = on("RB").map((p) => [p, share(p) * q(p, TALENT)]);
+  const relief = order("RB").find((p) => !rushers.some(([r]) => r === p));
+  if (relief && rushers.length < 2) rushers.push([relief, 0.12 * q(relief, TALENT)]);
   const qb = on("QB")[0] || order("QB")[0];
   const defs = [];
   for (const pos of ["DL", "LB", "CB", "S"]) on(pos).forEach((p, i) => defs.push([p, (TK[pos][i] ?? 0.01) * share(p) * q(p, 0.01)]));
-  const rushW = defs.map(([p, w]) => [p, rushRole(p) * w * q(p, 0.025)]);
+  const rushW = defs.map(([p, w]) => [p, rushRole(p) * w * q(p, 0.018)]);
   const covW = defs.map(([p, w]) => [p, (p.pos === "CB" ? 1.4 : p.pos === "S" ? 1.1 : p.pos === "LB" ? 0.35 : 0.05) * w * q(p, 0.035)]);
   const tackleW = defs.map(([p, w]) => [p, w]);
   const k = on("K")[0] || order("K")[0];
@@ -242,7 +246,8 @@ export function step(g, call, bonus = 1) {
     const qbl = line(g, off, qb);
     if (!screen && rand() < sackP) {
       const loss = Math.round(5 + rand() * 5);
-      const rusher = pickW(rand, d.rushW);
+      // Multi-sack games happen, but a rusher who already has two gets chipped and doubled.
+      const rusher = pickW(rand, d.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, n < 2 ? w : w * 0.45 ** (n - 1)]; }));
       add(qbl, "sk", 1); add(qbl, "skYds", loss); st.sacks++;
       if (rusher) { const rl = line(g, def, rusher); add(rl, "sacks", 1); add(rl, "qbH", 1); add(rl, "tkl", 1); }
       yards = -loss; type = "sack"; desc = `${qb?.name || "QB"} is SACKED${rusher ? ` by ${rusher.name}` : ""} for a loss of ${loss}.`;
@@ -255,7 +260,9 @@ export function step(g, call, bonus = 1) {
       add(qbl, "rushAtt", 1); st.rushAtt++;
       carrier = qb; type = "run"; desc = `${qb?.name || "QB"} scrambles for ${yards}.`;
     } else {
-      const target = screen ? (o.rushers[0]?.[0] || pickW(rand, o.receivers)) : pickW(rand, o.receivers);
+      // Once a receiver has had a big day the ball spreads around (no 15-catch games every week).
+      const busy = ([p, w]) => { const n = g.box[off][p.id]?.tgt || 0; return [p, n <= 8 ? w : w * Math.exp(-(n - 8) / 4)]; };
+      const target = screen ? (o.rushers[0]?.[0] || pickW(rand, o.receivers.map(busy))) : pickW(rand, o.receivers.map(busy));
       const tl = line(g, off, target);
       add(qbl, "att", 1); add(tl, "tgt", 1); st.passAtt++;
       const intP = clamp(0.024 - passE * 0.004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0), 0.006, 0.06);
@@ -288,7 +295,10 @@ export function step(g, call, bonus = 1) {
   } else {
     // Designed run: the back (by depth, snaps and talent), now and then a QB keeper.
     const keeper = call === "scramble" || (!call && (qb?.spd || 60) >= 80 && rand() < 0.1);
-    carrier = keeper ? qb : pickW(rand, o.rushers) || qb;
+    // A back's share tapers off as his carries pile up in a game (fatigue): a workhorse gets ~20-24,
+    // and the season record (416) stays out of reach.
+    const tired = ([p, w]) => { const n = g.box[off][p.id]?.rushAtt || 0; return [p, n <= 15 ? w : w * Math.exp(-(n - 15) / 5)]; };
+    carrier = keeper ? qb : pickW(rand, o.rushers.map(tired)) || qb;
     const outside = call === "run_outside";
     const mean = 3.65 + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.02 + (keeper ? 0.6 : 0);
     const breakaway = rand() < clamp(0.04 + ((carrier?.spd || 80) - 82) * 0.003 + runE * 0.005 + (outside ? 0.025 : 0), 0.015, 0.12);

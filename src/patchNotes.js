@@ -182,4 +182,10 @@ export const PATCH_NOTES = [
     "Games use each lineman's rating at the spot he plays, and edge rushers get the edge's share of sacks.",
     "AI teams start their best two edges outside and two tackles inside. If you set your line, your players keep their spots, and an injured starter is replaced by the best fit for his spot.",
   ] },
+  { v: "1.57", date: "2026-10-09", title: "No More Annual Record Seasons", notes: [
+    "Fixed: a running back set to 100% of the snaps got about 450 carries a season (the NFL record is 416), which produced 2,000-2,400-yard seasons. Backs now tire as their carries pile up in a game and the backup always spells them, so a workhorse gets about 330-370 carries.",
+    "Receivers: once a player has had a big day, the ball spreads around. Season reception leaders land around 125-145 instead of breaking the record of 149.",
+    "Pass rushers who already have two sacks in a game get chipped and doubled. Sack leaders land around 16-22.",
+    "Checked over many simulated seasons: rushing, receiving, passing, touchdown, sack and interception leaders all land in realistic ranges, below the NFL records.",
+  ] },
 ];
