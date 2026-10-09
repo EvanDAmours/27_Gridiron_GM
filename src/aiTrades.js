@@ -43,11 +43,11 @@ function payment(buyer, bi, picks, want, pkV) {
 
 // One week of AI-to-AI trades. Mutates the clubs' rosters (arrays are replaced, not edited in
 // place); returns { picks, trades }. capSpace(t): room under the cap. week: the week just played.
-export function aiTradeWeek(teams, picks, ui, { week, pkV, capSpace, rand = Math.random, max = 1 } = {}) {
+export function aiTradeWeek(teams, picks, ui, { week, pkV, capSpace, rand = Math.random, max = 1, odds: chance } = {}) {
   const out = { picks, trades: [] };
   if (week < 3 || week > TRADE_DEADLINE_WEEK) return out;
   // Quiet early, busier as the deadline nears.
-  const odds = week >= TRADE_DEADLINE_WEEK - 1 ? 0.75 : 0.3;
+  const odds = chance ?? (week >= TRADE_DEADLINE_WEEK - 1 ? 0.75 : 0.3);
   if (rand() > odds) return out;
   const idx = teams.map((_, i) => i).filter((i) => i !== ui);
   const buyers = idx.filter((i) => clubMode(teams[i]) === "contend").sort(() => rand() - 0.5);

@@ -188,4 +188,12 @@ export const PATCH_NOTES = [
     "Pass rushers who already have two sacks in a game get chipped and doubled. Sack leaders land around 16-22.",
     "Checked over many simulated seasons: rushing, receiving, passing, touchdown, sack and interception leaders all land in realistic ranges, below the NFL records.",
   ] },
+  { v: "1.58", date: "2026-10-09", title: "Trade Deadline Day", notes: [
+    "After week 9 the game stops for Trade Deadline Day, a dedicated screen in the style of the NHL and Madden deadline shows. The clock runs from 9:00 AM to the 4:00 PM ET deadline, an hour at a time, or let it run on its own.",
+    "The Deadline Feed breaks every deal as AI teams make them (contenders buying veterans from sellers) along with rumors drawn from the real league: who's taking calls, who's hunting for a pass rusher, which stars aren't going anywhere.",
+    "Your Phone: offers come in through the day and stay open for two hours. Each shows what they want, what you'd get and whether it's fair. Make a call takes you to the trade screen with the clock still running.",
+    "A Buyers and Sellers board, a ticker of the day's deals, and a recap when the deadline passes. The season resumes once the day is over. Sim All plays the whole day for you.",
+    "Replaces the old Trade Deadline Frenzy popup, which also deleted the pick you paid with instead of sending it to the other team.",
+    "Running backs: tightened the per-game fatigue so a back on every snap lands around 300-350 carries a season.",
+  ] },
 ];

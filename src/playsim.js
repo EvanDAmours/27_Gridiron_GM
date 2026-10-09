@@ -64,7 +64,7 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0 }) {
   // when the starter plays every snap (nobody carries 25+ times every week).
   const rushers = on("RB").map((p) => [p, share(p) * q(p, TALENT)]);
   const relief = order("RB").find((p) => !rushers.some(([r]) => r === p));
-  if (relief && rushers.length < 2) rushers.push([relief, 0.12 * q(relief, TALENT)]);
+  if (relief && rushers.length < 2) rushers.push([relief, 0.2 * q(relief, TALENT)]);
   const qb = on("QB")[0] || order("QB")[0];
   const defs = [];
   for (const pos of ["DL", "LB", "CB", "S"]) on(pos).forEach((p, i) => defs.push([p, (TK[pos][i] ?? 0.01) * share(p) * q(p, 0.01)]));
@@ -297,7 +297,7 @@ export function step(g, call, bonus = 1) {
     const keeper = call === "scramble" || (!call && (qb?.spd || 60) >= 80 && rand() < 0.1);
     // A back's share tapers off as his carries pile up in a game (fatigue): a workhorse gets ~20-24,
     // and the season record (416) stays out of reach.
-    const tired = ([p, w]) => { const n = g.box[off][p.id]?.rushAtt || 0; return [p, n <= 15 ? w : w * Math.exp(-(n - 15) / 5)]; };
+    const tired = ([p, w]) => { const n = g.box[off][p.id]?.rushAtt || 0; return [p, n <= 12 ? w : w * Math.exp(-(n - 12) / 4)]; };
     carrier = keeper ? qb : pickW(rand, o.rushers.map(tired)) || qb;
     const outside = call === "run_outside";
     const mean = 3.65 + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.02 + (keeper ? 0.6 : 0);
