@@ -227,4 +227,10 @@ export const PATCH_NOTES = [
     "Record Watch: anyone on pace to break a record shows up in the Record Book and in Top Stories, with what he has so far and his pace.",
     "When a record falls it leads Top Stories, goes in the league log, and (for your players) pops up on screen. Every record your league breaks is kept in a history list.",
   ] },
+  { v: "1.65", date: "2026-10-09", title: "League History and the Hall of Fame", notes: [
+    "New League History page (in the menu): every Super Bowl champion in your league, the award winners year by year, career leaders since 2026 (active and retired, for passing, rushing, receiving, sacks and interceptions), the Hall of Fame and notable retirements.",
+    "Hall of Fame: every retiring player gets a legacy score from his career in your league (seasons at his peak, stats, awards, records) plus, for real players, the career he already had. The established greats (Aaron Rodgers, Aaron Donald, Patrick Mahomes...) carry their real résumés. Legacy 60+ is elected, enshrined five years after he retires.",
+    "Fixed: Sim All never retired anyone at the end of the season; it now does, like Sim Week. Retirement messages now show the right number of seasons, and players still playing at an elite level (88+) are much less likely to walk away.",
+    "Replaced the old Hall of Fame ballot, which never had anyone on it.",
+  ] },
 ];
