@@ -30,7 +30,7 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
     let payroll = roster.reduce((s, p) => s + (p.salary || 0), 0);
     // Franchise players first (QBs ahead of everyone), then by rating, so a club never spends
     // its room on lesser starters and loses its young star.
-    const core = (p) => (keepChance(p) >= 0.95 ? (p.pos === "QB" ? 2 : 1) : 0);
+    const core = (p) => (isFranchisePlayer(p) ? 3 : 0) + (keepChance(p) >= 0.95 ? (p.pos === "QB" ? 2 : 1) : 0);
     for (const p of expiring.sort((a, b) => core(b) - core(a) || b.ovr - a.ovr)) {
       const keep = keepChance(p);
       const salary = +Math.max(p.salary || 1, askingPrice(p) * (0.95 + rand() * 0.15)).toFixed(1); // market, not a small raise
@@ -41,8 +41,11 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
       // For a franchise player the club also gives up its cap cushion (restructures, as real
       // teams do for a young QB); everyone else has to fit with room to spare.
       const limit = keep >= 0.95 ? cap : cap - room;
+      // A franchise player goes further: the club cuts whoever it takes (never another franchise
+      // player), and if he still doesn't fit it tags him anyway and sorts the cap out later.
+      const star = isFranchisePlayer(p);
       if (i !== ui && keep >= 0.95 && payroll + salary > limit) {
-        const cuts = roster.filter((q) => q.ovr < 80).sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, 5);
+        const cuts = roster.filter((q) => (star ? !isFranchisePlayer(q) && q.ovr < p.ovr : q.ovr < 80)).sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, star ? 12 : 5);
         for (const q of cuts) {
           if (payroll + salary <= limit || roster.length <= 30) break;
           roster.splice(roster.indexOf(q), 1);
@@ -50,7 +53,7 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
           pool.push({ ...q, contract: 0, cy, formerTeam: i, gl: [], av: 0 });
         }
       }
-      if (i !== ui && rand() < keep && payroll + salary <= limit) {
+      if (i !== ui && (star || (rand() < keep && payroll + salary <= limit))) {
         roster.push({ ...p, contract: roll(rand, 2, 4), salary, cy });
         payroll += salary;
         resigned.push({ p, team: i });
@@ -67,10 +70,22 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
   return { teams: out, pool, mine, resigned, retired };
 }
 
+// A franchise player: a superstar in or before his prime (90+ at 29 or younger, or 86+ with an
+// elite development trait or an X-Factor at 27 or younger; QBs three years later). AI clubs build
+// around these players: they never let one walk, cut anyone else to keep him and tag him if
+// they have to.
+export function isFranchisePlayer(p) {
+  const a = p.pos === "QB" ? p.age - 3 : p.age;
+  if (p.pos === "K") return false;
+  if (p.ovr >= 90 && a <= 29) return true;
+  return p.ovr >= 86 && a <= 27 && (p.xf || p.dev === "superstar" || p.dev === "generational");
+}
+
 // How likely an AI club is to keep its own player whose deal is up. Young stars almost never
 // reach the market (extension or the tag); the market gets veterans, mid-tier starters and the
 // stars of clubs that can't fit them under the cap. QBs age about three years later.
 export function keepChance(p) {
+  if (isFranchisePlayer(p)) return 1;
   const a = p.pos === "QB" ? p.age - 3 : p.age;
   if (p.ovr >= 88) return a <= 28 ? 0.98 : a <= 30 ? 0.85 : a <= 32 ? 0.5 : 0.25;
   if (p.ovr >= 82) return a <= 27 ? 0.85 : a <= 29 ? 0.65 : a <= 31 ? 0.35 : 0.15;

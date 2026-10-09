@@ -73,7 +73,26 @@ test("AI clubs keep their young stars; veterans and cap-strapped stars reach the
     if (r.teams[1].roster.some((p) => p.id === "s")) kept++;
   }
   assert.ok(kept >= 45, `kept ${kept}/50`);
-  // Truly cap-strapped (every dollar committed to non-stars): he reaches the market.
-  const broke = openFreeAgency([{ id: 0, roster: [] }, { id: 1, roster: [star, ...filler.map((f) => ({ ...f, salary: 5.9 }))] }], 0, 2026, rand, { cap: 301.2 });
-  assert.ok(broke.pool.some((p) => p.id === "s"));
+  // Truly cap-strapped (every dollar committed to non-stars): a very good player who isn't a
+  // franchise player reaches the market; a franchise player never does.
+  const good = { id: "g", pos: "DL", ovr: 88, age: 28, contract: 1, salary: 5 };
+  const broke = openFreeAgency([{ id: 0, roster: [] }, { id: 1, roster: [good, ...filler.map((f) => ({ ...f, salary: 5.9 }))] }], 0, 2026, rand, { cap: 301.2 });
+  assert.ok(broke.pool.some((p) => p.id === "g"));
+  const brokeStar = openFreeAgency([{ id: 0, roster: [] }, { id: 1, roster: [star, ...filler.map((f) => ({ ...f, salary: 5.9 }))] }], 0, 2026, rand, { cap: 301.2 });
+  assert.ok(brokeStar.teams[1].roster.some((p) => p.id === "s"));
+});
+
+test("AI clubs never let a franchise player walk, even when cap-strapped", async () => {
+  const { openFreeAgency, isFranchisePlayer } = await import("../src/offseason.js");
+  const chase = { id: "chase", name: "Ja'Marr Chase", pos: "WR", ovr: 99, age: 27, salary: 40, contract: 1 };
+  assert.ok(isFranchisePlayer(chase));
+  assert.ok(!isFranchisePlayer({ pos: "WR", ovr: 99, age: 31 }), "an aging star can hit the market");
+  // A club with almost no room: a pricey QB and a dozen mid-priced vets.
+  const roster = [chase, { id: "qb", pos: "QB", ovr: 92, age: 29, salary: 60, contract: 3 }, ...Array.from({ length: 45 }, (_, i) => ({ id: `v${i}`, pos: "LB", ovr: 70 + (i % 9), age: 28, salary: 4.5, contract: 2 }))];
+  for (let seed = 1; seed < 40; seed++) {
+    let x = seed; const rand = () => ((x = (x * 16807) % 2147483647) / 2147483647);
+    const r = openFreeAgency([{ roster: [] }, { roster }], 0, 2026, rand, { cap: 250 });
+    assert.ok(r.teams[1].roster.some((p) => p.id === "chase"), "Chase stays");
+    assert.ok(!r.pool.some((p) => p.id === "chase"));
+  }
 });

@@ -161,4 +161,9 @@ export const PATCH_NOTES = [
     "Move a cornerback to safety or a safety to cornerback from his player card, or from a CB/S spot on the depth chart. His skills translate to the new spot and his OVR is re-figured (most lose 1-3 points; poor tacklers and slow safeties lose more). Moving him back restores his old rating.",
     "Menu: an Injuries on/off switch for the whole league. Turning injuries off heals everyone who is hurt.",
   ] },
+  { v: "1.54", date: "2026-10-09", title: "Clubs Build Around Their Superstars", notes: [
+    "Fixed: a 27-year-old, 99-rated Ja'Marr Chase reached free agency. AI clubs now always keep their franchise players (90+ at 29 or younger, or 86+ young players with Superstar/Generational development or an X-Factor; quarterbacks three years later).",
+    "To fit one under the cap a club cuts other contracts first, and if that still isn't enough it tags him anyway. Aging stars can still reach the market.",
+    "Fixed: players who opted out of the last year of their deal disappeared from the league. They now become free agents, and AI franchise players never opt out.",
+  ] },
 ];
