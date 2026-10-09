@@ -10,6 +10,7 @@
 // Tuned to the modern NFL: ~22-23 points a team, ~63 offensive plays, ~215 passing and ~115
 // rushing yards, ~64% completions, ~2.4 sacks and ~1.2 giveaways a game.
 import { unitRatings } from "./gamesim.js";
+import { dlAsPlayed } from "./dline.js";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const gauss = (rand) => { let u = 0, v = 0; while (!u) u = rand(); while (!v) v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
@@ -41,15 +42,18 @@ function pickW(rand, list) {
 // lean: extra pass tendency (-0.15..0.15).
 // Who gets home on a sack: edge rushers take about half a team's sacks, interior tackles and
 // linebackers most of the rest, DBs a few (a 95-rated edge gets ~1.6x an average one's share).
-// Madden's position (mpos) says which; without it, body weight tells an edge (~250-285 lbs)
-// from a tackle (~295+).
+// The spot he's playing says which (LE/RE edge, DT1/DT2 inside); else Madden's position (mpos),
+// else body weight (an edge ~250-285 lbs, a tackle ~295+).
 function rushRole(p) {
-  if (p.pos === "DL") return p.mpos ? (p.mpos === "DT" ? 0.6 : 1) : (p.wt || 280) >= 292 ? 0.6 : 1;
+  if (p.pos === "DL") return p.dlKind ? (p.dlKind === "DT" ? 0.6 : 1) : p.mpos ? (p.mpos === "DT" ? 0.6 : 1) : (p.wt || 280) >= 292 ? 0.6 : 1;
   if (p.pos === "LB") return p.mpos === "SAM" ? 0.5 : 0.25;
   return 0.08;
 }
 
-export function makeSide({ team, order, snaps, mod = 0, lean = 0 }) {
+export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0 }) {
+  // The defensive line plays at its spots: edges at LE/RE, tackles inside, each rated for his spot.
+  const dl = dlAsPlayed(depth("DL"));
+  const order = (pos) => (pos === "DL" ? dl : depth(pos));
   const u = unitRatings(order);
   const on = (pos) => order(pos).filter((p) => (snaps[p.id] || 0) > 0);
   const share = (p) => (snaps[p.id] || 0) / 100;

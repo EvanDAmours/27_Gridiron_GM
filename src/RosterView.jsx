@@ -1,6 +1,7 @@
 // The roster table, in the same clean style as trades and free agency: one row per player,
 // large type, grouped by position in depth-chart order, with every column sortable.
 import React, { useState } from "react";
+import { naturalDL } from "./dline.js";
 import { C, oC, Bdg, Face } from "./ui.jsx";
 import { DevChip } from "./ScoutingUI.jsx";
 
@@ -62,7 +63,7 @@ export default function RosterTable({ players, depth, setSel, devOf }) {
                       </span>
                     </span>
                   </td>
-                  <td style={td}><Bdg pos={p.pos} /></td>
+                  <td style={td}><Bdg pos={p.pos} />{p.pos === "DL" && <span title={naturalDL(p) === "DT" ? "Defensive tackle by trade" : "Edge rusher by trade"} style={{ display: "block", fontSize: 10, fontWeight: 800, color: naturalDL(p) === "DT" ? "#fb923c" : "#f472b6" }}>{naturalDL(p)}</span>}</td>
                   <td className="ro-hide" style={{ ...td, fontWeight: 800, color: s?.starter ? C.gn : "#64748b", whiteSpace: "nowrap" }}>{s?.label || "—"}</td>
                   <td style={{ ...td, color: "#cbd5e1" }}>{p.age}</td>
                   <td style={{ ...td, fontWeight: 900, fontSize: 18, color: oC(p.ovr) }}>{p.ovr}</td>

@@ -176,4 +176,10 @@ export const PATCH_NOTES = [
     "Franchise tag in Re-sign Week: keep any expiring player one more year at the average of the top five salaries at his position. One a year. AI clubs tag franchise players they can't fit long-term.",
     "Fifth-year options: first-round picks finishing year four of their rookie deal can be kept one more year at a set price. Real players carry their real draft slot. AI clubs pick up options on first-rounders who became starters.",
   ] },
+  { v: "1.56", date: "2026-10-09", title: "Edge Rushers and Defensive Tackles", notes: [
+    "The defensive line has four spots: Left Edge, DT1, DT2 and Right Edge. Every lineman is an EDGE or a DT by trade (from Madden), shown on the roster and the depth chart.",
+    "Anyone can line up anywhere on the line, but players are rated for the spot: an edge rusher playing inside is judged on run stopping, power, strength and size; a tackle playing outside on get-off, speed and pass-rush moves. Most lose about 5 OVR off their spot; players built for both (like Myles Garrett) barely lose anything.",
+    "Games use each lineman's rating at the spot he plays, and edge rushers get the edge's share of sacks.",
+    "AI teams start their best two edges outside and two tackles inside. If you set your line, your players keep their spots, and an injured starter is replaced by the best fit for his spot.",
+  ] },
 ];
