@@ -5,6 +5,7 @@
 // picks really change hands.
 import { clubMode } from "./tradeOffers.js";
 import { isFranchisePlayer } from "./offseason.js";
+import { tradeAway } from "./bonus.js";
 
 export const TRADE_DEADLINE_WEEK = 9;
 const STARTERS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2 };
@@ -69,8 +70,11 @@ export function aiTradeWeek(teams, picks, ui, { week, pkV, capSpace, rand = Math
         if (capSpace(buyer) + outgoing < (p.salary || 0)) continue;
         const seller = teams[si];
         const sent = new Set(pay.players.map((q) => q.id));
-        teams[si] = { ...seller, roster: [...seller.roster.filter((q) => q.id !== p.id), ...pay.players.map((q) => ({ ...q, onBlock: false }))] };
-        teams[bi] = { ...buyer, roster: [...buyer.roster.filter((q) => !sent.has(q.id)), { ...p, onBlock: false }] };
+        // Each club keeps the bonus of the player it sends as dead money (see bonus.js).
+        const s2 = { ...seller }, b2 = { ...buyer }, ctx = { yr: 0, sp: "regular" };
+        const arrive = tradeAway(p, s2, ctx), paid = pay.players.map((q) => tradeAway(q, b2, ctx));
+        teams[si] = { ...s2, roster: [...seller.roster.filter((q) => q.id !== p.id), ...paid.map((q) => ({ ...q, onBlock: false }))] };
+        teams[bi] = { ...b2, roster: [...buyer.roster.filter((q) => !sent.has(q.id)), { ...arrive, onBlock: false }] };
         const ids = new Set(pay.picks.map((pk) => pk.id));
         out.picks = out.picks.map((pk) => (ids.has(pk.id) ? { ...pk, owner: si } : pk));
         out.trades.push({ buyer: bi, seller: si, player: p, picks: pay.picks, players: pay.players });

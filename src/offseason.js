@@ -4,6 +4,7 @@
 // ever invented here.
 
 import { leagueCap, leagueMin } from "./cap.js";
+import { freshDeal } from "./bonus.js";
 import { optionEligible, aiTakesOption, optionPrice, tagPrice } from "./contracts.js";
 
 // Fewest players a club carries at each position.
@@ -73,7 +74,7 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
       if (i !== ui && (star || (rand() < keep && payroll + salary <= limit))) {
         // A franchise player who still doesn't fit a long-term deal gets the franchise tag.
         const tag = star && payroll + salary > limit && !tagged;
-        const deal = tag ? { ...p, contract: 1, salary: tagPrice(teams, p, cap), ftag: true, tagYr: yr, cy } : { ...p, contract: roll(rand, 2, 4), salary, cy };
+        const deal = tag ? { ...freshDeal(p), sb: 0, contract: 1, salary: tagPrice(teams, p, cap), ftag: true, tagYr: yr, cy } : { ...freshDeal(p), contract: roll(rand, 2, 4), salary, cy };
         if (tag) tagged = true;
         roster.push(deal);
         payroll += deal.salary;
@@ -155,7 +156,7 @@ export function aiSignings(teams, pool, ui, { perTeam = 2, minOvr = 60, capSpace
         const k = pool.findIndex((p) => p.pos === pos && p.ovr >= bar && !skip(p) && askingPrice(p) <= capSpace(t));
         if (k < 0) continue;
         const [p] = pool.splice(k, 1);
-        const deal = { ...p, salary: askingPrice(p), contract: roll(rand, 1, p.age >= 30 ? 2 : 4), cy, formerTeam: undefined };
+        const deal = { ...freshDeal(p), salary: askingPrice(p), contract: roll(rand, 1, p.age >= 30 ? 2 : 4), cy, formerTeam: undefined };
         t.roster.push(deal);
         signed.push({ p: deal, team: i, from: p.formerTeam });
         break;
@@ -186,7 +187,7 @@ export function starterSignings(teams, pool, ui, { minOvr = 72, perTeam = 2, cap
     });
     if (best < 0 || gain < 2) continue;
     pool.splice(pool.indexOf(p), 1);
-    const deal = { ...p, salary: askingPrice(p), contract: roll(rand, 1, p.age >= 30 ? 2 : 4), cy, formerTeam: undefined };
+    const deal = { ...freshDeal(p), salary: askingPrice(p), contract: roll(rand, 1, p.age >= 30 ? 2 : 4), cy, formerTeam: undefined };
     teams[best].roster.push(deal);
     count[best] = (count[best] || 0) + 1;
     signed.push({ p: deal, team: best, from: p.formerTeam });
@@ -201,7 +202,7 @@ export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random 
   const signed = [];
   const sign = (t, i, k) => {
     const [p] = pool.splice(k, 1);
-    const deal = { ...p, salary: capSpace(t) >= askingPrice(p) ? askingPrice(p) : leagueMin(), contract: roll(rand, 1, 2), cy, formerTeam: undefined };
+    const deal = { ...freshDeal(p), salary: capSpace(t) >= askingPrice(p) ? askingPrice(p) : leagueMin(), contract: roll(rand, 1, 2), cy, formerTeam: undefined };
     t.roster.push(deal);
     signed.push({ p: deal, team: i });
   };

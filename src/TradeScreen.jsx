@@ -2,6 +2,7 @@
 // picks on two big roster tables, and the summary tells you plainly whether they'd take it.
 import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face, TeamLogo } from "./ui.jsx";
+import { deadMoney, proration } from "./bonus.js";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K"];
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
@@ -68,7 +69,7 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
   );
 }
 
-export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff, draftPicks, pickVal, evalTr, execTr, setSel, capSpace, closed, modes }) {
+export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff, draftPicks, pickVal, evalTr, execTr, setSel, capSpace, closed, modes, yr, sp }) {
   const me = teams[ui];
   const them = trTm != null ? teams[trTm] : null;
   const withAb = (pk) => ({ ...pk, origAb: teams[pk.orig]?.ab });
@@ -76,8 +77,10 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
   const any = trOff.g.length + trOff.r.length + trOff.gPk.length + trOff.rPk.length > 0;
   const ev = any ? evalTr() : { gv: 0, rv: 0, ask: 0, gap: 0, accept: false, over: false, nextWeight: 1 };
   const accept = ev.accept;
-  const salOut = trOff.g.reduce((s, p) => s + (p.salary || 0), 0), salIn = trOff.r.reduce((s, p) => s + (p.salary || 0), 0);
-  const capAfter = capSpace(me) + salOut - salIn;
+  // Players you send leave their signing bonus behind as dead money; players you get arrive on their base salary.
+  const dead = trOff.g.reduce((s, p) => { const d = deadMoney(p, { yr, sp }); return { now: s.now + d.now, next: s.next + d.next }; }, { now: 0, next: 0 });
+  const salOut = trOff.g.reduce((s, p) => s + (p.salary || 0), 0), salIn = trOff.r.reduce((s, p) => s + (p.salary || 0) - proration(p), 0);
+  const capAfter = capSpace(me) + salOut - salIn - dead.now;
 
   // Balance the deal: add the smallest asset of yours that covers what they still want, or, if
   // you're overpaying, the best extra piece of theirs that keeps it acceptable.
@@ -157,7 +160,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
             {verdict && <span style={{ fontSize: 20, fontWeight: 900, color: verdict[1], flex: "1 1 240px" }}>{verdict[0]}{ev.why && !accept && <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#fca5a5" }}>{ev.why}</span>}</span>}
-            {any && <span style={{ fontSize: 14, color: C.mt }}>Cap space after: <b style={{ color: capAfter >= 0 ? C.gn : C.rd }}>{money(capAfter)}</b></span>}
+            {any && <span style={{ fontSize: 14, color: C.mt }}>Cap space after: <b style={{ color: capAfter >= 0 ? C.gn : C.rd }}>{money(capAfter)}</b>{dead.now + dead.next > 0.05 && <span style={{ display: "block", fontSize: 12 }}>incl. {money(dead.now)} dead money{dead.next > 0.05 ? ` (+${money(dead.next)} next year)` : ""}</span>}</span>}
             {any && <Btn onClick={balance} bg={C.bd} c="#e2e8f0" style={{ fontSize: 15, padding: "9px 14px" }}>What would make this work?</Btn>}
             {any && <Btn onClick={() => setTrOff({ g: [], r: [], gPk: [], rPk: [] })} bg="transparent" c={C.mt} style={{ fontSize: 15, padding: "9px 12px", border: `1px solid ${C.bd}` }}>Clear</Btn>}
             <Btn onClick={execTr} disabled={!accept || closed} bg={C.gn} style={{ fontSize: 16, padding: "10px 20px", fontWeight: 900 }}>{closed ? "Trade deadline passed" : "Propose trade"}</Btn>

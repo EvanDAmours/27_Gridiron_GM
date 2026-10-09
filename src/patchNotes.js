@@ -243,4 +243,13 @@ export const PATCH_NOTES = [
     "Left/right swaps (LT to RT, LG to RG) cost nothing. Moving between tackle, guard and center re-rates him on what the new spot asks for: tackles need pass protection, footwork, reach and agility; guards run blocking, strength and power; centers snapping and smarts. A typical tackle loses about 1 at guard, a guard about 4 at tackle.",
     "Moving a lineman back to his natural spot restores his old rating exactly (keeping any growth since).",
   ] },
+  { v: "1.68", date: "2026-10-09", title: "Contract Structure: Bonuses, Dead Money and Restructures", notes: [
+    "Contracts now have signing bonuses. Part of every cap hit is bonus spread evenly over the deal (about 40% on star contracts, less on smaller ones, very little on minimum deals). The player card shows his cap hit, years left, bonus per year and what cutting him would cost.",
+    "Dead money works like the NFL: cut or trade a player and the bonus still to come stays on your cap. Before June 1 (re-sign week, free agency, the draft) it all hits this year; during the season this year's share stays and the rest moves to next year's cap.",
+    "June 1 cuts: in the off-season you can designate up to 2 cuts a year as June 1 cuts, keeping only this year's bonus share on this year's cap and pushing the rest to next year.",
+    "Restructures: turn most of a player's base salary into bonus for cap space right now. The cut and restructure screens show exactly what you save now, what each later year costs, and the extra dead money you're taking on. You can restructure the same player again in a later year.",
+    "Trades: the team sending a player keeps his bonus as dead money, and he arrives on his base salary. The trade screen's cap line includes it. AI teams follow the same rules.",
+    "Fixed: dead cap never came off the books. It now clears at the start of each new league year (re-sign week), when money pushed to next year arrives. The cap bar shows next year's dead money too.",
+    "Replaced the two old restructure buttons (one of them did nothing useful) with one real restructure.",
+  ] },
 ];

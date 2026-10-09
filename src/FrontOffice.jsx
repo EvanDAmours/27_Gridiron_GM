@@ -44,7 +44,7 @@ export default function FrontOffice({ team, yr, cap, floor, capSpace, capHit, re
   return (
     <div>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-        <Stat title="CAP SPACE" value={money(space)} color={space >= 0 ? C.gn : C.rd} sub={`${money(payroll)} of ${money(cap)} used${team.deadCap ? ` · ${money(team.deadCap)} dead` : ""}`} meter={(payroll / cap) * 100} />
+        <Stat title="CAP SPACE" value={money(space)} color={space >= 0 ? C.gn : C.rd} sub={`${money(payroll)} of ${money(cap)} used${team.deadCap ? ` · ${money(team.deadCap)} dead` : ""}${team.deadNext ? ` · ${money(team.deadNext)} dead next year` : ""}`} meter={(payroll / cap) * 100} />
         <Stat title="TEAM MORALE" value={morale} color={tone(morale, 45, 75)} sub={morale >= 75 ? "Fired up" : morale >= 45 ? "Steady" : "Frustrated"} meter={morale} />
         <Stat title="CHEMISTRY" value={chem} color={tone(chem, 45, 65)} sub={chem >= 65 ? "Gelling" : chem >= 45 ? "Getting there" : "Disjointed"} meter={chem} />
         <Stat title="GM REPUTATION" value={tier} color={tone(rep, 40, 60)} sub={`${rep}/100 · ${perk}`} meter={rep} />
