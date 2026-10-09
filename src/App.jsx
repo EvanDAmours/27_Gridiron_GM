@@ -26,6 +26,7 @@ import { seasonAwardWinners } from "./awards.js";
 import { leagueCap, leagueFloor, leagueMin, setLeagueYear, capYearFor, capFor, rookieSalary, DATA_TO_DOLLARS, migrateCap } from "./cap.js";
 import TrophyRoom from "./TrophyRoom.jsx";
 import { weeklyStories } from "./stories.js";
+import { applyTheme, getTheme } from "./theme.js";
 import { tradeDownOffers, acceptOffer, applyFutures, pickLabel } from "./draftTrade.js";
 import { runFocusWeeks, seasonSnapShare, seasonGrowth, traitGrowthScale, seasonAwards, awardGrowth } from "./development.js";
 import { teamSnaps, positionSnaps, snapBudget, snapOrdered } from "./snaps.js";
@@ -509,7 +510,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   const[tradeHistory,setTradeHistory]=useState([]);
   const[breakoutAlerts,setBreakoutAlerts]=useState([]);
   // v38: Depth Chart & Playing Time
-  const[depthOrder,setDepthOrder]=useState({});const[rosterView,setRosterView]=useState("players");const[depthView,setDepthView]=useState("field");const[menuOpen,setMenuOpen]=useState(false);const[playingTime,setPlayingTime]=useState({});
+  const[depthOrder,setDepthOrder]=useState({});const[rosterView,setRosterView]=useState("players");const[depthView,setDepthView]=useState("field");const[menuOpen,setMenuOpen]=useState(false);const[theme,setTheme]=useState(getTheme);const[playingTime,setPlayingTime]=useState({});
   // v7.0 new features
   const[awards,setAwards]=useState([]);
   const[draftClassRating,setDraftClassRating]=useState('Average');
@@ -1414,6 +1415,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         <div style={{position:"relative"}}>
           <Btn onClick={()=>setMenuOpen(o=>!o)} bg="#1e293b" c="#cbd5e1" style={{fontSize:13}}>☰ Menu</Btn>
           {menuOpen&&<div onClick={()=>setMenuOpen(false)} style={{position:"absolute",right:0,top:"110%",zIndex:300,background:C.cd,border:`1px solid ${C.bd}`,borderRadius:8,padding:8,display:"flex",flexDirection:"column",gap:6,minWidth:190,boxShadow:"0 8px 24px #000a"}}>
+          <Btn onClick={()=>{const t=theme==="light"?"dark":"light";applyTheme(t);setTheme(t);}} bg="#1e293b" c="#e2e8f0" style={{padding:"6px 9px",fontSize:13,textAlign:"left"}} title="Switch between light and dark mode">{theme==="light"?"🌙 Dark mode":"☀️ Light mode"}</Btn>
           {<Btn onClick={()=>setShowRecapCard(true)} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Season Recap Card">📊 Season recap</Btn>}
           <Btn onClick={()=>{setLeaderboardOpen(true);loadLeaderboard();}} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Leaderboard">🏅 Leaderboard</Btn>
           <Btn onClick={()=>setTab("trophies")} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Trophy Room">🏆 Trophy room</Btn>

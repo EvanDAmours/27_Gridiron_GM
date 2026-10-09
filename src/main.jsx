@@ -1,6 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import GridironGM from "./App.jsx";
+import { applyTheme, getTheme } from "./theme.js";
+
+// Light or dark before the first paint, so there's no flash.
+applyTheme(getTheme());
 
 class ErrorBoundary extends React.Component{
   constructor(p){super(p);this.state={err:null};}
