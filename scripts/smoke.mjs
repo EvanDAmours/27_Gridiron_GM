@@ -79,7 +79,7 @@ try {
   await page.locator("button", { hasText: "Giants" }).first().click();
   await page.waitForTimeout(1200);
   await healthy("new game"); log("new game");
-  for (const tab of ["Roster", "Depth Chart", "Schedule", "Scouting", "Trade", "Free Agency", "Trophy Room", "Record Book", "League History", "Game Info", "Home"]) {
+  for (const tab of ["Roster", "Depth Chart", "Schedule", "Scouting", "Trade", "Free Agency", "Trophy Room", "Record Book", "League History", "Draft Recap", "Game Info", "Home"]) {
     await dismiss();
     const t = page.locator(`button:text-is("${tab}")`);
     if (await t.count()) { await t.first().click(); await page.waitForTimeout(400); await healthy(tab); }
@@ -105,7 +105,10 @@ try {
   const cont = page.locator("button", { hasText: "Continue the draft" });
   if (await cont.count()) await cont.click();
   await click("Sim Draft", 3000);
-  await healthy("draft"); log("draft");
+  await healthy("draft");
+  if (!(await page.evaluate(() => /Draft Recap/.test(document.body.innerText) && /YOUR CLASS|EVERY PICK/.test(document.body.innerText)))) fail("draft recap didn't open after the draft");
+  if (process.env.SMOKE_SHOTS) await page.screenshot({ path: `${process.env.SMOKE_SHOTS}/recap.png`, fullPage: true });
+  log("draft and draft recap");
   await must("→ Next Season", 3000); await healthy("next season");
   d = await save();
   if (d.yr !== 2027) fail(`expected 2027 after Next Season, got ${d.yr}`);

@@ -252,4 +252,10 @@ export const PATCH_NOTES = [
     "Fixed: dead cap never came off the books. It now clears at the start of each new league year (re-sign week), when money pushed to next year arrives. The cap bar shows next year's dead money too.",
     "Replaced the two old restructure buttons (one of them did nothing useful) with one real restructure.",
   ] },
+  { v: "1.69", date: "2026-10-09", title: "Draft Recap", notes: [
+    "New Draft Recap (opens on its own when the draft ends, and in the menu any time): every pick of the draft with his true OVR and potential and his development trait revealed, so you know right away whether you hit or missed.",
+    "Each pick gets a verdict: Jackpot (Superstar or Generational), Hit (Star), Late bloomer, Value (a top ceiling taken much later than it should have been), Solid, or Miss (an early pick with one of the lowest ceilings in the class).",
+    "Your class is graded and ranked against the other 31, and a Class Grades table shows every team's haul. Filter the full pick list by your picks, hits only, or any team.",
+    "Past drafts are kept: pick any earlier year to see the whole class again, with a Now column showing what each player has become.",
+  ] },
 ];
