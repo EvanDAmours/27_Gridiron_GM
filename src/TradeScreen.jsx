@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K"];
-const SLACK = 18; // how far under value the other GM will still go (matches evalTr)
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 
@@ -75,9 +74,8 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
   const withAb = (pk) => ({ ...pk, origAb: teams[pk.orig]?.ab });
   const flip = (key, x) => setTrOff((o) => ({ ...o, [key]: o[key].some((y) => y.id === x.id) ? o[key].filter((y) => y.id !== x.id) : [...o[key], x] }));
   const any = trOff.g.length + trOff.r.length + trOff.gPk.length + trOff.rPk.length > 0;
-  const ev = any ? evalTr() : { gv: 0, rv: 0, d: 0, fair: true };
-  // ev.d is what you gain (value in minus value out); they'll give up to SLACK of it.
-  const accept = !!((trOff.g.length || trOff.gPk.length) && (trOff.r.length || trOff.rPk.length) && ev.d <= SLACK);
+  const ev = any ? evalTr() : { gv: 0, rv: 0, ask: 0, gap: 0, accept: false, over: false, nextWeight: 1 };
+  const accept = ev.accept;
   const salOut = trOff.g.reduce((s, p) => s + (p.salary || 0), 0), salIn = trOff.r.reduce((s, p) => s + (p.salary || 0), 0);
   const capAfter = capSpace(me) + salOut - salIn;
 
@@ -85,17 +83,19 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
   // you're overpaying, the best extra piece of theirs that keeps it acceptable.
   const balance = () => {
     if (!them) return;
-    const gap = ev.d - SLACK; // > 0: they want more from you
-    if (gap > 0) {
+    if (ev.gap > 0) {
+      // Their GM counts your next piece at a discount, so it has to cover gap / weight.
+      const need = ev.gap; // checked per asset below: picks count in full, players at nextWeight
       const mine = [
         ...me.roster.filter((p) => !trOff.g.some((x) => x.id === p.id)).map((p) => ({ k: "g", x: p, v: p.tradeVal })),
         ...draftPicks.filter((pk) => pk.owner === ui && !trOff.gPk.some((x) => x.id === pk.id)).map((pk) => ({ k: "gPk", x: pk, v: pickVal(pk) })),
       ].sort((a, b) => a.v - b.v);
-      const fit = mine.find((a) => a.v >= gap) || mine[mine.length - 1];
+      const counts = (a) => (a.k === "g" ? a.v * ev.nextWeight : a.v);
+      const fit = mine.find((a) => counts(a) >= need) || mine[mine.length - 1];
       if (fit) flip(fit.k, fit.x);
-    } else if (ev.d < -SLACK) {
-      const room = -ev.d - SLACK; // value you're giving away for free
-      const theirs = them.roster.filter((p) => !trOff.r.some((x) => x.id === p.id) && p.tradeVal <= room + SLACK).sort((a, b) => b.tradeVal - a.tradeVal);
+    } else if (ev.over) {
+      const room = (ev.gv - ev.ask) / 1.25; // what they could add and still come out ahead
+      const theirs = them.roster.filter((p) => !trOff.r.some((x) => x.id === p.id) && p.tradeVal <= room).sort((a, b) => b.tradeVal - a.tradeVal);
       if (theirs[0]) flip("r", theirs[0]);
     }
   };
@@ -103,15 +103,16 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
   const verdict = !any ? null
     : !(trOff.g.length || trOff.gPk.length) ? ["Add something you'll send", C.mt]
     : !(trOff.r.length || trOff.rPk.length) ? ["Add something you want back", C.mt]
-    : accept ? [ev.d < -SLACK ? "They'd accept — but you're overpaying" : "They'd accept this trade", C.gn]
-    : [`They want about ${ev.d - SLACK} more value`, C.rd];
+    : accept ? [ev.over ? "They'd accept — but you're overpaying" : "They'd accept this trade", C.gn]
+    : [`They want about ${ev.gap} more value`, C.rd];
   const chip = (x, key, label, color) => (
     <span key={x.id} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: C.bg, border: `1px solid ${color}55`, borderRadius: 8, padding: "5px 8px", fontSize: 14 }}>
       {label}<button onClick={() => flip(key, x)} aria-label="Remove" style={{ background: "transparent", border: 0, color: C.mt, cursor: "pointer", fontSize: 15, padding: 0 }}>✕</button>
     </span>
   );
   const pkLabel = (pk) => `${pk.yr || ""} Rd ${pk.rd}${pk.overall ? ` #${pk.overall}` : ""}`;
-  const meter = Math.max(-1, Math.min(1, (ev.rv - ev.gv) / Math.max(40, ev.gv + ev.rv)));
+  // Left of centre: short of what they ask. Right: comfortably over it.
+  const meter = Math.max(-1, Math.min(1, (ev.gv - ev.ask) / Math.max(40, ev.ask)));
 
   return (
     <div>
@@ -129,7 +130,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
         <div style={{ background: C.cd, border: `1px solid ${verdict ? verdict[1] : C.bd}`, borderRadius: 10, padding: "14px 16px", marginBottom: 12 }}>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.rd, marginBottom: 6 }}>YOU SEND · value {ev.gv}</div>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.rd, marginBottom: 6 }}>YOU SEND · worth {ev.gv} to them</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {trOff.g.map((p) => chip(p, "g", <><Bdg pos={p.pos} /> <b>{p.name}</b> <span style={{ color: oC(p.ovr) }}>{p.ovr}</span></>, C.rd))}
                 {trOff.gPk.map((pk) => chip(pk, "gPk", <b>{pkLabel(pk)}</b>, C.gd))}
@@ -137,7 +138,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
               </div>
             </div>
             <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.gn, marginBottom: 6 }}>YOU RECEIVE · value {ev.rv}</div>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.gn, marginBottom: 6 }}>YOU RECEIVE · value {ev.rv}{ev.ask > ev.rv ? ` · they ask ${ev.ask}` : ""}</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {trOff.r.map((p) => chip(p, "r", <><Bdg pos={p.pos} /> <b>{p.name}</b> <span style={{ color: oC(p.ovr) }}>{p.ovr}</span></>, C.gn))}
                 {trOff.rPk.map((pk) => chip(pk, "rPk", <b>{pkLabel(pk)}</b>, C.gd))}
@@ -151,11 +152,11 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
                 <div style={{ position: "absolute", left: "50%", top: -3, bottom: -3, width: 2, background: C.mt }} />
                 <div style={{ position: "absolute", top: 0, bottom: 0, borderRadius: 5, background: meter >= 0 ? C.gn : C.rd, left: meter >= 0 ? "50%" : `${50 + meter * 50}%`, width: `${Math.abs(meter) * 50}%` }} />
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.mt }}><span>You lose value</span><span>Even</span><span>You gain value</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.mt }}><span>Not enough</span><span>Their asking price</span><span>More than enough</span></div>
             </>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-            {verdict && <span style={{ fontSize: 20, fontWeight: 900, color: verdict[1], flex: "1 1 240px" }}>{verdict[0]}</span>}
+            {verdict && <span style={{ fontSize: 20, fontWeight: 900, color: verdict[1], flex: "1 1 240px" }}>{verdict[0]}{ev.why && !accept && <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#fca5a5" }}>{ev.why}</span>}</span>}
             {any && <span style={{ fontSize: 14, color: C.mt }}>Cap space after: <b style={{ color: capAfter >= 0 ? C.gn : C.rd }}>{money(capAfter)}</b></span>}
             {any && <Btn onClick={balance} bg={C.bd} c="#e2e8f0" style={{ fontSize: 15, padding: "9px 14px" }}>What would make this work?</Btn>}
             {any && <Btn onClick={() => setTrOff({ g: [], r: [], gPk: [], rPk: [] })} bg="transparent" c={C.mt} style={{ fontSize: 15, padding: "9px 12px", border: `1px solid ${C.bd}` }}>Clear</Btn>}
