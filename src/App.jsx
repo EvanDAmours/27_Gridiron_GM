@@ -24,6 +24,7 @@ import PlayoffBracket from "./PlayoffBracket.jsx";
 import { makeBracket, nextRound, ROUND_NAMES } from "./playoffs.js";
 import { seasonAwardWinners } from "./awards.js";
 import TrophyRoom from "./TrophyRoom.jsx";
+import { weeklyStories } from "./stories.js";
 import { runFocusWeeks, seasonSnapShare, seasonGrowth, traitGrowthScale, seasonAwards, awardGrowth } from "./development.js";
 import { teamSnaps, positionSnaps, snapBudget, snapOrdered } from "./snaps.js";
 import { nflSchedule, divisionPlaces } from "./schedule.js";
@@ -588,8 +589,8 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   // v31: Pro GM stub
   const[proGmOpen,setProGmOpen]=useState(false);
   // v31: Claude AI Storyline stub
-  const[aiStorylines,setAiStorylines]=useState([]);
-  const[aiStorylineOpen,setAiStorylineOpen]=useState(false);
+  // The league's top stories, written after every week (see stories.js).
+  const[stories,setStories]=useState([]);
   // v32: God Mode / Commissioner Layer
   const[godMode,setGodMode]=useState(false);const[godEditTeam,setGodEditTeam]=useState(0);
   // v32: Today's Challenge (seed-based weekly rotation)
@@ -664,31 +665,6 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   };
   // v31: GM Rep tier helper
   const gmRepTier=(rep)=>rep>=90?{lbl:'LEGEND',xpTo:100,clr:'#f59e0b'}:rep>=75?{lbl:'ELITE',xpTo:90,clr:'#a78bfa'}:rep>=60?{lbl:'RESPECTED',xpTo:75,clr:'#22c55e'}:rep>=40?{lbl:'VETERAN',xpTo:60,clr:'#60a5fa'}:{lbl:'ROOKIE',xpTo:40,clr:'#94a3b8'};
-  // v31: generate AI storyline (Claude API stub — wires into VITE_CLAUDE_API_KEY when set)
-  const genAIStoryline=()=>{
-    const CLAUDE_KEY=import.meta.env.VITE_CLAUDE_API_KEY||'';
-    if(!CLAUDE_KEY){
-      const ros=ut?.roster||[];const qb=ros.find(p=>p.pos==='QB');const topOvr=ros.filter(p=>!p.injured).sort((a,b)=>b.ovr-a.ovr)[0];const injured=ros.filter(p=>p.injured);const vets=ros.filter(p=>p.age>=32);const rookies=ros.filter(p=>p.age<=22);const streak=ut?.streak||0;const mor=ut?.morale||50;const rep=ut?.gmRep||50;const wins=ut?.w||0;const losses=ut?.l||0;const winsLeft=18-wk;const standPos=([...teams].filter(t=>t!==ut).filter(t=>t.w>wins).length)+1;const capSpc=Math.round(capSpace(ut)||0);const chemistry=fanSat||50;
-      const templates=[
-        `${ut?.city} ${ut?.name} sit at ${wins}-${losses}, ${standPos<=8?`${standPos}${standPos===1?'st':standPos===2?'nd':standPos===3?'rd':'th'} overall — a playoff spot is within reach`:'on the outside looking in'} with ${winsLeft} weeks remaining. ${streak>1?`A ${streak}-game winning streak has the locker room electric.`:streak<-1?`A ${Math.abs(streak)}-game skid is testing the roster's character.`:'The team is playing close games, outcomes going either way.'}`,
-        `${qb?.name||'The QB'} (${qb?.ovr||'??'} OVR) is the fulcrum of this offense. ${(qb?.ss?.passTD||0)>=(qb?.ss?.passInt||0)*3?`With a ${qb?.ss?.passTD||0}:${qb?.ss?.passInt||0} TD-to-INT ratio, he's been surgical.`:`The turnover concerns are real — ${qb?.ss?.passInt||0} picks this season have cost drives.`} ${(qb?.personality||null)==='clutch'?'His clutch gene has shown in close games.':qb?.personality==='gunslinger'?'His gunslinger mentality is a double-edged sword.':''}`,
-        injured.length>0?`The injury report is the talk of ${ut?.city}. ${injured.slice(0,2).map(p=>`${p.name} (${p.pos})`).join(' and ')} are sidelined, forcing the coaching staff to dig deep into the depth chart. The next man up mentality will define this stretch.`:`Health is a superpower — ${ut?.city} ${ut?.name} are remarkably healthy with no major injuries. ${topOvr?`${topOvr.name} (${topOvr.ovr} OVR) is playing like a Pro Bowler.`:'The entire roster is available for Sunday.'}`,
-        `Cap situation: $${capSpc}M in space ${capSpc>=15?`gives the front office flexibility. Expect aggressive moves before the deadline.`:capSpc>=5?`leaves some room to maneuver, but every decision counts.`:`is dangerously thin — one bad contract could hamstring this franchise for years.`} ${vets.length>2?`With ${vets.length} players 32+, the championship window ${wins>=(losses||1)?'is open':'is narrowing'}.`:''}`,
-        mor>=75?`The locker room in ${ut?.city} is as unified as it gets. Sources close to the team describe a selfless culture where veterans mentor rookies and nobody chases stats. ${topOvr?.name||'The star player'} has been leading by example.`:`Tension is simmering behind the scenes in ${ut?.city}. ${mor<40?`Morale is at a critical low — coaches are spending more time managing egos than game-planning.`:'Some players are frustrated with the direction, though the team is keeping it professional.'}`,
-        rookies.length>0?`The youth movement is real. ${rookies.slice(0,2).map(p=>`${p.name} (${p.pos}, ${p.ovr} OVR)`).join(' and ')} ${rookies.length>1?'are':'is'} ahead of schedule developmentally. ${rookies[0]?.pot>=80?`Scouts are buzzing about ${rookies[0].name}'s ${rookies[0].pot} potential ceiling.`:''}  Long-term, this franchise could be built around its young core.`:`${ut?.city}'s roster skews veteran — experience is the edge, but succession planning is a question the front office will face soon.`,
-        rep>=75?`The GM's reputation around the league is sterling. Trade partners are returning calls faster, free agents are listing ${ut?.city} as a preferred destination, and the owner's box has been nothing but smiles.`:rep>=50?`The front office has earned a measure of credibility. The moves have been steady, if not spectacular. A deep playoff run would cement the GM's status permanently.`:`Whispers around the league question the front office direction. ${wins<losses?'The record speaks for itself — something needs to change.':'Despite the record, the roster construction is raising eyebrows.'}`,
-        `Week ${wk} power ranking snapshot: The ${ut?.name} are ${standPos<=4?'one of the league\'s elite squads, drawing national attention':standPos<=12?'a legitimate contender that no one wants to see in January':'rebuilding with purpose — the pieces are coming together'}. ${(ut?.strat||'balanced')==='aggressive'?'An aggressive game plan is paying dividends.':ut?.strat==='conservative'?'Conservative clock management suits this roster.':''} ${chemistry>=70?'Fan satisfaction is high and the home crowd has been a genuine advantage.':chemistry<40?'Empty seats tell a story — the fanbase needs a spark.':''}`
-      ];
-      // Pick 3-4 most contextually relevant storylines
-      const picks=[];if(qb)picks.push(templates[1]);picks.push(templates[0]);if(injured.length>0)picks.push(templates[2]);else picks.push(templates[4]);picks.push(templates[capSpc<10?3:rep<50?6:7]);
-      const sl=picks.slice(0,4).map(t=>({id:uid(),text:t,wk}));
-      setAiStorylines(sl);
-      setAiStorylineOpen(true);
-      sm('AI Storylines generated (offline mode)');
-      return;
-    }
-    sm('Fetching Claude AI storylines...');
-  };
   // v32: Today's Challenge — seed-based weekly rotation
   const genTodayChallenge=()=>{const d=new Date();const wSeed=Math.floor(d.getTime()/(1000*60*60*24*7));const pool=[{id:'c1',title:"Browns Miracle",desc:"Win the Super Bowl with Cleveland in 3 seasons.",goal:'champ',target:3},{id:'c2',title:"Perfect Season",desc:"Go undefeated (18-0) in one regular season.",goal:'undefeated',target:18},{id:'c3',title:"Dynasty Run",desc:"Win 3 consecutive championships.",goal:'dynasty3',target:3},{id:'c4',title:"Underdog Story",desc:"Win a title starting with below-average roster.",goal:'underdog',target:1},{id:'c5',title:"Rebuild Speedrun",desc:"Go from <5 wins to playoffs in 1 season.",goal:'rebuild',target:1},{id:'c6',title:"Cap Wizard",desc:"Win title while staying under $120M cap.",goal:'cap_wizard',target:1},{id:'c7',title:"Draft Guru",desc:"Draft 5 players with OVR 85+ in one class.",goal:'draft_guru',target:5}];const ch=pool[wSeed%pool.length];setTodayChallenge(ch);return ch;};
   // v32: Offseason Grade calculation
@@ -715,8 +691,6 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   const importLeague=(e)=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result||'{}');if(!d.teams)return sm('Invalid save file');setYr(d.yr);setWk(d.wk);setSp(d.sp);setUi(d.ui);setTeams(withTradeValues(d.teams));setSched(wholeScores(d.sched));setFa(d.fa||[]);setDc(d.dc||{});setDraftPicks(d.draftPicks||[]);setLog(d.log||[]);setChamps(d.champs||[]);setPb(d.pb||null);setScouting(loadScouting(d,genFace));setDevFocus(d.devFocus||{off:null,def:null});setScPts(d.scPts||10);setDynastyStats(d.dynastyStats||{wins:0,losses:0,playoffApps:0,championships:0,seasons:0});setSeasonHistory(d.seasonHistory||[]);setAchievements(d.achievements||[]);setFanSat(d.fanSat||50);setStadium(d.stadium||{lvl:0,upgrades:[]});if(d.dynastyBook)setDynastyBook(d.dynastyBook);setPhase('main');setTab('roster');sm('League imported!');}catch{sm('Import failed — invalid file');}};r.readAsText(f);e.target.value='';};
   // v36: Pro GM unlock — Stripe Payment Link or dev bypass
   // v37: funnel tracking + annual tier
-  const checkoutPro=()=>{track('pro_cta_click');const LINK=import.meta.env.VITE_STRIPE_PAYMENT_LINK||'';if(LINK){track('checkout_opened');window.open(LINK,'_blank');sm('Opening checkout...');}else if(import.meta.env.DEV){localStorage.setItem('gm_pro','1');setProUnlocked(true);sm('Pro GM unlocked (dev mode)!');}else{sm('Set VITE_STRIPE_PAYMENT_LINK in .env.local to enable Pro GM');}};
-  const checkoutAnnual=()=>{track('annual_pass_cta');const LINK=import.meta.env.VITE_STRIPE_ANNUAL_LINK||'';if(LINK){track('checkout_annual_opened');window.open(LINK,'_blank');sm('Opening annual checkout...');}else if(import.meta.env.DEV){localStorage.setItem('gm_pro_annual','1');localStorage.setItem('gm_pro','1');setProAnnual(true);setProUnlocked(true);sm('Annual Pass unlocked (dev mode)!');}else{sm('Set VITE_STRIPE_ANNUAL_LINK in .env.local');}};
   // v32: Draft Lottery animation data
   const genDraftLottery=()=>{const order=[...teams].map((t,i)=>({...t,idx:i})).sort((a,b)=>a.w-b.w);const lottery=order.slice(0,5).sort(()=>Math.random()-.5);setDraftLotteryResult(lottery);setDraftLotteryOpen(true);};
   // v32: God Mode actions
@@ -729,8 +703,8 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   const callUpPS=(pid)=>{if(sp!=='regular'){sm("Only during regular season!");return;}if(scPts<1){sm("Need 1 SP!");return;}const nt=[...teams];const psi=(nt[ui].ps||[]).findIndex(p=>p.id===pid);if(psi<0)return;const[p]=nt[ui].ps.splice(psi,1);nt[ui].roster.push({...p,salary:+(p.ovr/99*Rf(0.5,2)).toFixed(1),psCallUp:true,callUpWk:wk});setTeams(nt);setScPts(x=>x-1);sm(`${p.name} called up from PS (returns in 3 wks)`);};
 
   // v33: Auto-save to localStorage
-  const autoSave=()=>{if(!teams.length||phase!=='main')return;try{const d={v:3,yr,wk,sp,ui,teams,sched,byeMap,fa,dc,draftPicks,log,champs,pb,scouting,devFocus,scPts,rivalry,fanSat,stadium,dynastyStats,seasonHistory,achievements:achievements||[],depthOrder,playingTime,awards};saveJSON('gm_autosave',d);setAutoSaveTs(new Date().toLocaleTimeString());}catch{}};
-  const applyAutoSave=d=>{if(!d?.teams)return;setYr(d.yr);setWk(d.wk);setSp(d.sp);setUi(d.ui);setTeams(withTradeValues(d.teams));setSched(wholeScores(d.sched));setFa(d.fa||[]);setDc(d.dc||{});setDraftPicks(d.draftPicks||[]);setLog(d.log||[]);setChamps(d.champs||[]);setAwards(d.awards||[]);setPb(d.pb||null);setScouting(loadScouting(d,genFace));setDevFocus(d.devFocus||{off:null,def:null});setScPts(d.scPts||10);setDynastyStats(d.dynastyStats||{wins:0,losses:0,playoffApps:0,championships:0,seasons:0});setSeasonHistory(d.seasonHistory||[]);setAchievements(d.achievements||[]);setFanSat(d.fanSat||50);setStadium(d.stadium||{lvl:0,upgrades:[]});if(d.byeMap)setByeMap(d.byeMap);if(d.rivalry!=null)setRivalry(d.rivalry);setDepthOrder(d.depthOrder||{});setPlayingTime(d.playingTime||{});setPhase('main');setTab('dashboard');sm('Franchise loaded — welcome back!');};
+  const autoSave=()=>{if(!teams.length||phase!=='main')return;try{const d={v:3,yr,wk,sp,ui,teams,sched,byeMap,fa,dc,draftPicks,log,champs,pb,scouting,devFocus,scPts,rivalry,fanSat,stadium,dynastyStats,seasonHistory,achievements:achievements||[],depthOrder,playingTime,awards,stories};saveJSON('gm_autosave',d);setAutoSaveTs(new Date().toLocaleTimeString());}catch{}};
+  const applyAutoSave=d=>{if(!d?.teams)return;setYr(d.yr);setWk(d.wk);setSp(d.sp);setUi(d.ui);setTeams(withTradeValues(d.teams));setSched(wholeScores(d.sched));setFa(d.fa||[]);setDc(d.dc||{});setDraftPicks(d.draftPicks||[]);setLog(d.log||[]);setChamps(d.champs||[]);setAwards(d.awards||[]);setStories(d.stories||[]);setPb(d.pb||null);setScouting(loadScouting(d,genFace));setDevFocus(d.devFocus||{off:null,def:null});setScPts(d.scPts||10);setDynastyStats(d.dynastyStats||{wins:0,losses:0,playoffApps:0,championships:0,seasons:0});setSeasonHistory(d.seasonHistory||[]);setAchievements(d.achievements||[]);setFanSat(d.fanSat||50);setStadium(d.stadium||{lvl:0,upgrades:[]});if(d.byeMap)setByeMap(d.byeMap);if(d.rivalry!=null)setRivalry(d.rivalry);setDepthOrder(d.depthOrder||{});setPlayingTime(d.playingTime||{});setPhase('main');setTab('dashboard');sm('Franchise loaded — welcome back!');};
   // v33: Web Share API — native share on mobile, clipboard fallback on desktop
   const shareViaWebAPI=(title,text)=>{if(navigator.share){navigator.share({title,text,url:'https://vaultsparkstudios.com/gridiron-gm/'}).catch(()=>navigator.clipboard?.writeText(text).then(()=>sm('Copied!')));}else{navigator.clipboard?.writeText(text).then(()=>sm('Copied to clipboard!'));}};
   // v33: Trade Deadline Frenzy — burst of offers at wk9
@@ -953,7 +927,7 @@ applyVetPresence(nt);updateOwnerPatience(nt,nw);const _syn=calcCoachSynergy(nt[u
 // INNO I71: win streak achievement
 if((nt[ui].streak||0)>=5&&!(achievements||[]).find(a=>a.id==='win_streak_5'))
   setAchievements(prev=>[...(prev||[]),{id:'win_streak_5',earnedWk:nw,earnedSeason:yr}]);
-setFanSat(fs=>cl(fs+fsD,0,100));setStadiumAtm(a=>cl(a+(fsD>0?2:fsD<0?-1:0)+(((stadium.upgrades||[]).includes('crowd_noise')?1:0)),0,100));setScPts(pr=>pr+2+repB+fanSatSpMod+Math.max(0,_syn));const _lab=runFocusWeeks(nt[ui].roster,devFocus,1);_lab.forEach(({p})=>{p.tradeVal=tradeValue(p);});if(_lab.length)setLog(l=>[..._lab.map(({p,g})=>`🔬 DEV FOCUS: ${p.name} (${p.pos}) +${g} OVR → ${p.ovr}`),...l.slice(0,149)]);setWeekResult({wk:nw,game:ns.find(g=>g.wk===nw&&g.played&&(g.h===ui||g.a===ui))||null});setTeams(nt);setSched(ns);setWk(nw);setScouting(s=>s&&creditWeeks(s,nw));setNextGameWx(rollGameWeather());
+setFanSat(fs=>cl(fs+fsD,0,100));setStadiumAtm(a=>cl(a+(fsD>0?2:fsD<0?-1:0)+(((stadium.upgrades||[]).includes('crowd_noise')?1:0)),0,100));setScPts(pr=>pr+2+repB+fanSatSpMod+Math.max(0,_syn));const _lab=runFocusWeeks(nt[ui].roster,devFocus,1);_lab.forEach(({p})=>{p.tradeVal=tradeValue(p);});if(_lab.length)setLog(l=>[..._lab.map(({p,g})=>`🔬 DEV FOCUS: ${p.name} (${p.pos}) +${g} OVR → ${p.ovr}`),...l.slice(0,149)]);setWeekResult({wk:nw,game:ns.find(g=>g.wk===nw&&g.played&&(g.h===ui||g.a===ui))||null});setTeams(nt);setSched(ns);setWk(nw);setStories(weeklyStories({teams:nt,sched:ns,wk:nw,ui,yr}));setScouting(s=>s&&creditWeeks(s,nw));setNextGameWx(rollGameWeather());
 // v30: beat reporter
 {const _bp=[];const _ug=ns.filter(g=>g.wk===nw&&g.played&&(g.h===ui||g.a===ui))[0];const _isH=_ug&&_ug.h===ui;const _uScore=_ug?(_isH?_ug.hs:_ug.as):null;const _oScore=_ug?(_isH?_ug.as:_ug.hs):null;const _top=nt[ui].roster.filter(p=>p.ss?.gp>0).sort((a,b)=>((b.ss?.passYds||0)+(b.ss?.rushYds||0)+(b.ss?.recYds||0))-((a.ss?.passYds||0)+(a.ss?.rushYds||0)+(a.ss?.recYds||0)))[0];const _opp=_ug?TEAMS[_isH?_ug.a:_ug.h]?.ab:'---';const _headlines=_uScore>_oScore?[`${nt[ui].ab} edges ${_opp} ${_uScore}-${_oScore} in Week ${nw} thriller`,`${_top?.name||'Team'} leads ${nt[ui].ab} past ${_opp}`,`Win keeps ${nt[ui].ab} in playoff hunt`]:_uScore<_oScore?[`${_opp} hands ${nt[ui].ab} Week ${nw} loss`,`${nt[ui].ab} falls to ${_opp} — questions mount`,`Tough loss drops ${nt[ui].ab} in standings`]:[`${nt[ui].ab} and ${_opp} settle for tie in Week ${nw}`];const _body=`${pick(_headlines)}. ${_top?`${_top.name} (${_top.pos}) continues to anchor the offense. `:''}The team enters Week ${nw+1} at ${nt[ui].w}-${nt[ui].l}.`;setBeatReports(prev=>[{wk:nw,headline:_headlines[0],body:_body,result:_uScore>_oScore?'W':_uScore<_oScore?'L':'T'},...prev].slice(0,8));}
 // v30: legacy records
@@ -1000,7 +974,7 @@ if((dynastyStats.seasons+1)%5===0&&dynastyStats.seasons>0){setDynastyEndOpen(tru
 // v22: generate shareable season recap text
 const _sT=`🏈 ${nt[ui].city} ${nt[ui].name} finished ${nt[ui].w}-${nt[ui].l} in Year ${yr-2025} of my Gridiron GM dynasty! #GridironGM`;setShareText(_sT);const seedConf2a=(conf)=>{const ct=nt.filter(t=>TEAMS[t.id]?.c===conf);const divs={};ct.forEach(t=>{const dk=TEAMS[t.id]?.d||'X';(divs[dk]||(divs[dk]=[])).push(t);});Object.values(divs).forEach(d=>d.sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)));const dw=Object.values(divs).map(d=>d[0]).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa));const wc=ct.filter(t=>!dw.find(d=>d.id===t.id)).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)).slice(0,3);return[...dw,...wc].map(t=>t.id);};const afTmp=seedConf2a('AFC'),nfTmp=seedConf2a('NFC');const uInPlayoffs=[...afTmp,...nfTmp].includes(ui);if(uInPlayoffs)setDynastyStats(d=>({...d,playoffApps:d.playoffApps+1}));}
 if(nw>=18){setSp("playoffs");const seedConf=(conf)=>{const ct=nt.filter(t=>TEAMS[t.id]?.c===conf);const divs={};ct.forEach(t=>{const dk=TEAMS[t.id]?.d||'X';(divs[dk]||(divs[dk]=[])).push(t);});Object.values(divs).forEach(d=>d.sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)));const dw=Object.values(divs).map(d=>d[0]).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa));const wc=ct.filter(t=>!dw.find(d=>d.id===t.id)).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)).slice(0,3);return[...dw,...wc].map(t=>t.id);};const af=seedConf('AFC'),nf=seedConf('NFC');setPb(makeBracket(af,nf));setTab("playoffs");}};
-  const simAll=()=>{if(sp!=="regular")return;let cw=wk;const nt=teams.map(t=>({...t,roster:t.roster.map(p=>({...p,ss:{...p.ss},gl:[...p.gl]}))}));const ns=[...sched];const rl=[];while(cw<18){cw++;ns.filter(g=>g.wk===cw&&!g.played).forEach(g=>{const gi=ns.indexOf(g);const r=simGame(nt[g.h],nt[g.a],g.h===ui?gamePlan:{off:'balanced',def:'balanced'},g.a===ui?gamePlan:{off:'balanced',def:'balanced'},null,{neutral:g.neutral});ns[gi]={...g,played:true,hs:r.hsc,as:r.asc,boxH:r.boxH,boxA:r.boxA};nt[g.h].pf+=r.hsc;nt[g.h].pa+=r.asc;nt[g.a].pf+=r.asc;nt[g.a].pa+=r.hsc;if(r.hsc>r.asc){nt[g.h].w++;nt[g.a].l++;}else if(r.asc>r.hsc){nt[g.a].w++;nt[g.h].l++;}else{nt[g.h].t++;nt[g.a].t++;}if(g.h===ui||g.a===ui){const ih=g.h===ui;const us=ih?r.hsc:r.asc;const them=ih?r.asc:r.hsc;const opp=ih?nt[g.a]:nt[g.h];rl.push(`${us>them?"W":"L"} ${us}-${them} vs ${opp.ab}`);const won=us>them;const tie=us===them;const nStr=won?Math.max(0,nt[ui].streak||0)+1:tie?0:Math.min(0,nt[ui].streak||0)-1;nt[ui].streak=nStr;const sB=Math.abs(nStr)>=3?2:0;nt[ui].morale=cl((nt[ui].morale||50)+(won?4+sB:tie?0:-(4+sB)),0,100);}});nt.forEach(t=>t.roster.forEach(p=>{if(p.injured){p.injWk--;if(p.injWk<=0){p.injured=false;p.injWk=0;p.injType="";}}}));}nt.forEach(t=>t.roster.forEach(p=>{p.av=calcAV(p);}));setScPts(pr=>pr+(18-wk)*2);const _lab=runFocusWeeks(nt[ui].roster,devFocus,Math.max(0,18-wk));_lab.forEach(({p})=>{p.tradeVal=tradeValue(p);});if(_lab.length)setLog(l=>[..._lab.map(({p,g})=>`🔬 DEV FOCUS: ${p.name} (${p.pos}) +${g} OVR → ${p.ovr}`),...l.slice(0,149)]);setTeams(nt);setSched(ns);setWk(18);setScouting(s=>s&&creditWeeks(s,18));setLog(p=>[...p,...rl]);setSp("playoffs");track('season_simmed');const seedConf2=(conf)=>{const ct=nt.filter(t=>TEAMS[t.id]?.c===conf);const divs={};ct.forEach(t=>{const dk=TEAMS[t.id]?.d||'X';(divs[dk]||(divs[dk]=[])).push(t);});Object.values(divs).forEach(d=>d.sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)));const dw=Object.values(divs).map(d=>d[0]).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa));const wc=ct.filter(t=>!dw.find(d=>d.id===t.id)).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)).slice(0,3);return[...dw,...wc].map(t=>t.id);};const af2=seedConf2('AFC'),nf2=seedConf2('NFC');setWeekResult({season:true,playoffs:[...af2,...nf2].includes(ui)});setPb(makeBracket(af2,nf2));setTab("playoffs");setShowRecapCard(true);setDynastyShareOpen(true);sm("Season complete! Recap card ready.");};
+  const simAll=()=>{if(sp!=="regular")return;let cw=wk;const nt=teams.map(t=>({...t,roster:t.roster.map(p=>({...p,ss:{...p.ss},gl:[...p.gl]}))}));const ns=[...sched];const rl=[];while(cw<18){cw++;ns.filter(g=>g.wk===cw&&!g.played).forEach(g=>{const gi=ns.indexOf(g);const r=simGame(nt[g.h],nt[g.a],g.h===ui?gamePlan:{off:'balanced',def:'balanced'},g.a===ui?gamePlan:{off:'balanced',def:'balanced'},null,{neutral:g.neutral});ns[gi]={...g,played:true,hs:r.hsc,as:r.asc,boxH:r.boxH,boxA:r.boxA};nt[g.h].pf+=r.hsc;nt[g.h].pa+=r.asc;nt[g.a].pf+=r.asc;nt[g.a].pa+=r.hsc;if(r.hsc>r.asc){nt[g.h].w++;nt[g.a].l++;}else if(r.asc>r.hsc){nt[g.a].w++;nt[g.h].l++;}else{nt[g.h].t++;nt[g.a].t++;}if(g.h===ui||g.a===ui){const ih=g.h===ui;const us=ih?r.hsc:r.asc;const them=ih?r.asc:r.hsc;const opp=ih?nt[g.a]:nt[g.h];rl.push(`${us>them?"W":"L"} ${us}-${them} vs ${opp.ab}`);const won=us>them;const tie=us===them;const nStr=won?Math.max(0,nt[ui].streak||0)+1:tie?0:Math.min(0,nt[ui].streak||0)-1;nt[ui].streak=nStr;const sB=Math.abs(nStr)>=3?2:0;nt[ui].morale=cl((nt[ui].morale||50)+(won?4+sB:tie?0:-(4+sB)),0,100);}});nt.forEach(t=>t.roster.forEach(p=>{if(p.injured){p.injWk--;if(p.injWk<=0){p.injured=false;p.injWk=0;p.injType="";}}}));}nt.forEach(t=>t.roster.forEach(p=>{p.av=calcAV(p);}));setScPts(pr=>pr+(18-wk)*2);const _lab=runFocusWeeks(nt[ui].roster,devFocus,Math.max(0,18-wk));_lab.forEach(({p})=>{p.tradeVal=tradeValue(p);});if(_lab.length)setLog(l=>[..._lab.map(({p,g})=>`🔬 DEV FOCUS: ${p.name} (${p.pos}) +${g} OVR → ${p.ovr}`),...l.slice(0,149)]);setTeams(nt);setSched(ns);setWk(18);setStories(weeklyStories({teams:nt,sched:ns,wk:18,ui,yr}));setScouting(s=>s&&creditWeeks(s,18));setLog(p=>[...p,...rl]);setSp("playoffs");track('season_simmed');const seedConf2=(conf)=>{const ct=nt.filter(t=>TEAMS[t.id]?.c===conf);const divs={};ct.forEach(t=>{const dk=TEAMS[t.id]?.d||'X';(divs[dk]||(divs[dk]=[])).push(t);});Object.values(divs).forEach(d=>d.sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)));const dw=Object.values(divs).map(d=>d[0]).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa));const wc=ct.filter(t=>!dw.find(d=>d.id===t.id)).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)).slice(0,3);return[...dw,...wc].map(t=>t.id);};const af2=seedConf2('AFC'),nf2=seedConf2('NFC');setWeekResult({season:true,playoffs:[...af2,...nf2].includes(ui)});setPb(makeBracket(af2,nf2));setTab("playoffs");setShowRecapCard(true);setDynastyShareOpen(true);sm("Season complete! Recap card ready.");};
   // One playoff round. live: the result of your game if you played it on the field.
   const simPR=(live)=>{if(!pb||pb.ch!=null)return;const nt=[...teams];const rr=[];
     pb.m.forEach(([a,b])=>{const mine=live&&live.h===a&&live.a===b;const r=mine?{hsc:live.hs,asc:live.as,boxH:live.boxH,boxA:live.boxA}:simGame(nt[a],nt[b],null,null,null,{playoff:true,neutral:pb.rd===4});
@@ -1409,18 +1383,6 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         </div>
       </div>;
     })()}
-    {/* v31: AI Storylines Modal */}
-    {aiStorylineOpen&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.93)',zIndex:3200,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setAiStorylineOpen(false)}>
-      <div onClick={e=>e.stopPropagation()} style={{background:'#0d1424',borderRadius:14,maxWidth:420,width:'100%',border:'2px solid #7c3aed'}}>
-        <div style={{padding:'14px 18px',borderBottom:'1px solid #1e293b'}}>
-          <div style={{fontSize:15,fontWeight:800,color:'#a78bfa'}}>✍️ FRANCHISE STORYLINES — Wk{wk}</div>
-        </div>
-        <div style={{padding:'12px 18px',display:'flex',flexDirection:'column',gap:8}}>
-          {aiStorylines.map((s,i)=><div key={s.id} style={{background:'#1e1040',borderRadius:6,padding:'10px 12px',border:'1px solid #3b0764',fontSize:12,color:'#c4b5fd',lineHeight:1.65,fontStyle:'italic'}}>{s.text}</div>)}
-          <button onClick={()=>setAiStorylineOpen(false)} style={{background:'#1e293b',color:C.mt,border:`1px solid ${C.bd}`,borderRadius:6,padding:'7px 0',fontSize:12,cursor:'pointer'}}>Close</button>
-        </div>
-      </div>
-    </div>}
     {/* I-C: New GM Onboarding Intro Modal */}
     {showIntro&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.95)',zIndex:2200,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}><div style={{background:'#0d1424',borderRadius:16,padding:24,maxWidth:380,width:'100%',border:'2px solid #22c55e',boxShadow:'0 0 40px #22c55e22'}}><div style={{textAlign:'center',marginBottom:16}}><div style={{fontSize:36,marginBottom:6}}>🏈</div><div style={{fontSize:24,fontWeight:900,color:'#22c55e',letterSpacing:1,marginBottom:4}}>Welcome, GM</div><div style={{fontSize:13,color:'#64748b'}}>Three things to know before you start</div></div><div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:18}}>{[['📋','Draft picks are currency','Trade them wisely. Your future picks show up in the Trade tab. Rookie contracts are cheap — invest in youth early.'],['📅','Sim Week advances time','Hit SIM WEEK each week to progress the season. Use SIM ALL to fast-forward. Play live games from the Schedule tab.'],['💰','SP is your power resource','Earn Season Points by winning. Spend them on scouting, coaching upgrades, and key roster moves.']].map(([icon,title,desc],i)=><div key={i} style={{background:'#ffffff06',border:'1px solid #1e3a5f',borderRadius:8,padding:'8px 10px',display:'flex',gap:10,alignItems:'flex-start'}}><span style={{fontSize:18,flexShrink:0,marginTop:1}}>{icon}</span><div><div style={{fontSize:13,fontWeight:700,color:'#e2e8f0',marginBottom:2}}>{title}</div><div style={{fontSize:14,color:'#94a3b8',lineHeight:1.5}}>{desc}</div></div></div>)}</div><button onClick={()=>{setShowIntro(false);localStorage.setItem('gm_intro_shown','1');}} style={{width:'100%',background:'#22c55e',color:'#fff',border:'none',borderRadius:8,padding:'10px 0',fontWeight:800,fontSize:15,cursor:'pointer',letterSpacing:1}}>LET'S GO</button></div></div>}
     {/* v20: Salary Arbitration Modal */}
@@ -1530,10 +1492,10 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         else if(sp==="resign")primary.push({label:"→ Free Agency",onClick:startFreeAgency});
         else if(sp==="freeagency")primary.push(draftPicks.length>0&&draftIdx>=draftPicks.length?{label:"→ Next Season",onClick:newSeason}:{label:"→ Draft",onClick:leaveFreeAgency});
         else if(sp==="draft")primary.push(draftActive?{label:"Go to the draft",onClick:()=>go("draft")}:{label:"→ Next Season",onClick:newSeason});
-        const NEWS=/📰|🏅|💰|🤝|TRADE|Trade|signs|chose|Re-signed|re-signed|injur|INJUR|🏆|HOLDOUT|DRAFT|Draft|Combine|COMBINE|free agen|Free agen|retire/;
+        const NEWS=/📰|🏅|💰|🤝|TRADE|Trade|signs|chose|Re-signed|re-signed|🏆|HOLDOUT|DRAFT|Draft|Combine|COMBINE|free agen|Free agen|retire/;
         const news=log.filter(l=>typeof l==="string"&&NEWS.test(l)).slice(0,3).map(text=>({text:text.replace(/^[^A-Za-z0-9]+/,""),team:teams.find(t=>text.includes(t.name)&&t.id!==ui)||teams.find(t=>text.includes(t.name))}));
         const messages=ut.roster.filter(p=>p.holdout&&!p.holdoutStone).length+ut.roster.filter(p=>p.tradeRequest).length+(aiOffer?1:0)+(capSpace(ut)<0?1:0);
-        return<HomeScreen teams={teams} ui={ui} depthOrder={depthOrder} playingTime={playingTime} sched={sched} wk={wk} sp={sp} yr={yr} pb={pb} byeMap={byeMap} news={news} messages={messages} menu={menu} primary={primary} onNav={t=>setTab(t)}/>;})()}
+        return<HomeScreen teams={teams} ui={ui} depthOrder={depthOrder} playingTime={playingTime} sched={sched} wk={wk} sp={sp} yr={yr} pb={pb} byeMap={byeMap} news={news} stories={sp==='regular'||sp==='playoffs'?stories:[]} messages={messages} menu={menu} primary={primary} onNav={t=>setTab(t)}/>;})()}
       <div style={{fontSize:13,fontWeight:800,letterSpacing:1.5,color:C.mt,margin:'4px 0 8px'}}>TEAM SNAPSHOT</div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:8}}>
         {/* Team Status */}
@@ -1849,11 +1811,11 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         </div>)}</div>)}
     </div>}
 
-    {/* HUB — Stats Hub, career leaders, franchise history, AI storyline, Pro GM */}
+    {/* HUB — Stats Hub, career leaders, franchise history, roster grades */}
     {tab==="hub"&&<div style={{maxWidth:700}}>
       {/* Section switcher */}
       <div style={{display:'flex',gap:3,marginBottom:10,flexWrap:'wrap'}}>
-        {[['leaders','📊 Season Leaders'],['franchise','🏆 Franchise History'],['roster','💪 Roster Grades'],['storyline','✍️ AI Storylines'],['pro','⭐ Pro GM']].map(([k,l])=><button key={k} onClick={()=>setHubSection(k)} style={{background:hubSection===k?C.gn+'22':'transparent',color:hubSection===k?C.gn:C.mt,border:`1px solid ${hubSection===k?C.gn:C.bd}`,borderRadius:4,padding:'3px 10px',fontSize:12,fontWeight:700,cursor:'pointer'}}>{l}</button>)}
+        {[['leaders','📊 Season Leaders'],['franchise','🏆 Franchise History'],['roster','💪 Roster Grades']].map(([k,l])=><button key={k} onClick={()=>setHubSection(k)} style={{background:hubSection===k?C.gn+'22':'transparent',color:hubSection===k?C.gn:C.mt,border:`1px solid ${hubSection===k?C.gn:C.bd}`,borderRadius:4,padding:'3px 10px',fontSize:12,fontWeight:700,cursor:'pointer'}}>{l}</button>)}
       </div>
 
       {/* SECTION: Season Leaders */}
@@ -1949,43 +1911,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         </div>;
       })()}
 
-      {/* SECTION: AI Storylines */}
-      {hubSection==='storyline'&&<div>
-        <div style={{fontSize:13,fontWeight:800,color:'#a78bfa',letterSpacing:2,marginBottom:8}}>✍️ AI FRANCHISE STORYLINES</div>
-        <div style={{background:'#0a0f1a',border:'1px solid #3b0764',borderRadius:6,padding:'8px 10px',marginBottom:10,fontSize:11,color:'#94a3b8',lineHeight:1.5}}>
-          Generates dynamic franchise storylines based on your current game state. Set <code style={{color:'#c4b5fd',background:'#1e1040',padding:'0 3px',borderRadius:2}}>VITE_CLAUDE_API_KEY</code> in .env.local for Claude-powered narrative.
-        </div>
-        <button onClick={genAIStoryline} style={{background:'#3b0764',color:'#c4b5fd',border:'1px solid #7c3aed',borderRadius:6,padding:'8px 16px',fontWeight:700,fontSize:12,cursor:'pointer',marginBottom:10}}>✨ Generate Storylines</button>
-        {aiStorylines.length>0&&<div style={{display:'flex',flexDirection:'column',gap:6}}>
-          {aiStorylines.map((s,i)=><div key={s.id} style={{background:C.cd,borderRadius:6,padding:'8px 10px',border:'1px solid #1e293b',fontSize:12,lineHeight:1.6,color:'#94a3b8',fontStyle:'italic'}}>
-            <span style={{color:'#334155',fontSize:10,fontWeight:700,display:'block',marginBottom:3}}>STORYLINE {i+1} · WK{s.wk}</span>
-            {s.text}
-          </div>)}
-        </div>}
-        {aiStorylines.length===0&&<div style={{color:'#334155',fontSize:12,textAlign:'center',padding:'20px 0'}}>Press Generate to create storylines from your current franchise state.</div>}
-      </div>}
 
-      {/* SECTION: Pro GM */}
-      {hubSection==='pro'&&<div>
-        <div style={{fontSize:13,fontWeight:800,color:'#f59e0b',letterSpacing:2,marginBottom:8}}>⭐ PRO GM SUBSCRIPTION</div>
-        <div style={{background:'linear-gradient(135deg,#92400e22,#1c1007)',border:'2px solid #f59e0b44',borderRadius:10,padding:'16px',marginBottom:10,textAlign:'center'}}>
-          <div style={{fontSize:24,marginBottom:4}}>⭐</div>
-          <div style={{fontSize:14,fontWeight:900,color:'#fbbf24',marginBottom:4}}>Gridiron GM Pro</div>
-          <div style={{fontSize:13,color:'#94a3b8',marginBottom:10}}>$4.99/month — Support the studio. Own the league.</div>
-          <div style={{display:'flex',flexDirection:'column',gap:4,marginBottom:14,textAlign:'left'}}>
-            {[['🎨','Custom Team Themes','Exclusive color palettes and logo styles'],['💾','Unlimited Save Slots','Save unlimited franchises (currently 3)'],['📊','Pro Analytics Dashboard','Advanced EPA, DVOA-style efficiency stats'],['🏆','Exclusive Achievements','Pro-only milestone badges in your trophy case'],['⚡','Early Access','New features 2 weeks early'],['🤖','Claude AI Storylines','Full Claude-powered narrative engine'],['🌐','Cloud Sync (Coming)','Save across devices when multiplayer ships']].map(([icon,ttl,desc])=><div key={ttl} style={{display:'flex',gap:8,alignItems:'flex-start',padding:'4px 0',borderBottom:'1px solid #1e293b33'}}>
-              <span style={{fontSize:14,flexShrink:0}}>{icon}</span>
-              <div><div style={{fontSize:12,fontWeight:700,color:'#e2e8f0'}}>{ttl}</div><div style={{fontSize:10,color:'#64748b'}}>{desc}</div></div>
-            </div>)}
-          </div>
-          {proUnlocked?<div style={{background:'#14532d',color:'#86efac',border:'1px solid #166534',borderRadius:8,padding:'10px 0',fontWeight:900,fontSize:14,textAlign:'center',letterSpacing:1}}>✅ PRO GM {proAnnual?'ANNUAL ':''}ACTIVE</div>:<div style={{display:'flex',flexDirection:'column',gap:5}}><button onClick={checkoutPro} style={{width:'100%',background:'#f59e0b',color:'#000',border:'none',borderRadius:8,padding:'8px 0',fontWeight:900,fontSize:14,cursor:'pointer',letterSpacing:1}}>UNLOCK PRO — $2.99 ONE-TIME</button><div style={{position:'relative'}}><button onClick={checkoutAnnual} style={{width:'100%',background:'#7c3aed',color:'#fff',border:'1px solid #a78bfa',borderRadius:8,padding:'8px 0',fontWeight:900,fontSize:14,cursor:'pointer',letterSpacing:1}}>SEASON PASS — $4.99 / YEAR</button><span style={{position:'absolute',top:-7,right:8,background:'#22c55e',color:'#000',fontSize:10,fontWeight:900,borderRadius:3,padding:'1px 5px',letterSpacing:1}}>BEST VALUE</span></div></div>}
-          <div style={{fontSize:10,color:'#334155',marginTop:6}}>{proUnlocked?`God Mode, Broadcast, Export unlocked. ${proAnnual?'Annual: weekly challenges + cosmetics.':''}`:'One-time $2.99 or $4.99/yr. Set VITE_STRIPE_PAYMENT_LINK + VITE_STRIPE_ANNUAL_LINK.'}</div>
-        </div>
-        <div style={{background:C.cd,borderRadius:6,padding:'8px 10px',border:`1px solid ${C.bd}`,fontSize:11,color:'#64748b'}}>
-          <div style={{fontWeight:700,color:C.mt,marginBottom:4}}>DEVELOPER NOTE</div>
-          To enable Stripe payments, add <code style={{color:'#c4b5fd',background:'#1e1040',padding:'0 3px',borderRadius:2}}>VITE_STRIPE_KEY=pk_live_xxx</code> to your .env.local and deploy the Stripe webhook handler from <code style={{color:'#93c5fd'}}>docs/PRO_GM_SETUP.md</code>.
-        </div>
-      </div>}
     </div>}
 
     {/* SCOUTING */}
