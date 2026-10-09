@@ -233,4 +233,9 @@ export const PATCH_NOTES = [
     "Fixed: Sim All never retired anyone at the end of the season; it now does, like Sim Week. Retirement messages now show the right number of seasons, and players still playing at an elite level (88+) are much less likely to walk away.",
     "Replaced the old Hall of Fame ballot, which never had anyone on it.",
   ] },
+  { v: "1.66", date: "2026-10-09", title: "Coaching Carousel and Owner Patience", notes: [
+    "Coaching carousel every off-season: struggling AI teams fire the coordinator whose side of the ball let them down (a bottom-ten offense or defense in a losing season), now and then a weak special teams coach, and hire replacements from the coaching market. New coordinators bring their own scheme and rating, so teams change identity.",
+    "Fixed: when an AI team's coordinator's contract ran out the job was left empty forever, so over a few seasons AI teams lost their coaches (and their bonuses). Every opening is now filled.",
+    "Owner patience is real now: winning seasons, playoff trips and titles build it; losing seasons drain it. Below 35 the owner gives you an ultimatum; run it out and you're fired, with job offers from the league's worst teams or one last chance to plead for another season.",
+  ] },
 ];
