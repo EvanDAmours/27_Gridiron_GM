@@ -34,7 +34,9 @@ export function seasonAwardWinners(teams, yr) {
   const mvp = pick(off, (x) => offScore(x.p) * (x.p.pos === "QB" ? 1 : 0.8) + x.w * 8);
   const opoy = pick(off.filter((x) => x.p.id !== mvp?.pid), (x) => offScore(x.p));
   const dpoy = pick(def, (x) => defScore(x.p));
-  const rookie = (x) => (x.p.draftYr != null ? x.p.draftYr === yr : x.p.age <= 22);
+  // Rookies: players drafted in this league (draftPk = their overall pick, 1+) were picked the off-season before, so their
+  // draftYr is last season; real players from the opening rosters carry the season itself.
+  const rookie = (x) => (x.p.draftPk > 0 ? x.p.draftYr === yr - 1 : x.p.draftYr != null ? x.p.draftYr === yr : x.p.age <= 22);
   const oroy = pick(off.filter(rookie), (x) => offScore(x.p));
   const droy = pick(def.filter(rookie), (x) => defScore(x.p));
   return { yr, mvp, opoy, dpoy, oroy, droy };

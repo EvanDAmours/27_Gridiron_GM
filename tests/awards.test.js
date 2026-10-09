@@ -23,3 +23,16 @@ test("real Super Bowl history", () => {
   assert.equal(sbName(58), "Super Bowl LVIII"); assert.equal(sbName(50), "Super Bowl 50"); assert.equal(sbName(44), "Super Bowl XLIV");
   assert.equal(sbNumber(2026), 61);
 });
+
+test("rookie awards find this year's draft class", () => {
+  const ss = (o) => ({ gp: 16, ...o });
+  const teams = [{ ab: "NYG", w: 8, roster: [
+    { id: "r1", name: "Drafted WR", pos: "WR", draftYr: 2026, draftPk: 5, ss: ss({ rec: 70, recYds: 900, recTD: 6 }) },
+    { id: "r2", name: "Drafted LB", pos: "LB", draftYr: 2026, draftPk: 40, ss: ss({ tkl: 110, sacks: 4 }) },
+    { id: "v", name: "Vet WR", pos: "WR", draftYr: 2026, draftPk: 0, ss: ss({ rec: 90, recYds: 1200 }) },
+  ] }];
+  const a = seasonAwardWinners(teams, 2027);
+  assert.equal(a.oroy.pid, "r1");
+  assert.equal(a.droy.pid, "r2");
+  assert.notEqual(seasonAwardWinners(teams, 2028).oroy?.pid, "r1", "not a rookie a year later");
+});
