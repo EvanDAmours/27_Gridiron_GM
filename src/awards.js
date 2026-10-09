@@ -20,6 +20,38 @@ const statLine = (p) => {
   return bits.join(" · ");
 };
 
+// The season a player is a rookie. rkYr is stamped when he joins the league; older saves fall back
+// to the draft year (players drafted in this league were picked the off-season before their first season).
+export function rookieSeason(p) {
+  if (p.rkYr != null) return p.rkYr;
+  if (p.draftPk > 0 && p.draftYr > 0) return p.draftYr + 1;
+  return p.draftYr > 0 ? p.draftYr : null;
+}
+
+// Stamp rkYr on every player who lacks it. realYears: "name|pos" -> rookie season for the real
+// players in the Madden data (the 2026 rookies are 2026), so saves made before the real rookies
+// were marked still find them.
+export function tagRookieYears(teams, realYears = {}) {
+  const tag = (p) => {
+    if (!p || p.rkYr != null) return p;
+    if (!(p.draftPk > 0)) {
+      const ry = realYears[`${p.name}|${p.pos}`];
+      if (ry != null) return { ...p, draftYr: ry, rkYr: ry };
+    }
+    const r = rookieSeason(p);
+    return r != null ? { ...p, rkYr: r } : p;
+  };
+  return (teams || []).map((t) => ({ ...t, roster: (t.roster || []).map(tag), ...(t.ir ? { ir: t.ir.map(tag) } : {}) }));
+}
+
+// Rookie awards for a season that already rolled over: a player's first season is all his career
+// stats hold until the next one ends, so last year's rookies can still be judged from them.
+export function pastRookieAwards(teams, yr) {
+  const asCareer = teams.map((t) => ({ ...t, roster: (t.roster || []).filter((p) => rookieSeason(p) === yr).map((p) => ({ ...p, ss: p.cs || {} })) }));
+  const w = seasonAwardWinners(asCareer, yr);
+  return { oroy: w.oroy, droy: w.droy };
+}
+
 // teams: every club (players carry .ss season stats). yr: the season. Returns { yr, mvp, opoy,
 // dpoy, oroy, droy }, each { pid, name, pos, ti, team, stat } or null.
 export function seasonAwardWinners(teams, yr) {
@@ -34,9 +66,7 @@ export function seasonAwardWinners(teams, yr) {
   const mvp = pick(off, (x) => offScore(x.p) * (x.p.pos === "QB" ? 1 : 0.8) + x.w * 8);
   const opoy = pick(off.filter((x) => x.p.id !== mvp?.pid), (x) => offScore(x.p));
   const dpoy = pick(def, (x) => defScore(x.p));
-  // Rookies: players drafted in this league (draftPk = their overall pick, 1+) were picked the off-season before, so their
-  // draftYr is last season; real players from the opening rosters carry the season itself.
-  const rookie = (x) => (x.p.draftPk > 0 ? x.p.draftYr === yr - 1 : x.p.draftYr != null ? x.p.draftYr === yr : x.p.age <= 22);
+  const rookie = (x) => rookieSeason(x.p) === yr;
   const oroy = pick(off.filter(rookie), (x) => offScore(x.p));
   const droy = pick(def.filter(rookie), (x) => defScore(x.p));
   return { yr, mvp, opoy, dpoy, oroy, droy };
