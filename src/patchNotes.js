@@ -217,4 +217,9 @@ export const PATCH_NOTES = [
     "The game engine was split out of the main screen file into its own module, so it can be tested directly. Removed leftover code from features that no longer exist (like the old Trade Deadline Frenzy popup).",
     "Every update now has to pass the unit tests and a full smoke test (a new game played through a season, Deadline Day, the playoffs, the off-season and the draft into the next year in a real browser) before it can be published.",
   ] },
+  { v: "1.63", date: "2026-10-09", title: "Any Given Sunday", notes: [
+    "Parity: each team now has good and bad days, and roster gaps decide a little less of every game. Over 40 simulated seasons the best record was usually 14-16 wins and the worst 1-3 (it used to be 15-17 and 0-1 every year), and win totals spread like the NFL's.",
+    "Home-field advantage trimmed: home teams win about 55% of games, like the NFL.",
+    "Points, yards, sacks and turnovers per game are unchanged.",
+  ] },
 ];

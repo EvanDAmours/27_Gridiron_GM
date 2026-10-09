@@ -20,7 +20,8 @@ const last = (p) => (p?.name || "").split(" ").slice(-1)[0] || "Player";
 
 // Home-field advantage and how much the game-day modifiers (game plan, coaches, morale,
 // weather...) count: both in "edge" units, where 1 unit is worth about 2.5 points a game.
-export const HOME_EDGE = 0.6;
+export const HOME_EDGE = 0.42; // home teams win ~55%, like the NFL
+let HOME = HOME_EDGE;
 export const POINTS_PER_EDGE = 2.5;
 
 // Who gets the ball: snap share x how often that spot is targeted per snap x talent. Each
@@ -106,6 +107,9 @@ export function createGame(home, away, { playoff = false, neutral = false, rand 
     box: { h: {}, a: {} }, stats: { h: emptyTeam(), a: emptyTeam() },
   };
   g.stats[first].drives++;
+  // Any given Sunday: each side has a good or bad day on offense and on defense.
+  const day = () => ({ o: gauss(rand) * GAME_DAY_SD, d: gauss(rand) * GAME_DAY_SD });
+  g.day = { h: day(), a: day() };
   return g;
 }
 
@@ -121,13 +125,17 @@ const add = (l, k, v) => { if (v) l[k] = (l[k] || 0) + v; };
 // compared in spreads above or below average, so an elite defense counts as much as an elite
 // offense even though defensive units (8 players averaged) vary less than offensive ones.
 export const LEAGUE = { pass: [81.4, 4.9], run: [81.7, 4.2], passD: [80.1, 2.4], runD: [79.1, 1.9], rush: [79.4, 2.2], ol: [78.2, 3.4] };
-export let SENSITIVITY = 0.75; // edge units per spread of advantage
+export let SENSITIVITY = 0.6; // edge units per spread of advantage
+// How much a team's play swings from one game to the next (edge units, per side of the ball).
+export let GAME_DAY_SD = 0.45; // with SENSITIVITY 0.6: win totals spread like the NFL's (~3 wins), no routine 16-1 or 1-16 teams
+export const tune = (o) => { if (o.SENSITIVITY != null) SENSITIVITY = o.SENSITIVITY; if (o.GAME_DAY_SD != null) GAME_DAY_SD = o.GAME_DAY_SD; if (o.HOME_EDGE != null) HOME = o.HOME_EDGE; };
 const z = (v, k) => (v - LEAGUE[k][0]) / LEAGUE[k][1];
 
 // Matchup edges for the team with the ball (passing and running), in edge units.
 function edges(g) {
   const o = g.sides[g.poss], d = g.sides[other(g.poss)];
-  const extra = o.mod / POINTS_PER_EDGE + (g.poss === "h" && !g.neutral ? HOME_EDGE : 0);
+  const dd = g.day ? g.day[g.poss].o - g.day[other(g.poss)].d : 0;
+  const extra = o.mod / POINTS_PER_EDGE + (g.poss === "h" && !g.neutral ? HOME : 0) + dd;
   return { o, d, passE: (z(o.u.pass, "pass") - z(d.u.passD, "passD")) * SENSITIVITY + extra, runE: (z(o.u.run, "run") - z(d.u.runD, "runD")) * SENSITIVITY + extra, rushE: z(d.u.rush, "rush") - z(o.u.ol, "ol") };
 }
 
