@@ -1,6 +1,7 @@
 // Scouting and draft screens: the Big Board (always in consensus order), your own list, the
 // Combine, your scouting staff, and the prospect profile. Game state comes in as `g`.
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import { mockDraft } from "./mockDraft.js";
 import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo } from "./ui.jsx";
 import {
   prospectRead, scoutProspect, interviewProspect, coverage, csRank, riskLabel, gradeTone,
@@ -578,10 +579,72 @@ export function DraftQueue({ picks, idx, teams, ui, n = 12 }) {
   );
 }
 
+// The order the next draft would go in today: the live draft from the pick on the clock, or the
+// current standings (worst record first) with traded picks going to their owners.
+export function projectedOrder(g, rounds = 2) {
+  if (g.sp === "draft" && g.curPick) return (g.draftPicks || []).slice(g.draftIdx || 0).filter((pk) => pk.rd <= rounds);
+  const order = (g.teams || []).map((t, i) => i).sort((a, b) => g.teams[a].w - g.teams[b].w || (g.teams[a].pf - g.teams[a].pa) - (g.teams[b].pf - g.teams[b].pa));
+  const out = [];
+  for (let rd = 1; rd <= rounds; rd++) order.forEach((tid, i) => {
+    const pk = (g.draftPicks || []).find((x) => x.yr === g.yr && x.orig === tid && x.rd === rd);
+    out.push({ id: `m${rd}-${tid}`, rd, overall: (rd - 1) * 32 + i + 1, owner: pk ? pk.owner : tid, orig: tid });
+  });
+  return out;
+}
+
+// The experts' mock draft for this class, with your picks and your list highlighted, and a
+// heads-up when someone you want is projected to go before you're up.
+export function MockDraft({ g }) {
+  const [rounds, setRounds] = useState(1);
+  const order = projectedOrder(g, 2);
+  const cls = (g.dc?.[g.yr] || []);
+  const mock = useMemo(() => mockDraft({ order, cls, teams: g.teams, seed: `${g.yr}:${order[0]?.overall || 0}` }), [cls.length, order.length, order[0]?.id, g.yr]);
+  const listed = new Set(listIds(g.scouting, g.yr));
+  const myNext = order.find((pk) => pk.owner === g.ui);
+  const before = myNext ? mock.filter((m) => listed.has(m.player.id) && m.pick.overall < myNext.overall) : [];
+  const td = { padding: "9px 6px", borderBottom: `1px solid ${C.bd}66`, verticalAlign: "middle" };
+  return (
+    <div>
+      <div style={{ ...panel, display: "flex", gap: "6px 16px", flexWrap: "wrap", alignItems: "center", fontSize: 15 }}>
+        <span><b>Experts' mock draft</b> <span style={{ color: C.mt }}>· consensus board plus each club's needs{g.sp === "draft" && g.curPick ? ", updated live" : ", in today's draft order"}</span></span>
+        <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>{[1, 2].map((r) => <button key={r} onClick={() => setRounds(r)} style={{ ...chipBtn(rounds === r), fontSize: 14, padding: "6px 12px" }}>{r === 1 ? "Round 1" : "Rounds 1-2"}</button>)}</span>
+      </div>
+      {myNext && (
+        <div style={{ ...panel, borderColor: before.length ? C.gd : C.bd, fontSize: 15 }}>
+          Your next pick: <b>#{myNext.overall}</b>.{" "}
+          {before.length ? <>Projected to be gone before then: {before.map((m, i) => <span key={m.player.id}>{i ? ", " : ""}<b style={{ color: C.gd }}>{m.player.name}</b> (#{m.pick.overall} to the {g.teams[m.pick.owner].name})</span>)}. Trade up if you want him.</> : listed.size ? <span style={{ color: C.gn }}>Everyone on your list is projected to still be there.</span> : <span style={{ color: C.mt }}>Star prospects to add them to your list and see where they're projected.</span>}
+        </div>
+      )}
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead><tr style={{ color: C.mt, fontSize: 13, textAlign: "left" }}><th style={{ padding: 6 }}>Pick</th><th style={{ padding: 6 }}>Team</th><th style={{ padding: 6 }}>Projected pick</th><th className="sc-hide" style={{ padding: 6 }}>Also linked</th></tr></thead>
+          <tbody>
+            {mock.filter((m) => m.pick.rd <= rounds).map(({ pick, player, alts }) => {
+              const t = g.teams[pick.owner], mine = pick.owner === g.ui, star = listed.has(player.id);
+              return (
+                <tr key={pick.id || pick.overall} style={{ background: mine ? `${C.gn}14` : "transparent" }}>
+                  <td style={{ ...td, width: 64, fontWeight: 800, color: mine ? C.gn : "#94a3b8", fontVariantNumeric: "tabular-nums" }}>R{pick.rd} #{pick.overall}</td>
+                  <td style={{ ...td, whiteSpace: "nowrap" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><TeamLogo t={t} sz={26} /><span style={{ fontWeight: mine ? 800 : 600 }}>{t.name}{mine ? " (you)" : ""}</span>{pick.orig != null && pick.orig !== pick.owner && <span style={{ fontSize: 12, color: C.mt }}>via {g.teams[pick.orig]?.ab}</span>}</span></td>
+                  <td style={{ ...td, cursor: "pointer" }} onClick={() => g.setSel(player)}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Bdg pos={player.pos} /><span style={{ fontSize: 16, fontWeight: 700 }}>{star ? "★ " : ""}{player.name}</span></div>
+                    <div style={{ fontSize: 13, color: C.mt }}>{player.bio?.college} · consensus #{csRank(player)}</div>
+                  </td>
+                  <td className="sc-hide" style={{ ...td, fontSize: 13, color: "#94a3b8" }}>{alts.map((a) => `${a.name} (${a.pos})`).join(", ")}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {!mock.length && <div style={{ color: C.mt, padding: 12 }}>No draft class yet.</div>}
+    </div>
+  );
+}
+
 export function ScoutingPage({ g }) {
   const hasCombine = (g.dc[g.yr] || []).some((p) => tested(p) && p.combine);
   const [view, setView] = useState(g.sp === "combine" ? "combine" : "board");
-  const views = [["board", "Big Board"], ["list", `Your list (${listIds(g.scouting, g.yr).length})`], hasCombine && ["combine", "Combine"], ["scouts", "Scouts"]].filter(Boolean);
+  const views = [["board", "Big Board"], ["list", `Your list (${listIds(g.scouting, g.yr).length})`], ["mock", "Mock Draft"], hasCombine && ["combine", "Combine"], ["scouts", "Scouts"]].filter(Boolean);
   const v = views.some(([k]) => k === view) ? view : "board";
   const myPicks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !(g.draftLog || []).some((d) => d.id === pk.id)).sort((a, b) => a.overall - b.overall);
   return (
@@ -606,6 +669,7 @@ export function ScoutingPage({ g }) {
       )}
       {v === "list" && <YourList g={g} classYr={g.yr} />}
       {v === "combine" && <CombineView g={g} buzz={g.buzz} />}
+      {v === "mock" && <MockDraft g={g} />}
       {v === "scouts" && <ScoutsView g={g} />}
     </div>
   );
