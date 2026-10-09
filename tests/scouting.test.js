@@ -28,11 +28,13 @@ test("a new staff covers two different groups and has points to spend", () => {
   assert.equal(sc.pool.length, 14);
 });
 
-test("staff changes only in the preseason and free agency, and the two scouts can't share a group", () => {
+test("staff changes only in the preseason and free agency; both scouts can work one group", () => {
   const sc = newScouting(2026);
   const sameAsMinor = sc.pool.find((s) => s.group === sc.minor.group);
   assert.equal(hireScout(sc, "regular", sameAsMinor.id, "major").ok, false);
-  assert.equal(hireScout(sc, "preseason", sameAsMinor.id, "major").ok, false);
+  const dbl = hireScout(sc, "preseason", sameAsMinor.id, "major");
+  assert.ok(dbl.ok, "double coverage is allowed");
+  assert.equal(dbl.sc.major.group, dbl.sc.minor.group);
   const other = sc.pool.find((s) => s.group !== sc.minor.group);
   const r = hireScout(sc, "preseason", other.id, "major");
   assert.ok(r.ok);
@@ -179,4 +181,15 @@ test("development traits are fixed per player and position groups map correctly"
   assert.equal(scoutGroup("RG"), "OL");
   assert.equal(scoutGroup("S"), "DB");
   assert.equal(scoutGroup("K"), "ST");
+});
+
+test("double coverage reads a group sharper than one scout and leaves the rest to the office", async () => {
+  const { coverage, scoutEval } = await import("../src/scouting.js");
+  const major = { id: "a", group: "DB", eval: 70, trait: null }, minor = { id: "b", group: "DB", eval: 74, trait: "projector" };
+  const sc = { major, minor };
+  const cb = { pos: "CB", bio: {} }, wr = { pos: "WR", bio: {} };
+  const c = coverage(sc, cb);
+  assert.equal(c.role, "major"); assert.equal(c.second.id, "b");
+  assert.ok(scoutEval(c.scout, cb, c.second) > Math.max(major.eval, minor.eval));
+  assert.equal(coverage(sc, wr).role, "office");
 });

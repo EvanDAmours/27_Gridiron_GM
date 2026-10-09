@@ -48,8 +48,8 @@ export function DevChip({ dev, hint = "Development trait unknown. Your major sco
 export function CovTag({ read }) {
   const role = read.cov;
   const c = role === "major" ? "#f5c542" : role === "minor" ? "#60a5fa" : "#64748b";
-  const title = read.scout ? `${SCOUT_ROLES[role].name}: ${read.scout.name} (${SCOUT_GROUPS[read.scout.group].toLowerCase()})` : "None of your scouts covers this position group, so your front office's generalists file the reports.";
-  return <span title={title} style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", padding: "2px 6px", borderRadius: 3, border: `1px solid ${c}66`, color: c, whiteSpace: "nowrap" }}>{role === "office" ? "No scout" : SCOUT_ROLES[role].short}</span>;
+  const title = read.second ? `Double coverage: ${read.scout.name} and ${read.second.name} both work ${SCOUT_GROUPS[read.scout.group].toLowerCase()}` : read.scout ? `${SCOUT_ROLES[role].name}: ${read.scout.name} (${SCOUT_GROUPS[read.scout.group].toLowerCase()})` : "None of your scouts covers this position group, so your front office's generalists file the reports.";
+  return <span title={title} style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", padding: "2px 6px", borderRadius: 3, border: `1px solid ${c}66`, color: c, whiteSpace: "nowrap" }}>{role === "office" ? "No scout" : read.second ? "2 scouts" : SCOUT_ROLES[role].short}</span>;
 }
 
 function Arrow({ p }) {
@@ -275,10 +275,6 @@ export function ScoutsView({ g }) {
   const open = staffWindowOpen(g.sp);
   const act = (r) => { g.sm(r.msg); if (r.ok) g.setScouting(r.sc); };
   const pool = [...(s.pool || [])].sort((a, b) => a.group.localeCompare(b.group) || b.eval - a.eval);
-  const blocked = (sc, role) => {
-    const other = s[role === "major" ? "minor" : "major"];
-    return other && other.group === sc.group ? `Your ${SCOUT_ROLES[role === "major" ? "minor" : "major"].name.toLowerCase()} already covers ${SCOUT_GROUPS[sc.group].toLowerCase()}` : null;
-  };
   const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,250px),1fr))", gap: 8, marginBottom: 8 };
   return (
     <div>
@@ -318,8 +314,8 @@ export function ScoutsView({ g }) {
               {open && (
                 <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
                   {["major", "minor"].map((role) => (
-                    <span key={role} title={blocked(sc, role) || `Hire him as your ${SCOUT_ROLES[role].name.toLowerCase()}${s[role] ? ` (replacing ${s[role].name})` : ""}`}>
-                      <Btn onClick={() => act(hireScout(s, g.sp, sc.id, role))} disabled={!!blocked(sc, role)} bg={`${C.gn}22`} c={C.gn} style={{ fontSize: 10, padding: "1px 6px" }}>Hire as {role}</Btn>
+                    <span key={role} title={`Hire him as your ${SCOUT_ROLES[role].name.toLowerCase()}${s[role] ? ` (replacing ${s[role].name})` : ""}`}>
+                      <Btn onClick={() => act(hireScout(s, g.sp, sc.id, role))} bg={`${C.gn}22`} c={C.gn} style={{ fontSize: 10, padding: "1px 6px" }}>Hire as {role}</Btn>
                     </span>
                   ))}
                 </div>

@@ -134,12 +134,15 @@ export function hireScout(sc, sp, scoutId, role) {
   if (!staffWindowOpen(sp)) return { ok: false, msg: ON_ROAD, sc };
   const s = (sc.pool || []).find((x) => x.id === scoutId);
   if (!s || !SCOUT_ROLES[role]) return { ok: false, msg: "That scout isn't available.", sc };
+  // Both scouts can work the same group: double coverage reads it sharper and leaves the rest of
+  // the class to the front office.
   const other = sc[otherRole(role)];
-  if (other && other.group === s.group) return { ok: false, msg: `Your ${SCOUT_ROLES[otherRole(role)].name.toLowerCase()} already covers ${SCOUT_GROUPS[s.group].toLowerCase()}. Your two scouts need different position groups.`, sc };
+  const double = other && other.group === s.group;
   const old = sc[role];
   const pool = sc.pool.filter((x) => x.id !== s.id);
   if (old) pool.push(old);
-  return { ok: true, msg: `${s.name} is your new ${SCOUT_ROLES[role].name.toLowerCase()} (${SCOUT_GROUPS[s.group].toLowerCase()}).`, sc: { ...sc, [role]: s, pool } };
+  const msg = `${s.name} is your new ${SCOUT_ROLES[role].name.toLowerCase()} (${SCOUT_GROUPS[s.group].toLowerCase()}).${double ? ` Both your scouts now work ${SCOUT_GROUPS[s.group].toLowerCase()}: sharper reads there, and the front office covers everyone else.` : ""}`;
+  return { ok: true, msg, sc: { ...sc, [role]: s, pool } };
 }
 
 export function releaseScout(sc, sp, role) {
@@ -176,19 +179,24 @@ export const startScoutingYear = (sc, year) => ({ ...sc, pts: SCOUT_PTS_START, w
 const OFFICE_EVAL = 60;
 
 // Which of your scouts covers a prospect: "major", "minor", or "office" (nobody, so the front
-// office's generalists handle it).
+// office's generalists handle it). With both scouts on one group the major scout leads and the
+// minor scout is a second opinion (`second`).
 export function coverage(sc, p) {
   const g = scoutGroup(p.pos);
+  if (sc?.major?.group === g && sc?.minor?.group === g) return { role: "major", scout: sc.major, second: sc.minor };
   if (sc?.major?.group === g) return { role: "major", scout: sc.major };
   if (sc?.minor?.group === g) return { role: "minor", scout: sc.minor };
   return { role: "office", scout: null };
 }
 
-export function scoutEval(scout, p) {
+// second: another scout on the same group. Two sets of eyes read better than the best one
+// alone, and either scout's specialty counts.
+export function scoutEval(scout, p, second) {
   if (!scout) return OFFICE_EVAL;
-  let e = scout.eval;
-  if (scout.trait === "sharp") e += 8;
-  if (scout.trait === "smallschool" && isSmallSchool(p)) e += 12;
+  let e = second ? Math.max(scout.eval, second.eval) + 6 : scout.eval;
+  const has = (t) => scout.trait === t || second?.trait === t;
+  if (has("sharp")) e += 8;
+  if (has("smallschool") && isSmallSchool(p)) e += 12;
   return clamp(e, 40, 99);
 }
 
@@ -209,7 +217,7 @@ export function scoutCost(p) {
 
 // Would this report on the prospect reveal his development trait?
 function seesDev(cov, lvl) {
-  if (cov.role === "major") return lvl >= 2 || cov.scout.trait === "projector";
+  if (cov.role === "major") return lvl >= 2 || cov.scout.trait === "projector" || cov.second?.trait === "projector";
   if (cov.role === "minor") return lvl >= 2 && cov.scout.trait === "projector";
   return false;
 }
@@ -217,7 +225,7 @@ function seesDev(cov, lvl) {
 // File a report on a prospect. Returns a new prospect object; the caller swaps it into the class.
 function fileReport(sc, p, lvl, teams) {
   const cov = coverage(sc, p);
-  const ev = scoutEval(cov.scout, p);
+  const ev = scoutEval(cov.scout, p, cov.second);
   const sd = readSd(cov.role, lvl, ev);
   const r = stream(`${p.id}|${cov.scout?.id || "office"}|${lvl}`);
   const n = (s) => (s ? clamp(r.gauss(0, s), -1.6 * s, 1.6 * s) : 0);
@@ -233,7 +241,7 @@ function fileReport(sc, p, lvl, teams) {
     sd,
     exact: sd === 0,
     by: cov.role,
-    who: cov.scout?.name || "Your front office",
+    who: cov.second ? `${cov.scout.name} & ${cov.second.name}` : cov.scout?.name || "Your front office",
     dev: seesDev(cov, lvl) ? devOf(p) : prev.dev || null,
     skills,
     notes: notesFor(p, skills, r),
@@ -256,7 +264,7 @@ export function scoutProspect(sc, sp, p, teams, classYr, draftYr) {
 export function generalIdea(sc, p) {
   const cov = coverage(sc, p);
   if (cov.role === "office") return null;
-  const sd = readSd(cov.role, 0, scoutEval(cov.scout, p));
+  const sd = readSd(cov.role, 0, scoutEval(cov.scout, p, cov.second));
   const r = stream(`${p.id}|${cov.scout.id}|gen`);
   const pot = p.truePot + clamp(r.gauss(0, sd), -1.6 * sd, 1.6 * sd);
   return { pot, grade: potGrade(pot), tier: projection(p.pos, pot), by: cov.role, who: cov.scout.name };
@@ -273,6 +281,7 @@ export function prospectRead(sc, p) {
     lvl: s.lvl || 0,
     cov: cov.role,
     scout: cov.scout,
+    second: cov.second || null,
     ovr: has ? (s.exact ? `${s.eOvr}` : `~${s.eOvr}`) : "??",
     pot: has ? (s.exact ? `${s.ePot}` : `~${s.ePot}`) : gen ? gen.grade : "??",
     ovrV: has ? s.eOvr : null,
