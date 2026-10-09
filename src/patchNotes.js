@@ -271,4 +271,11 @@ export const PATCH_NOTES = [
     "Punters show up in free agency, the draft (a few each class) and trades like any other position, and AI teams keep one on the roster.",
     "Existing franchises: every team gets its real punter (aged to your season). If your roster is already at 53, yours is waiting for you in free agency; until you sign a punter, your kicker punts, and not well.",
   ] },
+  { v: "1.72", date: "2026-10-09", title: "Mid-Season Extensions and a Holdout Fix", notes: [
+    "Contract extensions during the season: any player in the last two years of his deal has an Extend button on his player card (preseason through the Combine). You negotiate like in re-sign week (years, money, counters, walk-aways), and the new contract starts when his current one ends, so it has to fit under next season's cap. Extensions cost a little more than waiting for re-sign week, because he's giving up free agency.",
+    "The player card shows a pending extension (amount, years and the season it starts). It kicks in automatically at re-sign week, and he won't show up as expiring.",
+    "Fixed: the holdout window could trap you. The accept buttons checked your whole cap space against the full new salary and greyed out, and there was no way to close it. Now it has a close button and a 'Decide later' option, and holding-out players have a 'talk to his agent' button on their player card to reopen talks.",
+    "Holdouts now settle like the NFL's: he reports right away on his current deal, and the new contract is an extension starting next season, checked against next season's cap.",
+    "Removed the old +1yr/+2yr (1 SP) extension buttons and the instant 1-4yr re-sign buttons, which skipped negotiation and changed salaries immediately.",
+  ] },
 ];

@@ -7,7 +7,7 @@ import { yearlyAsk, maxYears, respond, interest } from "./negotiation.js";
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const r1 = (x) => Math.round(x * 10) / 10;
 
-export default function Negotiate({ p, mode, cap, t, talk = {}, onResult, onClose, rivalName }) {
+export default function Negotiate({ p, mode, cap, t, talk = {}, onResult, onClose, rivalName, note }) {
   const [yrs, setYrs] = useState(Math.min(2, maxYears(p)));
   const ask = yearlyAsk(p, yrs);
   const [sal, setSal] = useState(r1(ask * 0.9));
@@ -27,13 +27,14 @@ export default function Negotiate({ p, mode, cap, t, talk = {}, onResult, onClos
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 12 }}>
           <Face s={p.face} sz={52} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt }}>{mode === "resign" ? "RE-SIGN" : "FREE AGENT"}</div>
+            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt }}>{mode === "resign" ? "RE-SIGN" : mode === "extend" ? "CONTRACT EXTENSION" : "FREE AGENT"}</div>
             <div style={{ fontSize: 22, fontWeight: 900 }}>{p.name}</div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, color: "#cbd5e1" }}><Bdg pos={p.pos} /> Age {p.age}{mode === "resign" && p.salary ? ` · now ${money(p.salary)}` : ""}</div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, color: "#cbd5e1" }}><Bdg pos={p.pos} /> Age {p.age}{(mode === "resign" || mode === "extend") && p.salary ? ` · now ${money(p.salary)}${mode === "extend" ? ` · ${p.contract} yr${p.contract === 1 ? "" : "s"} left` : ""}` : ""}</div>
           </div>
           <div style={{ textAlign: "right" }}><div style={{ fontSize: 32, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</div><div style={{ fontSize: 12, color: C.mt }}>OVR</div></div>
         </div>
 
+        {note && <div style={{ fontSize: 13, color: "#cbd5e1", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 10 }}>{note}</div>}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
           <span style={{ fontSize: 13, color: C.mt, fontWeight: 700 }}>Interest</span>
           <div style={{ flex: 1, height: 8, background: C.bg, borderRadius: 4 }}><div style={{ width: `${mood}%`, height: "100%", borderRadius: 4, background: mood > 60 ? C.gn : mood > 30 ? C.gd : C.rd }} /></div>
@@ -63,7 +64,7 @@ export default function Negotiate({ p, mode, cap, t, talk = {}, onResult, onClos
             <input type="range" min={Math.max(0.8, r1(ask * 0.5))} max={r1(ask * 1.4 + 1)} step={0.1} value={sal} onChange={(e) => setSal(+e.target.value)} aria-label="Offer per year" style={{ width: "100%", accentColor: C.bl, marginBottom: 8 }} />
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: C.mt, marginBottom: 14 }}>
               <span>Total <b style={{ color: "#fff" }}>{money(sal * yrs)}</b> over {yrs} yr{yrs > 1 ? "s" : ""}</span>
-              <span>Cap after <b style={{ color: after >= 0 ? C.gn : C.rd }}>{money(after)}</b></span>
+              <span>{mode === "extend" ? "Next year's cap after" : "Cap after"} <b style={{ color: after >= 0 ? C.gn : C.rd }}>{money(after)}</b></span>
             </div>
           </>
         )}

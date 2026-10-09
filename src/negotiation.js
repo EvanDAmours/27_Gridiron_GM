@@ -16,7 +16,8 @@ export const maxYears = (p) => (p.age >= 33 ? 1 : p.age >= 30 ? 3 : 5);
 // The hidden side of a negotiation. loyalty (0-1) shaves up to 6% off for your own players
 // when the team is winning and happy. rivals: AI clubs that could bid in free agency.
 export function terms(p, { yr, mode, loyalty = 0, rivals = [] }) {
-  const minF = 0.86 + hash(`${p.id}:${yr}:min`) * 0.12 - (mode === "resign" ? 0.06 * loyalty : 0);
+  // An extension costs a little more: he gives up testing free agency.
+  const minF = 0.86 + hash(`${p.id}:${yr}:min`) * 0.12 - (mode === "resign" || mode === "extend" ? 0.06 * loyalty : 0) + (mode === "extend" ? 0.03 : 0);
   let rival = null;
   if (mode === "fa" && rivals.length && p.ovr >= 68 && hash(`${p.id}:${yr}:rival`) < Math.min(0.85, (p.ovr - 62) / 25)) {
     rival = { team: rivals[Math.floor(hash(`${p.id}:${yr}:who`) * rivals.length)], f: 0.88 + hash(`${p.id}:${yr}:bid`) * 0.24 };
