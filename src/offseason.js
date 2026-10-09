@@ -13,19 +13,26 @@ const roll = (rand, a, b) => a + Math.floor(rand() * (b - a + 1));
 // run out either get re-signed (AI clubs keep most of their core) or hit the market. Players
 // 36+ or rated under 45 retire instead. Everyone touched is stamped cy = yr + 1 so the season
 // rollover does not count the year twice.
-export function openFreeAgency(teams, ui, yr, rand = Math.random) {
+export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = 200, room = 12 } = {}) {
   const cy = yr + 1;
   const pool = [], mine = [], resigned = [], retired = [];
   const out = teams.map((t, i) => {
-    const roster = [];
+    const roster = [], expiring = [];
     for (const p of t.roster) {
       const left = (p.contract || 0) - 1;
-      if (left > 0) { roster.push({ ...p, contract: left, cy }); continue; }
+      if (left > 0) roster.push({ ...p, contract: left, cy });
+      else expiring.push(p);
+    }
+    // AI clubs re-sign best players first, and only what fits under the cap (with room for
+    // coaches and the draft class).
+    let payroll = roster.reduce((s, p) => s + (p.salary || 0), 0);
+    for (const p of expiring.sort((a, b) => b.ovr - a.ovr)) {
       // Stars nearly always get a new deal (or the tag); good young starters usually do.
       const keep = p.ovr >= 90 && p.age <= 33 ? 0.92 : p.ovr >= 80 && p.age <= 31 ? 0.75 : p.ovr >= 72 && p.age <= 27 ? 0.55 : 0;
-      if (i !== ui && rand() < keep) {
-        const salary = +Math.max(p.salary || 1, (p.salary || 1) * (1.05 + rand() * 0.3)).toFixed(1);
+      const salary = +Math.max(p.salary || 1, askingPrice(p) * (0.95 + rand() * 0.15)).toFixed(1); // market, not a small raise
+      if (i !== ui && rand() < keep && payroll + salary <= cap - room) {
         roster.push({ ...p, contract: roll(rand, 2, 4), salary, cy });
+        payroll += salary;
         resigned.push({ p, team: i });
         continue;
       }
@@ -40,12 +47,14 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random) {
   return { teams: out, pool, mine, resigned, retired };
 }
 
-// What a player asks for on a new deal: market value for his position and rating (the game's
-// $200M cap scale), less once he's past 30. Never under $0.8M.
-const MARKET = { QB: 34, DL: 21, WR: 20, LT: 18, CB: 16, RT: 15, LB: 12, S: 11, TE: 11, LG: 11, RG: 11, C: 10, RB: 9, K: 4 };
+// What a player asks for on a new deal: market value for his position and rating, as a share
+// of the game's $200M cap that tracks the real NFL (a top QB takes ~21%, a top receiver or
+// pass rusher ~14%, down to kickers), less once he's past his prime (QBs age four years later).
+const MARKET = { QB: 42, DL: 29, WR: 29, LT: 21, CB: 18, RT: 17, LB: 15, S: 15, TE: 14, LG: 14, RG: 14, RB: 13, C: 10, K: 4 };
 export const askingPrice = (p) => {
-  const value = 1 + (MARKET[p.pos] ?? 12) * Math.max(0, (p.ovr - 60) / 39) ** 1.6;
-  const age = p.age >= 34 ? 0.5 : p.age >= 32 ? 0.7 : p.age >= 30 ? 0.85 : 1;
+  const value = 0.8 + (MARKET[p.pos] ?? 14) * Math.max(0, (p.ovr - 60) / 39) ** 1.3;
+  const a = p.pos === "QB" ? p.age - 4 : p.age;
+  const age = a >= 34 ? 0.5 : a >= 32 ? 0.7 : a >= 30 ? 0.85 : 1;
   return +Math.max(0.8, value * age).toFixed(1);
 };
 
@@ -140,10 +149,24 @@ export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random 
       t.roster.splice(t.roster.indexOf(spare), 1);
       pool.push({ ...spare, contract: 0, formerTeam: i });
     }
-    while (t.roster.length < ROSTER_TARGET && pool.length) {
+  });
+  // Then clubs take turns, one signing each per round, so a thin market is shared out evenly.
+  for (let more = true; more && pool.length; ) {
+    more = false;
+    teams.forEach((t, i) => {
+      if (i === ui || t.roster.length >= ROSTER_TARGET || !pool.length) return;
       const want = needs(t);
       const k = pool.findIndex((p) => want.slice(0, 4).includes(p.pos));
       sign(t, i, k >= 0 ? k : 0);
+      more = true;
+    });
+  }
+  // Last pass: an AI club still over the cap releases its priciest depth players (never below 48).
+  teams.forEach((t, i) => {
+    while (i !== ui && capSpace(t) < 0 && t.roster.length > 48) {
+      const cut = [...t.roster].sort((a, b) => a.ovr - b.ovr).slice(0, 15).sort((a, b) => (b.salary || 0) - (a.salary || 0))[0];
+      t.roster.splice(t.roster.indexOf(cut), 1);
+      pool.push({ ...cut, contract: 0, formerTeam: i });
     }
   });
   return signed;

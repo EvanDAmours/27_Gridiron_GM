@@ -38,7 +38,7 @@ test("signings and roster fill only use players from the pool", () => {
   assert.ok([...s1, ...s2].every(({ p }) => ids.has(p.id)), "no invented players");
   for (const [i, t] of r.teams.entries()) {
     assert.equal(new Set(t.roster.map((p) => p.id)).size, t.roster.length, "no duplicates");
-    if (i !== 0 && r.pool.length) assert.ok(t.roster.length >= ROSTER_TARGET || r.pool.length === 0);
+    if (i !== 0 && r.pool.length) assert.ok(t.roster.length >= ROSTER_TARGET || (t.roster.length >= 48 && capSpace(t) < 15), `team ${i}: ${t.roster.length} players, cap space ${capSpace(t)}`); // full, or trimmed to fit the cap
     assert.ok(t.roster.every((p) => kept.has(p.id) || ids.has(p.id)));
   }
 });

@@ -141,8 +141,12 @@ def dev_trait(p):
     elif name in STAR: t = at_least(t, "star")
     return t
 
+# Ratings the game sets by hand (league consensus over EA's number).
+OVERRIDES = {"C.J. Stroud": {"overallRating": 90}}
+
 teams = defaultdict(list)
 for p in eap:
+    p.update(OVERRIDES.get(f'{p["firstName"]} {p["lastName"]}', {}))
     pos = POS.get(p["position"]["id"])
     if not pos or not p.get("team"): continue
     s = {k: v["value"] for k, v in p["stats"].items()}
