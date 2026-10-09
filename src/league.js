@@ -165,7 +165,13 @@ export function genDC(yr,dcr){
   for(const[p,n]of Object.entries(w))for(let i=0;i<n;i++)posW.push(p);
   const dcrAdj={Weak:{fl:58,cap:82,off:0},Average:{fl:60,cap:86,off:0},Strong:{fl:62,cap:89,off:0},Elite:{fl:64,cap:92,off:0}}[dcr||'Average']||{fl:60,cap:86,off:0};
   // Generate 7 rounds * 32 picks = 224 prospects (with extras)
-  for(let i=0;i<240;i++){const pos=pick(posW);const raw=cl(Gc(55,14,32,92),dcrAdj.fl,dcrAdj.cap);const p=genPlayer(pos,prospectAge(),raw,true);p.draftYear=yr;p.bio.backstory=`From ${pick(BSTORY_CITY)}, ${p.name.split(' ')[0]} ${pick(BSTORY_ARC)}. ${pick(BSTORY_TRAIT)}`;dc.push(p);}
+  // Each prospect's ceiling comes first (the same spread of ceilings as ever), then how far below
+  // it he is today: younger and higher-ceiling prospects are rawer, and some are more polished
+  // than others. Top picks come in around 75-80, second and third rounders around 68-72 (ready
+  // for real snaps, like NFL rookies), and late-rounders are low-ceiling depth.
+  for(let i=0;i<240;i++){const pos=pick(posW);const age=prospectAge();const raw=cl(Gc(55,14,32,92),dcrAdj.fl,dcrAdj.cap);const pt=cl(raw+R(0,20),raw,99);
+    const room=Math.round(({20:15,21:13,22:11,23:9,24:7}[age]||11)*cl(0.33+(pt-64)*0.027,0.3,1.35)*Rf(0.6,1.4));const now=cl(pt-room,55,pt);
+    const p=genPlayer(pos,age,now,true);p.pot=p.truePot=pt;p.scoutedPot=cl(pt+R(-12,12),pt-5,99);p.tradeVal=playerValue({pos,age,ovr:now,pot:pt});p.draftYear=yr;p.bio.backstory=`From ${pick(BSTORY_CITY)}, ${p.name.split(' ')[0]} ${pick(BSTORY_ARC)}. ${pick(BSTORY_TRAIT)}`;dc.push(p);}
   if(dcr==='Elite'){const top=dc[0];if(top&&top.trueOvr<90){top.ovr=90;top.trueOvr=90;}}
   return plantGems(rankClass(dc),yr);
 }
