@@ -212,4 +212,8 @@ export const PATCH_NOTES = [
     "Heavy workloads wear backs down: past about 18 carries in a game a back averages a little less, so even the best back in football on every snap breaks the rushing record only about one season in six.",
     "Record-breaking seasons happen again, just not every year: over 30 simulated seasons a single-season record (rushing, receiving or passing yards, receptions, TD passes or sacks) fell in about 1 season in 6 or 7, spread across different records. Typical league leaders stay in real-NFL ranges, and per-game league averages are unchanged.",
   ] },
+  { v: "1.62", date: "2026-10-09", title: "Under the Hood: Cleanup and a Safety Net", notes: [
+    "Fixed: a player you got in a trade offer (weekly calls and Deadline Day) lost all his season stats, which could cost him awards, milestones and records. Players you sign mid-season keep theirs too.",
+    "The game engine was split out of the main screen file into its own module, so it can be tested directly. Removed leftover code from features that no longer exist (like the old Trade Deadline Frenzy popup).",
+    "Every update now has to pass the unit tests and a full smoke test (a new game played through a season, Deadline Day, the playoffs, the off-season and the draft into the next year in a real browser) before it can be published.",
 ];
