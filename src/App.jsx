@@ -786,10 +786,11 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
 
   // Live sim ticker
   useEffect(()=>{
-    if(!liveSim||liveDone||livePaused||liveAwaitingCall||livePhase)return;
+    // Waiting on your play call only counts while play-calling is on; otherwise the game runs.
+    if(!liveSim||liveDone||livePaused||(liveCallMode&&(liveAwaitingCall||livePhase)))return;
     liveRef.current=setInterval(()=>advanceLivePlay(),1100);
     return()=>clearInterval(liveRef.current);
-  },[liveSim,liveDone,livePaused,liveAwaitingCall,livePlay,livePhase]);
+  },[liveSim,liveDone,livePaused,liveAwaitingCall,livePlay,livePhase,liveCallMode]);
   useEffect(()=>{if(logEndRef.current){const c=logEndRef.current.parentElement;if(c)c.scrollTop=c.scrollHeight;}},[liveLog]);
   useEffect(()=>{if(livePhase!=="running")return;const id=setInterval(()=>{setLiveQteBar(v=>{const nv=v+liveQteDirRef.current*3;if(nv>=100||nv<=0)liveQteDirRef.current*=-1;return Math.max(0,Math.min(100,nv));});},40);return()=>clearInterval(id);},[livePhase]);
   useEffect(()=>{if(livePhase!=="passing")return;const id=setInterval(()=>{setLiveRecTargets(ts=>ts.map(t=>Math.random()<0.28?{...t,open:!t.open}:t));},1100);return()=>clearInterval(id);},[livePhase]);
@@ -2176,7 +2177,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         </div>
         <div style={{display:"flex",alignItems:"center",gap:4}}>
           <span style={{fontSize:12,padding:"2px 6px",borderRadius:8,background:liveDone?`${C.gd}22`:`${C.gn}22`,color:liveDone?C.gd:C.gn,fontWeight:700}}>Q{liveQtr}{liveDone?" FINAL":""}</span>
-          {!liveDone&&<Btn onClick={()=>setLiveCallMode(m=>!m)} bg={liveCallMode?`${C.gn}33`:C.bd} c={liveCallMode?C.gn:C.mt} style={{padding:"3px 8px",border:`1px solid ${liveCallMode?C.gn:C.bd}`,fontSize:11}}>🎮{liveCallMode?" ON":" OFF"}</Btn>}
+          {!liveDone&&<Btn onClick={()=>{setLiveCallMode(m=>!m);setLiveAwaitingCall(false);setLivePhase(null);setFourthChoice(null);}} bg={liveCallMode?`${C.gn}33`:C.bd} c={liveCallMode?C.gn:C.mt} style={{padding:"3px 8px",border:`1px solid ${liveCallMode?C.gn:C.bd}`,fontSize:11}}>🎮{liveCallMode?" ON":" OFF"}</Btn>}
           {/* v34: broadcast mode toggle */}{!liveDone&&<Btn onClick={()=>setLiveBroadcastMode(b=>!b)} bg={liveBroadcastMode?'#7c3aed':C.bd} c={liveBroadcastMode?'#e9d5ff':C.mt} style={{padding:"3px 8px",fontSize:11}}>📺{liveBroadcastMode?" BCAST":" BCAST"}</Btn>}
           {!liveDone&&!liveAwaitingCall&&<Btn onClick={()=>setLivePaused(p=>!p)} bg={livePaused?"#22c55e":"#f97316"} style={{padding:"3px 8px"}}>{livePaused?"▶":"⏸"}</Btn>}
           <Btn onClick={()=>{setLiveSim(null);setTab("schedule");}} bg={C.bd} style={{padding:"3px 8px"}}>✕</Btn>
