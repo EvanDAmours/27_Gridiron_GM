@@ -270,18 +270,33 @@ export function scoutProspect(sc, sp, p, teams, classYr, draftYr) {
   return { ok: true, msg: `${np.scout.who} filed a ${np.scout.lvl >= 2 ? "full workup" : "scouting report"} on ${p.name}.`, sc: { ...sc, pts: sc.pts - cost }, p: np };
 }
 
-// The general idea a scout has of every prospect in his group, without a report.
-export function generalIdea(sc, p) {
+// The general idea your scouts have of every prospect in their group, without a report. One
+// scout has the public read of a sleeper and now and then a hunch. A deep, sharp crew on one
+// group (several good scouts all working it) sees through the board: it flags that group's
+// sleepers and spots the special development traits early, before you spend a point.
+export function crewOf(sc, p) {
   const cov = coverage(sc, p);
   if (cov.role === "office") return null;
-  const sd = readSd(cov.role, 0, scoutEval(cov.scout, p, cov.others));
+  const n = 1 + (cov.others?.length || 0), ev = scoutEval(cov.scout, p, cov.others);
+  return { cov, n, ev, see: clamp((ev - 75) / 24, 0, 1) * Math.min(1, 0.25 + 0.25 * n) };
+}
+export function generalIdea(sc, p) {
+  const crew = crewOf(sc, p);
+  if (!crew) return null;
+  const { cov, n, ev, see } = crew;
+  const sd = readSd(cov.role, 0, ev);
   const r = stream(`${p.id}|${cov.scout.id}|gen`);
-  const pot = publicPot(p) + clamp(r.gauss(0, sd), -1.6 * sd, 1.6 * sd);
-  // A hunch: your scout thinks there's more to him than the board says (now and then he's wrong).
+  const pot = publicPot(p) + gemGap(p) * see + clamp(r.gauss(0, sd), -1.6 * sd, 1.6 * sd);
+  // A hunch: your scouts think there's more to him than the board says (now and then they're wrong).
   const h = stream(`${p.id}|${cov.scout.id}|hunch`).next();
-  const knack = (cov.role === "major" ? 0.5 : 0.3) + (staffHas(sc, "smallschool") && isSmallSchool(p) ? 0.3 : 0) + (staffHas(sc, "sharp") ? 0.1 : 0);
-  const hunch = p.gem ? h < knack : (p.cons?.mid ?? 0) > 90 && h < 0.02;
-  return { pot, grade: potGrade(pot), tier: projection(p.pos, pot), by: cov.role, who: cov.scout.name, hunch };
+  const knack = Math.min(0.97, (cov.role === "major" ? 0.5 : 0.3) + 0.12 * (n - 1) + clamp((ev - 80) / 50, 0, 0.3) + (staffHas(sc, "smallschool") && isSmallSchool(p) ? 0.3 : 0) + (staffHas(sc, "sharp") ? 0.1 : 0));
+  const hunch = p.gem ? h < knack : (p.cons?.mid ?? 0) > 90 && h < 0.02 / n;
+  // A crew that sees through the board says so outright: "he's a sleeper".
+  const sleeper = !!p.gem && hunch && see >= 0.5;
+  // Special development traits, spotted early by a deep crew (two or more scouts on the group).
+  const d = devOf(p);
+  const spot = n >= 2 && ["generational", "superstar", "star"].includes(d) && stream(`${p.id}|crew|dev`).next() < clamp((ev - 80) / 19, 0, 1) * Math.min(0.95, 0.2 + 0.22 * n);
+  return { pot, grade: potGrade(pot), tier: projection(p.pos, pot), by: cov.role, who: n > 1 ? `Your ${n} scouts on ${SCOUT_GROUPS[scoutGroup(p.pos)].toLowerCase()}` : cov.scout.name, hunch, sleeper, dev: spot ? d : null, crew: n };
 }
 
 // Everything the UI shows about a prospect, from your point of view.
@@ -304,9 +319,11 @@ export function prospectRead(sc, p) {
     exact: !!s.exact,
     general: !!gen,
     hunch: !!gen?.hunch,
+    sleeper: !!gen?.sleeper,
+    devEarly: !s.dev && !!gen?.dev,
     grade: potV != null ? potGrade(potV) : null,
     tier: potV != null ? projection(p.pos, potV) : null,
-    dev: s.dev || null,
+    dev: s.dev || gen?.dev || null,
     sd: has ? s.sd ?? null : null,
     by: s.by || null,
     who: s.who || gen?.who || null,
