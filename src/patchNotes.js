@@ -216,4 +216,5 @@ export const PATCH_NOTES = [
     "Fixed: a player you got in a trade offer (weekly calls and Deadline Day) lost all his season stats, which could cost him awards, milestones and records. Players you sign mid-season keep theirs too.",
     "The game engine was split out of the main screen file into its own module, so it can be tested directly. Removed leftover code from features that no longer exist (like the old Trade Deadline Frenzy popup).",
     "Every update now has to pass the unit tests and a full smoke test (a new game played through a season, Deadline Day, the playoffs, the off-season and the draft into the next year in a real browser) before it can be published.",
+  ] },
 ];
