@@ -156,4 +156,9 @@ export const PATCH_NOTES = [
     "Existing saves get a second major and minor scout on groups nobody covers yet.",
     "New Game Info tab with these patch notes.",
   ] },
+  { v: "1.53", date: "2026-10-09", title: "Smarter Trade Calls, DB Position Changes, Injury Switch", notes: [
+    "Fixed: a rebuilding team offered a first-round pick for Jameis Winston. Rebuilding clubs now only call about young players, an aging quarterback only interests a winning team looking for a backup, and no offer is worth more than about 15% over the player.",
+    "Move a cornerback to safety or a safety to cornerback from his player card, or from a CB/S spot on the depth chart. His skills translate to the new spot and his OVR is re-figured (most lose 1-3 points; poor tacklers and slow safeties lose more). Moving him back restores his old rating.",
+    "Menu: an Injuries on/off switch for the whole league. Turning injuries off heals everyone who is hurt.",
+  ] },
 ];

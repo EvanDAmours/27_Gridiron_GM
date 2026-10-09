@@ -82,7 +82,11 @@ function Spot({ p, pos, idx, x, y, on, onClick }) {
 // Tackles and guards play either side: LT and RT share one pool, LG and RG another.
 export const PARTNER = { LT: "RT", RT: "LT", LG: "RG", RG: "LG" };
 
-export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps }) {
+// Corners and safeties can change position: a corner listed under a safety spot moves to safety
+// (his rating is re-figured for the new spot) and starts there.
+const DB_PARTNER = { CB: "S", S: "CB" };
+
+export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps, onMoveDB, previewDB }) {
   const [side, setSide] = useState("offense");
   const [pick, setPick] = useState(null); // [pos, idx]
   const set = SETS[side];
@@ -108,9 +112,18 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
     setDepthOrder((d) => ({ ...d, [pos]: [player.id, ...here], [other]: there }));
     clearSnaps(pos, other);
   };
+  // Move a corner to safety (or back) and start him at this spot.
+  const moveIn = (pos, idx, player) => {
+    onMoveDB(player.id);
+    const ids = order(pos).map((p) => p.id);
+    ids.splice(Math.min(idx, ids.length), 0, player.id);
+    setDepthOrder((d) => ({ ...d, [pos]: ids, [DB_PARTNER[pos]]: (d[DB_PARTNER[pos]] || []).filter((id) => id !== player.id) }));
+    clearSnaps(pos, DB_PARTNER[pos]);
+  };
   const rowLabel = (pos, i) => (i < STARTERS[pos] ? (STARTERS[pos] > 1 ? `${pos}${i + 1}` : `${pos}1`) : `${pos} #${i + 1}`);
   // Everyone who could line up here: for tackles and guards, both sides of the line.
-  const chosen = pick && [...order(pick[0]).map((p, i) => ({ p, at: pick[0], i })), ...(PARTNER[pick[0]] && setPositions ? order(PARTNER[pick[0]]).map((p, i) => ({ p, at: PARTNER[pick[0]], i })) : [])];
+  const chosen = pick && [...order(pick[0]).map((p, i) => ({ p, at: pick[0], i })), ...(PARTNER[pick[0]] && setPositions ? order(PARTNER[pick[0]]).map((p, i) => ({ p, at: PARTNER[pick[0]], i })) : []),
+    ...(DB_PARTNER[pick[0]] && onMoveDB ? order(DB_PARTNER[pick[0]]).map((p, i) => ({ p, at: DB_PARTNER[pick[0]], i, move: true })) : [])];
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
@@ -136,7 +149,8 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
               <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 6 }}>{STARTERS[pick[0]] > 1 ? `${pick[0]}${pick[1] + 1}` : pick[0]} <span style={{ fontSize: 12, color: C.mt, fontWeight: 600 }}>· {STARTERS[pick[0]]} starter{STARTERS[pick[0]] > 1 ? "s" : ""}</span></div>
               {!chosen.length && <div style={{ color: C.mt, fontSize: 13 }}>Nobody on the roster plays {pick[0]}.</div>}
               {PARTNER[pick[0]] && setPositions && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>Tackles and guards play either side. Starting a {PARTNER[pick[0]]} here swaps the two.</div>}
-              {chosen.map(({ p, at, i }) => {
+              {DB_PARTNER[pick[0]] && onMoveDB && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>Corners and safeties can switch. Moving a {DB_PARTNER[pick[0]]} here changes his position, and his rating is re-figured for {pick[0]} (shown in the Move button).</div>}
+              {chosen.map(({ p, at, i, move }) => {
                 const here = at === pick[0] && i === pick[1];
                 const starter = i < STARTERS[at];
                 return (
@@ -148,7 +162,8 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
                       <div style={{ fontSize: 11, color: C.mt }}>Age {p.age}{p.injured ? <span style={{ color: C.rd, fontWeight: 700 }}> · injured</span> : ""}</div>
                     </div>
                     <b style={{ fontSize: 16, color: oC(p.ovr), minWidth: 26, textAlign: "right" }}>{p.ovr}</b>
-                    {here ? <span style={{ fontSize: 11, color: "#facc15", fontWeight: 700, width: 56, textAlign: "center" }}>Here</span>
+                    {move ? <Btn onClick={() => moveIn(pick[0], pick[1], p)} bg="#7c3aed" c="#ede9fe" style={{ fontSize: 11, padding: "3px 6px", width: 56 }} title={`Move him to ${pick[0]}: ${previewDB ? previewDB(p).ovr : "?"} OVR there`}>Move {previewDB ? previewDB(p).ovr : ""}</Btn>
+                      : here ? <span style={{ fontSize: 11, color: "#facc15", fontWeight: 700, width: 56, textAlign: "center" }}>Here</span>
                       : <Btn onClick={() => (at === pick[0] ? place(pick[0], pick[1], p) : switchSide(pick[0], p))} bg={C.bl} style={{ fontSize: 11, padding: "3px 8px", width: 56 }}>Start</Btn>}
                   </div>
                 );
