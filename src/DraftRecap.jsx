@@ -38,8 +38,8 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
     </div>
   );
 
-  const shown = rows.filter((r) => (teamF >= 0 ? r.owner === teamF : true) && (show === "hits" ? ["jackpot", "hit"].includes(r.verdict) : show === "mine" ? r.owner === ui : true));
-  const jackpots = rows.filter((r) => ["jackpot", "hit"].includes(r.verdict)).sort((a, b) => b.score - a.score || a.overall - b.overall);
+  const shown = rows.filter((r) => (teamF >= 0 ? r.owner === teamF : true) && (show === "hits" ? ["gem", "jackpot", "hit"].includes(r.verdict) : show === "mine" ? r.owner === ui : true));
+  const jackpots = rows.filter((r) => ["gem", "jackpot", "hit"].includes(r.verdict)).sort((a, b) => b.score - a.score || a.overall - b.overall);
   const topClasses = [...grades].filter((g) => g.picks.length).sort((a, b) => a.rank - b.rank);
 
   return (
@@ -76,7 +76,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 12 }}>
         <div style={panel}>
-          <div style={head}>💎 THE CLASS'S BEST TRAITS</div>
+          <div style={head}>💎 HIDDEN GEMS AND BEST TRAITS</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
             {Object.keys(DEV_TRAITS).map((k) => <span key={k} style={{ fontSize: 13, color: C.mt }}><DevChip dev={k} /> {counts[k] || 0}</span>)}
           </div>

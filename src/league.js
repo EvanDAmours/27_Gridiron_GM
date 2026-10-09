@@ -11,7 +11,7 @@ import { makeSide, createGame, playGame } from "./playsim.js";
 import { DATA_TO_DOLLARS, leagueCap } from "./cap.js";
 import { teamSnaps } from "./snaps.js";
 import { nflSchedule, divisionPlaces } from "./schedule.js";
-import { aiDraftScore, devOf, rankClass } from "./scouting.js";
+import { aiDraftScore, devOf, rankClass, plantGems } from "./scouting.js";
 
 export const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 export const Rf=(a,b)=>Math.random()*(b-a)+a;
@@ -167,7 +167,7 @@ export function genDC(yr,dcr){
   // Generate 7 rounds * 32 picks = 224 prospects (with extras)
   for(let i=0;i<240;i++){const pos=pick(posW);const raw=cl(Gc(55,14,32,92),dcrAdj.fl,dcrAdj.cap);const p=genPlayer(pos,prospectAge(),raw,true);p.draftYear=yr;p.bio.backstory=`From ${pick(BSTORY_CITY)}, ${p.name.split(' ')[0]} ${pick(BSTORY_ARC)}. ${pick(BSTORY_TRAIT)}`;dc.push(p);}
   if(dcr==='Elite'){const top=dc[0];if(top&&top.trueOvr<90){top.ovr=90;top.trueOvr=90;}}
-  return rankClass(dc);
+  return plantGems(rankClass(dc),yr);
 }
 
 

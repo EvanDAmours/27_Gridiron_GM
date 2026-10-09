@@ -254,7 +254,7 @@ function fileReport(sc, p, lvl, teams) {
     who: cov.others ? [cov.scout, ...cov.others].map((x) => x.name).join(" & ") : cov.scout?.name || "Your front office",
     dev: seesDev(cov, lvl) ? devOf(p) : prev.dev || null,
     skills,
-    notes: notesFor(p, skills, r),
+    notes: p.gem ? { ...notesFor(p, skills, r), gem: `💎 Sleeper: ${p.gem.why}. ${cov.role === "office" ? "Our people think" : "Your scout thinks"} he's much better than where the board has him.` } : notesFor(p, skills, r),
     comp: comparable(teams, p, ePot),
   };
   // The older fields other screens read: scoutLvl 2 means "exact".
@@ -276,8 +276,12 @@ export function generalIdea(sc, p) {
   if (cov.role === "office") return null;
   const sd = readSd(cov.role, 0, scoutEval(cov.scout, p, cov.others));
   const r = stream(`${p.id}|${cov.scout.id}|gen`);
-  const pot = p.truePot + clamp(r.gauss(0, sd), -1.6 * sd, 1.6 * sd);
-  return { pot, grade: potGrade(pot), tier: projection(p.pos, pot), by: cov.role, who: cov.scout.name };
+  const pot = publicPot(p) + clamp(r.gauss(0, sd), -1.6 * sd, 1.6 * sd);
+  // A hunch: your scout thinks there's more to him than the board says (now and then he's wrong).
+  const h = stream(`${p.id}|${cov.scout.id}|hunch`).next();
+  const knack = (cov.role === "major" ? 0.5 : 0.3) + (staffHas(sc, "smallschool") && isSmallSchool(p) ? 0.3 : 0) + (staffHas(sc, "sharp") ? 0.1 : 0);
+  const hunch = p.gem ? h < knack : (p.cons?.mid ?? 0) > 90 && h < 0.02;
+  return { pot, grade: potGrade(pot), tier: projection(p.pos, pot), by: cov.role, who: cov.scout.name, hunch };
 }
 
 // Everything the UI shows about a prospect, from your point of view.
@@ -299,6 +303,7 @@ export function prospectRead(sc, p) {
     potV,
     exact: !!s.exact,
     general: !!gen,
+    hunch: !!gen?.hunch,
     grade: potV != null ? potGrade(potV) : null,
     tier: potV != null ? projection(p.pos, potV) : null,
     dev: s.dev || null,
@@ -503,13 +508,49 @@ export function devGrowth(p, age) {
 export function rankClass(cls) {
   for (const p of cls) {
     p.dev ||= rollDev(p.id, p.truePot);
-    p.aiNoise ??= gauss(0, 3);
+    p.aiNoise ??= gauss(0, 3.6);
     p.scout ||= { lvl: 0 };
     // Kickers rarely go early, however talented.
-    p.cons ||= { score: p.truePot * 0.78 + p.trueOvr * 0.22 - (p.pos === "K" || p.pos === "P" ? 6 : 0) + stream(`${p.id}|cs`).gauss(0, 2.4) };
+    p.cons ||= { score: p.truePot * 0.78 + p.trueOvr * 0.22 - (p.pos === "K" || p.pos === "P" ? 6 : 0) + stream(`${p.id}|cs`).gauss(0, 3.4) };
   }
   [...cls].sort((a, b) => b.cons.score - a.cons.score).forEach((p, i) => (p.cons.mid = i + 1));
   return sortByRank(cls);
+}
+// ---------- Hidden gems ----------
+// Every class has a few sleepers: players far better than anyone's board says (Brock Purdy,
+// Davante Adams, Antonio Brown...). The consensus board and most AI teams see only what the
+// public sees, so they slide to the middle and late rounds (or go undrafted). Your scouts find
+// them with a real report; before that, a good scout sometimes has a hunch.
+const GEM_WHY = {
+  small: "Small-school star: nobody trusts numbers put up against that competition",
+  size: "Undersized for the position, and teams worry he won't hold up",
+  injury: "Missed most of his final season hurt, so there's little recent tape",
+  raw: "Raw, with one year as a starter, but the flashes are special",
+  workout: "Ran poorly at his pro day; on tape he plays much faster",
+  qb: "Average arm and size, but he processes and throws with timing like a veteran",
+};
+export const gemGap = (p) => p.gem?.gap || 0;
+export const publicPot = (p) => p.truePot - gemGap(p);
+// Plant this class's gems once (a class that already has them is left alone). Called after the
+// consensus board is set, so the board never sees them.
+export function plantGems(cls, yr) {
+  if (!cls?.length || cls.some((p) => p.gemChk)) return cls;
+  const r = stream(`gems|${yr ?? cls[0]?.draftYear}|${cls.length}`);
+  const n = 4 + (r.chance(0.5) ? 1 : 0) + (r.chance(0.25) ? 1 : 0);
+  const pool = cls.filter((p) => !(p.scout?.lvl > 0) && (p.cons?.mid ?? 0) > 72 && p.pos !== "K" && p.pos !== "P" && p.trueOvr >= 50 && p.truePot < 84);
+  for (let i = 0; i < n && pool.length; i++) {
+    const p = pool.splice(Math.floor(r.next() * pool.length), 1)[0];
+    const target = clamp(Math.max(p.truePot + r.int(10, 17), r.int(82, 88)), 0, 95);
+    const kind = p.pos === "QB" ? "qb" : r.pick(["small", "small", "size", "injury", "raw", "workout"]);
+    if (kind === "small" && !isSmallSchool(p)) p.bio = { ...(p.bio || {}), college: r.pick([...SMALL_SCHOOLS]) };
+    const x = r.next();
+    p.dev = x < 0.06 ? "generational" : x < 0.32 ? "superstar" : x < 0.82 ? "star" : "late";
+    p.gem = { gap: target - p.truePot, why: GEM_WHY[kind] };
+    if (p.pot === p.truePot) p.pot = target;
+    p.truePot = target;
+  }
+  for (const p of cls) p.gemChk = 1;
+  return cls;
 }
 export const csRank = (p) => p.cons?.final ?? p.cons?.mid ?? 999;
 export const csScore = (p) => p.cons?.fscore ?? p.cons?.score ?? p.truePot * 0.78 + p.trueOvr * 0.22 - (p.pos === "K" || p.pos === "P" ? 6 : 0);
@@ -546,6 +587,7 @@ const NEWS = {
 // already; this mutates them and re-sorts the class.
 export function runCombine(sc, cls, { quiet = false } = {}) {
   rankClass(cls);
+  plantGems(cls);
   const invited = cls.filter((p) => p.combine);
   const groups = {};
   for (const p of invited) (groups[combineGroup(p.pos)] ||= []).push(p);
@@ -626,7 +668,8 @@ export function interviewProspect(sc, sp, p) {
 const DEV_EYE = { generational: 2, superstar: 1.2, star: 0.6, late: -0.3 };
 export function aiDraftScore(p, gmStyle) {
   const potW = gmStyle === "win-now" ? 0.6 : gmStyle === "rebuilder" ? 0.85 : 0.78;
-  const own = (p.truePot + (p.aiNoise || 0)) * potW + p.trueOvr * (1 - potW) + (DEV_EYE[devOf(p)] || 0) + (gmStyle === "rebuilder" && p.age <= 21 ? 0.6 : 0) - (p.pos === "K" || p.pos === "P" ? 6 : 0);
+  const seen = p.truePot - gemGap(p) * (gmStyle === "analytics" ? 0.78 : 0.95);
+  const own = (seen + (p.aiNoise || 0)) * potW + p.trueOvr * (1 - potW) + (p.gem ? 0 : DEV_EYE[devOf(p)] || 0) + (gmStyle === "rebuilder" && p.age <= 21 ? 0.6 : 0) - (p.pos === "K" || p.pos === "P" ? 6 : 0);
   const trust = gmStyle === "analytics" ? 0.65 : 0.5;
   return own * trust + csScore(p) * (1 - trust) + gauss(0, 1.2);
 }

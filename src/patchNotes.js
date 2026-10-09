@@ -278,4 +278,12 @@ export const PATCH_NOTES = [
     "Holdouts now settle like the NFL's: he reports right away on his current deal, and the new contract is an extension starting next season, checked against next season's cap.",
     "Removed the old +1yr/+2yr (1 SP) extension buttons and the instant 1-4yr re-sign buttons, which skipped negotiation and changed salaries immediately.",
   ] },
+  { v: "1.73", date: "2026-10-09", title: "Hidden Gems in the Draft", notes: [
+    "Every draft class now has 4-6 hidden gems: players far better than the board says, like Brock Purdy or Davante Adams. Each has a reason he slid (small school, undersized, an injury-shortened final season, raw, a bad pro day, or a quarterback with an average arm who processes like a vet), a real ceiling in the 80s or higher, and a Star-or-better development trait (or he's a late bloomer).",
+    "The consensus board and almost every AI team see only what the public sees, so gems slide to the middle and late rounds, and now and then one goes undrafted. Analytics-minded front offices catch one now and then.",
+    "Your scouts can find them. Before a report, your scout only has the public read, but a good scout (especially a small-school specialist) sometimes has a hunch: look for 👀 on the Big Board. A scouting report shows his real ceiling and flags him as a sleeper.",
+    "The draft board is a little less certain overall, so the occasional first-round talent slides and the occasional first-rounder busts, like the real thing.",
+    "The Draft Recap marks every gem (💎 Hidden gem), so you can see who found them and who missed.",
+    "Classes already made in your franchise get their gems at the Combine.",
+  ] },
 ];
