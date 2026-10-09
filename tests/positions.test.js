@@ -28,3 +28,19 @@ test("moving back restores the original position, skills and rating", () => {
   assert.equal(canMoveDB({ pos: "LB" }), false);
   assert.equal(moveDB({ pos: "WR", ovr: 70 }).pos, "WR");
 });
+
+test("offensive line: guards at tackle lose more than tackles at guard; moving back restores", async () => {
+  const { moveOL, movePlayer } = await import("../src/positions.js");
+  const attrs = (o) => ({ passBlock: o, footwork: o, anchor: o, awareness: o, handUse: o, reach: o + 4, agility: o - 15, toughness: o + 5, runBlock: o, pulling: o - 8, strength: o + 6, drive: o, snapping: o, leadership: o, athleticism: o - 12, power: o });
+  const tackle = { id: "t", name: "T", pos: "LT", ovr: 85, pot: 88, agi: 66, posAttrs: attrs(85) };
+  const guard = { id: "g", name: "G", pos: "LG", ovr: 85, pot: 88, agi: 60, posAttrs: attrs(85) };
+  const tg = moveOL(tackle, "RG"), gt = moveOL(guard, "LT");
+  assert.equal(tg.pos, "RG"); assert.equal(gt.pos, "LT");
+  assert.ok(85 - gt.ovr > 85 - tg.ovr, `guard at tackle ${gt.ovr} vs tackle at guard ${tg.ovr}`);
+  assert.ok(tg.ovr <= 85 && gt.ovr <= 85);
+  const back = moveOL(moveOL(guard, "LT"), "RG");
+  assert.equal(back.ovr, 85); assert.equal(back.pos, "RG"); assert.equal(back.posFrom, undefined);
+  assert.equal(moveOL(tackle, "RT").ovr, 85, "left/right is free");
+  assert.equal(movePlayer({ pos: "CB", ovr: 80, posAttrs: {} }, "S").pos, "S");
+  assert.equal(movePlayer({ pos: "WR", ovr: 80 }, "LT").pos, "WR", "no WR at tackle");
+});

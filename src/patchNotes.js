@@ -238,4 +238,9 @@ export const PATCH_NOTES = [
     "Fixed: when an AI team's coordinator's contract ran out the job was left empty forever, so over a few seasons AI teams lost their coaches (and their bonuses). Every opening is now filled.",
     "Owner patience is real now: winning seasons, playoff trips and titles build it; losing seasons drain it. Below 35 the owner gives you an ultimatum; run it out and you're fired, with job offers from the league's worst teams or one last chance to plead for another season.",
   ] },
+  { v: "1.67", date: "2026-10-09", title: "Offensive Line Flexibility", notes: [
+    "Linemen can move along the line: on the Depth Chart, each LT, LG, C, RG and RT spot has Move buttons to bring in a lineman from another spot, showing what he'd rate there before you commit.",
+    "Left/right swaps (LT to RT, LG to RG) cost nothing. Moving between tackle, guard and center re-rates him on what the new spot asks for: tackles need pass protection, footwork, reach and agility; guards run blocking, strength and power; centers snapping and smarts. A typical tackle loses about 1 at guard, a guard about 4 at tackle.",
+    "Moving a lineman back to his natural spot restores his old rating exactly (keeping any growth since).",
+  ] },
 ];

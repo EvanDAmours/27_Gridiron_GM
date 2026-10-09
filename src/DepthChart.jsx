@@ -61,9 +61,11 @@ export const PARTNER = { LT: "RT", RT: "LT", LG: "RG", RG: "LG" };
 
 // Corners and safeties can change position: a corner listed under a safety spot moves to safety
 // (his rating is re-figured for the new spot) and starts there.
-const DB_PARTNER = { CB: "S", S: "CB" };
+// Players from these positions can be moved into a spot (re-rated for it): corners and safeties,
+// and tackles, guards and centers along the line (left/right swaps go through PARTNER instead).
+const CROSS = { CB: ["S"], S: ["CB"], LT: ["LG", "RG", "C"], RT: ["LG", "RG", "C"], LG: ["LT", "RT", "C"], RG: ["LT", "RT", "C"], C: ["LG", "RG", "LT", "RT"] };
 
-export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps, onMoveDB, previewDB }) {
+export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps, onMovePos, previewPos }) {
   const [side, setSide] = useState("offense");
   const [pick, setPick] = useState(null); // [pos, idx]
   const set = SETS[side];
@@ -91,16 +93,17 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
   };
   // Move a corner to safety (or back) and start him at this spot.
   const moveIn = (pos, idx, player) => {
-    onMoveDB(player.id);
+    const from = player.pos;
+    onMovePos(player.id, pos);
     const ids = order(pos).map((p) => p.id);
     ids.splice(Math.min(idx, ids.length), 0, player.id);
-    setDepthOrder((d) => ({ ...d, [pos]: ids, [DB_PARTNER[pos]]: (d[DB_PARTNER[pos]] || []).filter((id) => id !== player.id) }));
-    clearSnaps(pos, DB_PARTNER[pos]);
+    setDepthOrder((d) => ({ ...d, [pos]: ids, [from]: (d[from] || []).filter((id) => id !== player.id) }));
+    clearSnaps(pos, from);
   };
   const rowLabel = (pos, i) => (pos === "DL" && i < 4 ? DL_SLOTS[i] : i < STARTERS[pos] ? (STARTERS[pos] > 1 ? `${pos}${i + 1}` : `${pos}1`) : `${pos} #${i + 1}`);
   // Everyone who could line up here: for tackles and guards, both sides of the line.
   const chosen = pick && [...order(pick[0]).map((p, i) => ({ p, at: pick[0], i })), ...(PARTNER[pick[0]] && setPositions ? order(PARTNER[pick[0]]).map((p, i) => ({ p, at: PARTNER[pick[0]], i })) : []),
-    ...(DB_PARTNER[pick[0]] && onMoveDB ? order(DB_PARTNER[pick[0]]).map((p, i) => ({ p, at: DB_PARTNER[pick[0]], i, move: true })) : [])];
+    ...(CROSS[pick[0]] && onMovePos ? CROSS[pick[0]].flatMap((x) => order(x).map((p, i) => ({ p, at: x, i, move: true }))) : [])];
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
@@ -127,7 +130,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
               {!chosen.length && <div style={{ color: C.mt, fontSize: 13 }}>Nobody on the roster plays {pick[0]}.</div>}
               {PARTNER[pick[0]] && setPositions && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>Tackles and guards play either side. Starting a {PARTNER[pick[0]]} here swaps the two.</div>}
               {pick[0] === "DL" && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>Any lineman can play {slotKind(pick[1]) === "EDGE" ? "edge" : "tackle"} here. The number is his rating at this spot; edge rushers lose some inside and run stuffers lose some outside (his natural rating after the slash).</div>}
-              {DB_PARTNER[pick[0]] && onMoveDB && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>Corners and safeties can switch. Moving a {DB_PARTNER[pick[0]]} here changes his position, and his rating is re-figured for {pick[0]} (shown in the Move button).</div>}
+              {CROSS[pick[0]] && onMovePos && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>{["CB", "S"].includes(pick[0]) ? "Corners and safeties can switch." : "Linemen can move along the line."} Moving a player here changes his position; the Move button shows his rating at {pick[0]}. Moving him back restores his old rating.</div>}
               {chosen.map(({ p, at, i, move }) => {
                 const here = at === pick[0] && i === pick[1];
                 const starter = i < STARTERS[at];
@@ -140,7 +143,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
                       <div style={{ fontSize: 11, color: C.mt }}>{p.pos === "DL" && <b style={{ color: naturalDL(p) === "DT" ? "#fb923c" : "#f472b6", marginRight: 4 }}>{naturalDL(p)}</b>}Age {p.age}{p.injured ? <span style={{ color: C.rd, fontWeight: 700 }}> · injured</span> : ""}</div>
                     </div>
                     {(() => { const v = p.pos === "DL" && pick[0] === "DL" ? dlOvrAt(p, slotKind(pick[1])) : p.ovr; return <b title={v !== p.ovr ? `${p.ovr} at his natural spot` : undefined} style={{ fontSize: 16, color: oC(v), minWidth: 26, textAlign: "right" }}>{v}{v !== p.ovr && <span style={{ fontSize: 10, color: C.mt, fontWeight: 600 }}> /{p.ovr}</span>}</b>; })()}
-                    {move ? <Btn onClick={() => moveIn(pick[0], pick[1], p)} bg="#7c3aed" c="#ede9fe" style={{ fontSize: 11, padding: "3px 6px", width: 56 }} title={`Move him to ${pick[0]}: ${previewDB ? previewDB(p).ovr : "?"} OVR there`}>Move {previewDB ? previewDB(p).ovr : ""}</Btn>
+                    {move ? <Btn onClick={() => moveIn(pick[0], pick[1], p)} bg="#7c3aed" c="#ede9fe" style={{ fontSize: 11, padding: "3px 6px", width: 56 }} title={`Move him to ${pick[0]}: ${previewPos ? previewPos(p, pick[0]) : "?"} OVR there`}>Move {previewPos ? previewPos(p, pick[0]) : ""}</Btn>
                       : here ? <span style={{ fontSize: 11, color: "#facc15", fontWeight: 700, width: 56, textAlign: "center" }}>Here</span>
                       : <Btn onClick={() => (at === pick[0] ? place(pick[0], pick[1], p) : switchSide(pick[0], p))} bg={C.bl} style={{ fontSize: 11, padding: "3px 8px", width: 56 }}>Start</Btn>}
                   </div>

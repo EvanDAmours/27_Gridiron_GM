@@ -21,7 +21,7 @@ import HomeScreen from "./HomeScreen.jsx";
 import { terms as talkTerms, yearlyAsk, maxYears } from "./negotiation.js";
 import { playerValue, pickValue as chartPickValue, evaluateTrade } from "./trade.js";
 import { genTradeOffer, wantsPlayer } from "./tradeOffers.js";
-import { moveDB, canMoveDB, moveDBPreview } from "./positions.js";
+import { moveDB, canMoveDB, moveDBPreview, movePlayer, movePreview, DB_SWAP } from "./positions.js";
 import { tagPrice, optionPrice, optionEligible } from "./contracts.js";
 import { aiTradeWeek, TRADE_DEADLINE_WEEK } from "./aiTrades.js";
 import { startDeadline, advanceDeadline, runDeadline, tradeText, feedItem } from "./deadline.js";
@@ -532,7 +532,10 @@ const _sb=loginStreak>=7?2:loginStreak>=3?1:0;if(_sb>0){setScPts(s=>s+_sb);setSt
     const a=awards.find(x=>x.yr===yr);if(a&&!(a.oroy&&a.droy)&&sp!=="regular"&&sp!=="preseason")return fill(yr,seasonAwardWinners(teams,yr));
     const b=awards.find(x=>x.yr===yr-1);if(b&&!(b.oroy&&b.droy))fill(yr-1,pastRookieAwards(teams,yr-1));},[sp,yr,awards,teams]);
   // Move one of your corners to safety, or a safety to corner.
-  const moveMyDB=pid=>{const pl=teams[ui]?.roster.find(r=>r.id===pid);if(!pl||!canMoveDB(pl))return;const np={...moveDB(pl)};np.tradeVal=tradeValue(np);setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(r=>r.id===pid?np:r)}));setPlayingTime(s=>{const n={...s};delete n[pid];return n;});setSel(prev=>prev?.id===pid?np:prev);sm(`${np.name} moves to ${np.pos === "S" ? "safety" : "cornerback"} (${np.ovr} OVR there).`);setLog(l=>[`🔁 ${np.name} moved from ${pl.pos} to ${np.pos} (${pl.ovr} → ${np.ovr} OVR)`,...l.slice(0,149)]);};
+  // Change one of your player's positions (CB/S, or along the offensive line), re-rated for the new spot.
+  const POS_NAME={S:"safety",CB:"cornerback",LT:"left tackle",RT:"right tackle",LG:"left guard",RG:"right guard",C:"center"};
+  const movePlayerTo=(pid,to)=>{const pl=teams[ui]?.roster.find(r=>r.id===pid);if(!pl)return;const np={...movePlayer(pl,to)};if(np.pos!==to)return;np.tradeVal=tradeValue(np);setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(r=>r.id===pid?np:r)}));setPlayingTime(s=>{const n={...s};delete n[pid];return n;});setSel(prev=>prev?.id===pid?np:prev);sm(`${np.name} moves to ${POS_NAME[to]||to} (${np.ovr} OVR there).`);setLog(l=>[`🔁 ${np.name} moved from ${pl.pos} to ${np.pos} (${pl.ovr} → ${np.ovr} OVR)`,...l.slice(0,149)]);};
+  const moveMyDB=pid=>{const pl=teams[ui]?.roster.find(r=>r.id===pid);if(pl&&canMoveDB(pl))movePlayerTo(pid,DB_SWAP[pl.pos]);};
   // League-wide injuries switch. Turning them off also heals everyone who's hurt right now.
   const toggleInjuries=()=>{const on=!injuriesOn;setInjuriesOn(on);setInjuries(on);if(!on){const heal=p=>p.injured?{...p,injured:false,injWk:0,injType:"",injSev:"",injRecWks:0,injNew:undefined}:p;setTeams(ts=>ts.map(t=>({...t,roster:t.roster.map(heal),...(t.ir?{ir:t.ir.map(heal)}:{})})));}sm(on?"Injuries are on league-wide.":"Injuries are off league-wide. Everyone who was hurt is healthy again.");setLog(l=>[on?"🩹 League setting: injuries turned on.":"🩹 League setting: injuries turned off (all injured players healed).",...l.slice(0,149)]);};
   // Trade Deadline Day (the day after week 9).
@@ -1437,7 +1440,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         </div>);})}
       </div>);
       const viewBtns=<div style={{display:'flex',gap:6}}>{[['field','Field'],['list','List']].map(([k,l])=><button key={k} onClick={()=>setDepthView(k)} style={{background:depthView===k?'#334155':'transparent',color:depthView===k?'#fff':'#94a3b8',border:`1px solid ${C.bd}`,borderRadius:6,padding:'5px 12px',fontSize:13,fontWeight:700,cursor:'pointer'}}>{l}</button>)}</div>;
-      if(depthView==='field')return(<div><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}><div style={{fontSize:20,fontWeight:900,color:'#e2e8f0'}}>Depth Chart</div>{viewBtns}</div><DepthChart roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} setSel={setSel} onAutoFill={autoFillAll} onMoveDB={moveMyDB} previewDB={moveDBPreview} setPositions={moves=>setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(p=>moves[p.id]?{...p,pos:moves[p.id]}:p)}))}/></div>);
+      if(depthView==='field')return(<div><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}><div style={{fontSize:20,fontWeight:900,color:'#e2e8f0'}}>Depth Chart</div>{viewBtns}</div><DepthChart roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} setSel={setSel} onAutoFill={autoFillAll} onMovePos={movePlayerTo} previewPos={movePreview} setPositions={moves=>setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(p=>moves[p.id]?{...p,pos:moves[p.id]}:p)}))}/></div>);
       return(<div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8,gap:8,flexWrap:'wrap'}}>
           <div style={{fontSize:20,fontWeight:900,color:'#e2e8f0'}}>Depth Chart</div>{viewBtns}

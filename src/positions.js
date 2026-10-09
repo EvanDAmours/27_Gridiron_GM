@@ -53,3 +53,46 @@ export function moveDB(p) {
 
 // What the move would do to his rating, for the button label.
 export const moveDBPreview = (p) => { const n = moveDB(p); return { to: n.pos, ovr: n.ovr }; };
+
+// ---------- Offensive line ----------
+// Tackles, guards and centers can move along the line. Left/right swaps (LT/RT, LG/RG) cost
+// nothing; moving between tackle, guard and center re-rates a lineman on what the new spot asks
+// for: tackles pass protection, footwork, reach and agility; guards run blocking, strength and
+// power; centers snapping, awareness and leadership. A typical tackle loses ~1 at guard, a guard
+// ~4 at tackle, a center ~1 at guard. Moving back restores his rating.
+export const OL_POS = ["LT", "LG", "C", "RG", "RT"];
+const OL_KIND = { LT: "T", RT: "T", LG: "G", RG: "G", C: "C" };
+export const isOL = (p) => !!OL_KIND[p?.pos];
+const olScore = (p, k) => {
+  const g = (x) => p.posAttrs?.[x] ?? 70;
+  if (k === "T") return 0.25 * g("passBlock") + 0.2 * g("footwork") + 0.15 * g("reach") + 0.15 * (p.agi ?? 63) + 0.1 * g("athleticism") + 0.15 * g("anchor");
+  if (k === "G") return 0.25 * g("runBlock") + 0.2 * g("strength") + 0.15 * g("anchor") + 0.15 * g("drive") + 0.15 * g("power") + 0.1 * g("pulling");
+  return 0.25 * g("snapping") + 0.2 * g("awareness") + 0.15 * g("leadership") + 0.15 * g("runBlock") + 0.15 * g("anchor") + 0.1 * g("handUse");
+};
+// Median score gap between spots over every real lineman (from -> to), and what a move costs.
+const OL_BASE = { T: { G: 3.0, C: 3.55 }, G: { T: -4.2, C: -2.0 }, C: { T: -3.77, G: -1.0 } };
+const OL_COST = { T: { G: 1, C: 3 }, G: { T: 4, C: 2 }, C: { T: 5, G: 1 } };
+
+// His rating at another line spot (no change for his own kind of spot).
+export function olShift(p, from, to) {
+  const a = OL_KIND[from], b = OL_KIND[to];
+  if (!a || !b || a === b) return 0;
+  return Math.round(Math.min(0, olScore(p, b) - olScore(p, a) - OL_BASE[a][b] - OL_COST[a][b]));
+}
+
+// The lineman at a new spot on the line.
+export function moveOL(p, to) {
+  if (!isOL(p) || !OL_KIND[to] || p.pos === to) return p;
+  const home = p.posFrom?.pos || p.pos;
+  const base = (p.ovr || 0) - (p.posFrom?.shift || 0);
+  const basePot = (p.pot || p.ovr || 0) - (p.posFrom?.shift || 0);
+  if (OL_KIND[to] === OL_KIND[home]) { const { posFrom, ...rest } = p; return { ...rest, pos: to, ovr: base, trueOvr: base, pot: Math.max(base, basePot), truePot: Math.max(base, basePot) }; }
+  const shift = olShift({ ...p, pos: home }, home, to);
+  const ovr = clamp(base + shift, 40, 99);
+  const pot = clamp(basePot + shift, ovr, 99);
+  return { ...p, pos: to, ovr, trueOvr: ovr, pot, truePot: pot, posFrom: { pos: home, shift } };
+}
+
+// Any position change the game supports (CB/S, or along the line). Returns the player unchanged otherwise.
+export const movePlayer = (p, to) => (OL_KIND[p.pos] && OL_KIND[to] ? moveOL(p, to) : DB_SWAP[p.pos] === to ? moveDB(p) : p);
+export const movePreview = (p, to) => movePlayer(p, to).ovr;
