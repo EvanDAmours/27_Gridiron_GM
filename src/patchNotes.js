@@ -196,4 +196,8 @@ export const PATCH_NOTES = [
     "Replaces the old Trade Deadline Frenzy popup, which also deleted the pick you paid with instead of sending it to the other team.",
     "Running backs: tightened the per-game fatigue so a back on every snap lands around 300-350 carries a season.",
   ] },
+  { v: "1.59", date: "2026-10-09", title: "Sim to Deadline", notes: [
+    "New Sim to Deadline button (top bar, Home screen and dashboard) during the regular season: sims every game through week 9 and takes you straight to Trade Deadline Day.",
+    "While deadline day is under way, the Home screen's main button takes you back to the deadline desk.",
+  ] },
 ];
