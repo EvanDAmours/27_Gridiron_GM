@@ -49,7 +49,7 @@ export default function LiveField({ ballYard, toGo, off, def, offDepth, defDepth
       return <Player key={`${side}${pos}${i}`} p={list[pos]?.[i]} pos={pos} x={x} y={y} clr={team?.clr || "#334155"} ac={team?.ac} />;
     });
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, background: "#1f6b2a" }}>
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, maxHeight: "min(46vh, 420px)" }}>
       {[...Array(10)].map((_, i) => <rect key={i} x={xOf(i * 10)} y="0" width={xOf(10) - xOf(0)} height={H} fill={i % 2 ? "#237a30" : "#1f6b2a"} />)}
       <rect x="0" y="0" width={EZ} height={H} fill={off?.clr || "#333"} opacity=".55" />
       <rect x={W - EZ} y="0" width={EZ} height={H} fill={def?.clr || "#333"} opacity=".55" />
