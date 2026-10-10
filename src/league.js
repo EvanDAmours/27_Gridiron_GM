@@ -363,8 +363,10 @@ const wx=wxOverride||rollGameWeather();
   const _hCov=_pmAvg(_grp(ht,['CB','S']))-_pmAvg(_grp(at,['WR','TE'])),_aCov=_pmAvg(_grp(at,['CB','S']))-_pmAvg(_grp(ht,['WR','TE']));
   const _hClash=SCHEME_CLASH[ht.coach?.oc?.scheme]?.[at.coach?.dc?.scheme]||0,_aClash=SCHEME_CLASH[at.coach?.oc?.scheme]?.[ht.coach?.dc?.scheme]||0;
   const _dda=DDA;
-  let hMod=hOC-aDC+hFit*.5+hOM.m+aDM.m+hMorB+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+((hPlan?.playbook?.length||0)>=3?1:0)+_hClash+(ht.isUser?_dda:0);
-  let aMod=aOC-hDC+aFit*.5+aOM.m+hDM.m+aMorB+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+((aPlan?.playbook?.length||0)>=3?1:0)+_aClash+(at.isUser?_dda:0);
+  // A scheme change takes a couple of weeks to install: the team plays a bit worse until it's in.
+  const _trans=t=>(t._schemeTransWks||0)>0?-2:0;
+  let hMod=_trans(ht)+hOC-aDC+hFit*.5+hOM.m+aDM.m+hMorB+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+((hPlan?.playbook?.length||0)>=3?1:0)+_hClash+(ht.isUser?_dda:0);
+  let aMod=_trans(at)+aOC-hDC+aFit*.5+aOM.m+hDM.m+aMorB+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+((aPlan?.playbook?.length||0)>=3?1:0)+_aClash+(at.isUser?_dda:0);
   // Who plays: AI clubs by their depth chart; yours by your depth chart with snap share overriding it.
   const _ord=t=>{const _healthy=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const _dO=t.isUser?USER_DEPTH:{};const _pt=t.isUser?USER_SNAPS:null;const memo={};return pos=>memo[pos]||(memo[pos]=depthOrderFor(_healthy,_dO,pos,_pt));};
   const hOrd=_ord(ht),aOrd=_ord(at);
@@ -410,6 +412,8 @@ export function applyGame(t,snaps,lines,playoff=false){
   });
   return box;
 }
+// Weekly upkeep after games are played: scheme installs run down.
+export function weeklyTick(teams,weeks=1){for(const t of teams||[])if((t._schemeTransWks||0)>0)t._schemeTransWks=Math.max(0,t._schemeTransWks-weeks);}
 // The league's unit-rating averages and spreads, for the game engine to measure teams against.
 export function calibrateLeague(teams){
   const us=(teams||[]).filter(t=>t?.roster?.length).map(t=>{const h=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const memo={};const order=pos=>memo[pos]||(memo[pos]=pos==="DL"?dlAsPlayed(depthOrderFor(h,{},"DL")):depthOrderFor(h,{},pos));return unitRatings(order);});
