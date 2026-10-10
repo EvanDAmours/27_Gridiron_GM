@@ -304,4 +304,9 @@ export const PATCH_NOTES = [
     "Depth or volume: individual scouting reports, full workups and development traits are still your position scouts' job, with your regular scouting points. A prospect's read uses whichever of your scouts knows him best.",
     "Draft classes now come from where real prospects do: the SEC and Big Ten produce the most, then the ACC and Big 12, with fewer from smaller conferences and FCS schools (which are too spread out for area trips). The Big Board shows each prospect's conference.",
   ] },
+  { v: "1.77", date: "2026-10-10", title: "No More Stars Let Go for Nothing", notes: [
+    "Fixed: AI teams were randomly releasing injured players during the season: any injured player rated 70+ had a 20% chance each week of being cut outright, so a star like Josh Allen could be released while hurt. Now AI teams only release injured depth players (rated under 74, not starters, never a QB or franchise player) with long-term injuries.",
+    "Fixed: AI teams' stars with a player option could opt out and land straight in free agency, skipping their team's re-sign decision. AI teams' 85+ players and starting-calibre QBs no longer slip out that way; they go through the normal re-sign process, where AI clubs keep their franchise players and starting QBs.",
+    "If a star already ended up in free agency in your franchise, he stays there for now (sign him yourself if you can!).",
+  ] },
 ];
