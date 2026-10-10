@@ -399,4 +399,8 @@ export const PATCH_NOTES = [
     "Sacks are counted the NFL way: about one in seven is shared by two rushers, half a sack each. Sack totals only ever show whole or half sacks, and every other stat is a whole number (no more 'on pace for 27.2 sacks').",
     "Fixed: trade offers that pop up under the header (an AI GM offering picks or a player for one of yours) couldn't be accepted; Accept did nothing. It works now.",
   ] },
+  { v: "1.93", date: "2026-10-10", title: "Phone Bottom Bar: Scouting and Stats", notes: [
+    "On the mobile version, Scouting replaces Schedule in the bottom bar, so sending area scouts and checking on prospects is one tap away all season.",
+    "League and player stats now sit with the standings on phones: Standings, Stats, Schedule and Playoffs are tabs on one screen (the schedule is still one tap from Standings).",
+  ] },
 ];

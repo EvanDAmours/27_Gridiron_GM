@@ -1029,7 +1029,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
 
   // Related screens share one tab with a row of sub-tabs: Schedule+ (schedule, standings, playoffs),
   // Roster+ (roster, depth chart, contracts), Draft+ (scouting, draft, draft recap) and League+.
-  const TAB_GROUPS=[{key:"roster",label:"Roster+",tabs:["roster","depth","contracts"]},{key:"schedule",label:"Schedule+",tabs:["schedule","standings","playoffs"]},{key:"scouting",label:"Draft+",tabs:["scouting","draft","draftrecap"]},{key:"hub",label:"League+",tabs:["hub","stats","records","history","trophies"]}];
+  // On phones the league and player stats sit with the standings (one tap from the bottom bar).
+  const TAB_GROUPS=[{key:"roster",label:"Roster+",tabs:["roster","depth","contracts"]},{key:"schedule",label:"Schedule+",tabs:MOBILE?["standings","stats","schedule","playoffs"]:["schedule","standings","playoffs"]},{key:"scouting",label:"Draft+",tabs:["scouting","draft","draftrecap"]},{key:"hub",label:"League+",tabs:MOBILE?["hub","records","history","trophies"]:["hub","stats","records","history","trophies"]}];
   const groupOf=t=>TAB_GROUPS.find(g=>g.tabs.includes(t));
   const groupEntry=g=>g.key==="scouting"&&sp==="draft"?"draft":g.key;
   const TABS=["dashboard","roster","schedule","scouting","trade","freeagency","coaching","hub","log","gameinfo"];

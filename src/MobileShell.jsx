@@ -1,4 +1,4 @@
-// Phone navigation: a bottom tab bar (Home, Roster, Schedule, whatever the season phase is
+// Phone navigation: a bottom tab bar (Home, Roster, Scouting, whatever the season phase is
 // about, More) and a full-screen "More" sheet with every other screen and the settings.
 import React from "react";
 import { C } from "./ui.jsx";
@@ -7,7 +7,7 @@ const PHASE_ITEM = {
   preseason: { icon: "🏋️", label: "Camp", tab: "roster", sub: "camp" },
   regular: { icon: "📊", label: "Standings", tab: "standings" },
   playoffs: { icon: "🏆", label: "Playoffs", tab: "playoffs" },
-  combine: { icon: "🔎", label: "Scouting", tab: "scouting" },
+  combine: { icon: "📊", label: "Standings", tab: "standings" },
   resign: { icon: "✍️", label: "Re-sign", tab: "freeagency" },
   freeagency: { icon: "✍️", label: "Free Agency", tab: "freeagency" },
   draft: { icon: "🎯", label: "Draft", tab: "draft" },
@@ -18,7 +18,7 @@ export function MobileNav({ tab, sp, rosterView, go, onMore, moreOpen }) {
   const items = [
     { icon: "🏠", label: "Home", tab: "dashboard" },
     { icon: "👥", label: "Roster", tab: "roster", sub: "players" },
-    { icon: "📅", label: "Schedule", tab: "schedule" },
+    { icon: "🔎", label: "Scouting", tab: "scouting" },
     ph,
   ];
   return (
