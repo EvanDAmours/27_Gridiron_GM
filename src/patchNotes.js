@@ -384,7 +384,7 @@ export const PATCH_NOTES = [
     "Fixed: a scheme change's 2-week transition never ended (the warning stayed up forever) and its penalty never actually applied. Now a new scheme costs about 2 points a game for your next 2 games while it's installed, then it's done.",
   ] },
   { v: "1.90", date: "2026-10-10", title: "A Little More Area Scouting, Cleaner Mobile Depth Chart", notes: [
-    "A little more area scouting: 4 area points at the start of the season (was 2), still 1 a week, and 4 more at the Combine for pro days and all-star games. That's about 13 trips a season instead of 10: three regions known inside out (every prospect's rating after the fourth trip) plus a look at a fourth. You still can't cover the whole country, so where you send them matters.",
+    "More area scouting: 6 area points at the start of the season (was 2), still 1 a week, and 8 more at the Combine for pro days and all-star games. That's 16 trips a season instead of 10: enough to know four of the six regions inside out (every prospect's rating after the fourth trip). You still can't cover the whole country, so where you send them matters.",
     "Depth chart on mobile: each player is now a clean two-line card (name, OVR and the move arrows on top; badges and the snap-share slider underneath), and the position headers are shorter.",
   ] },
 ];
