@@ -5,7 +5,10 @@ import { C, TeamLogo, Btn, kickoff } from "./ui.jsx";
 import { unitRatings } from "./gamesim.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import { ROUND_NAMES } from "./playoffs.js";
-import PlayerFigure, { starOf } from "./PlayerFigure.jsx";
+import PlayerFigureRaw, { starOf } from "./PlayerFigure.jsx";
+// Star figures beside the logos: off until the art is approved.
+const SHOW_STARS = false;
+const PlayerFigure = (props) => (SHOW_STARS ? <PlayerFigureRaw {...props} /> : null);
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const PHASE = { preseason: "Preseason", combine: "Offseason: NFL Combine", resign: "Offseason: Re-sign Week", freeagency: "Offseason: Free Agency", draft: "Offseason: NFL Draft" };

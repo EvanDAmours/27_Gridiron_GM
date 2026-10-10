@@ -1,10 +1,10 @@
 # Gridiron-GM
 
-Gridiron GM is a realistic football general manager simulation game based off the National Football League (NFL).
+Football GM is a realistic football general manager simulation game based off the National Football League (NFL).
 
-**Live Site:** [vaultsparkstudios.com](https://vaultsparkstudios.com)
+**Live Site:** [D'Amours Unlimited](https://evandamours.github.io/27_Gridiron_GM)
 
-**Repository:** [github.com/VaultSparkStudios/Gridiron-GM](https://github.com/VaultSparkStudios/Gridiron-GM)
+**Repository:** [github.com/EvanDAmours/27_Gridiron_GM](https://github.com/EvanDAmours/27_Gridiron_GM)
 
 ## Development
 

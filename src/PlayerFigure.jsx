@@ -41,111 +41,128 @@ const shade = (hex, f) => {
   return `rgb(${ch(n >> 16)},${ch((n >> 8) & 255)},${ch(n & 255)})`;
 };
 
-// A glossy vinyl-figure look: smooth rounded shapes, every surface lit from the upper left so it
-// reads as 3D next to the logos. Proportions are toy-like (the helmet a little big) but not a bobblehead.
+// A broadcast-graphic style athlete: realistic proportions (helmet about a seventh of his height),
+// muscular arms and legs, shoulder pads under the jersey, a real helmet shape with ear hole, chin
+// strap and facemask, and every surface shaded (light from the upper left, a rim light on the right).
 export default function PlayerFigure({ p, t, away = false, h = 180, label = true }) {
   if (!p || !t) return null;
   const g = gearFor(p);
   const clr = t.clr || "#334155", ac = t.ac || "#e2e8f0";
   const tc = (c) => (c === "team" ? clr : c);
-  const skin = p.face?.sk || "#c68642";
-  const J = away ? "#eef2f7" : clr, trim = away ? clr : ac;
-  const pants = away ? clr : "#e8ecf2", stripe = away ? "#eef2f7" : ac;
-  const sock = away ? clr : "#eef2f7";
+  const skin = p.face?.sk || "#a86b3c";
+  const J = away ? "#eef1f5" : clr, trim = away ? clr : ac;
+  const pants = away ? clr : "#e6e9ee", stripe = away ? "#eef1f5" : ac;
+  const sock = away ? clr : "#eef1f5";
   const big = BIG.has(p.pos), skill = SKILL.has(p.pos);
-  const w = big ? 1.12 : skill ? 0.95 : 1;
+  const w = big ? 1.1 : skill ? 0.95 : 1;
   const id = `pf${hash(p.id) % 100000}`;
   const u = (k) => `url(#${id}${k})`;
   const num = String(jerseyNum(p)).slice(0, 2);
-  const delay = `${(-g.sway * 3).toFixed(2)}s`;
-  const lin = (k, c, a = -0.3, b = 0.22) => (
-    <linearGradient id={`${id}${k}`} x1="0" x2="1" y1="0" y2="0">
-      <stop offset="0" stopColor={shade(c, a)} /><stop offset=".35" stopColor={shade(c, b)} /><stop offset=".65" stopColor={c} /><stop offset="1" stopColor={shade(c, a - 0.08)} />
+  const delay = `${(-g.sway * 4).toFixed(2)}s`;
+  // horizontal shading across a limb or panel: shadow edge, lit side, base, darker far edge
+  const lin = (k, c, x1 = 0, x2 = 1) => (
+    <linearGradient id={`${id}${k}`} x1={x1} x2={x2} y1="0" y2="0">
+      <stop offset="0" stopColor={shade(c, -0.42)} /><stop offset=".22" stopColor={shade(c, 0.12)} /><stop offset=".5" stopColor={shade(c, 0.04)} /><stop offset=".82" stopColor={shade(c, -0.18)} /><stop offset="1" stopColor={shade(c, -0.45)} />
     </linearGradient>
   );
-  const rad = (k, c) => (
-    <radialGradient id={`${id}${k}`} cx=".36" cy=".3" r=".75">
-      <stop offset="0" stopColor={shade(c, 0.45)} /><stop offset=".45" stopColor={c} /><stop offset="1" stopColor={shade(c, -0.42)} />
-    </radialGradient>
-  );
-  const sleeveOn = (side) => g.sleeves === "both" || (g.sleeves === "one" && side === "R");
-  const gloveOn = (side) => g.gloves === "both" || (g.gloves === "one" && side === "R");
-  const armFill = (side) => (sleeveOn(side) ? u(`sl`) : u("sk"));
+  const sleeve = (side) => g.sleeves === "both" || (g.sleeves === "one" && side === "R");
+  const glove = (side) => g.gloves === "both" || (g.gloves === "one" && side === "R");
+  const armFill = (side) => (sleeve(side) ? u("sl") : u("sk"));
+  // one arm (left side as drawn); the right one is mirrored
   const Arm = ({ side }) => {
-    const x = side === "L" ? 17 : 89; // left edge of the arm
+    const m = side === "R" ? "translate(200 0) scale(-1 1)" : undefined;
     return (
-      <g className={`${id}${side}`} style={{ transformOrigin: `${x + 7}px 64px` }}>
-        <rect x={x} y="60" width="14" height="58" rx="7" fill={armFill(side)} />
-        {g.armTape && !sleeveOn(side) && <><rect x={x} y="93" width="14" height="3" fill="#f8fafc" /><rect x={x} y="99" width="14" height="2.4" fill="#f8fafc" /></>}
-        {g.wristbands && <rect x={x - 0.5} y="106" width="15" height="7" rx="2.5" fill={tc(g.bandClr)} />}
-        <circle cx={x + 7} cy="121" r="8" fill={gloveOn(side) ? u("gl") : u("sk")} />
-        <rect x={x - 2} y="56" width="18" height="20" rx="8" fill={u("je")} />
-        <rect x={x - 2} y="70" width="18" height="3" fill={trim} opacity=".9" />
-      </g>
+      <g transform={m}><g className={`${id}${side}`} style={{ transformOrigin: "46px 104px" }}>
+        <path d="M33 104 C25 126 26 148 31 168 C28 188 30 208 35 224 L52 224 C55 208 56 190 53 171 C58 150 60 128 56 106 Z" fill={armFill(side)} />
+        <path d="M33 104 C25 126 26 148 31 168 C28 188 30 208 35 224 L39 224 C35 206 33 188 36 170 C31 148 31 128 37 106 Z" fill="#000" opacity=".18" />
+        {g.armTape && !sleeve(side) && <><path d="M32 192 L54 192 L54 196 L32 196 Z" fill="#f4f6f8" /><path d="M32 200 L54 200 L54 203 L32 203 Z" fill="#f4f6f8" /></>}
+        {g.wristbands && <rect x="33" y="210" width="21" height="10" rx="3" fill={tc(g.bandClr)} />}
+        <path d="M34 222 C30 232 31 244 37 250 C43 255 52 252 55 244 C57 236 55 228 53 222 Z" fill={glove(side) ? u("gl") : u("sk")} />
+        <path d="M37 236 C40 246 46 250 52 246" stroke="#000" strokeOpacity=".25" strokeWidth="1.2" fill="none" />
+        {/* jersey sleeve over the pad */}
+        <path d="M28 98 C30 88 44 84 58 88 L60 120 C50 124 38 124 30 120 Z" fill={u("je")} />
+        <path d="M30 114 C40 118 50 118 60 115 L60 119 C50 122 40 122 30 118 Z" fill={trim} />
+      </g></g>
     );
   };
   return (
     <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", lineHeight: 1 }}>
-      <svg viewBox="0 0 120 200" width={h * 0.6} height={h} role="img" aria-label={`${p.name}, #${num}`} style={{ overflow: "visible" }}>
+      <svg viewBox="0 0 200 400" width={h / 2} height={h} role="img" aria-label={`${p.name}, #${num}`} style={{ overflow: "visible" }}>
         <style>{`
-          .${id} { animation: ${id}b 3s ease-in-out infinite; animation-delay: ${delay}; transform-origin: 60px 196px; }
-          .${id}hd { animation: ${id}t 3s ease-in-out infinite; animation-delay: ${delay}; transform-origin: 60px 52px; }
-          .${id}L { animation: ${id}l 3s ease-in-out infinite; animation-delay: ${delay}; }
-          .${id}R { animation: ${id}r 3s ease-in-out infinite; animation-delay: ${delay}; }
-          @keyframes ${id}b { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-1.4px); } }
-          @keyframes ${id}t { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-2deg); } }
-          @keyframes ${id}l { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(3deg); } }
-          @keyframes ${id}r { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg); } }
-          @media (prefers-reduced-motion: reduce) { .${id}, .${id}hd, .${id}L, .${id}R { animation: none; } }
+          .${id} { animation: ${id}b 4s ease-in-out infinite; animation-delay: ${delay}; transform-origin: 100px 380px; }
+          .${id}c { animation: ${id}c 4s ease-in-out infinite; animation-delay: ${delay}; transform-origin: 100px 200px; }
+          .${id}L, .${id}R { animation: ${id}a 4s ease-in-out infinite; animation-delay: ${delay}; }
+          @keyframes ${id}b { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(0.7deg); } }
+          @keyframes ${id}c { 0%,100% { transform: scale(1, 1); } 50% { transform: scale(1.012, 1.008); } }
+          @keyframes ${id}a { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(1.6deg); } }
+          @media (prefers-reduced-motion: reduce) { .${id}, .${id}c, .${id}L, .${id}R { animation: none; } }
         `}</style>
         <defs>
-          {rad("hm", clr)}{rad("sk", skin)}{rad("gl", tc(g.gloveClr))}{rad("cl", tc(g.cleats))}
-          {lin("je", J)}{lin("pa", pants, -0.25, 0.2)}{lin("so", sock, -0.25, 0.2)}{lin("sl", tc(g.sleeveClr))}
+          {lin("sk", skin)}{lin("sl", tc(g.sleeveClr))}{lin("je", J)}{lin("pa", pants)}{lin("so", sock)}{lin("gl", tc(g.gloveClr))}{lin("cl", tc(g.cleats))}
+          <radialGradient id={`${id}hm`} cx=".35" cy=".3" r=".8"><stop offset="0" stopColor={shade(clr, 0.55)} /><stop offset=".35" stopColor={shade(clr, 0.08)} /><stop offset=".75" stopColor={shade(clr, -0.25)} /><stop offset="1" stopColor={shade(clr, -0.55)} /></radialGradient>
+          <radialGradient id={`${id}fc`} cx=".45" cy=".45" r=".7"><stop offset="0" stopColor={shade(skin, 0.1)} /><stop offset=".7" stopColor={skin} /><stop offset="1" stopColor={shade(skin, -0.35)} /></radialGradient>
           <linearGradient id={`${id}vi`} x1="0" x2="1"><stop offset="0" stopColor="#f59e0b" /><stop offset=".5" stopColor="#a855f7" /><stop offset="1" stopColor="#22d3ee" /></linearGradient>
+          <linearGradient id={`${id}rim`} x1="0" x2="1"><stop offset=".8" stopColor="#fff" stopOpacity="0" /><stop offset="1" stopColor="#fff" stopOpacity=".28" /></linearGradient>
         </defs>
-        <ellipse cx="60" cy="193" rx="34" ry="5" fill="#000" opacity=".35" />
+        <ellipse cx="100" cy="382" rx="58" ry="8" fill="#000" opacity=".4" />
         <g className={id}>
-          <g transform={`translate(60 0) scale(${w} 1) translate(-60 0)`}>
-            {/* legs */}
-            <rect x="38" y="116" width="44" height="18" rx="6" fill={u("pa")} />
-            <rect x="38" y="122" width="20" height="44" rx="8" fill={u("pa")} />
-            <rect x="62" y="122" width="20" height="44" rx="8" fill={u("pa")} />
-            <rect x="39" y="124" width="2.6" height="38" rx="1.3" fill={stripe} /><rect x="78.4" y="124" width="2.6" height="38" rx="1.3" fill={stripe} />
-            {g.socks === "low" && <><rect x="41" y="160" width="14" height="14" fill={u("sk")} /><rect x="65" y="160" width="14" height="14" fill={u("sk")} /></>}
-            <rect x="40" y={g.socks === "high" ? 156 : 170} width="16" height={g.socks === "high" ? 26 : 12} rx="5" fill={u("so")} />
-            <rect x="64" y={g.socks === "high" ? 156 : 170} width="16" height={g.socks === "high" ? 26 : 12} rx="5" fill={u("so")} />
-            <rect x="35" y="179" width="24" height="11" rx="5.5" fill={u("cl")} />
-            <rect x="61" y="179" width="24" height="11" rx="5.5" fill={u("cl")} />
-            {/* arms (behind the pads) */}
+          <g transform={`translate(100 0) scale(${w} 1) translate(-100 0)`}>
+            {/* legs: thighs, knee pads, calves, socks, cleats */}
+            {[0, 1].map((i) => (
+              <g key={i} transform={i ? "translate(200 0) scale(-1 1)" : undefined}>
+                <path d="M64 194 C58 236 62 274 66 300 L96 300 C98 270 100 232 100 198 Z" fill={u("pa")} />
+                <path d="M68 202 C64 240 66 272 69 298" stroke={stripe} strokeWidth="4" fill="none" />
+                <path d="M66 278 C70 270 92 270 96 278 L96 302 C90 308 72 308 66 302 Z" fill={u("pa")} />
+                <path d="M66 300 C61 322 63 346 70 362 L91 362 C96 342 98 320 96 300 Z" fill={g.socks === "high" ? u("so") : u("sk")} />
+                {g.socks === "low" && <path d="M68 340 L94 340 L92 364 L70 364 Z" fill={u("so")} />}
+                <path d="M64 358 C60 368 62 378 70 380 L98 380 C102 378 102 370 96 362 Z" fill={u("cl")} />
+                <path d="M66 377 L99 377" stroke="#000" strokeOpacity=".35" strokeWidth="2" />
+              </g>
+            ))}
+            <path d="M96 200 L104 200 L102 246 L98 246 Z" fill="#000" opacity=".22" />
+            {/* arms behind the torso */}
             <Arm side="L" /><Arm side="R" />
-            {/* torso: jersey over shoulder pads */}
-            {g.neckRoll && <rect x="42" y="48" width="36" height="11" rx="5.5" fill={away ? clr : "#e8ecf2"} />}
-            <path d="M30 60 Q30 50 44 50 L76 50 Q90 50 90 60 L86 120 Q60 124 34 120 Z" fill={u("je")} />
-            <path d="M33 54 Q46 48 60 50 Q74 48 87 54" fill="none" stroke={trim} strokeWidth="3.4" strokeLinecap="round" />
-            <ellipse cx="46" cy="62" rx="10" ry="4" fill="#fff" opacity=".18" />
-            <rect x="35" y="114" width="50" height="7" rx="3" fill="#1f2937" />
-            {g.towel && <rect x="63" y="119" width="9" height="22" rx="3" fill="#f8fafc" />}
-            <text x="60" y="101" textAnchor="middle" fontSize="30" fontWeight="900" fontFamily="'Arial Black', Impact, sans-serif" fill={away ? clr : "#f8fafc"} stroke={away ? ac : trim} strokeWidth="1.6" paintOrder="stroke">{num}</text>
-          </g>
-          {/* head: helmet, face, facemask */}
-          <g className={`${id}hd`}>
-            <rect x="53" y="42" width="14" height="12" rx="4" fill={u("sk")} />
-            <circle cx="60" cy="29" r="23" fill={u("hm")} />
-            <path d="M60 6.5 Q61.5 18 60 30" stroke={ac} strokeWidth="4.5" fill="none" strokeLinecap="round" />
-            <ellipse cx="60" cy="36" rx="13.5" ry="13" fill={u("sk")} />
-            <circle cx="55" cy="34" r="1.9" fill="#111" /><circle cx="65" cy="34" r="1.9" fill="#111" />
-            <circle cx="55.6" cy="33.4" r=".6" fill="#fff" /><circle cx="65.6" cy="33.4" r=".6" fill="#fff" />
-            <path d="M56 42 Q60 44.5 64 42" stroke="#5b3a29" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-            {g.eyeBlack === "stripes" && <><rect x="51.5" y="37" width="7" height="2.4" rx="1.2" fill="#111" /><rect x="61.5" y="37" width="7" height="2.4" rx="1.2" fill="#111" /></>}
-            {g.eyeBlack === "sticker" && <><rect x="51" y="36.5" width="8" height="3.6" rx="1" fill="#111" /><rect x="61" y="36.5" width="8" height="3.6" rx="1" fill="#111" /></>}
-            {g.visor !== "none" && <rect x="47" y="28.5" width="26" height="10" rx="4" fill={g.visor === "iridescent" ? `url(#${id}vi)` : g.visor === "smoke" ? "#0f172a" : "#dbeafe"} opacity={g.visor === "clear" ? 0.4 : 0.9} />}
-            <g stroke="#d1d5db" strokeWidth="2.2" fill="none" strokeLinecap="round">
-              <path d="M44 39 Q60 47 76 39" />
-              {g.mask !== "open" && <path d="M46 45 Q60 52 74 45" />}
-              {(g.mask === "bar3" || g.mask === "cage") && <path d="M49 50 Q60 55 71 50" />}
-              {g.mask === "cage" && <><line x1="60" y1="40" x2="60" y2="53" /><line x1="53" y1="41" x2="53" y2="51" /><line x1="67" y1="41" x2="67" y2="51" /></>}
+            <g className={`${id}c`}>
+              {g.neckRoll && <path d="M72 66 C80 58 120 58 128 66 L126 78 L74 78 Z" fill={away ? clr : "#e6e9ee"} />}
+              {/* neck */}
+              <path d="M86 56 L114 56 L118 80 L82 80 Z" fill={u("sk")} />
+              <path d="M86 70 L114 70 L118 80 L82 80 Z" fill="#000" opacity=".2" />
+              {/* torso over shoulder pads */}
+              <path d="M40 98 C44 80 62 72 82 74 L118 74 C138 72 156 80 160 98 L144 196 Q100 206 56 196 Z" fill={u("je")} />
+              <path d="M40 98 C44 80 62 72 82 74 L118 74 C138 72 156 80 160 98 L144 196 Q100 206 56 196 Z" fill={u("rim")} />
+              <path d="M58 112 L142 112 L140 124 Q100 130 60 124 Z" fill="#000" opacity=".14" />
+              <path d="M56 196 L50 120 L58 116 L64 196 Z" fill={trim} opacity=".9" />
+              <path d="M144 196 L150 120 L142 116 L136 196 Z" fill={trim} opacity=".9" />
+              <path d="M82 74 Q100 86 118 74" fill="none" stroke={trim} strokeWidth="5" />
+              <text x="100" y="170" textAnchor="middle" fontSize="52" fontWeight="900" fontFamily="'Arial Black', Impact, sans-serif" fill={away ? clr : "#f8fafc"} stroke={away ? ac : trim} strokeWidth="2.6" paintOrder="stroke" letterSpacing="-1">{num}</text>
+              <path d="M56 190 Q100 200 144 190 L144 204 Q100 212 56 204 Z" fill="#161b24" />
+              {g.towel && <path d="M108 204 L122 204 L120 246 Q115 250 110 246 Z" fill="#f4f6f8" />}
             </g>
-            <ellipse cx="50" cy="17" rx="9" ry="5" fill="#fff" opacity=".35" transform="rotate(-25 50 17)" />
+            {/* helmet */}
+            <path d="M68 44 C66 12 92 2 106 4 C126 6 136 22 134 46 L132 60 C126 66 116 66 112 62 L88 62 C82 66 72 64 68 58 Z" fill={u("hm")} />
+            <path d="M100 4.5 C103 22 103 40 100 60" stroke={ac} strokeWidth="6" fill="none" />
+            <ellipse cx="80" cy="18" rx="10" ry="5" fill="#fff" opacity=".4" transform="rotate(-30 80 18)" />
+            <circle cx="71" cy="44" r="3.4" fill="#0b0f16" opacity=".7" />
+            {/* face in the opening */}
+            <path d="M82 34 C82 26 118 26 118 34 L118 54 C116 66 106 72 100 72 C94 72 84 66 82 54 Z" fill={u("fc")} />
+            <path d="M82 34 C88 30 112 30 118 34 L118 38 C112 35 88 35 82 38 Z" fill="#000" opacity=".45" />
+            <path d="M87 41 Q92 38 96 41" stroke="#1b1410" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+            <path d="M104 41 Q108 38 113 41" stroke="#1b1410" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+            <ellipse cx="92" cy="43.5" rx="2.6" ry="1.6" fill="#1b1410" /><ellipse cx="108" cy="43.5" rx="2.6" ry="1.6" fill="#1b1410" />
+            <path d="M100 44 L98 53 L102 53" stroke="#000" strokeOpacity=".25" strokeWidth="1.4" fill="none" />
+            <path d="M94 60 Q100 62 106 60" stroke="#3a2418" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+            {g.eyeBlack === "stripes" && <><rect x="87" y="47" width="10" height="3" rx="1.4" fill="#0b0b0b" /><rect x="103" y="47" width="10" height="3" rx="1.4" fill="#0b0b0b" /></>}
+            {g.eyeBlack === "sticker" && <><rect x="86" y="46.5" width="11" height="4.5" rx="1" fill="#0b0b0b" /><rect x="103" y="46.5" width="11" height="4.5" rx="1" fill="#0b0b0b" /></>}
+            {g.visor !== "none" && <path d="M80 36 L120 36 L119 48 Q100 51 81 48 Z" fill={g.visor === "iridescent" ? `url(#${id}vi)` : g.visor === "smoke" ? "#0b1220" : "#dbeafe"} opacity={g.visor === "clear" ? 0.35 : 0.9} />}
+            {/* facemask and chin strap */}
+            <g stroke="#c9ced6" strokeWidth="3.2" fill="none" strokeLinecap="round">
+              <path d="M74 50 Q100 60 126 50" />
+              {g.mask !== "open" && <path d="M76 58 Q100 68 124 58" />}
+              {(g.mask === "bar3" || g.mask === "cage") && <path d="M80 65 Q100 73 120 65" />}
+              {g.mask === "cage" && <><path d="M100 52 L100 72" /><path d="M89 53 L88 69" /><path d="M111 53 L112 69" /></>}
+              <path d="M74 50 L72 60" /><path d="M126 50 L128 60" />
+            </g>
+            <path d="M86 70 Q100 78 114 70" stroke="#e5e7eb" strokeWidth="2.6" fill="none" />
           </g>
         </g>
       </svg>
