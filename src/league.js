@@ -151,7 +151,6 @@ export function genPlayer(pos,age,ovrO,isDraft){
     agent:pick(['Aggressive','Moderate','Passive']),
     traits:Array.from({length:R(1,2)},()=>pick(TRAITS_POOL)).filter((v,i,a)=>a.indexOf(v)===i),
     want:pick(['starter','starter','star','ring','money','money']),
-    playerOption:!isDraft&&ovr>=80&&Math.random()<0.25,
     bonus:isDraft?null:(Math.random()<0.3?{type:pick(['performance','roster','pro_bowl']),amount:+(Rf(0.3,2.0)).toFixed(1),threshold:pick(['500 rush yds','1000 rec yds','10 sacks','8+ wins','Pro Bowl'])}:null),
     endorsed:!isDraft&&ovr>=82&&Math.random()<0.3,
     snaps:0,loyal:false,role:'rotation'};

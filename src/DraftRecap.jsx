@@ -45,8 +45,8 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <div style={{ fontSize: 26, fontWeight: 900, flex: 1 }}>{view} Draft Recap</div>
-        {years.length > 1 && <select value={view} onChange={(e) => setPickYr(+e.target.value)} style={{ background: C.cd, color: "#e2e8f0", border: `1px solid ${C.bd}`, borderRadius: 6, padding: "6px 8px", fontSize: 14 }}>{years.map((y) => <option key={y} value={y}>{y} draft</option>)}</select>}
+        <div style={{ fontSize: 26, fontWeight: 900, flex: 1 }}>{view + 1} Draft Recap</div>
+        {years.length > 1 && <select value={view} onChange={(e) => setPickYr(+e.target.value)} style={{ background: C.cd, color: "#e2e8f0", border: `1px solid ${C.bd}`, borderRadius: 6, padding: "6px 8px", fontSize: 14 }}>{years.map((y) => <option key={y} value={y}>{y + 1} draft</option>)}</select>}
         {onNext && <Btn onClick={onNext} bg={C.gn} style={{ fontSize: 15, padding: "8px 14px" }}>→ Next Season</Btn>}
       </div>
       <div style={{ fontSize: 14, color: C.mt, marginBottom: 12 }}>Every pick with his true ratings and development trait revealed. {past ? "\"Now\" shows what each player has become since." : "Development traits decide how fast a player grows, so this is where you find out if you hit."}</div>

@@ -79,6 +79,7 @@ try {
   await page.locator("button", { hasText: "Giants" }).first().click();
   await page.waitForTimeout(1200);
   await healthy("new game"); log("new game");
+  { const d0 = await save(); const real = (d0.dc?.[2026] || []).filter((p) => p.real); if (real.length < 100 || !real.some((p) => p.name === "Jeremiah Smith")) fail("new game didn't load the real 2027 draft class"); log(`real draft class (${real.length} real prospects)`); }
   const seen = [];
   for (const tab of ["Roster+", "Depth Chart", "Contracts", "Schedule+", "Standings", "Playoffs", "Draft+", "Draft Recap", "League+", "Stats", "Trophy Room", "Record Book", "League History", "Trade", "Free Agency", "Game Info", "Home"]) {
     await dismiss();

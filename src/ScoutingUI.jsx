@@ -192,7 +192,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
       <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
         {!fixedYr && years.length > 1 && (
           <select value={cy} onChange={(e) => { setYrSel(+e.target.value); setN(page); }} aria-label="Draft class" style={sel}>
-            {years.map((y) => <option key={y} value={y}>{y} class</option>)}
+            {years.map((y) => <option key={y} value={y}>{y + 1} draft</option>)}
           </select>
         )}
         <select value={pos} onChange={(e) => { setPos(e.target.value); setN(page); }} aria-label="Position" style={sel}>
@@ -716,7 +716,7 @@ export function ScoutingPage({ g }) {
   return (
     <div>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-        <span style={{ fontSize: 22, fontWeight: 900 }}>{g.sp === "combine" ? `${g.yr} NFL Combine` : `${g.yr} Draft Class`}</span>
+        <span style={{ fontSize: 22, fontWeight: 900 }}>{g.sp === "combine" ? `${g.yr + 1} NFL Combine` : `${g.yr + 1} Draft Class`}</span>
         <span style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}><span title="Area-scout points for regional trips" style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: "#0c4a6e55", color: "#7dd3fc", fontWeight: 700 }}>🗺️ {g.scouting?.rpts ?? RPTS_START} area</span><ScoutPtsBadge pts={g.scouting?.pts || 0} /></span>
         {g.sp === "combine" && <span style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: "#7c3aed33", color: "#c4b5fd", fontWeight: 700 }}>Interviews: {g.scouting?.interviewsLeft || 0}</span>}
       </div>

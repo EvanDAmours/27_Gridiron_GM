@@ -357,4 +357,11 @@ export const PATCH_NOTES = [
     "AI teams fall for them too (most go in rounds 1-3), so a flag from your scouts is a real edge. The Draft Recap marks them '🚩 Bust'.",
     "Existing saves get red flags in their next draft class at the Combine.",
   ] },
+  { v: "1.87", date: "2026-10-10", title: "Real Draft Classes, and No More Vanishing Stars", notes: [
+    "New game option on the main menu: 'Real 2027 & 2028 prospects' (the default) or 'Auto-generated'. With real prospects, your first two drafts are the real 2027 and 2028 NFL Draft classes: 150 and 70 real college players (Jeremiah Smith, Leonard Moore, Colin Simmons, Arch Manning, Malachi Toney, Kamario Taylor...) with their schools, sizes and scouting notes, ranked on a consensus of current (October 2026) big boards and mock drafts. Generated prospects fill out the later rounds.",
+    "Claude rated every real prospect and made boom and bust calls: a handful of under-ranked players are hidden gems who'll outplay their slot, and a few highly ranked ones are red flags with a reason (injury history, one-year production, a system quarterback, character). The board doesn't know which; your scouts can find out.",
+    "Draft years are now labeled by the real NFL draft: the class picked after the 2026 season is the '2027 draft' on the board, the Combine and the Draft Recap.",
+    "Fixed: stars could vanish from your roster after the draft. A leftover 'player option' rule let some 80+ players (Andrew Thomas, Abdul Carter...) opt out of the last year of their deal at the start of the new season, even rookies and players you'd already extended, and other teams then signed them for the minimum. Player options are gone (the NFL barely uses them).",
+    "Retirements now all happen before free agency (end of the regular season, and when contracts expire), never after the draft.",
+  ] },
 ];
