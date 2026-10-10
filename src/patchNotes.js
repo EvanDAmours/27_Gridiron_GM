@@ -434,4 +434,9 @@ export const PATCH_NOTES = [
   ] },
   { v: "1.992", date: "2026-10-10", title: "Trophy Room on the Home Menu", notes: ["The Trophy Room now has its own spot in the home screen's menu, between League+ and Log."] },
   { v: "1.993", date: "2026-10-10", title: "Incentives That Fit", notes: ["Fixed: contract incentives were picked without looking at position, so a quarterback could have a bonus for 10 sacks. Every incentive now fits the player's position (passing yards for a QB, sacks for a pass rusher, interceptions for a corner, field goals for a kicker), and players who already had a mismatched one now show one that fits."] },
+  { v: "1.994", date: "2026-10-10", title: "Champions!", notes: [
+    "Win the Super Bowl and the morning paper arrives: a full broadsheet front page of The Gridiron Gazette, with a banner headline written from the game (a rout, a thriller, a first title, a repeat), the story of the night, a photo of the Super Bowl MVP, your road to the title and the parade plans.",
+    "Next comes the season's awards: Super Bowl MVP, MVP, Offensive and Defensive Player of the Year, both Rookies of the Year, the All-Pro team and your Pro Bowlers by name.",
+    "Then the game walks you into the Trophy Room, where your brand-new Lombardi stands under a spotlight with a NEW tag.",
+  ] },
 ];

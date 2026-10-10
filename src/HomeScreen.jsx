@@ -6,7 +6,7 @@ import { unitRatings } from "./gamesim.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import { ROUND_NAMES } from "./playoffs.js";
 import { starOf } from "./PlayerFigure.jsx";
-import PlayerFigureRaw from "./PixelPlayer.jsx";
+import PlayerFigureRaw from "./Player3D.jsx";
 // Star figures beside the logos: off until the art is approved.
 const SHOW_STARS = true;
 const PlayerFigure = (props) => (SHOW_STARS ? <PlayerFigureRaw {...props} /> : null);
