@@ -324,4 +324,8 @@ export const PATCH_NOTES = [
     "New Contracts screen (Roster+ > Contracts): every contract on your team, from the biggest cap hit down, with years left, bonus per year and dead money if cut, plus your cap space, dead money and next season's cap room.",
     "Extend players right from the Contracts screen during the season (anyone in the last two years of his deal), restructure for cap space, and open talks with a holdout. Pending extensions show the new deal and the season it starts.",
   ] },
+  { v: "1.81", date: "2026-10-10", title: "Better Area Scouting Reads and Board Filters", notes: [
+    "After your fourth trip to a region (4/4), your area scouts put a number on every prospect from there: you see an estimated current OVR (~xx), not just his ceiling. Your scouts' board uses it too.",
+    "New Big Board filters (Show menu), across every position at once: 💎 Sleepers & hunches (everyone your scouts have flagged), ⭐ Special dev traits spotted (Star, Superstar or Generational traits your scouts have seen), and 🗺️ From regions I've scouted. Combine them with the Your scouts board to see your scouts' favorite targets in order.",
+  ] },
 ];

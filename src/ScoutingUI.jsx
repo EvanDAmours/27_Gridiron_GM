@@ -167,7 +167,14 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
   const list = all
     .filter((p) => pos === "ALL" || p.pos === pos)
     .filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()) || (p.bio?.college || "").toLowerCase().includes(q.toLowerCase()))
-    .filter((p) => show === "all" || (show === "scouted" ? p.scout?.lvl > 0 : show === "unscouted" ? !p.scout?.lvl : show === "list" ? ids.includes(p.id) : coverage(g.scouting, p).role !== "office"))
+    .filter((p) => {
+      if (show === "all") return true;
+      if (["flagged", "special", "regions"].includes(show)) {
+        const r = prospectRead(g.scouting, p);
+        return show === "flagged" ? r.sleeper || r.hunch : show === "special" ? ["generational", "superstar", "star"].includes(r.dev) : r.trips > 0;
+      }
+      return show === "scouted" ? p.scout?.lvl > 0 : show === "unscouted" ? !p.scout?.lvl : show === "list" ? ids.includes(p.id) : coverage(g.scouting, p).role !== "office";
+    })
     .sort((a, b) => (ranks ? ranks.get(a.id) - ranks.get(b.id) : csRank(a) - csRank(b)));
   const final = all.some((p) => p.cons?.final);
   const climbers = ranks ? all.filter((p) => csRank(p) - ranks.get(p.id) >= 25).length : 0;
@@ -197,6 +204,9 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
           <option value="scouted">Scouted</option>
           <option value="unscouted">Not scouted yet</option>
           <option value="list">On my list</option>
+          <option value="flagged">💎 Sleepers & hunches</option>
+          <option value="special">⭐ Special dev traits spotted</option>
+          <option value="regions">🗺️ From regions I've scouted</option>
         </select>
         <input value={q} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search name or college" aria-label="Search prospects" style={{ ...sel, flex: "1 1 160px" }} />
       </div>

@@ -47,3 +47,12 @@ test("your scouts' board moves the sleepers they've found up, and follows the co
   }
   assert.ok(up / gems > 0.6, `${up}/${gems} gems moved up`);
 });
+
+test("four trips to a region show every prospect's current rating there too", () => {
+  const c = genDC(2300);
+  const p = c.find((x) => regionOf(x) === "SEC" && !x.scout?.lvl);
+  assert.equal(prospectRead({ regionsYr: 2300, regions: { SEC: 3 } }, p).ovr, "??");
+  const r = prospectRead({ regionsYr: 2300, regions: { SEC: 4 } }, p);
+  assert.match(r.ovr, /^~\d+$/);
+  assert.ok(Math.abs(r.ovrV - p.trueOvr) <= 3);
+});

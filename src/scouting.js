@@ -228,7 +228,9 @@ export function regionRead(sc, p) {
   const see = t >= 4 ? 0.6 : t === 3 ? 0.35 : 0;
   const pot = publicPot(p) + gemGap(p) * see + clamp(stream(`${p.id}|reg|${t}`).gauss(0, sd), -1.6 * sd, 1.6 * sd);
   const hunch = !!p.gem && t >= 2 && stream(`${p.id}|reghunch`).next() < 0.2 * t;
-  return { pot, sd, trips: t, grade: potGrade(pot), tier: projection(p.pos, pot), hunch, sleeper: hunch && t >= 4, region: regionOf(p), who: `Your area scouts (${regionName(regionOf(p))})` };
+  // After the fourth trip they've seen enough of him to put a number on him today too.
+  const ovr = t >= MAX_TRIPS ? Math.round(clamp(p.trueOvr + clamp(stream(`${p.id}|regovr`).gauss(0, 2), -3, 3), 30, 99)) : null;
+  return { pot, sd, trips: t, ovr, grade: potGrade(pot), tier: projection(p.pos, pot), hunch, sleeper: hunch && t >= 4, region: regionOf(p), who: `Your area scouts (${regionName(regionOf(p))})` };
 }
 
 // ---------- What your scouts know ----------
@@ -359,6 +361,7 @@ export function prospectRead(sc, p) {
   const genSd = gen0 ? readSd(cov.role, 0, scoutEval(cov.scout, p, cov.others)) : Infinity;
   const gen = gen0 && reg ? (reg.sd < genSd ? { ...gen0, pot: reg.pot, grade: reg.grade, tier: reg.tier, who: reg.who, hunch: gen0.hunch || reg.hunch, sleeper: gen0.sleeper || reg.sleeper } : { ...gen0, hunch: gen0.hunch || reg.hunch, sleeper: gen0.sleeper || reg.sleeper }) : gen0 || (reg && { ...reg, by: "region", dev: null });
   const potV = has ? s.ePot : gen ? gen.pot : null;
+  const regOvr = !has && reg?.ovr != null ? reg.ovr : null;
   return {
     lvl: s.lvl || 0,
     cov: cov.role,
@@ -368,9 +371,9 @@ export function prospectRead(sc, p) {
     scout: cov.scout,
     second: cov.second || null,
     others: cov.others || [],
-    ovr: has ? (s.exact ? `${s.eOvr}` : `~${s.eOvr}`) : "??",
+    ovr: has ? (s.exact ? `${s.eOvr}` : `~${s.eOvr}`) : regOvr != null ? `~${regOvr}` : "??",
     pot: has ? (s.exact ? `${s.ePot}` : `~${s.ePot}`) : gen ? gen.grade : "??",
-    ovrV: has ? s.eOvr : null,
+    ovrV: has ? s.eOvr : regOvr,
     potV,
     exact: !!s.exact,
     general: !!gen,
