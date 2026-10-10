@@ -417,4 +417,10 @@ export const PATCH_NOTES = [
     "Fixed: the Trade Finder's Refresh button showed the same five deals every time. Each refresh now brings up deals you haven't seen yet, then starts over once you've seen them all.",
     "Bigger Trade Finder, Refresh and Trade Block buttons.",
   ] },
+  { v: "1.97", date: "2026-10-10", title: "Stars on the Home Screen", notes: [
+    "Each team's best player now stands beside its logo on the home screen, in 3D, on the computer and on phones.",
+    "Every star is built from his real size: height sets how tall he stands, weight how big he is, and strength how much muscle he carries. A 6'7\" 340-pound tackle towers over a 5'11\" receiver.",
+    "Each player has his own gear (sleeves, arm tape, wristbands, gloves, eye black, visor, towel, cleats, facemask) plus his own grass stains and helmet scuffs, and they stay the same every week.",
+    "Home teams wear their color jerseys and road teams wear white, with the team logo on the helmet.",
+  ] },
 ];
