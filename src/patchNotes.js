@@ -408,4 +408,8 @@ export const PATCH_NOTES = [
     "The game is now Football GM, by D'Amours Unlimited. The main menu is cleaner: the NFL shield top left, a 3D Vince Lombardi Trophy turning on its platter top right, big New Game and Load Game buttons, and the 'Owner can fire you' and draft-class options side by side.",
     "Removed the daily challenge and the leaderboard from the main menu, and the old studio's branding, links and account code from the game.",
   ] },
+  { v: "1.95", date: "2026-10-10", title: "A Smaller Weekly Result", notes: [
+    "The result card after each game is smaller on desktop and a compact two-line strip on phones: the result, both logos and the score, your record, your top performer, and buttons for the box score and the rest of the league's scores.",
+    "Fixed: promoting a practice-squad player mid-season (when injuries left a position without a backup) could put a roster at 54. When the 53 is full, the least valuable player at your deepest position is released to make room, and the log says who.",
+  ] },
 ];

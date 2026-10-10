@@ -138,3 +138,15 @@ test("a spot without a healthy backup promotes from the practice squad and signs
   assert.equal(fa.length, 1);
   assert.equal(log.length, 1);
 });
+
+test("an in-season promotion never takes a club past 53", async () => {
+  const { keepBackups } = await import("../src/offseason.js");
+  const mk = (pos, i, ovr = 70) => ({ id: `${pos}${i}`, name: `${pos}${i}`, pos, ovr, age: 27, salary: 1, contract: 1 });
+  const roster = [mk("QB", 1, 85), { ...mk("QB", 2, 70), injured: true }];
+  const fill = ["RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S"];
+  for (let i = 0; roster.length < 53; i++) roster.push(mk(fill[i % fill.length], i, 60 + (i % 20)));
+  const t = { roster, ps: [mk("QB", 9, 64)] };
+  keepBackups([t], [], { ui: 0 });
+  assert.equal(t.roster.length, 53);
+  assert.ok(t.roster.some((p) => p.id === "QB9"), "the backup quarterback came up");
+});

@@ -319,9 +319,17 @@ export function keepBackups(teams, fa, { ui, minSal = leagueMin() } = {}) {
       const k = bestAt(t.ps.filter((p) => !p.injured), pos);
       if (k < 0) continue;
       const cand = t.ps.filter((p) => !p.injured)[k];
+      // A full 53 needs a spot first: the least valuable player at the deepest position goes.
+      let cut = null;
+      if (t.roster.length >= ROSTER_TARGET) {
+        cut = [...t.roster].filter((q) => q.pos !== pos && !q.injured && t.roster.filter((x) => x.pos === q.pos).length > (DEPTH_MIN[q.pos] || 1)).sort((a, b) => keepScore(a) - keepScore(b))[0];
+        if (!cut) continue;
+        t.roster.splice(t.roster.indexOf(cut), 1);
+        fa.push({ ...cut, contract: 0, formerTeam: i });
+      }
       t.ps.splice(t.ps.indexOf(cand), 1);
       t.roster.push(minDeal(cand, minSal));
-      let line = `⬆️ No healthy backup at ${pos}: ${cand.name} (${cand.ovr}) promoted from the practice squad.`;
+      let line = `⬆️ No healthy backup at ${pos}: ${cand.name} (${cand.ovr}) promoted from the practice squad${cut ? `; ${cut.name} (${cut.pos} ${cut.ovr}) released to make room` : ""}.`;
       // Refill the practice squad with a cheap fringe player at the position.
       const f = fa.reduce((b, p, j) => (p.pos === pos && p.ovr < 70 && (b < 0 || p.ovr > fa[b].ovr) ? j : b), -1);
       if (f >= 0 && t.ps.length < PS_SIZE) { const [p] = fa.splice(f, 1); t.ps.push(psDeal(p)); line += ` ${p.name} (${p.ovr}) signed to the practice squad.`; }

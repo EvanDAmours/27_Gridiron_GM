@@ -1,7 +1,8 @@
 // The big result card shown after you sim: did you win, the score, your record and
 // standing, who starred, and the rest of the week's scores.
-import React from "react";
+import React, { useState } from "react";
 import { C, Btn, TeamLogo } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 
 const fmtRec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const pct = (t) => (t.w + t.t * 0.5) / Math.max(1, t.w + t.l + t.t);
@@ -49,10 +50,11 @@ function Others({ list, teams, onBox }) {
 }
 
 export default function WeekResult({ result, teams, ui, sched, onClose, onBox, onTeam }) {
+  const [showOthers, setShowOthers] = useState(false);
   if (!result) return null;
   const me = teams[ui];
   if (!me) return null;
-  const card = { background: "linear-gradient(135deg,#0f172a,#111827)", border: `1px solid ${C.bd}`, borderRadius: 14, padding: "16px 18px", marginBottom: 14, position: "relative" };
+  const card = { background: "linear-gradient(135deg,#0f172a,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: MOBILE ? "8px 10px" : "12px 14px", marginBottom: MOBILE ? 8 : 12, position: "relative" };
   const close = <button onClick={onClose} aria-label="Dismiss result" style={{ position: "absolute", top: 10, right: 12, background: "transparent", border: 0, color: C.mt, fontSize: 20, cursor: "pointer" }}>✕</button>;
 
   if (result.season) {
@@ -60,8 +62,8 @@ export default function WeekResult({ result, teams, ui, sched, onClose, onBox, o
       <div style={{ ...card, borderColor: C.gd }}>
         {close}
         <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.gd }}>REGULAR SEASON COMPLETE</div>
-        <div style={{ fontSize: 44, fontWeight: 900, lineHeight: 1.1, marginTop: 4 }}>{me.city} {me.name} {fmtRec(me)}</div>
-        <div style={{ fontSize: 18, color: "#cbd5e1", marginTop: 4 }}>{divPlace(teams, me)} · {result.playoffs ? "Playoff bound!" : "Missed the playoffs"}</div>
+        <div style={{ fontSize: MOBILE ? 22 : 34, fontWeight: 900, lineHeight: 1.1, marginTop: 4 }}>{me.city} {me.name} {fmtRec(me)}</div>
+        <div style={{ fontSize: MOBILE ? 13 : 16, color: "#cbd5e1", marginTop: 4 }}>{divPlace(teams, me)} · {result.playoffs ? "Playoff bound!" : "Missed the playoffs"}</div>
       </div>
     );
   }
@@ -73,7 +75,7 @@ export default function WeekResult({ result, teams, ui, sched, onClose, onBox, o
       <div style={{ ...card, borderColor: champ ? C.gd : C.bd }}>
         {close}
         <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.mt }}>{result.round.toUpperCase()}</div>
-        <div style={{ fontSize: 36, fontWeight: 900, color: result.bye ? "#a78bfa" : "#cbd5e1" }}>{result.bye ? "FIRST-ROUND BYE" : champ ? `${champ.city} ${champ.name} win it all` : "Playoff results"}</div>
+        <div style={{ fontSize: MOBILE ? 20 : 30, fontWeight: 900, color: result.bye ? "#a78bfa" : "#cbd5e1" }}>{result.bye ? "FIRST-ROUND BYE" : champ ? `${champ.city} ${champ.name} win it all` : "Playoff results"}</div>
         {(result.others || []).length > 0 && <Others list={result.others} teams={teams} onBox={onBox} />}
       </div>
     );
@@ -83,8 +85,8 @@ export default function WeekResult({ result, teams, ui, sched, onClose, onBox, o
       <div style={card}>
         {close}
         <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.mt }}>WEEK {result.wk}</div>
-        <div style={{ fontSize: 40, fontWeight: 900, color: "#a78bfa" }}>BYE WEEK</div>
-        <div style={{ fontSize: 18, color: "#cbd5e1" }}>{fmtRec(me)} · {divPlace(teams, me)}</div>
+        <div style={{ fontSize: MOBILE ? 20 : 32, fontWeight: 900, color: "#a78bfa" }}>BYE WEEK</div>
+        <div style={{ fontSize: MOBILE ? 13 : 16, color: "#cbd5e1" }}>{fmtRec(me)} · {divPlace(teams, me)}</div>
       </div>
     );
   }
@@ -96,14 +98,37 @@ export default function WeekResult({ result, teams, ui, sched, onClose, onBox, o
   const stars = topLines(home ? g.boxH : g.boxA);
   const others = result.others || (sched || []).filter((x) => x.wk === result.wk && x.played && x !== g && x.h !== ui && x.a !== ui);
   const champs = result.playoff && result.champ === ui;
+  // Phones: a compact two-line strip.
+  if (MOBILE) {
+    const top = stars[0];
+    return (
+      <div style={{ ...card, borderColor: col }}>
+        <button onClick={onClose} aria-label="Dismiss result" style={{ position: "absolute", top: 4, right: 6, background: "transparent", border: 0, color: C.mt, fontSize: 18, cursor: "pointer" }}>✕</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, paddingRight: 22 }}>
+          <span style={{ fontSize: 20, fontWeight: 900, fontStyle: "italic", color: champs ? C.gd : col, minWidth: 0 }}>{champs ? "CHAMPS" : result.playoff && outcome === "LOSS" ? "OUT" : outcome[0]}</span>
+          <TeamLogo t={me} sz={24} /><b style={{ fontSize: 18, color: us >= them ? "#fff" : "#64748b" }}>{us}</b>
+          <span style={{ color: C.mt }}>–</span>
+          <b style={{ fontSize: 18, color: them >= us ? "#fff" : "#64748b" }}>{them}</b><TeamLogo t={opp} sz={24} />
+          <span style={{ fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{result.playoff ? result.round : `Wk ${result.wk}`} · {fmtRec(me)}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, fontSize: 12 }}>
+          {top && <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#cbd5e1" }}><b style={{ color: "#fff" }}>{top.name}</b> {top.line}</span>}
+          {!top && <span style={{ flex: 1 }} />}
+          <button onClick={() => onBox(g)} style={{ background: C.bl, color: "#fff", border: 0, borderRadius: 5, padding: "3px 8px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Box</button>
+          {others.length > 0 && <button onClick={() => setShowOthers((v) => !v)} style={{ background: "transparent", color: C.mt, border: `1px solid ${C.bd}`, borderRadius: 5, padding: "3px 8px", fontSize: 12, cursor: "pointer" }}>Scores {showOthers ? "▴" : "▾"}</button>}
+        </div>
+        {showOthers && <Others list={others} teams={teams} onBox={onBox} />}
+      </div>
+    );
+  }
   const Side = ({ t, pts, win }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-      <TeamLogo t={t} sz={54} />
+      <TeamLogo t={t} sz={40} />
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 13, color: C.mt, whiteSpace: "nowrap" }}>{t.city}</div>
-        <div style={{ fontSize: 22, fontWeight: 900, whiteSpace: "nowrap" }}>{t.name}</div>
+        <div style={{ fontSize: 18, fontWeight: 900, whiteSpace: "nowrap" }}>{t.name}</div>
       </div>
-      <span style={{ marginLeft: "auto", fontSize: 52, fontWeight: 900, color: win ? "#fff" : "#64748b", fontVariantNumeric: "tabular-nums" }}>{pts}</span>
+      <span style={{ marginLeft: "auto", fontSize: 38, fontWeight: 900, color: win ? "#fff" : "#64748b", fontVariantNumeric: "tabular-nums" }}>{pts}</span>
     </div>
   );
   return (
@@ -113,15 +138,15 @@ export default function WeekResult({ result, teams, ui, sched, onClose, onBox, o
         <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.mt }}>{result.playoff ? result.round.toUpperCase() : `WEEK ${result.wk}`} · {result.round === "Super Bowl" || g.neutral ? `NEUTRAL SITE${g.intl ? ` · ${(g.city || "").toUpperCase()}` : ""}` : home ? "HOME" : "AWAY"}</span>
         <span style={{ fontSize: 15, color: "#cbd5e1" }}>{fmtRec(me)} · {divPlace(teams, me)}</span>
       </div>
-      <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap", marginTop: 6 }}>
-        <div style={{ fontSize: champs ? 44 : 64, fontWeight: 900, fontStyle: "italic", color: champs ? C.gd : col, lineHeight: 1, minWidth: 190 }}>{champs ? "SUPER BOWL CHAMPIONS" : result.playoff && outcome === "LOSS" ? "ELIMINATED" : outcome}</div>
+      <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap", marginTop: 4 }}>
+        <div style={{ fontSize: champs ? 34 : 46, fontWeight: 900, fontStyle: "italic", color: champs ? C.gd : col, lineHeight: 1, minWidth: 140 }}>{champs ? "SUPER BOWL CHAMPIONS" : result.playoff && outcome === "LOSS" ? "ELIMINATED" : outcome}</div>
         <div style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
           <Side t={me} pts={us} win={us >= them} />
           <Side t={opp} pts={them} win={them >= us} />
         </div>
         <div style={{ flex: "1 1 240px", minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 4 }}>YOUR STARS</div>
-          {stars.map((s) => <div key={s.name} style={{ fontSize: 15, padding: "2px 0" }}><b>{s.name}</b> <span style={{ color: C.mt, fontSize: 12 }}>{s.pos}</span> <span style={{ color: "#cbd5e1" }}>{s.line}</span></div>)}
+          {stars.map((s) => <div key={s.name} style={{ fontSize: 14, padding: "1px 0" }}><b>{s.name}</b> <span style={{ color: C.mt, fontSize: 12 }}>{s.pos}</span> <span style={{ color: "#cbd5e1" }}>{s.line}</span></div>)}
           {!stars.length && <div style={{ color: C.mt }}>No standout performances.</div>}
           <div style={{ marginTop: 8 }}><Btn onClick={() => onBox(g)} bg={C.bl} style={{ fontSize: 13 }}>Box score</Btn></div>
         </div>
