@@ -432,4 +432,5 @@ export const PATCH_NOTES = [
   { v: "1.991", date: "2026-10-10", title: "Trophies at Rest", notes: [
     "The Lombardis in the Trophy Room now stand still and face front, the way they'd sit on a real shelf. Your newest one gets a spotlight and a NEW tag.",
   ] },
+  { v: "1.992", date: "2026-10-10", title: "Trophy Room on the Home Menu", notes: ["The Trophy Room now has its own spot in the home screen's menu, between League+ and Log."] },
 ];
