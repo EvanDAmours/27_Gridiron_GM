@@ -83,10 +83,10 @@ export default function Player3D({ p, t, away = false, flip = false, h = 180, la
         x.strokeStyle = "rgba(255,255,255,0.55)"; x.lineWidth = 3; for (let i = 0; i < 7; i++) { x.beginPath(); let px = rnd() * w; x.moveTo(px, h * 0.55); for (let y = h * 0.55; y < h; y += 18) { px += (rnd() - 0.5) * 22; x.lineTo(px, y); } x.stroke(); } }), false);
       const skin = mat(skinC, { roughness: 0.5, bumpMap: skinBump, bumpScale: 1.2, clearcoat: 0.35, clearcoatRoughness: 0.35, sheen: 0.12, sheenColor: new THREE.Color("#ffe8dc") });
       // pants: shiny stretch fabric, grass and dirt ground into the knees and thighs
-      const pantsTex = tex(canvas(512, 512, (x, w, h) => { x.fillStyle = pantsC; x.fillRect(0, 0, w, h); noise(x, w, h, 9000, 0.04);
+      const pantsTex = tex(canvas(512, 512, (x, w, h) => { x.fillStyle = pantsC; x.fillRect(0, 0, w, h);
         smudge(x, w, h, Math.round(18 * dirt), GRASS, 0.7 * dirt, 1, 0.6, 0.55, 1); smudge(x, w, h, Math.round(8 * dirt), DIRT, 0.45 * dirt, 0.8, 0.5, 0.2, 1); }));
       const pantsBump = tex(canvas(256, 256, (x, w, h) => { x.fillStyle = "#808080"; x.fillRect(0, 0, w, h); x.filter = "blur(3px)"; for (let i = 0; i < 12; i++) { x.strokeStyle = `rgba(${rnd() < 0.5 ? "0,0,0" : "255,255,255"},0.18)`; x.lineWidth = 3 + rnd() * 4; x.beginPath(); const y = rnd() * h; x.moveTo(0, y); x.bezierCurveTo(w * 0.3, y + 10, w * 0.6, y - 10, w, y + (rnd() - 0.5) * 20); x.stroke(); } }), false);
-      const pantsM = mat("#ffffff", { map: pantsTex, bumpMap: pantsBump, bumpScale: 0.35, roughness: 0.38, sheen: 0.7, sheenColor: new THREE.Color("#ffffff"), clearcoat: 0.2 });
+      const pantsM = mat("#ffffff", { map: pantsTex, bumpMap: pantsBump, bumpScale: 0.35, roughness: 0.42, sheen: 1, sheenRoughness: 0.3, sheenColor: new THREE.Color("#ffffff"), clearcoat: 0.12 });
       const sockBump = tex(canvas(256, 64, (x, w, h) => { for (let i = 0; i < w; i += 4) { x.fillStyle = i % 8 ? "#5a5a5a" : "#b0b0b0"; x.fillRect(i, 0, 4, h); } }), false);
       const sockM = mat(sockC, { roughness: 0.9, bumpMap: sockBump, bumpScale: 1.2 });
       const white = mat("#eceae4", { roughness: 0.85 });
@@ -116,11 +116,12 @@ export default function Player3D({ p, t, away = false, flip = false, h = 180, la
         for (let i = 0; i < 26; i++) { const x0 = rnd() * cw, y0 = ch * (0.55 + rnd() * 0.45), gr = cx.createLinearGradient(x0 - 14, 0, x0 + 14, 0); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(0.5, "rgba(0,0,0,0.16)"); gr.addColorStop(1, "rgba(0,0,0,0)"); cx.fillStyle = gr; cx.fillRect(x0 - 14, y0, 28, ch - y0); }
         smudge(cx, cw, ch, Math.round(10 * dirt), GRASS, 0.45 * dirt, 1.2, 0.7, 0.5, 1);
         smudge(cx, cw, ch, Math.round(6 * dirt), DIRT, 0.4 * dirt, 1, 0.5, 0.15, 0.9);
-        noise(cx, cw, ch, 6000, 0.05);
       });
-      const jerseyBump = tex(canvas(512, 256, (x, w, h) => { x.fillStyle = "#9a9a9a"; x.fillRect(0, 0, w, h); x.fillStyle = "#3a3a3a"; for (let yy = 0; yy < h; yy += 5) for (let xx = (yy / 5) % 2 ? 2.5 : 0; xx < w; xx += 5) x.fillRect(xx, yy, 2, 2); }), false);
-      jerseyBump.repeat.set(3, 3); jerseyBump.wrapT = THREE.RepeatWrapping;
-      const jersey = mat("#ffffff", { map: tex(jerseyC), bumpMap: jerseyBump, bumpScale: 0.6, roughness: 0.82, sheen: 0.45, sheenColor: new THREE.Color("#ffffff") });
+      // a fine knit: rows of tiny V stitches, softened, tiled small so it reads as cloth, not texture
+      const jerseyBump = tex(canvas(128, 128, (x, w, h) => { x.fillStyle = "#808080"; x.fillRect(0, 0, w, h); x.filter = "blur(0.6px)"; x.strokeStyle = "#c4c4c4"; x.lineWidth = 1.3;
+        for (let yy = 0; yy < h; yy += 4) { x.beginPath(); for (let xx = 0; xx <= w; xx += 4) { x.moveTo(xx, yy); x.lineTo(xx + 2, yy + 3); x.lineTo(xx + 4, yy); } x.stroke(); } }), false);
+      jerseyBump.repeat.set(14, 7); jerseyBump.wrapT = THREE.RepeatWrapping;
+      const jersey = mat("#ffffff", { map: tex(jerseyC), bumpMap: jerseyBump, bumpScale: 0.18, roughness: 0.62, sheen: 1, sheenRoughness: 0.4, sheenColor: new THREE.Color("#ffffff") });
 
       // ---- geometry helpers
       const Y = new THREE.Vector3(0, 1, 0);
