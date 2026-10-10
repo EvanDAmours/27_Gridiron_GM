@@ -176,11 +176,60 @@ export function creditWeeks(sc, wk) {
     pts += SCOUT_PTS_WEEKLY;
     if (workhorse && w % 4 === 0) pts++;
   }
-  return { ...sc, pts, wkPaid: wk };
+  return { ...sc, pts, rpts: (sc.rpts ?? RPTS_START) + (wk - paid) * RPTS_WEEKLY, wkPaid: wk };
 }
 
 // A new season: points left over from last year's class expire.
-export const startScoutingYear = (sc, year) => ({ ...sc, pts: SCOUT_PTS_START, wkPaid: 0, interviewsLeft: 0, list: { yr: year, ids: [] } });
+export const startScoutingYear = (sc, year) => ({ ...sc, pts: SCOUT_PTS_START, rpts: RPTS_START, regions: {}, regionsYr: year, wkPaid: 0, interviewsLeft: 0, list: { yr: year, ids: [] } });
+
+// ---------- Regional scouting ----------
+// Your area scouts work conferences, not players. Every trip to a region gives you a rough read
+// on every prospect from there; more trips sharpen it, and from the third trip on they start
+// seeing through the board to that region's sleepers. It's volume, not depth: individual reports
+// and full workups are still your position scouts' job (and your regular scouting points).
+export const REGIONS = {
+  SEC: { name: "SEC", schools: ["Alabama", "Georgia", "LSU", "Florida", "Auburn", "Tennessee", "Texas A&M", "Ole Miss", "Arkansas", "Kentucky", "Missouri", "South Carolina", "Mississippi State", "Vanderbilt", "Texas", "Oklahoma"] },
+  B1G: { name: "Big Ten", schools: ["Ohio State", "Michigan", "Penn State", "Wisconsin", "Iowa", "Minnesota", "Nebraska", "Maryland", "Purdue", "Michigan State", "Illinois", "Indiana", "Rutgers", "Northwestern", "USC", "UCLA", "Oregon", "Washington"] },
+  B12: { name: "Big 12", schools: ["Baylor", "TCU", "Utah", "Colorado", "Arizona State", "Kansas State", "Oklahoma State", "BYU", "Houston", "Cincinnati", "UCF", "West Virginia", "Iowa State", "Texas Tech"] },
+  ACC: { name: "ACC", schools: ["Clemson", "Notre Dame", "Florida State", "Miami", "NC State", "Pittsburgh", "North Carolina", "Syracuse", "SMU", "Virginia Tech", "Georgia Tech", "Wake Forest", "Virginia", "Duke", "Louisville", "Stanford"] },
+  PAC: { name: "Pac-12 & Mountain West", schools: ["Boise State", "San Diego State", "Fresno State", "Air Force", "UTEP", "Texas State", "UTSA", "Rice"] },
+  G5: { name: "AAC, Sun Belt, MAC & C-USA", schools: ["Tulane", "Memphis", "Temple", "Liberty", "Coastal Carolina", "James Madison", "Sam Houston", "Troy", "Marshall", "Western Kentucky", "Northern Illinois", "Ball State", "Ohio", "Kent State", "Central Michigan", "Western Michigan", "Toledo", "Florida Atlantic", "Middle Tennessee", "UAB", "Southern Miss", "Charlotte", "Navy", "Army", "Appalachian State", "Eastern Michigan", "Old Dominion"] },
+};
+const REGION_OF = Object.fromEntries(Object.entries(REGIONS).flatMap(([k, r]) => r.schools.map((s) => [s, k])));
+// Where draft prospects come from, roughly like the real draft (the SEC and Big Ten produce the most).
+export const FCS_SCHOOLS = ["North Dakota State", "South Dakota State", "Montana", "Montana State", "Villanova", "Delaware", "Furman", "Jackson State", "Sacramento State", "Illinois State"];
+const REGION_WEIGHT = [["SEC", 26], ["B1G", 24], ["ACC", 15], ["B12", 14], ["PAC", 6], ["G5", 12], ["OTH", 3]];
+export function draftCollege(rand = Math.random) {
+  let x = rand() * 100;
+  for (const [k, w] of REGION_WEIGHT) { if ((x -= w) <= 0) { const list = k === "OTH" ? FCS_SCHOOLS : REGIONS[k].schools; return list[Math.floor(rand() * list.length)]; } }
+  return REGIONS.SEC.schools[0];
+}
+export const regionOf = (p) => REGION_OF[p?.bio?.college] || "OTH";
+export const regionName = (k) => REGIONS[k]?.name || "Independents & FCS";
+export const RPTS_START = 2, RPTS_WEEKLY = 1, RTRIP_COST = 2, MAX_TRIPS = 4;
+const TRIP_SD = [Infinity, 6, 4.5, 3.2, 2.4];
+
+export function scoutRegion(sc, sp, region, classYr, draftYr) {
+  if (classYr !== draftYr || sp === "freeagency" || sp === "draft") return { ok: false, msg: "Area scouts work the upcoming class, before the draft.", sc };
+  const regions = sc.regionsYr === classYr ? sc.regions || {} : {};
+  const trips = regions[region] || 0;
+  if (trips >= MAX_TRIPS) return { ok: false, msg: `Your area scouts already know ${regionName(region)} inside out.`, sc };
+  const rp = sc.rpts ?? RPTS_START;
+  if (rp < RTRIP_COST) return { ok: false, msg: `Not enough area-scout points (a trip takes ${RTRIP_COST}; you earn ${RPTS_WEEKLY} a week).`, sc };
+  return { ok: true, msg: `Area scouts went through ${regionName(region)} (trip ${trips + 1} of ${MAX_TRIPS}).`, sc: { ...sc, rpts: rp - RTRIP_COST, regions: { ...regions, [region]: trips + 1 }, regionsYr: classYr } };
+}
+export const tripsTo = (sc, p) => (sc?.regionsYr === p.draftYear ? sc.regions?.[regionOf(p)] || 0 : 0);
+
+// What your area scouts think of a prospect from a region they've worked (null if they haven't).
+export function regionRead(sc, p) {
+  const t = Math.min(MAX_TRIPS, tripsTo(sc, p));
+  if (!t) return null;
+  const sd = TRIP_SD[t];
+  const see = t >= 4 ? 0.6 : t === 3 ? 0.35 : 0;
+  const pot = publicPot(p) + gemGap(p) * see + clamp(stream(`${p.id}|reg|${t}`).gauss(0, sd), -1.6 * sd, 1.6 * sd);
+  const hunch = !!p.gem && t >= 2 && stream(`${p.id}|reghunch`).next() < 0.2 * t;
+  return { pot, sd, trips: t, grade: potGrade(pot), tier: projection(p.pos, pot), hunch, sleeper: hunch && t >= 4, region: regionOf(p), who: `Your area scouts (${regionName(regionOf(p))})` };
+}
 
 // ---------- What your scouts know ----------
 
@@ -304,11 +353,18 @@ export function prospectRead(sc, p) {
   const s = p.scout || { lvl: 0 };
   const cov = coverage(sc, p);
   const has = s.lvl > 0 && s.eOvr != null;
-  const gen = has ? null : generalIdea(sc, p);
+  const gen0 = has ? null : generalIdea(sc, p);
+  const reg = has ? null : regionRead(sc, p);
+  // The sharper of your position scouts' general idea and your area scouts' regional read.
+  const genSd = gen0 ? readSd(cov.role, 0, scoutEval(cov.scout, p, cov.others)) : Infinity;
+  const gen = gen0 && reg ? (reg.sd < genSd ? { ...gen0, pot: reg.pot, grade: reg.grade, tier: reg.tier, who: reg.who, hunch: gen0.hunch || reg.hunch, sleeper: gen0.sleeper || reg.sleeper } : { ...gen0, hunch: gen0.hunch || reg.hunch, sleeper: gen0.sleeper || reg.sleeper }) : gen0 || (reg && { ...reg, by: "region", dev: null });
   const potV = has ? s.ePot : gen ? gen.pot : null;
   return {
     lvl: s.lvl || 0,
     cov: cov.role,
+    trips: reg?.trips || 0,
+    region: regionOf(p),
+    regional: !!reg && (gen?.by === "region" || gen?.who === reg.who),
     scout: cov.scout,
     second: cov.second || null,
     others: cov.others || [],

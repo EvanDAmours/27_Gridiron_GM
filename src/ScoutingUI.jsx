@@ -7,6 +7,7 @@ import {
   prospectRead, scoutProspect, interviewProspect, coverage, csRank, riskLabel, gradeTone,
   SCOUT_GROUPS, SCOUT_ROLES, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
   staffWindowOpen, SCOUT_SLOTS, slotKind, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, scoutGroup, isSmallSchool, devOf,
+  REGIONS, regionOf, regionName, scoutRegion, RTRIP_COST, RPTS_START, RPTS_WEEKLY, MAX_TRIPS,
 } from "./scouting.js";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
@@ -128,7 +129,7 @@ function ProspectRow({ g, p, onDraft, canDraft }) {
       </td>
       <td style={{ ...td, minWidth: 0 }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.name} <span className="sc-show"><Bdg pos={p.pos} /></span>{read.sleeper ? <span title={`${read.who} have seen through the board: he's a sleeper, much better than where he's ranked.`} style={{ fontSize: 11, fontWeight: 800, color: "#fdf2f8", background: "#be185d", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>💎 sleeper</span> : read.hunch && <span title={`${read.who} has a hunch there's more to him than the board says. A report will tell.`} style={{ fontSize: 11, fontWeight: 800, color: "#f9a8d4", background: "#831843", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>👀 hunch</span>}{read.devEarly && ["generational", "superstar"].includes(read.dev) && <span title={`${read.who} already see a ${read.dev} development trait.`} style={{ fontSize: 11, fontWeight: 800, color: read.dev === "generational" ? "#f472b6" : "#f5c542", border: `1px solid currentColor`, borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>{read.dev === "generational" ? "Generational" : "Superstar"}</span>}</div>
-        <div className="sc-sub" style={{ fontSize: 13, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260 }}>{p.bio?.college} · {p.age} yrs · {htS(p.ht_)} {p.wt}</div>
+        <div className="sc-sub" style={{ fontSize: 13, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260 }}>{p.bio?.college} ({regionName(regionOf(p))}) · {p.age} yrs · {htS(p.ht_)} {p.wt}</div>
       </td>
       <td className="sc-hide" style={{ ...td, textAlign: "center" }}><Bdg pos={p.pos} /></td>
       <td style={{ ...td, textAlign: "center" }}><Val txt={read.ovr} /></td>
@@ -638,17 +639,56 @@ export function MockDraft({ g }) {
   );
 }
 
+// Area scouting: send scouts through a conference for a rough read on everyone there.
+export function RegionsView({ g }) {
+  const s = g.scouting || {};
+  const cls = g.dc[g.yr] || [];
+  const trips = s.regionsYr === g.yr ? s.regions || {} : {};
+  const rp = s.rpts ?? RPTS_START;
+  const open = g.sp !== "freeagency" && g.sp !== "draft";
+  const keys = [...Object.keys(REGIONS), "OTH"];
+  const rows = keys.map((k) => {
+    const ps = cls.filter((p) => regionOf(p) === k);
+    const top = [...ps].sort((a, b) => csRank(a) - csRank(b))[0];
+    const flagged = ps.filter((p) => { const r = prospectRead(s, p); return r.sleeper || r.hunch; }).length;
+    return { k, n: ps.length, top, t: trips[k] || 0, flagged, r1: ps.filter((p) => csRank(p) <= 32).length };
+  });
+  const send = (k) => { const r = scoutRegion(s, g.sp, k, g.yr, g.yr); g.sm(r.msg); if (r.ok) g.setScouting(r.sc); };
+  return (
+    <div>
+      <div style={panel}>
+        <div style={head}>AREA SCOUTING<Right><b style={{ fontSize: 22, color: C.gd }}>{rp}</b><span style={{ fontSize: 12, color: C.mt }}> area pts</span></Right></div>
+        <div style={muted}>Your area scouts work conferences, not players. A trip ({RTRIP_COST} area points; you get {RPTS_START} at the start of the season and {RPTS_WEEKLY} every week) gives you a rough read on <b>every</b> prospect from that region. Each trip back sharpens every read there (up to {MAX_TRIPS} trips), and from the third trip on they start seeing through the board to the region's sleepers. It's volume, not depth: for close estimates, exact ratings and development traits, use your position scouts' reports and workups (regular scouting points).</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,300px),1fr))", gap: 8 }}>
+        {rows.map((r) => (
+          <div key={r.k} style={{ ...panel, marginBottom: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <b style={{ fontSize: 17, flex: 1 }}>{regionName(r.k)}</b>
+              <span title={`${r.t} of ${MAX_TRIPS} trips`} style={{ letterSpacing: 2, color: C.gd }}>{"●".repeat(r.t)}<span style={{ color: "#334155" }}>{"●".repeat(MAX_TRIPS - r.t)}</span></span>
+            </div>
+            <div style={{ fontSize: 13, color: C.mt, marginBottom: 8 }}>{r.n} prospects · {r.r1} on the board's first round{r.top ? <> · top: <b style={{ color: "#e2e8f0", cursor: "pointer" }} onClick={() => g.setSel(r.top)}>{r.top.name}</b> ({r.top.pos}, #{csRank(r.top)})</> : null}</div>
+            {r.flagged > 0 && <div style={{ fontSize: 13, color: "#f9a8d4", marginBottom: 6 }}>💎 {r.flagged} possible sleeper{r.flagged > 1 ? "s" : ""} flagged here</div>}
+            {r.k === "OTH" ? <div style={{ fontSize: 12, color: C.mt }}>Independents and FCS schools are too spread out for area trips; scout them one at a time.</div>
+              : <Btn onClick={() => send(r.k)} disabled={!open || r.t >= MAX_TRIPS || rp < RTRIP_COST} bg={C.bl} style={{ fontSize: 14, padding: "6px 12px" }}>{r.t >= MAX_TRIPS ? "Fully scouted" : `Send area scouts (${RTRIP_COST} pts)`}</Btn>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ScoutingPage({ g }) {
   const hasCombine = (g.dc[g.yr] || []).some((p) => tested(p) && p.combine);
   const [view, setView] = useState(g.sp === "combine" ? "combine" : "board");
-  const views = [["board", "Big Board"], ["list", `Your list (${listIds(g.scouting, g.yr).length})`], ["mock", "Mock Draft"], hasCombine && ["combine", "Combine"], ["scouts", "Scouts"]].filter(Boolean);
+  const views = [["board", "Big Board"], ["list", `Your list (${listIds(g.scouting, g.yr).length})`], ["mock", "Mock Draft"], hasCombine && ["combine", "Combine"], ["regions", "Regions"], ["scouts", "Scouts"]].filter(Boolean);
   const v = views.some(([k]) => k === view) ? view : "board";
   const myPicks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !(g.draftLog || []).some((d) => d.id === pk.id)).sort((a, b) => a.overall - b.overall);
   return (
     <div>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
         <span style={{ fontSize: 22, fontWeight: 900 }}>{g.sp === "combine" ? `${g.yr} NFL Combine` : `${g.yr} Draft Class`}</span>
-        <span style={{ marginLeft: "auto" }}><ScoutPtsBadge pts={g.scouting?.pts || 0} /></span>
+        <span style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}><span title="Area-scout points for regional trips" style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: "#0c4a6e55", color: "#7dd3fc", fontWeight: 700 }}>🗺️ {g.scouting?.rpts ?? RPTS_START} area</span><ScoutPtsBadge pts={g.scouting?.pts || 0} /></span>
         {g.sp === "combine" && <span style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: "#7c3aed33", color: "#c4b5fd", fontWeight: 700 }}>Interviews: {g.scouting?.interviewsLeft || 0}</span>}
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
@@ -667,6 +707,7 @@ export function ScoutingPage({ g }) {
       {v === "list" && <YourList g={g} classYr={g.yr} />}
       {v === "combine" && <CombineView g={g} buzz={g.buzz} />}
       {v === "mock" && <MockDraft g={g} />}
+      {v === "regions" && <RegionsView g={g} />}
       {v === "scouts" && <ScoutsView g={g} />}
     </div>
   );
@@ -682,6 +723,7 @@ function explain(read, p) {
     const next = read.cov === "major" ? "A full workup (2 points) gives exact ratings and his development trait." : read.cov === "minor" ? "A full workup (2 points) sharpens the estimates." : "A follow-up (2 points) sharpens the estimates a little.";
     return `Scouting report: estimates are ${pm(read.sd)}. ${next}`;
   }
+  if (read.regional) return `${read.who} have been through his region ${read.trips} time${read.trips > 1 ? "s" : ""}: a rough ${read.pot} ceiling. More trips sharpen every read there; a report (1 point) on him is still the way to close estimates.`;
   if (read.cov !== "office" && read.devEarly) return `${read.who} already have a strong read on him: a ${read.pot} ceiling and a ${read.dev} development trait. A report (1 point) gives close estimates.`;
   if (read.cov === "major") return `Your major scout's general idea of him is a ${read.pot} ceiling. A report (1 point) gives close estimates; a full workup (2 more) gives exact ratings and his development trait.`;
   if (read.cov === "minor") return `Your minor scout's general idea of him is a ${read.pot} ceiling. A report (1 point) gives estimates and a workup (2 more) sharpens them. Minor scouts don't see development traits.`;

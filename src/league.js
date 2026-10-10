@@ -11,7 +11,7 @@ import { makeSide, createGame, playGame } from "./playsim.js";
 import { DATA_TO_DOLLARS, leagueCap } from "./cap.js";
 import { teamSnaps } from "./snaps.js";
 import { nflSchedule, divisionPlaces } from "./schedule.js";
-import { aiDraftScore, devOf, rankClass, plantGems, gemGap } from "./scouting.js";
+import { aiDraftScore, devOf, rankClass, plantGems, gemGap, draftCollege } from "./scouting.js";
 
 export const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 export const Rf=(a,b)=>Math.random()*(b-a)+a;
@@ -176,7 +176,7 @@ export function genDC(yr,dcr){
   // for real snaps, like NFL rookies), and late-rounders are low-ceiling depth.
   for(let i=0;i<240;i++){const pos=pick(posW);const age=prospectAge();const raw=cl(Gc(55,14,32,92),dcrAdj.fl,dcrAdj.cap);const pt=cl(raw+R(0,20),raw,99);
     const room=Math.round(({20:15,21:13,22:11,23:9,24:7}[age]||11)*cl(0.33+(pt-64)*0.027,0.3,1.35)*Rf(0.6,1.4));const now=cl(pt-room,55,pt);
-    const p=genPlayer(pos,age,now,true);p.pot=p.truePot=pt;p.scoutedPot=cl(pt+R(-12,12),pt-5,99);p.tradeVal=playerValue({pos,age,ovr:now,pot:pt});p.ovrV=2;p.draftYear=yr;p.bio.backstory=`From ${pick(BSTORY_CITY)}, ${p.name.split(' ')[0]} ${pick(BSTORY_ARC)}. ${pick(BSTORY_TRAIT)}`;dc.push(p);}
+    const p=genPlayer(pos,age,now,true);p.pot=p.truePot=pt;p.scoutedPot=cl(pt+R(-12,12),pt-5,99);p.tradeVal=playerValue({pos,age,ovr:now,pot:pt});p.ovrV=2;p.bio.college=draftCollege();p.draftYear=yr;p.bio.backstory=`From ${pick(BSTORY_CITY)}, ${p.name.split(' ')[0]} ${pick(BSTORY_ARC)}. ${pick(BSTORY_TRAIT)}`;dc.push(p);}
   // An Elite class has a can't-miss prospect: its highest ceiling, ready from day one.
   if(dcr==='Elite'){const top=[...dc].sort((a,b)=>b.truePot-a.truePot)[0];if(top&&top.trueOvr<90){top.ovr=top.trueOvr=90;top.pot=top.truePot=Math.max(top.truePot,94);top.posAttrs=genPAttrs(top.pos,90);top.tradeVal=playerValue({pos:top.pos,age:top.age,ovr:90,pot:top.truePot});}}
   return plantGems(rankClass(dc),yr);

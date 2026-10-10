@@ -298,4 +298,10 @@ export const PATCH_NOTES = [
     "A young player who has reached his ceiling now only creeps past it now and then. Development traits, awards and big seasons are the real way to beat a ceiling, so mid-round picks no longer routinely outgrow what they were drafted as.",
     "Elite draft classes: the class's can't-miss prospect (90 OVR) is now its highest-ceiling player and sits near the top of the board. Before, the bonus went to a random prospect who could slide to the late rounds.",
   ] },
+  { v: "1.76", date: "2026-10-10", title: "Regional Scouting", notes: [
+    "New Regions view on the Scouting page: send area scouts through a conference (SEC, Big Ten, ACC, Big 12, Pac-12 & Mountain West, and the AAC / Sun Belt / MAC / C-USA) and you get a rough read on every prospect from there, not just the positions you need.",
+    "Area scouting has its own budget: 2 area points to start the season plus 1 every week, and a trip costs 2. Each trip back to a region sharpens every read there (up to 4 trips). From the third trip on, your area scouts start seeing through the board to that region's hidden gems (look for 👀 and 💎 on the Big Board), and each region's card counts the sleepers flagged there.",
+    "Depth or volume: individual scouting reports, full workups and development traits are still your position scouts' job, with your regular scouting points. A prospect's read uses whichever of your scouts knows him best.",
+    "Draft classes now come from where real prospects do: the SEC and Big Ten produce the most, then the ACC and Big 12, with fewer from smaller conferences and FCS schools (which are too spread out for area trips). The Big Board shows each prospect's conference.",
+  ] },
 ];

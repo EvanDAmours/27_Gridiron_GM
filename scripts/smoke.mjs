@@ -85,6 +85,10 @@ try {
     if (await t.count()) { await t.first().click(); await page.waitForTimeout(400); await healthy(tab); }
   }
   log("every main screen opens");
+  await dismiss(); await page.getByText("Scouting", { exact: true }).first().click(); await page.waitForTimeout(500);
+  await must("Regions", 500); await must("Send area scouts", 600); await healthy("regional scouting");
+  if (!(await page.evaluate(() => /trip 1 of|●/.test(document.body.innerText)))) fail("regional trip didn't register");
+  log("regional scouting");
   await must("Start Season", 1500);
   await must("Sim Week", 1500); await healthy("sim week"); log("sim week");
   await must("Sim to Deadline", 3500); await healthy("sim to deadline");
