@@ -32,3 +32,10 @@ test("owner patience: winning builds it, losing seasons drain it to an ultimatum
   const teams = [{ w: 10, l: 7 }, { w: 2, l: 15 }, { w: 3, l: 14 }, { w: 9, l: 8 }];
   assert.deepEqual(jobOffers(teams, 0, 2), [1, 2]);
 });
+
+test("with firing turned off the owner grumbles but never fires you", async () => {
+  const { ownerReview } = await import("../src/carousel.js");
+  let pat = 40;
+  for (let i = 0; i < 4; i++) { const r = ownerReview(pat, { w: 2, l: 15 }, { noFire: true }); assert.ok(!["fired", "ultimatum"].includes(r.verdict)); pat = r.patience; }
+  assert.equal(ownerReview(8, { w: 2, l: 15 }).verdict, "fired");
+});

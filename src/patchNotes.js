@@ -314,4 +314,9 @@ export const PATCH_NOTES = [
     "Each prospect on your board shows where the consensus has him: ▲ means your scouts like him a lot more than the league does (a sleeper you might get later), ▼ a lot less. The board tells you how many prospects your scouts have 25+ spots higher than the consensus.",
     "AI teams still mostly draft off the consensus, so the gap between the two boards is where you find value.",
   ] },
+  { v: "1.79", date: "2026-10-10", title: "Turn Off Getting Fired", notes: [
+    "New option on the main menu, under New Game: '👔 Owner can fire you: ON/OFF'. Turn it off before you start a franchise and the owner still judges your seasons (owner patience still moves, and he'll let you know when he's unhappy), but he never issues an ultimatum or fires you.",
+    "The setting is saved with your franchise. Older franchises keep firing on.",
+    "Casual difficulty now really means no firing, as its description always said.",
+  ] },
 ];

@@ -55,12 +55,15 @@ export const describeMove = (m, teams) => {
 };
 
 // The owner's verdict on your season. Returns { patience, verdict, msg }.
-export function ownerReview(patience, team, { madePlayoffs = false, champion = false, wonDivision = false } = {}) {
+// noFire: the franchise setting that turns firing off (the owner still reacts, but never fires
+// you or issues an ultimatum).
+export function ownerReview(patience, team, { madePlayoffs = false, champion = false, wonDivision = false, noFire = false } = {}) {
   const p = pct(team);
   let d = (p - 0.5) * 50 + (madePlayoffs ? 12 : 0) + (wonDivision ? 5 : 0) + (champion ? 30 : 0);
   if (!madePlayoffs && p < 0.42) d -= p < 0.35 ? 10 : 6;
   const next = Math.max(0, Math.min(100, Math.round((patience ?? 70) + d)));
   const rec = `${team.w || 0}-${team.l || 0}${team.t ? `-${team.t}` : ""}`;
+  if (noFire && next < 35) return { patience: Math.max(next, 10), verdict: "warning", msg: `The owner is furious about a ${rec} season, but you can't be fired in this franchise.` };
   if (next <= 5) return { patience: 0, verdict: "fired", msg: `After a ${rec} season the owner has seen enough: you've been fired.` };
   if (next < 35) return { patience: next, verdict: "ultimatum", msg: `Owner's ultimatum: after going ${rec}, things have to turn around next season or you're gone.` };
   if (d <= -10) return { patience: next, verdict: "warning", msg: `The owner isn't happy with a ${rec} season. His patience is wearing thin.` };
