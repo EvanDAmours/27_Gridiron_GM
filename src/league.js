@@ -4,6 +4,7 @@
 import M27 from "./data/madden27.json" with { type: "json" };
 import SPECIAL from "./data/special.json" with { type: "json" };
 import REAL_SCHED from "./data/schedule2026.json" with { type: "json" };
+import REAL_DC from "./data/realProspects.json" with { type: "json" };
 import { depthOrderFor } from "./depth.js";
 import { playerValue, pickValue as chartPickValue } from "./trade.js";
 import { arrangeDL } from "./dline.js";
@@ -165,8 +166,13 @@ export function genPlayer(pos,age,ovrO,isDraft){
 // the class being drafted right now. Returns a new dc object.
 export function reshapeDC(dc,yr,sp,draftIdx){const out={};for(const[k,cls]of Object.entries(dc||{})){if(!Array.isArray(cls)||cls.some(p=>p.ovrV)||(+k===yr&&sp==="draft"&&draftIdx>0)){out[k]=cls;continue;}
   out[k]=cls.map(p=>{if(p.scout?.lvl>0)return{...p,ovrV:2};const pt=p.truePot-gemGap(p);const room=Math.round(({20:15,21:13,22:11,23:9,24:7}[p.age]||11)*cl(0.33+(pt-64)*0.027,0.3,1.35)*Rf(0.6,1.4));const now=Math.max(p.trueOvr||p.ovr||55,cl(pt-room,55,pt));return{...p,ovr:now,trueOvr:now,ovrV:2};});}return out;}
+// One generated prospect (potCap/ovrCap keep the filler of a real class below its real names).
+function genProspect(yr,pos,adj,potCap=99,ovrCap=99){const age=prospectAge();const raw=cl(Gc(55,14,32,92),adj.fl,Math.min(adj.cap,potCap));const pt=cl(raw+R(0,20),raw,potCap);
+  const room=Math.round(({20:15,21:13,22:11,23:9,24:7}[age]||11)*cl(0.33+(pt-64)*0.027,0.3,1.35)*Rf(0.6,1.4));const now=Math.min(cl(pt-room,55,pt),ovrCap);
+  const p=genPlayer(pos,age,now,true);p.pot=p.truePot=pt;p.scoutedPot=cl(pt+R(-12,12),pt-5,99);p.tradeVal=playerValue({pos,age,ovr:now,pot:pt});p.ovrV=2;p.bio.college=draftCollege();p.draftYear=yr;p.bio.backstory=`From ${pick(BSTORY_CITY)}, ${p.name.split(' ')[0]} ${pick(BSTORY_ARC)}. ${pick(BSTORY_TRAIT)}`;return p;}
+const DC_POS_W={QB:4,RB:6,WR:9,TE:4,LT:2,LG:2,C:1,RG:2,RT:2,DL:8,LB:7,CB:6,S:5,K:1,P:1};
 export function genDC(yr,dcr){
-  const dc=[];const posW=[];const w={QB:4,RB:6,WR:9,TE:4,LT:2,LG:2,C:1,RG:2,RT:2,DL:8,LB:7,CB:6,S:5,K:1,P:1};
+  const dc=[];const posW=[];const w=DC_POS_W;
   for(const[p,n]of Object.entries(w))for(let i=0;i<n;i++)posW.push(p);
   const dcrAdj={Weak:{fl:58,cap:82,off:0},Average:{fl:60,cap:86,off:0},Strong:{fl:62,cap:89,off:0},Elite:{fl:64,cap:92,off:0}}[dcr||'Average']||{fl:60,cap:86,off:0};
   // Generate 7 rounds * 32 picks = 224 prospects (with extras)
@@ -174,12 +180,39 @@ export function genDC(yr,dcr){
   // it he is today: younger and higher-ceiling prospects are rawer, and some are more polished
   // than others. Top picks come in around 75-80, second and third rounders around 68-72 (ready
   // for real snaps, like NFL rookies), and late-rounders are low-ceiling depth.
-  for(let i=0;i<240;i++){const pos=pick(posW);const age=prospectAge();const raw=cl(Gc(55,14,32,92),dcrAdj.fl,dcrAdj.cap);const pt=cl(raw+R(0,20),raw,99);
-    const room=Math.round(({20:15,21:13,22:11,23:9,24:7}[age]||11)*cl(0.33+(pt-64)*0.027,0.3,1.35)*Rf(0.6,1.4));const now=cl(pt-room,55,pt);
-    const p=genPlayer(pos,age,now,true);p.pot=p.truePot=pt;p.scoutedPot=cl(pt+R(-12,12),pt-5,99);p.tradeVal=playerValue({pos,age,ovr:now,pot:pt});p.ovrV=2;p.bio.college=draftCollege();p.draftYear=yr;p.bio.backstory=`From ${pick(BSTORY_CITY)}, ${p.name.split(' ')[0]} ${pick(BSTORY_ARC)}. ${pick(BSTORY_TRAIT)}`;dc.push(p);}
+  for(let i=0;i<240;i++)dc.push(genProspect(yr,pick(posW),dcrAdj));
   // An Elite class has a can't-miss prospect: its highest ceiling, ready from day one.
   if(dcr==='Elite'){const top=[...dc].sort((a,b)=>b.truePot-a.truePot)[0];if(top&&top.trueOvr<90){top.ovr=top.trueOvr=90;top.pot=top.truePot=Math.max(top.truePot,94);top.posAttrs=genPAttrs(top.pos,90);top.tradeVal=playerValue({pos:top.pos,age:top.age,ovr:90,pot:top.truePot});}}
   return plantBusts(plantGems(rankClass(dc),yr),yr);
+}
+// Real draft classes (src/data/realProspects.json, keyed by the season whose off-season holds the
+// draft: 2026 is the April 2027 NFL Draft). Each real prospect has the board's view of him (his
+// rank, OVR and ceiling) and, for some, Claude's call: "boom" (much better than his slot; a
+// hidden gem the board doesn't see) or "bust" (a red flag: his real ceiling is lower). The rest
+// of the 240 are generated depth below the real names.
+export const REAL_DC_YEARS=Object.keys(REAL_DC).map(Number).filter(y=>REAL_DC[y]?.length);
+const BUST_KIND=w=>/charact|work ethic|maturity|off-field|arrest|attitude|motor/i.test(w)?"character":/injur|medical|knee|acl|shoulder|surgery|durab|health/i.test(w)?"medical":/one[- ]year|one season|small sample|breakout/i.test(w)?"oneyear":/system|scheme|supporting cast|surrounded/i.test(w)?"system":/athlet|workout|tools|raw|tape/i.test(w)?"workout":"character";
+export function genRealDC(yr){
+  const list=REAL_DC[yr];if(!list?.length)return genDC(yr);
+  const dc=[];let minScore=Infinity,minPot=99,minOvr=99,prev=Infinity;
+  for(const d of [...list].sort((a,b)=>a.rank-b.rank)){
+    const p=genPlayer(d.pos,d.age,d.ovr,true);
+    Object.assign(p,{name:d.name,ht_:d.ht||p.ht_,wt:d.wt||p.wt,pot:d.pot,truePot:d.pot,trueOvr:d.ovr,ovr:d.ovr,ovrV:2,draftYear:yr,real:1});
+    if(d.mpos)p.mpos=d.mpos;
+    p.scoutedPot=cl(d.pot+R(-12,12),d.pot-5,99);p.bio.college=d.college;p.bio.backstory=d.note||"";
+    // The consensus board follows the real boards' order.
+    const sc=Math.min(d.pot*0.78+d.ovr*0.22-(d.pos==="K"||d.pos==="P"?6:0),prev-0.05);prev=sc;p.cons={score:sc};
+    if(d.dev)p.dev=d.dev;
+    if(d.boom&&d.truePot>d.pot){p.gem={gap:d.truePot-d.pot,why:d.boom};p.pot=p.truePot=d.truePot;p.dev||=d.truePot>=90?"superstar":"star";}
+    else if(d.bust&&d.truePot<d.pot){p.bust={gap:d.pot-d.truePot,why:d.bust,kind:d.kind||BUST_KIND(d.bust)};p.pot=p.truePot=d.truePot;if(p.trueOvr>=d.truePot)p.ovr=p.trueOvr=Math.max(50,d.truePot-2);p.dev||="normal";}
+    p.posAttrs=genPAttrs(p.pos,p.trueOvr);p.tradeVal=playerValue({pos:p.pos,age:p.age,ovr:p.trueOvr,pot:p.truePot});
+    minScore=Math.min(minScore,sc);minPot=Math.min(minPot,d.pot);minOvr=Math.min(minOvr,d.ovr);dc.push(p);
+  }
+  const posW=[];for(const[p,n]of Object.entries(DC_POS_W))for(let i=0;i<n;i++)posW.push(p);
+  const adj={fl:58,cap:86};
+  while(dc.length<240){const p=genProspect(yr,pick(posW),adj,minPot,minOvr);const sc=p.truePot*0.78+p.trueOvr*0.22-(p.pos==="K"||p.pos==="P"?6:0)+Gc(0,2,-6,6);p.cons={score:Math.min(sc,minScore-0.1-Math.random())};dc.push(p);}
+  for(const p of dc){p.gemChk=1;p.bustChk=1;}
+  return rankClass(dc);
 }
 
 
