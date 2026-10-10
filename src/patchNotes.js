@@ -376,4 +376,11 @@ export const PATCH_NOTES = [
     "Fixed: in a real draft class, a generated prospect could end up with the same name as a real one.",
     "Depth chart list: every defensive lineman shows whether he's an edge rusher or a tackle by trade and which spot he's playing (EDGE @LE, DT @DT1...). A starter playing out of position is outlined in red with a ⚠, since he's rated lower there.",
   ] },
+  { v: "1.89", date: "2026-10-10", title: "Drama Around the League", notes: [
+    "Top Stories now cover more than big stat lines. From the box scores: interception-riddled games (and the quarterback controversy that follows when the backup is close), kickers whose misses cost their team the game, ball-security problems, and blowouts that boil over on the sideline.",
+    "From what's brewing: stars on losing teams requesting trades, contract-year standoffs, and owners issuing ominous votes of confidence.",
+    "Off the field: arrests for domestic violence and DUI, sexual-assault allegations, PED and gambling suspensions, and benchings for breaking team rules, with real consequences: the league suspends the player (Commissioner's Exempt List, 2 to 10 games, or the rest of the season for gambling) and he can't play until it's served. These only ever involve the game's generated players (drafted classes, free agents it creates), never real people, so they start showing up once your league has drafted a class or two.",
+    "Breaking stories get a red BREAKING tag. Suspensions now count down for every team (they only counted down for yours before), and your club's suspensions and returns go in your log.",
+    "Fixed: a scheme change's 2-week transition never ended (the warning stayed up forever) and its penalty never actually applied. Now a new scheme costs about 2 points a game for your next 2 games while it's installed, then it's done.",
+  ] },
 ];
