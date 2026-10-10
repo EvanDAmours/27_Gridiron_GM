@@ -15,6 +15,14 @@ import { teamSnaps } from "./snaps.js";
 import { nflSchedule, divisionPlaces } from "./schedule.js";
 import { aiDraftScore, devOf, rankClass, plantGems, plantBusts, gemGap, draftCollege, kpValue } from "./scouting.js";
 
+// Contract incentives that fit the position: a quarterback's is about passing, an edge rusher's sacks.
+const INCENTIVES={QB:['4,000 pass yds','30 pass TD','Pro Bowl','12+ wins'],RB:['1,000 rush yds','10 rush TD','Pro Bowl'],WR:['1,000 rec yds','8 rec TD','80 catches'],TE:['700 rec yds','60 catches','6 rec TD'],
+  OL:['Pro Bowl','All-Pro','17 starts'],DL:['10 sacks','8 sacks','Pro Bowl'],LB:['100 tackles','5 sacks','Pro Bowl'],CB:['5 INT','15 pass def','Pro Bowl'],S:['4 INT','90 tackles','Pro Bowl'],K:['30 FG made','90% on FGs'],P:['45.0 yd avg','Pro Bowl']};
+const INC_GROUP={LT:'OL',LG:'OL',C:'OL',RG:'OL',RT:'OL',OL:'OL',G:'OL',T:'OL',DL:'DL',DE:'DL',DT:'DL',LE:'DL',RE:'DL',EDGE:'DL',LB:'LB',MLB:'LB',OLB:'LB',ROLB:'LB',LOLB:'LB',MIKE:'LB',CB:'CB',S:'S',FS:'S',SS:'S'};
+export const incentiveOptions=(pos)=>INCENTIVES[pos]||INCENTIVES[INC_GROUP[pos]]||['Pro Bowl','10+ wins'];
+// Older saves picked incentives from one list for everybody; show a fitting one instead.
+export const fitIncentive=(p)=>{const o=incentiveOptions(p.mpos==='EDGE'?'DL':p.pos);const th=p.bonus?.threshold;if(o.includes(th))return th;let h=0;for(const c of String(p.id))h=(h*31+c.charCodeAt(0))>>>0;return o[h%o.length];};
+
 export const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 export const Rf=(a,b)=>Math.random()*(b-a)+a;
 export const pick=a=>a[R(0,a.length-1)];
@@ -152,7 +160,7 @@ export function genPlayer(pos,age,ovrO,isDraft){
     agent:pick(['Aggressive','Moderate','Passive']),
     traits:Array.from({length:R(1,2)},()=>pick(TRAITS_POOL)).filter((v,i,a)=>a.indexOf(v)===i),
     want:pick(['starter','starter','star','ring','money','money']),
-    bonus:isDraft?null:(Math.random()<0.3?{type:pick(['performance','roster','pro_bowl']),amount:+(Rf(0.3,2.0)).toFixed(1),threshold:pick(['500 rush yds','1000 rec yds','10 sacks','8+ wins','Pro Bowl'])}:null),
+    bonus:isDraft?null:(Math.random()<0.3?{type:pick(['performance','roster','pro_bowl']),amount:+(Rf(0.3,2.0)).toFixed(1),threshold:pick(incentiveOptions(pos))}:null),
     endorsed:!isDraft&&ovr>=82&&Math.random()<0.3,
     snaps:0,loyal:false,role:'rotation'};
 }

@@ -433,4 +433,5 @@ export const PATCH_NOTES = [
     "The Lombardis in the Trophy Room now stand still and face front, the way they'd sit on a real shelf. Your newest one gets a spotlight and a NEW tag.",
   ] },
   { v: "1.992", date: "2026-10-10", title: "Trophy Room on the Home Menu", notes: ["The Trophy Room now has its own spot in the home screen's menu, between League+ and Log."] },
+  { v: "1.993", date: "2026-10-10", title: "Incentives That Fit", notes: ["Fixed: contract incentives were picked without looking at position, so a quarterback could have a bonus for 10 sacks. Every incentive now fits the player's position (passing yards for a QB, sacks for a pass rusher, interceptions for a corner, field goals for a kicker), and players who already had a mismatched one now show one that fits."] },
 ];

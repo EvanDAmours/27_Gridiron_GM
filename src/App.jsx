@@ -68,6 +68,7 @@ import {
   realFA, initialFA, addPunters, reshapeDC, initTeams, genSched, simPG, teamStr, rollGameWeather, liveView, gameSetup, tickInjuries, applyGame,
   simGame, OC_SCHEMES, DC_SCHEMES, POS_MARKET, glGrade, genCoach, getOCFit, getDCFit, schemeRunPct, calcOffStr,
   calcDefStr, genCoachMarket, capHit, capSpace, sL, LIVE_SPEEDS, DRAFT_SPEEDS, pickDelay, setInjuries, injuriesEnabled, setUserLineup, setDifficultyAdj, REAL_OVR0,
+  fitIncentive,
 } from "./league.js";
 // ═══ PLAYER TABLE (shared roster/FA) ═══
 const PlayerTable=({players,setSel,sortCol,sortDir,onSort,posFilter,setPosFilter,showSign,onSign,onVetMin,onCompare,compareSlots,franchiseQB,depth})=>{
@@ -987,7 +988,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         {p.want&&<div style={{fontSize:11,color:'#a78bfa',marginBottom:4}}>Wants: <b>{p.want}</b></div>}
         {p.agent&&<div style={{fontSize:11,marginBottom:4}}>Agent: <span style={{color:p.agent==='Aggressive'?'#ef4444':p.agent==='Passive'?'#22c55e':'#94a3b8',fontWeight:700}}>{p.agent}</span></div>}
         {p.mentor&&(()=>{const mP=teams[ui]?.roster.find(r=>r.id===p.mentor);return mP?<div style={{fontSize:11,color:'#94a3b8',marginBottom:4}}>Mentor: <span style={{color:'#fbbf24'}}>{mP.name}</span></div>:null;})()}
-        {p.bonus&&<div style={{fontSize:11,color:'#eab308',marginBottom:4}}>⭐ BONUS: ${p.bonus.amount}M — {p.bonus.threshold}</div>}
+        {p.bonus&&<div style={{fontSize:11,color:'#eab308',marginBottom:4}}>⭐ BONUS: ${p.bonus.amount}M — {fitIncentive(p)}</div>}
         {p.injured&&<div style={{background:"#7f1d1d33",borderRadius:5,padding:"4px 8px",fontSize:13,color:"#fca5a5",marginBottom:8}}>🏥 {p.injType} — {p.injSev||"?"} ({Math.max(0,(p.injRecWks||3)-(wk-p.injWk))}wk)</div>}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3,marginBottom:10}}>{[["OVR",dO],["POT",dP],["SPD",p.spd],["STR",p.str],["AGI",p.agi],["ACC",p.acc],["JMP",p.jmp],["END",p.end],["CONF",p.conf||60]].map(([l,v])=>(<div key={l} style={{background:C.bg,borderRadius:4,padding:"3px",textAlign:"center"}}><div style={{fontSize:10,color:C.mt}}>{l}</div><div style={{fontSize:14,fontWeight:800,color:oC(v)}}>{v}</div></div>))}</div>
         {p.posAttrs&&p.scoutLvl>=1&&<div style={{marginBottom:10}}><div style={{fontSize:11,color:C.bl,fontWeight:700,marginBottom:3}}>POSITION SKILLS</div><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3}}>{Object.entries(p.posAttrs).slice(0,p.scoutLvl>=2?99:4).map(([k,v])=>(<div key={k} style={{background:C.bg,borderRadius:3,padding:"3px 4px",textAlign:"center"}}><div style={{fontSize:9,color:C.mt,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{PA_LABELS[k]||k}</div><div style={{fontSize:14,fontWeight:700,color:oC(v)}}>{v}</div></div>))}</div></div>}
