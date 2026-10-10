@@ -10,7 +10,15 @@ const r1 = (x) => Math.round(x * 10) / 10;
 
 // Per-year price for a deal of `yrs` years: veterans want more to commit long, young players
 // take a little less for security.
-export const yearlyAsk = (p, yrs) => r1(askingPrice(p) * (1 + (yrs - 2) * (p.age >= 30 ? 0.06 : -0.03)));
+// mode "resign" or "extend": his own team is negotiating, so his last season counts. A big year
+// raises the ask; after a down year he takes less on a long deal, or bets on himself with a
+// one-year "prove it" deal near his full price. In free agency (mode "fa") the market goes by
+// his rating again.
+export const perfFactor = (p, yrs, mode) => {
+  const f = (mode === "resign" || mode === "extend") && p.perf?.f ? p.perf.f : 1;
+  return f < 1 && yrs === 1 ? 1 - (1 - f) * 0.25 : f;
+};
+export const yearlyAsk = (p, yrs, mode) => r1(askingPrice(p) * (1 + (yrs - 2) * (p.age >= 30 ? 0.06 : -0.03)) * perfFactor(p, yrs, mode));
 export const maxYears = (p) => (p.age >= 33 ? 1 : p.age >= 30 ? 3 : 5);
 
 // The hidden side of a negotiation. loyalty (0-1) shaves up to 6% off for your own players
@@ -22,12 +30,12 @@ export function terms(p, { yr, mode, loyalty = 0, rivals = [] }) {
   if (mode === "fa" && rivals.length && p.ovr >= 68 && hash(`${p.id}:${yr}:rival`) < Math.min(0.85, (p.ovr - 62) / 25)) {
     rival = { team: rivals[Math.floor(hash(`${p.id}:${yr}:who`) * rivals.length)], f: 0.88 + hash(`${p.id}:${yr}:bid`) * 0.24 };
   }
-  return { minF, rival };
+  return { minF, rival, mode };
 }
 
 // The player's answer to `offer` ({ sal, yrs }). state: { tries } so far with this player.
 export function respond(p, offer, t, state = {}) {
-  const ask = yearlyAsk(p, offer.yrs);
+  const ask = yearlyAsk(p, offer.yrs, t.mode);
   const need = r1(ask * t.minF);
   const tries = (state.tries || 0) + 1;
   const rivalSal = t.rival ? r1(yearlyAsk(p, Math.min(maxYears(p), 3)) * t.rival.f) : 0;

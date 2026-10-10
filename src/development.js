@@ -76,6 +76,8 @@ export function seasonGrowth(p, share, rand = Math.random) {
     let g = ri(rand, -2, 2);
     if (share >= 0.75 && rand() < 0.35) g += 1;
     if (share < 0.1 && rand() < 0.35) g -= 1;
+    // The last few points come hard: an elite player in his prime rarely climbs further.
+    if (g > 0 && ovr >= 93) g = rand() < (ovr >= 96 ? 0.15 : 0.35) ? 1 : 0;
     return g;
   }
   // Past his prime: the decline speeds up the further past it he is.
@@ -134,4 +136,13 @@ export function awardGrowth(p, award, devTrait) {
     else ovr += 1;
   }
   return { ovr, dev, notes };
+}
+
+// Off-season taper at the very top: any rise past 93 has to be earned point by point (about a
+// coin flip each up to 96, rarer after), so 95+ and 99 ratings stay rare across a long franchise.
+export function eliteTaper(before, after, rand = Math.random) {
+  if (after <= before || after <= 93) return after;
+  let v = Math.max(before, 93);
+  for (let x = v + 1; x <= after; x++) { if (rand() < (x >= 97 ? 0.3 : 0.55)) v = x; else break; }
+  return Math.max(before, v);
 }

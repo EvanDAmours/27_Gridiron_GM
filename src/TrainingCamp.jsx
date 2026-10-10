@@ -109,7 +109,7 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
               <span onClick={() => setSel(p)} style={{ flex: 1, fontWeight: 700, cursor: "pointer" }}>{p.name} <span style={{ fontSize: 13, color: C.mt, fontWeight: 400 }}>{p.age}</span></span><Bdg pos={p.pos} />
               <span style={{ fontWeight: 900, color: oC(p.ovr), minWidth: 28, textAlign: "center" }}>{p.ovr}</span>
               {p.resigned?.yr === yr ? <span style={{ fontSize: 14, color: C.gn, fontWeight: 700 }}>Extended {p.resigned.yrs}y · {money(p.resigned.sal)}</span>
-                : <><span style={{ fontSize: 14, color: C.mt, whiteSpace: "nowrap" }}>asks {money(yearlyAsk(p, 2))}</span><Btn onClick={() => onExtend(p)} bg={C.gn} style={{ fontSize: 14, padding: "6px 12px" }}>Negotiate</Btn></>}
+                : <><span style={{ fontSize: 14, color: C.mt, whiteSpace: "nowrap" }}>asks {money(yearlyAsk(p, 2, "extend"))}</span><Btn onClick={() => onExtend(p)} bg={C.gn} style={{ fontSize: 14, padding: "6px 12px" }}>Negotiate</Btn></>}
             </div>
           ))}
         </div>

@@ -53,7 +53,7 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
         }
       }
       const keep = keepChance(p);
-      const salary = +Math.max(p.salary || 1, askingPrice(p) * (0.95 + rand() * 0.15)).toFixed(1); // market, not a small raise
+      const salary = +Math.max(Math.min(p.salary || 1, askingPrice(p)), askingPrice(p) * (0.95 + rand() * 0.15) * (p.perf?.f ?? 1)).toFixed(1); // market, not a small raise; his last season counts
       // A young franchise player is kept even if it means cap casualties: the club cuts its
       // priciest non-core contracts (up to five) to make room, as real teams do before tagging; it
       // refills the roster in free agency and the draft. A club that still can't fit him is truly
@@ -247,4 +247,86 @@ export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random 
     }
   });
   return signed;
+}
+
+// ---------- Depth: a backup at every spot ----------
+// Every club carries a backup at each position (kickers and punters aside), fills its 53 with
+// minimum deals, and stashes the best of what's left on its practice squad. During the season a
+// spot left without a healthy backup promotes his practice-squad replacement, and the practice
+// squad signs a fringe free agent in his place.
+export const DEPTH_MIN = { QB: 2, RB: 2, WR: 4, TE: 2, LT: 2, LG: 2, C: 2, RG: 2, RT: 2, DL: 6, LB: 4, CB: 3, S: 3, K: 1, P: 1 };
+export const PS_SIZE = 10;
+const minDeal = (p, minSal, cy) => ({ ...freshDeal(p), salary: minSal, contract: 1, ...(cy ? { cy } : {}), formerTeam: undefined, onPS: undefined });
+const psDeal = (p, cy) => ({ ...freshDeal(p), salary: 0, contract: 1, ...(cy ? { cy } : {}), formerTeam: undefined });
+const bestAt = (list, pos) => { let k = -1; list.forEach((p, i) => { if (p.pos === pos && (k < 0 || p.ovr > list[k].ovr)) k = i; }); return k; };
+
+// Before the season. Mutates teams and pool (sorted best first). Returns log lines for your club.
+export function fillDepth(teams, pool, { ui, minSal = leagueMin(), cy } = {}) {
+  const mine = [];
+  teams.forEach((t, i) => {
+    t.ps = t.ps || [];
+    const note = (txt) => { if (i === ui) mine.push(txt); };
+    // 1. A backup everywhere: from the practice squad first, then free agency.
+    for (const [pos, min] of Object.entries(DEPTH_MIN)) {
+      while (t.roster.filter((p) => p.pos === pos).length < min) {
+        if (t.roster.length >= ROSTER_TARGET) {
+          // Full: release the least valuable player at a position with more than its minimum.
+          const spare = [...t.roster].sort((a, b) => keepScore(a) - keepScore(b)).find((q) => q.pos !== pos && t.roster.filter((x) => x.pos === q.pos).length > (DEPTH_MIN[q.pos] || 1));
+          if (!spare) break;
+          t.roster.splice(t.roster.indexOf(spare), 1);
+          pool.push({ ...spare, contract: 0, formerTeam: i });
+          note(`✂️ ${spare.name} (${spare.pos} ${spare.ovr}) released to make room for a backup ${pos}.`);
+        }
+        let k = bestAt(t.ps, pos);
+        if (k >= 0) { const [p] = t.ps.splice(k, 1); t.roster.push(minDeal(p, minSal, cy)); note(`⬆️ ${p.name} (${pos} ${p.ovr}) promoted from the practice squad for depth.`); continue; }
+        k = bestAt(pool, pos);
+        if (k < 0) break;
+        const [p] = pool.splice(k, 1); t.roster.push(minDeal(p, minSal, cy)); note(`✍️ ${p.name} (${pos} ${p.ovr}) signed to a minimum deal for depth.`);
+      }
+    }
+    // 2. The rest of the 53 on minimum deals: the best players left, favouring thin positions.
+    while (t.roster.length < ROSTER_TARGET && pool.length) {
+      const thin = (pos) => t.roster.filter((p) => p.pos === pos).length - (DEPTH_MIN[pos] || 1);
+      const k = pool.reduce((b, p, j) => (b < 0 || p.ovr - thin(p.pos) * 3 > pool[b].ovr - thin(pool[b].pos) * 3 ? j : b), -1);
+      if (k < 0) break;
+      const [p] = pool.splice(k, 1); t.roster.push(minDeal(p, minSal, cy)); note(`✍️ ${p.name} (${p.pos} ${p.ovr}) signed to a minimum deal to fill the 53.`);
+    }
+  });
+  // 3. Practice squads: clubs take turns on the free agents still out there.
+  for (let more = true; more && pool.length; ) {
+    more = false;
+    teams.forEach((t, i) => {
+      if ((t.ps || []).length >= PS_SIZE || !pool.length) return;
+      const [p] = pool.splice(0, 1);
+      t.ps.push(psDeal(p, cy));
+      if (i === ui) mine.push(`📋 ${p.name} (${p.pos} ${p.ovr}) added to the practice squad.`);
+      more = true;
+    });
+  }
+  return mine;
+}
+
+// During the season, after injuries: any spot without a healthy backup promotes from the practice
+// squad, and the squad signs a fringe free agent (rated under 70) at that position. Mutates teams
+// and fa. Returns log lines for your club.
+export function keepBackups(teams, fa, { ui, minSal = leagueMin() } = {}) {
+  const mine = [];
+  teams.forEach((t, i) => {
+    t.ps = t.ps || [];
+    for (const [pos, n] of Object.entries(STARTS)) {
+      if (pos === "K" || pos === "P") continue;
+      if (t.roster.filter((p) => p.pos === pos && !p.injured).length > n) continue;
+      const k = bestAt(t.ps.filter((p) => !p.injured), pos);
+      if (k < 0) continue;
+      const cand = t.ps.filter((p) => !p.injured)[k];
+      t.ps.splice(t.ps.indexOf(cand), 1);
+      t.roster.push(minDeal(cand, minSal));
+      let line = `⬆️ No healthy backup at ${pos}: ${cand.name} (${cand.ovr}) promoted from the practice squad.`;
+      // Refill the practice squad with a cheap fringe player at the position.
+      const f = fa.reduce((b, p, j) => (p.pos === pos && p.ovr < 70 && (b < 0 || p.ovr > fa[b].ovr) ? j : b), -1);
+      if (f >= 0 && t.ps.length < PS_SIZE) { const [p] = fa.splice(f, 1); t.ps.push(psDeal(p)); line += ` ${p.name} (${p.ovr}) signed to the practice squad.`; }
+      if (i === ui) mine.push(line);
+    }
+  });
+  return mine;
 }

@@ -19,7 +19,8 @@
     "build:pages:all": "VITE_APP_BASE_PATH=/27_Gridiron_GM/ npm run build:pages && VITE_APP_BASE_PATH=/27_Gridiron_GM/mobile/ npm run build:mobile && rm -rf dist/mobile && cp -r dist-mobile dist/mobile",
     "smoke": "node scripts/smoke.mjs",
     "check": "npm test && npm run build && npm run smoke",
-    "publish:pages": "bash scripts/publish-pages.sh"
+    "publish:pages": "bash scripts/publish-pages.sh",
+    "health": "node scripts/health.mjs"
   },
   "dependencies": {
     "lz-string": "^1.5.0",

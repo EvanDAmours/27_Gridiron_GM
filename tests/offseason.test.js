@@ -111,3 +111,30 @@ test("your roster is never filled for you, and AI clubs keep their young startin
   const r = openFreeAgency([{ roster: [] }, { roster: [qb, ...filler] }], 0, 2026, () => 0.99, { cap: 301.2 });
   assert.ok(r.teams[1].roster.some((p) => p.id === "jd"));
 });
+
+import { fillDepth, keepBackups, DEPTH_MIN, PS_SIZE } from "../src/offseason.js";
+test("every club fills its 53 on minimum deals with a backup everywhere, then its practice squad", () => {
+  const mk = (pos, ovr, i) => ({ id: `${pos}${i}${ovr}`, name: `${pos}${i}`, pos, ovr, age: 25, salary: 5, contract: 2 });
+  const teams = [0, 1].map((t) => ({ roster: [mk("QB", 80, t), mk("C", 75, t), mk("K", 70, t), mk("P", 70, t)], ps: [mk("C", 60, 9 + t)] }));
+  const pool = [];
+  for (const pos of Object.keys(DEPTH_MIN)) for (let i = 0; i < 30; i++) pool.push(mk(pos, 50 + (i % 20), i));
+  pool.sort((a, b) => b.ovr - a.ovr);
+  const log = fillDepth(teams, pool, { ui: 0, minSal: 1 });
+  for (const t of teams) {
+    assert.equal(t.roster.length, 53);
+    for (const [pos, min] of Object.entries(DEPTH_MIN)) assert.ok(t.roster.filter((p) => p.pos === pos).length >= min, pos);
+    assert.equal(t.ps.length, PS_SIZE);
+  }
+  assert.ok(teams[0].roster.some((p) => p.name === "C9"), "the practice-squad center was promoted first");
+  assert.ok(log.length > 0);
+});
+
+test("a spot without a healthy backup promotes from the practice squad and signs a fringe player", () => {
+  const t = { roster: [{ id: 1, name: "Starter", pos: "TE", ovr: 80 }, { id: 2, name: "Hurt", pos: "TE", ovr: 70, injured: true }], ps: [{ id: 3, name: "PS TE", pos: "TE", ovr: 62 }] };
+  const fa = [{ id: 4, name: "Fringe TE", pos: "TE", ovr: 64 }, { id: 5, name: "Good TE", pos: "TE", ovr: 78 }];
+  const log = keepBackups([t], fa, { ui: 0, minSal: 1 });
+  assert.ok(t.roster.some((p) => p.name === "PS TE"));
+  assert.ok(t.ps.some((p) => p.name === "Fringe TE"), "a fringe (<70) player refills the squad");
+  assert.equal(fa.length, 1);
+  assert.equal(log.length, 1);
+});

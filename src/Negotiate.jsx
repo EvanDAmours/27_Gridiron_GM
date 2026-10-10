@@ -9,7 +9,9 @@ const r1 = (x) => Math.round(x * 10) / 10;
 
 export default function Negotiate({ p, mode, cap, t, talk = {}, onResult, onClose, rivalName, note }) {
   const [yrs, setYrs] = useState(Math.min(2, maxYears(p)));
-  const ask = yearlyAsk(p, yrs);
+  const ask = yearlyAsk(p, yrs, mode);
+  const f = p.perf?.f ?? 1;
+  const perfNote = mode !== "fa" && Math.abs(f - 1) >= 0.05 ? (f > 1 ? `Coming off a big season: he's asking about ${Math.round((f - 1) * 100)}% more than his rating alone would get.` : `Coming off a down season: he'd take about ${Math.round((1 - f) * 100)}% less on a multi-year deal, or bet on himself with a 1-year prove-it deal near full price.`) : null;
   const [sal, setSal] = useState(r1(ask * 0.9));
   const done = talk.walked || talk.signed;
   const last = talk.last;
@@ -34,6 +36,7 @@ export default function Negotiate({ p, mode, cap, t, talk = {}, onResult, onClos
           <div style={{ textAlign: "right" }}><div style={{ fontSize: 32, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</div><div style={{ fontSize: 12, color: C.mt }}>OVR</div></div>
         </div>
 
+        {perfNote && <div style={{ fontSize: 13, color: f > 1 ? "#fcd34d" : "#93c5fd", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 10 }}>{f > 1 ? "📈 " : "📉 "}{perfNote}</div>}
         {note && <div style={{ fontSize: 13, color: "#cbd5e1", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 10 }}>{note}</div>}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
           <span style={{ fontSize: 13, color: C.mt, fontWeight: 700 }}>Interest</span>
@@ -52,7 +55,7 @@ export default function Negotiate({ p, mode, cap, t, talk = {}, onResult, onClos
             <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>YEARS</div>
             <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
               {[1, 2, 3, 4, 5].map((y) => (
-                <button key={y} disabled={y > maxYears(p)} onClick={() => { setYrs(y); setSal(r1(yearlyAsk(p, y) * 0.9)); }} style={{ flex: 1, padding: "9px 0", fontSize: 16, fontWeight: 800, borderRadius: 8, cursor: y > maxYears(p) ? "not-allowed" : "pointer", opacity: y > maxYears(p) ? 0.3 : 1, background: yrs === y ? C.bl : C.bg, color: "#fff", border: `1px solid ${yrs === y ? C.bl : C.bd}` }}>{y}</button>
+                <button key={y} disabled={y > maxYears(p)} onClick={() => { setYrs(y); setSal(r1(yearlyAsk(p, y, mode) * 0.9)); }} style={{ flex: 1, padding: "9px 0", fontSize: 16, fontWeight: 800, borderRadius: 8, cursor: y > maxYears(p) ? "not-allowed" : "pointer", opacity: y > maxYears(p) ? 0.3 : 1, background: yrs === y ? C.bl : C.bg, color: "#fff", border: `1px solid ${yrs === y ? C.bl : C.bd}` }}>{y}</button>
               ))}
             </div>
             <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>YOUR OFFER PER YEAR <span style={{ fontWeight: 600, letterSpacing: 0, color: "#cbd5e1" }}>· he's asking {money(ask)}</span></div>

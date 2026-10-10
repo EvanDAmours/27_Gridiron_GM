@@ -47,7 +47,7 @@ export default function Resign({ team, yr, nextSpace, talkFor, onNegotiate, setS
                   <td className="rs-hide" style={{ ...td, color: "#cbd5e1" }}>{p.age}</td>
                   <td style={{ ...td, fontWeight: 900, fontSize: 18, color: oC(p.ovr) }}>{p.ovr}</td>
                   <td className="rs-hide" style={{ ...td, color: "#cbd5e1" }}>{signed ? "—" : money(p.salary)}</td>
-                  <td style={{ ...td, whiteSpace: "nowrap" }}>{money(yearlyAsk(p, 2))}</td>
+                  <td style={{ ...td, whiteSpace: "nowrap" }}>{money(yearlyAsk(p, 2, "resign"))}</td>
                   <td style={{ ...td, textAlign: "right" }}>
                     <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                       {!signed && optionFor(p) != null && <Btn onClick={() => onOption(p)} bg="#7c3aed" c="#ede9fe" style={{ fontSize: 13, padding: "6px 10px" }} title="Fifth-year option: one more year at a set price">5th-yr option {money(optionFor(p))}</Btn>}

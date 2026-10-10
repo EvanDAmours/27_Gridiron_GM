@@ -23,11 +23,13 @@ export const SLOTS = [
 
 // OVR the next off-season for making each team (the best honor counts, not all of them).
 export const HONOR_BOOST = { ap1: 2, ap2: 1, pb: 1 };
+// The boost tapers for players already near the top (95+ gain nothing; 92-94 at most +1).
+export const honorBoost = (k, ovr) => (ovr >= 95 ? 0 : ovr >= 92 ? Math.min(1, HONOR_BOOST[k]) : HONOR_BOOST[k]);
 export const HONOR_LABEL = { ap1: "First-team All-Pro", ap2: "Second-team All-Pro", pb: "Pro Bowl" };
 
 const s = (p, k) => p.ss?.[k] || 0;
 // What a player did this season, on a scale where a great season is about 100.
-function production(p) {
+export function production(p) {
   switch (p.pos) {
     case "QB": return s(p, "passYds") / 50 + s(p, "passTD") * 1.6 - s(p, "passInt") * 2 + s(p, "rushYds") / 25;
     case "RB": return s(p, "rushYds") / 15 + s(p, "rushTD") * 3 + s(p, "recYds") / 25;
@@ -72,4 +74,22 @@ export function honorsById(h) {
   for (const e of h.ap2 || []) out[e.pid] = "ap2";
   for (const e of h.ap1 || []) out[e.pid] = "ap1";
   return out;
+}
+
+// How a player's season compares with his rating: where his production ranks among players at
+// his spot, against where his OVR ranks. Stamped at the end of the regular season as p.perf =
+// { yr, f }: f above 1 means he outplayed his rating (a big contract year), below 1 a down year.
+// Offensive linemen have no stats, so they're judged on their rating alone (f = 1).
+export function stampPerformance(teams, yr) {
+  for (const sl of SLOTS) {
+    const field = [];
+    teams.forEach((t) => (t.roster || []).forEach((p) => { if (sl.of(p) && s(p, "gp") >= 8) field.push(p); }));
+    if (field.length < 4) continue;
+    const pct = (key) => { const sorted = [...field].sort((a, b) => key(a) - key(b)); return (p) => sorted.indexOf(p) / (sorted.length - 1); };
+    const prod = pct(production), rate = pct((p) => p.ovr || 0);
+    for (const p of field) {
+      const f = OL.has(p.pos) ? 1 : Math.max(0.72, Math.min(1.22, 1 + (prod(p) - rate(p)) * 0.5));
+      p.perf = { yr, f: Math.round(f * 100) / 100 };
+    }
+  }
 }

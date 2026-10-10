@@ -41,3 +41,14 @@ test("re-sign loyalty makes your own players a bit cheaper", () => {
   const p = P("c");
   assert.ok(terms(p, { yr: 2026, mode: "resign", loyalty: 1 }).minF < terms(p, { yr: 2026, mode: "resign", loyalty: 0 }).minF);
 });
+
+import { yearlyAsk as ask2, perfFactor } from "../src/negotiation.js";
+test("contract-year play counts with his own team; free agency goes by rating", () => {
+  const p = { id: "w", pos: "DL", ovr: 95, age: 28 };
+  const down = { ...p, perf: { yr: 2026, f: 0.8 } }, big = { ...p, perf: { yr: 2026, f: 1.15 } };
+  assert.ok(ask2(down, 3, "resign") < ask2(p, 3, "resign") * 0.85, "a down year costs him on a long deal");
+  assert.ok(ask2(down, 1, "resign") > ask2(down, 3, "resign"), "a prove-it year pays closer to full price");
+  assert.ok(ask2(big, 3, "resign") > ask2(p, 3, "resign") * 1.1, "a big year earns the big cheque");
+  assert.equal(ask2(down, 3, "fa"), ask2(p, 3, "fa"), "on the open market he asks by his rating again");
+  assert.equal(perfFactor(p, 2, "resign"), 1);
+});
