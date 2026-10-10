@@ -108,7 +108,8 @@ try {
     await must("→ Combine"); await must("→ Re-sign Week"); await must("→ Free Agency", 2500); await must("→ Draft", 1500);
     for (let k = 0; k < 3; k++) { await click("Sim Draft", 3000); const cont = page.locator("button", { hasText: "Continue the draft" }); if (await cont.count()) await cont.click(); }
     await must("→ Next Season", 3000); await healthy(`season ${s + 1}`);
-    const d = await save();
+    let d = await save();
+    for (let w = 0; w < 6 && d.yr !== 2027 + s; w++) d = await save();
     if (d.yr !== 2027 + s) fail(`expected ${2027 + s}, got ${d.yr}`);
     const m = measure(d); rows.push(m); console.log(JSON.stringify(m));
   }

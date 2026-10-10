@@ -138,11 +138,11 @@ export function awardGrowth(p, award, devTrait) {
   return { ovr, dev, notes };
 }
 
-// Off-season taper at the very top: any rise past 93 has to be earned point by point (about a
-// coin flip each up to 96, rarer after), so 95+ and 99 ratings stay rare across a long franchise.
+// Off-season taper at the top: any rise into the 90s has to be earned point by point (70% a
+// point up to 93, a coin flip to 96, rarer after), so 90+, 95+ and 99 stay rare over a long franchise.
 export function eliteTaper(before, after, rand = Math.random) {
-  if (after <= before || after <= 93) return after;
-  let v = Math.max(before, 93);
-  for (let x = v + 1; x <= after; x++) { if (rand() < (x >= 97 ? 0.3 : 0.55)) v = x; else break; }
+  if (after <= before || after <= 89) return after;
+  let v = Math.max(before, 89);
+  for (let x = v + 1; x <= after; x++) { if (rand() < (x >= 97 ? 0.3 : x >= 94 ? 0.5 : 0.7)) v = x; else break; }
   return Math.max(before, v);
 }
