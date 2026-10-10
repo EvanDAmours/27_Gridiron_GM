@@ -1,80 +1,84 @@
-// The Vince Lombardi Trophy on a turntable: polished silver, turning slowly. The trophy is close to
-// round, so the turn is carried by what moves across it: the reflections, the football's laces and
-// the engraving sweep around the front and disappear behind, and the platter turns underneath.
-import React from "react";
-
-const T = 9; // seconds per turn
+// The Vince Lombardi Trophy, in real 3D: a regulation football tipped up on a tapered three-sided
+// stand, polished chrome lit by a studio environment, turning slowly on a dark platter. three.js is
+// loaded only when this mounts (the main menu), so the game itself stays light.
+import React, { useEffect, useRef } from "react";
 
 export default function Lombardi({ size = 120 }) {
-  const id = "lmb";
-  // a value that sweeps across the front once per turn (left to right), fading in and out at the edges
-  const sweep = (from, to) => <animateTransform attributeName="transform" type="translate" values={`${from} 0; ${to} 0`} dur={`${T}s`} repeatCount="indefinite" />;
-  const fade = <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;.12;.38;.5;1" dur={`${T}s`} repeatCount="indefinite" />;
-  return (
-    <svg viewBox="0 0 140 260" width={size} height={size * (260 / 140)} role="img" aria-label="Vince Lombardi Trophy" style={{ overflow: "visible" }}>
-      <defs>
-        <linearGradient id={`${id}col`} x1="0" x2="1">
-          <stop offset="0" stopColor="#5b6270" /><stop offset=".18" stopColor="#c5cad3" /><stop offset=".42" stopColor="#f4f6f9" /><stop offset=".6" stopColor="#aab1bc" /><stop offset=".85" stopColor="#6f7683" /><stop offset="1" stopColor="#4a505c" />
-        </linearGradient>
-        <radialGradient id={`${id}ball`} cx=".38" cy=".32" r=".8">
-          <stop offset="0" stopColor="#ffffff" /><stop offset=".3" stopColor="#dfe3e9" /><stop offset=".7" stopColor="#9aa1ad" /><stop offset="1" stopColor="#5a606c" />
-        </radialGradient>
-        <linearGradient id={`${id}shine`} x1="0" x2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity="0" /><stop offset=".5" stopColor="#fff" stopOpacity=".85" /><stop offset="1" stopColor="#fff" stopOpacity="0" />
-        </linearGradient>
-        <radialGradient id={`${id}plat`} cx=".5" cy=".4" r=".7">
-          <stop offset="0" stopColor="#3a4150" /><stop offset=".8" stopColor="#1b2029" /><stop offset="1" stopColor="#0d1016" />
-        </radialGradient>
-        <clipPath id={`${id}ballClip`}><ellipse cx="0" cy="0" rx="31" ry="47" /></clipPath>
-        <clipPath id={`${id}colClip`}><path d="M54 112 L86 112 L95 232 L45 232 Z" /></clipPath>
-      </defs>
+  const ref = useRef(null);
+  useEffect(() => {
+    let stop = false, cleanup = () => {};
+    (async () => {
+      const THREE = await import("three");
+      const { RoomEnvironment } = await import("three/examples/jsm/environments/RoomEnvironment.js");
+      const el = ref.current;
+      if (!el || stop) return;
+      const w = size, h = Math.round(size * 1.9);
+      let renderer;
+      try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch { return; }
+      renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      renderer.setSize(w, h);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05;
+      el.appendChild(renderer.domElement);
+      const scene = new THREE.Scene();
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      const camera = new THREE.PerspectiveCamera(30, w / h, 0.1, 50);
+      camera.position.set(0, 2.6, 9.6);
+      camera.lookAt(0, 2.05, 0);
 
-      {/* platter: a dark disc turning underneath */}
-      <ellipse cx="70" cy="240" rx="62" ry="15" fill="#000" opacity=".35" />
-      <ellipse cx="70" cy="236" rx="60" ry="14" fill={`url(#${id}plat)`} stroke="#4b5563" strokeWidth="1" />
-      <g transform="translate(70 236) scale(1 .23)">
-        <g>
-          {Array.from({ length: 12 }, (_, i) => <line key={i} x1="0" y1="-30" x2="0" y2="-56" stroke="#6b7280" strokeWidth="1.4" opacity=".55" transform={`rotate(${i * 30})`} />)}
-          <animateTransform attributeName="transform" type="rotate" values="0;360" dur={`${T}s`} repeatCount="indefinite" />
-        </g>
-      </g>
-      <ellipse cx="70" cy="233" rx="60" ry="14" fill="none" stroke="#9ca3af" strokeOpacity=".35" strokeWidth="1" />
+      const chrome = new THREE.MeshStandardMaterial({ color: 0xe9ecf1, metalness: 1, roughness: 0.14 });
+      const trophy = new THREE.Group();
+      // the stand: tapered, three concave-looking faces
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.62, 2.5, 3, 1), chrome);
+      stand.position.y = 1.25;
+      trophy.add(stand);
+      const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.2, 0.12, 24), chrome);
+      collar.position.y = 2.56;
+      trophy.add(collar);
+      // the football: a lathe of a pointed ellipse, tipped up in kicking position
+      const prof = [];
+      for (let i = 0; i <= 32; i++) { const t = i / 32, y = (t - 0.5) * 1.95; prof.push(new THREE.Vector2(0.64 * Math.pow(Math.sin(Math.PI * t), 0.85), y)); }
+      const ball = new THREE.Group();
+      ball.add(new THREE.Mesh(new THREE.LatheGeometry(prof, 64), chrome));
+      // laces and seam
+      const seam = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.012, 6, 64, Math.PI * 0.62), chrome);
+      seam.rotation.set(0, Math.PI / 2, Math.PI / 2 + Math.PI * 0.19);
+      seam.position.set(-0.07, 0, 0);
+      for (let i = -3; i <= 3; i++) {
+        const lace = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.035, 0.05), chrome);
+        const y = i * 0.1, r = 0.64 * Math.pow(Math.sin(Math.PI * (y / 1.95 + 0.5)), 0.85);
+        lace.position.set(0, y, r + 0.01);
+        ball.add(lace);
+      }
+      ball.rotation.z = -0.42;
+      ball.position.set(0.12, 3.35, 0);
+      trophy.add(ball);
+      scene.add(trophy);
 
-      {/* the stand: a tapered column with concave sides */}
-      <path d="M54 112 L86 112 L95 232 L45 232 Z" fill={`url(#${id}col)`} />
-      <g clipPath={`url(#${id}colClip)`}>
-        <rect x="-30" y="100" width="22" height="140" fill={`url(#${id}shine)`} opacity=".7">{sweep(0, 190)}</rect>
-        {/* the engraving comes round the front */}
-        <g opacity="0">
-          {fade}
-          <g>
-            {sweep(-38, 38)}
-            <text x="70" y="150" textAnchor="middle" fontSize="6.2" fontFamily="Georgia, serif" fill="#4b5260" letterSpacing=".5">VINCE LOMBARDI</text>
-            <text x="70" y="158" textAnchor="middle" fontSize="6.2" fontFamily="Georgia, serif" fill="#4b5260" letterSpacing=".5">TROPHY</text>
-            <path d="M62 168 L78 168 L78 182 Q70 190 62 182 Z" fill="none" stroke="#4b5260" strokeWidth="1.2" />
-            <text x="70" y="182" textAnchor="middle" fontSize="6" fontWeight="700" fontFamily="Arial, sans-serif" fill="#4b5260">NFL</text>
-          </g>
-        </g>
-      </g>
-      <path d="M50 112 L90 112 L88 118 L52 118 Z" fill="#8e95a1" />
+      // the platter
+      const platMat = new THREE.MeshStandardMaterial({ color: 0x1b2029, metalness: 0.6, roughness: 0.35 });
+      const platter = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.42, 0.16, 64), platMat);
+      platter.position.y = -0.08;
+      scene.add(platter);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(1.38, 0.025, 8, 64), new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 1, roughness: 0.3 }));
+      rim.rotation.x = Math.PI / 2;
+      scene.add(rim);
+      const key = new THREE.DirectionalLight(0xffffff, 1.4); key.position.set(3, 5, 4); scene.add(key);
 
-      {/* the football, tipped up in kicking position */}
-      <g transform="translate(70 66) rotate(-22)">
-        <ellipse cx="0" cy="0" rx="31" ry="47" fill={`url(#${id}ball)`} />
-        <g clipPath={`url(#${id}ballClip)`}>
-          <rect x="-70" y="-60" width="18" height="120" fill={`url(#${id}shine)`} opacity=".75">{sweep(0, 140)}</rect>
-          {/* seam and laces sweep round the front */}
-          <g opacity="0">
-            {fade}
-            <g>
-              {sweep(-26, 26)}
-              <path d="M0 -42 Q4 0 0 42" stroke="#7d8492" strokeWidth="1.4" fill="none" />
-              {[-18, -11, -4, 3, 10, 17].map((y) => <line key={y} x1="-4.5" y1={y} x2="5.5" y2={y} stroke="#eef1f5" strokeWidth="2.2" strokeLinecap="round" />)}
-            </g>
-          </g>
-        </g>
-        <ellipse cx="0" cy="0" rx="31" ry="47" fill="none" stroke="#5a606c" strokeOpacity=".5" />
-      </g>
-    </svg>
-  );
+      const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      let raf = 0, t0 = performance.now();
+      const loop = (now) => {
+        const a = ((now - t0) / 1000) * 0.6;
+        trophy.rotation.y = reduce ? 0.5 : a;
+        platter.rotation.y = trophy.rotation.y;
+        renderer.render(scene, camera);
+        if (!reduce) raf = requestAnimationFrame(loop);
+      };
+      raf = requestAnimationFrame(loop);
+      cleanup = () => { cancelAnimationFrame(raf); renderer.dispose(); pmrem.dispose(); renderer.domElement.remove(); };
+    })();
+    return () => { stop = true; cleanup(); };
+  }, [size]);
+  return <div ref={ref} role="img" aria-label="Vince Lombardi Trophy" style={{ width: size, height: Math.round(size * 1.9) }} />;
 }
