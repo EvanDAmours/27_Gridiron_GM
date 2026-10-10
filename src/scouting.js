@@ -206,7 +206,9 @@ export function draftCollege(rand = Math.random) {
 }
 export const regionOf = (p) => REGION_OF[p?.bio?.college] || "OTH";
 export const regionName = (k) => REGIONS[k]?.name || "Independents & FCS";
-export const RPTS_START = 2, RPTS_WEEKLY = 1, RTRIP_COST = 2, MAX_TRIPS = 4;
+// About 44 area points a season (22 trips): enough to know five of the six regions inside out
+// and get a look at the sixth, so where you go deep still matters.
+export const RPTS_START = 4, RPTS_WEEKLY = 2, RPTS_COMBINE = 4, RTRIP_COST = 2, MAX_TRIPS = 4;
 const TRIP_SD = [Infinity, 6, 4.5, 3.2, 2.4];
 
 export function scoutRegion(sc, sp, region, classYr, draftYr) {
@@ -767,7 +769,8 @@ export function runCombine(sc, cls, { quiet = false } = {}) {
   sortByRank(cls);
   const bonus = quiet ? 0 : SCOUT_PTS_COMBINE + (staffHas(sc, "combine") ? 3 : 0);
   const interviews = COMBINE_INTERVIEWS + (staffHas(sc, "character") ? 2 : 0);
-  return { sc: { ...sc, pts: (sc.pts || 0) + bonus, interviewsLeft: interviews }, buzz: combineBuzz(cls, invited, events), events, bonus, interviews };
+  // Pro days and all-star games: one more round of area trips before the draft.
+  return { sc: { ...sc, pts: (sc.pts || 0) + bonus, rpts: (sc.rpts ?? RPTS_START) + (quiet ? 0 : RPTS_COMBINE), interviewsLeft: interviews }, buzz: combineBuzz(cls, invited, events), events, bonus, interviews };
 }
 
 function combineBuzz(cls, invited, events) {

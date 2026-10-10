@@ -7,7 +7,7 @@ import {
   prospectRead, scoutProspect, interviewProspect, coverage, csRank, riskLabel, gradeTone,
   SCOUT_GROUPS, SCOUT_ROLES, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
   staffWindowOpen, SCOUT_SLOTS, slotKind, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, scoutGroup, isSmallSchool, devOf,
-  myBoard, REGIONS, regionOf, regionName, scoutRegion, RTRIP_COST, RPTS_START, RPTS_WEEKLY, MAX_TRIPS,
+  myBoard, REGIONS, regionOf, regionName, scoutRegion, RTRIP_COST, RPTS_START, RPTS_COMBINE, RPTS_WEEKLY, MAX_TRIPS,
 } from "./scouting.js";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
@@ -687,7 +687,7 @@ export function RegionsView({ g }) {
     <div>
       <div style={panel}>
         <div style={head}>AREA SCOUTING<Right><b style={{ fontSize: 22, color: C.gd }}>{rp}</b><span style={{ fontSize: 12, color: C.mt }}> area pts</span></Right></div>
-        <div style={muted}>Your area scouts work conferences, not players. A trip ({RTRIP_COST} area points; you get {RPTS_START} at the start of the season and {RPTS_WEEKLY} every week) gives you a rough read on <b>every</b> prospect from that region. Each trip back sharpens every read there (up to {MAX_TRIPS} trips), and from the third trip on they start seeing through the board to the region's sleepers. It's volume, not depth: for close estimates, exact ratings and development traits, use your position scouts' reports and workups (regular scouting points).</div>
+        <div style={muted}>Your area scouts work conferences, not players. A trip ({RTRIP_COST} area points; you get {RPTS_START} at the start of the season, {RPTS_WEEKLY} every week and {RPTS_COMBINE} more at the Combine: enough to know five regions inside out) gives you a rough read on <b>every</b> prospect from that region. Each trip back sharpens every read there (up to {MAX_TRIPS} trips), and from the third trip on they start seeing through the board to the region's sleepers. It's volume, not depth: for close estimates, exact ratings and development traits, use your position scouts' reports and workups (regular scouting points).</div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,300px),1fr))", gap: 8 }}>
         {rows.map((r) => (

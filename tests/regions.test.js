@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { genDC } from "../src/league.js";
-import { scoutRegion, regionOf, prospectRead, regionRead, creditWeeks, startScoutingYear, RTRIP_COST, MAX_TRIPS } from "../src/scouting.js";
+import { scoutRegion, regionOf, prospectRead, regionRead, creditWeeks, startScoutingYear, RTRIP_COST, MAX_TRIPS, RPTS_START, RPTS_WEEKLY, RPTS_COMBINE } from "../src/scouting.js";
 
 const cls = genDC(2030);
 const sec = cls.filter((p) => regionOf(p) === "SEC");
@@ -11,7 +11,7 @@ test("a trip gives a rough read on every prospect in the region, and only there"
   assert.ok(sec.every((p) => prospectRead(sc, p).pot === "??"));
   const r = scoutRegion(sc, "regular", "SEC", 2030, 2030);
   assert.ok(r.ok); sc = r.sc;
-  assert.equal(sc.rpts, 2 - RTRIP_COST);
+  assert.equal(sc.rpts, RPTS_START - RTRIP_COST);
   assert.ok(sec.every((p) => prospectRead(sc, p).pot !== "??" && prospectRead(sc, p).regional));
   assert.ok(cls.filter((p) => regionOf(p) === "B1G").every((p) => prospectRead(sc, p).pot === "??"));
 });
@@ -26,7 +26,7 @@ test("more trips sharpen the reads and find the region's sleepers", () => {
 
 test("area points come in weekly, trips are limited, and nothing after the draft starts", () => {
   let sc = creditWeeks(startScoutingYear({}, 2030), 6);
-  assert.equal(sc.rpts, 8);
+  assert.equal(sc.rpts, RPTS_START + 6 * RPTS_WEEKLY);
   for (let i = 0; i < MAX_TRIPS; i++) sc = scoutRegion(sc, "regular", "ACC", 2030, 2030).sc;
   assert.ok(!scoutRegion(sc, "regular", "ACC", 2030, 2030).ok);
   assert.ok(!scoutRegion(sc, "draft", "SEC", 2030, 2030).ok);
@@ -55,4 +55,10 @@ test("four trips to a region show every prospect's current rating there too", ()
   const r = prospectRead({ regionsYr: 2300, regions: { SEC: 4 } }, p);
   assert.match(r.ovr, /^~\d+$/);
   assert.ok(Math.abs(r.ovrV - p.trueOvr) <= 3);
+});
+
+test("a season's area points cover five regions fully and part of the sixth", () => {
+  const season = RPTS_START + 18 * RPTS_WEEKLY + RPTS_COMBINE;
+  const trips = Math.floor(season / RTRIP_COST);
+  assert.ok(trips >= 5 * MAX_TRIPS && trips < 6 * MAX_TRIPS, `${trips} trips a season`);
 });
