@@ -89,6 +89,7 @@ try {
   await must("Regions", 500); await must("Send area scouts", 600); await healthy("regional scouting");
   if (!(await page.evaluate(() => /trip 1 of|●/.test(document.body.innerText)))) fail("regional trip didn't register");
   log("regional scouting");
+  await must("Big Board", 400); await must("Your scouts", 600); await healthy("your scouts' board"); log("your scouts' board");
   await must("Start Season", 1500);
   await must("Sim Week", 1500); await healthy("sim week"); log("sim week");
   await must("Sim to Deadline", 3500); await healthy("sim to deadline");

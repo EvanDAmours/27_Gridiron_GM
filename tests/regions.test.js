@@ -31,3 +31,19 @@ test("area points come in weekly, trips are limited, and nothing after the draft
   assert.ok(!scoutRegion(sc, "regular", "ACC", 2030, 2030).ok);
   assert.ok(!scoutRegion(sc, "draft", "SEC", 2030, 2030).ok);
 });
+
+import { myBoard, csRank } from "../src/scouting.js";
+test("your scouts' board moves the sleepers they've found up, and follows the consensus elsewhere", () => {
+  let up = 0, gems = 0;
+  for (let y = 0; y < 8; y++) {
+    const c = genDC(2200 + y);
+    const sc = { regionsYr: 2200 + y, regions: { SEC: 4, B1G: 4, ACC: 4, B12: 4, PAC: 4, G5: 4 } };
+    const mine = myBoard(sc, c);
+    assert.equal(mine.size, c.length);
+    for (const p of c.filter((x) => x.gem && regionOf(x) !== "OTH")) { gems++; if (mine.get(p.id) < csRank(p) - 10) up++; }
+    // With no scouting at all, your board is the consensus board.
+    const none = myBoard({}, c);
+    assert.ok(c.every((p) => Math.abs(none.get(p.id) - csRank(p)) <= 1));
+  }
+  assert.ok(up / gems > 0.6, `${up}/${gems} gems moved up`);
+});

@@ -626,6 +626,20 @@ export function plantGems(cls, yr) {
   return cls;
 }
 export const csRank = (p) => p.cons?.final ?? p.cons?.mid ?? 999;
+// Your scouts' own board: everyone ranked on what your scouts think of him (their estimates,
+// plus the development traits they've seen). Where they have no read, they go with the
+// consensus. Returns Map id -> your rank.
+const DEV_BUMP = { generational: 3, superstar: 2, star: 1, late: 0, normal: 0 };
+export function myScore(sc, p) {
+  const r = prospectRead(sc, p);
+  if (r.potV == null) return csScore(p);
+  const ovrE = r.ovrV ?? r.potV - 8;
+  return r.potV * 0.78 + ovrE * 0.22 + (DEV_BUMP[r.dev] || 0) - (p.pos === "K" || p.pos === "P" ? 6 : 0);
+}
+export function myBoard(sc, cls) {
+  const ranked = [...(cls || [])].map((p) => [p, myScore(sc, p)]).sort((a, b) => b[1] - a[1]);
+  return new Map(ranked.map(([p], i) => [p.id, i + 1]));
+}
 export const csScore = (p) => p.cons?.fscore ?? p.cons?.score ?? p.truePot * 0.78 + p.trueOvr * 0.22 - (p.pos === "K" || p.pos === "P" ? 6 : 0);
 export const sortByRank = (cls) => cls.sort((a, b) => csRank(a) - csRank(b));
 

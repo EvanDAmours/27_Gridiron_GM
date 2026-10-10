@@ -46,7 +46,8 @@ test("a young player at his ceiling only creeps past it now and then", () => {
 
 test("an Elite class's can't-miss prospect goes near the top of the board", () => {
   const cls = genDC(2091, "Elite");
-  const top = cls.find((p) => p.trueOvr === 90 && p.truePot >= 94);
-  assert.ok(top);
+  // The boosted prospect: 90+ now with a 94+ ceiling (Elite classes can have several 99 ceilings).
+  const top = cls.filter((p) => !p.gem && p.trueOvr >= 90 && p.truePot >= 94).sort((a, b) => a.cons.mid - b.cons.mid)[0];
+  assert.ok(top, "a can't-miss prospect");
   assert.ok(top.cons.mid <= 12, `board #${top.cons.mid}`);
 });

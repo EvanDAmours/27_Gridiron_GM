@@ -309,4 +309,9 @@ export const PATCH_NOTES = [
     "Fixed: AI teams' stars with a player option could opt out and land straight in free agency, skipping their team's re-sign decision. AI teams' 85+ players and starting-calibre QBs no longer slip out that way; they go through the normal re-sign process, where AI clubs keep their franchise players and starting QBs.",
     "If a star already ended up in free agency in your franchise, he stays there for now (sign him yourself if you can!).",
   ] },
+  { v: "1.78", date: "2026-10-10", title: "Your Scouts' Big Board", notes: [
+    "The Big Board (on the Scouting page and in the draft room) has a new toggle: Consensus or Your scouts. Your scouts' board ranks the whole class on your own scouts' reads (reports, workups, area-scouting trips and the development traits they've seen); where they don't know a player, they go with the consensus.",
+    "Each prospect on your board shows where the consensus has him: ▲ means your scouts like him a lot more than the league does (a sleeper you might get later), ▼ a lot less. The board tells you how many prospects your scouts have 25+ spots higher than the consensus.",
+    "AI teams still mostly draft off the consensus, so the gap between the two boards is where you find value.",
+  ] },
 ];

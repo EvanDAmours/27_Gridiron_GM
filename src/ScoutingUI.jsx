@@ -7,7 +7,7 @@ import {
   prospectRead, scoutProspect, interviewProspect, coverage, csRank, riskLabel, gradeTone,
   SCOUT_GROUPS, SCOUT_ROLES, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
   staffWindowOpen, SCOUT_SLOTS, slotKind, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, scoutGroup, isSmallSchool, devOf,
-  REGIONS, regionOf, regionName, scoutRegion, RTRIP_COST, RPTS_START, RPTS_WEEKLY, MAX_TRIPS,
+  myBoard, REGIONS, regionOf, regionName, scoutRegion, RTRIP_COST, RPTS_START, RPTS_WEEKLY, MAX_TRIPS,
 } from "./scouting.js";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
@@ -59,6 +59,13 @@ function Arrow({ p }) {
   if (!c?.final || c.final === c.mid) return null;
   const up = c.final < c.mid;
   return <span title={`Preseason #${c.mid} → final #${c.final}`} style={{ display: "block", fontSize: 9, fontWeight: 700, color: up ? C.gn : C.rd }}>{up ? "▲" : "▼"}{Math.abs(c.mid - c.final)}</span>;
+}
+
+// On your scouts' board: where the consensus has him, and whether your scouts like him more or less.
+function MyDelta({ mine, cons }) {
+  const d = cons - mine;
+  const c = d >= 10 ? C.gn : d <= -10 ? C.rd : "#64748b";
+  return <span title={`Consensus #${cons}; your scouts #${mine}`} style={{ display: "block", fontSize: 9, fontWeight: 700, color: c }}>{Math.abs(d) >= 10 ? (d > 0 ? "▲" : "▼") : ""}cons {cons}</span>;
 }
 
 // ---------- Actions ----------
@@ -115,7 +122,7 @@ function Val({ txt, title }) {
 
 const STATUS = (read) => (read.lvl >= 2 ? ["Full workup", C.gn] : read.lvl === 1 ? ["Report", "#60a5fa"] : ["—", "#475569"]);
 
-function ProspectRow({ g, p, onDraft, canDraft }) {
+function ProspectRow({ g, p, onDraft, canDraft, myRank }) {
   const a = useActions(g);
   const read = prospectRead(g.scouting, p);
   const listed = listIds(g.scouting, p.draftYear).includes(p.id);
@@ -123,7 +130,7 @@ function ProspectRow({ g, p, onDraft, canDraft }) {
   const td = { padding: "10px 6px", borderBottom: `1px solid ${C.bd}66`, verticalAlign: "middle" };
   return (
     <tr onClick={() => g.setSel(p)} style={{ cursor: "pointer" }} onMouseOver={(e) => (e.currentTarget.style.background = "#1e293b55")} onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}>
-      <td style={{ ...td, textAlign: "center", fontWeight: 800, fontSize: 16, color: "#94a3b8", width: 36 }}>{csRank(p)}<Arrow p={p} /></td>
+      <td style={{ ...td, textAlign: "center", fontWeight: 800, fontSize: 16, color: myRank ? "#fcd34d" : "#94a3b8", width: 36 }}>{myRank || csRank(p)}{myRank ? <MyDelta mine={myRank} cons={csRank(p)} /> : <Arrow p={p} />}</td>
       <td style={{ ...td, width: 26 }}>
         <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} title={listed ? "Remove from your list" : "Add to your list"} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ background: "transparent", border: 0, cursor: "pointer", color: listed ? "#f5c542" : "#475569", fontSize: 20, padding: 0, lineHeight: 1 }}>{listed ? "★" : "☆"}</button>
       </td>
@@ -153,22 +160,28 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
   const [q, setQ] = useState("");
   const [show, setShow] = useState("all");
   const [n, setN] = useState(page);
+  const [mine, setMine] = useState(false);
   const all = g.dc[cy] || [];
+  const ranks = useMemo(() => (mine ? myBoard(g.scouting, all) : null), [mine, g.scouting, all]);
   const ids = listIds(g.scouting, cy);
   const list = all
     .filter((p) => pos === "ALL" || p.pos === pos)
     .filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()) || (p.bio?.college || "").toLowerCase().includes(q.toLowerCase()))
     .filter((p) => show === "all" || (show === "scouted" ? p.scout?.lvl > 0 : show === "unscouted" ? !p.scout?.lvl : show === "list" ? ids.includes(p.id) : coverage(g.scouting, p).role !== "office"))
-    .sort((a, b) => csRank(a) - csRank(b));
+    .sort((a, b) => (ranks ? ranks.get(a.id) - ranks.get(b.id) : csRank(a) - csRank(b)));
   const final = all.some((p) => p.cons?.final);
+  const climbers = ranks ? all.filter((p) => csRank(p) - ranks.get(p.id) >= 25).length : 0;
   const th = { padding: "6px", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: C.mt, borderBottom: `1px solid ${C.bd}`, textAlign: "center" };
   return (
     <div style={panel}>
       <style>{"@media (max-width: 640px) { .sc-hide { display: none } .sc-t td, .sc-t th { padding-left: 3px !important; padding-right: 3px !important } .sc-sub { max-width: 120px !important } .sc-t button { padding: 5px 8px !important; font-size: 13px !important } } @media (min-width: 641px) { .sc-show { display: none } }"}</style>
       <div style={head}>
         {title}
-        <Right>Consensus {final ? "final" : "preseason"} rankings</Right>
+        <Right>
+          {[[false, "Consensus"], [true, "Your scouts"]].map(([k, l]) => <button key={l} onClick={() => setMine(k)} style={{ ...chipBtn(mine === k), fontSize: 13, padding: "4px 12px" }}>{l}</button>)}
+        </Right>
       </div>
+      <div style={{ ...muted, marginBottom: 8 }}>{mine ? `Your scouts' board: everyone ranked on your own scouts' reads (and the development traits they've seen); where they don't know a player, they go with the consensus. ▲ means your scouts like him a lot more than the consensus does, ▼ a lot less.${climbers ? ` They have ${climbers} prospect${climbers > 1 ? "s" : ""} 25+ spots higher than the consensus.` : ""}` : `Consensus ${final ? "final" : "preseason"} rankings: what the league's analysts think. AI teams mostly draft off this board.`}</div>
       <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
         {!fixedYr && years.length > 1 && (
           <select value={cy} onChange={(e) => { setYrSel(+e.target.value); setN(page); }} aria-label="Draft class" style={sel}>
@@ -191,7 +204,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
       <div style={{ overflowX: "auto" }}>
         <table className="sc-t" style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr><th style={th}>#</th><th style={th}></th><th style={{ ...th, textAlign: "left" }}>PLAYER</th><th className="sc-hide" style={th}>POS</th><th style={th}>OVR</th><th style={th}>POT</th><th className="sc-hide" style={th}>SCOUTED</th><th style={th}></th></tr></thead>
-          <tbody>{list.slice(0, n).map((p) => <ProspectRow key={p.id} g={g} p={p} onDraft={onDraft} canDraft={canDraft} />)}</tbody>
+          <tbody>{list.slice(0, n).map((p) => <ProspectRow key={p.id} g={g} p={p} onDraft={onDraft} canDraft={canDraft} myRank={ranks?.get(p.id)} />)}</tbody>
         </table>
       </div>
       {!list.length && <div style={{ ...muted, padding: 8 }}>No prospects match.</div>}
