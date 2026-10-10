@@ -226,11 +226,12 @@ export function regionRead(sc, p) {
   if (!t) return null;
   const sd = TRIP_SD[t];
   const see = t >= 4 ? 0.6 : t === 3 ? 0.35 : 0;
-  const pot = publicPot(p) + gemGap(p) * see + clamp(stream(`${p.id}|reg|${t}`).gauss(0, sd), -1.6 * sd, 1.6 * sd);
+  const pot = seenPot(p, see) + clamp(stream(`${p.id}|reg|${t}`).gauss(0, sd), -1.6 * sd, 1.6 * sd);
   const hunch = !!p.gem && t >= 2 && stream(`${p.id}|reghunch`).next() < 0.2 * t;
+  const flag = !!p.bust && t >= 3 && stream(`${p.id}|regflag`).next() < (t >= 4 ? 0.7 : 0.4);
   // After the fourth trip they've seen enough of him to put a number on him today too.
   const ovr = t >= MAX_TRIPS ? Math.round(clamp(p.trueOvr + clamp(stream(`${p.id}|regovr`).gauss(0, 2), -3, 3), 30, 99)) : null;
-  return { pot, sd, trips: t, ovr, grade: potGrade(pot), tier: projection(p.pos, pot), hunch, sleeper: hunch && t >= 4, region: regionOf(p), who: `Your area scouts (${regionName(regionOf(p))})` };
+  return { pot, sd, trips: t, ovr, grade: potGrade(pot), tier: projection(p.pos, pot), hunch, flag, sleeper: hunch && t >= 4, region: regionOf(p), who: `Your area scouts (${regionName(regionOf(p))})` };
 }
 
 // ---------- What your scouts know ----------
@@ -305,7 +306,7 @@ function fileReport(sc, p, lvl, teams) {
     who: cov.others ? [cov.scout, ...cov.others].map((x) => x.name).join(" & ") : cov.scout?.name || "Your front office",
     dev: seesDev(cov, lvl) ? devOf(p) : prev.dev || null,
     skills,
-    notes: p.gem ? { ...notesFor(p, skills, r), gem: `💎 Sleeper: ${p.gem.why}. ${cov.role === "office" ? "Our people think" : "Your scout thinks"} he's much better than where the board has him.` } : notesFor(p, skills, r),
+    notes: p.bust ? { ...notesFor(p, skills, r), flag: `🚩 Red flag: ${p.bust.why}. ${cov.role === "office" ? "Our people" : "Your scout"} sees a high bust risk.` } : p.gem ? { ...notesFor(p, skills, r), gem: `💎 Sleeper: ${p.gem.why}. ${cov.role === "office" ? "Our people think" : "Your scout thinks"} he's much better than where the board has him.` } : notesFor(p, skills, r),
     comp: comparable(teams, p, ePot),
   };
   // The older fields other screens read: scoutLvl 2 means "exact".
@@ -337,17 +338,19 @@ export function generalIdea(sc, p) {
   const { cov, n, ev, see } = crew;
   const sd = readSd(cov.role, 0, ev);
   const r = stream(`${p.id}|${cov.scout.id}|gen`);
-  const pot = publicPot(p) + gemGap(p) * see + clamp(r.gauss(0, sd), -1.6 * sd, 1.6 * sd);
+  const pot = seenPot(p, see) + clamp(r.gauss(0, sd), -1.6 * sd, 1.6 * sd);
   // A hunch: your scouts think there's more to him than the board says (now and then they're wrong).
   const h = stream(`${p.id}|${cov.scout.id}|hunch`).next();
   const knack = Math.min(0.97, (cov.role === "major" ? 0.5 : 0.3) + 0.12 * (n - 1) + clamp((ev - 80) / 50, 0, 0.3) + (staffHas(sc, "smallschool") && isSmallSchool(p) ? 0.3 : 0) + (staffHas(sc, "sharp") ? 0.1 : 0));
   const hunch = p.gem ? h < knack : (p.cons?.mid ?? 0) > 90 && h < 0.02 / n;
+  // A red flag before a report: a deep crew sometimes catches what the board missed.
+  const flag = !!p.bust && see >= 0.4 && stream(`${p.id}|${cov.scout.id}|flag`).next() < knack;
   // A crew that sees through the board says so outright: "he's a sleeper".
   const sleeper = !!p.gem && hunch && see >= 0.5;
   // Special development traits, spotted early by a deep crew (two or more scouts on the group).
   const d = devOf(p);
   const spot = n >= 2 && ["generational", "superstar", "star"].includes(d) && stream(`${p.id}|crew|dev`).next() < clamp((ev - 80) / 19, 0, 1) * Math.min(0.95, 0.2 + 0.22 * n);
-  return { pot, grade: potGrade(pot), tier: projection(p.pos, pot), by: cov.role, who: n > 1 ? `Your ${n} scouts on ${SCOUT_GROUPS[scoutGroup(p.pos)].toLowerCase()}` : cov.scout.name, hunch, sleeper, dev: spot ? d : null, crew: n };
+  return { pot, grade: potGrade(pot), tier: projection(p.pos, pot), by: cov.role, who: n > 1 ? `Your ${n} scouts on ${SCOUT_GROUPS[scoutGroup(p.pos)].toLowerCase()}` : cov.scout.name, hunch, sleeper, flag, dev: spot ? d : null, crew: n };
 }
 
 // Everything the UI shows about a prospect, from your point of view.
@@ -359,7 +362,7 @@ export function prospectRead(sc, p) {
   const reg = has ? null : regionRead(sc, p);
   // The sharper of your position scouts' general idea and your area scouts' regional read.
   const genSd = gen0 ? readSd(cov.role, 0, scoutEval(cov.scout, p, cov.others)) : Infinity;
-  const gen = gen0 && reg ? (reg.sd < genSd ? { ...gen0, pot: reg.pot, grade: reg.grade, tier: reg.tier, who: reg.who, hunch: gen0.hunch || reg.hunch, sleeper: gen0.sleeper || reg.sleeper } : { ...gen0, hunch: gen0.hunch || reg.hunch, sleeper: gen0.sleeper || reg.sleeper }) : gen0 || (reg && { ...reg, by: "region", dev: null });
+  const gen = gen0 && reg ? (reg.sd < genSd ? { ...gen0, pot: reg.pot, grade: reg.grade, tier: reg.tier, who: reg.who, hunch: gen0.hunch || reg.hunch, sleeper: gen0.sleeper || reg.sleeper, flag: gen0.flag || reg.flag } : { ...gen0, hunch: gen0.hunch || reg.hunch, sleeper: gen0.sleeper || reg.sleeper, flag: gen0.flag || reg.flag }) : gen0 || (reg && { ...reg, by: "region", dev: null });
   const potV = has ? s.ePot : gen ? gen.pot : null;
   const regOvr = !has && reg?.ovr != null ? reg.ovr : null;
   return {
@@ -379,6 +382,8 @@ export function prospectRead(sc, p) {
     general: !!gen,
     hunch: !!gen?.hunch,
     sleeper: !!gen?.sleeper,
+    flag: !!(s.notes?.flag || s.intv?.flag || gen?.flag),
+    flagWhy: s.notes?.flag || s.intv?.flag || (gen?.flag ? `${p.bust?.why}.` : null),
     devEarly: !s.dev && !!gen?.dev,
     grade: potV != null ? potGrade(potV) : null,
     tier: potV != null ? projection(p.pos, potV) : null,
@@ -606,7 +611,43 @@ const GEM_WHY = {
   qb: "Average arm and size, but he processes and throws with timing like a veteran",
 };
 export const gemGap = (p) => p.gem?.gap || 0;
-export const publicPot = (p) => p.truePot - gemGap(p);
+export const bustGap = (p) => p.bust?.gap || 0;
+// What the public (the board, the analysts, most AI teams) thinks his ceiling is.
+export const publicPot = (p) => p.truePot - gemGap(p) + bustGap(p);
+// Your read with the board seen through by `see` (0: the public read, 1: the truth).
+const seenPot = (p, see) => p.truePot + (bustGap(p) - gemGap(p)) * (1 - see);
+
+// ---------- Red flags (likely busts) ----------
+// Every class also has a few prospects the board loves (first- and second-round grades, great
+// tape and testing) who are much less than they look. The public never sees it; your scouts can
+// red-flag them: a report always does, a deep crew or repeated area trips sometimes do before a
+// report, and a Combine interview exposes the character cases.
+const BUST_WHY = {
+  character: "Character concerns: coaches question his work ethic and his love for the game",
+  medical: "Medical red flag: a recurring injury his school kept quiet",
+  oneyear: "One-year wonder: one great season against soft competition",
+  system: "System player: his numbers come from the scheme, not from him",
+  workout: "Workout warrior: tests off the charts, but it doesn't show up on tape",
+};
+export function plantBusts(cls, yr) {
+  if (!cls?.length || cls.some((p) => p.bustChk)) return cls;
+  const r = stream(`busts|${yr ?? cls[0]?.draftYear}|${cls.length}`);
+  const n = 3 + (r.chance(0.5) ? 1 : 0) + (r.chance(0.25) ? 1 : 0);
+  const pool = cls.filter((p) => !p.gem && !(p.scout?.lvl > 0) && (p.cons?.mid ?? 999) <= 70 && p.pos !== "K" && p.pos !== "P");
+  for (let i = 0; i < n && pool.length; i++) {
+    const p = pool.splice(Math.floor(r.next() * pool.length), 1)[0];
+    const target = p.truePot - r.int(8, 15);
+    // He isn't as good as he looks today either, when his ceiling drops below his current rating.
+    if (target <= p.trueOvr) { p.trueOvr = Math.max(50, target - 2); if (p.ovr > p.trueOvr) p.ovr = p.trueOvr; }
+    const kind = p.pos === "QB" && r.chance(0.5) ? "system" : r.pick(["character", "character", "medical", "oneyear", "workout"]);
+    p.bust = { gap: p.truePot - target, why: BUST_WHY[kind], kind };
+    if (p.pot === p.truePot) p.pot = target;
+    p.truePot = target;
+    p.dev = r.chance(0.3) ? "late" : "normal";
+  }
+  for (const p of cls) p.bustChk = 1;
+  return cls;
+}
 // Plant this class's gems once (a class that already has them is left alone). Called after the
 // consensus board is set, so the board never sees them.
 export function plantGems(cls, yr) {
@@ -678,6 +719,7 @@ const NEWS = {
 export function runCombine(sc, cls, { quiet = false } = {}) {
   rankClass(cls);
   plantGems(cls);
+  plantBusts(cls);
   const invited = cls.filter((p) => p.combine);
   const groups = {};
   for (const p of invited) (groups[combineGroup(p.pos)] ||= []).push(p);
@@ -746,8 +788,9 @@ export function interviewProspect(sc, sp, p) {
   if (p.scout?.intv) return { ok: false, msg: "You've already interviewed him.", sc, p };
   if ((sc.interviewsLeft ?? 0) <= 0) return { ok: false, msg: "You've used all your interview slots.", sc, p };
   const r = stream(`${p.id}|intv`);
-  const v = ({ generational: 94, superstar: 90, star: 85, normal: 77, late: 73 }[devOf(p)] ?? 77) + r.gauss(0, 3.5);
-  const intv = { grade: potGrade(v), note: r.pick(INTERVIEW_NOTES[v >= 85 ? "high" : v >= 77 ? "mid" : "low"]) };
+  const char = p.bust?.kind === "character";
+  const v = ({ generational: 94, superstar: 90, star: 85, normal: 77, late: 73 }[devOf(p)] ?? 77) + r.gauss(0, 3.5) - (char ? 14 : 0);
+  const intv = { grade: potGrade(v), note: r.pick(INTERVIEW_NOTES[v >= 85 ? "high" : v >= 77 ? "mid" : "low"]), ...(char ? { flag: `🚩 Red flag from the interview: ${p.bust.why}.` } : {}) };
   return { ok: true, msg: `Interview with ${p.name}: work ethic ${intv.grade}.`, sc: { ...sc, interviewsLeft: sc.interviewsLeft - 1 }, p: { ...p, scout: { ...(p.scout || { lvl: 0 }), intv } } };
 }
 
@@ -758,8 +801,8 @@ export function interviewProspect(sc, sp, p) {
 const DEV_EYE = { generational: 2, superstar: 1.2, star: 0.6, late: -0.3 };
 export function aiDraftScore(p, gmStyle) {
   const potW = gmStyle === "win-now" ? 0.6 : gmStyle === "rebuilder" ? 0.85 : 0.78;
-  const seen = p.truePot - gemGap(p) * (gmStyle === "analytics" ? 0.78 : 0.95);
-  const own = (seen + (p.aiNoise || 0)) * potW + p.trueOvr * (1 - potW) + (p.gem ? 0 : DEV_EYE[devOf(p)] || 0) + (gmStyle === "rebuilder" && p.age <= 21 ? 0.6 : 0) - (p.pos === "K" || p.pos === "P" ? 6 : 0);
+  const seen = p.truePot - gemGap(p) * (gmStyle === "analytics" ? 0.78 : 0.95) + bustGap(p) * (gmStyle === "analytics" ? 0.75 : 0.95);
+  const own = (seen + (p.aiNoise || 0)) * potW + p.trueOvr * (1 - potW) + (p.gem || p.bust ? 0 : DEV_EYE[devOf(p)] || 0) + (gmStyle === "rebuilder" && p.age <= 21 ? 0.6 : 0) - (p.pos === "K" || p.pos === "P" ? 6 : 0);
   const trust = gmStyle === "analytics" ? 0.65 : 0.5;
   return own * trust + csScore(p) * (1 - trust) + gauss(0, 1.2);
 }

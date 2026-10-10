@@ -351,4 +351,10 @@ export const PATCH_NOTES = [
     "Removed two old shortcuts that broke the contract system: the RFA tender (it cut a starter's salary to about $1M) and the 'mid-level exception' (an NBA rule that signed free agents at a 25% discount). Vet-minimum claims now pay the real league minimum.",
     "Fixed: with 'Owner can fire you' turned off, a second, older firing rule could still fire you after two losing seasons. Both rules respect the setting now.",
   ] },
+  { v: "1.86", date: "2026-10-10", title: "Red Flags", notes: [
+    "Every draft class now has 3-5 red-flag prospects: players whose tape, numbers and Combine look great (the consensus board usually has them in the first three rounds) but whose real ceiling is 8-15 points lower than it looks. Each has a reason: character concerns, a medical red flag, a one-year wonder, a system product, or a workout warrior.",
+    "Your scouts can catch them. A full report on a red-flag prospect always flags him; a deep crew at his position can flag him from a general look; 3-4 area trips to his region may turn it up; and a Combine interview exposes character concerns. Flagged players get a 🚩 chip on the board with the reason, and the board's Show filter has '🚩 Red flags (bust risks)'.",
+    "AI teams fall for them too (most go in rounds 1-3), so a flag from your scouts is a real edge. The Draft Recap marks them '🚩 Bust'.",
+    "Existing saves get red flags in their next draft class at the Combine.",
+  ] },
 ];

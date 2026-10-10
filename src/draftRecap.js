@@ -7,7 +7,7 @@ const DEV_PTS = { generational: 4, superstar: 3, star: 2, late: 1, normal: 0 };
 // A draft log entry ({ rd, overall, owner, player, ... }) reduced to what the recap keeps.
 export const recapEntry = (e) => ({
   rd: e.rd, overall: e.overall, owner: e.owner, id: e.player?.id, name: e.player?.name, pos: e.player?.pos,
-  age: e.player?.age, ovr: e.player?.trueOvr ?? e.player?.ovr, pot: e.player?.truePot ?? e.player?.pot, dev: e.player ? devOf(e.player) : "normal", gem: !!e.player?.gem,
+  age: e.player?.age, ovr: e.player?.trueOvr ?? e.player?.ovr, pot: e.player?.truePot ?? e.player?.pot, dev: e.player ? devOf(e.player) : "normal", gem: !!e.player?.gem, bust: !!e.player?.bust,
 });
 
 // Verdict on each pick: his trait, and his ceiling against where he went (potRank: where his
@@ -18,8 +18,8 @@ export function gradePicks(entries) {
   for (const r of rows) {
     const value = r.overall - r.potRank;
     r.value = value;
-    r.score = DEV_PTS[r.dev] + (value >= 32 ? 1 : value <= -48 && r.rd <= 3 ? -1 : 0) + (r.gem ? 1 : 0);
-    r.verdict = r.gem ? "gem" : r.dev === "generational" || r.dev === "superstar" ? "jackpot"
+    r.score = DEV_PTS[r.dev] + (value >= 32 ? 1 : value <= -48 && r.rd <= 3 ? -1 : 0) + (r.gem ? 1 : 0) - (r.bust ? 2 : 0);
+    r.verdict = r.bust ? "bust" : r.gem ? "gem" : r.dev === "generational" || r.dev === "superstar" ? "jackpot"
       : r.dev === "star" ? "hit"
       : r.dev === "late" ? "wait"
       : value >= 32 ? "value"
@@ -30,7 +30,7 @@ export function gradePicks(entries) {
 }
 
 export const VERDICT = {
-  gem: ["💎 Hidden gem", "#f472b6"], jackpot: ["⭐ Jackpot", "#f5c542"], hit: ["✅ Hit", "#22c55e"], value: ["💰 Value", "#22c55e"],
+  bust: ["🚩 Bust", "#ef4444"], gem: ["💎 Hidden gem", "#f472b6"], jackpot: ["⭐ Jackpot", "#f5c542"], hit: ["✅ Hit", "#22c55e"], value: ["💰 Value", "#22c55e"],
   wait: ["⏳ Late bloomer", "#c4b5fd"], solid: ["Solid", "#94a3b8"], miss: ["❌ Miss", "#ef4444"],
 };
 

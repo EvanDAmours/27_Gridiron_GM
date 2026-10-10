@@ -77,3 +77,31 @@ test("a deep, sharp crew on one group flags its sleepers and special traits earl
   const db = genDC(2090).filter((p) => GROUP(p.pos) === "DB");
   assert.ok(db.every((p) => !prospectRead(one, p).devEarly));
 });
+
+import { plantBusts, bustGap, interviewProspect } from "../src/scouting.js";
+test("every class has a few red-flag prospects the board loves", () => {
+  let n = 0, early = 0, flagged = 0;
+  for (let y = 0; y < 6; y++) {
+    const cls = genDC(2400 + y);
+    const busts = cls.filter((p) => p.bust);
+    assert.ok(busts.length >= 3 && busts.length <= 5, `${busts.length} busts`);
+    for (const p of busts) {
+      n++;
+      assert.ok(bustGap(p) >= 8 && publicPot(p) > p.truePot);
+      if (p.cons.mid <= 70) early++;
+      // a report always red-flags him
+      const rep = prospectRead({}, { ...p, scout: { lvl: 1, eOvr: p.trueOvr, ePot: p.truePot, notes: { flag: "🚩" } } });
+      if (rep.flag) flagged++;
+    }
+    assert.ok(cls.every((p) => !(p.bust && p.gem)));
+  }
+  assert.equal(early, n);
+  assert.equal(flagged, n);
+});
+
+test("a Combine interview exposes a character red flag", () => {
+  const cls = genDC(2450);
+  const p = { ...cls.find((x) => x.bust) || cls[0], bust: { gap: 10, why: "Character concerns", kind: "character" }, combine: {} };
+  const r = interviewProspect({ interviewsLeft: 2 }, "combine", p);
+  assert.ok(r.ok && r.p.scout.intv.flag);
+});

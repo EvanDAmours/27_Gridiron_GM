@@ -135,7 +135,7 @@ function ProspectRow({ g, p, onDraft, canDraft, myRank }) {
         <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} title={listed ? "Remove from your list" : "Add to your list"} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ background: "transparent", border: 0, cursor: "pointer", color: listed ? "#f5c542" : "#475569", fontSize: 20, padding: 0, lineHeight: 1 }}>{listed ? "★" : "☆"}</button>
       </td>
       <td style={{ ...td, minWidth: 0 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.name} <span className="sc-show"><Bdg pos={p.pos} /></span>{read.sleeper ? <span title={`${read.who} have seen through the board: he's a sleeper, much better than where he's ranked.`} style={{ fontSize: 11, fontWeight: 800, color: "#fdf2f8", background: "#be185d", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>💎 sleeper</span> : read.hunch && <span title={`${read.who} has a hunch there's more to him than the board says. A report will tell.`} style={{ fontSize: 11, fontWeight: 800, color: "#f9a8d4", background: "#831843", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>👀 hunch</span>}{read.devEarly && ["generational", "superstar"].includes(read.dev) && <span title={`${read.who} already see a ${read.dev} development trait.`} style={{ fontSize: 11, fontWeight: 800, color: read.dev === "generational" ? "#f472b6" : "#f5c542", border: `1px solid currentColor`, borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>{read.dev === "generational" ? "Generational" : "Superstar"}</span>}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.name} <span className="sc-show"><Bdg pos={p.pos} /></span>{read.flag && <span title={read.flagWhy || "Your scouts red-flagged him: high bust risk."} style={{ fontSize: 11, fontWeight: 800, color: "#fee2e2", background: "#991b1b", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>🚩 red flag</span>}{read.sleeper ? <span title={`${read.who} have seen through the board: he's a sleeper, much better than where he's ranked.`} style={{ fontSize: 11, fontWeight: 800, color: "#fdf2f8", background: "#be185d", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>💎 sleeper</span> : read.hunch && <span title={`${read.who} has a hunch there's more to him than the board says. A report will tell.`} style={{ fontSize: 11, fontWeight: 800, color: "#f9a8d4", background: "#831843", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>👀 hunch</span>}{read.devEarly && ["generational", "superstar"].includes(read.dev) && <span title={`${read.who} already see a ${read.dev} development trait.`} style={{ fontSize: 11, fontWeight: 800, color: read.dev === "generational" ? "#f472b6" : "#f5c542", border: `1px solid currentColor`, borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>{read.dev === "generational" ? "Generational" : "Superstar"}</span>}</div>
         <div className="sc-sub" style={{ fontSize: 13, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260 }}>{p.bio?.college} ({regionName(regionOf(p))}) · {p.age} yrs · {htS(p.ht_)} {p.wt}</div>
       </td>
       <td className="sc-hide" style={{ ...td, textAlign: "center" }}><Bdg pos={p.pos} /></td>
@@ -169,9 +169,9 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
     .filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()) || (p.bio?.college || "").toLowerCase().includes(q.toLowerCase()))
     .filter((p) => {
       if (show === "all") return true;
-      if (["flagged", "special", "regions"].includes(show)) {
+      if (["flagged", "redflags", "special", "regions"].includes(show)) {
         const r = prospectRead(g.scouting, p);
-        return show === "flagged" ? r.sleeper || r.hunch : show === "special" ? ["generational", "superstar", "star"].includes(r.dev) : r.trips > 0;
+        return show === "flagged" ? r.sleeper || r.hunch : show === "redflags" ? r.flag : show === "special" ? ["generational", "superstar", "star"].includes(r.dev) : r.trips > 0;
       }
       return show === "scouted" ? p.scout?.lvl > 0 : show === "unscouted" ? !p.scout?.lvl : show === "list" ? ids.includes(p.id) : coverage(g.scouting, p).role !== "office";
     })
@@ -205,6 +205,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
           <option value="unscouted">Not scouted yet</option>
           <option value="list">On my list</option>
           <option value="flagged">💎 Sleepers & hunches</option>
+          <option value="redflags">🚩 Red flags (bust risks)</option>
           <option value="special">⭐ Special dev traits spotted</option>
           <option value="regions">🗺️ From regions I've scouted</option>
         </select>
@@ -813,6 +814,7 @@ export function ProspectProfile({ g, p }) {
           </div>
           <div style={{ ...muted, fontSize: 10, marginTop: 3 }}>Tools graded at his projected NFL level.</div>
           <div style={{ fontSize: 14, lineHeight: 1.6, marginTop: 8 }}>
+            {s.notes?.flag && <div style={{ color: "#fca5a5", fontWeight: 800 }}>{s.notes.flag}</div>}
             {s.notes?.gem && <div style={{ color: "#f9a8d4", fontWeight: 700 }}>{s.notes.gem}</div>}
             {s.notes?.strengths?.map((x) => <div key={x} style={{ color: "#86efac" }}>✅ {x}</div>)}
             {s.notes?.weaknesses?.map((x) => <div key={x} style={{ color: "#f97316" }}>⚠️ {x}</div>)}
@@ -843,7 +845,7 @@ export function ProspectProfile({ g, p }) {
           </div>
           {p.combine && p.proDay && <div style={{ ...muted, fontSize: 10, marginTop: 3 }}>Bars show where he ranked among Combine invitees at his position.</div>}
           {s.intv ? (
-            <div style={{ marginTop: 6, fontSize: 12 }}>Your interview: work ethic <GradeChip g={s.intv.grade} small /> <i style={{ color: "#94a3b8" }}>"{s.intv.note}"</i></div>
+            <div style={{ marginTop: 6, fontSize: 12 }}>Your interview: work ethic <GradeChip g={s.intv.grade} small /> <i style={{ color: "#94a3b8" }}>"{s.intv.note}"</i>{s.intv.flag && <div style={{ color: "#fca5a5", fontWeight: 800, marginTop: 4 }}>{s.intv.flag}</div>}</div>
           ) : g.sp === "combine" && p.combine && p.draftYear === g.yr && (
             <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
               <Btn onClick={() => a.interview(p)} disabled={!(g.scouting?.interviewsLeft > 0)} bg="#7c3aed33" c="#c4b5fd" style={{ fontSize: 11, padding: "2px 8px" }}>Interview him</Btn>
