@@ -328,4 +328,7 @@ export const PATCH_NOTES = [
     "After your fourth trip to a region (4/4), your area scouts put a number on every prospect from there: you see an estimated current OVR (~xx), not just his ceiling. Your scouts' board uses it too.",
     "New Big Board filters (Show menu), across every position at once: 💎 Sleepers & hunches (everyone your scouts have flagged), ⭐ Special dev traits spotted (Star, Superstar or Generational traits your scouts have seen), and 🗺️ From regions I've scouted. Combine them with the Your scouts board to see your scouts' favorite targets in order.",
   ] },
+  { v: "1.82", date: "2026-10-10", title: "Dev Traits on the Depth Chart", notes: [
+    "The Depth Chart's List view now shows every player's development trait (Normal, Late bloomer, Star, Superstar, Generational) next to his rating, so you can see who's worth giving snaps to grow.",
+  ] },
 ];

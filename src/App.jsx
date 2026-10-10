@@ -1437,6 +1437,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
                 {isSt&&<span style={{fontSize:9,background:`${C.gn}33`,color:C.gn,borderRadius:2,padding:'1px 4px',fontWeight:700}}>ST</span>}
                 {p.injured&&<span style={{fontSize:9,color:C.rd,fontWeight:700}}>INJ</span>}
                 {franchiseQB===p.id&&<span style={{fontSize:9,background:'#b45309',color:'#fef3c7',borderRadius:2,padding:'1px 4px',fontWeight:700}}>FQB</span>}
+                <span style={{marginLeft:'auto',transform:'scale(.85)',transformOrigin:'right center'}}><DevChip dev={devOf(p)}/></span>
               </div>
               <div style={{fontSize:11,color:C.mt}}>{p.age}yr {p.contract}yr/${p.salary||0}M</div>
             </div>
