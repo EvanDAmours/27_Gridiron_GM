@@ -23,13 +23,40 @@ export default function Player3D({ p, t, away = false, flip = false, h = 180, la
       const el = ref.current;
       if (!el || stop) return;
       let renderer;
-      try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch { return; }
-      renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-      renderer.setSize(w, h);
+      try { renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true }); } catch { return; }
+      // Tecmo Bowl style: the 3D figure is rendered small, then posterized to a short palette, given a
+      // hard black outline and blown up with chunky square pixels.
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const PX = Math.max(2, Math.round((h * dpr) / 104));
+      const lw = Math.ceil((w * dpr) / PX), lh = Math.ceil((h * dpr) / PX);
+      renderer.setPixelRatio(1);
+      renderer.setSize(lw, lh, false);
+      const low = document.createElement("canvas"); low.width = lw; low.height = lh;
+      const lctx = low.getContext("2d", { willReadFrequently: true });
+      const out = document.createElement("canvas"); out.width = lw * PX; out.height = lh * PX;
+      out.style.width = `${w}px`; out.style.height = `${(lh * PX) / dpr}px`; out.style.imageRendering = "pixelated";
+      const octx = out.getContext("2d"); octx.imageSmoothingEnabled = false;
+      let nearest = (r, g, b) => [r, g, b];
+      const lv = (v) => Math.round(Math.min(255, Math.max(0, (v - 128) * 1.2 + 128)) / 64) * 64 - (v > 230 ? 1 : 0); // contrast, 5 levels a channel
+      const pixelate = () => {
+        lctx.clearRect(0, 0, lw, lh); lctx.drawImage(renderer.domElement, 0, 0);
+        const img = lctx.getImageData(0, 0, lw, lh), d = img.data, solid = new Uint8Array(lw * lh);
+        for (let i = 0, k = 0; i < d.length; i += 4, k++) {
+          if (d[i + 3] < 110) { d[i + 3] = 0; continue; }
+          solid[k] = 1; const a = d[i + 3] / 255, c = nearest(d[i] / a, d[i + 1] / a, d[i + 2] / a);
+          d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = 255;
+        }
+        for (let y = 0; y < lh; y++) for (let x = 0; x < lw; x++) {
+          const k = y * lw + x; if (solid[k]) continue;
+          if ((x > 0 && solid[k - 1]) || (x < lw - 1 && solid[k + 1]) || (y > 0 && solid[k - lw]) || (y < lh - 1 && solid[k + lw])) { const i = k * 4; d[i] = d[i + 1] = d[i + 2] = 10; d[i + 3] = 255; }
+        }
+        lctx.putImageData(img, 0, 0);
+        octx.clearRect(0, 0, out.width, out.height); octx.drawImage(low, 0, 0, out.width, out.height);
+      };
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.0;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
-      el.appendChild(renderer.domElement);
+      el.appendChild(out);
       const scene = new THREE.Scene();
       const pmrem = new THREE.PMREMGenerator(renderer);
       scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -251,8 +278,25 @@ export default function Player3D({ p, t, away = false, flip = false, h = 180, la
       gr.addColorStop(0, "rgba(0,0,0,0.55)"); gr.addColorStop(1, "rgba(0,0,0,0)"); sx.fillStyle = gr; sx.fillRect(0, 0, 128, 128);
       const shadow = new THREE.Mesh(keep(new THREE.PlaneGeometry(0.8, 0.5)), keep(new THREE.MeshBasicMaterial({ map: keep(new THREE.CanvasTexture(sc)), transparent: true, depthWrite: false })));
       shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.002;
-      scene.add(shadow);
+      // (no soft shadow or glow: they would only smear into the pixel art)
 
+      // the palette, like an old cartridge's: his team colors, skin and gear, each in a few shades
+      {
+        const base = [J, ac, clr, pantsC, sockC, skinC, tc(g.sleeveClr), tc(g.gloveClr), tc(g.bandClr), tc(g.cleats), lum(ac) < 0.2 ? "#2a2d33" : ac, "#eceae4", "#7a3b1c"];
+        const pal = [[10, 10, 10], [250, 250, 248]];
+        for (const hex of new Set(base)) { const c = new THREE.Color(hex); const r0 = c.r * 255, g0 = c.g * 255, b0 = c.b * 255;
+          for (const f of [0.38, 0.62, 0.85, 1]) pal.push([r0 * f, g0 * f, b0 * f]);
+          pal.push([r0 + (255 - r0) * 0.35, g0 + (255 - g0) * 0.35, b0 + (255 - b0) * 0.35]); }
+        const cache = new Map();
+        nearest = (r, g, b) => { const key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3); let c = cache.get(key); if (c) return c;
+          let best = pal[0], bd = 1e9; for (const q of pal) { const dr = r - q[0], dg = g - q[1], db = b - q[2], cr = (Math.max(r, g, b) - Math.min(r, g, b)) - (Math.max(q[0], q[1], q[2]) - Math.min(q[0], q[1], q[2])), dd = dr * dr + dg * dg + db * db + 1.5 * cr * cr; if (dd < bd) { bd = dd; best = q; } }
+          c = best.map(Math.round); cache.set(key, c); return c; };
+      }
+      // flat, clean color for the pixel art: fabric grain and sheen only become speckle at this size
+      const flat = new Set();
+      body.traverse((o) => { if (o.material && o.material !== helmetM && !flat.has(o.material)) flat.add(o.material); });
+      flat.forEach((m) => { m.bumpMap = null; m.sheen = 0; m.clearcoat = 0; m.roughness = Math.max(0.7, m.roughness); m.needsUpdate = true; });
+      scene.environmentIntensity = 0.5;
       const turn = flip ? -0.5 : 0.5;
       body.rotation.y = turn; body.scale.setScalar(HS);
       scene.add(body);
@@ -268,7 +312,7 @@ export default function Player3D({ p, t, away = false, flip = false, h = 180, la
       const gx = gc.getContext("2d"), gg = gx.createRadialGradient(64, 64, 2, 64, 64, 64);
       gg.addColorStop(0, `${lum(clr) < 0.12 ? ac : clr}cc`); gg.addColorStop(0.45, `${lum(clr) < 0.12 ? ac : clr}40`); gg.addColorStop(0.8, `${clr}00`); gg.addColorStop(1, `${clr}00`); gx.fillStyle = gg; gx.fillRect(0, 0, 128, 128);
       const glow = new THREE.Sprite(keep(new THREE.SpriteMaterial({ map: keep(new THREE.CanvasTexture(gc)), transparent: true, depthWrite: false, opacity: 0.55 })));
-      glow.scale.set(1.7, 2.3, 1); glow.position.set(0, 1.2, -1.2); scene.add(glow);
+      glow.scale.set(1.7, 2.3, 1); glow.position.set(0, 1.2, -1.2);
 
       const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       let raf = 0; const t0 = performance.now(), ph = g.sway * 6.28;
@@ -280,11 +324,11 @@ export default function Player3D({ p, t, away = false, flip = false, h = 180, la
           body.rotation.y = turn + Math.sin(s * 0.45 + ph) * 0.12;
           head.rotation.y = Math.sin(s * 0.7 + ph * 1.3) * 0.08; head.rotation.x = 0.16 + Math.sin(s * 0.5 + ph) * 0.02;
         }
-        renderer.render(scene, camera);
+        renderer.render(scene, camera); pixelate();
         if (!reduce && !document.hidden) raf = requestAnimationFrame(loop); else if (!reduce) raf = setTimeout(() => requestAnimationFrame(loop), 500);
       };
       raf = requestAnimationFrame(loop);
-      cleanup = () => { cancelAnimationFrame(raf); clearTimeout(raf); disposables.forEach((d) => d.dispose?.()); pmrem.dispose(); renderer.dispose(); renderer.domElement.remove(); };
+      cleanup = () => { cancelAnimationFrame(raf); clearTimeout(raf); disposables.forEach((d) => d.dispose?.()); pmrem.dispose(); renderer.dispose(); out.remove(); };
     })();
     return () => { stop = true; cleanup(); };
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
