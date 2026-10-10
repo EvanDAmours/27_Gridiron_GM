@@ -163,7 +163,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
                 <span className="hm-logo"><TeamLogo t={away} sz={150} /></span>
                 <div style={{ fontSize: mobile ? 22 : 36, fontWeight: 900, color: "#e2e8f0" }}>AT</div>
                 <span className="hm-logo"><TeamLogo t={home} sz={150} /></span>
-                <PlayerFigure p={starOf(home)} t={home} h={mobile ? 104 : 170} />
+                <PlayerFigure p={starOf(home)} t={home} flip h={mobile ? 104 : 170} />
               </div>
               <div style={{ textAlign: "center", fontSize: mobile ? 12 : 15, color: "#cbd5e1", marginBottom: mobile ? 10 : 14 }}>{sp === "playoffs" && pb?.rd === 4 ? "Super Bowl · neutral site" : game.date ? `${kickoff(game)} · ${game.venue}${game.intl ? `, ${game.city}` : ""}` : `1:00 PM · ${home.city}`}</div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: mobile ? 8 : 16, flexWrap: mobile ? "nowrap" : "wrap" }}>
@@ -173,7 +173,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
             </>
           ) : (
             <div style={{ textAlign: "center", padding: "30px 10px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4%" }}><span className="hm-logo"><TeamLogo t={me} sz={150} /></span><PlayerFigure p={starOf(me)} t={me} h={mobile ? 104 : 170} /></div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4%" }}><span className="hm-logo"><TeamLogo t={me} sz={150} /></span><PlayerFigure p={starOf(me)} t={me} flip h={mobile ? 104 : 170} /></div>
               <div style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, textTransform: "uppercase", marginTop: 10 }}>{sp === "regular" ? "Bye week" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>
               <div style={{ fontSize: 16, color: "#cbd5e1", marginTop: 4 }}>{me.city} {me.name} · {rec(me)}</div>
             </div>

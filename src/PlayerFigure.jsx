@@ -35,88 +35,118 @@ export function gearFor(p) {
 
 const jerseyNum = (p) => p?.num ?? (hash(`${p?.id}|num`) % 89) + 10;
 
-export default function PlayerFigure({ p, t, away = false, h = 180, label = true }) {
+// The sprite, facing right (3/4 view), one character per pixel. Slots are filled from his team
+// colors and gear: o outline; H/h/L helmet (base, shadow, highlight), S helmet stripe; k/K skin,
+// E eye, V visor slot, b eye-black slot; F facemask, M cage bar; N neck-roll slot, n neck; J/j/D
+// jersey (base, shadow, trim), s jersey sleeve; a forearm, t tape slot, w wrist, g hand; B belt;
+// P/p/T pants (base, shadow, stripe), R towel slot; y upper sock, X sock, C cleat.
+const SPRITE = [
+  "......oooooo..........",
+  "....ooHHSHHLLoo.......",
+  "...oHHHHSHHHLLLo......",
+  "..ohHHHHSHHHHHLLo.....",
+  "..ohhHHHHSHHHHHLo.....",
+  ".ohhhHHHHHHHHkkkoFo...",
+  ".ohhhHHHHHHHkVVkFFFo..",
+  ".ohhhhHHHHHHkbbkkFo...",
+  ".ohhhhHHHHHHkKkkFFFo..",
+  "..ohhhhhHHHoKkkMFo....",
+  "...oohhhhhooKKoo......",
+  ".....NNNNnnNNNN.......",
+  "...ooDDJJJJJJJJDDoo...",
+  "..oDDJJJJJJJJJJJJDDo..",
+  ".osjJJJJJJJJJJJJJJsso.",
+  ".ossjJJJJJJJJJJJJjsso.",
+  ".oaajJJJJJJJJJJJJjaao.",
+  ".oaajJJJJJJJJJJJJjaao.",
+  ".ottjJJJJJJJJJJJJjtto.",
+  ".oaajjJJJJJJJJJJjjaao.",
+  ".owwojjjjjjjjjjjjowwo.",
+  ".oggoBBBBBBBBBBBBoggo.",
+  "..oo.oPPPPPRRPPPo.oo..",
+  ".....oTPPPPRRPPTo.....",
+  ".....oTPPPpRRpPTo.....",
+  ".....oTPPPo..oPPTo....",
+  ".....oTPPPo..oPPTo....",
+  ".....oyyyyo..oyyyo....",
+  ".....oyyyyo..oyyyo....",
+  ".....oXXXXo..oXXXo....",
+  ".....oXXXXo..oXXXo....",
+  "....oCCCCCCo.oCCCCCo..",
+  "....oooooooo.ooooooo..",
+];
+const SW = 22, SH = SPRITE.length, HEAD_ROWS = 11;
+// 3x5 pixel digits for the jersey number.
+const DIGITS = { 0: ["111", "101", "101", "101", "111"], 1: ["010", "110", "010", "010", "111"], 2: ["111", "001", "111", "100", "111"], 3: ["111", "001", "011", "001", "111"], 4: ["101", "101", "111", "001", "001"], 5: ["111", "100", "111", "001", "111"], 6: ["111", "100", "111", "101", "111"], 7: ["111", "001", "010", "010", "010"], 8: ["111", "101", "111", "101", "111"], 9: ["111", "101", "111", "001", "111"] };
+const shade = (hex, f) => {
+  const n = parseInt((hex || "#888888").replace("#", "").padEnd(6, "0").slice(0, 6), 16);
+  const ch = (v) => Math.round(Math.max(0, Math.min(255, f >= 0 ? v + (255 - v) * f : v * (1 + f))));
+  return `rgb(${ch(n >> 16)},${ch((n >> 8) & 255)},${ch(n & 255)})`;
+};
+
+export default function PlayerFigure({ p, t, away = false, flip = false, h = 180, label = true }) {
   if (!p || !t) return null;
   const g = gearFor(p);
   const clr = t.clr || "#334155", ac = t.ac || "#e2e8f0";
   const tc = (c) => (c === "team" ? clr : c);
   const skin = p.face?.sk || "#c68642";
-  const jersey = away ? "#f8fafc" : clr, numClr = away ? clr : "#f8fafc", numStroke = away ? ac : ac;
-  const pants = away ? clr : "#f1f5f9";
-  const sockClr = away ? clr : "#f8fafc";
-  const big = BIG.has(p.pos), skill = SKILL.has(p.pos);
-  const w = big ? 1.14 : skill ? 0.94 : 1; // build
-  const id = `pf${hash(p.id) % 100000}`;
-  const delay = `${(-g.sway * 3).toFixed(2)}s`;
-  const arm = (x1, x2, side) => {
-    const sleeve = g.sleeves === "both" || (g.sleeves === "one" && side === "L");
-    const glove = g.gloves === "both" || (g.gloves === "one" && side === "R");
-    return (
-      <g className={`${id}-arm${side}`} style={{ transformOrigin: `${x1}px 64px` }}>
-        <line x1={x1} y1={66} x2={x2} y2={118} stroke={skin} strokeWidth={14 * w} strokeLinecap="round" />
-        {sleeve && <line x1={x1 + (x2 - x1) * 0.35} y1={84} x2={x2} y2={116} stroke={tc(g.sleeveClr)} strokeWidth={14.5 * w} strokeLinecap="round" />}
-        {g.armTape && !sleeve && <><line x1={x1 + (x2 - x1) * 0.62} y1={98} x2={x1 + (x2 - x1) * 0.7} y2={102} stroke="#f8fafc" strokeWidth={14.6 * w} /><line x1={x1 + (x2 - x1) * 0.76} y1={105} x2={x1 + (x2 - x1) * 0.8} y2={107} stroke="#f8fafc" strokeWidth={14.6 * w} /></>}
-        {g.wristbands && <line x1={x1 + (x2 - x1) * 0.9} y1={111} x2={x2} y2={116} stroke={tc(g.bandClr)} strokeWidth={15 * w} />}
-        <circle cx={x2} cy={124} r={7.5 * w} fill={glove ? tc(g.gloveClr) : skin} stroke="#0003" strokeWidth={0.6} />
-        {/* jersey sleeve over the shoulder */}
-        <line x1={x1} y1={64} x2={x1 + (x2 - x1) * 0.22} y2={78} stroke={jersey} strokeWidth={18 * w} strokeLinecap="round" />
-      </g>
-    );
+  const J = away ? "#f1f5f9" : clr, trim = away ? clr : ac;
+  const pants = away ? clr : "#e5e7eb", stripe = away ? "#f1f5f9" : ac;
+  const sock = away ? clr : "#f1f5f9";
+  const visor = { clear: "#bfdbfe", smoke: "#0f172a", iridescent: "#a855f7" }[g.visor];
+  const arm = (front) => (g.sleeves === "both" || (g.sleeves === "one" && front) ? tc(g.sleeveClr) : skin);
+  const glove = (front) => (g.gloves === "both" || (g.gloves === "one" && front) ? tc(g.gloveClr) : skin);
+  const col = (ch, x, y) => {
+    const front = x >= SW / 2;
+    switch (ch) {
+      case "o": return "#0b1020";
+      case "H": return clr; case "h": return shade(clr, -0.32); case "L": return shade(clr, 0.4); case "S": return ac;
+      case "k": case "n": return skin; case "K": return shade(skin, -0.22); case "E": return "#111";
+      case "V": return visor || (x === 14 ? "#111" : skin);
+      case "b": return g.eyeBlack !== "none" ? "#111" : skin;
+      case "F": return "#cbd5e1"; case "M": return g.mask === "cage" || g.mask === "bar3" ? "#cbd5e1" : skin;
+      case "N": return g.neckRoll ? (away ? clr : "#e5e7eb") : null;
+      case "J": return J; case "j": return shade(J, -0.22); case "D": return trim; case "s": return front ? J : shade(J, -0.22);
+      case "a": return front ? arm(true) : shade(arm(false), -0.15);
+      case "t": return g.armTape && arm(front) === skin ? "#f8fafc" : front ? arm(true) : shade(arm(false), -0.15);
+      case "w": return g.wristbands ? tc(g.bandClr) : front ? arm(true) : shade(arm(false), -0.15);
+      case "g": return glove(front);
+      case "B": return "#111827";
+      case "P": return pants; case "p": return shade(pants, -0.18); case "T": return stripe;
+      case "R": return g.towel ? "#f8fafc" : pants;
+      case "y": return g.socks === "high" ? sock : skin; case "X": return sock;
+      case "C": return tc(g.cleats);
+      default: return null;
+    }
   };
+  const num = String(jerseyNum(p)).slice(0, 2);
+  const numClr = away ? clr : "#f8fafc";
+  const fx = (x) => (flip ? SW - 1 - x : x);
+  const rects = (from, to) => {
+    const out = [];
+    for (let y = from; y < to; y++) for (let x = 0; x < SW; x++) {
+      const c = col(SPRITE[y][x], x, y);
+      if (c) out.push(<rect key={`${x}-${y}`} x={fx(x)} y={y} width="1.02" height="1.02" fill={c} />);
+    }
+    return out;
+  };
+  // The number on his chest (never mirrored).
+  const digits = [];
+  const left = 11 - (num.length * 4 - 1) / 2 + (flip ? -1 : 0);
+  [...num].forEach((d, i) => DIGITS[d].forEach((row, ry) => [...row].forEach((on, rx) => { if (on === "1") digits.push(<rect key={`n${i}-${rx}-${ry}`} x={Math.round(left) + i * 4 + rx} y={14 + ry} width="1.02" height="1.02" fill={numClr} />); })));
+  const id = `pf${hash(p.id) % 100000}`;
+  const delay = `${(-g.sway * 1.2).toFixed(2)}s`;
   return (
     <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", lineHeight: 1 }}>
-      <svg viewBox="0 0 120 214" width={h * (120 / 214)} height={h} role="img" aria-label={`${p.name}, #${jerseyNum(p)}`} style={{ overflow: "visible" }}>
+      <svg viewBox={`-1 -2 ${SW + 2} ${SH + 4}`} width={h * ((SW + 2) / (SH + 4))} height={h} shapeRendering="crispEdges" role="img" aria-label={`${p.name}, #${num}`} style={{ imageRendering: "pixelated", overflow: "visible" }}>
         <style>{`
-          .${id} { animation: ${id}b 3.2s ease-in-out infinite; animation-delay: ${delay}; transform-origin: 60px 200px; }
-          .${id}-armL { animation: ${id}l 3.2s ease-in-out infinite; animation-delay: ${delay}; }
-          .${id}-armR { animation: ${id}r 3.2s ease-in-out infinite; animation-delay: ${delay}; }
-          @keyframes ${id}b { 0%,100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1.2px) scaleY(1.008); } }
-          @keyframes ${id}l { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(2.5deg); } }
-          @keyframes ${id}r { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-2.5deg); } }
-          @media (prefers-reduced-motion: reduce) { .${id}, .${id}-armL, .${id}-armR { animation: none; } }
+          .${id}h { animation: ${id}b 1.2s steps(1, end) infinite; animation-delay: ${delay}; }
+          @keyframes ${id}b { 0% { transform: translateY(0); } 50% { transform: translateY(0.6px); } }
+          @media (prefers-reduced-motion: reduce) { .${id}h { animation: none; } }
         `}</style>
-        <defs>
-          <linearGradient id={`${id}iri`} x1="0" x2="1"><stop offset="0" stopColor="#f59e0b" /><stop offset=".5" stopColor="#a855f7" /><stop offset="1" stopColor="#22d3ee" /></linearGradient>
-        </defs>
-        <ellipse cx="60" cy="206" rx="34" ry="5" fill="#0006" />
-        <g className={id} transform={`translate(60 0) scale(${w} 1) translate(-60 0)`}>
-          {/* legs: pants, socks, cleats */}
-          <path d="M36 116 L84 116 L82 168 L62 168 L60 134 L58 168 L38 168 Z" fill={pants} />
-          <line x1="39" y1="122" x2="40" y2="166" stroke={ac} strokeWidth="2" opacity=".8" />
-          <line x1="81" y1="122" x2="80" y2="166" stroke={ac} strokeWidth="2" opacity=".8" />
-          <rect x="41.5" y={g.socks === "high" ? 166 : 182} width="15" height={g.socks === "high" ? 30 : 14} rx="3" fill={sockClr} />
-          <rect x="63.5" y={g.socks === "high" ? 166 : 182} width="15" height={g.socks === "high" ? 30 : 14} rx="3" fill={sockClr} />
-          {g.socks === "low" && <><rect x="42" y="166" width="14" height="16" fill={skin} /><rect x="64" y="166" width="14" height="16" fill={skin} /></>}
-          <ellipse cx="48" cy="200" rx="11" ry="5.5" fill={tc(g.cleats)} stroke="#0005" strokeWidth=".6" />
-          <ellipse cx="72" cy="200" rx="11" ry="5.5" fill={tc(g.cleats)} stroke="#0005" strokeWidth=".6" />
-          {/* arms behind the torso */}
-          {arm(30, 21, "L")}
-          {arm(90, 99, "R")}
-          {/* torso: shoulder pads and jersey */}
-          {g.neckRoll && <rect x="44" y="50" width="32" height="8" rx="4" fill={away ? clr : "#f8fafc"} />}
-          <path d="M24 64 Q24 50 44 52 L76 52 Q96 50 96 64 L88 120 L32 120 Z" fill={jersey} stroke="#0003" strokeWidth=".8" />
-          <path d="M24 64 Q25 55 38 54" fill="none" stroke={away ? clr : ac} strokeWidth="3" />
-          <path d="M96 64 Q95 55 82 54" fill="none" stroke={away ? clr : ac} strokeWidth="3" />
-          <rect x="34" y="116" width="52" height="5" rx="1.5" fill="#111827" />
-          {g.towel && <rect x="63" y="120" width="8" height="22" rx="2" fill="#f8fafc" stroke="#cbd5e1" strokeWidth=".5" />}
-          <text x="60" y="100" textAnchor="middle" fontSize="27" fontWeight="900" fontFamily="Impact, 'Arial Black', sans-serif" fill={numClr} stroke={numStroke} strokeWidth="1.2" paintOrder="stroke">{jerseyNum(p)}</text>
-          {/* neck and helmet */}
-          <rect x="54" y="44" width="12" height="12" fill={skin} />
-          <circle cx="60" cy="31" r="20" fill={away ? "#f8fafc" : clr} stroke="#0004" strokeWidth=".8" />
-          <path d="M60 11 L60 22" stroke={ac} strokeWidth="4" />
-          <ellipse cx="60" cy="37" rx="11" ry="11" fill={skin} />
-          <circle cx="55.5" cy="35" r="1.5" fill="#111" /><circle cx="64.5" cy="35" r="1.5" fill="#111" />
-          {g.eyeBlack === "stripes" && <><rect x="52.5" y="38" width="6" height="2.2" rx="1" fill="#111" /><rect x="61.5" y="38" width="6" height="2.2" rx="1" fill="#111" /></>}
-          {g.eyeBlack === "sticker" && <><rect x="52" y="37.5" width="7" height="3.4" rx="1" fill="#111" /><rect x="61" y="37.5" width="7" height="3.4" rx="1" fill="#111" /><rect x="53.5" y="38.7" width="4" height="1" fill={ac} /><rect x="62.5" y="38.7" width="4" height="1" fill={ac} /></>}
-          {g.visor !== "none" && <rect x="49" y="30" width="22" height="9" rx="3" fill={g.visor === "clear" ? "#e2e8f055" : g.visor === "smoke" ? "#0f172ae6" : `url(#${id}iri)`} opacity={g.visor === "iridescent" ? 0.85 : 1} />}
-          {/* facemask */}
-          <g stroke="#cbd5e1" strokeWidth="1.6" fill="none" strokeLinecap="round">
-            <path d="M47 40 Q60 46 73 40" />
-            {g.mask !== "open" && <path d="M48 45 Q60 51 72 45" />}
-            {(g.mask === "bar3" || g.mask === "cage") && <path d="M50 49 Q60 53 70 49" />}
-            {g.mask === "cage" && <><line x1="60" y1="41" x2="60" y2="52" /><line x1="54" y1="42" x2="54" y2="50" /><line x1="66" y1="42" x2="66" y2="50" /></>}
-          </g>
-        </g>
+        <ellipse cx={SW / 2} cy={SH + 0.3} rx="8" ry="1.3" fill="#0007" shapeRendering="auto" />
+        <g>{rects(HEAD_ROWS, SH)}{digits}</g>
+        <g className={`${id}h`}>{rects(0, HEAD_ROWS)}</g>
       </svg>
       {label && <div style={{ fontSize: Math.max(10, Math.round(h / 15)), fontWeight: 800, color: "#e2e8f0", marginTop: 2, whiteSpace: "nowrap", textAlign: "center" }}>{(p.name || "").split(" ").slice(1).join(" ") || p.name} <span style={{ color: "#94a3b8", fontWeight: 700 }}>{p.pos} {p.ovr}</span></div>}
     </div>
