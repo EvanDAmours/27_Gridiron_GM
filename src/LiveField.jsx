@@ -2,7 +2,8 @@
 // redrawn (and slid into place) after every play. Offense drives left to right.
 import React from "react";
 import { depthOrderFor } from "./DepthChart.jsx";
-import PixelPlayer from "./PixelPlayer.jsx";
+import SpritePlayer from "./pixel/SpritePlayer.jsx";
+import { snapPose, celebrationPose } from "./pixel/sprites.js";
 import { UNIFORMS, teamKey } from "./teamUniforms.js";
 
 const FORMATION = {
@@ -30,10 +31,8 @@ function starters(team, depth, order) {
 // One player: a pixel-art sprite in his team's uniform, posed for the snap (linemen down in a
 // three-point stance, the quarterback with the ball, defenders in a ready stance). After a
 // touchdown the scoring team's backs and receivers celebrate. Offense faces right, defense left.
-const SNAP_POSE = { QB: "qb", LT: "stance", LG: "stance", C: "stance", RG: "stance", RT: "stance", DL: "stance" };
-const TD_POSE = { RB: "heisman", WR: "spike", TE: "spike" };
 // Pixel-art players are built but switched off until they're approved; circles until then.
-const SPRITES = false;
+const SPRITES = typeof location !== "undefined" && /[?&]sprites=1\b/.test(location.search); // off unless ?sprites=1
 function Player({ p, pos, x, y, team, side, away, td }) {
   const last = p ? p.name.split(" ").slice(1).join(" ") || p.name : pos;
   if (!SPRITES) return (
@@ -44,11 +43,11 @@ function Player({ p, pos, x, y, team, side, away, td }) {
       <text y="24" textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff" stroke="#0008" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>
     </g>
   );
-  const pose = (side === "off" && td && TD_POSE[pos]) || SNAP_POSE[pos] || (side === "off" ? "upright" : "ready");
+  const pose = (side === "off" && td && celebrationPose(pos)) || snapPose(pos, side);
   return (
     <g style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform .55s ease" }}>
       <ellipse cx="0" cy="19" rx="12" ry="3.5" fill="#000" opacity=".25" />
-      <PixelPlayer inline x={0} y={20} scale={0.86} team={team} pos={pos} number={p?.num} pose={pose} facing={side === "off" ? "right" : "left"} away={away} skin={p?.face?.sk || "#8d5a3b"} title={p ? `${pos} ${p.name} (${p.ovr})` : pos} />
+      <SpritePlayer x={0} y={20} height={pose === "OL" || pose === "DL" ? 30 : 42} pose={pose} team={team} away={away} number={p?.num} facing={side === "off" ? "right" : "left"} title={p ? `${pos} ${p.name} (${p.ovr})` : pos} shadow={false} />
       <text y="31" textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff" stroke="#0008" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>
     </g>
   );
