@@ -383,7 +383,8 @@ export const PATCH_NOTES = [
     "Breaking stories get a red BREAKING tag. Suspensions now count down for every team (they only counted down for yours before), and your club's suspensions and returns go in your log.",
     "Fixed: a scheme change's 2-week transition never ended (the warning stayed up forever) and its penalty never actually applied. Now a new scheme costs about 2 points a game for your next 2 games while it's installed, then it's done.",
   ] },
-  { v: "1.90", date: "2026-10-10", title: "More Area Scouting", notes: [
-    "Area scouts get about twice the points: 4 at the start of the season (was 2), 2 every week (was 1), and 4 more at the Combine for pro days and all-star games. That's about 22 trips a season instead of 10: enough to know five of the six regions inside out (every prospect's rating after the fourth trip) and get a look at the sixth, so you can evaluate the whole class while still choosing where to go deep.",
+  { v: "1.90", date: "2026-10-10", title: "A Little More Area Scouting, Cleaner Mobile Depth Chart", notes: [
+    "A little more area scouting: 4 area points at the start of the season (was 2), still 1 a week, and 4 more at the Combine for pro days and all-star games. That's about 13 trips a season instead of 10: three regions known inside out (every prospect's rating after the fourth trip) plus a look at a fourth. You still can't cover the whole country, so where you send them matters.",
+    "Depth chart on mobile: each player is now a clean two-line card (name, OVR and the move arrows on top; badges and the snap-share slider underneath), and the position headers are shorter.",
   ] },
 ];

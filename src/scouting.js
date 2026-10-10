@@ -206,9 +206,9 @@ export function draftCollege(rand = Math.random) {
 }
 export const regionOf = (p) => REGION_OF[p?.bio?.college] || "OTH";
 export const regionName = (k) => REGIONS[k]?.name || "Independents & FCS";
-// About 44 area points a season (22 trips): enough to know five of the six regions inside out
-// and get a look at the sixth, so where you go deep still matters.
-export const RPTS_START = 4, RPTS_WEEKLY = 2, RPTS_COMBINE = 4, RTRIP_COST = 2, MAX_TRIPS = 4;
+// About 26 area points a season (13 trips): three regions inside out and a look at a fourth, so
+// where you send them is a real choice.
+export const RPTS_START = 4, RPTS_WEEKLY = 1, RPTS_COMBINE = 4, RTRIP_COST = 2, MAX_TRIPS = 4;
 const TRIP_SD = [Infinity, 6, 4.5, 3.2, 2.4];
 
 export function scoutRegion(sc, sp, region, classYr, draftYr) {

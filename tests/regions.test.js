@@ -57,8 +57,8 @@ test("four trips to a region show every prospect's current rating there too", ()
   assert.ok(Math.abs(r.ovrV - p.trueOvr) <= 3);
 });
 
-test("a season's area points cover five regions fully and part of the sixth", () => {
+test("a season's area points cover about three regions fully, not the whole country", () => {
   const season = RPTS_START + 18 * RPTS_WEEKLY + RPTS_COMBINE;
   const trips = Math.floor(season / RTRIP_COST);
-  assert.ok(trips >= 5 * MAX_TRIPS && trips < 6 * MAX_TRIPS, `${trips} trips a season`);
+  assert.ok(trips >= 3 * MAX_TRIPS && trips < 4 * MAX_TRIPS, `${trips} trips a season`);
 });
