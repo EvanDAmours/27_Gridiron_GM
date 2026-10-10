@@ -1462,7 +1462,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
           </div>);})}
         </div>);})}
       </div>);
-      const viewBtns=<div style={{display:'flex',gap:6}}>{[['field','Field'],['list','List']].map(([k,l])=><button key={k} onClick={()=>setDepthView(k)} style={{background:depthView===k?'#334155':'transparent',color:depthView===k?'#fff':'#94a3b8',border:`1px solid ${C.bd}`,borderRadius:6,padding:'5px 12px',fontSize:13,fontWeight:700,cursor:'pointer'}}>{l}</button>)}</div>;
+      const viewBtns=<div style={{display:'flex',gap:8}}>{[['field','🏈 Field'],['list','☰ List']].map(([k,l])=><button key={k} onClick={()=>setDepthView(k)} style={{background:depthView===k?'#1e3a5f':'transparent',color:depthView===k?'#7dd3fc':'#94a3b8',border:`2px solid ${depthView===k?'#3b82f6':C.bd}`,borderRadius:8,padding:'10px 22px',fontSize:17,fontWeight:800,cursor:'pointer',minWidth:110}}>{l}</button>)}</div>;
       if(depthView==='field')return(<div><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}><div style={{fontSize:20,fontWeight:900,color:'#e2e8f0'}}>Depth Chart</div>{viewBtns}</div><DepthChart roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} setSel={setSel} onAutoFill={autoFillAll} onMovePos={movePlayerTo} previewPos={movePreview} setPositions={moves=>setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(p=>moves[p.id]?{...p,pos:moves[p.id]}:p)}))}/></div>);
       return(<div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8,gap:8,flexWrap:'wrap'}}>

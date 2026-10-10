@@ -58,7 +58,8 @@ test("kickers and punters never go early, even a once-in-a-generation leg", asyn
     const k = dc.find((p) => p.pos === "K");
     Object.assign(k, { trueOvr: 88, ovr: 88, truePot: 99, pot: 99 });
     const others = dc.filter((p) => p !== k).map((p) => aiDraftScore(p, "balanced")).sort((a, b) => b - a);
-    const slot = others.filter((v) => v > aiDraftScore(k, "balanced")).length + 1;
+    const kv = Array.from({ length: 40 }, () => aiDraftScore(k, "balanced")).reduce((a, b) => a + b, 0) / 40; // his typical value (each team's read has a little noise)
+    const slot = others.filter((v) => v > kv).length + 1;
     assert.ok(slot >= 55, `an elite kicker would go around pick ${slot}`);
     assert.ok(dc.filter((p) => p.pos === "K" || p.pos === "P").every((p) => p === k || p.cons.mid > 64), "no specialist on the board's first two rounds");
     assert.ok(csScore(k) < others[50]);

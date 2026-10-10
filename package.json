@@ -20,7 +20,8 @@
     "smoke": "node scripts/smoke.mjs",
     "check": "npm test && npm run build && npm run smoke",
     "publish:pages": "bash scripts/publish-pages.sh",
-    "health": "node scripts/health.mjs"
+    "health": "node scripts/health.mjs",
+    "scoring": "node scripts/scoring.mjs"
   },
   "dependencies": {
     "lz-string": "^1.5.0",

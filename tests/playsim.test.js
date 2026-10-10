@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { makeSide, createGame, step, playGame } from "../src/playsim.js";
+import { makeSide, createGame, step, playGame, LEAGUE } from "../src/playsim.js";
 import { teamSnaps } from "../src/snaps.js";
 
 const M = JSON.parse(readFileSync(new URL("../src/data/madden27.json", import.meta.url)));
@@ -38,7 +38,7 @@ test("league numbers look like the NFL", () => {
 test("better offenses score more; better defenses allow less", () => {
   const pf = Array(32).fill(0), pa = Array(32).fill(0), gp = Array(32).fill(0);
   for (const [h, a, g] of games) { pf[h] += g.score.h; pa[h] += g.score.a; pf[a] += g.score.a; pa[a] += g.score.h; gp[h]++; gp[a]++; }
-  const off = teams.map((t) => t.side.u.pass * 0.6 + t.side.u.run * 0.4), def = teams.map((t) => t.side.u.passD * 0.6 + t.side.u.runD * 0.4);
+  const off = teams.map((t) => t.side.u.pass * 0.6 + t.side.u.run * 0.4), def = teams.map((t) => ((t.side.u.passD - LEAGUE.passD[0]) / LEAGUE.passD[1]) * 0.6 + ((t.side.u.runD - LEAGUE.runD[0]) / LEAGUE.runD[1]) * 0.4); // in the engine's units (spreads above average)
   const corr = (xs, ys) => { const mx = xs.reduce((a, b) => a + b) / xs.length, my = ys.reduce((a, b) => a + b) / ys.length; let c = 0, vx = 0, vy = 0; xs.forEach((x, i) => { c += (x - mx) * (ys[i] - my); vx += (x - mx) ** 2; vy += (ys[i] - my) ** 2; }); return c / Math.sqrt(vx * vy); };
   assert.ok(corr(off, pf.map((x, i) => x / gp[i])) > 0.85, "offense rating predicts points scored");
   assert.ok(corr(def, pa.map((x, i) => x / gp[i])) < -0.85, "defense rating predicts points allowed");

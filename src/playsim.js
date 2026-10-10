@@ -33,7 +33,7 @@ export const POINTS_PER_EDGE = 2.5;
 // Who gets the ball: snap share x how often that spot is targeted per snap x talent. Each
 // rating point above 75 adds ~1.5% to a player's share, so an elite WR1 sees ~30% of the
 // targets (a good one ~25%) and an elite back ~75% of the carries.
-const TALENT = 0.015;
+const TALENT = 0.019;
 const TGT_RATE = { WR: [0.23, 0.21, 0.19, 0.18, 0.18], TE: [0.21, 0.17, 0.15], RB: [0.13, 0.12, 0.1] };
 const TK = { DL: [0.07, 0.07, 0.06, 0.06, 0.03, 0.02], LB: [0.14, 0.12, 0.08, 0.03], CB: [0.07, 0.06, 0.03], S: [0.09, 0.08, 0.02] };
 
@@ -104,7 +104,8 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season 
   const p = on("P")[0] || order("P")?.[0];
   const pOvr = p ? p.ovr || 75 : 60, pPow = p ? p.posAttrs?.power ?? 93 : 85, pAcc = p ? p.posAttrs?.accuracy ?? 82 : 65;
   const stCov = team?.coach?.st?.rating ?? 70;
-  const passLean = clamp(0.6 + (u.pass - u.run) * 0.006 + lean, 0.5, 0.7);
+  // Measured against the league's balance, so league-wide rating drift doesn't tilt everyone's play-calling.
+  const passLean = clamp(0.6 + ((u.pass - LEAGUE.pass[0]) - (u.run - LEAGUE.run[0])) * 0.006 + lean, 0.5, 0.7);
   return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, p, pOvr, pPow, pAcc };
 }
 

@@ -371,6 +371,8 @@ export const PATCH_NOTES = [
     "Steadier drives and more chunk plays: fewer three-and-outs, more yards after the catch and breakaway runs (good defenses limit both), more goal-line runs (rushing touchdowns were too rare), and field-goal accuracy down to the NFL's ~87%.",
     "The engine now measures teams against the league as it is each season. Before, running games faded and passing numbers climbed year after year as ratings drifted (rushing fell from ~117 to ~92 yards a game over 10 seasons); now the league's numbers stay NFL-like for as long as you play.",
     "Kickers and punters go where they do in the real draft. NFL teams almost never use a premium pick on one (the highest since 2012 went around pick 60-70), so a once-in-a-generation leg now goes around the third round at the earliest, a good one on day three, and most go late or undrafted. Applies to existing saves too.",
+    "Stars get a star's share: season leaders now land where the NFL's do (about 5,000 passing yards and 40 TDs, 1,700 rushing and receiving yards, 17 sacks), so a record can fall in a career year, but not every season.",
+    "Bigger Field / List buttons on the depth chart.",
     "Depth chart list: every defensive lineman shows whether he's an edge rusher or a tackle by trade and which spot he's playing (EDGE @LE, DT @DT1...). A starter playing out of position is outlined in red with a ⚠, since he's rated lower there.",
   ] },
 ];

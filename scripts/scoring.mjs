@@ -37,3 +37,5 @@ console.log(JSON.stringify({
   passYds: per("passYds"), rushYds: per("rushYds"), compPct: +((100 * stat.comp) / stat.att).toFixed(1), passTD: per("passTD"), rushTD: per("rushTD"), ints: per("passInt"), sacks: per("sacks"), fgM: per("fgM"), fgPct: +((100 * stat.fgM) / stat.fgA).toFixed(1), punts: per("punts"),
 }, null, 0));
 for (const r of rows) console.log(JSON.stringify(r));
+const avgLead = (k) => Math.round(rows.reduce((a, r) => a + +r[k].split(" ").pop(), 0) / rows.length);
+console.log("avg leaders", JSON.stringify(Object.fromEntries(["passYds", "passTD", "rushYds", "recYds", "rec", "sacks", "ints"].map((k) => [k, avgLead(k)]))));
