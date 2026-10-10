@@ -2,7 +2,7 @@
 // papers. Blackletter masthead, a banner headline across the page, decks, a lead story written from
 // the game, a photo of the Super Bowl MVP, the road to the title and the parade plans.
 import React, { useEffect } from "react";
-import Player3D from "./Player3D.jsx";
+import PixelPlayer from "./PixelPlayer.jsx";
 import { starOf } from "./PlayerFigure.jsx";
 import { sbName, sbNumber } from "./data/superbowls.js";
 
@@ -87,7 +87,7 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
             </div>
           </section>
           <figure className="gz-photo">
-            <div className="gz-photo-frame">{photo && <Player3D p={photo} t={t} h={300} label={false} />}</div>
+            <div className="gz-photo-frame">{photo && <PixelPlayer p={photo} t={t} h={300} label={false} />}</div>
             <figcaption>{photo ? `${photo.name} of the ${t.name}${sbmvp && mvpP ? `, the most valuable player of ${sb}` : ""}, after the final whistle on Sunday night.` : `The ${t.name} celebrate.`} <i>Gazette Photo</i></figcaption>
           </figure>
           <aside className="gz-side">
