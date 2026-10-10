@@ -33,7 +33,7 @@ export function gearFor(p) {
   };
 }
 
-const jerseyNum = (p) => p?.num ?? (hash(`${p?.id}|num`) % 89) + 10;
+export const jerseyNum = (p) => p?.num ?? (hash(`${p?.id}|num`) % 89) + 10;
 
 const shade = (hex, f) => {
   const n = parseInt((hex || "#888888").replace("#", "").padEnd(6, "0").slice(0, 6), 16);
