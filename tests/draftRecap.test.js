@@ -52,7 +52,7 @@ test("one average scout has only the public read of a gem", () => {
   const gem = genDC(2050).find((p) => p.gem);
   const sc = { major: { id: "m", name: "Scout", group: GROUP(gem.pos), eval: 70 } };
   const read = prospectRead(sc, gem);
-  assert.ok(Math.abs(read.potV - publicPot(gem)) < 6);
+  assert.ok(Math.abs(read.potV - publicPot(gem)) < 7); // his read's noise is capped at 1.6 sd (~6)
   assert.ok(!read.sleeper);
 });
 

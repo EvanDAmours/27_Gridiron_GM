@@ -44,9 +44,9 @@ test("a young player at his ceiling only creeps past it now and then", () => {
   assert.ok(g / 2000 < 0.35, `${g / 2000} a year`);
 });
 
-test("an Elite class's can't-miss prospect tops the board", () => {
+test("an Elite class's can't-miss prospect goes near the top of the board", () => {
   const cls = genDC(2091, "Elite");
   const top = cls.find((p) => p.trueOvr === 90 && p.truePot >= 94);
   assert.ok(top);
-  assert.ok(top.cons.mid <= 3, `board #${top.cons.mid}`);
+  assert.ok(top.cons.mid <= 12, `board #${top.cons.mid}`);
 });

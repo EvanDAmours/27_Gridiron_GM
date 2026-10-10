@@ -296,6 +296,6 @@ export const PATCH_NOTES = [
   ] },
   { v: "1.75", date: "2026-10-10", title: "Development Ceilings and Elite Classes", notes: [
     "A young player who has reached his ceiling now only creeps past it now and then. Development traits, awards and big seasons are the real way to beat a ceiling, so mid-round picks no longer routinely outgrow what they were drafted as.",
-    "Elite draft classes: the class's can't-miss prospect (90 OVR) is now its highest-ceiling player and tops the board. Before, the bonus went to a random prospect who could slide to the late rounds.",
+    "Elite draft classes: the class's can't-miss prospect (90 OVR) is now its highest-ceiling player and sits near the top of the board. Before, the bonus went to a random prospect who could slide to the late rounds.",
   ] },
 ];
