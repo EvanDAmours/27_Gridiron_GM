@@ -182,7 +182,7 @@ export function genDC(yr,dcr){
   // for real snaps, like NFL rookies), and late-rounders are low-ceiling depth.
   for(let i=0;i<240;i++)dc.push(genProspect(yr,pick(posW),dcrAdj));
   // An Elite class has a can't-miss prospect: its highest ceiling, ready from day one.
-  if(dcr==='Elite'){const top=[...dc].sort((a,b)=>b.truePot-a.truePot)[0];if(top&&top.trueOvr<90){top.ovr=top.trueOvr=90;top.pot=top.truePot=Math.max(top.truePot,94);top.posAttrs=genPAttrs(top.pos,90);top.tradeVal=playerValue({pos:top.pos,age:top.age,ovr:90,pot:top.truePot});}}
+  if(dcr==='Elite'){const top=[...dc].filter(p=>p.pos!=='K'&&p.pos!=='P').sort((a,b)=>b.truePot-a.truePot)[0];if(top&&top.trueOvr<90){top.ovr=top.trueOvr=90;top.pot=top.truePot=Math.max(top.truePot,94);top.posAttrs=genPAttrs(top.pos,90);top.tradeVal=playerValue({pos:top.pos,age:top.age,ovr:90,pot:top.truePot});}}
   return plantBusts(plantGems(rankClass(dc),yr),yr);
 }
 // Real draft classes (src/data/realProspects.json, keyed by the season whose off-season holds the

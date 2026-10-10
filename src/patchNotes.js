@@ -387,4 +387,12 @@ export const PATCH_NOTES = [
     "More area scouting: 6 area points at the start of the season (was 2), still 1 a week, and 8 more at the Combine for pro days and all-star games. That's 16 trips a season instead of 10: enough to know four of the six regions inside out (every prospect's rating after the fourth trip). You still can't cover the whole country, so where you send them matters.",
     "Depth chart on mobile: each player is now a clean two-line card (name, OVR and the move arrows on top; badges and the snap-share slider underneath), and the position headers are shorter.",
   ] },
+  { v: "1.91", date: "2026-10-10", title: "Extensions, Position Changes and the Trade Block", notes: [
+    "Extensions work like real ones: you can pay part of the new money as a signing bonus (25%, 40% or 55%), spread over up to five years starting this season. The bigger the bonus, the lower every new year's cap hit, so a deal for your quarterback in his last year fits under next season's cap even after restructures have filled it up. It costs a little cap room now, and the bonus becomes dead money if you cut him later.",
+    "The Contracts screen says why a player can't be extended right now (extensions are negotiated from the preseason through the Combine, or talks broke off this year) instead of the button just not being there.",
+    "Change positions from the player profile: 'Move to' shows every spot he can play with his rating there (along the offensive line, corner/safety, and now edge rusher/linebacker).",
+    "Edge rushers can stand up as rush linebackers and linebackers can play on the edge, so you can build a blitz-heavy front. Skills are translated to the new spot (pass rush becomes blitzing and back), with a small learning cost; linebackers too light to hold the edge give up more, and interior tackles stay inside. Moving a player back restores his rating exactly.",
+    "The trade block is always on the Trade screen now, with an 'Add a player' picker and a ✕ to take someone off. Players on the block draw more calls from AI teams.",
+    "Fixed: an Elite draft class's can't-miss prospect could be a kicker or punter.",
+  ] },
 ];

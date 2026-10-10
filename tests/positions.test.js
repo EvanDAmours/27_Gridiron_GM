@@ -44,3 +44,20 @@ test("offensive line: guards at tackle lose more than tackles at guard; moving b
   assert.equal(movePlayer({ pos: "CB", ovr: 80, posAttrs: {} }, "S").pos, "S");
   assert.equal(movePlayer({ pos: "WR", ovr: 80 }, "LT").pos, "WR", "no WR at tackle");
 });
+
+test("edge rushers and linebackers can swap, and moving back restores the rating", async () => {
+  const { movePlayer, moveOptions, canMoveFront } = await import("../src/positions.js");
+  const edge = { id: 1, pos: "DL", mpos: "REDG", ovr: 90, pot: 92, spd: 84, wt: 255, posAttrs: { passRush: 92, runStop: 85, handUse: 88, motor: 90, getOff: 91, bullRush: 86, swim: 88, spin: 84 } };
+  const dt = { id: 2, pos: "DL", mpos: "DT", ovr: 88, wt: 310, posAttrs: { passRush: 85, runStop: 90 } };
+  const lb = { id: 3, pos: "LB", mpos: "MIKE", ovr: 88, pot: 88, spd: 86, wt: 238, posAttrs: { tackling: 90, coverage: 80, blitzing: 70, runFit: 88, instincts: 90, pursuit: 90, shedBlock: 78, zoneAwr: 82 } };
+  assert.ok(canMoveFront(edge) && canMoveFront(lb) && !canMoveFront(dt), "interior tackles stay inside");
+  assert.deepEqual(moveOptions(dt), []);
+  const olb = movePlayer(edge, "LB");
+  assert.equal(olb.pos, "LB"); assert.equal(olb.mpos, "SAM");
+  assert.ok(olb.ovr < edge.ovr && olb.ovr >= edge.ovr - 15, `${olb.ovr}`);
+  assert.ok(olb.posAttrs.blitzing >= 85, "his pass rush becomes blitzing");
+  assert.equal(movePlayer(olb, "DL").ovr, edge.ovr);
+  const rusher = movePlayer(lb, "DL");
+  assert.equal(rusher.pos, "DL"); assert.ok(rusher.ovr < lb.ovr);
+  assert.equal(movePlayer(rusher, "LB").ovr, lb.ovr);
+});

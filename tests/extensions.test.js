@@ -33,3 +33,19 @@ test("extensions cost a little more than re-signing in re-sign week", () => {
   assert.ok(terms(p, { yr: 2026, mode: "extend" }).minF > terms(p, { yr: 2026, mode: "resign" }).minF);
   assert.equal(respond(p, { sal: yearlyAsk(p, 3) * 1.2, yrs: 3 }, terms(p, { yr: 2026, mode: "extend" })).result, "accept");
 });
+
+test("a signing bonus lowers an extension's cap hit, starting this season", async () => {
+  const { extStructure, applyExtensions } = await import("../src/extensions.js");
+  const none = extStructure(60, 4, 0), big = extStructure(60, 4, 0.55);
+  assert.equal(none.hit, 60);
+  assert.equal(none.nowAdd, 0);
+  assert.ok(big.hit < 55, `cap hit ${big.hit}`);
+  assert.ok(big.nowAdd > 0 && big.pr === big.nowAdd);
+  // the money adds up: bonus spread over 5 years (this one + 4) and the base over the 4 new years
+  assert.ok(Math.abs(big.hit * 4 + big.pr - 60 * 4) < 0.5);
+  const t = { roster: [{ id: 1, name: "QB", salary: 30, contract: 1, ext: { sal: big.hit, apy: 60, yrs: 4, yr: 2026, sb: big.pr } }] };
+  applyExtensions([t], 2026);
+  assert.equal(t.roster[0].salary, big.hit);
+  assert.equal(t.roster[0].sb, big.pr, "the bonus proration carries into the new deal (dead money if he's cut)");
+  assert.equal(t.roster[0].contract, 5);
+});

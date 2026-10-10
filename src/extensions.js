@@ -22,6 +22,16 @@ export const nextYearRoom = (t, yr) => r1(capFor(yr + 1) - nextYearCommitted(t))
 // Room for this player's new deal (a player with two years left is already counted next year).
 export const extRoom = (t, p, yr) => r1(nextYearRoom(t, yr) + ((p.contract || 0) >= 2 ? (p.salary || 0) + (p.baseBack || 0) : 0));
 
+// How an extension is paid, like real deals: part of the new money as a signing bonus, spread
+// over up to five years starting this season. The bonus lowers every new year's cap hit (so the
+// deal fits next season's cap) at the cost of a little room now and dead money if he's cut.
+// sal: average per new year; share: part of the new money paid as bonus.
+export const EXT_BONUS = [0, 0.25, 0.4, 0.55];
+export function extStructure(sal, yrs, share = 0) {
+  const bonus = r1(sal * yrs * share), n = Math.min(5, yrs + 1), pr = r1(bonus / n);
+  return { bonus, n, pr, hit: r1(sal - bonus / yrs + pr), nowAdd: pr };
+}
+
 // New league year: extensions whose old deal just ran out take over. Mutates the teams.
 export function applyExtensions(teams, yr) {
   const done = [];
@@ -32,7 +42,7 @@ export function applyExtensions(teams, yr) {
       done.push(p);
       const { ext, ...rest } = p;
       // contract counts the season about to end too (it ticks down after the draft)
-      return { ...freshDeal(rest), salary: ext.sal, contract: ext.yrs + 1, resigned: { yr, sal: ext.sal, yrs: ext.yrs, how: "extension" } };
+      return { ...freshDeal(rest), salary: ext.sal, ...(ext.sb ? { sb: ext.sb } : {}), contract: ext.yrs + 1, resigned: { yr, sal: ext.apy ?? ext.sal, yrs: ext.yrs, how: "extension" } };
     });
   }
   return done;

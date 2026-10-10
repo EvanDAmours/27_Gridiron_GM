@@ -3,11 +3,16 @@
 import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
 import { yearlyAsk, maxYears, respond, interest } from "./negotiation.js";
+import { EXT_BONUS, extStructure } from "./extensions.js";
 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const r1 = (x) => Math.round(x * 10) / 10;
 
-export default function Negotiate({ p, mode, cap, t, talk = {}, onResult, onClose, rivalName, note }) {
+export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = {}, onResult, onClose, rivalName, note }) {
+  const [share, setShare] = useState(0);
+  const ext = mode === "extend";
+  const shape = (amount) => (ext ? extStructure(amount, yrs, share) : { hit: amount, nowAdd: 0, pr: 0, bonus: 0 });
+  const fits = (amount) => cap - shape(amount).hit >= 0 && nowRoom - shape(amount).nowAdd >= 0;
   const [yrs, setYrs] = useState(Math.min(2, maxYears(p)));
   const ask = yearlyAsk(p, yrs, mode);
   const f = p.perf?.f ?? 1;
@@ -16,12 +21,14 @@ export default function Negotiate({ p, mode, cap, t, talk = {}, onResult, onClos
   const done = talk.walked || talk.signed;
   const last = talk.last;
   const offer = (amount) => {
-    const o = { sal: r1(amount), yrs };
+    const s = shape(r1(amount));
+    const o = { sal: r1(amount), yrs, ...(ext ? { hit: s.hit, pr: s.pr, bonus: s.bonus } : {}) };
     onResult(respond(p, o, t, talk), o);
   };
   const step = (d) => setSal((s) => Math.max(0.8, r1(s + d)));
   const mood = interest(talk);
-  const after = cap - sal;
+  const cur = shape(sal);
+  const after = cap - cur.hit;
   const tone = { accept: C.gn, counter: C.gd, reject: "#f97316", walk: C.rd, lost: C.rd };
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
@@ -69,13 +76,22 @@ export default function Negotiate({ p, mode, cap, t, talk = {}, onResult, onClos
               <span>Total <b style={{ color: "#fff" }}>{money(sal * yrs)}</b> over {yrs} yr{yrs > 1 ? "s" : ""}</span>
               <span>{mode === "extend" ? "Next year's cap after" : "Cap after"} <b style={{ color: after >= 0 ? C.gn : C.rd }}>{money(after)}</b></span>
             </div>
+            {ext && <>
+              <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>SIGNING BONUS <span style={{ fontWeight: 600, letterSpacing: 0, color: "#cbd5e1" }}>· spread over {Math.min(5, yrs + 1)} years from this season</span></div>
+              <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                {EXT_BONUS.map((b) => <button key={b} onClick={() => setShare(b)} style={{ flex: 1, padding: "8px 0", fontSize: 15, fontWeight: 800, borderRadius: 8, cursor: "pointer", background: share === b ? C.bl : C.bg, color: "#fff", border: `1px solid ${share === b ? C.bl : C.bd}` }}>{b ? `${Math.round(b * 100)}%` : "None"}</button>)}
+              </div>
+              <div style={{ fontSize: 13, color: "#cbd5e1", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 14, lineHeight: 1.5 }}>
+                Cap hit each new year: <b style={{ color: "#fff" }}>{money(cur.hit)}</b>{share ? <> (vs {money(sal)} with no bonus) · this season's hit goes up <b style={{ color: nowRoom - cur.nowAdd >= 0 ? C.gd : C.rd }}>{money(cur.nowAdd)}</b>{nowRoom !== Infinity ? ` (room now ${money(nowRoom)})` : ""} · bonus {money(cur.bonus)}, dead money if he's cut</> : <>. A signing bonus lowers it, so the deal fits next year's cap.</>}
+              </div>
+            </>}
           </>
         )}
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Btn onClick={onClose} bg={C.bd} c="#cbd5e1" style={{ flex: "1 1 100px", fontSize: 16, padding: "11px 0" }}>{done ? "Close" : "Not now"}</Btn>
-          {!done && last?.result === "counter" && <Btn onClick={() => offer(last.counter)} disabled={cap - last.counter < 0} bg={C.gd} c="#000" style={{ flex: "2 1 160px", fontSize: 16, padding: "11px 0", fontWeight: 900 }}>Accept {money(last.counter)}</Btn>}
-          {!done && <Btn onClick={() => offer(sal)} disabled={after < 0} bg={C.gn} style={{ flex: "2 1 160px", fontSize: 16, padding: "11px 0", fontWeight: 900 }}>{after < 0 ? "Not enough cap" : "Make offer"}</Btn>}
+          {!done && last?.result === "counter" && <Btn onClick={() => offer(last.counter)} disabled={!fits(last.counter)} bg={C.gd} c="#000" style={{ flex: "2 1 160px", fontSize: 16, padding: "11px 0", fontWeight: 900 }}>Accept {money(last.counter)}</Btn>}
+          {!done && <Btn onClick={() => offer(sal)} disabled={!fits(sal)} bg={C.gn} style={{ flex: "2 1 160px", fontSize: 16, padding: "11px 0", fontWeight: 900 }}>{fits(sal) ? "Make offer" : after < 0 ? (ext && share < EXT_BONUS[EXT_BONUS.length - 1] ? "Not enough cap: add a bonus" : "Not enough cap") : "Not enough room this season"}</Btn>}
         </div>
       </div>
     </div>

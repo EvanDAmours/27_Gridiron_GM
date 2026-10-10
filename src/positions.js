@@ -93,6 +93,59 @@ export function moveOL(p, to) {
   return { ...p, pos: to, ovr, trueOvr: ovr, pot, truePot: pot, posFrom: { pos: home, shift } };
 }
 
-// Any position change the game supports (CB/S, or along the line). Returns the player unchanged otherwise.
-export const movePlayer = (p, to) => (OL_KIND[p.pos] && OL_KIND[to] ? moveOL(p, to) : DB_SWAP[p.pos] === to ? moveDB(p) : p);
+// ---------- Front seven: edge rushers and linebackers ----------
+// An edge rusher can stand up as a rush linebacker (a 3-4 outside backer) and a linebacker can put
+// his hand in the dirt on the edge: build a blitz-heavy front with more rushers off the ball. His
+// skills are translated to the new spot (an edge's pass rush becomes blitzing, his run stop and
+// motor become run fits and pursuit; a backer's blitzing becomes pass rush) and re-rated, with a
+// small learning cost, and a backer too light to hold the edge (under ~245 lbs) gives up more.
+// Interior tackles stay inside. Moving back restores his rating exactly.
+const FRONT_OFFSET = { EDGE: -1.25, LB: 1.5 };
+const isEdge = (p) => p?.pos === "DL" && (p.mpos ? p.mpos !== "DT" : (p.wt || 280) < 292);
+export const canMoveFront = (p) => p?.pos === "LB" || isEdge(p);
+function edgeToLB(a, spd) {
+  const g = (k, d = 65) => a[k] ?? d;
+  const cov = clamp(Math.round(48 + ((spd ?? 80) - 75) * 0.8), 35, 75);
+  return {
+    tackling: avg(g("runStop"), g("motor")) - 3, coverage: cov, blitzing: avg(g("passRush"), g("getOff"), g("bullRush")), runFit: g("runStop") - 2,
+    instincts: avg(g("runStop"), g("motor")) - 5, pursuit: avg(g("motor"), spd ?? 80), shedBlock: avg(g("handUse"), g("bullRush")), zoneAwr: cov - 3,
+  };
+}
+function lbToEdge(a, wt) {
+  const g = (k, d = 65) => a[k] ?? d;
+  const light = Math.max(0, 245 - (wt ?? 235)) / 2;
+  return {
+    passRush: g("blitzing"), runStop: Math.round(avg(g("runFit"), g("shedBlock")) - light), handUse: g("shedBlock") - 3, motor: g("pursuit"),
+    getOff: avg(g("pursuit"), g("blitzing")), bullRush: Math.round(g("shedBlock") - 4 - light), swim: g("blitzing") - 4, spin: g("blitzing") - 6,
+  };
+}
+export function moveFront(p) {
+  if (!canMoveFront(p)) return p;
+  const to = p.pos === "LB" ? "DL" : "LB";
+  if (p.posFrom?.pos === to) {
+    const { posFrom, ...rest } = p;
+    const ovr = clamp((p.ovr || 0) - posFrom.shift, 40, 99);
+    const pot = clamp((p.pot || p.ovr || 0) - posFrom.shift, ovr, 99);
+    return { ...rest, pos: to, mpos: posFrom.mpos, posAttrs: posFrom.attrs, ovr, trueOvr: ovr, pot, truePot: pot };
+  }
+  const attrs = to === "LB" ? edgeToLB(p.posAttrs || {}, p.spd) : lbToEdge(p.posAttrs || {}, p.wt);
+  const fromK = p.pos === "LB" ? "LB" : "EDGE", toK = to === "LB" ? "LB" : "EDGE";
+  const shift = Math.round(mean(attrs) + FRONT_OFFSET[toK] - (mean(p.posAttrs) + FRONT_OFFSET[fromK]) - 2);
+  const ovr = clamp((p.ovr || 0) + shift, 40, 99);
+  const pot = clamp((p.pot || p.ovr || 0) + shift, ovr, 99);
+  return { ...p, pos: to, mpos: to === "LB" ? "SAM" : "LEDG", posAttrs: attrs, ovr, trueOvr: ovr, pot, truePot: pot, posFrom: { pos: p.pos, mpos: p.mpos, attrs: p.posAttrs, shift } };
+}
+
+// Where a player can line up instead: [position, label] pairs for the profile's position menu.
+export function moveOptions(p) {
+  if (!p) return [];
+  if (OL_KIND[p.pos]) return OL_POS.filter((x) => x !== p.pos).map((x) => [x, x]);
+  if (DB_SWAP[p.pos]) return [[DB_SWAP[p.pos], DB_SWAP[p.pos] === "S" ? "Safety" : "Cornerback"]];
+  if (p.pos === "LB") return [["DL", "Edge rusher (DL)"]];
+  if (isEdge(p)) return [["LB", "Rush linebacker (LB)"]];
+  return [];
+}
+
+// Any position change the game supports (CB/S, along the line, edge/linebacker). Returns the player unchanged otherwise.
+export const movePlayer = (p, to) => (OL_KIND[p.pos] && OL_KIND[to] ? moveOL(p, to) : DB_SWAP[p.pos] === to ? moveDB(p) : canMoveFront(p) && (to === "LB" || to === "DL") && p.pos !== to ? moveFront(p) : p);
 export const movePreview = (p, to) => movePlayer(p, to).ovr;
