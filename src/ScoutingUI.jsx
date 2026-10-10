@@ -490,6 +490,11 @@ export function PickTracker({ g }) {
   const picks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr)).sort((a, b) => a.overall - b.overall);
   const made = new Map((g.draftLog || []).map((d) => [d.id, d]));
   const left = picks.filter((pk) => !made.has(pk.id)).length;
+  // Before the draft order is set, where each pick projects from the standings (worst record
+  // first, the Super Bowl champion last).
+  const ts = g.teams || [];
+  const ord = ts.map((t, i) => i).sort((a, b) => (a === g.pb?.ch) - (b === g.pb?.ch) || ts[a].w - ts[b].w || (ts[a].pf - ts[a].pa) - (ts[b].pf - ts[b].pa));
+  const slot = (pk) => ord.indexOf(pk.orig ?? pk.owner) + 1;
   return (
     <div style={{ ...panel, marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
@@ -511,7 +516,7 @@ export function PickTracker({ g }) {
                 const d = made.get(pk.id);
                 return (
                   <div key={pk.id} style={{ fontSize: 13, marginTop: 4, color: d ? C.mt : "#e2e8f0", fontWeight: d ? 500 : 800 }}>
-                    <span style={{ textDecoration: d ? "line-through" : "none" }}>{g.sp === "draft" ? `#${pk.overall}` : `Pick ${pk.num || "—"}`}</span>
+                    <span style={{ textDecoration: d ? "line-through" : "none" }}>{g.sp === "draft" ? `#${pk.overall}` : slot(pk) > 0 ? `Proj. pick ${slot(pk)}${pk.orig != null && pk.orig !== g.ui ? ` (${ts[pk.orig]?.ab})` : ""}` : "Pick —"}</span>
                     {d ? <div style={{ fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>✓ {d.player?.name || d.name || "Used"}{d.player?.pos ? ` · ${d.player.pos}` : ""}</div> : null}
                   </div>
                 );

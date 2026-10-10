@@ -339,5 +339,7 @@ export const PATCH_NOTES = [
     "Every season now has a first- and second-team All-Pro and a Pro Bowl roster for each conference, picked like the real ballots: position by position (QB, RB, 3 WR, TE, 2 tackles, 2 guards, C, 2 edge rushers, 2 DTs, 3 LB, 2 CB, 2 S, K, P), on each player's season stats and his rating. Offensive linemen are judged on their play.",
     "Honors pay off: in the off-season a first-team All-Pro gains +2 OVR, a second-team All-Pro or Pro Bowler +1 (the best honor counts). Your honorees are listed in the log.",
     "The season awards screen shows the first-team All-Pro roster and how many All-Pros and Pro Bowlers your team had. Player cards show every honor a player has earned, and honors count toward his legacy and the Hall of Fame.",
+    "Fixed: the Draft screen's 'Your picks' showed placeholder pick numbers (like pick 2 and 5) before the draft order was set. It now shows where each pick projects from the standings (worst record first, the champion last) and whose pick it originally was.",
+    "The 'Season Complete' share popup no longer sits over the playoff buttons: it's in the corner, under other windows, and closes itself after a few seconds.",
   ] },
 ];
