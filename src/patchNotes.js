@@ -319,4 +319,9 @@ export const PATCH_NOTES = [
     "The setting is saved with your franchise. Older franchises keep firing on.",
     "Casual difficulty now really means no firing, as its description always said.",
   ] },
+  { v: "1.80", date: "2026-10-10", title: "Cleaner Tabs and a Contracts Screen", notes: [
+    "The top bar and the Home menu are much shorter. Related screens now share one tab, with a row of sub-tabs at the top: Schedule+ (Schedule, Standings, Playoffs), Roster+ (Roster, Depth Chart, Contracts), Draft+ (Scouting, Draft, Draft Recap; it opens on the Draft during the draft) and League+ (League, Stats, Record Book, League History, Trophy Room).",
+    "New Contracts screen (Roster+ > Contracts): every contract on your team, from the biggest cap hit down, with years left, bonus per year and dead money if cut, plus your cap space, dead money and next season's cap room.",
+    "Extend players right from the Contracts screen during the season (anyone in the last two years of his deal), restructure for cap space, and open talks with a holdout. Pending extensions show the new deal and the season it starts.",
+  ] },
 ];

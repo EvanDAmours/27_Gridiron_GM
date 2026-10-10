@@ -79,13 +79,16 @@ try {
   await page.locator("button", { hasText: "Giants" }).first().click();
   await page.waitForTimeout(1200);
   await healthy("new game"); log("new game");
-  for (const tab of ["Roster", "Depth Chart", "Schedule", "Scouting", "Trade", "Free Agency", "Trophy Room", "Record Book", "League History", "Draft Recap", "Game Info", "Home"]) {
+  const seen = [];
+  for (const tab of ["Roster+", "Depth Chart", "Contracts", "Schedule+", "Standings", "Playoffs", "Draft+", "Draft Recap", "League+", "Stats", "Trophy Room", "Record Book", "League History", "Trade", "Free Agency", "Game Info", "Home"]) {
     await dismiss();
-    const t = page.locator(`button:text-is("${tab}")`);
-    if (await t.count()) { await t.first().click(); await page.waitForTimeout(400); await healthy(tab); }
+    let t = page.locator(`button:text-is("${tab}")`);
+    if (!(await t.count())) t = page.getByText(tab, { exact: true });
+    if (await t.count()) { await t.first().click(); await page.waitForTimeout(400); await healthy(tab); seen.push(tab); }
   }
+  for (const want of ["Roster+", "Contracts", "Schedule+", "Standings", "Draft+", "League+"]) if (!seen.includes(want)) fail(`couldn't open ${want}`);
   log("every main screen opens");
-  await dismiss(); await page.getByText("Scouting", { exact: true }).first().click(); await page.waitForTimeout(500);
+  await dismiss(); await page.getByText("Draft+", { exact: true }).first().click(); await page.waitForTimeout(400); await page.locator('button:text-is("Scouting")').first().click(); await page.waitForTimeout(500);
   await must("Regions", 500); await must("Send area scouts", 600); await healthy("regional scouting");
   if (!(await page.evaluate(() => /trip 1 of|●/.test(document.body.innerText)))) fail("regional trip didn't register");
   log("regional scouting");
