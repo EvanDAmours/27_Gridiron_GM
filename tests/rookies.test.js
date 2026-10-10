@@ -37,3 +37,16 @@ test("old saves' draft classes are reshaped once, never lowering anyone", () => 
   assert.strictEqual(reshapeDC(dc, 2079, "regular", 0)[2080], dc[2080]);
   assert.strictEqual(reshapeDC({ 2080: cls }, 2080, "draft", 5)[2080], cls);
 });
+
+import { seasonGrowth } from "../src/development.js";
+test("a young player at his ceiling only creeps past it now and then", () => {
+  let g = 0; for (let i = 0; i < 2000; i++) g += Math.max(0, seasonGrowth({ pos: "TE", age: 23, ovr: 75, pot: 75 }, 1));
+  assert.ok(g / 2000 < 0.35, `${g / 2000} a year`);
+});
+
+test("an Elite class's can't-miss prospect tops the board", () => {
+  const cls = genDC(2091, "Elite");
+  const top = cls.find((p) => p.trueOvr === 90 && p.truePot >= 94);
+  assert.ok(top);
+  assert.ok(top.cons.mid <= 3, `board #${top.cons.mid}`);
+});

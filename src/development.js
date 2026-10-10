@@ -67,6 +67,9 @@ export function seasonGrowth(p, share, rand = Math.random) {
     if (g > 0) g = Math.round(g * (0.4 + share));
     if (share >= 0.75 && ovr < pot && rand() < 0.5) g += 1;
     if (share < 0.1 && rand() < 0.3) g -= 1;
+    // At his ceiling he only creeps past it now and then (development traits and awards are the
+    // real way through).
+    if (ovr >= pot && g > 0) g = rand() < 0.25 ? 1 : 0;
     return g;
   }
   if (p.age <= end) {

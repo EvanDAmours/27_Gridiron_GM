@@ -294,4 +294,8 @@ export const PATCH_NOTES = [
     "The 'Pro-ready' label now means it: a prospect who can play now, not a low-ceiling late-rounder. Low-rated, low-ceiling prospects are labeled 'Developmental depth'.",
     "AI teams no longer cut their fresh draft picks first on cut-down day: a young player's upside counts when they decide who to keep.",
   ] },
+  { v: "1.75", date: "2026-10-10", title: "Development Ceilings and Elite Classes", notes: [
+    "A young player who has reached his ceiling now only creeps past it now and then. Development traits, awards and big seasons are the real way to beat a ceiling, so mid-round picks no longer routinely outgrow what they were drafted as.",
+    "Elite draft classes: the class's can't-miss prospect (90 OVR) is now its highest-ceiling player and tops the board. Before, the bonus went to a random prospect who could slide to the late rounds.",
+  ] },
 ];
