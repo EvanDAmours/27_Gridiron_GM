@@ -395,7 +395,10 @@ export function step(g, call, bonus = 1) {
       // Multi-sack games happen, but a rusher who already has two gets chipped and doubled.
       const rusher = pickW(rand, d.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, n < 2 ? w : w * 0.45 ** (n - 1)]; }));
       add(qbl, "sk", 1); add(qbl, "skYds", loss); st.sacks++;
-      if (rusher) { const rl = line(g, def, rusher); add(rl, "sacks", 1); add(rl, "qbH", 1); add(rl, "tkl", 1); }
+      // About one sack in seven is shared by two rushers: half a sack each.
+      const helper = rusher && rand() < 0.14 ? pickW(rand, d.rushW.filter(([p]) => p !== rusher)) : null;
+      if (rusher) { const rl = line(g, def, rusher); add(rl, "sacks", helper ? 0.5 : 1); add(rl, "qbH", 1); add(rl, "tkl", 1); }
+      if (helper) { const hl = line(g, def, helper); add(hl, "sacks", 0.5); add(hl, "qbH", 1); }
       yards = -loss; type = "sack"; desc = `${qb?.name || "QB"} is SACKED${rusher ? ` by ${rusher.name}` : ""} for a loss of ${loss}.`;
       if (rand() < 0.07) { // strip sack
         if (rusher) add(line(g, def, rusher), "ff", 1);

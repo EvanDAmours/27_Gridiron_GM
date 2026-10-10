@@ -30,7 +30,8 @@ export function loadRecordBook(book) {
   return { best: { ...fresh.best, ...book.best }, history: book.history || [] };
 }
 
-const fmt = (k, v) => (k === "sacks" ? (+v).toFixed(1).replace(/\.0$/, "") : Math.round(v).toLocaleString("en-US"));
+// Sacks come in halves (a shared sack); every other stat is a whole number.
+const fmt = (k, v) => (k === "sacks" ? String(Math.round(+v * 2) / 2) : Math.round(v).toLocaleString("en-US"));
 export const recordValue = fmt;
 
 // After a week (or the season): who now holds each record. teams: every club; yr: the season.
