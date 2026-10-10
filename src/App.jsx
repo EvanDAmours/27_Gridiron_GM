@@ -37,7 +37,7 @@ import { retireEntry } from "./history.js";
 import { seasonHonors, honorsById, honorBoost, HONOR_LABEL, stampPerformance } from "./honors.js";
 import { coachingCarousel, describeMove, ownerReview, jobOffers } from "./carousel.js";
 import { newRecordBook, loadRecordBook, updateRecords, recordWatch, recordStories, recordValue } from "./records.js";
-import { arrangeDL } from "./dline.js";
+import { arrangeDL, naturalDL, slotKind, DL_SLOTS } from "./dline.js";
 import { makeSide, createGame, step as playStep, playGame } from "./playsim.js";
 import PlayoffBracket from "./PlayoffBracket.jsx";
 import { makeBracket, nextRound, ROUND_NAMES } from "./playoffs.js";
@@ -62,7 +62,7 @@ import {
   R, Rf, pick, cl, uid, G, htS, fm, POS, TEAMS,
   PA, ACH_DEFS, AI_GM_NAMES, AI_GM_VOICE, PLAYS_POOL, LKR_EVENTS, pkV, genFace, qbRate, calcAV,
   genCombine, genProDay, combToPhys, SCREENS, gameClock, emptySS, tradeValue, REAL_ROOKIE_YRS, withRealPicks, tradeWireText,
-  dlSlotsMigrate, withTradeValues, wholeScores, genPlayer, genDC, genRealDC, REAL_DC_YEARS, getTeamNeed, aiBestPick, scGrade, MEDIA_HEADLINES, calcSOS,
+  dlSlotsMigrate, withTradeValues, wholeScores, genPlayer, genDC, genRealDC, REAL_DC_YEARS, calibrateLeague, getTeamNeed, aiBestPick, scGrade, MEDIA_HEADLINES, calcSOS,
   realFA, initialFA, addPunters, reshapeDC, initTeams, genSched, simPG, teamStr, rollGameWeather, liveView, gameSetup, tickInjuries, applyGame,
   simGame, OC_SCHEMES, DC_SCHEMES, POS_MARKET, glGrade, genCoach, getOCFit, getDCFit, schemeRunPct, calcOffStr,
   calcDefStr, genCoachMarket, capHit, capSpace, sL, LIVE_SPEEDS, DRAFT_SPEEDS, pickDelay, setInjuries, injuriesEnabled, setUserLineup, setDifficultyAdj, REAL_OVR0,
@@ -452,6 +452,8 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   // v32: mount — load leaderboard + gen today's challenge
   useEffect(()=>{loadLeaderboard();genTodayChallenge();},[]);
   // v33: auto-save on key state changes (debounced 900ms)
+  // The game engine measures teams against the league as it is this season.
+  useEffect(()=>{if(teams.length)calibrateLeague(teams);},[yr,phase,teams.length>0]);
   useEffect(()=>{if(phase==='main'&&teams.length){const t=setTimeout(autoSave,900);return()=>clearTimeout(t);}},[wk,sp,teams,dc,scouting,devFocus,awards,injuriesOn,noFire,deadline,recordBook,retired,ownerPatience,draftHistory]);
   // v34: login streak tracking
   useEffect(()=>{const today=new Date().toDateString();const last=localStorage.getItem('gm_last_login');const prev=parseInt(localStorage.getItem('gm_login_streak')||'0',10);const yesterday=new Date(Date.now()-86400000).toDateString();const ns=last===today?prev:last===yesterday?prev+1:1;setLoginStreak(ns);localStorage.setItem('gm_login_streak',String(ns));localStorage.setItem('gm_last_login',today);},[]);
@@ -1438,6 +1440,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
                 {isSt&&<span style={{fontSize:9,background:`${C.gn}33`,color:C.gn,borderRadius:2,padding:'1px 4px',fontWeight:700}}>ST</span>}
                 {p.injured&&<span style={{fontSize:9,color:C.rd,fontWeight:700}}>INJ</span>}
                 {franchiseQB===p.id&&<span style={{fontSize:9,background:'#b45309',color:'#fef3c7',borderRadius:2,padding:'1px 4px',fontWeight:700}}>FQB</span>}
+                {pos==='DL'&&(()=>{const nat=naturalDL(p);const slot=i<4?slotKind(i):null;const off=slot&&slot!==nat;return(<span title={`${nat==='DT'?'Defensive tackle':'Edge rusher'} by trade${slot?` · playing ${DL_SLOTS[i]}${off?' (out of position: rated lower there)':''}`:''}`} style={{fontSize:9,fontWeight:800,borderRadius:2,padding:'1px 4px',background:nat==='DT'?'#fb923c22':'#f472b622',color:nat==='DT'?'#fb923c':'#f472b6',border:off?'1px solid #ef4444':'none'}}>{nat}{slot?` @${DL_SLOTS[i]}`:''}{off?' ⚠':''}</span>);})()}
                 <span style={{marginLeft:'auto',transform:'scale(.85)',transformOrigin:'right center'}}><DevChip dev={devOf(p)}/></span>
               </div>
               <div style={{fontSize:11,color:C.mt}}>{p.age}yr {p.contract}yr/${p.salary||0}M</div>

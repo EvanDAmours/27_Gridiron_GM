@@ -364,4 +364,13 @@ export const PATCH_NOTES = [
     "Fixed: stars could vanish from your roster after the draft. A leftover 'player option' rule let some 80+ players (Andrew Thomas, Abdul Carter...) opt out of the last year of their deal at the start of the new season, even rookies and players you'd already extended, and other teams then signed them for the minimum. Player options are gone (the NFL barely uses them).",
     "Retirements now all happen before free agency (end of the regular season, and when contracts expire), never after the draft.",
   ] },
+  { v: "1.88", date: "2026-10-10", title: "A More Realistic Game Engine", notes: [
+    "Tested over whole simulated seasons against the modern NFL. Games now play out the way they do on Sundays: a team up big in the second half runs the ball, burns the clock and goes vanilla (and late, rests starters); a team down big throws into soft coverage; and close games come down to the last drives.",
+    "Late in a tied or one-score game, a team already in range plays for the field goal: runs it, centres it, and kicks at the end. More games are decided by 3, like the real thing.",
+    "Mismatches have diminishing returns. Even a stacked offense against the league's worst defense isn't a 50-point lock: blowouts (28+) dropped from about 8-14% of games to about 5%, and 60-point games are now rare instead of yearly. A dominant defense still dominates.",
+    "Steadier drives and more chunk plays: fewer three-and-outs, more yards after the catch and breakaway runs (good defenses limit both), more goal-line runs (rushing touchdowns were too rare), and field-goal accuracy down to the NFL's ~87%.",
+    "The engine now measures teams against the league as it is each season. Before, running games faded and passing numbers climbed year after year as ratings drifted (rushing fell from ~117 to ~92 yards a game over 10 seasons); now the league's numbers stay NFL-like for as long as you play.",
+    "Kickers and punters go where they do in the real draft. NFL teams almost never use a premium pick on one (the highest since 2012 went around pick 60-70), so a once-in-a-generation leg now goes around the third round at the earliest, a good one on day three, and most go late or undrafted. Applies to existing saves too.",
+    "Depth chart list: every defensive lineman shows whether he's an edge rusher or a tackle by trade and which spot he's playing (EDGE @LE, DT @DT1...). A starter playing out of position is outlined in red with a ⚠, since he's rated lower there.",
+  ] },
 ];

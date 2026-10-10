@@ -96,6 +96,24 @@ function measure(d) {
     records: (d.recordBook?.history || d.recordBook?.broken || []).length,
   };
 }
+// Game scoring for the regular season just played (read before the playoffs), against the NFL.
+function scoring(d) {
+  const gs = (d.sched || []).filter((g) => g.played);
+  const pts = gs.flatMap((g) => [g.hs, g.as]), n = pts.length || 1;
+  const mean = pts.reduce((a, b) => a + b, 0) / n, sd = Math.sqrt(pts.reduce((a, b) => a + (b - mean) ** 2, 0) / n);
+  const pct = (f) => +((100 * gs.filter(f).length) / Math.max(1, gs.length)).toFixed(1);
+  const all = d.teams.flatMap((t) => [...t.roster, ...(t.ir || [])]);
+  const tot = (k) => all.reduce((a, p) => a + (p.ss?.[k] || 0), 0);
+  const top = (k) => { const p = [...all].sort((a, b) => (b.ss?.[k] || 0) - (a.ss?.[k] || 0))[0]; return p ? `${p.name} ${+(p.ss?.[k] || 0).toFixed(1)}` : "-"; };
+  return {
+    yr: d.yr, games: gs.length, ppg: +mean.toFixed(1), sd: +sd.toFixed(1), max: Math.max(...pts),
+    t40: +((100 * pts.filter((x) => x >= 40).length) / n).toFixed(1), t50: pts.filter((x) => x >= 50).length, shutouts: pts.filter((x) => x === 0).length,
+    oneScore: pct((g) => Math.abs(g.hs - g.as) <= 8), blowout28: pct((g) => Math.abs(g.hs - g.as) >= 28), homeWin: pct((g) => g.hs > g.as), ties: gs.filter((g) => g.hs === g.as).length,
+    passYds: +(tot("passYds") / n).toFixed(0), rushYds: +(tot("rushYds") / n).toFixed(0), compPct: +((100 * tot("comp")) / Math.max(1, tot("att"))).toFixed(1),
+    passTD: +(tot("passTD") / n).toFixed(2), rushTD: +(tot("rushTD") / n).toFixed(2), ints: +(tot("passInt") / n).toFixed(2), sacks: +(tot("sacks") / n).toFixed(2),
+    lead: { passYds: top("passYds"), passTD: top("passTD"), rushYds: top("rushYds"), recYds: top("recYds"), rec: top("rec"), sacks: top("sacks"), ints: top("ints") },
+  };
+}
 let code = 0;
 try {
   await page.goto(url); await page.waitForTimeout(1200);
@@ -104,6 +122,7 @@ try {
     await must("Start Season", 1500);
     await must("Sim All", 6000);
     if (await page.evaluate(() => document.body.innerText.includes("TRADE DEADLINE DAY"))) { await must("Sim to 4:00 PM", 800); await must("Back to the season", 800); await must("Sim All", 6000); }
+    if (process.env.SCORING) { let r = await save(); for (let w = 0; w < 6 && r.sp !== "playoffs"; w++) r = await save(); console.log("SCORING " + JSON.stringify(scoring(r))); }
     for (let i = 0; i < 6; i++) { await click("Sim Round", 1000); const c = page.locator("button", { hasText: /^Continue$/ }); if (await c.count()) await c.first().click(); }
     await must("→ Combine"); await must("→ Re-sign Week"); await must("→ Free Agency", 2500); await must("→ Draft", 1500);
     for (let k = 0; k < 3; k++) { await click("Sim Draft", 3000); const cont = page.locator("button", { hasText: "Continue the draft" }); if (await cont.count()) await cont.click(); }

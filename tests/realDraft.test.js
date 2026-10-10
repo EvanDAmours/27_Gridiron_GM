@@ -17,14 +17,17 @@ test("a real class: 240 prospects, the real names on top in the real boards' ord
     const real = REAL[yr];
     assert.equal(dc.length, 240);
     const byName = new Map(dc.map((p) => [p.name, p]));
+    const kp = (x) => x.pos === "K" || x.pos === "P";
+    const field = real.filter((d) => !kp(d));
+    field.forEach((d, i) => assert.equal(byName.get(d.name).cons.mid, i + 1, `${d.name} keeps his place on the board`));
     for (const d of real) {
       const p = byName.get(d.name);
       assert.ok(p, d.name);
-      assert.equal(p.cons.mid, d.rank, `${d.name} keeps his board rank`);
+      if (kp(d)) assert.ok(p.cons.mid > 100, `${d.name}: specialists go late`);
       assert.equal(p.bio.college, d.college);
       assert.equal(publicPot(p), d.pot, "the board sees his listed ceiling");
     }
-    assert.ok(dc.filter((p) => !p.real).every((p) => p.cons.mid > real.length), "generated depth stays below the real names");
+    assert.ok(dc.filter((p) => !p.real && !kp(p)).every((p) => p.cons.mid > field.length), "generated depth stays below the real names");
   }
 });
 
@@ -45,4 +48,19 @@ test("Claude's boom and bust calls are hidden gems and red flags", () => {
   }
   assert.equal(dc.filter((p) => p.gem).length, booms.length, "no random gems on top of Claude's calls");
   assert.equal(dc.filter((p) => p.bust).length, busts.length, "no random busts on top of Claude's calls");
+});
+
+test("kickers and punters never go early, even a once-in-a-generation leg", async () => {
+  const { genDC } = await import("../src/league.js");
+  const { aiDraftScore, csScore } = await import("../src/scouting.js");
+  for (let i = 0; i < 6; i++) {
+    const dc = genDC(2030 + i);
+    const k = dc.find((p) => p.pos === "K");
+    Object.assign(k, { trueOvr: 88, ovr: 88, truePot: 99, pot: 99 });
+    const others = dc.filter((p) => p !== k).map((p) => aiDraftScore(p, "balanced")).sort((a, b) => b - a);
+    const slot = others.filter((v) => v > aiDraftScore(k, "balanced")).length + 1;
+    assert.ok(slot >= 55, `an elite kicker would go around pick ${slot}`);
+    assert.ok(dc.filter((p) => p.pos === "K" || p.pos === "P").every((p) => p === k || p.cons.mid > 64), "no specialist on the board's first two rounds");
+    assert.ok(csScore(k) < others[50]);
+  }
 });

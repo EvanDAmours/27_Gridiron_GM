@@ -7,12 +7,13 @@ import REAL_SCHED from "./data/schedule2026.json" with { type: "json" };
 import REAL_DC from "./data/realProspects.json" with { type: "json" };
 import { depthOrderFor } from "./depth.js";
 import { playerValue, pickValue as chartPickValue } from "./trade.js";
-import { arrangeDL } from "./dline.js";
-import { makeSide, createGame, playGame } from "./playsim.js";
+import { arrangeDL, dlAsPlayed } from "./dline.js";
+import { makeSide, createGame, playGame, setLeague } from "./playsim.js";
+import { unitRatings } from "./gamesim.js";
 import { DATA_TO_DOLLARS, leagueCap } from "./cap.js";
 import { teamSnaps } from "./snaps.js";
 import { nflSchedule, divisionPlaces } from "./schedule.js";
-import { aiDraftScore, devOf, rankClass, plantGems, plantBusts, gemGap, draftCollege } from "./scouting.js";
+import { aiDraftScore, devOf, rankClass, plantGems, plantBusts, gemGap, draftCollege, kpValue } from "./scouting.js";
 
 export const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 export const Rf=(a,b)=>Math.random()*(b-a)+a;
@@ -200,16 +201,16 @@ export function genRealDC(yr){
     if(d.mpos)p.mpos=d.mpos;
     p.scoutedPot=cl(d.pot+R(-12,12),d.pot-5,99);p.bio.college=d.college;p.bio.backstory=d.note||"";
     // The consensus board follows the real boards' order.
-    const sc=Math.min(d.pot*0.78+d.ovr*0.22-(d.pos==="K"||d.pos==="P"?6:0),prev-0.05);prev=sc;p.cons={score:sc};
+    const kp=d.pos==="K"||d.pos==="P";const sc=kp?kpValue(d,d.pot*0.78+d.ovr*0.22):Math.min(d.pot*0.78+d.ovr*0.22,prev-0.05);if(!kp)prev=sc;p.cons={score:sc,kp:1};
     if(d.dev)p.dev=d.dev;
     if(d.boom&&d.truePot>d.pot){p.gem={gap:d.truePot-d.pot,why:d.boom};p.pot=p.truePot=d.truePot;p.dev||=d.truePot>=90?"superstar":"star";}
     else if(d.bust&&d.truePot<d.pot){p.bust={gap:d.pot-d.truePot,why:d.bust,kind:d.kind||BUST_KIND(d.bust)};p.pot=p.truePot=d.truePot;if(p.trueOvr>=d.truePot)p.ovr=p.trueOvr=Math.max(50,d.truePot-2);p.dev||="normal";}
     p.posAttrs=genPAttrs(p.pos,p.trueOvr);p.tradeVal=playerValue({pos:p.pos,age:p.age,ovr:p.trueOvr,pot:p.truePot});
-    minScore=Math.min(minScore,sc);minPot=Math.min(minPot,d.pot);minOvr=Math.min(minOvr,d.ovr);dc.push(p);
+    if(!kp){minScore=Math.min(minScore,sc);minPot=Math.min(minPot,d.pot);minOvr=Math.min(minOvr,d.ovr);}dc.push(p);
   }
   const posW=[];for(const[p,n]of Object.entries(DC_POS_W))for(let i=0;i<n;i++)posW.push(p);
   const adj={fl:58,cap:86};
-  while(dc.length<240){const p=genProspect(yr,pick(posW),adj,minPot,minOvr);const sc=p.truePot*0.78+p.trueOvr*0.22-(p.pos==="K"||p.pos==="P"?6:0)+Gc(0,2,-6,6);p.cons={score:Math.min(sc,minScore-0.1-Math.random())};dc.push(p);}
+  while(dc.length<240){const p=genProspect(yr,pick(posW),adj,minPot,minOvr);const sc=kpValue(p,p.truePot*0.78+p.trueOvr*0.22)+Gc(0,2,-6,6);p.cons={score:p.pos==="K"||p.pos==="P"?sc:Math.min(sc,minScore-0.1-Math.random()),kp:1};dc.push(p);}
   for(const p of dc){p.gemChk=1;p.bustChk=1;}
   return rankClass(dc);
 }
@@ -407,6 +408,13 @@ export function applyGame(t,snaps,lines,playoff=false){
     const injMult=(p.fragile?1.5:1)*(p.traits?.includes('Injury Prone')?2.5:p.traits?.includes('Ironman')?0:1);if(INJ_ON&&Math.random()<.025*injMult*Math.max(.15,_sh/100)){p.injured=true;p.injCount=(p.injCount||0)+1;p.fragile=p.injCount>=2;const injCauses=['high-impact collision','awkward landing','non-contact','blocked low','tackled from behind','turf contact','pile-up'];p.injType=`${pick(["Hamstring","Ankle","Knee (MCL)","Shoulder","Concussion","Quad","Calf","Back"])} (${pick(injCauses)})`;const sevRoll=Math.random();if(sevRoll<0.4){p.injSev="minor";p.injRecWks=R(1,2);}else if(sevRoll<0.8){p.injSev="moderate";p.injRecWks=R(3,5);}else{p.injSev="major";p.injRecWks=R(6,8);}p.injWk=p.injRecWks;p.injNew=true;}
   });
   return box;
+}
+// The league's unit-rating averages and spreads, for the game engine to measure teams against.
+export function calibrateLeague(teams){
+  const us=(teams||[]).filter(t=>t?.roster?.length).map(t=>{const h=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const memo={};const order=pos=>memo[pos]||(memo[pos]=pos==="DL"?dlAsPlayed(depthOrderFor(h,{},"DL")):depthOrderFor(h,{},pos));return unitRatings(order);});
+  if(us.length<8)return null;
+  const base={};for(const k of ["pass","run","passD","runD","rush","ol"]){const xs=us.map(u=>u[k]).filter(Number.isFinite);const m=xs.reduce((a,b)=>a+b,0)/xs.length;base[k]=[m,Math.sqrt(xs.reduce((a,b)=>a+(b-m)**2,0)/xs.length)];}
+  setLeague(base);return base;
 }
 // Sim a game start to finish on the play-by-play engine. dry: a preview that changes nothing.
 export function simGame(ht,at,hPlan,aPlan,wxOverride,opts={}){

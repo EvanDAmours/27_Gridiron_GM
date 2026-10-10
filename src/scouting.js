@@ -584,6 +584,13 @@ export function devGrowth(p, age) {
 
 // ---------- Consensus big board ----------
 
+// Kickers and punters: NFL teams almost never spend a premium pick on one (the highest since
+// 2012 went 59th-70th, the next ~110th). Their draft value is squeezed toward the bottom of the
+// board: a once-in-a-generation leg goes around the third round, a good one on day three, most
+// late or undrafted.
+export const SPECIALIST = (p) => p.pos === "K" || p.pos === "P";
+export const kpValue = (p, v) => (SPECIALIST(p) ? 60 + (v - 60) * 0.45 : v);
+
 // Preseason rankings come out with the class; final rankings after the Combine. The Big Board
 // is always in this order, whatever your scouts find. Sorts the class in place.
 export function rankClass(cls) {
@@ -592,7 +599,7 @@ export function rankClass(cls) {
     p.aiNoise ??= gauss(0, 3.6);
     p.scout ||= { lvl: 0 };
     // Kickers rarely go early, however talented.
-    p.cons ||= { score: p.truePot * 0.78 + p.trueOvr * 0.22 - (p.pos === "K" || p.pos === "P" ? 6 : 0) + stream(`${p.id}|cs`).gauss(0, 3.4) };
+    p.cons ||= { score: kpValue(p, p.truePot * 0.78 + p.trueOvr * 0.22) + stream(`${p.id}|cs`).gauss(0, SPECIALIST(p) ? 1.5 : 3.4), kp: 1 };
   }
   [...cls].sort((a, b) => b.cons.score - a.cons.score).forEach((p, i) => (p.cons.mid = i + 1));
   return sortByRank(cls);
@@ -678,13 +685,17 @@ export function myScore(sc, p) {
   const r = prospectRead(sc, p);
   if (r.potV == null) return csScore(p);
   const ovrE = r.ovrV ?? r.potV - 8;
-  return r.potV * 0.78 + ovrE * 0.22 + (DEV_BUMP[r.dev] || 0) - (p.pos === "K" || p.pos === "P" ? 6 : 0);
+  return kpValue(p, r.potV * 0.78 + ovrE * 0.22 + (DEV_BUMP[r.dev] || 0));
 }
 export function myBoard(sc, cls) {
   const ranked = [...(cls || [])].map((p) => [p, myScore(sc, p)]).sort((a, b) => b[1] - a[1]);
   return new Map(ranked.map(([p], i) => [p.id, i + 1]));
 }
-export const csScore = (p) => p.cons?.fscore ?? p.cons?.score ?? p.truePot * 0.78 + p.trueOvr * 0.22 - (p.pos === "K" || p.pos === "P" ? 6 : 0);
+export const csScore = (p) => {
+  const v = p.cons?.fscore ?? p.cons?.score ?? kpValue(p, p.truePot * 0.78 + p.trueOvr * 0.22);
+  // Classes from older saves still carry a kicker's old board score; cap it at the specialist value.
+  return SPECIALIST(p) && p.cons && !p.cons.kp ? Math.min(v, kpValue(p, p.truePot * 0.78 + p.trueOvr * 0.22) + 1.5) : v;
+};
 export const sortByRank = (cls) => cls.sort((a, b) => csRank(a) - csRank(b));
 
 // ---------- The Combine ----------
@@ -802,9 +813,9 @@ const DEV_EYE = { generational: 2, superstar: 1.2, star: 0.6, late: -0.3 };
 export function aiDraftScore(p, gmStyle) {
   const potW = gmStyle === "win-now" ? 0.6 : gmStyle === "rebuilder" ? 0.85 : 0.78;
   const seen = p.truePot - gemGap(p) * (gmStyle === "analytics" ? 0.78 : 0.95) + bustGap(p) * (gmStyle === "analytics" ? 0.75 : 0.95);
-  const own = (seen + (p.aiNoise || 0)) * potW + p.trueOvr * (1 - potW) + (p.gem || p.bust ? 0 : DEV_EYE[devOf(p)] || 0) + (gmStyle === "rebuilder" && p.age <= 21 ? 0.6 : 0) - (p.pos === "K" || p.pos === "P" ? 6 : 0);
+  const own = (seen + (p.aiNoise || 0)) * potW + p.trueOvr * (1 - potW) + (p.gem || p.bust ? 0 : DEV_EYE[devOf(p)] || 0) + (gmStyle === "rebuilder" && p.age <= 21 ? 0.6 : 0);
   const trust = gmStyle === "analytics" ? 0.65 : 0.5;
-  return own * trust + csScore(p) * (1 - trust) + gauss(0, 1.2);
+  return kpValue(p, own) * trust + csScore(p) * (1 - trust) + gauss(0, SPECIALIST(p) ? 0.6 : 1.2);
 }
 
 const GRADE_ORDER = ["D", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+"];

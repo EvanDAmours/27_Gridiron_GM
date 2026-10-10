@@ -7,8 +7,13 @@
 // a better defense gets more stops, sacks and takeaways. Players get the ball by depth chart,
 // snap share AND talent, so a star WR1 or RB1 sees a star's share of the touches.
 //
-// Tuned to the modern NFL: ~22-23 points a team, ~63 offensive plays, ~215 passing and ~115
-// rushing yards, ~64% completions, ~2.4 sacks and ~1.2 giveaways a game.
+// Tuned to the modern NFL (checked over whole simulated seasons with scripts/scoring.mjs):
+// ~22 points a team, ~63 offensive plays, ~11.5 drives, ~40% on third down, ~235 passing and
+// ~120 rushing yards, ~65% completions, ~2.5 sacks, ~0.8 interceptions and ~87% on field goals.
+// The score shapes the game the way it does on Sundays: a team well ahead in the second half
+// runs the ball and goes vanilla, a team well behind throws into soft coverage, close games
+// come down to the last drives (and the field goal at the end), and lopsided mismatches have
+// diminishing returns, so blowouts and 50-point games stay rare.
 import { retRating } from "./special.js";
 import { unitRatings } from "./gamesim.js";
 import { dlAsPlayed } from "./dline.js";
@@ -99,7 +104,7 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season 
   const p = on("P")[0] || order("P")?.[0];
   const pOvr = p ? p.ovr || 75 : 60, pPow = p ? p.posAttrs?.power ?? 93 : 85, pAcc = p ? p.posAttrs?.accuracy ?? 82 : 65;
   const stCov = team?.coach?.st?.rating ?? 70;
-  const passLean = clamp(0.6 + (u.pass - u.run) * 0.008 + lean, 0.45, 0.75);
+  const passLean = clamp(0.6 + (u.pass - u.run) * 0.006 + lean, 0.5, 0.7);
   return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, p, pOvr, pPow, pAcc };
 }
 
@@ -131,23 +136,51 @@ const add = (l, k, v) => { if (v) l[k] = (l[k] || 0) + v; };
 // League baselines for each unit rating (mean, spread) from the 2026 rosters. Units are
 // compared in spreads above or below average, so an elite defense counts as much as an elite
 // offense even though defensive units (8 players averaged) vary less than offensive ones.
-export const LEAGUE = { pass: [81.4, 4.9], run: [81.7, 4.2], passD: [80.1, 2.4], runD: [79.1, 1.9], rush: [79.4, 2.2], ol: [78.2, 3.4] };
+export const LEAGUE0 = { pass: [81.4, 4.9], run: [81.7, 4.2], passD: [80.1, 2.4], runD: [79.1, 1.9], rush: [79.4, 2.2], ol: [78.2, 3.4] };
+export const LEAGUE = Object.fromEntries(Object.entries(LEAGUE0).map(([k, v]) => [k, [...v]]));
+// Re-centre on the league as it is now (each new season): as ratings drift over the years (say
+// defensive fronts get better while backs get worse), the league's numbers stay NFL-like, and
+// teams are still judged against each other. The spread can move only a little, so a club that
+// pulls away from the pack still stands out.
+export function setLeague(base) {
+  for (const [k, [m, sd]] of Object.entries(base || {})) {
+    if (!LEAGUE0[k] || !Number.isFinite(m)) continue;
+    LEAGUE[k] = [m, clamp(Number.isFinite(sd) ? sd : LEAGUE0[k][1], LEAGUE0[k][1] * 0.75, LEAGUE0[k][1] * 1.33)];
+  }
+}
 export let SENSITIVITY = 0.6; // edge units per spread of advantage
 // How much a team's play swings from one game to the next (edge units, per side of the ball).
 export let GAME_DAY_SD = 0.45; // with SENSITIVITY 0.6: win totals spread like the NFL's (~3 wins), no routine 16-1 or 1-16 teams
 export const tune = (o) => { if (o.SENSITIVITY != null) SENSITIVITY = o.SENSITIVITY; if (o.GAME_DAY_SD != null) GAME_DAY_SD = o.GAME_DAY_SD; if (o.HOME_EDGE != null) HOME = o.HOME_EDGE; };
 const z = (v, k) => (v - LEAGUE[k][0]) / LEAGUE[k][1];
 
-// Matchup edges for the team with the ball (passing and running), in edge units.
+// Matchup edges for the team with the ball (passing and running), in edge units. Big offensive
+// mismatches have diminishing returns (even the best offense against the worst defense isn't
+// a 50-point lock), and the score shapes how both teams play the second half: the team well
+// ahead goes vanilla (and late, rests starters), the team well behind faces soft coverage.
+export const EDGE_CAP = 1.15;
+const soft = (x) => (x > 0 ? EDGE_CAP * Math.tanh(x / EDGE_CAP) : 2.2 * Math.tanh(x / 2.2)); // a dominant defense still dominates, a little more than a dominant offense
+export function gameScript(qtr, margin, clock = 900) {
+  if (qtr < 3) return 0;
+  // The last five minutes of a one-score game: the team ahead sits in soft coverage and runs the
+  // clock; the team behind gets yards underneath and a real shot to tie or win it.
+  if (qtr >= 4 && clock < 480 && margin !== 0 && Math.abs(margin) <= 8) return margin < 0 ? 0.45 : -0.25;
+  if (margin >= 24) return qtr >= 4 ? -0.9 : -0.55; // backups in, the playbook closed
+  if (margin >= 17) return qtr >= 4 ? -0.6 : -0.35;
+  if (margin >= 9) return qtr >= 4 ? -0.3 : -0.12; // protecting it: run the ball, keep everything in front
+  if (margin <= -17) return 0.3;
+  if (margin <= -9) return qtr >= 4 ? 0.35 : 0.15; // prevent coverage gives up yards underneath
+  return 0;
+}
 function edges(g) {
   const o = g.sides[g.poss], d = g.sides[other(g.poss)];
   const dd = g.day ? g.day[g.poss].o - g.day[other(g.poss)].d : 0;
-  const extra = o.mod / POINTS_PER_EDGE + (g.poss === "h" && !g.neutral ? HOME : 0) + dd;
-  return { o, d, passE: (z(o.u.pass, "pass") - z(d.u.passD, "passD")) * SENSITIVITY + extra, runE: (z(o.u.run, "run") - z(d.u.runD, "runD")) * SENSITIVITY + extra, rushE: z(d.u.rush, "rush") - z(o.u.ol, "ol") };
+  const extra = o.mod / POINTS_PER_EDGE + (g.poss === "h" && !g.neutral ? HOME : 0) + dd + gameScript(g.ot ? 3 : g.qtr, g.score[g.poss] - g.score[other(g.poss)], g.clock);
+  return { o, d, passE: soft((z(o.u.pass, "pass") - z(d.u.passD, "passD")) * SENSITIVITY + extra), runE: soft((z(o.u.run, "run") - z(d.u.runD, "runD")) * SENSITIVITY + extra), rushE: z(d.u.rush, "rush") - z(o.u.ol, "ol") };
 }
 
 // Field goal odds from a distance (yards) and the kicker's rating.
-export const fgOdds = (dist, k = 75) => clamp(1.03 - 0.0045 * (dist - 18) - 0.0006 * Math.max(0, dist - 35) ** 2 + (k - 75) * 0.004, 0.15, 0.99);
+export const fgOdds = (dist, k = 75) => clamp(1.005 - 0.0045 * (dist - 18) - 0.0006 * Math.max(0, dist - 35) ** 2 + (k - 75) * 0.004, 0.15, 0.99);
 
 function newPossession(g, yard) {
   g.poss = other(g.poss);
@@ -218,6 +251,8 @@ function scored(g, side, pts) {
   if (g.ot) { g.done = true; }
 }
 
+// Late with the game tied (or down 3 or less) and in comfortable range: play for the field goal.
+const forTheKick = (g, lead) => ((g.qtr === 4 && g.clock < 150) || (g.ot && g.down >= 2)) && lead <= 0 && lead >= -3 && 100 - g.yard + 17 <= 45;
 // Play style from the situation (or the user's call).
 function chooseCall(g, o) {
   const rand = g.rand, lead = g.score[g.poss] - g.score[other(g.poss)];
@@ -226,8 +261,15 @@ function chooseCall(g, o) {
   if (g.down === 3) pass = g.toGo >= 7 ? 0.86 : g.toGo <= 2 ? 0.42 : 0.68;
   else if (g.down === 2 && g.toGo >= 8) pass += 0.08;
   else if (g.down === 1) pass -= 0.08;
+  // Game script: protect a big second-half lead on the ground; chase one through the air.
+  if (g.qtr >= 3 && lead >= 14) pass -= g.qtr >= 4 ? 0.2 : 0.1;
+  if (g.qtr >= 3 && lead <= -14) pass = Math.max(pass + 0.12, g.qtr >= 4 ? 0.75 : 0);
+  // At the goal line, most teams pound it.
+  if (g.yard >= 96 && g.down < 3) pass -= 0.18;
+  // Tied or down three or less late, already in field-goal range: run, centre it, kick at the end.
+  if (forTheKick(g, lead)) return "run";
   if ((late && lead < 0) || twoMin) pass = Math.max(pass, 0.8);
-  if (late && lead > 0) pass = Math.min(pass, 0.3);
+  if ((late && lead > 0) || (g.qtr >= 4 && lead >= 17)) pass = Math.min(pass, 0.3);
   return rand() < pass ? "pass" : "run";
 }
 
@@ -241,14 +283,14 @@ export function step(g, call, bonus = 1) {
   const off = g.poss, def = other(off);
   const st = g.stats[off];
   const lead = g.score[off] - g.score[def];
-  const hurry = ((g.qtr === 2 || g.qtr === 4) && g.clock < 120) || (g.qtr === 4 && g.clock < 300 && lead < 0);
+  const hurry = ((g.qtr === 2 || g.qtr === 4) && g.clock < 120) || (g.qtr === 4 && g.clock < 300 && lead < 0) || (g.qtr === 4 && lead <= -9);
   const fgDist = 100 - g.yard + 17;
   const before = { yard: g.yard, down: g.down, toGo: g.toGo, qtr: g.qtr, clock: g.clock, poss: off };
   const ev = { ...before, yards: 0, type: "", text: "", td: false, turnover: false, score: 0 };
   g.plays++;
 
   // Fourth down (or the end of a half in range): kick, punt or go for it.
-  const endOfHalf = (g.qtr === 2 || g.qtr === 4 || g.ot) && g.clock <= 25 && fgDist <= 55 && !(g.qtr >= 4 && lead < -3);
+  const endOfHalf = ((g.qtr === 2 || g.qtr === 4 || g.ot) && g.clock <= 25 && fgDist <= 55 && !(g.qtr >= 4 && lead < -3)) || (!call && forTheKick(g, lead) && g.down >= 3 && (g.clock <= 40 || g.ot));
   let decision = call === "punt" || call === "fg" ? call : null;
   if (!decision && (g.down === 4 || endOfHalf || (g.ot && g.down >= 3 && fgDist <= 52))) {
     if (endOfHalf && fgDist <= 55) decision = "fg";
@@ -381,10 +423,12 @@ export function step(g, call, bonus = 1) {
         if (!g.done) newPossession(g, 100 - g.yard - Math.round(8 + rand() * 12) + ret);
         return ev;
       }
-      const compP = clamp(0.645 + passE * 0.018 + ((target?.ovr || 75) - 75) * 0.0025 + (deep ? -0.22 : quick ? 0.08 : 0) + (screen ? 0.18 : 0), 0.3, 0.9);
+      const compP = clamp(0.655 + passE * 0.018 + ((target?.ovr || 75) - 75) * 0.0025 + (deep ? -0.22 : quick ? 0.08 : 0) + (screen ? 0.18 : 0), 0.3, 0.9);
       if (rand() < compP) {
-        const mean = screen ? 5.5 : deep ? 24 : quick ? 6.5 : 10.3;
+        const mean = screen ? 5.5 : deep ? 24 : quick ? 6.5 : 9.9;
         yards = Math.round((2 + expo(rand, mean - 2 + passE * 0.45 + ((target?.ovr || 75) - 75) * 0.055 + Math.max(0, (target?.ovr || 75) - 90) * 0.08)) * (bonus || 1));
+        // Now and then a catch turns into a big play after the catch (missed tackle, busted coverage).
+        if (!deep && rand() < clamp(0.02 + Math.max(0, (target?.spd || 85) - 88) * 0.0015 + passE * 0.008, 0.004, 0.05)) yards += Math.round(12 + expo(rand, 16));
         if (screen && rand() < 0.15) yards = -Math.round(rand() * 3);
         completed = true; carrier = target; type = "pass";
         add(qbl, "comp", 1); add(tl, "rec", 1); st.comp++;
@@ -406,9 +450,9 @@ export function step(g, call, bonus = 1) {
     const outside = call === "run_outside";
     // Heavy workloads wear a back down: past ~18 carries in a game he averages a little less.
     const load = carrier && !keeper ? Math.max(0, (g.box[off][carrier.id]?.rushAtt || 0) - 18) : 0;
-    const mean = 3.65 + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.022 + (keeper ? 0.6 : 0) - load * 0.06;
-    const breakaway = rand() < clamp(0.04 + ((carrier?.spd || 80) - 82) * 0.0018 - load * 0.003 + runE * 0.005 + (outside ? 0.025 : 0), 0.015, 0.12);
-    yards = breakaway ? Math.round(mean + 5 + expo(rand, 11)) : Math.round(clamp(mean - 0.6 + gauss(rand) * (outside ? 3.6 : 2.8), -4, 14));
+    const mean = 3.85 + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.022 + (keeper ? 0.6 : 0) - load * 0.06;
+    const breakaway = rand() < clamp(0.047 + ((carrier?.spd || 80) - 82) * 0.0018 - load * 0.003 + runE * 0.005 + (outside ? 0.025 : 0), 0.015, 0.12);
+    yards = breakaway ? Math.round(mean + 5 + expo(rand, 11)) : Math.round(clamp(mean - 0.6 + gauss(rand) * (outside ? 3.3 : 2.5), -4, 14));
     if (yards > 0) yards = Math.round(yards * (bonus || 1));
     const cl = line(g, off, carrier);
     add(cl, "rushAtt", 1); st.rushAtt++;
@@ -479,7 +523,7 @@ export function step(g, call, bonus = 1) {
     if (!g.done) newPossession(g, 100 - g.yard);
     return ev;
   }
-  ev.note = tick(g, clockStops ? (hurry ? 5 : 7) : hurry ? 18 : late(g) && lead > 0 ? 44 : 38 + Math.round(rand() * 8));
+  ev.note = tick(g, clockStops ? (hurry ? 5 : 7) : hurry ? 18 : (late(g) && lead > 0) || (g.qtr === 4 && lead >= 9) ? 44 : 40 + Math.round(rand() * 8));
   return ev;
 }
 const late = (g) => g.qtr === 4 && g.clock < 300;
