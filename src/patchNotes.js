@@ -404,10 +404,6 @@ export const PATCH_NOTES = [
     "League and player stats now sit with the standings on phones: Standings, Stats, Schedule and Playoffs are tabs on one screen (the schedule is still one tap from Standings).",
     "Phone home screen matches the computer's: both teams side by side with compact rating boxes and smaller logos, and the duplicate Play / Sim buttons below the matchup are gone (they're in the header).",
   ] },
-  { v: "1.94", date: "2026-10-10", title: "Stars on the Home Screen", notes: [
-    "Each team's best player now stands beside its logo on the home screen (desktop and phone), animated, in his number and his team's uniform: colors at home, white on the road.",
-    "Every player has his own gear loadout: arm sleeves, arm tape, wristbands, gloves (most quarterbacks go barehanded), eye black or stickers, a clear, smoke or iridescent visor, a towel, high or low socks, cleat color, a neck roll for the big men, and a facemask that fits his position. It's rolled once from who he is, so he looks the same every week and every season.",
-  ] },
   { v: "1.94", date: "2026-10-10", title: "Football GM", notes: [
     "The game is now Football GM, by D'Amours Unlimited. The main menu is cleaner: the NFL shield top left, a 3D Vince Lombardi Trophy turning on its platter top right, big New Game and Load Game buttons, and the 'Owner can fire you' and draft-class options side by side.",
     "Removed the daily challenge and the leaderboard from the main menu, and the old studio's branding, links and account code from the game.",
