@@ -412,4 +412,9 @@ export const PATCH_NOTES = [
     "The result card after each game is smaller on desktop and a compact two-line strip on phones: the result, both logos and the score, your record, your top performer, and buttons for the box score and the rest of the league's scores.",
     "Fixed: promoting a practice-squad player mid-season (when injuries left a position without a backup) could put a roster at 54. When the 53 is full, the least valuable player at your deepest position is released to make room, and the log says who.",
   ] },
+  { v: "1.96", date: "2026-10-10", title: "The Trade Block Works", notes: [
+    "Putting a player on the trade block now gets calls: teams that need his position (or are going for it) come to you with offers built around him, as a player swap, a player plus picks, or picks only. A star on the block draws extra calls at the deadline, and the same team won't send the same offer twice.",
+    "Fixed: the Trade Finder's Refresh button showed the same five deals every time. Each refresh now brings up deals you haven't seen yet, then starts over once you've seen them all.",
+    "Bigger Trade Finder, Refresh and Trade Block buttons.",
+  ] },
 ];

@@ -84,9 +84,11 @@ export function advanceDeadline(state, teams, picks, ui, { yr, pkV, capSpace, ge
   const kept = state.offers.filter((o) => hour - o.hour < 2 && !last);
   const pulled = state.offers.filter((o) => !kept.includes(o));
   const calls = [];
-  if (!last && genOffer) for (let k = 0; k < 3 && calls.length < (rand() < 0.5 ? 1 : 2); k++) {
+  if (!last && genOffer) for (let k = 0; k < 5 && calls.length < (rand() < 0.5 ? 1 : 2) + ((teams[ui]?.roster || []).some((p) => p.onBlock && p.ovr >= 85) ? 1 : 0); k++) {
     const o = genOffer(teams);
-    if (o && !kept.some((x) => x.want.id === o.want.id) && !calls.some((x) => x.want.id === o.want.id)) calls.push({ ...o, id: feedItem(hour, {}).id, hour });
+    // Several clubs can bid on the same player (a star on the block draws a crowd); one call per club per player.
+    const same = (x) => x.want.id === o.want.id && x.fromTm === o.fromTm;
+    if (o && !kept.some(same) && !calls.some(same)) calls.push({ ...o, id: feedItem(hour, {}).id, hour });
   }
   const news = [
     ...(last ? [feedItem(hour, { kind: "news", text: `4:00 PM ET: the trade deadline has passed. ${state.deals.length + r.trades.length} trade${state.deals.length + r.trades.length === 1 ? " was" : "s were"} made today.` })] : []),
