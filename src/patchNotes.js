@@ -423,4 +423,7 @@ export const PATCH_NOTES = [
     "Each player has his own gear (sleeves, arm tape, wristbands, gloves, eye black, visor, towel, cleats, facemask) plus his own grass stains and helmet scuffs, and they stay the same every week.",
     "Home teams wear their color jerseys and road teams wear white, with the team logo on the helmet.",
   ] },
+  { v: "1.98", date: "2026-10-10", title: "Visors Down", notes: [
+    "Every star on the home screen now wears a dark visor, so you see the helmet, not a face.",
+  ] },
 ];
