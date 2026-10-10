@@ -21,14 +21,14 @@ const helmetArt = (k) => (k ? HELMET_FILES[`./assets/helmets/${k.toLowerCase()}.
 // Each pose: its art, size, where the jersey number sits [x, y, w, h], the helmet [x0, y0, x1, y1],
 // and the row where the socks start (blue below this line is sock, not jersey).
 export const SPRITES = {
-  RB: { src: rbUrl, w: 127, h: 188, numBox: [51, 77, 42, 30], helmetBox: [50, 25, 102, 74], sockY: 150 },
-  WR: { src: wrUrl, w: 139, h: 184, numBox: [64, 77, 38, 29], helmetBox: [72, 35, 126, 81], sockY: 150 },
-  TE: { src: teUrl, w: 146, h: 192, numBox: [61, 78, 47, 30], helmetBox: [77, 37, 137, 93], sockY: 158 },
-  OL: { src: olUrl, w: 143, h: 122, numBox: [62, 20, 28, 35], helmetBox: [80, 6, 138, 69], sockY: 92 },
-  DL: { src: dlUrl, w: 159, h: 124, numBox: [62, 28, 35, 40], helmetBox: [91, 8, 149, 72], sockY: 94 },
+  RB: { src: rbUrl, w: 127, h: 188, numBox: [52, 73, 33, 27], helmetBox: [50, 25, 102, 74], sockY: 150 },
+  WR: { src: wrUrl, w: 139, h: 184, numBox: [63, 78, 31, 19], helmetBox: [72, 35, 126, 81], sockY: 150 },
+  TE: { src: teUrl, w: 146, h: 192, numBox: [66, 82, 32, 28], helmetBox: [77, 37, 137, 93], sockY: 158 },
+  OL: { src: olUrl, w: 143, h: 122, numBox: [61, 9, 21, 29], helmetBox: [80, 6, 138, 69], sockY: 92 },
+  DL: { src: dlUrl, w: 159, h: 124, numBox: [63, 10, 22, 29], helmetBox: [91, 8, 149, 72], sockY: 94 },
   QB: { src: qbUrl, w: 113, h: 181, numBox: [44, 75, 32, 30], helmetBox: [39, 9, 93, 64], sockY: 148 },
-  LB: { src: lbUrl, w: 131, h: 163, numBox: [50, 76, 49, 32], helmetBox: [52, 4, 114, 62], sockY: 132 },
-  DB: { src: dbUrl, w: 116, h: 176, numBox: [45, 78, 47, 30], helmetBox: [41, 8, 101, 66], sockY: 144 },
+  LB: { src: lbUrl, w: 131, h: 163, numBox: [58, 61, 32, 16], helmetBox: [52, 4, 114, 62], sockY: 132 },
+  DB: { src: dbUrl, w: 116, h: 176, numBox: [50, 65, 30, 14], helmetBox: [41, 8, 101, 66], sockY: 144 },
 };
 
 const FONT = { 0: ["111", "101", "101", "101", "111"], 1: ["010", "110", "010", "010", "111"], 2: ["111", "001", "111", "100", "111"], 3: ["111", "001", "111", "001", "111"], 4: ["101", "101", "111", "001", "001"], 5: ["111", "100", "111", "001", "111"], 6: ["111", "100", "111", "101", "111"], 7: ["111", "001", "010", "010", "010"], 8: ["111", "101", "111", "101", "111"], 9: ["111", "101", "111", "001", "111"] };
@@ -93,11 +93,12 @@ export function spriteFor(pose, team, { away = false, number = null, facing = "r
       const inNum = !helm && x >= nx && x <= nx + nw && y >= ny && y <= ny + nh;
       const inLogo = hasLogo && x >= lx0 && x <= lx1 && y >= ly0 && y <= ly1;
       const blue = b > 58 && b > r * 1.48 && b > g * 1.32;
-      const red = r > 92 && r > g * 1.65 && r > b * 1.44 && g < 100;
+      const red = r > 110 && g < r * 0.36 && b < r * 0.55;
+      const skin = !blue && !red && r > g && g > b && r - b > 35 && r > 70;
       const white = Math.min(r, g, b) > 150;
       let out = null;
       if (inLogo && (white || blue)) out = shade(C.helmet, white ? 1 : Math.max(0.39, Math.min(1.32, 0.37 + (bright / 255) * 0.87)));
-      else if (inNum && (white || red)) out = shade(C.jersey, 0.92);
+      else if (inNum && !skin) out = shade(C.jersey, white ? 0.95 : 0.85);
       else if (blue) out = shade(helm ? C.helmet : y >= meta.sockY ? C.socks : C.jersey, Math.max(0.39, Math.min(1.32, 0.37 + (bright / 255) * 0.87)));
       else if (red) out = shade(helm ? C.stripe : y >= meta.sockY ? C.sockStripe : y > H * 0.5 ? C.pantsStripe : C.sleeve, Math.max(0.5, Math.min(1.18, 0.34 + bright / 255)));
       else if (pantsTint && white && !helm && y > H * 0.48 && y < meta.sockY) out = shade(C.pants, Math.max(0.68, Math.min(1.1, r / 238)));
