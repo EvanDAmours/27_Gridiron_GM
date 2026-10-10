@@ -1362,14 +1362,14 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
           <div style={{marginTop:6,cursor:'pointer',fontSize:11,color:C.bl}} onClick={()=>setTab('log')}>Full Log →</div>
         </div>
       </div>
-      {/* Quick Actions */}
-      <div style={{display:'flex',gap:6,marginTop:10,flexWrap:'wrap'}}>
+      {/* Quick Actions (on phones the header has them, and Save is under More) */}
+      {!MOBILE&&<div style={{display:'flex',gap:6,marginTop:10,flexWrap:'wrap'}}>
         {sp==="preseason"&&<Btn onClick={startSeason} bg={C.gn} style={{padding:'8px 18px',fontSize:13}}>Start Season</Btn>}
         {sp==="regular"&&<Btn onClick={()=>{setSimming(true);setTimeout(()=>{simWk();setSimming(false);},50);}} style={{padding:'8px 18px',fontSize:13}}>Sim Week</Btn>}
         {sp==="regular"&&wk<TRADE_DEADLINE_WEEK&&<Btn onClick={()=>simAll(TRADE_DEADLINE_WEEK)} bg="#b91c1c" style={{padding:'8px 18px',fontSize:13}}>Sim to Deadline</Btn>}
         {sp==="regular"&&<Btn onClick={()=>simAll()} bg="#6366f1" style={{padding:'8px 18px',fontSize:13}}>Sim All</Btn>}
         <Btn onClick={saveGame} bg="#1e293b" c={C.mt} style={{padding:'8px 18px',fontSize:13}}>Save Game</Btn>
-      </div>
+      </div>}
     </div>}
 
     {/* ROSTER */}

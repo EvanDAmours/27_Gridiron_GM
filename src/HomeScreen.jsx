@@ -17,15 +17,15 @@ export function teamRatings(t, depthOrder, snaps) {
   return { ovr: Math.round(off * 0.5 + def * 0.5), off, def };
 }
 
-function RatingBoxes({ mine, other }) {
+function RatingBoxes({ mine, other, sm }) {
   return (
-    <div style={{ display: "flex", gap: 6 }}>
+    <div style={{ display: "flex", gap: sm ? 4 : 6 }}>
       {["ovr", "off", "def"].map((k) => {
         const best = mine[k] >= other[k];
         return (
-          <div key={k} style={{ textAlign: "center", minWidth: 56 }}>
-            <div style={{ fontSize: 26, fontWeight: 900, padding: "2px 8px", borderRadius: "6px 6px 0 0", border: `2px solid ${best ? C.gn : "#94a3b8"}`, borderBottom: 0, background: best ? `${C.gn}22` : "transparent" }}>{mine[k]}</div>
-            <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, padding: "1px 0", borderRadius: "0 0 6px 6px", background: best ? C.gn : "#94a3b8", color: "#0b1220" }}>{k.toUpperCase()}</div>
+          <div key={k} style={{ textAlign: "center", minWidth: sm ? 38 : 56 }}>
+            <div style={{ fontSize: sm ? 17 : 26, fontWeight: 900, padding: sm ? "1px 4px" : "2px 8px", borderRadius: "6px 6px 0 0", border: `2px solid ${best ? C.gn : "#94a3b8"}`, borderBottom: 0, background: best ? `${C.gn}22` : "transparent" }}>{mine[k]}</div>
+            <div style={{ fontSize: sm ? 9 : 12, fontWeight: 900, letterSpacing: sm ? 0.5 : 1, padding: "1px 0", borderRadius: "0 0 6px 6px", background: best ? C.gn : "#94a3b8", color: "#0b1220" }}>{k.toUpperCase()}</div>
           </div>
         );
       })}
@@ -33,13 +33,13 @@ function RatingBoxes({ mine, other }) {
   );
 }
 
-function Side({ t, rating, other, align }) {
+function Side({ t, rating, other, align, sm }) {
   return (
-    <div style={{ textAlign: align, minWidth: 0 }}>
-      <div style={{ fontSize: 18, color: "#e2e8f0" }}>{t.city}</div>
-      <div style={{ fontSize: "clamp(26px, 4.2vw, 44px)", fontWeight: 900, letterSpacing: 1, lineHeight: 1, textTransform: "uppercase" }}>{t.name}</div>
-      <div style={{ fontSize: 16, color: "#cbd5e1", margin: "4px 0 8px" }}>{rec(t)}</div>
-      <div style={{ display: "flex", justifyContent: align === "right" ? "flex-end" : "flex-start" }}><RatingBoxes mine={rating} other={other} /></div>
+    <div style={{ textAlign: align, minWidth: 0, flex: sm ? "1 1 0" : undefined }}>
+      <div style={{ fontSize: sm ? 12 : 18, color: "#e2e8f0" }}>{t.city}</div>
+      <div style={{ fontSize: sm ? 18 : "clamp(26px, 4.2vw, 44px)", fontWeight: 900, letterSpacing: sm ? 0.5 : 1, lineHeight: 1, textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>
+      <div style={{ fontSize: sm ? 12 : 16, color: "#cbd5e1", margin: sm ? "2px 0 6px" : "4px 0 8px" }}>{rec(t)}</div>
+      <div style={{ display: "flex", justifyContent: align === "right" ? "flex-end" : "flex-start" }}><RatingBoxes mine={rating} other={other} sm={sm} /></div>
     </div>
   );
 }
@@ -115,7 +115,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
   const bg = `radial-gradient(ellipse at 50% 35%, ${me.clr}55, transparent 60%), linear-gradient(160deg, #0b2a33, #050b12 70%)`;
   return (
     <div style={{ borderRadius: 14, overflow: "hidden", background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, position: "relative" }}>
-      <style>{"@media (max-width: 760px) { .hm-main { order: -1; padding: 12px !important } .hm-menu, .hm-side { max-width: none !important; border: 0 !important } .hm-logo > * { width: clamp(72px, 26vw, 150px) !important; height: clamp(72px, 26vw, 150px) !important } }"}</style>
+      <style>{"@media (max-width: 760px) { .hm-main { order: -1; padding: 12px !important } .hm-menu, .hm-side { max-width: none !important; border: 0 !important } .hm-logo > * { width: clamp(56px, 19vw, 110px) !important; height: clamp(56px, 19vw, 110px) !important } }"}</style>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 0 }}>
         {/* Menu */}
         <div className="hm-menu" style={{ flex: "1 1 220px", maxWidth: 300, padding: 18, borderRight: `1px solid #ffffff14`, display: mobile ? "none" : "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
@@ -159,13 +159,13 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
             <>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4%", margin: "6px 0 4px" }}>
                 <span className="hm-logo"><TeamLogo t={away} sz={150} /></span>
-                <div style={{ fontSize: 36, fontWeight: 900, color: "#e2e8f0" }}>AT</div>
+                <div style={{ fontSize: mobile ? 22 : 36, fontWeight: 900, color: "#e2e8f0" }}>AT</div>
                 <span className="hm-logo"><TeamLogo t={home} sz={150} /></span>
               </div>
-              <div style={{ textAlign: "center", fontSize: 15, color: "#cbd5e1", marginBottom: 14 }}>{sp === "playoffs" && pb?.rd === 4 ? "Super Bowl · neutral site" : game.date ? `${kickoff(game)} · ${game.venue}${game.intl ? `, ${game.city}` : ""}` : `1:00 PM · ${home.city}`}</div>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-                <Side t={away} rating={ra} other={rh} align="left" />
-                <Side t={home} rating={rh} other={ra} align="right" />
+              <div style={{ textAlign: "center", fontSize: mobile ? 12 : 15, color: "#cbd5e1", marginBottom: mobile ? 10 : 14 }}>{sp === "playoffs" && pb?.rd === 4 ? "Super Bowl · neutral site" : game.date ? `${kickoff(game)} · ${game.venue}${game.intl ? `, ${game.city}` : ""}` : `1:00 PM · ${home.city}`}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: mobile ? 8 : 16, flexWrap: mobile ? "nowrap" : "wrap" }}>
+                <Side t={away} rating={ra} other={rh} align="left" sm={mobile} />
+                <Side t={home} rating={rh} other={ra} align="right" sm={mobile} />
               </div>
             </>
           ) : (
@@ -175,7 +175,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
               <div style={{ fontSize: 16, color: "#cbd5e1", marginTop: 4 }}>{me.city} {me.name} · {rec(me)}</div>
             </div>
           )}
-          {primary.length > 0 && (
+          {primary.length > 0 && !(mobile && (sp === "regular" || sp === "preseason")) && (
             <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: 18 }}>
               {primary.map((b, i) => <Btn key={b.label} onClick={b.onClick} bg={i === 0 ? C.gn : "#ffffff22"} c="#fff" style={{ fontSize: 17, padding: "11px 22px", fontWeight: 900 }}>{b.label}</Btn>)}
             </div>

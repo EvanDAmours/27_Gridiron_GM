@@ -402,5 +402,6 @@ export const PATCH_NOTES = [
   { v: "1.93", date: "2026-10-10", title: "Phone Bottom Bar: Scouting and Stats", notes: [
     "On the mobile version, Scouting replaces Schedule in the bottom bar, so sending area scouts and checking on prospects is one tap away all season.",
     "League and player stats now sit with the standings on phones: Standings, Stats, Schedule and Playoffs are tabs on one screen (the schedule is still one tap from Standings).",
+    "Phone home screen matches the computer's: both teams side by side with compact rating boxes and smaller logos, and the duplicate Play / Sim buttons below the matchup are gone (they're in the header).",
   ] },
 ];
