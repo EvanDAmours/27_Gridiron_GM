@@ -395,7 +395,8 @@ export const PATCH_NOTES = [
     "The trade block is always on the Trade screen now, with an 'Add a player' picker and a ✕ to take someone off. Players on the block draw more calls from AI teams.",
     "Fixed: an Elite draft class's can't-miss prospect could be a kicker or punter.",
   ] },
-  { v: "1.92", date: "2026-10-10", title: "Half Sacks", notes: [
+  { v: "1.92", date: "2026-10-10", title: "Half Sacks and a Trade Offer Fix", notes: [
     "Sacks are counted the NFL way: about one in seven is shared by two rushers, half a sack each. Sack totals only ever show whole or half sacks, and every other stat is a whole number (no more 'on pace for 27.2 sacks').",
+    "Fixed: trade offers that pop up under the header (an AI GM offering picks or a player for one of yours) couldn't be accepted; Accept did nothing. It works now.",
   ] },
 ];
