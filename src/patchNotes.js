@@ -335,4 +335,9 @@ export const PATCH_NOTES = [
     "When you start a season with an empty coordinator spot (offense, defense or special teams), a reminder pops up with a shortcut to the Coaching tab.",
     "Removed the power rankings popup that appeared every four weeks. Rankings still update in the background.",
   ] },
+  { v: "1.84", date: "2026-10-10", title: "All-Pro and Pro Bowl Teams", notes: [
+    "Every season now has a first- and second-team All-Pro and a Pro Bowl roster for each conference, picked like the real ballots: position by position (QB, RB, 3 WR, TE, 2 tackles, 2 guards, C, 2 edge rushers, 2 DTs, 3 LB, 2 CB, 2 S, K, P), on each player's season stats and his rating. Offensive linemen are judged on their play.",
+    "Honors pay off: in the off-season a first-team All-Pro gains +2 OVR, a second-team All-Pro or Pro Bowler +1 (the best honor counts). Your honorees are listed in the log.",
+    "The season awards screen shows the first-team All-Pro roster and how many All-Pros and Pro Bowlers your team had. Player cards show every honor a player has earned, and honors count toward his legacy and the Hall of Fame.",
+  ] },
 ];

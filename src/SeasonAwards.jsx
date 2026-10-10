@@ -60,6 +60,18 @@ export default function SeasonAwards({ show, teams, ui, onClose }) {
         <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 8 }}>
           <Row label="Super Bowl MVP" w={sbmvp} teams={teams} ui={ui} big />
           {ROWS.map(([k, l]) => <Row key={k} label={l} w={awards[k]} teams={teams} ui={ui} />)}
+          {awards.honors && (() => {
+            const h = awards.honors, mineAP = [...h.ap1, ...h.ap2].filter((e) => e.ti === ui), minePB = [...h.pb.AFC, ...h.pb.NFC].filter((e) => e.ti === ui);
+            return (
+              <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10, background: "#ffffff08", border: "1px solid #ffffff14" }}>
+                <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "#fde68a", marginBottom: 6 }}>FIRST-TEAM ALL-PRO</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: "3px 10px", fontSize: 13 }}>
+                  {h.ap1.map((e) => <div key={e.pid} style={{ color: e.ti === ui ? "#86efac" : "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><b style={{ color: "#94a3b8", fontSize: 11, marginRight: 4 }}>{e.slot}</b>{e.name} <span style={{ color: "#64748b" }}>{e.team}</span></div>)}
+                </div>
+                <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 8 }}>Your team: <b>{mineAP.length}</b> All-Pro{mineAP.length === 1 ? "" : "s"}{mineAP.length ? ` (${mineAP.map((e) => e.name).join(", ")})` : ""} · <b>{minePB.length}</b> Pro Bowler{minePB.length === 1 ? "" : "s"}. Each earns OVR in the off-season (+2 first-team All-Pro, +1 second team or Pro Bowl).</div>
+              </div>
+            );
+          })()}
           <Btn onClick={onClose} bg={C.gn} style={{ width: "100%", marginTop: 6, fontSize: 16, padding: "10px 0", fontWeight: 900 }}>Continue</Btn>
         </div>
       </div>

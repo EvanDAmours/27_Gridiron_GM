@@ -55,7 +55,9 @@ export function legacyOf(p, { awards = [], book = null, yr, startYr = 2026, star
   const stats = CAREER_STATS.reduce((s, c) => s + (career[c.key] || 0) / c.per, 0) * 4;
   const awardPts = Object.entries(won).reduce((s, [k, ys]) => s + AWARD_PTS[k] * ys.length, 0);
   const records = book ? Object.values(book.best).filter((r) => r.pid === p.id).length * 10 : 0;
-  const legacy = Math.round(pre + seasonsHere * level(peak) + stats + awardPts + records);
+  // All-Pro and Pro Bowl selections in this league (first team 6, second team 3, Pro Bowl 2).
+  const honorPts = (p.honors || []).reduce((s, h) => s + ({ ap1: 6, ap2: 3, pb: 2 }[h.k] || 0), 0);
+  const legacy = Math.round(pre + seasonsHere * level(peak) + stats + awardPts + records + honorPts);
   return { legacy, career, won, peak, seasonsHere, pre: Math.round(pre) };
 }
 
