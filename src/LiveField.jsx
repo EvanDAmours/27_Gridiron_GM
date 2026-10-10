@@ -3,7 +3,7 @@
 import React from "react";
 import { depthOrderFor } from "./DepthChart.jsx";
 import SpritePlayer from "./pixel/SpritePlayer.jsx";
-import { snapPose, celebrationPose } from "./pixel/sprites.js";
+import { snapPose, celebrationPose, SPRITES as ART } from "./pixel/sprites.js";
 import { UNIFORMS, teamKey } from "./teamUniforms.js";
 
 const FORMATION = {
@@ -32,6 +32,7 @@ function starters(team, depth, order) {
 // three-point stance, the quarterback with the ball, defenders in a ready stance). After a
 // touchdown the scoring team's backs and receivers celebrate. Offense faces right, defense left.
 // Pixel-art players are built but switched off until they're approved; circles until then.
+const SPRITE_SCALE = 0.25; // every pose drawn at the same pixel size
 const SPRITES = typeof location !== "undefined" && /[?&]sprites=1\b/.test(location.search); // off unless ?sprites=1
 function Player({ p, pos, x, y, team, side, away, td }) {
   const last = p ? p.name.split(" ").slice(1).join(" ") || p.name : pos;
@@ -44,11 +45,10 @@ function Player({ p, pos, x, y, team, side, away, td }) {
     </g>
   );
   const pose = (side === "off" && td && celebrationPose(pos)) || snapPose(pos, side);
+  const hgt = (ART[pose] || ART.DB).h * SPRITE_SCALE;
   return (
     <g style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform .55s ease" }}>
-      <ellipse cx="0" cy="19" rx="12" ry="3.5" fill="#000" opacity=".25" />
-      <SpritePlayer x={0} y={20} height={pose === "OL" || pose === "DL" ? 30 : 42} pose={pose} team={team} away={away} number={p?.num} facing={side === "off" ? "right" : "left"} title={p ? `${pos} ${p.name} (${p.ovr})` : pos} shadow={false} />
-      <text y="31" textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff" stroke="#0008" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>
+      <SpritePlayer x={0} y={Math.round(hgt * 0.5)} height={hgt} pose={pose} team={team} away={away} number={p?.num} skin={p?.face?.sk} facing={side === "off" ? "right" : "left"} title={p ? `${pos} ${p.name} (${p.ovr})` : pos} />
     </g>
   );
 }
@@ -62,7 +62,12 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
   const awayFor = (side) => (homeWhite ? false : side === "off" ? !offHome : offHome);
   const place = (side, list, team) =>
     FORMATION[side].map(([pos, i, dx, lat]) => {
-      const x = clamp(xOf(los + dx), 16, W - 16), y = clamp(yOf(lat), 22, H - 34);
+      // with sprites, set each line's depth so the two rows of helmets meet evenly over the ball
+      if (SPRITES && ["LT", "LG", "C", "RG", "RT"].includes(pos)) dx = -1.5;
+      if (SPRITES && pos === "DL") dx = 4.8;
+      if (SPRITES && pos === "LB") dx = 9.5;
+      if (SPRITES && pos === "RB") lat = 7;
+      const x = clamp(xOf(los + dx), 20, W - 20), y = clamp(yOf(lat), SPRITES ? 26 : 22, H - (SPRITES ? 26 : 34));
       return <Player key={`${side}${pos}${i}`} p={list[pos]?.[i]} pos={pos} x={x} y={y} team={team} side={side} away={awayFor(side)} td={!!lastPlay?.td} />;
     });
   return (
@@ -82,7 +87,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       {toGo > 0 && los + toGo < 100 && <line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#facc15" strokeWidth="3" />}
       {place("def", d, def)}
       {place("off", o, off)}
-      <ellipse cx={x0 - 4} cy={H / 2} rx="7" ry="4.5" fill="#8B4513" stroke="#fff" strokeWidth="1" style={{ transition: "cx .55s ease" }} />
+      {!SPRITES && <ellipse cx={x0 - 4} cy={H / 2} rx="7" ry="4.5" fill="#8B4513" stroke="#fff" strokeWidth="1" style={{ transition: "cx .55s ease" }} />}
       {lastPlay?.td && <text x={W / 2} y={H / 2 - 40} textAnchor="middle" fill="#facc15" fontSize="54" fontWeight="900" stroke="#000" strokeWidth="3" paintOrder="stroke">TOUCHDOWN!</text>}
       {lastPlay?.type === "int" && <text x={W / 2} y={H / 2 - 40} textAnchor="middle" fill="#ef4444" fontSize="44" fontWeight="900" stroke="#000" strokeWidth="3" paintOrder="stroke">INTERCEPTED!</text>}
     </svg>

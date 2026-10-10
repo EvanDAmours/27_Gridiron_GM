@@ -42,10 +42,10 @@ const load = (src) => {
 };
 
 const cache = new Map();
-export function spriteFor(pose, team, { away = false, number = null, facing = "right" } = {}) {
+export function spriteFor(pose, team, { away = false, number = null, facing = "right", skin = null } = {}) {
   const meta = SPRITES[pose] || SPRITES.DB;
   const tk = teamKey(team) || (team && typeof team === "object" ? `${team.clr}/${team.ac}` : "none");
-  const key = `${pose}|${tk}|${away ? 1 : 0}|${number ?? ""}|${facing}`;
+  const key = `${pose}|${tk}|${away ? 1 : 0}|${number ?? ""}|${facing}|${skin || ""}`;
   if (cache.has(key)) return cache.get(key);
   const u = uniformFor(team, { away });
   const job = Promise.all([load(meta.src), helmetArt(teamKey(team)) ? load(helmetArt(teamKey(team))).catch(() => null) : null]).then(([img, logoImg]) => {
@@ -56,7 +56,9 @@ export function spriteFor(pose, team, { away = false, number = null, facing = "r
     const im = ctx.getImageData(0, 0, W, H), d = im.data;
     const [hx0, hy0, hx1, hy1] = meta.helmetBox, [nx, ny, nw, nh] = meta.numBox;
     const C = { jersey: rgb(u.jersey), helmet: rgb(u.helmet), stripe: rgb(u.stripe || u.helmet), sleeve: rgb(u.sleeve), pants: rgb(u.pants), pantsStripe: rgb(u.pantsStripe), socks: rgb(u.socks), sockStripe: rgb(u.sockStripe) };
+    const skinC = skin ? rgb(skin) : null;
     const pantsTint = u.pants.toLowerCase() !== "#ffffff" && u.pants.toLowerCase() !== "#f4f4f2";
+    const helmHard = () => false;
     const isBlueAt = (i) => d[i + 3] > 8 && d[i + 2] > 58 && d[i + 2] > d[i] * 1.48 && d[i + 2] > d[i + 1] * 1.32;
     const isWhiteAt = (i) => d[i + 3] > 8 && Math.min(d[i], d[i + 1], d[i + 2]) > 165;
 
@@ -95,6 +97,7 @@ export function spriteFor(pose, team, { away = false, number = null, facing = "r
       const blue = b > 58 && b > r * 1.48 && b > g * 1.32;
       const red = r > 110 && g < r * 0.36 && b < r * 0.55;
       const skin = !blue && !red && r > g && g > b && r - b > 35 && r > 70;
+      const skin_ = skin && g > r * 0.5 && !(r < 150 && g < 80);
       const white = Math.min(r, g, b) > 150;
       let out = null;
       if (inLogo && (white || blue)) out = shade(C.helmet, white ? 1 : Math.max(0.39, Math.min(1.32, 0.37 + (bright / 255) * 0.87)));
@@ -102,6 +105,7 @@ export function spriteFor(pose, team, { away = false, number = null, facing = "r
       else if (blue) out = shade(helm ? C.helmet : y >= meta.sockY ? C.socks : C.jersey, Math.max(0.39, Math.min(1.32, 0.37 + (bright / 255) * 0.87)));
       else if (red) out = shade(helm ? C.stripe : y >= meta.sockY ? C.sockStripe : y > H * 0.5 ? C.pantsStripe : C.sleeve, Math.max(0.5, Math.min(1.18, 0.34 + bright / 255)));
       else if (pantsTint && white && !helm && y > H * 0.48 && y < meta.sockY) out = shade(C.pants, Math.max(0.68, Math.min(1.1, r / 238)));
+      if (!out && skinC && skin_ && !helmHard(x, y)) out = shade(skinC, Math.max(0.35, Math.min(1.25, bright / 190)));
       if (out) { d[i] = out[0]; d[i + 1] = out[1]; d[i + 2] = out[2]; }
     }
     ctx.putImageData(im, 0, 0);
