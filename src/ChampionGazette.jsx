@@ -1,9 +1,8 @@
 // The morning after you win it all: a broadsheet front page in the style of the great New York
 // papers. Blackletter masthead, a banner headline across the page, decks, a lead story written from
-// the game, a photo of the Super Bowl MVP, the road to the title and the parade plans.
+// the game, a photo of the Lombardi Trophy, the road to the title and the parade plans.
 import React, { useEffect } from "react";
-import Player3D from "./Player3D.jsx";
-import { starOf } from "./PlayerFigure.jsx";
+import { LombardiStill } from "./Lombardi.jsx";
 import { sbName, sbNumber } from "./data/superbowls.js";
 
 const FONTS = "https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@700;900&display=swap";
@@ -43,8 +42,6 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
   const { yr, champ, opp, score, sbmvp, awards = {} } = show;
   const t = teams[champ], o = opp != null ? teams[opp] : null;
   const [us, them] = (score || "0-0").split("-").map(Number);
-  const mvpP = sbmvp ? (t.roster || []).find((p) => String(p.id) === String(sbmvp.pid)) : null;
-  const photo = mvpP || starOf(t);
   const { head, deck1, deck2 } = headlines({ t, o, us, them, titles, repeat, mvp: sbmvp });
   const sb = sbName(sbNumber(yr));
   const rec = `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
@@ -87,8 +84,8 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
             </div>
           </section>
           <figure className="gz-photo">
-            <div className="gz-photo-frame">{photo && <Player3D p={photo} t={t} h={300} label={false} />}</div>
-            <figcaption>{photo ? `${photo.name} of the ${t.name}${sbmvp && mvpP ? `, the most valuable player of ${sb}` : ""}, after the final whistle on Sunday night.` : `The ${t.name} celebrate.`} <i>Gazette Photo</i></figcaption>
+            <div className="gz-photo-frame"><LombardiStill size={150} /></div>
+            <figcaption>The Vince Lombardi Trophy, held aloft by the {t.name} after {sb} on Sunday night. It heads home to {t.city} today. <i>Gazette Photo</i></figcaption>
           </figure>
           <aside className="gz-side">
             <h5>The Road to the Title</h5>
@@ -135,7 +132,7 @@ const CSS = `
 .gz-cols p { margin: 0 0 8px; }
 .gz-drop::first-letter { float: left; font-family: 'Playfair Display', serif; font-weight: 900; font-size: 46px; line-height: .85; padding: 4px 6px 0 0; }
 .gz-photo { margin: 0; display: flex; flex-direction: column; align-items: center; }
-.gz-photo-frame { width: 100%; display: flex; justify-content: center; background: radial-gradient(ellipse at 50% 40%, #6b6b6b, #1d1d1d 80%); filter: grayscale(1) contrast(1.15) sepia(.12); border: 1px solid #151310; padding: 6px 0; }
+.gz-photo-frame { width: 100%; display: flex; justify-content: center; background: radial-gradient(ellipse at 50% 40%, #6b6b6b, #1d1d1d 80%); filter: grayscale(1) contrast(1.15) sepia(.12); border: 1px solid #151310; padding: 14px 0 10px; }
 .gz-photo figcaption { font-size: 11.5px; line-height: 1.35; margin-top: 6px; }
 .gz-photo figcaption i { display: block; text-align: right; font-size: 10px; margin-top: 2px; }
 .gz-side h5 { margin: 0 0 6px; font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; }

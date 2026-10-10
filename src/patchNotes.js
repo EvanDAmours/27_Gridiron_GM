@@ -439,4 +439,5 @@ export const PATCH_NOTES = [
     "Next comes the season's awards: Super Bowl MVP, MVP, Offensive and Defensive Player of the Year, both Rookies of the Year, the All-Pro team and your Pro Bowlers by name.",
     "Then the game walks you into the Trophy Room, where your brand-new Lombardi stands under a spotlight with a NEW tag.",
   ] },
+  { v: "1.995", date: "2026-10-10", title: "Front-Page Trophy", notes: ["The Gazette's front-page photo after a Super Bowl win is now the Vince Lombardi Trophy itself."] },
 ];

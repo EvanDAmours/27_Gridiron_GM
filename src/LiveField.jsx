@@ -32,8 +32,18 @@ function starters(team, depth, order) {
 // touchdown the scoring team's backs and receivers celebrate. Offense faces right, defense left.
 const SNAP_POSE = { QB: "qb", LT: "stance", LG: "stance", C: "stance", RG: "stance", RT: "stance", DL: "stance" };
 const TD_POSE = { RB: "heisman", WR: "spike", TE: "spike" };
+// Pixel-art players are built but switched off until they're approved; circles until then.
+const SPRITES = false;
 function Player({ p, pos, x, y, team, side, away, td }) {
   const last = p ? p.name.split(" ").slice(1).join(" ") || p.name : pos;
+  if (!SPRITES) return (
+    <g style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform .55s ease" }}>
+      <title>{p ? `${pos} ${p.name} (${p.ovr})` : pos}</title>
+      <circle r="12" fill={team?.clr || "#334155"} stroke={team?.ac || "#fff"} strokeWidth="2.5" />
+      <text y="4.5" textAnchor="middle" fontSize="12" fontWeight="900" fill="#fff">{p?.num ?? pos}</text>
+      <text y="24" textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff" stroke="#0008" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>
+    </g>
+  );
   const pose = (side === "off" && td && TD_POSE[pos]) || SNAP_POSE[pos] || (side === "off" ? "upright" : "ready");
   return (
     <g style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform .55s ease" }}>
