@@ -5,6 +5,7 @@ import { C, TeamLogo, Btn, kickoff } from "./ui.jsx";
 import { unitRatings } from "./gamesim.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import { ROUND_NAMES } from "./playoffs.js";
+import PlayerFigure, { starOf } from "./PlayerFigure.jsx";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const PHASE = { preseason: "Preseason", combine: "Offseason: NFL Combine", resign: "Offseason: Re-sign Week", freeagency: "Offseason: Free Agency", draft: "Offseason: NFL Draft" };
@@ -115,7 +116,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
   const bg = `radial-gradient(ellipse at 50% 35%, ${me.clr}55, transparent 60%), linear-gradient(160deg, #0b2a33, #050b12 70%)`;
   return (
     <div style={{ borderRadius: 14, overflow: "hidden", background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, position: "relative" }}>
-      <style>{"@media (max-width: 760px) { .hm-main { order: -1; padding: 12px !important } .hm-menu, .hm-side { max-width: none !important; border: 0 !important } .hm-logo > * { width: clamp(56px, 19vw, 110px) !important; height: clamp(56px, 19vw, 110px) !important } }"}</style>
+      <style>{"@media (max-width: 760px) { .hm-main { order: -1; padding: 12px !important } .hm-menu, .hm-side { max-width: none !important; border: 0 !important } .hm-logo > * { width: clamp(48px, 15vw, 96px) !important; height: clamp(48px, 15vw, 96px) !important } }"}</style>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 0 }}>
         {/* Menu */}
         <div className="hm-menu" style={{ flex: "1 1 220px", maxWidth: 300, padding: 18, borderRight: `1px solid #ffffff14`, display: mobile ? "none" : "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
@@ -157,10 +158,12 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
           )}
           {game ? (
             <>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4%", margin: "6px 0 4px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: mobile ? "2%" : "3%", margin: "6px 0 4px" }}>
+                <PlayerFigure p={starOf(away)} t={away} away h={mobile ? 104 : 170} />
                 <span className="hm-logo"><TeamLogo t={away} sz={150} /></span>
                 <div style={{ fontSize: mobile ? 22 : 36, fontWeight: 900, color: "#e2e8f0" }}>AT</div>
                 <span className="hm-logo"><TeamLogo t={home} sz={150} /></span>
+                <PlayerFigure p={starOf(home)} t={home} h={mobile ? 104 : 170} />
               </div>
               <div style={{ textAlign: "center", fontSize: mobile ? 12 : 15, color: "#cbd5e1", marginBottom: mobile ? 10 : 14 }}>{sp === "playoffs" && pb?.rd === 4 ? "Super Bowl · neutral site" : game.date ? `${kickoff(game)} · ${game.venue}${game.intl ? `, ${game.city}` : ""}` : `1:00 PM · ${home.city}`}</div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: mobile ? 8 : 16, flexWrap: mobile ? "nowrap" : "wrap" }}>
@@ -170,7 +173,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
             </>
           ) : (
             <div style={{ textAlign: "center", padding: "30px 10px" }}>
-              <span className="hm-logo"><TeamLogo t={me} sz={150} /></span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4%" }}><span className="hm-logo"><TeamLogo t={me} sz={150} /></span><PlayerFigure p={starOf(me)} t={me} h={mobile ? 104 : 170} /></div>
               <div style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, textTransform: "uppercase", marginTop: 10 }}>{sp === "regular" ? "Bye week" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>
               <div style={{ fontSize: 16, color: "#cbd5e1", marginTop: 4 }}>{me.city} {me.name} · {rec(me)}</div>
             </div>

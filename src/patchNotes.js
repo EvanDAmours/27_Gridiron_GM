@@ -404,4 +404,8 @@ export const PATCH_NOTES = [
     "League and player stats now sit with the standings on phones: Standings, Stats, Schedule and Playoffs are tabs on one screen (the schedule is still one tap from Standings).",
     "Phone home screen matches the computer's: both teams side by side with compact rating boxes and smaller logos, and the duplicate Play / Sim buttons below the matchup are gone (they're in the header).",
   ] },
+  { v: "1.94", date: "2026-10-10", title: "Stars on the Home Screen", notes: [
+    "Each team's best player now stands beside its logo on the home screen (desktop and phone), animated, in his number and his team's uniform: colors at home, white on the road.",
+    "Every player has his own gear loadout: arm sleeves, arm tape, wristbands, gloves (most quarterbacks go barehanded), eye black or stickers, a clear, smoke or iridescent visor, a towel, high or low socks, cleat color, a neck roll for the big men, and a facemask that fits his position. It's rolled once from who he is, so he looks the same every week and every season.",
+  ] },
 ];
