@@ -93,8 +93,9 @@ function buildScene(THREE, RoomEnvironment, renderer, w, h) {
 // all turn with CSS while only one 3D canvas ever exists (browsers allow just a handful).
 const sheets = new Map();
 export const SPIN_FRAMES = 48;
-export function lombardiStrip(size) {
-  if (sheets.has(size)) return sheets.get(size);
+export function lombardiStrip(size, frames = SPIN_FRAMES) {
+  const key = `${size}|${frames}`;
+  if (sheets.has(key)) return sheets.get(key);
   const job = (async () => {
     const THREE = await import("three");
     const { RoomEnvironment } = await import("three/examples/jsm/environments/RoomEnvironment.js");
@@ -104,17 +105,17 @@ export function lombardiStrip(size) {
     renderer.setPixelRatio(dpr); renderer.setSize(w, h);
     renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
     const { scene, camera, trophy, platter, pmrem } = buildScene(THREE, RoomEnvironment, renderer, w, h);
-    const out = document.createElement("canvas"); out.width = Math.round(w * dpr) * SPIN_FRAMES; out.height = Math.round(h * dpr);
+    const out = document.createElement("canvas"); out.width = Math.round(w * dpr) * frames; out.height = Math.round(h * dpr);
     const ctx = out.getContext("2d");
-    for (let i = 0; i < SPIN_FRAMES; i++) {
-      trophy.rotation.y = platter.rotation.y = (i / SPIN_FRAMES) * Math.PI * 2;
+    for (let i = 0; i < frames; i++) {
+      trophy.rotation.y = platter.rotation.y = (i / frames) * Math.PI * 2;
       renderer.render(scene, camera);
       ctx.drawImage(renderer.domElement, i * Math.round(w * dpr), 0);
     }
     pmrem.dispose(); renderer.dispose(); renderer.forceContextLoss?.();
     return out.toDataURL("image/png");
   })().catch(() => null);
-  sheets.set(size, job);
+  sheets.set(key, job);
   return job;
 }
 
@@ -129,4 +130,11 @@ export function LombardiSpin({ size = 100, delay = 0 }) {
       <style>{`@keyframes lomSpin { from { background-position: 0% 0; } to { background-position: ${((SPIN_FRAMES - 1) / (SPIN_FRAMES - 1)) * 100}% 0; } } @media (prefers-reduced-motion: reduce) { [aria-label="Vince Lombardi Trophy"] { animation: none !important; } }`}</style>
     </div>
   );
+}
+
+// A trophy standing still on a shelf, face on (laces to the front), rendered once to an image.
+export function LombardiStill({ size = 100 }) {
+  const [src, setSrc] = React.useState(null);
+  useEffect(() => { let on = true; lombardiStrip(size, 1).then((u) => on && setSrc(u)); return () => { on = false; }; }, [size]);
+  return <div role="img" aria-label="Vince Lombardi Trophy" style={{ width: size, height: Math.round(size * 1.9), backgroundImage: src ? `url(${src})` : "none", backgroundSize: "100% 100%" }} />;
 }

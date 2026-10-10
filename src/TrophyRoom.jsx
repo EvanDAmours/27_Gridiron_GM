@@ -3,7 +3,7 @@
 // players win while you're the GM. Each trophy is drawn in layers and turns slowly in 3D; hover
 // (or tap) one to see who won it and when.
 import React, { useEffect, useRef, useState } from "react";
-import Lombardi, { LombardiSpin } from "./Lombardi.jsx";
+import { LombardiStill } from "./Lombardi.jsx";
 import { C, TeamLogo } from "./ui.jsx";
 import { SUPER_BOWLS, sbName, sbNumber } from "./data/superbowls.js";
 
@@ -124,7 +124,7 @@ function Trophy({ t, i, on, setOn, small, spot }) {
       {on && <div className="tr-tip" role="tooltip"><div style={{ fontSize: 15, fontWeight: 900, color: "#fde68a" }}>{t.title}</div>{t.lines.filter(Boolean).map((l, k) => <div key={k} style={{ fontSize: 13, color: k ? "#cbd5e1" : "#fff", marginTop: 2 }}>{l}</div>)}</div>}
       {spot && <><div className="tr-beam" /><div className="tr-new">NEW</div></>}
       <div className="tr-pop" style={{ animationDelay: `${Math.min(i, 20) * 90}ms` }}>
-        <div className="tr-lift">{spot ? <Lombardi size={small ? 84 : 120} /> : <LombardiSpin size={small ? 74 : 100} delay={(i * 1.7) % 8} />}</div>
+        <div className="tr-lift"><LombardiStill size={spot ? (small ? 84 : 120) : small ? 74 : 100} /></div>
       </div>
       <div className="tr-plaque">{t.short}</div>
       <div className="tr-glow" />

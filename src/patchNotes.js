@@ -429,4 +429,7 @@ export const PATCH_NOTES = [
   { v: "1.99", date: "2026-10-10", title: "Real Lombardis in the Trophy Room", notes: [
     "Every Super Bowl trophy in your Trophy Room is now the same polished 3D Lombardi as the main menu, slowly turning on its platter, with a brass plaque for the game (LII, LIX...).",
   ] },
+  { v: "1.991", date: "2026-10-10", title: "Trophies at Rest", notes: [
+    "The Lombardis in the Trophy Room now stand still and face front, the way they'd sit on a real shelf. Your newest one gets a spotlight and a NEW tag.",
+  ] },
 ];
