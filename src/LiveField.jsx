@@ -2,6 +2,8 @@
 // redrawn (and slid into place) after every play. Offense drives left to right.
 import React from "react";
 import { depthOrderFor } from "./DepthChart.jsx";
+import PixelPlayer from "./PixelPlayer.jsx";
+import { UNIFORMS, teamKey } from "./teamUniforms.js";
 
 const FORMATION = {
   // [pos, depth index, yards behind (-) / past (+) the line, yards from the middle].
@@ -25,26 +27,34 @@ function starters(team, depth, order) {
   return by;
 }
 
-function Player({ p, pos, x, y, clr, ac }) {
+// One player: a pixel-art sprite in his team's uniform, posed for the snap (linemen down in a
+// three-point stance, the quarterback with the ball, defenders in a ready stance). After a
+// touchdown the scoring team's backs and receivers celebrate. Offense faces right, defense left.
+const SNAP_POSE = { QB: "qb", LT: "stance", LG: "stance", C: "stance", RG: "stance", RT: "stance", DL: "stance" };
+const TD_POSE = { RB: "heisman", WR: "spike", TE: "spike" };
+function Player({ p, pos, x, y, team, side, away, td }) {
   const last = p ? p.name.split(" ").slice(1).join(" ") || p.name : pos;
+  const pose = (side === "off" && td && TD_POSE[pos]) || SNAP_POSE[pos] || (side === "off" ? "upright" : "ready");
   return (
     <g style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform .55s ease" }}>
-      <title>{p ? `${pos} ${p.name} (${p.ovr})` : pos}</title>
-      <circle r="12" fill={clr} stroke={ac || "#fff"} strokeWidth="2.5" />
-      <text y="4.5" textAnchor="middle" fontSize="12" fontWeight="900" fill="#fff">{p?.num ?? pos}</text>
-      <text y="24" textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff" stroke="#0008" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>
+      <ellipse cx="0" cy="19" rx="12" ry="3.5" fill="#000" opacity=".25" />
+      <PixelPlayer inline x={0} y={20} scale={0.86} team={team} pos={pos} number={p?.num} pose={pose} facing={side === "off" ? "right" : "left"} away={away} skin={p?.face?.sk || "#8d5a3b"} title={p ? `${pos} ${p.name} (${p.ovr})` : pos} />
+      <text y="31" textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff" stroke="#0008" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>
     </g>
   );
 }
 
-export default function LiveField({ ballYard, toGo, off, def, offDepth, defDepth, offOrder, defOrder, lastPlay }) {
+export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay }) {
   const los = clamp(ballYard, 1, 99);
   const x0 = xOf(los);
   const o = starters(off, offDepth, offOrder), d = starters(def, defDepth, defOrder);
+  // the visitors wear white, unless the home team wears white at home (Dallas): then they wear color
+  const home = offHome ? off : def, homeWhite = !!UNIFORMS[teamKey(home)]?.whiteHome;
+  const awayFor = (side) => (homeWhite ? false : side === "off" ? !offHome : offHome);
   const place = (side, list, team) =>
     FORMATION[side].map(([pos, i, dx, lat]) => {
-      const x = clamp(xOf(los + dx), 14, W - 14), y = clamp(yOf(lat), 16, H - 30);
-      return <Player key={`${side}${pos}${i}`} p={list[pos]?.[i]} pos={pos} x={x} y={y} clr={team?.clr || "#334155"} ac={team?.ac} />;
+      const x = clamp(xOf(los + dx), 16, W - 16), y = clamp(yOf(lat), 22, H - 34);
+      return <Player key={`${side}${pos}${i}`} p={list[pos]?.[i]} pos={pos} x={x} y={y} team={team} side={side} away={awayFor(side)} td={!!lastPlay?.td} />;
     });
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, maxHeight: "min(46vh, 420px)" }}>
