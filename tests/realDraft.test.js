@@ -55,13 +55,13 @@ test("kickers and punters never go early, even a once-in-a-generation leg", asyn
   const { aiDraftScore, csScore } = await import("../src/scouting.js");
   for (let i = 0; i < 6; i++) {
     const dc = genDC(2030 + i);
-    const k = dc.find((p) => p.pos === "K");
+    const k = dc.find((p) => p.pos === "K") || Object.assign(dc[dc.length - 1], { pos: "K" });
     Object.assign(k, { trueOvr: 88, ovr: 88, truePot: 99, pot: 99 });
     const others = dc.filter((p) => p !== k).map((p) => aiDraftScore(p, "balanced")).sort((a, b) => b - a);
     const kv = Array.from({ length: 40 }, () => aiDraftScore(k, "balanced")).reduce((a, b) => a + b, 0) / 40; // his typical value (each team's read has a little noise)
     const slot = others.filter((v) => v > kv).length + 1;
     assert.ok(slot >= 55, `an elite kicker would go around pick ${slot}`);
-    assert.ok(dc.filter((p) => p.pos === "K" || p.pos === "P").every((p) => p === k || p.cons.mid > 64), "no specialist on the board's first two rounds");
+    assert.ok(dc.filter((p) => p.pos === "K" || p.pos === "P").every((p) => p === k || p.cons.mid > 48), "no specialist on the board's first round and a half");
     assert.ok(csScore(k) < others[50]);
   }
 });

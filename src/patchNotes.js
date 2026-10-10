@@ -373,6 +373,7 @@ export const PATCH_NOTES = [
     "Kickers and punters go where they do in the real draft. NFL teams almost never use a premium pick on one (the highest since 2012 went around pick 60-70), so a once-in-a-generation leg now goes around the third round at the earliest, a good one on day three, and most go late or undrafted. Applies to existing saves too.",
     "Stars get a star's share: season leaders now land where the NFL's do (about 5,000 passing yards and 40 TDs, 1,700 rushing and receiving yards, 17 sacks), so a record can fall in a career year, but not every season.",
     "Bigger Field / List buttons on the depth chart.",
+    "Fixed: in a real draft class, a generated prospect could end up with the same name as a real one.",
     "Depth chart list: every defensive lineman shows whether he's an edge rusher or a tackle by trade and which spot he's playing (EDGE @LE, DT @DT1...). A starter playing out of position is outlined in red with a ⚠, since he's rated lower there.",
   ] },
 ];

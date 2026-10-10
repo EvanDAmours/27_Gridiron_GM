@@ -210,7 +210,8 @@ export function genRealDC(yr){
   }
   const posW=[];for(const[p,n]of Object.entries(DC_POS_W))for(let i=0;i<n;i++)posW.push(p);
   const adj={fl:58,cap:86};
-  while(dc.length<240){const p=genProspect(yr,pick(posW),adj,minPot,minOvr);const sc=kpValue(p,p.truePot*0.78+p.trueOvr*0.22)+Gc(0,2,-6,6);p.cons={score:p.pos==="K"||p.pos==="P"?sc:Math.min(sc,minScore-0.1-Math.random()),kp:1};dc.push(p);}
+  const taken=new Set(dc.map(p=>p.name));
+  while(dc.length<240){const p=genProspect(yr,pick(posW),adj,minPot,minOvr);while(taken.has(p.name))p.name=`${pick(FN)} ${pick(LN)}`;taken.add(p.name);const sc=kpValue(p,p.truePot*0.78+p.trueOvr*0.22)+Gc(0,2,-6,6);p.cons={score:Math.min(sc,minScore-0.1-Math.random()),kp:1};dc.push(p);}
   for(const p of dc){p.gemChk=1;p.bustChk=1;}
   return rankClass(dc);
 }

@@ -589,7 +589,7 @@ export function devGrowth(p, age) {
 // board: a once-in-a-generation leg goes around the third round, a good one on day three, most
 // late or undrafted.
 export const SPECIALIST = (p) => p.pos === "K" || p.pos === "P";
-export const kpValue = (p, v) => (SPECIALIST(p) ? 60 + (v - 60) * 0.45 : v);
+export const kpValue = (p, v) => (SPECIALIST(p) ? 60 + (v - 60) * 0.38 : v);
 
 // Preseason rankings come out with the class; final rankings after the Combine. The Big Board
 // is always in this order, whatever your scouts find. Sorts the class in place.
@@ -599,7 +599,7 @@ export function rankClass(cls) {
     p.aiNoise ??= gauss(0, 3.6);
     p.scout ||= { lvl: 0 };
     // Kickers rarely go early, however talented.
-    p.cons ||= { score: kpValue(p, p.truePot * 0.78 + p.trueOvr * 0.22) + stream(`${p.id}|cs`).gauss(0, SPECIALIST(p) ? 1.5 : 3.4), kp: 1 };
+    p.cons ||= { score: kpValue(p, p.truePot * 0.78 + p.trueOvr * 0.22) + stream(`${p.id}|cs`).gauss(0, SPECIALIST(p) ? 1 : 3.4), kp: 1 };
   }
   [...cls].sort((a, b) => b.cons.score - a.cons.score).forEach((p, i) => (p.cons.mid = i + 1));
   return sortByRank(cls);
