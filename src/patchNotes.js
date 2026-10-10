@@ -342,4 +342,13 @@ export const PATCH_NOTES = [
     "Fixed: the Draft screen's 'Your picks' showed placeholder pick numbers (like pick 2 and 5) before the draft order was set. It now shows where each pick projects from the standings (worst record first, the champion last) and whose pick it originally was.",
     "The 'Season Complete' share popup no longer sits over the playoff buttons: it's in the corner, under other windows, and closes itself after a few seconds.",
   ] },
+  { v: "1.85", date: "2026-10-10", title: "Deeper Rosters, Prove-It Deals and a 10-Season Tune-Up", notes: [
+    "Every team now fills its 53 before the season: a backup at every position (kickers and punters aside) promoted from the practice squad or signed on a minimum deal, then the rest of the 53 on minimum deals, then the best remaining free agents on each team's practice squad (10 each). That includes your team; it's all in your log.",
+    "During the season, if injuries leave a position without a healthy backup, the practice squad's best player there is promoted and a cheap fringe free agent (rated under 70) takes his practice-squad spot. Your team too.",
+    "Contracts follow performance, not just OVR. At the end of every regular season each player's production is compared with his rating. Re-signing or extending him, a big contract year raises his ask (he's earned the big cheque); after a down year he takes less on a long deal, or bets on himself with a 1-year 'prove it' deal near full price. Let him walk and in free agency he goes back to asking by his rating. AI teams' re-signings work the same way.",
+    "League balance from a 10-season test run: the league's average and starters' ratings now hold steady for a decade, rosters stay full, no AI team goes over the cap, and early-round rookies get real snaps (first-rounders about half, second-rounders about a quarter). Rises into the 90s are tapered so 90+, 95+ and 99 players stay about as rare as today, and All-Pro/Pro Bowl boosts don't push players already 95+ any higher.",
+    "Rotations are a little deeper: the nickel corner, third safety, second tight end and backup receivers and backs play a bit more, so young backups get developmental snaps.",
+    "Removed two old shortcuts that broke the contract system: the RFA tender (it cut a starter's salary to about $1M) and the 'mid-level exception' (an NBA rule that signed free agents at a 25% discount). Vet-minimum claims now pay the real league minimum.",
+    "Fixed: with 'Owner can fire you' turned off, a second, older firing rule could still fire you after two losing seasons. Both rules respect the setting now.",
+  ] },
 ];
