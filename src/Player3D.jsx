@@ -200,12 +200,8 @@ export default function Player3D({ p, t, away = false, flip = false, h = 180, la
 
       // ---- head and helmet
       const head = new THREE.Group(); head.position.set(0, 1.76, 0.02); head.rotation.x = 0.16; // chin tucked
-      const face = ball(0.1, skin, 0.9, 1.08, 1); face.position.set(0, -0.025, 0.02); head.add(face);
-      for (const s of [-1, 1]) {
-        const eye = ball(0.012, black, 1.3, 0.8, 0.6); eye.position.set(s * 0.035, -0.005, 0.112); head.add(eye);
-        const glint = new THREE.Mesh(keep(new THREE.SphereGeometry(0.0035, 8, 6)), keep(new THREE.MeshBasicMaterial({ color: 0xffffff }))); glint.position.set(s * 0.033, -0.002, 0.118); head.add(glint); // a hard stare
-        if (g.eyeBlack !== "none") { const eb = new THREE.Mesh(keep(new THREE.BoxGeometry(g.eyeBlack === "sticker" ? 0.04 : 0.032, g.eyeBlack === "sticker" ? 0.016 : 0.009, 0.004)), black); eb.position.set(s * 0.037, -0.03, 0.11); eb.rotation.y = s * 0.3; head.add(eb); }
-      }
+      const shade = mat(new THREE.Color(skinC).multiplyScalar(0.12), { roughness: 0.7 }); // what little shows below the visor sits in shadow
+      const face = ball(0.1, shade, 0.9, 1.08, 1); face.position.set(0, -0.025, 0.02); head.add(face);
       const R = 0.145;
       const inner = mat("#15171b", { side: THREE.BackSide, roughness: 0.9 });
       const shellTop = new THREE.Mesh(keep(new THREE.SphereGeometry(R, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.4)), helmetM);
@@ -229,10 +225,10 @@ export default function Player3D({ p, t, away = false, flip = false, h = 180, la
       for (const s of [-1, 1]) head.add(tube([V(s * 0.13, 0.0, 0.08), V(s * 0.125, -0.06, 0.09), V(s * 0.1, -0.11, 0.08)], 0.007, maskM));
       // chin strap
       head.add(tube(arc(-0.13, 0.08, -1.2, 1.2, 0.0), 0.009, white));
-      // visor
-      if (g.visor !== "none") {
-        const vm = mat(g.visor === "clear" ? "#cfe3ff" : g.visor === "smoke" ? "#0b1220" : "#7c5cff", { transparent: true, opacity: g.visor === "clear" ? 0.25 : 0.82, roughness: 0.05, metalness: g.visor === "iridescent" ? 0.6 : 0.1, clearcoat: 1, iridescence: g.visor === "iridescent" ? 1 : 0 });
-        const vis = new THREE.Mesh(keep(new THREE.SphereGeometry(R * 0.97, 32, 8, Math.PI / 2 - gap * 0.95, gap * 1.9, Math.PI * 0.42, Math.PI * 0.13)), vm);
+      // a dark visor on every helmet: no faces, just a black eye shield (an iridescent one catches a little color)
+      {
+        const vm = mat("#05070a", { transparent: true, opacity: 0.97, roughness: 0.04, metalness: 0.5, clearcoat: 1, clearcoatRoughness: 0.02, iridescence: g.visor === "iridescent" ? 0.9 : 0, iridescenceIOR: 1.6 });
+        const vis = new THREE.Mesh(keep(new THREE.SphereGeometry(R * 0.985, 40, 10, Math.PI / 2 - gap * 1.02, gap * 2.04, Math.PI * 0.42, Math.PI * 0.2)), vm);
         vis.scale.set(0.93, 1, 1.1); vis.position.set(0, 0.02, -0.005); head.add(vis);
       }
       // team logo decals on both sides of the helmet
