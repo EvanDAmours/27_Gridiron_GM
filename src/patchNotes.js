@@ -331,4 +331,8 @@ export const PATCH_NOTES = [
   { v: "1.82", date: "2026-10-10", title: "Dev Traits on the Depth Chart", notes: [
     "The Depth Chart's List view now shows every player's development trait (Normal, Late bloomer, Star, Superstar, Generational) next to his rating, so you can see who's worth giving snaps to grow.",
   ] },
+  { v: "1.83", date: "2026-10-10", title: "Coach Reminder, Fewer Popups", notes: [
+    "When you start a season with an empty coordinator spot (offense, defense or special teams), a reminder pops up with a shortcut to the Coaching tab.",
+    "Removed the power rankings popup that appeared every four weeks. Rankings still update in the background.",
+  ] },
 ];
