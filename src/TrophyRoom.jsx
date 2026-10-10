@@ -2,7 +2,8 @@
 // history plus this league), and the MVP / Offensive / Defensive Player of the Year trophies your
 // players win while you're the GM. Each trophy is drawn in layers and turns slowly in 3D; hover
 // (or tap) one to see who won it and when.
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import Lombardi, { LombardiSpin } from "./Lombardi.jsx";
 import { C, TeamLogo } from "./ui.jsx";
 import { SUPER_BOWLS, sbName, sbNumber } from "./data/superbowls.js";
 
@@ -35,7 +36,7 @@ const Plinth = ({ label, band }) => (
 );
 
 // The Vince Lombardi Trophy: a football in kicking position on a tapering three-sided stand.
-const Lombardi = ({ label }) => (
+const LombardiSvg = ({ label }) => (
   <svg viewBox="0 0 100 240" width="100%" height="100%">
     <g transform="translate(-10.6 0) rotate(-20 50 58)">
       <ellipse cx="50" cy="56" rx="19" ry="31" fill="url(#tr-silverBall)" />
@@ -106,7 +107,7 @@ const RookieStar = ({ fill, metal, accent, label }) => (
 );
 
 const SHAPES = {
-  lombardi: (t) => <Lombardi label={t.short} />,
+  lombardi: (t) => <LombardiSvg label={t.short} />,
   mvp: () => <Mvp />,
   opoy: () => <Helmet shell="url(#tr-silverBall)" stripe="#2563eb" mask="#94a3b8" label="OPOY" />,
   dpoy: () => <Helmet shell="url(#tr-goldBall)" stripe="#dc2626" mask="#7c5a10" label="DPOY" flip />,
@@ -115,7 +116,20 @@ const SHAPES = {
 };
 const LAYERS = [-3, -2, -1, 0, 1, 2, 3];
 
-function Trophy({ t, i, on, setOn }) {
+function Trophy({ t, i, on, setOn, small, spot }) {
+  const ref = useRef(null);
+  useEffect(() => { if (spot) setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 400); }, [spot]);
+  if (t.kind === "lombardi") return (
+    <div ref={ref} className={`tr-slot tr-lom${spot ? " tr-spot" : ""}`} onMouseEnter={() => setOn(t.key)} onMouseLeave={() => setOn(null)} onClick={() => setOn(on ? null : t.key)}>
+      {on && <div className="tr-tip" role="tooltip"><div style={{ fontSize: 15, fontWeight: 900, color: "#fde68a" }}>{t.title}</div>{t.lines.filter(Boolean).map((l, k) => <div key={k} style={{ fontSize: 13, color: k ? "#cbd5e1" : "#fff", marginTop: 2 }}>{l}</div>)}</div>}
+      {spot && <><div className="tr-beam" /><div className="tr-new">NEW</div></>}
+      <div className="tr-pop" style={{ animationDelay: `${Math.min(i, 20) * 90}ms` }}>
+        <div className="tr-lift">{spot ? <Lombardi size={small ? 84 : 120} /> : <LombardiSpin size={small ? 74 : 100} delay={(i * 1.7) % 8} />}</div>
+      </div>
+      <div className="tr-plaque">{t.short}</div>
+      <div className="tr-glow" />
+    </div>
+  );
   const shape = SHAPES[t.kind](t);
   return (
     <div className="tr-slot" onMouseEnter={() => setOn(t.key)} onMouseLeave={() => setOn(null)} onClick={() => setOn(on ? null : t.key)}>
@@ -145,7 +159,7 @@ const useWidth = () => {
   return w;
 };
 
-function Shelf({ title, items, empty, perRow, on, setOn, start = 0 }) {
+function Shelf({ title, items, empty, perRow, on, setOn, start = 0, small, spot }) {
   const rows = [];
   for (let i = 0; i < items.length; i += perRow) rows.push(items.slice(i, i + perRow));
   if (!rows.length) rows.push([]);
@@ -160,7 +174,7 @@ function Shelf({ title, items, empty, perRow, on, setOn, start = 0 }) {
           <div key={r} className="tr-row">
             <div className="tr-items">
               {!row.length && <div style={{ alignSelf: "center", color: "#a8a29e", fontSize: 15, padding: "40px 10px", textAlign: "center" }}>{empty}</div>}
-              {row.map((t, k) => <Trophy key={t.key} t={t} i={start + r * perRow + k} on={on === t.key} setOn={setOn} />)}
+              {row.map((t, k) => <Trophy key={t.key} t={t} i={start + r * perRow + k} on={on === t.key} setOn={setOn} small={small} spot={spot === t.key} />)}
             </div>
             <div className="tr-board" />
           </div>
@@ -171,7 +185,7 @@ function Shelf({ title, items, empty, perRow, on, setOn, start = 0 }) {
 }
 
 // team: your club. champs: this league's champions. awards: season award winners by year.
-export default function TrophyRoom({ team, ui, champs = [], awards = [], teams = [] }) {
+export default function TrophyRoom({ team, ui, champs = [], awards = [], teams = [], spotlight = null }) {
   const [on, setOn] = useState(null);
   const width = useWidth();
   const full = `${team.city} ${team.name}`;
@@ -217,7 +231,7 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
           ))}
         </div>
       </div>
-      <Shelf title="Super Bowl Championships" items={lombardis} empty="No Super Bowls yet. Win one and the Lombardi Trophy goes here." perRow={perRow} on={on} setOn={setOn} />
+      <Shelf title="Super Bowl Championships" items={lombardis} empty="No Super Bowls yet. Win one and the Lombardi Trophy goes here." perRow={perRow} on={on} setOn={setOn} small={width <= 640} spot={spotlight != null ? `sb${sbNumber(spotlight)}` : null} />
       <Shelf title="Player Awards" items={mine} empty="Win MVP, Offensive or Defensive Player of the Year, or a Rookie of the Year award with you as GM and the trophy goes here." perRow={perRow} on={on} setOn={setOn} start={lombardis.length} />
     </div>
   );
@@ -242,5 +256,14 @@ const CSS = `
 @keyframes trSway { from { transform: rotateY(-24deg); } to { transform: rotateY(24deg); } }
 @keyframes trPop { from { opacity: 0; transform: translateY(40px) scale(.3); } 65% { opacity: 1; transform: translateY(-6px) scale(1.05); } to { opacity: 1; transform: none; } }
 @media (max-width: 640px) { .tr-slot { width: 78px; height: 164px; } .tr-items { gap: 8px; min-height: 120px; } .tr-tip { width: 180px; } }
+.tr-lom { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 104px; height: 218px; }
+.tr-lom .tr-pop { height: auto; display: flex; justify-content: center; }
+.tr-plaque { margin-top: -6px; padding: 1px 8px; border-radius: 3px; font: 800 11px Georgia, serif; letter-spacing: 1px; color: #3b2a0a; background: linear-gradient(180deg, #f6dd8a, #b8892b); box-shadow: 0 1px 3px #000a; position: relative; z-index: 2; }
+.tr-spot { width: 150px; height: 270px; }
+.tr-beam { position: absolute; left: 50%; top: -60px; width: 260px; height: 340px; transform: translateX(-50%); background: conic-gradient(from 162deg at 50% 0%, transparent 0deg, #fff8dc40 12deg, #fff8dc2a 26deg, transparent 36deg); filter: blur(4px); pointer-events: none; animation: trBeam 2.4s ease-out both; }
+.tr-spot .tr-glow { width: 120%; height: 22px; background: radial-gradient(#fde68a88, transparent 70%); }
+.tr-new { position: absolute; top: 0; right: 0; z-index: 3; padding: 2px 8px; border-radius: 999px; font: 900 11px system-ui; letter-spacing: 1px; color: #1a1200; background: #fde68a; box-shadow: 0 0 14px #fde68aaa; }
+@keyframes trBeam { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 640px) { .tr-lom { width: 78px; height: 164px; } .tr-spot { width: 110px; height: 200px; } .tr-beam { width: 190px; height: 250px; } }
 @media (prefers-reduced-motion: reduce) { .tr-spin, .tr-pop { animation: none; } }
 `;

@@ -426,4 +426,7 @@ export const PATCH_NOTES = [
   { v: "1.98", date: "2026-10-10", title: "Visors Down", notes: [
     "Every star on the home screen now wears a dark visor, so you see the helmet, not a face.",
   ] },
+  { v: "1.99", date: "2026-10-10", title: "Real Lombardis in the Trophy Room", notes: [
+    "Every Super Bowl trophy in your Trophy Room is now the same polished 3D Lombardi as the main menu, slowly turning on its platter, with a brass plaque for the game (LII, LIX...).",
+  ] },
 ];
