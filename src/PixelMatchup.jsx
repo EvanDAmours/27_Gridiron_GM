@@ -1,27 +1,27 @@
 import React, { useState } from 'react';
 import { TeamLogo } from './ui.jsx';
-import { spritePath } from './spriteAssets.js';
+import { matchupPortraitPath } from './matchupPortraitAssets.js';
 import './pixel-matchup.css';
 
 const h = React.createElement;
 const displayRating = value => Number.isFinite(value) ? Math.round(value) : '—';
 
-// All supplied sprites face right. Flip only the right-hand/home sprite.
-export function PixelPlayer({ player, team, uniform = 'home', flip = false }) {
-  const src = spritePath(team?.ab, player?.pos, uniform);
+// Matchup portraits are separate artwork; preserve readable jersey numbers.
+export function PixelPlayer({ player, team, uniform = 'home' }) {
+  const src = matchupPortraitPath(team?.ab, player?.pos, uniform);
   return h('figure', { className: 'pxm-player' },
-    h(SpriteImage, { key: src, src, flip, ab: team?.ab }),
+    h(SpriteImage, { key: src, src, ab: team?.ab }),
     h('figcaption', null,
       h('strong', null, player?.name || `${team?.ab || ''} ${uniform === 'away' ? 'offense' : 'defense'}`),
       player && h('span', null, `${player.pos} • ${displayRating(player.ovr)} OVR`)));
 }
 
-function SpriteImage({ src, flip, ab }) {
+function SpriteImage({ src, ab }) {
   const [failed, setFailed] = useState(false);
   if (!src || failed) return h('div', { className: 'pxm-sprite-fallback', 'aria-hidden': true }, ab || 'NFL');
   return h('img', {
-    className: `pxm-sprite${flip ? ' pxm-sprite--flip' : ''}`,
-    src, alt: '', width: 160, height: 160, decoding: 'async',
+    className: 'pxm-sprite',
+    src, alt: '', width: 627, height: 627, decoding: 'async',
     onError: () => setFailed(true),
   });
 }
@@ -55,10 +55,11 @@ export default function PixelMatchup({ away, home, awayPlayer, homePlayer, awayR
         h(PixelPlayer, { player: awayPlayer, team: away, uniform: awayUniform }),
         h('div', { className: 'pxm-logos', 'aria-hidden': true },
           h(TeamLogo, { t: away, sz: 64 }), h('b', null, 'AT'), h(TeamLogo, { t: home, sz: 64 })),
-        h(PixelPlayer, { player: homePlayer, team: home, uniform: homeUniform, flip: true }))),
+        h(PixelPlayer, { player: homePlayer, team: home, uniform: homeUniform }))),
     h('div', { className: 'pxm-kickoff' },
       kickoff && h('strong', null, kickoff), venue && h('span', null, venue)),
     h('div', { className: 'pxm-teams' },
       h(TeamSummary, { team: away, rating: awayRating, other: homeRating }),
       h(TeamSummary, { team: home, rating: homeRating, other: awayRating })));
 }
+
