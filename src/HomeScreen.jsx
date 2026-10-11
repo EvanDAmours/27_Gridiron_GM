@@ -5,11 +5,8 @@ import { C, TeamLogo, Btn, kickoff } from "./ui.jsx";
 import { unitRatings } from "./gamesim.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import { ROUND_NAMES } from "./playoffs.js";
-import { starOf } from "./PlayerFigure.jsx";
-import PlayerFigureRaw from "./Player3D.jsx";
-// Star figures beside the logos: off until the art is approved.
-const SHOW_STARS = true;
-const PlayerFigure = (props) => (SHOW_STARS ? <PlayerFigureRaw {...props} /> : null);
+import { highestRatedPlayer } from "./spriteAssets.js";
+import PixelMatchup, { PixelPlayer } from "./PixelMatchup.jsx";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const PHASE = { preseason: "Preseason", combine: "Offseason: NFL Combine", resign: "Offseason: Re-sign Week", freeagency: "Offseason: Free Agency", draft: "Offseason: NFL Draft" };
@@ -20,33 +17,6 @@ export function teamRatings(t, depthOrder, snaps) {
   const u = unitRatings((pos) => depthOrderFor(healthy, depthOrder, pos, snaps));
   const off = Math.round(u.pass * 0.6 + u.run * 0.4), def = Math.round(u.passD * 0.6 + u.runD * 0.4);
   return { ovr: Math.round(off * 0.5 + def * 0.5), off, def };
-}
-
-function RatingBoxes({ mine, other, sm }) {
-  return (
-    <div style={{ display: "flex", gap: sm ? 4 : 6 }}>
-      {["ovr", "off", "def"].map((k) => {
-        const best = mine[k] >= other[k];
-        return (
-          <div key={k} style={{ textAlign: "center", minWidth: sm ? 38 : 56 }}>
-            <div style={{ fontSize: sm ? 17 : 26, fontWeight: 900, padding: sm ? "1px 4px" : "2px 8px", borderRadius: "6px 6px 0 0", border: `2px solid ${best ? C.gn : "#94a3b8"}`, borderBottom: 0, background: best ? `${C.gn}22` : "transparent" }}>{mine[k]}</div>
-            <div style={{ fontSize: sm ? 9 : 12, fontWeight: 900, letterSpacing: sm ? 0.5 : 1, padding: "1px 0", borderRadius: "0 0 6px 6px", background: best ? C.gn : "#94a3b8", color: "#0b1220" }}>{k.toUpperCase()}</div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function Side({ t, rating, other, align, sm }) {
-  return (
-    <div style={{ textAlign: align, minWidth: 0, flex: sm ? "1 1 0" : undefined }}>
-      <div style={{ fontSize: sm ? 12 : 18, color: "#e2e8f0" }}>{t.city}</div>
-      <div style={{ fontSize: sm ? 18 : "clamp(26px, 4.2vw, 44px)", fontWeight: 900, letterSpacing: sm ? 0.5 : 1, lineHeight: 1, textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>
-      <div style={{ fontSize: sm ? 12 : 16, color: "#cbd5e1", margin: sm ? "2px 0 6px" : "4px 0 8px" }}>{rec(t)}</div>
-      <div style={{ display: "flex", justifyContent: align === "right" ? "flex-end" : "flex-start" }}><RatingBoxes mine={rating} other={other} sm={sm} /></div>
-    </div>
-  );
 }
 
 // This week's top stories (written after every week), with the league wire as a fallback.
@@ -161,23 +131,19 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
             </div>
           )}
           {game ? (
-            <>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: mobile ? "2%" : "3%", margin: "6px 0 4px" }}>
-                <PlayerFigure p={starOf(away)} t={away} away h={mobile ? 104 : 170} />
-                <span className="hm-logo"><TeamLogo t={away} sz={150} /></span>
-                <div style={{ fontSize: mobile ? 22 : 36, fontWeight: 900, color: "#e2e8f0" }}>AT</div>
-                <span className="hm-logo"><TeamLogo t={home} sz={150} /></span>
-                <PlayerFigure p={starOf(home)} t={home} flip h={mobile ? 104 : 170} />
-              </div>
-              <div style={{ textAlign: "center", fontSize: mobile ? 12 : 15, color: "#cbd5e1", marginBottom: mobile ? 10 : 14 }}>{sp === "playoffs" && pb?.rd === 4 ? "Super Bowl · neutral site" : game.date ? `${kickoff(game)} · ${game.venue}${game.intl ? `, ${game.city}` : ""}` : `1:00 PM · ${home.city}`}</div>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: mobile ? 8 : 16, flexWrap: mobile ? "nowrap" : "wrap" }}>
-                <Side t={away} rating={ra} other={rh} align="left" sm={mobile} />
-                <Side t={home} rating={rh} other={ra} align="right" sm={mobile} />
-              </div>
-            </>
+            <PixelMatchup
+              key={`${sp}-${game.wk ?? pb?.rd ?? 0}-${game.a}-${game.h}`}
+              away={away} home={home}
+              awayPlayer={highestRatedPlayer(away)}
+              homePlayer={highestRatedPlayer(home)}
+              awayRating={ra} homeRating={rh}
+              label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} • Week ${game.wk ?? nextWk}`}
+              kickoff={game.date ? kickoff(game) : "Kickoff TBD"}
+              venue={sp === "playoffs" && pb?.rd === 4 ? "Super Bowl • neutral site" : [game.venue || home.city, game.intl && game.city].filter(Boolean).join(", ")}
+            />
           ) : (
-            <div style={{ textAlign: "center", padding: "30px 10px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4%" }}><span className="hm-logo"><TeamLogo t={me} sz={150} /></span><PlayerFigure p={starOf(me)} t={me} flip h={mobile ? 104 : 170} /></div>
+            <div style={{ textAlign: "center", padding: "20px 10px" }}>
+              <div style={{ maxWidth: 170, margin: "0 auto" }}><PixelPlayer player={highestRatedPlayer(me)} team={me} /></div>
               <div style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, textTransform: "uppercase", marginTop: 10 }}>{sp === "regular" ? "Bye week" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>
               <div style={{ fontSize: 16, color: "#cbd5e1", marginTop: 4 }}>{me.city} {me.name} · {rec(me)}</div>
             </div>

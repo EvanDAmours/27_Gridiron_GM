@@ -1,0 +1,64 @@
+import React, { useState } from 'react';
+import { TeamLogo } from './ui.jsx';
+import { spritePath } from './spriteAssets.js';
+import './pixel-matchup.css';
+
+const h = React.createElement;
+const displayRating = value => Number.isFinite(value) ? Math.round(value) : '—';
+
+// All supplied sprites face right. Flip only the right-hand/home sprite.
+export function PixelPlayer({ player, team, uniform = 'home', flip = false }) {
+  const src = spritePath(team?.ab, player?.pos, uniform);
+  return h('figure', { className: 'pxm-player' },
+    h(SpriteImage, { key: src, src, flip, ab: team?.ab }),
+    h('figcaption', null,
+      h('strong', null, player?.name || `${team?.ab || ''} ${uniform === 'away' ? 'offense' : 'defense'}`),
+      player && h('span', null, `${player.pos} • ${displayRating(player.ovr)} OVR`)));
+}
+
+function SpriteImage({ src, flip, ab }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return h('div', { className: 'pxm-sprite-fallback', 'aria-hidden': true }, ab || 'NFL');
+  return h('img', {
+    className: `pxm-sprite${flip ? ' pxm-sprite--flip' : ''}`,
+    src, alt: '', width: 160, height: 160, decoding: 'async',
+    onError: () => setFailed(true),
+  });
+}
+
+function Ratings({ mine = {}, other = {} }) {
+  return h('div', { className: 'pxm-ratings' }, ...['ovr', 'off', 'def'].map(key => {
+    const ahead = Number.isFinite(mine[key]) && Number.isFinite(other[key]) && mine[key] >= other[key];
+    return h('div', { key, className: `pxm-rating${ahead ? ' pxm-rating--ahead' : ''}` },
+      h('strong', null, displayRating(mine[key])), h('span', null, key.toUpperCase()));
+  }));
+}
+
+function TeamSummary({ team, rating, other }) {
+  return h('section', { className: 'pxm-team', 'aria-label': `${team.city} ${team.name} team ratings` },
+    h('span', { className: 'pxm-city' }, team.city),
+    h('h3', null, team.name),
+    h('p', { className: 'pxm-record' }, `${team.w ?? 0}–${team.l ?? 0}${team.t ? `–${team.t}` : ''}`),
+    h(Ratings, { mine: rating, other }));
+}
+
+// Ratings, records, players, venue and kickoff are passed from the live game.
+// Uniform overrides are optional for alternate jerseys or neutral-site games.
+export default function PixelMatchup({ away, home, awayPlayer, homePlayer, awayRating,
+  homeRating, label, kickoff, venue, awayUniform = 'away', homeUniform = 'home' }) {
+  if (!away || !home) return null;
+  return h('article', { className: 'pxm-card', 'aria-label': `${away.city} ${away.name} at ${home.city} ${home.name}` },
+    h('header', { className: 'pxm-label' }, label),
+    h('div', { className: 'pxm-field' },
+      h('div', { className: 'pxm-yardmarks', 'aria-hidden': true }, ...['30', '40', '50', '40', '30'].map((mark, i) => h('span', { key: i }, mark))),
+      h('div', { className: 'pxm-matchup' },
+        h(PixelPlayer, { player: awayPlayer, team: away, uniform: awayUniform }),
+        h('div', { className: 'pxm-logos', 'aria-hidden': true },
+          h(TeamLogo, { t: away, sz: 64 }), h('b', null, 'AT'), h(TeamLogo, { t: home, sz: 64 })),
+        h(PixelPlayer, { player: homePlayer, team: home, uniform: homeUniform, flip: true }))),
+    h('div', { className: 'pxm-kickoff' },
+      kickoff && h('strong', null, kickoff), venue && h('span', null, venue)),
+    h('div', { className: 'pxm-teams' },
+      h(TeamSummary, { team: away, rating: awayRating, other: homeRating }),
+      h(TeamSummary, { team: home, rating: homeRating, other: awayRating })));
+}
