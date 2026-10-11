@@ -1,0 +1,1 @@
+Transparent football player sprites.
