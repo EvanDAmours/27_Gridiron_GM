@@ -719,4 +719,12 @@ export const PATCH_NOTES = [
     "Fix: the coaching pool could be empty all season. The automatic save left the available coaches out, so after you closed the game and pressed Continue there were none to hire until the next off-season. Continue now brings the pool back, and a save that lost it gets a fresh one.",
     "The same automatic save also dropped about 30 other things a full save keeps: your franchise tag, owner goals and promises, playbook, coach market, waivers, trade history, compensatory picks, fan mood history and more. It now saves and restores all of it.",
   ] },
+  { v: "2.43", date: "2026-10-12", title: "Nothing Lost on Reload", notes: [
+    "A full audit of saving and loading. Every way in and out of a game (Continue, save slots, Save/Load Game, Export/Import league, the reload after an update) now writes and reads the same complete save.",
+    "Now kept when you reload (it used to reset): contract talks (who walked away and their counters), your game plan, the owner's mandate and your job security, holdout weeks, coaches on the hot seat, the weekly locker-room meeting and preseason games already used, milestones already rewarded, rehab choices, undrafted rookies still available after the draft, RFA tenders, coach specializations, player story arcs, franchise records, the International Series week, a pending trade proposal, dismissed inbox items and challenge progress.",
+    "Export league used to save only part of your league, and Import league only read part back. Both now use the full save.",
+    "Fix: a reload no longer quietly reshuffles the draft board's preseason rankings.",
+    "Fix: player trade values update the moment anything about a player changes (a signing, a re-sign, training, a revised potential), instead of only when you reloaded.",
+    "Guard rails: a test fails the build if any new piece of game state isn't saved, and the automatic play-through now saves, reloads and continues twice (mid-season and on draft day), checking every field comes back exactly.",
+  ] },
 ];

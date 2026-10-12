@@ -603,7 +603,9 @@ export function rankClass(cls) {
     // Kickers rarely go early, however talented.
     p.cons ||= { score: kpValue(p, p.truePot * 0.78 + p.trueOvr * 0.22) + stream(`${p.id}|cs`).gauss(0, SPECIALIST(p) ? 1 : 3.4), kp: 1 };
   }
-  [...cls].sort((a, b) => b.cons.score - a.cons.score).forEach((p, i) => (p.cons.mid = i + 1));
+  // The preseason rank is set once, when the class comes out. Scores move afterwards (scouting, the
+  // Combine), so re-ranking on every load would quietly reshuffle the board.
+  if (cls.some((p) => p.cons.mid == null)) [...cls].sort((a, b) => b.cons.score - a.cons.score).forEach((p, i) => (p.cons.mid = i + 1));
   return sortByRank(cls);
 }
 // ---------- Hidden gems ----------

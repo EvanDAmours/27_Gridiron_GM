@@ -83,6 +83,22 @@ async function healthy(where) {
   if (errors.length) fail(`page error (${where}): ${errors[0]}`);
 }
 
+async function reloadCheck(where) {
+  // Save, reload the page, press Continue: everything in the save must come back exactly. (The
+  // automatic save once left out the coach pool, franchise tag, owner goals and more.)
+    const before = await save();
+    await page.reload(); await page.waitForTimeout(1500);
+    const cont = page.locator("button", { hasText: "CONTINUE" });
+    if (!(await cont.count())) fail("no Continue button after reload");
+    await cont.first().click(); await page.waitForTimeout(1500); await healthy(`continue after reload (${where})`);
+    const after = await save();
+    const canon = (v) => JSON.stringify(v, (k, x) => (x && typeof x === "object" && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((key) => [key, x[key]])) : x)); // key order doesn't matter
+    const lost = Object.keys(before).filter((k) => canon(before[k]) !== canon(after[k]));
+    const diff = (a, b, path = "") => { if (canon(a) === canon(b)) return []; if (a && b && typeof a === "object" && typeof b === "object") return [...new Set([...Object.keys(a), ...Object.keys(b)])].flatMap((k) => diff(a[k], b[k], `${path}.${k}`)); return [`${path}: ${JSON.stringify(a)?.slice(0, 80)} -> ${JSON.stringify(b)?.slice(0, 80)}`]; };
+    if (lost.length) { for (const k of lost) console.log(diff(before[k], after[k], k).slice(0, 8).join("\n")); fail(`reload + Continue (${where}) changed: ${lost.join(", ")}`); }
+    log(`reload + Continue (${where}) keeps all ${Object.keys(before).length} saved fields`);
+}
+
 let code = 0;
 try {
   console.log(`Smoke test on ${url}`);
@@ -109,6 +125,7 @@ try {
   await must("Big Board", 400); await must("Your scouts", 600); await healthy("your scouts' board"); log("your scouts' board");
   await startSeason();
   await must("Sim Week", 1500); await healthy("sim week"); log("sim week");
+  await reloadCheck("mid-season");
   await must("Sim to Deadline", 3500); await healthy("sim to deadline");
   if (!(await page.evaluate(() => document.body.innerText.includes("TRADE DEADLINE DAY")))) fail("deadline day didn't open");
   await must("Advance to", 800); await must("Sim to 4:00 PM", 800); await must("Back to the season", 800); log("trade deadline day");
@@ -123,6 +140,8 @@ try {
   log("playoffs and season awards");
   await must("→ Combine"); await advance("Finish Combine →"); await advance("Finish Re-signing →", 2500); await healthy("free agency"); log("combine, re-sign week, free agency");
   await advance("Finish Free Agency →", 1500);
+  await reloadCheck("draft day");
+  if (!(await page.locator("button", { hasText: "Sim Draft" }).count())) fail("the draft can't go on after reload + Continue");
   await click("Sim Draft", 3000);
   const cont = page.locator("button", { hasText: "Continue the draft" });
   if (await cont.count()) await cont.click();
