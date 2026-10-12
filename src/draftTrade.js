@@ -92,3 +92,60 @@ export function applyFutures(order, yr, futures) {
 }
 
 export const pickLabel = (pk, yr) => (pk.future || pk.yr !== yr || !pk.overall ? `${pk.yr} Round ${pk.rd}` : `R${pk.rd} #${pk.overall}`);
+
+// Trade-up calls: while another club is on the clock, you can phone the clubs picking between now
+// and your next pick. A club will move down for your next pick plus enough of your other picks
+// (later picks this year, next year's rounds 1-4) to cover the chart gap and a premium: moving up
+// costs more than moving down earns. Returns up to `max` offers, nearest pick first.
+export function tradeUpOffers({ picks, futures = [], idx, ui, yr, teams, max = 4 }) {
+  const myIdx = picks.findIndex((pk, i) => i >= idx && pk.owner === ui && pk.yr === yr);
+  if (myIdx < 0) return [];
+  const myPick = picks[myIdx];
+  const mine = chartValue(myPick.overall);
+  const seen = new Set();
+  const offers = [];
+  for (let i = idx; i < myIdx && offers.length < max; i++) {
+    const theirPick = picks[i];
+    if (theirPick.owner === ui || theirPick.yr !== yr || seen.has(theirPick.owner)) continue;
+    seen.add(theirPick.owner);
+    const rand = seeded(`${myPick.id}:${theirPick.id}`);
+    if (rand() < 0.3) continue; // some clubs love their spot
+    const premium = 1.08 + rand() * 0.14;
+    const need = (chartValue(theirPick.overall) - mine) * premium;
+    const pool = assets(ui, picks, futures, myIdx, myPick, yr).map((a) => ({ a, v: pickChartValue(a, yr) })).sort((x, y) => y.v - x.v);
+    const extras = [];
+    let got = 0;
+    while (got < need * 0.97 && extras.length < 3 && pool.length) {
+      const left = need - got;
+      const fit = pool.filter((x) => x.v <= left * 1.35);
+      const pickOne = (fit.length ? fit : pool.slice(-1))[0];
+      if (!fit.length && pickOne.v > left * 2.5) break;
+      extras.push(pickOne.a);
+      got += pickOne.v;
+      pool.splice(pool.indexOf(pickOne), 1);
+    }
+    if (got < need * 0.9) continue; // you can't afford it
+    const t = teams[theirPick.owner];
+    offers.push({ id: `up-${myPick.id}-${theirPick.id}`, team: theirPick.owner, theirPick, myPick, extras, give: Math.round(mine + got), get: chartValue(theirPick.overall), up: myPick.overall - theirPick.overall, from: `${t.city} ${t.name}` });
+  }
+  return offers;
+}
+
+// Accept a trade-up: their pick becomes yours; your pick and the extras go to them.
+export function acceptTradeUp(picks, futures, offer, ui) {
+  const give = new Set([offer.myPick.id, ...offer.extras.filter((a) => !a.future).map((a) => a.id)]);
+  return {
+    picks: picks.map((pk) => (pk.id === offer.theirPick.id ? { ...pk, owner: ui } : give.has(pk.id) ? { ...pk, owner: offer.team } : pk)),
+    futures: [...futures, ...offer.extras.filter((a) => a.future).map((a) => ({ id: a.id, rd: a.rd, yr: a.yr, owner: offer.team, orig: ui }))],
+  };
+}
+
+// Steal or reach: where a player went against where the consensus board had him.
+export function pickValueTag(overall, csr) {
+  if (!csr || csr >= 999) return null;
+  const d = overall - csr; // positive: he lasted longer than he should have
+  const big = Math.max(6, Math.round(overall * 0.25));
+  if (d >= big) return { kind: "steal", d };
+  if (-d >= Math.max(10, Math.round(overall * 0.4))) return { kind: "reach", d };
+  return null;
+}

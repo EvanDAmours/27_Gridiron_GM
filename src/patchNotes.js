@@ -468,5 +468,10 @@ export const PATCH_NOTES = [
     "Every head coach is known for something, and it matters: Player Developer (young players grow faster), QB Whisperer (quarterbacks develop faster and age better), Talent Evaluator (+3 scouting points a season), Offensive Guru and Defensive Mastermind (about half a point a game on that side of the ball), Culture Builder (free agents and re-signs ask for less) and Veteran Manager (veterans decline more slowly).",
     "Real coaches have the trait they're known for: Andy Reid and Sean Payton are QB Whisperers, Sean McVay and Kyle Shanahan are Offensive Gurus, Mike Macdonald is a Defensive Mastermind, the Harbaughs and Dan Campbell are Culture Builders, Mike Vrabel is a Talent Evaluator, Matt LaFleur is a Player Developer, and so on.",
     "Your head coach's trait is on the Coaching page, and the League Coaching Staffs list shows every head coach's trait icon.",
+  ] },  { v: "1.9994", date: "2026-10-12", title: "Draft Day", notes: [
+    "A broadcast-style On the Clock stage: the club's colors and logo, round and pick, its biggest needs, and how far away your next pick is.",
+    "The pick is in: every first-round pick gets the commissioner's announcement (\"With the 5th pick in the 2026 NFL Draft, the Cleveland Browns select...\") with the player's position, school, grade and a steal/reach call. It's skipped on Fast speed.",
+    "A draft ticker runs across the top with every pick so far, and calls out the steals (players who went well after their consensus rank) and the reaches.",
+    "Trade up: while another club is on the clock, tap Trade up to pause the draft and call the clubs picking ahead of you. They'll move down for your next pick plus later picks or next year's picks, priced on the draft trade chart with a premium for moving up.",
   ] },
 ];
