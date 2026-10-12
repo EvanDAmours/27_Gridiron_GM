@@ -715,4 +715,8 @@ export const PATCH_NOTES = [
     "Field goal range now depends on the kicker's leg strength: on a normal 4th down a strong leg tries from about 57 to 59 yards (52 for the weakest legs), and with the half or the game on the line coaches stretch it to 60 to 64. Before, nobody tried much past 54.",
     "A big leg also makes long kicks more likely to go in: a 60-yarder is roughly a coin flip, a little better for the strongest legs. League-wide, 60+ yard tries come up about as often as in the NFL (around 20 a season).",
   ] },
+  { v: "2.42", date: "2026-10-12", title: "Continue Keeps Everything", notes: [
+    "Fix: the coaching pool could be empty all season. The automatic save left the available coaches out, so after you closed the game and pressed Continue there were none to hire until the next off-season. Continue now brings the pool back, and a save that lost it gets a fresh one.",
+    "The same automatic save also dropped about 30 other things a full save keeps: your franchise tag, owner goals and promises, playbook, coach market, waivers, trade history, compensatory picks, fan mood history and more. It now saves and restores all of it.",
+  ] },
 ];
