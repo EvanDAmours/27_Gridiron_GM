@@ -690,4 +690,10 @@ export const PATCH_NOTES = [
   { v: "2.35", date: "2026-10-12", title: "Roster Opens the Depth Chart", notes: [
     "On phones, the Roster button in the bottom bar always opens the Depth Chart; the full roster list is one tap away in the Depth Chart / Roster switch at the top.",
   ] },
+  { v: "2.36", date: "2026-10-12", title: "Draft Day on Your Phone", notes: [
+    "The draft board on phones is one compact row per prospect (rank, ★, name, OVR, POT and a single button), so about three times as many fit on the screen. The button is Draft when you're on the clock and Scout otherwise; tap a row for the full profile.",
+    "Less above the board on phones: the scouting points badge and pick strip step aside once the draft is running (the clock bar shows your next pick), the board's explanation is gone, the filters share one row and search sits behind 🔍.",
+    "When you're on the clock on a phone, draft-day trade offers fold into one '📞 3 trade offers' button; tap it to see them.",
+    "Fix: continuing a save made in the middle of the draft now picks up at the right pick (paused, press Resume). Before, the draft could get stuck with no way to go on.",
+  ] },
 ];
