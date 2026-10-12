@@ -65,3 +65,18 @@ export const COORD = {
   "Dave Toub": { rating: 88 }, "Darrin Simmons": { rating: 85 }, "Dave Fipp": { rating: 82 },
   "John Fassel": { rating: 81 }, "Darren Rizzi": { rating: 80 }, "Danny Crossman": { rating: 77 },
 };
+
+// What each head coach is known for (see src/headCoach.js for what each trait does).
+export const HC_TRAIT = {
+  "Andy Reid": "QB Whisperer", "Sean McVay": "Offensive Guru", "Kyle Shanahan": "Offensive Guru",
+  "John Harbaugh": "Culture Builder", "Jim Harbaugh": "Culture Builder", "Sean Payton": "QB Whisperer",
+  "Dan Campbell": "Culture Builder", "Mike Vrabel": "Talent Evaluator", "Nick Sirianni": "Veteran Manager",
+  "Matt LaFleur": "Player Developer", "Kevin O'Connell": "QB Whisperer", "Mike Macdonald": "Defensive Mastermind",
+  "Ben Johnson": "Offensive Guru", "Mike McCarthy": "QB Whisperer", "Kevin Stefanski": "Offensive Guru",
+  "DeMeco Ryans": "Defensive Mastermind", "Dan Quinn": "Defensive Mastermind", "Liam Coen": "Player Developer",
+  "Zac Taylor": "Veteran Manager", "Todd Bowles": "Defensive Mastermind", "Shane Steichen": "QB Whisperer",
+  "Robert Saleh": "Defensive Mastermind", "Todd Monken": "Offensive Guru", "Brian Schottenheimer": "Player Developer",
+  "Jesse Minter": "Defensive Mastermind", "Kellen Moore": "Offensive Guru", "Mike LaFleur": "Player Developer",
+  "Joe Brady": "QB Whisperer", "Dave Canales": "Player Developer", "Jeff Hafley": "Talent Evaluator",
+  "Klint Kubiak": "Offensive Guru", "Aaron Glenn": "Talent Evaluator",
+};

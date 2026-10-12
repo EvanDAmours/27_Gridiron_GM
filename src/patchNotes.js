@@ -464,5 +464,9 @@ export const PATCH_NOTES = [
     "The best-known coordinators carry their reputations: Spagnuolo, Vic Fangio and Brian Flores call aggressive defenses, Mike McDaniel runs a West Coast offense, and so on.",
     "The Coaching page shows your head coach and a League Coaching Staffs list with every club's head coach, OC and DC.",
     "Existing saves get each club's real head coach; their coordinators stay as they were.",
+  ] },  { v: "1.9993", date: "2026-10-12", title: "Head Coach Traits", notes: [
+    "Every head coach is known for something, and it matters: Player Developer (young players grow faster), QB Whisperer (quarterbacks develop faster and age better), Talent Evaluator (+3 scouting points a season), Offensive Guru and Defensive Mastermind (about half a point a game on that side of the ball), Culture Builder (free agents and re-signs ask for less) and Veteran Manager (veterans decline more slowly).",
+    "Real coaches have the trait they're known for: Andy Reid and Sean Payton are QB Whisperers, Sean McVay and Kyle Shanahan are Offensive Gurus, Mike Macdonald is a Defensive Mastermind, the Harbaughs and Dan Campbell are Culture Builders, Mike Vrabel is a Talent Evaluator, Matt LaFleur is a Player Developer, and so on.",
+    "Your head coach's trait is on the Coaching page, and the League Coaching Staffs list shows every head coach's trait icon.",
   ] },
 ];

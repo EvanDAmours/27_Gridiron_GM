@@ -12,7 +12,8 @@ import { makeSide, createGame, playGame, setLeague } from "./playsim.js";
 import { unitRatings } from "./gamesim.js";
 import { DATA_TO_DOLLARS, leagueCap } from "./cap.js";
 import { teamSnaps } from "./snaps.js";
-import { REAL_STAFF, HC_RATING, COORD } from "./data/realCoaches.js";
+import { REAL_STAFF, HC_RATING, HC_TRAIT, COORD } from "./data/realCoaches.js";
+import { HC_TRAIT_NAMES, hcGameEdge } from "./headCoach.js";
 import { nflSchedule, divisionPlaces } from "./schedule.js";
 import { aiDraftScore, devOf, rankClass, plantGems, plantBusts, gemGap, draftCollege, kpValue } from "./scouting.js";
 
@@ -388,7 +389,7 @@ const wx=wxOverride||rollGameWeather();
   const hOC=ht.coach?.oc?(ht.coach.oc.rating-60)*.1:0,hDC=ht.coach?.dc?(ht.coach.dc.rating-60)*.1:0;
   const aOC=at.coach?.oc?(at.coach.oc.rating-60)*.1:0,aDC=at.coach?.dc?(at.coach.dc.rating-60)*.1:0;
   const hFit=getOCFit(ht)+getDCFit(ht),aFit=getOCFit(at)+getDCFit(at);
-  const _hc=t=>t.coach?.hc?(t.coach.hc.rating-75)*.05:0,hHC=_hc(ht)-_hc(at);
+  const _hc=t=>t.coach?.hc?(t.coach.hc.rating-75)*.05:0,_he=hcGameEdge(ht.coach?.hc),_ae=hcGameEdge(at.coach?.hc),hHC=_hc(ht)-_hc(at)+_he.off+_he.def-_ae.off-_ae.def;
   const offB={run_heavy:{m:-1.2,s:-2},balanced:{m:0,s:0},pass_heavy:{m:1.5,s:2.5}};
   const defB={conservative:{m:-1.5,s:-2},aggressive:{m:-2.2,s:2.5},prevent:{m:-0.5,s:-3}};
   const hOM=offB[hPlan?.off]||offB.balanced,hDM=defB[hPlan?.def]||{m:0,s:0};
@@ -478,7 +479,7 @@ export const glGrade=p=>{const s=p.ss||{};const g=Math.max(1,s.gp||1);if(p.pos==
 export const CO_TRAITS={OC:["Creative Play-Caller","Run Game Specialist","QB Whisperer","Red Zone Guru","Clock Manager","Tempo Master","Play-Action Artist","2-Minute Drill"],DC:["Blitz Specialist","Cover 2 Maestro","Run Stopper","Turnover Machine","4th Quarter D","Secondary Coach","Pressure Specialist","Bend Don't Break"],ST:["Kicker Developer","Returner Coach","Coverage Unit","Ice the Kicker"]};
 export function genCoach(role){const sch=role==="OC"?OC_SCHEMES:role==="DC"?DC_SCHEMES:["Standard ST"];return{id:uid(),name:`${pick(FN)} ${pick(LN)}`,face:genFace(),role,rating:Gc(65,12,40,95),trait:pick(CO_TRAITS[role]),scheme:pick(sch),salary:+(Rf(1,6)*DATA_TO_DOLLARS).toFixed(1),contract:R(1,3),xp:0};}
 // A club's real 2026 staff: real names, with ratings/schemes for the known ones and normal rolls otherwise.
-export function realStaff(ab){const r=REAL_STAFF[ab];if(!r)return{oc:genCoach("OC"),dc:genCoach("DC"),st:genCoach("ST")};const real=(role,name)=>{const c=genCoach(role),k=COORD[name]||{};return{...c,name,rating:k.rating??Math.min(c.rating,80),...(k.scheme&&role!=="ST"?{scheme:k.scheme}:{}),real:true};};const [hc,oc,dc,st]=r;return{hc:{id:uid(),name:hc,face:genFace(),role:"HC",rating:HC_RATING[hc]??74,real:true},oc:real("OC",oc),dc:real("DC",dc),st:real("ST",st)};}
+export function realStaff(ab){const r=REAL_STAFF[ab];if(!r)return{oc:genCoach("OC"),dc:genCoach("DC"),st:genCoach("ST")};const real=(role,name)=>{const c=genCoach(role),k=COORD[name]||{};return{...c,name,rating:k.rating??Math.min(c.rating,80),...(k.scheme&&role!=="ST"?{scheme:k.scheme}:{}),real:true};};const [hc,oc,dc,st]=r;return{hc:{id:uid(),name:hc,face:genFace(),role:"HC",rating:HC_RATING[hc]??74,trait:HC_TRAIT[hc]||pick(HC_TRAIT_NAMES),real:true},oc:real("OC",oc),dc:real("DC",dc),st:real("ST",st)};}
 export function getOCFit(t){const oc=t.coach?.oc;if(!oc)return 0;const qb=t.roster.filter(p=>p.pos==="QB"&&!p.injured).sort((a,b)=>b.ovr-a.ovr)[0];const rb=t.roster.filter(p=>p.pos==="RB"&&!p.injured).sort((a,b)=>b.ovr-a.ovr)[0];if(oc.scheme==="Air Raid"&&(qb?.ovr||0)>70)return 2;if(oc.scheme==="Power Run"&&(rb?.ovr||0)>70)return 2;if(oc.scheme==="West Coast"&&(qb?.ovr||0)>65)return 1;if(oc.scheme==="Spread"&&(qb?.spd||0)>70)return 1.5;return 0;}
 export function getDCFit(t){const dc=t.coach?.dc;if(!dc)return 0;const lb=t.roster.filter(p=>p.pos==="LB"&&!p.injured).sort((a,b)=>b.ovr-a.ovr)[0];const dl=t.roster.filter(p=>p.pos==="DL"&&!p.injured).sort((a,b)=>b.ovr-a.ovr)[0];if(dc.scheme==="3-4"&&(lb?.ovr||0)>70)return 2;if(dc.scheme==="4-3"&&(dl?.ovr||0)>70)return 2;if(dc.scheme==="Zone Blitz"&&(lb?.ovr||0)>65)return 1.5;return 0;}
 export function schemeRunPct(t){const s=t.coach?.oc?.scheme;if(s==="Power Run")return .60;if(s==="Air Raid")return .28;if(s==="Spread")return .35;return .42;}

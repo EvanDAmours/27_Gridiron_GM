@@ -2,7 +2,7 @@
 // rosters and the free-agent pool, clears development traits the game doesn't know, and fills
 // in fields every screen expects. Mutates and returns the save; reports what it fixed.
 import { DEV_TRAITS } from "./scouting.js";
-import { REAL_STAFF, HC_RATING } from "./data/realCoaches.js";
+import { REAL_STAFF, HC_RATING, HC_TRAIT } from "./data/realCoaches.js";
 
 const okPlayer = (p) => p && typeof p === "object" && p.id != null && typeof p.pos === "string";
 
@@ -33,7 +33,8 @@ export function repairSave(d) {
     t.ps = fixList(t.ps, fixes, `${t.ab || i} practice squad`);
     t.ir = fixList(t.ir, fixes, `${t.ab || i} injured reserve`);
     // Saves from before real head coaches: give each club its real 2026 head coach.
-    if (t.coach && !t.coach.hc && REAL_STAFF[t.ab]) { const n = REAL_STAFF[t.ab][0]; t.coach.hc = { id: `hc-${t.ab}`, name: n, face: null, role: "HC", rating: HC_RATING[n] ?? 74, real: true }; }
+    if (t.coach && !t.coach.hc && REAL_STAFF[t.ab]) { const n = REAL_STAFF[t.ab][0]; t.coach.hc = { id: `hc-${t.ab}`, name: n, face: null, role: "HC", rating: HC_RATING[n] ?? 74, trait: HC_TRAIT[n], real: true }; }
+    if (t.coach?.hc && !t.coach.hc.trait && HC_TRAIT[t.coach.hc.name]) t.coach.hc.trait = HC_TRAIT[t.coach.hc.name];
   });
   d.fa = fixList(d.fa, fixes, "free agents");
   // The log is lines of text; an old farewell feature put records in it, which can't be drawn.

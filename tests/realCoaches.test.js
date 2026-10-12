@@ -23,3 +23,19 @@ test("old saves get a head coach and keep their coordinators", () => {
   assert.equal(d.teams[0].coach.hc.name, "Kyle Shanahan");
   assert.equal(d.teams[0].coach.oc.name, "Old OC");
 });
+
+test("head coach traits do what they say", async () => {
+  const { hcGrowth, hcScoutBonus, hcGameEdge, hcCulture, HC_TRAITS } = await import("../src/headCoach.js");
+  const { HC_TRAIT } = await import("../src/data/realCoaches.js");
+  for (const t of Object.values(HC_TRAIT)) assert.ok(HC_TRAITS[t], t);
+  for (const t of initTeams(0)) assert.ok(HC_TRAITS[t.coach.hc.trait], t.ab);
+  const always = () => 0;
+  assert.equal(hcGrowth({ trait: "Player Developer" }, { age: 23, ovr: 70, pot: 85 }, 2, 29, always), 3);
+  assert.equal(hcGrowth({ trait: "Player Developer" }, { age: 30, ovr: 70, pot: 85 }, 0, 29, always), 0);
+  assert.equal(hcGrowth({ trait: "QB Whisperer" }, { age: 35, pos: "QB", ovr: 80 }, -3, 34, always), -2);
+  assert.equal(hcGrowth({ trait: "Veteran Manager" }, { age: 33, pos: "WR", ovr: 80 }, -3, 29, always), -2);
+  assert.equal(hcGrowth(null, { age: 23, ovr: 70 }, 1, 29, always), 1);
+  assert.equal(hcScoutBonus({ trait: "Talent Evaluator" }), 3);
+  assert.equal(hcGameEdge({ trait: "Offensive Guru" }).off, 0.5);
+  assert.equal(hcCulture({ trait: "Culture Builder" }), 0.04);
+});
