@@ -88,17 +88,23 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
           <stop offset="0" stopColor="#000" stopOpacity=".18" /><stop offset=".25" stopColor="#000" stopOpacity="0" />
           <stop offset=".75" stopColor="#000" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".22" />
         </linearGradient>
-        <pattern id="lf-ezl" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="14" fill="#fff" opacity=".07" /></pattern>
+        {/* painted on the grass: a white border around the logo, like a real midfield logo */}
+        <filter id="lf-paint" x="-10%" y="-10%" width="120%" height="120%">
+          <feMorphology in="SourceAlpha" operator="dilate" radius="2.2" result="d" />
+          <feFlood floodColor="#fff" result="w" /><feComposite in="w" in2="d" operator="in" result="edge" />
+          <feMerge><feMergeNode in="edge" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
       </defs>
-      {/* mowed stripes, five yards each */}
+      {/* mowed stripes, five yards each, running through the end zones */}
+      {[...Array(24)].map((_, i) => <rect key={`e${i}`} x={i < 12 ? i * (EZ / 12) : W - EZ + (i - 12) * (EZ / 12)} y="0" width={EZ / 12 + 0.5} height={H} fill={i % 2 ? "#2f8a3a" : "#287c33"} />)}
       {[...Array(20)].map((_, i) => <rect key={i} x={xOf(i * 5)} y="0" width={xOf(5) - xOf(0) + 0.5} height={H} fill={i % 2 ? "#2f8a3a" : "#287c33"} />)}
-      <rect x="0" y="0" width={W} height={H} filter="url(#lf-grain)" opacity=".5" />
-      {/* end zones in each club's color, with diagonal stripes */}
-      {[[0, off], [W - EZ, def]].map(([x, t], i) => <g key={i}><rect x={x} y="0" width={EZ} height={H} fill={t?.clr || "#333"} /><rect x={x} y="0" width={EZ} height={H} fill="url(#lf-ezl)" /></g>)}
-      <text x={EZ / 2} y={H / 2} fill="#fff" opacity=".9" fontSize="22" fontWeight="900" letterSpacing="3" textAnchor="middle" dominantBaseline="middle" stroke="#0006" strokeWidth="3" paintOrder="stroke" transform={`rotate(-90 ${EZ / 2} ${H / 2})`}>{off?.name?.toUpperCase()}</text>
-      <text x={W - EZ / 2} y={H / 2} fill="#fff" opacity=".9" fontSize="22" fontWeight="900" letterSpacing="3" textAnchor="middle" dominantBaseline="middle" stroke="#0006" strokeWidth="3" paintOrder="stroke" transform={`rotate(90 ${W - EZ / 2} ${H / 2})`}>{def?.name?.toUpperCase()}</text>
+      {/* end zones: the same grass with a wash of each club's color, and its name painted in */}
+      {[[0, off], [W - EZ, def]].map(([x, t], i) => <rect key={i} x={x} y="0" width={EZ} height={H} fill={t?.clr || "#333"} opacity=".32" />)}
+      <text x={EZ / 2} y={H / 2} fill={off?.clr || "#334155"} fontSize="24" fontWeight="900" letterSpacing="3" textAnchor="middle" dominantBaseline="middle" stroke="#fff" strokeWidth="3.5" paintOrder="stroke" transform={`rotate(-90 ${EZ / 2} ${H / 2})`}>{off?.name?.toUpperCase()}</text>
+      <text x={W - EZ / 2} y={H / 2} fill={def?.clr || "#334155"} fontSize="24" fontWeight="900" letterSpacing="3" textAnchor="middle" dominantBaseline="middle" stroke="#fff" strokeWidth="3.5" paintOrder="stroke" transform={`rotate(90 ${W - EZ / 2} ${H / 2})`}>{def?.name?.toUpperCase()}</text>
       {/* the home club's logo at midfield */}
-      {(offHome ? off : def)?.ab && <image href={logoUrl((offHome ? off : def).ab)} x={W / 2 - 46} y={H / 2 - 46} width="92" height="92" opacity=".38" />}
+      {(offHome ? off : def)?.ab && <image href={logoUrl((offHome ? off : def).ab)} x={W / 2 - 44} y={H / 2 - 44} width="88" height="88" opacity=".26" filter="url(#lf-paint)" />}
+      <rect x="0" y="0" width={W} height={H} filter="url(#lf-grain)" opacity=".55" />
       {/* yard lines every five, goal lines heavier */}
       {[...Array(21)].map((_, i) => <line key={i} x1={xOf(i * 5)} y1="0" x2={xOf(i * 5)} y2={H} stroke="#fff" strokeOpacity={i % 20 === 0 ? 0.95 : i % 2 ? 0.4 : 0.7} strokeWidth={i % 20 === 0 ? 3 : i % 2 ? 1.2 : 1.8} />)}
       {/* hash marks every yard: along both sidelines and the two inbound rows */}
