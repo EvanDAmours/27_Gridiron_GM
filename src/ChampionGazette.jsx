@@ -8,6 +8,8 @@ import { sbName, sbNumber } from "./data/superbowls.js";
 
 const FONTS = "https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@700;900&display=swap";
 const ROUNDS = ["Wild Card", "Divisional Round", "Conference Championship", "Super Bowl"];
+// the Road to the Title box is narrow: short names there
+const SHORT = { "Divisional Round": "Divisional", "Conference Championship": "Conf. Championship" };
 const MONTHS = ["JANUARY", "FEBRUARY", "MARCH"];
 const DAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
 const last = (n) => (n || "").split(" ").slice(1).join(" ") || n;
@@ -59,8 +61,8 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
 
   const lead = [
     `${t.city.toUpperCase()} — The ${t.name} are champions of professional football. Before a sellout crowd and a television audience counted in the tens of millions, ${t.city} beat the ${o ? `${o.city} ${o.name}` : "opposition"}, ${us} to ${them}, in ${sb} on Sunday night, ${us - them >= 14 ? "pulling away early and never letting the outcome come into question" : us - them <= 3 ? "surviving a finish that had both sidelines on their knees" : "taking control in the second half and closing it out with poise"}.`,
-    sbmvp ? `${sbmvp.name}, the ${sbmvp.pos === "QB" ? "quarterback" : sbmvp.pos}, was named the game's most valuable player${sbmvp.stat ? ` after a night that read ${sbmvp.stat}` : ""}. "This is for everybody who believed in us before anybody else did," ${last(sbmvp.name)} said, a hat with the words SUPER BOWL CHAMPIONS pulled low over his eyes, confetti still falling.` : `It was a victory built on every phase of the game, the kind coaches talk about and rarely see.`,
-    `The ${t.name} finished the regular season ${rec}${bye ? " and earned a first-round bye" : ""}, then won ${num(games.length)} playoff game${games.length === 1 ? "" : "s"} to reach this night. ${titles <= 1 ? `It is the first championship in the history of the franchise, and the city that waited for it was ready.` : repeat ? `It is their second straight title, and talk of a dynasty began before the trophy left the stage.` : `It is the ${titles === 2 ? "second" : titles === 3 ? "third" : `${titles}th`} championship in team history.`}`,
+    sbmvp ? `${sbmvp.name}, the ${sbmvp.pos === "QB" ? "quarterback" : sbmvp.pos}, was named the game's most valuable player${sbmvp.prose ? ` after ${sbmvp.prose}` : sbmvp.stat ? ` (${sbmvp.stat})` : ""}. "This is for everybody who believed in us before anybody else did," ${last(sbmvp.name)} said, a hat with the words SUPER BOWL CHAMPIONS pulled low over his eyes, confetti still falling.` : `It was a victory built on every phase of the game, the kind coaches talk about and rarely see.`,
+    `The ${t.name} finished the regular season ${rec}${bye ? " and earned a first-round bye" : ""}, then won ${num(games.length)} playoff game${games.length === 1 ? "" : "s"} to reach this night. ${titles <= 1 ? `It is the first championship in the history of the franchise, and the city that waited for it was ready.` : repeat ? `It is their second straight title, and talk of a dynasty began before the trophy left the stage.` : `It is the ${["", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"][titles] || `${titles}th`} championship in team history.`}`,
   ];
 
   return (
@@ -91,7 +93,7 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
               <>
                 <div className="gz-photo-frame gz-mvp"><img src={mvpSrc} alt={`${sbmvp.name}, Super Bowl MVP`} width="627" height="627" /></div>
                 <figcaption>{sbmvp.name} of the {t.name}, the most valuable player of {sb}, after the final whistle on Sunday night. <i>Gazette Photo</i></figcaption>
-                <div className="gz-photo-frame gz-inset"><LombardiStill size={70} /></div>
+                <div className="gz-photo-frame gz-inset"><LombardiStill size={120} /></div>
                 <figcaption>The Lombardi Trophy heads home to {t.city} today.</figcaption>
               </>
             ) : (
@@ -104,7 +106,7 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
           <aside className="gz-side">
             <h5>The Road to the Title</h5>
             {bye && <div className="gz-row"><span>Wild Card</span><span>First-round bye</span></div>}
-            {games.map((g, i) => <div key={i} className="gz-row"><span>{g.round}</span><span>{g.txt} <b>W {g.a}-{g.b}</b></span></div>)}
+            {games.map((g, i) => <div key={i} className="gz-row"><span>{SHORT[g.round] || g.round}</span><span style={{ whiteSpace: "nowrap" }}>{g.txt} <b>W {g.a}-{g.b}</b></span></div>)}
             <div className="gz-rule thin" />
             <h5>By the Numbers</h5>
             <div className="gz-row"><span>Regular season</span><b>{rec}</b></div>
@@ -142,13 +144,13 @@ const CSS = `
 .gz-rule { height: 1px; background: #151310; margin: 8px 30%; }
 .gz-rule.thin { margin: 10px 0; opacity: .5; }
 .gz-byline { margin: 8px 0; text-align: center; font-size: 10.5px; letter-spacing: 1.5px; }
-.gz-cols { column-count: 2; column-gap: 16px; column-rule: 1px solid #15131033; font-size: 13.5px; line-height: 1.42; text-align: justify; hyphens: auto; }
+.gz-cols { column-count: 2; column-gap: 16px; column-rule: 1px solid #15131033; font-size: 13.5px; line-height: 1.42; text-align: left; hyphens: auto; -webkit-hyphens: auto; }
 .gz-cols p { margin: 0 0 8px; }
 .gz-drop::first-letter { float: left; font-family: 'Playfair Display', serif; font-weight: 900; font-size: 46px; line-height: .85; padding: 4px 6px 0 0; }
 .gz-photo { margin: 0; display: flex; flex-direction: column; align-items: center; }
 .gz-photo-frame { width: 100%; display: flex; justify-content: center; background: radial-gradient(ellipse at 50% 40%, #6b6b6b, #1d1d1d 80%); filter: grayscale(1) contrast(1.15) sepia(.12); border: 1px solid #151310; padding: 14px 0 10px; }
 .gz-mvp img { display: block; width: min(100%, 300px); height: auto; aspect-ratio: 1; object-fit: contain; }
-.gz-inset { margin-top: 10px; width: 60%; padding: 4px 0; }
+.gz-inset { margin-top: 10px; width: 100%; padding: 10px 0 8px; }
 .gz-photo figcaption { font-size: 11.5px; line-height: 1.35; margin-top: 6px; }
 .gz-photo figcaption i { display: block; text-align: right; font-size: 10px; margin-top: 2px; }
 .gz-side h5 { margin: 0 0 6px; font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; }

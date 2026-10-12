@@ -5,6 +5,21 @@ import { C, TeamLogo, Btn, Bdg } from "./ui.jsx";
 import { sbName, sbNumber } from "./data/superbowls.js";
 
 // The Super Bowl MVP: the best line on the winning side of the box score.
+// "three touchdowns", "a touchdown", "12 tackles": numbers the way a newspaper writes them
+const WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+const count = (n, one, many = `${one}s`) => (n === 1 ? `a ${one}` : `${n < 10 ? WORDS[n] : n} ${many}`);
+// The MVP's night as a phrase: "completing 24 of 33 passes for 291 yards and three touchdowns".
+export function mvpProse(l) {
+  const bits = [];
+  if (l.att) bits.push(`completing ${l.comp || 0} of ${l.att} passes for ${l.passYds || 0} yards${l.passTD ? ` and ${count(l.passTD, "touchdown")}` : ""}`);
+  if (l.rushYds && (!l.att || l.rushYds >= 40)) bits.push(`running for ${l.rushYds} yards${l.rushTD ? ` and ${count(l.rushTD, "touchdown")}` : ""}`);
+  if (l.recYds) bits.push(`catching ${count(l.rec || 0, "pass", "passes")} for ${l.recYds} yards${l.recTD ? ` and ${count(l.recTD, "touchdown")}` : ""}`);
+  if (l.sacks) bits.push(`sacking the quarterback ${l.sacks === 1 ? "once" : l.sacks === 2 ? "twice" : `${l.sacks} times`}`);
+  if (l.ints) bits.push(`intercepting ${count(l.ints, "pass", "passes")}`);
+  if (!bits.length && l.tkl) bits.push(`making ${l.tkl} tackles`);
+  const b = bits.slice(0, 2);
+  return b.length > 1 ? `${b[0]} and ${b[1]}` : b[0] || "";
+}
 export function superBowlMvp(box, ti) {
   const score = (l) => (l.passYds || 0) / 25 + (l.passTD || 0) * 4 - (l.passInt || 0) * 3 + (l.rushYds || 0) / 10 + (l.recYds || 0) / 10 + ((l.rushTD || 0) + (l.recTD || 0)) * 6 + (l.sacks || 0) * 5 + (l.ints || 0) * 6 + (l.tkl || 0) * 0.5;
   const best = Object.entries(box || {}).map(([pid, l]) => ({ pid, l })).sort((a, b) => score(b.l) - score(a.l))[0];
@@ -16,7 +31,7 @@ export function superBowlMvp(box, ti) {
   if (l.sacks) bits.push(`${l.sacks} sacks`);
   if (l.ints) bits.push(`${l.ints} INT`);
   if (!bits.length && l.tkl) bits.push(`${l.tkl} tackles`);
-  return { pid: best.pid, name: l.name, pos: l.pos, ti, stat: bits.slice(0, 2).join(" · ") };
+  return { pid: best.pid, name: l.name, pos: l.pos, ti, stat: bits.slice(0, 2).join(" · "), prose: mvpProse(l) };
 }
 
 const ROWS = [["mvp", "Most Valuable Player"], ["opoy", "Offensive Player of the Year"], ["dpoy", "Defensive Player of the Year"], ["oroy", "Offensive Rookie of the Year"], ["droy", "Defensive Rookie of the Year"]];
