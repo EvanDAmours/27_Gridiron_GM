@@ -23,7 +23,9 @@ export function playerValue(p, dev) {
 
 // Pick value from the draft chart (index = overall pick). Picks without a slot yet are
 // valued at the middle of their round.
-export const pickValue = (chart, pk) => (chart[pk.overall || 16 + (pk.rd - 1) * 32] || 60) / 30;
+// Future picks (pk.ahead years after this draft) are worth less the further out they are.
+export const FUTURE_DISCOUNT = [1, 0.8, 0.65, 0.55];
+export const pickValue = (chart, pk) => ((chart[(!pk.ahead && pk.overall) || 16 + (pk.rd - 1) * 32] || 60) / 30) * (FUTURE_DISCOUNT[pk.ahead || 0] ?? 0.5);
 
 // How the other club adds up the players you offer: the best counts in full, each extra one
 // less (five backups don't make a star). Draft picks always count in full.
@@ -49,4 +51,24 @@ export function evaluateTrade({ send = [], sendPk = [], get = [], getPk = [], th
   const both = (send.length || sendPk.length) && (get.length || getPk.length);
   const accept = !!both && gv >= ask;
   return { gv, rv, ask, accept, gap: Math.max(0, ask - gv), over: gv > ask * 1.35 + 10, nextWeight: PACKAGE[offered.length] ?? 0.25, why }; // nextWeight: how the next player you add would count
+}
+
+// A deal a little short of their price isn't always dead. How much they'll give depends on the
+// moment: a rebuilding club moving a veteran, a player whose contract runs out this season (some
+// return beats watching him walk), and the last hours of deadline day all loosen them up. How far
+// they'll bend is set per club for each week (and each deadline hour), never per offer, so
+// re-proposing the same deal or reshuffling it gets the same answer: only more value moves them.
+// ctx: { mode: "rebuild" | "contend" | "middle", season: in-season?, hour: deadline hour or null, key }
+export function closeCall(ev, get = [], ctx = {}) {
+  if (ev.accept || !ev.gap || !ev.ask || /franchise quarterback/.test(ev.why || "")) return { ok: false };
+  const reasons = [];
+  let tol = 0.03;
+  if (ctx.mode === "rebuild" && get.some((p) => (p.age || 0) >= 27)) { tol += 0.05; reasons.push("they're rebuilding and happy to move veterans"); }
+  if (ctx.season && get.some((p) => (p.contract || 0) <= 1)) { tol += 0.04; reasons.push("his deal runs out after the season, so some return beats none"); }
+  if (ctx.hour != null && ctx.hour >= 5) { tol += ctx.hour >= 6 ? 0.06 : 0.03; reasons.push("the deadline is closing in"); }
+  let h = 2166136261;
+  for (const c of String(ctx.key || "")) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  const mood = 0.5 + ((h >>> 0) / 4294967296) * 0.5; // how flexible this GM is feeling right now
+  const ok = ev.gap <= ev.ask * Math.min(0.2, tol) * mood;
+  return { ok, reasons };
 }

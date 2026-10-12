@@ -38,3 +38,28 @@ test("a fair deal for an ordinary starter goes through", () => {
   assert.equal(evaluateTrade({ sendPk: [{ rd: 1, overall: 20 }], get: [wr], them: { roster: [wr] }, pick }).accept, true, "a 1st for a good WR2");
   assert.equal(evaluateTrade({ sendPk: [{ rd: 2, overall: 50 }], get: [wr], them: { roster: [wr] }, pick }).accept, false, "a late 2nd isn't enough");
 });
+
+test("close calls: a deal a little short can go through when the moment is right, and retrying never rerolls", async () => {
+  const { closeCall } = await import("../src/trade.js");
+  const ev = { accept: false, gap: 6, ask: 60 };
+  const vet = { age: 30, contract: 1 };
+  const calm = closeCall(ev, [vet], { mode: "contend", season: true, key: "a" });
+  const fire = closeCall(ev, [vet], { mode: "rebuild", season: true, hour: 6, key: "a" });
+  assert.ok(fire.ok, "a seller at 3 PM on deadline day takes a 10% short offer for an expiring veteran");
+  assert.ok(fire.reasons.length >= 2);
+  assert.equal(closeCall(ev, [vet], { mode: "contend", season: true, key: "a" }).ok, calm.ok, "same moment, same answer");
+  assert.ok(!closeCall({ accept: false, gap: 30, ask: 60 }, [vet], { mode: "rebuild", season: true, hour: 6, key: "a" }).ok, "never far short");
+});
+
+test("future picks are worth less the further out they are", async () => {
+  const { pickValue } = await import("../src/trade.js");
+  const chart = Array.from({ length: 260 }, (_, i) => 3000 - i * 10);
+  const v = (ahead) => pickValue(chart, { rd: 1, ahead });
+  assert.ok(v(1) > v(2) && v(2) > v(3), `${v(1)} > ${v(2)} > ${v(3)}`);
+  const { futurePickList, moveFuture } = await import("../src/draftTrade.js");
+  let fut = futurePickList([], 2026);
+  assert.equal(fut.filter((pk) => pk.owner === 5).length, 3 * 4, "rounds 1-4 for three drafts");
+  const pk = fut.find((x) => x.orig === 5 && x.yr === 2028 && x.rd === 1);
+  fut = futurePickList(moveFuture([], pk, 9), 2026);
+  assert.equal(fut.find((x) => x.id === pk.id).owner, 9, "a traded future pick changes owner");
+});

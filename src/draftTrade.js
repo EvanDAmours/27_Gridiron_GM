@@ -149,3 +149,22 @@ export function pickValueTag(overall, csr) {
   if (-d >= Math.max(10, Math.round(overall * 0.4))) return { kind: "reach", d };
   return null;
 }
+
+// Tradeable picks in the next three drafts after `draftYr`, with their current owners (a pick
+// nobody has traded belongs to its original club). Rounds 1-4, plus any later-round pick that
+// has already changed hands. ahead: years after this draft (it lowers the pick's value).
+export const FUTURE_YEARS = 3;
+export function futurePickList(futures, draftYr, nTeams = 32) {
+  const out = [];
+  for (let ahead = 1; ahead <= FUTURE_YEARS; ahead++) {
+    const y = draftYr + ahead;
+    for (let rd = 1; rd <= 7; rd++) for (let orig = 0; orig < nTeams; orig++) {
+      const rec = futures.find((pk) => pk.yr === y && pk.orig === orig && pk.rd === rd);
+      if (rd > 4 && !rec) continue;
+      out.push({ id: `fut-${orig}-${y}-${rd}`, rd, yr: y, orig, owner: rec ? rec.owner : orig, future: true, ahead });
+    }
+  }
+  return out;
+}
+// Record a future pick changing hands.
+export const moveFuture = (futures, pk, owner) => [...futures.filter((x) => !(x.yr === pk.yr && x.orig === pk.orig && x.rd === pk.rd)), { id: pk.id, rd: pk.rd, yr: pk.yr, orig: pk.orig, owner }];

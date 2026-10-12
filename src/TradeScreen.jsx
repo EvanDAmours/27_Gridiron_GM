@@ -69,8 +69,10 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
   );
 }
 
-export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff, draftPicks, pickVal, evalTr, execTr, setSel, capSpace, closed, modes, yr, sp }) {
+export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff, draftPicks: thisDraft, futurePicks = [], pickVal, evalTr, execTr, setSel, capSpace, closed, modes, yr, sp }) {
   const me = teams[ui];
+  // this year's picks, then the next three drafts'
+  const draftPicks = [...thisDraft, ...futurePicks];
   const them = trTm != null ? teams[trTm] : null;
   const withAb = (pk) => ({ ...pk, origAb: teams[pk.orig]?.ab });
   const flip = (key, x) => setTrOff((o) => ({ ...o, [key]: o[key].some((y) => y.id === x.id) ? o[key].filter((y) => y.id !== x.id) : [...o[key], x] }));
@@ -106,6 +108,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
   const verdict = !any ? null
     : !(trOff.g.length || trOff.gPk.length) ? ["Add something you'll send", C.mt]
     : !(trOff.r.length || trOff.rPk.length) ? ["Add something you want back", C.mt]
+    : accept && ev.close ? [`A little short, but they'd take it${ev.close.length ? `: ${ev.close.join("; ")}` : ""}`, C.gd]
     : accept ? [ev.over ? "They'd accept — but you're overpaying" : "They'd accept this trade", C.gn]
     : [`They want about ${ev.gap} more value`, C.rd];
   const chip = (x, key, label, color) => (
