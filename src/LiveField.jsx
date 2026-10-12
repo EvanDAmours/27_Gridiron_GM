@@ -4,7 +4,8 @@ import React from "react";
 import { depthOrderFor } from "./DepthChart.jsx";
 import SpritePlayer from "./pixel/SpritePlayer.jsx";
 import { snapPose, celebrationPose, SPRITES as ART } from "./pixel/sprites.js";
-import { UNIFORMS, teamKey } from "./teamUniforms.js";
+import { UNIFORMS, teamKey, uniformFor } from "./teamUniforms.js";
+import { logoUrl } from "./ui.jsx";
 
 const FORMATION = {
   // [pos, depth index, yards behind (-) / past (+) the line, yards from the middle].
@@ -34,13 +35,17 @@ function starters(team, depth, order) {
 // Pixel-art players are built but switched off until they're approved; circles until then.
 const SPRITE_SCALE = 0.25; // every pose drawn at the same pixel size
 const SPRITES = typeof location !== "undefined" && /[?&]sprites=1\b/.test(location.search); // off unless ?sprites=1
+const uni = (team, away) => uniformFor(team, { away });
 function Player({ p, pos, x, y, team, side, away, td }) {
   const last = p ? p.name.split(" ").slice(1).join(" ") || p.name : pos;
   if (!SPRITES) return (
     <g style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform .55s ease" }}>
       <title>{p ? `${pos} ${p.name} (${p.ovr})` : pos}</title>
-      <circle r="10.5" fill={team?.clr || "#334155"} stroke={team?.ac || "#fff"} strokeWidth="2.2" />
-      <text y="4" textAnchor="middle" fontSize="11" fontWeight="900" fill="#fff">{p?.num ?? pos}</text>
+      {/* the jersey (home color or road white), ringed in the helmet color, number in the club's number color */}
+      <ellipse cx="1.5" cy="3" rx="11" ry="10" fill="#000" opacity=".28" />
+      <circle r="10.5" fill={uni(team, away).jersey} stroke={uni(team, away).helmet} strokeWidth="2.6" />
+      <circle r="7.9" fill="none" stroke="#fff" strokeOpacity=".18" strokeWidth="1" />
+      <text y="4" textAnchor="middle" fontSize="11" fontWeight="900" fill={uni(team, away).number} stroke={uni(team, away).numberEdge} strokeWidth=".9" paintOrder="stroke">{p?.num ?? pos}</text>
       {/* names hang away from the line of scrimmage (offense to the left, defense to the right) so the two fronts never overlap */}
       <text x={side === "off" ? 8 : -8} y="21" textAnchor={side === "off" ? "end" : "start"} fontSize="8.5" fontWeight="700" fill="#fff" stroke="#0009" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>
     </g>
@@ -73,19 +78,47 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
     });
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, maxHeight: "min(46vh, 420px)" }}>
-      {[...Array(10)].map((_, i) => <rect key={i} x={xOf(i * 10)} y="0" width={xOf(10) - xOf(0)} height={H} fill={i % 2 ? "#237a30" : "#1f6b2a"} />)}
-      <rect x="0" y="0" width={EZ} height={H} fill={off?.clr || "#333"} opacity=".55" />
-      <rect x={W - EZ} y="0" width={EZ} height={H} fill={def?.clr || "#333"} opacity=".55" />
-      <text x={EZ / 2} y={H / 2} fill="#fff" opacity=".8" fontSize="20" fontWeight="900" textAnchor="middle" transform={`rotate(-90 ${EZ / 2} ${H / 2})`}>{off?.name?.toUpperCase()}</text>
-      <text x={W - EZ / 2} y={H / 2} fill="#fff" opacity=".8" fontSize="20" fontWeight="900" textAnchor="middle" transform={`rotate(90 ${W - EZ / 2} ${H / 2})`}>{def?.name?.toUpperCase()}</text>
+      <defs>
+        {/* turf grain: fine noise over the grass */}
+        <filter id="lf-grain" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4" result="n" />
+          <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 -.2" />
+        </filter>
+        <linearGradient id="lf-shade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#000" stopOpacity=".18" /><stop offset=".25" stopColor="#000" stopOpacity="0" />
+          <stop offset=".75" stopColor="#000" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".22" />
+        </linearGradient>
+        <pattern id="lf-ezl" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="14" fill="#fff" opacity=".07" /></pattern>
+      </defs>
+      {/* mowed stripes, five yards each */}
+      {[...Array(20)].map((_, i) => <rect key={i} x={xOf(i * 5)} y="0" width={xOf(5) - xOf(0) + 0.5} height={H} fill={i % 2 ? "#2f8a3a" : "#287c33"} />)}
+      <rect x="0" y="0" width={W} height={H} filter="url(#lf-grain)" opacity=".5" />
+      {/* end zones in each club's color, with diagonal stripes */}
+      {[[0, off], [W - EZ, def]].map(([x, t], i) => <g key={i}><rect x={x} y="0" width={EZ} height={H} fill={t?.clr || "#333"} /><rect x={x} y="0" width={EZ} height={H} fill="url(#lf-ezl)" /></g>)}
+      <text x={EZ / 2} y={H / 2} fill="#fff" opacity=".9" fontSize="22" fontWeight="900" letterSpacing="3" textAnchor="middle" dominantBaseline="middle" stroke="#0006" strokeWidth="3" paintOrder="stroke" transform={`rotate(-90 ${EZ / 2} ${H / 2})`}>{off?.name?.toUpperCase()}</text>
+      <text x={W - EZ / 2} y={H / 2} fill="#fff" opacity=".9" fontSize="22" fontWeight="900" letterSpacing="3" textAnchor="middle" dominantBaseline="middle" stroke="#0006" strokeWidth="3" paintOrder="stroke" transform={`rotate(90 ${W - EZ / 2} ${H / 2})`}>{def?.name?.toUpperCase()}</text>
+      {/* the home club's logo at midfield */}
+      {(offHome ? off : def)?.ab && <image href={logoUrl((offHome ? off : def).ab)} x={W / 2 - 46} y={H / 2 - 46} width="92" height="92" opacity=".38" />}
+      {/* yard lines every five, goal lines heavier */}
+      {[...Array(21)].map((_, i) => <line key={i} x1={xOf(i * 5)} y1="0" x2={xOf(i * 5)} y2={H} stroke="#fff" strokeOpacity={i % 20 === 0 ? 0.95 : i % 2 ? 0.4 : 0.7} strokeWidth={i % 20 === 0 ? 3 : i % 2 ? 1.2 : 1.8} />)}
+      {/* hash marks every yard: along both sidelines and the two inbound rows */}
+      {[...Array(99)].map((_, i) => (i + 1) % 5 !== 0 && <g key={i} stroke="#fff" strokeOpacity=".55" strokeWidth="1">
+        <line x1={xOf(i + 1)} y1="2" x2={xOf(i + 1)} y2="9" /><line x1={xOf(i + 1)} y1={H - 9} x2={xOf(i + 1)} y2={H - 2} />
+        <line x1={xOf(i + 1)} y1={yOf(-3.1) - 3} x2={xOf(i + 1)} y2={yOf(-3.1) + 3} /><line x1={xOf(i + 1)} y1={yOf(3.1) - 3} x2={xOf(i + 1)} y2={yOf(3.1) + 3} />
+      </g>)}
+      {/* numbers, upright at the bottom and upside down at the top, like a real field */}
       {[10, 20, 30, 40, 50, 60, 70, 80, 90].map((y) => (
-        <g key={y}>
-          <line x1={xOf(y)} y1="0" x2={xOf(y)} y2={H} stroke="#fff" strokeOpacity=".45" strokeWidth="1.5" />
-          <text x={xOf(y)} y={H - 10} fill="#fff" fillOpacity=".7" fontSize="16" fontWeight="800" textAnchor="middle">{y <= 50 ? y : 100 - y}</text>
+        <g key={y} fill="#fff" fillOpacity=".8" fontSize="20" fontWeight="900" textAnchor="middle" fontFamily="'Arial Black', Arial, sans-serif">
+          <text x={xOf(y)} y={H - 16}>{y <= 50 ? y : 100 - y}</text>
+          <text x={xOf(y)} y={30} transform={`rotate(180 ${xOf(y)} 23)`}>{y <= 50 ? y : 100 - y}</text>
         </g>
       ))}
-      <line x1={x0} y1="0" x2={x0} y2={H} stroke="#3b82f6" strokeWidth="3" />
-      {toGo > 0 && los + toGo < 100 && <line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#facc15" strokeWidth="3" />}
+      <rect x="0" y="0" width={W} height={H} fill="url(#lf-shade)" />
+      <rect x="1" y="1" width={W - 2} height={H - 2} fill="none" stroke="#fff" strokeOpacity=".85" strokeWidth="2" rx="9" />
+      {/* line of scrimmage and the line to gain, with a soft glow */}
+      <line x1={x0} y1="0" x2={x0} y2={H} stroke="#3b82f6" strokeWidth="8" strokeOpacity=".25" />
+      <line x1={x0} y1="0" x2={x0} y2={H} stroke="#60a5fa" strokeWidth="3" />
+      {toGo > 0 && los + toGo < 100 && <><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#facc15" strokeWidth="8" strokeOpacity=".25" /><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#fde047" strokeWidth="3" /></>}
       {place("def", d, def)}
       {place("off", o, off)}
       {!SPRITES && <ellipse cx={x0 - 4} cy={H / 2} rx="7" ry="4.5" fill="#8B4513" stroke="#fff" strokeWidth="1" style={{ transition: "cx .55s ease" }} />}
