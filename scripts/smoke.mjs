@@ -64,6 +64,12 @@ async function advance(text, wait = 1500) {
   if (!(await yes.count())) fail(`no confirm after "${text}"`);
   await yes.first().click(); await page.waitForTimeout(wait);
 }
+// Starting the season without opening training camp asks first: start anyway.
+async function startSeason() {
+  await must("Start Season", 600);
+  const go = page.locator("button", { hasText: "Start the season anyway" });
+  if (await go.count()) { await go.first().click(); await page.waitForTimeout(1200); }
+}
 async function must(text, wait) { if (!(await click(text, wait))) fail(`no "${text}" button`); }
 async function save() {
   await page.waitForTimeout(2000);
@@ -88,20 +94,20 @@ try {
   await healthy("new game"); log("new game");
   { const d0 = await save(); const real = (d0.dc?.[2026] || []).filter((p) => p.real); if (real.length < 100 || !real.some((p) => p.name === "Jeremiah Smith")) fail("new game didn't load the real 2027 draft class"); log(`real draft class (${real.length} real prospects)`); }
   const seen = [];
-  for (const tab of ["Depth Chart", "Roster", "Front Office", "Schedule & Standings", "Standings", "Playoffs", "Draft & Scouting", "Draft Recap", "League+", "Stats", "Legacy Hall", "Record Book", "League History", "Trade", "Free Agency", "Saves", "Game Updates", "Home"]) {
+  for (const tab of ["Depth Chart", "Roster", "Front Office", "Schedule & Standings", "Standings", "Playoffs", "Draft & Scouting", "Draft Recap", "League", "Stats", "Legacy Hall", "Record Book", "League History", "Trade", "Free Agency", "Saves", "Game Updates", "Timeline", "Home"]) {
     await dismiss();
     let t = page.locator(`button:text-is("${tab}")`);
     if (!(await t.count())) t = page.getByText(tab, { exact: true });
     if (await t.count()) { await t.first().click(); await page.waitForTimeout(400); await healthy(tab); seen.push(tab); }
   }
-  for (const want of ["Depth Chart", "Front Office", "Schedule & Standings", "Standings", "Draft & Scouting", "League+"]) if (!seen.includes(want)) fail(`couldn't open ${want}`);
+  for (const want of ["Depth Chart", "Front Office", "Schedule & Standings", "Standings", "Draft & Scouting", "League"]) if (!seen.includes(want)) fail(`couldn't open ${want}`);
   log("every main screen opens");
   await dismiss(); await page.getByText("Draft & Scouting", { exact: true }).first().click(); await page.waitForTimeout(400); await page.locator('button:text-is("Scouting")').first().click(); await page.waitForTimeout(500);
   await must("Regions", 500); await must("Send area scouts", 600); await healthy("regional scouting");
   if (!(await page.evaluate(() => /trip 1 of|●/.test(document.body.innerText)))) fail("regional trip didn't register");
   log("regional scouting");
   await must("Big Board", 400); await must("Your scouts", 600); await healthy("your scouts' board"); log("your scouts' board");
-  await must("Start Season", 1500);
+  await startSeason();
   await must("Sim Week", 1500); await healthy("sim week"); log("sim week");
   await must("Sim to Deadline", 3500); await healthy("sim to deadline");
   if (!(await page.evaluate(() => document.body.innerText.includes("TRADE DEADLINE DAY")))) fail("deadline day didn't open");
@@ -131,7 +137,7 @@ try {
   const short = d.teams.filter((t, i) => i !== d.ui && t.roster.length < 45).map((t) => `${t.ab} ${t.roster.length}`);
   if (short.length) fail(`AI rosters short after the off-season: ${short.join(", ")}`);
   log("next season (2027)");
-  await must("Start Season", 1500); await must("Sim Week", 1500); await healthy("season two"); log("season two week 1");
+  await startSeason(); await must("Sim Week", 1500); await healthy("season two"); log("season two week 1");
   console.log(`\nSMOKE PASSED (${steps.length} steps)`);
 } catch (e) {
   code = 1;

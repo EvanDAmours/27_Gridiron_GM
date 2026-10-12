@@ -571,4 +571,12 @@ export const PATCH_NOTES = [
     "Roster+ is now Depth Chart (the roster is still a tab inside it), and the Trade screen's History & intel tab is gone.",
     "Fans & Stadium is gone (the stadium upgrades and atmosphere didn't add much); fan satisfaction still shows in the Owner & Locker Room box on Home.",
   ] },
+  { v: "2.11", date: "2026-10-12", title: "Training Camp Reminders", notes: [
+    "Needs Attention reminds you to run training camp in the preseason (its points are gone once Week 1 kicks off) and to look over your coaching schemes before the season.",
+    "Starting the season without having opened training camp asks first: go to camp, or start anyway.",
+    "The top bar, the Home menu and the phone's More sheet are in a new order: Home, Depth Chart, Schedule & Standings, Draft & Scouting, Stats, Trade, Free Agency, Coaching, Front Office, League, Legacy Hall, Saves, Game Updates. League+ is just League now.",
+    "Timeline moved into Game Updates as its own tab.",
+    "Live games: win probability and the drive chart sit right under the field and keep their size, so the box score filling up below no longer pushes them down the page.",
+    "Game Updates shows the latest 15 patch notes; older ones are in a dropdown at the bottom (search still looks through all of them).",
+  ] },
 ];

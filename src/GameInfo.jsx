@@ -1,15 +1,20 @@
-// Game Updates: the patch notes, newest first, with a search box.
+// Game Updates: the patch notes, newest first, with a search box. Only the latest 15 show at
+// first; older ones render when you open the dropdown (a search looks through all of them).
 import React, { useState } from "react";
 import { C } from "./ui.jsx";
 import { PATCH_NOTES } from "./patchNotes.js";
 
+const RECENT = 15;
 const fmtDate = (d) => new Date(`${d}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
 export default function GameInfo() {
   const [q, setQ] = useState("");
+  const [older, setOlder] = useState(false);
   const all = [...PATCH_NOTES].reverse();
   const needle = q.trim().toLowerCase();
-  const shown = needle ? all.filter((p) => `${p.title} ${p.notes.join(" ")}`.toLowerCase().includes(needle)) : all;
+  const found = needle ? all.filter((p) => `${p.title} ${p.notes.join(" ")}`.toLowerCase().includes(needle)) : all;
+  const shown = needle || older ? found : found.slice(0, RECENT);
+  const hidden = found.length - shown.length;
   return (
     <div style={{ maxWidth: 900 }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
@@ -33,6 +38,11 @@ export default function GameInfo() {
           </ul>
         </div>
       ))}
+      {!needle && all.length > RECENT && (
+        <button onClick={() => setOlder(!older)} style={{ width: "100%", background: C.cd, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "12px 14px", fontSize: 15, fontWeight: 800, cursor: "pointer", textAlign: "left" }}>
+          {older ? "▲ Hide older updates" : `▼ Older updates (${hidden})`}
+        </button>
+      )}
       {!shown.length && <div style={{ color: C.mt, fontSize: 14 }}>No patch notes match "{q}".</div>}
     </div>
   );

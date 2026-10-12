@@ -69,13 +69,14 @@ export function WinProbChart({ wp, home, away, height = 110, live = false }) {
 }
 
 // Each drive as a bar across the field, in the offense's color, with how it ended.
-export function DriveChart({ drives, home, away, max = 24 }) {
+// rows: during a live game, the height of that many drives is kept so the chart never jumps.
+export function DriveChart({ drives, home, away, max = 24, rows = null }) {
   if (!drives?.length) return null;
   const RES = { Live: "#38bdf8", TD: "#22c55e", FG: "#eab308", "Missed FG": "#f97316", Punt: "#64748b", INT: "#ef4444", FUM: "#ef4444", Safety: "#a855f7", "Downs/End": "#94a3b8" };
   return (
     <div style={{ background: C.bg, borderRadius: 10, padding: "8px 10px", marginBottom: 12 }}>
       <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: C.mt, marginBottom: 6 }}>DRIVE CHART</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 3, minHeight: rows ? rows * 15 - 3 : undefined }}>
         {drives.slice(0, max).map((d, i) => {
           const t = d.p === "h" ? home : away;
           const tc = vivid(t);
