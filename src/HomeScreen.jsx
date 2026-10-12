@@ -105,8 +105,8 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
           ))}
           <div style={{ flex: 1 }} />
           {messages > 0 && (
-            <button onClick={() => onNav("log")} style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10, background: "#ffffff14", border: "1px solid #ffffff22", borderRadius: 8, padding: "10px 12px", color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 800 }}>
-              ✉ {messages} NEW MESSAGE{messages > 1 ? "S" : ""} <span style={{ color: C.rd }}>●</span>
+            <button onClick={() => onNav("inbox")} style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10, background: "#ffffff14", border: "1px solid #ffffff22", borderRadius: 8, padding: "10px 12px", color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 800 }}>
+              📥 {messages} ITEM{messages > 1 ? "S" : ""} IN YOUR INBOX <span style={{ color: C.rd }}>●</span>
             </button>
           )}
         </div>
