@@ -594,4 +594,9 @@ export const PATCH_NOTES = [
   { v: "2.15", date: "2026-10-12", title: "Easier Development Focus Picks", notes: [
     "The Development Focus pickers group your players by position (QB, RB, WR and so on; fastest growers first within each), with a Sort toggle to switch back to one list ranked by growth.",
   ] },
+  { v: "2.16", date: "2026-10-12", title: "A Real Field", notes: [
+    "Live games are played on a real-looking field: mowed stripes every five yards, turf grain, yard lines and hash marks every yard, numbers along both sidelines, the home club's logo painted at midfield, big painted wordmarks in the end zones and orange pylons.",
+    "Players wear their uniforms: the home side in its jersey color and the road side in white (or the other way round in Dallas), with numbers in the club's colors, so the two teams are easy to tell apart.",
+    "The line of scrimmage and the line to gain glow a little.",
+  ] },
 ];
