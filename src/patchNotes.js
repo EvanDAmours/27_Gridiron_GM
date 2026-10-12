@@ -669,4 +669,7 @@ export const PATCH_NOTES = [
     "Season awards on phones: tighter rows so every award fits on one screen, the close button no longer covers the header, and on the All-Pro page your honorees' names aren't cut off. Continue stays pinned at the bottom.",
     "Re-sign Week on phones: each expiring player is a card with Tag and Negotiate right on it (they were cut off the edge of the table), and Finish Re-signing is a smaller button.",
   ] },
+  { v: "2.29", date: "2026-10-12", title: "Tighter Re-sign Cards", notes: [
+    "Re-sign Week on phones: the player cards are tighter (asking price on the same row as Tag and Negotiate, slightly smaller text and buttons), so about twice as many players fit on the screen.",
+  ] },
 ];

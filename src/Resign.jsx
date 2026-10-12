@@ -17,11 +17,11 @@ export default function Resign({ team, yr, nextSpace, talkFor, onNegotiate, setS
     {!signed && talk.walked && <span style={{ display: "block", fontSize: 13, color: C.rd, fontWeight: 700 }}>Walked away — he'll test free agency</span>}
     {!signed && !talk.walked && talk.last && <span style={{ display: "block", fontSize: 13, color: C.gd }}>{talk.last.result === "counter" ? `Countered at $${talk.last.counter}M` : "Talks ongoing"}</span>}
   </>;
-  const actions = (p, talk, signed) => <>
-    {!signed && optionFor(p) != null && <Btn onClick={() => onOption(p)} bg="#7c3aed" c="#ede9fe" style={{ fontSize: 13, padding: "6px 10px" }} title="Fifth-year option: one more year at a set price">5th-yr option {money(optionFor(p))}</Btn>}
-    {!signed && !tagUsed && tagFor(p) != null && <Btn onClick={() => onTag(p)} bg="#b45309" c="#fef3c7" style={{ fontSize: 13, padding: "6px 10px" }} title="Franchise tag: one more year, no negotiation">Tag {money(tagFor(p))}</Btn>}
-    {!signed && !talk.walked && <Btn onClick={() => onNegotiate(p)} bg={C.gn} style={{ fontSize: 14, padding: "6px 14px" }}>Negotiate</Btn>}
-  </>;
+  const actions = (p, talk, signed, sm) => { const b = sm ? { fontSize: 13, padding: "4px 10px", minHeight: 34 } : null; return <>
+    {!signed && optionFor(p) != null && <Btn onClick={() => onOption(p)} bg="#7c3aed" c="#ede9fe" style={b || { fontSize: 13, padding: "6px 10px" }} title="Fifth-year option: one more year at a set price">5th-yr option {money(optionFor(p))}</Btn>}
+    {!signed && !tagUsed && tagFor(p) != null && <Btn onClick={() => onTag(p)} bg="#b45309" c="#fef3c7" style={b || { fontSize: 13, padding: "6px 10px" }} title="Franchise tag: one more year, no negotiation">Tag {money(tagFor(p))}</Btn>}
+    {!signed && !talk.walked && <Btn onClick={() => onNegotiate(p)} bg={C.gn} style={b ? { ...b, padding: "4px 14px" } : { fontSize: 14, padding: "6px 14px" }}>Negotiate</Btn>}
+  </>; };
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: "8px 18px", flexWrap: "wrap", marginBottom: 8 }}>
@@ -40,17 +40,20 @@ export default function Resign({ team, yr, nextSpace, talkFor, onNegotiate, setS
             const talk = talkFor(p);
             const signed = p.resigned?.yr === yr;
             return (
-              <div key={p.id} style={{ background: C.cd, border: `1px solid ${signed ? C.gn + "66" : C.bd}`, borderRadius: 10, padding: "10px 12px" }}>
+              <div key={p.id} style={{ background: C.cd, border: `1px solid ${signed ? C.gn + "66" : C.bd}`, borderRadius: 10, padding: "8px 10px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <Face s={p.face} sz={34} />
+                  <Face s={p.face} sz={30} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div onClick={() => setSel(p)} style={{ fontWeight: 800, fontSize: 16, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#94a3b8" }}><Bdg pos={p.pos} /> Age {p.age} · asking <b style={{ color: "#e2e8f0" }}>{money(yearlyAsk(p, 2, "resign"))}</b></div>
+                    <div onClick={() => setSel(p)} style={{ fontWeight: 800, fontSize: 15, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#94a3b8" }}><Bdg pos={p.pos} /> Age {p.age}</div>
                     {status(p, talk, signed)}
                   </div>
-                  <b style={{ fontSize: 22, color: oC(p.ovr) }}>{p.ovr}</b>
+                  <b style={{ fontSize: 20, color: oC(p.ovr) }}>{p.ovr}</b>
                 </div>
-                {!signed && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end", marginTop: 8 }}>{actions(p, talk, signed)}</div>}
+                {!signed && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", marginTop: 6 }}>
+                  <span style={{ fontSize: 12, color: "#94a3b8", marginRight: "auto" }}>Asking <b style={{ fontSize: 14, color: "#e2e8f0" }}>{money(yearlyAsk(p, 2, "resign"))}</b></span>
+                  {actions(p, talk, signed, true)}
+                </div>}
               </div>
             );
           })}
