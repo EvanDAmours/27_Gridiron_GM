@@ -492,4 +492,7 @@ export const PATCH_NOTES = [
     "Polish from a ten-season playtest on desktop and phone: team logos sit on a light badge so dark logos (Giants, Bears, Texans, Titans) stay visible, the season progress bar's offseason stages are readable, the Record Book and Contracts table fit a phone (player names stay put while you scroll the columns), passer rating leaders need 14 attempts a game, and division banners list every year without being cut off.",
     "Also in 2.0: real head coaches and coordinators with traits, the draft day presentation, signing bonuses in free agency and re-sign week, EDGE vs DT in the draft, positional value and team needs in the AI draft, and Jeremiah Smith as a generational prospect.",
   ] },
+  { v: "2.01", date: "2026-10-12", title: "Home screen: your logo when there's no game", notes: [
+    "The home screen shows your team's highest-rated player only when you have a game that week. On a bye week, once the season is over and through the offseason, it shows your team's logo instead.",
+  ] },
 ];
