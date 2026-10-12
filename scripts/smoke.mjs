@@ -88,13 +88,13 @@ try {
   await healthy("new game"); log("new game");
   { const d0 = await save(); const real = (d0.dc?.[2026] || []).filter((p) => p.real); if (real.length < 100 || !real.some((p) => p.name === "Jeremiah Smith")) fail("new game didn't load the real 2027 draft class"); log(`real draft class (${real.length} real prospects)`); }
   const seen = [];
-  for (const tab of ["Roster+", "Depth Chart", "Front Office", "Schedule & Standings", "Standings", "Playoffs", "Draft & Scouting", "Draft Recap", "League+", "Stats", "Legacy Hall", "Record Book", "League History", "Trade", "Free Agency", "Saves", "Game Updates", "Home"]) {
+  for (const tab of ["Depth Chart", "Roster", "Front Office", "Schedule & Standings", "Standings", "Playoffs", "Draft & Scouting", "Draft Recap", "League+", "Stats", "Legacy Hall", "Record Book", "League History", "Trade", "Free Agency", "Saves", "Game Updates", "Home"]) {
     await dismiss();
     let t = page.locator(`button:text-is("${tab}")`);
     if (!(await t.count())) t = page.getByText(tab, { exact: true });
     if (await t.count()) { await t.first().click(); await page.waitForTimeout(400); await healthy(tab); seen.push(tab); }
   }
-  for (const want of ["Roster+", "Front Office", "Schedule & Standings", "Standings", "Draft & Scouting", "League+"]) if (!seen.includes(want)) fail(`couldn't open ${want}`);
+  for (const want of ["Depth Chart", "Front Office", "Schedule & Standings", "Standings", "Draft & Scouting", "League+"]) if (!seen.includes(want)) fail(`couldn't open ${want}`);
   log("every main screen opens");
   await dismiss(); await page.getByText("Draft & Scouting", { exact: true }).first().click(); await page.waitForTimeout(400); await page.locator('button:text-is("Scouting")').first().click(); await page.waitForTimeout(500);
   await must("Regions", 500); await must("Send area scouts", 600); await healthy("regional scouting");

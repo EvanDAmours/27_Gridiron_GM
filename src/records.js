@@ -15,19 +15,68 @@ export const RECORD_DEFS = [
   { key: "ints", label: "Interceptions", pos: ["CB", "S", "LB", "DL"], nfl: { val: 14, name: "Night Train Lane", team: "LAR", yr: 1952 } },
 ];
 export const GAMES = 17;
+import { FRANCHISE_RECORDS } from "./data/franchiseRecords.js";
 
-// A fresh book: the NFL's marks.
+// Each club's real franchise records (club abbreviation -> stat -> { val, name, yr, real }).
+const freshFranchise = () => Object.fromEntries(Object.entries(FRANCHISE_RECORDS).map(([ab, recs]) => [ab, Object.fromEntries(Object.entries(recs).map(([k, r]) => [k, { ...r, real: true }]))]));
+
+// A fresh book: the NFL's marks, and every club's own.
 export function newRecordBook() {
   const best = {};
   for (const d of RECORD_DEFS) best[d.key] = { ...d.nfl, nfl: true };
-  return { best, history: [] };
+  return { best, history: [], franchise: freshFranchise(), fhistory: [] };
 }
 
-// Saves from before the record book (or missing a stat added later) get the NFL marks.
+// Saves from before the record book (or missing a stat or the franchise records added later) get
+// the real marks.
 export function loadRecordBook(book) {
   const fresh = newRecordBook();
   if (!book?.best) return fresh;
-  return { best: { ...fresh.best, ...book.best }, history: book.history || [] };
+  const franchise = { ...fresh.franchise };
+  for (const [ab, recs] of Object.entries(book.franchise || {})) franchise[ab] = { ...franchise[ab], ...recs };
+  return { best: { ...fresh.best, ...book.best }, history: book.history || [], franchise, fhistory: book.fhistory || [] };
+}
+
+// After a week: each club's own records. A player passes his club's mark with the stats he's put up
+// this season (his season totals, wherever he started it). Returns { book, broken } with
+// broken: [{ fr: true, key, label, name, pid, team, ti, val, yr, prev }] for marks newly taken.
+export function updateFranchiseRecords(book, teams, yr) {
+  const franchise = { ...(book.franchise || freshFranchise()) };
+  const fhistory = [...(book.fhistory || [])];
+  const broken = [];
+  teams.forEach((t, ti) => {
+    const recs = { ...(franchise[t.ab] || {}) };
+    for (const d of RECORD_DEFS) {
+      let top = null;
+      for (const p of t.roster || []) { const v = p.ss?.[d.key] || 0; if (v > 0 && (!top || v > top.v)) top = { p, v }; }
+      const cur = recs[d.key];
+      if (!top || (cur && top.v <= cur.val)) continue;
+      const same = cur && cur.pid === top.p.id && cur.yr === yr;
+      const prev = same ? cur.prev : cur ? { val: cur.val, name: cur.name, yr: cur.yr } : null;
+      recs[d.key] = { val: top.v, name: top.p.name, pid: top.p.id, yr, prev };
+      if (!same) { const e = { fr: true, key: d.key, label: d.label, name: top.p.name, pid: top.p.id, team: t.ab, ti, val: top.v, yr, prev }; broken.push(e); fhistory.push(e); }
+    }
+    franchise[t.ab] = recs;
+  });
+  return { book: { ...book, franchise, fhistory }, broken };
+}
+
+// Franchise Record Watch for one club: its players on pace for a club record.
+export function franchiseWatch(book, team, { minGames = 4, margin = 0.97 } = {}) {
+  const g = (team.w || 0) + (team.l || 0) + (team.t || 0);
+  if (g < minGames || g >= GAMES) return [];
+  const recs = book.franchise?.[team.ab] || {};
+  const out = [];
+  for (const d of RECORD_DEFS) {
+    const rec = recs[d.key];
+    if (!rec) continue;
+    for (const p of team.roster || []) {
+      const v = p.ss?.[d.key] || 0;
+      const pace = (v / g) * GAMES;
+      if (v && v < rec.val && pace >= rec.val * margin) out.push({ key: d.key, label: d.label, name: p.name, pid: p.id, val: v, pace, record: rec });
+    }
+  }
+  return out.sort((a, b) => b.pace / b.record.val - a.pace / a.record.val);
 }
 
 // Sacks come in halves (a shared sack); every other stat is a whole number.
@@ -83,12 +132,20 @@ export function recordWatch(book, teams, { minGames = 5, margin = 0.95 } = {}) {
 }
 
 // Top-story items for the home screen: records broken this week, then the closest chases.
-export function recordStories({ broken = [], watch = [], teams, yr, wk }) {
+export function recordStories({ broken = [], watch = [], franchise = [], fwatch = [], myTi = -1, teams, yr, wk }) {
   const teamIdx = (ab) => teams.findIndex((t) => t.ab === ab);
   const s = [];
   for (const b of broken) {
     s.push({ id: `rec-${yr}-${wk}-${b.key}`, kind: "record", team: teamIdx(b.team), head: `🏆 NEW RECORD: ${b.name} sets the single-season ${b.label.toLowerCase()} mark`,
       text: `${b.name} (${b.team}) now has ${fmt(b.key, b.val)} ${b.label.toLowerCase()}, passing ${b.prev.name}'s ${fmt(b.key, b.prev.val)} from ${b.prev.yr}${wk && wk < GAMES + 1 ? `, and there's still football left` : ""}.` });
+  }
+  for (const f of franchise) {
+    s.push({ id: `frec-${yr}-${wk}-${f.team}-${f.key}`, kind: "record", team: teamIdx(f.team), head: `🏟️ FRANCHISE RECORD: ${f.name} owns the ${f.team} single-season ${f.label.toLowerCase()} mark`,
+      text: `${f.name} is up to ${fmt(f.key, f.val)} ${f.label.toLowerCase()}${f.prev ? `, past ${f.prev.name}'s ${fmt(f.key, f.prev.val)}${f.prev.yr ? ` from ${f.prev.yr}` : ""}` : ""}.` });
+  }
+  for (const w of fwatch.slice(0, 1)) {
+    s.push({ id: `fpace-${yr}-${wk}-${w.key}-${w.pid}`, kind: "pace", team: myTi, head: `📈 Franchise watch: ${w.name} on pace for ${fmt(w.key, w.pace)} ${w.label.toLowerCase()}`,
+      text: `He has ${fmt(w.key, w.val)} so far. The club record is ${fmt(w.key, w.record.val)}, held by ${w.record.name}${w.record.yr ? ` (${w.record.yr})` : ""}.` });
   }
   for (const w of watch.slice(0, 2)) {
     s.push({ id: `pace-${yr}-${wk}-${w.key}-${w.pid}`, kind: "pace", team: w.ti, head: `📈 Record watch: ${w.name} on pace for ${fmt(w.key, w.pace)} ${w.label.toLowerCase()}`,

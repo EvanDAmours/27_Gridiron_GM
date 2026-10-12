@@ -5,7 +5,7 @@ import React from "react";
 import { C, Btn, TeamLogo } from "./ui.jsx";
 import { CAREER_STATS, careerTotals } from "./history.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
-import { RECORD_DEFS } from "./records.js";
+import { RECORD_DEFS, recordValue } from "./records.js";
 import goldJacket from "./assets/gold-jacket.webp";
 import { RING_OF_HONOR } from "./data/ringOfHonor.js";
 
@@ -168,9 +168,37 @@ export function RecordsWall({ team, retired, book }) {
     return { ...c, best };
   }).filter((r) => r.best);
   const held = Object.entries(book?.best || {}).filter(([, b]) => b.team === team.ab && !b.nfl).map(([k, b]) => ({ ...b, label: RECORD_DEFS.find((d) => d.key === k)?.label || k }));
+  // the club's single-season marks (real history, plus any set in your league), and who on this
+  // year's roster is closest to each
+  const fr = book?.franchise?.[team.ab] || {};
+  const season = RECORD_DEFS.filter((d) => fr[d.key]).map((d) => {
+    let lead = null;
+    for (const p of team.roster || []) { const v = p.ss?.[d.key] || 0; if (v > 0 && (!lead || v > lead.v)) lead = { name: p.name, v }; }
+    return { ...d, rec: fr[d.key], lead };
+  });
   return (
     <div style={{ marginBottom: 22 }}>
-      <H sub="Career marks in this league">Franchise Records</H>
+      {season.length > 0 && <>
+        <H sub="The club's best single seasons, through 2025 and in your league. Beat one and it's yours.">Single-Season Records</H>
+        <div style={{ background: "linear-gradient(180deg,#13202e,#0c1520)", border: "1px solid #1e3a5f", borderRadius: 12, padding: 12, display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 8, marginBottom: 16 }}>
+          {season.map((r) => {
+            const mine = !r.rec.real, pct = r.lead ? Math.min(100, (r.lead.v / r.rec.val) * 100) : 0;
+            return (
+              <div key={r.key} style={{ background: mine ? "linear-gradient(180deg,#fef3c7,#fcd34d)" : "linear-gradient(180deg,#e2e8f0,#cbd5e1)", borderRadius: 8, padding: "9px 11px", color: "#0f172a", boxShadow: "0 3px 8px #0008" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", flex: 1 }}>{r.label}</span>{mine && <span style={{ fontSize: 10, fontWeight: 900, background: "#b45309", color: "#fff", borderRadius: 4, padding: "1px 5px" }}>SET IN YOUR LEAGUE</span>}</div>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 900, lineHeight: 1.15 }}>{recordValue(r.key, r.rec.val)}</div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{r.rec.name}{r.rec.yr ? ` · ${r.rec.yr}` : " · tied"}</div>
+                {r.rec.prev && mine && <div style={{ fontSize: 11, color: "#78350f" }}>Broke {r.rec.prev.name}'s {recordValue(r.key, r.rec.prev.val)}{r.rec.prev.yr ? ` (${r.rec.prev.yr})` : ""}</div>}
+                {r.lead && !(mine && r.rec.name === r.lead.name) && <div style={{ marginTop: 6 }}>
+                  <div style={{ height: 5, background: "#0f172a22", borderRadius: 3 }}><div style={{ width: `${pct}%`, height: "100%", background: pct >= 90 ? "#dc2626" : "#2563eb", borderRadius: 3 }} /></div>
+                  <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>This season: {r.lead.name}, {recordValue(r.key, r.lead.v)}</div>
+                </div>}
+              </div>
+            );
+          })}
+        </div>
+      </>}
+      <H sub="Career leaders in this league">Career Records</H>
       <div style={{ background: "linear-gradient(180deg,#2a1d13,#1a120c)", border: "1px solid #3d2a1a", borderRadius: 12, padding: 12, display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(210px,1fr))", gap: 8 }}>
         {rows.length ? rows.map((r) => (
           <div key={r.key} style={{ background: "linear-gradient(180deg,#f6e7b8,#d9bf7a)", borderRadius: 6, padding: "8px 10px", color: "#2b1d0e", boxShadow: "inset 0 0 0 2px #8a6a2a, 0 3px 6px #0008" }}>

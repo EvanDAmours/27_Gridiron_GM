@@ -369,12 +369,12 @@ export function BuzzFeed({ g, buzz, limit }) {
   const tag = { up: ["RISING", C.gn], down: ["FALLING", C.rd], best: ["TOP TEST", "#60a5fa"], news: ["NEWS", "#f59e0b"] };
   const open = (pid) => { const p = (g.dc[g.yr] || []).find((x) => x.id === pid); if (p) g.setSel(p); };
   return (
-    <div style={{ background: "#0a1020", border: "1px solid #7c3aed44", borderRadius: 5, padding: "5px 8px", marginBottom: 6 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", marginBottom: 4 }}>📡 DRAFT BUZZ</div>
+    <div style={panel}>
+      <div style={{ ...head, color: "#c4b5fd" }}>📡 DRAFT BUZZ</div>
       {(buzz || []).slice(0, limit || 99).map((x, i) => (
-        <div key={i} onClick={() => open(x.pid)} style={{ display: "flex", gap: 6, alignItems: "baseline", fontSize: 11, padding: "2px 3px", borderLeft: `2px solid ${(tag[x.kind] || tag.news)[1]}`, marginBottom: 2, cursor: "pointer" }}>
-          <span style={{ fontSize: 9, fontWeight: 800, color: (tag[x.kind] || tag.news)[1], minWidth: 52 }}>{(tag[x.kind] || tag.news)[0]}</span>
-          <span style={{ color: "#cbd5e1" }}>{x.text}</span>
+        <div key={i} onClick={() => open(x.pid)} style={{ padding: "6px 0", borderTop: `1px solid ${C.bd}66`, cursor: "pointer", fontSize: 14, lineHeight: 1.35 }}>
+          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 0.8, color: (tag[x.kind] || tag.news)[1], marginRight: 6 }}>{(tag[x.kind] || tag.news)[0]}</span>
+          <span style={{ color: "#e2e8f0" }}>{x.text}</span>
         </div>
       ))}
       {!buzz?.length && <div style={muted}>No buzz yet.</div>}
@@ -433,10 +433,19 @@ export function CombineView({ g, buzz }) {
           </div>
         </div>
       )}
-      {(up.length > 0 || down.length > 0) && (
+      {(up.length > 0 || down.length > 0 || buzz?.length > 0) && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 10, marginBottom: 10 }}>
           <div style={panel}><div style={{ ...head, color: C.gn }}>📈 STOCK UP · tested like a higher pick</div>{up.map((p) => <Mover key={p.id} p={p} />)}{!up.length && <div style={muted}>Nobody from the back of the board blew up the Combine.</div>}</div>
           <div style={panel}><div style={{ ...head, color: C.rd }}>📉 STOCK DOWN · early names who tested poorly</div>{down.map((p) => <Mover key={p.id} p={p} />)}{!down.length && <div style={muted}>The early names all held up.</div>}</div>
+          {/* the week's draft news, in the same card style as the movers */}
+          <div style={panel}><div style={{ ...head, color: "#c4b5fd" }}>📡 DRAFT BUZZ</div>
+            {(buzz || []).slice(0, 4).map((x, k) => { const tg = { up: ["RISING", C.gn], down: ["FALLING", C.rd], best: ["TOP TEST", "#60a5fa"], news: ["NEWS", C.gd] }[x.kind] || ["NEWS", C.gd]; const pp = (g.dc[g.yr] || []).find((y) => y.id === x.pid); return (
+              <div key={k} onClick={() => pp && g.setSel(pp)} style={{ padding: "6px 0", borderTop: `1px solid ${C.bd}66`, cursor: pp ? "pointer" : "default", fontSize: 14, lineHeight: 1.35 }}>
+                <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 0.8, color: tg[1], marginRight: 6 }}>{tg[0]}</span><span style={{ color: "#e2e8f0" }}>{x.text}</span>
+              </div>
+            ); })}
+            {!buzz?.length && <div style={muted}>Quiet so far.</div>}
+          </div>
         </div>
       )}
       <div style={panel}>
@@ -456,7 +465,6 @@ export function CombineView({ g, buzz }) {
           );
         })}
       </div>
-      <BuzzFeed g={g} buzz={buzz} limit={4} />
       <div style={panel}>
         <div style={head}>COMBINE RESULTS<Right>{rows.length} of {COMBINE_INVITES} invitees</Right></div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>

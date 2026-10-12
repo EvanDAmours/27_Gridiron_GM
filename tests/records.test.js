@@ -37,3 +37,23 @@ test("season form: fixed per player and season, mostly small, now and then a car
   assert.ok(big > 0.01 && big < 0.08, `career years are rare (${big})`);
   assert.ok(Math.max(...f) <= 8 && Math.min(...f) >= -8);
 });
+
+test("franchise records: every club starts with its real marks, and a player who passes his club's mark takes it", async () => {
+  const { newRecordBook, updateFranchiseRecords, franchiseWatch, loadRecordBook } = await import("../src/records.js");
+  const book = newRecordBook();
+  assert.equal(Object.keys(book.franchise).length, 32);
+  assert.equal(book.franchise.NYG.sacks.val, 22.5);
+  const nyg = { ab: "NYG", w: 10, l: 6, roster: [{ id: "a", name: "Abdul Carter", ss: { sacks: 23 } }] };
+  const r = updateFranchiseRecords(book, [nyg], 2026);
+  assert.equal(r.broken.length, 1);
+  assert.equal(r.book.franchise.NYG.sacks.name, "Abdul Carter");
+  assert.equal(r.book.franchise.NYG.sacks.prev.name, "Michael Strahan");
+  // adding to his own record isn't news again
+  nyg.roster[0].ss.sacks = 24;
+  assert.equal(updateFranchiseRecords(r.book, [nyg], 2026).broken.length, 0);
+  // on pace for one
+  const watch = franchiseWatch(newRecordBook(), { ab: "NYG", w: 5, l: 3, roster: [{ id: "b", name: "Malik Nabers", ss: { rec: 60 } }] });
+  assert.ok(watch.some((x) => x.key === "rec"));
+  // old saves get the franchise marks
+  assert.equal(loadRecordBook({ best: {}, history: [] }).franchise.DET.recYds.val, 1964);
+});

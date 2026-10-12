@@ -564,4 +564,11 @@ export const PATCH_NOTES = [
     "Needs Attention flags area-scout points that are about to go unused (re-sign week is the last chance before free agency) and a pile of 10 or more waiting to be spent.",
     "Injuries that can't heal before the Super Bowl say \"out for the season\" instead of a week that doesn't exist.",
   ] },
+  { v: "2.10", date: "2026-10-12", title: "Franchise Records", notes: [
+    "Every club now has its real single-season franchise records, through the 2025 season: passing yards and touchdowns, rushing yards and touchdowns, receptions, receiving yards and touchdowns, sacks and interceptions (Strahan's 22.5 sacks, Eli Manning's 4,933 yards, Rice's 1,848 receiving yards...).",
+    "Break one and it's yours: the Legacy Hall's Records tab shows each mark, who holds it (gold once someone in your league takes it, with whose record he broke), and a bar for this season's leader on your team. Your club's record-breakers hit the news and the Timeline, and Franchise Watch tells you who's on pace.",
+    "Combine week: Draft Buzz sits in the same row as Stock Up and Stock Down, in the same style.",
+    "Roster+ is now Depth Chart (the roster is still a tab inside it), and the Trade screen's History & intel tab is gone.",
+    "Fans & Stadium is gone (the stadium upgrades and atmosphere didn't add much); fan satisfaction still shows in the Owner & Locker Room box on Home.",
+  ] },
 ];
