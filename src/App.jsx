@@ -88,7 +88,7 @@ import {
   dlSlotsMigrate, withTradeValues, wholeScores, genPlayer, genDC, genRealDC, REAL_DC_YEARS, calibrateLeague, weeklyTick, getTeamNeed, aiBestPick, draftNeeds, scGrade, MEDIA_HEADLINES, calcSOS,
   realFA, initialFA, addPunters, reshapeDC, initTeams, genSched, simPG, teamStr, rollGameWeather, liveView, gameSetup, tickInjuries, applyGame,
   simGame, OC_SCHEMES, DC_SCHEMES, POS_MARKET, glGrade, genCoach, newCoachPool, getOCFit, getDCFit, schemeRunPct, calcOffStr,
-  calcDefStr, genCoachMarket, capHit, capSpace, sL, LIVE_SPEEDS, DRAFT_SPEEDS, pickDelay, setInjuries, injuriesEnabled, setUserLineup, setDifficultyAdj, REAL_OVR0,
+  calcDefStr, genCoachMarket, capHit, capSpace, sL, LIVE_SPEEDS, DRAFT_SPEEDS, clockTick, aiPickAt, DRAFT_CLOCK, setInjuries, injuriesEnabled, setUserLineup, setDifficultyAdj, REAL_OVR0,
   fitIncentive,
 } from "./league.js";
 // ═══ PLAYER TABLE (shared roster/FA) ═══
@@ -451,9 +451,10 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   // Draft timer
   useEffect(()=>{
     if(!draftActive||sp!=="draft"||draftPaused)return;
-    timerRef.current=setInterval(()=>setDraftTimer(t=>t<=1?0:t-1),1000);
+    const rd=draftPicks[draftIdx]?.rd||1;
+    timerRef.current=setInterval(()=>setDraftTimer(t=>t<=1?0:t-1),clockTick(draftSpeed,rd));
     return()=>clearInterval(timerRef.current);
-  },[draftActive,sp,draftPaused]);
+  },[draftActive,sp,draftPaused,draftSpeed,draftPicks[draftIdx]?.rd]);// eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{
     if(sp!=="draft"||!draftActive||draftPaused)return;
     const picks=draftPicks;const idx=draftIdx;if(idx>=picks.length){setDraftActive(false);return;}
@@ -465,8 +466,9 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   useEffect(()=>{
     if(sp!=="draft"||!draftActive||draftPaused)return;
     const cur=draftPicks[draftIdx];if(!cur||cur.owner===ui)return;
-    const to=setTimeout(()=>aiPick(),pickDelay(draftSpeed,cur.rd));return()=>clearTimeout(to);
-  },[draftIdx,draftActive,sp,draftPaused,draftSpeed,draftPicks]);
+    if(DRAFT_CLOCK-draftTimer<aiPickAt(cur.id||`${cur.yr}-${cur.overall}`))return;
+    const to=setTimeout(()=>aiPick(),50);return()=>clearTimeout(to);
+  },[draftIdx,draftActive,sp,draftPaused,draftTimer,draftPicks]);
 
   // Live sim ticker
   useEffect(()=>{
@@ -896,7 +898,7 @@ if(yr-2026>=10&&Math.random()<0.05){setShowFranchiseSale(true);}
 // v30: track season_reset
 track('season_reset');
 sm(`${ns} season!`);};
-  const startSeason=()=>{setWeekResult(null);setSp("regular");setWk(0);setTab("roster");sm("Season begins!");const _miss=[['hc','Head coach'],['oc','Offensive coordinator'],['dc','Defensive coordinator'],['st','Special teams coordinator']].filter(([r])=>!ut?.coach?.[r]);if(_miss.length)setCoachNag(_miss.map(([,l])=>l));};
+  const startSeason=()=>{{/* the last unsigned starters find homes before kickoff (you had the preseason to sign them) */const nt=teams.map(t=>({...t,roster:[...t.roster]}));const pool=[...fa];const late=starterSignings(nt,pool,ui,{minOvr:75,perTeam:1,capSpace,cy:yr,cut:true});if(late.length){setTeams(nt);setFa(pool);setLog(l=>[...late.map(x=>`📰 ${x.p.name} (${x.p.pos} ${x.p.ovr}) signs with the ${TEAMS[x.team]?.name} before the season — $${x.p.salary}M/yr`),...l].slice(0,150));}}setWeekResult(null);setSp("regular");setWk(0);setTab("roster");sm("Season begins!");const _miss=[['hc','Head coach'],['oc','Offensive coordinator'],['dc','Defensive coordinator'],['st','Special teams coordinator']].filter(([r])=>!ut?.coach?.[r]);if(_miss.length)setCoachNag(_miss.map(([,l])=>l));};
   // ═══ OPTION D: PRESEASON GAME SIM ═══
   const simPreseasonGame=()=>{const nt=[...teams];const ut=nt[ui];const oppIdx=(ui+1)%nt.length;const opp=nt[oppIdx];const g=simGame(ut,opp,gamePlan,{off:'balanced',def:'balanced'},null,{dry:true});const starters=ut.roster.filter(p=>!p.injured).sort((a,b)=>b.ovr-a.ovr);const statLines=[];const posWinners={};starters.forEach(p=>{const s=simPG(p);const hasStats=s.passYds||s.rushYds||s.recYds||s.tkl||s.sacks;if(!hasStats)return;statLines.push({id:p.id,name:p.name,pos:p.pos,ovr:p.ovr,...s});if(!posWinners[p.pos]||s.grade>posWinners[p.pos].grade)posWinners[p.pos]={id:p.id,name:p.name,pos:p.pos,ovr:p.ovr,grade:s.grade||'C'};});// Dev bonus: top performer per position group gets +1 devG
   const devBonuses=[];['QB','RB','WR','TE'].forEach(pos=>{const grp=statLines.filter(s=>s.pos===pos).sort((a,b)=>{const gv={'A+':8,'A':7,'B+':6,'B':5,'C':4,'D':3,'F':2};return(gv[b.grade]||3)-(gv[a.grade]||3);});if(!grp.length)return;const top=grp[0];const pl=nt[ui].roster.find(r=>r.id===top.id);if(pl&&pl.age<=27){pl.devG=(pl.devG||0)+1;if(pl.devG>=3&&pl.ovr<99){pl.ovr=Math.min(99,pl.ovr+1);pl.devG=0;}devBonuses.push({name:top.name,pos:pos,grade:top.grade});}});// Injury risk

@@ -513,4 +513,9 @@ export const sL=k=>({passYds:"PYDS",passTD:"PTD",passInt:"INT",comp:"CMP",att:"A
 // Live game: milliseconds between plays.
 export const LIVE_SPEEDS={Slow:2200,Normal:1100,Fast:400};
 export const DRAFT_SPEEDS=["Slow","Normal","Fast"];
-export const pickDelay=(speed,rd)=>({Slow:rd===1?4500:2200,Normal:rd===1?2400:1100,Fast:rd===1?500:250})[speed]||1100;
+// The draft clock: every pick gets two minutes and AI clubs use 45-75 seconds of it. How fast the
+// clock runs: Slow is real time throughout; Normal is real time in round 1 (time to work the phones
+// for a top pick) and quicker after; Fast blows through it.
+export const DRAFT_CLOCK=120;
+export const clockTick=(speed,rd)=>({Slow:1000,Normal:rd===1?1000:rd<=3?250:100,Fast:40})[speed]||250;
+export const aiPickAt=(pickId)=>{let h=2166136261;for(const c of String(pickId))h=Math.imul(h^c.charCodeAt(0),16777619);return 45+((h>>>0)%31);};

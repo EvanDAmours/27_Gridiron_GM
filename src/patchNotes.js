@@ -535,4 +535,11 @@ export const PATCH_NOTES = [
   { v: "2.5", date: "2026-10-12", title: "Team Snapshot Up Top", notes: [
     "Home: the Team Snapshot (roster health by position, team intel, development focus and upcoming games) now sits right under the franchise boxes instead of below everything else, and it shows on phones too. Cards the boxes above already cover (record, cap, alerts) and the near-empty recent activity card are gone.",
   ] },
+  { v: "2.6", date: "2026-10-12", title: "A Real Draft Clock and a Smarter Market", notes: [
+    "The draft clock: every pick gets two minutes and AI clubs take 45-75 seconds of it, so there's time to call about a top pick. The clock shows for every pick. Speed: Slow runs in real time; Normal is real time in round 1 and quicker after; Fast flies. Sim to my pick still skips ahead.",
+    "AI free agency works like yours: clubs where a player would start bid, and he picks the one that best fits what he wants (money, a starting job, the scheme, a winner). A good fit signs him a bit cheaper.",
+    "Free agents good enough to start don't sit unsigned all year: anyone 75+ still on the market when you start the season signs somewhere first.",
+    "Quarterback contracts top out around 20% of the cap (it was 23.5%), in line with the real market.",
+    "The draft ticker no longer loops (it showed every pick twice): it's a still strip of the latest picks, newest first.",
+  ] },
 ];

@@ -14,25 +14,19 @@ export function ValueTag({ overall, csr, small }) {
   return <span title={`Consensus board #${csr}`} style={{ background: s.bg, color: s.c, borderRadius: 4, padding: small ? "0 4px" : "1px 6px", fontSize: small ? 10 : 12, fontWeight: 900, letterSpacing: 1 }}>{s.txt} {t.d > 0 ? `+${t.d}` : t.d}</span>;
 }
 
-// The scrolling ticker of every pick so far, steals and reaches called out.
+// The latest picks, newest first, steals and reaches called out. It stays still (a loop showed every
+// pick twice); swipe or scroll it sideways for older picks.
 export function DraftTickerBar({ log, ui }) {
   if (!log.length) return null;
-  const items = log.slice(-24).reverse();
-  const dur = Math.max(18, items.length * 4);
-  const roll = items.length >= 4;
+  const items = log.slice(-32).reverse();
   return (
-    <div style={{ position: "relative", overflow: "hidden", background: "#020617", border: `1px solid ${C.bd}`, borderRadius: 8, marginBottom: 10, height: 34, display: "flex", alignItems: "center" }}>
-      <style>{`@keyframes dd-tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, zIndex: 2, background: "#b91c1c", color: "#fff", fontWeight: 900, fontSize: 12, letterSpacing: 1.5, padding: "0 10px", display: "flex", alignItems: "center" }}>DRAFT</div>
-      <div style={{ display: "flex", whiteSpace: "nowrap", animation: roll ? `dd-tick ${dur}s linear infinite` : "none", paddingLeft: 70 }}>
-        {(roll ? [0, 1] : [0]).map((k) => (
-          <div key={k} style={{ display: "flex" }}>
-            {items.map((d, i) => (
-              <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "0 16px", fontSize: 13, borderRight: `1px solid ${C.bd}`, color: d.owner === ui ? C.gn : "#e2e8f0" }}>
-                <span style={{ color: C.mt }}>#{d.overall}</span><b>{d.ab || ""}</b><span>{d.player?.name}</span><span style={{ color: C.mt }}>{d.player?.pos}</span><ValueTag overall={d.overall} csr={d.csr} small />
-              </span>
-            ))}
-          </div>
+    <div style={{ display: "flex", alignItems: "stretch", background: "#020617", border: `1px solid ${C.bd}`, borderRadius: 8, marginBottom: 10, height: 34, overflow: "hidden" }}>
+      <div style={{ flexShrink: 0, background: "#b91c1c", color: "#fff", fontWeight: 900, fontSize: 12, letterSpacing: 1.5, padding: "0 10px", display: "flex", alignItems: "center" }}>LATEST</div>
+      <div style={{ display: "flex", whiteSpace: "nowrap", overflowX: "auto", scrollbarWidth: "none" }}>
+        {items.map((d, i) => (
+          <span key={d.overall ?? i} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "0 16px", fontSize: 13, borderRight: `1px solid ${C.bd}`, color: d.owner === ui ? C.gn : "#e2e8f0", opacity: i === 0 ? 1 : 0.85 }}>
+            <span style={{ color: C.mt }}>#{d.overall}</span><b>{d.ab || ""}</b><span>{d.player?.name}</span><span style={{ color: C.mt }}>{d.player?.pos}</span><ValueTag overall={d.overall} csr={d.csr} small />
+          </span>
         ))}
       </div>
     </div>
@@ -89,6 +83,7 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
           <div style={{ textAlign: "right" }}><div style={{ fontSize: 40, fontWeight: 900, color: timer <= 10 ? C.rd : C.gd, fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</div><div style={{ fontSize: 12, color: "#fffa" }}>TIME LEFT</div></div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ textAlign: "right", lineHeight: 1 }}><span style={{ fontSize: 28, fontWeight: 900, color: timer <= 10 ? C.rd : "#fff", fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</span><div style={{ fontSize: 11, color: "#fffa", marginTop: 2 }}>ON THE CLOCK</div></div>
             {nextMine && <Btn onClick={onSim} bg={C.gn} style={{ fontSize: 15, padding: "9px 16px", fontWeight: 900 }}>⏩ Sim to my pick</Btn>}
             {nextMine && <Btn onClick={onCalls} bg={callsOpen ? "#4c1d95" : "#1e1b4b"} c="#c4b5fd" style={{ fontSize: 14, padding: "8px 14px", fontWeight: 800 }}>📞 {callsOpen ? "Hide calls" : "Trade up"}</Btn>}
           </div>

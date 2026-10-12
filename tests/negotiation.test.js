@@ -92,3 +92,22 @@ test("the rival's offer is leverage, not a price tag: matching it can still lose
   assert.ok(leverage > 20, `agents use rival offers (${leverage})`);
   assert.ok(lostAfterMatch > 0, "matching the number isn't a guarantee");
 });
+
+test("AI free agency: a player picks the club that fits what he wants, and good fits pay a bit less", async () => {
+  const { starterSignings, askingPrice } = await import("../src/offseason.js");
+  const te = (id, ovr) => ({ id, ovr, age: 26, pos: "TE", salary: 1 });
+  const club = (id, scheme, depth) => ({ id, roster: depth, coach: { oc: { scheme } }, w: 9, l: 8 });
+  let toFit = 0, n = 0;
+  for (let i = 0; i < 60; i++) {
+    const p = te(`fa${i}`, 84);
+    const teams = [club(0, "Air Raid", [te("a", 60)]), club(1, "West Coast", [te("b", 60)]), club(2, "Air Raid", [te("c", 60)])];
+    const pool = [p];
+    const s = starterSignings(teams, pool, 99, { capSpace: () => 100, cy: 2026, rand: () => 0.5 });
+    if (!s.length) continue;
+    n++;
+    if (s[0].team === 1) toFit++;
+    assert.ok(s[0].p.salary <= askingPrice(p));
+  }
+  assert.ok(n > 50);
+  assert.ok(toFit > n * 0.3, `scheme-minded players pick the West Coast club (${toFit}/${n})`);
+});

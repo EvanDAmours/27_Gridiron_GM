@@ -6,6 +6,7 @@
 import { leagueCap, leagueMin } from "./cap.js";
 import { freshDeal } from "./bonus.js";
 import { optionEligible, aiTakesOption, optionPrice, tagPrice } from "./contracts.js";
+import { priorities, teamFit, fitPull } from "./negotiation.js";
 
 // Fewest players a club carries at each position.
 // How much a club wants to keep a player: his rating, plus half his remaining upside while he's young.
@@ -124,11 +125,11 @@ export function keepChance(p) {
 }
 
 // What a player asks for on a new deal: a share of the salary cap set by his position and
-// rating, from real contracts. A 99 earns the top of his position's market (QB ~23.5% of the
+// rating, from real contracts. A 99 earns the top of his position's market (QB ~20% of the
 // cap, elite WR or pass rusher ~15%, down to kickers ~2%); an 88 gets ~87% of that, an 80 half,
 // a 70 a tenth, and anyone below starter level the minimum. Less once he's past his prime (QBs
 // age four years later). cap: the cap for the league year the deal starts.
-export const TOP_SHARE = { QB: 0.235, WR: 0.15, DL: 0.15, LT: 0.115, CB: 0.11, RT: 0.09, LB: 0.09, S: 0.085, TE: 0.08, LG: 0.08, RG: 0.08, RB: 0.07, C: 0.07, K: 0.02, P: 0.015 };
+export const TOP_SHARE = { QB: 0.2, WR: 0.15, DL: 0.15, LT: 0.115, CB: 0.11, RT: 0.09, LB: 0.09, S: 0.085, TE: 0.08, LG: 0.08, RG: 0.08, RB: 0.07, C: 0.07, K: 0.02, P: 0.015 };
 const curve = (ovr) => Math.min(1, 1 / (1 + Math.exp(-(ovr - 80) / 4.5)) / 0.985);
 export const askingPrice = (p, cap = leagueCap()) => {
   const a = p.pos === "QB" ? p.age - 4 : p.age;
@@ -178,22 +179,34 @@ const startBar = (t, pos) => {
   return r[STARTS[pos] - 1] ?? 0;
 };
 
-// The best free agents go to the clubs where they'd start and that can pay them (the club
-// gaining the most wins him). Mutates the teams and the pool; returns the signings.
-export function starterSignings(teams, pool, ui, { minOvr = 72, perTeam = 2, capSpace, cy, skip = () => false, rand = Math.random } = {}) {
+// The best free agents: every club where he'd start and that can pay him makes an offer, and he
+// picks, the same way he weighs yours: the money, plus how much he'd play, the scheme and how they
+// win, depending on what he cares about. A club that suits him gets him a little cheaper.
+// cut: keep clubs at 53 by releasing their least valuable player (used once the season's near).
+// Mutates the teams and the pool; returns the signings.
+export function starterSignings(teams, pool, ui, { minOvr = 72, perTeam = 2, capSpace, cy, skip = () => false, rand = Math.random, cut = false } = {}) {
   const signed = [], count = {};
-  for (const p of [...pool]) {
+  for (const p of [...pool].sort((a, b) => b.ovr - a.ovr)) {
     if (p.ovr < minOvr || skip(p)) continue;
-    let best = -1, gain = 0;
+    const prio = priorities(p);
+    let best = -1, top = 0, bestPull = 0;
     teams.forEach((t, i) => {
       if (i === ui || (count[i] || 0) >= perTeam || askingPrice(p) > capSpace(t)) return;
-      const g = p.ovr - startBar(t, p.pos) + rand() * 2;
-      if (g > gain) { gain = g; best = i; }
+      if (p.ovr - startBar(t, p.pos) < 2) return; // he wouldn't start: they don't bid
+      const pull = fitPull(prio, teamFit(p, t));
+      const u = (1 + pull) * (1 + rand() * 0.04);
+      if (u > top) { top = u; best = i; bestPull = pull; }
     });
-    if (best < 0 || gain < 2) continue;
+    if (best < 0) continue;
     pool.splice(pool.indexOf(p), 1);
-    const deal = { ...freshDeal(p), salary: askingPrice(p), contract: roll(rand, 1, p.age >= 30 ? 2 : 4), cy, formerTeam: undefined };
-    teams[best].roster.push(deal);
+    const salary = +(askingPrice(p) * (1 - Math.max(0, bestPull) * 0.5)).toFixed(1);
+    const deal = { ...freshDeal(p), salary, contract: roll(rand, 1, p.age >= 30 ? 2 : 4), cy, formerTeam: undefined };
+    const t = teams[best];
+    t.roster.push(deal);
+    if (cut && t.roster.length > ROSTER_TARGET) {
+      const spare = [...t.roster].filter((x) => x !== deal).sort((a, b) => keepScore(a) - keepScore(b)).find((x) => t.roster.filter((q) => q.pos === x.pos).length > ROSTER_MIN[x.pos]);
+      if (spare) { t.roster.splice(t.roster.indexOf(spare), 1); pool.push({ ...spare, contract: 0, formerTeam: best }); }
+    }
     count[best] = (count[best] || 0) + 1;
     signed.push({ p: deal, team: best, from: p.formerTeam });
   }

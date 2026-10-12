@@ -13,7 +13,7 @@ test("the cap is real through 2026, then rises every year", () => {
 test("contracts are a share of the cap: same share as the cap grows", () => {
   const dart = { pos: "QB", ovr: 88, age: 24 };
   const now = askingPrice(dart, capFor(2026)), later = askingPrice(dart, capFor(2031));
-  assert.ok(now >= 55 && now <= 66, `88 QB asks ${now}`);
+  assert.ok(now >= 48 && now <= 60, `88 QB asks ${now}`);
   assert.ok(Math.abs(now / capFor(2026) - later / capFor(2031)) < 0.002);
   assert.ok(askingPrice({ pos: "QB", ovr: 99, age: 27 }, 301.2) > askingPrice({ pos: "WR", ovr: 99, age: 27 }, 301.2));
   assert.ok(askingPrice({ pos: "RB", ovr: 60, age: 25 }, 301.2) <= 1.1, "depth players get about the minimum");
