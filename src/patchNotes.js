@@ -591,4 +591,7 @@ export const PATCH_NOTES = [
   { v: "2.14", date: "2026-10-12", title: "Development Focus Reminder", notes: [
     "Needs Attention flags it as urgent when you haven't picked an offensive and a defensive development focus player (or one has left the roster), from the preseason through the regular season. Tap it to jump to Development Focus on Home.",
   ] },
+  { v: "2.15", date: "2026-10-12", title: "Easier Development Focus Picks", notes: [
+    "The Development Focus pickers group your players by position (QB, RB, WR and so on; fastest growers first within each), with a Sort toggle to switch back to one list ranked by growth.",
+  ] },
 ];

@@ -1,18 +1,29 @@
 // The Development Focus card on the dashboard.
-import React from "react";
+import React, { useState } from "react";
 import { C, oC, pC } from "./ui.jsx";
 import { devOf, DEV_TRAITS } from "./scouting.js";
 import { OFFENSE, DEFENSE, focusChance, perSeason } from "./development.js";
 import { DevChip } from "./ScoutingUI.jsx";
 
+// The order positions are listed in the picker.
+const POS_ORDER = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "OL", "EDGE", "DL", "DT", "LB", "CB", "S", "K", "P"];
+const posRank = (pos) => { const i = POS_ORDER.indexOf(pos); return i < 0 ? 99 : i; };
 const initials = (n) => String(n || "").split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
 function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
-  const p = players.find((x) => x.id === focus?.[side]);
-  const options = [...players].sort((a, b) => focusChance(b) - focusChance(a) || b.ovr - a.ovr);
+  const p = players.find((x) => focus?.[side] != null && String(x.id) === String(focus[side]));
+  const [by, setBy] = useState("pos"); // "pos": grouped by position; "growth": fastest growers first
+  const best = (a, b) => focusChance(b) - focusChance(a) || b.ovr - a.ovr;
+  const options = [...players].sort(best);
+  const groups = [...new Set(players.map((x) => x.pos))].sort((a, b) => posRank(a) - posRank(b)).map((pos) => [pos, options.filter((x) => x.pos === pos)]);
+  const opt = (x) => <option key={x.id} value={x.id}>{x.name} ({x.pos}, {x.ovr} OVR, {(DEV_TRAITS[devOf(x)]?.name || "Normal").toUpperCase()}) · ~{perSeason(x)}/season</option>;
   return (
     <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: C.mt }}>{label.toUpperCase()}</span>
+        <span style={{ marginLeft: "auto", fontSize: 11, color: C.mt }}>Sort</span>
+        {[["pos", "Position"], ["growth", "Growth"]].map(([k, l]) => <button key={k} onClick={() => setBy(k)} style={{ fontSize: 11, fontWeight: 800, padding: "3px 8px", borderRadius: 999, cursor: "pointer", border: `1px solid ${by === k ? C.bl : C.bd}`, background: by === k ? `${C.bl}33` : "transparent", color: by === k ? "#fff" : C.mt }}>{l}</button>)}
+      </div>
       {p ? (
         <div style={{ borderRadius: 10, overflow: "hidden", border: "1px solid #8a6d1d", marginBottom: 6, cursor: "pointer" }} onClick={() => setSel(p)}>
           <div style={{ background: "linear-gradient(135deg,#0b1a3a,#13244a)", padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
@@ -33,7 +44,7 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
       )}
       <select value={p?.id || ""} onChange={(e) => setFocus((f) => ({ ...f, [side]: e.target.value || null }))} aria-label={`${label} development focus`} style={{ width: "100%", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
         <option value="">— choose {label.toLowerCase()} —</option>
-        {options.map((x) => <option key={x.id} value={x.id}>{x.name} ({x.pos}, {x.ovr} OVR, {(DEV_TRAITS[devOf(x)]?.name || "Normal").toUpperCase()}) · ~{perSeason(x)}/season</option>)}
+        {by === "pos" ? groups.map(([pos, list]) => <optgroup key={pos} label={pos}>{list.map(opt)}</optgroup>) : options.map(opt)}
       </select>
     </div>
   );

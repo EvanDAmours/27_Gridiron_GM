@@ -21,7 +21,7 @@ export const perSeason = (p) => Math.round(focusChance(p) * 17 * 10) / 10;
 export function runFocusWeeks(roster, focus, weeks) {
   const out = [];
   for (const side of ["off", "def"]) {
-    const p = roster.find((x) => x.id === focus?.[side]);
+    const p = roster.find((x) => focus?.[side] != null && String(x.id) === String(focus[side]));
     if (!p) continue;
     let g = 0;
     for (let w = 0; w < weeks; w++) {
