@@ -35,7 +35,7 @@ export function CardHeader({ p, team, ovr, pot, sub, dev }) {
           <div style={{ fontSize: 21, fontWeight: 900, color: "#fff", lineHeight: 1.15 }}>{p.name}</div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 3, fontSize: 13, color: "#fffd" }}><Bdg pos={p.pos} />{sub}{dev}</div>
         </div>
-        <div style={{ textAlign: "center" }}>
+        <div style={{ textAlign: "center", marginRight: 34 }}>
           <OvrRing ovr={ovr} />
           {pot != null && <div style={{ fontSize: 11, color: "#fffc", fontWeight: 700 }} title={p.potRev && p.potRev.stage < 3 ? "Your staff's current read. A young player's real ceiling becomes clear over his first two seasons." : undefined}>POT <b style={{ color: oC(pot) }}>{p.potRev && p.potRev.stage < 3 ? "~" : ""}{pot}</b></div>}
           {p.potRev && p.potRev.stage < 3 && <div style={{ fontSize: 10, color: "#fffa" }}>{p.potRev.stage === 0 ? "draft-day read" : "still unproven"}</div>}

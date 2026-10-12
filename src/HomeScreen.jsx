@@ -97,18 +97,25 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
       <div style={{ display: "flex", flexWrap: "wrap", gap: 0 }}>
         {/* Menu */}
         <div className="hm-menu" style={{ flex: "1 1 220px", maxWidth: 300, padding: 18, borderRight: `1px solid #ffffff14`, display: mobile ? "none" : "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-          <div style={{ fontSize: 18, fontWeight: 800, paddingBottom: 8, borderBottom: "1px solid #ffffff22", marginBottom: 8 }}>Menu</div>
+          <div style={{ fontSize: 18, fontWeight: 800, paddingBottom: 8, borderBottom: "1px solid #ffffff22", marginBottom: 8 }}>This week</div>
           {menu.map((m, i) => (
-            <button key={m.label} onClick={m.onClick} style={{ textAlign: "left", background: i === 0 ? "#00000055" : "transparent", border: i === 0 ? "1px solid #f97316" : "1px solid transparent", borderRadius: 8, padding: i === 0 ? "10px 12px" : "6px 12px", color: "#fff", cursor: "pointer" }}>
-              <div style={{ fontSize: i === 0 ? 17 : 16, fontWeight: i === 0 ? 800 : 500 }}>{m.label}</div>
+            <button key={m.label} onClick={m.onClick} style={{ textAlign: "left", background: i === 0 ? "#00000055" : "transparent", border: i === 0 ? "1px solid #f97316" : "1px solid transparent", borderLeft: i > 0 && m.tone ? `3px solid ${m.tone === "urgent" ? C.rd : m.tone === "action" ? C.gd : "#38bdf8"}` : undefined, borderRadius: 8, padding: i === 0 ? "10px 12px" : "6px 10px", color: "#fff", cursor: "pointer" }}>
+              <div style={{ fontSize: i === 0 ? 17 : 14, fontWeight: i === 0 ? 800 : 600, lineHeight: 1.35 }}>{m.label}</div>
               {i === 0 && m.sub && <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 2 }}>{m.sub}</div>}
             </button>
           ))}
+          {menu.length <= 1 && <div style={{ fontSize: 14, color: "#94a3b8", padding: "6px 12px" }}>Nothing else needs you this week.</div>}
+          <div style={{ fontSize: 12, color: "#64748b", padding: "10px 12px 0", marginTop: "auto" }}>Every screen is in the bar above. Press / to search.</div>
         </div>
 
         {/* Matchup */}
         <div className="hm-main" style={{ flex: "3 1 460px", minWidth: 0, padding: 18 }}>
           <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>{label}</div>
+          {primary.length > 0 && !(mobile && (sp === "regular" || sp === "preseason")) && (
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-start", flexWrap: "wrap", marginBottom: 14 }}>
+              {primary.map((b, i) => <Btn key={b.label} onClick={b.onClick} bg={i === 0 ? C.gn : "#ffffff22"} c="#fff" style={{ fontSize: 16, padding: "10px 20px", fontWeight: 900 }}>{b.label}</Btn>)}
+            </div>
+          )}
           {strip.length > 0 && (
             <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto" }}>
               {strip.map((w) => {
@@ -145,11 +152,6 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
               <div style={{ display: "inline-flex" }}><TeamLogo t={me} sz={mobile ? 130 : 160} glow /></div>
               <div style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, textTransform: "uppercase", marginTop: 10 }}>{sp === "regular" ? "Bye week" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>
               <div style={{ fontSize: 16, color: "#cbd5e1", marginTop: 4 }}>{me.city} {me.name} · {rec(me)}</div>
-            </div>
-          )}
-          {primary.length > 0 && !(mobile && (sp === "regular" || sp === "preseason")) && (
-            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: 18 }}>
-              {primary.map((b, i) => <Btn key={b.label} onClick={b.onClick} bg={i === 0 ? C.gn : "#ffffff22"} c="#fff" style={{ fontSize: 17, padding: "11px 22px", fontWeight: 900 }}>{b.label}</Btn>)}
             </div>
           )}
         </div>

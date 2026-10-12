@@ -2,7 +2,7 @@
 // Used for re-signing your own players and for free agents.
 import { capProjection } from "./capProjection.js";
 import React, { useState } from "react";
-import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
+import { C, oC, Bdg, Btn, Face, CloseX } from "./ui.jsx";
 import { yearlyAsk, maxYears, respond, interest } from "./negotiation.js";
 import { EXT_BONUS, extStructure } from "./extensions.js";
 import { SIGN_BONUS, signingStructure } from "./bonus.js";
@@ -65,7 +65,8 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   const tone = { accept: C.gn, counter: C.gd, reject: "#f97316", walk: C.rd, lost: C.rd };
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 14, padding: 20, width: "100%", maxWidth: 480, maxHeight: "92vh", overflowY: "auto" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 14, padding: 20, width: "100%", maxWidth: 480, maxHeight: "92vh", overflowY: "auto" }}>
+        <CloseX onClick={onClose} />
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 12 }}>
           <Face s={p.face} sz={52} />
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -73,7 +74,7 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
             <div style={{ fontSize: 22, fontWeight: 900 }}>{p.name}</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, color: "#cbd5e1" }}><Bdg pos={p.pos} /> Age {p.age}{(mode === "resign" || mode === "extend") && p.salary ? ` · now ${money(p.salary)}${mode === "extend" ? ` · ${p.contract} yr${p.contract === 1 ? "" : "s"} left` : ""}` : ""}</div>
           </div>
-          <div style={{ textAlign: "right" }}><div style={{ fontSize: 32, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</div><div style={{ fontSize: 12, color: C.mt }}>OVR</div></div>
+          <div style={{ textAlign: "right", marginRight: 40 }}><div style={{ fontSize: 32, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</div><div style={{ fontSize: 12, color: C.mt }}>OVR</div></div>
         </div>
 
         {perfNote && <div style={{ fontSize: 13, color: f > 1 ? "#fcd34d" : "#93c5fd", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 10 }}>{f > 1 ? "📈 " : "📉 "}{perfNote}</div>}

@@ -82,15 +82,19 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
         {mine ? (
           <div style={{ textAlign: "right" }}><div style={{ fontSize: 40, fontWeight: 900, color: timer <= 10 ? C.rd : C.gd, fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</div><div style={{ fontSize: 12, color: "#fffa" }}>TIME LEFT</div></div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div>
             <div style={{ textAlign: "right", lineHeight: 1 }}><span style={{ fontSize: 28, fontWeight: 900, color: timer <= 10 ? C.rd : "#fff", fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</span><div style={{ fontSize: 11, color: "#fffa", marginTop: 2 }}>ON THE CLOCK</div></div>
-            {onSimPick && <Btn onClick={onSimPick} bg="#0e7490" style={{ fontSize: 15, padding: "9px 16px", fontWeight: 900 }}>⏭ Sim this pick</Btn>}
-            {nextMine && <Btn onClick={onSim} bg={C.gn} style={{ fontSize: 15, padding: "9px 16px", fontWeight: 900 }}>⏩ Sim to my pick</Btn>}
-            {nextMine && <Btn onClick={onForPick} bg={forPickOpen ? "#854d0e" : "#422006"} c="#fde68a" style={{ fontSize: 14, padding: "8px 14px", fontWeight: 800 }}>🔁 {forPickOpen ? "Never mind" : "Trade for this pick"}</Btn>}
-            {nextMine && <Btn onClick={onCalls} bg={callsOpen ? "#4c1d95" : "#1e1b4b"} c="#c4b5fd" style={{ fontSize: 14, padding: "8px 14px", fontWeight: 800 }}>📞 {callsOpen ? "Hide calls" : "Trade up"}</Btn>}
           </div>
         )}
       </div>
+      {!mine && (onSimPick || nextMine) && (
+        <div style={{ background: "#0b1120", padding: "8px 14px", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", borderTop: "1px solid #ffffff14" }}>
+          {onSimPick && <Btn onClick={onSimPick} bg="#0e7490" style={{ fontSize: 14, padding: "7px 14px", fontWeight: 900 }}>⏭ Sim this pick</Btn>}
+          {nextMine && <Btn onClick={onSim} bg={C.gn} style={{ fontSize: 14, padding: "7px 14px", fontWeight: 900 }}>⏩ Sim to my pick</Btn>}
+          {nextMine && <Btn onClick={onForPick} bg={forPickOpen ? "#854d0e" : "#422006"} c="#fde68a" style={{ fontSize: 14, padding: "7px 14px", fontWeight: 800 }}>🔁 {forPickOpen ? "Never mind" : "Trade for this pick"}</Btn>}
+          {nextMine && <Btn onClick={onCalls} bg={callsOpen ? "#4c1d95" : "#1e1b4b"} c="#c4b5fd" style={{ fontSize: 14, padding: "7px 14px", fontWeight: 800 }}>📞 {callsOpen ? "Hide calls" : "Trade up"}</Btn>}
+        </div>
+      )}
     </div>
   );
 }

@@ -11,7 +11,21 @@ const GROUPS = { ALL: null, OFF: ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG",
 const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 const DEV_RANK = { generational: 4, superstar: 3, star: 2, normal: 1, late: 0 };
 
-export default function RosterTable({ players, depth, setSel, devOf, wk = 0 }) {
+// Little status badges next to a name, so the whole roster reads at a glance.
+function Badges({ p, focus, mine }) {
+  const b = [];
+  const isFocus = focus && ["off", "def"].some((k) => focus[k] != null && String(focus[k]) === String(p.id));
+  if (isFocus) b.push(["🔬", "Development focus: can gain a point each regular-season week"]);
+  if (mine && (p.contract || 0) === 1 && !p.ext) b.push(["✍️", p.cyr?.choice === "bet" ? "Contract year: playing out his deal" : "Contract year: last year of his deal"]);
+  if (p.ext) b.push(["📝", "Extended: his new deal starts next season"]);
+  if (p.potRev && p.potRev.stage < 3) b.push(["~", "Unproven: his real ceiling is still coming into focus"]);
+  if (p.tradeRequest) b.push(["🔁", "Has asked for a trade"]);
+  if (p.suspended) b.push(["🚫", `Suspended${p.suspWksLeft ? ` (${p.suspWksLeft} more game${p.suspWksLeft === 1 ? "" : "s"})` : ""}`]);
+  if (!b.length) return null;
+  return <span style={{ marginLeft: 6, display: "inline-flex", gap: 3, verticalAlign: "middle" }}>{b.map(([i, t]) => <span key={t} title={t} style={{ fontSize: 12, fontWeight: 900, color: "#cbd5e1", cursor: "help" }}>{i}</span>)}</span>;
+}
+
+export default function RosterTable({ players, depth, setSel, devOf, wk = 0, focus = null, mine = false }) {
   const [filter, setFilter] = useState("ALL");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState(["pos", 1]);
@@ -43,6 +57,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0 }) {
         </select>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search roster" style={{ ...sel, flex: "1 1 160px" }} />
       </div>
+      {mine && <div style={{ fontSize: 12, color: C.mt, margin: "-4px 0 8px" }}>🔬 development focus · ✍️ contract year · 📝 extended · ~ unproven rookie · 🔁 trade request · 🚫 suspended</div>}
       <div style={{ maxHeight: "72vh", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr>{th("name", "PLAYER", { left: true })}{th("pos", "POS")}{th("pos", "DEPTH", { hide: true })}{th("age", "AGE")}{th("ovr", "OVR")}{th("pot", "POT", { hide: true })}{th("dev", "DEV", { hide: true })}{th("sal", "CONTRACT", { hide: true })}</tr></thead>
@@ -58,6 +73,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0 }) {
                       <Face s={p.face} sz={28} />
                       <span>
                         <span style={{ fontWeight: 700, color: "#f1f5f9" }}>{p.name}</span>
+                        <Badges p={p} focus={focus} mine={mine} />
                         {p.xf && <span title={`X-Factor: ${p.xf}`} style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, color: "#f472b6" }}>XF</span>}
                         <InjTag p={p} wk={wk} showNote />
                         {p.holdout && <span style={{ marginLeft: 6, fontSize: 12, fontWeight: 800, color: C.gd }}>Holdout</span>}

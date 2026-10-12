@@ -1,6 +1,6 @@
 // This week's matchup, with stakes: what the game means in the standings and the playoff race,
 // how both teams are playing, a betting line, who's hurt, and the matchups that decide it.
-import React from "react";
+import React, { useState } from "react";
 import { C, TeamLogo } from "./ui.jsx";
 import { nflSeeds } from "./playoffs.js";
 import { injuryReport } from "./injuries.js";
@@ -63,7 +63,11 @@ function Pill({ r }) {
   return <span style={{ display: "inline-block", width: 20, textAlign: "center", fontSize: 12, fontWeight: 900, borderRadius: 4, padding: "1px 0", background: `${c}33`, color: c, border: `1px solid ${c}66` }}>{r}</span>;
 }
 
+const SHOW_KEY = "gm_matchup_details";
 export default function MatchupStakes({ teams, ui, game, sched, wk, ra, rh, playoff, neutral }) {
+  // the details (form, line, injuries, key matchups) fold away; the choice is remembered
+  const [more, setMore] = useState(() => { try { return localStorage.getItem(SHOW_KEY) === "1"; } catch { return false; } });
+  const toggle = () => setMore((m) => { try { localStorage.setItem(SHOW_KEY, m ? "0" : "1"); } catch { /* private mode */ } return !m; });
   if (!game) return null;
   const home = teams[game.h], away = teams[game.a];
   const oppI = game.h === ui ? game.a : game.h, me = teams[ui], opp = teams[oppI];
@@ -89,6 +93,8 @@ export default function MatchupStakes({ teams, ui, game, sched, wk, ra, rh, play
           {lines.map((l, i) => <div key={i} style={{ fontSize: i ? 14 : 16, fontWeight: i ? 600 : 800, color: i ? "#cbd5e1" : "#fff", lineHeight: 1.4 }}>{l}</div>)}
         </div>
       )}
+      <button onClick={toggle} style={{ alignSelf: "flex-start", background: "transparent", border: `1px solid #ffffff2a`, color: "#cbd5e1", borderRadius: 999, padding: "5px 12px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{more ? "▲ Less on this matchup" : "▼ More on this matchup: form, the line, injuries, key matchups"}</button>
+      {more && <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 8 }}>
         <div style={box}>
           <div style={head}>FORM</div>
@@ -134,6 +140,7 @@ export default function MatchupStakes({ teams, ui, game, sched, wk, ra, rh, play
           })}
         </div>
       )}
+      </>}
     </div>
   );
 }

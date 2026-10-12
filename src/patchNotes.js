@@ -625,4 +625,16 @@ export const PATCH_NOTES = [
     "Starting from the current week with injuries on now brings in every team's real injury report: Questionable players play hurt, Doubtful and Out players miss their games, injured reserve keeps a player out until his expected return date (or the season), and suspended players sit.",
     "The report is refreshed with the real results every Monday and Tuesday, so a league started any week reflects who's actually hurt.",
   ] },
+  { v: "2.23", date: "2026-10-12", title: "Easier to Use", notes: [
+    "The header's shorthand (SP, MOR, REP) is now plain chips: season and record, cap room, scouting points, morale, GM rep and your owner. Hover any of them for what it means; click cap room or scouting to jump there.",
+    "Search everything from anywhere: the Search button (or press /, or Ctrl/Cmd+K) finds any player in the league, free agents, draft prospects, teams and screens.",
+    "The tab bar stays on Home too, and Home's left column is now This week: the week's main job, then your to-do list straight from Needs Attention.",
+    "Home's action buttons (Start Season, Play Week, Sim) sit at the top of the matchup column, and the matchup details (form, the line, injuries, key matchups) fold behind a More on this matchup toggle that remembers your choice.",
+    "Needs Attention puts urgent items first, keeps each to two lines, and handles some things in one tap: Pick the fastest growers sets your development focus right there.",
+    "The roster shows status badges by each name: development focus, contract year, extended, unproven rookie, trade request, suspended (hover for what each means).",
+    "Every main popup closes the same way: a round ✕ in the top-right corner.",
+    "Messages pop up in the bottom-right corner on desktop instead of over the middle of the screen.",
+    "Draft day: Sim this pick, Sim to my pick, Trade for this pick and Trade up sit in one row under the clock, so the board stays in view.",
+    "Live games: only the quarterback, backs, receivers and tight ends (and on desktop the secondary) show names; everyone else is a number, so the line of scrimmage isn't a pile of text. On phones the field zooms in around the ball.",
+  ] },
 ];

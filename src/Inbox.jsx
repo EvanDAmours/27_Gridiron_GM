@@ -2,7 +2,7 @@
 // injuries, unspent scouting points, messages), instead of popups. An item opens the screen or
 // the decision it's about.
 import React from "react";
-import { C, Btn } from "./ui.jsx";
+import { C, Btn, CloseX } from "./ui.jsx";
 
 const TONE = { urgent: C.rd, action: C.gd, info: "#38bdf8" };
 
@@ -16,7 +16,10 @@ export function InboxButton({ count, onClick, open }) {
 }
 
 // items: [{ key, icon, title, sub, tone: "urgent" | "action" | "info", cta, onOpen, onDismiss, dismissLabel }]
-export default function Inbox({ items, onClose, mobile }) {
+const RANK = { urgent: 0, action: 1, info: 2 };
+export default function Inbox({ items: raw, onClose, mobile }) {
+  // urgent first, then decisions, then information (stable within each)
+  const items = raw.map((it, i) => ({ it, i })).sort((a, b) => (RANK[a.it.tone] ?? 3) - (RANK[b.it.tone] ?? 3) || a.i - b.i).map((x) => x.it);
   const urgent = items.filter((i) => i.tone === "urgent").length;
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 1200, background: mobile ? C.bg : "#0007", display: "flex", justifyContent: mobile ? "stretch" : "flex-end", alignItems: "flex-start", padding: mobile ? 0 : "56px 14px 14px" }}>
@@ -24,7 +27,7 @@ export default function Inbox({ items, onClose, mobile }) {
         <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
           <span style={{ fontSize: 20, fontWeight: 900 }}>📥 Inbox</span>
           <span style={{ marginLeft: 8, fontSize: 13, color: C.mt }}>{items.length ? `${items.length} item${items.length === 1 ? "" : "s"}${urgent ? ` · ${urgent} urgent` : ""}` : "All caught up"}</span>
-          <button onClick={onClose} aria-label="Close inbox" style={{ marginLeft: "auto", background: C.bg, border: `1px solid ${C.bd}`, color: C.tx, borderRadius: 8, width: 34, height: 34, fontSize: 16, cursor: "pointer" }}>✕</button>
+          <CloseX onClick={onClose} style={{ position: "static", marginLeft: "auto" }} />
         </div>
         {!items.length && <div style={{ color: C.mt, fontSize: 14, padding: "20px 4px", textAlign: "center" }}>Nothing needs your attention right now.</div>}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -33,7 +36,8 @@ export default function Inbox({ items, onClose, mobile }) {
               <span style={{ fontSize: 22 }}>{it.icon}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 800, fontSize: 14 }}>{it.title}</div>
-                {it.sub && <div style={{ fontSize: 12, color: C.mt, lineHeight: 1.4 }}>{it.sub}</div>}
+                {it.sub && <div title={it.sub} style={{ fontSize: 12, color: C.mt, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{it.sub}</div>}
+                {it.actions?.length > 0 && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 5 }}>{it.actions.map((a) => <button key={a.label} onClick={a.onClick} style={{ background: `${C.gn}22`, border: `1px solid ${C.gn}77`, color: "#bbf7d0", borderRadius: 6, padding: "3px 9px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>{a.label}</button>)}</div>}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
                 {it.onOpen && <Btn onClick={it.onOpen} bg={it.tone === "urgent" ? C.rd : C.bl} style={{ fontSize: 13, padding: "5px 12px", whiteSpace: "nowrap" }}>{it.cta || "Open"}</Btn>}

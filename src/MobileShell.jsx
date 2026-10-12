@@ -1,7 +1,7 @@
 // Phone navigation: a bottom tab bar (Home, Roster, Scouting, whatever the season phase is
 // about, More) and a full-screen "More" sheet with every other screen and the settings.
 import React from "react";
-import { C } from "./ui.jsx";
+import { C, CloseX } from "./ui.jsx";
 
 const PHASE_ITEM = {
   preseason: { icon: "🏋️", label: "Camp", tab: "roster", sub: "camp" },
@@ -43,7 +43,7 @@ export function MoreSheet({ tabs, labels, tab, go, onClose, actions }) {
     <div role="dialog" aria-label="More" style={{ position: "fixed", inset: 0, zIndex: 390, background: C.bg, overflowY: "auto", padding: "14px 14px 96px" }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
         <span style={{ fontSize: 22, fontWeight: 900 }}>More</span>
-        <button onClick={onClose} aria-label="Close" style={{ marginLeft: "auto", background: C.cd, border: `1px solid ${C.bd}`, color: C.tx, borderRadius: 8, width: 38, height: 38, fontSize: 18, cursor: "pointer" }}>✕</button>
+        <CloseX onClick={onClose} style={{ position: "static", marginLeft: "auto" }} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
         {tabs.map((t) => (

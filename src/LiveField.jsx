@@ -6,6 +6,7 @@ import SpritePlayer from "./pixel/SpritePlayer.jsx";
 import { snapPose, celebrationPose, SPRITES as ART } from "./pixel/sprites.js";
 import { UNIFORMS, teamKey, uniformFor } from "./teamUniforms.js";
 import { logoUrl } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 
 const FORMATION = {
   // [pos, depth index, yards behind (-) / past (+) the line, yards from the middle].
@@ -36,6 +37,7 @@ function starters(team, depth, order) {
 const SPRITE_SCALE = 0.25; // every pose drawn at the same pixel size
 const SPRITES = typeof location !== "undefined" && /[?&]sprites=1\b/.test(location.search); // off unless ?sprites=1
 const uni = (team, away) => uniformFor(team, { away });
+const SHOW_NAME = { off: new Set(["QB", "RB", "WR", "TE"]), def: new Set(MOBILE ? [] : ["CB", "S"]) };
 function Player({ p, pos, x, y, team, side, away, td }) {
   const last = p ? p.name.split(" ").slice(1).join(" ") || p.name : pos;
   if (!SPRITES) return (
@@ -46,8 +48,10 @@ function Player({ p, pos, x, y, team, side, away, td }) {
       <circle r="10.5" fill={uni(team, away).jersey} stroke={uni(team, away).helmet} strokeWidth="2.6" />
       <circle r="7.9" fill="none" stroke="#fff" strokeOpacity=".18" strokeWidth="1" />
       <text y="4" textAnchor="middle" fontSize="11" fontWeight="900" fill={uni(team, away).number} stroke={uni(team, away).numberEdge} strokeWidth=".9" paintOrder="stroke">{p?.num ?? pos}</text>
-      {/* names hang away from the line of scrimmage (offense to the left, defense to the right) so the two fronts never overlap */}
-      <text x={side === "off" ? 8 : -8} y="21" textAnchor={side === "off" ? "end" : "start"} fontSize="8.5" fontWeight="700" fill="#fff" stroke="#0009" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>
+      {/* names only where they help (the ball handlers and receivers, and on desktop the secondary
+          covering them); linemen are just numbers so the fronts don't turn into a pile of text.
+          Names hang away from the line of scrimmage so the two sides never overlap. */}
+      {SHOW_NAME[side].has(pos) && <text x={side === "off" ? 8 : -8} y="21" textAnchor={side === "off" ? "end" : "start"} fontSize="8.5" fontWeight="700" fill="#fff" stroke="#0009" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>}
     </g>
   );
   const pose = (side === "off" && td && celebrationPose(pos)) || snapPose(pos, side);
@@ -77,7 +81,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       return <Player key={`${side}${pos}${i}`} p={list[pos]?.[i]} pos={pos} x={x} y={y} team={team} side={side} away={awayFor(side)} td={!!lastPlay?.td} />;
     });
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, maxHeight: "min(46vh, 420px)" }}>
+    <svg viewBox={MOBILE ? `${clamp(x0 - 250, 0, W - 500)} 0 500 ${H}` : `0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, maxHeight: MOBILE ? "none" : "min(46vh, 420px)", transition: "all .4s ease" }}>
       <defs>
         {/* turf grain: fine noise over the grass */}
         <filter id="lf-grain" x="0" y="0" width="100%" height="100%">
