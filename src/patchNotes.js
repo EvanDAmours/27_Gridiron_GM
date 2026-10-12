@@ -579,4 +579,10 @@ export const PATCH_NOTES = [
     "Live games: win probability and the drive chart sit right under the field and keep their size, so the box score filling up below no longer pushes them down the page.",
     "Game Updates shows the latest 15 patch notes; older ones are in a dropdown at the bottom (search still looks through all of them).",
   ] },
+  { v: "2.12", date: "2026-10-12", title: "Trade For This Pick", notes: [
+    "Draft day: while another club is on the clock, Trade for this pick asks them straight up what it would take to get that exact pick. Take the deal and you're on the clock. Their answer doesn't change if you ask again.",
+    "The weekly result card closes itself after 10 seconds (a bar along the bottom counts down). Hover over it to pause, or click anything in it to keep it up.",
+    "Season awards come in two pages: the awards first, then CONTINUE to the All-Pro team, starting with your honorees and the OVR each one gains this off-season. The All-Pro lists use the same type as the rest of the card.",
+    "The season recap card is easier to read (no more red on orange) and just has a close button: download, copy and share are gone.",
+  ] },
 ];

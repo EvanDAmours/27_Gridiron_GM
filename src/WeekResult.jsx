@@ -1,6 +1,7 @@
 // The big result card shown after you sim: did you win, the score, your record and
-// standing, who starred, and the rest of the week's scores.
-import React, { useState } from "react";
+// standing, who starred, and the rest of the week's scores. It closes itself after 10 seconds (a bar
+// along the bottom counts down); hovering pauses it, and clicking anything in it keeps it up.
+import React, { useEffect, useRef, useState } from "react";
 import { WinProbChart } from "./GameRecap.jsx";
 import { C, Btn, TeamLogo } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
@@ -50,12 +51,38 @@ function Others({ list, teams, onBox }) {
   );
 }
 
-export default function WeekResult({ result, teams, ui, sched, onClose, onBox, onTeam }) {
+const SHOW_MS = 10000;
+export default function WeekResult(props) {
+  const { result, onClose } = props;
+  const [left, setLeft] = useState(SHOW_MS);
+  const [hover, setHover] = useState(false);
+  const [kept, setKept] = useState(false);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => { setLeft(SHOW_MS); setKept(false); }, [result]);
+  useEffect(() => {
+    if (!result || hover || kept) return;
+    if (left <= 0) { closeRef.current(); return; }
+    const t = setTimeout(() => setLeft((v) => v - 100), 100);
+    return () => clearTimeout(t);
+  }, [result, left, hover, kept]);
+  if (!result) return null;
+  return (
+    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onClickCapture={() => setKept(true)} style={{ position: "relative", marginBottom: MOBILE ? 8 : 12 }}>
+      <Card {...props} />
+      {!kept && <div style={{ position: "absolute", left: 12, right: 12, bottom: 1, height: 3, borderRadius: 2, background: "#ffffff14", overflow: "hidden", pointerEvents: "none" }}>
+        <div style={{ height: "100%", width: `${(left / SHOW_MS) * 100}%`, background: hover ? "#64748b" : "#94a3b8", transition: "width .1s linear" }} />
+      </div>}
+    </div>
+  );
+}
+
+function Card({ result, teams, ui, sched, onClose, onBox, onTeam }) {
   const [showOthers, setShowOthers] = useState(false);
   if (!result) return null;
   const me = teams[ui];
   if (!me) return null;
-  const card = { background: "linear-gradient(135deg,#0f172a,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: MOBILE ? "8px 10px" : "12px 14px", marginBottom: MOBILE ? 8 : 12, position: "relative" };
+  const card = { background: "linear-gradient(135deg,#0f172a,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: MOBILE ? "8px 10px" : "12px 14px", position: "relative" };
   const close = <button onClick={onClose} aria-label="Dismiss result" style={{ position: "absolute", top: 10, right: 12, background: "transparent", border: 0, color: C.mt, fontSize: 20, cursor: "pointer" }}>✕</button>;
 
   if (result.season) {

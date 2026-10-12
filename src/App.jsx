@@ -64,8 +64,8 @@ import { SUPER_BOWLS } from "./data/superbowls.js";
 import { weeklyStories } from "./stories.js";
 import { leagueDrama, isFictional } from "./drama.js";
 import { applyTheme, getTheme } from "./theme.js";
-import { tradeDownOffers, acceptOffer, applyFutures, pickLabel, tradeUpOffers, acceptTradeUp, futurePickList, moveFuture } from "./draftTrade.js";
-import { DraftTickerBar, PickIsIn, OnTheClock, TradeUpPanel } from "./DraftDay.jsx";
+import { tradeDownOffers, acceptOffer, applyFutures, pickLabel, tradeUpOffers, quoteTradeUp, acceptTradeUp, futurePickList, moveFuture } from "./draftTrade.js";
+import { DraftTickerBar, PickIsIn, OnTheClock, TradeUpPanel, ForPickPanel } from "./DraftDay.jsx";
 import { InjTag } from "./InjuryTag.jsx";
 import { summarize } from "./gameday.js";
 import Inbox from "./Inbox.jsx";
@@ -241,7 +241,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   // v19.0 audit improvements
   const[onboardDone,setOnboardDone]=useState([]);const[lastSaved,setLastSaved]=useState(null);const[simGameLog,setSimGameLog]=useState({});const[seasonHistory,setSeasonHistory]=useState([]);const[ownerPromises,setOwnerPromises]=useState([]);
   // v20.0 Wave 2
-  const[compareSlots,setCompareSlots]=useState([]);const[socialFeed,setSocialFeed]=useState([]);const[draftTicker,setDraftTicker]=useState([]);const[pickIsIn,setPickIsIn]=useState(null);const[inboxOpen,setInboxOpen]=useState(false);const[inboxShow,setInboxShow]=useState(null);const[inboxDismissed,setInboxDismissed]=useState({});const[upCalls,setUpCalls]=useState(false);const[upPassed,setUpPassed]=useState({});const[arbModal,setArbModal]=useState(null);const[ownerPersonality,setOwnerPersonality]=useState(null);
+  const[compareSlots,setCompareSlots]=useState([]);const[socialFeed,setSocialFeed]=useState([]);const[draftTicker,setDraftTicker]=useState([]);const[pickIsIn,setPickIsIn]=useState(null);const[forPick,setForPick]=useState(null);const[inboxOpen,setInboxOpen]=useState(false);const[inboxShow,setInboxShow]=useState(null);const[inboxDismissed,setInboxDismissed]=useState({});const[upCalls,setUpCalls]=useState(false);const[upPassed,setUpPassed]=useState({});const[arbModal,setArbModal]=useState(null);const[ownerPersonality,setOwnerPersonality]=useState(null);
   // v21.0 Wave 3
   const[playbook,setPlaybook]=useState([]);const[tradeDesk,setTradeDeskState]=useState(null);const[stadiumAtm,setStadiumAtm]=useState(50);const[tradeDeskOpen,setTradeDeskOpen]=useState(false);
   // v22.0 Wave 5
@@ -1201,55 +1201,24 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       </div>
       <div style={{padding:'12px 20px 16px'}}>{topP&&<div style={{fontSize:12,color:'#94a3b8',marginBottom:10,padding:'6px 8px',background:'#ffffff08',borderRadius:4}}>TOP PERFORMER: <span style={{color:'#e2e8f0',fontWeight:700}}>{topP.name}</span> <span style={{color:pC(topP.pos),fontSize:11}}>{topP.pos} {topP.ovr}OVR</span></div>}<div style={{fontSize:11,color:'#334155',marginBottom:10,fontStyle:'italic',lineHeight:1.4,borderLeft:'2px solid #1e3a5f',paddingLeft:8}}>{shareStr}</div><div style={{display:'flex',gap:6}}><button onClick={()=>{navigator.clipboard?.writeText(shareStr).then(()=>{sm('Copied! Paste anywhere to share.');setShowShareCard(false);}).catch(()=>sm(shareStr));}} style={{flex:1,background:'#1e3a5f',color:'#7dd3fc',border:'1px solid #1e3a5f33',borderRadius:6,padding:'7px 0',fontSize:12,fontWeight:700,cursor:'pointer'}}>Copy & Share</button><button onClick={()=>setShowShareCard(false)} style={{background:'#1e293b',color:C.mt,border:`1px solid ${C.bd}`,borderRadius:6,padding:'7px 12px',fontSize:12,cursor:'pointer'}}>Close</button></div></div>
     </div></div>);})()}
-    {/* v31: Season Recap Card — canvas downloadable */}
+    {/* Season Recap Card */}
     {showRecapCard&&ut&&(()=>{
       const champ=champs.some(c=>c.yr===yr&&c.t===`${ut.city} ${ut.name}`);
       const topP=ut.roster.filter(p=>['QB','RB','WR','TE'].includes(p.pos)&&p.ss?.gp>0).sort((a,b)=>{const bs=s=>((s.passYds||0)+(s.rushYds||0)+(s.recYds||0));return bs(b.ss)-bs(a.ss);})[0];
       const topDef=ut.roster.filter(p=>['DL','LB','CB','S'].includes(p.pos)&&p.ss?.gp>0).sort((a,b)=>((b.ss?.tkl||0)+(b.ss?.sacks||0)*4)-((a.ss?.tkl||0)+(a.ss?.sacks||0)*4))[0];
       const pf=sched.filter(g=>g.played&&(g.h===ui||g.a===ui)).reduce((s,g)=>s+(g.h===ui?g.hs:g.as),0);
       const pa=sched.filter(g=>g.played&&(g.h===ui||g.a===ui)).reduce((s,g)=>s+(g.h===ui?g.as:g.hs),0);
-      const shareStr=`🏈 ${ut.city} ${ut.name} — ${ut.w}-${ut.l} | ${yr} Season${champ?' 🏆 CHAMPIONS!':''}${topP?` | MVP: ${topP.name}`:''}${topDef?` | DEF: ${topDef.name}`:''}  +${pf}pts −${pa}pts | #FootballGM`;
-      const dlCard=()=>{
-        const W=1200,H=630;const c=document.createElement('canvas');c.width=W;c.height=H;const ctx=c.getContext('2d');
-        // Background
-        const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,ut.clr||'#0f172a');bg.addColorStop(1,'#0a0f1a');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-        // Side panel
-        ctx.fillStyle=(ut.clr||'#1e3a5f')+'99';ctx.fillRect(0,0,380,H);
-        // Top accent bar
-        ctx.fillStyle=ut.ac||'#f59e0b';ctx.fillRect(0,0,W,10);ctx.fillRect(0,H-10,W,10);
-        // Team badge
-        ctx.fillStyle=(ut.ac||'#f59e0b')+'22';ctx.beginPath();ctx.arc(190,200,130,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle=ut.ac||'#f59e0b';ctx.font='bold 88px Arial';ctx.textAlign='center';ctx.fillText(ut.ab,190,228);
-        // Divider
-        ctx.strokeStyle=(ut.ac||'#334155')+'55';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(400,40);ctx.lineTo(400,590);ctx.stroke();
-        // Team name block
-        ctx.textAlign='left';ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 56px Arial';ctx.fillText(ut.city,430,150);
-        ctx.fillStyle=ut.ac||'#f59e0b';ctx.font='bold 76px Arial';ctx.fillText(ut.name,430,240);
-        ctx.fillStyle='#64748b';ctx.font='24px Arial';ctx.fillText(`${yr} Season`,430,290);
-        // Record
-        ctx.fillStyle=ut.w>=ut.l?'#22c55e':'#ef4444';ctx.font='bold 110px Arial';ctx.fillText(`${ut.w}-${ut.l}`,430,420);
-        // Champ banner
-        if(champ){const bx=430,by=440,bw=440,bh=60;ctx.fillStyle='#92400e';ctx.fillRect(bx,by,bw,bh);ctx.fillStyle='#fde68a';ctx.font='bold 34px Arial';ctx.fillText('🏆  SEASON CHAMPIONS',bx+16,by+42);}
-        // Stats column
-        const sx=880;ctx.fillStyle='#475569';ctx.font='18px Arial';ctx.textAlign='left';ctx.fillText('PF '+pf+'   PA '+pa,sx,100);
-        ctx.strokeStyle='#1e3a5f';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx,115);ctx.lineTo(1170,115);ctx.stroke();
-        if(topP){ctx.fillStyle='#64748b';ctx.font='16px Arial';ctx.fillText('TOP PERFORMER',sx,155);ctx.fillStyle='#e2e8f0';ctx.font='bold 32px Arial';ctx.fillText(topP.name,sx,198);ctx.fillStyle='#94a3b8';ctx.font='20px Arial';ctx.fillText(`${topP.pos}  ·  OVR ${topP.ovr}`,sx,228);const pStat=topP.pos==='QB'?`${topP.ss?.passYds||0} pass yds  ${topP.ss?.passTD||0} TD`:`${(topP.ss?.rushYds||0)+(topP.ss?.recYds||0)} yds`;ctx.fillStyle='#7dd3fc';ctx.font='18px Arial';ctx.fillText(pStat,sx,258);}
-        if(topDef){ctx.strokeStyle='#1e3a5f';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx,280);ctx.lineTo(1170,280);ctx.stroke();ctx.fillStyle='#64748b';ctx.font='16px Arial';ctx.fillText('DEFENSIVE LEADER',sx,312);ctx.fillStyle='#e2e8f0';ctx.font='bold 28px Arial';ctx.fillText(topDef.name,sx,348);ctx.fillStyle='#94a3b8';ctx.font='18px Arial';ctx.fillText(`${topDef.pos}  ·  ${topDef.ss?.tkl||0}tkl  ${topDef.ss?.sacks||0}sk`,sx,375);}
-        // Branding bar
-        ctx.fillStyle='#0d1424cc';ctx.fillRect(0,570,W,60);ctx.fillStyle='#334155';ctx.font='18px Arial';ctx.textAlign='center';ctx.fillText('evandamours.github.io/27_Gridiron_GM  ·  #FootballGM  ·  Free in your browser',W/2,606);
-        const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download=`gridiron-gm-${yr}-recap.png`;a.click();
-        sm('Season recap card downloaded!');
-      };
       return<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.95)',zIndex:3100,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setShowRecapCard(false)}>
-        <div onClick={e=>e.stopPropagation()} style={{background:'#0d1424',borderRadius:14,maxWidth:420,width:'100%',border:`2px solid ${champ?'#f59e0b':ut.ac||C.gn}`,overflow:'hidden'}}>
-          <div style={{background:`linear-gradient(135deg,${ut.clr||'#1e293b'},${ut.ac||'#334155'}44)`,padding:'18px 20px 14px',borderBottom:'1px solid #1e293b'}}>
+        <div onClick={e=>e.stopPropagation()} style={{position:'relative',background:'#0d1424',borderRadius:14,maxWidth:420,width:'100%',border:`2px solid ${champ?'#f59e0b':ut.ac||C.gn}`,overflow:'hidden'}}>
+          <button onClick={()=>setShowRecapCard(false)} aria-label="Close" style={{position:'absolute',top:10,right:10,zIndex:1,width:40,height:40,borderRadius:20,background:'#000a',color:'#fff',border:'1px solid #ffffff33',fontSize:22,lineHeight:1,cursor:'pointer'}}>✕</button>
+          <div style={{background:`linear-gradient(160deg,${ut.clr||'#1e293b'} 0%,${ut.clr||'#1e293b'}88 45%,#0d1424 100%)`,padding:'18px 20px 14px',borderBottom:'1px solid #1e293b'}}>
             <div style={{display:'flex',gap:10,alignItems:'center',marginBottom:10}}>
               <TeamLogo t={ut} sz={44} />
               <div><div style={{fontSize:16,fontWeight:900,color:'#fff'}}>{ut.city} {ut.name}</div><div style={{fontSize:12,color:'#94a3b8'}}>{yr} Season Recap Card</div></div>
-              {champ&&<div style={{marginLeft:'auto',fontSize:28}}>🏆</div>}
+              {champ&&<div style={{marginLeft:'auto',marginRight:44,fontSize:28}}>🏆</div>}
             </div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6}}>
-              {[['RECORD',`${ut.w}-${ut.l}`,ut.w>=ut.l?'#22c55e':'#ef4444'],['PF',pf,C.gd],['PA',pa,'#94a3b8'],['SEASON',`Y${yr-2025}`,C.bl]].map(([l,v,clr])=><div key={l} style={{textAlign:'center',background:'#ffffff11',borderRadius:4,padding:'5px 2px'}}><div style={{fontSize:14,fontWeight:900,color:clr}}>{v}</div><div style={{fontSize:10,color:'#64748b'}}>{l}</div></div>)}
+              {[['RECORD',`${ut.w}-${ut.l}`,ut.w>=ut.l?'#4ade80':'#f87171'],['PF',pf,'#fcd34d'],['PA',pa,'#e2e8f0'],['SEASON',`Y${yr-2025}`,'#93c5fd']].map(([l,v,clr])=><div key={l} style={{textAlign:'center',background:'#0b1220d9',border:'1px solid #ffffff1a',borderRadius:6,padding:'6px 2px'}}><div style={{fontSize:16,fontWeight:900,color:clr}}>{v}</div><div style={{fontSize:10,fontWeight:700,letterSpacing:1,color:'#cbd5e1'}}>{l}</div></div>)}
             </div>
           </div>
           <div style={{padding:'12px 20px 16px'}}>
@@ -1261,12 +1230,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
               <Face s={topDef.face} sz={24}/>
               <div><div style={{fontSize:11,color:'#64748b'}}>DEFENSIVE LEADER</div><div style={{fontSize:13,fontWeight:700,color:'#e2e8f0'}}>{topDef.name} <Bdg pos={topDef.pos}/></div><div style={{fontSize:10,color:'#94a3b8'}}>{topDef.ss?`${topDef.ss.tkl||0}tkl ${topDef.ss.sacks||0}sk`:''}</div></div>
             </div>}
-            <div style={{display:'flex',gap:4}}>
-              <button onClick={dlCard} style={{flex:1,background:'#14532d',color:'#22c55e',border:'1px solid #22c55e44',borderRadius:6,padding:'7px 0',fontSize:12,fontWeight:700,cursor:'pointer'}}>⬇ Download Card</button>
-              <button onClick={()=>{navigator.clipboard?.writeText(shareStr).then(()=>sm('Copied!'));}} style={{flex:1,background:'#1e3a5f',color:'#7dd3fc',border:'1px solid #1e3a5f',borderRadius:6,padding:'7px 0',fontSize:12,fontWeight:700,cursor:'pointer'}}>📋 Copy</button>
-              <button onClick={()=>shareViaWebAPI(`${ut.city} ${ut.name} — ${yr} Season`,shareStr)} style={{flex:1,background:'#7c3aed22',color:'#a78bfa',border:'1px solid #7c3aed55',borderRadius:6,padding:'7px 0',fontSize:12,fontWeight:700,cursor:'pointer'}}>📤 Share</button>
-              <button onClick={()=>setShowRecapCard(false)} style={{background:'#1e293b',color:C.mt,border:`1px solid ${C.bd}`,borderRadius:6,padding:'7px 12px',fontSize:12,cursor:'pointer'}}>✕</button>
-            </div>
+            <button onClick={()=>setShowRecapCard(false)} style={{width:'100%',background:'#1e293b',color:'#e2e8f0',border:`1px solid ${C.bd}`,borderRadius:8,padding:'10px 0',fontSize:15,fontWeight:800,cursor:'pointer'}}>Close</button>
           </div>
         </div>
       </div>;
@@ -1769,9 +1733,11 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       {pickIsIn&&tab==="draft"&&<PickIsIn entry={pickIsIn} team={TEAMS[pickIsIn.owner]} yr={yr} onDone={()=>setPickIsIn(null)}/>}
       {sp==="draft"&&draftActive&&curPick&&(()=>{const _t=TEAMS[curPick.owner];const _mine=curPick.owner===ui;const _nx=draftPicks.slice(draftIdx).find(pk=>pk.owner===ui);const _nd=Object.entries(draftNeeds(teams[curPick.owner]?.roster||[])).filter(([,v])=>v>=0.3).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([k])=>k);
         const _offers=upCalls&&!_mine&&_nx?tradeUpOffers({picks:draftPicks,futures:futurePicks,idx:draftIdx,ui,yr,teams}).filter(o=>!upPassed[o.id]):[];
-        const _acceptUp=o=>{const r=acceptTradeUp(draftPicks,futurePicks,o,ui);setDraftPicks(r.picks);setFuturePicks(r.futures);setUpCalls(false);setDraftTimer(120);const gave=[o.myPick,...o.extras].map(a=>pickLabel(a,yr)).join(', ');setLog(l=>[`🔁 DRAFT-DAY TRADE: ${TEAMS[ui].ab} move up to #${o.theirPick.overall} with ${TEAMS[o.team].ab} for ${gave}`,...l.slice(0,149)]);sm(`Moved up to #${o.theirPick.overall}!`);};
+        const _forOpen=forPick===curPick.id&&!_mine&&_nx;const _quote=_forOpen?quoteTradeUp({picks:draftPicks,futures:futurePicks,i:draftIdx,ui,yr,teams}):null;
+        const _acceptUp=o=>{const r=acceptTradeUp(draftPicks,futurePicks,o,ui);setDraftPicks(r.picks);setFuturePicks(r.futures);setUpCalls(false);setForPick(null);setDraftTimer(120);const gave=[o.myPick,...o.extras].map(a=>pickLabel(a,yr)).join(', ');setLog(l=>[`🔁 DRAFT-DAY TRADE: ${TEAMS[ui].ab} move up to #${o.theirPick.overall} with ${TEAMS[o.team].ab} for ${gave}`,...l.slice(0,149)]);sm(`Moved up to #${o.theirPick.overall}!`);};
         return(<>
-        <OnTheClock pick={curPick} team={_t} mine={_mine} paused={draftPaused} timer={draftTimer} nextMine={_nx&&!_mine?_nx:null} needs={_nd} onSim={()=>{setUpCalls(false);simEntireDraft(true);}} callsOpen={upCalls} onCalls={()=>{const o=!upCalls;setUpCalls(o);if(o)setDraftPaused(true);}}/>
+        <OnTheClock pick={curPick} team={_t} mine={_mine} paused={draftPaused} timer={draftTimer} nextMine={_nx&&!_mine?_nx:null} needs={_nd} onSim={()=>{setUpCalls(false);simEntireDraft(true);}} callsOpen={upCalls} onCalls={()=>{const o=!upCalls;setUpCalls(o);if(o){setForPick(null);setDraftPaused(true);}}} forPickOpen={!!_forOpen} onForPick={()=>{if(_forOpen){setForPick(null);return;}setForPick(curPick.id);setUpCalls(false);setDraftPaused(true);}}/>
+        {_forOpen&&<ForPickPanel quote={_quote} team={_t} yr={yr} onAccept={_acceptUp} onClose={()=>setForPick(null)}/>}
         {upCalls&&!_mine&&_nx&&<TradeUpPanel offers={_offers} yr={yr} onAccept={_acceptUp} onPass={o=>setUpPassed(m=>({...m,[o.id]:true}))}/>}
         </>);})()}
       {/* Scouting points and your picks, round by round */}

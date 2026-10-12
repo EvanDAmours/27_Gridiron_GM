@@ -62,7 +62,7 @@ export function PickIsIn({ entry, team, yr, onDone, ms = 2300 }) {
 }
 
 // The on-the-clock stage. needs: positions the club is short at; fits: best available for them.
-export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = [], fits = [], onSim, onCalls, callsOpen }) {
+export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = [], fits = [], onSim, onCalls, callsOpen, onForPick, forPickOpen }) {
   return (
     <div style={{ borderRadius: 14, overflow: "hidden", marginBottom: 10, border: mine ? `2px solid ${C.gn}` : `1px solid ${C.bd}` }}>
       <div style={{ height: 5, background: "linear-gradient(90deg,#1d4ed8 0 33%,#fff 33% 66%,#b91c1c 66%)" }} />
@@ -85,6 +85,7 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ textAlign: "right", lineHeight: 1 }}><span style={{ fontSize: 28, fontWeight: 900, color: timer <= 10 ? C.rd : "#fff", fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</span><div style={{ fontSize: 11, color: "#fffa", marginTop: 2 }}>ON THE CLOCK</div></div>
             {nextMine && <Btn onClick={onSim} bg={C.gn} style={{ fontSize: 15, padding: "9px 16px", fontWeight: 900 }}>⏩ Sim to my pick</Btn>}
+            {nextMine && <Btn onClick={onForPick} bg={forPickOpen ? "#854d0e" : "#422006"} c="#fde68a" style={{ fontSize: 14, padding: "8px 14px", fontWeight: 800 }}>🔁 {forPickOpen ? "Never mind" : "Trade for this pick"}</Btn>}
             {nextMine && <Btn onClick={onCalls} bg={callsOpen ? "#4c1d95" : "#1e1b4b"} c="#c4b5fd" style={{ fontSize: 14, padding: "8px 14px", fontWeight: 800 }}>📞 {callsOpen ? "Hide calls" : "Trade up"}</Btn>}
           </div>
         )}
@@ -94,6 +95,31 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
 }
 
 // Clubs ahead of you willing to move down.
+// The on-the-clock club's answer to "what would it take for this pick?"
+const FORPICK_NO = {
+  keep: (t) => `The ${t} like their spot and aren't moving off this pick.`,
+  cost: (t) => `You don't have the picks to cover what the ${t} want for this spot.`,
+  none: () => "You need a later pick this year to build a deal around.",
+};
+export function ForPickPanel({ quote, team, yr, onAccept, onClose }) {
+  const o = quote.offer;
+  return (
+    <div style={{ background: C.cd, border: "1px solid #ca8a0466", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+      <div style={{ fontSize: 14, fontWeight: 800, color: "#fde68a", marginBottom: 6 }}>🔁 Trade for this pick <span style={{ fontSize: 12, color: C.mt, fontWeight: 500 }}>· the draft is paused. Make the trade and you're on the clock.</span></div>
+      {!o && <div style={{ fontSize: 14, color: C.mt }}>{FORPICK_NO[quote.no](team.name)}</div>}
+      {o && <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 14 }}>The {team.name} give you <b style={{ color: "#86efac" }}>#{o.theirPick.overall}</b> (up {o.up} spots) for</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>{[o.myPick, ...o.extras].map((a, i) => <span key={i} style={{ fontSize: 13, fontWeight: 800, padding: "3px 8px", borderRadius: 6, background: i ? "#1e293b" : "#7f1d1d", color: i ? "#e2e8f0" : "#fca5a5" }}>{pickLabel(a, yr)}</span>)}</div>
+        <span style={{ fontSize: 12, color: C.gd }}>Chart: {o.give} for {o.get}</span>
+      </div>}
+      <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+        {o && <Btn onClick={() => onAccept(o)} bg={C.gn} style={{ fontSize: 14, padding: "7px 16px", fontWeight: 800 }}>Make the trade</Btn>}
+        <Btn onClick={onClose} bg={C.bd} c={C.mt} style={{ fontSize: 14, padding: "7px 14px" }}>{o ? "No thanks" : "Close"}</Btn>
+      </div>
+    </div>
+  );
+}
+
 export function TradeUpPanel({ offers, yr, onAccept, onPass }) {
   return (
     <div style={{ background: C.cd, border: "1px solid #7c3aed66", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>

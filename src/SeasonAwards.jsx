@@ -1,6 +1,8 @@
 // The season's honors, shown the moment the Super Bowl ends: the champion, the Super Bowl MVP and
-// the regular-season awards (MVP, OPOY, DPOY and both Rookies of the Year).
-import React from "react";
+// the regular-season awards (MVP, OPOY, DPOY and both Rookies of the Year). Continue goes to a
+// second page: the All-Pro team, and which of your players were honored and what they gain.
+import React, { useState } from "react";
+import { HONOR_LABEL, honorBoost, honorsById } from "./honors.js";
 import { C, TeamLogo, Btn, Bdg } from "./ui.jsx";
 import { sbName, sbNumber } from "./data/superbowls.js";
 
@@ -55,12 +57,66 @@ function Row({ label, w, teams, ui, big }) {
   );
 }
 
+// One honoree in the All-Pro list: slot, name, club.
+const Pick = ({ e, ui }) => (
+  <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: 15, lineHeight: 1.5, minWidth: 0, color: e.ti === ui ? "#86efac" : "#e2e8f0" }}>
+    <span style={{ width: 40, flexShrink: 0, fontSize: 12, fontWeight: 900, color: "#fcd34d" }}>{e.slot}</span>
+    <span style={{ fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.name}</span>
+    <span style={{ fontSize: 13, color: "#94a3b8", flexShrink: 0 }}>{e.team}</span>
+  </div>
+);
+
+// Page two: your honorees first (with what they gain), then the first and second teams.
+function HonorsPage({ yr, h, teams, ui, onBack, onClose, cta }) {
+  const best = honorsById(h);
+  const roster = teams[ui]?.roster || [];
+  const mine = roster.filter((p) => best[p.id]).map((p) => ({ p, k: best[p.id] })).sort((a, b) => ["ap1", "ap2", "pb"].indexOf(a.k) - ["ap1", "ap2", "pb"].indexOf(b.k));
+  const Team = ({ title, list }) => (
+    <div style={{ padding: "12px 14px", borderRadius: 10, background: "#ffffff08", border: "1px solid #ffffff14" }}>
+      <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "#fcd34d", marginBottom: 6 }}>{title}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: "2px 16px" }}>{list.map((e) => <Pick key={e.pid} e={e} ui={ui} />)}</div>
+    </div>
+  );
+  return (
+    <>
+      <div style={{ padding: "18px 20px 14px", textAlign: "center", background: "linear-gradient(135deg,#713f12cc,#0b1220)" }}>
+        <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 2, color: "#fde68a" }}>{yr} ALL-PRO TEAM</div>
+        <div style={{ fontSize: 15, color: "#e2e8f0", marginTop: 4 }}>The league's best at every spot. Honorees gain OVR this off-season.</div>
+      </div>
+      <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ padding: "12px 14px", borderRadius: 10, background: `${C.gn}14`, border: `1px solid ${C.gn}66` }}>
+          <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "#86efac", marginBottom: 6 }}>YOUR HONOREES</div>
+          {!mine.length && <div style={{ fontSize: 15, color: "#cbd5e1" }}>None of your players made the All-Pro teams or the Pro Bowl this year.</div>}
+          {mine.map(({ p, k }) => {
+            const g = honorBoost(k, p.ovr || 0);
+            return (
+              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, lineHeight: 1.6 }}>
+                <Bdg pos={p.pos} /><b style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</b>
+                <span style={{ color: "#cbd5e1", fontSize: 14 }}>{HONOR_LABEL[k]}</span>
+                <span style={{ marginLeft: "auto", fontWeight: 900, color: g ? C.gn : C.mt, fontSize: 14, whiteSpace: "nowrap" }}>{g ? `+${g} OVR` : "already elite"}</span>
+              </div>
+            );
+          })}
+        </div>
+        <Team title="FIRST-TEAM ALL-PRO" list={h.ap1} />
+        {h.ap2?.length > 0 && <Team title="SECOND-TEAM ALL-PRO" list={h.ap2} />}
+        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+          <Btn onClick={onBack} bg={C.bd} c="#e2e8f0" style={{ fontSize: 15, padding: "10px 16px", fontWeight: 800 }}>← Awards</Btn>
+          <Btn onClick={onClose} bg={C.gn} style={{ flex: 1, fontSize: 16, padding: "10px 0", fontWeight: 900 }}>{cta}</Btn>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function SeasonAwards({ show, teams, ui, onClose, cta = "Continue" }) {
   const { yr, champ, opp, score, sbmvp, awards = {} } = show;
+  const [page, setPage] = useState(1);
   const ct = teams[champ], ot = opp != null ? teams[opp] : null;
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(2,6,15,.88)", zIndex: 2300, display: "flex", alignItems: "center", justifyContent: "center", padding: 14 }}>
-      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Season awards" style={{ width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", borderRadius: 16, background: "#0b1220", border: "2px solid #d4a017", boxShadow: "0 0 70px #d4a01744" }}>
+      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Season awards" key={page} style={{ width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", borderRadius: 16, background: "#0b1220", border: "2px solid #d4a017", boxShadow: "0 0 70px #d4a01744" }}>
+        {page === 2 ? <HonorsPage yr={yr} h={awards.honors} teams={teams} ui={ui} onBack={() => setPage(1)} onClose={onClose} cta={cta} /> : <>
         <div style={{ padding: "18px 20px 14px", textAlign: "center", background: `linear-gradient(135deg, ${ct?.clr || "#1e3a5f"}dd, #0b1220)` }}>
           <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 2, color: "#fde68a" }}>{yr} SEASON AWARDS</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 8 }}>
@@ -75,20 +131,9 @@ export default function SeasonAwards({ show, teams, ui, onClose, cta = "Continue
         <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 8 }}>
           <Row label="Super Bowl MVP" w={sbmvp} teams={teams} ui={ui} big />
           {ROWS.map(([k, l]) => <Row key={k} label={l} w={awards[k]} teams={teams} ui={ui} />)}
-          {awards.honors && (() => {
-            const h = awards.honors, mineAP = [...h.ap1, ...h.ap2].filter((e) => e.ti === ui), minePB = [...h.pb.AFC, ...h.pb.NFC].filter((e) => e.ti === ui);
-            return (
-              <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10, background: "#ffffff08", border: "1px solid #ffffff14" }}>
-                <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "#fde68a", marginBottom: 6 }}>FIRST-TEAM ALL-PRO</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: "3px 10px", fontSize: 13 }}>
-                  {h.ap1.map((e) => <div key={e.pid} style={{ color: e.ti === ui ? "#86efac" : "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><b style={{ color: "#94a3b8", fontSize: 11, marginRight: 4 }}>{e.slot}</b>{e.name} <span style={{ color: "#64748b" }}>{e.team}</span></div>)}
-                </div>
-                <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 8 }}>Your team: <b>{mineAP.length}</b> All-Pro{mineAP.length === 1 ? "" : "s"}{mineAP.length ? ` (${mineAP.map((e) => e.name).join(", ")})` : ""} · <b>{minePB.length}</b> Pro Bowler{minePB.length === 1 ? "" : "s"}{minePB.length ? ` (${minePB.map((e) => e.name).join(", ")})` : ""}. Each earns OVR in the off-season (+2 first-team All-Pro, +1 second team or Pro Bowl).</div>
-              </div>
-            );
-          })()}
-          <Btn onClick={onClose} bg={C.gn} style={{ width: "100%", marginTop: 6, fontSize: 16, padding: "10px 0", fontWeight: 900 }}>{cta}</Btn>
+          <Btn onClick={awards.honors ? () => setPage(2) : onClose} bg={C.gn} style={{ width: "100%", marginTop: 6, fontSize: 16, padding: "11px 0", fontWeight: 900, letterSpacing: 1 }}>{awards.honors ? "CONTINUE →" : cta}</Btn>
         </div>
+        </>}
       </div>
     </div>
   );
