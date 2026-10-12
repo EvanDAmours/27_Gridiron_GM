@@ -2,11 +2,17 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import TrophyRoom from "./TrophyRoom.jsx";
 import { SaveSlots, CapGlossary } from "./SaveSlots.jsx";
-import { initTeams } from "./league.js";
+import { CardHeader, RatingBars, CareerOvrGraph, SeasonTable, ContractTimeline, HonorsRow } from "./PlayerCard.jsx";
+import { initTeams, TEAMS } from "./league.js";
+import { C, PA_LABELS } from "./ui.jsx";
 const teams = initTeams(13);
-const ut = { ...teams[13], divTitles: [2026, 2027, 2029], legacyHall: { ring: ["r1"], nums: [{ num: 87, name: "Travis Kelce" }] } };
-const awards = [{ yr: 2027, gm: 13, mvp: { name: "Patrick Mahomes", pos: "QB", ti: 13, stat: "5,012 yds 44 TD" }, dpoy: { name: "Chris Jones", pos: "DL", ti: 13, stat: "16 sacks" } }, { yr: 2028, gm: 13, opoy: { name: "Rashee Rice", pos: "WR", ti: 13, stat: "1,600 yds" }, oroy: { name: "Rookie", pos: "RB", ti: 13 }, sbmvp: { name: "Patrick Mahomes", pos: "QB", ti: 13 } }];
-const retired = [{ id: "r1", name: "Travis Kelce", pos: "TE", num: 87, team: "KC", retYr: 2027, legacy: 90, hof: true, hofClass: 2032, career: { rec: 180, recYds: 2100, recTD: 15 } }, { id: "r2", name: "Chris Jones", pos: "DL", num: 95, team: "KC", retYr: 2029, legacy: 70, hof: true, hofClass: 2034, career: { sacks: 41 } }, { id: "r3", name: "Joe Thuney", pos: "LG", num: 62, team: "KC", retYr: 2028, legacy: 25, career: {} }];
-const champs = [{ yr: 2028, ti: 13, gm: 13, score: "31-17", opp: 25 }];
-const which = new URLSearchParams(location.search).get("v") || "hall";
-createRoot(document.getElementById("root")).render(<div style={{ padding: 16 }}>{which === "hall" ? <TrophyRoom team={ut} ui={13} teams={teams} champs={champs} awards={awards} retired={retired} yr={2029} book={{ best: {} }} /> : <><SaveSlots teams={teams} onSave={() => {}} onLoad={() => {}} /><CapGlossary /></>}</div>);
+const which = new URLSearchParams(location.search).get("v") || "card";
+const p = { ...teams[13].roster.find((x) => x.pos === "QB"), scoutLvl: 2, oh: [{ y: 2026, o: 88 }, { y: 2027, o: 91 }, { y: 2028, o: 93 }], sh: [{ y: 2026, tm: "KC", gp: 17, comp: 401, att: 597, passYds: 4512, passTD: 33, passInt: 11, rushYds: 380 }, { y: 2027, tm: "KC", gp: 16, comp: 388, att: 560, passYds: 4890, passTD: 41, passInt: 8, rushYds: 290 }], ss: { gp: 8, comp: 190, att: 280, passYds: 2300, passTD: 19, passInt: 4, rushYds: 120 }, honors: [{ k: "ap1", yr: 2027 }, { k: "pb", yr: 2026 }], salary: 52.4, contract: 3, baseBack: 12, voidYrs: 1, voidDead: 6.2, inc: { label: "4,000 pass yds", amt: 5 } };
+createRoot(document.getElementById("root")).render(<div style={{ padding: 16, maxWidth: 560, background: C.cd }}>
+  <CardHeader p={p} team={TEAMS[13]} ovr={p.ovr} pot={p.pot} sub={<span>Age {p.age} • Texas Tech</span>} />
+  <HonorsRow p={p} awards={[{ yr: 2027, mvp: { pid: p.id } }]} />
+  <RatingBars p={p} labels={PA_LABELS} />
+  <CareerOvrGraph p={p} yr={2029} />
+  <SeasonTable p={p} yr={2029} teamAb="KC" />
+  <ContractTimeline p={p} yr={2029} yearsLeft={3} proration={9.5} deadNow={28.5} />
+</div>);
