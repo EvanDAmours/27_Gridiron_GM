@@ -98,10 +98,14 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       {/* mowed stripes, five yards each, running through the end zones */}
       {[...Array(24)].map((_, i) => <rect key={`e${i}`} x={i < 12 ? i * (EZ / 12) : W - EZ + (i - 12) * (EZ / 12)} y="0" width={EZ / 12 + 0.5} height={H} fill={i % 2 ? "#2f8a3a" : "#287c33"} />)}
       {[...Array(20)].map((_, i) => <rect key={i} x={xOf(i * 5)} y="0" width={xOf(5) - xOf(0) + 0.5} height={H} fill={i % 2 ? "#2f8a3a" : "#287c33"} />)}
-      {/* end zones: the same grass with a wash of each club's color, and its name painted in */}
-      {[[0, off], [W - EZ, def]].map(([x, t], i) => <rect key={i} x={x} y="0" width={EZ} height={H} fill={t?.clr || "#333"} opacity=".32" />)}
-      <text x={EZ / 2} y={H / 2} fill={off?.clr || "#334155"} fontSize="24" fontWeight="900" letterSpacing="3" textAnchor="middle" dominantBaseline="middle" stroke="#fff" strokeWidth="3.5" paintOrder="stroke" transform={`rotate(-90 ${EZ / 2} ${H / 2})`}>{off?.name?.toUpperCase()}</text>
-      <text x={W - EZ / 2} y={H / 2} fill={def?.clr || "#334155"} fontSize="24" fontWeight="900" letterSpacing="3" textAnchor="middle" dominantBaseline="middle" stroke="#fff" strokeWidth="3.5" paintOrder="stroke" transform={`rotate(90 ${W - EZ / 2} ${H / 2})`}>{def?.name?.toUpperCase()}</text>
+      {/* end zones: plain grass with the club's wordmark painted big across it (club color, white
+          outline), its logo painted at each end, and orange pylons at the four corners */}
+      {[[0, off, -90], [W - EZ, def, 90]].map(([x, t, rot], i) => t && (
+        <g key={i}>
+          <text x={x + EZ / 2} y={H / 2} fill={t.clr || "#334155"} fontSize="34" fontWeight="900" fontFamily="'Arial Black', Arial, sans-serif" textAnchor="middle" dominantBaseline="central" textLength={H - 120} lengthAdjust="spacingAndGlyphs" stroke="#fff" strokeWidth="2.5" paintOrder="stroke" opacity=".92" transform={`rotate(${rot} ${x + EZ / 2} ${H / 2})`}>{(t.name || "").toUpperCase()}</text>
+          {[30, H - 30].map((cy) => <image key={cy} href={logoUrl(t.ab)} x={x + EZ / 2 - 16} y={cy - 16} width="32" height="32" opacity=".5" filter="url(#lf-paint)" transform={`rotate(${rot} ${x + EZ / 2} ${cy})`} />)}
+        </g>
+      ))}
       {/* the home club's logo at midfield */}
       {(offHome ? off : def)?.ab && <image href={logoUrl((offHome ? off : def).ab)} x={W / 2 - 44} y={H / 2 - 44} width="88" height="88" opacity=".26" filter="url(#lf-paint)" />}
       <rect x="0" y="0" width={W} height={H} filter="url(#lf-grain)" opacity=".55" />
@@ -121,6 +125,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       ))}
       <rect x="0" y="0" width={W} height={H} fill="url(#lf-shade)" />
       <rect x="1" y="1" width={W - 2} height={H - 2} fill="none" stroke="#fff" strokeOpacity=".85" strokeWidth="2" rx="9" />
+      {[2, EZ - 3, W - EZ - 3, W - 8].flatMap((x) => [2, H - 8].map((y) => <rect key={`${x}-${y}`} x={x} y={y} width="6" height="6" rx="1" fill="#f97316" stroke="#7c2d12" strokeWidth=".6" />))}
       {/* line of scrimmage and the line to gain, with a soft glow */}
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#3b82f6" strokeWidth="8" strokeOpacity=".25" />
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#60a5fa" strokeWidth="3" />
