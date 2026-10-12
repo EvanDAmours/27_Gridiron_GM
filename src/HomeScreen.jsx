@@ -6,6 +6,8 @@ import { unitRatings } from "./gamesim.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import { ROUND_NAMES } from "./playoffs.js";
 import { highestRatedPlayer } from "./spriteAssets.js";
+import { InjTag } from "./InjuryTag.jsx";
+import { injuryReport } from "./injuries.js";
 import PixelMatchup, { PixelPlayer } from "./PixelMatchup.jsx";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
@@ -45,24 +47,24 @@ function Stories({ stories, news, teams }) {
 }
 
 // Your injured players, then the biggest names out around the league.
-function Injuries({ teams, ui, onNav }) {
-  const mine = [...(teams[ui].roster || []).filter((p) => p.injured), ...(teams[ui].ir || [])].sort((a, b) => b.ovr - a.ovr);
-  const league = teams.flatMap((t, i) => (i === ui ? [] : [...(t.roster || []).filter((p) => p.injured), ...(t.ir || [])].filter((p) => p.ovr >= 78).map((p) => ({ p, t, ir: (t.ir || []).includes(p) })))).sort((a, b) => b.p.ovr - a.p.ovr).slice(0, 8);
-  const row = (p, t, ir) => (
+function Injuries({ teams, ui, onNav, wk }) {
+  const mine = injuryReport(teams[ui], wk);
+  const league = teams.flatMap((t, i) => (i === ui ? [] : injuryReport(t, wk).filter(({ p, st }) => p.ovr >= 78 && st.tag !== "Q").map(({ p, st }) => ({ p, t, st })))).sort((a, b) => b.p.ovr - a.p.ovr).slice(0, 8);
+  const row = (p, t, st) => (
     <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: "1px solid #ffffff14" }}>
       {t && <TeamLogo t={t} sz={22} />}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name} <span style={{ color: "#94a3b8", fontWeight: 600 }}>{p.pos} {p.ovr}</span></div>
-        <div style={{ fontSize: 12, color: "#fca5a5" }}>{(p.injType || "Injured").replace(/ \(.*\)$/, "")}{p.injRecWks ? ` · ${p.injRecWks} wk${p.injRecWks > 1 ? "s" : ""}` : ""}{ir ? " · IR" : ""}</div>
+        <div style={{ fontSize: 12, display: "flex", alignItems: "center" }}><InjTag st={st} showNote style={{ marginLeft: 0 }} /></div>
       </div>
     </div>
   );
   return (
     <>
       <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: "#94a3b8", margin: "2px 0 4px" }}>YOUR TEAM · {mine.length}</div>
-      {mine.length ? mine.map((p) => row(p, null, (teams[ui].ir || []).includes(p))) : <div style={{ fontSize: 14, color: C.gn, padding: "6px 0 10px" }}>Fully healthy.</div>}
+      {mine.length ? mine.map(({ p, st }) => row(p, null, st)) : <div style={{ fontSize: 14, color: C.gn, padding: "6px 0 10px" }}>Fully healthy.</div>}
       <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: "#94a3b8", margin: "14px 0 4px" }}>AROUND THE LEAGUE</div>
-      {league.length ? league.map(({ p, t, ir }) => row(p, t, ir)) : <div style={{ fontSize: 14, color: "#cbd5e1", padding: "6px 0" }}>No big names out.</div>}
+      {league.length ? league.map(({ p, t, st }) => row(p, t, st)) : <div style={{ fontSize: 14, color: "#cbd5e1", padding: "6px 0" }}>No big names out.</div>}
       {mine.length > 0 && <button onClick={() => onNav("roster")} style={{ marginTop: 10, background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", padding: 0 }}>Manage roster →</button>}
     </>
   );
@@ -163,7 +165,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
             ))}
           </div>
           <div style={{ maxHeight: 520, overflowY: "auto", paddingRight: 2 }}>
-            {panel === "stories" ? <Stories stories={stories} news={news} teams={teams} /> : <Injuries teams={teams} ui={ui} onNav={onNav} />}
+            {panel === "stories" ? <Stories stories={stories} news={news} teams={teams} /> : <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />}
           </div>
         </div>
       </div>

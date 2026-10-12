@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { naturalDL } from "./dline.js";
 import { C, oC, Bdg, Face } from "./ui.jsx";
+import { InjTag } from "./InjuryTag.jsx";
 import { DevChip } from "./ScoutingUI.jsx";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
@@ -10,7 +11,7 @@ const GROUPS = { ALL: null, OFF: ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG",
 const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 const DEV_RANK = { generational: 4, superstar: 3, star: 2, normal: 1, late: 0 };
 
-export default function RosterTable({ players, depth, setSel, devOf }) {
+export default function RosterTable({ players, depth, setSel, devOf, wk = 0 }) {
   const [filter, setFilter] = useState("ALL");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState(["pos", 1]);
@@ -58,7 +59,7 @@ export default function RosterTable({ players, depth, setSel, devOf }) {
                       <span>
                         <span style={{ fontWeight: 700, color: "#f1f5f9" }}>{p.name}</span>
                         {p.xf && <span title={`X-Factor: ${p.xf}`} style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, color: "#f472b6" }}>XF</span>}
-                        {p.injured && <span title={p.injType || "Injured"} style={{ marginLeft: 6, fontSize: 12, fontWeight: 800, color: p.injSev === "major" ? C.rd : "#f97316" }}>🏥 {p.injType || "Injured"}</span>}
+                        <InjTag p={p} wk={wk} showNote />
                         {p.holdout && <span style={{ marginLeft: 6, fontSize: 12, fontWeight: 800, color: C.gd }}>Holdout</span>}
                       </span>
                     </span>

@@ -424,8 +424,13 @@ const wx=wxOverride||rollGameWeather();
 export function tickInjuries(nt,nw,ui){
   const logs=[];
   nt.forEach((t,ti)=>{
-    for(const p of [...t.roster,...(t.ir||[])]){if(!p.injured)continue;if(p.injNew){delete p.injNew;continue;}
-      p.injWk=(p.injWk??p.injRecWks??1)-1;if(p.injWk<=0){p.injured=false;p.injWk=0;p.injType="";p.injSev="";p.injRecWks=0;}}
+    for(const p of [...t.roster,...(t.ir||[])]){
+      // playing hurt wears off a game at a time
+      if(p.hurt){if(p.hurtNew)delete p.hurtNew;else if((p.hurt.wks=(p.hurt.wks||1)-1)<=0)delete p.hurt;}
+      if(!p.injured)continue;if(p.injNew){delete p.injNew;continue;}
+      p.injWk=(p.injWk??p.injRecWks??1)-1;if(p.injWk<=0){const _was=p.injSev,_ty=p.injType;p.injured=false;p.injWk=0;p.injType="";p.injSev="";p.injRecWks=0;
+        // back from a real injury, he's not quite himself for a game
+        if(_was&&_was!=="minor"&&Math.random()<0.6)p.hurt={wks:1,pen:R(2,4),type:`Returning from ${String(_ty||"injury").replace(/ \(.*\)$/,"").toLowerCase()}`};}}
     if((t.ir||[]).length){const ready=t.ir.filter(p=>!p.injured&&nw-(p.irWk??0)>=4);const back=[];
       for(const p of ready){if(ti!==ui||t.roster.length+back.length<53)back.push(p);else if(!p.irReady){p.irReady=true;logs.push(`🏥 ${p.name} is healthy and ready to come off IR. Make room on the 53 to activate him.`);}}
       if(back.length){t.ir=t.ir.filter(p=>!back.includes(p));t.roster.push(...back.map(({irWk,irMin,irType,irReturnWk,irReady,...p})=>p));if(ti===ui)logs.push(...back.map(p=>`🏥 ${p.name} (${p.pos}) is back from injured reserve.`));}}
@@ -448,7 +453,7 @@ export function applyGame(t,snaps,lines,playoff=false){
     const gs={...(lines[p.id]||{})};delete gs.name;delete gs.pos;if(p.pos==="QB"&&gs.att)gs.rate=qbRate(gs.comp||0,gs.att,gs.passYds||0,gs.passTD||0,gs.passInt||0);
     const S=playoff?(p.pss=p.pss||{}):p.ss;S.gp=(S.gp||0)+1;if(!playoff)p.ss.snp=(p.ss.snp||0)+_sh;if(_sh>=50)S.gs=(S.gs||0)+1;
     if(Object.keys(gs).length){addS(S,gs);if(p.pos==="QB"&&S.att>0)S.rate=qbRate(S.comp,S.att,S.passYds||0,S.passTD||0,S.passInt||0);if(!playoff)p.gl.push({...gs,gp:1});box[p.id]={...gs,name:p.name,pos:p.pos};}
-    const injMult=(p.fragile?1.5:1)*(p.traits?.includes('Injury Prone')?2.5:p.traits?.includes('Ironman')?0:1);if(INJ_ON&&Math.random()<.025*injMult*Math.max(.15,_sh/100)){p.injured=true;p.injCount=(p.injCount||0)+1;p.fragile=p.injCount>=2;const injCauses=['high-impact collision','awkward landing','non-contact','blocked low','tackled from behind','turf contact','pile-up'];p.injType=`${pick(["Hamstring","Ankle","Knee (MCL)","Shoulder","Concussion","Quad","Calf","Back"])} (${pick(injCauses)})`;const sevRoll=Math.random();if(sevRoll<0.4){p.injSev="minor";p.injRecWks=R(1,2);}else if(sevRoll<0.8){p.injSev="moderate";p.injRecWks=R(3,5);}else{p.injSev="major";p.injRecWks=R(6,8);}p.injWk=p.injRecWks;p.injNew=true;}
+    const injMult=(p.fragile?1.5:1)*(p.traits?.includes('Injury Prone')?2.5:p.traits?.includes('Ironman')?0:1);if(INJ_ON&&Math.random()<.025*injMult*Math.max(.15,_sh/100)){p.injured=true;p.injCount=(p.injCount||0)+1;p.fragile=p.injCount>=2;const injCauses=['high-impact collision','awkward landing','non-contact','blocked low','tackled from behind','turf contact','pile-up'];p.injType=`${pick(["Hamstring","Ankle","Knee (MCL)","Shoulder","Concussion","Quad","Calf","Back"])} (${pick(injCauses)})`;const sevRoll=Math.random();if(sevRoll<0.25){/* questionable: he plays through it, at a reduced rating */p.injured=false;p.injCount--;p.fragile=p.injCount>=2;p.hurt={wks:R(1,2),pen:R(3,7),type:p.injType.replace(/ \(.*\)$/,"")};p.hurtNew=true;p.injType="";return;}if(sevRoll<0.45){p.injSev="minor";p.injRecWks=R(1,2);}else if(sevRoll<0.8){p.injSev="moderate";p.injRecWks=R(3,5);}else{p.injSev="major";p.injRecWks=R(6,8);}p.injWk=p.injRecWks;p.injNew=true;}
   });
   return box;
 }

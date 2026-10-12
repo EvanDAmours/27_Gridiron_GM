@@ -18,6 +18,7 @@ import { retRating } from "./special.js";
 import { unitRatings } from "./gamesim.js";
 import { dlAsPlayed } from "./dline.js";
 import { getLeagueYear } from "./cap.js";
+import { hurtPen } from "./injuries.js";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const gauss = (rand) => { let u = 0, v = 0; while (!u) u = rand(); while (!v) v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
@@ -77,7 +78,8 @@ export function seasonForm(id, season) {
 export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season = getLeagueYear() }) {
   // Everyone plays at his rating plus his form this season; the defensive line at its spots
   // (edges at LE/RE, tackles inside, each rated for his spot).
-  const formed = (list) => list.map((p) => { const f = seasonForm(p.id, season); return f ? { ...p, ovr: clamp((p.ovr || 70) + f, 30, 105), form: f } : p; });
+  // A player playing hurt (questionable) suits up at a reduced rating.
+  const formed = (list) => list.map((p) => { const f = seasonForm(p.id, season) - hurtPen(p); return f ? { ...p, ovr: clamp((p.ovr || 70) + f, 30, 105), form: f } : p; });
   const memo = {};
   const order = (pos) => (memo[pos] ||= pos === "DL" ? dlAsPlayed(formed(depth("DL"))) : formed(depth(pos)));
   const u = unitRatings(order);
