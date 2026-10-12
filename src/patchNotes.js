@@ -532,4 +532,7 @@ export const PATCH_NOTES = [
     "Readability: the depth chart's snap sliders are compact, coaching cards and the locker room are easier to read, trade-block names on deadline day aren't cut off, and League leaders explain themselves before Week 1.",
     "Fixed: the Legacy Hall and Trade screens could fail to open after an update (the game now reloads itself and puts you back where you were). The dynasty record book is gone.",
   ] },
+  { v: "2.5", date: "2026-10-12", title: "Team Snapshot Up Top", notes: [
+    "Home: the Team Snapshot (roster health by position, team intel, development focus and upcoming games) now sits right under the franchise boxes instead of below everything else, and it shows on phones too. Cards the boxes above already cover (record, cap, alerts) and the near-empty recent activity card are gone.",
+  ] },
 ];

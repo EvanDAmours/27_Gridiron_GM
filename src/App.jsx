@@ -1373,38 +1373,9 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         const messages=ut.roster.filter(p=>p.holdout&&!p.holdoutStone).length+ut.roster.filter(p=>p.tradeRequest).length+(aiOffer?1:0)+(capSpace(ut)<0?1:0);
         const _div=teams.filter(t=>t.c===ut.c&&t.d===ut.d).sort((a,b)=>(b.w+(b.t||0)/2)/Math.max(1,b.w+b.l+(b.t||0))-(a.w+(a.t||0)/2)/Math.max(1,a.w+a.l+(a.t||0))||b.w-a.w);const _rk=_div.findIndex(t=>t===ut)+1;const _inj=ut.roster.filter(p=>p.injured).length;const _starsOut=ut.roster.filter(p=>p.injured&&p.ovr>=80).length;const _cs=capSpace(ut);const _exp=ut.roster.filter(p=>p.contract===1).length;const _op=ownerPatience??100;const _mor=ut.morale||50;
         const _tiles=[...(inboxItems.length?[{label:"NEEDS ATTENTION",value:inboxItems.length?`${inboxItems.length} item${inboxItems.length>1?"s":""}`:"All clear",tone:inboxItems.some(i=>i.tone==="urgent")?C.rd:inboxItems.length?C.gd:C.gn,sub:inboxItems[0]?.title,wide:true,onClick:()=>setInboxOpen(true)}]:[]),{label:"RECORD",value:`${ut.w}-${ut.l}${ut.t?`-${ut.t}`:""}`,sub:`${["","1st","2nd","3rd","4th"][_rk]||_rk} in the ${ut.c} ${ut.d}`,onClick:()=>setTab("standings")},{label:"CAP SPACE",value:`$${_cs.toFixed(1)}M`,tone:_cs<0?C.rd:_cs<15?C.gd:C.gn,sub:_exp?`${_exp} expiring deal${_exp>1?"s":""}`:"No deals expiring",onClick:()=>setTab("contracts")},{label:"ROSTER HEALTH",value:_inj?`${_inj} injured`:"Healthy",tone:_starsOut?C.rd:_inj?C.gd:C.gn,sub:_starsOut?`${_starsOut} starter-level out`:`${ut.roster.length} on the roster`,onClick:()=>{setRosterView("players");setTab("roster");}},{label:"OWNER & LOCKER ROOM",value:_op<35?"Hot seat":_op<60?"Uneasy":"Secure",tone:_op<35?C.rd:_op<60?C.gd:C.gn,sub:`Morale ${_mor} · Fans ${fanSat}% · Rep ${(ut.gmRep||50)>=90?"Legend":(ut.gmRep||50)>=75?"Elite":(ut.gmRep||50)>=60?"Respected":(ut.gmRep||50)>=40?"Veteran":"Rookie"}${ownerPersonality?` · ${ownerPersonality} owner`:""}`,onClick:()=>setTab("coaching")}];
-        return<><FranchiseStrip tiles={_tiles} accent={teamAccent} mobile={MOBILE}/><HomeScreen mobile={MOBILE} teams={teams} ui={ui} depthOrder={depthOrder} playingTime={playingTime} sched={sched} wk={wk} sp={sp} yr={yr} pb={pb} byeMap={byeMap} news={news} stories={sp==='regular'||sp==='playoffs'?stories:[]} messages={inboxItems.length} menu={menu} primary={primary} onNav={t=>t==="inbox"?setInboxOpen(true):setTab(t)}/></>;})()}
-      <div style={{fontSize:13,fontWeight:800,letterSpacing:1.5,color:C.mt,margin:'4px 0 8px',display:MOBILE?'none':undefined}}>TEAM SNAPSHOT</div>
-      <div style={{display:MOBILE?'none':'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:8}}>
-        {/* Team Status */}
-        <div style={{background:C.cd,borderRadius:8,padding:'12px 14px',border:`1px solid ${C.bd}`}}>
-          <div style={{fontSize:11,color:C.mt,letterSpacing:1,marginBottom:6,fontWeight:700}}>TEAM STATUS</div>
-          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
-            <TeamLogo t={ut} sz={36} />
-            <div><div style={{fontSize:16,fontWeight:800}}>{ut.city} {ut.name}</div><div style={{fontSize:12,color:C.mt}}>{yr} {sp==='regular'?`Week ${wk}`:sp==='preseason'?'Preseason':sp==='playoffs'?'Playoffs':sp==='combine'?'Combine':sp==='draft'?'Draft':'Free Agency'}</div></div>
-          </div>
-          <div style={{display:'flex',gap:12,fontSize:14,fontWeight:800}}>
-            <span style={{color:C.gn}}>{ut.w}W</span><span style={{color:C.rd}}>{ut.l}L</span>
-            {(ut.streak||0)>=3&&<span style={{color:C.gn,fontSize:12}}>W{ut.streak} streak</span>}
-            {(ut.streak||0)<=-3&&<span style={{color:C.rd,fontSize:12}}>L{Math.abs(ut.streak)} streak</span>}
-          </div>
-          {(()=>{const conf=ut.c,div=ut.d;const divTeams=teams.filter(t=>t.c===conf&&t.d===div).sort((a,b)=>(b.w-b.l)-(a.w-a.l));const rank=divTeams.findIndex(t=>t.ab===ut.ab)+1;return <div style={{fontSize:12,color:C.mt,marginTop:4}}>{conf} {div} — <span style={{color:rank===1?C.gn:rank<=2?C.gd:C.mt,fontWeight:700}}>{rank===1?'1st':rank===2?'2nd':rank===3?'3rd':rank+'th'}</span> in division</div>;})()}
-        </div>
-        {/* Cap Snapshot */}
-        <div style={{background:C.cd,borderRadius:8,padding:'12px 14px',border:`1px solid ${C.bd}`}}>
-          <div style={{fontSize:11,color:C.mt,letterSpacing:1,marginBottom:6,fontWeight:700}}>SALARY CAP</div>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:4}}>
-            <span style={{fontSize:22,fontWeight:900,color:capSpace(ut)>=0?C.gn:C.rd}}>${capSpace(ut).toFixed(1)}M</span>
-            <span style={{fontSize:12,color:C.mt}}>of ${leagueCap()}M</span>
-          </div>
-          <div style={{height:8,background:C.bd,borderRadius:4,marginBottom:6}}><div style={{width:`${Math.min(100,(capHit(ut)/leagueCap())*100)}%`,height:'100%',background:capSpace(ut)<20?C.rd:capSpace(ut)<50?C.gd:C.gn,borderRadius:4}}/></div>
-          <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:C.mt}}>
-            <span>Used: <span style={{color:C.gd,fontWeight:700}}>${capHit(ut).toFixed(1)}M</span></span>
-            <span>Dead: <span style={{color:C.rd,fontWeight:700}}>${(ut.deadCap||0).toFixed(1)}M</span>{ut.deadNext>0&&<span style={{color:C.mt}}> (+${ut.deadNext.toFixed(1)}M next yr)</span>}</span>
-          </div>
-          {(()=>{const exp=ut.roster.filter(p=>p.contract===1).length;return exp>0?<div style={{fontSize:11,color:'#f59e0b',marginTop:4}}>{exp} expiring contract{exp>1?'s':''}</div>:null;})()}
-          {capSpace(ut)<0&&<div style={{fontSize:12,color:C.rd,fontWeight:700,marginTop:4}}>Over the cap — penalties at next sim</div>}
-        </div>
+        return<><FranchiseStrip tiles={_tiles} accent={teamAccent} mobile={MOBILE}/>
+      <div style={{fontSize:13,fontWeight:800,letterSpacing:1.5,color:C.mt,margin:'2px 0 8px'}}>TEAM SNAPSHOT</div>
+      <div style={{display:'grid',gridTemplateColumns:MOBILE?'1fr':'repeat(auto-fill,minmax(270px,1fr))',gap:8,marginBottom:12}}>
         {/* Roster Health */}
         <div style={{background:C.cd,borderRadius:8,padding:'12px 14px',border:`1px solid ${C.bd}`}}>
           <div style={{fontSize:11,color:C.mt,letterSpacing:1,marginBottom:6,fontWeight:700}}>ROSTER HEALTH</div>
@@ -1442,29 +1413,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
           </div>;});})()}
           <div style={{marginTop:6,cursor:'pointer',fontSize:11,color:C.bl}} onClick={()=>setTab('schedule')}>Full Schedule →</div>
         </div>
-        {/* Alerts */}
-        <div style={{background:C.cd,borderRadius:8,padding:'12px 14px',border:`1px solid ${C.bd}`}}>
-          <div style={{fontSize:11,color:C.mt,letterSpacing:1,marginBottom:6,fontWeight:700}}>ALERTS</div>
-          <div style={{display:'flex',flexDirection:'column',gap:4}}>
-            {capSpace(ut)<0&&<div style={{fontSize:12,color:C.rd,fontWeight:700}}>Over the salary cap — penalties incoming</div>}
-            {capHit(ut)<leagueFloor()&&<div style={{fontSize:12,color:C.rd}}>Below cap floor (${leagueFloor()}M) — will auto-sign</div>}
-            {ut.roster.filter(p=>p.tradeRequest).length>0&&<div style={{fontSize:12,color:'#f59e0b'}}>{ut.roster.filter(p=>p.tradeRequest).length} player(s) requesting trade</div>}
-            {ut.roster.filter(p=>p.holdout).length>0&&<div style={{fontSize:12,color:'#f59e0b'}}>{ut.roster.filter(p=>p.holdout).length} player holdout(s)</div>}
-            {ut.roster.filter(p=>p.injured&&p.ovr>=80).map(p=><div key={p.id} style={{fontSize:12,color:C.rd}}>Star injured: {p.name} ({p.pos} {p.ovr})</div>)}
-            {ut.roster.filter(p=>p.contract===1).length>3&&sp==='preseason'&&<div style={{fontSize:12,color:'#f59e0b'}}>{ut.roster.filter(p=>p.contract===1).length} contracts expiring — re-sign window open</div>}
-            {(ownerPatience||100)<35&&<div style={{fontSize:12,color:C.rd,fontWeight:700}}>Owner patience critically low</div>}
-            {fanSat<30&&<div style={{fontSize:12,color:C.rd}}>Fan satisfaction critical — SP income reduced</div>}
-            {capSpace(ut)>=0&&!ut.roster.filter(p=>p.tradeRequest).length&&!ut.roster.filter(p=>p.holdout).length&&!ut.roster.filter(p=>p.injured&&p.ovr>=80).length&&fanSat>=30&&<div style={{fontSize:12,color:C.gn}}>All clear — no urgent issues</div>}
-          </div>
-        </div>
-        {/* Recent Activity */}
-        <div style={{background:C.cd,borderRadius:8,padding:'12px 14px',border:`1px solid ${C.bd}`}}>
-          <div style={{fontSize:11,color:C.mt,letterSpacing:1,marginBottom:6,fontWeight:700}}>RECENT ACTIVITY</div>
-          {log.slice(0,6).map((entry,i)=><div key={i} style={{fontSize:12,color:i===0?'#e2e8f0':'#94a3b8',padding:'2px 0',borderBottom:i<5?`1px solid ${C.bd}11`:'none'}}>{entry}</div>)}
-          {!log.length&&<span style={{fontSize:12,color:C.mt}}>No activity yet</span>}
-          <div style={{marginTop:6,cursor:'pointer',fontSize:11,color:C.bl}} onClick={()=>setTab('log')}>Full Timeline →</div>
-        </div>
       </div>
+      <HomeScreen mobile={MOBILE} teams={teams} ui={ui} depthOrder={depthOrder} playingTime={playingTime} sched={sched} wk={wk} sp={sp} yr={yr} pb={pb} byeMap={byeMap} news={news} stories={sp==='regular'||sp==='playoffs'?stories:[]} messages={inboxItems.length} menu={menu} primary={primary} onNav={t=>t==="inbox"?setInboxOpen(true):setTab(t)}/></>;})()}
       {/* Quick Actions (on phones the header has them, and Save is under More) */}
       {!MOBILE&&<div style={{display:'flex',gap:6,marginTop:10,flexWrap:'wrap'}}>
         {sp==="preseason"&&<Btn onClick={startSeason} bg={C.gn} style={{padding:'8px 18px',fontSize:13}}>Start Season</Btn>}
