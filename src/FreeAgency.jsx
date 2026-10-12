@@ -2,7 +2,9 @@
 // cap and needs up top, and a real negotiation (years and money) when you go to sign someone.
 import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
-import { askingPrice } from "./offseason.js";
+import { yearlyAsk, maxYears } from "./negotiation.js";
+// what the negotiation table opens at: his ask for the default length (two years, or one for a 33+ veteran)
+const askingPrice = (p) => yearlyAsk(p, Math.min(2, maxYears(p)), "fa");
 import Negotiate from "./Negotiate.jsx";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];

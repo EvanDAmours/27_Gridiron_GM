@@ -17,7 +17,7 @@ test("tag and option prices come from the league's salaries at his position", ()
   const teams = [team([50, 45, 40, 35, 30, 10, 8, 6, 4, 2, 1, 1, 1])];
   const p = { pos: "WR", ovr: 84, salary: 3 };
   const tag = tagPrice(teams, p, 301.2);
-  assert.ok(tag >= 40, `tag ${tag} is at least the top-5 average`);
+  assert.ok(tag >= 30 && tag < 40, `tag ${tag} is about three quarters of the top-5 average`);
   assert.ok(optionPrice(teams, p, 301.2) < tag, "a regular option is cheaper than the tag");
   assert.ok(optionPrice(teams, { ...p, ovr: 90 }, 301.2) > optionPrice(teams, p, 301.2), "a star's option costs more");
   assert.ok(tagPrice(teams, { ...p, salary: 60 }, 301.2) >= 72, "120% of his pay if that's more");

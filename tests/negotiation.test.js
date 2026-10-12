@@ -30,7 +30,8 @@ test("in free agency a rival can outbid you, and outbidding the rival wins him",
     const p = P(`fa${i}`, 88, 27), t = terms(p, { yr: 2026, mode: "fa", rivals: [3, 5, 9] });
     if (!t.rival) continue;
     const ask = yearlyAsk(p, 2);
-    if (respond(p, { sal: Math.round(ask * t.minF * 10 + 1) / 10, yrs: 2 }, t).result === "lost") lost++;
+    const low = { sal: Math.round(ask * t.minF * 10 + 1) / 10, yrs: 2 }, first = respond(p, low, t);
+    if (first.rivalBid) { assert.equal(first.result, "counter"); if (respond(p, low, t, { tries: 1, last: first }).result === "lost") lost++; }
     if (respond(p, { sal: Math.round(ask * 1.4 * 10) / 10, yrs: 2 }, t).result === "accept") won++;
   }
   assert.ok(lost > 20, `rivals win some (${lost})`);
@@ -51,4 +52,43 @@ test("contract-year play counts with his own team; free agency goes by rating", 
   assert.ok(ask2(big, 3, "resign") > ask2(p, 3, "resign") * 1.1, "a big year earns the big cheque");
   assert.equal(ask2(down, 3, "fa"), ask2(p, 3, "fa"), "on the open market he asks by his rating again");
   assert.equal(perfFactor(p, 2, "resign"), 1);
+});
+
+test("players weigh fit, not just money: a starting job and the right scheme can beat a bigger offer", async () => {
+  const { priorities, teamFit, fitPull } = await import("../src/negotiation.js");
+  const te = (id, ovr) => ({ id, ovr, age: 26, pos: "TE" });
+  // a club where he'd start in a scheme that features tight ends, and one where he'd back up
+  const fits = { roster: [te("x1", 60)], coach: { oc: { scheme: "West Coast" } }, w: 10, l: 7 };
+  const buried = { roster: [te("x2", 92), te("x3", 90)], coach: { oc: { scheme: "Air Raid" } }, w: 10, l: 7 };
+  let roleSeekers = 0, tookLess = 0;
+  for (let i = 0; i < 400; i++) {
+    const p = te(`te${i}`, 79);
+    const pr = priorities(p);
+    if (pr.key !== "role" && pr.key !== "scheme") continue;
+    roleSeekers++;
+    assert.ok(fitPull(pr, teamFit(p, fits)) > fitPull(pr, teamFit(p, buried)));
+    // the rival (where he'd be buried) bids more; you offer his number
+    const t = terms(p, { yr: 2026, mode: "fa", rivals: [1], myTeam: fits, teamById: () => buried });
+    if (!t.rival) continue;
+    const r = respond(p, { sal: yearlyAsk(p, 2), yrs: 2 }, t);
+    if (r.result === "accept" && /less/.test(r.msg)) tookLess++;
+  }
+  assert.ok(roleSeekers > 50, `some players chase snaps or schemes (${roleSeekers})`);
+  assert.ok(tookLess > 5, `some take less to start in the right scheme (${tookLess})`);
+});
+
+test("the rival's offer is leverage, not a price tag: matching it can still lose him", () => {
+  const club = { roster: [], coach: {}, w: 8, l: 9 };
+  let leverage = 0, lostAfterMatch = 0;
+  for (let i = 0; i < 400; i++) {
+    const p = P(`lv${i}`, 88, 27), t = terms(p, { yr: 2026, mode: "fa", rivals: [2], myTeam: club, teamById: () => club });
+    if (!t.rival) continue;
+    const first = respond(p, { sal: Math.round(yearlyAsk(p, 2) * t.minF * 10 + 1) / 10, yrs: 2 }, t);
+    if (!first.rivalBid) continue;
+    leverage++;
+    assert.ok(first.sal > 0 && first.yrs >= 1 && first.counter > 0);
+    if (respond(p, { sal: first.sal, yrs: 2 }, t, { tries: 1, last: first }).result === "lost") lostAfterMatch++;
+  }
+  assert.ok(leverage > 20, `agents use rival offers (${leverage})`);
+  assert.ok(lostAfterMatch > 0, "matching the number isn't a guarantee");
 });

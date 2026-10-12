@@ -27,7 +27,7 @@ export default function TradeFinder({ results, needs = [], onRun, onLoad, onPlay
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ fontSize: 20, fontWeight: 900 }}>Trade finder</div>
-          <div style={{ fontSize: 14, color: C.mt }}>Deals for your biggest needs{needs.length ? `: ${needs.join(", ")}` : ""}. Fairness is how close the two sides are in trade value.</div>
+          <div style={{ fontSize: 14, color: C.mt }}>Deals for your biggest needs{needs.length ? `: ${needs.join(", ")}` : ""}. Every deal here is one they would accept; the tag says how much you overpay to get it.</div>
         </div>
         <Btn onClick={onRun} bg="#1e3a5f" c="#bfdbfe" style={{ fontSize: 15, padding: "9px 16px" }}>↺ Find new deals</Btn>
       </div>

@@ -39,9 +39,10 @@ function Player({ p, pos, x, y, team, side, away, td }) {
   if (!SPRITES) return (
     <g style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform .55s ease" }}>
       <title>{p ? `${pos} ${p.name} (${p.ovr})` : pos}</title>
-      <circle r="12" fill={team?.clr || "#334155"} stroke={team?.ac || "#fff"} strokeWidth="2.5" />
-      <text y="4.5" textAnchor="middle" fontSize="12" fontWeight="900" fill="#fff">{p?.num ?? pos}</text>
-      <text y="24" textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff" stroke="#0008" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>
+      <circle r="10.5" fill={team?.clr || "#334155"} stroke={team?.ac || "#fff"} strokeWidth="2.2" />
+      <text y="4" textAnchor="middle" fontSize="11" fontWeight="900" fill="#fff">{p?.num ?? pos}</text>
+      {/* names hang away from the line of scrimmage (offense to the left, defense to the right) so the two fronts never overlap */}
+      <text x={side === "off" ? 8 : -8} y="21" textAnchor={side === "off" ? "end" : "start"} fontSize="8.5" fontWeight="700" fill="#fff" stroke="#0009" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>
     </g>
   );
   const pose = (side === "off" && td && celebrationPose(pos)) || snapPose(pos, side);

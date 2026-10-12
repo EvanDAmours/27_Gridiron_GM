@@ -304,6 +304,8 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   // v31.0 state — GM Rep bar, Stats Hub, Trade Finder, Mobile, Season Recap
   const[hubSection,setHubSection]=useState('leaders');
   const[tradeFinderResults,setTradeFinderResults]=useState([]);
+  // finder deals are a snapshot: rosters and values move every week, so start over when the week does
+  useEffect(()=>{setTradeFinderResults([]);},[wk,yr,sp]);
   const[showRecapCard,setShowRecapCard]=useState(false);
   const[isMobile,setIsMobile]=useState(()=>typeof window!=='undefined'&&window.innerWidth<640);
   // v31: Pro GM stub
@@ -371,13 +373,13 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
         if(!topNeeds.includes(pos))return;
         const theirBest=t.roster.filter(p=>p.pos===pos&&p.ovr>=68).sort((a,b)=>b.ovr-a.ovr)[0];
         if(!theirBest)return;
-        const myOfferPool=ut.roster.filter(p=>!topNeeds.includes(p.pos)&&p.ovr>=theirBest.ovr-10&&p.ovr<=theirBest.ovr+10&&p.ovr>=60).sort((a,b)=>Math.abs((a.tradeVal||0)-(theirBest.tradeVal||0))-Math.abs((b.tradeVal||0)-(theirBest.tradeVal||0)));
-        const myOffer=myOfferPool[0];
+        // only deals they'd actually take, judged the same way the trade table judges a proposal; the cheapest one that works
+        const myOffer=ut.roster.filter(p=>!topNeeds.includes(p.pos)&&p.ovr>=theirBest.ovr-10&&p.ovr<=theirBest.ovr+10&&p.ovr>=60).map(p=>({p,ev:evaluateTrade({send:[p],sendPk:[],get:[theirBest],getPk:[],them:t,pick:pkV})})).filter(x=>x.ev.accept).sort((a,b)=>a.ev.gv-b.ev.gv)[0];
         if(!myOffer)return;
-        const valDiff=Math.abs((myOffer.tradeVal||0)-(theirBest.tradeVal||0));
-        const rating=valDiff<15?'FAIR':valDiff<35?'SLIGHT EDGE':valDiff<60?'UNEVEN':'LOPSIDED';
+        const over=myOffer.ev.gv-myOffer.ev.ask,valDiff=Math.round(over/Math.max(1,myOffer.ev.ask)*100);
+        const rating=valDiff<15?'FAIR':valDiff<35?'YOU PAY A LITTLE MORE':valDiff<60?'OVERPAY':'BIG OVERPAY';
         const ratingColor=valDiff<15?'#22c55e':valDiff<35?'#eab308':valDiff<60?'#f97316':'#ef4444';
-        results.push({team:t,get:theirBest,send:myOffer,valDiff,rating,ratingColor});
+        results.push({team:t,get:theirBest,send:myOffer.p,valDiff,rating,ratingColor});
       });
     });
     // each refresh shows a fresh set: deals you've already seen drop to the back, with a little shuffle
@@ -498,9 +500,6 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   useEffect(()=>{if(phase==='splash')track('splash_view');},[phase]);
   // v37: Live AI Draft Partner — fires when user goes on clock
   useEffect(()=>{if(sp==='draft'&&!draftActive&&draftPicks.length>0&&draftIdx>=draftPicks.length&&draftLog.length&&!recapShown.current[yr]){recapShown.current[yr]=true;setTab('draftrecap');sm('📋 The draft is done: here is every pick with his development trait revealed');}},[sp,draftActive,draftIdx,draftPicks.length,draftLog.length,yr]);
-  useEffect(()=>{if(!draftActive||!curPick||curPick?.owner!==ui)return;setDraftAnalyst(null);setDraftAnalystLoading(true);const _da=['Excellent value here — this prospect fits multiple scheme packages.','The metrics strongly favor this selection. Film room confirmed the scouting report.','Sleeper alert — analytics suggest significant upside relative to position in class.','War room has been buzzing about this name. Physical tools match the production.','Positional need and talent converge. This is the pick.','High-upside selection. The development curve could make this a steal in year 2.','Blue-chip prospect. No question this shores up a key roster gap.','Analytics and eye test agree. Outstanding selection.'];const _txt=_da[Math.floor(Math.random()*_da.length)];const _PROXY=import.meta.env.VITE_CLAUDE_PROXY_URL||'';if(_PROXY){const _need=(getTeamNeed(ut?.roster||[])||['QB'])[0];const _top=(dc[yr]||[]).slice(0,3).map(x=>`${x.name} (${x.pos}, ~${x.scoutedOvr||x.trueOvr})`).join(', ');fetch(_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:100,messages:[{role:'user',content:`NFL draft analyst. ${TEAMS[ui]?.ab} on clock at Rd${curPick?.rd} pick #${curPick?.overall}. Top need: ${_need}. Top available: ${_top}. 1-2 sharp sentences of analyst commentary.`}]})}).then(r=>r.json()).then(d=>{setDraftAnalyst(d?.content?.[0]?.text||_txt);}).catch(()=>setDraftAnalyst(_txt)).finally(()=>setDraftAnalystLoading(false));}else{setTimeout(()=>{setDraftAnalyst(_txt);setDraftAnalystLoading(false);},600);}
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[draftActive,draftIdx]);
 
   // v32: urgent trade countdown
   useEffect(()=>{if(urgentTradeActive&&urgentTradeTimer>0&&inboxShow!=='urgentTrade')return;if(!urgentTradeActive||urgentTradeTimer<=0){if(urgentTradeTimer<=0&&urgentTradeActive){setUrgentTradeActive(false);setUrgentTrade(null);sm('⚡ Urgent trade expired!');}return;}const t=setTimeout(()=>setUrgentTradeTimer(n=>n-1),1000);return()=>clearTimeout(t);},[urgentTradeTimer,urgentTradeActive,inboxShow]);
@@ -530,6 +529,8 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
     if(liveSim.h===ui||liveSim.a===ui)setLog(pr=>[...pr,`Wk${liveSim.wk}: ${us>them?"W":"L"} ${us}-${them} vs ${oppAb} (LIVE)`]);
   },[liveDone]);
 
+  // Skip to the final whistle: the rest of the game plays out at once, and the result counts.
+  function finishLiveNow(){const L=liveGameRef.current;if(!liveSim||liveDone||!L)return;const g=L.g;let n=0;while(!g.done&&n++<600)playStep(g);if(!g.done)return;const view=liveView(g.box);setLiveStats(view);setLiveScore({...g.score});setLiveQtr(g.ot?5:g.qtr);setLiveClock(0);setLiveAwaitingCall(false);setFourthChoice(null);let best=null,bestVal=0;for(const side of["h","a"])for(const ps of Object.values(view[side]||{})){const val=(ps.passYds||0)+(ps.rushYds||0)+(ps.recYds||0)+(ps.td||0)*30+(ps.sack||0)*15+(ps.int||0)*25;if(val>bestVal){bestVal=val;best={...ps,side};}}setLivePOG(best);setLiveDone(true);}
   // One play of the live game, on the same engine as quick sims.
   function advanceLivePlay(uCall,qteBonus=1){
     if(!liveSim||liveDone)return;
@@ -923,7 +924,7 @@ const sal=p.salary>0?p.salary:askingPrice(p);if(capSpace(nt[ui])<sal){sm("Not en
   // ── Negotiations (re-sign week and free agency) ──
   const talkKey=p=>`${yr}:${p.id}`;
   const talkFor=p=>talks[talkKey(p)]||{};
-  const termsFor=(p,mode)=>{const k=talkKey(p);if(talks[k]?.t)return talks[k].t;const ask=yearlyAsk(p,2,mode);const rivals=teams.filter(t=>t.id!==ui&&capSpace(t)>=ask).map(t=>t.id);const loyalty=cl(((ut?.morale||50)-50)/50,0,1)*0.5+((ut?.w||0)>(ut?.l||0)?0.5:0);return talkTerms(p,{yr,mode,loyalty,rivals,culture:hcCulture(ut?.coach?.hc)});};
+  const termsFor=(p,mode)=>{const k=talkKey(p);if(talks[k]?.t)return talks[k].t;const ask=yearlyAsk(p,2,mode);const rivals=teams.filter(t=>t.id!==ui&&capSpace(t)>=ask).map(t=>t.id);const loyalty=cl(((ut?.morale||50)-50)/50,0,1)*0.5+((ut?.w||0)>(ut?.l||0)?0.5:0);return talkTerms(p,{yr,mode,loyalty,rivals,culture:hcCulture(ut?.coach?.hc),myTeam:ut,teamById:id=>teams[id]});};
   // Franchise tag and fifth-year option in Re-sign Week: one more year at a set price.
   const tagFor=p=>tagPrice(teams,p,capFor(yr+1));
   const optionFor=p=>optionEligible(p,yr)?optionPrice(teams,p,capFor(yr+1)):null;
@@ -1865,7 +1866,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       {/* Scouting points and your picks, round by round */}
       <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"flex-start"}}><div style={{flex:"0 0 auto",marginBottom:12}}><ScoutPtsBadge pts={scoutG.scouting?.pts||0}/></div><div style={{flex:"1 1 560px",minWidth:0}}><PickTracker g={scoutG}/></div></div>
       {sp==="draft"&&draftActive&&curPick&&<>
-        {curPick.owner===ui&&(draftAnalyst||draftAnalystLoading)&&<div style={{background:'#0a1520',border:'1px solid #3b82f644',borderRadius:5,padding:'7px 10px',marginBottom:6,display:'flex',gap:8,alignItems:'flex-start'}}><span style={{fontSize:16,flexShrink:0}}>🎙️</span><div style={{flex:1}}><div style={{fontSize:10,color:'#3b82f6',fontWeight:800,letterSpacing:2,marginBottom:2}}>DRAFT ANALYST</div>{draftAnalystLoading?<div style={{fontSize:12,color:'#64748b',fontStyle:'italic'}}>Analyzing class…</div>:<div style={{fontSize:12,color:'#e2e8f0',fontStyle:'italic',lineHeight:1.4}}>"{draftAnalyst}"</div>}</div></div>}
+        {curPick.owner===ui&&(()=>{const _cls=[...(dc[yr]||[])].sort((a,b)=>csRank(a)-csRank(b));const _need=[...new Set(getTeamNeed(ut?.roster||[]))].slice(0,2);const _best=_cls[0];const _fit=_need.map(n=>_cls.find(x=>x.pos===n||(n==="DL"&&["DT","EDGE"].includes(x.pos)))).filter(Boolean)[0];if(!_best)return null;return<div style={{background:'#0a1520',border:'1px solid #3b82f644',borderRadius:8,padding:'8px 12px',marginBottom:6,display:'flex',gap:8,alignItems:'flex-start'}}><span style={{fontSize:16,flexShrink:0}}>🎙️</span><div style={{flex:1,fontSize:14,color:'#e2e8f0',lineHeight:1.45}}><div style={{fontSize:11,color:'#60a5fa',fontWeight:800,letterSpacing:1.5,marginBottom:2}}>WAR ROOM</div>Best player left: <b>{_best.name}</b> ({_best.pos}).{_fit&&_fit.id!==_best.id?<> For your biggest need ({_need.join(", ")}), the top one left is <b>{_fit.name}</b> ({_fit.pos}, #{csRank(_fit)} on the board).</>:_fit?<> He fills a need, too.</>:null}</div></div>;})()}
         {curPick.owner===ui&&<div style={{marginBottom:10,background:C.cd,border:`1px solid ${C.gn}`,borderRadius:10,padding:'12px 14px'}}>
           {/* I49: Draft war room live clock */}
           {draftClockActive&&<div style={{fontSize:13,color:draftClock<=15?'#ef4444':'#f59e0b',fontWeight:700,marginBottom:4}}>⏱ ON THE CLOCK: {draftClock}s {draftClock<=10?'— AUTO-DRAFT SOON':''}</div>}
@@ -1972,7 +1973,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
           {/* v34: broadcast mode toggle */}{!liveDone&&<Btn onClick={()=>setLiveBroadcastMode(b=>!b)} bg={liveBroadcastMode?'#7c3aed':C.bd} c={liveBroadcastMode?'#e9d5ff':C.mt} style={{padding:"3px 8px",fontSize:11}}>📺{liveBroadcastMode?" BCAST":" BCAST"}</Btn>}
           {!liveDone&&<Btn onClick={()=>setLiveSpeed(v=>{const ks=Object.keys(LIVE_SPEEDS);const n=ks[(ks.indexOf(v)+1)%ks.length];try{localStorage.setItem('gm_live_speed',n);}catch{}return n;})} bg={C.bd} c="#e2e8f0" style={{padding:"3px 10px",fontSize:12}} title="Time between plays">⏱ {liveSpeed}</Btn>}
           {!liveDone&&!liveAwaitingCall&&<Btn onClick={()=>setLivePaused(p=>!p)} bg={livePaused?"#22c55e":"#f97316"} style={{padding:"3px 8px"}}>{livePaused?"▶":"⏸"}</Btn>}
-          <Btn onClick={()=>{setLiveSim(null);setTab("schedule");}} bg={C.bd} style={{padding:"3px 8px"}}>✕</Btn>
+          {liveDone?<Btn onClick={finishLive} bg={C.bd} style={{padding:"3px 8px"}} title="Leave the game">✕</Btn>:<Btn onClick={finishLiveNow} bg={C.bd} c="#e2e8f0" style={{padding:"3px 10px",fontSize:12}} title="Play out the rest of the game instantly">⏭ Finish</Btn>}
         </div>
       </div>
       {!liveDone&&<div style={{fontSize:12,color:C.mt,marginBottom:4}}>

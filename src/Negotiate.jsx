@@ -61,9 +61,21 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
           {t.rival && mode === "fa" && !done && <span style={{ fontSize: 13, color: "#fca5a5", fontWeight: 700 }}>Other teams are interested</span>}
         </div>
 
+        {t.prio && !done && (() => {
+          const fm = t.fitMe;
+          const bits = fm ? [fm.roleLabel === "starter" ? "he'd start" : `he'd be your ${fm.roleLabel}`, fm.schemeName ? (fm.scheme === 1 ? `your ${fm.schemeName} features his position` : `your ${fm.schemeName} doesn't feature him`) : null, fm.win >= 0.6 ? "you win" : fm.win <= 0.4 ? "you lost a lot last year" : null].filter(Boolean) : [];
+          return (
+            <div style={{ fontSize: 13, color: "#cbd5e1", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 10, lineHeight: 1.5 }}>
+              🧠 <b style={{ color: "#fff" }}>What he wants most: {t.prio.label}.</b>{bits.length ? <> With you, {bits.join(" · ")}.</> : null}
+              {t.prio.key !== "money" && <span style={{ color: C.mt }}> A club that gives him that can sign him for less.</span>}
+            </div>
+          );
+        })()}
         {last && (
           <div style={{ background: C.bg, border: `1px solid ${tone[last.result] || C.bd}`, borderRadius: 8, padding: "10px 12px", marginBottom: 12, fontSize: 16, fontWeight: 700, color: tone[last.result] || "#fff" }}>
-            {last.result === "lost" ? `Signed with ${rivalName?.(last.team) || "another team"} — $${last.sal}M a year.` : last.msg}
+            {last.result === "lost" ? `Signed with ${rivalName?.(last.team) || "another team"}: $${last.sal}M a year${last.why ? ` (${last.why})` : ""}.`
+              : last.rivalBid ? <>📞 His agent: "We have <b>${last.sal}M a year for {last.yrs} years</b> from the {rivalName?.(last.team) || "another club"}{last.why ? ` (${last.why})` : ""}. Give him a reason to choose you." <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#cbd5e1", marginTop: 4 }}>About {money(last.counter)} would make it close. Even then it's his decision.</span></>
+              : last.msg}
           </div>
         )}
 
@@ -123,7 +135,7 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Btn onClick={onClose} bg={C.bd} c="#cbd5e1" style={{ flex: "1 1 100px", fontSize: 16, padding: "11px 0" }}>{done ? "Close" : "Not now"}</Btn>
-          {!done && last?.result === "counter" && <Btn onClick={() => offer(last.counter)} disabled={!fits(last.counter)} bg={C.gd} c="#000" style={{ flex: "2 1 160px", fontSize: 16, padding: "11px 0", fontWeight: 900 }}>Accept {money(last.counter)}</Btn>}
+          {!done && last?.result === "counter" && <Btn onClick={() => offer(last.counter)} disabled={!fits(last.counter)} bg={C.gd} c="#000" style={{ flex: "2 1 160px", fontSize: 16, padding: "11px 0", fontWeight: 900 }}>{last.rivalBid ? "Offer" : "Accept"} {money(last.counter)}</Btn>}
           {!done && <Btn onClick={() => offer(sal)} disabled={!fits(sal)} bg={C.gn} style={{ flex: "2 1 160px", fontSize: 16, padding: "11px 0", fontWeight: 900 }}>{fits(sal) ? "Make offer" : after < 0 ? (ext && share < EXT_BONUS[EXT_BONUS.length - 1] ? "Not enough cap: add a bonus" : "Not enough cap") : "Not enough room this season"}</Btn>}
         </div>
       </div>

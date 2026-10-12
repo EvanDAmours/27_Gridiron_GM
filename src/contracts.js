@@ -1,8 +1,8 @@
 // The franchise tag and the fifth-year option, priced off what the league actually pays at each
 // position.
 //
-// Franchise tag: a one-year deal for a player whose contract is up, at the average of the five
-// biggest salaries at his position (or 120% of his current pay, if more). One per club per year.
+// Franchise tag: a one-year deal for a player whose contract is up, at about three quarters of the
+// average of the five biggest salaries at his position (or 120% of his current pay, if more). One per club per year.
 //
 // Fifth-year option: a first-round pick finishing the fourth season of his rookie deal can be
 // kept one more year at a set price: the top-10 average at his position for a star (85+), the
@@ -18,8 +18,11 @@ export function positionSalaries(teams, pos) {
   return teams.flatMap((t) => (t.roster || []).filter((p) => p.pos === pos).map((p) => p.salary || 0)).sort((a, b) => b - a);
 }
 
+// The real tag averages the top five cap shares over five years, so with salaries climbing it lands
+// around three quarters of today's top-five average (2026: QB $40M against a $55M top five).
+export const TAG_SHARE = 0.75;
 export function tagPrice(teams, p, cap) {
-  const top5 = mean(positionSalaries(teams, p.pos).slice(0, 5));
+  const top5 = mean(positionSalaries(teams, p.pos).slice(0, 5)) * TAG_SHARE;
   return r1(Math.max(top5, askingPrice({ pos: p.pos, ovr: 86, age: 27 }, cap), (p.salary || 0) * 1.2));
 }
 

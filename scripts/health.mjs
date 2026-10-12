@@ -10,6 +10,7 @@ import path from "node:path";
 import { preview } from "vite";
 import { chromium } from "playwright-core";
 import LZ from "lz-string";
+import { capFor } from "../src/cap.js";
 
 const findChromium = () => {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
@@ -94,6 +95,8 @@ function measure(d) {
     thinTeams: thin, olDepth: +olDepth.toFixed(1), noP: ai.filter((t) => !t.roster.some((p) => p.pos === "P")).length,
     rookieSnapPct: { r1: byRd(1), r2: byRd(2), r3: byRd(3), r4_7: (() => { const xs = rk.filter((p) => p.draftPk > 96).map((p) => p.cs?.snp || 0); return xs.length ? Math.round(mean(xs) / 17) : null; })() },
     records: (d.recordBook?.history || d.recordBook?.broken || []).length,
+    // the market at the top: the five biggest salaries at a position, as % of the cap (2025 NFL: QB ~16%, DL/WR ~12%, CB ~9%)
+    top5Pct: Object.fromEntries(["QB", "DL", "WR", "CB", "LT"].map((pos) => [pos, +((100 * mean(all.filter((p) => p.pos === pos).map((p) => p.salary || 0).sort((x, y) => y - x).slice(0, 5))) / capFor(d.yr)).toFixed(1)])),
   };
 }
 // Game scoring for the regular season just played (read before the playoffs), against the NFL.
@@ -114,6 +117,13 @@ function scoring(d) {
     lead: { passYds: top("passYds"), passTD: top("passTD"), rushYds: top("rushYds"), recYds: top("recYds"), rec: top("rec"), sacks: top("sacks"), ints: top("ints") },
   };
 }
+// Leaving an offseason week asks first: press the button, then confirm in the dialog.
+async function advance(text, wait = 1500) {
+  await must(text, 400);
+  const yes = page.locator("button", { hasText: "Yes, go to" });
+  if (await yes.count()) await yes.first().click();
+  await page.waitForTimeout(wait);
+}
 let code = 0;
 try {
   await page.goto(url); await page.waitForTimeout(1200);
@@ -124,7 +134,7 @@ try {
     if (await page.evaluate(() => document.body.innerText.includes("TRADE DEADLINE DAY"))) { await must("Sim to 4:00 PM", 800); await must("Back to the season", 800); await must("Sim All", 6000); }
     if (process.env.SCORING) { let r = await save(); for (let w = 0; w < 6 && r.sp !== "playoffs"; w++) r = await save(); console.log("SCORING " + JSON.stringify(scoring(r))); }
     for (let i = 0; i < 6; i++) { await click("Sim Round", 1000); const c = page.locator("button", { hasText: /^Continue$/ }); if (await c.count()) await c.first().click(); }
-    await must("→ Combine"); await must("→ Re-sign Week"); await must("→ Free Agency", 2500); await must("→ Draft", 1500);
+    await must("→ Combine"); await advance("Finish Combine →"); await advance("Finish Re-signing →", 2500); await advance("Finish Free Agency →", 1500);
     for (let k = 0; k < 3; k++) { await click("Sim Draft", 3000); const cont = page.locator("button", { hasText: "Continue the draft" }); if (await cont.count()) await cont.click(); }
     await must("→ Next Season", 3000); await healthy(`season ${s + 1}`);
     let d = await save();
