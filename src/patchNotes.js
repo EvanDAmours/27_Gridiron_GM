@@ -708,4 +708,7 @@ export const PATCH_NOTES = [
   { v: "2.39", date: "2026-10-12", title: "No Super Bowl Toast", notes: [
     "The small \"wins the Super Bowl\" toast is gone; the season-awards popup already leads with the champion.",
   ] },
+  { v: "2.40", date: "2026-10-12", title: "Next Season Stays Home", notes: [
+    "Starting a new season (→ Next Season) keeps you on the Home screen instead of jumping to the roster.",
+  ] },
 ];
