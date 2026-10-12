@@ -39,7 +39,7 @@ await page.addInitScript(() => { localStorage.setItem("gm_intro_shown", "1"); se
 // Close full-screen overlays (result cards, popups) by clicking the backdrop corner.
 async function dismiss() {
   for (let i = 0; i < 6; i++) {
-    for (const t of ["Continue to the awards", "To the Trophy Room", "Close (offers expire", "Standard", "Meet Demands", "STAY CALM", "Let Go (coach departs)", "Decide later", "Later"]) {
+    for (const t of ["Continue to the awards", "To the Legacy Hall", "Close (offers expire", "Standard", "Meet Demands", "STAY CALM", "Let Go (coach departs)", "Decide later", "Later"]) {
       const b = page.locator("button", { hasText: t });
       if (await b.count()) { await b.first().click(); await page.waitForTimeout(150); }
     }
@@ -81,7 +81,7 @@ try {
   await healthy("new game"); log("new game");
   { const d0 = await save(); const real = (d0.dc?.[2026] || []).filter((p) => p.real); if (real.length < 100 || !real.some((p) => p.name === "Jeremiah Smith")) fail("new game didn't load the real 2027 draft class"); log(`real draft class (${real.length} real prospects)`); }
   const seen = [];
-  for (const tab of ["Roster+", "Depth Chart", "Contracts", "Schedule+", "Standings", "Playoffs", "Draft+", "Draft Recap", "League+", "Stats", "Trophy Room", "Record Book", "League History", "Trade", "Free Agency", "Game Info", "Home"]) {
+  for (const tab of ["Roster+", "Depth Chart", "Contracts", "Schedule+", "Standings", "Playoffs", "Draft+", "Draft Recap", "League+", "Stats", "Legacy Hall", "Record Book", "League History", "Trade", "Free Agency", "Saves", "Game Info", "Home"]) {
     await dismiss();
     let t = page.locator(`button:text-is("${tab}")`);
     if (!(await t.count())) t = page.getByText(tab, { exact: true });

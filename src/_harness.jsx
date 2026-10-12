@@ -1,0 +1,12 @@
+import React from "react";
+import { createRoot } from "react-dom/client";
+import TrophyRoom from "./TrophyRoom.jsx";
+import { SaveSlots, CapGlossary } from "./SaveSlots.jsx";
+import { initTeams } from "./league.js";
+const teams = initTeams(13);
+const ut = { ...teams[13], divTitles: [2026, 2027, 2029], legacyHall: { ring: ["r1"], nums: [{ num: 87, name: "Travis Kelce" }] } };
+const awards = [{ yr: 2027, gm: 13, mvp: { name: "Patrick Mahomes", pos: "QB", ti: 13, stat: "5,012 yds 44 TD" }, dpoy: { name: "Chris Jones", pos: "DL", ti: 13, stat: "16 sacks" } }, { yr: 2028, gm: 13, opoy: { name: "Rashee Rice", pos: "WR", ti: 13, stat: "1,600 yds" }, oroy: { name: "Rookie", pos: "RB", ti: 13 }, sbmvp: { name: "Patrick Mahomes", pos: "QB", ti: 13 } }];
+const retired = [{ id: "r1", name: "Travis Kelce", pos: "TE", num: 87, team: "KC", retYr: 2027, legacy: 90, hof: true, hofClass: 2032, career: { rec: 180, recYds: 2100, recTD: 15 } }, { id: "r2", name: "Chris Jones", pos: "DL", num: 95, team: "KC", retYr: 2029, legacy: 70, hof: true, hofClass: 2034, career: { sacks: 41 } }, { id: "r3", name: "Joe Thuney", pos: "LG", num: 62, team: "KC", retYr: 2028, legacy: 25, career: {} }];
+const champs = [{ yr: 2028, ti: 13, gm: 13, score: "31-17", opp: 25 }];
+const which = new URLSearchParams(location.search).get("v") || "hall";
+createRoot(document.getElementById("root")).render(<div style={{ padding: 16 }}>{which === "hall" ? <TrophyRoom team={ut} ui={13} teams={teams} champs={champs} awards={awards} retired={retired} yr={2029} book={{ best: {} }} /> : <><SaveSlots teams={teams} onSave={() => {}} onLoad={() => {}} /><CapGlossary /></>}</div>);

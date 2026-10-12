@@ -67,7 +67,7 @@ export function retireEntry(p, team, yr, opts = {}) {
   const hof = L.legacy >= HOF_LINE;
   if (!hof && L.legacy < 12) return null;
   return {
-    id: p.id, name: p.name, pos: p.pos, team: team?.ab || p.formerTeam || "FA", age: p.age, retYr: yr,
+    id: p.id, name: p.name, pos: p.pos, num: p.num, team: team?.ab || p.formerTeam || "FA", age: p.age, retYr: yr,
     peak: L.peak, legacy: L.legacy, career: L.career, won: L.won, seasons: L.seasonsHere,
     hof, hofClass: hof ? yr + HOF_WAIT : null,
   };
