@@ -114,8 +114,8 @@ function TradeBlock({ teams, ui, needs, pickValue, onInquire, setSel, closed }) 
           <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 2px", borderBottom: `1px solid ${C.bd}66` }}>
             <TeamLogo t={teams[ti]} sz={24} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 14, fontWeight: 800 }}><Bdg pos={p.pos} /><span onClick={() => setSel(p)} style={{ cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>{needs.includes(p.pos) && <span title="A position you need" style={{ fontSize: 10, color: C.gn, fontWeight: 900 }}>NEED</span>}</div>
-              <div style={{ fontSize: 11, color: C.mt }}>{teams[ti].ab} · age {p.age} · {money(p.salary)}{p.contract ? `, ${p.contract} yr${p.contract > 1 ? "s" : ""}` : ""} · {why} · asking {costIn(p, pickValue)}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 14, fontWeight: 800 }}><Bdg pos={p.pos} /><span onClick={() => setSel(p)} style={{ cursor: "pointer", lineHeight: 1.2 }}>{p.name}</span>{needs.includes(p.pos) && <span title="A position you need" style={{ fontSize: 10, color: C.gn, fontWeight: 900 }}>NEED</span>}</div>
+              <div style={{ fontSize: 12, color: C.mt, lineHeight: 1.35 }}>{teams[ti].ab} · age {p.age} · {money(p.salary)}{p.contract ? `, ${p.contract} yr${p.contract > 1 ? "s" : ""}` : ""} · {why} · asking {costIn(p, pickValue)}</div>
             </div>
             <b style={{ fontSize: 16, color: oC(p.ovr), minWidth: 24, textAlign: "right" }}>{p.ovr}</b>
             <Btn onClick={() => onInquire(p, ti)} disabled={closed} bg="#1d4ed8" style={{ fontSize: 12, padding: "4px 9px" }}>Inquire</Btn>
