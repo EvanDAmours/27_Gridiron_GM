@@ -696,4 +696,7 @@ export const PATCH_NOTES = [
     "When you're on the clock on a phone, draft-day trade offers fold into one '📞 3 trade offers' button; tap it to see them.",
     "Fix: continuing a save made in the middle of the draft now picks up at the right pick (paused, press Resume). Before, the draft could get stuck with no way to go on.",
   ] },
+  { v: "2.37", date: "2026-10-12", title: "Smarter 4th Downs", notes: [
+    "Late in a game (4th quarter or overtime), when a field goal of 50 yards or less would tie it or take the lead, the head coach kicks it. Before, the 4th-and-short gamble ignored the score and clock, so a team down 2 at the 15 could go for it. Only a shaky head coach (rated in the 60s) still rolls the dice there now and then.",
+  ] },
 ];

@@ -107,9 +107,10 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season 
   const p = on("P")[0] || order("P")?.[0];
   const pOvr = p ? p.ovr || 75 : 60, pPow = p ? p.posAttrs?.power ?? 93 : 85, pAcc = p ? p.posAttrs?.accuracy ?? 82 : 65;
   const stCov = team?.coach?.st?.rating ?? 70;
+  const hcR = team?.coach?.hc?.rating ?? 70; // the head coach makes the 4th-down calls
   // Measured against the league's balance, so league-wide rating drift doesn't tilt everyone's play-calling.
   const passLean = clamp(0.6 + ((u.pass - LEAGUE.pass[0]) - (u.run - LEAGUE.run[0])) * 0.006 + lean, 0.5, 0.7);
-  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, p, pOvr, pPow, pAcc };
+  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, p, pOvr, pPow, pAcc };
 }
 
 const emptyTeam = () => ({ plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
@@ -310,8 +311,14 @@ function stepPlay(g, call, bonus = 1) {
       const needTD = g.qtr === 4 && g.clock < 240 && lead < -3;
       // Modern 4th-down aggression: short yardage near midfield or in scoring range is often a go.
       const goShort = g.toGo <= 2 && g.yard >= 40 ? (g.toGo === 1 ? 0.7 : 0.45) : g.toGo <= 4 && g.yard >= 55 && g.yard < 70 ? 0.3 : 0;
+      const lateGame = g.qtr >= 4 || g.ot;
+      // Late, a makeable kick that ties it or takes the lead is the call. Only a shaky head coach
+      // (rated under ~72) ever gambles there, and rarely.
+      const kickToLead = lateGame && lead <= 0 && lead >= -3 && fgDist <= 50;
+      const gamble = Math.max(0, 72 - (o.hcR ?? 70)) * 0.01;
       if (call) decision = null; // the user chose to go for it
       else if (needTD || (g.qtr === 4 && g.clock < 240 && lead < 0 && fgDist > 52)) decision = null;
+      else if (kickToLead) decision = rand() < gamble ? null : "fg";
       else if (rand() < goShort * (fgDist <= 40 ? 0.6 : 1)) decision = null;
       else if (fgDist <= 54) decision = "fg";
       else decision = "punt";
