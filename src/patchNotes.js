@@ -585,4 +585,7 @@ export const PATCH_NOTES = [
     "Season awards come in two pages: the awards first, then CONTINUE to the All-Pro team, starting with your honorees and the OVR each one gains this off-season. The All-Pro lists use the same type as the rest of the card.",
     "The season recap card is easier to read (no more red on orange) and just has a close button: download, copy and share are gone.",
   ] },
+  { v: "2.13", date: "2026-10-12", title: "New Faces", notes: [
+    "Player and coach portraits are redrawn: a head-and-shoulders bust in a round frame, with real hairstyles (bald, buzz, fade, high-top, locs, swept), beards, goatees and stubble, and better proportions. Every player keeps his own look.",
+  ] },
 ];
