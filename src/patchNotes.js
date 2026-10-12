@@ -699,4 +699,10 @@ export const PATCH_NOTES = [
   { v: "2.37", date: "2026-10-12", title: "Smarter 4th Downs", notes: [
     "Late in a game (4th quarter or overtime), when a field goal of 50 yards or less would tie it or take the lead, the head coach kicks it. Before, the 4th-and-short gamble ignored the score and clock, so a team down 2 at the 15 could go for it. Only a shaky head coach (rated in the 60s) still rolls the dice there now and then.",
   ] },
+  { v: "2.38", date: "2026-10-12", title: "Smarter Endgames", notes: [
+    "Victory formation: a team ahead in the 4th quarter takes a knee when that runs out the clock, instead of running real plays (and now and then fumbling the game away).",
+    "Protecting a lead in the last two minutes, teams keep it on the ground; they only throw on a long third down. Before, they threw about a third of the time and stopped the clock with incompletions.",
+    "No more 4th-and-short gambles in their own territory while protecting a late lead.",
+    "Overtime follows the current NFL rules: both teams get a possession, then the next score wins. A field goal on the first possession no longer ends the game, and a team down more than a field goal in overtime goes for it instead of kicking.",
+  ] },
 ];

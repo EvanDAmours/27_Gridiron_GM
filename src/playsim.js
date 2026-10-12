@@ -189,6 +189,8 @@ function edges(g) {
 export const fgOdds = (dist, k = 75) => clamp(1.005 - 0.0045 * (dist - 18) - 0.0006 * Math.max(0, dist - 35) ** 2 + (k - 75) * 0.004, 0.15, 0.99);
 
 function newPossession(g, yard) {
+  // Overtime (2025 rules): once both teams have had the ball, a team that's ahead has won.
+  if (g.ot) { g.otPoss = (g.otPoss || 1) + 1; if (g.otPoss >= 3 && g.score.h !== g.score.a) { g.done = true; return; } }
   g.poss = other(g.poss);
   g.yard = clamp(Math.round(yard), 1, 99);
   g.down = 1; g.toGo = Math.min(10, 100 - g.yard);
@@ -245,16 +247,21 @@ function tick(g, secs) {
   if (g.qtr === 3) { g.clock = 900; g.poss = other(g.firstPoss); g.yard = 25; g.down = 1; g.toGo = 10; g.stats[g.poss].drives++; return "Halftime."; }
   if (g.qtr === 5) {
     if (g.score.h !== g.score.a) { g.done = true; g.qtr = 4; g.clock = 0; return "Final."; }
-    g.ot = true; g.clock = g.playoff ? 900 : 600; g.poss = g.rand() < 0.5 ? "h" : "a"; g.yard = 25; g.down = 1; g.toGo = 10; g.stats[g.poss].drives++;
+    g.ot = true; g.otPoss = 1; g.clock = g.playoff ? 900 : 600; g.poss = g.rand() < 0.5 ? "h" : "a"; g.yard = 25; g.down = 1; g.toGo = 10; g.stats[g.poss].drives++;
     return "Overtime!";
   }
   g.clock = 900;
   return `End of quarter ${g.qtr - 1}.`;
 }
 
+// Overtime: both teams get a possession, then it's sudden death. A score on the first possession
+// sends it to the other team; on the second, it ends the game if it puts them ahead; after that
+// (or a defensive score) the next points win.
 function scored(g, side, pts) {
   g.score[side] += pts;
-  if (g.ot) { g.done = true; }
+  if (!g.ot) return;
+  const n = g.otPoss || 1;
+  if (side !== g.poss || n >= 3 || (n === 2 && g.score[side] > g.score[other(side)])) g.done = true;
 }
 
 // Late with the game tied (or down 3 or less) and in comfortable range: play for the field goal.
@@ -276,6 +283,8 @@ function chooseCall(g, o) {
   if (forTheKick(g, lead)) return "run";
   if ((late && lead < 0) || twoMin) pass = Math.max(pass, 0.8);
   if ((late && lead > 0) || (g.qtr >= 4 && lead >= 17)) pass = Math.min(pass, 0.3);
+  // Ahead in the last two minutes: run the clock (only a long third down is worth a throw).
+  if (g.qtr === 4 && !g.ot && g.clock <= 120 && lead > 0) pass = g.down === 3 && g.toGo >= 5 ? 0.45 : 0.08;
   return rand() < pass ? "pass" : "run";
 }
 
@@ -301,14 +310,23 @@ function stepPlay(g, call, bonus = 1) {
   const ev = { ...before, yards: 0, type: "", text: "", td: false, turnover: false, score: 0 };
   g.plays++;
 
+  // Victory formation: ahead in the 4th with few enough seconds left that kneeling runs it out.
+  if (!call && g.qtr === 4 && !g.ot && lead > 0 && g.down < 4 && g.clock <= 40 * (4 - g.down)) {
+    const ql = line(g, off, o.qb); add(ql, "rushAtt", 1); add(ql, "rushYds", -1); st.rushAtt++; st.rushYds -= 1;
+    g.yard = Math.max(1, g.yard - 1); g.down++; g.toGo += 1;
+    ev.type = "run"; ev.kneel = true; ev.yards = -1; ev.player = o.qb; ev.text = `${o.qb?.name || "The QB"} takes a knee.`;
+    ev.note = tick(g, 40);
+    return ev;
+  }
+
   // Fourth down (or the end of a half in range): kick, punt or go for it.
   const endOfHalf = ((g.qtr === 2 || g.qtr === 4 || g.ot) && g.clock <= 25 && fgDist <= 55 && !(g.qtr >= 4 && lead < -3)) || (!call && forTheKick(g, lead) && g.down >= 3 && (g.clock <= 40 || g.ot));
   let decision = call === "punt" || call === "fg" ? call : null;
-  if (!decision && (g.down === 4 || endOfHalf || (g.ot && g.down >= 3 && fgDist <= 52))) {
+  if (!decision && (g.down === 4 || endOfHalf || (g.ot && g.down >= 3 && fgDist <= 52 && lead <= 0 && lead >= -3))) {
     if (endOfHalf && fgDist <= 55) decision = "fg";
-    else if (g.ot && g.down >= 3 && fgDist <= 52 && !call) decision = "fg"; // overtime: take the points
+    else if (g.ot && g.down >= 3 && fgDist <= 52 && !call && lead <= 0 && lead >= -3) decision = "fg"; // overtime: take the points
     else if (g.down === 4) {
-      const needTD = g.qtr === 4 && g.clock < 240 && lead < -3;
+      const needTD = (g.qtr === 4 && g.clock < 240 && lead < -3) || (g.ot && lead < -3);
       // Modern 4th-down aggression: short yardage near midfield or in scoring range is often a go.
       const goShort = g.toGo <= 2 && g.yard >= 40 ? (g.toGo === 1 ? 0.7 : 0.45) : g.toGo <= 4 && g.yard >= 55 && g.yard < 70 ? 0.3 : 0;
       const lateGame = g.qtr >= 4 || g.ot;
@@ -316,10 +334,11 @@ function stepPlay(g, call, bonus = 1) {
       // (rated under ~72) ever gambles there, and rarely.
       const kickToLead = lateGame && lead <= 0 && lead >= -3 && fgDist <= 50;
       const gamble = Math.max(0, 72 - (o.hcR ?? 70)) * 0.01;
+      const protecting = g.qtr >= 4 && !g.ot && g.clock < 300 && lead > 0 && g.yard < 50;
       if (call) decision = null; // the user chose to go for it
       else if (needTD || (g.qtr === 4 && g.clock < 240 && lead < 0 && fgDist > 52)) decision = null;
       else if (kickToLead) decision = rand() < gamble ? null : "fg";
-      else if (rand() < goShort * (fgDist <= 40 ? 0.6 : 1)) decision = null;
+      else if (!protecting && rand() < goShort * (fgDist <= 40 ? 0.6 : 1)) decision = null;
       else if (fgDist <= 54) decision = "fg";
       else decision = "punt";
     }

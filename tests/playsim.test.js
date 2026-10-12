@@ -105,3 +105,20 @@ test("late, a field goal that ties or takes the lead is the call", () => {
   const shaky = trial(55);
   assert.ok(shaky > 0 && shaky < 0.3, `a 55-rated coach gambles now and then (${shaky})`);
 });
+
+test("ahead with the clock nearly gone, the offense takes a knee", () => {
+  const g = createGame(teams[0].side, teams[1].side, { rand });
+  Object.assign(g, { poss: "h", qtr: 4, clock: 70, yard: 40, down: 1, toGo: 10, score: { h: 24, a: 20 } });
+  const ev = step(g);
+  assert.ok(ev.kneel, `kneels (${ev.text})`);
+});
+
+test("overtime: a first-possession field goal gives the other team the ball", () => {
+  for (let i = 0; i < 50; i++) {
+    const g = createGame(teams[0].side, teams[1].side, { rand, playoff: true });
+    Object.assign(g, { poss: "h", qtr: 5, ot: true, otPoss: 1, clock: 800, yard: 80, down: 4, toGo: 8, score: { h: 20, a: 20 } });
+    const ev = step(g);
+    if (ev.type === "fg") { assert.equal(g.done, false, "the game goes on"); assert.equal(g.poss, "a", "the other team gets the ball"); return; }
+  }
+  assert.fail("never kicked");
+});
