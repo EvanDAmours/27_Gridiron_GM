@@ -13,6 +13,15 @@ const title = (t, sub) => (
 const row = { display: "flex", alignItems: "center", gap: 10, padding: "8px 2px", borderBottom: `1px solid ${C.bd}55`, fontSize: 15 };
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const ATTRS = [["ovr", "Overall"], ["spd", "Speed"], ["str", "Strength"], ["agi", "Agility"], ["acc", "Acceleration"]];
+// The player picker: grouped by position (offense, then defense, then specialists), best first.
+const PICK_ORDER = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DL", "DT", "LB", "CB", "S", "K", "P"];
+const POS_NAME = { QB: "Quarterbacks", RB: "Running backs", WR: "Wide receivers", TE: "Tight ends", LT: "Left tackles", LG: "Left guards", C: "Centers", RG: "Right guards", RT: "Right tackles", EDGE: "Edge rushers", DL: "Defensive line", DT: "Defensive tackles", LB: "Linebackers", CB: "Cornerbacks", S: "Safeties", K: "Kickers", P: "Punters" };
+const groupByPos = (ps) => {
+  const m = new Map();
+  for (const p of ps) { if (!m.has(p.pos)) m.set(p.pos, []); m.get(p.pos).push(p); }
+  const rank = (pos) => { const i = PICK_ORDER.indexOf(pos); return i < 0 ? 99 : i; };
+  return [...m.entries()].sort((a, b) => rank(a[0]) - rank(b[0])).map(([pos, list]) => [pos, list.sort((a, b) => (b.ovr || 0) - (a.ovr || 0))]);
+};
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
 
 export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk, onSimGame, onReport, onDevCamp, onTrain, battlesDone, onBattle, otcFocus, onOtc, onExtend, setSel }) {
@@ -21,7 +30,7 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
   const [attr, setAttr] = useState("ovr");
   const rookies = roster.filter((p) => p.age <= 23 && (p.draftYr === yr || p.draftYr === yr - 1)).sort((a, b) => b.ovr - a.ovr).slice(0, 6);
   const campUsed = team.devCampYr === yr;
-  const trainable = roster.filter((p) => !p.trainedThisCamp).sort((a, b) => b.ovr - a.ovr).slice(0, 25);
+  const trainable = roster.filter((p) => !p.trainedThisCamp);
   const trained = roster.filter((p) => p.trainedThisCamp);
   const expiring = roster.filter((p) => p.contract === 1 || p.resigned?.yr === yr).sort((a, b) => b.ovr - a.ovr);
   const pre = sp === "preseason";
@@ -74,7 +83,11 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
             <select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Player to train" style={{ flex: "1 1 220px", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "9px 10px", fontSize: 15 }}>
               <option value="">Choose a player…</option>
-              {trainable.map((p) => <option key={p.id} value={p.id}>{p.name} · {p.pos} {p.ovr}</option>)}
+              {groupByPos(trainable).map(([pos, ps]) => (
+                <optgroup key={pos} label={POS_NAME[pos] || pos}>
+                  {ps.map((p) => <option key={p.id} value={p.id}>{p.name} · {p.ovr}{p.age <= 23 ? " · young" : ""}</option>)}
+                </optgroup>
+              ))}
             </select>
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>

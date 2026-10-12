@@ -681,4 +681,7 @@ export const PATCH_NOTES = [
   { v: "2.32", date: "2026-10-12", title: "A Little Smaller on Phones", notes: [
     "The whole phone version is drawn at 90%: text, buttons, cards and the field all shrink together, so each screen holds more and feels less crowded.",
   ] },
+  { v: "2.33", date: "2026-10-12", title: "Training Focus Picker", notes: [
+    "Training camp's Training focus player list is grouped by position (Quarterbacks, Running backs... Punters), best player first in each group, with young players marked. It now lists your whole roster instead of only your top 25.",
+  ] },
 ];
