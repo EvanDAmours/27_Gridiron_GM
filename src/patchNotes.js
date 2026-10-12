@@ -458,4 +458,11 @@ export const PATCH_NOTES = [
     "Bonuses count properly against the cap: the year-one hit is what's charged now, the base salary comes back the next league year, and cutting the player leaves the unpaid bonus as dead money.",
     "Players like guaranteed money, so an offer with a bonus is worth a little more to them.",
   ] },
+  { v: "1.9992", date: "2026-10-12", title: "Real Head Coaches and Coordinators", notes: [
+    "Every club starts a new game with its real 2026 staff: head coach, offensive and defensive coordinators and special teams coordinator (Andy Reid and Steve Spagnuolo in Kansas City, Sean McVay in LA, John Harbaugh and Matt Nagy with the Giants, and so on).",
+    "Head coaches are new. They have a rating, and on game day a better head coach is worth up to about a point a game against the other sideline.",
+    "The best-known coordinators carry their reputations: Spagnuolo, Vic Fangio and Brian Flores call aggressive defenses, Mike McDaniel runs a West Coast offense, and so on.",
+    "The Coaching page shows your head coach and a League Coaching Staffs list with every club's head coach, OC and DC.",
+    "Existing saves get each club's real head coach; their coordinators stay as they were.",
+  ] },
 ];

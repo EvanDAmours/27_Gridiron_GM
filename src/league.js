@@ -12,6 +12,7 @@ import { makeSide, createGame, playGame, setLeague } from "./playsim.js";
 import { unitRatings } from "./gamesim.js";
 import { DATA_TO_DOLLARS, leagueCap } from "./cap.js";
 import { teamSnaps } from "./snaps.js";
+import { REAL_STAFF, HC_RATING, COORD } from "./data/realCoaches.js";
 import { nflSchedule, divisionPlaces } from "./schedule.js";
 import { aiDraftScore, devOf, rankClass, plantGems, plantBusts, gemGap, draftCollege, kpValue } from "./scouting.js";
 
@@ -301,7 +302,7 @@ export function addPunters(d){
   for(const x of PUNTERS)if(PUNTER[x.team]!==x&&x.age+yrs<=40)d.fa.push({...aged(x),contract:0});
   return d.teams;
 }
-export function initTeams(ui){return TEAMS.map((t,i)=>({...t,id:i,isUser:i===ui,roster:[...M27.teams[i].roster.filter(d=>d!==CUT[i]),...(PUNTER[t.ab]?[PUNTER[t.ab]]:[])].map(realPlayer),ps:M27.teams[i].ps.map(realPlayer),ir:[],w:0,l:0,t:0,pf:0,pa:0,morale:50,streak:0,gmRep:50,chemistry:75,strat:pick(["balanced","pass-heavy","run-heavy","defensive"]),gmStyle:i===ui?'user':pick(['rebuilder','win-now','analytics']),coach:{oc:genCoach("OC"),dc:genCoach("DC"),st:genCoach("ST")}}));}
+export function initTeams(ui){return TEAMS.map((t,i)=>({...t,id:i,isUser:i===ui,roster:[...M27.teams[i].roster.filter(d=>d!==CUT[i]),...(PUNTER[t.ab]?[PUNTER[t.ab]]:[])].map(realPlayer),ps:M27.teams[i].ps.map(realPlayer),ir:[],w:0,l:0,t:0,pf:0,pa:0,morale:50,streak:0,gmRep:50,chemistry:75,strat:pick(["balanced","pass-heavy","run-heavy","defensive"]),gmStyle:i===ui?'user':pick(['rebuilder','win-now','analytics']),coach:realStaff(t.ab)}));}
 // Assign bye weeks 5-14 to each team (paired so week always has even active teams)
 // 18-week schedule: each team plays 17 games (1 bye in weeks 5-14)
 // The NFL schedule formula (src/schedule.js). prev: last season's teams, for division finishes.
@@ -387,6 +388,7 @@ const wx=wxOverride||rollGameWeather();
   const hOC=ht.coach?.oc?(ht.coach.oc.rating-60)*.1:0,hDC=ht.coach?.dc?(ht.coach.dc.rating-60)*.1:0;
   const aOC=at.coach?.oc?(at.coach.oc.rating-60)*.1:0,aDC=at.coach?.dc?(at.coach.dc.rating-60)*.1:0;
   const hFit=getOCFit(ht)+getDCFit(ht),aFit=getOCFit(at)+getDCFit(at);
+  const _hc=t=>t.coach?.hc?(t.coach.hc.rating-75)*.05:0,hHC=_hc(ht)-_hc(at);
   const offB={run_heavy:{m:-1.2,s:-2},balanced:{m:0,s:0},pass_heavy:{m:1.5,s:2.5}};
   const defB={conservative:{m:-1.5,s:-2},aggressive:{m:-2.2,s:2.5},prevent:{m:-0.5,s:-3}};
   const hOM=offB[hPlan?.off]||offB.balanced,hDM=defB[hPlan?.def]||{m:0,s:0};
@@ -402,8 +404,8 @@ const wx=wxOverride||rollGameWeather();
   const _dda=DDA;
   // A scheme change takes a couple of weeks to install: the team plays a bit worse until it's in.
   const _trans=t=>(t._schemeTransWks||0)>0?-2:0;
-  let hMod=_trans(ht)+hOC-aDC+hFit*.5+hOM.m+aDM.m+hMorB+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+((hPlan?.playbook?.length||0)>=3?1:0)+_hClash+(ht.isUser?_dda:0);
-  let aMod=_trans(at)+aOC-hDC+aFit*.5+aOM.m+hDM.m+aMorB+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+((aPlan?.playbook?.length||0)>=3?1:0)+_aClash+(at.isUser?_dda:0);
+  let hMod=_trans(ht)+hOC-aDC+hFit*.5+hOM.m+aDM.m+hMorB+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+((hPlan?.playbook?.length||0)>=3?1:0)+_hClash+hHC+(ht.isUser?_dda:0);
+  let aMod=_trans(at)+aOC-hDC+aFit*.5+aOM.m+hDM.m+aMorB+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+((aPlan?.playbook?.length||0)>=3?1:0)+_aClash-hHC+(at.isUser?_dda:0);
   // Who plays: AI clubs by their depth chart; yours by your depth chart with snap share overriding it.
   const _ord=t=>{const _healthy=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const _dO=t.isUser?USER_DEPTH:{};const _pt=t.isUser?USER_SNAPS:null;const memo={};return pos=>memo[pos]||(memo[pos]=depthOrderFor(_healthy,_dO,pos,_pt));};
   const hOrd=_ord(ht),aOrd=_ord(at);
@@ -475,6 +477,8 @@ export const POS_MARKET={QB:4.2,RB:1.8,WR:2.5,TE:1.9,LT:2.8,LG:2.2,C:1.8,RG:2.2,
 export const glGrade=p=>{const s=p.ss||{};const g=Math.max(1,s.gp||1);if(p.pos==='QB'){const r=s.rate||0;return r>=105?'A+':r>=95?'A':r>=82?'B':r>=70?'C':r>=55?'D':'F';}if(p.pos==='RB'){const y=(s.rushYds||0)/g;return y>=85?'A+':y>=65?'A':y>=45?'B':y>=30?'C':'D';}if(['WR','TE'].includes(p.pos)){const y=(s.recYds||0)/g;return y>=80?'A+':y>=60?'A':y>=40?'B':y>=25?'C':'D';}if(['DL','LB'].includes(p.pos)){const v=(s.sacks||0)*2.5+(s.tkl||0)/g;return v>=10?'A+':v>=7?'A':v>=5?'B':v>=3?'C':'D';}if(['CB','S'].includes(p.pos)){const v=(s.ints||0)*5+(s.pd||0)*1.5+(s.tkl||0)/g;return v>=12?'A+':v>=8?'A':v>=5?'B':v>=3?'C':'D';}return 'B';};
 export const CO_TRAITS={OC:["Creative Play-Caller","Run Game Specialist","QB Whisperer","Red Zone Guru","Clock Manager","Tempo Master","Play-Action Artist","2-Minute Drill"],DC:["Blitz Specialist","Cover 2 Maestro","Run Stopper","Turnover Machine","4th Quarter D","Secondary Coach","Pressure Specialist","Bend Don't Break"],ST:["Kicker Developer","Returner Coach","Coverage Unit","Ice the Kicker"]};
 export function genCoach(role){const sch=role==="OC"?OC_SCHEMES:role==="DC"?DC_SCHEMES:["Standard ST"];return{id:uid(),name:`${pick(FN)} ${pick(LN)}`,face:genFace(),role,rating:Gc(65,12,40,95),trait:pick(CO_TRAITS[role]),scheme:pick(sch),salary:+(Rf(1,6)*DATA_TO_DOLLARS).toFixed(1),contract:R(1,3),xp:0};}
+// A club's real 2026 staff: real names, with ratings/schemes for the known ones and normal rolls otherwise.
+export function realStaff(ab){const r=REAL_STAFF[ab];if(!r)return{oc:genCoach("OC"),dc:genCoach("DC"),st:genCoach("ST")};const real=(role,name)=>{const c=genCoach(role),k=COORD[name]||{};return{...c,name,rating:k.rating??Math.min(c.rating,80),...(k.scheme&&role!=="ST"?{scheme:k.scheme}:{}),real:true};};const [hc,oc,dc,st]=r;return{hc:{id:uid(),name:hc,face:genFace(),role:"HC",rating:HC_RATING[hc]??74,real:true},oc:real("OC",oc),dc:real("DC",dc),st:real("ST",st)};}
 export function getOCFit(t){const oc=t.coach?.oc;if(!oc)return 0;const qb=t.roster.filter(p=>p.pos==="QB"&&!p.injured).sort((a,b)=>b.ovr-a.ovr)[0];const rb=t.roster.filter(p=>p.pos==="RB"&&!p.injured).sort((a,b)=>b.ovr-a.ovr)[0];if(oc.scheme==="Air Raid"&&(qb?.ovr||0)>70)return 2;if(oc.scheme==="Power Run"&&(rb?.ovr||0)>70)return 2;if(oc.scheme==="West Coast"&&(qb?.ovr||0)>65)return 1;if(oc.scheme==="Spread"&&(qb?.spd||0)>70)return 1.5;return 0;}
 export function getDCFit(t){const dc=t.coach?.dc;if(!dc)return 0;const lb=t.roster.filter(p=>p.pos==="LB"&&!p.injured).sort((a,b)=>b.ovr-a.ovr)[0];const dl=t.roster.filter(p=>p.pos==="DL"&&!p.injured).sort((a,b)=>b.ovr-a.ovr)[0];if(dc.scheme==="3-4"&&(lb?.ovr||0)>70)return 2;if(dc.scheme==="4-3"&&(dl?.ovr||0)>70)return 2;if(dc.scheme==="Zone Blitz"&&(lb?.ovr||0)>65)return 1.5;return 0;}
 export function schemeRunPct(t){const s=t.coach?.oc?.scheme;if(s==="Power Run")return .60;if(s==="Air Raid")return .28;if(s==="Spread")return .35;return .42;}
