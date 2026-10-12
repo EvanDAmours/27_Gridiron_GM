@@ -1,16 +1,16 @@
 .pxm-card { box-sizing: border-box; container-type: inline-size; width: 100%; min-width: 0; overflow: hidden; color: #e2e8f0; background: #071b27; border: 1px solid #36566f; border-radius: 12px; font-family: 'Segoe UI', system-ui, sans-serif; }
 .pxm-card *, .pxm-card *::before, .pxm-card *::after { box-sizing: border-box; }
 .pxm-label { padding: 12px 14px; color: #afc1d3; font-size: 12px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
-.pxm-field { position: relative; padding: 34px 8px 12px; isolation: isolate; background: linear-gradient(to bottom, #12434b66, #071b2700 90%); }
+.pxm-field { position: relative; padding: 30px 8px 8px; isolation: isolate; background: linear-gradient(to bottom, #12434b66, #071b2700 90%); }
 .pxm-field::before { content: ''; z-index: -1; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(20% - 2px), #6dafbb18 calc(20% - 2px) 20%), repeating-linear-gradient(0deg, transparent 0 46px, #6dafbb10 46px 48px); mask-image: linear-gradient(#000, transparent); }
 .pxm-yardmarks { position: absolute; left: 5%; right: 5%; top: 6px; display: flex; justify-content: space-between; color: #71b3c433; font: bold 20px monospace; }
 .pxm-matchup { display: grid; grid-template-columns: minmax(0, 1fr) minmax(65px, .9fr) minmax(0, 1fr); align-items: start; gap: 4px; }
 .pxm-player { margin: 0; min-width: 0; text-align: center; }
-.pxm-sprite { display: block; width: min(100%, 240px); margin: 0 auto; height: auto; aspect-ratio: 1; object-fit: contain; image-rendering: auto; }
+.pxm-sprite { display: block; width: min(100%, 180px); margin: 0 auto; height: auto; aspect-ratio: 1; object-fit: contain; image-rendering: auto; }
 .pxm-player figcaption { padding-top: 5px; font-size: clamp(11px, 3.2cqi, 16px); line-height: 1.25; overflow-wrap: anywhere; }
 .pxm-player figcaption strong { display: block; font-weight: 800; }
 .pxm-player figcaption span { display: block; margin-top: 3px; color: #aebed0; font-size: clamp(10px, 2.7cqi, 13px); }
-.pxm-sprite-fallback { display: flex; align-items: center; justify-content: center; width: min(100%, 240px); margin: 0 auto; aspect-ratio: 1; color: #94a3b8; font-weight: 900; }
+.pxm-sprite-fallback { display: flex; align-items: center; justify-content: center; width: min(100%, 180px); margin: 0 auto; aspect-ratio: 1; color: #94a3b8; font-weight: 900; }
 .pxm-logos { display: flex; align-items: center; justify-content: center; align-self: start; gap: 5px; padding-top: 25%; min-width: 0; }
 .pxm-logos > :not(b) { width: 36% !important; height: auto !important; aspect-ratio: 1; min-width: 0; object-fit: contain; }
 .pxm-logos b { font-size: clamp(12px, 3.7cqi, 24px); }
@@ -22,13 +22,13 @@
 .pxm-team:first-child { padding-right: 12px; border-right: 1px solid #36566f; }
 .pxm-team:last-child { padding-left: 12px; }
 .pxm-city { color: #cbd5e1; font-size: clamp(12px, 3.5cqi, 17px); }
-.pxm-team h3 { margin: 1px 0 0; text-transform: uppercase; font-size: clamp(13px, 4.6cqi, 30px); font-weight: 900; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pxm-team h3 { margin: 1px 0 0; text-transform: uppercase; font-size: clamp(13px, 4.2cqi, 26px); font-weight: 900; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pxm-record { margin: 4px 0 10px; font-size: clamp(12px, 3.7cqi, 17px); color: #cbd5e1; }
 .pxm-ratings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
 .pxm-rating { overflow: hidden; border: 2px solid #94a3b8; border-radius: 6px; text-align: center; }
-.pxm-rating strong { display: block; padding: 4px 0; font-size: clamp(18px, 6cqi, 30px); line-height: 1; font-weight: 900; }
+.pxm-rating strong { display: block; padding: 4px 0; font-size: clamp(18px, 5cqi, 26px); line-height: 1; font-weight: 900; }
 .pxm-rating span { display: block; padding: 3px 0; background: #94a3b8; color: #07121f; font-weight: 900; font-size: clamp(9px, 2.8cqi, 12px); letter-spacing: .5px; }
 .pxm-rating--ahead { border-color: #22c55e; background: #22c55e14; }
 .pxm-rating--ahead span { background: #22c55e; }
-@container (min-width: 640px) { .pxm-matchup { max-width: 680px; margin: 0 auto; } .pxm-sprite { max-width: 240px; margin: 0 auto; } .pxm-field { padding-top: 32px; } }
+@container (min-width: 640px) { .pxm-matchup { max-width: 540px; margin: 0 auto; } .pxm-sprite { max-width: 170px; margin: 0 auto; } .pxm-field { padding-top: 28px; } .pxm-teams { max-width: 760px; margin: 0 auto; } }
 

@@ -54,7 +54,7 @@ export default function PixelMatchup({ away, home, awayPlayer, homePlayer, awayR
       h('div', { className: 'pxm-matchup' },
         h(PixelPlayer, { player: awayPlayer, team: away, uniform: awayUniform }),
         h('div', { className: 'pxm-logos', 'aria-hidden': true },
-          h(TeamLogo, { t: away, sz: 64 }), h('b', null, 'AT'), h(TeamLogo, { t: home, sz: 64 })),
+          h(TeamLogo, { t: away, sz: 64, glow: true }), h('b', null, 'AT'), h(TeamLogo, { t: home, sz: 64, glow: true })),
         h(PixelPlayer, { player: homePlayer, team: home, uniform: homeUniform }))),
     h('div', { className: 'pxm-kickoff' },
       kickoff && h('strong', null, kickoff), venue && h('span', null, venue)),

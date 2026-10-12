@@ -14,12 +14,15 @@ export const PN=({p,setSel,style:st})=><span onClick={e=>{e.stopPropagation();se
 // If a logo can't load, the team's colors and abbreviation stand in.
 const ESPN_AB = { WAS: "wsh" };
 export const logoUrl = (ab) => `https://a.espncdn.com/i/teamlogos/nfl/500/${ESPN_AB[ab] || String(ab || "").toLowerCase()}.png`;
-export function TeamLogo({ t, sz = 40 }) {
+// glow: a thin light outline so dark logos (Giants, Bears, Texans) read on dark or team-color
+// backgrounds without sitting on a white tile.
+const GLOW = "drop-shadow(0 0 1px #ffffffd9) drop-shadow(0 0 1px #ffffffb3) drop-shadow(0 2px 6px #0008)";
+export function TeamLogo({ t, sz = 40, glow = false }) {
   const [bad, setBad] = React.useState(false);
   if (!t) return null;
   const box = { width: sz, height: sz, flexShrink: 0, borderRadius: Math.round(sz / 5), display: "inline-flex", alignItems: "center", justifyContent: "center" };
   if (bad) return <span style={{ ...box, background: `linear-gradient(135deg,${t.clr},${t.ac})`, fontWeight: 900, fontSize: Math.max(9, Math.round(sz / 3)), color: "#fff" }}>{t.ab}</span>;
-  return <img src={logoUrl(t.ab)} alt={`${t.city || ""} ${t.name || t.ab}`.trim()} title={`${t.city || ""} ${t.name || ""}`.trim()} width={sz} height={sz} loading="lazy" onError={() => setBad(true)} style={{ ...box, objectFit: "contain" }} />;
+  return <img src={logoUrl(t.ab)} alt={`${t.city || ""} ${t.name || t.ab}`.trim()} title={`${t.city || ""} ${t.name || ""}`.trim()} width={sz} height={sz} loading="lazy" onError={() => setBad(true)} style={{ ...box, objectFit: "contain", ...(glow ? { filter: GLOW } : {}) }} />;
 }
 
 // "Thu, Sep 10 · 8:20 PM ET" from a real schedule's kickoff time (UTC), or "" without one.

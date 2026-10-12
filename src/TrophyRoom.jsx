@@ -6,16 +6,16 @@ import React, { useEffect, useRef, useState } from "react";
 import { LombardiStill } from "./Lombardi.jsx";
 import { C, TeamLogo } from "./ui.jsx";
 import { SUPER_BOWLS, sbName, sbNumber } from "./data/superbowls.js";
-import AwardTrophy3D from "./AwardTrophy3D.jsx";
 import opoyArt from "./assets/opoy.webp";
 import dpoyArt from "./assets/dpoy.webp";
 import mvpArt from "./assets/mvp.webp";
 import sbmvpArt from "./assets/sbmvp.webp";
 import oroyArt from "./assets/oroy.webp";
+import droyArt from "./assets/droy.webp";
 
 // The real trophies, as artwork: MVP, Offensive and Defensive Player of the Year (the NFL Honors
 // trophy) and the Super Bowl MVP football.
-const TROPHY_ART = { mvp: mvpArt, opoy: opoyArt, dpoy: dpoyArt, sbmvp: sbmvpArt, oroy: oroyArt };
+const TROPHY_ART = { mvp: mvpArt, opoy: opoyArt, dpoy: dpoyArt, sbmvp: sbmvpArt, oroy: oroyArt, droy: droyArt };
 import { TEAM_HISTORY } from "./data/teamHistory.js";
 import { Rafters, GoldJackets, RingOfHonor, RecordsWall } from "./LegacyHall.jsx";
 
@@ -160,7 +160,7 @@ function Trophy({ t, i, on, setOn, small, spot }) {
         </div>
       )}
       <div className="tr-pop" style={{ animationDelay: `${Math.min(i, 20) * 90}ms` }}>
-        <div className="tr-lift">{TROPHY_ART[t.kind] ? <img src={TROPHY_ART[t.kind]} alt={t.title} style={t.kind === "sbmvp" ? { width: small ? 74 : 104, height: "auto", display: "block", margin: "0 auto", filter: "drop-shadow(0 8px 10px #000b)" } : { height: small ? 140 : 190, width: "auto", display: "block", margin: "0 auto", filter: "drop-shadow(0 8px 10px #000b)" }} /> : <AwardTrophy3D kind={t.kind} size={small ? 74 : 100} label={t.title} fallback={<div style={{ width: small ? 74 : 100, height: small ? 150 : 200 }}>{layered}</div>} />}</div>
+        <div className="tr-lift">{TROPHY_ART[t.kind] ? <img src={TROPHY_ART[t.kind]} alt={t.title} style={t.kind === "sbmvp" ? { width: small ? 74 : 104, height: "auto", display: "block", margin: "0 auto", filter: "drop-shadow(0 8px 10px #000b)" } : { height: small ? 140 : 190, width: "auto", display: "block", margin: "0 auto", filter: "drop-shadow(0 8px 10px #000b)" }} /> : <div style={{ width: small ? 74 : 100, height: small ? 150 : 200 }}>{layered}</div>}</div>
       </div>
       <div className="tr-plaque">{t.plaque || t.kind.toUpperCase()}</div>
       <div className="tr-glow" />
@@ -202,6 +202,7 @@ function Shelf({ title, items, empty, perRow, on, setOn, start = 0, small, spot 
 // team: your club. champs: this league's champions. awards: season award winners by year.
 export default function TrophyRoom({ team, ui, champs = [], awards = [], teams = [], spotlight = null, retired = [], yr = 2026, book = null, onInduct, onRetireNum }) {
   const [on, setOn] = useState(null);
+  const [sec, setSec] = useState(spotlight != null ? "trophies" : "banners");
   const width = useWidth();
   const full = `${team.city} ${team.name}`;
   const lombardis = [
@@ -234,7 +235,7 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
       <Defs />
       <style>{CSS}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
-        <span style={{ background: "#ffffffe6", borderRadius: 14, padding: 5, display: "inline-flex", flexShrink: 0 }}><TeamLogo t={team} sz={52} /></span>
+        <TeamLogo t={team} sz={60} glow />
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontSize: 26, fontWeight: 900 }}>Legacy Hall</div>
           <div style={{ fontSize: 15, color: C.mt }}>{full} · banners, trophies, gold jackets and the Ring of Honor</div>
@@ -248,7 +249,12 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
           ))}
         </div>
       </div>
-      {(() => {
+      <div role="tablist" style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14, position: "sticky", top: 0, zIndex: 5, background: C.bg, padding: "6px 0" }}>
+        {[["banners", "🚩 Banners"], ["trophies", "🏆 Trophies"], ["jackets", "🧥 Gold Jackets"], ["ring", "💍 Ring of Honor"], ["records", "📊 Records"]].map(([k, l]) => (
+          <button key={k} role="tab" aria-selected={sec === k} onClick={() => setSec(k)} style={{ background: sec === k ? "#d4a01722" : C.cd, color: sec === k ? "#fde68a" : "#cbd5e1", border: `1px solid ${sec === k ? "#d4a017" : C.bd}`, borderRadius: 999, padding: "7px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>
+        ))}
+      </div>
+      {sec === "banners" && (() => {
         // real history before 2026, then everything won in this league
         const h = TEAM_HISTORY[team.ab] || { d: [], c: [], l: [] };
         const mine = (c) => (c.ti != null ? c.ti === ui : c.t === full);
@@ -257,11 +263,11 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
         const divs = [...h.d, ...(team.divTitles || []).map((y) => [y, `${team.c} ${team.d}`])];
         return <Rafters team={team} sbs={sbs} titles={h.l} confs={confs} divs={divs} />;
       })()}
-      <Shelf title="Super Bowl Championships" items={lombardis} empty="No Super Bowls yet. Win one and the Lombardi Trophy goes here." perRow={perRow} on={on} setOn={setOn} small={width <= 640} spot={spotlight != null ? `sb${sbNumber(spotlight)}` : null} />
-      <Shelf title="Player Awards" items={mine} empty="Win MVP, Offensive or Defensive Player of the Year, Super Bowl MVP or a Rookie of the Year award with you as GM and the trophy goes here." perRow={perRow} on={on} setOn={setOn} start={lombardis.length} small={width <= 640} />
-      <GoldJackets team={team} hofers={retiredHere.filter((r) => r.hof)} yr={yr} />
-      <RingOfHonor team={team} retired={retiredHere} hall={hall} onInduct={onInduct || (() => {})} onRetireNum={onRetireNum || (() => {})} />
-      <RecordsWall team={team} retired={retiredHere} book={book} />
+      {sec === "trophies" && <><Shelf title="Super Bowl Championships" items={lombardis} empty="No Super Bowls yet. Win one and the Lombardi Trophy goes here." perRow={perRow} on={on} setOn={setOn} small={width <= 640} spot={spotlight != null ? `sb${sbNumber(spotlight)}` : null} />
+      <Shelf title="Player Awards" items={mine} empty="Win MVP, Offensive or Defensive Player of the Year, Super Bowl MVP or a Rookie of the Year award with you as GM and the trophy goes here." perRow={perRow} on={on} setOn={setOn} start={lombardis.length} small={width <= 640} /></>}
+      {sec === "jackets" && <GoldJackets team={team} hofers={retiredHere.filter((r) => r.hof)} yr={yr} />}
+      {sec === "ring" && <RingOfHonor team={team} retired={retiredHere} hall={hall} onInduct={onInduct || (() => {})} onRetireNum={onRetireNum || (() => {})} />}
+      {sec === "records" && <RecordsWall team={team} retired={retiredHere} book={book} />}
     </div>
   );
 }

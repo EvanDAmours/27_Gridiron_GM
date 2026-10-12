@@ -145,7 +145,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
             />
           ) : (
             <div style={{ textAlign: "center", padding: "20px 10px" }}>
-              <div style={{ display: "inline-flex", padding: 14, borderRadius: 28, background: "#ffffffe6", boxShadow: `0 0 0 4px ${me.clr}, 0 12px 40px #000a` }}><TeamLogo t={me} sz={mobile ? 120 : 150} /></div>
+              <div style={{ display: "inline-flex" }}><TeamLogo t={me} sz={mobile ? 130 : 160} glow /></div>
               <div style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, textTransform: "uppercase", marginTop: 10 }}>{sp === "regular" ? "Bye week" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>
               <div style={{ fontSize: 16, color: "#cbd5e1", marginTop: 4 }}>{me.city} {me.name} · {rec(me)}</div>
             </div>

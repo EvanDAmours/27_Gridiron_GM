@@ -1,4 +1,4 @@
-// Game Info: the patch notes, newest first, with a search box.
+// Game Updates: the patch notes, newest first, with a search box.
 import React, { useState } from "react";
 import { C } from "./ui.jsx";
 import { PATCH_NOTES } from "./patchNotes.js";
@@ -14,7 +14,7 @@ export default function GameInfo() {
     <div style={{ maxWidth: 860, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>Game Info</div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>Game Updates</div>
           <div style={{ fontSize: 14, color: C.mt }}>Patch notes: every change to Football GM, newest first. Current version {all[0].v}.</div>
         </div>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search patch notes" aria-label="Search patch notes"

@@ -106,7 +106,7 @@ SUPERSTAR = {"Jeremiyah Love", "Caleb Downs", "Drake Maye", "Jayden Daniels", "C
              "Will Campbell", "Ja'Marr Chase", "Aidan Hutchinson"}
 STAR = {"C.J. Stroud", "Marvin Harrison Jr", "Bo Nix", "Cam Ward", "Jaxson Dart", "Jalon Walker", "Mykel Williams", "Jihaad Campbell",
         "Emeka Egbuka", "Omarion Hampton", "Kelvin Banks Jr", "Carnell Tate", "Jordyn Tyson", "Mansoor Delane", "Jermod McCoy",
-        "Keldric Faulk", "Kadyn Proctor", "Spencer Fano", "Francis Mauigoa", "Ty Simpson", "Olaivavega Ioane", "Kenyon Sadiq",
+        "Keldric Faulk", "Kadyn Proctor", "Spencer Fano", "Francis Mauigoa", "Ty Simpson", "Olaivavega Ioane", "Vega Ioane", "Kenyon Sadiq",
         "Peter Woods", "Garrett Wilson", "Jahdae Barron"}
 
 def key(name):
@@ -212,7 +212,7 @@ for label, meta in TEAMS.items():
     out.append({"city": city, "name": name, "ab": ab, "c": c, "d": d, "clr": clr, "ac": ac, "roster": keep, "ps": squad})
     print(f"{ab:4} {len(keep)} +{len(squad)} PS +{len([x for x in rest if x not in squad])} FA  payroll ${sum(x['sal'] for x in keep):.0f}M  top {keep[0]['name']} {keep[0]['ovr']}")
 print(f"ESPN depth charts matched {depth_hits} players")
-json.dump({"source": "EA SPORTS Madden NFL 27 ratings (Week 3); depth charts from ESPN", "season": SEASON, "teams": out, "fa": sorted(fa, key=lambda x: -x["ovr"])}, open("src/data/madden27.json", "w"), separators=(",", ":"))
+json.dump({"source": "EA SPORTS Madden NFL 27 ratings (Week 4); depth charts from ESPN", "season": SEASON, "teams": out, "fa": sorted(fa, key=lambda x: -x["ovr"])}, open("src/data/madden27.json", "w"), separators=(",", ":"))
 from collections import Counter
 print("development:", dict(Counter(x["dev"] for t in out for x in t["roster"] + t["ps"])))
 xfs = [x for t in out for x in t["roster"] + t["ps"] if x["xf"]]

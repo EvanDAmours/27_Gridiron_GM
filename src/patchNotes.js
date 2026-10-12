@@ -1,4 +1,4 @@
-// Every change to the game, oldest first. The Game Info tab shows them newest first.
+// Every change to the game, oldest first. The Game Updates screen shows them newest first.
 // { v: version, date, title, notes: [what changed, in plain words] }
 export const PATCH_NOTES = [
   { v: "1.1", date: "2026-10-08", title: "The Scouting Overhaul", notes: [
