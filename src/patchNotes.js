@@ -607,4 +607,7 @@ export const PATCH_NOTES = [
     "Front Office has a new Long View: this cap year and the next three, each with the money already committed (dead money in red), the room left, how many players are signed, and the good players whose deals end that year, so you can see the re-sign decisions coming.",
     "Every contract negotiation (free agents, re-signings, extensions and offer sheets) shows your cap room in each of the next four seasons if he signs the offer on the table, and it updates as you change the years and money.",
   ] },
+  { v: "2.19", date: "2026-10-12", title: "Sim This Pick", notes: [
+    "Draft day: while another club is on the clock, Sim this pick makes their selection right away, so you can move the draft along one pick at a time instead of waiting out the clock or jumping straight to your pick.",
+  ] },
 ];
