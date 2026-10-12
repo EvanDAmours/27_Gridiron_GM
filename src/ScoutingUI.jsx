@@ -617,35 +617,24 @@ export function PickTracker({ g }) {
   const ts = g.teams || [];
   const ord = ts.map((t, i) => i).sort((a, b) => (a === g.pb?.ch) - (b === g.pb?.ch) || ts[a].w - ts[b].w || (ts[a].pf - ts[a].pa) - (ts[b].pf - ts[b].pa));
   const slot = (pk) => ord.indexOf(pk.orig ?? pk.owner) + 1;
+  const label = (pk) => (g.sp === "draft" ? `#${pk.overall}` : slot(pk) > 0 ? `#${(pk.rd - 1) * 32 + slot(pk)}${pk.orig != null && pk.orig !== g.ui ? ` ${ts[pk.orig]?.ab}` : ""}` : "—");
+  // one small chip per pick, in a row that wraps; rounds without a pick show faded
+  const chips = [1, 2, 3, 4, 5, 6, 7].flatMap((rd) => {
+    const mine = picks.filter((pk) => pk.rd === rd);
+    return mine.length ? mine.map((pk) => ({ rd, pk, d: made.get(pk.id) })) : [{ rd }];
+  });
   return (
-    <div style={{ ...panel, marginBottom: 12 }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
-        <span style={{ fontSize: 17, fontWeight: 900 }}>Your picks</span>
-        <span style={{ fontSize: 15, color: left ? C.gn : C.mt, fontWeight: 800 }}>{left} of {picks.length} left</span>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(118px, 1fr))", gap: 8 }}>
-        {[1, 2, 3, 4, 5, 6, 7].map((rd) => {
-          const mine = picks.filter((pk) => pk.rd === rd);
-          const open = mine.filter((pk) => !made.has(pk.id)).length;
-          return (
-            <div key={rd} style={{ borderRadius: 10, padding: "8px 10px", background: open ? `${C.bl}1f` : "#0b1220", border: `1px solid ${open ? C.bl : C.bd}`, opacity: mine.length ? 1 : 0.55 }}>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1, color: open ? "#bfdbfe" : C.mt }}>ROUND {rd}</span>
-                <span style={{ fontSize: 22, fontWeight: 900, color: open ? "#fff" : C.mt }}>{mine.length}</span>
-              </div>
-              {!mine.length && <div style={{ fontSize: 13, color: C.mt }}>No pick</div>}
-              {mine.map((pk) => {
-                const d = made.get(pk.id);
-                return (
-                  <div key={pk.id} style={{ fontSize: 13, marginTop: 4, color: d ? C.mt : "#e2e8f0", fontWeight: d ? 500 : 800 }}>
-                    <span style={{ textDecoration: d ? "line-through" : "none" }}>{g.sp === "draft" ? `#${pk.overall}` : slot(pk) > 0 ? `Proj. #${(pk.rd - 1) * 32 + slot(pk)}${pk.orig != null && pk.orig !== g.ui ? ` (${ts[pk.orig]?.ab})` : ""}` : "Pick —"}</span>
-                    {d ? <div style={{ fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>✓ {d.player?.name || d.name || "Used"}{d.player?.pos ? ` · ${d.player.pos}` : ""}</div> : null}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
+    <div style={{ ...panel, marginBottom: 12, padding: "10px 12px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 15, fontWeight: 900, marginRight: 2 }}>Your picks</span>
+        <span style={{ fontSize: 13, color: left ? C.gn : C.mt, fontWeight: 800, marginRight: 6 }}>{left} of {picks.length} left</span>
+        {chips.map(({ rd, pk, d }, k) => (
+          <span key={pk?.id ?? `r${rd}`} title={!pk ? `No round ${rd} pick` : d ? `Round ${rd}: ${d.player?.name || d.name || "used"}` : g.sp === "draft" ? `Round ${rd}, pick ${pk.overall}` : `Round ${rd}, projected from the standings`} style={{ display: "inline-flex", alignItems: "baseline", gap: 5, borderRadius: 999, padding: "3px 10px", fontSize: 13, whiteSpace: "nowrap", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", background: pk && !d ? `${C.bl}1f` : "#0b1220", border: `1px solid ${pk && !d ? C.bl + "99" : C.bd}`, opacity: pk ? 1 : 0.5, color: pk && !d ? "#e2e8f0" : C.mt }}>
+            <b style={{ fontSize: 11, letterSpacing: 0.5, color: pk && !d ? "#bfdbfe" : C.mt }}>R{rd}</b>
+            {!pk ? "—" : <span style={{ fontWeight: d ? 500 : 800, textDecoration: d ? "line-through" : "none" }}>{label(pk)}</span>}
+            {d && <span style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis" }}>✓ {d.player?.name || d.name || "Used"}{d.player?.pos ? ` ${d.player.pos}` : ""}</span>}
+          </span>
+        ))}
       </div>
     </div>
   );

@@ -672,4 +672,7 @@ export const PATCH_NOTES = [
   { v: "2.29", date: "2026-10-12", title: "Tighter Re-sign Cards", notes: [
     "Re-sign Week on phones: the player cards are tighter (asking price on the same row as Tag and Negotiate, slightly smaller text and buttons), so about twice as many players fit on the screen.",
   ] },
+  { v: "2.30", date: "2026-10-12", title: "Compact Pick Tracker", notes: [
+    "Your picks on the draft screen are a row of small chips (R1 #2, R2 #34...) instead of seven big boxes: one line on desktop, a few short lines on a phone. Used picks are crossed out with the player you took; rounds where you have no pick show faded.",
+  ] },
 ];
