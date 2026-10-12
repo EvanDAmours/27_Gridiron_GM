@@ -161,35 +161,39 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
             <>
               <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 6 }}>{pick[0] === "DL" ? DL_SLOTS[pick[1]] : STARTERS[pick[0]] > 1 ? `${pick[0]}${pick[1] + 1}` : pick[0]} <span style={{ fontSize: 12, color: C.mt, fontWeight: 600 }}>· {pick[0] === "DL" ? (slotKind(pick[1]) === "EDGE" ? "edge rusher" : "defensive tackle") : RET[pick[0]] ? RET[pick[0]] : `${STARTERS[pick[0]]} starter${STARTERS[pick[0]] > 1 ? "s" : ""}`}</span></div>
               {!chosen.length && <div style={{ color: C.mt, fontSize: 13 }}>Nobody on the roster plays {pick[0]}.</div>}
-              {PARTNER[pick[0]] && setPositions && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>Tackles and guards play either side. Starting a {PARTNER[pick[0]]} here swaps the two.</div>}
-              {RET[pick[0]] && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>Any receiver, back or defensive back can return. The number is his return rating (speed, acceleration, agility and a knack for it). A great returner flips field position and breaks a long one now and then, and it doesn't have to be a starter: a fast backup is a weapon here.</div>}
-              {pick[0] === "DL" && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>Any lineman can play {slotKind(pick[1]) === "EDGE" ? "edge" : "tackle"} here. The number is his rating at this spot; edge rushers lose some inside and run stuffers lose some outside (his natural rating after the slash).</div>}
-              {CROSS[pick[0]] && onMovePos && <div style={{ fontSize: 12, color: C.mt, marginBottom: 4 }}>{["CB", "S"].includes(pick[0]) ? "Corners and safeties can switch." : "Linemen can move along the line."} Moving a player here changes his position; the Move button shows his rating at {pick[0]}. Moving him back restores his old rating.</div>}
-              {!RET[pick[0]] && setSnaps && <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.mt, margin: "2px 0 6px" }}><span>Snap shares fill by depth automatically; drag one to set it yourself (yellow).</span>{order(pick[0]).some((p) => snaps?.[p.id] != null) && <button onClick={() => resetShares(pick[0])} style={{ marginLeft: "auto", background: "transparent", border: `1px solid ${C.bd}`, color: "#cbd5e1", borderRadius: 6, padding: "3px 8px", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>Reset to auto</button>}</div>}
-              <button onClick={() => setPick(null)} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 12, cursor: "pointer", padding: "0 0 6px" }}>← All positions</button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 6px", flexWrap: "wrap" }}>
+                <button onClick={() => setPick(null)} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", padding: 0 }}>← All positions</button>
+                {!RET[pick[0]] && setSnaps && order(pick[0]).some((p) => snaps?.[p.id] != null) && <button onClick={() => resetShares(pick[0])} style={{ background: "transparent", border: `1px solid ${C.bd}`, color: "#cbd5e1", borderRadius: 6, padding: "2px 8px", fontSize: 12, cursor: "pointer" }}>Reset snaps to auto</button>}
+                <details style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}><summary style={{ cursor: "pointer", color: "#94a3b8" }}>How this works</summary><div style={{ marginTop: 4, maxWidth: 420 }}>
+              {PARTNER[pick[0]] && setPositions && <div style={{ marginBottom: 4 }}>Tackles and guards play either side. Starting a {PARTNER[pick[0]]} here swaps the two.</div>}
+              {RET[pick[0]] && <div style={{ marginBottom: 4 }}>Any receiver, back or defensive back can return. The number is his return rating (speed, acceleration, agility and a knack for it). A great returner flips field position and breaks a long one now and then, and it doesn't have to be a starter: a fast backup is a weapon here.</div>}
+              {pick[0] === "DL" && <div style={{ marginBottom: 4 }}>Any lineman can play {slotKind(pick[1]) === "EDGE" ? "edge" : "tackle"} here. The number is his rating at this spot; edge rushers lose some inside and run stuffers lose some outside (his natural rating after the slash).</div>}
+              {CROSS[pick[0]] && onMovePos && <div style={{ marginBottom: 4 }}>{["CB", "S"].includes(pick[0]) ? "Corners and safeties can switch." : "Linemen can move along the line."} Moving a player here changes his position; the Move button shows his rating at {pick[0]}. Moving him back restores his old rating.</div>}
+                  {!RET[pick[0]] && setSnaps && <div>Snap shares fill by depth on their own; drag a slider to set one yourself (it turns yellow).</div>}
+                </div></details>
+              </div>
               {chosen.map(({ p, at, i, move }) => {
                 const here = at === pick[0] && i === pick[1];
                 const starter = i < STARTERS[at];
                 return (
                   <React.Fragment key={`${at}${p.id}`}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 4px", borderBottom: `1px solid ${C.bd}`, background: here ? "#facc1514" : "transparent" }}>
-                    <span style={{ width: 44, fontSize: 12, fontWeight: 800, color: starter ? C.gn : C.mt }}>{at === pick[0] && !starter ? `#${i + 1}` : rowLabel(at, i)}</span>
-                    <Face s={p.face} sz={26} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "4px 4px", borderBottom: `1px solid ${C.bd}`, background: here ? "#facc1514" : "transparent", flexWrap: "wrap" }}>
+                    <span style={{ width: 40, fontSize: 12, fontWeight: 800, color: starter ? C.gn : C.mt }}>{at === pick[0] && !starter ? `#${i + 1}` : rowLabel(at, i)}</span>
+                    <Face s={p.face} sz={22} />
+                    <div style={{ flex: 1, minWidth: 120 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => setSel(p)}>{p.name}</div>
                       <div style={{ fontSize: 11, color: C.mt }}>{RET[pick[0]] && <b style={{ marginRight: 4 }}>{p.pos} {p.ovr}</b>}{p.pos === "DL" && <b style={{ color: naturalDL(p) === "DT" ? "#fb923c" : "#f472b6", marginRight: 4 }}>{naturalDL(p)}</b>}Age {p.age}{p.injured ? <span style={{ color: C.rd, fontWeight: 700 }}> · injured</span> : ""}</div>
                     </div>
                     {(() => { const v = p.pos === "DL" && pick[0] === "DL" ? dlOvrAt(p, slotKind(pick[1])) : shown(p, pick[0]); return <b title={RET[pick[0]] ? `Return rating (${p.pos} ${p.ovr} OVR)` : v !== p.ovr ? `${p.ovr} at his natural spot` : undefined} style={{ fontSize: 16, color: oC(v), minWidth: 26, textAlign: "right" }}>{v}{v !== p.ovr && !RET[pick[0]] && <span style={{ fontSize: 10, color: C.mt, fontWeight: 600 }}> /{p.ovr}</span>}</b>; })()}
+                    {at === pick[0] && !RET[pick[0]] && setSnaps && !p.injured && (() => { const v = shares(pick[0])[p.id] ?? 0; const set_ = snaps?.[p.id] != null; return (
+                      <span title={set_ ? "Snap share you set" : "Snap share (automatic, by depth)"} style={{ display: "inline-flex", alignItems: "center", gap: 4, width: 128 }}>
+                        <input type="range" min={0} max={100} step={5} value={v} onChange={(e) => setShare(pick[0], p, +e.target.value)} aria-label={`${p.name} snap share`} style={{ width: 84, accentColor: v >= 70 ? C.gn : v >= 30 ? "#f59e0b" : "#64748b" }} />
+                        <span style={{ fontSize: 12, fontWeight: 800, minWidth: 34, textAlign: "right", color: set_ ? "#fde68a" : "#cbd5e1" }}>{v}%</span>
+                      </span>); })()}
                     {move ? <Btn onClick={() => moveIn(pick[0], pick[1], p)} bg="#7c3aed" c="#ede9fe" style={{ fontSize: 11, padding: "3px 6px", width: 56 }} title={`Move him to ${pick[0]}: ${previewPos ? previewPos(p, pick[0]) : "?"} OVR there`}>Move {previewPos ? previewPos(p, pick[0]) : ""}</Btn>
                       : here ? <span style={{ fontSize: 11, color: "#facc15", fontWeight: 700, width: 56, textAlign: "center" }}>Here</span>
                       : <Btn onClick={() => (at === pick[0] ? place(pick[0], pick[1], p) : switchSide(pick[0], p))} bg={C.bl} style={{ fontSize: 11, padding: "3px 8px", width: 56 }}>Start</Btn>}
                   </div>
-                  {at === pick[0] && !RET[pick[0]] && setSnaps && !p.injured && (() => { const v = shares(pick[0])[p.id] ?? 0; const set_ = snaps?.[p.id] != null; return (
-                    <div key={`s${p.id}`} style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 4px 8px 52px", borderBottom: `1px solid ${C.bd}` }}>
-                      <span style={{ fontSize: 11, color: C.mt, minWidth: 34 }}>Snaps</span>
-                      <input type="range" min={0} max={100} step={5} value={v} onChange={(e) => setShare(pick[0], p, +e.target.value)} aria-label={`${p.name} snap share`} style={{ flex: 1, accentColor: v >= 70 ? C.gn : v >= 30 ? "#f59e0b" : "#64748b" }} />
-                      <span style={{ fontSize: 13, fontWeight: 800, minWidth: 38, textAlign: "right", color: set_ ? "#fde68a" : "#cbd5e1" }} title={set_ ? "You set this" : "Automatic, by depth"}>{v}%</span>
-                    </div>); })()}
                   </React.Fragment>
                 );
               })}
