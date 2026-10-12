@@ -610,4 +610,10 @@ export const PATCH_NOTES = [
   { v: "2.19", date: "2026-10-12", title: "Sim This Pick", notes: [
     "Draft day: while another club is on the clock, Sim this pick makes their selection right away, so you can move the draft along one pick at a time instead of waiting out the clock or jumping straight to your pick.",
   ] },
+  { v: "2.20", date: "2026-10-12", title: "Scouting Misses", notes: [
+    "A drafted player's potential (POT) now starts as what was believed on draft day: your scouts' read for your picks (spot on only when they had an exact report), the public board's for everyone else, which can be off by several points and never sees hidden gems or red flags.",
+    "The truth comes out over his first two seasons: a first read by Week 9 of his rookie year, most of it by the end of that season, all of it by the end of his second. Big misses (4+ points either way) make the news: a rookie outplaying his draft-day read, or one who isn't what the scouts said.",
+    "His real ceiling drives his growth the whole time; only what you can see changes. The player card marks an unproven POT with a ~, and the Draft Recap holds its gem and bust calls until the truth is out.",
+    "Scouting matters more: a full report on a prospect is the only way to know exactly what you're drafting.",
+  ] },
 ];

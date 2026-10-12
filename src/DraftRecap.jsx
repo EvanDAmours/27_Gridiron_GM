@@ -21,7 +21,12 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
   const [teamF, setTeamF] = useState(-1);
   const view = pickYr ?? years[0];
   const entries = useMemo(() => (view === yr && current && draftLog.length ? draftLog.map(recapEntry) : history[view] || []), [view, yr, current, draftLog, history]);
-  const rows = useMemo(() => gradePicks(entries), [entries]);
+  // Players still being figured out (see scoutMiss.js) show the club's current read of their
+  // ceiling, and no gem or bust call until the truth is out.
+  const rows = useMemo(() => gradePicks(entries.map((e) => {
+    const live = e.id != null ? findPlayer(e.id) : null;
+    return live?.potRev && live.potRev.stage < 3 ? { ...e, pot: live.pot, gem: false, bust: false, pending: true } : e;
+  })), [entries, findPlayer]);
   const grades = useMemo(() => classGrades(rows, teams.length), [rows, teams.length]);
   const counts = devCounts(rows);
   const mine = grades[ui];

@@ -60,7 +60,8 @@ export const primeEnd = (p) => PRIME_END[p.pos] ?? 30;
 export const yearsPastPrime = (p, age = p.age) => age - primeEnd(p);
 
 export function seasonGrowth(p, share, rand = Math.random) {
-  const ovr = p.ovr, pot = p.pot ?? ovr;
+  // his real ceiling drives growth, whatever the club believes it is (see scoutMiss.js)
+  const ovr = p.ovr, pot = p.truePot ?? p.pot ?? ovr;
   const end = primeEnd(p);
   if (p.age < Math.min(27, end - 2)) {
     let g = ri(rand, -1, Math.round((pot - ovr) / 4) + 2);

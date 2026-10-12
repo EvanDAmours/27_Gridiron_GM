@@ -37,7 +37,8 @@ export function CardHeader({ p, team, ovr, pot, sub, dev }) {
         </div>
         <div style={{ textAlign: "center" }}>
           <OvrRing ovr={ovr} />
-          {pot != null && <div style={{ fontSize: 11, color: "#fffc", fontWeight: 700 }}>POT <b style={{ color: oC(pot) }}>{pot}</b></div>}
+          {pot != null && <div style={{ fontSize: 11, color: "#fffc", fontWeight: 700 }} title={p.potRev && p.potRev.stage < 3 ? "Your staff's current read. A young player's real ceiling becomes clear over his first two seasons." : undefined}>POT <b style={{ color: oC(pot) }}>{p.potRev && p.potRev.stage < 3 ? "~" : ""}{pot}</b></div>}
+          {p.potRev && p.potRev.stage < 3 && <div style={{ fontSize: 10, color: "#fffa" }}>{p.potRev.stage === 0 ? "draft-day read" : "still unproven"}</div>}
         </div>
       </div>
     </div>

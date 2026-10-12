@@ -14,7 +14,7 @@ export const HC_TRAIT_NAMES = Object.keys(HC_TRAITS);
 export function hcGrowth(hc, p, g, end, rand = Math.random) {
   const tr = hc?.trait;
   if (!tr) return g;
-  if (tr === "Player Developer" && p.age < 27 && g >= 0 && (p.ovr < (p.pot ?? p.ovr) || g > 0) && rand() < 0.4) return g + 1;
+  if (tr === "Player Developer" && p.age < 27 && g >= 0 && (p.ovr < (p.truePot ?? p.pot ?? p.ovr) || g > 0) && rand() < 0.4) return g + 1;
   if (tr === "QB Whisperer" && p.pos === "QB") {
     if (g < 0) return rand() < 0.5 ? g + 1 : g;
     if (p.age < 30 && rand() < 0.45) return g + 1;
