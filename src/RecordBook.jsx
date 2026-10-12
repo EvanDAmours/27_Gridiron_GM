@@ -29,8 +29,8 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
       <div style={panel}>
         <div style={head}>SINGLE-SEASON RECORDS</div>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
-            <thead><tr>{["RECORD", "MARK", "HELD BY", "SEASON"].map((h) => <th key={h} style={{ textAlign: "left", fontSize: 12, color: C.mt, letterSpacing: 1, padding: "6px 4px", borderBottom: `1px solid ${C.bd}` }}>{h}</th>)}</tr></thead>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead><tr>{["RECORD", "MARK", "HELD BY"].map((h) => <th key={h} style={{ textAlign: "left", fontSize: 12, color: C.mt, letterSpacing: 1, padding: "6px 4px", borderBottom: `1px solid ${C.bd}` }}>{h}</th>)}</tr></thead>
             <tbody>
               {RECORD_DEFS.map((d) => {
                 const r = book.best[d.key];
@@ -40,11 +40,10 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
                     <td style={{ padding: "9px 4px", fontWeight: 700 }}>{d.label}</td>
                     <td style={{ padding: "9px 4px", fontSize: 18, fontWeight: 900, color: mine ? C.gn : "#fff" }}>{recordValue(d.key, r.val)}</td>
                     <td style={{ padding: "9px 4px" }}>
-                      <span onClick={() => open(r.pid)} style={{ fontWeight: 800, cursor: r.pid ? "pointer" : "default" }}>{r.name}</span> <span style={{ color: C.mt }}>({r.team})</span>
+                      <span onClick={() => open(r.pid)} style={{ fontWeight: 800, cursor: r.pid ? "pointer" : "default" }}>{r.name}</span> <span style={{ color: C.mt, whiteSpace: "nowrap" }}>({r.team}, {r.yr})</span>
                       {mine && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, color: C.gn }}>SET IN YOUR LEAGUE</span>}
                       {mine && r.prev && <div style={{ fontSize: 12, color: C.mt }}>Broke {r.prev.name}'s {recordValue(d.key, r.prev.val)} ({r.prev.yr})</div>}
                     </td>
-                    <td style={{ padding: "9px 4px", color: "#cbd5e1" }}>{r.yr}</td>
                   </tr>
                 );
               })}

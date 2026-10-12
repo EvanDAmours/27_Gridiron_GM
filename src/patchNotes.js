@@ -464,14 +464,31 @@ export const PATCH_NOTES = [
     "The best-known coordinators carry their reputations: Spagnuolo, Vic Fangio and Brian Flores call aggressive defenses, Mike McDaniel runs a West Coast offense, and so on.",
     "The Coaching page shows your head coach and a League Coaching Staffs list with every club's head coach, OC and DC.",
     "Existing saves get each club's real head coach; their coordinators stay as they were.",
-  ] },  { v: "1.9993", date: "2026-10-12", title: "Head Coach Traits", notes: [
+  ] },
+  { v: "1.9993", date: "2026-10-12", title: "Head Coach Traits", notes: [
     "Every head coach is known for something, and it matters: Player Developer (young players grow faster), QB Whisperer (quarterbacks develop faster and age better), Talent Evaluator (+3 scouting points a season), Offensive Guru and Defensive Mastermind (about half a point a game on that side of the ball), Culture Builder (free agents and re-signs ask for less) and Veteran Manager (veterans decline more slowly).",
     "Real coaches have the trait they're known for: Andy Reid and Sean Payton are QB Whisperers, Sean McVay and Kyle Shanahan are Offensive Gurus, Mike Macdonald is a Defensive Mastermind, the Harbaughs and Dan Campbell are Culture Builders, Mike Vrabel is a Talent Evaluator, Matt LaFleur is a Player Developer, and so on.",
     "Your head coach's trait is on the Coaching page, and the League Coaching Staffs list shows every head coach's trait icon.",
-  ] },  { v: "1.9994", date: "2026-10-12", title: "Draft Day", notes: [
+  ] },
+  { v: "1.9994", date: "2026-10-12", title: "Draft Day", notes: [
     "A broadcast-style On the Clock stage: the club's colors and logo, round and pick, its biggest needs, and how far away your next pick is.",
     "The pick is in: every first-round pick gets the commissioner's announcement (\"With the 5th pick in the 2026 NFL Draft, the Cleveland Browns select...\") with the player's position, school, grade and a steal/reach call. It's skipped on Fast speed.",
     "A draft ticker runs across the top with every pick so far, and calls out the steals (players who went well after their consensus rank) and the reaches.",
     "Trade up: while another club is on the clock, tap Trade up to pause the draft and call the clubs picking ahead of you. They'll move down for your next pick plus later picks or next year's picks, priced on the draft trade chart with a premium for moving up.",
+  ] },
+  { v: "2.0", date: "2026-10-12", title: "Football GM 2.0", notes: [
+    "Legacy Hall (the Trophy Room, rebuilt): your club's real history in the rafters, with every Super Bowl, NFL/AFL championship, conference title and division title it has ever won (real titles through 2025, then whatever you win), plus the real-looking Lombardi, MVP, Offensive and Defensive Player of the Year, Rookie of the Year and Super Bowl MVP trophies, gold jackets for your Hall of Famers, a Ring of Honor with retired numbers, and a franchise records wall.",
+    "Game day: a broadcast score bug, a live win-probability chart and drive chart during your games, and a game recap afterwards with the key plays (the biggest swings) and the game's top three performers. The box score is rebuilt as passing, rushing, receiving, defense and kicking tables that read on a phone.",
+    "Injury report: players are Questionable (playing hurt at a reduced rating), Doubtful or Out, with the week they're back; injured reserve shows return dates; players coming back from a real injury can play a game below full strength.",
+    "Contract depth: void years to spread a signing bonus thinner (the rest comes due as dead money when the real deal ends), incentives a player earns by hitting a target (charged to next season's cap), and offer sheets for other clubs' franchise-tagged players (they match, or he's yours for two first-round picks).",
+    "Save slots: four slots, each with your team's logo, the season and phase, your record and titles, saved and loaded from the new Saves screen (and loadable from the title screen), plus a How the Cap Works glossary there and on the Contracts screen.",
+    "Player cards: a header in the player's team colors with his number and an OVR ring, rating bars by skill group, a career OVR graph, a season-by-season stats table, a contract timeline (each year's cap hit, bonus and dead money) and his honors.",
+    "An inbox instead of popups: trade offers, coordinator poaching, suspensions, expiring deals, injuries, unspent scouting points and more wait in one list (the button in the header) until you're ready; offer countdowns only run while you're looking at them.",
+    "Head coaches can be fired (by you and by AI clubs after bad seasons), and the coaching pool keeps everyone who's been fired or let go, real coaches included, until somebody hires them.",
+    "Phones: compact standings (rank, logo, team, record, point differential), the fans and stadium panels moved to the Front Office, and box scores and rosters that fit a phone.",
+    "Your team's colors run through the header and tabs; standings show every club's win/loss streak; season leaders and league leaders are bigger and easier to read; a game result card now stays on the screen it appeared on.",
+    "Faster loading: the game is split up so the first load is about half the size, the roster data is cached separately between updates, and screens like the Legacy Hall, League History and the Trade screen load when you open them.",
+    "Auto-drafting for you (when the clock runs out or you sim the draft) now takes your roster's needs into account instead of the best player on the board, so you won't end up with ten quarterbacks.",
+    "Also in 2.0: real head coaches and coordinators with traits, the draft day presentation, signing bonuses in free agency and re-sign week, EDGE vs DT in the draft, positional value and team needs in the AI draft, and Jeremiah Smith as a generational prospect.",
   ] },
 ];
