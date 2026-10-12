@@ -515,5 +515,6 @@ export const PATCH_NOTES = [
     "Scouting HQ: the scouting screen opens on a front page with your scouting and area points (and what they buy), a Do This Next list (the best region to send your area scouts, and prospects at your biggest needs around your first pick who haven't been scouted, each with a button), your staff at a glance and a three-step guide. Hiring scouts has bigger, clearer buttons.",
     "Combine week: filter the results by position or your team's needs, sort by any drill or the combine grade, and see 25 at a time. Stock Up and Stock Down show who helped and hurt himself, and new private workouts give you three free full workups, Combine week only.",
     "Home: the header no longer repeats what the franchise boxes show (record, cap, morale); rep and the owner's style moved into the Owner & Locker Room box.",
+    "Home: Needs Attention comes first and only shows when something's waiting on you; on phones the franchise boxes are a tidy two-column grid and the header's buttons stay on one row (inbox first) instead of stacking.",
   ] },
 ];
