@@ -1,6 +1,7 @@
 // The big result card shown after you sim: did you win, the score, your record and
 // standing, who starred, and the rest of the week's scores. It closes itself after 10 seconds (a bar
-// along the bottom counts down); hovering pauses it, and clicking anything in it keeps it up.
+// along the bottom counts down); hovering pauses it, and clicking anything in it keeps it up. On
+// phones it slides up from the bottom, above the action bar, and a swipe down dismisses it.
 import React, { useEffect, useRef, useState } from "react";
 import { WinProbChart } from "./GameRecap.jsx";
 import { C, Btn, TeamLogo } from "./ui.jsx";
@@ -57,6 +58,7 @@ export default function WeekResult(props) {
   const [left, setLeft] = useState(SHOW_MS);
   const [hover, setHover] = useState(false);
   const [kept, setKept] = useState(false);
+  const startY = useRef(null); // phones: swipe the card down to dismiss it
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   useEffect(() => { setLeft(SHOW_MS); setKept(false); }, [result]);
@@ -68,7 +70,10 @@ export default function WeekResult(props) {
   }, [result, left, hover, kept]);
   if (!result) return null;
   return (
-    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onClickCapture={() => setKept(true)} style={{ position: "relative", marginBottom: MOBILE ? 8 : 12 }}>
+    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onClickCapture={() => setKept(true)}
+      onTouchStart={MOBILE ? (e) => { startY.current = e.touches[0].clientY; } : undefined}
+      onTouchEnd={MOBILE ? (e) => { if (startY.current != null && e.changedTouches[0].clientY - startY.current > 60) onClose(); startY.current = null; } : undefined}
+      style={MOBILE ? { position: "fixed", left: 8, right: 8, bottom: "calc(126px + env(safe-area-inset-bottom))", zIndex: 392, animation: "sheetUp .25s ease-out", boxShadow: "0 -8px 30px #000b", borderRadius: 12 } : { position: "relative", marginBottom: 12 }}>
       <Card {...props} />
       {!kept && <div style={{ position: "absolute", left: 12, right: 12, bottom: 1, height: 3, borderRadius: 2, background: "#ffffff14", overflow: "hidden", pointerEvents: "none" }}>
         <div style={{ height: "100%", width: `${(left / SHOW_MS) * 100}%`, background: hover ? "#64748b" : "#94a3b8", transition: "width .1s linear" }} />

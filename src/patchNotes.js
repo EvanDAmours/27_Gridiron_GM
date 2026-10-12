@@ -640,4 +640,16 @@ export const PATCH_NOTES = [
   { v: "2.24", date: "2026-10-12", title: "One Difficulty", notes: [
     "The Casual / Standard / Hardcore choice on the team-select screen is gone: every new franchise plays by the standard rules.",
   ] },
+  { v: "2.25", date: "2026-10-12", title: "Built for Phones", notes: [
+    "The phone header is one slim line (team, record, cap room, search). The week's main action (Start Season, Play Week, Finish Combine...) is a big button right above the tab bar; Sim All, Sim to Deadline and the rest are behind the ▾ next to it.",
+    "Home's status boxes are one swipeable row instead of a block that filled half the screen.",
+    "Roster, Front Office contracts, Free Agency and the Big Board are lists of player cards on phones, with a Sort menu, instead of squeezed tables. Extend, Restructure, Offer and Draft are big buttons right on the card.",
+    "Every button and menu on a touch screen is at least 40px tall, and choosing a development focus player opens a full-screen picker with search, grouped by position.",
+    "Popups (negotiations, player cards, box scores, the season recap) slide up from the bottom; drag the grip down to close. In a negotiation, Make offer stays pinned at the bottom.",
+    "Game day: the field (the full field, no zooming) stays pinned at the top with a compact score line while the plays scroll underneath, and Pause, Speed, Play calling and Finish are big buttons at the bottom. The result card slides up after the game; swipe it down to dismiss.",
+    "Draft day: a compact clock bar stays pinned at the top with Sim pick, To my pick, This pick and Trade up in one swipeable row; trade offers open in a bottom sheet.",
+    "Swipe left or right to move between a screen's tabs (Depth Chart ↔ Roster, Schedule ↔ Standings ↔ Playoffs...).",
+    "A note appears when you're offline (the game keeps working and saves on the device), and the installed app fits around the notch and the home bar.",
+    "Real contract lengths: every real player now starts a new league with the years actually left on his deal (from ESPN's contract data), instead of the Madden file's often-stale numbers. Brian Burns, for one, is signed through 2028, not in a contract year.",
+  ] },
 ];

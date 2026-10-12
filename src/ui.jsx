@@ -4,6 +4,10 @@ import React from "react";
 export { Face } from "./Face.jsx";
 // The one close button every popup uses: round, top-right, same size everywhere. The popup's box
 // needs position: relative.
+// Phones: popups slide up from the bottom as a sheet (drag the grip down to close).
+export const sheetWrap=(m)=>m?{alignItems:"flex-end",justifyContent:"stretch",padding:0}:{};
+export const sheetBox=(m)=>m?{width:"100%",maxWidth:"none",borderRadius:"18px 18px 0 0",maxHeight:"92vh",paddingBottom:"calc(16px + env(safe-area-inset-bottom))",animation:"sheetUp .22s ease-out",borderBottom:0}:{};
+export function SheetGrip({onClose}){const st=React.useRef(null);return<div onTouchStart={e=>{st.current=e.touches[0].clientY;}} onTouchEnd={e=>{const y=e.changedTouches[0].clientY;if(st.current!=null&&y-st.current>70)onClose();st.current=null;}} style={{display:"flex",justifyContent:"center",padding:"2px 0 10px",margin:"-6px 0 0",touchAction:"none"}} aria-hidden="true"><span style={{width:44,height:5,borderRadius:3,background:"#ffffff40"}}/></div>;}
 export const CloseX=({onClick,label="Close",style:st})=><button onClick={onClick} aria-label={label} title={label} style={{position:"absolute",top:10,right:10,zIndex:5,width:36,height:36,borderRadius:18,background:"#000a",color:"#fff",border:"1px solid #ffffff33",fontSize:18,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",...(st||{})}}>✕</button>;
 export const C={bg:"#080c14",cd:"#111827",bd:"#1e293b",tx:"#e0e6f0",mt:"#64748b",gn:"#22c55e",bl:"#3b82f6",gd:"#eab308",rd:"#ef4444",f:"'Segoe UI',system-ui,sans-serif"};
 export const oC=o=>o>=80?"#22c55e":o>=68?"#84cc16":o>=55?"#eab308":o>=42?"#f97316":"#ef4444";

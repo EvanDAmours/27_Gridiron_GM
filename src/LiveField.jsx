@@ -81,7 +81,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       return <Player key={`${side}${pos}${i}`} p={list[pos]?.[i]} pos={pos} x={x} y={y} team={team} side={side} away={awayFor(side)} td={!!lastPlay?.td} />;
     });
   return (
-    <svg viewBox={MOBILE ? `${clamp(x0 - 250, 0, W - 500)} 0 500 ${H}` : `0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, maxHeight: MOBILE ? "none" : "min(46vh, 420px)", transition: "all .4s ease" }}>
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, maxHeight: "min(46vh, 420px)" }}>
       <defs>
         {/* turf grain: fine noise over the grass */}
         <filter id="lf-grain" x="0" y="0" width="100%" height="100%">

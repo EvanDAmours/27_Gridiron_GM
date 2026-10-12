@@ -1,6 +1,7 @@
 // Scouting and draft screens: the Big Board (always in consensus order), your own list, the
 // Combine, your scouting staff, and the prospect profile. Game state comes in as `g`.
 import { posTag } from "./dline.js";
+import { MOBILE } from "./mobile.js";
 import React, { useState, useMemo, useEffect } from "react";
 import { mockDraft } from "./mockDraft.js";
 import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo } from "./ui.jsx";
@@ -158,7 +159,33 @@ function ProspectRow({ g, p, onDraft, canDraft, myRank }) {
   );
 }
 
-const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "7px 10px", fontSize: 14 };
+// Phones: the same prospect as a card, with the Draft button big when you're on the clock.
+function ProspectCard({ g, p, onDraft, canDraft, myRank }) {
+  const a = useActions(g);
+  const read = prospectRead(g.scouting, p);
+  const listed = listIds(g.scouting, p.draftYear).includes(p.id);
+  const [st, stc] = STATUS(read);
+  return (
+    <div onClick={() => g.setSel(p)} style={{ background: C.bg, border: `1px solid ${canDraft && onDraft ? `${C.gn}66` : C.bd}`, borderRadius: 10, padding: "8px 10px", cursor: "pointer" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ width: 30, textAlign: "center", fontWeight: 900, fontSize: 16, color: myRank ? "#fcd34d" : "#94a3b8" }}>{myRank || csRank(p)}</span>
+        <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ width: 40, height: 40, background: "transparent", border: 0, fontSize: 20, color: listed ? C.gd : "#64748b", cursor: "pointer" }}>{listed ? "★" : "☆"}</button>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 800, fontSize: 15 }}><Bdg pos={posTag(p)} /><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>{read.flag && <span title={read.flagWhy || "Red flag"} style={{ fontSize: 12 }}>🚩</span>}</span>
+          <span style={{ display: "block", fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.bio?.college} · {p.age} yrs · <span style={{ color: stc }}>{st}</span></span>
+        </span>
+        <span style={{ textAlign: "center", minWidth: 34 }}><Val txt={read.ovr} /><span style={{ display: "block", fontSize: 10, color: C.mt }}>OVR</span></span>
+        <span style={{ textAlign: "center", minWidth: 34 }}><Val txt={read.pot} /><span style={{ display: "block", fontSize: 10, color: C.mt }}>POT</span></span>
+      </div>
+      <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 8, marginTop: 6, justifyContent: "flex-end" }}>
+        <ScoutButton g={g} p={p} read={read} />
+        {onDraft && <Btn onClick={() => onDraft(p)} disabled={!canDraft} bg={C.gn} style={{ minHeight: 40, padding: "6px 18px", fontSize: 15, fontWeight: 900 }}>Draft</Btn>}
+      </div>
+    </div>
+  );
+}
+
+const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "7px 10px", fontSize: 14, minHeight: MOBILE ? 44 : undefined };
 
 export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = "Big Board", page = 40 }) {
   const years = Object.keys(g.dc).map(Number).sort((x, y) => x - y);
@@ -220,12 +247,16 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
         <input value={q} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search name or college" aria-label="Search prospects" style={{ ...sel, flex: "1 1 160px" }} />
       </div>
       {cy !== g.yr && <div style={{ ...muted, marginBottom: 8 }}>An early look at a future class: your scouts can only file reports on the {g.yr} class.</div>}
+      {MOBILE ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{list.slice(0, n).map((p) => <ProspectCard key={p.id} g={g} p={p} onDraft={onDraft} canDraft={canDraft} myRank={ranks?.get(p.id)} />)}</div>
+      ) : (
       <div style={{ overflowX: "auto" }}>
         <table className="sc-t" style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr><th style={th}>#</th><th style={th}></th><th style={{ ...th, textAlign: "left" }}>PLAYER</th><th className="sc-hide" style={th}>POS</th><th style={th}>OVR</th><th style={th}>POT</th><th className="sc-hide" style={th}>SCOUTED</th><th style={th}></th></tr></thead>
           <tbody>{list.slice(0, n).map((p) => <ProspectRow key={p.id} g={g} p={p} onDraft={onDraft} canDraft={canDraft} myRank={ranks?.get(p.id)} />)}</tbody>
         </table>
       </div>
+      )}
       {!list.length && <div style={{ ...muted, padding: 8 }}>No prospects match.</div>}
       {list.length > n && <div style={{ marginTop: 10, textAlign: "center" }}><Btn onClick={() => setN(n + page)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 14, padding: "6px 14px" }}>Show more ({list.length - n} left)</Btn></div>}
     </div>

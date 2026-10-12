@@ -5,6 +5,7 @@ import M27 from "./data/madden27.json" with { type: "json" };
 import SPECIAL from "./data/special.json" with { type: "json" };
 import REAL_SCHED from "./data/schedule2026.json" with { type: "json" };
 import REAL_DC from "./data/realProspects.json" with { type: "json" };
+import REAL_CONTRACTS from "./data/contracts2026.json" with { type: "json" };
 import { depthOrderFor } from "./depth.js";
 import { playerValue, pickValue as chartPickValue } from "./trade.js";
 import { arrangeDL, dlAsPlayed, naturalDL } from "./dline.js";
@@ -303,7 +304,12 @@ export function addPunters(d){
   for(const x of PUNTERS)if(PUNTER[x.team]!==x&&x.age+yrs<=40)d.fa.push({...aged(x),contract:0});
   return d.teams;
 }
-export function initTeams(ui){return TEAMS.map((t,i)=>({...t,id:i,isUser:i===ui,roster:[...M27.teams[i].roster.filter(d=>d!==CUT[i]),...(PUNTER[t.ab]?[PUNTER[t.ab]]:[])].map(realPlayer),ps:M27.teams[i].ps.map(realPlayer),ir:[],w:0,l:0,t:0,pf:0,pa:0,morale:50,streak:0,gmRep:50,chemistry:75,strat:pick(["balanced","pass-heavy","run-heavy","defensive"]),gmStyle:i===ui?'user':pick(['rebuilder','win-now','analytics']),coach:realStaff(t.ab)}));}
+// Real contract lengths (ESPN's "signed through" year for every rostered player): the Madden data's
+// contract years are often stale, so a league starts with each real player's actual years left.
+const _cn=(n)=>String(n||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[.'’]/g,"").replace(/-/g," ").replace(/\b(jr|sr|ii|iii|iv|v)\b/g,"").replace(/\s+/g," ").trim();
+const REAL_THROUGH=(()=>{const byTeam=new Map(),byName=new Map(),dup=new Set();for(const[k,v]of Object.entries(REAL_CONTRACTS.players||{})){const i=k.indexOf("|"),ab=k.slice(0,i),nm=_cn(k.slice(i+1));byTeam.set(`${ab}|${nm}`,v);if(byName.has(nm))dup.add(nm);byName.set(nm,v);}for(const n of dup)byName.delete(n);return(ab,name)=>byTeam.get(`${ab}|${_cn(name)}`)??byName.get(_cn(name));})();
+export function realContractYears(teams,season=REAL_CONTRACTS.season){for(const t of teams)for(const p of [...(t.roster||[]),...(t.ps||[])]){const th=REAL_THROUGH(t.ab,p.name);if(th!=null&&th>=season)p.contract=Math.max(1,Math.min(7,th-season+1));}return teams;}
+export function initTeams(ui){return realContractYears(TEAMS.map((t,i)=>({...t,id:i,isUser:i===ui,roster:[...M27.teams[i].roster.filter(d=>d!==CUT[i]),...(PUNTER[t.ab]?[PUNTER[t.ab]]:[])].map(realPlayer),ps:M27.teams[i].ps.map(realPlayer),ir:[],w:0,l:0,t:0,pf:0,pa:0,morale:50,streak:0,gmRep:50,chemistry:75,strat:pick(["balanced","pass-heavy","run-heavy","defensive"]),gmStyle:i===ui?'user':pick(['rebuilder','win-now','analytics']),coach:realStaff(t.ab)})));}
 // Assign bye weeks 5-14 to each team (paired so week always has even active teams)
 // 18-week schedule: each team plays 17 games (1 bye in weeks 5-14)
 // The NFL schedule formula (src/schedule.js). prev: last season's teams, for division finishes.

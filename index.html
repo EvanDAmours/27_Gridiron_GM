@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Football GM</title>
     <meta name="description" content="Football GM — the ultimate browser football general manager game. Draft prospects, sign free agents, make trades, manage your salary cap, then take your team to the field in real-time. Free to play, no download required." />
     <meta name="keywords" content="football GM game, NFL manager game, browser football game, franchise mode, football simulator, GM simulation, draft game, salary cap game" />
@@ -25,6 +25,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <style>
       /* rows of tab pills: one swipeable line on phones instead of wrapping */
+      @keyframes sheetUp { from { transform: translateY(40px); opacity: .4 } to { transform: none; opacity: 1 } }
+      /* touch screens: every control at least 40px tall so it is easy to hit */
+      @media (pointer: coarse) { button, select, input:not([type=checkbox]):not([type=radio]):not([type=range]) { min-height: 40px; } }
       @media (max-width: 700px) { .pill-row { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; } .pill-row > * { flex-shrink: 0; white-space: nowrap; } }
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { background: #0f172a; overflow-y: auto; }

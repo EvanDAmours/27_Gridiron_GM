@@ -1,6 +1,7 @@
 // The Development Focus card on the dashboard.
 import React, { useState } from "react";
-import { C, oC, pC } from "./ui.jsx";
+import { C, oC, pC, Bdg, CloseX } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 import { devOf, DEV_TRAITS } from "./scouting.js";
 import { OFFENSE, DEFENSE, focusChance, perSeason } from "./development.js";
 import { DevChip } from "./ScoutingUI.jsx";
@@ -10,9 +11,45 @@ const POS_ORDER = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "OL", "E
 const posRank = (pos) => { const i = POS_ORDER.indexOf(pos); return i < 0 ? 99 : i; };
 const initials = (n) => String(n || "").split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
+// Phones: a full-screen picker (search, players grouped by position, big rows) instead of a
+// tiny dropdown.
+function Picker({ label, groups, current, onPick, onClose }) {
+  const [q, setQ] = useState("");
+  const n = q.trim().toLowerCase();
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 3200, background: C.bg, display: "flex", flexDirection: "column" }}>
+      <div style={{ position: "relative", padding: "calc(12px + env(safe-area-inset-top)) 14px 10px", borderBottom: `1px solid ${C.bd}` }}>
+        <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>{label} development focus</div>
+        <CloseX onClick={onClose} style={{ top: "calc(8px + env(safe-area-inset-top))" }} />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search your roster" aria-label="Search" style={{ width: "100%", boxSizing: "border-box", minHeight: 44, background: C.cd, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "8px 12px", fontSize: 16 }} />
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: "6px 10px calc(20px + env(safe-area-inset-bottom))" }}>
+        {current && <button onClick={() => onPick(null)} style={{ width: "100%", minHeight: 48, margin: "4px 0 8px", background: "transparent", border: `1px dashed ${C.bd}`, borderRadius: 10, color: C.mt, fontSize: 15, cursor: "pointer" }}>Nobody in the lab</button>}
+        {groups.map(([pos, list]) => {
+          const rows = list.filter((x) => !n || x.name.toLowerCase().includes(n));
+          if (!rows.length) return null;
+          return (
+            <div key={pos} style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.mt, margin: "8px 4px 4px" }}>{pos}</div>
+              {rows.map((x) => (
+                <button key={x.id} onClick={() => onPick(x.id)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, minHeight: 56, marginBottom: 4, background: String(current) === String(x.id) ? `${C.gn}22` : C.cd, border: `1px solid ${String(current) === String(x.id) ? C.gn : C.bd}`, borderRadius: 10, padding: "6px 12px", color: C.tx, textAlign: "left", cursor: "pointer" }}>
+                  <Bdg pos={x.pos} />
+                  <span style={{ flex: 1, minWidth: 0 }}><b style={{ display: "block", fontSize: 15 }}>{x.name}</b><span style={{ fontSize: 12, color: C.mt }}>Age {x.age} · {(DEV_TRAITS[devOf(x)]?.name || "Normal")} · ~{perSeason(x)}/season</span></span>
+                  <b style={{ fontSize: 20, color: oC(x.ovr) }}>{x.ovr}</b>
+                </button>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
   const p = players.find((x) => focus?.[side] != null && String(x.id) === String(focus[side]));
   const [by, setBy] = useState("pos"); // "pos": grouped by position; "growth": fastest growers first
+  const [picking, setPicking] = useState(false);
   const best = (a, b) => focusChance(b) - focusChance(a) || b.ovr - a.ovr;
   const options = [...players].sort(best);
   const groups = [...new Set(players.map((x) => x.pos))].sort((a, b) => posRank(a) - posRank(b)).map((pos) => [pos, options.filter((x) => x.pos === pos)]);
@@ -42,10 +79,12 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
       ) : (
         <div style={{ border: `1px dashed ${C.bd}`, borderRadius: 10, padding: "14px 12px", color: C.mt, fontSize: 13, marginBottom: 6 }}>Nobody in the lab. Pick a player below.</div>
       )}
-      <select value={p?.id || ""} onChange={(e) => setFocus((f) => ({ ...f, [side]: e.target.value || null }))} aria-label={`${label} development focus`} style={{ width: "100%", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
+      {MOBILE && <button onClick={() => setPicking(true)} style={{ width: "100%", minHeight: 46, background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "8px 12px", fontSize: 15, fontWeight: 700, textAlign: "left", cursor: "pointer" }}>{p ? `Change ${label.toLowerCase()} player ›` : `Choose ${label.toLowerCase()} player ›`}</button>}
+      {MOBILE && picking && <Picker label={label} groups={by === "pos" ? groups : [["Fastest growers first", options]]} current={p?.id} onClose={() => setPicking(false)} onPick={(id) => { setFocus((f) => ({ ...f, [side]: id })); setPicking(false); }} />}
+      {!MOBILE && <select value={p?.id || ""} onChange={(e) => setFocus((f) => ({ ...f, [side]: e.target.value || null }))} aria-label={`${label} development focus`} style={{ width: "100%", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
         <option value="">— choose {label.toLowerCase()} —</option>
         {by === "pos" ? groups.map(([pos, list]) => <optgroup key={pos} label={pos}>{list.map(opt)}</optgroup>) : options.map(opt)}
-      </select>
+      </select>}
     </div>
   );
 }

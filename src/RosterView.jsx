@@ -5,10 +5,11 @@ import { naturalDL } from "./dline.js";
 import { C, oC, Bdg, Face } from "./ui.jsx";
 import { InjTag } from "./InjuryTag.jsx";
 import { DevChip } from "./ScoutingUI.jsx";
+import { MOBILE } from "./mobile.js";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
 const GROUPS = { ALL: null, OFF: ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT"], DEF: ["DL", "LB", "CB", "S"], ST: ["K", "P"] };
-const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
+const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15, minHeight: MOBILE ? 44 : undefined };
 const DEV_RANK = { generational: 4, superstar: 3, star: 2, normal: 1, late: 0 };
 
 // Little status badges next to a name, so the whole roster reads at a glance.
@@ -58,6 +59,38 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search roster" style={{ ...sel, flex: "1 1 160px" }} />
       </div>
       {mine && <div style={{ fontSize: 12, color: C.mt, margin: "-4px 0 8px" }}>🔬 development focus · ✍️ contract year · 📝 extended · ~ unproven rookie · 🔁 trade request · 🚫 suspended</div>}
+      {MOBILE && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+          <span style={{ fontSize: 13, color: C.mt }}>Sort</span>
+          <select value={sort[0]} onChange={(e) => setSort([e.target.value, ["pos", "name"].includes(e.target.value) ? 1 : -1])} aria-label="Sort roster" style={{ ...sel, flex: 1, minHeight: 44 }}>
+            {[["pos", "Position & depth"], ["ovr", "Overall"], ["pot", "Potential"], ["age", "Age"], ["sal", "Salary"], ["name", "Name"]].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </select>
+        </div>
+      )}
+      {MOBILE ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {rows.map((p) => {
+            const s = slot(p);
+            return (
+              <button key={p.id} onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 10, textAlign: "left", background: C.bg, border: `1px solid ${C.bd}`, borderLeft: `3px solid ${s?.starter ? C.gn : C.bd}`, borderRadius: 10, padding: "8px 10px", minHeight: 56, color: C.tx, cursor: "pointer" }}>
+                <Face s={p.face} sz={34} />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontWeight: 800, fontSize: 15, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}<Badges p={p} focus={focus} mine={mine} /></span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}>
+                    <Bdg pos={p.pos} /><span style={{ color: s?.starter ? C.gn : "#94a3b8", fontWeight: 700 }}>{s?.label || "—"}</span><span>Age {p.age}</span><span>${(p.salary || 0).toFixed(1)}M · {p.contract}y</span>
+                    <InjTag p={p} wk={wk} />{p.holdout && <span style={{ color: C.gd, fontWeight: 800 }}>Holdout</span>}
+                  </span>
+                </span>
+                <span style={{ textAlign: "right" }}>
+                  <span style={{ display: "block", fontSize: 22, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</span>
+                  <span style={{ fontSize: 11, color: C.mt }}>POT {p.potRev && p.potRev.stage < 3 ? "~" : ""}{p.pot || p.ovr}</span>
+                </span>
+              </button>
+            );
+          })}
+          {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 15 }}>Nobody matches.</div>}
+        </div>
+      ) : (
       <div style={{ maxHeight: "72vh", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr>{th("name", "PLAYER", { left: true })}{th("pos", "POS")}{th("pos", "DEPTH", { hide: true })}{th("age", "AGE")}{th("ovr", "OVR")}{th("pot", "POT", { hide: true })}{th("dev", "DEV", { hide: true })}{th("sal", "CONTRACT", { hide: true })}</tr></thead>
@@ -94,6 +127,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
         </table>
         {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 15 }}>Nobody matches.</div>}
       </div>
+      )}
     </div>
   );
 }

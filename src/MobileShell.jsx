@@ -59,3 +59,30 @@ export function MoreSheet({ tabs, labels, tab, go, onClose, actions }) {
     </div>
   );
 }
+
+// Phones: the week's main action sits right above the tab bar, where your thumb is. Anything else
+// (Sim All, Sim to Deadline, draft speed...) is one tap away behind the ▾.
+// actions: [{ label, onClick, bg, c }], first = the main one.
+export function MobileActionBar({ actions }) {
+  const [open, setOpen] = React.useState(false);
+  if (!actions?.length) return null;
+  const [main, ...rest] = actions;
+  const bar = { position: "fixed", left: 0, right: 0, bottom: "calc(58px + env(safe-area-inset-bottom))", zIndex: 395, padding: "8px 10px", background: "linear-gradient(180deg, #0b122000, #0b1220f2 35%)", display: "flex", gap: 8 };
+  return (
+    <>
+      {open && rest.length > 0 && (
+        <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 396, background: "#0007" }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", left: 10, right: 10, bottom: "calc(120px + env(safe-area-inset-bottom))", background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 14, padding: 8, display: "flex", flexDirection: "column", gap: 6, boxShadow: "0 -10px 40px #000a" }}>
+            {rest.map((a) => (
+              <button key={a.label} onClick={() => { setOpen(false); a.onClick(); }} style={{ minHeight: 48, borderRadius: 10, border: 0, background: a.bg || C.bd, color: a.c || "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>{a.label}</button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div data-tour="actions" style={bar}>
+        <button onClick={main.onClick} style={{ flex: 1, minHeight: 48, borderRadius: 12, border: 0, background: main.bg || C.gn, color: main.c || "#fff", fontSize: 17, fontWeight: 900, cursor: "pointer", boxShadow: "0 6px 20px #0008" }}>{main.label}</button>
+        {rest.length > 0 && <button onClick={() => setOpen((o) => !o)} aria-label="More actions" style={{ width: 56, minHeight: 48, borderRadius: 12, border: `1px solid ${C.bd}`, background: open ? C.bl : C.cd, color: "#fff", fontSize: 18, fontWeight: 900, cursor: "pointer" }}>{open ? "✕" : "▾"}</button>}
+      </div>
+    </>
+  );
+}

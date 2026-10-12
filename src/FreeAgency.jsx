@@ -1,5 +1,6 @@
 // Free agency, laid out like the trade screen: one big sortable table of real free agents, your
 // cap and needs up top, and a real negotiation (years and money) when you go to sign someone.
+import { MOBILE } from "./mobile.js";
 import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
 import { yearlyAsk, maxYears } from "./negotiation.js";
@@ -50,6 +51,36 @@ export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSe
           <button onClick={() => setNeedOnly((v) => !v)} style={{ ...sel, cursor: "pointer", background: needOnly ? `${C.bl}33` : C.bg, borderColor: needOnly ? C.bl : C.bd, fontWeight: 700 }}>Your needs: {needs.slice(0, 4).join(", ") || "none"}</button>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search free agents" style={{ ...sel, flex: "1 1 160px" }} />
         </div>
+        {MOBILE && (
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: 13, color: C.mt }}>Sort</span>
+            <select value={sort[0]} onChange={(e) => setSort([e.target.value, ["name", "pos"].includes(e.target.value) ? 1 : -1])} aria-label="Sort free agents" style={{ ...sel, flex: 1, minHeight: 44 }}>
+              {[["ovr", "Overall"], ["ask", "Asking price"], ["age", "Age"], ["pos", "Position"], ["name", "Name"]].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          </div>
+        )}
+        {MOBILE ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {rows.slice(0, n).map((p) => {
+              const ask = askingPrice(p);
+              const from = p.formerTeam != null ? teams[p.formerTeam] : null;
+              return (
+                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, background: p.formerTeam === ui ? "#14532d22" : C.bg, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "8px 10px" }}>
+                  <span onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0, cursor: "pointer" }}>
+                    <Face s={p.face} sz={34} />
+                    <span style={{ minWidth: 0 }}>
+                      <span style={{ display: "block", fontWeight: 800, fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+                      <span style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}><Bdg pos={p.pos} /><span>Age {p.age}</span><span style={{ color: ask <= cap ? "#e2e8f0" : C.rd, fontWeight: 700 }}>{money(ask)}/yr</span>{from && <span style={{ color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `ex-${from.ab}`}</span>}</span>
+                    </span>
+                  </span>
+                  <span style={{ fontSize: 22, fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
+                  {talkFor(p).walked ? <span style={{ fontSize: 12, color: C.rd, fontWeight: 700, width: 64, textAlign: "center" }}>Not interested</span> : <Btn onClick={() => setOffer(p)} bg={C.gn} style={{ fontSize: 14, minHeight: 42, padding: "6px 12px" }}>Offer</Btn>}
+                </div>
+              );
+            })}
+            {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 15 }}>Nobody matches.</div>}
+          </div>
+        ) : (
         <div style={{ maxHeight: "70vh", overflow: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>{th("name", "PLAYER", true)}{th("pos", "POS")}{th("age", "AGE")}{th("ovr", "OVR")}<th className="fa-hide" style={{ padding: "8px 6px", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: C.mt, borderBottom: `1px solid ${C.bd}`, position: "sticky", top: 0, background: C.cd }}>POT</th>{th("ask", "ASKING")}<th style={{ borderBottom: `1px solid ${C.bd}`, position: "sticky", top: 0, background: C.cd }}></th></tr></thead>
@@ -82,6 +113,7 @@ export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSe
           </table>
           {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 15 }}>Nobody matches.</div>}
         </div>
+        )}
         {rows.length > n && <div style={{ textAlign: "center", marginTop: 10 }}><Btn onClick={() => setN(n + 50)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 14, padding: "6px 14px" }}>Show more ({rows.length - n} left)</Btn></div>}
       </div>
       {extras}

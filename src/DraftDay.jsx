@@ -1,7 +1,8 @@
 // Draft day presentation: the on-the-clock stage, the commissioner's "pick is in" card, the
 // steal/reach ticker and the trade-up phone bank.
+import { MOBILE } from "./mobile.js";
 import React, { useEffect, useRef } from "react";
-import { C, Bdg, Btn, TeamLogo } from "./ui.jsx";
+import { C, Bdg, Btn, TeamLogo, SheetGrip, CloseX } from "./ui.jsx";
 import { pickValueTag, pickLabel } from "./draftTrade.js";
 
 const ord = (n) => { const s = ["th", "st", "nd", "rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
@@ -63,6 +64,29 @@ export function PickIsIn({ entry, team, yr, onDone, ms = 2300 }) {
 
 // The on-the-clock stage. needs: positions the club is short at; fits: best available for them.
 export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = [], fits = [], onSim, onSimPick, onCalls, callsOpen, onForPick, forPickOpen }) {
+  const clock = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
+  // Phones: a compact clock bar pinned under the header, the buttons in one swipeable row.
+  if (MOBILE) return (
+    <div style={{ position: "sticky", top: "calc(56px + env(safe-area-inset-top))", zIndex: 20, borderRadius: 12, overflow: "hidden", marginBottom: 10, border: mine ? `2px solid ${C.gn}` : `1px solid ${C.bd}`, boxShadow: "0 8px 20px #0009" }}>
+      <div style={{ background: `linear-gradient(120deg,${team.clr} 0%,#0b1120 85%)`, padding: "8px 10px", display: "flex", alignItems: "center", gap: 10 }}>
+        <TeamLogo t={team} sz={34} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: "#fffb" }}>{paused ? "PAUSED" : mine ? "YOU'RE ON THE CLOCK" : "ON THE CLOCK"} · R{pick.rd} #{pick.overall}</div>
+          <div style={{ fontSize: 17, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{team.city} {team.name}</div>
+          {!mine && nextMine && <div style={{ fontSize: 12, color: "#fffc" }}>Your pick: #{nextMine.overall} ({nextMine.overall - pick.overall} away)</div>}
+        </div>
+        <div style={{ fontSize: 26, fontWeight: 900, color: timer <= 10 ? C.rd : mine ? C.gd : "#fff", fontVariantNumeric: "tabular-nums" }}>{clock}</div>
+      </div>
+      {!mine && (onSimPick || nextMine) && (
+        <div className="pill-row" style={{ background: "#0b1120", padding: "6px 8px", display: "flex", gap: 6, overflowX: "auto" }}>
+          {onSimPick && <Btn onClick={onSimPick} bg="#0e7490" style={{ fontSize: 14, minHeight: 42, padding: "6px 12px", fontWeight: 900, flexShrink: 0 }}>⏭ Sim pick</Btn>}
+          {nextMine && <Btn onClick={onSim} bg={C.gn} style={{ fontSize: 14, minHeight: 42, padding: "6px 12px", fontWeight: 900, flexShrink: 0 }}>⏩ To my pick</Btn>}
+          {nextMine && <Btn onClick={onForPick} bg={forPickOpen ? "#854d0e" : "#422006"} c="#fde68a" style={{ fontSize: 14, minHeight: 42, padding: "6px 12px", fontWeight: 800, flexShrink: 0 }}>🔁 This pick</Btn>}
+          {nextMine && <Btn onClick={onCalls} bg={callsOpen ? "#4c1d95" : "#1e1b4b"} c="#c4b5fd" style={{ fontSize: 14, minHeight: 42, padding: "6px 12px", fontWeight: 800, flexShrink: 0 }}>📞 Trade up</Btn>}
+        </div>
+      )}
+    </div>
+  );
   return (
     <div style={{ borderRadius: 14, overflow: "hidden", marginBottom: 10, border: mine ? `2px solid ${C.gn}` : `1px solid ${C.bd}` }}>
       <div style={{ height: 5, background: "linear-gradient(90deg,#1d4ed8 0 33%,#fff 33% 66%,#b91c1c 66%)" }} />
@@ -100,6 +124,20 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
 }
 
 // Clubs ahead of you willing to move down.
+// Phones: draft-day trade panels open as a bottom sheet over the board.
+function PhoneSheet({ onClose, children }) {
+  if (!MOBILE) return children;
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 1100, background: "#000a", display: "flex", alignItems: "flex-end" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "100%", maxHeight: "85vh", overflowY: "auto", background: C.bg, borderRadius: "18px 18px 0 0", padding: "8px 10px calc(14px + env(safe-area-inset-bottom))", animation: "sheetUp .22s ease-out" }}>
+        <SheetGrip onClose={onClose} />
+        <CloseX onClick={onClose} style={{ top: 8, right: 8 }} />
+        {children}
+      </div>
+    </div>
+  );
+}
+
 // The on-the-clock club's answer to "what would it take for this pick?"
 const FORPICK_NO = {
   keep: (t) => `The ${t} like their spot and aren't moving off this pick.`,
@@ -108,7 +146,7 @@ const FORPICK_NO = {
 };
 export function ForPickPanel({ quote, team, yr, onAccept, onClose }) {
   const o = quote.offer;
-  return (
+  return (<PhoneSheet onClose={onClose}>
     <div style={{ background: C.cd, border: "1px solid #ca8a0466", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
       <div style={{ fontSize: 14, fontWeight: 800, color: "#fde68a", marginBottom: 6 }}>🔁 Trade for this pick <span style={{ fontSize: 12, color: C.mt, fontWeight: 500 }}>· the draft is paused. Make the trade and you're on the clock.</span></div>
       {!o && <div style={{ fontSize: 14, color: C.mt }}>{FORPICK_NO[quote.no](team.name)}</div>}
@@ -121,12 +159,12 @@ export function ForPickPanel({ quote, team, yr, onAccept, onClose }) {
         {o && <Btn onClick={() => onAccept(o)} bg={C.gn} style={{ fontSize: 14, padding: "7px 16px", fontWeight: 800 }}>Make the trade</Btn>}
         <Btn onClick={onClose} bg={C.bd} c={C.mt} style={{ fontSize: 14, padding: "7px 14px" }}>{o ? "No thanks" : "Close"}</Btn>
       </div>
-    </div>
+    </div></PhoneSheet>
   );
 }
 
-export function TradeUpPanel({ offers, yr, onAccept, onPass }) {
-  return (
+export function TradeUpPanel({ offers, yr, onAccept, onPass, onClose }) {
+  return (<PhoneSheet onClose={onClose}>
     <div style={{ background: C.cd, border: "1px solid #7c3aed66", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
       <div style={{ fontSize: 14, fontWeight: 800, color: "#c4b5fd", marginBottom: 6 }}>📞 Trade up <span style={{ fontSize: 12, color: C.mt, fontWeight: 500 }}>· the draft is paused while you work the phones. Prices from the draft trade chart; moving up costs a premium.</span></div>
       {!offers.length && <div style={{ fontSize: 13, color: C.mt }}>Nobody ahead of you is willing to move down right now (or you don't have the picks to pay for it).</div>}
@@ -142,6 +180,6 @@ export function TradeUpPanel({ offers, yr, onAccept, onPass }) {
           </div>
         ))}
       </div>
-    </div>
+    </div></PhoneSheet>
   );
 }

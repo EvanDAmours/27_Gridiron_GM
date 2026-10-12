@@ -2,7 +2,8 @@
 // Used for re-signing your own players and for free agents.
 import { capProjection } from "./capProjection.js";
 import React, { useState } from "react";
-import { C, oC, Bdg, Btn, Face, CloseX } from "./ui.jsx";
+import { C, oC, Bdg, Btn, Face, CloseX, sheetWrap, sheetBox, SheetGrip } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 import { yearlyAsk, maxYears, respond, interest } from "./negotiation.js";
 import { EXT_BONUS, extStructure } from "./extensions.js";
 import { SIGN_BONUS, signingStructure } from "./bonus.js";
@@ -64,8 +65,9 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   const after = cap - cur.hit;
   const tone = { accept: C.gn, counter: C.gd, reject: "#f97316", walk: C.rd, lost: C.rd };
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 14, padding: 20, width: "100%", maxWidth: 480, maxHeight: "92vh", overflowY: "auto" }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 12, ...sheetWrap(MOBILE) }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 14, padding: 20, width: "100%", maxWidth: 480, maxHeight: "92vh", overflowY: "auto", ...sheetBox(MOBILE) }}>
+        {MOBILE && <SheetGrip onClose={onClose} />}
         <CloseX onClick={onClose} />
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 12 }}>
           <Face s={p.face} sz={52} />
@@ -158,7 +160,7 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
           </>
         )}
 
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", ...(MOBILE ? { position: "sticky", bottom: -16, background: C.cd, padding: "10px 0 6px", marginBottom: -6, borderTop: `1px solid ${C.bd}` } : {}) }}>
           <Btn onClick={onClose} bg={C.bd} c="#cbd5e1" style={{ flex: "1 1 100px", fontSize: 16, padding: "11px 0" }}>{done ? "Close" : "Not now"}</Btn>
           {!done && last?.result === "counter" && <Btn onClick={() => offer(last.counter)} disabled={!fits(last.counter)} bg={C.gd} c="#000" style={{ flex: "2 1 160px", fontSize: 16, padding: "11px 0", fontWeight: 900 }}>{last.rivalBid ? "Offer" : "Accept"} {money(last.counter)}</Btn>}
           {!done && <Btn onClick={() => offer(sal)} disabled={!fits(sal)} bg={C.gn} style={{ flex: "2 1 160px", fontSize: 16, padding: "11px 0", fontWeight: 900 }}>{fits(sal) ? "Make offer" : after < 0 ? (ext && share < EXT_BONUS[EXT_BONUS.length - 1] ? "Not enough cap: add a bonus" : "Not enough cap") : "Not enough room this season"}</Btn>}

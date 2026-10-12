@@ -15,3 +15,4 @@ if (MOBILE && typeof document !== "undefined") {
   `;
   document.head.appendChild(s);
 }
+
