@@ -637,4 +637,7 @@ export const PATCH_NOTES = [
     "Draft day: Sim this pick, Sim to my pick, Trade for this pick and Trade up sit in one row under the clock, so the board stays in view.",
     "Live games: only the quarterback, backs, receivers and tight ends (and on desktop the secondary) show names; everyone else is a number, so the line of scrimmage isn't a pile of text. On phones the field zooms in around the ball.",
   ] },
+  { v: "2.24", date: "2026-10-12", title: "One Difficulty", notes: [
+    "The Casual / Standard / Hardcore choice on the team-select screen is gone: every new franchise plays by the standard rules.",
+  ] },
 ];
