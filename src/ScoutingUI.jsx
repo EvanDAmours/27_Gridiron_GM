@@ -5,7 +5,7 @@ import React, { useState, useMemo } from "react";
 import { mockDraft } from "./mockDraft.js";
 import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo } from "./ui.jsx";
 import {
-  prospectRead, scoutProspect, interviewProspect, coverage, csRank, riskLabel, gradeTone,
+  prospectRead, scoutProspect, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, coverage, csRank, riskLabel, gradeTone,
   SCOUT_GROUPS, SCOUT_ROLES, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
   staffWindowOpen, SCOUT_SLOTS, slotKind, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, scoutGroup, isSmallSchool, devOf,
   myBoard, REGIONS, regionOf, regionName, scoutRegion, RTRIP_COST, RPTS_START, RPTS_COMBINE, RPTS_WEEKLY, MAX_TRIPS,
@@ -83,6 +83,13 @@ function useActions(g) {
     },
     interview: (p) => {
       const r = interviewProspect(g.scouting, g.sp, p);
+      g.sm(r.msg);
+      if (!r.ok) return;
+      g.setScouting(r.sc);
+      swap(r.p);
+    },
+    workout: (p) => {
+      const r = privateWorkout(g.scouting, g.sp, p, g.teams);
       g.sm(r.msg);
       if (!r.ok) return;
       g.setScouting(r.sc);
@@ -277,15 +284,15 @@ function ScoutCard({ scout, role, children }) {
   return (
     <div style={{ background: role === "pool" ? "#0d1424" : C.cd, border: `1px ${scout ? "solid" : "dashed"} ${C.bd}`, borderRadius: 6, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-        <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", color: rc }}>{SCOUT_ROLES[role]?.name || "Available"}</span>
-        {scout && <b style={{ fontSize: 12 }}>{SCOUT_GROUPS[scout.group]}</b>}
+        <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", color: rc }}>{SCOUT_ROLES[role]?.name || "Available"}</span>
+        {scout && <b style={{ fontSize: 14 }}>{SCOUT_GROUPS[scout.group]}</b>}
       </div>
       {scout ? (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}><Face s={scout.face} sz={26} /><span style={{ fontSize: 15, fontWeight: 800 }}>{scout.name}</span></div>
           <div style={muted}>{scout.age} · {scout.bg}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 9, fontWeight: 800, color: C.mt, width: 62 }}>EVALUATION</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: C.mt, width: 78 }}>EVALUATION</span>
             <div style={{ flex: 1, height: 5, background: C.bg, borderRadius: 3 }}><div style={{ width: `${scout.eval}%`, height: "100%", background: oC(scout.eval), borderRadius: 3 }} /></div>
             <b style={{ fontSize: 12, color: oC(scout.eval) }}>{scout.eval}</b>
           </div>
@@ -313,7 +320,7 @@ export function ScoutsView({ g }) {
         {SCOUT_SLOTS.map((role) => (
           <ScoutCard key={role} scout={s[role]} role={role}>
             <div style={{ ...muted, marginTop: 3 }}>{SCOUT_ROLES[role].desc}</div>
-            {open && s[role] && <div><Btn onClick={() => act(releaseScout(s, g.sp, role))} bg="#7f1d1d" c="#fca5a5" style={{ fontSize: 10, padding: "1px 6px", marginTop: 4 }}>Let go</Btn></div>}
+            {open && s[role] && <div><Btn onClick={() => act(releaseScout(s, g.sp, role))} bg="#7f1d1d" c="#fca5a5" style={{ fontSize: 13, padding: "5px 10px", marginTop: 4 }}>Let go</Btn></div>}
           </ScoutCard>
         ))}
       </div>
@@ -342,7 +349,7 @@ export function ScoutsView({ g }) {
                 <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
                   {SCOUT_SLOTS.map((role) => (
                     <span key={role} title={`Hire him as your ${SCOUT_ROLES[role].name.toLowerCase()}${s[role] ? ` (replacing ${s[role].name})` : ""}`}>
-                      <Btn onClick={() => act(hireScout(s, g.sp, sc.id, role))} bg={`${C.gn}22`} c={C.gn} style={{ fontSize: 10, padding: "1px 6px" }}>Hire as {SCOUT_ROLES[role].short.toLowerCase()}</Btn>
+                      <Btn onClick={() => act(hireScout(s, g.sp, sc.id, role))} bg={`${C.gn}22`} c={C.gn} style={{ fontSize: 13, padding: "5px 10px" }}>Hire as {SCOUT_ROLES[role].short.toLowerCase()}{s[role] ? ` (replaces ${s[role].name.split(" ").slice(-1)})` : ""}</Btn>
                     </span>
                   ))}
                 </div>
@@ -375,54 +382,100 @@ export function BuzzFeed({ g, buzz, limit }) {
   );
 }
 
+const OL = ["LT", "LG", "C", "RG", "RT"];
+const POS_GROUPS = [["All", null], ["QB", ["QB"]], ["RB", ["RB"]], ["WR", ["WR"]], ["TE", ["TE"]], ["OL", OL], ["EDGE", "EDGE"], ["DT", "DT"], ["LB", ["LB"]], ["CB", ["CB"]], ["S", ["S"]], ["K/P", ["K", "P"]]];
+const inGroup = (p, grp) => !grp || (typeof grp === "string" ? posTag(p) === grp : grp.includes(p.pos));
+const GRADE_ORDER = { "A+": 13, A: 12, "A-": 11, "B+": 10, B: 9, "B-": 8, "C+": 7, C: 6, "C-": 5, "D+": 4, D: 3, "D-": 2, F: 1 };
+
 export function CombineView({ g, buzz }) {
   const a = useActions(g);
   const live = g.sp === "combine";
-  const rows = (g.dc[g.yr] || []).filter((p) => tested(p) && p.combine).sort((x, y) => csRank(x) - csRank(y));
-  const [n, setN] = useState(40);
-  const th = { padding: "3px 5px", textAlign: "right", color: C.mt, fontWeight: 700, whiteSpace: "nowrap" };
-  const td = { padding: "3px 5px", textAlign: "right", whiteSpace: "nowrap" };
+  const sc = g.scouting || {};
+  const all = (g.dc[g.yr] || []).filter((p) => tested(p) && p.combine);
+  const me = g.teams[g.ui];
+  const best = (pos) => Math.max(0, ...(me?.roster || []).filter((p) => (pos === "OL" ? OL.includes(p.pos) : p.pos === pos)).map((p) => p.ovr));
+  const needs = ["QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].sort((x, y) => best(x) - best(y)).slice(0, 3);
+  const isNeed = (p) => needs.includes(OL.includes(p.pos) ? "OL" : p.pos);
+  const [grp, setGrp] = useState("All");
+  const [mine, setMine] = useState(false);
+  const [sort, setSort] = useState("rank");
+  const [n, setN] = useState(25);
+  const g0 = POS_GROUPS.find(([k]) => k === grp)?.[1];
+  const val = (p) => sort === "rank" ? -csRank(p) : sort === "grade" ? GRADE_ORDER[p.combGrade] || 0 : (() => { const t = COMBINE_TESTS.find((x) => x.k === sort); return t ? (t.lowGood ? -p.combine[t.k] : +p.combine[t.k]) : 0; })();
+  const rows = all.filter((p) => inGroup(p, g0) && (!mine || isNeed(p))).sort((x, y) => val(y) - val(x));
+  // stock up: tested great relative to where the board has him; stock down: the reverse
+  const up = all.filter((p) => (GRADE_ORDER[p.combGrade] || 0) >= 11 && csRank(p) > 40).sort((x, y) => (GRADE_ORDER[y.combGrade] - GRADE_ORDER[x.combGrade]) || csRank(x) - csRank(y)).slice(0, 4);
+  const down = all.filter((p) => (GRADE_ORDER[p.combGrade] || 0) <= 4 && csRank(p) <= 64).sort((x, y) => csRank(x) - csRank(y)).slice(0, 4);
+  const th = { padding: "7px 6px", textAlign: "right", color: C.mt, fontWeight: 800, whiteSpace: "nowrap", fontSize: 12, cursor: "pointer", userSelect: "none" };
+  const td = { padding: "7px 6px", textAlign: "right", whiteSpace: "nowrap", fontSize: 14 };
+  const pill = (on) => ({ ...chipBtn(on), fontSize: 13, padding: "5px 11px" });
+  const Mover = ({ p, tone }) => (
+    <div onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: `1px solid ${C.bd}66`, cursor: "pointer" }}>
+      <Bdg pos={posTag(p)} /><span style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+      <span style={{ fontSize: 12, color: C.mt }}>#{csRank(p)}</span><GradeChip g={p.combGrade} small />
+    </div>
+  );
   return (
     <div>
       {live && (
         <div style={{ ...panel, border: "1px solid #7c3aed" }}>
-          <div style={{ ...head, color: "#c4b5fd" }}>BEFORE THE DRAFT</div>
-          <div style={{ fontSize: 12 }}>Interviews left: <b>{g.scouting?.interviewsLeft || 0}</b> · Scouting points: <b>{g.scouting?.pts || 0}</b></div>
-          <div style={{ ...muted, marginTop: 4 }}>Interviews read a prospect's work ethic, which tends to go with how fast he develops. Spend your last scouting points, then head to the draft with "→ Draft".</div>
+          <div style={{ ...head, color: "#c4b5fd" }}>COMBINE WEEK · USE THESE BEFORE YOU LEAVE</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10 }}>
+            {[["🎤", sc.interviewsLeft || 0, "Interviews", "A prospect's work ethic, which tends to go with how fast he develops."], ["🏋️", sc.workoutsLeft || 0, "Private workouts", `A full workup for free: exact ratings and (from a major scout) his development trait. ${PRIVATE_WORKOUTS} a year.`], ["🔎", sc.pts || 0, "Scouting points", "Reports and workups, same as always. They expire when next season starts."]].map(([ic, v, l, d]) => (
+              <div key={l} style={{ background: C.bg, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "8px 10px" }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: v ? "#e9d5ff" : C.mt }}>{ic} {v} <span style={{ fontSize: 14, fontWeight: 800 }}>{l}</span></div>
+                <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.4 }}>{d}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
-      <BuzzFeed g={g} buzz={buzz} />
+      {(up.length > 0 || down.length > 0) && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 10, marginBottom: 10 }}>
+          <div style={panel}><div style={{ ...head, color: C.gn }}>📈 STOCK UP · tested like a higher pick</div>{up.map((p) => <Mover key={p.id} p={p} />)}{!up.length && <div style={muted}>Nobody from the back of the board blew up the Combine.</div>}</div>
+          <div style={panel}><div style={{ ...head, color: C.rd }}>📉 STOCK DOWN · early names who tested poorly</div>{down.map((p) => <Mover key={p.id} p={p} />)}{!down.length && <div style={muted}>The early names all held up.</div>}</div>
+        </div>
+      )}
+      <BuzzFeed g={g} buzz={buzz} limit={4} />
       <div style={panel}>
-        <div style={head}>COMBINE RESULTS<Right>{COMBINE_INVITES} invited · consensus final order</Right></div>
+        <div style={head}>COMBINE RESULTS<Right>{rows.length} of {COMBINE_INVITES} invitees</Right></div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+          {POS_GROUPS.map(([k]) => <button key={k} onClick={() => { setGrp(k); setN(25); }} style={pill(grp === k)}>{k}</button>)}
+          <button onClick={() => { setMine((v) => !v); setN(25); }} style={{ ...pill(mine), marginLeft: 6 }}>⭐ My needs ({needs.join(", ")})</button>
+        </div>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ borderCollapse: "collapse", fontSize: 12, width: "100%" }}>
+          <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.bd}` }}>
-                <th style={{ ...th, textAlign: "left" }}>#</th><th style={{ ...th, textAlign: "left" }}>Player</th><th style={th}>Size</th>
-                {COMBINE_TESTS.map((t) => <th key={t.k} style={th} title={`${t.name}${t.unit ? ` (${t.unit})` : ""}${t.lowGood ? ", lower is better" : ""}`}>{t.short}</th>)}
-                <th style={th}>Grade</th><th style={th}>Interview</th>
+                <th onClick={() => setSort("rank")} style={{ ...th, textAlign: "left", color: sort === "rank" ? "#fde68a" : C.mt }}>#</th><th style={{ ...th, textAlign: "left", cursor: "default" }}>Player</th><th style={{ ...th, cursor: "default" }}>Size</th>
+                {COMBINE_TESTS.map((t) => <th key={t.k} onClick={() => setSort(t.k)} style={{ ...th, color: sort === t.k ? "#fde68a" : C.mt }} title={`Sort by ${t.name}${t.unit ? ` (${t.unit})` : ""}${t.lowGood ? ", lower is better" : ""}`}>{t.short}{sort === t.k ? " ▼" : ""}</th>)}
+                <th onClick={() => setSort("grade")} style={{ ...th, color: sort === "grade" ? "#fde68a" : C.mt }}>Grade{sort === "grade" ? " ▼" : ""}</th><th style={{ ...th, cursor: "default" }}>{live ? "Workout / Interview" : "Interview"}</th>
               </tr>
             </thead>
             <tbody>
-              {rows.slice(0, n).map((p) => (
-                <tr key={p.id} style={{ borderBottom: `1px solid ${C.bd}44` }}>
-                  <td style={{ ...td, textAlign: "left", color: "#94a3b8" }}>{csRank(p)}</td>
-                  <td style={{ ...td, textAlign: "left" }}><PN p={p} setSel={g.setSel} /> <Bdg pos={posTag(p)} /></td>
-                  <td style={{ ...td, color: C.mt }}>{htS(p.ht_)} {p.wt}</td>
-                  {COMBINE_TESTS.map((t) => <td key={t.k} style={{ ...td, color: p.combPcts?.[t.k] >= 0.9 ? C.gn : "#cbd5e1", fontWeight: p.combPcts?.[t.k] >= 0.9 ? 800 : 400 }}>{(+p.combine[t.k]).toFixed(t.dp)}</td>)}
-                  <td style={td}><GradeChip g={p.combGrade} small /></td>
-                  <td style={td}>
-                    {p.scout?.intv ? <span title={p.scout.intv.note} style={{ fontSize: 11 }}>Work ethic <GradeChip g={p.scout.intv.grade} small /></span>
-                      : live ? <Btn onClick={() => a.interview(p)} disabled={!(g.scouting?.interviewsLeft > 0)} bg="#7c3aed33" c="#c4b5fd" style={{ fontSize: 10, padding: "1px 6px" }}>Interview</Btn>
-                      : <span style={{ color: "#475569" }}>—</span>}
-                  </td>
-                </tr>
-              ))}
+              {rows.slice(0, n).map((p) => {
+                const read = prospectRead(sc, p);
+                return (
+                  <tr key={p.id} style={{ borderBottom: `1px solid ${C.bd}44`, background: isNeed(p) ? "#eab30808" : "transparent" }}>
+                    <td style={{ ...td, textAlign: "left", color: "#94a3b8" }}>{csRank(p)}</td>
+                    <td style={{ ...td, textAlign: "left" }}><PN p={p} setSel={g.setSel} /> <Bdg pos={posTag(p)} /></td>
+                    <td style={{ ...td, color: C.mt, fontSize: 13 }}>{htS(p.ht_)} {p.wt}</td>
+                    {COMBINE_TESTS.map((t) => <td key={t.k} style={{ ...td, color: p.combPcts?.[t.k] >= 0.9 ? C.gn : "#cbd5e1", fontWeight: p.combPcts?.[t.k] >= 0.9 || sort === t.k ? 800 : 400 }}>{(+p.combine[t.k]).toFixed(t.dp)}</td>)}
+                    <td style={td}><GradeChip g={p.combGrade} small /></td>
+                    <td style={{ ...td, display: "flex", gap: 4, justifyContent: "flex-end" }}>
+                      {live && read.lvl < 2 && <Btn onClick={() => a.workout(p)} disabled={!(sc.workoutsLeft > 0)} bg="#0c4a6e" c="#7dd3fc" style={{ fontSize: 12, padding: "4px 8px" }} title="Free full workup">🏋️ Workout</Btn>}
+                      {p.scout?.intv ? <span title={p.scout.intv.note} style={{ fontSize: 12 }}>Ethic <GradeChip g={p.scout.intv.grade} small /></span>
+                        : live ? <Btn onClick={() => a.interview(p)} disabled={!(sc.interviewsLeft > 0)} bg="#7c3aed33" c="#c4b5fd" style={{ fontSize: 12, padding: "4px 8px" }}>🎤 Interview</Btn>
+                        : <span style={{ color: "#475569" }}>—</span>}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
-        {rows.length > n && <div style={{ marginTop: 6 }}><Btn onClick={() => setN(n + 40)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 11, padding: "2px 8px" }}>Show more ({rows.length - n} left)</Btn></div>}
-        <div style={{ ...muted, marginTop: 5 }}>Grades compare each prospect's testing with the other invitees at his position. Green results are in the top 10%; the 40, 3-cone and shuttle are timed, so lower is better.</div>
+        {rows.length > n && <div style={{ marginTop: 8 }}><Btn onClick={() => setN(n + 25)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 13, padding: "5px 12px" }}>Show 25 more ({rows.length - n} left)</Btn></div>}
+        <div style={{ ...muted, marginTop: 6 }}>Click a column to sort by it. Grades compare each prospect's testing with the other invitees at his position; green results are in the top 10%. The 40, 3-cone and shuttle are timed, so lower is better. Gold rows are at your need positions.</div>
       </div>
     </div>
   );
@@ -708,11 +761,97 @@ export function RegionsView({ g }) {
   );
 }
 
+// ---------- Scouting HQ ----------
+// The front page of scouting: what you have to spend, who's on your staff, and the handful of
+// things worth doing right now, each one a button.
+export function ScoutingHQ({ g, go }) {
+  const s = g.scouting || {};
+  const cls = g.dc[g.yr] || [];
+  const me = g.teams[g.ui];
+  const rp = s.rpts ?? RPTS_START, pts = s.pts || 0;
+  const trips = s.regionsYr === g.yr ? s.regions || {} : {};
+  const canTravel = g.sp !== "freeagency" && g.sp !== "draft";
+  // your thinnest spots: the positions where your best player is weakest
+  const best = (pos) => Math.max(0, ...(me?.roster || []).filter((p) => (pos === "OL" ? ["LT", "LG", "C", "RG", "RT"].includes(p.pos) : p.pos === pos)).map((p) => p.ovr));
+  const needs = ["QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].sort((a, b) => best(a) - best(b)).slice(0, 3);
+  const isNeed = (p) => needs.includes(["LT", "LG", "C", "RG", "RT"].includes(p.pos) ? "OL" : p.pos);
+  const myPicks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !(g.draftLog || []).some((d) => d.id === pk.id)).sort((a, b) => a.overall - b.overall);
+  // where your first pick lands: its slot once the order's set, otherwise where your record would put it
+  const standing = [...g.teams].sort((a, b) => (a.w - a.l) - (b.w - b.l)).findIndex((t) => t.id === g.ui) + 1;
+  const first = myPicks[0] ? (g.sp === "draft" || g.sp === "freeagency" ? myPicks[0].overall : (myPicks[0].rd - 1) * 32 + standing) : null;
+  const inRange = (p) => first == null || (csRank(p) >= first - 10 && csRank(p) <= first + 24);
+  const targets = cls.filter((p) => isNeed(p) && inRange(p) && !p.drafted).map((p) => ({ p, read: prospectRead(s, p) })).filter((x) => x.read.cost).sort((a, b) => csRank(a.p) - csRank(b.p)).slice(0, 6);
+  const regionPick = Object.keys(REGIONS).map((k) => ({ k, n: cls.filter((p) => regionOf(p) === k && csRank(p) <= 64).length, t: trips[k] || 0 })).filter((r) => r.t < MAX_TRIPS).sort((a, b) => b.n - a.n || a.t - b.t)[0];
+  const send = (k) => { const r = scoutRegion(s, g.sp, k, g.yr, g.yr); g.sm(r.msg); if (r.ok) g.setScouting(r.sc); };
+  const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
+  const h = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8 };
+  const Budget = ({ icon, v, label, sub, tone }) => (
+    <div style={{ ...card, flex: "1 1 200px" }}>
+      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt }}>{label}</div>
+      <div style={{ fontSize: 26, fontWeight: 900, color: tone }}>{icon} {v}</div>
+      <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.4 }}>{sub}</div>
+    </div>
+  );
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <Budget icon="🔎" v={pts} label="SCOUTING POINTS" tone={C.gd} sub={`A report on one prospect costs 1, a full workup 2 more. +${SCOUT_PTS_WEEKLY} a week in season, +${SCOUT_PTS_COMBINE} at the Combine.`} />
+        <Budget icon="🗺️" v={rp} label="AREA POINTS" tone="#7dd3fc" sub={`A trip (${RTRIP_COST}) gives a rough read on every prospect in one region.`} />
+        {g.sp === "combine" && <Budget icon="🎤" v={s.interviewsLeft || 0} label="INTERVIEWS LEFT" tone="#c4b5fd" sub="Combine week only: learn a prospect's character and how he'll handle the pros." />}
+      </div>
+      <div style={card}>
+        <div style={{ ...h, display: "flex" }}>DO THIS NEXT<span style={{ marginLeft: "auto", color: C.mt, letterSpacing: 0 }}>your biggest needs: {needs.join(", ")}{first ? ` · first pick around #${first}` : ""}</span></div>
+        {canTravel && regionPick && rp >= RTRIP_COST && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${C.bd}`, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 22 }}>🗺️</span>
+            <div style={{ flex: 1, minWidth: 200 }}><div style={{ fontWeight: 800, fontSize: 15 }}>Send your area scouts to the {regionName(regionPick.k)}</div><div style={{ fontSize: 13, color: "#94a3b8" }}>{regionPick.n} of the board's top 64 play there. A trip reads every prospect in the region at once.</div></div>
+            <Btn onClick={() => send(regionPick.k)} bg={C.bl} style={{ fontSize: 14, padding: "8px 14px" }}>Send ({RTRIP_COST} pts)</Btn>
+          </div>
+        )}
+        {targets.map(({ p, read }) => (
+          <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${C.bd}`, flexWrap: "wrap" }}>
+            <Bdg pos={posTag(p)} />
+            <div style={{ flex: 1, minWidth: 200, cursor: "pointer" }} onClick={() => g.setSel(p)}>
+              <div style={{ fontWeight: 800, fontSize: 15 }}>{p.name} <span style={{ fontSize: 13, color: C.mt, fontWeight: 600 }}>#{csRank(p)} on the board{p.bio?.college || p.college ? ` · ${p.bio?.college || p.college}` : ""}</span></div>
+              <div style={{ fontSize: 13, color: "#94a3b8" }}>{read.lvl === 0 ? "No report yet. A need position in your range." : "Reported. A workup would sharpen it."}</div>
+            </div>
+            <ScoutButton g={g} p={p} read={read} />
+          </div>
+        ))}
+        {!targets.length && <div style={{ fontSize: 14, color: "#94a3b8", padding: "6px 0" }}>Every prospect at your need positions in your range has been scouted. Check the Big Board for more, or build Your list.</div>}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+          <Btn onClick={() => go("board")} bg={C.bd} c="#e2e8f0" style={{ fontSize: 14 }}>Big Board →</Btn>
+          <Btn onClick={() => go("list")} bg={C.bd} c="#e2e8f0" style={{ fontSize: 14 }}>Your list →</Btn>
+          <Btn onClick={() => go("regions")} bg={C.bd} c="#e2e8f0" style={{ fontSize: 14 }}>All regions →</Btn>
+        </div>
+      </div>
+      <div style={card}>
+        <div style={{ ...h, display: "flex" }}>YOUR SCOUTING STAFF<span style={{ marginLeft: "auto" }}><Btn onClick={() => go("scouts")} bg={C.bd} c="#e2e8f0" style={{ fontSize: 13 }}>{staffWindowOpen(g.sp) ? "Hire or change scouts →" : "Staff details →"}</Btn></span></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 8 }}>
+          {SCOUT_SLOTS.map((r) => { const sc = s[r]; return (
+            <div key={r} style={{ background: C.bg, border: `1px ${sc ? "solid" : "dashed"} ${C.bd}`, borderRadius: 10, padding: "8px 10px" }}>
+              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: slotKind(r) === "major" ? "#f5c542" : "#60a5fa" }}>{SCOUT_ROLES[r].name.toUpperCase()}</div>
+              {sc ? <><div style={{ fontSize: 15, fontWeight: 800 }}>{sc.name}</div><div style={{ fontSize: 13, color: "#94a3b8" }}>{SCOUT_GROUPS[sc.group]} · evaluation <b style={{ color: oC(sc.eval) }}>{sc.eval}</b></div></> : <div style={{ fontSize: 14, color: C.mt }}>Vacant{staffWindowOpen(g.sp) ? ": hire one" : ""}</div>}
+            </div>); })}
+        </div>
+      </div>
+      <div style={card}>
+        <div style={h}>HOW SCOUTING WORKS</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 10, fontSize: 14, lineHeight: 1.45, color: "#cbd5e1" }}>
+          <div><b style={{ color: "#7dd3fc" }}>1. Area trips</b><br />Area points. A rough read on every prospect in a region; more trips sharpen it and turn up sleepers.</div>
+          <div><b style={{ color: C.gd }}>2. Scouting reports</b><br />1 scouting point per prospect: close estimates, tool grades and an NFL comparison. Best in your scouts' position groups.</div>
+          <div><b style={{ color: C.gn }}>3. Full workups</b><br />2 more points: exact ratings, and from a major scout his development trait. Save these for the players you'd actually draft.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ScoutingPage({ g }) {
   const hasCombine = (g.dc[g.yr] || []).some((p) => tested(p) && p.combine);
-  const [view, setView] = useState(g.sp === "combine" ? "combine" : "board");
-  const views = [["board", "Big Board"], ["list", `Your list (${listIds(g.scouting, g.yr).length})`], ["mock", "Mock Draft"], hasCombine && ["combine", "Combine"], ["regions", "Regions"], ["scouts", "Scouts"]].filter(Boolean);
-  const v = views.some(([k]) => k === view) ? view : "board";
+  const [view, setView] = useState(g.sp === "combine" ? "combine" : "hq");
+  const views = [["hq", "🏠 Scouting HQ"], ["board", "Big Board"], ["list", `Your list (${listIds(g.scouting, g.yr).length})`], ["mock", "Mock Draft"], hasCombine && ["combine", "Combine"], ["regions", "Regions"], ["scouts", "Scouts"]].filter(Boolean);
+  const v = views.some(([k]) => k === view) ? view : "hq";
   const myPicks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !(g.draftLog || []).some((d) => d.id === pk.id)).sort((a, b) => a.overall - b.overall);
   return (
     <div>
@@ -734,6 +873,7 @@ export function ScoutingPage({ g }) {
           <Board g={g} classYr={g.yr} />
         </>
       )}
+      {v === "hq" && <ScoutingHQ g={g} go={setView} />}
       {v === "list" && <YourList g={g} classYr={g.yr} />}
       {v === "combine" && <CombineView g={g} buzz={g.buzz} />}
       {v === "mock" && <MockDraft g={g} />}

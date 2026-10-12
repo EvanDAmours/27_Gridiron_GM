@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   newScouting, hireScout, releaseScout, swapScoutRoles, creditWeeks, startScoutingYear, coverage, scoutProspect, prospectRead,
-  rankClass, csRank, combineInvites, runCombine, interviewProspect, pickGrade, classGrade, toggleList, moveOnList, listIds,
+  rankClass, csRank, combineInvites, runCombine, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, pickGrade, classGrade, toggleList, moveOnList, listIds,
   autoPickFrom, aiDraftScore, loadScouting, rollDev, scoutGroup, SCOUT_PTS_START, COMBINE_INVITES,
 } from "../src/scouting.js";
 
@@ -129,6 +129,25 @@ test("the Combine invites the top of the board, grades by position, and publishe
   assert.equal(i1.sc.interviewsLeft, r.sc.interviewsLeft - 1);
   assert.equal(interviewProspect(i1.sc, "combine", i1.p).ok, false);
   assert.equal(interviewProspect(r.sc, "draft", invitee).ok, false);
+});
+
+test("private workouts: Combine week only, a full workup for free, a few a year", () => {
+  const cls = rankClass(Array.from({ length: 240 }, () => prospect()));
+  const inv = combineInvites(cls);
+  for (const p of cls) p.combine = inv.has(p.id) ? fakeCombine(p) : null;
+  const r = runCombine(newScouting(2026), cls);
+  assert.equal(r.sc.workoutsLeft, PRIVATE_WORKOUTS);
+  const p = cls.find((x) => x.combine && (x.scout?.lvl || 0) < 2);
+  const w = privateWorkout(r.sc, "combine", p, []);
+  assert.ok(w.ok);
+  assert.equal(w.p.scout.lvl, 2);
+  assert.equal(w.sc.pts, r.sc.pts, "costs no scouting points");
+  assert.equal(w.sc.workoutsLeft, PRIVATE_WORKOUTS - 1);
+  assert.equal(privateWorkout(w.sc, "combine", w.p, []).ok, false, "already fully scouted");
+  assert.equal(privateWorkout(r.sc, "draft", p, []).ok, false, "only during Combine week");
+  let sc = r.sc;
+  for (const x of cls.filter((q) => q.combine).slice(0, PRIVATE_WORKOUTS + 1)) { const t = privateWorkout(sc, "combine", x, []); if (t.ok) sc = t.sc; }
+  assert.equal(sc.workoutsLeft, 0);
 });
 
 test("pick grades follow value against the consensus board", () => {

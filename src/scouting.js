@@ -770,7 +770,7 @@ export function runCombine(sc, cls, { quiet = false } = {}) {
   const bonus = quiet ? 0 : SCOUT_PTS_COMBINE + (staffHas(sc, "combine") ? 3 : 0);
   const interviews = COMBINE_INTERVIEWS + (staffHas(sc, "character") ? 2 : 0);
   // Pro days and all-star games: one more round of area trips before the draft.
-  return { sc: { ...sc, pts: (sc.pts || 0) + bonus, rpts: (sc.rpts ?? RPTS_START) + (quiet ? 0 : RPTS_COMBINE), interviewsLeft: interviews }, buzz: combineBuzz(cls, invited, events), events, bonus, interviews };
+  return { sc: { ...sc, pts: (sc.pts || 0) + bonus, rpts: (sc.rpts ?? RPTS_START) + (quiet ? 0 : RPTS_COMBINE), interviewsLeft: interviews, workoutsLeft: quiet ? 0 : PRIVATE_WORKOUTS }, buzz: combineBuzz(cls, invited, events), events, bonus, interviews };
 }
 
 function combineBuzz(cls, invited, events) {
@@ -796,6 +796,16 @@ const INTERVIEW_NOTES = {
 };
 
 // A sit-down at the Combine: a read on his work ethic, which tends to go with how fast he develops.
+// Private workouts: Combine week only, a handful of prospects brought in for a day. Each one is a
+// full workup (exact ratings, and from a major scout his development trait) without the points.
+export const PRIVATE_WORKOUTS = 3;
+export function privateWorkout(sc, sp, p, teams) {
+  if (sp !== "combine") return { ok: false, msg: "Private workouts happen during Combine week.", sc, p };
+  if ((sc.workoutsLeft ?? 0) <= 0) return { ok: false, msg: "You've used all your private workouts.", sc, p };
+  if ((p.scout?.lvl || 0) >= 2) return { ok: false, msg: `${p.name} is already fully scouted.`, sc, p };
+  const np = fileReport(sc, p, 2, teams);
+  return { ok: true, msg: `${p.name} came in for a private workout: ${np.scout.who} has the full read.`, sc: { ...sc, workoutsLeft: sc.workoutsLeft - 1 }, p: np };
+}
 export function interviewProspect(sc, sp, p) {
   if (sp !== "combine") return { ok: false, msg: "Interviews happen at the Combine, before the draft starts.", sc, p };
   if (!p.combine) return { ok: false, msg: "He wasn't invited to the Combine.", sc, p };
