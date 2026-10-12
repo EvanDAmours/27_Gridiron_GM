@@ -448,4 +448,5 @@ export const PATCH_NOTES = [
     "Defensive linemen in the draft are now labeled EDGE or DT (Big Board, prospect profiles, mock drafts and the draft recap), so you know whether you're taking an edge rusher or an interior tackle.",
     "Jeremiah Smith is a Generational talent with a 97 ceiling, the best prospect in the 2027 class.",
   ] },
+  { v: "1.998", date: "2026-10-12", title: "MVP on the Front Page", notes: ["After a Super Bowl win, the Gazette's front-page photo is the Super Bowl MVP's portrait in black and white, with the Lombardi Trophy in a smaller photo below."] },
 ];
