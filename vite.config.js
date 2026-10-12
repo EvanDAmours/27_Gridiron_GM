@@ -10,8 +10,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 1400,
     rollupOptions: {
       output: {
+        // The roster/schedule/draft data rarely changes, so it gets its own long-cached file;
+        // React too. Screens you don't need on first load are split off with React.lazy.
         manualChunks(id) {
-          if (id.includes('react')) return 'vendor';
+          if (id.includes('node_modules/react')) return 'vendor';
+          if (id.includes('/src/data/')) return 'data';
         },
       },
     },

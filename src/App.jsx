@@ -9,14 +9,14 @@ import { depthSlots, depthOrderFor, byDepth } from "./depth.js";
 import DevFocusCard from "./DevFocus.jsx";
 import WeekResult from "./WeekResult.jsx";
 import LiveField from "./LiveField.jsx";
-import TradeScreen from "./TradeScreen.jsx";
+const TradeScreen = React.lazy(() => import("./TradeScreen.jsx")); // loaded when first opened
 import FreeAgency from "./FreeAgency.jsx";
 import RosterTable from "./RosterView.jsx";
 import SchedulePage from "./SchedulePage.jsx";
 import FrontOffice from "./FrontOffice.jsx";
 import Negotiate from "./Negotiate.jsx";
 import Resign from "./Resign.jsx";
-import TrainingCamp from "./TrainingCamp.jsx";
+const TrainingCamp = React.lazy(() => import("./TrainingCamp.jsx")); // loaded when first opened
 import HomeScreen from "./HomeScreen.jsx";
 import { terms as talkTerms, yearlyAsk, maxYears } from "./negotiation.js";
 import { HC_TRAITS, hcGrowth, hcScoutBonus, hcCulture } from "./headCoach.js";
@@ -27,10 +27,10 @@ import { tagPrice, optionPrice, optionEligible } from "./contracts.js";
 import { deadMoney, chargeDead, tradeAway, restructurePlan, restructure, freshDeal, newLeagueYear, yearsLeft, proration, OFFSEASON, JUNE1_CUTS, signedTerms } from "./bonus.js";
 import { aiTradeWeek, TRADE_DEADLINE_WEEK } from "./aiTrades.js";
 import { startDeadline, advanceDeadline, runDeadline, tradeText, feedItem } from "./deadline.js";
-import DeadlineDay from "./DeadlineDay.jsx";
-import RecordBook from "./RecordBook.jsx";
-import LeagueHistory from "./LeagueHistory.jsx";
-import DraftRecap from "./DraftRecap.jsx";
+const DeadlineDay = React.lazy(() => import("./DeadlineDay.jsx")); // loaded when first opened
+const RecordBook = React.lazy(() => import("./RecordBook.jsx")); // loaded when first opened
+const LeagueHistory = React.lazy(() => import("./LeagueHistory.jsx")); // loaded when first opened
+const DraftRecap = React.lazy(() => import("./DraftRecap.jsx")); // loaded when first opened
 import { recapEntry } from "./draftRecap.js";
 import { retRating, RET_POS } from "./special.js";
 import { canExtend, extRoom, applyExtensions } from "./extensions.js";
@@ -44,15 +44,15 @@ import PlayoffBracket from "./PlayoffBracket.jsx";
 import { makeBracket, nextRound, ROUND_NAMES } from "./playoffs.js";
 import { seasonAwardWinners, tagRookieYears, pastRookieAwards } from "./awards.js";
 import { leagueCap, leagueFloor, leagueMin, setLeagueYear, capYearFor, capFor, rookieSalary, DATA_TO_DOLLARS, migrateCap } from "./cap.js";
-import TrophyRoom from "./TrophyRoom.jsx";
-import GameInfo from "./GameInfo.jsx";
+const TrophyRoom = React.lazy(() => import("./TrophyRoom.jsx")); // loaded when first opened
+const GameInfo = React.lazy(() => import("./GameInfo.jsx")); // loaded when first opened
 import ScreenBoundary from "./Boundary.jsx";
 import { MOBILE, DESKTOP_URL, MOBILE_URL } from "./mobile.js";
 import { MobileNav, MoreSheet } from "./MobileShell.jsx";
 import Lombardi from "./Lombardi.jsx";
 import { repairSave } from "./repair.js";
 import SeasonAwards, { superBowlMvp } from "./SeasonAwards.jsx";
-import ChampionGazette from "./ChampionGazette.jsx";
+const ChampionGazette = React.lazy(() => import("./ChampionGazette.jsx")); // loaded when first opened
 import { SUPER_BOWLS } from "./data/superbowls.js";
 import { weeklyStories } from "./stories.js";
 import { leagueDrama, isFictional } from "./drama.js";
@@ -62,7 +62,7 @@ import { DraftTickerBar, PickIsIn, OnTheClock, TradeUpPanel } from "./DraftDay.j
 import { InjTag } from "./InjuryTag.jsx";
 import { summarize } from "./gameday.js";
 import Inbox, { InboxButton } from "./Inbox.jsx";
-import GameRecap, { ScoreBug, WinProbChart, DriveChart, KeyPlays, TopPerformers, BoxScore } from "./GameRecap.jsx";
+import GameRecap, { vivid, ScoreBug, WinProbChart, DriveChart, KeyPlays, TopPerformers, BoxScore } from "./GameRecap.jsx";
 import { CardHeader, RatingBars, CareerOvrGraph, SeasonTable, ContractTimeline, HonorsRow, seasonLine } from "./PlayerCard.jsx";
 import OfferSheets from "./OfferSheets.jsx";
 import { settleIncentives, accelerateVoid, taggedPlayers, sheetCompensation, clubMatches } from "./contractDepth.js";
@@ -1052,6 +1052,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       <Btn onClick={onClose} bg={C.bd} style={{marginTop:8,width:"100%"}}>Close</Btn>
     </div></div>);};
 
+  // your club's color, bright enough to read on the dark theme (header stripe, active tab)
+  const teamAccent=TEAMS[ui]?vivid(TEAMS[ui]):C.gn;
   // ═══ INBOX ═══ everything that needs your attention, instead of popups
   const inboxItems=(()=>{if(!ut||phase!=='main')return[];const it=[];const stamp=`${yr}-${sp}-${wk}`;const keep=k=>inboxDismissed[k]!==stamp;const open=k=>()=>{setInboxShow(k);setInboxOpen(false);};const go=(t,f)=>()=>{setInboxOpen(false);setTab(t);f&&f();};const dismiss=k=>()=>setInboxDismissed(m=>({...m,[k]:stamp}));
     if(urgentTrade&&urgentTradeActive)it.push({key:'urgentTrade',icon:'⚡',tone:'urgent',title:'Urgent trade offer',sub:`A club wants a deal now. You'll have ${urgentTradeTimer}s once you open it.`,cta:'Open',onOpen:open('urgentTrade')});
@@ -1222,7 +1224,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       return(<div onClick={()=>setHoldoutNeg(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.92)',zIndex:3900,display:'flex',alignItems:'center',justifyContent:'center',padding:12}}><div onClick={e=>e.stopPropagation()} style={{position:'relative',background:C.cd,borderRadius:14,padding:16,maxWidth:360,width:'100%',border:'2px solid #f59e0b'}}><button onClick={()=>setHoldoutNeg(null)} title="Decide later" style={{position:'absolute',top:8,right:10,background:'transparent',border:0,color:C.mt,fontSize:20,cursor:'pointer'}}>✕</button><div style={{fontSize:14,fontWeight:800,color:'#f59e0b',marginBottom:4}}>✋ HOLDOUT NEGOTIATION</div><div style={{fontSize:12,color:'#94a3b8',marginBottom:6}}>{p.name} ({p.pos} {p.ovr} OVR) · week {wks} of his holdout · now ${(p.salary||0).toFixed(1)}M</div><div style={{background:'#0a0f1a',borderRadius:5,padding:8,marginBottom:8,border:'1px solid #f59e0b44',fontSize:11,fontStyle:'italic',color:'#fde68a',lineHeight:1.5}}>"{stage==='initial'?`I've earned more than this contract shows. Sign me right or I sit.`:`Fine. I'll come down — but this is my final number.`}" — {p.name}'s agent</div><div style={{marginBottom:10,fontSize:12}}><div style={{color:C.mt,marginBottom:2}}>Player demands: <span style={{color:'#f59e0b',fontWeight:800}}>${demand}M/yr x 3yr</span></div>{stage==='counter'&&<div style={{color:C.mt}}>Counter offer: <span style={{color:'#86efac',fontWeight:700}}>${ext}M/yr x 3yr</span></div>}<div style={{color:C.mt,marginTop:2}}>Settles with an extension: he reports now on his current deal, and the new one starts next season. Room under next season's cap: <b style={{color:okAt(ext)?C.gn:C.rd}}>${room}M</b></div></div><div style={{display:'flex',flexDirection:'column',gap:5}}><Btn onClick={()=>settle(demand,'signed')} bg="#14532d" c="#86efac" disabled={!okAt(demand)}>✅ Meet Demands ${demand}M/yr</Btn>{stage==='initial'&&<Btn onClick={()=>setHoldoutNeg({p,demand,stage:'counter',wks})} bg="#1e3a5f" c="#7dd3fc">↩ Counter (agent calls back)</Btn>}{stage==='counter'&&<Btn onClick={()=>settle(ext,'agreed to your counter')} bg="#0f2a1a" c="#86efac" disabled={!okAt(ext)}>Accept Counter ${ext}M/yr</Btn>}<Btn onClick={()=>{const _hit=p.ovr>=85?4:p.ovr>=80?2:1;const nt2=[...teams];nt2[ui]={...nt2[ui],morale:Math.max(0,(nt2[ui].morale||50)-_hit),roster:nt2[ui].roster.map(r=>r.id===p.id?{...r,holdout:true,holdoutStone:true,holdoutWks:0}:r)};setTeams(nt2);setHoldoutNeg(null);setHoldoutWks(h=>({...h,[p.id]:-99}));setLog(l=>[`🚪 HOLDOUT: You refused ${p.name}'s demands — he sits until he reports (morale -${_hit})`,...l.slice(0,149)]);sm(`${p.name} will sit out until he gives in`);}} bg="#7f1d1d" c="#fca5a5">🚪 Refuse — he sits until he reports</Btn><Btn onClick={()=>setHoldoutNeg(null)} bg={C.bd} c="#cbd5e1">Decide later (he keeps holding out)</Btn></div></div></div>);})()}
     {arbModal&&(()=>{const{p,round}=arbModal;const base=askingPrice(p);const dem=round===1?+(base*1.2).toFixed(1):round===2?+(base*1.1).toFixed(1):base;const canAfford=capSpace(ut||{})>=dem;return(<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.92)',zIndex:1003,display:'flex',alignItems:'center',justifyContent:'center',padding:12}}><div onClick={e=>e.stopPropagation()} style={{background:C.cd,borderRadius:14,padding:16,maxWidth:380,width:'100%',border:'1px solid #f59e0b'}}><div style={{fontSize:14,fontWeight:800,color:'#f59e0b',marginBottom:6}}>⚖️ SALARY ARBITRATION — ROUND {round}/3</div><div style={{fontSize:12,color:'#94a3b8',marginBottom:8}}>{p.name} ({p.pos} {p.ovr}OVR) — contract expired</div><div style={{background:C.bg,borderRadius:5,padding:8,marginBottom:10,border:'1px solid #f59e0b44'}}><div style={{fontSize:12,color:'#fbbf24',fontWeight:700,marginBottom:3}}>PLAYER DEMAND (Round {round})</div><div style={{fontSize:13,fontWeight:900,color:'#e2e8f0'}}>${dem}M / yr</div><div style={{fontSize:11,color:C.mt,marginTop:2}}>Your cap space: <span style={{color:canAfford?C.gn:C.rd,fontWeight:700}}>${capSpace(ut||{}).toFixed(1)}M</span></div></div><div style={{display:'flex',flexDirection:'column',gap:5}}><Btn onClick={()=>{if(!canAfford){sm('Not enough cap!');return;}const nt=[...teams];const pl=nt[ui].roster.find(r=>r.id===p.id);if(pl){pl.salary=dem;pl.contract=2;}setTeams(nt);setArbModal(null);sm(`✅ ${p.name} — Arb settled $${dem}M x 2yr`);setLog(l=>[`⚖️ ARB: ${p.name} settled at $${dem}M/yr`,...l.slice(0,149)]);}} bg="#14532d" c="#86efac" disabled={!canAfford}>✅ Accept ${dem}M x 2yr</Btn>{round<3&&<Btn onClick={()=>setArbModal({p,round:round+1})} bg="#1e3a5f" c="#7dd3fc">↩ Counter (next round: ${+(base*(round===1?1.1:1.05)).toFixed(1)}M)</Btn>}<Btn onClick={()=>{const nt=[...teams];nt[ui].roster=nt[ui].roster.filter(r=>r.id!==p.id);setTeams(nt);setFa(prev=>[{...p,contract:0},...prev]);setArbModal(null);sm(`${p.name} walks — enters FA`);setLog(l=>[`❌ ARB FAILED: ${p.name} enters free agency`,...l.slice(0,149)]);}} bg="#7f1d1d" c="#fca5a5">🚪 Reject — player enters FA</Btn><Btn onClick={()=>setArbModal(null)} bg={C.bd}>Defer</Btn></div></div></div>);})()}
     {draftPickTrade&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.88)',zIndex:1001,display:'flex',alignItems:'center',justifyContent:'center',padding:12}}><div style={{background:C.cd,borderRadius:14,padding:16,maxWidth:380,width:'100%',border:`1px solid ${C.bd}`}}><div style={{fontSize:15,fontWeight:800,marginBottom:8}}>📤 TRADE YOUR PICK</div><div style={{fontSize:13,color:'#94a3b8',marginBottom:8}}>Rd{draftPickTrade.pick.rd} #{draftPickTrade.pick.overall} — {draftPickTrade.aiTmName} wants your pick</div><div style={{background:C.bg,padding:8,borderRadius:5,marginBottom:10,fontSize:12}}>{draftPickTrade.offeredPlayer&&<div style={{color:C.gn,marginBottom:3}}>🏈 {draftPickTrade.offeredPlayer.name} ({draftPickTrade.offeredPlayer.pos} {draftPickTrade.offeredPlayer.ovr}OVR)</div>}{draftPickTrade.offeredPick&&<div style={{color:'#a78bfa'}}>📋 Rd{draftPickTrade.offeredPick.rd} #{draftPickTrade.offeredPick.overall} pick</div>}</div><div style={{display:'flex',flexDirection:'column',gap:5}}><Btn onClick={()=>{const nt=[...teams];const np=[...draftPicks];const pi=np.findIndex(pk=>pk.id===draftPickTrade.pick.id);if(pi>=0)np[pi]={...np[pi],owner:draftPickTrade.aiTm};if(draftPickTrade.offeredPlayer){const idx=nt[draftPickTrade.aiTm].roster.findIndex(p=>p.id===draftPickTrade.offeredPlayer.id);if(idx>=0){const[pl]=nt[draftPickTrade.aiTm].roster.splice(idx,1);nt[ui].roster.push(pl);}}if(draftPickTrade.offeredPick){const opi=np.findIndex(pk=>pk.id===draftPickTrade.offeredPick.id);if(opi>=0)np[opi]={...np[opi],owner:ui};}setTeams(nt);setDraftPicks(np);setDraftPickTrade(null);setLog(l=>[`📤 Draft Pick Trade: Sent Rd${draftPickTrade.pick.rd}#${draftPickTrade.pick.overall} to ${draftPickTrade.aiTmName}`,...l.slice(0,149)]);sm('Pick traded!');}} bg={C.gn}>Accept Trade</Btn><Btn onClick={()=>setDraftPickTrade(null)} bg={C.bd}>Decline</Btn></div></div></div>}
-    <div style={{background:"linear-gradient(90deg,#0f172a,#1e293b)",padding:MOBILE?"8px 10px":"6px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${C.bd}`,flexWrap:"wrap",gap:MOBILE?6:4,...(MOBILE?{position:"sticky",top:0,zIndex:300}:{})}}>
+    <div style={{background:`linear-gradient(90deg,${TEAMS[ui]?.clr||"#0f172a"}66 0%,#0f172a 40%,#1e293b 100%)`,boxShadow:`inset 0 -3px 0 ${teamAccent}`,padding:MOBILE?"8px 10px":"6px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${C.bd}`,flexWrap:"wrap",gap:MOBILE?6:4,...(MOBILE?{position:"sticky",top:0,zIndex:300}:{})}}>
       <div style={{display:"flex",alignItems:"center",gap:6}}><TeamLogo t={ut} sz={26} /><div><div style={{fontWeight:800,fontSize:15}}>{ut?.city} {ut?.name}</div>{MOBILE&&<div style={{fontSize:12,color:C.mt}}>{yr} · {ut?.w}-{ut?.l}{ut?.t?`-${ut.t}`:""} · Cap room <span style={{color:capSpace(ut||{})>=0?C.gn:C.rd,fontWeight:800}}>${capSpace(ut||{}).toFixed(1)}M</span></div>}<div style={{fontSize:11,color:C.mt,display:MOBILE?"none":undefined}}>{yr} • {ut?.w}W-{ut?.l}L • Cap <span style={{color:capSpace(ut||{})>=0?C.gn:C.rd,fontWeight:700}}>${capSpace(ut||{}).toFixed(1)}M</span>/{leagueCap()}M • SP:{scPts} • MOR:<span style={{color:(ut?.morale||50)>=75?C.gn:(ut?.morale||50)>=45?C.gd:C.rd,fontWeight:700}}>{(ut?.morale||50)>=75?'HIGH':(ut?.morale||50)>=45?'MED':'LOW'}</span> • REP:<span style={{color:(ut?.gmRep||50)>=75?'#a78bfa':(ut?.gmRep||50)>=60?C.gd:C.mt,fontWeight:700}}>{(ut?.gmRep||50)>=90?'LEGEND':(ut?.gmRep||50)>=75?'ELITE':(ut?.gmRep||50)>=60?'RESPECTED':(ut?.gmRep||50)>=40?'VETERAN':'ROOKIE'}</span>{ownerPersonality&&<> • <span style={{color:ownerPersonality==='demanding'?C.rd:ownerPersonality==='meddling'?'#f59e0b':'#22c55e',fontWeight:700,fontSize:10}}>{ownerPersonality==='demanding'?'👔⚡':ownerPersonality==='meddling'?'👔👀':'👔😌'} {ownerPersonality.toUpperCase()}</span></>}</div></div></div>
       <div style={MOBILE?{display:"flex",alignItems:"center",gap:6,flexWrap:"nowrap",overflowX:"auto",width:"100%",WebkitOverflowScrolling:"touch"}:{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
         <span style={{fontSize:11,padding:"2px 6px",borderRadius:10,background:`${C.bl}22`,color:C.bl,fontWeight:700,whiteSpace:"nowrap"}}>{phaseFlow}</span>
@@ -1273,7 +1275,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       <button onClick={()=>acceptTrade(trProp)} style={{background:"#166534",color:"#22c55e",border:"1px solid #22c55e",borderRadius:3,padding:"2px 8px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Accept</button>
       <button onClick={()=>setTrProp(null)} style={{background:"#1e293b",color:"#64748b",border:"1px solid #334155",borderRadius:3,padding:"2px 8px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Decline</button>
     </div>}
-    {!MOBILE&&tab!=="dashboard"&&<div style={{display:"flex",flexWrap:"nowrap",background:"#0f172a",borderBottom:`1px solid ${C.bd}`,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>{TABS.map(t=>{const gp=groupOf(t);const on=gp?gp.tabs.includes(tab):tab===t;return<button key={t} onClick={()=>setTab(gp?groupEntry(gp):t)} style={{background:on?"#1e293b":"transparent",color:on?"#fff":"#94a3b8",border:"none",borderBottom:on?`3px solid ${C.gn}`:"3px solid transparent",padding:isMobile?"9px 11px":"10px 14px",fontSize:isMobile?13:14,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>{gp?gp.label:TAB_LABEL[t]||t}</button>;})}</div>}
+    {!MOBILE&&tab!=="dashboard"&&<div style={{display:"flex",flexWrap:"nowrap",background:"#0f172a",borderBottom:`1px solid ${C.bd}`,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>{TABS.map(t=>{const gp=groupOf(t);const on=gp?gp.tabs.includes(tab):tab===t;return<button key={t} onClick={()=>setTab(gp?groupEntry(gp):t)} style={{background:on?"#1e293b":"transparent",color:on?"#fff":"#94a3b8",border:"none",borderBottom:on?`3px solid ${teamAccent}`:"3px solid transparent",padding:isMobile?"9px 11px":"10px 14px",fontSize:isMobile?13:14,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>{gp?gp.label:TAB_LABEL[t]||t}</button>;})}</div>}
     {!MOBILE&&(()=>{
       const stageList=[{k:'preseason',lbl:'PRE'},{k:'reg',lbl:'SEASON',weeks:18},{k:'playoffs',lbl:'PLAYOFFS'},{k:'combine',lbl:'COMBINE'},{k:'resign',lbl:'RE-SIGN'},{k:'freeagency',lbl:'FREE AGENCY'},{k:'draft',lbl:'DRAFT'}];
       const curIdx=sp==='preseason'?0:sp==='regular'?1:sp==='playoffs'?2:sp==='combine'?3:sp==='resign'?4:sp==='freeagency'?5:6;
@@ -1311,6 +1313,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     })()}
     <div style={{flex:1,padding:isMobile?"6px 8px":"8px 12px",overflowY:"auto",maxHeight:MOBILE?"none":"calc(100vh - 120px)",paddingBottom:MOBILE?96:undefined,fontSize:MOBILE?'15px':isMobile?'13px':'inherit'}}>
     <ScreenBoundary key={tab+rosterView} onHome={()=>{setRosterView("players");setRosterTeam(null);setTab("dashboard");}} onGo={t=>{setRosterView("players");setRosterTeam(null);setTab(t);}}>
+    <React.Suspense fallback={<div style={{padding:24,color:C.mt,fontSize:14}}>Loading…</div>}>
 
     {groupOf(tab)&&<div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap",alignItems:"center"}}><b style={{fontSize:13,color:C.mt,letterSpacing:1,marginRight:4}}>{groupOf(tab).label.toUpperCase()}</b>{groupOf(tab).tabs.map(t=><button key={t} onClick={()=>{if(t==="roster")setRosterView("players");setRosterTeam(null);setTab(t);}} style={{background:tab===t?C.bl+"33":"transparent",color:tab===t?"#fff":C.mt,border:`1px solid ${tab===t?C.bl:C.bd}`,borderRadius:6,padding:"6px 14px",fontSize:14,fontWeight:700,cursor:"pointer"}}>{TAB_LABEL[t]||t}</button>)}</div>}
     {/* The result of your last sim, front and centre on every screen */}
@@ -2424,6 +2427,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     {dynastyShareOpen&&ut&&<div style={{position:'fixed',bottom:MOBILE?88:16,left:16,zIndex:150,background:'#0d1424',border:'1px solid #22c55e',borderRadius:10,padding:'12px 16px',display:'flex',alignItems:'center',gap:10,boxShadow:'0 4px 32px #00000088',minWidth:260,maxWidth:380}}><div style={{flex:1}}><div style={{fontSize:13,fontWeight:900,color:'#22c55e',marginBottom:2}}>🏁 Season Complete!</div><div style={{fontSize:11,color:'#94a3b8'}}>{ut.w}-{ut.l} · Share your franchise story?</div></div><Btn onClick={()=>{shareViaWebAPI(`${ut.city} ${ut.name} — ${yr} Season`,`${yr} #FootballGM: ${ut.city} ${ut.name} went ${ut.w}-${ut.l}. GM Rep: ${ut.gmRep}/100. Building my dynasty! evandamours.github.io/27_Gridiron_GM`);setDynastyShareOpen(false);track('dynasty_shared');}} bg="#22c55e22" c="#22c55e" style={{fontSize:11,padding:'4px 10px',whiteSpace:'nowrap'}}>📤 Share</Btn><button onClick={()=>setDynastyShareOpen(false)} style={{background:'transparent',border:'none',color:'#475569',cursor:'pointer',fontSize:14,padding:'0 4px',lineHeight:1}}>✕</button></div>}
     
 
+    </React.Suspense>
     </ScreenBoundary>
     </div>
     {MOBILE&&moreOpen&&<MoreSheet tabs={TABS.filter(t=>t!=="dashboard")} labels={{...TAB_LABEL,...Object.fromEntries(TAB_GROUPS.map(g=>[g.key,g.label]))}} tab={groupOf(tab)?.key||tab} go={t=>{setMoreOpen(false);setRosterTeam(null);const gp=groupOf(t);setTab(gp?groupEntry(gp):t);}} onClose={()=>setMoreOpen(false)} actions={[{label:"💾 Save game",onClick:()=>{saveGame();setMoreOpen(false);}},{label:theme==="light"?"🌙 Dark mode":"☀️ Light mode",onClick:()=>{const t=theme==="light"?"dark":"light";applyTheme(t);setTheme(t);}},{label:injuriesOn?"🩹 Injuries: on (tap to turn off)":"🩹 Injuries: off (tap to turn on)",onClick:toggleInjuries},{label:"📊 Season recap",onClick:()=>{setMoreOpen(false);setShowRecapCard(true);}},{label:"🖥 Desktop version",onClick:()=>{window.location.href=DESKTOP_URL;}}]}/>}

@@ -11,10 +11,11 @@ import opoyArt from "./assets/opoy.webp";
 import dpoyArt from "./assets/dpoy.webp";
 import mvpArt from "./assets/mvp.webp";
 import sbmvpArt from "./assets/sbmvp.webp";
+import oroyArt from "./assets/oroy.webp";
 
 // The real trophies, as artwork: MVP, Offensive and Defensive Player of the Year (the NFL Honors
 // trophy) and the Super Bowl MVP football.
-const TROPHY_ART = { mvp: mvpArt, opoy: opoyArt, dpoy: dpoyArt, sbmvp: sbmvpArt };
+const TROPHY_ART = { mvp: mvpArt, opoy: opoyArt, dpoy: dpoyArt, sbmvp: sbmvpArt, oroy: oroyArt };
 import { Rafters, GoldJackets, RingOfHonor, RecordsWall } from "./LegacyHall.jsx";
 
 const AWARDS = [["mvp", "MVP", "Most Valuable Player"], ["opoy", "OPOY", "Offensive Player of the Year"], ["dpoy", "DPOY", "Defensive Player of the Year"], ["oroy", "OROY", "Offensive Rookie of the Year"], ["droy", "DROY", "Defensive Rookie of the Year"], ["sbmvp", "SB MVP", "Super Bowl MVP"]];
