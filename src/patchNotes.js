@@ -675,4 +675,7 @@ export const PATCH_NOTES = [
   { v: "2.30", date: "2026-10-12", title: "Compact Pick Tracker", notes: [
     "Your picks on the draft screen are a row of small chips (R1 #2, R2 #34...) instead of seven big boxes: one line on desktop, a few short lines on a phone. Used picks are crossed out with the player you took; rounds where you have no pick show faded.",
   ] },
+  { v: "2.31", date: "2026-10-12", title: "Trade Requests You Can Act On", notes: [
+    "A trade request in Needs Attention now says who wants out and how low his confidence is, with two buttons right there: Talk him down (1 scouting point, +20 confidence, he stays) or Shop him (a club comes back with an offer you can review). Tapping the item opens his player card instead of dropping you on the roster with nothing to do.",
+  ] },
 ];
