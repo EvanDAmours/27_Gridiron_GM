@@ -7,6 +7,7 @@ import { CAREER_STATS, careerTotals } from "./history.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 import { RECORD_DEFS } from "./records.js";
 import goldJacket from "./assets/gold-jacket.webp";
+import { RING_OF_HONOR } from "./data/ringOfHonor.js";
 
 const DIV = { AFC: "AFC", NFC: "NFC" };
 const fmt = (n) => Math.round(n).toLocaleString();
@@ -22,7 +23,7 @@ const H = ({ children, sub }) => (
 function Banner({ team, line1, line2, year, years, gold }) {
   const bg = team.clr || "#1e3a8a", ac = team.ac || "#e5e7eb", trim = gold ? "#e8c45a" : ac;
   return (
-    <div style={{ position: "relative", flex: "0 0 auto", width: years && years.length > 6 ? 116 : 96, paddingTop: 10 }}>
+    <div className="keep-dark" style={{ position: "relative", flex: "0 0 auto", width: years && years.length > 6 ? 116 : 96, paddingTop: 10 }}>
       <div style={{ position: "absolute", top: 0, left: 10, right: 10, height: 6, borderRadius: 3, background: "linear-gradient(180deg,#e5e7eb,#6b7280)" }} />
       <div style={{ position: "absolute", top: 4, left: 46, width: 4, height: 8, background: "#9ca3af" }} />
       <div style={{ filter: "drop-shadow(0 8px 10px #000b)" }}>
@@ -56,7 +57,7 @@ export function Rafters({ team, sbs = [], titles = [], confs = [], divs = [] }) 
   for (const [y, n] of divs) (groups[n] ||= []).push(y);
   const order = Object.entries(groups).sort((a, b) => Math.min(...a[1]) - Math.min(...b[1]));
   const wall = (children) => (
-    <div style={{ background: "linear-gradient(180deg,#0b0f19,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: "0 12px 14px", position: "relative", overflowX: "auto", marginBottom: 10 }}>
+    <div className="keep-dark" style={{ background: "linear-gradient(180deg,#0b0f19,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: "0 12px 14px", position: "relative", overflowX: "auto", marginBottom: 10 }}>
       <div style={{ height: 8, margin: "0 -12px 0", background: "repeating-linear-gradient(90deg,#374151 0 14px,#1f2937 14px 28px)" }} />
       <div style={{ display: "flex", gap: 12, paddingTop: 2, minHeight: 190, alignItems: "flex-start" }}>{children}</div>
     </div>
@@ -100,21 +101,44 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum }) {
   const ring = retired.filter((r) => hall.ring.includes(r.id));
   const cands = retired.filter((r) => !hall.ring.includes(r.id) && (r.hof || r.legacy >= 20)).sort((a, b) => b.legacy - a.legacy).slice(0, 8);
   const taken = new Set(hall.nums.map((n) => n.num));
+  const real = RING_OF_HONOR[team.ab] || { name: null, members: [] };
+  const trim = team.ac || "#e5e7eb", bg = team.clr || "#1e3a8a";
+  // retired numbers: the club's real ones, then any retired in this league
+  const nums = [...real.members.filter((m) => m.ret && m.num != null).map((m) => ({ num: m.num, name: m.n })), ...(real.fans12 ? [{ num: 12, name: "The 12s (fans)" }] : []), ...hall.nums.filter((n) => !real.members.some((m) => m.ret && m.num === n.num)).map((n) => ({ ...n, mine: true }))].sort((a, b) => a.num - b.num);
+  const plaques = [...real.members.map((m) => ({ key: m.n, name: m.n, num: m.num, pos: m.pos, yrs: m.yrs, ind: m.ind, ret: m.ret })), ...ring.map((r) => ({ key: r.id, name: r.name, num: r.num, pos: r.pos, ind: r.retYr, mine: true }))];
   return (
     <div style={{ marginBottom: 22 }}>
-      <H sub="Honor the greats who played here">Ring of Honor & Retired Numbers</H>
-      <div style={{ background: `linear-gradient(180deg,${team.clr || "#1e293b"},#0b1220)`, borderRadius: 12, padding: "12px 14px", border: `2px solid ${team.ac || C.bd}` }}>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", minHeight: 44 }}>
-          {ring.length ? ring.map((r) => <span key={r.id} style={{ fontFamily: "Georgia, serif", fontWeight: 900, fontSize: 18, letterSpacing: 1.5, color: "#fff", textShadow: "0 2px 4px #000a", padding: "2px 10px", borderRight: `2px solid ${team.ac || "#fff"}55` }}>{r.name.toUpperCase()} <span style={{ fontSize: 13, opacity: 0.8 }}>{r.retYr}</span></span>) : <span style={{ color: "#fffa", fontSize: 14 }}>The Ring of Honor is empty. Induct a retired great below.</span>}
+      <H sub={real.name ? `${team.city} ${team.name} ${real.name}${real.members.length ? `, ${plaques.length} members` : ""}` : "Honor the greats who played here"}>{real.name || "Ring of Honor"} & Retired Numbers</H>
+      {nums.length > 0 && (
+        <div className="keep-dark" style={{ background: "linear-gradient(180deg,#0b0f19,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: "14px 12px", marginBottom: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "#fde68a", marginBottom: 10 }}>RETIRED NUMBERS</div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {nums.map((n) => (
+              <div key={`${n.num}${n.name}`} title={n.name} style={{ width: 92, textAlign: "center" }}>
+                <div style={{ clipPath: "polygon(0 0,100% 0,100% 86%,50% 100%,0 86%)", background: trim, padding: 3 }}>
+                  <div style={{ clipPath: "polygon(0 0,100% 0,100% 86%,50% 100%,0 86%)", background: bg, padding: "10px 4px 20px" }}>
+                    <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 38, fontWeight: 900, lineHeight: 1, color: "#fff", textShadow: "0 2px 3px #0009" }}>{n.num}</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", marginTop: 4, lineHeight: 1.2 }}>{n.name}{n.mine && <span style={{ display: "block", fontSize: 10, color: "#fde68a" }}>RETIRED IN YOUR LEAGUE</span>}</div>
+              </div>
+            ))}
+          </div>
         </div>
-        {hall.nums.length > 0 && <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
-          {hall.nums.map((n) => (
-            <div key={n.num} style={{ textAlign: "center" }}>
-              <div style={{ width: 62, height: 62, borderRadius: 31, background: "#fff", color: team.clr || "#111", border: `4px solid ${team.ac || "#999"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 900, fontFamily: "Georgia, serif" }}>{n.num}</div>
-              <div style={{ fontSize: 11, color: "#fffc", marginTop: 3, maxWidth: 80 }}>{n.name}</div>
+      )}
+      <div className="keep-dark" style={{ background: `linear-gradient(180deg,${bg},#0b1220)`, borderRadius: 12, padding: "12px 14px", border: `2px solid ${trim}` }}>
+        {!plaques.length && <span style={{ color: "#fffa", fontSize: 14 }}>{real.name === null ? "The club has never had a Ring of Honor. Start one: induct a retired great below." : "The Ring of Honor is empty. Induct a retired great below."}</span>}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 8 }}>
+          {plaques.map((m) => (
+            <div key={m.key} style={{ display: "flex", alignItems: "center", gap: 10, background: "#0006", border: `1px solid ${m.mine ? "#fde68a" : trim + "66"}`, borderRadius: 8, padding: "7px 10px" }}>
+              <div style={{ minWidth: 38, height: 38, borderRadius: 19, display: "flex", alignItems: "center", justifyContent: "center", background: m.ret ? "#fde68a" : "#fff", color: m.ret ? "#3b2a0a" : bg, fontFamily: "Georgia, serif", fontWeight: 900, fontSize: 17 }}>{m.num ?? "★"}</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontFamily: "Georgia, serif", fontWeight: 900, fontSize: 14, letterSpacing: 0.5, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name.toUpperCase()}</div>
+                <div style={{ fontSize: 11, color: "#fffb" }}>{[m.pos, m.yrs, m.ind && `inducted ${m.ind}`].filter(Boolean).join(" · ")}{m.mine && <b style={{ color: "#fde68a" }}> · YOUR LEAGUE</b>}</div>
+              </div>
             </div>
           ))}
-        </div>}
+        </div>
       </div>
       {(cands.length > 0 || ring.some((r) => r.num != null && !taken.has(r.num))) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 8, marginTop: 8 }}>
         {cands.map((r) => (

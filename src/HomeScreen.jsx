@@ -91,7 +91,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
   const ra = away && teamRatings(away, ...mine(away)), rh = home && teamRatings(home, ...mine(home));
   const bg = `radial-gradient(ellipse at 50% 35%, ${me.clr}55, transparent 60%), linear-gradient(160deg, #0b2a33, #050b12 70%)`;
   return (
-    <div style={{ borderRadius: 14, overflow: "hidden", background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, position: "relative" }}>
+    <div className="keep-dark" style={{ borderRadius: 14, overflow: "hidden", background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, position: "relative" }}>
       <style>{"@media (max-width: 760px) { .hm-main { order: -1; padding: 12px !important } .hm-menu, .hm-side { max-width: none !important; border: 0 !important } .hm-logo > * { width: clamp(48px, 15vw, 96px) !important; height: clamp(48px, 15vw, 96px) !important } }"}</style>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 0 }}>
         {/* Menu */}

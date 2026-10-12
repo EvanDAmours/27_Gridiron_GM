@@ -184,7 +184,7 @@ function Shelf({ title, items, empty, perRow, on, setOn, start = 0, small, spot 
         <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#e2e8f0" }}>{title}</span>
         <span style={{ fontSize: 15, color: "#fde68a", fontWeight: 800 }}>{items.length || ""}</span>
       </div>
-      <div className="tr-wall">
+      <div className="tr-wall keep-dark">
         {rows.map((row, r) => (
           <div key={r} className="tr-row">
             <div className="tr-items">

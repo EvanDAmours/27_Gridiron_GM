@@ -47,7 +47,7 @@ function TeamSummary({ team, rating, other }) {
 export default function PixelMatchup({ away, home, awayPlayer, homePlayer, awayRating,
   homeRating, label, kickoff, venue, awayUniform = 'away', homeUniform = 'home' }) {
   if (!away || !home) return null;
-  return h('article', { className: 'pxm-card', 'aria-label': `${away.city} ${away.name} at ${home.city} ${home.name}` },
+  return h('article', { className: 'pxm-card keep-dark', 'aria-label': `${away.city} ${away.name} at ${home.city} ${home.name}` },
     h('header', { className: 'pxm-label' }, label),
     h('div', { className: 'pxm-field' },
       h('div', { className: 'pxm-yardmarks', 'aria-hidden': true }, ...['30', '40', '50', '40', '30'].map((mark, i) => h('span', { key: i }, mark))),
