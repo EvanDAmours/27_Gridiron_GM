@@ -86,3 +86,52 @@ export function MobileActionBar({ actions }) {
     </>
   );
 }
+
+// Phones can't hover, so the explanations that live in `title` (badges, chips, notes) never show.
+// A tap on a plain element with a title, or a long-press on anything with one (buttons too), shows
+// that text in a small popover by your finger. The next tap or a few seconds closes it.
+const INTERACTIVE = "button, a, input, select, textarea, label, [role=button], [onclick]";
+export function TapTips() {
+  const [tip, setTip] = React.useState(null);
+  React.useEffect(() => {
+    let timer = 0, hide = 0, start = null, longShown = false;
+    const titled = (el) => { for (let n = el; n && n !== document.body; n = n.parentElement) if (n.getAttribute?.("title")) return n; return null; };
+    const show = (el, x, y) => {
+      const text = el.getAttribute("title");
+      if (!text) return;
+      clearTimeout(hide);
+      setTip({ text, x, y });
+      hide = setTimeout(() => setTip(null), 4500);
+    };
+    const down = (e) => {
+      const t = e.touches[0]; start = { x: t.clientX, y: t.clientY }; longShown = false;
+      setTip(null);
+      const el = titled(e.target);
+      clearTimeout(timer);
+      if (el) timer = setTimeout(() => { longShown = true; show(el, start.x, start.y); }, 450);
+    };
+    const move = (e) => { const t = e.touches[0]; if (start && Math.hypot(t.clientX - start.x, t.clientY - start.y) > 10) clearTimeout(timer); };
+    const up = (e) => {
+      clearTimeout(timer);
+      if (longShown) { e.preventDefault(); return; } // the long-press already answered; don't also fire the button
+      const el = titled(e.target);
+      if (!el || !start) return;
+      const ct = e.changedTouches[0];
+      if (Math.hypot(ct.clientX - start.x, ct.clientY - start.y) > 10) return;
+      // a plain tap explains only things that do nothing else when tapped
+      if (e.target.closest(INTERACTIVE) || el.closest(INTERACTIVE)) return;
+      show(el, ct.clientX, ct.clientY);
+    };
+    document.addEventListener("touchstart", down, { passive: true });
+    document.addEventListener("touchmove", move, { passive: true });
+    document.addEventListener("touchend", up, { passive: false });
+    return () => { clearTimeout(timer); clearTimeout(hide); document.removeEventListener("touchstart", down); document.removeEventListener("touchmove", move); document.removeEventListener("touchend", up); };
+  }, []);
+  if (!tip) return null;
+  const w = Math.min(280, window.innerWidth - 24);
+  const left = Math.max(12, Math.min(tip.x - w / 2, window.innerWidth - w - 12));
+  const above = tip.y > 140;
+  return (
+    <div role="tooltip" style={{ position: "fixed", zIndex: 2000, left, width: w, ...(above ? { bottom: window.innerHeight - tip.y + 14 } : { top: tip.y + 18 }), background: "#0f172af7", border: `1px solid ${C.bl}`, borderRadius: 10, padding: "9px 12px", color: "#e2e8f0", fontSize: 14, lineHeight: 1.4, fontWeight: 600, boxShadow: "0 10px 30px #000c", pointerEvents: "none", whiteSpace: "pre-line" }}>{tip.text}</div>
+  );
+}

@@ -652,4 +652,9 @@ export const PATCH_NOTES = [
     "A note appears when you're offline (the game keeps working and saves on the device), and the installed app fits around the notch and the home bar.",
     "Real contract lengths: every real player now starts a new league with the years actually left on his deal (from ESPN's contract data), instead of the Madden file's often-stale numbers. Brian Burns, for one, is signed through 2028, not in a contract year.",
   ] },
+  { v: "2.26", date: "2026-10-12", title: "Phone Polish", notes: [
+    "Phone Home is shorter: the matchup is a compact card (logos, records, OVR/OFF/DEF), your This Week to-do list is back, and Development Focus sits right below it.",
+    "The Play Week bar no longer covers the More menu, search, the inbox or player cards; it hides while they're open.",
+    "Tap explanations on phones: tap a badge, chip or note to see the explanation that used to appear only on mouse hover. Long-press a button to see what it does.",
+  ] },
 ];

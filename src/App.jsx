@@ -55,7 +55,7 @@ const TrophyRoom = lazyScreen(() => import("./TrophyRoom.jsx")); // loaded when 
 const GameInfo = lazyScreen(() => import("./GameInfo.jsx")); // loaded when first opened
 import ScreenBoundary from "./Boundary.jsx";
 import { MOBILE, DESKTOP_URL, MOBILE_URL } from "./mobile.js";
-import { MobileNav, MoreSheet, MobileActionBar } from "./MobileShell.jsx";
+import { MobileNav, MoreSheet, MobileActionBar, TapTips } from "./MobileShell.jsx";
 import Lombardi from "./Lombardi.jsx";
 import { repairSave } from "./repair.js";
 import SeasonAwards, { superBowlMvp } from "./SeasonAwards.jsx";
@@ -2326,7 +2326,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     </ScreenBoundary>
     </div>
     {MOBILE&&moreOpen&&<MoreSheet tabs={TABS.filter(t=>t!=="dashboard")} labels={{...TAB_LABEL,...Object.fromEntries(TAB_GROUPS.map(g=>[g.key,g.label]))}} tab={groupOf(tab)?.key||tab} go={t=>{setMoreOpen(false);setRosterTeam(null);const gp=groupOf(t);setTab(gp?groupEntry(gp):t);}} onClose={()=>setMoreOpen(false)} actions={[{label:"💾 Save game",onClick:()=>{saveGame();setMoreOpen(false);}},{label:"🧭 Take the tour",onClick:()=>{setMoreOpen(false);setTourStep(0);}},{label:theme==="light"?"🌙 Dark mode":"☀️ Light mode",onClick:()=>{const t=theme==="light"?"dark":"light";applyTheme(t);setTheme(t);}},{label:injuriesOn?"🩹 Injuries: on (tap to turn off)":"🩹 Injuries: off (tap to turn on)",onClick:toggleInjuries},{label:"📊 Season recap",onClick:()=>{setMoreOpen(false);setShowRecapCard(true);}},{label:"🖥 Desktop version",onClick:()=>{window.location.href=DESKTOP_URL;}}]}/>}
-    {MOBILE&&phase==='main'&&tab!=="livesim"&&(()=>{const A=[];const _ng=sp==="regular"?sched.find(g=>g.wk===wk+1&&!g.played&&(g.h===ui||g.a===ui)):null;
+    {MOBILE&&phase==='main'&&tab!=="livesim"&&!moreOpen&&!inboxOpen&&!searchOpen&&!sel&&!boxView&&!extTalk&&!resignTalk&&(()=>{const A=[];const _ng=sp==="regular"?sched.find(g=>g.wk===wk+1&&!g.played&&(g.h===ui||g.a===ui)):null;
       if(sp==="preseason")A.push({label:"Start Season",onClick:startSeasonAsk});
       else if(sp==="regular"){if(liveSim&&!liveDone)A.push({label:"● Back to the live game",onClick:()=>setTab("livesim"),bg:C.rd});else if(_ng)A.push({label:`▶ Play Week ${wk+1}`,onClick:()=>startLiveSim(_ng)});A.push({label:_ng?"Sim Week":"Advance Week",onClick:()=>{setSimming(true);setTimeout(()=>{simWk();setSimming(false);},50);},bg:C.bl});if(wk<TRADE_DEADLINE_WEEK)A.push({label:"Sim to Deadline",onClick:()=>simAll(TRADE_DEADLINE_WEEK),bg:"#b91c1c"});A.push({label:"Sim All",onClick:()=>simAll(),bg:"#6366f1"});}
       else if(sp==="playoffs"&&pb){if(pb.ch!=null)A.push({label:"→ Combine",onClick:goToCombine,bg:"#7c3aed"});else{const _m=pb.m.find(([h,a])=>h===ui||a===ui);if(liveSim&&!liveDone)A.push({label:"● Back to the live game",onClick:()=>setTab("livesim"),bg:C.rd});else if(_m&&pb.seeds)A.push({label:`▶ Play ${ROUND_NAMES[pb.rd]}`,onClick:()=>startLiveSim({wk:`P${pb.rd}`,h:_m[0],a:_m[1],playoff:true})});A.push({label:"Sim Round",onClick:()=>simPR(),bg:C.gd,c:"#000"});}}
@@ -2335,6 +2335,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       else if(sp==="freeagency")A.push({label:"Finish Free Agency →",onClick:askAdvance,bg:C.gd,c:"#000"});
       else if(sp==="draft"){if(draftActive){if(curPick&&curPick.owner!==ui&&draftPicks.slice(draftIdx).some(pk=>pk.owner===ui))A.push({label:"⏩ Sim to my pick",onClick:()=>simEntireDraft(true)});A.push({label:draftPaused?"▶ Resume draft":"⏸ Pause draft",onClick:()=>setDraftPaused(p=>!p),bg:draftPaused?C.gn:"#f97316"});A.push({label:"⏭ Sim the whole draft",onClick:()=>simEntireDraft(),bg:"#6366f1"});A.push({label:`Speed: ${draftSpeed}`,onClick:()=>setDraftSpeed(s=>{const n=DRAFT_SPEEDS[(DRAFT_SPEEDS.indexOf(s)+1)%DRAFT_SPEEDS.length];try{localStorage.setItem("gm_draft_speed",n);}catch{}return n;}),bg:C.bd});}else if(draftPicks.length>0&&draftIdx>=draftPicks.length)A.push({label:"→ Next Season",onClick:newSeason});}
       return<MobileActionBar actions={A}/>;})()}
+    {MOBILE&&<TapTips/>}
     {MOBILE&&<MobileNav tab={tab} sp={sp} rosterView={rosterView} moreOpen={moreOpen} onMore={()=>setMoreOpen(o=>!o)} go={(t,sub)=>{setMoreOpen(false);setRosterTeam(null);if(sub)setRosterView(sub);setTab(t);}}/>}
   </div>);
 }

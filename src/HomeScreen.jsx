@@ -22,6 +22,26 @@ export function teamRatings(t, depthOrder, snaps) {
   return { ovr: Math.round(off * 0.5 + def * 0.5), off, def };
 }
 
+// Phones: the matchup as a compact card (logos, records, team ratings, kickoff) instead of the
+// big illustrated one, so the week's to-dos fit on the first screen.
+function CompactMatchup({ away, home, ra, rh, label, kickoff }) {
+  const Side = ({ t, r }) => (
+    <div style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
+      <div style={{ display: "inline-flex" }}><TeamLogo t={t} sz={48} glow /></div>
+      <div style={{ fontSize: 15, fontWeight: 900, marginTop: 2 }}>{t.name}</div>
+      <div style={{ fontSize: 12, color: "#cbd5e1" }}>{rec(t)}</div>
+      {r && <div style={{ display: "flex", gap: 4, justifyContent: "center", marginTop: 4 }}>{[["OVR", r.ovr], ["OFF", r.off], ["DEF", r.def]].map(([k, v]) => <span key={k} style={{ fontSize: 11, fontWeight: 800, color: "#e2e8f0", background: "#ffffff14", borderRadius: 6, padding: "2px 5px" }}>{k} <b style={{ color: v >= 85 ? C.gn : v >= 75 ? "#a3e635" : "#cbd5e1" }}>{v}</b></span>)}</div>}
+    </div>
+  );
+  return (
+    <div style={{ background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 12, padding: "10px 8px" }}>
+      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", textAlign: "center", marginBottom: 6 }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}><Side t={away} r={ra} /><b style={{ fontSize: 14, color: "#94a3b8" }}>AT</b><Side t={home} r={rh} /></div>
+      <div style={{ fontSize: 12, color: "#94a3b8", textAlign: "center", marginTop: 6 }}>{kickoff}</div>
+    </div>
+  );
+}
+
 // This week's top stories (written after every week), with the league wire as a fallback.
 function Stories({ stories, news, teams }) {
   if (!stories.length && !news.length) return <div style={{ fontSize: 15, color: "#cbd5e1" }}>Quiet around the league so far. Stories arrive after every week.</div>;
@@ -134,7 +154,9 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
               })}
             </div>
           )}
-          {game ? (
+          {game && mobile ? (
+            <CompactMatchup away={away} home={home} ra={ra} rh={rh} label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} · Week ${game.wk ?? nextWk}`} kickoff={game.date ? kickoff(game) : "Kickoff TBD"} />
+          ) : game ? (
             <PixelMatchup
               key={`${sp}-${game.wk ?? pb?.rd ?? 0}-${game.a}-${game.h}`}
               away={away} home={home}
@@ -147,6 +169,18 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
             />
           ) : null}
           {game && (sp === "regular" || sp === "playoffs" || sp === "preseason") && <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={sp === "playoffs"} neutral={!!game.neutral || (sp === "playoffs" && pb?.rd === 4)} />}
+          {mobile && menu.length > 0 && (
+            <div style={{ marginTop: 12, background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 12, padding: "10px 10px 6px" }}>
+              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", marginBottom: 6 }}>THIS WEEK</div>
+              {menu.map((m, i) => (
+                <button key={m.label} onClick={m.onClick} style={{ display: "block", width: "100%", textAlign: "left", background: i === 0 ? "#00000055" : "transparent", border: i === 0 ? "1px solid #f97316" : "1px solid transparent", borderLeft: i > 0 && m.tone ? `3px solid ${m.tone === "urgent" ? C.rd : m.tone === "action" ? C.gd : "#38bdf8"}` : undefined, borderRadius: 8, padding: "8px 10px", marginBottom: 4, color: "#fff", cursor: "pointer" }}>
+                  <div style={{ fontSize: i === 0 ? 16 : 14, fontWeight: i === 0 ? 800 : 600, lineHeight: 1.35 }}>{m.label}</div>
+                  {i === 0 && m.sub && <div style={{ fontSize: 12.5, color: "#cbd5e1", marginTop: 2 }}>{m.sub}</div>}
+                </button>
+              ))}
+            </div>
+          )}
+          {mobile && side && <div style={{ marginTop: 12 }}>{side}</div>}
           {game ? null : (
             <div style={{ textAlign: "center", padding: "20px 10px" }}>
               <div style={{ display: "inline-flex" }}><TeamLogo t={me} sz={mobile ? 130 : 160} glow /></div>
@@ -167,7 +201,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
           <div style={{ maxHeight: side ? 300 : 520, overflowY: "auto", paddingRight: 2 }}>
             {panel === "stories" ? <Stories stories={stories} news={news} teams={teams} /> : <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />}
           </div>
-          {side && <div style={{ marginTop: "auto" }}>{side}</div>}
+          {side && !mobile && <div style={{ marginTop: "auto" }}>{side}</div>}
         </div>
       </div>
     </div>
