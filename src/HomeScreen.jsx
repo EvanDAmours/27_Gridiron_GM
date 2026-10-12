@@ -9,6 +9,7 @@ import { highestRatedPlayer } from "./spriteAssets.js";
 import { InjTag } from "./InjuryTag.jsx";
 import { injuryReport } from "./injuries.js";
 import PixelMatchup from "./PixelMatchup.jsx";
+import MatchupStakes from "./MatchupStakes.jsx";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const PHASE = { preseason: "Preseason", combine: "Offseason: NFL Combine", resign: "Offseason: Re-sign Week", freeagency: "Offseason: Free Agency", draft: "Offseason: NFL Draft" };
@@ -137,7 +138,9 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
               kickoff={game.date ? kickoff(game) : "Kickoff TBD"}
               venue={sp === "playoffs" && pb?.rd === 4 ? "Super Bowl • neutral site" : [game.venue || home.city, game.intl && game.city].filter(Boolean).join(", ")}
             />
-          ) : (
+          ) : null}
+          {game && (sp === "regular" || sp === "playoffs" || sp === "preseason") && <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={sp === "playoffs"} neutral={!!game.neutral || (sp === "playoffs" && pb?.rd === 4)} />}
+          {game ? null : (
             <div style={{ textAlign: "center", padding: "20px 10px" }}>
               <div style={{ display: "inline-flex" }}><TeamLogo t={me} sz={mobile ? 130 : 160} glow /></div>
               <div style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, textTransform: "uppercase", marginTop: 10 }}>{sp === "regular" ? "Bye week" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>

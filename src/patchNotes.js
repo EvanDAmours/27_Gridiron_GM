@@ -599,4 +599,8 @@ export const PATCH_NOTES = [
     "Players wear their uniforms: the home side in its jersey color and the road side in white (or the other way round in Dallas), with numbers in the club's colors, so the two teams are easy to tell apart.",
     "The line of scrimmage and the line to gain glow a little.",
   ] },
+  { v: "2.17", date: "2026-10-12", title: "Matchup Preview", notes: [
+    "Home's matchup card now shows what's at stake: first place in the division on the line, games back, where you'd be seeded if the season ended today, or a must-win when you're chasing the last playoff spot late in the year.",
+    "Plus both teams' last three results and streak, a betting line from the two teams' ratings (home field is worth 1.5), key players out on each side, and the matchups that decide it (your top target vs their top corner, your left tackle vs their best rusher) with who has the edge.",
+  ] },
 ];
