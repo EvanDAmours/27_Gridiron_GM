@@ -705,4 +705,7 @@ export const PATCH_NOTES = [
     "No more 4th-and-short gambles in their own territory while protecting a late lead.",
     "Overtime follows the current NFL rules: both teams get a possession, then the next score wins. A field goal on the first possession no longer ends the game, and a team down more than a field goal in overtime goes for it instead of kicking.",
   ] },
+  { v: "2.39", date: "2026-10-12", title: "No Super Bowl Toast", notes: [
+    "The small \"wins the Super Bowl\" toast is gone; the season-awards popup already leads with the champion.",
+  ] },
 ];
