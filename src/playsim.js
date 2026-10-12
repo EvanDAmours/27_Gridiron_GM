@@ -20,6 +20,7 @@ import { dlAsPlayed } from "./dline.js";
 import { getLeagueYear } from "./cap.js";
 import { hurtPen } from "./injuries.js";
 import { recPlay } from "./gameday.js";
+import { coachAggression } from "./coachStyle.js";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const gauss = (rand) => { let u = 0, v = 0; while (!u) u = rand(); while (!v) v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
@@ -109,9 +110,10 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season 
   const stCov = team?.coach?.st?.rating ?? 70;
   const kLeg = k?.posAttrs?.legStr ?? k?.attrs?.legStr ?? 93;
   const hcR = team?.coach?.hc?.rating ?? 70; // the head coach makes the 4th-down calls
+  const hcAgg = coachAggression(team?.coach?.hc); // ...in his own style
   // Measured against the league's balance, so league-wide rating drift doesn't tilt everyone's play-calling.
   const passLean = clamp(0.6 + ((u.pass - LEAGUE.pass[0]) - (u.run - LEAGUE.run[0])) * 0.006 + lean, 0.5, 0.7);
-  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, kLeg, p, pOvr, pPow, pAcc };
+  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, hcAgg, kLeg, p, pOvr, pPow, pAcc };
 }
 
 const emptyTeam = () => ({ plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
@@ -121,7 +123,7 @@ export function createGame(home, away, { playoff = false, neutral = false, rand 
   const g = {
     sides: { h: home, a: away }, playoff, neutral, rand,
     poss: first, firstPoss: first, yard: 25, down: 1, toGo: 10, qtr: 1, clock: 900,
-    score: { h: 0, a: 0 }, done: false, ot: false, otScored: false, plays: 0,
+    score: { h: 0, a: 0 }, done: false, ot: false, otScored: false, plays: 0, to: { h: 3, a: 3 },
     box: { h: {}, a: {} }, stats: { h: emptyTeam(), a: emptyTeam() },
     ...(rec ? { pl: [] } : {}),
   };
@@ -242,14 +244,14 @@ function tick(g, secs) {
   g.clock -= secs;
   if (g.clock > 0) return null;
   if (g.ot) { // overtime period over
-    if (g.score.h === g.score.a && g.playoff) { g.clock = 900; return "Another overtime period."; }
+    if (g.score.h === g.score.a && g.playoff) { g.clock = 900; g.to = { h: 2, a: 2 }; return "Another overtime period."; }
     g.done = true; return g.score.h === g.score.a ? "Overtime ends in a tie." : "Final.";
   }
   g.qtr++;
-  if (g.qtr === 3) { g.clock = 900; g.poss = other(g.firstPoss); g.yard = 25; g.down = 1; g.toGo = 10; g.stats[g.poss].drives++; return "Halftime."; }
+  if (g.qtr === 3) { g.to = { h: 3, a: 3 }; g.clock = 900; g.poss = other(g.firstPoss); g.yard = 25; g.down = 1; g.toGo = 10; g.stats[g.poss].drives++; return "Halftime."; }
   if (g.qtr === 5) {
     if (g.score.h !== g.score.a) { g.done = true; g.qtr = 4; g.clock = 0; return "Final."; }
-    g.ot = true; g.otPoss = 1; g.clock = g.playoff ? 900 : 600; g.poss = g.rand() < 0.5 ? "h" : "a"; g.yard = 25; g.down = 1; g.toGo = 10; g.stats[g.poss].drives++;
+    g.ot = true; g.otPoss = 1; g.to = { h: 2, a: 2 }; g.clock = g.playoff ? 900 : 600; g.poss = g.rand() < 0.5 ? "h" : "a"; g.yard = 25; g.down = 1; g.toGo = 10; g.stats[g.poss].drives++;
     return "Overtime!";
   }
   g.clock = 900;
@@ -310,18 +312,21 @@ function stepPlay(g, call, bonus = 1) {
   const off = g.poss, def = other(off);
   const st = g.stats[off];
   const lead = g.score[off] - g.score[def];
-  const hurry = ((g.qtr === 2 || g.qtr === 4) && g.clock < 120) || (g.qtr === 4 && g.clock < 300 && lead < 0) || (g.qtr === 4 && lead <= -9);
+  const hurry = ((g.qtr === 2 || g.qtr === 4) && g.clock < 120) || (g.qtr === 4 && g.clock < 300 && lead < 0) || (g.qtr === 4 && lead <= -9) || (g.ot && g.clock < 150 && lead <= 0);
   const fgDist = 100 - g.yard + 17;
   const before = { yard: g.yard, down: g.down, toGo: g.toGo, qtr: g.qtr, clock: g.clock, poss: off };
   const ev = { ...before, yards: 0, type: "", text: "", td: false, turnover: false, score: 0 };
   g.plays++;
 
   // Victory formation: ahead in the 4th with few enough seconds left that kneeling runs it out.
-  if (!call && g.qtr === 4 && !g.ot && lead > 0 && g.down < 4 && g.clock <= 40 * (4 - g.down)) {
+  // A defense that's out of reach (down more than two scores) doesn't bother with its timeouts.
+  const defTO = lead <= 16 ? g.to?.[def] ?? 0 : 0, kneels = 4 - g.down;
+  if (!call && g.qtr === 4 && !g.ot && lead > 0 && g.down < 4 && g.clock <= 40 * Math.max(0, kneels - defTO) + 2 * kneels) {
     const ql = line(g, off, o.qb); add(ql, "rushAtt", 1); add(ql, "rushYds", -1); st.rushAtt++; st.rushYds -= 1;
     g.yard = Math.max(1, g.yard - 1); g.down++; g.toGo += 1;
     ev.type = "run"; ev.kneel = true; ev.yards = -1; ev.player = o.qb; ev.text = `${o.qb?.name || "The QB"} takes a knee.`;
-    ev.note = tick(g, 40);
+    if (defTO > 0 && g.clock > 2) { g.to[def]--; ev.text += ` Timeout, ${sideName(g, def)}.`; ev.note = tick(g, 2); }
+    else ev.note = tick(g, 40);
     return ev;
   }
 
@@ -345,7 +350,7 @@ function stepPlay(g, call, bonus = 1) {
       if (call) decision = null; // the user chose to go for it
       else if (needTD || (g.qtr === 4 && g.clock < 240 && lead < 0 && fgDist > longFG)) decision = null;
       else if (kickToLead) decision = rand() < gamble ? null : "fg";
-      else if (!protecting && rand() < goShort * (fgDist <= 40 ? 0.6 : 1)) decision = null;
+      else if (!protecting && rand() < Math.min(0.95, goShort * (o.hcAgg ?? 1)) * (fgDist <= 40 ? 0.6 : 1)) decision = null;
       else if (fgDist <= maxFG) decision = "fg";
       else decision = "punt";
     }
@@ -536,7 +541,7 @@ function stepPlay(g, call, bonus = 1) {
     // Extra point (or the occasional two-point try).
     const kl = line(g, off, o.k);
     let pts = 6;
-    if (rand() < 0.05 || (g.qtr === 4 && g.clock < 300 && [-2, -10, 5, 1].includes(g.score[off] + 6 - g.score[def]))) {
+    if (rand() < 0.05 * (o.hcAgg ?? 1) ** 2 || (g.qtr === 4 && g.clock < 300 && [-2, -10, 5, 1].includes(g.score[off] + 6 - g.score[def]))) {
       if (rand() < 0.48) { pts += 2; ev.text += " Two-point try is good."; } else ev.text += " Two-point try fails.";
     } else {
       add(kl, "xpA", 1);
@@ -570,10 +575,21 @@ function stepPlay(g, call, bonus = 1) {
     if (!g.done) newPossession(g, 100 - g.yard);
     return ev;
   }
-  ev.note = tick(g, clockStops ? (hurry ? 5 : 7) : hurry ? 18 : (late(g) && lead > 0) || (g.qtr === 4 && lead >= 9) ? 44 : 40 + Math.round(rand() * 8));
+  let secs = clockStops ? (hurry ? 5 : 7) : hurry ? 18 : (late(g) && lead > 0) || (g.qtr === 4 && lead >= 9) ? 44 : g.ot ? 30 + Math.round(rand() * 6) : 40 + Math.round(rand() * 8);
+  if (!clockStops) {
+    // Timeouts: a team chasing points late stops the clock on its own drive; a defense that's behind
+    // late stops it to get the ball back. (Three a half, two in overtime.)
+    const endHalf = (g.qtr === 2 || g.qtr === 4 || g.ot) && g.clock <= 120;
+    const offWants = endHalf && (g.qtr === 2 ? g.yard >= 50 : lead <= 0) && g.clock - secs > 0;
+    const defWants = (g.qtr === 4 || g.ot) && g.clock <= 180 && lead > 0 && lead <= 16 && g.clock - secs > 0;
+    const who = offWants && (g.to?.[off] ?? 0) > 0 ? off : defWants && (g.to?.[def] ?? 0) > 0 ? def : null;
+    if (who) { g.to[who]--; secs = 4; ev.text += ` Timeout, ${sideName(g, who)}.`; ev.timeout = who; }
+  }
+  ev.note = tick(g, secs);
   return ev;
 }
 const late = (g) => g.qtr === 4 && g.clock < 300;
+const sideName = (g, side) => g.sides[side]?.team?.name || (side === "h" ? "home" : "away");
 
 // Play a whole game instantly.
 export function playGame(g) {

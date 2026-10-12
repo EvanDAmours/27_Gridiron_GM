@@ -727,4 +727,9 @@ export const PATCH_NOTES = [
     "Fix: player trade values update the moment anything about a player changes (a signing, a re-sign, training, a revised potential), instead of only when you reloaded.",
     "Guard rails: a test fails the build if any new piece of game state isn't saved, and the automatic play-through now saves, reloads and continues twice (mid-season and on draft day), checking every field comes back exactly.",
   ] },
+  { v: "2.44", date: "2026-10-12", title: "Timeouts, Overtime and Coaching Styles", notes: [
+    "Timeouts: three a half (two in overtime). A team behind late uses its own to stop the clock on a drive, a team driving at the end of the first half saves time with them, and a defense that's behind late calls them to get the ball back. The leading team can only kneel it out when the other side is out of timeouts or out of reach.",
+    "Overtime moves at a quicker tempo, so a 10-minute overtime has room for real drives: ties dropped from about 1 in 5 overtime games to about 1 in 20.",
+    "Head coaches have a game-day style, from conservative to aggressive, that shapes how often they go for it on 4th-and-short and try two-point conversions. Coaches known for it play to their reputation (Dan Campbell goes for it). You'll see each head coach's style on the Coaching screen and in the list of coaches available to hire.",
+  ] },
 ];

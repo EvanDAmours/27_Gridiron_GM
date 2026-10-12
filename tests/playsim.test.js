@@ -108,9 +108,27 @@ test("late, a field goal that ties or takes the lead is the call", () => {
 
 test("ahead with the clock nearly gone, the offense takes a knee", () => {
   const g = createGame(teams[0].side, teams[1].side, { rand });
-  Object.assign(g, { poss: "h", qtr: 4, clock: 70, yard: 40, down: 1, toGo: 10, score: { h: 24, a: 20 } });
+  Object.assign(g, { poss: "h", qtr: 4, clock: 70, yard: 40, down: 1, toGo: 10, score: { h: 24, a: 20 }, to: { h: 3, a: 0 } });
   const ev = step(g);
   assert.ok(ev.kneel, `kneels (${ev.text})`);
+});
+
+test("with timeouts left, a defense within reach keeps the leader from kneeling it out", () => {
+  const g = createGame(teams[0].side, teams[1].side, { rand });
+  Object.assign(g, { poss: "h", qtr: 4, clock: 70, yard: 40, down: 1, toGo: 10, score: { h: 24, a: 20 }, to: { h: 3, a: 3 } });
+  const ev = step(g);
+  assert.ok(!ev.kneel, "not enough to kneel out");
+});
+
+test("a team behind late stops the clock with its timeouts", () => {
+  let used = 0;
+  for (let i = 0; i < 40; i++) {
+    const g = createGame(teams[0].side, teams[1].side, { rand });
+    Object.assign(g, { poss: "h", qtr: 4, clock: 100, yard: 50, down: 1, toGo: 10, score: { h: 17, a: 20 }, to: { h: 3, a: 3 } });
+    const ev = step(g);
+    if (ev.timeout === "h") used++;
+  }
+  assert.ok(used > 10, `uses its timeouts (${used}/40)`);
 });
 
 test("overtime: a first-possession field goal gives the other team the ball", () => {
