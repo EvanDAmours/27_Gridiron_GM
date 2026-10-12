@@ -542,4 +542,14 @@ export const PATCH_NOTES = [
     "Quarterback contracts top out around 20% of the cap (it was 23.5%), in line with the real market.",
     "The draft ticker no longer loops (it showed every pick twice): it's a still strip of the latest picks, newest first.",
   ] },
+  { v: "2.7", date: "2026-10-12", title: "UI Cleanup", notes: [
+    "Messages (\"Trade completed!\" and the like) pop up as a small toast instead of pushing the whole page down.",
+    "Phones: the sim buttons fit across the top (Play Wk, Sim Week, To Deadline, Sim All), and rows of tabs stay on one line you can swipe instead of wrapping onto two or three.",
+    "Standings: the rival button only shows when you point at a team (and on your current rival), instead of a flame on every row.",
+    "Depth chart: offensive linemen's names no longer run into each other (and players with three names show their surname).",
+    "Every screen lines up on the left at a consistent width; League History, the Record Book and Game Updates were centered, and Coaching was squeezed into a narrow column.",
+    "The League hub drops its Season Leaders list (the Stats tab has them, better) and opens on Franchise History.",
+    "Timeline: no stray \"Giants: 2026\" line, readable achievements, and the legacy score explains itself and waits until a season is played.",
+    "Draft: your picks show their projected overall slot (#55, not \"pick 23\" in every round), the Big Board's year matches the draft class, and a 0-0 record shows no win percentage.",
+  ] },
 ];

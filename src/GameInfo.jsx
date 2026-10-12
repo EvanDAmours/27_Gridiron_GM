@@ -11,7 +11,7 @@ export default function GameInfo() {
   const needle = q.trim().toLowerCase();
   const shown = needle ? all.filter((p) => `${p.title} ${p.notes.join(" ")}`.toLowerCase().includes(needle)) : all;
   return (
-    <div style={{ maxWidth: 860, margin: "0 auto" }}>
+    <div style={{ maxWidth: 900 }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>Game Updates</div>

@@ -24,6 +24,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <style>
+      /* rows of tab pills: one swipeable line on phones instead of wrapping */
+      @media (max-width: 700px) { .pill-row { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; } .pill-row > * { flex-shrink: 0; white-space: nowrap; } }
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { background: #0f172a; overflow-y: auto; }
       #root { width: 100vw; min-height: 100vh; }

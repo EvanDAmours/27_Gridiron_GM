@@ -11,7 +11,7 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
   const head = { fontSize: 13, fontWeight: 900, letterSpacing: 1.5, color: "#fcd34d", marginBottom: 10 };
   const open = (pid) => { const p = pid && findPlayer(pid); if (p) setSel(p); };
   return (
-    <div style={{ maxWidth: 980, margin: "0 auto" }}>
+    <div style={{ maxWidth: 1100 }}>
       <div style={{ fontSize: 26, fontWeight: 900 }}>Record Book</div>
       <div style={{ fontSize: 14, color: C.mt, marginBottom: 12 }}>Single-season records, regular season only. The NFL's marks stand until someone in your league beats them.</div>
       {watch.length > 0 && (

@@ -571,7 +571,7 @@ export function PickTracker({ g }) {
                 const d = made.get(pk.id);
                 return (
                   <div key={pk.id} style={{ fontSize: 13, marginTop: 4, color: d ? C.mt : "#e2e8f0", fontWeight: d ? 500 : 800 }}>
-                    <span style={{ textDecoration: d ? "line-through" : "none" }}>{g.sp === "draft" ? `#${pk.overall}` : slot(pk) > 0 ? `Proj. pick ${slot(pk)}${pk.orig != null && pk.orig !== g.ui ? ` (${ts[pk.orig]?.ab})` : ""}` : "Pick —"}</span>
+                    <span style={{ textDecoration: d ? "line-through" : "none" }}>{g.sp === "draft" ? `#${pk.overall}` : slot(pk) > 0 ? `Proj. #${(pk.rd - 1) * 32 + slot(pk)}${pk.orig != null && pk.orig !== g.ui ? ` (${ts[pk.orig]?.ab})` : ""}` : "Pick —"}</span>
                     {d ? <div style={{ fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>✓ {d.player?.name || d.name || "Used"}{d.player?.pos ? ` · ${d.player.pos}` : ""}</div> : null}
                   </div>
                 );
@@ -860,7 +860,7 @@ export function ScoutingPage({ g }) {
         <span style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}><span title="Area-scout points for regional trips" style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: "#0c4a6e55", color: "#7dd3fc", fontWeight: 700 }}>🗺️ {g.scouting?.rpts ?? RPTS_START} area</span><ScoutPtsBadge pts={g.scouting?.pts || 0} /></span>
         {g.sp === "combine" && <span style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: "#7c3aed33", color: "#c4b5fd", fontWeight: 700 }}>Interviews: {g.scouting?.interviewsLeft || 0}</span>}
       </div>
-      <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+      <div className="pill-row" style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
         {views.map(([k, label]) => <button key={k} onClick={() => setView(k)} style={{ ...chipBtn(v === k), fontSize: 15, padding: "8px 16px" }}>{label}</button>)}
       </div>
       {v === "board" && (

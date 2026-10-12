@@ -36,7 +36,8 @@ const SETS = {
 };
 
 // "Michael Schmidt Jr" -> "Schmidt": the name that fits under a spot
-const lastName = (n) => { const w = String(n || "").split(" ").filter((x) => !/^(jr\.?|sr\.?|ii|iii|iv|v)$/i.test(x)); return w.length > 1 ? w.slice(1).join(" ") : w[0] || ""; };
+// "John Michael Schmitz Jr" -> "Schmitz", but "Amon-Ra St. Brown" -> "St. Brown"
+const lastName = (n) => { const w = String(n || "").split(" ").filter((x) => !/^(jr\.?|sr\.?|ii|iii|iv|v)$/i.test(x)); if (w.length < 2) return w[0] || ""; const k = w.length - 2; return k >= 1 && /^(st\.?|de|del|la|le|van|von|da|di)$/i.test(w[k]) ? w.slice(k).join(" ") : w[w.length - 1]; };
 const narrow = () => typeof window !== "undefined" && window.innerWidth < 700;
 function Field({ los, children }) {
   const lines = [];
@@ -62,7 +63,7 @@ function Spot({ p: p0, pos, idx, x, y, on, onClick }) {
     <button onClick={onClick} title={p ? `${label}: ${p.name} (${p.ovr})` : `${label}: empty`} style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%,-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "transparent", border: 0, cursor: "pointer", padding: 0, width: sm ? 52 : 70 }}>
       <span style={{ width: sm ? 30 : 36, height: sm ? 30 : 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: p ? "#0b1220" : "#0b122099", border: `3px solid ${on ? "#facc15" : p?.injured ? C.rd : pC(pos)}`, boxShadow: on ? "0 0 0 3px #facc1566" : "0 2px 6px #0008", color: p ? oC(p.ovr) : C.mt, fontWeight: 900, fontSize: sm ? 12 : 14 }}>{p ? p.ovr : "—"}</span>
       <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", background: pC(pos), borderRadius: 3, padding: "0 4px", lineHeight: "14px" }}>{label}</span>
-      {!(sm && ["LT", "LG", "C", "RG", "RT", "DL"].includes(pos)) && <span style={{ fontSize: sm ? 9 : 11, fontWeight: 700, color: "#fff", textShadow: "0 1px 2px #000", maxWidth: sm ? 52 : 70, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p ? lastName(p.name) : "Empty"}</span>}
+      {!(sm && ["LT", "LG", "C", "RG", "RT", "DL"].includes(pos)) && <span style={{ fontSize: sm ? 9 : ["LT", "LG", "C", "RG", "RT"].includes(pos) ? 10 : 11, fontWeight: 700, color: "#fff", textShadow: "0 1px 2px #000", maxWidth: sm ? 52 : ["LT", "LG", "C", "RG", "RT"].includes(pos) ? 46 : 70, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p ? lastName(p.name) : "Empty"}</span>}
     </button>
   );
 }

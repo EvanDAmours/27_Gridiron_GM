@@ -20,7 +20,7 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
   const notable = retired.filter((r) => !r.hof).sort((a, b) => b.retYr - a.retYr || b.legacy - a.legacy).slice(0, 12);
   const team = (ab) => teams.find((t) => t.ab === ab);
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+    <div style={{ maxWidth: 1100 }}>
       <div style={{ fontSize: 26, fontWeight: 900 }}>League History</div>
       <div style={{ fontSize: 14, color: C.mt, marginBottom: 12 }}>Champions, award winners, career leaders and the Hall of Fame since your league began in 2026.</div>
 
