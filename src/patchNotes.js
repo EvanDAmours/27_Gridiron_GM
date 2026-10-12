@@ -495,4 +495,19 @@ export const PATCH_NOTES = [
   { v: "2.01", date: "2026-10-12", title: "Home screen: your logo when there's no game", notes: [
     "The home screen shows your team's highest-rated player only when you have a game that week. On a bye week, once the season is over and through the offseason, it shows your team's logo instead.",
   ] },
+  { v: "2.2", date: "2026-10-12", title: "Start From This Week, Front Office and a Lot of Polish", notes: [
+    "Start from the current week: a new game can join the real 2026 season where it is now, with every real score so far, real standings and every player's real stats. The results update every Monday and Tuesday morning during the season.",
+    "Madden NFL 27 ratings updated to EA's Week 4 release (183 players changed).",
+    "Front Office: a new tab with your cap this year and next, where the money goes by position, your biggest cap hits, a cap advisor (restructures, cuts that free real money, extensions to get done early) and every contract.",
+    "Depth chart: Roster+ now opens it, the field is smaller (and fits a phone), tapping a position shows everyone there with snap-share sliders, and a new Schemes & Playbook tab puts your offensive and defensive schemes (with how well each fits your roster), core plays and coaching specializations in one readable place. The same panel is on the coaching screen.",
+    "Stats rebuilt: league, conference, division or any team, roomier leader cards, sortable tables, and a team view with the leader at every position.",
+    "Trades: tabs for Make a trade, Trade finder (redesigned), Trade block, 3-way trades and History & intel, instead of a collapsed box of tools.",
+    "Coaches: extend your head coach or any coordinator 1, 2 or 3 more years at any time (1 SP), so you don't have to rehire a staff you like.",
+    "Offseason: the big button now takes you into the week you're in (the Combine, re-signing, free agency), and moving on asks first and lists what's still undone, so you can't skip a week by accident.",
+    "Legacy Hall: every club's real Ring of Honor (or Wall of Fame, Hall of Honor, Pride of the Lions...) and retired numbers, new trophy art for MVP, Super Bowl MVP, the Lombardi and both Rookie of the Year awards, and tabs for banners, trophies, gold jackets, the ring and records.",
+    "Home: a franchise-at-a-glance strip (record, cap, roster health, owner and locker room, what needs attention) at the top, a smaller matchup preview, and team logos without white tiles.",
+    "Light mode is a real light theme now, not an inverted dark one: team colors, logos and photos keep their real colors.",
+    "The Log is now the Timeline (newest first), its record book no longer crowns you champion every year, team meetings moved to the coaching screen, Game Info is now Game Updates, and the Saves screen no longer disappears when you open it.",
+    "The Gridiron Gazette's lead story reads better: the MVP's night is written out, the round names fit, and the Lombardi photo is bigger.",
+  ] },
 ];
