@@ -449,4 +449,8 @@ export const PATCH_NOTES = [
     "Jeremiah Smith is a Generational talent with a 97 ceiling, the best prospect in the 2027 class.",
   ] },
   { v: "1.998", date: "2026-10-12", title: "MVP on the Front Page", notes: ["After a Super Bowl win, the Gazette's front-page photo is the Super Bowl MVP's portrait in black and white, with the Lombardi Trophy in a smaller photo below."] },
+  { v: "1.999", date: "2026-10-12", title: "Smarter AI Drafting", notes: [
+    "AI teams now draft for what they actually need: they rate their own starters at every position (edge rushers and interior tackles separately) and push up players where they're weakest.",
+    "Positional value like the real NFL: quarterbacks, edge rushers, left tackles and corners go early; running backs slide unless they're elite or the team has nothing at the position. Teams with a solid starting quarterback stop spending high picks on another one.",
+  ] },
 ];

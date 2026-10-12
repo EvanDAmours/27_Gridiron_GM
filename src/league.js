@@ -7,7 +7,7 @@ import REAL_SCHED from "./data/schedule2026.json" with { type: "json" };
 import REAL_DC from "./data/realProspects.json" with { type: "json" };
 import { depthOrderFor } from "./depth.js";
 import { playerValue, pickValue as chartPickValue } from "./trade.js";
-import { arrangeDL, dlAsPlayed } from "./dline.js";
+import { arrangeDL, dlAsPlayed, naturalDL } from "./dline.js";
 import { makeSide, createGame, playGame, setLeague } from "./playsim.js";
 import { unitRatings } from "./gamesim.js";
 import { DATA_TO_DOLLARS, leagueCap } from "./cap.js";
@@ -233,10 +233,39 @@ export function getTeamNeed(roster){
   if(!needs.length)POS.forEach(p=>needs.push(p)); // fallback
   return needs;
 }
-// AI teams blend their own scouts' read with the consensus board and lean toward needs
+// AI teams blend their own scouts' read with the consensus board, then weigh two things real
+// front offices do: how much the league values the position (quarterbacks, edge rushers, left
+// tackles and corners go early; running backs late, unless he's special or the cupboard is bare),
+// and how bad their own starters are there. Edge rushers and interior tackles are separate needs.
+const DRAFT_POS_VALUE={QB:1.03,EDGE:1.04,LT:1.035,CB:1.025,WR:1.015,DT:1.0,RT:1.0,S:0.975,LB:0.965,TE:0.965,LG:0.96,RG:0.96,C:0.955,RB:0.955,K:1,P:1};
+const STARTERS={QB:1,RB:1,WR:3,TE:1,LT:1,LG:1,C:1,RG:1,RT:1,EDGE:2,DT:2,LB:3,CB:3,S:2,K:1,P:1};
+const groupOf=(p)=>(p.pos==="DL"?naturalDL(p):p.pos);
+// How badly a roster needs each position: 0 (set) to 1 (no starter-caliber player at all).
+export function draftNeeds(roster){
+  const by={};for(const p of roster||[]){if(p.injured&&p.injWk>8)continue;(by[groupOf(p)]||=[]).push(p.ovr||0);}
+  const need={};
+  for(const [g,n] of Object.entries(STARTERS)){
+    const top=(by[g]||[]).sort((a,b)=>b-a).slice(0,n);while(top.length<n)top.push(55);
+    const avg=top.reduce((a,b)=>a+b,0)/n;need[g]=Math.max(0,Math.min(1,(82-avg)/16));
+  }
+  // a team with a real starting quarterback (not near the end) doesn't spend a high pick on another
+  const qb=(roster||[]).filter((p)=>p.pos==="QB").sort((a,b)=>b.ovr-a.ovr)[0];
+  if(qb&&qb.ovr>=74&&(qb.age||27)<=33)need.QB=0;
+  need.QB=need.QB??1;
+  return need;
+}
 export function aiBestPick(roster,available,gmStyle){
-  const needs=new Set(getTeamNeed(roster));const needM=gmStyle==='rebuilder'?1.025:1.04;
-  let best=null,bs=-Infinity;for(const p of available){const sc=aiDraftScore(p,gmStyle)*(needs.has(p.pos)?needM:1);if(sc>bs){bs=sc;best=p;}}
+  const need=draftNeeds(roster),needW=gmStyle==='rebuilder'?0.05:gmStyle==='win-now'?0.09:0.07;
+  let best=null,bs=-Infinity;
+  for(const p of available){
+    const g=groupOf(p),n=need[g]??0;
+    let val=DRAFT_POS_VALUE[g]??1;
+    // a running back only goes early if he's elite or the team has nothing at the position
+    if(g==="RB"&&((p.truePot||0)>=90||n>=0.75))val=1;
+    if(g==="QB"&&n===0)val=0.94; // set at quarterback: only a rare one is worth it
+    const sc=aiDraftScore(p,gmStyle)*val*(1+needW*n);
+    if(sc>bs){bs=sc;best=p;}
+  }
   return best||available[0];
 }
 export const scGrade=ovr=>ovr>=90?"A+":ovr>=85?"A":ovr>=78?"B":ovr>=72?"C":ovr>=65?"D":"F";
