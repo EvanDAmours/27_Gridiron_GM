@@ -552,4 +552,8 @@ export const PATCH_NOTES = [
     "Timeline: no stray \"Giants: 2026\" line, readable achievements, and the legacy score explains itself and waits until a season is played.",
     "Draft: your picks show their projected overall slot (#55, not \"pick 23\" in every round), the Big Board's year matches the draft class, and a 0-0 record shows no win percentage.",
   ] },
+  { v: "2.8", date: "2026-10-12", title: "A Guided Tour and a Cleaner Home", notes: [
+    "New franchises open with an offer of a quick tour: skip it, or click through 14 short steps that show where everything is (the franchise boxes, moving time forward, the league year, the depth chart, Front Office, coaching, trades, free agency, scouting and the draft, the schedule and your Legacy Hall). Leave any time; replay it from the Menu (More on a phone).",
+    "Home: the Team Snapshot is gone. Development Focus now lives under the stories and injury report on the right, so it's always on Home, and the inbox button at the bottom of the menu is gone (Needs Attention opens it).",
+  ] },
 ];

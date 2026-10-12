@@ -18,7 +18,7 @@ function Tile({ label, value, sub, tone = C.tx, onClick, accent, wide, mobile })
 // tiles: [{ label, value, sub, tone, onClick, wide }]; accent: the team color for the top edge
 export default function FranchiseStrip({ tiles, accent, mobile }) {
   return (
-    <div style={mobile ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 } : { display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+    <div data-tour="strip" style={mobile ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 } : { display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
       {tiles.map((t) => <Tile key={t.label} {...t} accent={accent} mobile={mobile} />)}
     </div>
   );

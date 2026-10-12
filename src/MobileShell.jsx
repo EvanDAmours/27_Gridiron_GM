@@ -22,7 +22,7 @@ export function MobileNav({ tab, sp, rosterView, go, onMore, moreOpen }) {
     ph,
   ];
   return (
-    <nav aria-label="Main" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 400, display: "flex", background: "#0b1220f7", borderTop: `1px solid ${C.bd}`, paddingBottom: "env(safe-area-inset-bottom)", backdropFilter: "blur(8px)" }}>
+    <nav aria-label="Main" data-tour="nav" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 400, display: "flex", background: "#0b1220f7", borderTop: `1px solid ${C.bd}`, paddingBottom: "env(safe-area-inset-bottom)", backdropFilter: "blur(8px)" }}>
       {[...items, { icon: "☰", label: "More", more: true }].map((it) => {
         // Roster and Camp share a screen: Camp is lit only on its own view.
         const on = it.more ? moreOpen : !moreOpen && tab === it.tab && (it.tab !== "roster" || (it.sub === "camp") === (rosterView === "camp"));

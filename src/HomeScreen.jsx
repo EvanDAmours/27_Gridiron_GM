@@ -70,7 +70,7 @@ function Injuries({ teams, ui, onNav, wk }) {
   );
 }
 
-export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav }) {
+export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side }) {
   const me = teams[ui];
   const [panel, setPanel] = useState("stories");
   const inSeason = sp === "regular" || sp === "preseason";
@@ -103,12 +103,6 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
               {i === 0 && m.sub && <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 2 }}>{m.sub}</div>}
             </button>
           ))}
-          <div style={{ flex: 1 }} />
-          {messages > 0 && (
-            <button onClick={() => onNav("inbox")} style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10, background: "#ffffff14", border: "1px solid #ffffff22", borderRadius: 8, padding: "10px 12px", color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 800 }}>
-              📥 {messages} ITEM{messages > 1 ? "S" : ""} IN YOUR INBOX <span style={{ color: C.rd }}>●</span>
-            </button>
-          )}
         </div>
 
         {/* Matchup */}
@@ -158,15 +152,17 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
         </div>
 
         {/* Top stories */}
-        <div className="hm-side" style={{ flex: "1 1 240px", maxWidth: 320, padding: 18, borderLeft: `1px solid #ffffff14`, minWidth: 0 }}>
+        {/* the news up top, your development focus underneath (always on Home) */}
+        <div className="hm-side" style={{ flex: "1 1 260px", maxWidth: 340, padding: 18, borderLeft: `1px solid #ffffff14`, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
           <div role="tablist" style={{ display: "flex", gap: 4, paddingBottom: 8, borderBottom: "1px solid #ffffff22", marginBottom: 10 }}>
             {[["stories", "Top Stories"], ["injuries", "Injury Report"]].map(([k, l]) => (
               <button key={k} role="tab" aria-selected={panel === k} onClick={() => setPanel(k)} style={{ flex: 1, background: panel === k ? "#ffffff1f" : "transparent", border: `1px solid ${panel === k ? "#ffffff40" : "transparent"}`, borderRadius: 8, padding: "7px 6px", color: panel === k ? "#fff" : "#94a3b8", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{l}</button>
             ))}
           </div>
-          <div style={{ maxHeight: 520, overflowY: "auto", paddingRight: 2 }}>
+          <div style={{ maxHeight: side ? 300 : 520, overflowY: "auto", paddingRight: 2 }}>
             {panel === "stories" ? <Stories stories={stories} news={news} teams={teams} /> : <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />}
           </div>
+          {side && <div style={{ marginTop: "auto" }}>{side}</div>}
         </div>
       </div>
     </div>
