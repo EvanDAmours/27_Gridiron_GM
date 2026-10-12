@@ -7,6 +7,11 @@ import { LombardiStill } from "./Lombardi.jsx";
 import { C, TeamLogo } from "./ui.jsx";
 import { SUPER_BOWLS, sbName, sbNumber } from "./data/superbowls.js";
 import AwardTrophy3D from "./AwardTrophy3D.jsx";
+import opoyArt from "./assets/opoy.webp";
+import dpoyArt from "./assets/dpoy.webp";
+
+// Offensive and Defensive Player of the Year: the NFL Honors trophy, as artwork.
+const TROPHY_ART = { opoy: opoyArt, dpoy: dpoyArt };
 import { Rafters, GoldJackets, RingOfHonor, RecordsWall } from "./LegacyHall.jsx";
 
 const AWARDS = [["mvp", "MVP", "Most Valuable Player"], ["opoy", "OPOY", "Offensive Player of the Year"], ["dpoy", "DPOY", "Defensive Player of the Year"], ["oroy", "OROY", "Offensive Rookie of the Year"], ["droy", "DROY", "Defensive Rookie of the Year"], ["sbmvp", "SB MVP", "Super Bowl MVP"]];
@@ -150,7 +155,7 @@ function Trophy({ t, i, on, setOn, small, spot }) {
         </div>
       )}
       <div className="tr-pop" style={{ animationDelay: `${Math.min(i, 20) * 90}ms` }}>
-        <div className="tr-lift"><AwardTrophy3D kind={t.kind} size={small ? 74 : 100} label={t.title} fallback={<div style={{ width: small ? 74 : 100, height: small ? 150 : 200 }}>{layered}</div>} /></div>
+        <div className="tr-lift">{TROPHY_ART[t.kind] ? <img src={TROPHY_ART[t.kind]} alt={t.title} style={{ height: small ? 140 : 190, width: "auto", display: "block", margin: "0 auto", filter: "drop-shadow(0 8px 10px #000b)" }} /> : <AwardTrophy3D kind={t.kind} size={small ? 74 : 100} label={t.title} fallback={<div style={{ width: small ? 74 : 100, height: small ? 150 : 200 }}>{layered}</div>} />}</div>
       </div>
       <div className="tr-plaque">{t.plaque || t.kind.toUpperCase()}</div>
       <div className="tr-glow" />

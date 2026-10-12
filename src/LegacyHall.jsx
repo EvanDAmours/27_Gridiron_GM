@@ -2,10 +2,11 @@
 // for the franchise's Hall of Famers, the Ring of Honor and retired numbers, and the franchise
 // records wall.
 import React from "react";
-import { C, Btn } from "./ui.jsx";
+import { C, Btn, TeamLogo } from "./ui.jsx";
 import { CAREER_STATS, careerTotals } from "./history.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 import { RECORD_DEFS } from "./records.js";
+import goldJacket from "./assets/gold-jacket.webp";
 
 const DIV = { AFC: "AFC", NFC: "NFC" };
 const fmt = (n) => Math.round(n).toLocaleString();
@@ -16,34 +17,41 @@ const H = ({ children, sub }) => (
   </div>
 );
 
-// A banner hanging from the rafters.
-function Banner({ team, top, big, small, gold }) {
-  const bg = team.clr || "#1e3a8a", ac = team.ac || "#e5e7eb";
+// A banner hanging from the rafters, laid out like the real ones in NFL stadiums: the club's logo,
+// what was won on two lines, and the year, on team-color fabric with stitched trim.
+function Banner({ team, line1, line2, year, gold }) {
+  const bg = team.clr || "#1e3a8a", ac = team.ac || "#e5e7eb", trim = gold ? "#e8c45a" : ac;
   return (
-    <svg viewBox="0 0 90 150" width={78} height={130} style={{ flex: "0 0 auto", filter: "drop-shadow(0 6px 8px #000a)" }}>
-      <line x1="45" y1="0" x2="45" y2="8" stroke="#9ca3af" strokeWidth="1.5" />
-      <rect x="6" y="8" width="78" height="4" rx="1" fill="#cbd5e1" />
-      <path d="M8 12 H82 V128 L45 146 L8 128 Z" fill={bg} stroke={gold ? "#d4a017" : ac} strokeWidth="3" />
-      <path d="M14 18 H76 V124 L45 139 L14 124 Z" fill="none" stroke={gold ? "#fde68a" : ac} strokeWidth="1" opacity=".7" />
-      <text x="45" y="40" textAnchor="middle" fontSize="8.5" fontWeight="900" fill={gold ? "#fde68a" : "#fff"} fontFamily="system-ui" {...(String(top).length > 10 ? { textLength: 64, lengthAdjust: "spacingAndGlyphs" } : {})}>{top}</text>
-      <text x="45" y="78" textAnchor="middle" fontSize={String(big).length > 4 ? 15 : 22} fontWeight="900" fill="#fff" fontFamily="Georgia, serif">{big}</text>
-      <text x="45" y="100" textAnchor="middle" fontSize="7.5" fontWeight="800" fill={gold ? "#fde68a" : ac} fontFamily="system-ui" {...(String(small).length > 11 ? { textLength: 62, lengthAdjust: "spacingAndGlyphs" } : {})}>{small}</text>
-      {gold && <polygon points="45,108 48,115 56,115 50,120 52,127 45,123 38,127 40,120 34,115 42,115" fill="#fde68a" />}
-    </svg>
+    <div style={{ position: "relative", flex: "0 0 auto", width: 96, paddingTop: 10 }}>
+      <div style={{ position: "absolute", top: 0, left: 10, right: 10, height: 6, borderRadius: 3, background: "linear-gradient(180deg,#e5e7eb,#6b7280)" }} />
+      <div style={{ position: "absolute", top: 4, left: 46, width: 4, height: 8, background: "#9ca3af" }} />
+      <div style={{ filter: "drop-shadow(0 8px 10px #000b)" }}>
+        <div style={{ clipPath: "polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)", background: trim, padding: 3 }}>
+          <div style={{ clipPath: "polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)", background: `linear-gradient(100deg, ${bg} 0%, ${bg} 42%, color-mix(in srgb, ${bg} 80%, #fff) 50%, ${bg} 58%, ${bg} 100%)`, height: 170, display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 6px 0", boxSizing: "border-box", position: "relative" }}>
+            <div style={{ position: "absolute", inset: 5, border: `1px dashed ${trim}99`, clipPath: "polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)", pointerEvents: "none" }} />
+            <div style={{ width: 42, height: 42, borderRadius: 21, background: "#ffffffee", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 0 2px ${trim}` }}><TeamLogo t={team} sz={34} /></div>
+            <div style={{ marginTop: 8, fontSize: 9.5, fontWeight: 900, letterSpacing: 0.8, color: gold ? "#fde68a" : "#fff", textAlign: "center", lineHeight: 1.15, textShadow: "0 1px 2px #0008" }}>{line1}</div>
+            <div style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.2, color: gold ? "#fde68a" : "#fff", textAlign: "center", textShadow: "0 1px 2px #0008" }}>{line2}</div>
+            <div style={{ marginTop: 6, fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 26, fontWeight: 900, color: "#fff", textShadow: "0 2px 3px #0009" }}>{year}</div>
+            {gold && <div style={{ color: "#fde68a", fontSize: 14, marginTop: 1 }}>★</div>}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
 export function Rafters({ team, sbs, divTitles }) {
   const items = [
-    ...sbs.map((s) => ({ key: `sb${s.yr}`, yr: s.yr, el: <Banner key={`sb${s.yr}`} team={team} top="WORLD CHAMPIONS" big={s.yr} small={sbName(s.n ?? sbNumber(s.yr)).replace("Super Bowl ", "SUPER BOWL ")} gold /> })),
-    ...divTitles.map((y) => ({ key: `d${y}`, yr: y, el: <Banner key={`d${y}`} team={team} top={`${DIV[team.c] || ""} ${String(team.d || "").toUpperCase()}`} big={y} small="DIVISION CHAMPIONS" /> })),
+    ...sbs.map((s) => ({ key: `sb${s.yr}`, yr: s.yr, el: <Banner key={`sb${s.yr}`} team={team} line1={sbName(s.n ?? sbNumber(s.yr)).toUpperCase()} line2="CHAMPIONS" year={s.yr} gold /> })),
+    ...divTitles.map((y) => ({ key: `d${y}`, yr: y, el: <Banner key={`d${y}`} team={team} line1={`${DIV[team.c] || ""} ${String(team.d || "").toUpperCase()}`} line2="CHAMPIONS" year={y} /> })),
   ].sort((a, b) => a.yr - b.yr);
   return (
     <div style={{ marginBottom: 22 }}>
       <H sub={`${sbs.length} Super Bowl${sbs.length === 1 ? "" : "s"} · ${divTitles.length} division title${divTitles.length === 1 ? "" : "s"} in this league`}>The Rafters</H>
       <div style={{ background: "linear-gradient(180deg,#0b0f19,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: "0 12px 14px", position: "relative", overflowX: "auto" }}>
         <div style={{ height: 8, margin: "0 -12px 0", background: "repeating-linear-gradient(90deg,#374151 0 14px,#1f2937 14px 28px)" }} />
-        <div style={{ display: "flex", gap: 10, paddingTop: 2, minHeight: 130, alignItems: "flex-start" }}>
+        <div style={{ display: "flex", gap: 12, paddingTop: 2, minHeight: 190, alignItems: "flex-start" }}>
           {items.length ? items.map((x) => x.el) : <div style={{ color: C.mt, fontSize: 14, padding: "40px 6px" }}>No banners yet. Win the division or the Super Bowl and one goes up here.</div>}
         </div>
       </div>
@@ -52,21 +60,8 @@ export function Rafters({ team, sbs, divTitles }) {
 }
 
 // A gold jacket on a hanger.
-function GoldJacket({ team }) {
-  return (
-    <svg viewBox="0 0 100 110" width={84} height={92} style={{ filter: "drop-shadow(0 6px 10px #000b)" }}>
-      <defs><linearGradient id="gj-gold" x1="0" x2="1"><stop offset="0" stopColor="#8a6212" /><stop offset=".35" stopColor="#f6d77a" /><stop offset=".6" stopColor="#d4a017" /><stop offset="1" stopColor="#7c5a10" /></linearGradient></defs>
-      <path d="M50 4 C46 4 45 9 48 10" stroke="#9ca3af" strokeWidth="1.6" fill="none" />
-      <path d="M22 18 L50 12 L78 18" stroke="#6b7280" strokeWidth="2.4" fill="none" strokeLinecap="round" />
-      <path d="M24 18 L40 14 L50 30 L60 14 L76 18 L92 34 L84 100 L58 104 L50 44 L42 104 L16 100 L8 34 Z" fill="url(#gj-gold)" stroke="#5b3a06" strokeWidth="1" />
-      <path d="M40 14 L50 44 L60 14" fill="#f3f4f6" />
-      <path d="M45 26 L50 44 L55 26 L50 22 Z" fill={team.clr || "#1e3a8a"} />
-      <path d="M40 14 L34 40 L50 44 Z M60 14 L66 40 L50 44 Z" fill="#b8892b" opacity=".8" />
-      <circle cx="68" cy="56" r="7" fill="#1e3a8a" stroke="#fde68a" strokeWidth="1.5" />
-      <text x="68" y="59" textAnchor="middle" fontSize="6.5" fontWeight="900" fill="#fde68a" fontFamily="Georgia, serif">HOF</text>
-      {[60, 72, 84].map((y) => <circle key={y} cx="52" cy={y} r="1.6" fill="#5b3a06" />)}
-    </svg>
-  );
+function GoldJacket() {
+  return <img src={goldJacket} alt="Hall of Fame gold jacket" width={96} height={102} style={{ objectFit: "contain", filter: "drop-shadow(0 8px 12px #000c)" }} />;
 }
 
 export function GoldJackets({ team, hofers, yr }) {
@@ -76,7 +71,7 @@ export function GoldJackets({ team, hofers, yr }) {
       <div style={{ background: "radial-gradient(ellipse at 50% 0%,#3b2f2455,transparent 70%),#0f0c0a", border: "1px solid #2b211b", borderRadius: 12, padding: 14, display: "flex", gap: 14, flexWrap: "wrap" }}>
         {hofers.length ? hofers.map((h) => (
           <div key={h.id} style={{ width: 120, textAlign: "center" }}>
-            <GoldJacket team={team} />
+            <GoldJacket />
             <div style={{ fontWeight: 900, fontSize: 14, marginTop: 4 }}>{h.name}</div>
             <div style={{ fontSize: 12, color: "#fde68a" }}>{h.pos} · Class of {h.hofClass}</div>
             {h.hofClass > yr && <div style={{ fontSize: 11, color: C.mt }}>enshrined in {h.hofClass}</div>}

@@ -1,18 +1,9 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import TrophyRoom from "./TrophyRoom.jsx";
-import { SaveSlots, CapGlossary } from "./SaveSlots.jsx";
-import { CardHeader, RatingBars, CareerOvrGraph, SeasonTable, ContractTimeline, HonorsRow } from "./PlayerCard.jsx";
-import { initTeams, TEAMS } from "./league.js";
-import { C, PA_LABELS } from "./ui.jsx";
+import { initTeams } from "./league.js";
 const teams = initTeams(13);
-const which = new URLSearchParams(location.search).get("v") || "card";
-const p = { ...teams[13].roster.find((x) => x.pos === "QB"), scoutLvl: 2, oh: [{ y: 2026, o: 88 }, { y: 2027, o: 91 }, { y: 2028, o: 93 }], sh: [{ y: 2026, tm: "KC", gp: 17, comp: 401, att: 597, passYds: 4512, passTD: 33, passInt: 11, rushYds: 380 }, { y: 2027, tm: "KC", gp: 16, comp: 388, att: 560, passYds: 4890, passTD: 41, passInt: 8, rushYds: 290 }], ss: { gp: 8, comp: 190, att: 280, passYds: 2300, passTD: 19, passInt: 4, rushYds: 120 }, honors: [{ k: "ap1", yr: 2027 }, { k: "pb", yr: 2026 }], salary: 52.4, contract: 3, baseBack: 12, voidYrs: 1, voidDead: 6.2, inc: { label: "4,000 pass yds", amt: 5 } };
-createRoot(document.getElementById("root")).render(<div style={{ padding: 16, maxWidth: 560, background: C.cd }}>
-  <CardHeader p={p} team={TEAMS[13]} ovr={p.ovr} pot={p.pot} sub={<span>Age {p.age} • Texas Tech</span>} />
-  <HonorsRow p={p} awards={[{ yr: 2027, mvp: { pid: p.id } }]} />
-  <RatingBars p={p} labels={PA_LABELS} />
-  <CareerOvrGraph p={p} yr={2029} />
-  <SeasonTable p={p} yr={2029} teamAb="KC" />
-  <ContractTimeline p={p} yr={2029} yearsLeft={3} proration={9.5} deadNow={28.5} />
-</div>);
+const ut = { ...teams[13], divTitles: [2026, 2027], legacyHall: { ring: ["r1"], nums: [{ num: 87, name: "Travis Kelce" }] } };
+const awards = [{ yr: 2027, gm: 13, mvp: { name: "Patrick Mahomes", pos: "QB", ti: 13 }, dpoy: { name: "Chris Jones", pos: "DL", ti: 13 } }, { yr: 2028, gm: 13, opoy: { name: "Rashee Rice", pos: "WR", ti: 13 } }];
+const retired = [{ id: "r1", name: "Travis Kelce", pos: "TE", num: 87, team: "KC", retYr: 2027, legacy: 90, hof: true, hofClass: 2032, career: { rec: 180 } }];
+createRoot(document.getElementById("root")).render(<div style={{ padding: 16 }}><TrophyRoom team={ut} ui={13} teams={teams} champs={[]} awards={awards} retired={retired} yr={2029} book={{ best: {} }} /></div>);

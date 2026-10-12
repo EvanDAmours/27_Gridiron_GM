@@ -3,8 +3,6 @@
 // image (one short-lived WebGL context per kind), so a shelf of them costs nothing to show.
 //   mvp   - a gold football lying on a fluted gold column (MVP)
 //   sbmvp - a sterling football on a tall black obelisk (Super Bowl MVP)
-//   opoy  - a chrome helmet on a pedestal (Offensive Player of the Year)
-//   dpoy  - a gold helmet on a pedestal (Defensive Player of the Year)
 //   oroy / droy - a small football on a crystal pillar (Rookies of the Year), silver / gold
 import React, { useEffect, useState } from "react";
 
@@ -27,30 +25,7 @@ function football(THREE, mat, { len = 1.95, rad = 0.64, laces = true } = {}) {
   }
   return g;
 }
-function helmet(THREE, shell, mask, stripe) {
-  const g = new THREE.Group();
-  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.9, 48, 32, 0, Math.PI * 2, 0, Math.PI * 0.62), shell);
-  dome.scale.set(1, 0.95, 1.12);
-  g.add(dome);
-  const band = new THREE.Mesh(new THREE.TorusGeometry(0.905, 0.07, 10, 64, Math.PI * 1.1), stripe);
-  band.rotation.set(0, Math.PI / 2, Math.PI / 2 - 0.1);
-  band.scale.set(1, 1.12, 0.95);
-  g.add(band);
-  // face mask: three bars and two uprights in front
-  for (const y of [-0.15, -0.38, -0.6]) {
-    const bar = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.035, 8, 40, Math.PI * 0.7), mask);
-    bar.rotation.set(Math.PI / 2, 0, Math.PI * 0.15);
-    bar.position.set(0, y, 0.12);
-    g.add(bar);
-  }
-  for (const x of [-0.28, 0.28]) {
-    const up = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.5, 8), mask);
-    up.position.set(x, -0.38, 0.86);
-    g.add(up);
-  }
-  g.rotation.y = -1.05; // three-quarter profile: shell, stripe and face mask all show
-  return g;
-}
+
 
 function buildAward(THREE, RoomEnvironment, renderer, w, h, kind) {
   const scene = new THREE.Scene();
@@ -86,14 +61,6 @@ function buildAward(THREE, RoomEnvironment, renderer, w, h, kind) {
     ob.rotation.y = Math.PI / 4; ob.position.y = top + 1.3; g.add(ob);
     const ball = football(THREE, chrome, { len: 1.6, rad: 0.52 });
     ball.rotation.z = -0.5; ball.position.y = top + 3.25; g.add(ball);
-  } else if (kind === "opoy" || kind === "dpoy") {
-    const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.55, 1.6, 6, 1), ebony);
-    ped.position.y = top + 0.8; g.add(ped);
-    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.47, 0.47, 0.08, 24), metal);
-    ring.position.y = top + 1.62; g.add(ring);
-    const stripe = new THREE.MeshStandardMaterial({ color: kind === "opoy" ? 0x2563eb : 0xb91c1c, metalness: 0.5, roughness: 0.3 });
-    const hm = helmet(THREE, metal, kind === "opoy" ? new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 1, roughness: 0.3 }) : gold, stripe);
-    hm.position.y = top + 2.45; g.add(hm);
   } else {
     const pil = new THREE.Mesh(new THREE.BoxGeometry(0.62, 2.3, 0.62), crystal);
     pil.position.y = top + 1.15; g.add(pil);
