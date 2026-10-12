@@ -588,4 +588,7 @@ export const PATCH_NOTES = [
   { v: "2.13", date: "2026-10-12", title: "New Faces", notes: [
     "Player and coach portraits are redrawn: a head-and-shoulders bust in a round frame, with real hairstyles (bald, buzz, fade, high-top, locs, swept), beards, goatees and stubble, and better proportions. Every player keeps his own look.",
   ] },
+  { v: "2.14", date: "2026-10-12", title: "Development Focus Reminder", notes: [
+    "Needs Attention flags it as urgent when you haven't picked an offensive and a defensive development focus player (or one has left the roster), from the preseason through the regular season. Tap it to jump to Development Focus on Home.",
+  ] },
 ];
