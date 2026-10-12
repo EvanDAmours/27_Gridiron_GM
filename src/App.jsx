@@ -2340,6 +2340,6 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       else if(sp==="draft"){if(draftActive){if(curPick&&curPick.owner!==ui&&draftPicks.slice(draftIdx).some(pk=>pk.owner===ui))A.push({label:"⏩ Sim to my pick",onClick:()=>simEntireDraft(true)});A.push({label:draftPaused?"▶ Resume draft":"⏸ Pause draft",onClick:()=>setDraftPaused(p=>!p),bg:draftPaused?C.gn:"#f97316"});A.push({label:"⏭ Sim the whole draft",onClick:()=>simEntireDraft(),bg:"#6366f1"});A.push({label:`Speed: ${draftSpeed}`,onClick:()=>setDraftSpeed(s=>{const n=DRAFT_SPEEDS[(DRAFT_SPEEDS.indexOf(s)+1)%DRAFT_SPEEDS.length];try{localStorage.setItem("gm_draft_speed",n);}catch{}return n;}),bg:C.bd});}else if(draftPicks.length>0&&draftIdx>=draftPicks.length)A.push({label:"→ Next Season",onClick:newSeason});}
       return<MobileActionBar actions={A}/>;})()}
     {MOBILE&&<TapTips/>}
-    {MOBILE&&<MobileNav tab={tab} sp={sp} rosterView={rosterView} moreOpen={moreOpen} onMore={()=>setMoreOpen(o=>!o)} go={(t,sub)=>{setMoreOpen(false);setRosterTeam(null);if(sub)setRosterView(sub);setTab(t);}}/>}
+    {MOBILE&&<MobileNav tab={tab} sp={sp} rosterView={rosterView} moreOpen={moreOpen} onMore={()=>setMoreOpen(o=>!o)} go={(t,sub)=>{setMoreOpen(false);setRosterTeam(null);setRosterView(sub||"players");setTab(t);}}/>}
   </div>);
 }

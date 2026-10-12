@@ -17,7 +17,7 @@ export function MobileNav({ tab, sp, rosterView, go, onMore, moreOpen }) {
   const ph = PHASE_ITEM[sp] || PHASE_ITEM.regular;
   const items = [
     { icon: "🏠", label: "Home", tab: "dashboard" },
-    { icon: "👥", label: "Roster", tab: "roster", sub: "players" },
+    { icon: "👥", label: "Roster", tab: "depth" }, // opens the depth chart; the roster list is its neighbor tab
     { icon: "🔎", label: "Scouting", tab: "scouting" },
     ph,
   ];
@@ -25,7 +25,7 @@ export function MobileNav({ tab, sp, rosterView, go, onMore, moreOpen }) {
     <nav aria-label="Main" data-tour="nav" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 400, display: "flex", background: "#0b1220f7", borderTop: `1px solid ${C.bd}`, paddingBottom: "env(safe-area-inset-bottom)", backdropFilter: "blur(8px)" }}>
       {[...items, { icon: "☰", label: "More", more: true }].map((it) => {
         // Roster and Camp share a screen: Camp is lit only on its own view.
-        const on = it.more ? moreOpen : !moreOpen && tab === it.tab && (it.tab !== "roster" || (it.sub === "camp") === (rosterView === "camp"));
+        const on = it.more ? moreOpen : !moreOpen && (it.tab === "depth" ? tab === "depth" || (tab === "roster" && rosterView !== "camp") : tab === it.tab && (it.tab !== "roster" || (it.sub === "camp") === (rosterView === "camp")));
         return (
           <button key={it.label} onClick={() => (it.more ? onMore() : go(it.tab, it.sub))} aria-current={on ? "page" : undefined} style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, padding: "8px 2px 7px", color: on ? "#fff" : "#94a3b8", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
             <span style={{ fontSize: 20, lineHeight: 1, filter: on ? "none" : "grayscale(0.4)", opacity: on ? 1 : 0.85 }}>{it.icon}</span>

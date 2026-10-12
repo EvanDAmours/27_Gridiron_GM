@@ -687,4 +687,7 @@ export const PATCH_NOTES = [
   { v: "2.34", date: "2026-10-12", title: "Start Season Stays Home", notes: [
     "Starting the season keeps you on the Home screen (with week 1's matchup and your to-do list) instead of jumping to the roster.",
   ] },
+  { v: "2.35", date: "2026-10-12", title: "Roster Opens the Depth Chart", notes: [
+    "On phones, the Roster button in the bottom bar always opens the Depth Chart; the full roster list is one tap away in the Depth Chart / Roster switch at the top.",
+  ] },
 ];
