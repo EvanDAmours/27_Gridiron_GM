@@ -1,6 +1,7 @@
 // The big result card shown after you sim: did you win, the score, your record and
 // standing, who starred, and the rest of the week's scores.
 import React, { useState } from "react";
+import { WinProbChart } from "./GameRecap.jsx";
 import { C, Btn, TeamLogo } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 
@@ -145,12 +146,13 @@ export default function WeekResult({ result, teams, ui, sched, onClose, onBox, o
           <Side t={opp} pts={them} win={them >= us} />
         </div>
         <div style={{ flex: "1 1 240px", minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 4 }}>YOUR STARS</div>
-          {stars.map((s) => <div key={s.name} style={{ fontSize: 14, padding: "1px 0" }}><b>{s.name}</b> <span style={{ color: C.mt, fontSize: 12 }}>{s.pos}</span> <span style={{ color: "#cbd5e1" }}>{s.line}</span></div>)}
-          {!stars.length && <div style={{ color: C.mt }}>No standout performances.</div>}
-          <div style={{ marginTop: 8 }}><Btn onClick={() => onBox(g)} bg={C.bl} style={{ fontSize: 13 }}>Box score</Btn></div>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 4 }}>{g.gd?.top ? "TOP PERFORMERS" : "YOUR STARS"}</div>
+          {(g.gd?.top || stars).map((s) => <div key={s.name} style={{ fontSize: 14, padding: "1px 0" }}><b>{s.name}</b> <span style={{ color: C.mt, fontSize: 12 }}>{s.pos}{s.side ? ` · ${teams[s.side === "h" ? g.h : g.a]?.ab}` : ""}</span> <span style={{ color: "#cbd5e1" }}>{s.line}</span></div>)}
+          {!(g.gd?.top || stars).length && <div style={{ color: C.mt }}>No standout performances.</div>}
+          <div style={{ marginTop: 8 }}><Btn onClick={() => onBox(g)} bg={C.bl} style={{ fontSize: 13 }}>{g.gd ? "Game recap & box score" : "Box score"}</Btn></div>
         </div>
       </div>
+      {g.gd?.wp && <div style={{ marginTop: 10 }}><WinProbChart wp={g.gd.wp} home={teams[g.h]} away={teams[g.a]} height={70} /></div>}
       {others.length > 0 && <Others list={others} teams={teams} onBox={onBox} />}
     </div>
   );

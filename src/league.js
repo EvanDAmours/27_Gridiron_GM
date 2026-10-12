@@ -469,9 +469,9 @@ export function calibrateLeague(teams){
 // Sim a game start to finish on the play-by-play engine. dry: a preview that changes nothing.
 export function simGame(ht,at,hPlan,aPlan,wxOverride,opts={}){
   const su=gameSetup(ht,at,hPlan,aPlan,wxOverride);
-  const g=playGame(createGame(su.home,su.away,{playoff:!!opts.playoff,neutral:!!opts.neutral}));
+  const g=playGame(createGame(su.home,su.away,{playoff:!!opts.playoff,neutral:!!opts.neutral,rec:!!opts.rec}));
   if(opts.dry)return{hsc:g.score.h,asc:g.score.a,boxH:g.box.h,boxA:g.box.a,wx:su.wx,game:g};
-  return{hsc:g.score.h,asc:g.score.a,boxH:applyGame(ht,su.hSnaps,g.box.h,!!opts.playoff),boxA:applyGame(at,su.aSnaps,g.box.a,!!opts.playoff),wx:su.wx};
+  return{hsc:g.score.h,asc:g.score.a,boxH:applyGame(ht,su.hSnaps,g.box.h,!!opts.playoff),boxA:applyGame(at,su.aSnaps,g.box.a,!!opts.playoff),wx:su.wx,...(g.pl?{game:g}:{})};
 }
 // ═══════════ SCOUTS ═══════════
 

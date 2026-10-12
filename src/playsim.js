@@ -19,6 +19,7 @@ import { unitRatings } from "./gamesim.js";
 import { dlAsPlayed } from "./dline.js";
 import { getLeagueYear } from "./cap.js";
 import { hurtPen } from "./injuries.js";
+import { recPlay } from "./gameday.js";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const gauss = (rand) => { let u = 0, v = 0; while (!u) u = rand(); while (!v) v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
@@ -113,13 +114,14 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season 
 
 const emptyTeam = () => ({ plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
 
-export function createGame(home, away, { playoff = false, neutral = false, rand = Math.random } = {}) {
+export function createGame(home, away, { playoff = false, neutral = false, rand = Math.random, rec = false } = {}) {
   const first = rand() < 0.5 ? "h" : "a";
   const g = {
     sides: { h: home, a: away }, playoff, neutral, rand,
     poss: first, firstPoss: first, yard: 25, down: 1, toGo: 10, qtr: 1, clock: 900,
     score: { h: 0, a: 0 }, done: false, ot: false, otScored: false, plays: 0,
     box: { h: {}, a: {} }, stats: { h: emptyTeam(), a: emptyTeam() },
+    ...(rec ? { pl: [] } : {}),
   };
   g.stats[first].drives++;
   // Any given Sunday: each side has a good or bad day on offense and on defense.
@@ -279,7 +281,13 @@ function chooseCall(g, o) {
 // Run one play. call (optional, from the user): run_inside, run_outside, run_screen, scramble,
 // pass_quick, pass_medium, pass_deep, pass_rpo, punt, fg. bonus: timing-minigame multiplier on
 // yards gained. Returns what happened, for the play-by-play.
+// One play; recorded in g.pl when the game keeps a play log (your games, for the game recap).
 export function step(g, call, bonus = 1) {
+  const ev = stepPlay(g, call, bonus);
+  if (g.pl) recPlay(g, ev);
+  return ev;
+}
+function stepPlay(g, call, bonus = 1) {
   if (g.done) return null;
   const rand = g.rand;
   const { o, d, passE, runE, rushE } = edges(g);
