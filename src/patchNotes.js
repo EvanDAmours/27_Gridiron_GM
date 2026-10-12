@@ -616,4 +616,9 @@ export const PATCH_NOTES = [
     "His real ceiling drives his growth the whole time; only what you can see changes. The player card marks an unproven POT with a ~, and the Draft Recap holds its gem and bust calls until the truth is out.",
     "Scouting matters more: a full report on a prospect is the only way to know exactly what you're drafting.",
   ] },
+  { v: "2.21", date: "2026-10-12", title: "Contract-Year Drama", notes: [
+    "Before the season, your good players (78+) in the last year of their deals want to talk. Needs Attention lists each one: Talk extension opens the negotiation at today's price, or Let him play it out.",
+    "A player who plays it out bets on himself: he can gain a point or two of OVR during the season, and his asking price in re-sign week follows the year he has. Make no call by Week 4 and he plays it out.",
+    "A star (85+) playing out his deal on a losing team can get restless and ask for a trade.",
+  ] },
 ];

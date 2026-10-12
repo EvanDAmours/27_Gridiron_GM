@@ -15,7 +15,7 @@ export function InboxButton({ count, onClick, open }) {
   );
 }
 
-// items: [{ key, icon, title, sub, tone: "urgent" | "action" | "info", cta, onOpen, onDismiss }]
+// items: [{ key, icon, title, sub, tone: "urgent" | "action" | "info", cta, onOpen, onDismiss, dismissLabel }]
 export default function Inbox({ items, onClose, mobile }) {
   const urgent = items.filter((i) => i.tone === "urgent").length;
   return (
@@ -37,7 +37,7 @@ export default function Inbox({ items, onClose, mobile }) {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
                 {it.onOpen && <Btn onClick={it.onOpen} bg={it.tone === "urgent" ? C.rd : C.bl} style={{ fontSize: 13, padding: "5px 12px", whiteSpace: "nowrap" }}>{it.cta || "Open"}</Btn>}
-                {it.onDismiss && <button onClick={it.onDismiss} style={{ background: "transparent", border: 0, color: C.mt, fontSize: 11, cursor: "pointer" }}>Dismiss</button>}
+                {it.onDismiss && <button onClick={it.onDismiss} style={it.dismissLabel ? { background: "transparent", border: `1px solid ${C.bd}`, borderRadius: 6, padding: "3px 8px", color: "#cbd5e1", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" } : { background: "transparent", border: 0, color: C.mt, fontSize: 11, cursor: "pointer" }}>{it.dismissLabel || "Dismiss"}</button>}
               </div>
             </div>
           ))}
