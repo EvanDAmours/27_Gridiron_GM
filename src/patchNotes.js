@@ -684,4 +684,7 @@ export const PATCH_NOTES = [
   { v: "2.33", date: "2026-10-12", title: "Training Focus Picker", notes: [
     "Training camp's Training focus player list is grouped by position (Quarterbacks, Running backs... Punters), best player first in each group, with young players marked. It now lists your whole roster instead of only your top 25.",
   ] },
+  { v: "2.34", date: "2026-10-12", title: "Start Season Stays Home", notes: [
+    "Starting the season keeps you on the Home screen (with week 1's matchup and your to-do list) instead of jumping to the roster.",
+  ] },
 ];
