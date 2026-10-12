@@ -1,12 +1,13 @@
 // Draft recap: every pick of a draft with what he really is (true ratings and development trait
 // revealed), how he compares with where he went, and a grade for each team's class.
 import { devOf } from "./scouting.js";
+import { posTag } from "./dline.js";
 
 const DEV_PTS = { generational: 4, superstar: 3, star: 2, late: 1, normal: 0 };
 
 // A draft log entry ({ rd, overall, owner, player, ... }) reduced to what the recap keeps.
 export const recapEntry = (e) => ({
-  rd: e.rd, overall: e.overall, owner: e.owner, id: e.player?.id, name: e.player?.name, pos: e.player?.pos,
+  rd: e.rd, overall: e.overall, owner: e.owner, id: e.player?.id, name: e.player?.name, pos: e.player ? posTag(e.player) : undefined,
   age: e.player?.age, ovr: e.player?.trueOvr ?? e.player?.ovr, pot: e.player?.truePot ?? e.player?.pot, dev: e.player ? devOf(e.player) : "normal", gem: !!e.player?.gem, bust: !!e.player?.bust,
 });
 

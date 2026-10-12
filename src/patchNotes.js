@@ -444,4 +444,8 @@ export const PATCH_NOTES = [
     "The home screen's matchup card shows each team's highest-rated player as a large retro portrait in his team's home or road uniform, art matched to his position, with his name, position and rating underneath.",
     "Long team names (Commanders, Buccaneers) stay on one line on phones.",
   ] },
+  { v: "1.997", date: "2026-10-12", title: "Draft Board Clarity", notes: [
+    "Defensive linemen in the draft are now labeled EDGE or DT (Big Board, prospect profiles, mock drafts and the draft recap), so you know whether you're taking an edge rusher or an interior tackle.",
+    "Jeremiah Smith is a Generational talent with a 97 ceiling, the best prospect in the 2027 class.",
+  ] },
 ];

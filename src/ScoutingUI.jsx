@@ -1,5 +1,6 @@
 // Scouting and draft screens: the Big Board (always in consensus order), your own list, the
 // Combine, your scouting staff, and the prospect profile. Game state comes in as `g`.
+import { posTag } from "./dline.js";
 import React, { useState, useMemo } from "react";
 import { mockDraft } from "./mockDraft.js";
 import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo } from "./ui.jsx";
@@ -135,10 +136,10 @@ function ProspectRow({ g, p, onDraft, canDraft, myRank }) {
         <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} title={listed ? "Remove from your list" : "Add to your list"} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ background: "transparent", border: 0, cursor: "pointer", color: listed ? "#f5c542" : "#475569", fontSize: 20, padding: 0, lineHeight: 1 }}>{listed ? "★" : "☆"}</button>
       </td>
       <td style={{ ...td, minWidth: 0 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.name} <span className="sc-show"><Bdg pos={p.pos} /></span>{read.flag && <span title={read.flagWhy || "Your scouts red-flagged him: high bust risk."} style={{ fontSize: 11, fontWeight: 800, color: "#fee2e2", background: "#991b1b", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>🚩 red flag</span>}{read.sleeper ? <span title={`${read.who} have seen through the board: he's a sleeper, much better than where he's ranked.`} style={{ fontSize: 11, fontWeight: 800, color: "#fdf2f8", background: "#be185d", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>💎 sleeper</span> : read.hunch && <span title={`${read.who} has a hunch there's more to him than the board says. A report will tell.`} style={{ fontSize: 11, fontWeight: 800, color: "#f9a8d4", background: "#831843", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>👀 hunch</span>}{read.devEarly && ["generational", "superstar"].includes(read.dev) && <span title={`${read.who} already see a ${read.dev} development trait.`} style={{ fontSize: 11, fontWeight: 800, color: read.dev === "generational" ? "#f472b6" : "#f5c542", border: `1px solid currentColor`, borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>{read.dev === "generational" ? "Generational" : "Superstar"}</span>}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.name} <span className="sc-show"><Bdg pos={posTag(p)} /></span>{read.flag && <span title={read.flagWhy || "Your scouts red-flagged him: high bust risk."} style={{ fontSize: 11, fontWeight: 800, color: "#fee2e2", background: "#991b1b", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>🚩 red flag</span>}{read.sleeper ? <span title={`${read.who} have seen through the board: he's a sleeper, much better than where he's ranked.`} style={{ fontSize: 11, fontWeight: 800, color: "#fdf2f8", background: "#be185d", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>💎 sleeper</span> : read.hunch && <span title={`${read.who} has a hunch there's more to him than the board says. A report will tell.`} style={{ fontSize: 11, fontWeight: 800, color: "#f9a8d4", background: "#831843", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>👀 hunch</span>}{read.devEarly && ["generational", "superstar"].includes(read.dev) && <span title={`${read.who} already see a ${read.dev} development trait.`} style={{ fontSize: 11, fontWeight: 800, color: read.dev === "generational" ? "#f472b6" : "#f5c542", border: `1px solid currentColor`, borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>{read.dev === "generational" ? "Generational" : "Superstar"}</span>}</div>
         <div className="sc-sub" style={{ fontSize: 13, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260 }}>{p.bio?.college} ({regionName(regionOf(p))}) · {p.age} yrs · {htS(p.ht_)} {p.wt}</div>
       </td>
-      <td className="sc-hide" style={{ ...td, textAlign: "center" }}><Bdg pos={p.pos} /></td>
+      <td className="sc-hide" style={{ ...td, textAlign: "center" }}><Bdg pos={posTag(p)} /></td>
       <td style={{ ...td, textAlign: "center" }}><Val txt={read.ovr} /></td>
       <td style={{ ...td, textAlign: "center" }}><Val txt={read.pot} title={read.tier ? `Projects as: ${read.tier}` : undefined} /></td>
       <td className="sc-hide" style={{ ...td, textAlign: "center", fontSize: 13, color: stc, whiteSpace: "nowrap" }}>{st}</td>
@@ -248,7 +249,7 @@ export function YourList({ g, classYr, onDraft, canDraft, compact = false }) {
         return (
           <div key={id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 4px", borderBottom: `1px solid ${C.bd}44`, fontSize: 16, flexWrap: "wrap", opacity: p ? 1 : 0.5 }}>
             <b style={{ minWidth: 28, color: "#fef3c7", fontSize: 18 }}>{i + 1}.</b>
-            <Bdg pos={pl.pos} />
+            <Bdg pos={posTag(pl)} />
             {p ? <PN p={p} setSel={g.setSel} /> : <span>{pl.name}</span>}
             <span style={{ color: C.mt, fontSize: 13 }}>consensus #{csRank(pl)}</span>
             {read && <span style={{ display: "inline-flex", gap: 14, marginLeft: "auto", alignItems: "baseline" }}><span style={{ fontSize: 12, color: C.mt }}>OVR <Val txt={read.ovr} /></span><span style={{ fontSize: 12, color: C.mt }}>POT <Val txt={read.pot} /></span></span>}
@@ -406,7 +407,7 @@ export function CombineView({ g, buzz }) {
               {rows.slice(0, n).map((p) => (
                 <tr key={p.id} style={{ borderBottom: `1px solid ${C.bd}44` }}>
                   <td style={{ ...td, textAlign: "left", color: "#94a3b8" }}>{csRank(p)}</td>
-                  <td style={{ ...td, textAlign: "left" }}><PN p={p} setSel={g.setSel} /> <Bdg pos={p.pos} /></td>
+                  <td style={{ ...td, textAlign: "left" }}><PN p={p} setSel={g.setSel} /> <Bdg pos={posTag(p)} /></td>
                   <td style={{ ...td, color: C.mt }}>{htS(p.ht_)} {p.wt}</td>
                   {COMBINE_TESTS.map((t) => <td key={t.k} style={{ ...td, color: p.combPcts?.[t.k] >= 0.9 ? C.gn : "#cbd5e1", fontWeight: p.combPcts?.[t.k] >= 0.9 ? 800 : 400 }}>{(+p.combine[t.k]).toFixed(t.dp)}</td>)}
                   <td style={td}><GradeChip g={p.combGrade} small /></td>
@@ -550,7 +551,7 @@ export function DraftReveal({ pick, team, onClose }) {
           <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: "#ffffffb0" }}>ROUND {pick.rd} · PICK #{pick.overall}</div>
           <div style={{ fontSize: 13, color: "#ffffffb0", marginTop: 2 }}>The {team.city} {team.name} select</div>
           <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.15, marginTop: 6 }}>{p.name}</div>
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", alignItems: "center", marginTop: 6, fontSize: 15, color: "#e2e8f0" }}><Bdg pos={p.pos} />{p.bio?.college || p.college || ""}{p.age ? ` · Age ${p.age}` : ""}</div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", alignItems: "center", marginTop: 6, fontSize: 15, color: "#e2e8f0" }}><Bdg pos={posTag(p)} />{p.bio?.college || p.college || ""}{p.age ? ` · Age ${p.age}` : ""}</div>
         </div>
         <div style={{ padding: "14px 20px 18px" }}>
           <div style={{ textAlign: "center", padding: "12px 10px", borderRadius: 12, border: `2px solid ${bg}`, background: `${fg}14`, animation: "drFlip .5s .35s ease-out both" }}>
@@ -653,7 +654,7 @@ export function MockDraft({ g }) {
                   <td style={{ ...td, width: 64, fontWeight: 800, color: mine ? C.gn : "#94a3b8", fontVariantNumeric: "tabular-nums" }}>R{pick.rd} #{pick.overall}</td>
                   <td style={{ ...td, whiteSpace: "nowrap" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><TeamLogo t={t} sz={26} /><span style={{ fontWeight: mine ? 800 : 600 }}>{t.name}{mine ? " (you)" : ""}</span>{pick.orig != null && pick.orig !== pick.owner && <span style={{ fontSize: 12, color: C.mt }}>via {g.teams[pick.orig]?.ab}</span>}</span></td>
                   <td style={{ ...td, cursor: "pointer" }} onClick={() => g.setSel(player)}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Bdg pos={player.pos} /><span style={{ fontSize: 16, fontWeight: 700 }}>{star ? "★ " : ""}{player.name}</span></div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Bdg pos={posTag(player)} /><span style={{ fontSize: 16, fontWeight: 700 }}>{star ? "★ " : ""}{player.name}</span></div>
                     <div style={{ fontSize: 13, color: C.mt }}>{player.bio?.college} · consensus #{csRank(player)}</div>
                   </td>
                   <td className="sc-hide" style={{ ...td, fontSize: 13, color: "#94a3b8" }}>{alts.map((a) => `${a.name} (${a.pos})`).join(", ")}</td>
@@ -890,7 +891,7 @@ export function ProspectModal({ g, p, onClose }) {
           <Face s={p.face} sz={46} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 24, fontWeight: 900 }}>{p.name}</div>
-            <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap", marginTop: 2 }}><Bdg pos={p.pos} /><span style={{ fontSize: 13, padding: "2px 8px", borderRadius: 10, background: `${C.bl}22`, color: "#93c5fd", fontWeight: 700 }}>{p.draftYear} draft prospect</span></div>
+            <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap", marginTop: 2 }}><Bdg pos={posTag(p)} /><span style={{ fontSize: 13, padding: "2px 8px", borderRadius: 10, background: `${C.bl}22`, color: "#93c5fd", fontWeight: 700 }}>{p.draftYear} draft prospect</span></div>
           </div>
           <div style={{ textAlign: "right" }}><div style={{ fontSize: 30, fontWeight: 900, color: read.exact ? oC(read.ovrV) : "#94a3b8" }}>{read.ovr === "??" ? "?" : read.ovr}</div><div style={{ fontSize: 10, color: C.mt }}>OVR</div></div>
         </div>
