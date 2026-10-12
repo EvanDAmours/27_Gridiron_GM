@@ -37,20 +37,23 @@ export function superBowlMvp(box, ti) {
   return { pid: best.pid, name: l.name, pos: l.pos, ti, stat: bits.slice(0, 2).join(" · "), prose: mvpProse(l) };
 }
 
+// The sheet's main button stays in view at the bottom while the list scrolls.
+const stickyFoot = { position: "sticky", bottom: MOBILE ? "calc(-16px - env(safe-area-inset-bottom))" : -14, margin: MOBILE ? "4px -14px calc(-16px - env(safe-area-inset-bottom))" : "4px -14px -14px", padding: MOBILE ? "10px 14px calc(16px + env(safe-area-inset-bottom))" : "10px 14px 14px", background: "linear-gradient(180deg, #0b122000, #0b1220 30%)", zIndex: 2 };
+
 const ROWS = [["mvp", "Most Valuable Player"], ["opoy", "Offensive Player of the Year"], ["dpoy", "Defensive Player of the Year"], ["oroy", "Offensive Rookie of the Year"], ["droy", "Defensive Rookie of the Year"]];
 
 function Row({ label, w, teams, ui, big }) {
   const t = w ? teams[w.ti] : null;
   const mine = w && w.ti === ui;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: big ? "12px 14px" : "10px 12px", borderRadius: 10, background: mine ? `${C.gn}1c` : "#ffffff08", border: `1px solid ${mine ? C.gn : "#ffffff14"}` }}>
-      {t ? <TeamLogo t={t} sz={big ? 40 : 32} /> : <span style={{ width: 32 }} />}
+    <div style={{ display: "flex", alignItems: "center", gap: MOBILE ? 10 : 12, padding: MOBILE ? "7px 10px" : big ? "12px 14px" : "10px 12px", borderRadius: 10, background: mine ? `${C.gn}1c` : "#ffffff08", border: `1px solid ${mine ? C.gn : "#ffffff14"}` }}>
+      {t ? <TeamLogo t={t} sz={MOBILE ? (big ? 32 : 26) : big ? 40 : 32} /> : <span style={{ width: MOBILE ? 26 : 32 }} />}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: "#fcd34d" }}>{label.toUpperCase()}</div>
+        <div style={{ fontSize: MOBILE ? 10.5 : 12, fontWeight: 900, letterSpacing: 1, color: "#fcd34d" }}>{label.toUpperCase()}</div>
         {w ? (
           <>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: big ? 19 : 17, fontWeight: 800 }}>{w.pos && <Bdg pos={w.pos} />}<span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w.name}</span>{mine && <span style={{ fontSize: 11, fontWeight: 900, color: C.gn }}>YOUR TEAM</span>}</div>
-            <div style={{ fontSize: 13, color: "#cbd5e1" }}>{t ? `${t.city} ${t.name}` : ""}{w.stat ? ` · ${w.stat}` : ""}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: MOBILE ? (big ? 17 : 15.5) : big ? 19 : 17, fontWeight: 800, minWidth: 0 }}>{w.pos && <Bdg pos={w.pos} />}<span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w.name}</span>{mine && <span style={{ fontSize: 11, fontWeight: 900, color: C.gn }}>YOUR TEAM</span>}</div>
+            <div style={{ fontSize: MOBILE ? 12 : 13, color: "#cbd5e1", lineHeight: 1.35 }}>{t ? (MOBILE ? t.ab : `${t.city} ${t.name}`) : ""}{w.stat ? ` · ${w.stat}` : ""}</div>
           </>
         ) : <div style={{ fontSize: 15, color: C.mt }}>Not awarded</div>}
       </div>
@@ -60,7 +63,7 @@ function Row({ label, w, teams, ui, big }) {
 
 // One honoree in the All-Pro list: slot, name, club.
 const Pick = ({ e, ui }) => (
-  <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: 15, lineHeight: 1.5, minWidth: 0, color: e.ti === ui ? "#86efac" : "#e2e8f0" }}>
+  <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: MOBILE ? 14 : 15, lineHeight: MOBILE ? 1.45 : 1.5, minWidth: 0, color: e.ti === ui ? "#86efac" : "#e2e8f0" }}>
     <span style={{ width: 40, flexShrink: 0, fontSize: 12, fontWeight: 900, color: "#fcd34d" }}>{e.slot}</span>
     <span style={{ fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.name}</span>
     <span style={{ fontSize: 13, color: "#94a3b8", flexShrink: 0 }}>{e.team}</span>
@@ -80,9 +83,9 @@ function HonorsPage({ yr, h, teams, ui, onBack, onClose, cta }) {
   );
   return (
     <>
-      <div style={{ padding: "18px 20px 14px", textAlign: "center", background: "linear-gradient(135deg,#713f12cc,#0b1220)" }}>
+      <div style={{ padding: MOBILE ? "14px 56px 12px 16px" : "18px 20px 14px", textAlign: "center", background: "linear-gradient(135deg,#713f12cc,#0b1220)" }}>
         <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 2, color: "#fde68a" }}>{yr} ALL-PRO TEAM</div>
-        <div style={{ fontSize: 15, color: "#e2e8f0", marginTop: 4 }}>The league's best at every spot. Honorees gain OVR this off-season.</div>
+        <div style={{ fontSize: MOBILE ? 13 : 15, color: "#e2e8f0", marginTop: 4 }}>The league's best at every spot. Honorees gain OVR this off-season.</div>
       </div>
       <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
         <div style={{ padding: "12px 14px", borderRadius: 10, background: `${C.gn}14`, border: `1px solid ${C.gn}66` }}>
@@ -91,9 +94,9 @@ function HonorsPage({ yr, h, teams, ui, onBack, onClose, cta }) {
           {mine.map(({ p, k }) => {
             const g = honorBoost(k, p.ovr || 0);
             return (
-              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, lineHeight: 1.6 }}>
-                <Bdg pos={p.pos} /><b style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</b>
-                <span style={{ color: "#cbd5e1", fontSize: 14 }}>{HONOR_LABEL[k]}</span>
+              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, padding: "3px 0" }}>
+                <Bdg pos={p.pos} />
+                <span style={{ minWidth: 0, flex: 1, lineHeight: 1.3 }}><b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</b><span style={{ color: "#cbd5e1", fontSize: 13 }}>{HONOR_LABEL[k]}</span></span>
                 <span style={{ marginLeft: "auto", fontWeight: 900, color: g ? C.gn : C.mt, fontSize: 14, whiteSpace: "nowrap" }}>{g ? `+${g} OVR` : "already elite"}</span>
               </div>
             );
@@ -101,7 +104,7 @@ function HonorsPage({ yr, h, teams, ui, onBack, onClose, cta }) {
         </div>
         <Team title="FIRST-TEAM ALL-PRO" list={h.ap1} />
         {h.ap2?.length > 0 && <Team title="SECOND-TEAM ALL-PRO" list={h.ap2} />}
-        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+        <div style={{ ...stickyFoot, display: "flex", gap: 8 }}>
           <Btn onClick={onBack} bg={C.bd} c="#e2e8f0" style={{ fontSize: 15, padding: "10px 16px", fontWeight: 800 }}>← Awards</Btn>
           <Btn onClick={onClose} bg={C.gn} style={{ flex: 1, fontSize: 16, padding: "10px 0", fontWeight: 900 }}>{cta}</Btn>
         </div>
@@ -119,13 +122,13 @@ export default function SeasonAwards({ show, teams, ui, onClose, cta = "Continue
       <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Season awards" key={page} style={{ position: "relative", width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", borderRadius: 16, background: "#0b1220", border: "2px solid #d4a017", boxShadow: "0 0 70px #d4a01744", ...sheetBox(MOBILE) }}>
         <CloseX onClick={onClose} />
         {page === 2 ? <HonorsPage yr={yr} h={awards.honors} teams={teams} ui={ui} onBack={() => setPage(1)} onClose={onClose} cta={cta} /> : <>
-        <div style={{ padding: "18px 20px 14px", textAlign: "center", background: `linear-gradient(135deg, ${ct?.clr || "#1e3a5f"}dd, #0b1220)` }}>
+        <div style={{ padding: MOBILE ? "14px 56px 12px 16px" : "18px 20px 14px", textAlign: "center", background: `linear-gradient(135deg, ${ct?.clr || "#1e3a5f"}dd, #0b1220)` }}>
           <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 2, color: "#fde68a" }}>{yr} SEASON AWARDS</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 8 }}>
-            {ct && <TeamLogo t={ct} sz={64} />}
+            {ct && <TeamLogo t={ct} sz={MOBILE ? 44 : 64} />}
             <div style={{ textAlign: "left" }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: "#ffffffb0" }}>{sbName(sbNumber(yr))} champions</div>
-              <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.1 }}>{ct ? `${ct.city} ${ct.name}` : "—"}</div>
+              <div style={{ fontSize: MOBILE ? 20 : 26, fontWeight: 900, lineHeight: 1.1 }}>{ct ? `${ct.city} ${ct.name}` : "—"}</div>
               {ot && score && <div style={{ fontSize: 14, color: "#e2e8f0" }}>Beat the {ot.name} {score}</div>}
             </div>
           </div>
@@ -133,7 +136,7 @@ export default function SeasonAwards({ show, teams, ui, onClose, cta = "Continue
         <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 8 }}>
           <Row label="Super Bowl MVP" w={sbmvp} teams={teams} ui={ui} big />
           {ROWS.map(([k, l]) => <Row key={k} label={l} w={awards[k]} teams={teams} ui={ui} />)}
-          <Btn onClick={awards.honors ? () => setPage(2) : onClose} bg={C.gn} style={{ width: "100%", marginTop: 6, fontSize: 16, padding: "11px 0", fontWeight: 900, letterSpacing: 1 }}>{awards.honors ? "CONTINUE →" : cta}</Btn>
+          <div style={stickyFoot}><Btn onClick={awards.honors ? () => setPage(2) : onClose} bg={C.gn} style={{ width: "100%", fontSize: 16, padding: "11px 0", fontWeight: 900, letterSpacing: 1 }}>{awards.honors ? "CONTINUE →" : cta}</Btn></div>
         </div>
         </>}
       </div>

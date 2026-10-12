@@ -3,6 +3,7 @@
 // offers coming in, and the board lists who's buying and who's selling.
 import React, { useEffect, useState } from "react";
 import { C, oC, Bdg, Btn, TeamLogo } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 import { DEADLINE_HOURS, LAST_HOUR, marketBoard, leagueTradeBlock } from "./deadline.js";
 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
@@ -129,6 +130,7 @@ function TradeBlock({ teams, ui, needs, pickValue, onInquire, setSel, closed }) 
 
 export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, needs = [], onInquire, onAdvance, onFinish, onAccept, onDecline, onOpenTrade, onClose, setSel }) {
   const [auto, setAuto] = useState(false);
+  const [view, setView] = useState("feed");
   const me = teams[ui];
   const { buyers, sellers } = marketBoard(teams, ui);
   // Auto-advance the clock, pausing whenever your phone has offers waiting.
@@ -139,6 +141,77 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
   }, [auto, dl.hour, dl.done, dl.offers.length]);
   const panel = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: 12, minWidth: 0 };
   const head = { fontSize: 13, fontWeight: 900, letterSpacing: 1.5, color: "#fca5a5", marginBottom: 8 };
+  const left = LAST_HOUR - dl.hour;
+  // phones: a slim sticky clock bar, your phone first, the rest in tabs; the clock's controls
+  // sit in the action bar at the bottom of the screen
+  if (MOBILE) return (
+    <div style={{ margin: "-4px 0 0" }}>
+      <div style={{ position: "sticky", top: "calc(56px + env(safe-area-inset-top))", zIndex: 20, background: "linear-gradient(120deg,#450a0a,#0b0f19 70%)", border: "1px solid #ef444466", borderRadius: 12, padding: "8px 12px", marginBottom: 8, boxShadow: "0 6px 16px #0008" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#fca5a5" }}>{dl.done ? "FINAL" : "● LIVE"}</span>
+          <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 22, fontWeight: 900, color: dl.done ? "#94a3b8" : "#fff" }}>{DEADLINE_HOURS[dl.hour]}</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: "#fecaca", flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{dl.done ? "Deadline passed" : left === 1 ? "Final hour" : `${left} hrs left`}</span>
+          {!dl.done && <button onClick={() => setAuto((a) => !a)} style={{ background: auto ? "#7f1d1d" : "#1e293b", color: "#fecaca", border: "1px solid #ef444455", borderRadius: 8, padding: "4px 10px", fontSize: 13, fontWeight: 800, minHeight: 34 }}>{auto ? "⏸ Pause" : "▶ Run clock"}</button>}
+        </div>
+        <div style={{ display: "flex", gap: 3, marginTop: 6 }}>{DEADLINE_HOURS.map((h, i) => <div key={h} style={{ flex: 1, height: 4, borderRadius: 2, background: i < dl.hour ? "#ef4444" : i === dl.hour ? "#fff" : "#ffffff22" }} />)}</div>
+      </div>
+      <Ticker deals={dl.deals} teams={teams} yr={yr} />
+      <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
+        <div style={panel}>
+          <div style={head}>YOUR PHONE {dl.offers.length > 0 && <span style={{ background: "#dc2626", color: "#fff", borderRadius: 10, padding: "0 7px", marginLeft: 6 }}>{dl.offers.length}</span>}</div>
+          {dl.offers.map((o) => <Offer key={o.id} o={o} teams={teams} pickValue={pickValue} onAccept={onAccept} onDecline={onDecline} setSel={setSel} hour={dl.hour} />)}
+          {!dl.offers.length && <div style={{ fontSize: 14, color: C.mt, lineHeight: 1.5 }}>{dl.done ? "The phones have gone quiet." : "No offers on the table right now. Calls come in through the day, and put players on the trade block to draw interest. Or pick up the phone yourself with Make a call."}{auto && !dl.done ? " The clock pauses whenever an offer comes in." : ""}</div>}
+          {dl.done && (
+            <div style={{ marginTop: 12 }}>
+              <div style={head}>TODAY'S DEALS ({dl.deals.length})</div>
+              {dl.deals.map((d, i) => <div key={i} style={{ fontSize: 14, padding: "5px 0", borderBottom: `1px solid ${C.bd}66` }}><b>{teams[d.buyer]?.ab}</b> get <b>{d.player.name}</b> ({d.player.pos} {d.player.ovr}) from <b>{teams[d.seller]?.ab}</b></div>)}
+              {!dl.deals.length && <div style={{ fontSize: 14, color: C.mt }}>A quiet deadline: no trades between other clubs.</div>}
+            </div>
+          )}
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[["feed", "Feed"], ["block", "Trade block"], ["market", "Buyers & sellers"]].map(([k, l]) => <button key={k} onClick={() => setView(k)} style={{ flex: 1, background: view === k ? `${C.bl}33` : C.cd, border: `1px solid ${view === k ? C.bl : C.bd}`, color: view === k ? "#bfdbfe" : "#cbd5e1", borderRadius: 8, padding: "6px 4px", fontSize: 13, fontWeight: 800 }}>{l}</button>)}
+        </div>
+        {view === "feed" && <>
+        <div style={{ ...panel, gridColumn: "span 1" }}>
+          <div style={head}>DEADLINE FEED</div>
+          <div>
+            {dl.feed.map((f) => {
+              const k = KIND[f.kind] || KIND.news;
+              const t = f.ti != null ? teams[f.ti] : null;
+              return (
+                <div key={f.id} style={{ display: "flex", gap: 10, padding: "9px 4px", borderBottom: `1px solid ${C.bd}66`, background: f.big ? "#ef444414" : "transparent" }}>
+                  <div style={{ width: 52, flex: "0 0 auto", fontSize: 11, color: C.mt, textAlign: "right" }}>{DEADLINE_HOURS[f.hour].replace(":00", "")}</div>
+                  {t ? <TeamLogo t={t} sz={26} /> : <span style={{ width: 26 }} />}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: k.c, marginRight: 6 }}>{f.big ? "BREAKING" : k.tag}</span>
+                    <span style={{ fontSize: f.kind === "trade" ? 15 : 14, fontWeight: f.kind === "trade" ? 700 : 400, color: "#e2e8f0" }}>{f.text}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        </>}
+        {view === "block" && <>
+        <div style={panel}>
+          <div style={head}>TRADE BLOCK</div>
+          <TradeBlock teams={teams} ui={ui} needs={needs} pickValue={pickValue} onInquire={onInquire} setSel={setSel} closed={dl.done} />
+        </div>
+        </>}
+        {view === "market" && <>
+        <div style={panel}>
+          <div style={head}>BUYERS</div>
+          {buyers.slice(0, 8).map((b) => <div key={b.ti} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}><TeamLogo t={teams[b.ti]} sz={22} /><span style={{ flex: 1, fontSize: 14 }}>{b.name}</span><b style={{ fontSize: 14, color: C.gn }}>{b.rec}</b></div>)}
+          {!buyers.length && <div style={{ fontSize: 13, color: C.mt }}>Nobody's clearly in win-now mode.</div>}
+          <div style={{ ...head, marginTop: 14 }}>SELLERS</div>
+          {sellers.slice(0, 8).map((s) => <div key={s.ti} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}><TeamLogo t={teams[s.ti]} sz={22} /><span style={{ flex: 1, fontSize: 14 }}>{s.name}</span><b style={{ fontSize: 14, color: C.rd }}>{s.rec}</b></div>)}
+          {!sellers.length && <div style={{ fontSize: 13, color: C.mt }}>Nobody's clearly selling.</div>}
+        </div>
+        </>}
+      </div>
+    </div>
+  );
   return (
     <div style={{ margin: "-4px 0 0" }}>
       <div style={{ background: "linear-gradient(120deg,#450a0a,#0b0f19 55%,#1e1b4b)", border: "1px solid #ef444466", borderRadius: 14, padding: "14px 16px", marginBottom: 10 }}>
@@ -166,6 +239,18 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
       </div>
       <Ticker deals={dl.deals} teams={teams} yr={yr} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: 10, marginTop: 10 }}>
+        <div style={panel}>
+          <div style={head}>YOUR PHONE {dl.offers.length > 0 && <span style={{ background: "#dc2626", color: "#fff", borderRadius: 10, padding: "0 7px", marginLeft: 6 }}>{dl.offers.length}</span>}</div>
+          {dl.offers.map((o) => <Offer key={o.id} o={o} teams={teams} pickValue={pickValue} onAccept={onAccept} onDecline={onDecline} setSel={setSel} hour={dl.hour} />)}
+          {!dl.offers.length && <div style={{ fontSize: 14, color: C.mt, lineHeight: 1.5 }}>{dl.done ? "The phones have gone quiet." : "No offers on the table right now. Calls come in through the day, and put players on the trade block to draw interest. Or pick up the phone yourself with Make a call."}{auto && !dl.done ? " The clock pauses whenever an offer comes in." : ""}</div>}
+          {dl.done && (
+            <div style={{ marginTop: 12 }}>
+              <div style={head}>TODAY'S DEALS ({dl.deals.length})</div>
+              {dl.deals.map((d, i) => <div key={i} style={{ fontSize: 14, padding: "5px 0", borderBottom: `1px solid ${C.bd}66` }}><b>{teams[d.buyer]?.ab}</b> get <b>{d.player.name}</b> ({d.player.pos} {d.player.ovr}) from <b>{teams[d.seller]?.ab}</b></div>)}
+              {!dl.deals.length && <div style={{ fontSize: 14, color: C.mt }}>A quiet deadline: no trades between other clubs.</div>}
+            </div>
+          )}
+        </div>
         <div style={{ ...panel, gridColumn: "span 1" }}>
           <div style={head}>DEADLINE FEED</div>
           <div style={{ maxHeight: 560, overflowY: "auto" }}>
@@ -184,18 +269,6 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
               );
             })}
           </div>
-        </div>
-        <div style={panel}>
-          <div style={head}>YOUR PHONE {dl.offers.length > 0 && <span style={{ background: "#dc2626", color: "#fff", borderRadius: 10, padding: "0 7px", marginLeft: 6 }}>{dl.offers.length}</span>}</div>
-          {dl.offers.map((o) => <Offer key={o.id} o={o} teams={teams} pickValue={pickValue} onAccept={onAccept} onDecline={onDecline} setSel={setSel} hour={dl.hour} />)}
-          {!dl.offers.length && <div style={{ fontSize: 14, color: C.mt, lineHeight: 1.5 }}>{dl.done ? "The phones have gone quiet." : "No offers on the table right now. Calls come in through the day, and put players on the trade block to draw interest. Or pick up the phone yourself with Make a call."}{auto && !dl.done ? " The clock pauses whenever an offer comes in." : ""}</div>}
-          {dl.done && (
-            <div style={{ marginTop: 12 }}>
-              <div style={head}>TODAY'S DEALS ({dl.deals.length})</div>
-              {dl.deals.map((d, i) => <div key={i} style={{ fontSize: 14, padding: "5px 0", borderBottom: `1px solid ${C.bd}66` }}><b>{teams[d.buyer]?.ab}</b> get <b>{d.player.name}</b> ({d.player.pos} {d.player.ovr}) from <b>{teams[d.seller]?.ab}</b></div>)}
-              {!dl.deals.length && <div style={{ fontSize: 14, color: C.mt }}>A quiet deadline: no trades between other clubs.</div>}
-            </div>
-          )}
         </div>
         <div style={panel}>
           <div style={head}>TRADE BLOCK</div>

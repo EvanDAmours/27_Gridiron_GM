@@ -663,4 +663,10 @@ export const PATCH_NOTES = [
     "Coaching: Fire is tucked behind a ⋯ menu on each coach and asks before it acts; Upgrade and Extend stay right there.",
     "Scouting: your scouting points and area points sit together in one badge at the top, instead of showing up three times on Scouting HQ.",
   ] },
+  { v: "2.28", date: "2026-10-12", title: "Deadline Day on Your Phone", notes: [
+    "Trade Deadline Day: your phone (the offers coming in) now sits above the deadline feed.",
+    "On phones the big deadline header is a slim clock bar that stays pinned at the top (time, hours left, Run clock), and the feed, trade block and buyers & sellers are tabs under your phone. Advance the clock, Make a call and Sim to 4:00 PM sit in the action bar at the bottom.",
+    "Season awards on phones: tighter rows so every award fits on one screen, the close button no longer covers the header, and on the All-Pro page your honorees' names aren't cut off. Continue stays pinned at the bottom.",
+    "Re-sign Week on phones: each expiring player is a card with Tag and Negotiate right on it (they were cut off the edge of the table), and Finish Re-signing is a smaller button.",
+  ] },
 ];
