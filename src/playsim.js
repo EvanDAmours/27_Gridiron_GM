@@ -107,10 +107,11 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season 
   const p = on("P")[0] || order("P")?.[0];
   const pOvr = p ? p.ovr || 75 : 60, pPow = p ? p.posAttrs?.power ?? 93 : 85, pAcc = p ? p.posAttrs?.accuracy ?? 82 : 65;
   const stCov = team?.coach?.st?.rating ?? 70;
+  const kLeg = k?.posAttrs?.legStr ?? k?.attrs?.legStr ?? 93;
   const hcR = team?.coach?.hc?.rating ?? 70; // the head coach makes the 4th-down calls
   // Measured against the league's balance, so league-wide rating drift doesn't tilt everyone's play-calling.
   const passLean = clamp(0.6 + ((u.pass - LEAGUE.pass[0]) - (u.run - LEAGUE.run[0])) * 0.006 + lean, 0.5, 0.7);
-  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, p, pOvr, pPow, pAcc };
+  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, kLeg, p, pOvr, pPow, pAcc };
 }
 
 const emptyTeam = () => ({ plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
@@ -186,7 +187,8 @@ function edges(g) {
 }
 
 // Field goal odds from a distance (yards) and the kicker's rating.
-export const fgOdds = (dist, k = 75) => clamp(1.005 - 0.0045 * (dist - 18) - 0.0006 * Math.max(0, dist - 35) ** 2 + (k - 75) * 0.004, 0.15, 0.99);
+// A big leg matters from distance: past 40 yards, leg strength above or below a 95 counts.
+export const fgOdds = (dist, k = 75, leg = 95) => clamp(1.005 - 0.0045 * (dist - 18) - 0.0005 * Math.max(0, dist - 35) ** 2 + (k - 75) * 0.004 + (leg - 95) * 0.0012 * Math.max(0, dist - 40), 0.15, 0.99);
 
 function newPossession(g, yard) {
   // Overtime (2025 rules): once both teams have had the ball, a team that's ahead has won.
@@ -264,6 +266,10 @@ function scored(g, side, pts) {
   if (side !== g.poss || n >= 3 || (n === 2 && g.score[side] > g.score[other(side)])) g.done = true;
 }
 
+// How far a coach trusts his kicker on an ordinary 4th down: about 52 yards for a 92 leg, 57 for a
+// 97, 59 for a 99. With the half or the game on the line he'll stretch it five more (up to ~64).
+export const fgRange = (leg = 93, stretch = false) => Math.round(clamp(44 + (leg - 85) * 1.1, 48, 60) + (stretch ? 5 : 0));
+
 // Late with the game tied (or down 3 or less) and in comfortable range: play for the field goal.
 const forTheKick = (g, lead) => ((g.qtr === 4 && g.clock < 150) || (g.ot && g.down >= 2)) && lead <= 0 && lead >= -3 && 100 - g.yard + 17 <= 45;
 // Play style from the situation (or the user's call).
@@ -320,11 +326,12 @@ function stepPlay(g, call, bonus = 1) {
   }
 
   // Fourth down (or the end of a half in range): kick, punt or go for it.
-  const endOfHalf = ((g.qtr === 2 || g.qtr === 4 || g.ot) && g.clock <= 25 && fgDist <= 55 && !(g.qtr >= 4 && lead < -3)) || (!call && forTheKick(g, lead) && g.down >= 3 && (g.clock <= 40 || g.ot));
+  const maxFG = fgRange(o.kLeg), longFG = fgRange(o.kLeg, true);
+  const endOfHalf = ((g.qtr === 2 || g.qtr === 4 || g.ot) && g.clock <= 25 && fgDist <= longFG && !(g.qtr >= 4 && lead < -3)) || (!call && forTheKick(g, lead) && g.down >= 3 && (g.clock <= 40 || g.ot));
   let decision = call === "punt" || call === "fg" ? call : null;
-  if (!decision && (g.down === 4 || endOfHalf || (g.ot && g.down >= 3 && fgDist <= 52 && lead <= 0 && lead >= -3))) {
-    if (endOfHalf && fgDist <= 55) decision = "fg";
-    else if (g.ot && g.down >= 3 && fgDist <= 52 && !call && lead <= 0 && lead >= -3) decision = "fg"; // overtime: take the points
+  if (!decision && (g.down === 4 || endOfHalf || (g.ot && g.down >= 3 && fgDist <= maxFG && lead <= 0 && lead >= -3))) {
+    if (endOfHalf && fgDist <= longFG) decision = "fg";
+    else if (g.ot && g.down >= 3 && fgDist <= maxFG && !call && lead <= 0 && lead >= -3) decision = "fg"; // overtime: take the points
     else if (g.down === 4) {
       const needTD = (g.qtr === 4 && g.clock < 240 && lead < -3) || (g.ot && lead < -3);
       // Modern 4th-down aggression: short yardage near midfield or in scoring range is often a go.
@@ -332,19 +339,19 @@ function stepPlay(g, call, bonus = 1) {
       const lateGame = g.qtr >= 4 || g.ot;
       // Late, a makeable kick that ties it or takes the lead is the call. Only a shaky head coach
       // (rated under ~72) ever gambles there, and rarely.
-      const kickToLead = lateGame && lead <= 0 && lead >= -3 && fgDist <= 50;
+      const kickToLead = lateGame && lead <= 0 && lead >= -3 && fgDist <= longFG;
       const gamble = Math.max(0, 72 - (o.hcR ?? 70)) * 0.01;
       const protecting = g.qtr >= 4 && !g.ot && g.clock < 300 && lead > 0 && g.yard < 50;
       if (call) decision = null; // the user chose to go for it
-      else if (needTD || (g.qtr === 4 && g.clock < 240 && lead < 0 && fgDist > 52)) decision = null;
+      else if (needTD || (g.qtr === 4 && g.clock < 240 && lead < 0 && fgDist > longFG)) decision = null;
       else if (kickToLead) decision = rand() < gamble ? null : "fg";
       else if (!protecting && rand() < goShort * (fgDist <= 40 ? 0.6 : 1)) decision = null;
-      else if (fgDist <= 54) decision = "fg";
+      else if (fgDist <= maxFG) decision = "fg";
       else decision = "punt";
     }
   }
   if (decision === "fg") {
-    const made = rand() < fgOdds(fgDist, o.kOvr);
+    const made = rand() < fgOdds(fgDist, o.kOvr, o.kLeg);
     const kl = line(g, off, o.k);
     add(kl, "fgA", 1); st.fgA++;
     ev.type = made ? "fg" : "fg_miss"; ev.player = o.k;

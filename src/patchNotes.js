@@ -711,4 +711,8 @@ export const PATCH_NOTES = [
   { v: "2.40", date: "2026-10-12", title: "Next Season Stays Home", notes: [
     "Starting a new season (→ Next Season) keeps you on the Home screen instead of jumping to the roster.",
   ] },
+  { v: "2.41", date: "2026-10-12", title: "Long Field Goals", notes: [
+    "Field goal range now depends on the kicker's leg strength: on a normal 4th down a strong leg tries from about 57 to 59 yards (52 for the weakest legs), and with the half or the game on the line coaches stretch it to 60 to 64. Before, nobody tried much past 54.",
+    "A big leg also makes long kicks more likely to go in: a 60-yarder is roughly a coin flip, a little better for the strongest legs. League-wide, 60+ yard tries come up about as often as in the NFL (around 20 a season).",
+  ] },
 ];
