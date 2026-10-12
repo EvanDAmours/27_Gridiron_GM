@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face, TeamLogo } from "./ui.jsx";
 import { deadMoney, proration } from "./bonus.js";
+import { MOBILE } from "./mobile.js";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
@@ -116,6 +117,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
       {label}<button onClick={() => flip(key, x)} aria-label="Remove" style={{ background: "transparent", border: 0, color: C.mt, cursor: "pointer", fontSize: 15, padding: 0 }}>✕</button>
     </span>
   );
+  const pick = (id) => { setTrTm(id); setTrOff({ g: [], r: [], gPk: [], rPk: [] }); };
   const pkLabel = (pk) => `${pk.yr || ""} Rd ${pk.rd}${pk.overall ? ` #${pk.overall}` : ""}`;
   // Left of centre: short of what they ask. Right: comfortably over it.
   const meter = Math.max(-1, Math.min(1, (ev.gv - ev.ask) / Math.max(40, ev.ask)));
@@ -125,10 +127,10 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
       <style>{"@media (max-width: 640px) { .tr-hide { display: none } }"}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <span style={{ fontSize: 24, fontWeight: 900 }}>Trade with</span>
-        <select value={trTm ?? ""} onChange={(e) => { setTrTm(e.target.value === "" ? null : +e.target.value); setTrOff({ g: [], r: [], gPk: [], rPk: [] }); }} aria-label="Trade partner" style={{ ...sel, fontSize: 17, fontWeight: 700, minWidth: 240 }}>
+        {(!MOBILE || them) && <select value={trTm ?? ""} onChange={(e) => pick(e.target.value === "" ? null : +e.target.value)} aria-label="Trade partner" style={{ ...sel, fontSize: 17, fontWeight: 700, minWidth: 240 }}>
           <option value="">Choose a team…</option>
           {teams.filter((t) => t.id !== ui).sort((a, b) => a.city.localeCompare(b.city)).map((t) => <option key={t.id} value={t.id}>{t.city} {t.name} ({t.w}-{t.l}){modes?.[t.id] === "buyer" ? " · buying" : modes?.[t.id] === "seller" ? " · selling" : ""}</option>)}
-        </select>
+        </select>}
         <span style={{ fontSize: 14, color: C.mt }}>Your cap space: <b style={{ color: capSpace(me) >= 0 ? C.gn : C.rd }}>{money(capSpace(me))}</b></span>
       </div>
 
@@ -175,6 +177,21 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
           <Side title="YOUR TEAM" color={C.rd} team={me} players={me.roster} picks={draftPicks.filter((pk) => pk.owner === ui).map(withAb)} chosen={trOff.g} chosenPk={trOff.gPk} toggle={(p) => flip("g", p)} togglePk={(pk) => flip("gPk", pk)} pickVal={pickVal} setSel={setSel} />
           <Side title="THEIR TEAM" color={C.gn} team={them} players={them.roster} picks={draftPicks.filter((pk) => pk.owner === trTm).map(withAb)} chosen={trOff.r} chosenPk={trOff.rPk} toggle={(p) => flip("r", p)} togglePk={(pk) => flip("rPk", pk)} pickVal={pickVal} setSel={setSel} />
+        </div>
+      ) : MOBILE ? (
+        // phones: a grid of logos beats a 31-line dropdown
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+          {teams.filter((t) => t.id !== ui).sort((a, b) => a.city.localeCompare(b.city)).map((t) => {
+            const m = modes?.[t.id];
+            return (
+              <button key={t.id} onClick={() => pick(t.id)} title={`${t.city} ${t.name}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 2px 6px", background: C.cd, border: `1px solid ${m === "buyer" ? C.gn + "88" : m === "seller" ? C.gd + "88" : C.bd}`, borderRadius: 10, color: "#e2e8f0", cursor: "pointer" }}>
+                <TeamLogo t={t} sz={34} />
+                <b style={{ fontSize: 13 }}>{t.ab}</b>
+                <span style={{ fontSize: 11, color: C.mt }}>{t.w}-{t.l}</span>
+                {m && <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.8, color: m === "buyer" ? C.gn : C.gd }}>{m === "buyer" ? "BUYING" : "SELLING"}</span>}
+              </button>
+            );
+          })}
         </div>
       ) : (
         <div style={{ background: C.cd, border: `1px dashed ${C.bd}`, borderRadius: 10, padding: 24, textAlign: "center", fontSize: 16, color: C.mt }}>Choose a team above to see both rosters side by side.</div>

@@ -657,4 +657,10 @@ export const PATCH_NOTES = [
     "The Play Week bar no longer covers the More menu, search, the inbox or player cards; it hides while they're open.",
     "Tap explanations on phones: tap a badge, chip or note to see the explanation that used to appear only on mouse hover. Long-press a button to see what it does.",
   ] },
+  { v: "2.27", date: "2026-10-12", title: "Less Scrolling", notes: [
+    "Trade finder: each deal is one compact row (team, who you get ⇄ who you send, the fairness tag, Load), so a normal list of offers fits on one screen. On phones the team, tag and Load share one line.",
+    "Trade on phones: pick a partner from a grid of team logos (with record, and whether they're buying or selling) instead of a 31-team dropdown.",
+    "Coaching: Fire is tucked behind a ⋯ menu on each coach and asks before it acts; Upgrade and Extend stay right there.",
+    "Scouting: your scouting points and area points sit together in one badge at the top, instead of showing up three times on Scouting HQ.",
+  ] },
 ];

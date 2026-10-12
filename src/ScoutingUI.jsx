@@ -589,12 +589,20 @@ export function DraftGrades({ g }) {
 // ---------- The scouting tab ----------
 
 // Scouting points left, big enough to read at a glance.
-export function ScoutPtsBadge({ pts = 0 }) {
+// Pass the scouting state as sc to show the area scouts' points beside it.
+export function ScoutPtsBadge({ pts = 0, sc }) {
   const on = pts > 0;
+  const area = sc ? sc.rpts ?? RPTS_START : null;
   return (
-    <div title="Spend them on scouting reports and workups" style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "8px 16px", borderRadius: 12, background: on ? `linear-gradient(135deg, ${C.gd}33, #0b1220)` : C.cd, border: `2px solid ${on ? C.gd : C.bd}` }}>
-      <span style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, color: on ? C.gd : C.mt, fontVariantNumeric: "tabular-nums" }}>{pts}</span>
-      <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1, lineHeight: 1.25, color: on ? "#fde68a" : C.mt }}>SCOUTING<br />POINT{pts === 1 ? "" : "S"} LEFT</span>
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "8px 16px", borderRadius: 12, background: on ? `linear-gradient(135deg, ${C.gd}33, #0b1220)` : C.cd, border: `2px solid ${on ? C.gd : C.bd}` }}>
+      <span title="Spend them on scouting reports and workups" style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+        <span style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, color: on ? C.gd : C.mt, fontVariantNumeric: "tabular-nums" }}>{pts}</span>
+        <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1, lineHeight: 1.25, color: on ? "#fde68a" : C.mt }}>SCOUTING<br />POINT{pts === 1 ? "" : "S"} LEFT</span>
+      </span>
+      {area != null && <span title={`Area-scout points for regional trips (${RTRIP_COST} a trip)`} style={{ display: "inline-flex", alignItems: "center", gap: 8, borderLeft: `1px solid ${C.bd}`, paddingLeft: 12 }}>
+        <span style={{ fontSize: 28, fontWeight: 900, lineHeight: 1, color: "#7dd3fc", fontVariantNumeric: "tabular-nums" }}>{area}</span>
+        <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, lineHeight: 1.25, color: "#7dd3fc" }}>AREA<br />PTS</span>
+      </span>}
     </div>
   );
 }
@@ -827,7 +835,7 @@ export function ScoutingHQ({ g, go }) {
   const s = g.scouting || {};
   const cls = g.dc[g.yr] || [];
   const me = g.teams[g.ui];
-  const rp = s.rpts ?? RPTS_START, pts = s.pts || 0;
+  const rp = s.rpts ?? RPTS_START;
   const trips = s.regionsYr === g.yr ? s.regions || {} : {};
   const canTravel = g.sp !== "freeagency" && g.sp !== "draft";
   // your thinnest spots: the positions where your best player is weakest
@@ -854,8 +862,7 @@ export function ScoutingHQ({ g, go }) {
   return (
     <div style={{ display: "grid", gap: 12 }}>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <Budget icon="🔎" v={pts} label="SCOUTING POINTS" tone={C.gd} sub={`A report on one prospect costs 1, a full workup 2 more. +${SCOUT_PTS_WEEKLY} a week in season, +${SCOUT_PTS_COMBINE} at the Combine.`} />
-        <Budget icon="🗺️" v={rp} label="AREA POINTS" tone="#7dd3fc" sub={`A trip (${RTRIP_COST}) gives a rough read on every prospect in one region.`} />
+        <div style={{ flex: "1 1 100%", fontSize: 13, color: "#94a3b8" }}>A report on one prospect costs 1 scouting point, a full workup 2 more (+{SCOUT_PTS_WEEKLY} a week in season, +{SCOUT_PTS_COMBINE} at the Combine). An area trip costs {RTRIP_COST} area points and reads a whole region.</div>
         {g.sp === "combine" && <Budget icon="🎤" v={s.interviewsLeft || 0} label="INTERVIEWS LEFT" tone="#c4b5fd" sub="Combine week only: learn a prospect's character and how he'll handle the pros." />}
       </div>
       <div style={card}>
@@ -918,7 +925,8 @@ export function ScoutingPage({ g }) {
     <div>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
         <span style={{ fontSize: 22, fontWeight: 900 }}>{g.sp === "combine" ? `${g.yr + 1} NFL Combine` : `${g.yr + 1} Draft Class`}</span>
-        <span style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}><span title="Area-scout points for regional trips" style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: "#0c4a6e55", color: "#7dd3fc", fontWeight: 700 }}>🗺️ {g.scouting?.rpts ?? RPTS_START} area</span><ScoutPtsBadge pts={g.scouting?.pts || 0} /></span>
+        <span style={{ marginLeft: "auto" }}><ScoutPtsBadge pts={g.scouting?.pts || 0} sc={g.scouting || {}} /></span>
+        
         {g.sp === "combine" && <span style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: "#7c3aed33", color: "#c4b5fd", fontWeight: 700 }}>Interviews: {g.scouting?.interviewsLeft || 0}</span>}
       </div>
       <div className="pill-row" style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
