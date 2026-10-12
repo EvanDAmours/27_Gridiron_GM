@@ -1,7 +1,7 @@
 // Scouting and draft screens: the Big Board (always in consensus order), your own list, the
 // Combine, your scouting staff, and the prospect profile. Game state comes in as `g`.
 import { posTag } from "./dline.js";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { mockDraft } from "./mockDraft.js";
 import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo } from "./ui.jsx";
 import {
@@ -400,6 +400,9 @@ export function CombineView({ g, buzz }) {
   const [mine, setMine] = useState(false);
   const [sort, setSort] = useState("rank");
   const [n, setN] = useState(25);
+  const [q, setQ] = useState("");
+  // find anyone in the class (invited or pro day) and see how the week moved him
+  const hits = q.trim().length >= 2 ? (g.dc[g.yr] || []).filter((p) => `${p.name} ${p.college || ""}`.toLowerCase().includes(q.trim().toLowerCase())).sort((x, y) => csRank(x) - csRank(y)).slice(0, 8) : [];
   const g0 = POS_GROUPS.find(([k]) => k === grp)?.[1];
   const val = (p) => sort === "rank" ? -csRank(p) : sort === "grade" ? GRADE_ORDER[p.combGrade] || 0 : (() => { const t = COMBINE_TESTS.find((x) => x.k === sort); return t ? (t.lowGood ? -p.combine[t.k] : +p.combine[t.k]) : 0; })();
   const rows = all.filter((p) => inGroup(p, g0) && (!mine || isNeed(p))).sort((x, y) => val(y) - val(x));
@@ -421,7 +424,7 @@ export function CombineView({ g, buzz }) {
         <div style={{ ...panel, border: "1px solid #7c3aed" }}>
           <div style={{ ...head, color: "#c4b5fd" }}>COMBINE WEEK · USE THESE BEFORE YOU LEAVE</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10 }}>
-            {[["🎤", sc.interviewsLeft || 0, "Interviews", "A prospect's work ethic, which tends to go with how fast he develops."], ["🏋️", sc.workoutsLeft || 0, "Private workouts", `A full workup for free: exact ratings and (from a major scout) his development trait. ${PRIVATE_WORKOUTS} a year.`], ["🔎", sc.pts || 0, "Scouting points", "Reports and workups, same as always. They expire when next season starts."]].map(([ic, v, l, d]) => (
+            {[["🎤", sc.interviewsLeft || 0, "Interviews", "A sit-down: work ethic, football IQ, leadership and coachability graded, what stood out, and any red flags. Work ethic tends to go with how fast he develops."], ["🏋️", sc.workoutsLeft || 0, "Private workouts", `A full workup for free: exact ratings and (from a major scout) his development trait. ${PRIVATE_WORKOUTS} a year.`], ["🔎", sc.pts || 0, "Scouting points", "Reports and workups, same as always. They expire when next season starts."]].map(([ic, v, l, d]) => (
               <div key={l} style={{ background: C.bg, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "8px 10px" }}>
                 <div style={{ fontSize: 22, fontWeight: 900, color: v ? "#e9d5ff" : C.mt }}>{ic} {v} <span style={{ fontSize: 14, fontWeight: 800 }}>{l}</span></div>
                 <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.4 }}>{d}</div>
@@ -436,6 +439,23 @@ export function CombineView({ g, buzz }) {
           <div style={panel}><div style={{ ...head, color: C.rd }}>📉 STOCK DOWN · early names who tested poorly</div>{down.map((p) => <Mover key={p.id} p={p} />)}{!down.length && <div style={muted}>The early names all held up.</div>}</div>
         </div>
       )}
+      <div style={panel}>
+        <div style={head}>FIND A PROSPECT</div>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or college…" aria-label="Search prospects" style={{ width: "100%", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "9px 12px", fontSize: 15 }} />
+        {q.trim().length >= 2 && !hits.length && <div style={{ ...muted, marginTop: 6 }}>Nobody in this class matches.</div>}
+        {hits.map((p) => {
+          const pre = p.cons?.mid, fin = p.cons?.final, mv = pre && fin ? pre - fin : 0;
+          return (
+            <div key={p.id} onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 2px", borderTop: `1px solid ${C.bd}66`, cursor: "pointer", flexWrap: "wrap" }}>
+              <Bdg pos={posTag(p)} />
+              <span style={{ fontWeight: 800, fontSize: 15 }}>{p.name}</span>
+              <span style={{ fontSize: 13, color: C.mt, flex: 1, minWidth: 100 }}>{p.college}{p.combine ? "" : " · pro day"}</span>
+              {p.combGrade && <GradeChip g={p.combGrade} small />}
+              <span style={{ fontSize: 13, fontWeight: 800, color: mv > 0 ? C.gn : mv < 0 ? C.rd : C.mt, minWidth: 110, textAlign: "right" }}>{pre && fin ? `#${pre} → #${fin} ${mv > 0 ? `▲${mv}` : mv < 0 ? `▼${-mv}` : "="}` : `#${csRank(p)}`}</span>
+            </div>
+          );
+        })}
+      </div>
       <BuzzFeed g={g} buzz={buzz} limit={4} />
       <div style={panel}>
         <div style={head}>COMBINE RESULTS<Right>{rows.length} of {COMBINE_INVITES} invitees</Right></div>
@@ -464,7 +484,7 @@ export function CombineView({ g, buzz }) {
                     <td style={td}><GradeChip g={p.combGrade} small /></td>
                     <td style={{ ...td, display: "flex", gap: 4, justifyContent: "flex-end" }}>
                       {live && read.lvl < 2 && <Btn onClick={() => a.workout(p)} disabled={!(sc.workoutsLeft > 0)} bg="#0c4a6e" c="#7dd3fc" style={{ fontSize: 12, padding: "4px 8px" }} title="Free full workup">🏋️ Workout</Btn>}
-                      {p.scout?.intv ? <span title={p.scout.intv.note} style={{ fontSize: 12 }}>Ethic <GradeChip g={p.scout.intv.grade} small /></span>
+                      {p.scout?.intv ? <span title={[...(p.scout.intv.good || []), ...(p.scout.intv.bad || [])].join(" ") || p.scout.intv.note} style={{ fontSize: 12 }}>{p.scout.intv.verdict ? "Interview" : "Ethic"} <GradeChip g={p.scout.intv.overall || p.scout.intv.grade} small /></span>
                         : live ? <Btn onClick={() => a.interview(p)} disabled={!(sc.interviewsLeft > 0)} bg="#7c3aed33" c="#c4b5fd" style={{ fontSize: 12, padding: "4px 8px" }}>🎤 Interview</Btn>
                         : <span style={{ color: "#475569" }}>—</span>}
                     </td>
@@ -850,6 +870,8 @@ export function ScoutingHQ({ g, go }) {
 export function ScoutingPage({ g }) {
   const hasCombine = (g.dc[g.yr] || []).some((p) => tested(p) && p.combine);
   const [view, setView] = useState(g.sp === "combine" ? "combine" : "hq");
+  // combine week opens on the combine results (interviews, workouts) whenever you arrive
+  useEffect(() => { if (g.sp === "combine") setView("combine"); }, [g.sp]);
   const views = [["hq", "🏠 Scouting HQ"], ["board", "Big Board"], ["list", `Your list (${listIds(g.scouting, g.yr).length})`], ["mock", "Mock Draft"], hasCombine && ["combine", "Combine"], ["regions", "Regions"], ["scouts", "Scouts"]].filter(Boolean);
   const v = views.some(([k]) => k === view) ? view : "hq";
   const myPicks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !(g.draftLog || []).some((d) => d.id === pk.id)).sort((a, b) => a.overall - b.overall);
@@ -986,11 +1008,22 @@ export function ProspectProfile({ g, p }) {
           </div>
           {p.combine && p.proDay && <div style={{ ...muted, fontSize: 10, marginTop: 3 }}>Bars show where he ranked among Combine invitees at his position.</div>}
           {s.intv ? (
-            <div style={{ marginTop: 6, fontSize: 12 }}>Your interview: work ethic <GradeChip g={s.intv.grade} small /> <i style={{ color: "#94a3b8" }}>"{s.intv.note}"</i>{s.intv.flag && <div style={{ color: "#fca5a5", fontWeight: 800, marginTop: 4 }}>{s.intv.flag}</div>}</div>
+            <div style={{ marginTop: 8, background: "#7c3aed14", border: "1px solid #7c3aed44", borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                <b style={{ color: "#c4b5fd", letterSpacing: 1, fontSize: 12 }}>YOUR INTERVIEW</b>
+                {s.intv.verdict && <b style={{ color: { Impressive: C.gn, Solid: "#7dd3fc", Mixed: C.gd, Concerning: C.rd }[s.intv.verdict] }}>{s.intv.verdict}</b>}
+                {s.intv.overall && <GradeChip g={s.intv.overall} small />}
+              </div>
+              {s.intv.traits ? <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>{s.intv.traits.map((t) => <span key={t.label} style={{ color: "#cbd5e1" }}>{t.label} <GradeChip g={t.grade} small /></span>)}</div>
+                : <div>Work ethic <GradeChip g={s.intv.grade} small /> <i style={{ color: "#94a3b8" }}>"{s.intv.note}"</i></div>}
+              {(s.intv.good || []).map((x, i) => <div key={`g${i}`} style={{ color: "#86efac" }}>+ {x}</div>)}
+              {(s.intv.bad || []).map((x, i) => <div key={`b${i}`} style={{ color: "#fca5a5" }}>− {x}</div>)}
+              {s.intv.flag && <div style={{ color: "#fca5a5", fontWeight: 800, marginTop: 4 }}>{s.intv.flag}</div>}
+            </div>
           ) : g.sp === "combine" && p.combine && p.draftYear === g.yr && (
             <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
               <Btn onClick={() => a.interview(p)} disabled={!(g.scouting?.interviewsLeft > 0)} bg="#7c3aed33" c="#c4b5fd" style={{ fontSize: 11, padding: "2px 8px" }}>Interview him</Btn>
-              <span style={muted}>{g.scouting?.interviewsLeft || 0} left. Work ethic tends to go with how fast a player develops.</span>
+              <span style={muted}>{g.scouting?.interviewsLeft || 0} left. Grades his work ethic, football IQ, leadership and coachability, and flags anything that worries you. Work ethic tends to go with how fast he develops.</span>
             </div>
           )}
         </div>

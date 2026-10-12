@@ -80,7 +80,7 @@ import { SaveSlots, CapGlossary, SLOT_COUNT, readSlotMeta, metaKey, slotMetaFor 
 import { runFocusWeeks, seasonSnapShare, seasonGrowth, traitGrowthScale, seasonAwards, awardGrowth, yearsPastPrime, primeEnd, eliteTaper } from "./development.js";
 import { teamSnaps, positionSnaps, snapBudget, snapOrdered } from "./snaps.js";
 import { nflSchedule, divisionPlaces } from "./schedule.js";
-import { newScouting, refreshScoutPool, creditWeeks, startScoutingYear, loadScouting, rankClass, csRank, combineInvites, runCombine, aiDraftScore, pickGrade, pickTake, classGrade, autoPickFrom, listedPick, devOf, devGrowth } from "./scouting.js";
+import { RTRIP_COST, newScouting, refreshScoutPool, creditWeeks, startScoutingYear, loadScouting, rankClass, csRank, combineInvites, runCombine, aiDraftScore, pickGrade, pickTake, classGrade, autoPickFrom, listedPick, devOf, devGrowth } from "./scouting.js";
 import { ScoutingPage, Board, YourList, BuzzFeed, DraftGrades, ProspectModal, DevChip, potText, ScoutPtsBadge, PickTracker, DraftQueue, DraftReveal, MockDraft } from "./ScoutingUI.jsx";
 import {
   R, Rf, pick, cl, uid, G, htS, fm, POS, TEAMS,
@@ -784,7 +784,7 @@ if(_dlDone)setDeadline(_dlDone);if(_trLog.length){setDraftPicks(_pk);setLog(l=>[
 const _cmb=runCombine(scouting||newScouting(yr,genFace),cls);ndc[yr]=cls;setScouting(_cmb.sc);setDraftEvents(_cmb.events);setDraftBuzz(_cmb.buzz);setLog(l=>[`📋 COMBINE: ${cls.filter(p=>p.combine).length} prospects tested. Final consensus rankings are out; you have ${_cmb.interviews} interview slots and +${_cmb.bonus} scouting pts before the draft.`,..._cmb.events.map(e=>`📋 DRAFT NEWS: ${e.name} — ${e.label}`),...l.slice(0,149)]);
 // v27 I50: Pre-draft rumor mill — 3 AI team position buzz cards
 {const _posNeeds=['QB','WR','OL','TE','RB','CB','LB','DL','S','K'];const _aiTeamsRumors=teams.filter(t=>t.id!==ui).sort(()=>Math.random()-.5).slice(0,3).map(t=>{const _np=_posNeeds[R(0,_posNeeds.length-1)];const _phrases=['expected to target','strongly linked to','scouting multiple','trading up for a','building war room around'];return{tid:t.id,city:t.city,ab:t.ab,pos:_np,phrase:_phrases[R(0,_phrases.length-1)]};});setDraftRumors(_aiTeamsRumors);}
-setDc(ndc);setSp("combine");setTab("draft");sm("Combine complete!");};
+setDc(ndc);setSp("combine");setTab("scouting");sm("Combine complete!");};
   // Free agency opens after the Combine, before the draft (like the NFL): contracts run out,
   // AI clubs keep most of their core, and the first wave of signings happens right away.
   const startFreeAgency=()=>{backupSave(`${yr} re-sign week`);setWeekResult(null);const r=openFA(teams,ui,yr);logHistory(historyFor((r.retired||[]).map(x=>({p:x.p,t:teams[x.team]}))));const nt=r.teams;const seen=new Set(r.pool.map(p=>p.id));const pool=[...r.pool,...fa.filter(p=>!seen.has(p.id)).map(p=>({...p,cy:yr+1}))].sort((a,b)=>b.ovr-a.ovr);
@@ -1098,6 +1098,9 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     if(capSpace(ut)<0)it.push({key:'cap',icon:'💸',tone:'urgent',title:`You're $${Math.abs(capSpace(ut)).toFixed(1)}M over the cap`,sub:'Cut, trade or restructure to get under.',cta:'Contracts',onOpen:go('contracts')});
     const hold=ut.roster.filter(p=>p.holdout&&!p.holdoutStone);if(hold.length)it.push({key:'holdout',icon:'✋',tone:'action',title:`${hold.length} player${hold.length>1?'s are':' is'} holding out`,sub:hold.map(p=>p.name).slice(0,3).join(', '),cta:'Roster',onOpen:go('roster')});
     const req=ut.roster.filter(p=>p.tradeRequest);if(req.length)it.push({key:'tradeReq',icon:'📨',tone:'action',title:`${req.length} trade request${req.length>1?'s':''}`,sub:req.map(p=>p.name).slice(0,3).join(', '),cta:'Roster',onOpen:go('roster')});
+    {/* area-scout points: last chance before they stop being usable, or a pile sitting idle */const _rp=scouting?.rpts??0;const _canTrip=!["freeagency","draft"].includes(sp);
+    if(_canTrip&&sp==="resign"&&_rp>=RTRIP_COST)it.push({key:'rptsExpire',icon:'🗺️',tone:'urgent',title:`${_rp} area-scout points about to go unused`,sub:"Area scouts can't travel once free agency opens. Send them on a regional trip this week.",cta:'Regions',onOpen:go('scouting')});
+    else if(_canTrip&&_rp>=10)it.push({key:'rptsPile',icon:'🗺️',tone:'action',title:`${_rp} area-scout points to spend`,sub:`A regional trip costs ${RTRIP_COST} and reads every prospect in that region at once.`,cta:'Regions',onOpen:go('scouting')});}
     if(Object.keys(rehabChoices).length)it.push({key:'rehab',icon:'🏥',tone:'action',title:'Rehab decisions',sub:'Choose a rehab plan for your injured players.',onOpen:open('rehab')});
     if(coachNag)it.push({key:'coachNag',icon:'📋',tone:'action',title:'Your coaching staff has openings',sub:coachNag.join(', '),onOpen:open('coachNag')});
     if(sp==='resign')it.push({key:'resign',icon:'✍️',tone:'action',title:'Re-sign week',sub:'Talk to your expiring players before free agency opens.',cta:'Re-sign',onOpen:go('freeagency')});
@@ -1131,13 +1134,13 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
 </div></div>);
   if(phase==="teamSelect")return(<div style={{minHeight:"100vh",background:C.bg,fontFamily:C.f,color:C.tx,padding:24}}><h2 style={{textAlign:"center",fontSize:20,fontWeight:800,marginBottom:8}}>Choose Your Team</h2>{/* I46: Difficulty preset */}<div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 14px 0'}}>{[['Casual','casual','#22c55e','225M cap, no fires, +4SP start'],['Standard','standard','#3b82f6','Normal rules'],['Hardcore','hardcore','#ef4444','160M cap, owner fires early']].map(([lbl,key,clr,sub])=>(<div key={key} onClick={()=>setDifficulty(key)} style={{cursor:'pointer',padding:'6px 10px',borderRadius:4,border:`1px solid ${difficulty===key?clr:'#334155'}`,background:difficulty===key?clr+'22':'#0d1424',minWidth:90}}><div style={{fontSize:13,fontWeight:700,color:difficulty===key?clr:'#94a3b8'}}>{lbl}</div><div style={{fontSize:11,color:'#475569'}}>{sub}</div></div>))}</div><div style={{display:'flex',gap:6,justifyContent:'center',margin:'-4px 0 14px 0',flexWrap:'wrap'}}>{[[false,'Start at Week 1','The full 2026 season, preseason first'],[true,'Start from the current week',liveInfo?`Real results through Week ${liveInfo.through}; you take over for Week ${liveInfo.through+1}`:'Real scores and stats from the season so far']].map(([v,lbl,sub])=><div key={lbl} onClick={()=>setStartLive(v)} style={{cursor:'pointer',padding:'6px 10px',borderRadius:4,border:`1px solid ${startLive===v?'#38bdf8':'#334155'}`,background:startLive===v?'#38bdf822':'#0d1424',minWidth:200}}><div style={{fontSize:13,fontWeight:700,color:startLive===v?'#38bdf8':'#94a3b8'}}>{lbl}</div><div style={{fontSize:11,color:'#64748b'}}>{sub}</div></div>)}</div><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:6,maxWidth:900,margin:"0 auto"}}>{TEAMS.map((t,i)=><button key={i} onClick={()=>startGame(i)} style={{background:`linear-gradient(135deg,${t.clr}cc,${t.clr})`,border:`2px solid ${t.ac}33`,borderRadius:8,padding:"10px 8px",cursor:"pointer",textAlign:"left",color:"#fff",display:"flex",alignItems:"center",gap:10}}><span style={{display:"inline-flex",flexShrink:0}}><TeamLogo t={t} sz={46} glow/></span><span><div style={{fontSize:11,textTransform:"uppercase",letterSpacing:2,opacity:.7}}>{t.city}</div><div style={{fontSize:14,fontWeight:800}}>{t.name}</div><div style={{fontSize:11,color:"#ffffffbf",fontWeight:700,marginTop:2}}>{t.ab} • {t.c} {t.d}</div></span></button>)}</div></div>);
 
-  // Related screens share one tab with a row of sub-tabs: Schedule+ (schedule, standings, playoffs),
-  // Roster+ (roster, depth chart, contracts), Draft+ (scouting, draft, draft recap) and League+.
+  // Related screens share one tab with a row of sub-tabs: Schedule & Standings (schedule, standings,
+  // playoffs), Roster+ (roster, depth chart), Draft & Scouting (scouting, draft, draft recap) and League+.
   // On phones the league and player stats sit with the standings (one tap from the bottom bar).
-  const TAB_GROUPS=[{key:"roster",label:"Roster+",tabs:["depth","roster"]},{key:"schedule",label:"Schedule+",tabs:MOBILE?["standings","stats","schedule","playoffs"]:["schedule","standings","playoffs"]},{key:"scouting",label:"Draft+",tabs:["scouting","draft","draftrecap"]},{key:"hub",label:"League+",tabs:MOBILE?["hub","records","history","trophies"]:["hub","stats","records","history","trophies"]}];
+  const TAB_GROUPS=[{key:"roster",label:"Roster+",tabs:["depth","roster"]},{key:"schedule",label:"Schedule & Standings",tabs:MOBILE?["standings","schedule","playoffs"]:["schedule","standings","playoffs"]},{key:"scouting",label:"Draft & Scouting",tabs:["scouting","draft","draftrecap"]},{key:"hub",label:"League+",tabs:["hub","records","history"]}];
   const groupOf=t=>TAB_GROUPS.find(g=>g.tabs.includes(t));
   const groupEntry=g=>g.key==="scouting"&&sp==="draft"?"draft":g.key==="roster"?"depth":g.key;
-  const TABS=["dashboard","roster","contracts","schedule","scouting","trade","freeagency","coaching","hub","log","saves","gameinfo"];
+  const TABS=["dashboard","roster","contracts","schedule","scouting","trade","freeagency","coaching","stats","hub","trophies","log","saves","gameinfo"];
   const TAB_LABEL={dashboard:"Home",roster:"Roster",depth:"Depth Chart",schedule:"Schedule",standings:"Standings",stats:"Stats",scouting:"Scouting",draft:"Draft",trade:"Trade",freeagency:"Free Agency",coaching:"Coaching",playoffs:"Playoffs",hub:"League",trophies:"Legacy Hall",records:"Record Book",history:"League History",draftrecap:"Draft Recap",contracts:"Front Office",log:"Timeline",saves:"Saves",gameinfo:"Game Updates",deadline:"⏰ Deadline Day",livesim:"⚡ Live Game",god:"God Mode",dev:"Balance"};
   if(liveSim)TABS.push("livesim");if(dlShown)TABS.unshift("deadline");
   if(godMode)TABS.push("god","dev");
@@ -1317,39 +1320,36 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       <button onClick={()=>acceptTrade(trProp)} style={{background:"#166534",color:"#22c55e",border:"1px solid #22c55e",borderRadius:3,padding:"2px 8px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Accept</button>
       <button onClick={()=>setTrProp(null)} style={{background:"#1e293b",color:"#64748b",border:"1px solid #334155",borderRadius:3,padding:"2px 8px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Decline</button>
     </div>}
-    {!MOBILE&&tab!=="dashboard"&&<div data-tour="nav" style={{display:"flex",flexWrap:"nowrap",background:"#0f172a",borderBottom:`1px solid ${C.bd}`,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>{TABS.map(t=>{const gp=groupOf(t);const on=gp?gp.tabs.includes(tab):tab===t;return<button key={t} onClick={()=>setTab(gp?groupEntry(gp):t)} style={{background:on?"#1e293b":"transparent",color:on?"#fff":"#94a3b8",border:"none",borderBottom:on?`3px solid ${teamAccent}`:"3px solid transparent",padding:isMobile?"9px 11px":"10px 14px",fontSize:isMobile?13:14,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>{gp?gp.label:TAB_LABEL[t]||t}</button>;})}</div>}
+    {!MOBILE&&tab!=="dashboard"&&<div data-tour="nav" style={{display:"flex",flexWrap:"nowrap",background:"#0f172a",borderBottom:`1px solid ${C.bd}`,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>{TABS.map(t=>{const gp=groupOf(t);const on=gp?gp.tabs.includes(tab):tab===t;return<button key={t} onClick={()=>setTab(gp?groupEntry(gp):t)} style={{background:on?"#1e293b":"transparent",color:on?"#fff":"#94a3b8",border:"none",borderBottom:on?`3px solid ${teamAccent}`:"3px solid transparent",padding:isMobile?"9px 11px":"10px 11px",fontSize:isMobile?13:14,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>{gp?gp.label:TAB_LABEL[t]||t}</button>;})}</div>}
     {!MOBILE&&(()=>{
-      const stageList=[{k:'preseason',lbl:'PRE'},{k:'reg',lbl:'SEASON',weeks:18},{k:'playoffs',lbl:'PLAYOFFS'},{k:'combine',lbl:'COMBINE'},{k:'resign',lbl:'RE-SIGN'},{k:'freeagency',lbl:'FREE AGENCY'},{k:'draft',lbl:'DRAFT'}];
+      // The league year at a glance: the stages as labelled pills, and inside the season a box per
+      // week with your result (W/L/T, a bye) or the week number, the week up next ringed.
+      const stageList=[{k:'preseason',lbl:'Preseason'},{k:'reg',lbl:'Season',weeks:18},{k:'playoffs',lbl:'Playoffs'},{k:'combine',lbl:'Combine'},{k:'resign',lbl:'Re-sign'},{k:'freeagency',lbl:'Free agency'},{k:'draft',lbl:'Draft'}];
       const curIdx=sp==='preseason'?0:sp==='regular'?1:sp==='playoffs'?2:sp==='combine'?3:sp==='resign'?4:sp==='freeagency'?5:6;
       const byeWk=byeMap[ui];
       const wkBoxes=[];
       for(let wi=1;wi<=18;wi++){
-        // Each week shows your result: ✓ win, ✗ loss, T tie, B bye.
         const g=sched.find(x=>x.wk===wi&&x.played&&(x.h===ui||x.a===ui));
         const us=g?(g.h===ui?g.hs:g.as):0,them=g?(g.h===ui?g.as:g.hs):0;
         const res=g?(us>them?"W":us<them?"L":"T"):null;
         const isCur=sp==="regular"&&wk+1===wi;
         const isBye=byeWk===wi&&!g;
-        const byeDone=isBye&&(sp!=="regular"&&sp!=="preseason"||wk>=wi);
-        const bg=res==="W"?C.gn:res==="L"?C.rd:res==="T"?"#64748b":isBye?"#7c3aed44":isCur?"#22c55e33":"#1e293b";
-        const bdr=res==="W"?C.gn:res==="L"?C.rd:res==="T"?"#94a3b8":isBye?"#7c3aed":isCur?C.gn:C.bd;
-        const lbl=res==="W"?"✓":res==="L"?"✗":res==="T"?"T":isBye?"B":isCur?String(wi):"";
-        const tip=g?`Week ${wi}: ${res} ${us}-${them} ${g.h===ui?"vs":"@"} ${teams[g.h===ui?g.a:g.h]?.ab||""}`:isBye?`Week ${wi}: bye`:`Week ${wi}`;
-        wkBoxes.push(<div key={wi} title={tip} style={{width:12,height:12,borderRadius:2,background:bg,border:"1px solid "+bdr,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:900,color:isBye&&!byeDone?"#a78bfa":"#fff"}}>{lbl}</div>);
+        const bg=res==="W"?"#15803d":res==="L"?"#b91c1c":res==="T"?"#475569":isBye?"#4c1d95":"#111827";
+        const fg=res||isBye?"#fff":isCur?"#e2e8f0":"#64748b";
+        const tip=g?`Week ${wi}: ${res==="W"?"won":res==="L"?"lost":"tied"} ${us}-${them} ${g.h===ui?"vs":"@"} ${teams[g.h===ui?g.a:g.h]?.city||""} ${teams[g.h===ui?g.a:g.h]?.name||""}`:isBye?`Week ${wi}: bye`:`Week ${wi}${isCur?" (next)":""}`;
+        wkBoxes.push(<div key={wi} title={tip} style={{width:isBye?30:22,height:22,borderRadius:5,background:bg,border:`1px solid ${isCur?C.gn:res||isBye?"transparent":"#1e293b"}`,boxShadow:isCur?`0 0 0 2px ${C.gn}55`:undefined,display:"flex",alignItems:"center",justifyContent:"center",fontSize:res||isBye?11:10,fontWeight:900,color:fg,flexShrink:0}}>{res||(isBye?"BYE":wi)}</div>);
       }
-      return(<div data-tour="phases" style={{background:"#080f1e",borderBottom:"1px solid #1e293b",padding:"3px 12px",display:"flex",alignItems:"center",gap:0,overflowX:"auto"}}>
+      const rec=sp==="regular"||sp==="playoffs"?` · ${ut?.w||0}-${ut?.l||0}${ut?.t?`-${ut.t}`:""}`:"";
+      return(<div data-tour="phases" style={{background:"#080f1e",borderBottom:"1px solid #1e293b",padding:"6px 12px",display:"flex",alignItems:"center",gap:6,overflowX:"auto"}}>
         {stageList.map((s,si)=>{
-          const active=si===curIdx;const done=si<curIdx;const dotC=active?C.gn:done?"#334155":C.bd;
-          const lc=active?C.gn:done?C.mt:"#475569";
-          return(<div key={s.k} style={{display:"flex",alignItems:"flex-end",gap:0}}>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1,padding:s.weeks?0:"0 3px"}}>
-              {s.weeks
-                ?<div style={{display:"flex",gap:1,alignItems:"center",paddingBottom:1}}>{wkBoxes}</div>
-                :<div style={{width:32,height:12,borderRadius:2,background:active?"#22c55e33":done?"#1e293b":"#080f1e",border:"1px solid "+(active||done?dotC:"#334155"),display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:6,height:6,borderRadius:"50%",background:active||done?dotC:"#334155"}}/></div>}
-              <span style={{fontSize:9,fontWeight:700,color:lc,letterSpacing:.5,whiteSpace:"nowrap"}}>{s.lbl}</span>
-            </div>
-            {si<stageList.length-1&&<div style={{width:6,height:1,background:done?C.gn:C.bd,marginBottom:8,flexShrink:0}}/>}
-          </div>);
+          const active=si===curIdx,done=si<curIdx;
+          const pill=(label)=><span style={{fontSize:12,fontWeight:800,letterSpacing:.4,whiteSpace:"nowrap",padding:"4px 10px",borderRadius:999,background:active?`${C.gn}22`:"transparent",border:`1px solid ${active?C.gn:done?"#334155":"#1e293b"}`,color:active?C.gn:done?"#94a3b8":"#64748b"}}>{done?"✓ ":""}{label}</span>;
+          return(<React.Fragment key={s.k}>
+            {si>0&&<span style={{color:"#334155",fontSize:14,flexShrink:0}}>›</span>}
+            {s.weeks
+              ?<div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>{pill(`${yr} season${rec}`)}<div style={{display:"flex",gap:3}}>{wkBoxes}</div></div>
+              :<div style={{flexShrink:0}}>{pill(s.lbl)}</div>}
+          </React.Fragment>);
         })}
       </div>);
     })()}
@@ -1365,7 +1365,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       {(()=>{const go=(t,sub)=>{setTab(t);if(sub)setRosterView(sub);};
         const _ng=sp==="regular"?sched.find(g=>g.wk===wk+1&&!g.played&&(g.h===ui||g.a===ui)):null;
         const first={preseason:{label:"Training Camp",t:"roster",sub:"Camp work and mini games to improve your roster before the season",onClick:()=>go("roster","camp")},regular:{label:"Schedule",t:"schedule",sub:"Your games, this week's game plan and the playoff picture",onClick:()=>go("schedule")},playoffs:{label:"Playoff Bracket",t:"playoffs",sub:"The road to the Super Bowl",onClick:()=>go("playoffs")},combine:{label:"Scouting",t:"scouting",sub:"Combine results, interviews and your big board",onClick:()=>go("scouting")},resign:{label:"Re-sign Players",t:"freeagency",sub:"Only you can talk to your expiring players this week",onClick:()=>go("freeagency")},freeagency:{label:"Free Agency",t:"freeagency",sub:"Negotiate with the players on the market",onClick:()=>go("freeagency")},draft:{label:"NFL Draft",t:"draft",sub:"Make your picks",onClick:()=>go("draft")}}[sp];
-        const rest=[...(dlShown?[["⏰ Trade Deadline Day","deadline"]]:[]),["Schedule+","schedule"],["Roster+","roster"],["Front Office","contracts"],["Draft+",sp==="draft"?"draft":"scouting"],["Trades","trade"],["Free Agency","freeagency"],["Manage Staff","coaching"],["League+","hub"],["Legacy Hall","trophies"],["Timeline","log"],["Saves & Cap 101","saves"],["Game Updates","gameinfo"],...(liveSim&&!liveDone?[["⚡ Live Game","livesim"]]:[])].map(([label,t])=>({label,t,onClick:()=>go(t==="roster"?"depth":t,t==="roster"?"players":null)}));
+        const rest=[...(dlShown?[["⏰ Trade Deadline Day","deadline"]]:[]),["Schedule & Standings","schedule"],["Roster+","roster"],["Front Office","contracts"],["Draft & Scouting",sp==="draft"?"draft":"scouting"],["Trades","trade"],["Free Agency","freeagency"],["Manage Staff","coaching"],["Stats","stats"],["League+","hub"],["Legacy Hall","trophies"],["Timeline","log"],["Saves & Cap 101","saves"],["Game Updates","gameinfo"],...(liveSim&&!liveDone?[["⚡ Live Game","livesim"]]:[])].map(([label,t])=>({label,t,onClick:()=>go(t==="roster"?"depth":t,t==="roster"?"players":null)}));
         const menu=[...(first?[first]:[]),...rest.filter(m=>m.label!==first?.label&&!(first&&first.t===m.t&&m.t!=="roster"))];
         const primary=[];
         if(liveSim&&!liveDone)primary.push({label:"● Back to the live game",onClick:()=>setTab("livesim")});

@@ -556,4 +556,12 @@ export const PATCH_NOTES = [
     "New franchises open with an offer of a quick tour: skip it, or click through 14 short steps that show where everything is (the franchise boxes, moving time forward, the league year, the depth chart, Front Office, coaching, trades, free agency, scouting and the draft, the schedule and your Legacy Hall). Leave any time; replay it from the Menu (More on a phone).",
     "Home: the Team Snapshot is gone. Development Focus now lives under the stories and injury report on the right, so it's always on Home, and the inbox button at the bottom of the menu is gone (Needs Attention opens it).",
   ] },
+  { v: "2.9", date: "2026-10-12", title: "Navigation, the Season Tracker and Combine Week", notes: [
+    "The top bar has Stats and Legacy Hall as their own tabs (out of League+), and Schedule+ and Draft+ are now Schedule & Standings and Draft & Scouting. The Home menu and the phone's More sheet match.",
+    "The season tracker under the top bar is easier to read: every week is a box with its number, W or L once it's played and BYE for your week off, the next game is ringed, your record sits next to the season, and the stages read Preseason › Season › Playoffs › Combine › Re-sign › Free agency › Draft.",
+    "Combine week: the → Combine button now takes you to the Combine (interviews, private workouts, results), not the draft class, and there's a search box to pull up any prospect and see how far the week moved him on the board.",
+    "Interviews are worth the slot: each grades work ethic, football IQ, leadership and coachability, lists what stood out (good and bad) on his profile, flags character concerns, and a toast sums up the verdict.",
+    "Needs Attention flags area-scout points that are about to go unused (re-sign week is the last chance before free agency) and a pile of 10 or more waiting to be spent.",
+    "Injuries that can't heal before the Super Bowl say \"out for the season\" instead of a week that doesn't exist.",
+  ] },
 ];

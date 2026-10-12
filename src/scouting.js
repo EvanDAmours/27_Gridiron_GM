@@ -795,6 +795,20 @@ const INTERVIEW_NOTES = {
   low: ["Coaches question his consistency in practice.", "Needs to grow up away from the facility.", "Struggled on the whiteboard and didn't seem bothered.", "The talent is there; the habits aren't yet."],
 };
 
+// What stood out in the room, good and bad, by trait.
+const INTERVIEW_GOOD = {
+  ethic: ["First one in the building at school and the last one out.", "Talks about his offseason routine like it's a hobby.", "Already working with a trainer on his weakest drill."],
+  iq: ["Drew up his college playbook from memory on the whiteboard.", "Walked us through three coverages he saw on film without notes.", "Picked up our terminology in one session."],
+  lead: ["Two-time team captain; teammates follow him.", "Took over the group drill and had everyone lined up.", "Coaches say the locker room was his."],
+  coach: ["Took a correction mid-drill and fixed it on the next rep.", "Asked what he could do better before we told him.", "Owned every mistake we showed him on tape."],
+};
+const INTERVIEW_BAD = {
+  ethic: ["Admitted he coasted through his first two seasons.", "Vague about his offseason routine.", "Coaches question his consistency in practice."],
+  iq: ["Struggled on the whiteboard once the questions got specific.", "Mixed up his own team's terminology.", "Didn't recognize a basic coverage on film."],
+  lead: ["Quiet in the room; let others do the talking.", "Blamed teammates for a bad loss.", "Not someone the room seems to follow yet."],
+  coach: ["Got defensive when we showed him his mistakes.", "Pushed back on a coaching point twice.", "Wants to do it his way."],
+};
+
 // A sit-down at the Combine: a read on his work ethic, which tends to go with how fast he develops.
 // Private workouts: Combine week only, a handful of prospects brought in for a day. Each one is a
 // full workup (exact ratings, and from a major scout his development trait) without the points.
@@ -814,8 +828,25 @@ export function interviewProspect(sc, sp, p) {
   const r = stream(`${p.id}|intv`);
   const char = p.bust?.kind === "character";
   const v = ({ generational: 94, superstar: 90, star: 85, normal: 77, late: 73 }[devOf(p)] ?? 77) + r.gauss(0, 3.5) - (char ? 14 : 0);
-  const intv = { grade: potGrade(v), note: r.pick(INTERVIEW_NOTES[v >= 85 ? "high" : v >= 77 ? "mid" : "low"]), ...(char ? { flag: `🚩 Red flag from the interview: ${p.bust.why}.` } : {}) };
-  return { ok: true, msg: `Interview with ${p.name}: work ethic ${intv.grade}.`, sc: { ...sc, interviewsLeft: sc.interviewsLeft - 1 }, p: { ...p, scout: { ...(p.scout || { lvl: 0 }), intv } } };
+  // Four reads from the room. Work ethic tracks how fast he'll develop; the football IQ read leans on
+  // how good he already is; leadership and coachability wander more, and a character case drags them.
+  const smart = ["QB", "LB", "S", "C"].includes(p.pos) ? 3 : 0;
+  const traits = [
+    { k: "ethic", label: "Work ethic", v },
+    { k: "iq", label: "Football IQ", v: 70 + ((p.trueOvr ?? p.ovr ?? 70) - 60) * 0.45 + smart + r.gauss(0, 5) },
+    { k: "lead", label: "Leadership", v: v - 3 + r.gauss(0, 6) - (char ? 6 : 0) },
+    { k: "coach", label: "Coachability", v: v + r.gauss(0, 5) - (char ? 8 : 0) },
+  ].map((t) => ({ ...t, grade: potGrade(t.v) }));
+  const sorted = [...traits].sort((x, y) => y.v - x.v);
+  const good = sorted.filter((t) => t.v >= 82).slice(0, 2).map((t) => r.pick(INTERVIEW_GOOD[t.k]));
+  const bad = sorted.filter((t) => t.v < 74).slice(-2).map((t) => r.pick(INTERVIEW_BAD[t.k]));
+  if (!good.length && !bad.length) good.push(r.pick(INTERVIEW_NOTES.mid));
+  const avg = traits.reduce((s2, t) => s2 + t.v, 0) / traits.length;
+  const verdict = char || avg < 70 ? "Concerning" : avg >= 86 ? "Impressive" : avg >= 78 ? "Solid" : "Mixed";
+  const intv = { grade: potGrade(v), overall: potGrade(avg), verdict, traits: traits.map(({ label, grade }) => ({ label, grade })), good, bad, note: r.pick(INTERVIEW_NOTES[v >= 85 ? "high" : v >= 77 ? "mid" : "low"]), ...(char ? { flag: `🚩 Red flag from the interview: ${p.bust.why}.` } : {}) };
+  const icon = { Impressive: "🌟", Solid: "👍", Mixed: "🤔", Concerning: "⚠️" }[verdict];
+  const msg = `${icon} Interview with ${p.name}: ${verdict.toLowerCase()} (${intv.overall}). ${good[0] || bad[0] || ""}${char ? " Red flag raised." : ""} Full notes are on his profile.`;
+  return { ok: true, msg, sc: { ...sc, interviewsLeft: sc.interviewsLeft - 1 }, p: { ...p, scout: { ...(p.scout || { lvl: 0 }), intv } } };
 }
 
 // ---------- Draft day ----------

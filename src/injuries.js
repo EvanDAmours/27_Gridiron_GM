@@ -2,7 +2,15 @@
 // Doubtful players miss the next game and are back the week after; Out players miss longer;
 // injured reserve shows when a player can come back.
 // wk: games played so far this season (the next game is wk + 1).
-export function injStatus(p, { ir = false, wk = 0 } = {}) {
+// The last week anyone plays: Week 18, then four playoff rounds (the Super Bowl is week 22). An
+// injury that heals after that is season-ending: the report says so instead of "back wk 25".
+export const SEASON_LAST_WK = 22;
+const seasonEnding = (st) => (st && st.back > SEASON_LAST_WK ? { ...st, back: null, seasonOver: true, label: `${st.label}: out for the season`, note: `${st.note} · out for the season` } : st);
+
+export function injStatus(p, opts = {}) {
+  return seasonEnding(injStatus0(p, opts));
+}
+function injStatus0(p, { ir = false, wk = 0 } = {}) {
   if (!p) return null;
   const back = (n) => wk + n + 1;
   if (ir) {
