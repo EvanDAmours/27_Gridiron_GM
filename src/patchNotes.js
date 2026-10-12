@@ -621,4 +621,8 @@ export const PATCH_NOTES = [
     "A player who plays it out bets on himself: he can gain a point or two of OVR during the season, and his asking price in re-sign week follows the year he has. Make no call by Week 4 and he plays it out.",
     "A star (85+) playing out his deal on a losing team can get restless and ask for a trade.",
   ] },
+  { v: "2.22", date: "2026-10-12", title: "Real Injury Reports", notes: [
+    "Starting from the current week with injuries on now brings in every team's real injury report: Questionable players play hurt, Doubtful and Out players miss their games, injured reserve keeps a player out until his expected return date (or the season), and suspended players sit.",
+    "The report is refreshed with the real results every Monday and Tuesday, so a league started any week reflects who's actually hurt.",
+  ] },
 ];

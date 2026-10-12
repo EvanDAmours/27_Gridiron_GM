@@ -4,7 +4,10 @@ Usage: python3 scripts/fetch-nfl-results.py [YEAR]   (default 2026; re-run any t
 Writes src/data/live<YEAR>.json:
   season, updated (UTC ISO), throughWeek (last week whose games are ALL final),
   games: [{wk,h,a,hs,as,ot}] for FINAL games only (in-progress / scheduled games are left out),
-  stats: {"TEAM|Player Name": {gp, ...season totals in the game's p.ss keys}}.
+  stats: {"TEAM|Player Name": {gp, ...season totals in the game's p.ss keys}},
+  injuries: [{team, name, pos, status, type, ret, note}] from ESPN's league-wide injury report
+    (everyone not listed Active: Questionable, Doubtful, Out, Injured Reserve, Suspension...;
+    ret: ESPN's expected return date YYYY-MM-DD when it has one).
 Team abbreviations use the game's codes (ESPN WSH -> WAS). A player's totals are summed across
 every team he played for this season and filed under the team he played for most recently.
 """
@@ -99,6 +102,31 @@ def add_line(S, cat, keys, vals):
         S["pts"] = S.get("pts", 0) + 6 * num(row.get("kickReturnTouchdowns" if cat == "kickReturns" else "puntReturnTouchdowns"))
 
 
+INJ_URL = f"{BASE}/injuries"
+
+
+def injuries():
+    """Every team's current injury report (players listed Active are left out)."""
+    out = []
+    for t in get(INJ_URL).get("injuries", []):
+        for x in t.get("injuries", []):
+            st = x.get("status") or ""
+            if not st or st == "Active":
+                continue
+            a = x.get("athlete") or {}
+            d = x.get("details") or {}
+            out.append({
+                "team": ab((a.get("team") or {}).get("abbreviation", "")),
+                "name": a.get("displayName", ""),
+                "pos": (a.get("position") or {}).get("abbreviation", ""),
+                "status": st,
+                "type": d.get("type") or "",
+                "ret": (d.get("returnDate") or "")[:10] or None,
+                "note": (x.get("shortComment") or "")[:200],
+            })
+    return out
+
+
 def main():
     games, final_ids, through = [], [], 0
     for wk in range(1, 19):
@@ -155,10 +183,14 @@ def main():
 
     out = {"season": YEAR, "updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
            "throughWeek": through, "games": games, "stats": stats}
+    try:
+        out["injuries"] = injuries()
+    except Exception as e:  # the results still matter without the injury report
+        print(f"  injury report skipped: {e}", file=sys.stderr)
     path = f"src/data/live{YEAR}.json"
     with open(path, "w") as f:
         json.dump(out, f, separators=(",", ":"))
-    print(f"{path}: through week {through}, {len(games)} final games, {len(stats)} players")
+    print(f"{path}: through week {through}, {len(games)} final games, {len(stats)} players, {len(out.get('injuries', []))} injury report entries")
 
 
 if __name__ == "__main__":

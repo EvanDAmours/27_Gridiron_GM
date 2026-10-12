@@ -21,7 +21,7 @@ function injStatus0(p, { ir = false, wk = 0 } = {}) {
   }
   if (p.injured) {
     const n = p.injWk || 1;
-    if (n <= 1) return { tag: "D", label: "Doubtful", color: "#f97316", back: back(1), note: p.injType || "Injured" };
+    if (n <= 1 && p.injSev !== "Out") return { tag: "D", label: "Doubtful", color: "#f97316", back: back(1), note: p.injType || "Injured" };
     return { tag: "OUT", label: "Out", color: "#ef4444", back: back(n), note: p.injType || "Injured" };
   }
   if (p.hurt?.wks > 0) return { tag: "Q", label: "Questionable", color: "#eab308", back: null, pen: p.hurt.pen, note: `${p.hurt.type || "Banged up"}: playing hurt (−${p.hurt.pen} OVR)` };

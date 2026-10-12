@@ -18,9 +18,41 @@ const qbRate = (c, a, y, td, i) => {
   return +(((cl((c / a - 0.3) * 5) + cl((y / a - 3) * 0.25) + cl((td / a) * 20) + cl(2.375 - (i / a) * 25)) / 6) * 100).toFixed(1);
 };
 
+// The real injury report (with injuries on): everyone ESPN lists as Questionable plays hurt,
+// Doubtful misses the next game, Out and Injured Reserve miss until their expected return date
+// (or the season, for IR with no date), and a suspended player sits out his games.
+const DAY = 86400000;
+export function weeksUntil(ret, asOf) {
+  if (!ret) return null;
+  const d = (Date.parse(`${ret}T12:00:00Z`) - Date.parse(asOf || Date.now())) / DAY;
+  return Number.isFinite(d) ? Math.max(1, Math.ceil(d / 7)) : null;
+}
+export function applyLiveInjuries(teams, live) {
+  const list = live?.injuries || [];
+  if (!list.length) return { injured: 0, unmatched: 0 };
+  const byTeam = new Map(), byName = new Map();
+  teams.forEach((t) => (t.roster || []).forEach((p) => { byTeam.set(`${t.ab}|${key(p.name)}`, p); if (!byName.has(key(p.name))) byName.set(key(p.name), p); }));
+  let injured = 0, unmatched = 0;
+  for (const x of list) {
+    const p = byTeam.get(`${x.team}|${key(x.name)}`) || byName.get(key(x.name));
+    if (!p) { unmatched++; continue; }
+    const wks = weeksUntil(x.ret, live.updated);
+    const type = x.type && x.type !== "Suspension" ? x.type : "Injury";
+    if (x.status === "Questionable") p.hurt = { wks: 1, pen: 3, type };
+    else if (x.status === "Doubtful") Object.assign(p, { injured: true, injWk: 1, injRecWks: 1, injType: type, injSev: "Doubtful" });
+    else if (x.status === "Out") Object.assign(p, { injured: true, injWk: wks || 1, injRecWks: wks || 1, injType: type, injSev: "Out" });
+    else if (x.status === "Injured Reserve" || x.status === "Reserve-Ret") Object.assign(p, { injured: true, injWk: wks || 30, injRecWks: wks || 30, injType: x.status === "Reserve-Ret" ? "Reserve/retired" : type });
+    else if (x.status === "Suspension") Object.assign(p, { suspended: true, suspWksLeft: wks || 1 });
+    else continue;
+    injured++;
+  }
+  return { injured, unmatched };
+}
+
 // teams: the league's teams (index = team id); sched: the season's games ({wk, h, a} as team ids).
-// Changes both in place. Returns { wk: weeks completed, games, players, unmatched }.
-export function applyLiveSeason(teams, sched, live) {
+// Changes both in place. Returns { wk: weeks completed, games, players, unmatched, injured }.
+// injuries: also apply the real injury report.
+export function applyLiveSeason(teams, sched, live, { injuries = false } = {}) {
   if (!live?.games?.length) return { wk: 0, games: 0, players: 0, unmatched: 0 };
   const through = live.throughWeek || 0;
   const id = Object.fromEntries(teams.map((t, i) => [t.ab, i]));
@@ -50,5 +82,6 @@ export function applyLiveSeason(teams, sched, live) {
     if (ss.att) ss.rate = qbRate(ss.comp || 0, ss.att, ss.passYds || 0, ss.passTD || 0, ss.passInt || 0);
     p.ss = ss; players++;
   }
-  return { wk: through, games, players, unmatched };
+  const inj = injuries ? applyLiveInjuries(teams, live) : { injured: 0 };
+  return { wk: through, games, players, unmatched, injured: inj.injured };
 }
