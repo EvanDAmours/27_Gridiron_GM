@@ -22,7 +22,7 @@
 .pxm-team:first-child { padding-right: 12px; border-right: 1px solid #36566f; }
 .pxm-team:last-child { padding-left: 12px; }
 .pxm-city { color: #cbd5e1; font-size: clamp(12px, 3.5cqi, 17px); }
-.pxm-team h3 { margin: 1px 0 0; text-transform: uppercase; font-size: clamp(16px, 5.6cqi, 30px); font-weight: 900; line-height: 1.1; overflow-wrap: anywhere; }
+.pxm-team h3 { margin: 1px 0 0; text-transform: uppercase; font-size: clamp(13px, 4.6cqi, 30px); font-weight: 900; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pxm-record { margin: 4px 0 10px; font-size: clamp(12px, 3.7cqi, 17px); color: #cbd5e1; }
 .pxm-ratings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
 .pxm-rating { overflow: hidden; border: 2px solid #94a3b8; border-radius: 6px; text-align: center; }

@@ -440,4 +440,8 @@ export const PATCH_NOTES = [
     "Then the game walks you into the Trophy Room, where your brand-new Lombardi stands under a spotlight with a NEW tag.",
   ] },
   { v: "1.995", date: "2026-10-10", title: "Front-Page Trophy", notes: ["The Gazette's front-page photo after a Super Bowl win is now the Vince Lombardi Trophy itself."] },
+  { v: "1.996", date: "2026-10-12", title: "Matchup Portraits", notes: [
+    "The home screen's matchup card shows each team's highest-rated player as a large retro portrait in his team's home or road uniform, art matched to his position, with his name, position and rating underneath.",
+    "Long team names (Commanders, Buccaneers) stay on one line on phones.",
+  ] },
 ];

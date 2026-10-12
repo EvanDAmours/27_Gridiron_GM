@@ -19,7 +19,7 @@ export function spritePath(ab, pos, uniform = 'home', base = import.meta.env?.BA
   if (!teams.has(team)) return null;
   const group = spriteGroup(pos);
   if (!group) return null;
-  return `${base.replace(/\/?$/, '/')}sprites/public/sprites/${group}_${team}_${uniform === 'away' ? 'away' : 'home'}.png`;
+  return `${base.replace(/\/?$/, '/')}sprites/${group}_${team}_${uniform === 'away' ? 'away' : 'home'}.png`;
 }
 
 // Read the current roster on every render; never retain a stale featured player.
