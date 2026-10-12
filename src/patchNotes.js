@@ -510,4 +510,10 @@ export const PATCH_NOTES = [
     "The Log is now the Timeline (newest first), its record book no longer crowns you champion every year, team meetings moved to the coaching screen, Game Info is now Game Updates, and the Saves screen no longer disappears when you open it.",
     "The Gridiron Gazette's lead story reads better: the MVP's night is written out, the round names fit, and the Lombardi photo is bigger.",
   ] },
+  { v: "2.3", date: "2026-10-12", title: "Playoff Picture, Scouting HQ and a Real Combine Week", notes: [
+    "Playoff picture: during the season the Playoffs tab shows who'd be in if the season ended today, with the seeds, the bye, division leaders and wild cards, the teams in the hunt and how far back they are, and the bracket it would make.",
+    "Scouting HQ: the scouting screen opens on a front page with your scouting and area points (and what they buy), a Do This Next list (the best region to send your area scouts, and prospects at your biggest needs around your first pick who haven't been scouted, each with a button), your staff at a glance and a three-step guide. Hiring scouts has bigger, clearer buttons.",
+    "Combine week: filter the results by position or your team's needs, sort by any drill or the combine grade, and see 25 at a time. Stock Up and Stock Down show who helped and hurt himself, and new private workouts give you three free full workups, Combine week only.",
+    "Home: the header no longer repeats what the franchise boxes show (record, cap, morale); rep and the owner's style moved into the Owner & Locker Room box.",
+  ] },
 ];
