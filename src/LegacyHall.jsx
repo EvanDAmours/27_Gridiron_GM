@@ -22,18 +22,18 @@ const H = ({ children, sub }) => (
 function Banner({ team, line1, line2, year, years, gold }) {
   const bg = team.clr || "#1e3a8a", ac = team.ac || "#e5e7eb", trim = gold ? "#e8c45a" : ac;
   return (
-    <div style={{ position: "relative", flex: "0 0 auto", width: years && years.length > 9 ? 116 : 96, paddingTop: 10 }}>
+    <div style={{ position: "relative", flex: "0 0 auto", width: years && years.length > 6 ? 116 : 96, paddingTop: 10 }}>
       <div style={{ position: "absolute", top: 0, left: 10, right: 10, height: 6, borderRadius: 3, background: "linear-gradient(180deg,#e5e7eb,#6b7280)" }} />
       <div style={{ position: "absolute", top: 4, left: 46, width: 4, height: 8, background: "#9ca3af" }} />
       <div style={{ filter: "drop-shadow(0 8px 10px #000b)" }}>
         <div style={{ clipPath: "polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)", background: trim, padding: 3 }}>
-          <div style={{ clipPath: "polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)", background: `linear-gradient(100deg, ${bg} 0%, ${bg} 42%, color-mix(in srgb, ${bg} 80%, #fff) 50%, ${bg} 58%, ${bg} 100%)`, minHeight: 170, paddingBottom: years ? 46 : 0, display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 6px 0", boxSizing: "border-box", position: "relative" }}>
+          <div style={{ clipPath: "polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)", background: `linear-gradient(100deg, ${bg} 0%, ${bg} 42%, color-mix(in srgb, ${bg} 80%, #fff) 50%, ${bg} 58%, ${bg} 100%)`, minHeight: 170, display: "flex", flexDirection: "column", alignItems: "center", padding: `8px 6px ${years ? 40 : 0}px`, boxSizing: "border-box", position: "relative" }}>
             <div style={{ position: "absolute", inset: 5, border: `1px dashed ${trim}99`, clipPath: "polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)", pointerEvents: "none" }} />
             <div style={{ width: 42, height: 42, borderRadius: 21, background: "#ffffffee", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 0 2px ${trim}` }}><TeamLogo t={team} sz={34} /></div>
             <div style={{ marginTop: 8, fontSize: 9.5, fontWeight: 900, letterSpacing: 0.8, color: gold ? "#fde68a" : "#fff", textAlign: "center", lineHeight: 1.15, textShadow: "0 1px 2px #0008" }}>{line1}</div>
             <div style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.2, color: gold ? "#fde68a" : "#fff", textAlign: "center", textShadow: "0 1px 2px #0008" }}>{line2}</div>
             {years ? (
-              <div style={{ marginTop: 6, display: "grid", gridTemplateColumns: years.length > 9 ? "1fr 1fr" : "1fr", columnGap: 8, rowGap: 1, fontFamily: "Georgia, 'Times New Roman', serif", fontSize: years.length > 9 ? 12 : 15, fontWeight: 900, color: "#fff", textShadow: "0 1px 2px #0009", textAlign: "center" }}>{years.map((y) => <span key={y}>{y}</span>)}</div>
+              <div style={{ marginTop: 6, display: "grid", gridTemplateColumns: years.length > 6 ? "1fr 1fr" : "1fr", columnGap: 8, rowGap: 1, fontFamily: "Georgia, 'Times New Roman', serif", fontSize: years.length > 6 ? 13 : 15, fontWeight: 900, color: "#fff", textShadow: "0 1px 2px #0009", textAlign: "center" }}>{years.map((y) => <span key={y}>{y}</span>)}</div>
             ) : <div style={{ marginTop: 6, fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 26, fontWeight: 900, color: "#fff", textShadow: "0 2px 3px #0009" }}>{year}</div>}
             {gold && <div style={{ color: "#fde68a", fontSize: 14, marginTop: 1 }}>★</div>}
           </div>
@@ -50,7 +50,7 @@ export function Rafters({ team, sbs = [], titles = [], confs = [], divs = [] }) 
   const big = [
     ...sbs.map((s) => ({ key: `sb${s.yr}`, yr: s.yr, el: <Banner key={`sb${s.yr}`} team={team} line1={sbName(s.n ?? sbNumber(s.yr)).toUpperCase()} line2="CHAMPIONS" year={s.yr} gold /> })),
     ...titles.map(([y, k]) => ({ key: `l${y}${k}`, yr: y, el: <Banner key={`l${y}${k}`} team={team} line1={`${LG[k] || k}`} line2="CHAMPIONS" year={y} gold /> })),
-    ...confs.map(([y, k]) => ({ key: `c${y}`, yr: y, el: <Banner key={`c${y}`} team={team} line1={`${k}`} line2="CHAMPIONS" year={y} /> })),
+    ...confs.map(([y, k]) => ({ key: `c${y}`, yr: y, el: <Banner key={`c${y}`} team={team} line1={`${k}`.toUpperCase()} line2="CHAMPIONS" year={y} /> })),
   ].sort((a, b) => a.yr - b.yr || (a.key < b.key ? -1 : 1));
   const groups = {};
   for (const [y, n] of divs) (groups[n] ||= []).push(y);

@@ -234,7 +234,7 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
       <Defs />
       <style>{CSS}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
-        <TeamLogo t={team} sz={56} />
+        <span style={{ background: "#ffffffe6", borderRadius: 14, padding: 5, display: "inline-flex", flexShrink: 0 }}><TeamLogo t={team} sz={52} /></span>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontSize: 26, fontWeight: 900 }}>Legacy Hall</div>
           <div style={{ fontSize: 15, color: C.mt }}>{full} · banners, trophies, gold jackets and the Ring of Honor</div>
