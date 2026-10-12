@@ -863,6 +863,12 @@ export function moveOnList(sc, yr, pid, dir) {
 }
 
 // Who you take when the clock runs out: the top of your list, else the top of the board.
+// The top player still on your own list, or null if you haven't listed anyone available.
+export function listedPick(sc, yr, cls) {
+  const avail = new Map(cls.map((p) => [p.id, p]));
+  for (const id of listIds(sc, yr)) if (avail.has(id)) return avail.get(id);
+  return null;
+}
 export function autoPickFrom(sc, yr, cls) {
   const avail = new Map(cls.map((p) => [p.id, p]));
   for (const id of listIds(sc, yr)) if (avail.has(id)) return avail.get(id);

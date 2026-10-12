@@ -16,6 +16,7 @@ import oroyArt from "./assets/oroy.webp";
 // The real trophies, as artwork: MVP, Offensive and Defensive Player of the Year (the NFL Honors
 // trophy) and the Super Bowl MVP football.
 const TROPHY_ART = { mvp: mvpArt, opoy: opoyArt, dpoy: dpoyArt, sbmvp: sbmvpArt, oroy: oroyArt };
+import { TEAM_HISTORY } from "./data/teamHistory.js";
 import { Rafters, GoldJackets, RingOfHonor, RecordsWall } from "./LegacyHall.jsx";
 
 const AWARDS = [["mvp", "MVP", "Most Valuable Player"], ["opoy", "OPOY", "Offensive Player of the Year"], ["dpoy", "DPOY", "Defensive Player of the Year"], ["oroy", "OROY", "Offensive Rookie of the Year"], ["droy", "DROY", "Defensive Rookie of the Year"], ["sbmvp", "SB MVP", "Super Bowl MVP"]];
@@ -247,7 +248,15 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
           ))}
         </div>
       </div>
-      <Rafters team={team} sbs={[...SUPER_BOWLS.filter(([, , ab]) => ab === team.ab).map(([n, season]) => ({ yr: season, n })), ...champs.filter((c) => (c.ti != null ? c.ti === ui : c.t === full)).map((c) => ({ yr: c.yr }))]} divTitles={team.divTitles || []} />
+      {(() => {
+        // real history before 2026, then everything won in this league
+        const h = TEAM_HISTORY[team.ab] || { d: [], c: [], l: [] };
+        const mine = (c) => (c.ti != null ? c.ti === ui : c.t === full);
+        const sbs = [...SUPER_BOWLS.filter(([, , ab]) => ab === team.ab).map(([n, season]) => ({ yr: season, n })), ...champs.filter(mine).map((c) => ({ yr: c.yr }))];
+        const confs = [...h.c, ...champs.filter((c) => mine(c) || c.opp === ui).map((c) => [c.yr, team.c])];
+        const divs = [...h.d, ...(team.divTitles || []).map((y) => [y, `${team.c} ${team.d}`])];
+        return <Rafters team={team} sbs={sbs} titles={h.l} confs={confs} divs={divs} />;
+      })()}
       <Shelf title="Super Bowl Championships" items={lombardis} empty="No Super Bowls yet. Win one and the Lombardi Trophy goes here." perRow={perRow} on={on} setOn={setOn} small={width <= 640} spot={spotlight != null ? `sb${sbNumber(spotlight)}` : null} />
       <Shelf title="Player Awards" items={mine} empty="Win MVP, Offensive or Defensive Player of the Year, Super Bowl MVP or a Rookie of the Year award with you as GM and the trophy goes here." perRow={perRow} on={on} setOn={setOn} start={lombardis.length} small={width <= 640} />
       <GoldJackets team={team} hofers={retiredHere.filter((r) => r.hof)} yr={yr} />

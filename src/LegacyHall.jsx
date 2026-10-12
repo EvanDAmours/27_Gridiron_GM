@@ -19,20 +19,22 @@ const H = ({ children, sub }) => (
 
 // A banner hanging from the rafters, laid out like the real ones in NFL stadiums: the club's logo,
 // what was won on two lines, and the year, on team-color fabric with stitched trim.
-function Banner({ team, line1, line2, year, gold }) {
+function Banner({ team, line1, line2, year, years, gold }) {
   const bg = team.clr || "#1e3a8a", ac = team.ac || "#e5e7eb", trim = gold ? "#e8c45a" : ac;
   return (
-    <div style={{ position: "relative", flex: "0 0 auto", width: 96, paddingTop: 10 }}>
+    <div style={{ position: "relative", flex: "0 0 auto", width: years && years.length > 9 ? 116 : 96, paddingTop: 10 }}>
       <div style={{ position: "absolute", top: 0, left: 10, right: 10, height: 6, borderRadius: 3, background: "linear-gradient(180deg,#e5e7eb,#6b7280)" }} />
       <div style={{ position: "absolute", top: 4, left: 46, width: 4, height: 8, background: "#9ca3af" }} />
       <div style={{ filter: "drop-shadow(0 8px 10px #000b)" }}>
         <div style={{ clipPath: "polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)", background: trim, padding: 3 }}>
-          <div style={{ clipPath: "polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)", background: `linear-gradient(100deg, ${bg} 0%, ${bg} 42%, color-mix(in srgb, ${bg} 80%, #fff) 50%, ${bg} 58%, ${bg} 100%)`, height: 170, display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 6px 0", boxSizing: "border-box", position: "relative" }}>
+          <div style={{ clipPath: "polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)", background: `linear-gradient(100deg, ${bg} 0%, ${bg} 42%, color-mix(in srgb, ${bg} 80%, #fff) 50%, ${bg} 58%, ${bg} 100%)`, minHeight: 170, paddingBottom: years ? 46 : 0, display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 6px 0", boxSizing: "border-box", position: "relative" }}>
             <div style={{ position: "absolute", inset: 5, border: `1px dashed ${trim}99`, clipPath: "polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)", pointerEvents: "none" }} />
             <div style={{ width: 42, height: 42, borderRadius: 21, background: "#ffffffee", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 0 2px ${trim}` }}><TeamLogo t={team} sz={34} /></div>
             <div style={{ marginTop: 8, fontSize: 9.5, fontWeight: 900, letterSpacing: 0.8, color: gold ? "#fde68a" : "#fff", textAlign: "center", lineHeight: 1.15, textShadow: "0 1px 2px #0008" }}>{line1}</div>
             <div style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.2, color: gold ? "#fde68a" : "#fff", textAlign: "center", textShadow: "0 1px 2px #0008" }}>{line2}</div>
-            <div style={{ marginTop: 6, fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 26, fontWeight: 900, color: "#fff", textShadow: "0 2px 3px #0009" }}>{year}</div>
+            {years ? (
+              <div style={{ marginTop: 6, display: "grid", gridTemplateColumns: years.length > 9 ? "1fr 1fr" : "1fr", columnGap: 8, rowGap: 1, fontFamily: "Georgia, 'Times New Roman', serif", fontSize: years.length > 9 ? 12 : 15, fontWeight: 900, color: "#fff", textShadow: "0 1px 2px #0009", textAlign: "center" }}>{years.map((y) => <span key={y}>{y}</span>)}</div>
+            ) : <div style={{ marginTop: 6, fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 26, fontWeight: 900, color: "#fff", textShadow: "0 2px 3px #0009" }}>{year}</div>}
             {gold && <div style={{ color: "#fde68a", fontSize: 14, marginTop: 1 }}>★</div>}
           </div>
         </div>
@@ -41,20 +43,30 @@ function Banner({ team, line1, line2, year, gold }) {
   );
 }
 
-export function Rafters({ team, sbs, divTitles }) {
-  const items = [
+// sbs: [{ yr, n }] Super Bowl wins; titles: [[yr, "NFL" | "AFL" | "AAFC"]] older league titles;
+// confs: [[yr, "AFC" | "NFC" | ...]] conference championships; divs: [[yr, "AFC West"]] division titles.
+export function Rafters({ team, sbs = [], titles = [], confs = [], divs = [] }) {
+  const LG = { NFL: "NFL", AFL: "AFL", AAFC: "AAFC" };
+  const big = [
     ...sbs.map((s) => ({ key: `sb${s.yr}`, yr: s.yr, el: <Banner key={`sb${s.yr}`} team={team} line1={sbName(s.n ?? sbNumber(s.yr)).toUpperCase()} line2="CHAMPIONS" year={s.yr} gold /> })),
-    ...divTitles.map((y) => ({ key: `d${y}`, yr: y, el: <Banner key={`d${y}`} team={team} line1={`${DIV[team.c] || ""} ${String(team.d || "").toUpperCase()}`} line2="CHAMPIONS" year={y} /> })),
-  ].sort((a, b) => a.yr - b.yr);
+    ...titles.map(([y, k]) => ({ key: `l${y}${k}`, yr: y, el: <Banner key={`l${y}${k}`} team={team} line1={`${LG[k] || k}`} line2="CHAMPIONS" year={y} gold /> })),
+    ...confs.map(([y, k]) => ({ key: `c${y}`, yr: y, el: <Banner key={`c${y}`} team={team} line1={`${k}`} line2="CHAMPIONS" year={y} /> })),
+  ].sort((a, b) => a.yr - b.yr || (a.key < b.key ? -1 : 1));
+  const groups = {};
+  for (const [y, n] of divs) (groups[n] ||= []).push(y);
+  const order = Object.entries(groups).sort((a, b) => Math.min(...a[1]) - Math.min(...b[1]));
+  const wall = (children) => (
+    <div style={{ background: "linear-gradient(180deg,#0b0f19,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: "0 12px 14px", position: "relative", overflowX: "auto", marginBottom: 10 }}>
+      <div style={{ height: 8, margin: "0 -12px 0", background: "repeating-linear-gradient(90deg,#374151 0 14px,#1f2937 14px 28px)" }} />
+      <div style={{ display: "flex", gap: 12, paddingTop: 2, minHeight: 190, alignItems: "flex-start" }}>{children}</div>
+    </div>
+  );
+  const nDiv = divs.length, nTitles = sbs.length + titles.length;
   return (
     <div style={{ marginBottom: 22 }}>
-      <H sub={`${sbs.length} Super Bowl${sbs.length === 1 ? "" : "s"} · ${divTitles.length} division title${divTitles.length === 1 ? "" : "s"} in this league`}>The Rafters</H>
-      <div style={{ background: "linear-gradient(180deg,#0b0f19,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: "0 12px 14px", position: "relative", overflowX: "auto" }}>
-        <div style={{ height: 8, margin: "0 -12px 0", background: "repeating-linear-gradient(90deg,#374151 0 14px,#1f2937 14px 28px)" }} />
-        <div style={{ display: "flex", gap: 12, paddingTop: 2, minHeight: 190, alignItems: "flex-start" }}>
-          {items.length ? items.map((x) => x.el) : <div style={{ color: C.mt, fontSize: 14, padding: "40px 6px" }}>No banners yet. Win the division or the Super Bowl and one goes up here.</div>}
-        </div>
-      </div>
+      <H sub={`${nTitles} championship${nTitles === 1 ? "" : "s"} · ${confs.length} conference title${confs.length === 1 ? "" : "s"} · ${nDiv} division title${nDiv === 1 ? "" : "s"}`}>The Rafters</H>
+      {wall(big.length ? big.map((x) => x.el) : <div style={{ color: C.mt, fontSize: 14, padding: "40px 6px" }}>No championship banners yet. Win the conference or the Super Bowl and one goes up here.</div>)}
+      {order.length > 0 && wall(order.map(([name, ys]) => <Banner key={name} team={team} line1={name.toUpperCase()} line2="CHAMPIONS" years={[...ys].sort((a, b) => a - b)} />))}
     </div>
   );
 }

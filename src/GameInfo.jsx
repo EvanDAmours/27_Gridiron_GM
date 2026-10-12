@@ -15,7 +15,7 @@ export default function GameInfo() {
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>Game Info</div>
-          <div style={{ fontSize: 14, color: C.mt }}>Patch notes: every change to Gridiron GM, newest first. Current version {all[0].v}.</div>
+          <div style={{ fontSize: 14, color: C.mt }}>Patch notes: every change to Football GM, newest first. Current version {all[0].v}.</div>
         </div>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search patch notes" aria-label="Search patch notes"
           style={{ background: C.cd, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 14, minWidth: 0, width: 240, maxWidth: "100%" }} />
