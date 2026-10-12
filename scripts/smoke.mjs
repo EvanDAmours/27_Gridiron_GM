@@ -57,6 +57,13 @@ async function click(text, wait = 1000) {
   await page.waitForTimeout(wait);
   return true;
 }
+// Leaving an offseason week asks first: press the button, then confirm in the dialog.
+async function advance(text, wait = 1500) {
+  await must(text, 400);
+  const yes = page.locator("button", { hasText: "Yes, go to" });
+  if (!(await yes.count())) fail(`no confirm after "${text}"`);
+  await yes.first().click(); await page.waitForTimeout(wait);
+}
 async function must(text, wait) { if (!(await click(text, wait))) fail(`no "${text}" button`); }
 async function save() {
   await page.waitForTimeout(2000);
@@ -81,13 +88,13 @@ try {
   await healthy("new game"); log("new game");
   { const d0 = await save(); const real = (d0.dc?.[2026] || []).filter((p) => p.real); if (real.length < 100 || !real.some((p) => p.name === "Jeremiah Smith")) fail("new game didn't load the real 2027 draft class"); log(`real draft class (${real.length} real prospects)`); }
   const seen = [];
-  for (const tab of ["Roster+", "Depth Chart", "Contracts", "Schedule+", "Standings", "Playoffs", "Draft+", "Draft Recap", "League+", "Stats", "Legacy Hall", "Record Book", "League History", "Trade", "Free Agency", "Saves", "Game Updates", "Home"]) {
+  for (const tab of ["Roster+", "Depth Chart", "Front Office", "Schedule+", "Standings", "Playoffs", "Draft+", "Draft Recap", "League+", "Stats", "Legacy Hall", "Record Book", "League History", "Trade", "Free Agency", "Saves", "Game Updates", "Home"]) {
     await dismiss();
     let t = page.locator(`button:text-is("${tab}")`);
     if (!(await t.count())) t = page.getByText(tab, { exact: true });
     if (await t.count()) { await t.first().click(); await page.waitForTimeout(400); await healthy(tab); seen.push(tab); }
   }
-  for (const want of ["Roster+", "Contracts", "Schedule+", "Standings", "Draft+", "League+"]) if (!seen.includes(want)) fail(`couldn't open ${want}`);
+  for (const want of ["Roster+", "Front Office", "Schedule+", "Standings", "Draft+", "League+"]) if (!seen.includes(want)) fail(`couldn't open ${want}`);
   log("every main screen opens");
   await dismiss(); await page.getByText("Draft+", { exact: true }).first().click(); await page.waitForTimeout(400); await page.locator('button:text-is("Scouting")').first().click(); await page.waitForTimeout(500);
   await must("Regions", 500); await must("Send area scouts", 600); await healthy("regional scouting");
@@ -108,8 +115,8 @@ try {
   d = await save();
   if (!d.awards?.some((a) => a.yr === 2026 && a.mvp)) fail("no 2026 season awards after the Super Bowl");
   log("playoffs and season awards");
-  await must("→ Combine"); await must("→ Re-sign Week"); await must("→ Free Agency", 2500); await healthy("free agency"); log("combine, re-sign week, free agency");
-  await must("→ Draft", 1500);
+  await must("→ Combine"); await advance("Finish Combine →"); await advance("Finish Re-signing →", 2500); await healthy("free agency"); log("combine, re-sign week, free agency");
+  await advance("Finish Free Agency →", 1500);
   await click("Sim Draft", 3000);
   const cont = page.locator("button", { hasText: "Continue the draft" });
   if (await cont.count()) await cont.click();
