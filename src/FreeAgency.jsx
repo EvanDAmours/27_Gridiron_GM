@@ -9,7 +9,7 @@ const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "C
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 
-export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSel, open, extras, talkFor, termsFor, onTalk }) {
+export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk }) {
   const [pos, setPos] = useState("ALL");
   const [q, setQ] = useState("");
   const [needOnly, setNeedOnly] = useState(false);
@@ -39,6 +39,7 @@ export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSe
         <span style={{ fontSize: 15, color: C.mt }}>{fa.length} free agents</span>
       </div>
       {!open && <div style={{ background: `${C.gd}18`, border: `1px solid ${C.gd}55`, borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 15, color: "#fde68a" }}>The big free agency period opens after the Combine. Right now it's whoever is left on the market.</div>}
+      {sheets}
       <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
           <select value={pos} onChange={(e) => { setPos(e.target.value); setN(50); }} aria-label="Position" style={sel}>

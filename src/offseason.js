@@ -29,6 +29,9 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
       if (left > 0) roster.push({ ...p, contract: left, cy });
       else expiring.push(p.ftag ? { ...p, ftag: undefined } : p); // a tag lasts one year
     }
+    // a deal's void years come due when it ends
+    const voidDue = expiring.reduce((s, p) => s + (p.voidDead || 0), 0);
+    for (let k = 0; k < expiring.length; k++) if (expiring[k].voidDead) { const { voidDead, voidYrs, ...rest } = expiring[k]; expiring[k] = rest; }
     // AI clubs re-sign best players first, and only what fits under the cap (with room for
     // coaches and the draft class).
     let payroll = roster.reduce((s, p) => s + (p.salary || 0), 0);
@@ -88,7 +91,7 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
       pool.push(fa);
       if (i === ui) mine.push(fa);
     }
-    return { ...t, roster };
+    return { ...t, roster, ...(voidDue ? { deadCap: +((t.deadCap || 0) + voidDue).toFixed(1) } : {}) };
   });
   pool.sort((a, b) => b.ovr - a.ovr);
   return { teams: out, pool, mine, resigned, retired };

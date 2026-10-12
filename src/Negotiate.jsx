@@ -6,15 +6,21 @@ import { yearlyAsk, maxYears, respond, interest } from "./negotiation.js";
 import { EXT_BONUS, extStructure } from "./extensions.js";
 import { SIGN_BONUS, signingStructure } from "./bonus.js";
 import { leagueMin, leagueCap } from "./cap.js";
+import { VOID_YEARS, INCENTIVE_SIZES } from "./contractDepth.js";
+import { incentiveOptions } from "./league.js";
 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const r1 = (x) => Math.round(x * 10) / 10;
 
 export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = {}, onResult, onClose, rivalName, note }) {
   const [share, setShare] = useState(0);
+  const [voidYrs, setVoidYrs] = useState(0);
+  const [incSize, setIncSize] = useState(0);
+  const incOpts = incentiveOptions(p.mpos === "EDGE" ? "DL" : p.pos);
+  const [incLabel, setIncLabel] = useState(incOpts[0]);
   const ext = mode === "extend";
   // extensions spread a bonus from this season; new deals turn part of year one into bonus
-  const shape = (amount) => { if (ext) return extStructure(amount, yrs, share); const st = signingStructure(amount, yrs, share, { minSal: leagueMin(), cap: leagueCap() }); return { hit: st.hitNow, later: st.hitLater, nowAdd: 0, pr: st.add, bonus: st.bonus }; };
+  const shape = (amount) => { if (ext) return extStructure(amount, yrs, share); const st = signingStructure(amount, yrs, share, { minSal: leagueMin(), cap: leagueCap(), voidYrs }); return { hit: st.hitNow, later: st.hitLater, nowAdd: 0, pr: st.add, bonus: st.bonus, voidDead: st.voidDead, voidYrs: st.voidYrs }; };
   const fits = (amount) => cap - shape(amount).hit >= 0 && nowRoom - shape(amount).nowAdd >= 0;
   const [yrs, setYrs] = useState(Math.min(2, maxYears(p)));
   const ask = yearlyAsk(p, yrs, mode);
@@ -25,7 +31,8 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   const last = talk.last;
   const offer = (amount) => {
     const s = shape(r1(amount));
-    const o = { sal: r1(amount), yrs, share: yrs >= 2 ? share : 0, ...(ext ? { hit: s.hit, pr: s.pr, bonus: s.bonus } : { hitNow: s.hit, bonus: s.bonus }) };
+    const inc = !ext && incSize ? { label: incLabel, amt: r1(amount * incSize) } : null;
+    const o = { sal: r1(amount), yrs, share: yrs >= 2 ? share : 0, ...(ext ? { hit: s.hit, pr: s.pr, bonus: s.bonus } : { hitNow: s.hit, bonus: s.bonus, voidYrs: s.voidYrs || 0, inc }) };
     onResult(respond(p, o, t, talk), o);
   };
   const step = (d) => setSal((s) => Math.max(0.8, r1(s + d)));
@@ -87,6 +94,20 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
               <div style={{ fontSize: 13, color: "#cbd5e1", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 14, lineHeight: 1.5 }}>
                 {share ? <>Bonus <b style={{ color: "#fff" }}>{money(cur.bonus)}</b> · cap hit this year <b style={{ color: C.gn }}>{money(cur.hit)}</b> (vs {money(sal)}), then <b style={{ color: C.gd }}>{money(cur.later)}</b> a year after that. Players like guaranteed money, so he values the offer a little more. Cut him early and the unpaid bonus is dead money.</> : <>A signing bonus lowers this year's cap hit (handy when you're tight) at the cost of a slightly higher hit in later years and dead money if he's cut.</>}
               </div>
+              {share > 0 && yrs < 5 && <>
+                <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>VOID YEARS <span style={{ fontWeight: 600, letterSpacing: 0, color: "#cbd5e1" }}>· fake years that spread the bonus thinner</span></div>
+                <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                  {VOID_YEARS.filter((v) => yrs + v <= 5).map((v) => <button key={v} onClick={() => setVoidYrs(v)} style={{ flex: 1, padding: "8px 0", fontSize: 15, fontWeight: 800, borderRadius: 8, cursor: "pointer", background: voidYrs === v ? "#7c3aed" : C.bg, color: "#fff", border: `1px solid ${voidYrs === v ? "#7c3aed" : C.bd}` }}>{v ? `+${v}` : "None"}</button>)}
+                </div>
+                {cur.voidYrs > 0 && <div style={{ fontSize: 13, color: "#cbd5e1", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 14, lineHeight: 1.5 }}>The bonus is spread over {yrs + cur.voidYrs} years, so the hit is <b style={{ color: C.gn }}>{money(cur.hit)}</b> this year. When his {yrs}-year deal ends, the <b style={{ color: C.rd }}>{money(cur.voidDead)}</b> left on the void years hits your cap as dead money.</div>}
+              </>}
+            </>}
+            {!ext && <>
+              <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>INCENTIVE <span style={{ fontWeight: 600, letterSpacing: 0, color: "#cbd5e1" }}>· paid only if he earns it, charged to next year's cap</span></div>
+              <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+                {INCENTIVE_SIZES.map((v) => <button key={v} onClick={() => setIncSize(v)} style={{ flex: 1, padding: "8px 0", fontSize: 15, fontWeight: 800, borderRadius: 8, cursor: "pointer", background: incSize === v ? "#0e7490" : C.bg, color: "#fff", border: `1px solid ${incSize === v ? "#0e7490" : C.bd}` }}>{v ? money(sal * v) : "None"}</button>)}
+              </div>
+              {incSize > 0 && <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>{incOpts.map((o) => <button key={o} onClick={() => setIncLabel(o)} style={{ padding: "6px 10px", fontSize: 13, fontWeight: 700, borderRadius: 16, cursor: "pointer", background: incLabel === o ? "#0e749044" : "transparent", color: incLabel === o ? "#67e8f9" : C.mt, border: `1px solid ${incLabel === o ? "#0e7490" : C.bd}` }}>{o}</button>)}</div>}
             </>}
             {ext && <>
               <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>SIGNING BONUS <span style={{ fontWeight: 600, letterSpacing: 0, color: "#cbd5e1" }}>· spread over {Math.min(5, yrs + 1)} years from this season</span></div>

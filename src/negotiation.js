@@ -34,12 +34,15 @@ export function terms(p, { yr, mode, loyalty = 0, rivals = [], culture = 0 }) {
 }
 
 // The player's answer to `offer` ({ sal, yrs }). state: { tries } so far with this player.
+import { incentiveWorth } from "./contractDepth.js";
+
 export function respond(p, offer, t, state = {}) {
   const ask = yearlyAsk(p, offer.yrs, t.mode);
   const need = r1(ask * t.minF);
   const tries = (state.tries || 0) + 1;
   // guaranteed money up front makes an offer worth a little more to him
-  const v = r1(offer.sal * (1 + 0.06 * (offer.share || 0)));
+  // and an incentive he might earn is worth something too
+  const v = r1(offer.sal * (1 + 0.06 * (offer.share || 0)) + incentiveWorth(offer.inc?.amt));
   const rivalSal = t.rival ? r1(yearlyAsk(p, Math.min(maxYears(p), 3)) * t.rival.f) : 0;
   if (v >= need) {
     // He'd take yours, unless another club is paying clearly more.

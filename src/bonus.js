@@ -84,22 +84,25 @@ export function restructure(p, ctx) {
 // cut him and the unpaid proration is dead money. share: 0 to 0.75 of the first-year base above
 // the league minimum. Deals of one year can't spread a bonus.
 export const SIGN_BONUS = [0, 0.25, 0.5, 0.75];
-export function signingStructure(sal, yrs, share, { minSal = 1, cap } = {}) {
-  const n = Math.min(5, yrs);
+// voidYrs: void years tacked on to spread the bonus thinner (the proration never runs past five
+// years); what's left on them becomes dead money when the real deal ends.
+export function signingStructure(sal, yrs, share, { minSal = 1, cap, voidYrs = 0 } = {}) {
   const convert = yrs >= 2 && share > 0 ? r1(Math.max(0, sal - minSal) * share) : 0;
-  const add = r1(convert / n);
+  const n = Math.min(5, yrs + (convert ? voidYrs : 0));
+  const vy = Math.max(0, n - yrs);
+  const add = r1(convert / Math.max(1, Math.min(5, n)));
   const base = r1(sal * bonusShare(sal, cap || capFor(BASE_YEAR)));
-  return { bonus: convert, years: n, add, hitNow: r1(sal - convert + add), hitLater: r1(sal + add), sb: r1(base + add), deadIfCutNow: r1((base + add) * yrs) };
+  return { bonus: convert, years: n, voidYrs: vy, voidDead: r1(add * vy), add, hitNow: r1(sal - convert + add), hitLater: r1(sal + add), sb: r1(base + add), deadIfCutNow: r1((base + add) * yrs + add * vy) };
 }
 // The contract fields for a signed deal (merged over the player).
 export function signedTerms(sal, yrs, share, ctx) {
   const st = signingStructure(sal, yrs, share, ctx);
   if (!st.bonus) return { salary: sal };
-  return { salary: st.hitNow, sb: st.sb, baseBack: st.bonus, signBonus: st.bonus };
+  return { salary: st.hitNow, sb: st.sb, baseBack: st.bonus, signBonus: st.bonus, ...(st.voidYrs ? { voidYrs: st.voidYrs, voidDead: st.voidDead } : {}) };
 }
 
 // A brand-new contract: his old bonus and restructures don't come with him.
-export const freshDeal = (p) => { const { sb, baseBack, restructures, restructured, ...rest } = p; return rest; };
+export const freshDeal = (p) => { const { sb, baseBack, restructures, restructured, voidYrs, voidDead, inc, ...rest } = p; return rest; };
 
 // A new league year (re-sign week): last year's dead money is off the books, money pushed to
 // this year arrives, and restructured base salaries come back. Mutates the teams.
@@ -109,6 +112,9 @@ export function newLeagueYear(teams) {
     t.deadCap = r1(t.deadNext || 0);
     t.deadNext = 0;
     t.june1 = 0;
+    // incentives earned last season count against this year's cap
+    t.incCharge = r1(t.incNext || 0);
+    t.incNext = 0;
     for (const list of [t.roster, t.ir, t.ps]) for (const p of list || []) {
       if (p.baseBack) { p.salary = r1((p.salary || 0) + p.baseBack); delete p.baseBack; }
     }
