@@ -1561,20 +1561,19 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
 
     {/* STANDINGS */}
     {tab==="standings"&&<div>
-      <style>{".st-x{display:table-cell}.st-xi{display:inline}.st-row .rv-btn{opacity:0;transition:opacity .15s}.st-row:hover .rv-btn,.rv-btn:focus{opacity:1}@media (max-width:640px){.st-x,.st-xi{display:none}}"}</style>
+      <style>{".st-x{display:table-cell}.st-xi{display:inline}@media (max-width:640px){.st-x,.st-xi{display:none}}"}</style>
       {(()=>{const divs={};teams.forEach(t=>{const dk=`${TEAMS[t.id]?.c||'AFC'} ${TEAMS[t.id]?.d||'East'}`;(divs[dk]||(divs[dk]=[])).push(t);});Object.values(divs).forEach(d=>d.sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)));
         const th={padding:"6px 6px",fontSize:11,fontWeight:800,letterSpacing:1,color:C.mt,textAlign:"right",whiteSpace:"nowrap"},td={padding:"6px 6px",fontSize:14,textAlign:"right",whiteSpace:"nowrap",fontVariantNumeric:"tabular-nums",borderTop:`1px solid ${C.bd}55`};
         const pct=t=>{const g=t.w+t.l+(t.t||0);return g?((t.w+(t.t||0)*.5)/g).toFixed(3).replace(/^0/,""):".000";};
         return<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(100%,460px),1fr))",gap:10,marginBottom:12}}>{['AFC East','AFC North','AFC South','AFC West','NFC East','NFC North','NFC South','NFC West'].filter(k=>divs[k]).map(dk=><div key={dk} style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:10,padding:"8px 10px"}}>
-          <table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,textAlign:"left",color:C.gd}} colSpan={3}>{dk.toUpperCase()}</th><th style={th}>W-L</th><th style={th}>PCT</th><th style={th}>DIFF</th><th style={th} className="st-x">PF</th><th style={th} className="st-x">PA</th><th style={th} className="st-x">STRK</th><th style={th} className="st-x"></th></tr></thead>
-          <tbody>{divs[dk].map((t,i)=>{const diff=t.pf-t.pa;const me=t.id===ui;return<tr key={t.id} className="st-row" style={{background:me?`${C.gn}14`:"transparent"}}>
+          <table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,textAlign:"left",color:C.gd}} colSpan={3}>{dk.toUpperCase()}</th><th style={th}>W-L</th><th style={th}>PCT</th><th style={th}>DIFF</th><th style={th} className="st-x">PF</th><th style={th} className="st-x">PA</th><th style={th} className="st-x">STRK</th></tr></thead>
+          <tbody>{divs[dk].map((t,i)=>{const diff=t.pf-t.pa;const me=t.id===ui;return<tr key={t.id} style={{background:me?`${C.gn}14`:"transparent"}}>
             <td style={{...td,textAlign:"left",color:C.mt,width:18}}>{i+1}</td><td style={{...td,width:28,padding:"4px 2px"}}><TeamLogo t={t} sz={22}/></td>
             <td style={{...td,textAlign:"left",fontWeight:me?900:700}}><span>{t.ab}</span><span className="st-xi" style={{color:C.mt,fontWeight:500,fontSize:12,marginLeft:6}}>{t.name}</span>{i===0&&(t.w+t.l)>0&&<span style={{fontSize:10,color:C.gd,fontWeight:800,marginLeft:5}}>DIV</span>}{rivalry&&rivalry.teamId===t.id&&<span style={{fontSize:10,color:"#f97316",marginLeft:4}}>🔥</span>}</td>
             <td style={{...td,fontWeight:800}}>{t.w}-{t.l}{t.t?`-${t.t}`:""}</td><td style={{...td,color:C.mt}}>{pct(t)}</td>
             <td style={{...td,fontWeight:700,color:diff>0?C.gn:diff<0?C.rd:C.mt}}>{diff>0?"+":""}{diff}</td>
             <td style={{...td,color:C.mt}} className="st-x">{t.pf}</td><td style={{...td,color:C.mt}} className="st-x">{t.pa}</td>
-            {(()=>{const k=streakOf(t.id);return<td style={{...td,color:k>0?C.gn:k<0?C.rd:C.mt}} className="st-x">{k?`${k>0?"W":"L"}${Math.abs(k)}`:"–"}</td>;})()}
-            <td style={td} className="st-x">{!me&&<button onClick={()=>setRivalry({teamId:t.id,wins:0,losses:0})} className={rivalry?.teamId===t.id?undefined:"rv-btn"} title={rivalry?.teamId===t.id?"Your rival":"Make them your rival"} style={{background:"transparent",border:`1px solid ${rivalry?.teamId===t.id?"#f9731666":C.bd}`,color:rivalry?.teamId===t.id?"#f97316":C.mt,borderRadius:4,fontSize:11,padding:"1px 5px",cursor:"pointer"}}>{rivalry?.teamId===t.id?"🔥 Rival":"🔥"}</button>}</td></tr>;})}</tbody></table></div>)}</div>;
+            {(()=>{const k=streakOf(t.id);return<td style={{...td,color:k>0?C.gn:k<0?C.rd:C.mt}} className="st-x">{k?`${k>0?"W":"L"}${Math.abs(k)}`:"–"}</td>;})()}</tr>;})}</tbody></table></div>)}</div>;
       })()}
       <div style={{marginTop:10,borderTop:`1px solid ${C.bd}`,paddingTop:8}}>
         <div style={{fontSize:12,fontWeight:700,color:C.gd,marginBottom:5}}>PLAYOFF PICTURE</div>

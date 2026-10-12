@@ -545,7 +545,7 @@ export const PATCH_NOTES = [
   { v: "2.7", date: "2026-10-12", title: "UI Cleanup", notes: [
     "Messages (\"Trade completed!\" and the like) pop up as a small toast instead of pushing the whole page down.",
     "Phones: the sim buttons fit across the top (Play Wk, Sim Week, To Deadline, Sim All), and rows of tabs stay on one line you can swipe instead of wrapping onto two or three.",
-    "Standings: the rival button only shows when you point at a team (and on your current rival), instead of a flame on every row.",
+    "Standings: the \"make them your rival\" flame button is gone from every row.",
     "Depth chart: offensive linemen's names no longer run into each other (and players with three names show their surname).",
     "Every screen lines up on the left at a consistent width; League History, the Record Book and Game Updates were centered, and Coaching was squeezed into a narrow column.",
     "The League hub drops its Season Leaders list (the Stats tab has them, better) and opens on Franchise History.",
