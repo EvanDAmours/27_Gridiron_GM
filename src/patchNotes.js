@@ -453,4 +453,9 @@ export const PATCH_NOTES = [
     "AI teams now draft for what they actually need: they rate their own starters at every position (edge rushers and interior tackles separately) and push up players where they're weakest.",
     "Positional value like the real NFL: quarterbacks, edge rushers, left tackles and corners go early; running backs slide unless they're elite or the team has nothing at the position. Teams with a solid starting quarterback stop spending high picks on another one.",
   ] },
+  { v: "1.9991", date: "2026-10-12", title: "Signing Bonuses in Free Agency", notes: [
+    "Free agents and re-signs can now get a signing bonus: turn 25%, 50% or 75% of year one's salary into bonus on any deal of two years or more. It's spread over the deal (up to five years), so this year's cap hit drops and later years carry the proration, just like a real front-loaded deal.",
+    "Bonuses count properly against the cap: the year-one hit is what's charged now, the base salary comes back the next league year, and cutting the player leaves the unpaid bonus as dead money.",
+    "Players like guaranteed money, so an offer with a bonus is worth a little more to them.",
+  ] },
 ];

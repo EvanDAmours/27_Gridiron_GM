@@ -78,6 +78,26 @@ export function restructure(p, ctx) {
   return { plan, p: { ...p, salary: plan.hitNow, sb: r1(proration(p) + plan.addPerYr), baseBack: r1((p.baseBack || 0) + plan.convert), restructures: (p.restructures || 0) + 1 } };
 }
 
+// A new deal (free agency or re-sign week) with a signing bonus: part of the first year's base
+// salary is paid up front as bonus and spread over the deal (up to five years), exactly like a
+// restructure on day one. This year's cap hit drops; every later year carries the proration;
+// cut him and the unpaid proration is dead money. share: 0 to 0.75 of the first-year base above
+// the league minimum. Deals of one year can't spread a bonus.
+export const SIGN_BONUS = [0, 0.25, 0.5, 0.75];
+export function signingStructure(sal, yrs, share, { minSal = 1, cap } = {}) {
+  const n = Math.min(5, yrs);
+  const convert = yrs >= 2 && share > 0 ? r1(Math.max(0, sal - minSal) * share) : 0;
+  const add = r1(convert / n);
+  const base = r1(sal * bonusShare(sal, cap || capFor(BASE_YEAR)));
+  return { bonus: convert, years: n, add, hitNow: r1(sal - convert + add), hitLater: r1(sal + add), sb: r1(base + add), deadIfCutNow: r1((base + add) * yrs) };
+}
+// The contract fields for a signed deal (merged over the player).
+export function signedTerms(sal, yrs, share, ctx) {
+  const st = signingStructure(sal, yrs, share, ctx);
+  if (!st.bonus) return { salary: sal };
+  return { salary: st.hitNow, sb: st.sb, baseBack: st.bonus, signBonus: st.bonus };
+}
+
 // A brand-new contract: his old bonus and restructures don't come with him.
 export const freshDeal = (p) => { const { sb, baseBack, restructures, restructured, ...rest } = p; return rest; };
 

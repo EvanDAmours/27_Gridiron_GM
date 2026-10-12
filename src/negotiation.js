@@ -38,15 +38,17 @@ export function respond(p, offer, t, state = {}) {
   const ask = yearlyAsk(p, offer.yrs, t.mode);
   const need = r1(ask * t.minF);
   const tries = (state.tries || 0) + 1;
+  // guaranteed money up front makes an offer worth a little more to him
+  const v = r1(offer.sal * (1 + 0.06 * (offer.share || 0)));
   const rivalSal = t.rival ? r1(yearlyAsk(p, Math.min(maxYears(p), 3)) * t.rival.f) : 0;
-  if (offer.sal >= need) {
+  if (v >= need) {
     // He'd take yours, unless another club is paying clearly more.
-    if (t.rival && rivalSal > offer.sal * 1.05) return { result: "lost", team: t.rival.team, sal: rivalSal, tries, msg: `He took a better offer: $${rivalSal}M a year.` };
-    return { result: "accept", tries, msg: offer.sal >= ask ? "Done deal — he's thrilled." : "He accepts. Welcome aboard." };
+    if (t.rival && rivalSal > v * 1.05) return { result: "lost", team: t.rival.team, sal: rivalSal, tries, msg: `He took a better offer: $${rivalSal}M a year.` };
+    return { result: "accept", tries, msg: v >= ask ? "Done deal — he's thrilled." : "He accepts. Welcome aboard." };
   }
-  const insult = offer.sal < need * 0.7;
+  const insult = v < need * 0.7;
   if (insult || tries >= 3) return { result: "walk", tries, msg: insult ? "He's insulted and ends talks." : "He's done negotiating with you." };
-  if (offer.sal >= need * 0.85) {
+  if (v >= need * 0.85) {
     const counter = r1(Math.max(need, (offer.sal + ask) / 2));
     return { result: "counter", counter, tries, msg: `He'd sign for $${counter}M a year.` };
   }
