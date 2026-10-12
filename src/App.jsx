@@ -1,3 +1,4 @@
+import { lazyScreen } from "./lazyScreen.js";
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { C, oC, pC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo } from "./ui.jsx";
 import M27 from "./data/madden27.json";
@@ -10,14 +11,14 @@ import CapOverview from "./CapOverview.jsx";
 import DevFocusCard from "./DevFocus.jsx";
 import WeekResult from "./WeekResult.jsx";
 import LiveField from "./LiveField.jsx";
-const TradeScreen = React.lazy(() => import("./TradeScreen.jsx")); // loaded when first opened
+const TradeScreen = lazyScreen(() => import("./TradeScreen.jsx")); // loaded when first opened
 import FreeAgency from "./FreeAgency.jsx";
 import RosterTable from "./RosterView.jsx";
 import SchedulePage from "./SchedulePage.jsx";
 import FrontOffice from "./FrontOffice.jsx";
 import Negotiate from "./Negotiate.jsx";
 import Resign from "./Resign.jsx";
-const TrainingCamp = React.lazy(() => import("./TrainingCamp.jsx")); // loaded when first opened
+const TrainingCamp = lazyScreen(() => import("./TrainingCamp.jsx")); // loaded when first opened
 import HomeScreen from "./HomeScreen.jsx";
 import FranchiseStrip from "./FranchiseStrip.jsx";
 import StatsScreen from "./StatsScreen.jsx";
@@ -34,10 +35,10 @@ import { tagPrice, optionPrice, optionEligible } from "./contracts.js";
 import { deadMoney, chargeDead, tradeAway, restructurePlan, restructure, freshDeal, newLeagueYear, yearsLeft, proration, OFFSEASON, JUNE1_CUTS, signedTerms } from "./bonus.js";
 import { aiTradeWeek, TRADE_DEADLINE_WEEK } from "./aiTrades.js";
 import { startDeadline, advanceDeadline, runDeadline, tradeText, feedItem } from "./deadline.js";
-const DeadlineDay = React.lazy(() => import("./DeadlineDay.jsx")); // loaded when first opened
-const RecordBook = React.lazy(() => import("./RecordBook.jsx")); // loaded when first opened
-const LeagueHistory = React.lazy(() => import("./LeagueHistory.jsx")); // loaded when first opened
-const DraftRecap = React.lazy(() => import("./DraftRecap.jsx")); // loaded when first opened
+const DeadlineDay = lazyScreen(() => import("./DeadlineDay.jsx")); // loaded when first opened
+const RecordBook = lazyScreen(() => import("./RecordBook.jsx")); // loaded when first opened
+const LeagueHistory = lazyScreen(() => import("./LeagueHistory.jsx")); // loaded when first opened
+const DraftRecap = lazyScreen(() => import("./DraftRecap.jsx")); // loaded when first opened
 import { recapEntry } from "./draftRecap.js";
 import { retRating, RET_POS } from "./special.js";
 import { canExtend, extRoom, applyExtensions } from "./extensions.js";
@@ -51,15 +52,15 @@ import PlayoffBracket from "./PlayoffBracket.jsx";
 import { makeBracket, nextRound, ROUND_NAMES } from "./playoffs.js";
 import { seasonAwardWinners, tagRookieYears, pastRookieAwards } from "./awards.js";
 import { leagueCap, leagueFloor, leagueMin, setLeagueYear, capYearFor, capFor, rookieSalary, DATA_TO_DOLLARS, migrateCap } from "./cap.js";
-const TrophyRoom = React.lazy(() => import("./TrophyRoom.jsx")); // loaded when first opened
-const GameInfo = React.lazy(() => import("./GameInfo.jsx")); // loaded when first opened
+const TrophyRoom = lazyScreen(() => import("./TrophyRoom.jsx")); // loaded when first opened
+const GameInfo = lazyScreen(() => import("./GameInfo.jsx")); // loaded when first opened
 import ScreenBoundary from "./Boundary.jsx";
 import { MOBILE, DESKTOP_URL, MOBILE_URL } from "./mobile.js";
 import { MobileNav, MoreSheet } from "./MobileShell.jsx";
 import Lombardi from "./Lombardi.jsx";
 import { repairSave } from "./repair.js";
 import SeasonAwards, { superBowlMvp } from "./SeasonAwards.jsx";
-const ChampionGazette = React.lazy(() => import("./ChampionGazette.jsx")); // loaded when first opened
+const ChampionGazette = lazyScreen(() => import("./ChampionGazette.jsx")); // loaded when first opened
 import { SUPER_BOWLS } from "./data/superbowls.js";
 import { weeklyStories } from "./stories.js";
 import { leagueDrama, isFictional } from "./drama.js";
@@ -442,6 +443,10 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   useEffect(()=>{setUserLineup(depthOrder,playingTime);},[depthOrder,playingTime]);
   // Never leave a blank screen: a finished live game or an unknown tab falls back to Home.
   useEffect(()=>{if((tab==='livesim'&&!liveSim)||!SCREENS.has(tab))setTab('dashboard');},[tab,liveSim]);
+  // After an update the page reloads itself to load a new screen (see lazyScreen.js): pick the league
+  // back up from the autosave and return to the screen you were opening.
+  useEffect(()=>{try{const t=+sessionStorage.getItem('gm_chunk_reload')||0;if(Date.now()-t>60000||phase!=="splash")return;const sv=loadJSON('gm_autosave');if(!sv?.teams)return;applyAutoSave(sv);const lt=sessionStorage.getItem('gm_last_tab');if(lt&&SCREENS.has(lt))setTimeout(()=>setTab(lt),50);}catch{/* nothing to resume */}},[]);// eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(()=>{if(phase!=="main")return;try{sessionStorage.setItem('gm_last_tab',tab);}catch{/* private mode */}},[tab,phase]);
   // Draft timer
   useEffect(()=>{
     if(!draftActive||sp!=="draft"||draftPaused)return;
