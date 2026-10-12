@@ -9,8 +9,8 @@
 // Below 35 the owner issues an ultimatum; at 5 or less he fires you.
 import { genCoach } from "./league.js";
 
-const ROLE = { oc: "OC", dc: "DC", st: "ST" };
-const TITLE = { oc: "offensive coordinator", dc: "defensive coordinator", st: "special teams coordinator" };
+const ROLE = { hc: "HC", oc: "OC", dc: "DC", st: "ST" };
+const TITLE = { hc: "head coach", oc: "offensive coordinator", dc: "defensive coordinator", st: "special teams coordinator" };
 const pct = (t) => ((t.w || 0) + 0.5 * (t.t || 0)) / Math.max(1, (t.w || 0) + (t.l || 0) + (t.t || 0));
 
 // coachTeams: the clubs whose coaches change (this off-season's copies); perf: last season's
@@ -27,19 +27,23 @@ export function coachingCarousel(coachTeams, perf, ui, { pool = [], rand = Math.
     if (i === ui) return;
     const p = pct(perf[i]);
     const coach = { ...(t.coach || {}) };
-    const fire = (role, why) => { const c = coach[role]; if (!c) return; moves.push({ ti: i, role, kind: "fired", name: c.name, why }); market.push({ ...c, contract: 2 }); coach[role] = null; };
+    const fire = (role, why) => { const c = coach[role]; if (!c) return; moves.push({ ti: i, role, kind: "fired", name: c.name, why }); market.push({ ...c, contract: 2, fired: true, from: t.ab }); coach[role] = null; };
+    // a losing season can cost the head coach his job too (rarely a great one)
+    if (p < 0.3 && coach.hc && rand() < (coach.hc.rating >= 88 ? 0.08 : 0.35)) fire("hc", `a ${perf[i].w}-${perf[i].l} season`);
     if (p < 0.4 && bottom(offRank, i) && rand() < 0.65) fire("oc", `a bottom-ten offense in a ${perf[i].w}-${perf[i].l} season`);
     if (p < 0.4 && bottom(defRank, i) && rand() < 0.65) fire("dc", `a bottom-ten defense in a ${perf[i].w}-${perf[i].l} season`);
     if (p < 0.5 && coach.st && coach.st.rating < 55 && rand() < 0.3) fire("st", "special teams that kept costing games");
-    for (const role of ["oc", "dc", "st"]) {
+    for (const role of ["hc", "oc", "dc", "st"]) {
       if (coach[role]) continue;
       // The market's best fits, plus a couple of fresh names; a better job (winning club) lands a better coach.
       const fresh = [genCoach(ROLE[role]), genCoach(ROLE[role])];
-      const options = [...market.filter((c) => (c.role || "").toUpperCase() === ROLE[role]), ...fresh];
+      // never the coach this club just let go
+      const options = [...market.filter((c) => (c.role || "").toUpperCase() === ROLE[role] && !(c.from === t.ab && (c.fired || c.expired))), ...fresh];
       const appeal = (c) => c.rating + rand() * 12 + p * 8;
       const pickC = options.sort((a, b) => appeal(b) - appeal(a))[0];
       market = market.filter((c) => c.id !== pickC.id);
-      coach[role] = { ...pickC, role: ROLE[role], contract: 2 + Math.floor(rand() * 3), xp: 0 };
+      const { fired: _f, expired: _e, from: _fr, ...hired } = pickC;
+      coach[role] = { ...hired, role: ROLE[role], contract: 2 + Math.floor(rand() * 3), xp: 0 };
       moves.push({ ti: i, role, kind: "hired", name: pickC.name, scheme: pickC.scheme, rating: pickC.rating });
     }
     t.coach = coach;
