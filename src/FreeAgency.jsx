@@ -11,7 +11,7 @@ const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "C
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 
-export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk }) {
+export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk, cy }) {
   const [pos, setPos] = useState("ALL");
   const [q, setQ] = useState("");
   const [needOnly, setNeedOnly] = useState(false);
@@ -85,7 +85,7 @@ export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSe
         {rows.length > n && <div style={{ textAlign: "center", marginTop: 10 }}><Btn onClick={() => setN(n + 50)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 14, padding: "6px 14px" }}>Show more ({rows.length - n} left)</Btn></div>}
       </div>
       {extras}
-      {offer && <Negotiate p={offer} mode="fa" cap={cap} t={termsFor(offer, "fa")} talk={talkFor(offer)} onResult={(r, o) => onTalk(offer, "fa", r, o)} onClose={() => setOffer(null)} rivalName={(id) => teams[id] && `${teams[id].city} ${teams[id].name}`} />}
+      {offer && <Negotiate team={team} cy={cy} p={offer} mode="fa" cap={cap} t={termsFor(offer, "fa")} talk={talkFor(offer)} onResult={(r, o) => onTalk(offer, "fa", r, o)} onClose={() => setOffer(null)} rivalName={(id) => teams[id] && `${teams[id].city} ${teams[id].name}`} />}
     </div>
   );
 }

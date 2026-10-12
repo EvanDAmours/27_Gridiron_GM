@@ -1,5 +1,6 @@
 // The negotiation table: pick the years, set the money, make an offer, and read his answer.
 // Used for re-signing your own players and for free agents.
+import { capProjection } from "./capProjection.js";
 import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
 import { yearlyAsk, maxYears, respond, interest } from "./negotiation.js";
@@ -12,7 +13,29 @@ import { incentiveOptions } from "./league.js";
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const r1 = (x) => Math.round(x * 10) / 10;
 
-export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = {}, onResult, onClose, rivalName, note }) {
+// Room in each of the next four seasons if he signs this offer (for an extension, the new deal
+// starts when his current one ends; for a re-sign, his old deal is replaced).
+function FutureRoom({ team, cy, p, mode, sal, yrs, room0 }) {
+  if (!team || cy == null) return null;
+  const ext = mode === "extend";
+  const yrsNow = capProjection(team, cy, { extra: ext ? { sal, yrs, start: p.contract || 0 } : { sal, yrs, skip: mode === "resign" ? p.id : null }, room0 });
+  return (
+    <div style={{ background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 14 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: C.mt, marginBottom: 4 }}>CAP ROOM WITH THIS DEAL</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
+        {yrsNow.map((y) => (
+          <div key={y.yr} style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 12, color: C.mt }}>{y.yr}</div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: y.room < 0 ? C.rd : y.room < y.cap * 0.08 ? C.gd : C.gn }}>{y.room < 0 ? "-" : ""}${Math.abs(y.room).toFixed(1)}M</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 11, color: C.mt, marginTop: 4 }}>Before re-signings, rookies and free agents in later years.</div>
+    </div>
+  );
+}
+
+export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = {}, onResult, onClose, rivalName, note, team, cy }) {
   const [share, setShare] = useState(0);
   const [voidYrs, setVoidYrs] = useState(0);
   const [incSize, setIncSize] = useState(0);
@@ -98,6 +121,7 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
               <span>Total <b style={{ color: "#fff" }}>{money(sal * yrs)}</b> over {yrs} yr{yrs > 1 ? "s" : ""}</span>
               <span>{mode === "extend" ? "Next year's cap after" : "Cap room after"} <b style={{ color: after >= 0 ? C.gn : C.rd }}>{money(after)}</b></span>
             </div>
+            <FutureRoom team={team} cy={cy} p={p} mode={mode} sal={sal} yrs={yrs} room0={ext ? nowRoom - (cur.nowAdd || 0) : after} />
             {!ext && yrs >= 2 && <>
               <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>SIGNING BONUS <span style={{ fontWeight: 600, letterSpacing: 0, color: "#cbd5e1" }}>· part of year one paid up front, spread over {Math.min(5, yrs)} years</span></div>
               <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>

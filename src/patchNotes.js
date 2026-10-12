@@ -603,4 +603,8 @@ export const PATCH_NOTES = [
     "Home's matchup card now shows what's at stake: first place in the division on the line, games back, where you'd be seeded if the season ended today, or a must-win when you're chasing the last playoff spot late in the year.",
     "Plus both teams' last three results and streak, a betting line from the two teams' ratings (home field is worth 1.5), key players out on each side, and the matchups that decide it (your top target vs their top corner, your left tackle vs their best rusher) with who has the edge.",
   ] },
+  { v: "2.18", date: "2026-10-12", title: "The Cap's Long View", notes: [
+    "Front Office has a new Long View: this cap year and the next three, each with the money already committed (dead money in red), the room left, how many players are signed, and the good players whose deals end that year, so you can see the re-sign decisions coming.",
+    "Every contract negotiation (free agents, re-signings, extensions and offer sheets) shows your cap room in each of the next four seasons if he signs the offer on the table, and it updates as you change the years and money.",
+  ] },
 ];

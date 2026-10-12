@@ -3,6 +3,7 @@
 // extensions to get done early, and what to do with room to spare).
 import React from "react";
 import { C, Bdg } from "./ui.jsx";
+import { capProjection } from "./capProjection.js";
 
 const GROUPS = [["QB", ["QB"]], ["Skill", ["RB", "WR", "TE"]], ["O-line", ["LT", "LG", "C", "RG", "RT"]], ["D-line", ["DL"]], ["LB", ["LB"]], ["Secondary", ["CB", "S"]], ["Specialists", ["K", "P"]]];
 const $ = (v) => `$${(+v || 0).toFixed(1)}M`;
@@ -26,7 +27,44 @@ export function capAdvice({ rows, space, nextRoom, canExtend, starters }) {
   return out;
 }
 
-export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext, rows, canExtend, starters, onPlayer, mobile, leagueAvg, onContracts }) {
+// Four seasons of cap: committed money against each year's cap, the room left, how many players
+// are signed, and the good players whose deals end that year (next year's re-sign calls).
+export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = null, title = "THE LONG VIEW" }) {
+  const yrs = capProjection(team, cy, { extra, room0 });
+  const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
+  return (
+    <div style={card}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd }}>{title}</span>
+        <span style={{ fontSize: 12, color: C.mt }}>Money already committed against each season's cap. Re-signings, rookies and free agents come out of the room.</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${mobile ? 2 : 4},minmax(0,1fr))`, gap: 10 }}>
+        {yrs.map((y, i) => {
+          const pct = Math.min(100, (y.committed / y.cap) * 100), deadPct = Math.min(pct, (y.dead / y.cap) * 100);
+          const tone = y.room < 0 ? C.rd : y.room < y.cap * 0.08 ? C.gd : C.gn;
+          return (
+            <div key={y.yr} style={{ background: C.bg, border: `1px solid ${i === 0 ? "#ffffff2a" : C.bd}`, borderRadius: 10, padding: "10px 10px 8px", minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}><b style={{ fontSize: 16 }}>{y.yr}</b><span style={{ fontSize: 11, color: C.mt }}>{i === 0 ? "this cap year" : `cap ${$(y.cap)}`}</span></div>
+              <div style={{ height: 10, borderRadius: 5, background: C.bd, overflow: "hidden", margin: "6px 0", position: "relative" }} title={`${$(y.committed)} committed of ${$(y.cap)}`}>
+                <div style={{ width: `${pct}%`, height: "100%", background: y.room < 0 ? C.rd : "#38bdf8" }} />
+                {deadPct > 0 && <div style={{ position: "absolute", left: 0, top: 0, width: `${deadPct}%`, height: "100%", background: "#ef4444" }} />}
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: tone, lineHeight: 1.1 }}>{y.room < 0 ? `-${$(-y.room)}` : $(y.room)}</div>
+              <div style={{ fontSize: 12, color: "#94a3b8" }}>room · {$(y.committed)} committed{y.dead > 0 ? ` (${$(y.dead)} dead)` : ""}</div>
+              <div style={{ fontSize: 12, color: "#94a3b8" }}>{y.players} player{y.players === 1 ? "" : "s"} signed</div>
+              {y.expiring.length > 0 && <div style={{ marginTop: 6, fontSize: 11, fontWeight: 800, letterSpacing: 0.8, color: C.mt }}>DEALS ENDING</div>}
+              {y.expiring.slice(0, 4).map((p) => <div key={p.id} onClick={() => onPlayer?.(p)} style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, padding: "1px 0", cursor: onPlayer ? "pointer" : "default", minWidth: 0 }}><Bdg pos={p.pos} /><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span><b style={{ color: "#cbd5e1" }}>{p.ovr}</b></div>)}
+              {y.expiring.length > 4 && <div style={{ fontSize: 12, color: C.mt }}>+{y.expiring.length - 4} more</div>}
+            </div>
+          );
+        })}
+      </div>
+      {extra && <div style={{ fontSize: 12, color: C.mt, marginTop: 6 }}>Includes this offer: {$(extra.sal)} a year for {extra.yrs} year{extra.yrs === 1 ? "" : "s"}.</div>}
+    </div>
+  );
+}
+
+export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext, rows, canExtend, starters, onPlayer, mobile, leagueAvg, onContracts, cy }) {
   const used = cap - space;
   const byGroup = GROUPS.map(([g, ps]) => [g, team.roster.filter((p) => ps.includes(p.pos)).reduce((s, p) => s + (p.salary || 0), 0), leagueAvg ? leagueAvg(ps) : null]);
   const top = [...team.roster].sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, 5);
@@ -44,6 +82,7 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
           </div>
         ))}
       </div>
+      {cy != null && <CapLongView team={team} cy={cy} room0={space} onPlayer={onPlayer} mobile={mobile} />}
       <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${mobile ? 280 : 340}px,1fr))`, gap: 10 }}>
         <div style={card}>
           <div style={head}>WHERE THE MONEY GOES</div>

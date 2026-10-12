@@ -28,7 +28,7 @@ export default function OfferSheets({ teams, ui, yr, picks, futures, cap, termsF
           </div>
         ))}
       </div>
-      {open && <Negotiate p={open.p} mode="fa" cap={cap} t={{ ...termsFor(open.p, "fa"), rival: null }} talk={talkFor(open.p)} note={`Offer sheet: if he signs it, the ${teams[open.ti].city} ${teams[open.ti].name} can match and keep him. If they don't, he's yours and they get your ${yr} and ${yr + 1} first-round picks.`} onResult={(r, o) => onSheet(open.p, open.ti, r, o)} onClose={() => setOpen(null)} />}
+      {open && <Negotiate team={teams[ui]} cy={yr + 1} p={open.p} mode="fa" cap={cap} t={{ ...termsFor(open.p, "fa"), rival: null }} talk={talkFor(open.p)} note={`Offer sheet: if he signs it, the ${teams[open.ti].city} ${teams[open.ti].name} can match and keep him. If they don't, he's yours and they get your ${yr} and ${yr + 1} first-round picks.`} onResult={(r, o) => onSheet(open.p, open.ti, r, o)} onClose={() => setOpen(null)} />}
     </div>
   );
 }
