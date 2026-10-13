@@ -33,6 +33,14 @@ export const leagueFloor = () => capFloor(leagueYear);
 export const leagueMin = () => minSalary(leagueYear);
 export const capYearFor = (yr, sp) => (["resign", "freeagency", "draft"].includes(sp) ? yr + 1 : yr);
 
+// The season and phase, so a cap count knows who's still on the books. In re-sign week the cap is
+// already next season's, and a deal in its last year is ending: it no longer counts unless it's a
+// new deal for next season (cy).
+let phase = { yr: BASE_YEAR, sp: "preseason" };
+export const setCapPhase = (yr, sp) => { phase = { yr, sp }; };
+export const getCapPhase = () => phase;
+export const expiringNow = (p) => phase.sp === "resign" && (p?.contract || 0) <= 1 && p?.cy !== phase.yr + 1;
+
 // Rookie wage scale by overall pick, as a share of the cap: about $12M a year at #1, $3.6M at
 // #32, ~$2M in round 2 and near the minimum after that.
 export function rookieSalary(overall, cap = leagueCap()) {

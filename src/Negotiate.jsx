@@ -45,7 +45,9 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   const ext = mode === "extend";
   // extensions spread a bonus from this season; new deals turn part of year one into bonus
   const shape = (amount) => { if (ext) return extStructure(amount, yrs, share); const st = signingStructure(amount, yrs, share, { minSal: leagueMin(), cap: leagueCap(), voidYrs }); return { hit: st.hitNow, later: st.hitLater, nowAdd: 0, pr: st.add, bonus: st.bonus, voidDead: st.voidDead, voidYrs: st.voidYrs }; };
-  const fits = (amount) => cap - shape(amount).hit >= 0 && nowRoom - shape(amount).nowAdd >= 0;
+  // This season's room only matters for money that lands this season (an extension's signing
+  // bonus); a plain extension starts next year, so being tight or over the cap now doesn't block it.
+  const fits = (amount) => { const sh = shape(amount); return cap - sh.hit >= 0 && (sh.nowAdd <= 0 || nowRoom - sh.nowAdd >= 0); };
   const [yrs, setYrs] = useState(Math.min(2, maxYears(p)));
   const ask = yearlyAsk(p, yrs, mode);
   const f = p.perf?.f ?? 1;
