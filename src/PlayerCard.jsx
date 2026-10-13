@@ -52,8 +52,8 @@ export function RatingBars({ p, labels = {}, showPos = true, posLimit = 99 }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10, marginBottom: 12 }}>
       {groups.map(([g, rows]) => (
-        <div key={g} style={{ background: C.bg, borderRadius: 8, padding: "8px 10px" }}>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: C.mt, marginBottom: 5 }}>{g}</div>
+        <div key={g} style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px" }}>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: C.mt, marginBottom: 6 }}>{g}</div>
           {rows.map(([l, v]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
               <span style={{ fontSize: 11, color: "#cbd5e1", width: 78, flex: "0 0 auto", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l}</span>
@@ -71,16 +71,16 @@ export function RatingBars({ p, labels = {}, showPos = true, posLimit = 99 }) {
 export function CareerOvrGraph({ p, yr }) {
   const pts = [...(p.oh || []).map((h) => ({ y: h.y, o: h.o })), { y: yr, o: p.ovr }].filter((x, i, a) => a.findIndex((z) => z.y === x.y) === i);
   if (pts.length < 2) return null;
-  const W = 300, H = 90, lo = Math.min(...pts.map((x) => x.o)) - 3, hi = Math.max(...pts.map((x) => x.o)) + 3;
+  const W = 420, H = 120, lo = Math.min(...pts.map((x) => x.o)) - 3, hi = Math.max(...pts.map((x) => x.o)) + 3;
   const X = (i) => 16 + (i * (W - 32)) / (pts.length - 1), Y = (o) => H - 16 - ((o - lo) / Math.max(1, hi - lo)) * (H - 30);
   const path = pts.map((x, i) => `${i ? "L" : "M"}${X(i).toFixed(1)} ${Y(x.o).toFixed(1)}`).join(" ");
   return (
-    <div style={{ background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 12 }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: C.mt }}>CAREER OVR</div>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none">
+    <div style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
+      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: "#60a5fa" }}>CAREER OVR</div>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", maxHeight: 150 }}>
         <path d={`${path} L${X(pts.length - 1)} ${H - 12} L${X(0)} ${H - 12} Z`} fill="#3b82f622" />
         <path d={path} fill="none" stroke="#60a5fa" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
-        {pts.map((x, i) => <g key={x.y}><circle cx={X(i)} cy={Y(x.o)} r="3.5" fill={oC(x.o)} /><text x={X(i)} y={Y(x.o) - 7} textAnchor="middle" fontSize="10" fontWeight="800" fill="#e2e8f0">{x.o}</text><text x={X(i)} y={H - 1} textAnchor="middle" fontSize="9" fill="#94a3b8">{String(x.y).slice(2)}</text></g>)}
+        {pts.map((x, i) => <g key={x.y}><circle cx={X(i)} cy={Y(x.o)} r="3.5" fill={oC(x.o)} /><text x={X(i)} y={Y(x.o) - 7} textAnchor="middle" fontSize="13" fontWeight="800" fill="#e2e8f0">{x.o}</text><text x={X(i)} y={H - 1} textAnchor="middle" fontSize="11" fill="#94a3b8">{x.y}</text></g>)}
       </svg>
     </div>
   );
@@ -100,15 +100,15 @@ export const SEASON_KEYS = ["gp", "gs", "comp", "att", "passYds", "passTD", "pas
 export const seasonLine = (ss, y, tm) => { const o = { y, tm }; for (const k of SEASON_KEYS) if (ss?.[k]) o[k] = ss[k]; return o; };
 
 export function SeasonTable({ p, yr, teamAb }) {
-  const cols = COLS[p.pos] || [["GP", "gp"]];
+  const cols = COLS[p.pos] || [["GS", "gs"]];
   const rows = [...(p.sh || []), ...(p.ss?.gp ? [seasonLine(p.ss, yr, teamAb)] : [])];
   if (!rows.length) return null;
   const tot = {}; for (const r of rows) for (const k of SEASON_KEYS) if (r[k]) tot[k] = (tot[k] || 0) + r[k];
   const td = { padding: "5px 6px", textAlign: "right", fontSize: 13, borderBottom: `1px solid ${C.bd}55`, whiteSpace: "nowrap" };
   const fmt = (v) => (v == null ? "–" : Number.isInteger(v) ? v.toLocaleString() : r1(v));
   return (
-    <div style={{ background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 12, overflowX: "auto" }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: C.mt, marginBottom: 4 }}>SEASON BY SEASON</div>
+    <div style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px", marginBottom: 12, overflowX: "auto" }}>
+      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: "#38bdf8", marginBottom: 4 }}>SEASON BY SEASON</div>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead><tr>{["YEAR", "TM", "GP", ...cols.map(([l]) => l)].map((h, i) => <th key={h} style={{ ...td, textAlign: i < 2 ? "left" : "right", fontSize: 11, color: C.mt, fontWeight: 800 }}>{h}</th>)}</tr></thead>
         <tbody>
@@ -132,21 +132,21 @@ export function ContractTimeline({ p, yr, yearsLeft, proration, deadNow }) {
   const voids = Array.from({ length: p.voidYrs || 0 }, (_, i) => ({ y: yr + yearsLeft + i, void: true }));
   const max = Math.max(...years.map((x) => x.hit), 1);
   return (
-    <div style={{ background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 12 }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: C.mt, marginBottom: 6 }}>CONTRACT TIMELINE <span style={{ fontWeight: 600, letterSpacing: 0 }}>· <span style={{ color: "#60a5fa" }}>■</span> base <span style={{ color: C.gd }}>■</span> bonus <span style={{ color: C.rd }}>■</span> dead money if cut</span></div>
-      <div style={{ display: "flex", gap: 6, alignItems: "flex-end" }}>
+    <div style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
+      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: C.gd, marginBottom: 8 }}>CONTRACT TIMELINE <span style={{ fontWeight: 600, letterSpacing: 0 }}>· <span style={{ color: "#60a5fa" }}>■</span> base <span style={{ color: C.gd }}>■</span> bonus <span style={{ color: C.rd }}>■</span> dead money if cut</span></div>
+      <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
         {years.map((x) => (
-          <div key={x.y} style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
+          <div key={x.y} style={{ flex: "1 1 0", maxWidth: 110, minWidth: 0, textAlign: "center" }}>
             <div style={{ fontSize: 12, fontWeight: 800 }}>{money(x.hit)}</div>
             <div style={{ height: 70, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-              <div style={{ height: `${((x.hit - x.bonus) / max) * 66}px`, background: "#3b82f6", borderRadius: "4px 4px 0 0" }} />
-              <div style={{ height: `${(x.bonus / max) * 66}px`, background: C.gd }} />
+              <div style={{ height: `${((x.hit - x.bonus) / max) * 66}px`, background: "#3b82f6", borderRadius: x.bonus ? "4px 4px 0 0" : 4 }} />
+              <div style={{ height: `${(x.bonus / max) * 66}px`, background: C.gd, borderRadius: x.hit - x.bonus > 0 ? "0 0 4px 4px" : 4 }} />
             </div>
             <div style={{ fontSize: 11, color: C.mt }}>{x.y}</div>
             <div style={{ fontSize: 11, color: x.dead ? C.rd : C.mt }}>{x.dead ? `${money(x.dead)} dead` : "no dead $"}</div>
           </div>
         ))}
-        {voids.map((x) => <div key={x.y} style={{ flex: 1, minWidth: 0, textAlign: "center", opacity: 0.6 }}><div style={{ fontSize: 12 }}>void</div><div style={{ height: 70, display: "flex", alignItems: "flex-end" }}><div style={{ width: "100%", height: 10, background: "repeating-linear-gradient(45deg,#7c3aed55 0 4px,transparent 4px 8px)", borderRadius: 3 }} /></div><div style={{ fontSize: 11, color: C.mt }}>{x.y}</div></div>)}
+        {voids.map((x) => <div key={x.y} style={{ flex: "1 1 0", maxWidth: 110, minWidth: 0, textAlign: "center", opacity: 0.6 }}><div style={{ fontSize: 12 }}>void</div><div style={{ height: 70, display: "flex", alignItems: "flex-end" }}><div style={{ width: "100%", height: 10, background: "repeating-linear-gradient(45deg,#7c3aed55 0 4px,transparent 4px 8px)", borderRadius: 3 }} /></div><div style={{ fontSize: 11, color: C.mt }}>{x.y}</div></div>)}
       </div>
       {p.ext && <div style={{ fontSize: 12, color: C.gn, marginTop: 6 }}>Extension: {money(p.ext.sal)} a year × {p.ext.yrs} from {yr + yearsLeft}</div>}
       {p.inc?.amt > 0 && <div style={{ fontSize: 12, color: "#67e8f9", marginTop: 4 }}>Incentive: {money(p.inc.amt)} for {p.inc.label}</div>}
