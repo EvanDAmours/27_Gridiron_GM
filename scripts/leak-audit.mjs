@@ -186,7 +186,7 @@ try {
     await must("Sim Week", 1500); await audit("week 1");
     await simUntil("Sim to Deadline", () => document.body.innerText.includes("TRADE DEADLINE DAY"));
     await must("Advance to", 800); await must("Sim to 4:00 PM", 800); await must("Back to the season", 800); await audit("deadline");
-    await simUntil("Sim All", () => /Playoffs|PLAYOFF/.test(document.body.innerText) && !/Sim All/.test([...document.querySelectorAll("button")].map((b) => b.innerText).join(" "))); await page.waitForTimeout(2500); await audit("regular season");
+    await simUntil("Sim All", () => ((t) => !/Sim All/.test(t) && /Sim Round/.test(t))([...document.querySelectorAll("button")].map((b) => b.innerText).join(" "))); await page.waitForTimeout(2500); await audit("regular season");
     for (let i = 0; i < 5; i++) { await click("Sim Round", 1000); const c = page.locator("button", { hasText: /^Continue$/ }); if (await c.count()) await c.first().click(); }
     await audit("playoffs");
     await must("→ Combine"); await audit("combine"); await advance("Finish Combine →"); await audit("re-sign"); await advance("Finish Re-signing →", 2500); await audit("free agency");

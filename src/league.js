@@ -231,7 +231,7 @@ export function genRealDC(yr){
 
 
 // The positions a club needs most, neediest first (needs.js; a DL need is EDGE or DT).
-export const getTeamNeed=(roster)=>topNeeds(roster,6);
+export const getTeamNeed=(roster)=>{const l=topNeeds(roster,6);return l.length?l:teamNeeds(roster).list.filter(x=>x.pos!=="K"&&x.pos!=="P").slice(0,3).map(x=>x.pos);};
 // AI teams blend their own scouts' read with the consensus board, then weigh two things real
 // front offices do: how much the league values the position (quarterbacks, edge rushers, left
 // tackles and corners go early; running backs late, unless he's special or the cupboard is bare),
@@ -248,7 +248,7 @@ export function aiBestPick(roster,available,gmStyle){
     let val=DRAFT_POS_VALUE[g]??1;
     // a running back only goes early if he's elite or the team has nothing at the position
     if(g==="RB"&&((p.truePot||0)>=90||n>=0.75))val=1;
-    if(g==="QB"&&n===0)val=0.94; // set at quarterback: only a rare one is worth it
+    if(g==="QB"&&n<=0.1)val=0.94; // set at quarterback: only a rare one is worth it
     const sc=aiDraftScore(p,gmStyle)*val*(1+needW*n);
     if(sc>bs){bs=sc;best=p;}
   }

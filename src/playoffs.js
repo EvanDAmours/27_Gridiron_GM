@@ -54,6 +54,9 @@ export const seedLabel = (pb, id) => {
 export function draftOrder(teams, pb) {
   const out = new Map();
   for (const r of pb?.res || []) out.set(r.w === r.h ? r.a : r.h, r.rd); // the round each loser went out in
-  const exitRd = (id) => (pb?.ch === id ? 5 : out.get(id) ?? 0);
+  // a playoff club still alive goes out no earlier than the round being played (it used to count as a
+  // non-playoff club mid-postseason and picked ahead of teams already knocked out)
+  const seeded = new Set(pb?.seeds ? [...(pb.seeds.AFC || []), ...(pb.seeds.NFC || [])] : []);
+  const exitRd = (id) => (pb?.ch === id ? 5 : out.get(id) ?? (seeded.has(id) && pb?.ch == null ? (pb.rd || 1) + 0.5 : 0));
   return [...teams].sort((a, b) => exitRd(a.id) - exitRd(b.id) || -better(a, b) || 0).map((t) => t.id);
 }

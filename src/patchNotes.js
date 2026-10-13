@@ -953,4 +953,13 @@ export const PATCH_NOTES = [
     "Fixed the snap-share sliders on the depth chart's field view. Dragging one re-sorted the list by snaps under your finger, so the slider jumped to another player. The list now keeps the depth chart's order while you drag, the same way the list view always has.",
     "Behind the scenes: every push now plays a full season and off-season in a real browser as two different clubs (Giants and Chiefs), on top of the code checks and tests. Each week a deeper check plays three seasons and audits every player and pick (fails if anyone young vanishes or appears twice, a pick goes missing, or career totals don't add up). A new missing hook dependency in the code now fails the checks too.",
   ] },
+  { v: "2.74", date: "2026-10-14", title: "Bug Sweep", notes: [
+    "Punters and kickers: AI clubs hoarded them (in one league the Chargers carried three punters while four clubs had none and their kickers punted). Clubs now carry one of each, let extras go before the season, and an AI club left without one signs the best available. If your own roster has no quarterback, kicker or punter, Needs Attention says so.",
+    "AI releases now leave dead money like yours do. Their cuts used to cost nothing, so a few seasons in, no club carried any dead money at all.",
+    "The draft order during the playoffs: a team knocked out picked behind the teams still playing until the Super Bowl was over. Now it slots in right away, across the pick tracker, mock draft, scouting and trade values.",
+    "Teams already set at quarterback stopped getting the usual discount on quarterback prospects after the new team-needs update, so they reached for QBs early again. Fixed.",
+    "The draft War Room never suggested a prospect for an edge rusher or defensive tackle need. Fixed.",
+    "A deep roster with no real needs left every \"your needs\" filter (free agency, Deadline Day, the trade finder) empty; it now shows your thinnest spots.",
+    "On third and long, a blitz-heavy defense could crowd coverage calls out of the mix entirely. The calls now always leave room for each other.",
+  ] },
 ];

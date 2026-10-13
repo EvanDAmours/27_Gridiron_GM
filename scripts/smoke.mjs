@@ -187,7 +187,7 @@ try {
   await simUntil("Sim to Deadline", () => document.body.innerText.includes("TRADE DEADLINE DAY"), "sim to deadline"); await healthy("sim to deadline");
   if (!(await page.evaluate(() => document.body.innerText.includes("TRADE DEADLINE DAY")))) fail("deadline day didn't open");
   await must("Advance to", 800); await must("Sim to 4:00 PM", 800); await must("Back to the season", 800); log("trade deadline day");
-  await simUntil("Sim All", () => /Playoffs|PLAYOFF/.test(document.body.innerText) && !/Sim All/.test([...document.querySelectorAll("button")].map((b) => b.innerText).join(" ")), "sim all"); await page.waitForTimeout(2500); await healthy("sim all");
+  await simUntil("Sim All", () => ((t) => !/Sim All/.test(t) && /Sim Round/.test(t))([...document.querySelectorAll("button")].map((b) => b.innerText).join(" ")), "sim all"); await page.waitForTimeout(2500); await healthy("sim all");
   let d = await save();
   if (d.sp !== "playoffs" || d.wk !== 18) fail(`expected playoffs after Sim All, got ${d.sp} wk ${d.wk}`);
   log("regular season"); await census("regular season");

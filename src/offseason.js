@@ -3,8 +3,18 @@
 // season every roster is topped up from the real players still on the market. No player is
 // ever invented here.
 
-import { leagueCap, leagueMin } from "./cap.js";
-import { freshDeal } from "./bonus.js";
+import { leagueCap, leagueMin, getLeagueYear } from "./cap.js";
+import { freshDeal, deadMoney, chargeDead } from "./bonus.js";
+
+// A club releases a player into the pool. His remaining signing-bonus proration stays on its cap
+// as dead money, the same rule as your releases (AI cuts used to cost nothing, so by the late 2020s
+// no club carried any dead money at all). Counted as an in-season cut: this year's share now, the
+// rest next year.
+function release(t, p, pool, from) {
+  t.roster.splice(t.roster.indexOf(p), 1);
+  chargeDead(t, deadMoney(p, { yr: getLeagueYear(), sp: "preseason" }));
+  pool.push({ ...p, contract: 0, formerTeam: from });
+}
 import { optionEligible, aiTakesOption, optionPrice, tagPrice } from "./contracts.js";
 import { priorities, teamFit, fitPull } from "./negotiation.js";
 
@@ -227,7 +237,7 @@ export function starterSignings(teams, pool, ui, { minOvr = 72, perTeam = 2, cap
     t.roster.push(deal);
     if (cut && t.roster.length > ROSTER_TARGET) {
       const spare = [...t.roster].filter((x) => x !== deal).sort((a, b) => keepScore(a) - keepScore(b)).find((x) => t.roster.filter((q) => q.pos === x.pos).length > ROSTER_MIN[x.pos]);
-      if (spare) { t.roster.splice(t.roster.indexOf(spare), 1); pool.push({ ...spare, contract: 0, formerTeam: best }); }
+      if (spare) release(t, spare, pool, best);
     }
     count[best] = (count[best] || 0) + 1;
     signed.push({ p: deal, team: best, from: p.formerTeam });
@@ -261,8 +271,7 @@ export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random 
     while (t.roster.length > ROSTER_TARGET) {
       const spare = [...t.roster].sort((a, b) => keepScore(a) - keepScore(b)).find((p) => t.roster.filter((q) => q.pos === p.pos).length > ROSTER_MIN[p.pos]);
       if (!spare) break;
-      t.roster.splice(t.roster.indexOf(spare), 1);
-      pool.push({ ...spare, contract: 0, formerTeam: i });
+      release(t, spare, pool, i);
     }
   });
   // Then clubs take turns, one signing each per round, so a thin market is shared out evenly.
@@ -271,8 +280,10 @@ export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random 
     teams.forEach((t, i) => {
       if (i === ui || t.roster.length >= ROSTER_TARGET || !pool.length) return;
       const want = needs(t);
-      const k = pool.findIndex((p) => want.slice(0, 4).includes(p.pos));
-      sign(t, i, k >= 0 ? k : 0);
+      let k = pool.findIndex((p) => want.slice(0, 4).includes(p.pos) && !fullAt(t, p.pos));
+      if (k < 0) k = pool.findIndex((p) => !fullAt(t, p.pos));
+      if (k < 0) return;
+      sign(t, i, k);
       more = true;
     });
   }
@@ -280,8 +291,7 @@ export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random 
   teams.forEach((t, i) => {
     while (i !== ui && capSpace(t) < 0 && t.roster.length > 48) {
       const cut = [...t.roster].sort((a, b) => keepScore(a) - keepScore(b)).slice(0, 15).sort((a, b) => (b.salary || 0) - (a.salary || 0))[0];
-      t.roster.splice(t.roster.indexOf(cut), 1);
-      pool.push({ ...cut, contract: 0, formerTeam: i });
+      release(t, cut, pool, i);
     }
   });
   return signed;
@@ -294,6 +304,10 @@ export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random 
 // squad signs a fringe free agent in his place.
 export const DEPTH_MIN = { QB: 2, RB: 2, WR: 4, TE: 2, LT: 2, LG: 2, C: 2, RG: 2, RT: 2, DL: 6, LB: 4, CB: 3, S: 3, K: 1, P: 1 };
 export const PS_SIZE = 10;
+// Clubs carry one kicker and one punter. Hoarding them left other clubs with nobody to punt (in one
+// 2028 league the Chargers had three punters while four clubs had none).
+const SPECIALIST = { K: 1, P: 1 };
+const fullAt = (t, pos) => SPECIALIST[pos] != null && t.roster.filter((p) => p.pos === pos).length >= SPECIALIST[pos];
 const minDeal = (p, minSal, cy) => ({ ...freshDeal(p), salary: minSal, contract: 1, ...(cy ? { cy } : {}), formerTeam: undefined, onPS: undefined });
 const psDeal = (p, cy) => ({ ...freshDeal(p), salary: 0, contract: 1, ...(cy ? { cy } : {}), formerTeam: undefined });
 const bestAt = (list, pos) => { let k = -1; list.forEach((p, i) => { if (p.pos === pos && (k < 0 || p.ovr > list[k].ovr)) k = i; }); return k; };
@@ -301,6 +315,15 @@ const bestAt = (list, pos) => { let k = -1; list.forEach((p, i) => { if (p.pos =
 // Before the season. Mutates teams and pool (sorted best first). Returns log lines for your club.
 export function fillDepth(teams, pool, { ui, minSal = leagueMin(), cy } = {}) {
   const mine = [];
+  // 0. AI clubs carrying a second kicker or punter let the extra go first, so every club can find one.
+  teams.forEach((t, i) => {
+    if (i === ui) return;
+    for (const [pos, n] of Object.entries(SPECIALIST)) {
+      const at = t.roster.filter((p) => p.pos === pos).sort((a, b) => b.ovr - a.ovr);
+      for (const p of at.slice(n)) release(t, p, pool, i);
+    }
+  });
+  pool.sort((a, b) => b.ovr - a.ovr);
   teams.forEach((t, i) => {
     t.ps = t.ps || [];
     const note = (txt) => { if (i === ui) mine.push(txt); };
@@ -311,8 +334,7 @@ export function fillDepth(teams, pool, { ui, minSal = leagueMin(), cy } = {}) {
           // Full: release the least valuable player at a position with more than its minimum.
           const spare = [...t.roster].sort((a, b) => keepScore(a) - keepScore(b)).find((q) => q.pos !== pos && t.roster.filter((x) => x.pos === q.pos).length > (DEPTH_MIN[q.pos] || 1));
           if (!spare) break;
-          t.roster.splice(t.roster.indexOf(spare), 1);
-          pool.push({ ...spare, contract: 0, formerTeam: i });
+          release(t, spare, pool, i);
           note(`✂️ ${spare.name} (${spare.pos} ${spare.ovr}) released to make room for a backup ${pos}.`);
         }
         let k = bestAt(t.ps, pos);
@@ -325,7 +347,7 @@ export function fillDepth(teams, pool, { ui, minSal = leagueMin(), cy } = {}) {
     // 2. The rest of the 53 on minimum deals: the best players left, favouring thin positions.
     while (t.roster.length < ROSTER_TARGET && pool.length) {
       const thin = (pos) => t.roster.filter((p) => p.pos === pos).length - (DEPTH_MIN[pos] || 1);
-      const k = pool.reduce((b, p, j) => (b < 0 || p.ovr - thin(p.pos) * 3 > pool[b].ovr - thin(pool[b].pos) * 3 ? j : b), -1);
+      const k = pool.reduce((b, p, j) => (fullAt(t, p.pos) ? b : b < 0 || p.ovr - thin(p.pos) * 3 > pool[b].ovr - thin(pool[b].pos) * 3 ? j : b), -1);
       if (k < 0) break;
       const [p] = pool.splice(k, 1); t.roster.push(minDeal(p, minSal, cy)); note(`✍️ ${p.name} (${p.pos} ${p.ovr}) signed to a minimum deal to fill the 53.`);
     }
@@ -351,6 +373,19 @@ export function keepBackups(teams, fa, { ui, minSal = leagueMin() } = {}) {
   const mine = [];
   teams.forEach((t, i) => {
     t.ps = t.ps || [];
+    // An AI club with no kicker or punter signs the best one out there (making room if it must).
+    if (i !== ui) for (const pos of ["K", "P"]) {
+      if (t.roster.some((p) => p.pos === pos && !p.injured)) continue;
+      const f = bestAt(fa, pos);
+      if (f < 0) continue;
+      if (t.roster.length >= ROSTER_TARGET) {
+        const cut = [...t.roster].filter((q) => !q.injured && !SPECIALIST[q.pos] && t.roster.filter((x) => x.pos === q.pos).length > (DEPTH_MIN[q.pos] || 1)).sort((a, b) => keepScore(a) - keepScore(b))[0];
+        if (!cut) continue;
+        release(t, cut, fa, i);
+      }
+      const [p] = fa.splice(f, 1);
+      t.roster.push(minDeal(p, minSal));
+    }
     for (const [pos, n] of Object.entries(STARTS)) {
       if (pos === "K" || pos === "P") continue;
       if (t.roster.filter((p) => p.pos === pos && !p.injured).length > n) continue;
@@ -362,8 +397,7 @@ export function keepBackups(teams, fa, { ui, minSal = leagueMin() } = {}) {
       if (t.roster.length >= ROSTER_TARGET) {
         cut = [...t.roster].filter((q) => q.pos !== pos && !q.injured && t.roster.filter((x) => x.pos === q.pos).length > (DEPTH_MIN[q.pos] || 1)).sort((a, b) => keepScore(a) - keepScore(b))[0];
         if (!cut) continue;
-        t.roster.splice(t.roster.indexOf(cut), 1);
-        fa.push({ ...cut, contract: 0, formerTeam: i });
+        release(t, cut, fa, i);
       }
       t.ps.splice(t.ps.indexOf(cand), 1);
       t.roster.push(minDeal(cand, minSal));

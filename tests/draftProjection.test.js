@@ -44,3 +44,13 @@ test("compensatory picks sit at the end of their own round, and the rest renumbe
   assert.equal(out.find((x) => x.rd === 4 && x.num === 1).overall, 99, "round 4 starts after the comps");
   assert.deepEqual(out.map((x) => x.overall), out.map((_, i) => i + 1));
 });
+
+test("mid-playoffs, a team knocked out picks ahead of every team still alive", () => {
+  const ts = teams.map((t) => ({ ...t, w: t.id % 17, l: 17 - (t.id % 17), pf: 300, pa: 300 }));
+  const seeds = { AFC: [31, 30, 29, 28, 27, 26, 25], NFC: [24, 23, 22, 21, 20, 19, 18] };
+  const pb = { rd: 2, seeds, ch: null, res: [{ rd: 1, h: 30, a: 25, w: 30 }] }; // 25 is out in the Wild Card round
+  const order = draftOrder(ts, pb);
+  const alive = [...seeds.AFC, ...seeds.NFC].filter((id) => id !== 25);
+  assert.ok(alive.every((id) => order.indexOf(id) > order.indexOf(25)), "every live playoff club picks after the team that just lost");
+  assert.ok(order.indexOf(25) > order.indexOf(0), "and after every non-playoff club");
+});

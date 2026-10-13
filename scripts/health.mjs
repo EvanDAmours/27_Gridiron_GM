@@ -136,12 +136,13 @@ try {
     { const go = page.locator("button", { hasText: "Start the season anyway" }); if (await go.count()) { await go.first().click(); await page.waitForTimeout(1500); } }
     // Sim All plays one real week at a time and pauses for decisions: keep pressing until the playoffs
     for (let i = 0; i < 15; i++) {
-      const done = () => !/Sim All/.test([...document.querySelectorAll("button")].map((b) => b.innerText).join(" ")) && /Playoffs|PLAYOFF/.test(document.body.innerText);
+      const done = () => ((t) => !/Sim All/.test(t) && /Sim Round/.test(t))([...document.querySelectorAll("button")].map((b) => b.innerText).join(" "));
       if (await page.evaluate(done)) break;
       for (const t of ["Sim to 4:00 PM", "Back to the season", "Meet Demands", "Decide later", "Later", "Got it"]) { const b = page.locator("button:visible", { hasText: t }); if (await b.count()) { await b.first().click().catch(() => {}); await page.waitForTimeout(300); } }
       const b = page.locator("button:visible", { hasText: "Sim All" }); if (await b.count()) await b.first().click();
       for (let t = 0; t < 80 && !(await page.evaluate(done)); t++) await page.waitForTimeout(500);
     }
+    if (!(await page.evaluate(() => /Sim Round/.test([...document.querySelectorAll("button")].map((b) => b.innerText).join(" "))))) fail("Sim All never reached the playoffs");
     if (process.env.SCORING) { let r = await save(); for (let w = 0; w < 6 && r.sp !== "playoffs"; w++) r = await save(); console.log("SCORING " + JSON.stringify(scoring(r))); }
     for (let i = 0; i < 6; i++) { await click("Sim Round", 1000); const c = page.locator("button", { hasText: /^Continue$/ }); if (await c.count()) await c.first().click(); }
     await must("→ Combine"); await advance("Finish Combine →"); await advance("Finish Re-signing →", 2500); await advance("Finish Free Agency →", 1500);

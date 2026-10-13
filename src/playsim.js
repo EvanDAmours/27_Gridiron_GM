@@ -461,8 +461,10 @@ function stepPlay(g, call, bonus = 1) {
   let yards = 0, desc = "", type = "", carrier = null, completed = false, clockStops = false;
   // The defense's call this snap (defStyle): more blitzes on third and long.
   const ds = d.dStyle || { blitz: 0.22, box: 0.2, cover: 0.2 }, dst = g.stats[def];
-  const bl = ds.blitz * (g.down === 3 && g.toGo >= 6 ? 1.25 : 1), rr = rand();
-  const dcall = rr < bl ? "blitz" : rr < bl + ds.box ? "box" : rr < bl + ds.box + ds.cover ? "cover" : "base";
+  // more blitzes on third and long; the three calls never add up past 95% (some snaps are base)
+  const bl0 = ds.blitz * (g.down === 3 && g.toGo >= 6 ? 1.25 : 1), sum = bl0 + ds.box + ds.cover, sc = sum > 0.95 ? 0.95 / sum : 1;
+  const bl = bl0 * sc, rr = rand();
+  const dcall = rr < bl ? "blitz" : rr < bl + ds.box * sc ? "box" : rr < bl + (ds.box + ds.cover) * sc ? "cover" : "base";
   if (dst && dcall !== "base") dst[dcall]++;
   if (dst && (style === "pass" || style === "screen")) dst.dropbacks++;
   ev.dcall = dcall;
