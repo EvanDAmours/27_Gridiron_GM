@@ -10,6 +10,7 @@ import { depthOrderFor } from "./depth.js";
 import { playerValue, pickValue as chartPickValue } from "./trade.js";
 import { arrangeDL, dlAsPlayed, naturalDL } from "./dline.js";
 import { teamNeeds, topNeeds } from "./needs.js";
+import { bestPlan, planEdge } from "./gamePlan.js";
 import { makeSide, createGame, playGame, setLeague } from "./playsim.js";
 import { unitRatings } from "./gamesim.js";
 import { DATA_TO_DOLLARS, leagueCap, expiringNow } from "./cap.js";
@@ -378,10 +379,14 @@ const wx=wxOverride||rollGameWeather();
   const aOC=at.coach?.oc?(at.coach.oc.rating-60)*.1:0,aDC=at.coach?.dc?(at.coach.dc.rating-60)*.1:0;
   const hFit=getOCFit(ht)+getDCFit(ht),aFit=getOCFit(at)+getDCFit(at);
   const _hc=t=>t.coach?.hc?(t.coach.hc.rating-75)*.05:0,_he=hcGameEdge(ht.coach?.hc),_ae=hcGameEdge(at.coach?.hc),hHC=_hc(ht)-_hc(at)+_he.off+_he.def-_ae.off-_ae.def;
-  const offB={run_heavy:{m:-1.2,s:-2},balanced:{m:0,s:0},pass_heavy:{m:1.5,s:2.5}};
-  const defB={conservative:{m:-1.5,s:-2},aggressive:{m:-2.2,s:2.5},prevent:{m:-0.5,s:-3}};
-  const hOM=offB[hPlan?.off]||offB.balanced,hDM=defB[hPlan?.def]||{m:0,s:0};
-  const aOM=offB[aPlan?.off]||offB.balanced,aDM=defB[aPlan?.def]||{m:0,s:0};
+  // Who plays: AI clubs by their depth chart; yours by your depth chart with snap share overriding it.
+  const _ord=t=>{const _healthy=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const _dO=t.isUser?USER_DEPTH:{};const _pt=t.isUser?USER_SNAPS:null;const memo={};return pos=>memo[pos]||(memo[pos]=depthOrderFor(_healthy,_dO,pos,_pt));};
+  const hOrd=_ord(ht),aOrd=_ord(at);
+  // The game plans: yours if you picked one for this week, otherwise (and for every AI club) the
+  // one that suits the matchup best (gamePlan.js).
+  const hU=unitRatings(hOrd),aU=unitRatings(aOrd);
+  hPlan=ht.isUser&&hPlan&&!hPlan.auto?hPlan:{...(hPlan||{}),...bestPlan(hU,aU),auto:true};aPlan=at.isUser&&aPlan&&!aPlan.auto?aPlan:{...(aPlan||{}),...bestPlan(aU,hU),auto:true};
+  const _pe=planEdge(hPlan,aPlan,hU,aU);
   const hMorB=((ht.morale||50)-50)*0.06,aMorB=((at.morale||50)-50)*0.06;
   const wxM=wx==='snow'?-4:wx==='rain'?-2:wx==='wind'?-1:0;
   // Everything that tilts a game, in points for each offense (the engine turns it into play-by-play odds).
@@ -393,15 +398,12 @@ const wx=wxOverride||rollGameWeather();
   const _dda=DDA;
   // A scheme change takes a couple of weeks to install: the team plays a bit worse until it's in.
   const _trans=t=>(t._schemeTransWks||0)>0?-2:0;
-  let hMod=_trans(ht)+hOC-aDC+hFit*.5+hOM.m+aDM.m+hMorB+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+((hPlan?.playbook?.length||0)>=3?1:0)+_hClash+hHC+(ht.isUser?_dda:0);
-  let aMod=_trans(at)+aOC-hDC+aFit*.5+aOM.m+hDM.m+aMorB+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+((aPlan?.playbook?.length||0)>=3?1:0)+_aClash-hHC+(at.isUser?_dda:0);
-  // Who plays: AI clubs by their depth chart; yours by your depth chart with snap share overriding it.
-  const _ord=t=>{const _healthy=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const _dO=t.isUser?USER_DEPTH:{};const _pt=t.isUser?USER_SNAPS:null;const memo={};return pos=>memo[pos]||(memo[pos]=depthOrderFor(_healthy,_dO,pos,_pt));};
-  const hOrd=_ord(ht),aOrd=_ord(at);
+  let hMod=_trans(ht)+hOC-aDC+hFit*.5+_pe.h+hMorB+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+((hPlan?.playbook?.length||0)>=3?1:0)+_hClash+hHC+(ht.isUser?_dda:0);
+  let aMod=_trans(at)+aOC-hDC+aFit*.5+_pe.a+aMorB+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+((aPlan?.playbook?.length||0)>=3?1:0)+_aClash-hHC+(at.isUser?_dda:0);
   const hSnaps=teamSnaps(hOrd,ht.isUser?USER_SNAPS:{}),aSnaps=teamSnaps(aOrd,at.isUser?USER_SNAPS:{});
   // Play-calling tendency: the game plan, plus the coordinator's scheme (Air Raid throws more, Power Run runs more).
   const lean=(t,pl)=>(pl?.off==="pass_heavy"?0.07:pl?.off==="run_heavy"?-0.07:0)+(0.42-schemeRunPct(t))*0.5;
-  return{wx,hSnaps,aSnaps,home:makeSide({team:ht,order:hOrd,snaps:hSnaps,mod:hMod,lean:lean(ht,hPlan)}),away:makeSide({team:at,order:aOrd,snaps:aSnaps,mod:aMod,lean:lean(at,aPlan)})};
+  return{wx,hPlan,aPlan,hSnaps,aSnaps,home:makeSide({team:ht,order:hOrd,snaps:hSnaps,mod:hMod,lean:lean(ht,hPlan)}),away:makeSide({team:at,order:aOrd,snaps:aSnaps,mod:aMod,lean:lean(at,aPlan)})};
 }
 // After the final whistle: season stats, games played/started and injury checks for one team.
 // Returns the box score lines (with QB ratings) for the schedule.
@@ -455,6 +457,9 @@ export function calibrateLeague(teams){
   setLeague(base);return base;
 }
 // Sim a game start to finish on the play-by-play engine. dry: a preview that changes nothing.
+// Each club's unit ratings for a matchup, from the lineup that would take the field (for the game
+// plan screen; gameSetup builds the same).
+export function matchupUnits(ht,at){const _ord=t=>{const _healthy=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const _dO=t.isUser?USER_DEPTH:{};const _pt=t.isUser?USER_SNAPS:null;const memo={};return pos=>memo[pos]||(memo[pos]=depthOrderFor(_healthy,_dO,pos,_pt));};return{mine:unitRatings(_ord(ht)),theirs:unitRatings(_ord(at))};}
 export function simGame(ht,at,hPlan,aPlan,wxOverride,opts={}){
   const su=gameSetup(ht,at,hPlan,aPlan,wxOverride);
   const g=playGame(createGame(su.home,su.away,{playoff:!!opts.playoff,neutral:!!opts.neutral,rec:!!opts.rec}));

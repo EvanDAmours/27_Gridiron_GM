@@ -91,7 +91,7 @@ function Injuries({ teams, ui, onNav, wk }) {
   );
 }
 
-export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side }) {
+export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard }) {
   const me = teams[ui];
   const [panel, setPanel] = useState("stories");
   const inSeason = sp === "regular" || sp === "preseason";
@@ -169,6 +169,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
             />
           ) : null}
           {game && (sp === "regular" || sp === "playoffs" || sp === "preseason") && <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={sp === "playoffs"} neutral={!!game.neutral || (sp === "playoffs" && pb?.rd === 4)} />}
+          {game && (sp === "regular" || sp === "playoffs") && planCard && <div style={{ marginTop: 12 }}>{planCard}</div>}
           {mobile && menu.length > 0 && (
             <div style={{ marginTop: 12, background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 12, padding: "10px 10px 6px" }}>
               <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", marginBottom: 6 }}>THIS WEEK</div>

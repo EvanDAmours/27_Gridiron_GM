@@ -928,4 +928,9 @@ export const PATCH_NOTES = [
     "Team needs are smarter and shared by the whole game (your scouts, the draft room, free agency, trades, and the AI clubs' drafts, signings and trades). A position is a need when its starters are below par, or soon will be: a starter in his last contract year or past the age his position declines counts for less, and a thin bench adds a little. Edge rushers and defensive tackles are separate needs, and an aging quarterback with nobody behind him flags a need for the quarterback of the future.",
     "Removed the Draft Lottery button from God Mode: the NFL has no lottery, and it showed a made-up top five that didn't match the real order.",
   ] },
+  { v: "2.70", date: "2026-10-14", title: "Game Plans and Injury Calls", notes: [
+    "A real weekly game plan, on Home under the matchup. Each option is graded for this opponent: run heavy when your run game has the bigger edge on their run defense, pass heavy when your passing does; stack the box against a run team, drop into coverage against a passing team, blitz when your pass rush beats their line (and it backfires against a great line). Each one shows why.",
+    "Your coaches go with the best fit every week unless you pick something else, and a pick only lasts for that game, so next week starts from their call again. AI clubs game-plan the same way. Before, Pass Heavy and Aggressive were simply better every week whoever you played.",
+    "When one of your starters gets hurt, you choose who starts in his place: any healthy player at the position, or promote one from the practice squad. Your pick takes his exact spot on the depth chart and his share of the snaps. It waits in Needs Attention; if you don't choose, the next man on the depth chart plays, as before.",
+  ] },
 ];
