@@ -496,10 +496,10 @@ const ATTR_NOTES = {
   consistency: ["Repeatable, consistent mechanics", "Inconsistent mechanics"],
   coldWx: ["Unbothered by cold and wind", "Struggles in bad weather"],
   pressure: ["Thrives under pressure", "Tightens up under pressure"],
-  power: ["Booming punts that flip the field", "Short punts give up field position"],
   coffin: ["Pins returners inside the 10", "Sails punts into the end zone"],
 };
-const KICKER_NOTES = { accuracy: ["Splits the uprights consistently", "Sprays kicks from mid-range"] };
+// Kicking words for skills that share a name with a lineman's (a punter's "power" is his leg).
+const KICKER_NOTES = { accuracy: ["Splits the uprights consistently", "Sprays kicks from mid-range"], power: ["Booming punts that flip the field", "Short punts give up field position"] };
 const noteFor = (pos, k) => ((pos === "K" || pos === "P") && KICKER_NOTES[k]) || ATTR_NOTES[k] || [`Strong ${k}`, `Weak ${k}`];
 
 // Tool grades, projected to his NFL ceiling: today's skill plus the growth the scout expects.
