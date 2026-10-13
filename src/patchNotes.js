@@ -894,4 +894,8 @@ export const PATCH_NOTES = [
     "Saves are about 20% smaller (a three-season save went from 6.7 MB to 5.4 MB, and the autosave stored on your device from about 1.4 MB to 1.1 MB), so saving and loading are quicker, especially on phones and offline.",
     "What's trimmed is what no screen reads back: each player keeps his last 6 game logs (his card shows 5); full box scores are kept for every one of your games and for the last two weeks league-wide, while older games between other clubs keep just the score; and the draft log keeps what the draft recap shows for each pick.",
   ] },
+  { v: "2.63", date: "2026-10-14", title: "Phone Polish", notes: [
+    "The 3-way trade desk works on a phone: each club's list stacks full width with big tap rows and checkboxes, shows up to 20 players with their trade value, and has full-size team pickers and buttons (it was tiny text in cramped side-by-side columns showing about five players).",
+    "Front Office contracts: the Restructure option is a small secondary button (\"Restructure · frees $24.6M\") instead of a big bar on every card, so the contract numbers lead.",
+  ] },
 ];
