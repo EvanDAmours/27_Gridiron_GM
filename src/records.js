@@ -15,6 +15,9 @@ export const RECORD_DEFS = [
   { key: "ints", label: "Interceptions", pos: ["CB", "S", "LB", "DL"], nfl: { val: 14, name: "Night Train Lane", team: "LAR", yr: 1952 } },
 ];
 export const GAMES = 17;
+// A club's players for the record book: the active roster and injured reserve (a player hurt in
+// the game that set a record goes to IR before the week's check, and the record is still his).
+export const everyone = (t) => [...(t?.roster || []), ...(t?.ir || [])];
 import { FRANCHISE_RECORDS } from "./data/franchiseRecords.js";
 
 // Each club's real franchise records (club abbreviation -> stat -> { val, name, yr, real }).
@@ -48,7 +51,7 @@ export function updateFranchiseRecords(book, teams, yr) {
     const recs = { ...(franchise[t.ab] || {}) };
     for (const d of RECORD_DEFS) {
       let top = null;
-      for (const p of t.roster || []) { const v = p.ss?.[d.key] || 0; if (v > 0 && (!top || v > top.v)) top = { p, v }; }
+      for (const p of everyone(t)) { const v = p.ss?.[d.key] || 0; if (v > 0 && (!top || v > top.v)) top = { p, v }; }
       const cur = recs[d.key];
       if (!top || (cur && top.v <= cur.val)) continue;
       const same = cur && cur.pid === top.p.id && cur.yr === yr;
@@ -92,7 +95,7 @@ export function updateRecords(book, teams, yr) {
   const broken = [];
   for (const d of RECORD_DEFS) {
     let top = null;
-    teams.forEach((t) => (t.roster || []).forEach((p) => {
+    teams.forEach((t) => everyone(t).forEach((p) => {
       const v = p.ss?.[d.key] || 0;
       if (v > 0 && (!top || v > top.v)) top = { p, t, v };
     }));

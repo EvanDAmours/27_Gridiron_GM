@@ -57,3 +57,19 @@ test("franchise records: every club starts with its real marks, and a player who
   // old saves get the franchise marks
   assert.equal(loadRecordBook({ best: {}, history: [] }).franchise.DET.recYds.val, 1964);
 });
+
+test("records: a player who sets a mark and lands on injured reserve still holds it, and the next man to pass it passes him", async () => {
+  const { newRecordBook, updateFranchiseRecords, updateRecords, loadRecordBook } = await import("../src/records.js");
+  // Nabers is hurt in the game that takes him to 110: he's on IR when the week is checked
+  const nyg = { ab: "NYG", w: 9, l: 7, roster: [{ id: "cc", name: "Cam Coleman", ss: { rec: 80 } }], ir: [{ id: "mn", name: "Malik Nabers", ss: { rec: 110 } }] };
+  let book = updateFranchiseRecords(updateRecords(newRecordBook(), [nyg], 2026).book, [nyg], 2026).book;
+  assert.equal(book.franchise.NYG.rec.name, "Malik Nabers");
+  assert.equal(book.franchise.NYG.rec.val, 110);
+  // a save and reload later, the next season: Coleman passes Nabers's 110, not the old 109
+  book = loadRecordBook(JSON.parse(JSON.stringify(book)));
+  const nyg2 = { ab: "NYG", w: 12, l: 3, roster: [{ id: "cc", name: "Cam Coleman", ss: { rec: 114 } }], ir: [] };
+  const r = updateFranchiseRecords(book, [nyg2], 2027);
+  assert.equal(r.broken[0].prev.name, "Malik Nabers");
+  assert.equal(r.broken[0].prev.val, 110);
+  assert.equal(r.broken[0].prev.yr, 2026);
+});

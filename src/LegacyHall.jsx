@@ -5,7 +5,7 @@ import React from "react";
 import { C, Btn, TeamLogo } from "./ui.jsx";
 import { CAREER_STATS, careerTotals } from "./history.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
-import { RECORD_DEFS, recordValue } from "./records.js";
+import { RECORD_DEFS, recordValue, everyone } from "./records.js";
 import goldJacket from "./assets/gold-jacket.webp";
 import { RING_OF_HONOR } from "./data/ringOfHonor.js";
 
@@ -173,7 +173,7 @@ export function RecordsWall({ team, retired, book }) {
   const fr = book?.franchise?.[team.ab] || {};
   const season = RECORD_DEFS.filter((d) => fr[d.key]).map((d) => {
     let lead = null;
-    for (const p of team.roster || []) { const v = p.ss?.[d.key] || 0; if (v > 0 && (!lead || v > lead.v)) lead = { name: p.name, v }; }
+    for (const p of everyone(team)) { const v = p.ss?.[d.key] || 0; if (v > 0 && (!lead || v > lead.v)) lead = { name: p.name, v }; }
     return { ...d, rec: fr[d.key], lead };
   });
   return (

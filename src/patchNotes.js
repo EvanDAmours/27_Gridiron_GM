@@ -748,6 +748,9 @@ export const PATCH_NOTES = [
     "The header chip that said Scouting is now Staff pts (SP): the points for training camp, coaching and meetings. Your scouts' own points are on the Scouting screen, and leaving the Combine now warns about those, not SP.",
     "Training camp extensions use the same negotiation and cap check as the Front Office (the new deal starts next season, so it's measured against next year's cap).",
     "Every dropdown in the game (Training focus, rosters, teams, filters, sort, weeks, draft classes) is now the same dark list in the game's style on desktop, with search on long ones, and the ⋯ menus match it. Phones keep their own picker.",
-    "Club records: checked over a full simulated season; every record broken was saved. (Saves from before 2.43 could lose records on reload.)",
+  ] },
+  { v: "2.47", date: "2026-10-13", title: "Records on Injured Reserve", notes: [
+    "Fixed: a player who set a club or NFL record and got hurt in that game went to injured reserve before the week's record check, so his record never counted (his stats said 110 catches, but the club record stayed at 109). Records now count everyone on the roster and on IR, so the next player to pass him is measured against his mark.",
+    "The Legacy Hall's records wall also counts IR players when showing who's closest this season.",
   ] },
 ];
