@@ -1,0 +1,34 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { reprojectPicks, slotsFor } from "../src/draftProjection.js";
+import { draftOrder } from "../src/playoffs.js";
+
+const teams = Array.from({ length: 32 }, (_, i) => ({ id: i, c: i < 16 ? "AFC" : "NFC", d: ["East", "North", "South", "West"][(i >> 2) % 4], w: 0, l: 0, pf: 0, pa: 0 }));
+const picks = () => { const out = []; for (let rd = 1; rd <= 7; rd++) for (let i = 0; i < 32; i++) out.push({ id: `${rd}-${i}`, rd, num: i + 1, overall: (rd - 1) * 32 + i + 1, orig: i, owner: i, yr: 2027 }); out.push({ id: "c1", rd: 7, comp: true, orig: 5, owner: 5, yr: 2027, overall: 225 }); return out; };
+
+test("before any games the picks keep the order set at the start of the season", () => {
+  const p = picks();
+  assert.equal(reprojectPicks(p, teams, null, 2027), p);
+});
+
+test("mid-season every pick follows the standings, worst record first, owners unchanged", () => {
+  const ts = teams.map((t) => ({ ...t, w: t.id % 10, l: 10 - (t.id % 10), pf: 200 + t.id, pa: 200 }));
+  const p = picks(); p[3] = { ...p[3], owner: 9 }; // a traded first
+  const np = reprojectPicks(p, ts, null, 2027);
+  const order = draftOrder(ts, null);
+  for (const pk of np.filter((x) => !x.comp)) assert.equal(pk.overall, (pk.rd - 1) * 32 + order.indexOf(pk.orig) + 1);
+  assert.equal(np.find((x) => x.id === "1-3").owner, 9);
+  assert.equal(np.find((x) => x.comp).overall, 225);
+  assert.equal(new Set(np.map((x) => x.overall)).size, np.length);
+  assert.equal(reprojectPicks(np, ts, null, 2027), np, "no change, same array");
+});
+
+test("after the playoffs the champion picks last and the runner-up 31st", () => {
+  const ts = teams.map((t) => ({ ...t, w: 10, l: 7, pf: 300 + t.id, pa: 300 }));
+  const pb = { ch: 0, res: [{ rd: 4, h: 0, a: 20, w: 0 }, { rd: 3, h: 1, a: 0, w: 0 }] };
+  const np = reprojectPicks(picks(), ts, pb, 2027);
+  assert.equal(np.find((x) => x.rd === 1 && x.orig === 0).overall, 32);
+  assert.equal(np.find((x) => x.rd === 1 && x.orig === 20).overall, 31);
+  assert.deepEqual(slotsFor(np, 0, 2027).slice(0, 2), [32, 64]);
+  assert.deepEqual(slotsFor(np, 0, 2027, [np.find((x) => x.rd === 1 && x.orig === 0).id])[0], 64);
+});

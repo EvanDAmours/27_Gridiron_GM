@@ -3,17 +3,18 @@
 // with draft picks and/or a young player worth about what he is. Franchise players and starting
 // quarterbacks are never moved, and the buyer has to fit his salary under the cap. Players and
 // picks really change hands.
+import { teamNeeds, needGroup, NEED_STARTERS } from "./needs.js";
 import { withRace, clubMode } from "./tradeOffers.js";
 import { isFranchisePlayer } from "./offseason.js";
 import { tradeAway } from "./bonus.js";
 
 export const TRADE_DEADLINE_WEEK = 9;
-const STARTERS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2 };
+const STARTERS = NEED_STARTERS;
 const FAIR = [0.9, 1.25];
 
 // His team's weakest starter at a position (the bar a trade target has to clear).
 function starterBar(t, pos) {
-  const o = t.roster.filter((p) => p.pos === pos && !p.injured).map((p) => p.ovr).sort((a, b) => b - a);
+  const o = t.roster.filter((p) => needGroup(p) === pos && !p.injured).map((p) => p.ovr).sort((a, b) => b - a);
   return o[(STARTERS[pos] || 1) - 1] ?? 40;
 }
 const isQB1 = (t, p) => p.pos === "QB" && p === [...t.roster].filter((q) => q.pos === "QB").sort((a, b) => b.ovr - a.ovr)[0];
@@ -58,10 +59,11 @@ function aiTradeWeekNow(teams, picks, ui, { week, pkV, capSpace, rand = Math.ran
   for (const bi of buyers) {
     if (made >= max) break;
     const buyer = teams[bi];
-    const needs = Object.keys(STARTERS).map((pos) => ({ pos, bar: starterBar(buyer, pos) })).sort((a, b) => a.bar - b.bar); // weakest spot first
+    // its real needs first (needs.js: weak, aging or expiring starters), kickers aside
+    const needs = teamNeeds(buyer.roster).list.filter((x) => x.score >= 0.15 && x.pos !== "K" && x.pos !== "P").map(({ pos }) => ({ pos, bar: starterBar(buyer, pos) }));
     for (const { pos, bar } of needs) {
       const options = sellers.flatMap((si) => teams[si].roster
-        .filter((p) => p.pos === pos && p.ovr >= bar + 3 && p.age >= 27 && !p.injured && !isFranchisePlayer(p) && !isQB1(teams[si], p) && !p.ftag && (p.contract || 0) >= 1)
+        .filter((p) => needGroup(p) === pos && p.ovr >= bar + 3 && p.age >= 27 && !p.injured && !isFranchisePlayer(p) && !isQB1(teams[si], p) && !p.ftag && (p.contract || 0) >= 1)
         .map((p) => ({ si, p })))
         .sort((a, b) => b.p.ovr - a.p.ovr);
       for (const { si, p } of options) {

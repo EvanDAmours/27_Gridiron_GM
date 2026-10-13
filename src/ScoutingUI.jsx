@@ -2,6 +2,8 @@
 // Combine, your scouting staff, and the prospect profile. Game state comes in as `g`.
 import Select from "./Select.jsx";
 import { posTag } from "./dline.js";
+import { slotsFor } from "./draftProjection.js";
+import { topNeeds, fillsNeed } from "./needs.js";
 import { MOBILE } from "./mobile.js";
 import React, { useState, useMemo, useEffect } from "react";
 import { mockDraft } from "./mockDraft.js";
@@ -421,16 +423,9 @@ const POS_GROUPS = [["All", null], ["QB", ["QB"]], ["RB", ["RB"]], ["WR", ["WR"]
 const inGroup = (p, grp) => !grp || (typeof grp === "string" ? posTag(p) === grp : grp.includes(p.pos));
 const GRADE_ORDER = { "A+": 13, A: 12, "A-": 11, "B+": 10, B: 9, "B-": 8, "C+": 7, C: 6, "C-": 5, "D+": 4, D: 3, "D-": 2, F: 1 };
 
-// Your remaining picks this year as overall numbers: the real slots once the order is set,
-// otherwise projected from the standings (worst record first, the champion last).
-export function mySlots(g) {
-  const ts = g.teams || [];
-  const used = new Set((g.draftLog || []).map((d) => d.id));
-  const picks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !used.has(pk.id));
-  if (g.sp === "draft" || g.sp === "freeagency") return picks.map((pk) => pk.overall).sort((a, b) => a - b);
-  const ord = ts.map((t, i) => i).sort((a, b) => (a === g.pb?.ch) - (b === g.pb?.ch) || ts[a].w - ts[b].w || (ts[a].pf - ts[a].pa) - (ts[b].pf - ts[b].pa));
-  return picks.map((pk) => (pk.rd - 1) * 32 + ord.indexOf(pk.orig ?? pk.owner) + 1).sort((a, b) => a - b);
-}
+// Your remaining picks this year as overall numbers (the game keeps them projected from the
+// standings until the draft starts: draftProjection.js).
+export const mySlots = (g) => slotsFor(g.draftPicks, g.ui, g.yr, (g.draftLog || []).map((d) => d.id));
 
 // The Combine shortlist from your scouts: who to interview and work out, picked for where you
 // draft and what you need. compact: the top few, for Scouting HQ.
@@ -468,9 +463,8 @@ export function CombineView({ g, buzz }) {
   const sc = g.scouting || {};
   const all = (g.dc[g.yr] || []).filter((p) => tested(p) && p.combine);
   const me = g.teams[g.ui];
-  const best = (pos) => Math.max(0, ...(me?.roster || []).filter((p) => (pos === "OL" ? OL.includes(p.pos) : p.pos === pos)).map((p) => p.ovr));
-  const needs = ["QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].sort((x, y) => best(x) - best(y)).slice(0, 3);
-  const isNeed = (p) => needs.includes(OL.includes(p.pos) ? "OL" : p.pos);
+  const needs = topNeeds(me?.roster || [], 3);
+  const isNeed = (p) => fillsNeed(needs, p);
   const [grp, setGrp] = useState("All");
   const [mine, setMine] = useState(false);
   const [sort, setSort] = useState("rank");
@@ -666,9 +660,7 @@ export function PickTracker({ g }) {
   // Before the draft order is set, where each pick projects from the standings (worst record
   // first, the Super Bowl champion last).
   const ts = g.teams || [];
-  const ord = ts.map((t, i) => i).sort((a, b) => (a === g.pb?.ch) - (b === g.pb?.ch) || ts[a].w - ts[b].w || (ts[a].pf - ts[a].pa) - (ts[b].pf - ts[b].pa));
-  const slot = (pk) => ord.indexOf(pk.orig ?? pk.owner) + 1;
-  const label = (pk) => (g.sp === "draft" ? `#${pk.overall}` : slot(pk) > 0 ? `#${(pk.rd - 1) * 32 + slot(pk)}${pk.orig != null && pk.orig !== g.ui ? ` ${ts[pk.orig]?.ab}` : ""}` : "—");
+  const label = (pk) => (pk.overall ? `#${pk.overall}${g.sp !== "draft" && pk.orig != null && pk.orig !== g.ui ? ` ${ts[pk.orig]?.ab}` : ""}` : "—");
   // one small chip per pick, in a row that wraps; rounds without a pick show faded
   const chips = [1, 2, 3, 4, 5, 6, 7].flatMap((rd) => {
     const mine = picks.filter((pk) => pk.rd === rd);
@@ -767,17 +759,11 @@ export function DraftQueue({ picks, idx, teams, ui, n = 12 }) {
   );
 }
 
-// The order the next draft would go in today: the live draft from the pick on the clock, or the
-// current standings (worst record first) with traded picks going to their owners.
+// The order the next draft would go in today: the live draft from the pick on the clock, or this
+// year's picks as the game projects them from the standings (draftProjection.js).
 export function projectedOrder(g, rounds = 2) {
   if (g.sp === "draft" && g.curPick) return (g.draftPicks || []).slice(g.draftIdx || 0).filter((pk) => pk.rd <= rounds);
-  const order = (g.teams || []).map((t, i) => i).sort((a, b) => g.teams[a].w - g.teams[b].w || (g.teams[a].pf - g.teams[a].pa) - (g.teams[b].pf - g.teams[b].pa));
-  const out = [];
-  for (let rd = 1; rd <= rounds; rd++) order.forEach((tid, i) => {
-    const pk = (g.draftPicks || []).find((x) => x.yr === g.yr && x.orig === tid && x.rd === rd);
-    out.push({ id: `m${rd}-${tid}`, rd, overall: (rd - 1) * 32 + i + 1, owner: pk ? pk.owner : tid, orig: tid });
-  });
-  return out;
+  return (g.draftPicks || []).filter((pk) => (pk.yr == null || pk.yr === g.yr) && pk.rd <= rounds && !pk.comp).sort((a, b) => a.overall - b.overall);
 }
 
 // The experts' mock draft for this class, with your picks and your list highlighted, and a
@@ -879,9 +865,8 @@ export function ScoutingHQ({ g, go }) {
   const trips = s.regionsYr === g.yr ? s.regions || {} : {};
   const canTravel = g.sp !== "freeagency" && g.sp !== "draft";
   // your thinnest spots: the positions where your best player is weakest
-  const best = (pos) => Math.max(0, ...(me?.roster || []).filter((p) => (pos === "OL" ? ["LT", "LG", "C", "RG", "RT"].includes(p.pos) : p.pos === pos)).map((p) => p.ovr));
-  const needs = ["QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].sort((a, b) => best(a) - best(b)).slice(0, 3);
-  const isNeed = (p) => needs.includes(["LT", "LG", "C", "RG", "RT"].includes(p.pos) ? "OL" : p.pos);
+  const needs = topNeeds(me?.roster || [], 3);
+  const isNeed = (p) => fillsNeed(needs, p);
   const myPicks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !(g.draftLog || []).some((d) => d.id === pk.id)).sort((a, b) => a.overall - b.overall);
   // where your first pick lands: its slot once the order's set, otherwise where your record would put it
   const first = myPicks.length ? mySlots(g)[0] ?? null : null;

@@ -1,5 +1,6 @@
 // Free agency, laid out like the trade screen: one big sortable table of real free agents, your
 // cap and needs up top, and a real negotiation (years and money) when you go to sign someone.
+import { fillsNeed } from "./needs.js";
 import Select from "./Select.jsx";
 import { MOBILE } from "./mobile.js";
 import React, { useState } from "react";
@@ -25,7 +26,7 @@ export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSe
   const key = { ovr: (p) => p.ovr, age: (p) => p.age, ask: (p) => askingPrice(p), pos: (p) => POS.indexOf(p.pos), name: (p) => p.name };
   const rows = fa
     .filter((p) => pos === "ALL" || p.pos === pos)
-    .filter((p) => !needOnly || needs.includes(p.pos))
+    .filter((p) => !needOnly || fillsNeed(needs, p))
     .filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => { const x = key[sort[0]](a), y = key[sort[0]](b); return (typeof x === "string" ? x.localeCompare(y) : x - y) * sort[1]; });
   const th = (k, label, left) => (

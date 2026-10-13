@@ -4,6 +4,7 @@
 // is worth (a first-round pick is not on the table for a backup).
 
 import { nflSeeds } from "./playoffs.js";
+import { needGroup, NEED_STARTERS } from "./needs.js";
 
 export const MAX_OVERPAY = 1.15; // the most an offer can be worth, as a multiple of your player
 const MIN_FAIR = 0.75; // and the least
@@ -46,9 +47,9 @@ export function clubMode(t) {
 // yours unless he's clearly better.
 const STARTS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, EDGE: 2, DT: 2, LB: 3, CB: 2, S: 2, K: 1, P: 1 };
 export function fitsTeam(t, p) {
-  const mine = (t?.roster || []).filter((x) => x.pos === p.pos && x.id !== p.id).sort((a, b) => (b.ovr || 0) - (a.ovr || 0));
+  const mine = (t?.roster || []).filter((x) => needGroup(x) === needGroup(p) && x.id !== p.id).sort((a, b) => (b.ovr || 0) - (a.ovr || 0));
   if (p.pos === "QB") { const qb1 = mine[0]?.ovr || 0; return (p.ovr || 0) >= qb1 + 3 || qb1 < 72; }
-  const n = STARTS[p.pos] || 1;
+  const n = NEED_STARTERS[needGroup(p)] || STARTS[p.pos] || 1;
   const nth = mine[n - 1]?.ovr || 0; // their worst starter there
   return (p.ovr || 0) > nth || mine.filter((x) => (x.ovr || 0) >= 65).length < n + 1;
 }

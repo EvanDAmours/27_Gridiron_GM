@@ -2,13 +2,14 @@
 // by hour from 9 AM to the 4 PM ET deadline. Each hour AI clubs make deals (contenders buying
 // veterans from rebuilding clubs), the insiders' feed fills with breaking trades and rumors from
 // the real state of the league, and your phone rings with offers. At 4 PM the window closes.
+import { teamNeeds } from "./needs.js";
 import { aiTradeWeek, TRADE_DEADLINE_WEEK } from "./aiTrades.js";
 import { clubMode, withRace } from "./tradeOffers.js";
 import { isFranchisePlayer } from "./offseason.js";
 
 export const DEADLINE_HOURS = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"];
 export const LAST_HOUR = DEADLINE_HOURS.length - 1;
-const POS_NAME = { QB: "quarterback", RB: "running back", WR: "receiver", TE: "tight end", LT: "left tackle", LG: "guard", C: "center", RG: "guard", RT: "right tackle", DL: "pass rusher", LB: "linebacker", CB: "cornerback", S: "safety", K: "kicker" };
+const POS_NAME = { QB: "quarterback", RB: "running back", WR: "receiver", TE: "tight end", LT: "left tackle", LG: "guard", C: "center", RG: "guard", RT: "right tackle", DL: "pass rusher", EDGE: "pass rusher", DT: "defensive tackle", LB: "linebacker", CB: "cornerback", S: "safety", K: "kicker" };
 const STARTERS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2 };
 const nm = (t) => `${t.city} ${t.name}`;
 const rec = (t) => `${t.w || 0}-${t.l || 0}${t.t ? `-${t.t}` : ""}`;
@@ -33,9 +34,7 @@ function marketBoardNow(teams, ui) {
   };
 }
 
-const needOf = (t) => Object.keys(STARTERS)
-  .map((pos) => ({ pos, bar: t.roster.filter((p) => p.pos === pos && !p.injured).map((p) => p.ovr).sort((a, b) => b - a)[STARTERS[pos] - 1] ?? 40 }))
-  .sort((a, b) => a.bar - b.bar)[0]?.pos;
+const needOf = (t) => teamNeeds(t.roster).list.find((x) => x.pos !== "K" && x.pos !== "P")?.pos;
 
 // What the insiders are hearing, from the real state of the league.
 export function rumors(teams, ui, rand, n = 2) {

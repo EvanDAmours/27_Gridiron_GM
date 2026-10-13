@@ -922,4 +922,10 @@ export const PATCH_NOTES = [
     "Your scouts build the Combine shortlist the way a real staff does. Besides where you pick and what you need, they now weigh what they think of each player: one they grade above the rest of that range (or a sleeper they've spotted) moves up, and one they grade well below it is left off.",
     "They also want answers before you spend a premium pick (rounds 1 and 2): anyone they only have a rough read on, a red flag, a poor Combine, or a raw project gets a visit, with the reason spelled out (\"red flag: get the story before spending a 1st\").",
   ] },
+  { v: "2.69", date: "2026-10-14", title: "One Draft Order, Real Needs", notes: [
+    "One draft order everywhere. Until the draft starts, every pick number follows the NFL rule (non-playoff clubs worst record first, then playoff clubs by the round they went out, the champion last) and updates as the standings change. The pick tracker, mock draft, Scouting HQ, your scouts' shortlist and trade values now all show the same numbers. Mid-season, pick values in trades used to come from last season's order.",
+    "The experts' mock draft and Big Board still follow the consensus, while your scouts keep their own grades, so where your staff disagrees with the board you'll see it.",
+    "Team needs are smarter and shared by the whole game (your scouts, the draft room, free agency, trades, and the AI clubs' drafts, signings and trades). A position is a need when its starters are below par, or soon will be: a starter in his last contract year or past the age his position declines counts for less, and a thin bench adds a little. Edge rushers and defensive tackles are separate needs, and an aging quarterback with nobody behind him flags a need for the quarterback of the future.",
+    "Removed the Draft Lottery button from God Mode: the NFL has no lottery, and it showed a made-up top five that didn't match the real order.",
+  ] },
 ];

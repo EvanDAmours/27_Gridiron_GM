@@ -9,6 +9,7 @@ import REAL_CONTRACTS from "./data/contracts2026.json" with { type: "json" };
 import { depthOrderFor } from "./depth.js";
 import { playerValue, pickValue as chartPickValue } from "./trade.js";
 import { arrangeDL, dlAsPlayed, naturalDL } from "./dline.js";
+import { teamNeeds, topNeeds } from "./needs.js";
 import { makeSide, createGame, playGame, setLeague } from "./playsim.js";
 import { unitRatings } from "./gamesim.js";
 import { DATA_TO_DOLLARS, leagueCap, expiringNow } from "./cap.js";
@@ -228,35 +229,16 @@ export function genRealDC(yr){
 }
 
 
-// AI positional need
-export function getTeamNeed(roster){
-  const ideal={QB:2,RB:3,WR:5,TE:2,LT:2,LG:2,C:1,RG:2,RT:2,DL:5,LB:4,CB:4,S:3,K:1,P:1};
-  const ct={};POS.forEach(p=>ct[p]=roster.filter(x=>x.pos===p).length);
-  const needs=[];POS.forEach(p=>{const diff=ideal[p]-(ct[p]||0);if(diff>0)for(let i=0;i<diff;i++)needs.push(p);});
-  if(!needs.length)POS.forEach(p=>needs.push(p)); // fallback
-  return needs;
-}
+// The positions a club needs most, neediest first (needs.js; a DL need is EDGE or DT).
+export const getTeamNeed=(roster)=>topNeeds(roster,6);
 // AI teams blend their own scouts' read with the consensus board, then weigh two things real
 // front offices do: how much the league values the position (quarterbacks, edge rushers, left
 // tackles and corners go early; running backs late, unless he's special or the cupboard is bare),
 // and how bad their own starters are there. Edge rushers and interior tackles are separate needs.
 const DRAFT_POS_VALUE={QB:1.03,EDGE:1.04,LT:1.035,CB:1.025,WR:1.015,DT:1.0,RT:1.0,S:0.975,LB:0.965,TE:0.965,LG:0.96,RG:0.96,C:0.955,RB:0.955,K:1,P:1};
-const STARTERS={QB:1,RB:1,WR:3,TE:1,LT:1,LG:1,C:1,RG:1,RT:1,EDGE:2,DT:2,LB:3,CB:3,S:2,K:1,P:1};
 const groupOf=(p)=>(p.pos==="DL"?naturalDL(p):p.pos);
-// How badly a roster needs each position: 0 (set) to 1 (no starter-caliber player at all).
-export function draftNeeds(roster){
-  const by={};for(const p of roster||[]){if(p.injured&&p.injWk>8)continue;(by[groupOf(p)]||=[]).push(p.ovr||0);}
-  const need={};
-  for(const [g,n] of Object.entries(STARTERS)){
-    const top=(by[g]||[]).sort((a,b)=>b-a).slice(0,n);while(top.length<n)top.push(55);
-    const avg=top.reduce((a,b)=>a+b,0)/n;need[g]=Math.max(0,Math.min(1,(82-avg)/16));
-  }
-  // a team with a real starting quarterback (not near the end) doesn't spend a high pick on another
-  const qb=(roster||[]).filter((p)=>p.pos==="QB").sort((a,b)=>b.ovr-a.ovr)[0];
-  if(qb&&qb.ovr>=74&&(qb.age||27)<=33)need.QB=0;
-  need.QB=need.QB??1;
-  return need;
-}
+// How badly a roster needs each position: 0 (set) to 1 (nothing there), from needs.js.
+export const draftNeeds=(roster)=>teamNeeds(roster).score;
 export function aiBestPick(roster,available,gmStyle){
   const need=draftNeeds(roster),needW=gmStyle==='rebuilder'?0.05:gmStyle==='win-now'?0.09:0.07;
   let best=null,bs=-Infinity;

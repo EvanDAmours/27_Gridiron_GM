@@ -15,7 +15,7 @@ const SESSION_ONLY = new Set([
   "capOutlookOpen capRollover celebrate challengeSeason chemGraph coachExt coachNag",
   "compareOpen compareSel compareSlots cutWarnPending deadlineUrgency",
   "depthView difficulty docCard draftActive draftAnalyst draftAnalystLoading draftBuzz draftClock",
-  "draftClockActive draftLotteryOpen draftLotteryResult draftPaused draftPickTrade",
+  "draftClockActive draftPaused draftPickTrade",
   "draftReveal draftRumors draftSpeed draftTicker draftTimer draftView dynastyEndOpen",
   "dynastyShareOpen expansionModal expansionMode expansionResults extTalk faBid faCombine",
   "findTradeOpen firedOffer foFilter foSort foView forPick fourthChoice gemScout globalLB",

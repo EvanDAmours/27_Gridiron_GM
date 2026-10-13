@@ -1,6 +1,7 @@
 // Trade Deadline Day: a whole screen for the day, broadcast style. The clock runs 9 AM to the
 // 4 PM ET deadline an hour at a time; the feed breaks every deal and rumor, your phone shows the
 // offers coming in, and the board lists who's buying and who's selling.
+import { fillsNeed } from "./needs.js";
 import Select from "./Select.jsx";
 import React, { useEffect, useState } from "react";
 import { C, oC, Bdg, Btn, TeamLogo } from "./ui.jsx";
@@ -100,7 +101,7 @@ function TradeBlock({ teams, ui, needs, pickValue, onInquire, setSel, closed }) 
   const [needOnly, setNeedOnly] = useState(false);
   const [pos, setPos] = useState("ALL");
   const all = leagueTradeBlock(teams, ui);
-  const list = all.filter((x) => (!needOnly || needs.includes(x.p.pos)) && (pos === "ALL" || x.p.pos === pos));
+  const list = all.filter((x) => (!needOnly || fillsNeed(needs, x.p)) && (pos === "ALL" || x.p.pos === pos));
   const btn = (on) => ({ background: on ? `${C.bl}33` : C.bg, border: `1px solid ${on ? C.bl : C.bd}`, color: on ? "#bfdbfe" : "#cbd5e1", borderRadius: 6, padding: "4px 10px", fontSize: 13, fontWeight: 700, cursor: "pointer" });
   return (
     <>
