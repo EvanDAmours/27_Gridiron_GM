@@ -82,11 +82,14 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
   const [pick, setPick] = useState(null); // [pos, idx]
   const set = SETS[side] || SETS.offense;
   // snap shares at a position, the way game day will hand them out
-  const shares = (pos) => positionSnaps(pos, order(pos).filter((p) => !p.injured), snaps || {});
-  const setShare = (pos, p, v) => { if (!setSnaps) return; const others = order(pos).filter((x) => x.id !== p.id && !x.injured && snaps?.[x.id] != null).reduce((t, x) => t + snaps[x.id], 0); setSnaps((sn) => ({ ...sn, [p.id]: Math.max(0, Math.min(v, 100, snapBudget(pos) - others)) })); };
+  const shares = (pos) => positionSnaps(pos, depthList(pos).filter((p) => !p.injured), snaps || {});
+  const setShare = (pos, p, v) => { if (!setSnaps) return; const others = depthList(pos).filter((x) => x.id !== p.id && !x.injured && snaps?.[x.id] != null).reduce((t, x) => t + snaps[x.id], 0); setSnaps((sn) => ({ ...sn, [p.id]: Math.max(0, Math.min(v, 100, snapBudget(pos) - others)) })); };
   const resetShares = (pos) => clearSnaps(pos);
   const sidePositions = [...new Set(set.spots.map(([pos]) => pos))];
   const order = (pos) => depthOrderFor(roster, depthOrder, pos, snaps);
+  // The pick list keeps the depth chart's order while you drag a snap slider (the list view does the
+  // same): ordered by snaps, the rows re-sorted under your finger and the slider jumped to someone else.
+  const depthList = (pos) => depthOrderFor(roster, depthOrder, pos);
   // Choosing a starter here is your call: it clears snap shares you set at that position, so
   // the new order takes over.
   const clearSnaps = (...ps) => setSnaps && setSnaps((s) => { const n = { ...s }; for (const pos of ps) for (const p of roster) if (p.pos === pos) delete n[p.id]; return n; });
@@ -119,7 +122,8 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
   };
   const rowLabel = (pos, i) => (pos === "DL" && i < 4 ? DL_SLOTS[i] : i < STARTERS[pos] ? (STARTERS[pos] > 1 ? `${pos}${i + 1}` : `${pos}1`) : `${pos} #${i + 1}`);
   // Everyone who could line up here: for tackles and guards, both sides of the line.
-  const chosen = pick && [...order(pick[0]).map((p, i) => ({ p, at: pick[0], i })), ...(PARTNER[pick[0]] && setPositions ? order(PARTNER[pick[0]]).map((p, i) => ({ p, at: PARTNER[pick[0]], i })) : []),
+  const pickedId = pick && order(pick[0])[pick[1]]?.id; // who's in the spot you opened
+  const chosen = pick && [...depthList(pick[0]).map((p, i) => ({ p, at: pick[0], i })), ...(PARTNER[pick[0]] && setPositions ? order(PARTNER[pick[0]]).map((p, i) => ({ p, at: PARTNER[pick[0]], i })) : []),
     ...(CROSS[pick[0]] && onMovePos ? CROSS[pick[0]].flatMap((x) => order(x).map((p, i) => ({ p, at: x, i, move: true }))) : [])];
   return (
     <div>
@@ -174,7 +178,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
                 </div></details>
               </div>
               {chosen.map(({ p, at, i, move }) => {
-                const here = at === pick[0] && i === pick[1];
+                const here = at === pick[0] && p.id === pickedId;
                 const starter = i < STARTERS[at];
                 return (
                   <React.Fragment key={`${at}${p.id}`}>

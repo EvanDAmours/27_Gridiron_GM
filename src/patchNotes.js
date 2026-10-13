@@ -949,4 +949,8 @@ export const PATCH_NOTES = [
     "Removed dead features that never appeared or never worked: salary arbitration, a second contract window, RFA tenders, and the owner mandate that never resolved.",
     "Home-screen icon showing a GitHub 404? It was added before 2.58, when the app pointed to an old address. Delete it and add it again from the phone link (the Offline Play panel says so too).",
   ] },
+  { v: "2.73", date: "2026-10-14", title: "Snap Sliders and Safety Nets", notes: [
+    "Fixed the snap-share sliders on the depth chart's field view. Dragging one re-sorted the list by snaps under your finger, so the slider jumped to another player. The list now keeps the depth chart's order while you drag, the same way the list view always has.",
+    "Behind the scenes: every push now plays a full season and off-season in a real browser as two different clubs (Giants and Chiefs), on top of the code checks and tests. Each week a deeper check plays three seasons and audits every player and pick (fails if anyone young vanishes or appears twice, a pick goes missing, or career totals don't add up). A new missing hook dependency in the code now fails the checks too.",
+  ] },
 ];

@@ -73,6 +73,17 @@ async function startSeason() {
   const go = page.locator("button", { hasText: "Start the season anyway" });
   if (await go.count()) { await go.first().click(); await page.waitForTimeout(1200); }
 }
+// Sim several weeks: one real week at a time, pausing for decisions; press again until done.
+async function simUntil(text, done) {
+  for (let i = 0; i < 12; i++) {
+    if (await page.evaluate(done)) return;
+    await dismiss();
+    const b = page.locator("button:visible", { hasText: text });
+    if (await b.count()) await b.first().click();
+    for (let t = 0; t < 60 && !(await page.evaluate(done)); t++) await page.waitForTimeout(500);
+  }
+  if (!(await page.evaluate(done))) fail(`"${text}" never finished`);
+}
 async function must(text, wait) { if (!(await click(text, wait))) fail(`no "${text}" button`); }
 async function save() {
   await page.waitForTimeout(2000);
@@ -118,7 +129,8 @@ async function census(where) {
   prevC = m;
 }
 
-const SEEN = new Map(); // id -> last description
+const SEEN = new Map();
+const problems = []; // anything here fails the audit (old players retiring is expected and doesn't) // id -> last description
 let prevA = null;
 async function audit(where) {
   const d = await save();
@@ -131,25 +143,33 @@ async function audit(where) {
   const retired = new Set((d.retired || []).map((r) => r.id));
   const prospects = new Map(); for (const [y, cls] of Object.entries(d.dc || {})) for (const p of cls || []) prospects.set(p.id, y);
   const out = [];
+  if (dups.length) problems.push(`${where}: ${dups.length} players in two places`);
   if (dups.length) out.push(`DUPLICATES (${dups.length}): ${dups.slice(0, 6).join(" | ")}`);
   if (prevA) {
     const gone = [...prevA.loc.values()].filter(({ p }) => !loc.has(p.id) && !retired.has(p.id));
     const notable = gone.filter(({ p }) => (p.age || 0) <= 31);
     const old = gone.length - notable.length;
+    // ordinary retirements aren't kept in the record book, so only a young player vanishing is a leak
+    const young = gone.filter(({ p }) => (p.age || 0) <= 29);
+    if (young.length) problems.push(`${where}: ${young.length} players aged 29 or under vanished (${young.slice(0, 3).map(({ p }) => p.name).join(", ")})`);
     if (gone.length) out.push(`vanished ${gone.length} (${old} aged 32+, likely retirements): ${notable.slice(0, 12).map(({ p, w }) => `${p.name} ${p.pos} ${w} age${p.age} c${p.contract} ovr${p.ovr}`).join(" | ")}`);
     // prospects: in last check's class, now neither prospect nor anywhere
     const lostPros = [...prevA.prospects.keys()].filter((id) => !prospects.has(id) && !loc.has(id));
+    if (lostPros.length) problems.push(`${where}: ${lostPros.length} prospects lost`);
     if (lostPros.length) out.push(`prospects lost ${lostPros.length}: ${lostPros.slice(0, 8).map((id) => prevA.pnames.get(id)).join(", ")}`);
   }
   // picks: every (year, round, original club) once
   const pk = new Map(); for (const p of [...(d.draftPicks || []), ...(d.futurePicks || [])]) { const k = `${p.yr}-${p.rd}-${p.orig}${p.comp ? "-c" + p.id : ""}`; pk.set(k, (pk.get(k) || 0) + 1); }
   const pdup = [...pk].filter(([, n]) => n > 1);
+  if (pdup.length) problems.push(`${where}: duplicate picks`);
   if (pdup.length) out.push(`duplicate picks: ${pdup.slice(0, 8).map(([k, n]) => `${k}×${n}`).join(", ")}`);
   const byYr = {}; for (const k of pk.keys()) if (!k.includes("-c")) { const y = k.split("-")[0]; byYr[y] = (byYr[y] || 0) + 1; }
   const short = Object.entries(byYr).filter(([y, n]) => n !== 224 && !(d.sp === "draft" && +y === d.yr)).map(([y, n]) => `${y}:${n}`);
+  if (short.length) problems.push(`${where}: pick counts off (${short.join(", ")})`);
   if (short.length) out.push(`pick counts off (should be 224): ${short.join(", ")}`);
   // career stats: cs.gp at least the sum of past season lines
   const badCs = []; for (const { p } of loc.values()) { const sum = (p.sh || []).reduce((s, x) => s + (x.gp || 0), 0); if (sum > (p.cs?.gp || 0) + 0.5) badCs.push(`${p.name} cs.gp ${p.cs?.gp || 0} < lines ${sum}`); }
+  if (badCs.length) problems.push(`${where}: ${badCs.length} career totals short`);
   if (badCs.length) out.push(`career totals short (${badCs.length}): ${badCs.slice(0, 4).join(" | ")}`);
   console.log(`  ## ${d.yr} ${d.sp} wk${d.wk} (${where}): ${loc.size} players${out.length ? "\n     " + out.join("\n     ") : " — clean"}`);
   const pnames = new Map(); for (const [y, cls] of Object.entries(d.dc || {})) for (const p of cls || []) pnames.set(p.id, `${p.name} (${y})`);
@@ -164,9 +184,9 @@ try {
   for (let season = 0; season < 3; season++) {
     await startSeason(); await audit("season start");
     await must("Sim Week", 1500); await audit("week 1");
-    await must("Sim to Deadline", 3500);
+    await simUntil("Sim to Deadline", () => document.body.innerText.includes("TRADE DEADLINE DAY"));
     await must("Advance to", 800); await must("Sim to 4:00 PM", 800); await must("Back to the season", 800); await audit("deadline");
-    await must("Sim All", 4000); await audit("regular season");
+    await simUntil("Sim All", () => /Playoffs|PLAYOFF/.test(document.body.innerText) && !/Sim All/.test([...document.querySelectorAll("button")].map((b) => b.innerText).join(" "))); await page.waitForTimeout(2500); await audit("regular season");
     for (let i = 0; i < 5; i++) { await click("Sim Round", 1000); const c = page.locator("button", { hasText: /^Continue$/ }); if (await c.count()) await c.first().click(); }
     await audit("playoffs");
     await must("→ Combine"); await audit("combine"); await advance("Finish Combine →"); await audit("re-sign"); await advance("Finish Re-signing →", 2500); await audit("free agency");
@@ -176,6 +196,7 @@ try {
     await audit("draft done");
     await must("→ Next Season", 3000); await audit("new season");
   }
-  if (errors.length) console.log("page errors:", errors.slice(0, 3));
-} catch (e) { code = 1; console.log("FAILED:", e.message.split("\n")[0]); await page.screenshot({ path: "/tmp/claude-0/shots/audit_fail.png" }); }
+  if (errors.length) { console.log("page errors:", errors.slice(0, 3)); code = 1; }
+  if (problems.length) { console.log(`AUDIT FOUND ${problems.length} PROBLEM(S):\n  ${problems.join("\n  ")}`); code = 1; } else console.log("AUDIT CLEAN: nobody lost or duplicated, every pick accounted for");
+} catch (e) { code = 1; console.log("FAILED:", e.message.split("\n")[0]); try { await page.screenshot({ path: "audit-failure.png" }); } catch { /* no screenshot */ } }
 await browser.close(); server.httpServer.close(); process.exit(code);

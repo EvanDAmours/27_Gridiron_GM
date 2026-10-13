@@ -17,7 +17,9 @@ export default [
       "no-duplicate-case": "error", "no-cond-assign": "error", "no-const-assign": "error", "no-func-assign": "error",
       "no-import-assign": "error", "no-dupe-args": "error", "no-unused-private-class-members": "error",
       "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "off",
+      // missing hook dependencies: a ratchet (npm run lint allows only the reviewed ones that exist today:
+      // timer effects for the draft clock, the live game and autosave that must not restart on every change)
+      "react-hooks/exhaustive-deps": "warn",
     },
   },
 ];
