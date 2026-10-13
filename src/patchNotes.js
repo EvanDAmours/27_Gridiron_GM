@@ -933,4 +933,9 @@ export const PATCH_NOTES = [
     "Your coaches go with the best fit every week unless you pick something else, and a pick only lasts for that game, so next week starts from their call again. AI clubs game-plan the same way. Before, Pass Heavy and Aggressive were simply better every week whoever you played.",
     "When one of your starters gets hurt, you choose who starts in his place: any healthy player at the position, or promote one from the practice squad. Your pick takes his exact spot on the depth chart and his share of the snaps. It waits in Needs Attention; if you don't choose, the next man on the depth chart plays, as before.",
   ] },
+  { v: "2.71", date: "2026-10-14", title: "One Week, Every Time", notes: [
+    "Sim All and Sim to Deadline now play the season one real week at a time, exactly like Sim Week. They used to run a separate, cut-down loop that skipped about a dozen weekly systems: holdouts, trade requests, owner patience, fan reaction, waiver claims, news, IR returns, coach hot seats and more.",
+    "A multi-week sim pauses when something needs your decision (a holdout demand), and plays out Trade Deadline Day on its own when you sim past it.",
+    "Removed practice-squad poaching: it picked a player to poach every few weeks but never showed it or did anything, and it blocked other events.",
+  ] },
 ];

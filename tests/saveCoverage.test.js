@@ -10,7 +10,7 @@ const src = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 // Screen and moment-to-moment state: open popups, tabs, the live game in progress, draft timers,
 // one-off modals, and a few unused leftovers. Fine to lose on a reload.
 const SESSION_ONLY = new Set([
-  "ownerReviewShow injuryCalls injuryPick",
+  "ownerReviewShow injuryCalls injuryPick simBatch",
   "advanceAsk arbModal autoSaveTs awardsShow beatReports boxView",
   "capOutlookOpen capRollover celebrate challengeSeason chemGraph coachExt coachNag",
   "compareOpen compareSel compareSlots cutWarnPending deadlineUrgency",
@@ -26,7 +26,7 @@ const SESSION_ONLY = new Set([
   "liveScore liveSim liveSpeed liveStats liveToGo liveYard lkrOpen lkrSpeechModal localLeaderboard",
   "loginStreak mediaStory mediaWeek menuOpen mobileHint moreOpen msg multiOpen",
   "negPlayer newsOpen newspaper nextGameWx offszGrade offszGradeOpen online paradeOpen pcTimer",
-  "phase pickIsIn posDemandMap prBroadcast pressConf proUnlocked psPoachAttempt",
+  "phase pickIsIn posDemandMap prBroadcast pressConf proUnlocked",
   "psRaceResult psReport realDraft resignTalk restructModal rivalTaunt rosterTeam rosterView",
   "savSlots searchOpen sel sf shareModalOpen shareText showChallenges showDepth",
   "showFranchiseSale showIR showInjRpt showIntro showLiveEnd showPS showPlayoffOdds showRecapCard",

@@ -70,6 +70,18 @@ async function startSeason() {
   const go = page.locator("button", { hasText: "Start the season anyway" });
   if (await go.count()) { await go.first().click(); await page.waitForTimeout(1200); }
 }
+// Sim several weeks: the game plays them one at a time and pauses when a decision needs you.
+// Press the button, answer anything that comes up, and press again until `done` holds.
+async function simUntil(text, done, where) {
+  for (let i = 0; i < 12; i++) {
+    if (await page.evaluate(done)) return;
+    await dismiss();
+    const b = page.locator("button:visible", { hasText: text });
+    if (await b.count()) await b.first().click();
+    for (let t = 0; t < 60 && !(await page.evaluate(done)); t++) await page.waitForTimeout(500);
+  }
+  if (!(await page.evaluate(done))) fail(`${where}: never finished`);
+}
 async function must(text, wait) { if (!(await click(text, wait))) fail(`no "${text}" button`); }
 async function save() {
   await page.waitForTimeout(2000);
@@ -171,10 +183,10 @@ try {
   await startSeason();
   await must("Sim Week", 1500); await healthy("sim week"); log("sim week");
   await reloadCheck("mid-season");
-  await must("Sim to Deadline", 3500); await healthy("sim to deadline");
+  await simUntil("Sim to Deadline", () => document.body.innerText.includes("TRADE DEADLINE DAY"), "sim to deadline"); await healthy("sim to deadline");
   if (!(await page.evaluate(() => document.body.innerText.includes("TRADE DEADLINE DAY")))) fail("deadline day didn't open");
   await must("Advance to", 800); await must("Sim to 4:00 PM", 800); await must("Back to the season", 800); log("trade deadline day");
-  await must("Sim All", 4000); await healthy("sim all");
+  await simUntil("Sim All", () => /Playoffs|PLAYOFF/.test(document.body.innerText) && !/Sim All/.test([...document.querySelectorAll("button")].map((b) => b.innerText).join(" ")), "sim all"); await page.waitForTimeout(2500); await healthy("sim all");
   let d = await save();
   if (d.sp !== "playoffs" || d.wk !== 18) fail(`expected playoffs after Sim All, got ${d.sp} wk ${d.wk}`);
   log("regular season"); await census("regular season");
