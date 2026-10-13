@@ -122,7 +122,13 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
   };
   const rowLabel = (pos, i) => (pos === "DL" && i < 4 ? DL_SLOTS[i] : i < STARTERS[pos] ? (STARTERS[pos] > 1 ? `${pos}${i + 1}` : `${pos}1`) : `${pos} #${i + 1}`);
   // Everyone who could line up here: for tackles and guards, both sides of the line.
-  const pickedId = pick && order(pick[0])[pick[1]]?.id; // who's in the spot you opened
+  // who's in the spot you opened (fixed when you open it, so dragging a slider doesn't move "Here")
+  const pickedRef = React.useRef(null);
+  if (!pick) pickedRef.current = null;
+  else if (!pickedRef.current || pickedRef.current.key !== `${pick[0]}:${pick[1]}`) pickedRef.current = { key: `${pick[0]}:${pick[1]}`, id: order(pick[0])[pick[1]]?.id };
+  const pickedId = pickedRef.current?.id;
+  // who starts on game day (snap shares included), for the row labels
+  const startsNow = (at) => new Set(order(at).slice(0, STARTERS[at] || 1).map((p) => p.id));
   const chosen = pick && [...depthList(pick[0]).map((p, i) => ({ p, at: pick[0], i })), ...(PARTNER[pick[0]] && setPositions ? order(PARTNER[pick[0]]).map((p, i) => ({ p, at: PARTNER[pick[0]], i })) : []),
     ...(CROSS[pick[0]] && onMovePos ? CROSS[pick[0]].flatMap((x) => order(x).map((p, i) => ({ p, at: x, i, move: true }))) : [])];
   return (
@@ -179,7 +185,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
               </div>
               {chosen.map(({ p, at, i, move }) => {
                 const here = at === pick[0] && p.id === pickedId;
-                const starter = i < STARTERS[at];
+                const starter = startsNow(at).has(p.id);
                 return (
                   <React.Fragment key={`${at}${p.id}`}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "4px 4px", borderBottom: `1px solid ${C.bd}`, background: here ? "#facc1514" : "transparent", flexWrap: "wrap" }}>

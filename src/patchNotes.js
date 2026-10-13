@@ -962,4 +962,12 @@ export const PATCH_NOTES = [
     "A deep roster with no real needs left every \"your needs\" filter (free agency, Deadline Day, the trade finder) empty; it now shows your thinnest spots.",
     "On third and long, a blitz-heavy defense could crowd coverage calls out of the mix entirely. The calls now always leave room for each other.",
   ] },
+  { v: "2.75", date: "2026-10-14", title: "Second Bug Sweep", notes: [
+    "Holdouts matter again: a player holding out sits that week's game and costs locker-room chemistry until he signs (since 2.72 he was cleared before kickoff every week, so a holdout changed nothing).",
+    "Injury calls: a starter's major injury (sent straight to injured reserve) now asks you who replaces him too; calls clear when the season ends; loading a save no longer raises a false one; and Promote & start works with a full 53 (the injured starter goes to IR to make room).",
+    "Sim All and Sim to Deadline show a Stop button while they run, stop if you start a live game, and don't carry over into a save you load.",
+    "Fixed: a 3rd-round pick forfeited for a cap violation came back if an AI trade happened the same week.",
+    "Depth chart field view: the 'Here' marker no longer jumps while you drag a snap slider, and starters are labeled by who actually starts on game day.",
+    "The game plan card grades the lineup you just set (it could be one change behind).",
+  ] },
 ];
