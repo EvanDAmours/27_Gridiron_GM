@@ -792,4 +792,9 @@ export const PATCH_NOTES = [
     "Fixed: releasing a player after a conduct violation deleted him; he now goes to free agency.",
     "Everything else checked out clean: trades, offer sheets, failed negotiations, arbitration walkouts, practice-squad moves, IR, position changes, draft picks and career totals. The only players who leave the league are retirements.",
   ] },
+  { v: "2.53", date: "2026-10-13", title: "Draft Pedigree", notes: [
+    "Player cards show where each player was drafted: year, round, overall pick and the club that took him (with its logo), from the real NFL draft record for every real player (1980 on) and from your league's drafts for everyone since. Undrafted players say so.",
+    "Player cards are two-sided: ratings on the left; draft pedigree, Combine, college stats and the scouting report on the right (one column on phones).",
+    "The old honor badges at the top of the card are folded into the accolade chips (no more listing the same All-Pro twice).",
+  ] },
 ];

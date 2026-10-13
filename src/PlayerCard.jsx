@@ -154,17 +154,3 @@ export function ContractTimeline({ p, yr, yearsLeft, proration, deadNow }) {
   );
 }
 
-const HONOR = { ap1: ["FIRST-TEAM ALL-PRO", "#fde68a", "#713f12"], ap2: ["SECOND-TEAM ALL-PRO", "#e5e7eb", "#374151"], pb: ["PRO BOWL", "#bfdbfe", "#1e3a8a"] };
-const AWARD = { mvp: "MVP", opoy: "OFF. PLAYER OF THE YEAR", dpoy: "DEF. PLAYER OF THE YEAR", oroy: "OFF. ROOKIE OF THE YEAR", droy: "DEF. ROOKIE OF THE YEAR", sbmvp: "SUPER BOWL MVP" };
-export function HonorsRow({ p, awards = [] }) {
-  const badges = [];
-  for (const a of awards) for (const k of Object.keys(AWARD)) if (a?.[k]?.pid === p.id) badges.push({ key: `${k}${a.yr}`, label: AWARD[k], yr: a.yr, fg: "#1a1200", bg: "linear-gradient(180deg,#fde68a,#d4a017)" });
-  for (const h of p.honors || []) { const [l, fg, bg] = HONOR[h.k] || []; if (l) badges.push({ key: `${h.k}${h.yr}`, label: l, yr: h.yr, fg, bg }); }
-  if (!badges.length) return null;
-  badges.sort((a, b) => b.yr - a.yr);
-  return (
-    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-      {badges.map((b) => <span key={b.key} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 8px", borderRadius: 999, fontSize: 11, fontWeight: 900, letterSpacing: 0.5, color: b.fg, background: b.bg, boxShadow: "0 1px 3px #0008" }}>🏅 {b.label} <span style={{ opacity: 0.75 }}>{b.yr}</span></span>)}
-    </div>
-  );
-}

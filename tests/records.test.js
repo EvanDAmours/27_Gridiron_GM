@@ -86,3 +86,12 @@ test("player accolades: rings from the champion's roster, awards and honors with
   assert.deepEqual(a.ap1, [2027]);
   assert.deepEqual(a.pb, [2026, 2027, 2028]);
 });
+
+test("draft pedigree: real players from the real draft, league picks with the team that made them", async () => {
+  const { draftPedigree } = await import("../src/history.js");
+  assert.deepEqual(draftPedigree({ name: "Josh Allen", src: "m27", bio: { college: "Wyoming" } }), { yr: 2018, rd: 1, pk: 7, tm: "BUF" });
+  assert.deepEqual(draftPedigree({ name: "Arvell Reese", src: "m27", bio: { college: "Ohio State" } }), { yr: 2026, rd: 1, pk: 5, tm: "NYG" });
+  const teams = []; teams[17] = { ab: "NYG" };
+  assert.deepEqual(draftPedigree({ id: "a", draftYr: 2027, draftPk: 40 }, { draftHistory: { 2027: [{ id: "a", rd: 2, owner: 17 }] }, teams }), { yr: 2027, rd: 2, pk: 40, tm: "NYG" });
+  assert.equal(draftPedigree({ name: "Nobody Real", src: "m27", bio: { college: "Nowhere" } }).undrafted, true);
+});

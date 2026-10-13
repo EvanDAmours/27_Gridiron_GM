@@ -6,6 +6,8 @@
 // for the established greats, what they'd already won. A legacy of 60 or more puts him in the
 // Hall of Fame, enshrined five years after he retires, like the NFL.
 
+import { DRAFT_PEDIGREE, pedigreeKey } from "./data/draftPedigree.js";
+
 export const HOF_LINE = 60;
 export const HOF_WAIT = 5;
 
@@ -28,6 +30,21 @@ export const CAREER_STATS = [
 ];
 const AWARD_PTS = { mvp: 25, opoy: 15, dpoy: 15, sbmvp: 10, oroy: 5, droy: 5 };
 const level = (ovr) => (ovr >= 95 ? 4 : ovr >= 90 ? 3 : ovr >= 85 ? 2 : ovr >= 80 ? 1 : 0);
+
+// Where a player was drafted: { yr, rd, pk, tm } (tm: the club's abbreviation), or { undrafted, yr }.
+// Drafts in this league come from the player (or the draft history); real players from the real
+// draft record. Prospects not yet drafted get null.
+export function draftPedigree(p, { draftHistory = {}, teams = [] } = {}) {
+  if (!p) return null;
+  if (p.draftPk > 0) {
+    const h = (draftHistory[p.draftYr] || draftHistory[String(p.draftYr)] || []).find((x) => x.id === p.id);
+    return { yr: p.draftYr, rd: p.draftRd || h?.rd || Math.ceil(p.draftPk / 32), pk: p.draftPk, tm: p.draftTm || (h ? teams[h.owner]?.ab : null) };
+  }
+  const real = DRAFT_PEDIGREE[pedigreeKey(p.name, p.bio?.college || p.college)];
+  if (real) return { yr: real[0], rd: real[1], pk: real[2], tm: real[3] };
+  if (p.undrafted || p.src === "m27") return { undrafted: true, yr: p.undrafted ? p.draftYr : null };
+  return null;
+}
 
 // Career totals in this league: past seasons plus the one in progress.
 export function careerTotals(p) {
