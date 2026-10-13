@@ -77,7 +77,30 @@ export function seasonForm(id, season) {
   return clamp(Math.round(z * 3), -8, 8);
 }
 
-export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season = getLeagueYear() }) {
+// How a defense calls its plays: how often it blitzes, loads the box against the run, or drops
+// into coverage. Set by the week's game plan (gamePlan.js), the coordinator's scheme and his
+// specialty. Each call changes the play: a blitz brings more sacks and rushed throws but leaves
+// receivers open behind it; a loaded box stuffs runs but opens up the pass; coverage takes away
+// the deep ball and gives up yards on the ground.
+export function defStyle(team, plan) {
+  const dc = team?.coach?.dc || {};
+  const p = plan?.def === "conservative" || plan?.def === "prevent" ? "coverage" : plan?.def || "balanced";
+  let blitz = 0.22, box = 0.2, cover = 0.2;
+  if (p === "aggressive") blitz += 0.2, cover -= 0.08;
+  if (p === "run_stop") box += 0.25, blitz += 0.03, cover -= 0.08;
+  if (p === "coverage") cover += 0.25, blitz -= 0.12, box -= 0.08;
+  if (dc.scheme === "Zone Blitz") blitz += 0.08;
+  if (dc.scheme === "Cover 2") cover += 0.08, blitz -= 0.04;
+  if (dc.scheme === "3-4") blitz += 0.03;
+  if (dc.spec === "Blitz Pkg") blitz += 0.07;
+  if (dc.spec === "Zone Cov") cover += 0.07;
+  if (dc.spec === "Run Stop") box += 0.07;
+  return { blitz: clamp(blitz, 0.05, 0.6), box: clamp(box, 0.05, 0.55), cover: clamp(cover, 0.05, 0.55) };
+}
+// The offensive coordinator's specialty tilts the play calling too.
+const OC_LEAN = { "Run Game": -0.04, Spread: 0.04, "Play-Action": 0 };
+
+export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = null, season = getLeagueYear() }) {
   // Everyone plays at his rating plus his form this season; the defensive line at its spots
   // (edges at LE/RE, tackles inside, each rated for his spot).
   // A player playing hurt (questionable) suits up at a reduced rating.
@@ -112,11 +135,12 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season 
   const hcR = team?.coach?.hc?.rating ?? 70; // the head coach makes the 4th-down calls
   const hcAgg = coachAggression(team?.coach?.hc); // ...in his own style
   // Measured against the league's balance, so league-wide rating drift doesn't tilt everyone's play-calling.
-  const passLean = clamp(0.6 + ((u.pass - LEAGUE.pass[0]) - (u.run - LEAGUE.run[0])) * 0.006 + lean, 0.5, 0.7);
-  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, hcAgg, kLeg, p, pOvr, pPow, pAcc, pHang };
+  const passLean = clamp(0.6 + ((u.pass - LEAGUE.pass[0]) - (u.run - LEAGUE.run[0])) * 0.006 + lean + (OC_LEAN[team?.coach?.oc?.spec] || 0), 0.45, 0.75);
+  const dStyle = defStyle(team, plan), paSpec = team?.coach?.oc?.spec === "Play-Action";
+  return { team, order, u, mod, passLean, dStyle, paSpec, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, hcAgg, kLeg, p, pOvr, pPow, pAcc, pHang };
 }
 
-const emptyTeam = () => ({ plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
+const emptyTeam = () => ({ blitz: 0, box: 0, cover: 0, dropbacks: 0, plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
 
 export function createGame(home, away, { playoff = false, neutral = false, rand = Math.random, rec = false } = {}) {
   const first = rand() < 0.5 ? "h" : "a";
@@ -435,10 +459,18 @@ function stepPlay(g, call, bonus = 1) {
   if (!style) style = chooseCall(g, o);
   const qb = o.qb;
   let yards = 0, desc = "", type = "", carrier = null, completed = false, clockStops = false;
+  // The defense's call this snap (defStyle): more blitzes on third and long.
+  const ds = d.dStyle || { blitz: 0.22, box: 0.2, cover: 0.2 }, dst = g.stats[def];
+  const bl = ds.blitz * (g.down === 3 && g.toGo >= 6 ? 1.25 : 1), rr = rand();
+  const dcall = rr < bl ? "blitz" : rr < bl + ds.box ? "box" : rr < bl + ds.box + ds.cover ? "cover" : "base";
+  if (dst && dcall !== "base") dst[dcall]++;
+  if (dst && (style === "pass" || style === "screen")) dst.dropbacks++;
+  ev.dcall = dcall;
+  const B = dcall === "blitz", X = dcall === "box", V = dcall === "cover";
 
   if (style === "pass" || style === "screen") {
     const deep = call === "pass_deep", quick = call === "pass_quick" || call === "pass_rpo", screen = style === "screen";
-    const sackP = clamp(0.064 + rushE * 0.008 - passE * 0.004 + (deep ? 0.025 : quick || screen ? -0.035 : 0), 0.02, 0.14);
+    const sackP = clamp(0.064 + rushE * 0.008 - passE * 0.004 + (deep ? 0.025 : quick || screen ? -0.035 : 0) + (B ? (quick || screen ? 0.02 : 0.06) : V ? -0.015 : 0), 0.02, 0.2);
     const qbl = line(g, off, qb);
     if (!screen && rand() < sackP) {
       const loss = Math.round(5 + rand() * 5);
@@ -464,7 +496,7 @@ function stepPlay(g, call, bonus = 1) {
       const target = screen ? (o.rushers[0]?.[0] || pickW(rand, o.receivers.map(busy))) : pickW(rand, o.receivers.map(busy));
       const tl = line(g, off, target);
       add(qbl, "att", 1); add(tl, "tgt", 1); st.passAtt++;
-      const intP = clamp(0.024 - passE * 0.004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0), 0.006, 0.06);
+      const intP = clamp(0.024 - passE * 0.004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0), 0.006, 0.08);
       if (rand() < intP) {
         const db = pickW(rand, d.covW);
         add(qbl, "passInt", 1); st.ints++;
@@ -477,12 +509,13 @@ function stepPlay(g, call, bonus = 1) {
         if (!g.done) newPossession(g, 100 - g.yard - Math.round(8 + rand() * 12) + ret);
         return ev;
       }
-      const compP = clamp(0.655 + passE * 0.018 + ((target?.ovr || 75) - 75) * 0.0025 + (deep ? -0.22 : quick ? 0.08 : 0) + (screen ? 0.18 : 0), 0.3, 0.9);
+      const compP = clamp(0.655 + passE * 0.018 + ((target?.ovr || 75) - 75) * 0.0025 + (deep ? -0.22 : quick ? 0.08 : 0) + (screen ? 0.18 : 0) + (B ? -0.03 : X ? 0.04 + (o.paSpec ? 0.03 : 0) : V ? (deep ? -0.1 : -0.03) : 0), 0.25, 0.92);
       if (rand() < compP) {
         const mean = screen ? 5.5 : deep ? 24 : quick ? 6.5 : 9.9;
         yards = Math.round((2 + expo(rand, mean - 2 + passE * 0.45 + ((target?.ovr || 75) - 75) * 0.055 + Math.max(0, (target?.ovr || 75) - 90) * 0.08)) * (bonus || 1));
         // Now and then a catch turns into a big play after the catch (missed tackle, busted coverage).
-        if (!deep && rand() < clamp(0.02 + Math.max(0, (target?.spd || 85) - 88) * 0.0015 + passE * 0.008, 0.004, 0.05)) yards += Math.round(12 + expo(rand, 16));
+        if (!deep && rand() < clamp(0.02 + Math.max(0, (target?.spd || 85) - 88) * 0.0015 + passE * 0.008 + (B ? 0.045 : X ? 0.02 : V ? -0.012 : 0), 0.004, 0.1)) yards += Math.round(12 + expo(rand, 16));
+        if (V && yards > 6) yards = Math.round(yards * 0.85); // tackled in space by a deep safety
         if (screen && rand() < 0.15) yards = -Math.round(rand() * 3);
         completed = true; carrier = target; type = "pass";
         add(qbl, "comp", 1); add(tl, "rec", 1); st.comp++;
@@ -504,8 +537,8 @@ function stepPlay(g, call, bonus = 1) {
     const outside = call === "run_outside";
     // Heavy workloads wear a back down: past ~18 carries in a game he averages a little less.
     const load = carrier && !keeper ? Math.max(0, (g.box[off][carrier.id]?.rushAtt || 0) - 18) : 0;
-    const mean = 3.85 + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.022 + (keeper ? 0.6 : 0) - load * 0.06;
-    const breakaway = rand() < clamp(0.047 + ((carrier?.spd || 80) - 82) * 0.0018 - load * 0.003 + runE * 0.005 + (outside ? 0.025 : 0), 0.015, 0.12);
+    const mean = 3.85 + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.022 + (keeper ? 0.6 : 0) - load * 0.06 + (X ? -0.9 : V ? 0.6 : B ? -0.3 : 0);
+    const breakaway = rand() < clamp(0.047 + ((carrier?.spd || 80) - 82) * 0.0018 - load * 0.003 + runE * 0.005 + (outside ? 0.025 : 0) + (B ? 0.025 : X ? -0.015 : 0), 0.01, 0.14);
     yards = breakaway ? Math.round(mean + 5 + expo(rand, 11)) : Math.round(clamp(mean - 0.6 + gauss(rand) * (outside ? 3.3 : 2.5), -4, 14));
     if (yards > 0) yards = Math.round(yards * (bonus || 1));
     const cl = line(g, off, carrier);

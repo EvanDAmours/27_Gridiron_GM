@@ -131,10 +131,32 @@ export function keepChance(p) {
 // age four years later). cap: the cap for the league year the deal starts.
 export const TOP_SHARE = { QB: 0.2, WR: 0.15, DL: 0.15, LT: 0.115, CB: 0.11, RT: 0.09, LB: 0.09, S: 0.085, TE: 0.08, LG: 0.08, RG: 0.08, RB: 0.07, C: 0.07, K: 0.02, P: 0.015 };
 const curve = (ovr) => Math.min(1, 1 / (1 + Math.exp(-(ovr - 80) / 4.5)) / 0.985);
+// Players are priced against today's league, not a fixed rating. Ratings drift up over the seasons
+// (development outpaces aging at the top), so an 80 in 2032 is a more ordinary starter than an 80
+// in 2026. The market knows: each position is priced by how its rating compares with the league's
+// starters there now, against the real 2026 rosters (the average of the top 32 x starters).
+const MARKET_2026 = { QB: 83.6, RB: 87.2, WR: 81.6, TE: 82.8, LT: 84.8, LG: 78.5, C: 78, RG: 80.2, RT: 79.3, DL: 82.5, LB: 78, CB: 83, S: 81.8, K: 78.3, P: 76.8 };
+const MARKET_N = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1, P: 1 };
+let marketShift = {};
+// Call with every club when the league changes (the app does it each time the rosters change).
+// Returns the shift per position (how many points better the league's starters are than in 2026).
+export function setMarket(teams) {
+  const by = {};
+  for (const t of teams || []) for (const p of t.roster || []) (by[p.pos] ||= []).push(p.ovr || 0);
+  const out = {};
+  for (const [pos, base] of Object.entries(MARKET_2026)) {
+    const o = (by[pos] || []).sort((a, b) => b - a).slice(0, 32 * MARKET_N[pos]);
+    if (o.length >= 16 * MARKET_N[pos]) out[pos] = Math.max(-4, Math.min(8, +(o.reduce((a, b) => a + b, 0) / o.length - base).toFixed(1)));
+  }
+  marketShift = out;
+  return out;
+}
+export const marketRating = (p) => (p.ovr || 0) - (marketShift[p.pos] || 0);
+
 export const askingPrice = (p, cap = leagueCap()) => {
   const a = p.pos === "QB" ? p.age - 4 : p.age;
   const age = a >= 34 ? 0.5 : a >= 32 ? 0.7 : a >= 30 ? 0.85 : 1;
-  return +Math.max(cap * 0.0033, cap * (TOP_SHARE[p.pos] ?? 0.08) * curve(p.ovr) * age).toFixed(1);
+  return +Math.max(cap * 0.0033, cap * (TOP_SHARE[p.pos] ?? 0.08) * curve(marketRating(p)) * age).toFixed(1);
 };
 
 // The position a club most needs: furthest below its minimum, then the weakest starter.

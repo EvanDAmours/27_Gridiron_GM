@@ -403,7 +403,7 @@ const wx=wxOverride||rollGameWeather();
   const hSnaps=teamSnaps(hOrd,ht.isUser?USER_SNAPS:{}),aSnaps=teamSnaps(aOrd,at.isUser?USER_SNAPS:{});
   // Play-calling tendency: the game plan, plus the coordinator's scheme (Air Raid throws more, Power Run runs more).
   const lean=(t,pl)=>(pl?.off==="pass_heavy"?0.07:pl?.off==="run_heavy"?-0.07:0)+(0.42-schemeRunPct(t))*0.5;
-  return{wx,hPlan,aPlan,hSnaps,aSnaps,home:makeSide({team:ht,order:hOrd,snaps:hSnaps,mod:hMod,lean:lean(ht,hPlan)}),away:makeSide({team:at,order:aOrd,snaps:aSnaps,mod:aMod,lean:lean(at,aPlan)})};
+  return{wx,hPlan,aPlan,hSnaps,aSnaps,home:makeSide({team:ht,order:hOrd,snaps:hSnaps,mod:hMod,lean:lean(ht,hPlan),plan:hPlan}),away:makeSide({team:at,order:aOrd,snaps:aSnaps,mod:aMod,lean:lean(at,aPlan),plan:aPlan})};
 }
 // After the final whistle: season stats, games played/started and injury checks for one team.
 // Returns the box score lines (with QB ratings) for the schedule.

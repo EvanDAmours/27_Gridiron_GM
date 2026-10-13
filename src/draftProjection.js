@@ -6,6 +6,14 @@
 // season (last season's order).
 import { draftOrder } from "./playoffs.js";
 
+// Picks in draft order: each round's regular picks, then that round's compensatory picks (rounds
+// 3-7, as in the NFL), numbered 1..N overall. num: the slot within the round.
+export function inDraftOrder(picks, perRound = 32) {
+  const sorted = [...picks].sort((a, b) => a.rd - b.rd || (a.comp ? 1 : 0) - (b.comp ? 1 : 0) || (a.comp ? String(a.id).localeCompare(String(b.id)) : (a.num || 0) - (b.num || 0)));
+  const comps = {};
+  return sorted.map((pk, i) => ({ ...pk, overall: i + 1, num: pk.comp ? perRound + (comps[pk.rd] = (comps[pk.rd] || 0) + 1) : pk.num }));
+}
+
 // picks: this year's picks [{ rd, overall, orig, owner, comp? }]. Returns the same array when
 // nothing moved, or a new one with rd/num/overall re-projected (owners never change here).
 export function reprojectPicks(picks, teams, pb, yr) {
@@ -13,17 +21,11 @@ export function reprojectPicks(picks, teams, pb, yr) {
   if (!teams.some((t) => (t.w || 0) + (t.l || 0) + (t.t || 0) > 0) && !pb) return picks;
   const order = draftOrder(teams.map((t, i) => ({ ...t, id: t.id ?? i })), pb);
   const pos = new Map(order.map((tid, i) => [tid, i]));
-  const n = order.length;
-  let comp = 0, changed = false;
-  const out = picks.map((pk) => {
-    if (yr != null && pk.yr != null && pk.yr !== yr) return pk;
-    const overall = pk.comp ? 7 * n + 1 + comp++ : (pk.rd - 1) * n + (pos.get(pk.orig ?? pk.owner) ?? 0) + 1;
-    const num = pk.comp ? n + comp : (pos.get(pk.orig ?? pk.owner) ?? 0) + 1;
-    if (overall === pk.overall && num === pk.num) return pk;
-    changed = true;
-    return { ...pk, overall, num };
-  });
-  return changed ? [...out].sort((a, b) => a.overall - b.overall) : picks;
+  const mine = picks.filter((pk) => yr == null || pk.yr == null || pk.yr === yr), rest = picks.filter((pk) => !mine.includes(pk));
+  const next = inDraftOrder(mine.map((pk) => (pk.comp ? pk : { ...pk, num: (pos.get(pk.orig ?? pk.owner) ?? 0) + 1 })), order.length);
+  const before = new Map(mine.map((pk) => [pk.id, pk]));
+  const changed = next.some((pk) => { const b = before.get(pk.id); return !b || b.overall !== pk.overall || b.num !== pk.num; });
+  return changed ? [...next, ...rest] : picks;
 }
 
 // Your remaining picks this year (overall numbers, earliest first).

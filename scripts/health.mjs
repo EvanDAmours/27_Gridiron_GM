@@ -94,6 +94,9 @@ function measure(d) {
     overCap: ai.filter((t) => capOf(t) > (d.capCur || 1e9)).length, avgDead: +mean(ai.map((t) => t.deadCap || 0)).toFixed(1), maxDead: +Math.max(...ai.map((t) => t.deadCap || 0)).toFixed(1),
     thinTeams: thin, olDepth: +olDepth.toFixed(1), noP: ai.filter((t) => !t.roster.some((p) => p.pos === "P")).length,
     rookieSnapPct: { r1: byRd(1), r2: byRd(2), r3: byRd(3), r4_7: (() => { const xs = rk.filter((p) => p.draftPk > 96).map((p) => p.cs?.snp || 0); return xs.length ? Math.round(mean(xs) / 17) : null; })() },
+    // how many players rate 80+ (more over time = rating inflation) and what an 80-84 WR is paid, as % of the cap
+    n80: all.filter((p) => p.ovr >= 80).length, wr80: all.filter((p) => p.pos === "WR" && p.ovr >= 80).length,
+    wr80Pct: (() => { const xs = all.filter((p) => p.pos === "WR" && p.ovr >= 80 && p.ovr <= 84 && (p.salary || 0) > 2).map((p) => p.salary).sort((a, b) => a - b); return xs.length ? +((100 * xs[Math.floor(xs.length / 2)]) / capFor(d.yr)).toFixed(1) : null; })(),
     records: (d.recordBook?.history || d.recordBook?.broken || []).length,
     // the market at the top: the five biggest salaries at a position, as % of the cap (2025 NFL: QB ~16%, DL/WR ~12%, CB ~9%)
     top5Pct: Object.fromEntries(["QB", "DL", "WR", "CB", "LT"].map((pos) => [pos, +((100 * mean(all.filter((p) => p.pos === pos).map((p) => p.salary || 0).sort((x, y) => y - x).slice(0, 5))) / capFor(d.yr)).toFixed(1)])),
@@ -130,8 +133,15 @@ try {
   await must("NEW GAME"); await page.locator("button", { hasText: "Giants" }).first().click(); await page.waitForTimeout(1500);
   for (let s = 0; s < N; s++) {
     await must("Start Season", 1500);
-    await must("Sim All", 6000);
-    if (await page.evaluate(() => document.body.innerText.includes("TRADE DEADLINE DAY"))) { await must("Sim to 4:00 PM", 800); await must("Back to the season", 800); await must("Sim All", 6000); }
+    { const go = page.locator("button", { hasText: "Start the season anyway" }); if (await go.count()) { await go.first().click(); await page.waitForTimeout(1500); } }
+    // Sim All plays one real week at a time and pauses for decisions: keep pressing until the playoffs
+    for (let i = 0; i < 15; i++) {
+      const done = () => !/Sim All/.test([...document.querySelectorAll("button")].map((b) => b.innerText).join(" ")) && /Playoffs|PLAYOFF/.test(document.body.innerText);
+      if (await page.evaluate(done)) break;
+      for (const t of ["Sim to 4:00 PM", "Back to the season", "Meet Demands", "Decide later", "Later", "Got it"]) { const b = page.locator("button:visible", { hasText: t }); if (await b.count()) { await b.first().click().catch(() => {}); await page.waitForTimeout(300); } }
+      const b = page.locator("button:visible", { hasText: "Sim All" }); if (await b.count()) await b.first().click();
+      for (let t = 0; t < 80 && !(await page.evaluate(done)); t++) await page.waitForTimeout(500);
+    }
     if (process.env.SCORING) { let r = await save(); for (let w = 0; w < 6 && r.sp !== "playoffs"; w++) r = await save(); console.log("SCORING " + JSON.stringify(scoring(r))); }
     for (let i = 0; i < 6; i++) { await click("Sim Round", 1000); const c = page.locator("button", { hasText: /^Continue$/ }); if (await c.count()) await c.first().click(); }
     await must("→ Combine"); await advance("Finish Combine →"); await advance("Finish Re-signing →", 2500); await advance("Finish Free Agency →", 1500);

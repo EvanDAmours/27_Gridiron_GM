@@ -3,6 +3,7 @@
 // the club moving up sends its own pick plus enough extra picks (this year's, or next year's,
 // which the chart counts a round lower) to cover the gap, usually with a small premium. You can
 // only trade down: you always come out with more picks.
+import { inDraftOrder } from "./draftProjection.js";
 
 // Jimmy Johnson chart, picks 1-224.
 const JJ_TOP = [3000, 2600, 2200, 1800, 1700, 1600, 1500, 1400, 1350, 1300, 1250, 1200, 1150, 1100, 1050, 1000, 950, 900, 875, 850, 800, 780, 760, 740, 720, 700, 680, 660, 640, 620, 600, 590,
@@ -88,9 +89,9 @@ export function applyFutures(order, yr, futures) {
     const t = futures.find((pk) => pk.yr === yr && pk.orig === tid && pk.rd === rd && !pk.comp);
     out.push({ rd, num: idx + 1, overall: (rd - 1) * 32 + idx + 1, owner: t ? t.owner : tid, orig: tid, yr });
   });
-  // compensatory picks come at the end of the draft
-  futures.filter((pk) => pk.comp && pk.yr === yr).forEach((pk, i) => out.push({ rd: 7, num: order.length + 1 + i, overall: 7 * order.length + 1 + i, owner: pk.owner, orig: pk.orig, yr, comp: true }));
-  return out;
+  // compensatory picks come at the end of their round (rounds 3-7)
+  futures.filter((pk) => pk.comp && pk.yr === yr).forEach((pk, i) => out.push({ id: pk.id ?? `comp-${yr}-${i}`, rd: pk.rd || 7, owner: pk.owner, orig: pk.orig, yr, comp: true }));
+  return inDraftOrder(out, order.length);
 }
 
 export const pickLabel = (pk, yr) => (pk.future || pk.yr !== yr || !pk.overall ? `${pk.yr} Round ${pk.rd}` : `R${pk.rd} #${pk.overall}`);

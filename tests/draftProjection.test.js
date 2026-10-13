@@ -32,3 +32,15 @@ test("after the playoffs the champion picks last and the runner-up 31st", () => 
   assert.deepEqual(slotsFor(np, 0, 2027).slice(0, 2), [32, 64]);
   assert.deepEqual(slotsFor(np, 0, 2027, [np.find((x) => x.rd === 1 && x.orig === 0).id])[0], 64);
 });
+
+test("compensatory picks sit at the end of their own round, and the rest renumber after them", async () => {
+  const { inDraftOrder } = await import("../src/draftProjection.js");
+  const p = picks().filter((x) => !x.comp);
+  const out = inDraftOrder([...p, { id: "cA", rd: 3, comp: true, owner: 4, orig: 4 }, { id: "cB", rd: 3, comp: true, owner: 9, orig: 9 }]);
+  const a = out.find((x) => x.id === "cA");
+  assert.equal(a.overall, 97);
+  assert.equal(a.num, 33);
+  assert.equal(out.find((x) => x.id === "cB").overall, 98);
+  assert.equal(out.find((x) => x.rd === 4 && x.num === 1).overall, 99, "round 4 starts after the comps");
+  assert.deepEqual(out.map((x) => x.overall), out.map((_, i) => i + 1));
+});

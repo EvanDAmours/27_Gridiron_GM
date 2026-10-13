@@ -11,7 +11,7 @@ const src = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 // one-off modals, and a few unused leftovers. Fine to lose on a reload.
 const SESSION_ONLY = new Set([
   "ownerReviewShow injuryCalls injuryPick simBatch",
-  "advanceAsk arbModal autoSaveTs awardsShow beatReports boxView",
+  "advanceAsk autoSaveTs awardsShow beatReports boxView",
   "capOutlookOpen capRollover celebrate challengeSeason chemGraph coachExt coachNag",
   "compareOpen compareSel compareSlots cutWarnPending deadlineUrgency",
   "depthView difficulty docCard draftActive draftAnalyst draftAnalystLoading draftBuzz draftClock",
@@ -19,13 +19,13 @@ const SESSION_ONLY = new Set([
   "draftReveal draftRumors draftSpeed draftTicker draftTimer draftView dynastyEndOpen",
   "dynastyShareOpen expansionModal expansionMode expansionResults extTalk faBid faCombine",
   "findTradeOpen firedOffer foFilter foSort foView forPick fourthChoice gemScout globalLB",
-  "globalLBLoading gmDMs offlineOpen godEditTeam godMode hofModal holdoutNeg hubSection inboxOpen",
+  "globalLBLoading gmDMs offlineOpen godEditTeam godMode hofModal hubSection inboxOpen",
   "inboxShow injToasts isMobile lastLivePlay lastSaved lbTab leaderboardOpen liveAwaitingCall",
   "liveBroadcastMode liveCallMode liveClock liveDone liveDown liveInfo liveLog liveMomentum livePOG",
   "livePaused livePendingCall livePhase livePlay livePoss liveQteBar liveQtr liveRecTargets",
   "liveScore liveSim liveSpeed liveStats liveToGo liveYard lkrOpen lkrSpeechModal localLeaderboard",
   "loginStreak mediaStory mediaWeek menuOpen mobileHint moreOpen msg multiOpen",
-  "negPlayer newsOpen newspaper nextGameWx offszGrade offszGradeOpen online paradeOpen pcTimer",
+  "newsOpen newspaper nextGameWx offszGrade offszGradeOpen online paradeOpen pcTimer",
   "phase pickIsIn posDemandMap prBroadcast pressConf proUnlocked",
   "psRaceResult psReport realDraft resignTalk restructModal rivalTaunt rosterTeam rosterView",
   "savSlots searchOpen sel sf shareModalOpen shareText showChallenges showDepth",
@@ -68,4 +68,12 @@ test("no save path builds its own partial save, and every load path uses the ful
     const body = src.slice(src.indexOf(`const ${fn}=`), src.indexOf("\n", src.indexOf(`const ${fn}=`)));
     assert.match(body, /applyFullSave\(/, `${fn} loads through applyFullSave`);
   }
+});
+
+test("loading a save keeps a zero: no `d.x||N` defaults for numbers that can reach 0", async () => {
+  const fs = await import("node:fs");
+  const src = fs.readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+  // e.g. setFanSat(d.fanSat||50) turned bottomed-out fans back to 50 and setScPts(d.scPts||10) gave 10 free points on reload
+  const bad = src.match(/set[A-Z]\w*\(d\.\w+\|\|[1-9][\d.]*\)/g) || [];
+  assert.deepEqual(bad, []);
 });

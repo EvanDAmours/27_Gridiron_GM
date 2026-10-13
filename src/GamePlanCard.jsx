@@ -10,7 +10,7 @@ const GRADE_C = { A: "#22c55e", B: "#84cc16", C: "#eab308", D: "#f97316", F: "#e
 // units: { mine, theirs } (league.js matchupUnits). plan: your saved plan; planKey: this game's
 // key (a pick for another week doesn't count). onPick(side, key): set one side for this game;
 // onAuto(): back to your coaches' pick.
-export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto, onTwoPoint, mobile }) {
+export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto, onTwoPoint, mobile, last }) {
   if (!units || !opp) return null;
   const opts = planOptions(units.mine, units.theirs);
   const best = bestPlan(units.mine, units.theirs);
@@ -45,6 +45,7 @@ export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto
       </div>
       <Row side="off" list={OFF_PLANS} />
       <Row side="def" list={DEF_PLANS} />
+      {last?.snaps > 0 && <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 8, lineHeight: 1.45 }}>Last game vs {last.opp}: your defense blitzed on <b style={{ color: "#e2e8f0" }}>{Math.round((last.blitz / last.snaps) * 100)}%</b> of snaps, loaded the box on <b style={{ color: "#e2e8f0" }}>{Math.round((last.box / last.snaps) * 100)}%</b> and dropped into coverage on <b style={{ color: "#e2e8f0" }}>{Math.round((last.cover / last.snaps) * 100)}%</b>. Your plan, your coordinator's scheme and his specialty all move these.</div>}
       {onTwoPoint && <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, fontSize: 12, color: C.mt, cursor: "pointer" }}><input type="checkbox" checked={!!plan?.twoPoint} onChange={onTwoPoint} /> Go for two after touchdowns</label>}
     </div>
   );

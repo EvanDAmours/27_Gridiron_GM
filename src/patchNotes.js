@@ -938,4 +938,15 @@ export const PATCH_NOTES = [
     "A multi-week sim pauses when something needs your decision (a holdout demand), and plays out Trade Deadline Day on its own when you sim past it.",
     "Removed practice-squad poaching: it picked a player to poach every few weeks but never showed it or did anything, and it blocked other events.",
   ] },
+  { v: "2.72", date: "2026-10-14", title: "Real Defensive Calls, One of Everything", notes: [
+    "The defensive game plan now changes the calls on the field. Every snap the defense blitzes, loads the box or drops into coverage, at rates set by your plan, your defensive coordinator's scheme (Zone Blitz blitzes more, Cover 2 sits back) and his specialty (Blitz Pkg, Zone Cov, Run Stop). Each call matters: a blitz brings more sacks and rushed throws but leaves receivers open behind it; a loaded box stuffs the run and opens up the pass; coverage takes away the deep ball and gives up yards on the ground. Over 300 games a blitz-heavy plan blitzed on 46% of snaps (13% when dropping into coverage) and got about 30% more sacks; stacking the box held runs to 4.2 yards a carry against 4.6.",
+    "Your offensive coordinator's specialty tilts the play calling too (Run Game runs more, Spread throws more, Play-Action punishes a loaded box). The game plan card shows how often your defense blitzed, loaded the box and dropped into coverage last game.",
+    "Fixed: the franchise documentary, the five-season look-back, Hall of Fame inductions, off-season grades and the offer to buy the franchise opened from the inbox and closed instantly.",
+    "Contract prices follow today's league: ratings drift up over the seasons (in a six-season test the number of 80+ players grew from 458 to 583), so a player is now priced by how he compares with the league's starters at his position that year. An 80-rated receiver in 2032, when 80 is an ordinary starter, asks like one.",
+    "Holdouts go through the same extension talks as any other extension (the old holdout window had its own prices and wrote a flat 3-year deal). Signing him ends the holdout.",
+    "One of everything: compensatory picks for free agents you lose are real picks at the end of their round (rounds 3-7) in the next draft, instead of a queue you had to add by hand that could vanish; the season's MVP, OPOY and DPOY in your history and the MVP race come from the awards themselves; owner patience changes once a year at your review (a separate weekly nudge only ran when you simmed week by week); coordinators are only fired by you or in the off-season carousel (no random mid-season firings); one source of AI trade offers.",
+    "Fixed: reloading a save turned fan satisfaction at 0 back to 50, stadium atmosphere at 0 back to 50, and 0 scouting points into 10 free ones.",
+    "Removed dead features that never appeared or never worked: salary arbitration, a second contract window, RFA tenders, and the owner mandate that never resolved.",
+    "Home-screen icon showing a GitHub 404? It was added before 2.58, when the app pointed to an old address. Delete it and add it again from the phone link (the Offline Play panel says so too).",
+  ] },
 ];
