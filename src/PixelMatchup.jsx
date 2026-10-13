@@ -21,7 +21,7 @@ function SpriteImage({ src, ab }) {
   if (!src || failed) return h('div', { className: 'pxm-sprite-fallback', 'aria-hidden': true }, ab || 'NFL');
   return h('img', {
     className: 'pxm-sprite',
-    src, alt: '', width: 627, height: 627, decoding: 'async',
+    src, alt: '', width: 360, height: 360, decoding: 'async',
     onError: () => setFailed(true),
   });
 }

@@ -68,7 +68,16 @@ export default function OfflinePanel({ teamAb, mobile }) {
     if (!sw) { setProg(null); return; }
     sw.postMessage({ type: "save-all" });
     // your own team's matchup artwork (the rest is saved as it's shown)
-    if (teamAb) sw.postMessage({ type: "save-urls", urls: PORTRAIT_GROUPS.flatMap((g) => ["home", "away"].map((u) => `${BASE}matchup-portraits/${g}_${teamAb}_${u}.png`)) });
+    if (teamAb) sw.postMessage({ type: "save-urls", urls: PORTRAIT_GROUPS.flatMap((g) => ["home", "away"].map((u) => `${BASE}matchup-portraits/${g}_${teamAb}_${u}.webp`)) });
+  };
+  // every club's matchup artwork too (about 12 MB), so every matchup shows its art offline
+  const [artDone, setArtDone] = useState(false);
+  const saveArt = async () => {
+    const d = await fetch(`${BASE}offline.json`, { cache: "no-store" }).then((r) => r.json()).catch(() => null);
+    const sw = (await navigator.serviceWorker.ready.catch(() => null))?.active;
+    if (!d?.art?.length || !sw) return;
+    sw.postMessage({ type: "save-urls", urls: d.art.map((f) => BASE + f) });
+    setArtDone(true);
   };
   const install = async () => {
     const p = installPrompt();
@@ -100,7 +109,7 @@ export default function OfflinePanel({ teamAb, mobile }) {
         <div style={step}>{n(1)}<span>While you're online, open the game once (that's it on most browsers: it saves itself), or press <b>Get ready for offline</b> to be sure. It's about 5 MB, plus your team's matchup artwork.</span></div>
         <div style={step}>{n(2)}<span>{isInstalled() ? "It's installed as an app on this device. Open it from your home screen or app list." : canInstall ? <>Install it as an app so it opens like one, even in airplane mode: <Btn onClick={install} bg={C.bl} style={{ fontSize: 13, padding: "4px 10px", marginLeft: 4 }}>Install app</Btn></> : isIOS() ? <>On iPhone or iPad: tap Safari's <b>Share</b> button, then <b>Add to Home Screen</b>. Open it from there.</> : <>Install it as an app: in Chrome or Edge, use the install icon in the address bar (or the menu: <b>Install Football GM</b>). On Android: menu ⋮ → <b>Add to Home screen</b>.</>}</span></div>
         <div style={step}>{n(3)}<span>Offline, open the game from that icon (or the same web address in the same browser). Your saves live on this device and keep working; export a save file from the Saves screen to back one up or move it to another device.</span></div>
-        <div style={{ fontSize: 12, color: C.mt, marginTop: 10 }}>Offline you'll miss only the online extras: the global leaderboard and sharing. Other teams' matchup artwork shows once it has been seen online; until then a team badge stands in.</div>
+        <div style={{ fontSize: 12, color: C.mt, marginTop: 10 }}>Offline you'll miss only the online extras: the global leaderboard and sharing. Other teams' matchup artwork shows once it has been seen online (a team badge stands in until then){online && ready ? <> — or <button onClick={saveArt} disabled={artDone} style={{ background: "none", border: "none", color: artDone ? C.gn : "#93c5fd", textDecoration: artDone ? "none" : "underline", cursor: artDone ? "default" : "pointer", font: "inherit", padding: 0 }}>{artDone ? "saving every team's artwork ✓" : "save every team's artwork now (about 12 MB)"}</button></> : null}.</div>
       </div>}
     </div>
   );

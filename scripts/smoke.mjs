@@ -113,6 +113,36 @@ async function census(where) {
     if (gone.length) fail(`${gone.length} players under contract vanished (${where}): ${gone.slice(0, 5).map((p) => `${p.name} ${p.pos} age ${p.age}`).join(", ")}`);
   }
   prevC = m;
+  invariants(d, where);
+}
+
+// Things that must always hold in a save (each once broke): nobody in two places at once, every
+// draft pick exactly once with a real owner, and no money that isn't a number.
+function invariants(d, where) {
+  const seen = new Map(), dups = [];
+  const put = (p, w) => { if (p?.id == null) return; if (seen.has(p.id)) dups.push(`${p.name}: ${seen.get(p.id)} + ${w}`); else seen.set(p.id, w); };
+  d.teams.forEach((t) => { for (const k of ["roster", "ps", "ir"]) for (const p of t[k] || []) put(p, `${t.ab}/${k}`); });
+  for (const k of ["fa", "waivers", "udfaPool"]) for (const p of d[k] || []) put(p, k);
+  if (dups.length) fail(`players in two places (${where}): ${dups.slice(0, 5).join(" | ")}`);
+  const pk = new Map(), badOwner = [];
+  for (const p of [...(d.draftPicks || []), ...(d.futurePicks || [])]) {
+    const k = `${p.yr}-${p.rd}-${p.orig}${p.comp ? "-c" + (p.id ?? p.overall) : ""}`;
+    pk.set(k, (pk.get(k) || 0) + 1);
+    if (!(Number.isInteger(p.owner) && p.owner >= 0 && p.owner < d.teams.length)) badOwner.push(k);
+  }
+  const pdup = [...pk].filter(([, n]) => n > 1).map(([k, n]) => `${k}×${n}`);
+  if (pdup.length) fail(`draft picks listed twice (${where}): ${pdup.slice(0, 6).join(", ")}`);
+  if (badOwner.length) fail(`draft picks with no owner (${where}): ${badOwner.slice(0, 6).join(", ")}`);
+  const ids = new Map(); for (const p of d.draftPicks || []) if (p.id != null) ids.set(p.id, (ids.get(p.id) || 0) + 1);
+  const idDup = [...ids].filter(([, n]) => n > 1);
+  if (idDup.length) fail(`draft pick ids repeated (${where}): ${idDup.slice(0, 6).map(([k]) => k).join(", ")}`);
+  const bad = [];
+  const num = (v, what) => { if (v != null && !Number.isFinite(+v)) bad.push(`${what}=${v}`); };
+  d.teams.forEach((t) => {
+    num(t.deadCap, `${t.ab} deadCap`);
+    for (const k of ["roster", "ps", "ir"]) for (const p of t[k] || []) { num(p.salary, `${p.name} salary`); num(p.contract, `${p.name} contract`); if ((+p.salary || 0) < 0) bad.push(`${p.name} salary ${p.salary}`); }
+  });
+  if (bad.length) fail(`money that isn't a number (${where}): ${bad.slice(0, 6).join(", ")}`);
 }
 let code = 0;
 try {

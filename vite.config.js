@@ -20,7 +20,9 @@ function offlineList() {
       walk(root);
       const list = files.filter((f) => !skip.test(f) && f !== "offline.json" && f !== "sw.js" && f !== "404.html" && !f.endsWith(".map")).sort();
       const version = String(list.filter((f) => f.startsWith("assets/")).join("|").split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7));
-      writeFileSync(join(root, "offline.json"), JSON.stringify({ version, files: list }));
+      // matchup portraits aren't saved up front; the Offline Play panel can fetch them all on request
+      const art = files.filter((f) => f.startsWith("matchup-portraits/") && f.endsWith(".webp")).sort();
+      writeFileSync(join(root, "offline.json"), JSON.stringify({ version, files: list, art }));
     },
   };
 }

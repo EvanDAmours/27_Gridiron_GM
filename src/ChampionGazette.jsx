@@ -91,7 +91,7 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
           <figure className="gz-photo">
             {mvpSrc ? (
               <>
-                <div className="gz-photo-frame gz-mvp"><img src={mvpSrc} alt={`${sbmvp.name}, Super Bowl MVP`} width="627" height="627" /></div>
+                <div className="gz-photo-frame gz-mvp"><img src={mvpSrc} alt={`${sbmvp.name}, Super Bowl MVP`} width="360" height="360" /></div>
                 <figcaption>{sbmvp.name} of the {t.name}, the most valuable player of {sb}, after the final whistle on Sunday night. <i>Gazette Photo</i></figcaption>
                 <div className="gz-photo-frame gz-inset"><LombardiStill size={120} /></div>
                 <figcaption>The Lombardi Trophy heads home to {t.city} today.</figcaption>

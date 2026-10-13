@@ -5,6 +5,6 @@ export function matchupPortraitPath(ab, pos, uniform = 'home', base = import.met
   const team = spriteTeam(ab);
   const group = spriteGroup(pos);
   if (!teams.has(team) || !group) return null;
-  return `${base.replace(/\/?$/, '/')}matchup-portraits/${group}_${team}_${uniform === 'away' ? 'away' : 'home'}.png`;
+  return `${base.replace(/\/?$/, '/')}matchup-portraits/${group}_${team}_${uniform === 'away' ? 'away' : 'home'}.webp`;
 }
 

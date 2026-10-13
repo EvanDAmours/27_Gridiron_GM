@@ -903,4 +903,14 @@ export const PATCH_NOTES = [
     "Accepting a trade offer that includes a future draft pick now records that pick properly (only this year's picks changed hands before).",
     "The 3-way trade desk is its own screen component and resets cleanly after a deal or Cancel.",
   ] },
+  { v: "2.65", date: "2026-10-14", title: "Lighter Downloads", notes: [
+    "Matchup artwork is about 13 times smaller (360px WebP instead of 627px PNG, about 27 KB a picture instead of 360 KB), with no visible difference at the sizes it's shown. Home and the Gazette load their portraits faster, especially on phones.",
+    "Removed about 450 old sprite images that nothing in the game used any more, so the site is far smaller to deploy and download.",
+    "Offline play: once the game is saved for offline, a new link saves every club's matchup artwork too (about 12 MB), so every matchup shows its art with no connection.",
+  ] },
+  { v: "2.66", date: "2026-10-14", title: "Automatic Checks", notes: [
+    "Behind the scenes: every change is now checked automatically before it ships. A code checker (lint) catches typos and broken names in the main game file, which no test loads, and runs with the tests on every push.",
+    "The full-season browser test now also checks every save along the way: no player in two places at once, every draft pick listed exactly once with a real owner, and no salary or cap figure that isn't a number.",
+    "Fixed two practice-squad and IR rows on the roster screen that set their spacing twice.",
+  ] },
 ];

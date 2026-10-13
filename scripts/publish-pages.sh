@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Publish the desktop and mobile builds to the gh-pages branch, and only if everything passes:
-# unit tests, a production build, and the browser smoke test (a full season played end to end).
+# lint, unit tests, a production build, and the browser smoke test (a full season played end to end).
 # Usage: npm run publish:pages [-- <repo-url>]
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REMOTE="${1:-https://github.com/EvanDAmours/27_Gridiron_GM}"
 
+echo "== lint";         npm run lint --silent
 echo "== unit tests";   npm test --silent
 echo "== build";        npm run build --silent
 echo "== smoke test";   npm run smoke --silent
