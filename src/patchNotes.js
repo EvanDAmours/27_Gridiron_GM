@@ -838,7 +838,7 @@ export const PATCH_NOTES = [
     "Undrafted players you signed to the practice squad were released at the new season before playing a down.",
     "Injury-prone tags never cleared for other clubs' players.",
     "The franchise documentary never counted your titles.",
-    "Trades:",
+    "Trade fixes:",
     "The 3-way trade desk is a real rotation now: you send to Team B, Team B sends to Team C, and Team C sends to you. Each club has to get back about as much value as it gives, and the deadline applies. It used to hand you Team B's players for nothing, its Team C column did nothing, and it could crash.",
     "A trade (or an accepted offer) no longer goes through if a player in it has already left (released, sent to the practice squad, or traded in another deal). You used to get their players and keep yours. Trade finder results clear after a trade.",
     "Trades that would put you over the cap are blocked.",
