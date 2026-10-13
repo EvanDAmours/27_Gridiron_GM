@@ -16,6 +16,7 @@ const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, border
 export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk, cy }) {
   const [pos, setPos] = useState("ALL");
   const [q, setQ] = useState("");
+  const [find, setFind] = useState(false);
   const [needOnly, setNeedOnly] = useState(false);
   const [sort, setSort] = useState(["ovr", -1]);
   const [n, setN] = useState(50);
@@ -45,21 +46,28 @@ export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSe
       {!open && <div style={{ background: `${C.gd}18`, border: `1px solid ${C.gd}55`, borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 15, color: "#fde68a" }}>The big free agency period opens after the Combine. Right now it's whoever is left on the market.</div>}
       {sheets}
       <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12 }}>
-        <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
+        {MOBILE ? (
+          <>
+            {/* phones: one row (position, sort, needs, search behind 🔍) instead of three */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center" }}>
+              <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(50); }} aria-label="Position" style={{ ...sel, flex: "1 1 0", minWidth: 0 }}>
+                {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? "All pos." : x}</option>)}
+              </Select>
+              <Select value={sort[0]} onChange={(e) => setSort([e.target.value, ["name", "pos"].includes(e.target.value) ? 1 : -1])} aria-label="Sort free agents" style={{ ...sel, flex: "1 1 0", minWidth: 0 }}>
+                {[["ovr", "Overall"], ["ask", "Price"], ["age", "Age"], ["pos", "Position"], ["name", "Name"]].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              </Select>
+              <button onClick={() => setNeedOnly((v) => !v)} aria-pressed={needOnly} title={`Your needs: ${needs.slice(0, 4).join(", ") || "none"}`} style={{ ...sel, flex: "0 0 auto", cursor: "pointer", background: needOnly ? `${C.bl}33` : C.bg, borderColor: needOnly ? C.bl : C.bd, fontWeight: 700 }}>Needs</button>
+              <button onClick={() => { setFind((v) => !v); if (find) setQ(""); }} aria-label="Search by name" style={{ ...sel, flex: "0 0 auto", cursor: "pointer", background: find || q ? `${C.bl}33` : C.bg }}>🔍</button>
+            </div>
+            {find && <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search free agents" style={{ ...sel, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />}
+          </>
+        ) : <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
           <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(50); }} aria-label="Position" style={sel}>
             {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? "All positions" : x}</option>)}
           </Select>
           <button onClick={() => setNeedOnly((v) => !v)} style={{ ...sel, cursor: "pointer", background: needOnly ? `${C.bl}33` : C.bg, borderColor: needOnly ? C.bl : C.bd, fontWeight: 700 }}>Your needs: {needs.slice(0, 4).join(", ") || "none"}</button>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search free agents" style={{ ...sel, flex: "1 1 160px" }} />
-        </div>
-        {MOBILE && (
-          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-            <span style={{ fontSize: 13, color: C.mt }}>Sort</span>
-            <Select value={sort[0]} onChange={(e) => setSort([e.target.value, ["name", "pos"].includes(e.target.value) ? 1 : -1])} aria-label="Sort free agents" style={{ ...sel, flex: 1, minHeight: 44 }}>
-              {[["ovr", "Overall"], ["ask", "Asking price"], ["age", "Age"], ["pos", "Position"], ["name", "Name"]].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-            </Select>
-          </div>
-        )}
+        </div>}
         {MOBILE ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {rows.slice(0, n).map((p) => {

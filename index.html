@@ -26,6 +26,7 @@
     <style>
       /* rows of tab pills: one swipeable line on phones instead of wrapping */
       @keyframes sheetUp { from { transform: translateY(40px); opacity: .4 } to { transform: none; opacity: 1 } }
+      @keyframes toastDown { from { transform: translateY(-16px); opacity: 0 } to { transform: none; opacity: 1 } }
       /* touch screens: every control at least 40px tall so it is easy to hit */
       @media (pointer: coarse) { button, select, input:not([type=checkbox]):not([type=radio]):not([type=range]) { min-height: 40px; } }
       @media (max-width: 700px) { .pill-row { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; } .pill-row > * { flex-shrink: 0; white-space: nowrap; } }

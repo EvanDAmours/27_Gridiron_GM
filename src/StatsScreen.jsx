@@ -70,10 +70,11 @@ export default function StatsScreen({ teams, ui, onPlayer, grade, mobile }) {
 
   return (
     <div style={{ maxWidth: 1200 }}>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
-        {[["league", "League"], ["AFC", "AFC"], ["NFC", "NFC"], ["div", `${me.c} ${me.d}`], [`team:${ui}`, `My team (${me.ab})`]].map(([k, l]) => <button key={k} onClick={() => setScope(k)} style={pill(scope === k)}>{l}</button>)}
-        <Select value={teamId != null && teamId !== ui ? scope : ""} onChange={(e) => e.target.value && setScope(e.target.value)} style={{ background: C.cd, color: C.tx, border: `1px solid ${teamId != null && teamId !== ui ? C.bl : C.bd}`, borderRadius: 999, padding: "6px 10px", fontSize: 14, fontWeight: 700 }}>
-          <option value="">Another team…</option>
+      {/* phones: each row of chips is one swipeable line instead of wrapping onto two */}
+      <div style={{ display: "flex", gap: 6, flexWrap: mobile ? "nowrap" : "wrap", overflowX: mobile ? "auto" : undefined, alignItems: "center", marginBottom: 12, paddingBottom: mobile ? 2 : 0 }}>
+        {[["league", "League"], ["AFC", "AFC"], ["NFC", "NFC"], ["div", `${me.c} ${me.d}`], [`team:${ui}`, mobile ? me.ab : `My team (${me.ab})`]].map(([k, l]) => <button key={k} onClick={() => setScope(k)} style={{ ...pill(scope === k), flex: "0 0 auto", whiteSpace: "nowrap" }}>{l}</button>)}
+        <Select value={teamId != null && teamId !== ui ? scope : ""} onChange={(e) => e.target.value && setScope(e.target.value)} style={{ background: C.cd, color: C.tx, border: `1px solid ${teamId != null && teamId !== ui ? C.bl : C.bd}`, borderRadius: 999, padding: "6px 10px", fontSize: 14, fontWeight: 700, flex: "0 0 auto" }}>
+          <option value="">{mobile ? "Other team…" : "Another team…"}</option>
           {teams.map((t, i) => ({ t, i })).sort((a, b) => a.t.city.localeCompare(b.t.city)).map(({ t, i }) => <option key={i} value={`team:${i}`}>{t.city} {t.name}</option>)}
         </Select>
       </div>
@@ -127,8 +128,8 @@ export default function StatsScreen({ teams, ui, onPlayer, grade, mobile }) {
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-        {Object.keys(TABLES).map((k) => <button key={k} onClick={() => { setCat(k); setSort(null); }} style={pill(cat === k)}>{k}</button>)}
+      <div style={{ display: "flex", gap: 6, flexWrap: mobile ? "nowrap" : "wrap", overflowX: mobile ? "auto" : undefined, marginBottom: 8, paddingBottom: mobile ? 2 : 0 }}>
+        {Object.keys(TABLES).map((k) => <button key={k} onClick={() => { setCat(k); setSort(null); }} style={{ ...pill(cat === k), flex: "0 0 auto", whiteSpace: "nowrap" }}>{k}</button>)}
       </div>
       <div style={{ overflowX: "auto", background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10 }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>

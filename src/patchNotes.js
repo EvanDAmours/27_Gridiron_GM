@@ -753,4 +753,15 @@ export const PATCH_NOTES = [
     "Fixed: a player who set a club or NFL record and got hurt in that game went to injured reserve before the week's record check, so his record never counted (his stats said 110 catches, but the club record stayed at 109). Records now count everyone on the roster and on IR, so the next player to pass him is measured against his mark.",
     "The Legacy Hall's records wall also counts IR players when showing who's closest this season.",
   ] },
+  { v: "2.48", date: "2026-10-13", title: "Cleaner Screens", notes: [
+    "Desktop: the top bar is one slim row. The chips that repeated what's right below it (season and record, cap room, morale, GM rep, owner) and the week tag are gone; the bar keeps only what lives nowhere else: Play/Sim, Search, Save and Menu. Staff points (SP) now show at the top of the Coaching screen.",
+    "Finishing the Combine, Re-sign Week or Free Agency now lands you on Home, where the new phase's card takes you in. The draft clock waits until you open the Draft.",
+    "Phones: the season recap card slides up from the bottom like every other sheet.",
+    "Phones: messages drop in at the top of the screen (tap to dismiss) instead of covering the action bar and popups.",
+    "Phones: Free Agency's filters fit on one line (position, sort, needs, and search behind 🔍); Stats' team and category chips are single swipeable rows; the trade block header fits on one line.",
+    "Coaching: each coordinator's Upgrade and Extend buttons sit in a row under him instead of stacked down the side.",
+    "Power rankings and the coach-synergy bonus no longer disappear when you reload.",
+    "Fixed: the injured reserve list could crash when showing how many weeks until a player returns.",
+    "Cleanup: removed leftover features that did nothing (an unused MVP popup, a fake drive log and several unused settings).",
+  ] },
 ];
