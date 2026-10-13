@@ -4,6 +4,7 @@
 //
 // Reads that must not change between renders (a scout's general idea of a prospect, the
 // report he files) draw from keyed streams, so the same prospect always reads the same way.
+import { posTag } from "./dline.js";
 
 // ---------- Keyed random streams ----------
 
@@ -1007,4 +1008,42 @@ function fileReportQuiet(p, exact, teams) {
     np.scoutLvl = 2;
   }
   return np;
+}
+
+// Your scouts' Combine shortlist: who to interview and bring in for a private workout. Only
+// prospects expected to be there at your picks (the board ranks them a little ahead of or behind
+// the slot), need positions first, and the early names who tested poorly when one is in range
+// (a real concern or a bad day). Stars who'll be long gone before you pick are left off: they're
+// only worth a look if you plan to trade up.
+//   slots: your remaining picks' overall numbers (projected from the standings before the order
+//   is set); isNeed(p): one of your biggest needs. Returns [{ p, slot, why: [..], interview, workout }].
+export function scoutsShortlist(sc, cls, slots, { isNeed = () => false, max = 8 } = {}) {
+  const picks = [...new Set(slots)].filter((s) => s > 0).sort((a, b) => a - b).slice(0, 3);
+  const out = [];
+  const taken = new Set();
+  picks.forEach((slot, k) => {
+    // a first-round pick looks a little ahead (someone may slide) and further behind (the board
+    // isn't the league); later picks look wider
+    const lo = Math.max(1, slot - (k === 0 ? 8 : 12)), hi = slot + (k === 0 ? 14 : 24);
+    const pool = cls.filter((p) => !p.drafted && !taken.has(p.id) && csRank(p) >= lo && csRank(p) <= hi)
+      .map((p) => {
+        const read = prospectRead(sc, p);
+        const interview = !p.scout?.intv, workout = read.lvl < 2;
+        const need = isNeed(p), dip = !!p.combDip;
+        const score = (need ? 6 : 0) + (dip ? 3 : 0) + (interview ? 2 : 0) + (workout ? 1 : 0) - Math.abs(csRank(p) - slot) / 8;
+        return { p, slot, read, interview, workout, need, dip, score };
+      })
+      .filter((x) => x.interview || x.workout)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, k === 0 ? 4 : 2);
+    for (const x of pool) taken.add(x.p.id), out.push(x);
+  });
+  return out.slice(0, max).map(({ p, slot, interview, workout, need, dip }) => {
+    const r = csRank(p);
+    const why = [r <= slot - 3 ? `board #${r}: could slide to your #${slot}` : r >= slot + 6 ? `board #${r}: there at #${slot}, maybe later` : `board #${r}: right around your #${slot}`];
+    if (need) why.push(`fills a need (${posTag(p)})`);
+    if (dip) why.push("tested poorly: a real concern or a bad day?");
+    else if (!interview) why.push("interviewed; a workout gets his exact ratings");
+    return { p, slot, why, interview, workout };
+  });
 }

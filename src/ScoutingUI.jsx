@@ -7,7 +7,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { mockDraft } from "./mockDraft.js";
 import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo } from "./ui.jsx";
 import {
-  prospectRead, scoutProspect, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, coverage, csRank, riskLabel, gradeTone,
+  prospectRead, scoutProspect, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, scoutsShortlist, coverage, csRank, riskLabel, gradeTone,
   SCOUT_GROUPS, SCOUT_ROLES, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
   staffWindowOpen, SCOUT_SLOTS, slotKind, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, scoutGroup, isSmallSchool, devOf,
   myBoard, REGIONS, regionOf, regionName, scoutRegion, RTRIP_COST, RPTS_START, RPTS_COMBINE, RPTS_WEEKLY, MAX_TRIPS,
@@ -421,6 +421,47 @@ const POS_GROUPS = [["All", null], ["QB", ["QB"]], ["RB", ["RB"]], ["WR", ["WR"]
 const inGroup = (p, grp) => !grp || (typeof grp === "string" ? posTag(p) === grp : grp.includes(p.pos));
 const GRADE_ORDER = { "A+": 13, A: 12, "A-": 11, "B+": 10, B: 9, "B-": 8, "C+": 7, C: 6, "C-": 5, "D+": 4, D: 3, "D-": 2, F: 1 };
 
+// Your remaining picks this year as overall numbers: the real slots once the order is set,
+// otherwise projected from the standings (worst record first, the champion last).
+export function mySlots(g) {
+  const ts = g.teams || [];
+  const used = new Set((g.draftLog || []).map((d) => d.id));
+  const picks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !used.has(pk.id));
+  if (g.sp === "draft" || g.sp === "freeagency") return picks.map((pk) => pk.overall).sort((a, b) => a - b);
+  const ord = ts.map((t, i) => i).sort((a, b) => (a === g.pb?.ch) - (b === g.pb?.ch) || ts[a].w - ts[b].w || (ts[a].pf - ts[a].pa) - (ts[b].pf - ts[b].pa));
+  return picks.map((pk) => (pk.rd - 1) * 32 + ord.indexOf(pk.orig ?? pk.owner) + 1).sort((a, b) => a - b);
+}
+
+// The Combine shortlist from your scouts: who to interview and work out, picked for where you
+// draft and what you need. compact: the top few, for Scouting HQ.
+export function ScoutShortlist({ g, isNeed, compact }) {
+  const a = useActions(g);
+  const sc = g.scouting || {};
+  const slots = mySlots(g);
+  const list = scoutsShortlist(sc, g.dc[g.yr] || [], slots, { isNeed, max: compact ? 3 : 8 });
+  const who = sc.major?.name ? `${sc.major.name} and your scouts` : "Your scouts";
+  if (!slots.length) return <div style={{ fontSize: 14, color: "#94a3b8", padding: "6px 0" }}>You have no picks in this draft, so your scouts aren't lining up visits. Trade for a pick and they'll build a list.</div>;
+  return (
+    <div>
+      {!compact && <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 6, lineHeight: 1.45 }}>{who} picked these for where you draft ({slots.slice(0, 3).map((s) => `#${s}`).join(", ")}) and what you need. The top names will be gone long before you pick: they're only worth a visit if you plan to trade up.</div>}
+      {list.map(({ p, why, interview, workout }) => (
+        <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderTop: `1px solid ${C.bd}66`, flexWrap: "wrap" }}>
+          <Bdg pos={posTag(p)} />
+          <div style={{ flex: 1, minWidth: 190, cursor: "pointer" }} onClick={() => g.setSel(p)}>
+            <div style={{ fontWeight: 800, fontSize: 15 }}>{p.name} <span style={{ fontSize: 13, color: C.mt, fontWeight: 600 }}>{p.college || p.bio?.college || ""}</span></div>
+            <div style={{ fontSize: 13, color: "#94a3b8" }}>{why.join(" · ")}</div>
+          </div>
+          <div style={{ display: "flex", gap: 6 }}>
+            {workout && <Btn onClick={() => a.workout(p)} disabled={!(sc.workoutsLeft > 0)} bg="#0c4a6e" c="#7dd3fc" style={{ fontSize: 13, padding: "6px 10px" }} title="Free full workup">🏋️ Workout</Btn>}
+            {interview && <Btn onClick={() => a.interview(p)} disabled={!(sc.interviewsLeft > 0)} bg="#7c3aed33" c="#c4b5fd" style={{ fontSize: 13, padding: "6px 10px" }}>🎤 Interview</Btn>}
+          </div>
+        </div>
+      ))}
+      {!list.length && <div style={{ fontSize: 14, color: "#94a3b8", padding: "6px 0" }}>Everyone your scouts flagged around your picks has been interviewed and worked out.</div>}
+    </div>
+  );
+}
+
 export function CombineView({ g, buzz }) {
   const a = useActions(g);
   const live = g.sp === "combine";
@@ -456,6 +497,12 @@ export function CombineView({ g, buzz }) {
   return (
     <div>
       {live && (
+        <div style={{ ...panel, border: `1px solid ${C.gd}88` }}>
+          <div style={{ ...head, color: C.gd }}>🗂️ YOUR SCOUTS' SHORTLIST · prospects in your range</div>
+          <ScoutShortlist g={g} isNeed={isNeed} />
+        </div>
+      )}
+      {live && (
         <div style={{ ...panel, border: "1px solid #7c3aed" }}>
           <div style={{ ...head, color: "#c4b5fd" }}>COMBINE WEEK · USE THESE BEFORE YOU LEAVE</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10 }}>
@@ -471,7 +518,7 @@ export function CombineView({ g, buzz }) {
       {(up.length > 0 || down.length > 0 || buzz?.length > 0) && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 10, marginBottom: 10 }}>
           <div style={panel}><div style={{ ...head, color: C.gn }}>📈 STOCK UP · tested like a higher pick</div>{up.map((p) => <Mover key={p.id} p={p} />)}{!up.length && <div style={muted}>Nobody from the back of the board blew up the Combine.</div>}</div>
-          <div style={panel}><div style={{ ...head, color: C.rd }}>📉 STOCK DOWN · early names who tested poorly</div>{down.length > 0 && <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 2 }}>A real concern or a bad day? Interview him or bring him in for a private workout to find out.</div>}{down.map((p) => <Mover key={p.id} p={p} />)}{!down.length && <div style={muted}>The early names all held up.</div>}</div>
+          <div style={panel}><div style={{ ...head, color: C.rd }}>📉 STOCK DOWN · early names who tested poorly</div>{down.length > 0 && <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 2 }}>A real concern or a bad day? An interview or private workout tells you, but only spend one if he could fall to you (or you plan to trade up).</div>}{down.map((p) => <Mover key={p.id} p={p} />)}{!down.length && <div style={muted}>The early names all held up.</div>}</div>
           {/* the week's draft news, in the same card style as the movers */}
           <div style={panel}><div style={{ ...head, color: "#c4b5fd" }}>📡 DRAFT BUZZ</div>
             {(buzz || []).slice(0, 4).map((x, k) => { const tg = { up: ["RISING", C.gn], down: ["FALLING", C.rd], best: ["TOP TEST", "#60a5fa"], news: ["NEWS", C.gd] }[x.kind] || ["NEWS", C.gd]; const pp = (g.dc[g.yr] || []).find((y) => y.id === x.pid); return (
@@ -837,8 +884,7 @@ export function ScoutingHQ({ g, go }) {
   const isNeed = (p) => needs.includes(["LT", "LG", "C", "RG", "RT"].includes(p.pos) ? "OL" : p.pos);
   const myPicks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !(g.draftLog || []).some((d) => d.id === pk.id)).sort((a, b) => a.overall - b.overall);
   // where your first pick lands: its slot once the order's set, otherwise where your record would put it
-  const standing = [...g.teams].sort((a, b) => (a.w - a.l) - (b.w - b.l)).findIndex((t) => t.id === g.ui) + 1;
-  const first = myPicks[0] ? (g.sp === "draft" || g.sp === "freeagency" ? myPicks[0].overall : (myPicks[0].rd - 1) * 32 + standing) : null;
+  const first = myPicks.length ? mySlots(g)[0] ?? null : null;
   const inRange = (p) => first == null || (csRank(p) >= first - 10 && csRank(p) <= first + 24);
   const targets = cls.filter((p) => isNeed(p) && inRange(p) && !p.drafted).map((p) => ({ p, read: prospectRead(s, p) })).filter((x) => x.read.cost).sort((a, b) => csRank(a.p) - csRank(b.p)).slice(0, 6);
   const regionPick = Object.keys(REGIONS).map((k) => ({ k, n: cls.filter((p) => regionOf(p) === k && csRank(p) <= 64).length, t: trips[k] || 0 })).filter((r) => r.t < MAX_TRIPS).sort((a, b) => b.n - a.n || a.t - b.t)[0];
@@ -865,6 +911,13 @@ export function ScoutingHQ({ g, go }) {
             <span style={{ fontSize: 22 }}>🗺️</span>
             <div style={{ flex: 1, minWidth: 200 }}><div style={{ fontWeight: 800, fontSize: 15 }}>Send your area scouts to the {regionName(regionPick.k)}</div><div style={{ fontSize: 13, color: "#94a3b8" }}>{regionPick.n} of the board's top 64 play there. A trip reads every prospect in the region at once.</div></div>
             <Btn onClick={() => send(regionPick.k)} bg={C.bl} style={{ fontSize: 14, padding: "8px 14px" }}>Send ({RTRIP_COST} pts)</Btn>
+          </div>
+        )}
+        {g.sp === "combine" && (
+          <div style={{ padding: "8px 0", borderBottom: `1px solid ${C.bd}` }}>
+            <div style={{ fontWeight: 800, fontSize: 15 }}>🗂️ Your scouts' visit list <span style={{ fontSize: 13, color: C.mt, fontWeight: 600 }}>interview and work out players who'll be there when you pick</span></div>
+            <ScoutShortlist g={g} isNeed={isNeed} compact />
+            <button onClick={() => go("combine")} style={{ background: "none", border: "none", color: "#93c5fd", textDecoration: "underline", cursor: "pointer", font: "inherit", fontSize: 13, padding: "4px 0 0" }}>See the full shortlist on the Combine screen</button>
           </div>
         )}
         {targets.map(({ p, read }) => (

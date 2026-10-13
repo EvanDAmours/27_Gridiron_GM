@@ -913,4 +913,9 @@ export const PATCH_NOTES = [
     "The full-season browser test now also checks every save along the way: no player in two places at once, every draft pick listed exactly once with a real owner, and no salary or cap figure that isn't a number.",
     "Fixed two practice-squad and IR rows on the roster screen that set their spacing twice.",
   ] },
+  { v: "2.67", date: "2026-10-14", title: "Scouts' Visit List", notes: [
+    "Combine week now opens with your scouts' shortlist: the prospects worth an interview or a private workout, picked for where you draft and what you need. Each one says why: where the board has him against your pick (\"board #31: right around your #28\"), the need he fills, and whether he tested poorly (a real concern or a bad day?).",
+    "Stars who'll be gone long before your pick are left off: from #28 there's no point spending an interview on the #2 prospect unless you plan to trade up. Later picks get a wider look, since the board is less certain there.",
+    "Scouting HQ shows the top three during Combine week, and its projected first pick now uses the same draft-order projection as your pick tracker.",
+  ] },
 ];
