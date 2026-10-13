@@ -85,9 +85,11 @@ export function acceptOffer(picks, futures, offer, ui) {
 export function applyFutures(order, yr, futures) {
   const out = [];
   for (let rd = 1; rd <= 7; rd++) order.forEach((tid, idx) => {
-    const t = futures.find((pk) => pk.yr === yr && pk.orig === tid && pk.rd === rd);
+    const t = futures.find((pk) => pk.yr === yr && pk.orig === tid && pk.rd === rd && !pk.comp);
     out.push({ rd, num: idx + 1, overall: (rd - 1) * 32 + idx + 1, owner: t ? t.owner : tid, orig: tid, yr });
   });
+  // compensatory picks come at the end of the draft
+  futures.filter((pk) => pk.comp && pk.yr === yr).forEach((pk, i) => out.push({ rd: 7, num: order.length + 1 + i, overall: 7 * order.length + 1 + i, owner: pk.owner, orig: pk.orig, yr, comp: true }));
   return out;
 }
 

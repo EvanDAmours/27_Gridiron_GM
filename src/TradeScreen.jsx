@@ -3,7 +3,11 @@
 import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face, TeamLogo } from "./ui.jsx";
-import { deadMoney, proration } from "./bonus.js";
+import { deadMoney, proration, yearsLeft } from "./bonus.js";
+import { getCapPhase } from "./cap.js";
+
+// Years left on his deal as of now (in the off-season his contract count hasn't ticked down yet).
+const yrsLeft = (p) => { const { yr, sp } = getCapPhase(); return yearsLeft(p, yr, sp); };
 import { MOBILE } from "./mobile.js";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
@@ -11,7 +15,7 @@ const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "C
 const SORTS = {
   ovr: { label: "Overall", key: (p) => p.ovr, dir: -1 },
   salary: { label: "Salary", key: (p) => +p.salary || 0, dir: -1 },
-  years: { label: "Years left", key: (p) => +p.contract || 0, dir: -1 },
+  years: { label: "Years left", key: (p) => yrsLeft(p), dir: -1 },
   val: { label: "Trade value", key: (p) => +p.tradeVal || 0, dir: -1 },
   age: { label: "Age", key: (p) => p.age, dir: 1 },
 };
@@ -34,7 +38,7 @@ function BestAt({ teams, ui, pos, setPos, onPick, setSel }) {
           <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><span onClick={(e) => { e.stopPropagation(); setSel(p); }} style={{ fontWeight: 800, textDecoration: "underline", textDecorationColor: "#334155", textUnderlineOffset: 3 }}>{p.name}</span> <span style={{ fontSize: 12, color: C.mt }}>{t.ab}{MOBILE ? ` · ${p.age}` : ""}</span></span>
           {!MOBILE && <span style={{ fontSize: 13, color: "#cbd5e1" }}>age {p.age}</span>}
           <b style={{ fontSize: 17, color: oC(p.ovr), textAlign: "center" }}>{p.ovr}</b>
-          {!MOBILE && <span style={{ fontSize: 13, color: "#cbd5e1", whiteSpace: "nowrap" }}>{money(p.salary)} · {p.contract}y</span>}
+          {!MOBILE && <span style={{ fontSize: 13, color: "#cbd5e1", whiteSpace: "nowrap" }}>{money(p.salary)} · {yrsLeft(p)}y</span>}
           {!MOBILE && <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }} title="Trade value">{p.tradeVal}</span>}
           <span style={{ fontSize: 12, fontWeight: 800, color: C.bl, whiteSpace: "nowrap" }}>Trade →</span>
         </div>
@@ -99,8 +103,8 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
                   <td style={td}><Bdg pos={p.pos} /></td>
                   <td className="tr-hide" style={{ ...td, color: "#cbd5e1" }}>{p.age}</td>
                   <td style={{ ...td, fontWeight: 900, fontSize: 17, color: oC(p.ovr) }}>{p.ovr}</td>
-                  <td className="tr-hide" style={{ ...td, color: "#cbd5e1", whiteSpace: "nowrap", fontSize: 14 }}>{money(p.salary)} · {p.contract}y</td>
-                  {payCol ? <td style={{ ...td, color: "#cbd5e1", whiteSpace: "nowrap", fontSize: 14 }}>{sort === "years" ? `${p.contract}y` : money(p.salary)}</td> : <td style={{ ...td, fontWeight: 800, color: "#fbbf24" }}>{p.tradeVal}</td>}
+                  <td className="tr-hide" style={{ ...td, color: "#cbd5e1", whiteSpace: "nowrap", fontSize: 14 }}>{money(p.salary)} · {yrsLeft(p)}y</td>
+                  {payCol ? <td style={{ ...td, color: "#cbd5e1", whiteSpace: "nowrap", fontSize: 14 }}>{sort === "years" ? `${yrsLeft(p)}y` : money(p.salary)}</td> : <td style={{ ...td, fontWeight: 800, color: "#fbbf24" }}>{p.tradeVal}</td>}
                 </tr>
               );
             })}

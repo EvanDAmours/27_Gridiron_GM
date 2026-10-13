@@ -111,7 +111,7 @@ export function updateRecords(book, teams, yr) {
       history.push(e);
     } else best[d.key].prev = cur.prev;
   }
-  return { book: { best, history }, broken };
+  return { book: { ...book, best, history }, broken }; // keep the franchise records riding along in the book
 }
 
 // Record Watch: players on pace to break a record. gamesPlayed: the team's games so far.

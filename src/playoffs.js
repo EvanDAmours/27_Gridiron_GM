@@ -47,3 +47,13 @@ export const seedLabel = (pb, id) => {
   for (const c of ["AFC", "NFC"]) { const i = pb?.seeds?.[c]?.indexOf(id); if (i >= 0) return `${c} #${i + 1}`; }
   return "";
 };
+
+// Draft order, like the NFL: clubs that missed the playoffs first (worst record first), then
+// playoff clubs by the round they went out in, the Super Bowl loser 31st and the champion last.
+// pb: the finished bracket (null before the playoffs: record only).
+export function draftOrder(teams, pb) {
+  const out = new Map();
+  for (const r of pb?.res || []) out.set(r.w === r.h ? r.a : r.h, r.rd); // the round each loser went out in
+  const exitRd = (id) => (pb?.ch === id ? 5 : out.get(id) ?? 0);
+  return [...teams].sort((a, b) => exitRd(a.id) - exitRd(b.id) || -better(a, b) || 0).map((t) => t.id);
+}
