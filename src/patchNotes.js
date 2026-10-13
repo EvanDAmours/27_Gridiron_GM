@@ -875,4 +875,14 @@ export const PATCH_NOTES = [
     "Trades now check the other club's cap too: if they can't fit the salary you're sending, they say so.",
     "The trade screen tells you how they see the deal (\"he'd start for them at CB; they're rebuilding, so picks count for more\").",
   ] },
+  { v: "2.60", date: "2026-10-14", title: "No Free Lunches", notes: [
+    "An audit of the old scouting-point shortcuts. Anything that handed your club an edge the AI never gets, or made something out of nothing, is gone:",
+    "Removed the Franchise QB tag: for 1 point it gave your team a hidden +5 strength in every game.",
+    "Removed the hidden rivalry boost: your team got +4 strength and a 2-3 point \"crowd surge\" on the scoreboard in every rivalry game. Rivalry games still carry their stakes and stories.",
+    "Removed the core / rotation / depth role buttons: each \"core\" starter added free team strength (all 22 starters made it +11).",
+    "Removed injury insurance: it created $2M of cap room from nothing when an insured player went on IR.",
+    "Removed the 1-point late-round gem scout: it raised a drafted player's rating and potential out of thin air. Finding gems is your scouts' job (workups, interviews, the combine).",
+    "Coach development (+5 rating for 2 points) is once per coach per season instead of unlimited.",
+    "Kept, since each is a fair one-time choice: stadium upgrades, coach specialties, scheme changes, dev camp and training-camp work, locker-room meetings, retaining a poached coordinator, practice-squad focus, and coach extensions.",
+  ] },
 ];
