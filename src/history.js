@@ -7,6 +7,8 @@
 // Hall of Fame, enshrined five years after he retires, like the NFL.
 
 import { DRAFT_PEDIGREE, pedigreeKey } from "./data/draftPedigree.js";
+import { FRANCHISE_CAREER } from "./data/franchiseCareer.js";
+import { TEAM_CAREER_BASE, TEAM_CAREER_KEYS } from "./data/teamCareerBase.js";
 
 export const HOF_LINE = 60;
 export const HOF_WAIT = 5;
@@ -78,14 +80,74 @@ export function legacyOf(p, { awards = [], book = null, yr, startYr = 2026, star
   return { legacy, career, won, peak, seasonsHere, pre: Math.round(pre) };
 }
 
+// ── Franchise careers ──
+// A club's all-time leaders count everything a player did for it: real players' seasons there
+// before the league began (through 2025), every league season he finished there, and this season
+// if he's there now. The real record books (through 2025) fill in everyone who played before.
+export const normName = (name) => String(name || "").toLowerCase().replace(/[.'’]/g, "").replace(/\b(jr|sr|ii|iii|iv|v)\b/g, "").replace(/[^a-z]+/g, " ").trim();
+const isReal = (p) => !(p?.draftYr >= 2026);
+let clubsByName = null;
+const clubsOf = (name) => {
+  if (!clubsByName) { clubsByName = new Map(); for (const k of Object.keys(TEAM_CAREER_BASE)) { const [n, ab] = k.split("|"); (clubsByName.get(n) || clubsByName.set(n, []).get(n)).push(ab); } }
+  return clubsByName.get(normName(name)) || [];
+};
+// His totals with club ab. curAb: the club he's on now (his season so far counts there).
+export function teamCareer(p, ab, curAb) {
+  const out = {};
+  const base = isReal(p) ? TEAM_CAREER_BASE[`${normName(p.name)}|${ab}`] : null;
+  TEAM_CAREER_KEYS.forEach((k, i) => { out[k] = base?.[i] || 0; });
+  for (const s of p.sh || []) if (s.tm === ab) for (const k of TEAM_CAREER_KEYS) out[k] += s[k] || 0;
+  if (curAb === ab) for (const k of TEAM_CAREER_KEYS) out[k] += p.ss?.[k] || 0;
+  return out;
+}
+// Every club he has numbers with: { ab: { stat: total } }.
+export function teamCareers(p, curAb) {
+  const clubs = new Set([...(isReal(p) ? clubsOf(p.name) : []), ...(p.sh || []).map((s) => s.tm), ...(curAb ? [curAb] : [])]);
+  const out = {};
+  for (const ab of clubs) { if (!ab) continue; const c = teamCareer(p, ab, curAb); if (TEAM_CAREER_KEYS.some((k) => c[k] > 0)) out[ab] = c; }
+  return out;
+}
+// The club's all-time top n in one stat: { name, v, active, pid, team, real }. teams: every club;
+// others: free agents and the like; retired: league history entries (their tc holds club careers).
+export function franchiseBoard(ab, key, { teams = [], others = [], retired = [] } = {}, n = 10) {
+  const rows = [];
+  const seen = new Set();
+  const add = (row) => { const k = normName(row.name); if (row.v > 0 && !seen.has(k)) { seen.add(k); rows.push(row); } };
+  const league = [];
+  for (const t of teams) for (const p of [...(t.roster || []), ...(t.ir || []), ...(t.ps || [])]) league.push({ p, cur: t.ab });
+  for (const p of others) league.push({ p, cur: null });
+  for (const { p, cur } of league) { const v = teamCareer(p, ab, cur)[key]; if (v > 0) add({ name: p.name, pid: p.id, v, active: true, team: cur }); }
+  for (const r of retired) { const v = r.tc?.[ab]?.[key] ?? (r.team === ab && !r.tc ? r.career?.[key] : 0); if (v > 0) add({ name: r.name, pid: r.id, v, active: false, retYr: r.retYr }); }
+  for (const r of FRANCHISE_CAREER[ab]?.[key] || []) add({ name: r.n, v: r.v, active: false, real: true });
+  return rows.sort((a, b) => b.v - a.v).slice(0, n);
+}
+// Where he stands in his club's history: [{ key, label, rank, v }] for every stat where he's top 10.
+export function franchiseRanks(p, ab, ctx) {
+  if (!ab) return [];
+  const out = [];
+  for (const c of CAREER_STATS) {
+    const mine = teamCareer(p, ab, ab)[c.key];
+    if (!(mine > 0)) continue;
+    const board = franchiseBoard(ab, c.key, ctx, 10);
+    const i = board.findIndex((r) => normName(r.name) === normName(p.name));
+    if (i >= 0) out.push({ key: c.key, label: c.label, rank: i + 1, v: mine });
+  }
+  return out;
+}
+// The 10th-best real mark in a stat (anyone past it belongs in the club's history).
+const tenth = (ab, key) => { const l = FRANCHISE_CAREER[ab]?.[key] || []; return l.length >= 10 ? l[9].v : 1; };
+
 // A player hanging it up. Returns his history entry (or null if he isn't notable enough to keep).
 export function retireEntry(p, team, yr, opts = {}) {
   const L = legacyOf(p, { ...opts, yr });
   const hof = L.legacy >= HOF_LINE;
-  if (!hof && L.legacy < 12) return null;
+  const tc = teamCareers(p, team?.ab);
+  // a top-10 career with a club keeps him in the books even without a big legacy
+  const clubGreat = Object.entries(tc).some(([ab, c]) => CAREER_STATS.some(({ key }) => c[key] >= tenth(ab, key)));
+  if (!hof && L.legacy < 12 && !clubGreat) return null;
   return {
     id: p.id, name: p.name, pos: p.pos, num: p.num, team: team?.ab || p.formerTeam || "FA", age: p.age, retYr: yr,
-    peak: L.peak, legacy: L.legacy, career: L.career, won: L.won, seasons: L.seasonsHere,
+    peak: L.peak, legacy: L.legacy, career: L.career, won: L.won, seasons: L.seasonsHere, tc,
     hof, hofClass: hof ? yr + HOF_WAIT : null,
   };
 }
@@ -127,4 +189,28 @@ export function accoladesOf(p, { awards = [], champs = [], teams = [], yr, teamA
   if (teamAb && (p.ss?.gp || 0) > 0) clubIn.set(yr, teamAb);
   for (const c of champs) { const ab = teams[c.ti]?.ab; if (ab && clubIn.get(c.yr) === ab) add("sb", c.yr); }
   return ACCOLADES.filter(([k]) => got[k]?.length).map(([k, icon, label]) => ({ k, icon, label, years: got[k].sort((a, b) => a - b) }));
+}
+
+// After a week: has anyone taken over his club's all-time lead in a stat? book.cc holds the league
+// players who hold a club career record ({ ab: { stat: { name, pid, v } } }); until one does, the
+// real record (through 2025) stands. Returns { book, broken: [{ key, label, name, pid, team, ti, v, prev }] }.
+export function updateCareerRecords(book, teams) {
+  const cc = { ...(book.cc || {}) };
+  const broken = [];
+  teams.forEach((t, ti) => {
+    const recs = { ...(cc[t.ab] || {}) };
+    for (const c of CAREER_STATS) {
+      let top = null;
+      for (const p of [...(t.roster || []), ...(t.ir || [])]) { const v = teamCareer(p, t.ab, t.ab)[c.key]; if (v > 0 && (!top || v > top.v)) top = { p, v }; }
+      if (!top) continue;
+      const real = FRANCHISE_CAREER[t.ab]?.[c.key]?.[0];
+      const cur = recs[c.key] || (real ? { name: real.n, v: real.v } : null);
+      if (cur && top.v <= cur.v) continue;
+      const same = cur && (cur.pid === top.p.id || normName(cur.name) === normName(top.p.name));
+      recs[c.key] = { name: top.p.name, pid: top.p.id, v: top.v };
+      if (!same) broken.push({ key: c.key, label: c.label, name: top.p.name, pid: top.p.id, team: t.ab, ti, v: top.v, prev: cur });
+    }
+    cc[t.ab] = recs;
+  });
+  return { book: { ...book, cc }, broken };
 }

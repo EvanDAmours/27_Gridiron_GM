@@ -292,7 +292,7 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
       <Shelf title="Player Awards" items={mine} empty="Win MVP, Offensive or Defensive Player of the Year, Super Bowl MVP or a Rookie of the Year award with you as GM and the trophy goes here." perRow={perRow} on={on} setOn={setOn} start={lombardis.length} small={width <= 640} /></>}
       {sec === "jackets" && <GoldJackets team={team} hofers={retiredHere.filter((r) => r.hof)} yr={yr} />}
       {sec === "ring" && <RingOfHonor team={team} retired={retiredHere} hall={hall} onInduct={onInduct || (() => {})} onRetireNum={onRetireNum || (() => {})} />}
-      {sec === "records" && <RecordsWall team={team} retired={retiredHere} book={book} />}
+      {sec === "records" && <RecordsWall team={team} retired={retiredHere} book={book} teams={teams} allRetired={retired} />}
     </div>
   );
 }

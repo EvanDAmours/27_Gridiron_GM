@@ -37,7 +37,7 @@ export function loadRecordBook(book) {
   if (!book?.best) return fresh;
   const franchise = { ...fresh.franchise };
   for (const [ab, recs] of Object.entries(book.franchise || {})) franchise[ab] = { ...franchise[ab], ...recs };
-  return { best: { ...fresh.best, ...book.best }, history: book.history || [], franchise, fhistory: book.fhistory || [] };
+  return { best: { ...fresh.best, ...book.best }, history: book.history || [], franchise, fhistory: book.fhistory || [], cc: book.cc || {} };
 }
 
 // After a week: each club's own records. A player passes his club's mark with the stats he's put up

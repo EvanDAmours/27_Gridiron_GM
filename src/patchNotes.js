@@ -853,4 +853,12 @@ export const PATCH_NOTES = [
     "Trades, game results and season wrap-ups now appear at the top of the newest-first timeline instead of at the bottom, where they could get trimmed off.",
     "Scouting: defensive linemen strong at power no longer get a punter's scouting note (\"booming punts\").",
   ] },
+  { v: "2.57", date: "2026-10-13", title: "Franchise History", notes: [
+    "Franchise career records now cover each club's whole history. The Legacy Hall's records wall shows every club's real all-time career leaders through 2025 (top 10 in passing yards and TDs, rushing yards and TDs, receptions, receiving yards and TDs, sacks and interceptions), merged with everything done in your league. Eli Manning's 57,023 passing yards are the Giants' mark to chase.",
+    "Real players carry what they really did for each club before 2026 (from week-by-week NFL stats, so a mid-season trade splits his numbers), and their league seasons add on top. A young quarterback is no longer his club's all-time leader just because the league started with him.",
+    "Each stat shows the top five, your best active player's place (\"#7, 45,231 behind Eli Manning\" or how far he is from the top 10), and a dot marks players still in the league.",
+    "When anyone passes his club's all-time leader, it's league news (\"GIANTS ALL-TIME: … passes Eli Manning\"), and yours gets a pop-up.",
+    "Player cards show where he stands in his club's history: \"#6 in Giants passing TDs\".",
+    "A player who retires with a top-10 career at a club stays in its books, even without a Hall of Fame-level legacy.",
+  ] },
 ];

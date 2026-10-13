@@ -3,7 +3,7 @@
 // records wall.
 import React from "react";
 import { C, Btn, TeamLogo } from "./ui.jsx";
-import { CAREER_STATS, careerTotals, ringCandidates } from "./history.js";
+import { CAREER_STATS, ringCandidates, franchiseBoard, teamCareer, normName } from "./history.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 import { RECORD_DEFS, recordValue, everyone } from "./records.js";
 import goldJacket from "./assets/gold-jacket.webp";
@@ -172,15 +172,18 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum }) {
   );
 }
 
-// Franchise records: career leaders for the club (current players and those who retired here)
-// and the league records your players hold.
-export function RecordsWall({ team, retired, book }) {
+// Franchise records: the club's all-time career leaders (its real history through 2025 plus
+// everything done in your league) and the league records your players hold.
+export function RecordsWall({ team, retired, book, teams = [], allRetired = retired }) {
+  const ctx = { teams, retired: allRetired };
   const rows = CAREER_STATS.map((c) => {
-    let best = null;
-    for (const p of team.roster || []) { const v = careerTotals(p)[c.key]; if (v > 0 && (!best || v > best.v)) best = { name: p.name, v, active: true }; }
-    for (const r of retired) { const v = r.career?.[c.key]; if (v > 0 && (!best || v > best.v)) best = { name: r.name, v, active: false }; }
-    return { ...c, best };
-  }).filter((r) => r.best);
+    const board = franchiseBoard(team.ab, c.key, ctx, 10);
+    // the best on this year's roster, and where he stands
+    let mine = null;
+    for (const p of everyone(team)) { const v = teamCareer(p, team.ab, team.ab)[c.key]; if (v > 0 && (!mine || v > mine.v)) mine = { name: p.name, v }; }
+    const rank = mine ? board.findIndex((r) => normName(r.name) === normName(mine.name)) + 1 : 0;
+    return { ...c, board, mine, rank };
+  }).filter((r) => r.board.length);
   const held = Object.entries(book?.best || {}).filter(([, b]) => b.team === team.ab && !b.nfl).map(([k, b]) => ({ ...b, label: RECORD_DEFS.find((d) => d.key === k)?.label || k }));
   // the club's single-season marks (real history, plus any set in your league), and who on this
   // year's roster is closest to each
@@ -212,16 +215,34 @@ export function RecordsWall({ team, retired, book }) {
           })}
         </div>
       </>}
-      <H sub="Career leaders in this league">Career Records</H>
-      <div style={{ background: "linear-gradient(180deg,#2a1d13,#1a120c)", border: "1px solid #3d2a1a", borderRadius: 12, padding: 12, display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(210px,1fr))", gap: 8 }}>
-        {rows.length ? rows.map((r) => (
-          <div key={r.key} style={{ background: "linear-gradient(180deg,#f6e7b8,#d9bf7a)", borderRadius: 6, padding: "8px 10px", color: "#2b1d0e", boxShadow: "inset 0 0 0 2px #8a6a2a, 0 3px 6px #0008" }}>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase" }}>{r.label}</div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 900 }}>{fmt(r.best.v)}</div>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>{r.best.name}{r.best.active ? " · active" : ""}</div>
-          </div>
-        )) : <div style={{ color: "#d6c3a0", fontSize: 14, padding: 10 }}>Records start piling up as your players build careers here.</div>}
+      <H sub="Each stat's all-time leaders with the club: its real history through 2025, plus everything done in your league.">Franchise Career Leaders</H>
+      <div style={{ background: "linear-gradient(180deg,#2a1d13,#1a120c)", border: "1px solid #3d2a1a", borderRadius: 12, padding: 12, display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 8 }}>
+        {rows.length ? rows.map((r) => {
+          const top = r.board[0], tenth = r.board[r.board.length - 1];
+          return (
+            <div key={r.key} style={{ background: "linear-gradient(180deg,#f6e7b8,#d9bf7a)", borderRadius: 6, padding: "9px 11px", color: "#2b1d0e", boxShadow: "inset 0 0 0 2px #8a6a2a, 0 3px 6px #0008" }}>
+              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase" }}>{r.label}</div>
+              <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 900, lineHeight: 1.15 }}>{recordValue(r.key, top.v)}</div>
+              <div style={{ fontSize: 13, fontWeight: 800 }}>{top.name}{top.active ? <span style={{ color: "#166534" }}> · active</span> : null}</div>
+              <div style={{ marginTop: 5, borderTop: "1px solid #8a6a2a55", paddingTop: 4 }}>
+                {r.board.slice(1, 5).map((b, i) => (
+                  <div key={b.name} style={{ display: "flex", gap: 6, fontSize: 12, lineHeight: 1.45, fontWeight: b.active ? 800 : 500 }}>
+                    <span style={{ width: 18, color: "#6b4f22" }}>{i + 2}.</span><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.name}{b.active ? " ●" : ""}</span><span>{recordValue(r.key, b.v)}</span>
+                  </div>
+                ))}
+              </div>
+              {r.mine && r.rank !== 1 && (
+                <div style={{ marginTop: 5, fontSize: 11.5, background: "#2b1d0e14", borderRadius: 4, padding: "3px 6px", fontWeight: 700 }}>
+                  {r.rank > 0
+                    ? <>{r.mine.name}: #{r.rank}, {recordValue(r.key, top.v - r.mine.v)} behind {top.name}</>
+                    : <>{r.mine.name}: {recordValue(r.key, r.mine.v)} · {recordValue(r.key, tenth.v - r.mine.v + 1)} from the top 10</>}
+                </div>
+              )}
+            </div>
+          );
+        }) : <div style={{ color: "#d6c3a0", fontSize: 14, padding: 10 }}>No records yet.</div>}
       </div>
+      <div style={{ marginTop: 6, fontSize: 12, color: "#d6c3a0" }}>● still playing. Real players carry what they did here before 2026; anyone who passes #1 makes the news.</div>
       {held.length > 0 && <div style={{ marginTop: 8, fontSize: 13, color: "#fde68a" }}>🏅 League records held: {held.map((b) => `${b.label}: ${b.name}, ${b.yr}`).join(" · ")}</div>}
     </div>
   );
