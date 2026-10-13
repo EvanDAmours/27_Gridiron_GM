@@ -869,4 +869,10 @@ export const PATCH_NOTES = [
     "Offline, a small \"✈️ Offline\" tag sits in the top bar. The old floating offline banner, which covered buttons, is gone.",
     "Your saves were already stored on your device, so they work offline as before. Offline you only miss the online extras (the global leaderboard and sharing); other teams' matchup artwork shows once it has been seen online, with a team badge standing in until then.",
   ] },
+  { v: "2.59", date: "2026-10-14", title: "Real Moves, Smarter Trades", notes: [
+    "Only real moves make the news. Removed an old filler that logged made-up trades between AI clubs every week (\"DAL traded WR for CB\", no players involved), and one that cut injured depth players from AI rosters at random (clubs put long-term injuries on IR instead, as before). Real AI trades, deadline deals and signings are unchanged.",
+    "AI clubs now judge your trade offers from their own situation, not just by adding up player values: a player who'd start at a thin spot is worth more to them than a backup at a stacked one; a rebuilding club prizes young players and draft picks and marks down veterans and expiring deals; a contender pays for help now and wants a premium to give up one of its starters.",
+    "Trades now check the other club's cap too: if they can't fit the salary you're sending, they say so.",
+    "The trade screen tells you how they see the deal (\"he'd start for them at CB; they're rebuilding, so picks count for more\").",
+  ] },
 ];
