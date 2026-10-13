@@ -35,6 +35,8 @@ export function repairSave(d) {
     // Saves from before real head coaches: give each club its real 2026 head coach.
     if (t.coach && !t.coach.hc && REAL_STAFF[t.ab]) { const n = REAL_STAFF[t.ab][0]; t.coach.hc = { id: `hc-${t.ab}`, name: n, face: null, role: "HC", rating: HC_RATING[n] ?? 74, trait: HC_TRAIT[n], real: true }; }
     if (t.coach?.hc && !t.coach.hc.trait && HC_TRAIT[t.coach.hc.name]) t.coach.hc.trait = HC_TRAIT[t.coach.hc.name];
+    // Gambling bans used to be "99 weeks" (and only ran down in season): now a full 17 games at most.
+    for (const p of [...t.roster, ...t.ps, ...t.ir]) if (p.suspended && p.suspWksLeft > 17) p.suspWksLeft = 17;
   });
   d.fa = fixList(d.fa, fixes, "free agents");
   // The log is lines of text; an old farewell feature put records in it, which can't be drawn.

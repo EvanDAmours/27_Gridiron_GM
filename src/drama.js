@@ -15,18 +15,23 @@ const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const last = (name) => (name || "").split(" ").slice(1).join(" ") || name;
 export const isFictional = (p) => !!p && p.src !== "m27" && !p.real;
 
-// Suspensions run down by the weeks played; returns your club's players who are back.
-export function serveSuspensions(teams, weeks = 1, ui = -1) {
+// Suspensions count games, like the NFL's: each week, every player serving one on a club that
+// played that week has one fewer game to go (a bye doesn't count). played: the clubs (indexes)
+// that played; returns your club's players who are back.
+export function serveSuspensions(teams, played, ui = -1) {
   const back = [];
-  teams.forEach((t, ti) => (t.roster || []).forEach((p) => {
-    if (!p.suspended || p.suspWksLeft == null) return;
-    p.suspWksLeft = Math.max(0, p.suspWksLeft - weeks);
-    if (p.suspWksLeft <= 0) { p.suspended = false; p.suspWksLeft = null; if (ti === ui) back.push(p); }
-  }));
+  teams.forEach((t, ti) => {
+    if (!played.has(ti)) return;
+    for (const p of [...(t.roster || []), ...(t.ir || [])]) {
+      if (!p.suspended || p.suspWksLeft == null) continue;
+      p.suspWksLeft = Math.max(0, p.suspWksLeft - 1);
+      if (p.suspWksLeft <= 0) { p.suspended = false; p.suspWksLeft = null; if (ti === ui) back.push(p); }
+    }
+  });
   return back;
 }
 
-// The off-field incidents, with the league's response (weeks out; 99 = the rest of the season).
+// The off-field incidents, with the league's response (games out).
 const OFF_FIELD = [
   { k: "dv", w: 3, wks: [6, 8], head: (n) => `${n} arrested on domestic violence charges`,
     text: (n, t, pos, wks) => `The ${t.name} say they are "aware of the situation and gathering information." The league has placed the ${pos} on the Commissioner's Exempt List while it investigates; he is out at least ${wks} weeks.` },
@@ -34,19 +39,17 @@ const OFF_FIELD = [
     text: (n, t, pos, wks) => `A civil suit filed this week accuses the ${t.name} ${pos} of sexual assault. He denies the allegations through his attorney. The league has placed him on the Commissioner's Exempt List; he will miss at least ${wks} weeks.` },
   { k: "ped", w: 4, wks: [4, 6], head: (n, wks) => `${n} suspended ${wks} games for PEDs`,
     text: (n, t, pos, wks) => `The ${t.name} ${pos} violated the league's policy on performance-enhancing substances. He says a supplement was to blame, but the suspension stands: ${wks} games without pay.` },
-  { k: "gamble", w: 1, wks: [99, 99], head: (n) => `League suspends ${n} indefinitely for gambling`,
-    text: (n, t, pos) => `An investigation found the ${t.name} ${pos} bet on NFL games, including some involving his own team. He is out for at least the rest of the season, and his career may be over.` },
+  { k: "gamble", w: 1, wks: [17, 17], head: (n) => `League suspends ${n} indefinitely for gambling`,
+    text: (n, t, pos) => `An investigation found the ${t.name} ${pos} bet on NFL games, including some involving his own team. He is banned for at least a full year (17 games, into next season if need be), and his career may be over.` },
   { k: "dui", w: 3, wks: [2, 3], head: (n) => `${n} arrested for DUI`,
     text: (n, t, pos, wks) => `Police stopped the ${t.name} ${pos} early Sunday morning. The league suspended him ${wks} games under the personal conduct policy.` },
   { k: "rules", w: 3, wks: [1, 1], head: (n, wks, t) => `${t.name} bench ${n} for violating team rules`,
     text: (n, t, pos) => `The ${pos} missed meetings and the team flight. He'll sit this week; the coaching staff called it "an internal matter."` },
 ];
 
-export function leagueDrama({ teams, sched, wk, ui, yr, weeks = 1, rand = Math.random }) {
+export function leagueDrama({ teams, sched, wk, ui, yr, weeks = 1, offField = [], rand = Math.random }) {
   const out = [], log = [];
   const add = (s) => out.push({ id: `${yr}-${wk}-d${out.length}`, kind: "drama", ...s, mine: s.team === ui });
-  const back = serveSuspensions(teams, weeks, ui);
-  for (const p of back) log.push(`✅ ${p.name} has served his suspension and is back.`);
   const games = (sched || []).filter((g) => g.wk === wk && g.played);
   const findP = (ti, id) => (teams[ti]?.roster || []).find((p) => p.id === id);
   const onField = [];
@@ -93,8 +96,21 @@ export function leagueDrama({ teams, sched, wk, ui, yr, weeks = 1, rand = Math.r
     if (c) add({ team: c.ti, head: `${c.t.name} owner issues vote of confidence`, text: `At ${rec(c.t)}, the ${c.t.city} owner says the head coach "has my full support." Around the league, that's rarely a good sign.` });
   }
 
+  out.push(...offField);
+  return { stories: out.sort((a, b) => (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || (b.breaking ? 1 : 0) - (a.breaking ? 1 : 0)).slice(0, 3), log };
+}
+
+// One week off the field, run right after that week's games (so a suspension keeps a player out of
+// the next ones, even in Sim to Deadline / Sim All): suspensions served, then maybe new trouble.
+// Returns { stories, log }; pass the stories on to leagueDrama as offField.
+export function offFieldWeek({ teams, sched, wk, ui, yr, rand = Math.random }) {
+  const out = [], log = [];
+  const add = (s) => out.push({ id: `${yr}-${wk}-o${out.length}`, kind: "drama", ...s, mine: s.team === ui });
+  const played = new Set();
+  for (const g of sched || []) if (g.wk === wk && g.played) { played.add(g.h); played.add(g.a); }
+  for (const p of serveSuspensions(teams, played, ui)) log.push(`✅ ${p.name} has served his suspension and is back.`);
   // Off the field: serious trouble, a league suspension (generated players only; see above).
-  if (rand() < 0.3 * weeks) {
+  if (rand() < 0.3) {
     const pool = teams.flatMap((t, ti) => (t.roster || []).filter((p) => isFictional(p) && !p.suspended && p.ovr >= 62).map((p) => ({ p, t, ti })));
     const c = pool[Math.floor(rand() * pool.length)];
     if (c) {
@@ -105,8 +121,8 @@ export function leagueDrama({ teams, sched, wk, ui, yr, weeks = 1, rand = Math.r
       c.p.suspended = true; c.p.suspWksLeft = wks;
       (c.p.incidents ||= []).push({ yr, wk, k: ev.k, wks });
       add({ team: c.ti, breaking: ev.k !== "rules", head: ev.head(c.p.name, wks, c.t), text: ev.text(c.p.name, c.t, c.p.pos, wks) });
-      if (c.ti === ui) log.push(`🚨 ${c.p.name} (${c.p.pos}) is out ${wks >= 99 ? "for the season" : `${wks} week${wks > 1 ? "s" : ""}`}: ${ev.head(c.p.name, wks, c.t)}.`);
+      if (c.ti === ui) log.push(`🚨 ${c.p.name} (${c.p.pos}) is out ${wks} game${wks > 1 ? "s" : ""}: ${ev.head(c.p.name, wks, c.t)}.`);
     }
   }
-  return { stories: out.sort((a, b) => (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || (b.breaking ? 1 : 0) - (a.breaking ? 1 : 0)).slice(0, 3), log };
+  return { stories: out, log };
 }

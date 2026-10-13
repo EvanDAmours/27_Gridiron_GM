@@ -5,7 +5,6 @@
 
 import { nflSeeds } from "./playoffs.js";
 
-const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
 export const MAX_OVERPAY = 1.15; // the most an offer can be worth, as a multiple of your player
 const MIN_FAIR = 0.75; // and the least
 
@@ -115,12 +114,19 @@ export function genTradeOffer(teams, ui, picks, pkV, rand = Math.random) {
     for (let k = fits.length - 1; k > 0; k--) { const j = ri(0, k); [fits[k], fits[j]] = [fits[j], fits[k]]; }
     for (const fromTm of fits.slice(0, 6)) { const o = buildOffer(teams, fromTm, want, picks, pkV, rand); if (o) return o; }
   }
+  // Otherwise a club calls about one of your players who'd start for them (the biggest upgrade
+  // over their own man first, with some luck in it). A few clubs are tried before the phone goes quiet.
   const aiIdxs = teams.map((_, i) => i).filter((i) => i !== ui);
-  const fromTm = aiIdxs[ri(0, aiIdxs.length - 1)];
-  const aiT = teams[fromTm];
-  const needs = POS.filter((pos) => aiT.roster.filter((p) => p.pos === pos && p.ovr >= 65).length < 2 && usT.roster.filter((p) => p.pos === pos && p.ovr >= 70).length >= 3);
-  if (!needs.length) return null;
-  const wPos = needs[ri(0, needs.length - 1)];
-  const want = usT.roster.filter((p) => p.pos === wPos && p.ovr >= 70 && !p.ftag && wantsPlayer(aiT, p) && fitsTeam(aiT, p)).sort((a, b) => a.tradeVal - b.tradeVal)[0];
-  return want ? buildOffer(teams, fromTm, want, picks, pkV, rand) : null;
+  for (let k = aiIdxs.length - 1; k > 0; k--) { const j = ri(0, k); [aiIdxs[k], aiIdxs[j]] = [aiIdxs[j], aiIdxs[k]]; }
+  for (const fromTm of aiIdxs.slice(0, 8)) {
+    const aiT = teams[fromTm];
+    const theirBest = (pos) => Math.max(0, ...(aiT.roster || []).filter((x) => x.pos === pos).map((x) => x.ovr || 0));
+    const cands = (usT?.roster || []).filter((p) => (p.ovr || 0) >= 68 && !p.ftag && !p.injured && !p.suspended && p.pos !== "K" && p.pos !== "P" && wantsPlayer(aiT, p) && fitsTeam(aiT, p))
+      .sort((a, b) => (b.ovr - theirBest(b.pos)) - (a.ovr - theirBest(a.pos)));
+    if (!cands.length) continue;
+    const want = cands[ri(0, Math.min(2, cands.length - 1))];
+    const o = buildOffer(teams, fromTm, want, picks, pkV, rand);
+    if (o) return o;
+  }
+  return null;
 }

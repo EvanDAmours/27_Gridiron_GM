@@ -764,4 +764,12 @@ export const PATCH_NOTES = [
     "Fixed: the injured reserve list could crash when showing how many weeks until a player returns.",
     "Cleanup: removed leftover features that did nothing (an unused MVP popup, a fake drive log and several unused settings).",
   ] },
+  { v: "2.49", date: "2026-10-13", title: "Suspensions Stick, Phones Ring", notes: [
+    "Suspensions now count games, like the NFL's: a 3-game DUI suspension is 3 games your team plays (a bye doesn't count), and the player is kept out of the lineup in every one of them, simmed or played live.",
+    "Fixed: Sim to Deadline and Sim All only counted suspensions down once at the end, so a short suspension could keep a player out for the whole stretch. They now run game by game, and off-field incidents can happen in any week, not just once per sim.",
+    "Gambling bans are a full year: 17 games, carrying into next season if they start mid-year (they used to quietly last for several seasons). Old saves get the same cap.",
+    "Your own player's conduct violation now suspends him right away; the popup only asks whether you keep him or release him (it used to cost 1 SP to accept the suspension, and ignoring it meant he never served it).",
+    "Deadline Day: your phone actually rings. Clubs now call about any of your players who'd start for them, not just in rare roster situations; expect around 8-10 calls over the day, more with a star on the block.",
+    "Clubs also approach you more in the weeks before the deadline, and a proposal you haven't answered is withdrawn once the deadline passes.",
+  ] },
 ];
