@@ -785,4 +785,11 @@ export const PATCH_NOTES = [
     "Player cards show accolades next to the development trait: Super Bowls (for the seasons he was on the champion's roster), MVP and the other awards, All-Pro and Pro Bowl selections, with the years (or ×3, ×4... once he has three; hover for the years).",
     "Make a Trade: a grid of team logos on desktop too (no dropdown), and a new League's best by position view: the league's top 15 at any position, one tap to start a trade for him.",
   ] },
+  { v: "2.52", date: "2026-10-13", title: "Leak Audit", notes: [
+    "A full audit for players disappearing, run over three simulated seasons and off-seasons, checking every phase for players lost, players in two places at once, draft picks lost or duplicated, and career stats that don't add up.",
+    "Fixed: undrafted prospects (about 16 a year) vanished when the new season started. They now join free agency as undrafted rookies.",
+    "Fixed: a player you released during the season who was still on waivers when you simmed to the end vanished at the new season. Anyone left on waivers is a free agent now.",
+    "Fixed: releasing a player after a conduct violation deleted him; he now goes to free agency.",
+    "Everything else checked out clean: trades, offer sheets, failed negotiations, arbitration walkouts, practice-squad moves, IR, position changes, draft picks and career totals. The only players who leave the league are retirements.",
+  ] },
 ];
