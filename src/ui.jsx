@@ -17,10 +17,10 @@ export const Bdg=({pos})=><span style={{background:pC(pos),color:"#fff",padding:
 export const Btn=({children,onClick,disabled,bg,c:co,style:st})=><button onClick={onClick} disabled={disabled} style={{background:bg||C.bl,color:co||"#fff",border:"none",padding:"4px 10px",borderRadius:4,fontWeight:700,fontSize:13,cursor:disabled?"default":"pointer",opacity:disabled?.5:1,...(st||{})}}>{children}</button>;
 export const PN=({p,setSel,style:st})=><span onClick={e=>{e.stopPropagation();setSel(p);}} style={{cursor:"pointer",fontWeight:600,textDecoration:"none",...(st||{})}} onMouseOver={e=>e.target.style.textDecoration="underline"} onMouseOut={e=>e.target.style.textDecoration="none"}>{p.name}</span>;
 
-// Team logos, loaded from ESPN's public logo CDN (NFL marks belong to the NFL and its clubs).
-// If a logo can't load, the team's colors and abbreviation stand in.
-const ESPN_AB = { WAS: "wsh" };
-export const logoUrl = (ab) => `https://a.espncdn.com/i/teamlogos/nfl/500/${ESPN_AB[ab] || String(ab || "").toLowerCase()}.png`;
+// Team logos ship with the game (public/logos, 256px, from ESPN's logo CDN) so they show offline
+// too (NFL marks belong to the NFL and its clubs). If one is missing (an expansion club), the
+// team's colors and abbreviation stand in.
+export const logoUrl = (ab) => `${import.meta.env.BASE_URL}logos/${String(ab || "").toUpperCase()}.png`;
 // glow: a thin light outline so dark logos (Giants, Bears, Texans) read on dark or team-color
 // backgrounds without sitting on a white tile.
 const GLOW = "drop-shadow(0 0 1px #ffffffd9) drop-shadow(0 0 1px #ffffffb3) drop-shadow(0 2px 6px #0008)";

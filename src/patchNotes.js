@@ -861,4 +861,12 @@ export const PATCH_NOTES = [
     "Player cards show where he stands in his club's history: \"#6 in Giants passing TDs\".",
     "A player who retires with a top-10 career at a club stays in its books, even without a Hall of Fame-level legacy.",
   ] },
+  { v: "2.58", date: "2026-10-13", title: "Offline Play", notes: [
+    "Play with no connection, like on a plane. Open the game once while you're online and it saves itself to your device (about 5 MB: all the code, rosters, history and logos); after that it starts and plays with no internet at all, on desktop and phone.",
+    "Install it as an app for one-tap offline play: Chrome or Edge offer an Install button (or use the install icon in the address bar); on iPhone, Safari's Share → Add to Home Screen. The app now installs properly with its own icon (the install setup pointed at the wrong address before).",
+    "A new Offline Play panel (Saves screen, and \"✈️ Offline play\" on the main menu) shows whether the game is ready to play offline, saves it on demand along with your team's matchup artwork, and walks you through installing.",
+    "Team logos now ship with the game instead of loading from ESPN, so they show offline (and load faster).",
+    "Offline, a small \"✈️ Offline\" tag sits in the top bar. The old floating offline banner, which covered buttons, is gone.",
+    "Your saves were already stored on your device, so they work offline as before. Offline you only miss the online extras (the global leaderboard and sharing); other teams' matchup artwork shows once it has been seen online, with a team badge standing in until then.",
+  ] },
 ];

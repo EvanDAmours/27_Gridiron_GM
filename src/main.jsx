@@ -44,6 +44,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   </React.StrictMode>
 );
 
+// The browser's offer to install the game as an app: kept for the Offline Play panel's button.
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window.__installPrompt = e;
+  window.dispatchEvent(new Event('gm-install-ready'));
+});
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {});
