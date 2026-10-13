@@ -898,4 +898,9 @@ export const PATCH_NOTES = [
     "The 3-way trade desk works on a phone: each club's list stacks full width with big tap rows and checkboxes, shows up to 20 players with their trade value, and has full-size team pickers and buttons (it was tiny text in cramped side-by-side columns showing about five players).",
     "Front Office contracts: the Restructure option is a small secondary button (\"Restructure · frees $24.6M\") instead of a big bar on every card, so the contract numbers lead.",
   ] },
+  { v: "2.64", date: "2026-10-14", title: "Sturdier Under the Hood", notes: [
+    "Behind the scenes: the code that carries out trades (your offers, offers you accept, AI offers and 3-way deals) and your roster moves (practice squad, injured reserve, releases) now lives in its own tested modules instead of the main game file. The checks that once let a trade go through with a missing player, or wiped a contract on the practice squad, are now covered by automated tests.",
+    "Accepting a trade offer that includes a future draft pick now records that pick properly (only this year's picks changed hands before).",
+    "The 3-way trade desk is its own screen component and resets cleanly after a deal or Cancel.",
+  ] },
 ];

@@ -32,7 +32,7 @@ const SESSION_ONLY = new Set([
   "showFranchiseSale showIR showInjRpt showIntro showLiveEnd showPS showPlayoffOdds showRecapCard",
   "showSeasonSummary showShareCard simTicker simming slotsV spectatorGame spectatorLog",
   "startAsk startLive streakBonus tab tdCalls tdOpen theme todayChallenge tourOffer tourStep trOff",
-  "trTm tradeDesk tradeDeskOpen tradeFinderResults tradeTab tradeTimer tradeTimerActive",
+  "trTm tradeFinderResults tradeTab tradeTimer tradeTimerActive",
   "trophySpot upCalls upPassed urgentTrade urgentTradeActive urgentTradeTimer weekResult",
 ].join(" ").split(" "));
 
