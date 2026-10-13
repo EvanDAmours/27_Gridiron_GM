@@ -3,7 +3,7 @@
 // with draft picks and/or a young player worth about what he is. Franchise players and starting
 // quarterbacks are never moved, and the buyer has to fit his salary under the cap. Players and
 // picks really change hands.
-import { clubMode } from "./tradeOffers.js";
+import { withRace, clubMode } from "./tradeOffers.js";
 import { isFranchisePlayer } from "./offseason.js";
 import { tradeAway } from "./bonus.js";
 
@@ -44,7 +44,8 @@ function payment(buyer, bi, picks, want, pkV) {
 
 // One week of AI-to-AI trades. Mutates the clubs' rosters (arrays are replaced, not edited in
 // place); returns { picks, trades }. capSpace(t): room under the cap. week: the week just played.
-export function aiTradeWeek(teams, picks, ui, { week, pkV, capSpace, rand = Math.random, max = 1, odds: chance } = {}) {
+export function aiTradeWeek(teams, picks, ui, opts = {}) { return withRace(teams, () => aiTradeWeekNow(teams, picks, ui, opts)); }
+function aiTradeWeekNow(teams, picks, ui, { week, pkV, capSpace, rand = Math.random, max = 1, odds: chance } = {}) {
   const out = { picks, trades: [] };
   if (week < 3 || week > TRADE_DEADLINE_WEEK) return out;
   // Quiet early, busier as the deadline nears.

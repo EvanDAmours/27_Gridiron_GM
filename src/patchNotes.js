@@ -732,4 +732,10 @@ export const PATCH_NOTES = [
     "Overtime moves at a quicker tempo, so a 10-minute overtime has room for real drives: ties dropped from about 1 in 5 overtime games to about 1 in 20.",
     "Head coaches have a game-day style, from conservative to aggressive, that shapes how often they go for it on 4th-and-short and try two-point conversions. Coaches known for it play to their reputation (Dan Campbell goes for it). You'll see each head coach's style on the Coaching screen and in the list of coaches available to hire.",
   ] },
+  { v: "2.45", date: "2026-10-13", title: "Rollover, Resume, the Race and the Owner", notes: [
+    "Cap rollover is real: every club carries half of last year's unused room (up to 5% of the cap) into the new season, and it shows under Cap Space in the Front Office. Before, the log announced a rollover that never reached your cap.",
+    "Live games survive a reload: close the app or refresh mid-game and you pick it up at the same play (Needs Attention tells you it's waiting). It also can't be restarted from the kickoff anymore.",
+    "The trade deadline follows the playoff race: clubs in a playoff spot or a game out buy, clubs 2.5+ games out sell, instead of going by record alone.",
+    "Owner's Review: when a new season starts, the owner's verdict comes as a full sheet: how his patience moved, your record and playoff run against his win target, his mandate, and what he expects next year. (It used to be a toast.)",
+  ] },
 ];

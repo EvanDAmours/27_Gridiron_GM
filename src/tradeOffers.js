@@ -3,13 +3,38 @@
 // only interests a winning club looking for a cheap backup. It never pays more than the player
 // is worth (a first-round pick is not on the table for a backup).
 
+import { nflSeeds } from "./playoffs.js";
+
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
 export const MAX_OVERPAY = 1.15; // the most an offer can be worth, as a multiple of your player
 const MIN_FAIR = 0.75; // and the least
 
+// The playoff race, once the standings mean something (5+ games): clubs in a playoff spot, or a
+// game or less out of one, buy; clubs 2.5+ games out (or under .350) sell. Set by withRace()
+// around the deadline and the weekly AI trades, so clubMode() reads the real race there.
+let RACE = null;
+export function raceModes(teams) {
+  if (!teams?.length || teams.some((t) => t.id == null || !t.c)) return null;
+  const played = teams.reduce((s, t) => s + (t.w || 0) + (t.l || 0) + (t.t || 0), 0) / teams.length;
+  if (played < 5) return null;
+  const out = {};
+  for (const conf of [...new Set(teams.map((t) => t.c))]) {
+    const seeds = nflSeeds(teams, conf);
+    const last = teams.find((t) => t.id === seeds[seeds.length - 1]);
+    for (const t of teams.filter((x) => x.c === conf)) {
+      const g = (t.w || 0) + (t.l || 0) + (t.t || 0), pct = ((t.w || 0) + 0.5 * (t.t || 0)) / Math.max(1, g);
+      const back = seeds.includes(t.id) ? 0 : ((last.w || 0) - (t.w || 0) + (t.l || 0) - (last.l || 0)) / 2;
+      out[t.id] = pct < 0.35 || back >= 2.5 || (t.gmStyle === "rebuilder" && back > 0) ? "rebuild" : back <= 1 && pct >= 0.5 ? "contend" : "middle";
+    }
+  }
+  return out;
+}
+export function withRace(teams, fn) { const prev = RACE; RACE = raceModes(teams); try { return fn(); } finally { RACE = prev; } }
+
 // Where a club is: "rebuild" (losing, or built that way and not winning), "contend" (winning),
-// or "middle".
+// or "middle". In the playoff race (see withRace) it's the standings that decide.
 export function clubMode(t) {
+  if (RACE && t && RACE[t.id]) return RACE[t.id];
   const g = (t.w || 0) + (t.l || 0);
   if (g >= 3 && (t.w || 0) / g < 0.4) return "rebuild";
   if (t.gmStyle === "rebuilder" && (t.w || 0) <= (t.l || 0)) return "rebuild";

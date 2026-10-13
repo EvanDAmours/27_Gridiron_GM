@@ -3,7 +3,7 @@
 // veterans from rebuilding clubs), the insiders' feed fills with breaking trades and rumors from
 // the real state of the league, and your phone rings with offers. At 4 PM the window closes.
 import { aiTradeWeek, TRADE_DEADLINE_WEEK } from "./aiTrades.js";
-import { clubMode } from "./tradeOffers.js";
+import { clubMode, withRace } from "./tradeOffers.js";
 import { isFranchisePlayer } from "./offseason.js";
 
 export const DEADLINE_HOURS = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"];
@@ -22,7 +22,8 @@ export function tradeText(x, teams, yr) {
 }
 
 // Contenders and sellers, for the board.
-export function marketBoard(teams, ui) {
+export function marketBoard(teams, ui) { return withRace(teams, () => marketBoardNow(teams, ui)); }
+function marketBoardNow(teams, ui) {
   const row = (t, i) => ({ ti: i, ab: t.ab, name: nm(t), rec: rec(t) });
   const idx = teams.map((t, i) => [t, i]).filter(([, i]) => i !== ui);
   const byWins = (a, b) => (b[0].w || 0) - (a[0].w || 0) || (a[0].l || 0) - (b[0].l || 0);
@@ -72,7 +73,8 @@ export function startDeadline(teams, ui, yr, rand = Math.random) {
 
 // One hour of the day. genOffer(teams): an AI club's call to you, or null. Returns the new state,
 // with teams and picks updated in place of the arrays passed in.
-export function advanceDeadline(state, teams, picks, ui, { yr, pkV, capSpace, genOffer, rand = Math.random } = {}) {
+export function advanceDeadline(state, teams, picks, ui, opts = {}) { return withRace(teams, () => advanceDeadlineNow(state, teams, picks, ui, opts)); }
+function advanceDeadlineNow(state, teams, picks, ui, { yr, pkV, capSpace, genOffer, rand = Math.random } = {}) {
   if (state.done) return { state, teams, picks };
   const hour = state.hour + 1;
   const last = hour >= LAST_HOUR;

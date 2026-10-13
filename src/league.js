@@ -504,7 +504,8 @@ export function calcOffStr(t){const r=t.roster.filter(p=>!p.injured&&!p.holdout&
 export function calcDefStr(t){const r=t.roster.filter(p=>!p.injured&&!p.holdout&&DEF_POS_SET.has(p.pos));return r.length?Math.round(r.reduce((s,p)=>s+p.ovr,0)/r.length):65;}
 export function genCoachMarket(){const n=R(5,8);const roles=['OC','DC','ST'];const specs=['pass','run','defense','special'];return Array.from({length:n},()=>({id:uid(),name:`${pick(FN)} ${pick(LN)}`,pos:pick(roles),rating:R(65,85),specialty:pick(specs),cost:R(1,2),face:genFace()}));}
 
-export function capHit(t){return+((t.roster?.reduce((s,p)=>s+(p.salary||0),0)||0)+((t.coach?.oc?.salary||0)+(t.coach?.dc?.salary||0)+(t.coach?.st?.salary||0))+(t.deadCap||0)+(t.incCharge||0)).toFixed(1);}
+// Cap rollover (t.rollover): half of last year's unused room, up to 5% of the cap, counts as a credit.
+export function capHit(t){return+((t.roster?.reduce((s,p)=>s+(p.salary||0),0)||0)+((t.coach?.oc?.salary||0)+(t.coach?.dc?.salary||0)+(t.coach?.st?.salary||0))+(t.deadCap||0)+(t.incCharge||0)-(t.rollover||0)).toFixed(1);}
 // Cap room under the cap for the league year in force (see cap.js).
 export function capSpace(t){return+(leagueCap()-capHit(t)).toFixed(1);}
 

@@ -74,7 +74,7 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
   return (
     <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
       <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${mobile ? 150 : 180}px,1fr))`, gap: 8 }}>
-        {[["CAP SPACE", $(space), space < 0 ? C.rd : space < 15 ? C.gd : C.gn, `of ${$(cap)}`], ["NEXT SEASON'S ROOM", $(nextRoom), nextRoom < 0 ? C.rd : C.gn, "before re-signings"], ["DEAD MONEY", $(dead), dead > 0 ? C.rd : C.mt, deadNext ? `+${$(deadNext)} next year` : "none next year"], ["EXPIRING DEALS", rows.filter((r) => r.yl <= 1).length, C.tx, onContracts ? "after this season · see them →" : "after this season", "expiring"]].map(([l, v, c, sub, f]) => (
+        {[["CAP SPACE", $(space), space < 0 ? C.rd : space < 15 ? C.gd : C.gn, `of ${$(cap)}${team?.rollover > 0 ? `, incl. ${$(team.rollover)} rolled over` : ""}`], ["NEXT SEASON'S ROOM", $(nextRoom), nextRoom < 0 ? C.rd : C.gn, "before re-signings"], ["DEAD MONEY", $(dead), dead > 0 ? C.rd : C.mt, deadNext ? `+${$(deadNext)} next year` : "none next year"], ["EXPIRING DEALS", rows.filter((r) => r.yl <= 1).length, C.tx, onContracts ? "after this season · see them →" : "after this season", "expiring"]].map(([l, v, c, sub, f]) => (
           <div key={l} onClick={f && onContracts ? () => onContracts(f) : undefined} style={{ ...card, cursor: f && onContracts ? "pointer" : "default" }}>
             <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt }}>{l}</div>
             <div style={{ fontSize: 24, fontWeight: 900, color: c }}>{v}</div>
