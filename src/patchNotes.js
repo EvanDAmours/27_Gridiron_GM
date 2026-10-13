@@ -885,4 +885,9 @@ export const PATCH_NOTES = [
     "Coach development (+5 rating for 2 points) is once per coach per season instead of unlimited.",
     "Kept, since each is a fair one-time choice: stadium upgrades, coach specialties, scheme changes, dev camp and training-camp work, locker-room meetings, retaining a poached coordinator, practice-squad focus, and coach extensions.",
   ] },
+  { v: "2.61", date: "2026-10-14", title: "Calmer Inbox", notes: [
+    "Fewer popups. News that doesn't need an answer now waits in your inbox (the Needs Attention list on Home) instead of jumping over the game: a Hall of Famer's induction, the five-year franchise documentary, the five-season dynasty look-back, your off-season grades, and the offer to buy the franchise. Open any of them when you like.",
+    "Popups are kept for things you decide: getting fired, suspensions, a coordinator being poached, bidding wars, holdouts, and the like. Big moments you earned (the Super Bowl celebration and parade) still play.",
+    "Quick notices (the messages that slide in) each get their full time on screen. When several fired at once, an earlier one's timer used to wipe the newest one almost immediately.",
+  ] },
 ];
