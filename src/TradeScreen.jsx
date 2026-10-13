@@ -10,6 +10,32 @@ const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "C
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 
+// The league's best at one position (other clubs' players): pick one and he's loaded into a trade
+// with his team.
+function BestAt({ teams, ui, pos, setPos, onPick, setSel }) {
+  const rows = teams.flatMap((t) => (t.id === ui ? [] : (t.roster || []).filter((p) => p.pos === pos).map((p) => ({ t, p })))).sort((a, b) => b.p.ovr - a.p.ovr || a.p.age - b.p.age).slice(0, 15);
+  return (
+    <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 10 }}>
+      <div style={{ display: "flex", gap: 5, flexWrap: MOBILE ? "nowrap" : "wrap", overflowX: MOBILE ? "auto" : undefined, marginBottom: 8, paddingBottom: 2 }}>
+        {POS.map((x) => <button key={x} onClick={() => setPos(x)} style={{ flex: "0 0 auto", background: pos === x ? `${C.bl}33` : C.bg, color: pos === x ? "#fff" : "#cbd5e1", border: `1px solid ${pos === x ? C.bl : C.bd}`, borderRadius: 999, padding: "5px 11px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{x}</button>)}
+      </div>
+      {rows.map(({ t, p }, i) => (
+        <div key={p.id} onClick={() => onPick(t, p)} title={`Trade for ${p.name}`} style={{ display: "grid", gridTemplateColumns: MOBILE ? "20px 26px 1fr auto auto" : "22px 30px 1fr 70px 60px 110px 70px auto", alignItems: "center", gap: 8, padding: "7px 4px", borderTop: i ? `1px solid ${C.bd}66` : "none", cursor: "pointer" }}>
+          <span style={{ fontSize: 12, color: C.mt, fontWeight: 800 }}>{i + 1}</span>
+          <TeamLogo t={t} sz={MOBILE ? 24 : 28} />
+          <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><span onClick={(e) => { e.stopPropagation(); setSel(p); }} style={{ fontWeight: 800, textDecoration: "underline", textDecorationColor: "#334155", textUnderlineOffset: 3 }}>{p.name}</span> <span style={{ fontSize: 12, color: C.mt }}>{t.ab}{MOBILE ? ` · ${p.age}` : ""}</span></span>
+          {!MOBILE && <span style={{ fontSize: 13, color: "#cbd5e1" }}>age {p.age}</span>}
+          <b style={{ fontSize: 17, color: oC(p.ovr), textAlign: "center" }}>{p.ovr}</b>
+          {!MOBILE && <span style={{ fontSize: 13, color: "#cbd5e1", whiteSpace: "nowrap" }}>{money(p.salary)} · {p.contract}y</span>}
+          {!MOBILE && <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }} title="Trade value">{p.tradeVal}</span>}
+          <span style={{ fontSize: 12, fontWeight: 800, color: C.bl, whiteSpace: "nowrap" }}>Trade →</span>
+        </div>
+      ))}
+      {!rows.length && <div style={{ fontSize: 14, color: C.mt, padding: 8 }}>No players at {pos} elsewhere in the league.</div>}
+    </div>
+  );
+}
+
 function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, togglePk, pickVal, setSel }) {
   const [pos, setPos] = useState("ALL");
   const rows = [...(players || [])].filter((p) => pos === "ALL" || p.pos === pos).sort((a, b) => b.ovr - a.ovr);
@@ -75,6 +101,8 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
   const me = teams[ui];
   // this year's picks, then the next three drafts'
   const draftPicks = [...thisDraft, ...futurePicks];
+  const [view, setView] = useState("teams");
+  const [bpos, setBpos] = useState("QB");
   const them = trTm != null ? teams[trTm] : null;
   const withAb = (pk) => ({ ...pk, origAb: teams[pk.orig]?.ab });
   const flip = (key, x) => setTrOff((o) => ({ ...o, [key]: o[key].some((y) => y.id === x.id) ? o[key].filter((y) => y.id !== x.id) : [...o[key], x] }));
@@ -128,10 +156,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
       <style>{"@media (max-width: 640px) { .tr-hide { display: none } }"}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <span style={{ fontSize: 24, fontWeight: 900 }}>Trade with</span>
-        {(!MOBILE || them) && <Select value={trTm ?? ""} onChange={(e) => pick(e.target.value === "" ? null : +e.target.value)} aria-label="Trade partner" style={{ ...sel, fontSize: 17, fontWeight: 700, minWidth: 240 }}>
-          <option value="">Choose a team…</option>
-          {teams.filter((t) => t.id !== ui).sort((a, b) => a.city.localeCompare(b.city)).map((t) => <option key={t.id} value={t.id}>{t.city} {t.name} ({t.w}-{t.l}){modes?.[t.id] === "buyer" ? " · buying" : modes?.[t.id] === "seller" ? " · selling" : ""}</option>)}
-        </Select>}
+        {them && <button onClick={() => pick(null)} title="Pick a different team" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "4px 12px 4px 6px", color: "#e2e8f0", cursor: "pointer", fontSize: 16, fontWeight: 800 }}><TeamLogo t={them} sz={28} />{MOBILE ? them.ab : `${them.city} ${them.name}`}<span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>change ▾</span></button>}
         <span style={{ fontSize: 14, color: C.mt }}>Your cap space: <b style={{ color: capSpace(me) >= 0 ? C.gn : C.rd }}>{money(capSpace(me))}</b></span>
       </div>
 
@@ -179,9 +204,13 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
           <Side title="YOUR TEAM" color={C.rd} team={me} players={me.roster} picks={draftPicks.filter((pk) => pk.owner === ui).map(withAb)} chosen={trOff.g} chosenPk={trOff.gPk} toggle={(p) => flip("g", p)} togglePk={(pk) => flip("gPk", pk)} pickVal={pickVal} setSel={setSel} />
           <Side title="THEIR TEAM" color={C.gn} team={them} players={them.roster} picks={draftPicks.filter((pk) => pk.owner === trTm).map(withAb)} chosen={trOff.r} chosenPk={trOff.rPk} toggle={(p) => flip("r", p)} togglePk={(pk) => flip("rPk", pk)} pickVal={pickVal} setSel={setSel} />
         </div>
-      ) : MOBILE ? (
-        // phones: a grid of logos beats a 31-line dropdown
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+      ) : (<>
+        <div role="tablist" style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+          {[["teams", "By team"], ["best", "League's best by position"]].map(([k, l]) => <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)} style={{ background: view === k ? `${C.bl}33` : C.cd, color: view === k ? "#fff" : "#cbd5e1", border: `1px solid ${view === k ? C.bl : C.bd}`, borderRadius: 999, padding: "6px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
+        </div>
+        {view === "best" ? <BestAt teams={teams} ui={ui} pos={bpos} setPos={setBpos} onPick={(t, p) => { setTrTm(t.id); setTrOff({ g: [], r: [p], gPk: [], rPk: [] }); }} setSel={setSel} /> :
+        // a grid of logos beats a 31-line dropdown
+        <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "repeat(4, 1fr)" : "repeat(auto-fill, minmax(92px, 1fr))", gap: 6 }}>
           {teams.filter((t) => t.id !== ui).sort((a, b) => a.city.localeCompare(b.city)).map((t) => {
             const m = modes?.[t.id];
             return (
@@ -193,10 +222,8 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
               </button>
             );
           })}
-        </div>
-      ) : (
-        <div style={{ background: C.cd, border: `1px dashed ${C.bd}`, borderRadius: 10, padding: 24, textAlign: "center", fontSize: 16, color: C.mt }}>Choose a team above to see both rosters side by side.</div>
-      )}
+        </div>}
+      </>)}
     </div>
   );
 }

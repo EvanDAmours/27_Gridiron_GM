@@ -778,4 +778,11 @@ export const PATCH_NOTES = [
     "The Combine has busts: every year a few early names test poorly and slide down the board. Some are real concerns (the tape agrees: they were overrated); some are flukes (a tight hamstring, a bad start). The league can't tell which. An interview tells you, and a private workout shows his true ratings.",
     "Stock Down shows how far each early name slid (#18 → #41).",
   ] },
+  { v: "2.51", date: "2026-10-13", title: "Nobody Vanishes", notes: [
+    "Fixed a serious bug: every new season quietly deleted every club's practice squad and injured reserve. Those players vanished from the league entirely (about 100 a year), young players on rookie deals included. Now injured reserve rejoins the roster for the new year, practice squads carry over, and anyone whose deal is up (or who's too old for the squad) becomes a free agent.",
+    "Fixed: a player an AI club released mid-season to make room could vanish when it signed a practice-squad player the same week (and that signee stayed in free agency too).",
+    "Expiring players up to 35 now reach free agency instead of quietly retiring at 34-35.",
+    "Player cards show accolades next to the development trait: Super Bowls (for the seasons he was on the champion's roster), MVP and the other awards, All-Pro and Pro Bowl selections, with the years (or ×3, ×4... once he has three; hover for the years).",
+    "Make a Trade: a grid of team logos on desktop too (no dropdown), and a new League's best by position view: the league's top 15 at any position, one tap to start a trade for him.",
+  ] },
 ];

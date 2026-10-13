@@ -99,6 +99,21 @@ async function reloadCheck(where) {
     log(`reload + Continue (${where}) keeps all ${Object.keys(before).length} saved fields`);
 }
 
+
+// Every player stays somewhere (a roster, practice squad, IR, free agency or retirement): nobody
+// under contract and in his prime may vanish between phases.
+let prevC = null;
+async function census(where) {
+  const d = await save();
+  const m = new Map();
+  d.teams.forEach((t) => { for (const k of ["roster", "ps", "ir"]) for (const p of t[k] || []) m.set(p.id, p); });
+  for (const p of [...(d.fa || []), ...(d.waivers || []), ...(d.retired || [])]) if (!m.has(p.id)) m.set(p.id, p);
+  if (prevC) {
+    const gone = [...prevC.values()].filter((p) => !m.has(p.id) && (p.contract || 0) >= 2 && (p.age || 30) <= 30);
+    if (gone.length) fail(`${gone.length} players under contract vanished (${where}): ${gone.slice(0, 5).map((p) => `${p.name} ${p.pos} age ${p.age}`).join(", ")}`);
+  }
+  prevC = m;
+}
 let code = 0;
 try {
   console.log(`Smoke test on ${url}`);
@@ -107,7 +122,7 @@ try {
   await must("NEW GAME");
   await page.locator("button", { hasText: "Giants" }).first().click();
   await page.waitForTimeout(1200);
-  await healthy("new game"); log("new game");
+  await healthy("new game"); log("new game"); await census("start");
   { const d0 = await save(); const real = (d0.dc?.[2026] || []).filter((p) => p.real); if (real.length < 100 || !real.some((p) => p.name === "Jeremiah Smith")) fail("new game didn't load the real 2027 draft class"); log(`real draft class (${real.length} real prospects)`); }
   const seen = [];
   for (const tab of ["Depth Chart", "Roster", "Front Office", "Schedule & Standings", "Standings", "Playoffs", "Draft & Scouting", "Draft Recap", "League", "Stats", "Legacy Hall", "Record Book", "League History", "Trade", "Free Agency", "Saves", "Game Updates", "Timeline", "Home"]) {
@@ -132,7 +147,7 @@ try {
   await must("Sim All", 4000); await healthy("sim all");
   let d = await save();
   if (d.sp !== "playoffs" || d.wk !== 18) fail(`expected playoffs after Sim All, got ${d.sp} wk ${d.wk}`);
-  log("regular season");
+  log("regular season"); await census("regular season");
   for (let i = 0; i < 5; i++) { await click("Sim Round", 1000); const c = page.locator("button", { hasText: /^Continue$/ }); if (await c.count()) await c.first().click(); }
   await healthy("playoffs");
   d = await save();
@@ -149,13 +164,13 @@ try {
   await healthy("draft");
   if (!(await page.evaluate(() => /Draft Recap/.test(document.body.innerText) && /YOUR CLASS|EVERY PICK/.test(document.body.innerText)))) fail("draft recap didn't open after the draft");
   if (process.env.SMOKE_SHOTS) await page.screenshot({ path: `${process.env.SMOKE_SHOTS}/recap.png`, fullPage: true });
-  log("draft and draft recap");
+  log("draft and draft recap"); await census("draft");
   await must("→ Next Season", 3000); await healthy("next season");
   d = await save();
   if (d.yr !== 2027) fail(`expected 2027 after Next Season, got ${d.yr}`);
   const short = d.teams.filter((t, i) => i !== d.ui && t.roster.length < 45).map((t) => `${t.ab} ${t.roster.length}`);
   if (short.length) fail(`AI rosters short after the off-season: ${short.join(", ")}`);
-  log("next season (2027)");
+  log("next season (2027)"); await census("next season"); log("nobody under contract vanished in a full season and off-season");
   await startSeason(); await must("Sim Week", 1500); await healthy("season two"); log("season two week 1");
   console.log(`\nSMOKE PASSED (${steps.length} steps)`);
 } catch (e) {

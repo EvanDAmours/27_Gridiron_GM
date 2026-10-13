@@ -73,3 +73,16 @@ test("records: a player who sets a mark and lands on injured reserve still holds
   assert.equal(r.broken[0].prev.val, 110);
   assert.equal(r.broken[0].prev.yr, 2026);
 });
+
+test("player accolades: rings from the champion's roster, awards and honors with years", async () => {
+  const { accoladesOf } = await import("../src/history.js");
+  const p = { id: "x", sh: [{ y: 2027, tm: "NYG" }, { y: 2026, tm: "DAL" }], ss: { gp: 16 } };
+  const teams = []; teams[17] = { ab: "NYG" }; teams[8] = { ab: "DAL" };
+  const awards = [{ yr: 2026, honors: { pb: { NFC: [{ pid: "x" }], AFC: [] } } }, { yr: 2027, dpoy: { pid: "x" }, honors: { ap1: [{ pid: "x" }], pb: { NFC: [{ pid: "x" }] } } }, { yr: 2028, honors: { pb: { NFC: [{ pid: "x" }] } } }];
+  const champs = [{ yr: 2026, ti: 17 }, { yr: 2027, ti: 17 }, { yr: 2028, ti: 17 }];
+  const a = Object.fromEntries(accoladesOf(p, { awards, champs, teams, yr: 2028, teamAb: "NYG" }).map((x) => [x.k, x.years]));
+  assert.deepEqual(a.sb, [2027, 2028], "a ring for each title he was on the roster for (not 2026, when he was in Dallas)");
+  assert.deepEqual(a.dpoy, [2027]);
+  assert.deepEqual(a.ap1, [2027]);
+  assert.deepEqual(a.pb, [2026, 2027, 2028]);
+});

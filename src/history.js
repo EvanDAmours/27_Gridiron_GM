@@ -85,3 +85,29 @@ export function careerLeaders(teams, retired = [], key, n = 10) {
 // A club's Ring of Honor candidates: players who retired with it, Hall of Famers or a legacy of
 // 20+, not yet inducted. Best first.
 export const ringCandidates = (retired, team, hall) => (retired || []).filter((r) => r.team === team?.ab && !(hall?.ring || []).includes(r.id) && (r.hof || r.legacy >= 20)).sort((a, b) => b.legacy - a.legacy);
+
+// A player's accolades in this league, each with the years: Super Bowls (on the champion's roster
+// that season), MVP and the other awards, All-Pro and Pro Bowl selections. teams: today's clubs
+// (champs carry the club's index); yr: the current season (its stats aren't in his season lines yet).
+const ACCOLADES = [
+  ["sb", "🏆", "Super Bowl"], ["mvp", "🏅", "MVP"], ["sbmvp", "🏟️", "Super Bowl MVP"], ["opoy", "⭐", "Off. Player of the Year"],
+  ["dpoy", "🛡️", "Def. Player of the Year"], ["oroy", "🌱", "Off. Rookie of the Year"], ["droy", "🌱", "Def. Rookie of the Year"],
+  ["ap1", "🥇", "First-team All-Pro"], ["ap2", "🥈", "Second-team All-Pro"], ["pb", "🎖️", "Pro Bowl"],
+];
+export function accoladesOf(p, { awards = [], champs = [], teams = [], yr, teamAb } = {}) {
+  if (!p) return [];
+  const got = {};
+  const add = (k, y) => { if (y != null && !(got[k] ||= []).includes(y)) got[k].push(y); };
+  for (const a of awards) {
+    for (const k of ["mvp", "sbmvp", "opoy", "dpoy", "oroy", "droy"]) if (a?.[k]?.pid === p.id) add(k, a.yr);
+    // a list, or split by conference ({ AFC: [...], NFC: [...] } for the Pro Bowl)
+    const flat = (v) => (Array.isArray(v) ? v : v && typeof v === "object" ? Object.values(v).flat() : []);
+    for (const k of ["ap1", "ap2", "pb"]) if (flat(a?.honors?.[k]).some((h) => h?.pid === p.id)) add(k, a.yr);
+  }
+  for (const h of Array.isArray(p.honors) ? p.honors : []) if (h?.k && h.yr) add(h.k, h.yr);
+  // rings: his club in each season (his season lines), and this season's club
+  const clubIn = new Map((p.sh || []).map((s) => [s.y, s.tm]));
+  if (teamAb && (p.ss?.gp || 0) > 0) clubIn.set(yr, teamAb);
+  for (const c of champs) { const ab = teams[c.ti]?.ab; if (ab && clubIn.get(c.yr) === ab) add("sb", c.yr); }
+  return ACCOLADES.filter(([k]) => got[k]?.length).map(([k, icon, label]) => ({ k, icon, label, years: got[k].sort((a, b) => a - b) }));
+}
