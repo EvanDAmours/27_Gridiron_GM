@@ -19,7 +19,7 @@ const SESSION_ONLY = new Set([
   "draftReveal draftRumors draftSpeed draftTicker draftTimer draftView dynastyEndOpen",
   "dynastyShareOpen expansionModal expansionMode expansionResults extTalk faBid faCombine",
   "findTradeOpen firedOffer foFilter foSort foView forPick fourthChoice gemScout globalLB",
-  "globalLBLoading gmDMs gmFireModal godEditTeam godMode hofModal holdoutNeg hubSection inboxOpen",
+  "globalLBLoading gmDMs godEditTeam godMode hofModal holdoutNeg hubSection inboxOpen",
   "inboxShow injToasts isMobile lastLivePlay lastSaved lbTab leaderboardOpen liveAwaitingCall",
   "liveBroadcastMode liveCallMode liveClock liveDone liveDown liveInfo liveLog liveMomentum livePOG",
   "livePaused livePendingCall livePhase livePlay livePoss liveQteBar liveQtr liveRecTargets",

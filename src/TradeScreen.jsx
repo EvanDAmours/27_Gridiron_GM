@@ -7,6 +7,14 @@ import { deadMoney, proration } from "./bonus.js";
 import { MOBILE } from "./mobile.js";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
+// Ways to order a roster table; dir is the first click's order (-1 = biggest first).
+const SORTS = {
+  ovr: { label: "Overall", key: (p) => p.ovr, dir: -1 },
+  salary: { label: "Salary", key: (p) => +p.salary || 0, dir: -1 },
+  years: { label: "Years left", key: (p) => +p.contract || 0, dir: -1 },
+  val: { label: "Trade value", key: (p) => +p.tradeVal || 0, dir: -1 },
+  age: { label: "Age", key: (p) => p.age, dir: 1 },
+};
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 
@@ -38,7 +46,19 @@ function BestAt({ teams, ui, pos, setPos, onPick, setSel }) {
 
 function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, togglePk, pickVal, setSel }) {
   const [pos, setPos] = useState("ALL");
-  const rows = [...(players || [])].filter((p) => pos === "ALL" || p.pos === pos).sort((a, b) => b.ovr - a.ovr);
+  const [sort, setSort] = useState("ovr");
+  const [dir, setDir] = useState(-1);
+  const [q, setQ] = useState("");
+  const needle = q.trim().toLowerCase();
+  const rows = [...(players || [])]
+    .filter((p) => (pos === "ALL" || p.pos === pos) && (!needle || p.name.toLowerCase().includes(needle)))
+    .sort((a, b) => dir * (SORTS[sort].key(a) - SORTS[sort].key(b)) || b.ovr - a.ovr);
+  // Click a column to sort by it; click it again to flip the order.
+  const by = (k) => { if (k === sort) setDir(-dir); else { setSort(k); setDir(SORTS[k].dir); } };
+  const arrow = (k) => (k === sort ? (dir < 0 ? " ▼" : " ▲") : "");
+  // Phones hide the contract column, so a pay sort shows pay where trade value usually sits.
+  const payCol = MOBILE && (sort === "salary" || sort === "years");
+  const sh = (k) => ({ cursor: "pointer", color: k === sort ? C.tx : C.mt, userSelect: "none" });
   const th = { padding: "6px 6px", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: C.mt, borderBottom: `1px solid ${C.bd}`, textAlign: "center", position: "sticky", top: 0, background: C.cd };
   const td = { padding: "8px 6px", borderBottom: `1px solid ${C.bd}55`, textAlign: "center", fontSize: 15 };
   return (
@@ -49,13 +69,19 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color }}>{title}</div>
           <div style={{ fontSize: 18, fontWeight: 900 }}>{team.city} {team.name} <span style={{ fontSize: 14, color: C.mt, fontWeight: 600 }}>{team.w}-{team.l}{team.t ? `-${team.t}` : ""}</span></div>
         </div>
-        <Select value={pos} onChange={(e) => setPos(e.target.value)} aria-label="Position" style={{ ...sel, padding: "6px 8px", fontSize: 14 }}>
-          {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? "All positions" : x}</option>)}
+      </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: MOBILE ? "nowrap" : "wrap" }}>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Search players" aria-label="Search players" style={{ ...sel, padding: "6px 9px", fontSize: 14, flex: "1 1 140px", minWidth: 0 }} />
+        <Select value={pos} onChange={(e) => setPos(e.target.value)} aria-label="Position" style={{ ...sel, padding: "6px 8px", fontSize: 14, flex: "0 0 auto" }}>
+          {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? (MOBILE ? "All" : "All positions") : x}</option>)}
+        </Select>
+        <Select value={sort} onChange={(e) => { setSort(e.target.value); setDir(SORTS[e.target.value].dir); }} aria-label="Sort by" style={{ ...sel, padding: "6px 8px", fontSize: 14, flex: "0 0 auto" }}>
+          {Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </Select>
       </div>
       <div style={{ maxHeight: 460, overflowY: "auto", overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead><tr><th style={th}></th><th style={{ ...th, textAlign: "left" }}>PLAYER</th><th style={th}>POS</th><th className="tr-hide" style={th}>AGE</th><th style={th}>OVR</th><th className="tr-hide" style={th}>CONTRACT</th><th style={th}>VALUE</th></tr></thead>
+          <thead><tr><th style={th}></th><th style={{ ...th, textAlign: "left" }}>PLAYER</th><th style={th}>POS</th><th className="tr-hide" style={{ ...th, ...sh("age") }} onClick={() => by("age")}>AGE{arrow("age")}</th><th style={{ ...th, ...sh("ovr") }} onClick={() => by("ovr")}>OVR{arrow("ovr")}</th><th className="tr-hide" style={{ ...th, ...sh(sort === "years" ? "years" : "salary") }} onClick={() => by("salary")}>CONTRACT{arrow("salary")}{arrow("years")}</th>{payCol ? <th style={{ ...th, ...sh(sort) }}>{sort === "years" ? "YEARS" : "SALARY"}{arrow(sort)}</th> : <th style={{ ...th, ...sh("val") }} onClick={() => by("val")}>VALUE{arrow("val")}</th>}</tr></thead>
           <tbody>
             {rows.map((p) => {
               const on = chosen.some((x) => x.id === p.id);
@@ -74,12 +100,13 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
                   <td className="tr-hide" style={{ ...td, color: "#cbd5e1" }}>{p.age}</td>
                   <td style={{ ...td, fontWeight: 900, fontSize: 17, color: oC(p.ovr) }}>{p.ovr}</td>
                   <td className="tr-hide" style={{ ...td, color: "#cbd5e1", whiteSpace: "nowrap", fontSize: 14 }}>{money(p.salary)} · {p.contract}y</td>
-                  <td style={{ ...td, fontWeight: 800, color: "#fbbf24" }}>{p.tradeVal}</td>
+                  {payCol ? <td style={{ ...td, color: "#cbd5e1", whiteSpace: "nowrap", fontSize: 14 }}>{sort === "years" ? `${p.contract}y` : money(p.salary)}</td> : <td style={{ ...td, fontWeight: 800, color: "#fbbf24" }}>{p.tradeVal}</td>}
                 </tr>
               );
             })}
-            {picks.length > 0 && <tr><td colSpan={7} style={{ padding: "12px 6px 4px", fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.gd }}>DRAFT PICKS</td></tr>}
-            {picks.map((pk) => {
+            {!rows.length && <tr><td colSpan={7} style={{ ...td, color: C.mt, fontSize: 14 }}>{needle ? `No one named "${q.trim()}"` : "No players"}</td></tr>}
+            {!needle && picks.length > 0 && <tr><td colSpan={7} style={{ padding: "12px 6px 4px", fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.gd }}>DRAFT PICKS</td></tr>}
+            {!needle && picks.map((pk) => {
               const on = chosenPk.some((x) => x.id === pk.id);
               return (
                 <tr key={pk.id} onClick={() => togglePk(pk)} style={{ cursor: "pointer", background: on ? `${C.gd}26` : "transparent" }}>

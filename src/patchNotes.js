@@ -797,4 +797,9 @@ export const PATCH_NOTES = [
     "Player cards are two-sided: ratings on the left; draft pedigree, Combine, college stats and the scouting report on the right (one column on phones).",
     "The old honor badges at the top of the card are folded into the accolade chips (no more listing the same All-Pro twice).",
   ] },
+  { v: "2.54", date: "2026-10-13", title: "Trade Search & Sort", notes: [
+    "Trade screen: both rosters have a player search bar and a sort menu (overall, salary, years left, trade value, age). On desktop you can also click the AGE, OVR, CONTRACT and VALUE headers to sort, and click again to flip the order.",
+    "On phones, sorting by salary or years left shows that column in place of trade value, since the contract column is hidden there.",
+    "Fixed: two separate firing systems could both go off at the end of a season, stacking an old \"You've been fired\" box (Exit to Menu / Play On as a lame duck) on top of the owner's review. The old one is gone: the owner's review alone decides your job, and if he fires you, you get the job offers or can plead for one more season.",
+  ] },
 ];
