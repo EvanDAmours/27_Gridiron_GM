@@ -37,8 +37,8 @@ const SESSION_ONLY = new Set([
 ].join(" ").split(" "));
 
 const states = [...src.matchAll(/const\[(\w+),set\w+\]=(?:React\.)?useState/g)].map((m) => m[1]);
-const saveObj = src.slice(src.indexOf("const fullSaveData=()=>({"), src.indexOf("});", src.indexOf("const fullSaveData=()=>({")));
-const saved = new Set(saveObj.replace("const fullSaveData=()=>({", "").split(",").map((k) => k.split(":")[0].trim()));
+const saveObj = src.slice(src.indexOf("const fullSaveData=()=>slimSave({"), src.indexOf("});", src.indexOf("const fullSaveData=()=>slimSave({")));
+const saved = new Set(saveObj.replace("const fullSaveData=()=>slimSave({", "").split(",").map((k) => k.split(":")[0].trim()));
 const loaderStart = src.indexOf("const applyFullSave=");
 const loader = src.slice(loaderStart, src.indexOf("\n", src.indexOf("const _def=defaultSaveState();", loaderStart)));
 

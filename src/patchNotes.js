@@ -890,4 +890,8 @@ export const PATCH_NOTES = [
     "Popups are kept for things you decide: getting fired, suspensions, a coordinator being poached, bidding wars, holdouts, and the like. Big moments you earned (the Super Bowl celebration and parade) still play.",
     "Quick notices (the messages that slide in) each get their full time on screen. When several fired at once, an earlier one's timer used to wipe the newest one almost immediately.",
   ] },
+  { v: "2.62", date: "2026-10-14", title: "Lighter Saves", notes: [
+    "Saves are about 20% smaller (a three-season save went from 6.7 MB to 5.4 MB, and the autosave stored on your device from about 1.4 MB to 1.1 MB), so saving and loading are quicker, especially on phones and offline.",
+    "What's trimmed is what no screen reads back: each player keeps his last 6 game logs (his card shows 5); full box scores are kept for every one of your games and for the last two weeks league-wide, while older games between other clubs keep just the score; and the draft log keeps what the draft recap shows for each pick.",
+  ] },
 ];
