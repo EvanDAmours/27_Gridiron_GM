@@ -1010,11 +1010,15 @@ function fileReportQuiet(p, exact, teams) {
   return np;
 }
 
-// Your scouts' Combine shortlist: who to interview and bring in for a private workout. Only
-// prospects expected to be there at your picks (the board ranks them a little ahead of or behind
-// the slot), need positions first, and the early names who tested poorly when one is in range
-// (a real concern or a bad day). Stars who'll be long gone before you pick are left off: they're
-// only worth a look if you plan to trade up.
+// Your scouts' Combine shortlist: who to interview and bring in for a private workout. They
+// weigh three things, the way a real staff builds its visit list:
+//  - where you pick: only prospects expected to be there (the board has them a little ahead of or
+//    behind the slot). Stars long gone before you pick are left off unless you trade up.
+//  - what you need: your thinnest positions first.
+//  - what they think of him: a prospect your scouts grade above the others in that range (or a
+//    sleeper they've spotted) is worth a closer look; one they grade below it isn't.
+//  - what they don't know yet: before a premium pick (rounds 1-2) they want to know more about
+//    anyone they've only got a rough read on, a red flag, a poor Combine, or a raw project.
 //   slots: your remaining picks' overall numbers (projected from the standings before the order
 //   is set); isNeed(p): one of your biggest needs. Returns [{ p, slot, why: [..], interview, workout }].
 export function scoutsShortlist(sc, cls, slots, { isNeed = () => false, max = 8 } = {}) {
@@ -1022,27 +1026,41 @@ export function scoutsShortlist(sc, cls, slots, { isNeed = () => false, max = 8 
   const out = [];
   const taken = new Set();
   picks.forEach((slot, k) => {
+    const premium = slot <= 64;
     // a first-round pick looks a little ahead (someone may slide) and further behind (the board
     // isn't the league); later picks look wider
     const lo = Math.max(1, slot - (k === 0 ? 8 : 12)), hi = slot + (k === 0 ? 14 : 24);
-    const pool = cls.filter((p) => !p.drafted && !taken.has(p.id) && csRank(p) >= lo && csRank(p) <= hi)
-      .map((p) => {
-        const read = prospectRead(sc, p);
-        const interview = !p.scout?.intv, workout = read.lvl < 2;
-        const need = isNeed(p), dip = !!p.combDip;
-        const score = (need ? 6 : 0) + (dip ? 3 : 0) + (interview ? 2 : 0) + (workout ? 1 : 0) - Math.abs(csRank(p) - slot) / 8;
-        return { p, slot, read, interview, workout, need, dip, score };
-      })
-      .filter((x) => x.interview || x.workout)
+    const near = cls.filter((p) => !p.drafted && !taken.has(p.id) && csRank(p) >= lo && csRank(p) <= hi).map((p) => ({ p, read: prospectRead(sc, p) }));
+    const pots = near.map((x) => x.read.potV).filter((v) => v != null).sort((a, b) => a - b);
+    const mid = pots.length ? pots[Math.floor(pots.length / 2)] : null;
+    const pool = near.map(({ p, read }) => {
+      const interview = !p.scout?.intv, workout = read.lvl < 2;
+      const need = isNeed(p), dip = !!p.combDip, flag = read.flag && !p.scout?.intv;
+      const rel = read.potV != null && mid != null ? read.potV - mid : 0; // how they grade him against the rest of the range
+      const likes = read.sleeper || read.hunch || rel >= 3;
+      const rough = read.lvl === 0, raw = read.potV != null && read.ovrV != null && read.potV - read.ovrV >= 14;
+      const unsure = (rough ? 2 : read.lvl < 2 ? 1 : 0) + (flag ? 3 : 0) + (dip ? 2 : 0) + (raw ? 1 : 0);
+      const score = (need ? 6 : 0) + Math.max(-4, Math.min(4, rel / 1.5)) + (read.sleeper ? 3 : read.hunch ? 2 : 0) + unsure * (premium ? 1.2 : 0.6) + (interview ? 1 : 0) - Math.abs(csRank(p) - slot) / 8;
+      return { p, slot, read, interview, workout, need, dip, flag, likes, rel, rough, raw, premium, score };
+    })
+      .filter((x) => (x.interview || x.workout) && !(x.rel <= -4 && !x.need && !x.likes))
       .sort((a, b) => b.score - a.score)
       .slice(0, k === 0 ? 4 : 2);
     for (const x of pool) taken.add(x.p.id), out.push(x);
   });
-  return out.slice(0, max).map(({ p, slot, interview, workout, need, dip }) => {
+  return out.slice(0, max).map(({ p, slot, read, interview, workout, need, dip, flag, likes, rel, rough, raw, premium }) => {
     const r = csRank(p);
     const why = [r <= slot - 3 ? `board #${r}: could slide to your #${slot}` : r >= slot + 6 ? `board #${r}: there at #${slot}, maybe later` : `board #${r}: right around your #${slot}`];
     if (need) why.push(`fills a need (${posTag(p)})`);
-    if (dip) why.push("tested poorly: a real concern or a bad day?");
+    if (read.sleeper) why.push("your scouts think he's a sleeper");
+    else if (read.hunch) why.push("your scouts have a hunch about him");
+    else if (likes && read.grade) why.push(`your scouts rate him above the others in this range (${read.grade})`);
+    else if (rel <= -3 && read.grade) why.push(`your scouts are lukewarm (${read.grade})`);
+    const pickWord = slot <= 32 ? "a 1st" : slot <= 64 ? "a 2nd" : "this pick";
+    if (flag) why.push(`red flag: get the story before spending ${pickWord}`);
+    else if (dip) why.push("tested poorly: a real concern or a bad day?");
+    else if (rough && premium) why.push(`only a rough read so far: know more before spending ${pickWord}`);
+    else if (raw && premium) why.push("a raw project: is the work ethic there?");
     else if (!interview) why.push("interviewed; a workout gets his exact ratings");
     return { p, slot, why, interview, workout };
   });

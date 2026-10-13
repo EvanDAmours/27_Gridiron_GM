@@ -918,4 +918,8 @@ export const PATCH_NOTES = [
     "Stars who'll be gone long before your pick are left off: from #28 there's no point spending an interview on the #2 prospect unless you plan to trade up. Later picks get a wider look, since the board is less certain there.",
     "Scouting HQ shows the top three during Combine week, and its projected first pick now uses the same draft-order projection as your pick tracker.",
   ] },
+  { v: "2.68", date: "2026-10-14", title: "Smarter Visit List", notes: [
+    "Your scouts build the Combine shortlist the way a real staff does. Besides where you pick and what you need, they now weigh what they think of each player: one they grade above the rest of that range (or a sleeper they've spotted) moves up, and one they grade well below it is left off.",
+    "They also want answers before you spend a premium pick (rounds 1 and 2): anyone they only have a rough read on, a red flag, a poor Combine, or a raw project gets a visit, with the reason spelled out (\"red flag: get the story before spending a 1st\").",
+  ] },
 ];

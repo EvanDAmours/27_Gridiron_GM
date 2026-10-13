@@ -443,7 +443,7 @@ export function ScoutShortlist({ g, isNeed, compact }) {
   if (!slots.length) return <div style={{ fontSize: 14, color: "#94a3b8", padding: "6px 0" }}>You have no picks in this draft, so your scouts aren't lining up visits. Trade for a pick and they'll build a list.</div>;
   return (
     <div>
-      {!compact && <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 6, lineHeight: 1.45 }}>{who} picked these for where you draft ({slots.slice(0, 3).map((s) => `#${s}`).join(", ")}) and what you need. The top names will be gone long before you pick: they're only worth a visit if you plan to trade up.</div>}
+      {!compact && <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 6, lineHeight: 1.45 }}>{who} built this list around your picks ({slots.slice(0, 3).map((s) => `#${s}`).join(", ")}): players who should be there, at the positions you need, that they grade well, and anyone they want to know more about before you spend a premium pick on him (a rough read, a red flag, a poor Combine). The top names will be gone long before you pick: they're only worth a visit if you plan to trade up.</div>}
       {list.map(({ p, why, interview, workout }) => (
         <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderTop: `1px solid ${C.bd}66`, flexWrap: "wrap" }}>
           <Bdg pos={posTag(p)} />

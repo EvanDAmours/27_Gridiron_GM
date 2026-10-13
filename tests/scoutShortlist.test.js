@@ -50,3 +50,21 @@ test("someone already interviewed and fully read drops off; no picks means no li
   assert.ok(!still || (!still.interview));
   assert.deepEqual(scoutsShortlist(sc, cls, []), []);
 });
+
+test("the scouts favor players they grade well, drop ones they don't, and chase red flags before a 1st", () => {
+  const { sc, cls } = combineClass();
+  const range = cls.filter((p) => csRank(p) >= 20 && csRank(p) <= 42);
+  // a scouted range: every report says ~75 potential...
+  for (const p of range) p.scout = { lvl: 1, eOvr: 68, ePot: 75, sd: 3 };
+  const [star, dud, flagged] = [range[10], range[2], range[16]];
+  star.scout = { lvl: 1, eOvr: 72, ePot: 88, sd: 3 }; // ...but they love this one
+  dud.scout = { lvl: 1, eOvr: 60, ePot: 64, sd: 3 }; // ...and don't think much of this one
+  flagged.scout = { lvl: 1, eOvr: 68, ePot: 76, sd: 3, notes: { flag: "Character concerns" } };
+  const list = scoutsShortlist(sc, cls, [28]);
+  const ids = list.map((x) => x.p.id);
+  assert.ok(ids.includes(star.id), "the player they grade highest makes the list");
+  assert.ok(list.find((x) => x.p.id === star.id).why.some((w) => w.includes("rate him above")));
+  assert.ok(!ids.includes(dud.id), "a player they grade well below the range is left off");
+  const f = list.find((x) => x.p.id === flagged.id);
+  assert.ok(f && f.why.some((w) => w.includes("red flag") && w.includes("1st")));
+});
