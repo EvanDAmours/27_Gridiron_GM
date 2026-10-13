@@ -1,5 +1,6 @@
 // The roster table, in the same clean style as trades and free agency: one row per player,
 // large type, grouped by position in depth-chart order, with every column sortable.
+import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { naturalDL } from "./dline.js";
 import { C, oC, Bdg, Face } from "./ui.jsx";
@@ -52,19 +53,19 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
     <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12 }}>
       <style>{"@media (max-width: 640px) { .ro-hide { display: none } }"}</style>
       <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-        <select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Position" style={sel}>
+        <Select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Position" style={sel}>
           <option value="ALL">All positions</option><option value="OFF">Offense</option><option value="DEF">Defense</option><option value="ST">Special teams</option>
           {POS.map((x) => <option key={x} value={x}>{x}</option>)}
-        </select>
+        </Select>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search roster" style={{ ...sel, flex: "1 1 160px" }} />
       </div>
       {mine && <div style={{ fontSize: 12, color: C.mt, margin: "-4px 0 8px" }}>🔬 development focus · ✍️ contract year · 📝 extended · ~ unproven rookie · 🔁 trade request · 🚫 suspended</div>}
       {MOBILE && (
         <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
           <span style={{ fontSize: 13, color: C.mt }}>Sort</span>
-          <select value={sort[0]} onChange={(e) => setSort([e.target.value, ["pos", "name"].includes(e.target.value) ? 1 : -1])} aria-label="Sort roster" style={{ ...sel, flex: 1, minHeight: 44 }}>
+          <Select value={sort[0]} onChange={(e) => setSort([e.target.value, ["pos", "name"].includes(e.target.value) ? 1 : -1])} aria-label="Sort roster" style={{ ...sel, flex: 1, minHeight: 44 }}>
             {[["pos", "Position & depth"], ["ovr", "Overall"], ["pot", "Potential"], ["age", "Age"], ["sal", "Salary"], ["name", "Name"]].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-          </select>
+          </Select>
         </div>
       )}
       {MOBILE ? (

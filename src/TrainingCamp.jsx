@@ -1,4 +1,5 @@
 // Training camp (preseason): every camp tool in one clean screen of large cards.
+import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
 import { yearlyAsk } from "./negotiation.js";
@@ -32,7 +33,7 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
   const campUsed = team.devCampYr === yr;
   const trainable = roster.filter((p) => !p.trainedThisCamp);
   const trained = roster.filter((p) => p.trainedThisCamp);
-  const expiring = roster.filter((p) => p.contract === 1 || p.resigned?.yr === yr).sort((a, b) => b.ovr - a.ovr);
+  const expiring = roster.filter((p) => p.contract === 1 || p.ext || p.resigned?.yr === yr).sort((a, b) => b.ovr - a.ovr);
   const pre = sp === "preseason";
   return (
     <div>
@@ -81,14 +82,14 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
         <div style={card}>
           {title("Training focus · 2 SP", "Give one player extra reps: +1 to one attribute. Once per player each camp.")}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-            <select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Player to train" style={{ flex: "1 1 220px", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "9px 10px", fontSize: 15 }}>
+            <Select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Player to train" style={{ flex: "1 1 220px", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "9px 10px", fontSize: 15 }}>
               <option value="">Choose a player…</option>
               {groupByPos(trainable).map(([pos, ps]) => (
                 <optgroup key={pos} label={POS_NAME[pos] || pos}>
                   {ps.map((p) => <option key={p.id} value={p.id}>{p.name} · {p.ovr}{p.age <= 23 ? " · young" : ""}</option>)}
                 </optgroup>
               ))}
-            </select>
+            </Select>
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
             {ATTRS.map(([k, l]) => <button key={k} onClick={() => setAttr(k)} style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: "pointer", background: attr === k ? `${C.bl}33` : C.bg, color: attr === k ? "#fff" : "#cbd5e1", border: `1px solid ${attr === k ? C.bl : C.bd}` }}>{l}</button>)}
@@ -115,13 +116,14 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
         </div>
 
         <div style={card}>
-          {title("Contract extensions", "Extend players heading into the last year of their deals — a real negotiation, same as re-sign week.")}
+          {title("Contract extensions", "Extend players heading into the last year of their deals: the same negotiation as the Front Office, and the new deal starts next season, so it has to fit under next year's cap.")}
           {!expiring.length && <div style={{ fontSize: 15, color: C.mt }}>Nobody is in a contract year.</div>}
           {expiring.map((p) => (
             <div key={p.id} style={row}>
               <span onClick={() => setSel(p)} style={{ flex: 1, fontWeight: 700, cursor: "pointer" }}>{p.name} <span style={{ fontSize: 13, color: C.mt, fontWeight: 400 }}>{p.age}</span></span><Bdg pos={p.pos} />
               <span style={{ fontWeight: 900, color: oC(p.ovr), minWidth: 28, textAlign: "center" }}>{p.ovr}</span>
-              {p.resigned?.yr === yr ? <span style={{ fontSize: 14, color: C.gn, fontWeight: 700 }}>Extended {p.resigned.yrs}y · {money(p.resigned.sal)}</span>
+              {p.ext ? <span style={{ fontSize: 14, color: C.gn, fontWeight: 700 }}>Extended {p.ext.yrs}y · {money(p.ext.apy ?? p.ext.sal)}</span>
+                : p.resigned?.yr === yr ? <span style={{ fontSize: 14, color: C.gn, fontWeight: 700 }}>Extended {p.resigned.yrs}y · {money(p.resigned.sal)}</span>
                 : <><span style={{ fontSize: 14, color: C.mt, whiteSpace: "nowrap" }}>asks {money(yearlyAsk(p, 2, "extend"))}</span><Btn onClick={() => onExtend(p)} bg={C.gn} style={{ fontSize: 14, padding: "6px 12px" }}>Negotiate</Btn></>}
             </div>
           ))}

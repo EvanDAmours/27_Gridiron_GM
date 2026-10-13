@@ -738,4 +738,16 @@ export const PATCH_NOTES = [
     "The trade deadline follows the playoff race: clubs in a playoff spot or a game out buy, clubs 2.5+ games out sell, instead of going by record alone.",
     "Owner's Review: when a new season starts, the owner's verdict comes as a full sheet: how his patience moved, your record and playoff run against his win target, his mandate, and what he expects next year. (It used to be a toast.)",
   ] },
+  { v: "2.46", date: "2026-10-13", title: "Smarter Trade Calls", notes: [
+    "Trade offers stop at the deadline: no more calls once it passes. Offers no longer vanish after 30 seconds; a weekly offer stays on the table for two weeks (or until the deadline), and an urgent offer for the week you get it.",
+    "Clubs only call about players they'd actually play: a team with a better starting quarterback won't trade for yours (the Texans with Stroud don't want Jaxson Dart), and the same goes for every position.",
+    "Punters matter more: hang time now counts, so a high punt gets more fair catches and shorter returns. An elite punter against a poor one is worth about two points a game, close to real life.",
+    "Coordinator XP works: every 20 XP (a win is 3, a loss 1) levels a coordinator up, +1 to his rating. The bars no longer run off the panel or show things like 41/20.",
+    "Win the Super Bowl in a live game, read the Gazette and go to the Legacy Hall: the final-score card no longer pops back up and pulls you away from your new trophy.",
+    "Legacy Hall: trophy cards no longer get cut off at the top; they always fit on screen.",
+    "The header chip that said Scouting is now Staff pts (SP): the points for training camp, coaching and meetings. Your scouts' own points are on the Scouting screen, and leaving the Combine now warns about those, not SP.",
+    "Training camp extensions use the same negotiation and cap check as the Front Office (the new deal starts next season, so it's measured against next year's cap).",
+    "Every dropdown in the game (Training focus, rosters, teams, filters, sort, weeks, draft classes) is now the same dark list in the game's style on desktop, with search on long ones, and the ⋯ menus match it. Phones keep their own picker.",
+    "Club records: checked over a full simulated season; every record broken was saved. (Saves from before 2.43 could lose records on reload.)",
+  ] },
 ];

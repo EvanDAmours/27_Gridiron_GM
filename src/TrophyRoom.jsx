@@ -2,7 +2,8 @@
 // history plus this league), and the MVP / Offensive / Defensive Player of the Year trophies your
 // players win while you're the GM. Each trophy is drawn in layers and turns slowly in 3D; hover
 // (or tap) one to see who won it and when.
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { LombardiStill } from "./Lombardi.jsx";
 import { C, TeamLogo } from "./ui.jsx";
 import { SUPER_BOWLS, sbName, sbNumber } from "./data/superbowls.js";
@@ -128,12 +129,35 @@ const SHAPES = {
 };
 const LAYERS = [-3, -2, -1, 0, 1, 2, 3];
 
+// A trophy's card floats over the page (not inside the shelf, which clips it): above the trophy when
+// there's room, below it when not, and never off the sides of the screen.
+function FloatTip({ anchor, children }) {
+  const tip = useRef(null);
+  const [pos, setPos] = useState(null);
+  useLayoutEffect(() => {
+    const place = () => {
+      const a = anchor.current?.getBoundingClientRect(), t = tip.current;
+      if (!a || !t) return;
+      const w = t.offsetWidth, h = t.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+      const left = Math.max(8, Math.min(vw - w - 8, a.left + a.width / 2 - w / 2));
+      const above = a.top - h - 6;
+      const top = above >= 8 ? above : Math.min(vh - h - 8, a.bottom + 6);
+      setPos({ left, top, font: getComputedStyle(anchor.current).fontFamily });
+    };
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => { window.removeEventListener("scroll", place, true); window.removeEventListener("resize", place); };
+  }, [anchor]);
+  return createPortal(<div ref={tip} className="tr-tip" role="tooltip" style={{ position: "fixed", left: pos?.left ?? -9999, top: pos?.top ?? -9999, fontFamily: pos?.font, bottom: "auto", transform: "none", zIndex: 3000 }}>{children}</div>, document.body);
+}
+
 function Trophy({ t, i, on, setOn, small, spot }) {
   const ref = useRef(null);
   useEffect(() => { if (spot) setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 400); }, [spot]);
   if (t.kind === "lombardi") return (
     <div ref={ref} className={`tr-slot tr-lom${spot ? " tr-spot" : ""}`} onMouseEnter={() => setOn(t.key)} onMouseLeave={() => setOn(null)} onClick={() => setOn(on ? null : t.key)}>
-      {on && <div className="tr-tip" role="tooltip"><div style={{ fontSize: 15, fontWeight: 900, color: "#fde68a" }}>{t.title}</div>{t.lines.filter(Boolean).map((l, k) => <div key={k} style={{ fontSize: 13, color: k ? "#cbd5e1" : "#fff", marginTop: 2 }}>{l}</div>)}</div>}
+      {on && <FloatTip anchor={ref}><div style={{ fontSize: 15, fontWeight: 900, color: "#fde68a" }}>{t.title}</div>{t.lines.filter(Boolean).map((l, k) => <div key={k} style={{ fontSize: 13, color: k ? "#cbd5e1" : "#fff", marginTop: 2 }}>{l}</div>)}</FloatTip>}
       {spot && <><div className="tr-beam" /><div className="tr-new">NEW</div></>}
       <div className="tr-pop" style={{ animationDelay: `${Math.min(i, 20) * 90}ms` }}>
         <div className="tr-lift"><LombardiStill size={spot ? (small ? 84 : 120) : small ? 74 : 100} /></div>
@@ -152,12 +176,12 @@ function Trophy({ t, i, on, setOn, small, spot }) {
   );
   // the real-looking 3D trophy, with the drawn one as a fallback when WebGL isn't available
   return (
-    <div className="tr-slot tr-lom" onMouseEnter={() => setOn(t.key)} onMouseLeave={() => setOn(null)} onClick={() => setOn(on ? null : t.key)}>
+    <div ref={ref} className="tr-slot tr-lom" onMouseEnter={() => setOn(t.key)} onMouseLeave={() => setOn(null)} onClick={() => setOn(on ? null : t.key)}>
       {on && (
-        <div className="tr-tip" role="tooltip">
+        <FloatTip anchor={ref}>
           <div style={{ fontSize: 15, fontWeight: 900, color: "#fde68a" }}>{t.title}</div>
           {t.lines.filter(Boolean).map((l, k) => <div key={k} style={{ fontSize: 13, color: k ? "#cbd5e1" : "#fff", marginTop: 2 }}>{l}</div>)}
-        </div>
+        </FloatTip>
       )}
       <div className="tr-pop" style={{ animationDelay: `${Math.min(i, 20) * 90}ms` }}>
         <div className="tr-lift">{TROPHY_ART[t.kind] ? <img src={TROPHY_ART[t.kind]} alt={t.title} style={t.kind === "sbmvp" ? { width: small ? 74 : 104, height: "auto", display: "block", margin: "0 auto", filter: "drop-shadow(0 8px 10px #000b)" } : { height: small ? 140 : 190, width: "auto", display: "block", margin: "0 auto", filter: "drop-shadow(0 8px 10px #000b)" }} /> : <div style={{ width: small ? 74 : 100, height: small ? 150 : 200 }}>{layered}</div>}</div>

@@ -51,9 +51,9 @@ export function OverflowMenu({ items, label = "More actions" }) {
       <button onClick={() => setOpen((o) => !o)} aria-label={label} title={label} style={{ background: open ? C.bd : "transparent", border: `1px solid ${C.bd}`, color: "#cbd5e1", borderRadius: 6, padding: "2px 8px", fontSize: 15, fontWeight: 900, cursor: "pointer", lineHeight: 1.2 }}>⋯</button>
       {open && <>
         <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 50 }} />
-        <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 51, background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 8, padding: 4, minWidth: 170, boxShadow: "0 10px 30px #000a" }}>
+        <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 51, background: "#0d1424", border: "1px solid #334155", borderRadius: 10, padding: 4, minWidth: 170, boxShadow: "0 14px 34px #000c" }}>
           {items.map((it) => (
-            <button key={it.label} onClick={() => { setOpen(false); if (!it.confirm || window.confirm(it.confirm)) it.onClick(); }} style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", border: 0, color: it.danger ? "#fca5a5" : "#e2e8f0", fontSize: 14, fontWeight: 700, padding: "8px 10px", borderRadius: 6, cursor: "pointer" }}>{it.label}</button>
+            <button key={it.label} onMouseEnter={(e) => { e.currentTarget.style.background = "#1e293b"; }} onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }} onClick={() => { setOpen(false); if (!it.confirm || window.confirm(it.confirm)) it.onClick(); }} style={{ display: "block", width: "100%", textAlign: "left", background: "transparent", border: 0, color: it.danger ? "#fca5a5" : "#e2e8f0", fontSize: 14, fontWeight: 700, padding: "8px 10px", borderRadius: 6, cursor: "pointer" }}>{it.label}</button>
           ))}
         </div>
       </>}

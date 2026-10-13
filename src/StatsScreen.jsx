@@ -1,5 +1,6 @@
 // Stats: league leaders and full stat tables for the whole league, a conference, a division or a
 // single team. Pick a team and you get its leader at every position; click a column to sort.
+import Select from "./Select.jsx";
 import React, { useMemo, useState } from "react";
 import { C, Bdg, Face, TeamLogo } from "./ui.jsx";
 
@@ -71,10 +72,10 @@ export default function StatsScreen({ teams, ui, onPlayer, grade, mobile }) {
     <div style={{ maxWidth: 1200 }}>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
         {[["league", "League"], ["AFC", "AFC"], ["NFC", "NFC"], ["div", `${me.c} ${me.d}`], [`team:${ui}`, `My team (${me.ab})`]].map(([k, l]) => <button key={k} onClick={() => setScope(k)} style={pill(scope === k)}>{l}</button>)}
-        <select value={teamId != null && teamId !== ui ? scope : ""} onChange={(e) => e.target.value && setScope(e.target.value)} style={{ background: C.cd, color: C.tx, border: `1px solid ${teamId != null && teamId !== ui ? C.bl : C.bd}`, borderRadius: 999, padding: "6px 10px", fontSize: 14, fontWeight: 700 }}>
+        <Select value={teamId != null && teamId !== ui ? scope : ""} onChange={(e) => e.target.value && setScope(e.target.value)} style={{ background: C.cd, color: C.tx, border: `1px solid ${teamId != null && teamId !== ui ? C.bl : C.bd}`, borderRadius: 999, padding: "6px 10px", fontSize: 14, fontWeight: 700 }}>
           <option value="">Another team…</option>
           {teams.map((t, i) => ({ t, i })).sort((a, b) => a.t.city.localeCompare(b.t.city)).map(({ t, i }) => <option key={i} value={`team:${i}`}>{t.city} {t.name}</option>)}
-        </select>
+        </Select>
       </div>
 
       {team ? (

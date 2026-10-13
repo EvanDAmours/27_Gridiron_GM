@@ -1,6 +1,7 @@
 // Trade Deadline Day: a whole screen for the day, broadcast style. The clock runs 9 AM to the
 // 4 PM ET deadline an hour at a time; the feed breaks every deal and rumor, your phone shows the
 // offers coming in, and the board lists who's buying and who's selling.
+import Select from "./Select.jsx";
 import React, { useEffect, useState } from "react";
 import { C, oC, Bdg, Btn, TeamLogo } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
@@ -105,9 +106,9 @@ function TradeBlock({ teams, ui, needs, pickValue, onInquire, setSel, closed }) 
     <>
       <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap", alignItems: "center" }}>
         <button onClick={() => setNeedOnly((v) => !v)} style={btn(needOnly)} title={`Your needs: ${needs.join(", ") || "none"}`}>Your needs{needs.length ? ` (${needs.slice(0, 4).join(", ")})` : ""}</button>
-        <select value={pos} onChange={(e) => setPos(e.target.value)} style={{ ...btn(pos !== "ALL"), padding: "4px 6px" }}>
+        <Select value={pos} onChange={(e) => setPos(e.target.value)} style={{ ...btn(pos !== "ALL"), padding: "4px 6px" }}>
           <option value="ALL">All positions</option>{POSITIONS.map((x) => <option key={x} value={x}>{x}</option>)}
-        </select>
+        </Select>
         <span style={{ fontSize: 12, color: C.mt, marginLeft: "auto" }}>{list.length} available</span>
       </div>
       <div style={{ maxHeight: 520, overflowY: "auto" }}>

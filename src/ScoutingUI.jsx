@@ -1,5 +1,6 @@
 // Scouting and draft screens: the Big Board (always in consensus order), your own list, the
 // Combine, your scouting staff, and the prospect profile. Game state comes in as `g`.
+import Select from "./Select.jsx";
 import { posTag } from "./dline.js";
 import { MOBILE } from "./mobile.js";
 import React, { useState, useMemo, useEffect } from "react";
@@ -227,14 +228,14 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
       {!MOBILE && <div style={{ ...muted, marginBottom: 8 }}>{mine ? `Your scouts' board: everyone ranked on your own scouts' reads (and the development traits they've seen); where they don't know a player, they go with the consensus. ▲ means your scouts like him a lot more than the consensus does, ▼ a lot less.${climbers ? ` They have ${climbers} prospect${climbers > 1 ? "s" : ""} 25+ spots higher than the consensus.` : ""}` : `Consensus ${final ? "final" : "preseason"} rankings: what the league's analysts think. AI teams mostly draft off this board.`}</div>}
       <div style={{ display: "flex", gap: MOBILE ? 6 : 8, marginBottom: MOBILE ? 8 : 10, flexWrap: MOBILE && !searching ? "nowrap" : "wrap" }}>
         {!fixedYr && years.length > 1 && (
-          <select value={cy} onChange={(e) => { setYrSel(+e.target.value); setN(page); }} aria-label="Draft class" style={MOBILE ? { ...sel, flex: "1 1 0", minWidth: 0 } : sel}>
+          <Select value={cy} onChange={(e) => { setYrSel(+e.target.value); setN(page); }} aria-label="Draft class" style={MOBILE ? { ...sel, flex: "1 1 0", minWidth: 0 } : sel}>
             {years.map((y) => <option key={y} value={y}>{y + 1}{MOBILE ? "" : " draft"}</option>)}
-          </select>
+          </Select>
         )}
-        <select value={pos} onChange={(e) => { setPos(e.target.value); setN(page); }} aria-label="Position" style={MOBILE ? { ...sel, flex: "1 1 0", minWidth: 0 } : sel}>
+        <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(page); }} aria-label="Position" style={MOBILE ? { ...sel, flex: "1 1 0", minWidth: 0 } : sel}>
           {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? (MOBILE ? "All pos." : "All positions") : x}</option>)}
-        </select>
-        <select value={show} onChange={(e) => { setShow(e.target.value); setN(page); }} aria-label="Show" style={MOBILE ? { ...sel, flex: "1 1 0", minWidth: 0 } : sel}>
+        </Select>
+        <Select value={show} onChange={(e) => { setShow(e.target.value); setN(page); }} aria-label="Show" style={MOBILE ? { ...sel, flex: "1 1 0", minWidth: 0 } : sel}>
           <option value="all">{MOBILE ? "All" : "Everyone"}</option>
           <option value="covered">Groups my scouts cover</option>
           <option value="scouted">Scouted</option>
@@ -244,7 +245,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
           <option value="redflags">🚩 Red flags (bust risks)</option>
           <option value="special">⭐ Special dev traits spotted</option>
           <option value="regions">🗺️ From regions I've scouted</option>
-        </select>
+        </Select>
         {MOBILE && !searching && <button onClick={() => setSearching(true)} aria-label="Search prospects" style={{ ...sel, width: 44, padding: 0, cursor: "pointer" }}>🔍</button>}
         {(!MOBILE || searching) && <input value={q} autoFocus={MOBILE} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search name or college" aria-label="Search prospects" style={{ ...sel, flex: "1 1 160px" }} />}
       </div>

@@ -17,7 +17,7 @@ export default function HeaderChips({ yr, t, space, cap, sp, owner, go }) {
   const chips = [
     { k: "Season", v: `${yr} · ${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`, tip: "This season and your record so far", to: ["schedule"] },
     { k: "Cap room", v: `$${space.toFixed(1)}M`, c: space >= 0 ? C.gn : C.rd, tip: `Cap space left this season, out of a $${cap}M cap. Click for the Front Office.`, to: ["contracts", "overview"] },
-    { k: "Scouting", v: `${sp} pts`, c: "#93c5fd", tip: "Scouting points to spend on prospect reports (and training camp in the preseason). Click for scouting.", to: ["scouting"] },
+    { k: "Staff pts", v: `${sp} SP`, c: "#93c5fd", tip: "Staff points (SP): spent on training camp, coaching upgrades and extensions, locker-room meetings and practice-squad call-ups. Your scouts have their own scouting points on the Scouting screen.", to: ["coaching"] },
     { k: "Morale", v: morale[0], c: morale[1], tip: `Locker-room morale (${mor}/100). Winning, playing time and contracts move it; low morale hurts on game day.` },
     { k: "GM rep", v: repL, c: rep >= 75 ? "#a78bfa" : rep >= 60 ? C.gd : "#cbd5e1", tip: `Your reputation as a GM (${rep}/100). Higher rep makes free agents and trade partners more willing.` },
     ...(owner && OWNER[owner] ? [{ k: "Owner", v: OWNER[owner][0], c: OWNER[owner][1], tip: OWNER[owner][2] }] : []),

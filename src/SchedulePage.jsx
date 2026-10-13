@@ -1,5 +1,6 @@
 // The schedule: your 17 games and bye week as one clean list, the playoff tree under it (live
 // once the playoffs start, projected before), and every week's league games in a second tab.
+import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { C, Btn, TeamLogo, kickoff } from "./ui.jsx";
 import PlayoffBracket from "./PlayoffBracket.jsx";
@@ -86,9 +87,9 @@ function LeagueSchedule({ g }) {
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
         <Btn onClick={() => setWeek((w) => Math.max(1, w - 1))} disabled={week <= 1} bg={C.bd} c="#e2e8f0" style={{ fontSize: 16, padding: "7px 14px" }}>‹</Btn>
-        <select value={week} onChange={(e) => setWeek(+e.target.value)} aria-label="Week" style={{ background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 12px", fontSize: 16, fontWeight: 700 }}>
+        <Select value={week} onChange={(e) => setWeek(+e.target.value)} aria-label="Week" style={{ background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 12px", fontSize: 16, fontWeight: 700 }}>
           {Array.from({ length: 18 }, (_, i) => <option key={i} value={i + 1}>Week {i + 1}</option>)}
-        </select>
+        </Select>
         <Btn onClick={() => setWeek((w) => Math.min(18, w + 1))} disabled={week >= 18} bg={C.bd} c="#e2e8f0" style={{ fontSize: 16, padding: "7px 14px" }}>›</Btn>
         {byes.length > 0 && <span style={{ fontSize: 14, color: C.mt }}>Bye: {byes.map((t) => t.ab).join(", ")}</span>}
       </div>

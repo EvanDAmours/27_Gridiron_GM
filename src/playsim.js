@@ -106,14 +106,14 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, season 
   const kr = order("KR")?.[0], pr = order("PR")?.[0];
   // The punter (a kicker punts, badly, if a club has none).
   const p = on("P")[0] || order("P")?.[0];
-  const pOvr = p ? p.ovr || 75 : 60, pPow = p ? p.posAttrs?.power ?? 93 : 85, pAcc = p ? p.posAttrs?.accuracy ?? 82 : 65;
+  const pOvr = p ? p.ovr || 75 : 60, pPow = p ? p.posAttrs?.power ?? 93 : 85, pAcc = p ? p.posAttrs?.accuracy ?? 82 : 65, pHang = p ? p.posAttrs?.hangTime ?? 86 : 70;
   const stCov = team?.coach?.st?.rating ?? 70;
   const kLeg = k?.posAttrs?.legStr ?? k?.attrs?.legStr ?? 93;
   const hcR = team?.coach?.hc?.rating ?? 70; // the head coach makes the 4th-down calls
   const hcAgg = coachAggression(team?.coach?.hc); // ...in his own style
   // Measured against the league's balance, so league-wide rating drift doesn't tilt everyone's play-calling.
   const passLean = clamp(0.6 + ((u.pass - LEAGUE.pass[0]) - (u.run - LEAGUE.run[0])) * 0.006 + lean, 0.5, 0.7);
-  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, hcAgg, kLeg, p, pOvr, pPow, pAcc };
+  return { team, order, u, mod, passLean, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, hcAgg, kLeg, p, pOvr, pPow, pAcc, pHang };
 }
 
 const emptyTeam = () => ({ plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
@@ -388,8 +388,10 @@ function stepPlay(g, call, bonus = 1) {
     const spot = pinned && land >= 100 ? 92 + Math.round(rand() * 6) : land; // where it's caught or downed
     let ret = 0;
     const r = d.prR ?? 80, p = d.pr, rl = line(g, def, p);
-    if (rand() < (spot >= 88 ? 0.12 : 0.55)) {
-      ret = Math.round(Math.max(0, 8 + (r - 85) * 0.22 - ((o.stCov ?? 70) - 70) * 0.05 + gauss(rand) * 5.5));
+    // Hang time: a high punt gets the coverage there first (more fair catches, shorter returns).
+    const hang = (o.pHang ?? 86) - 86;
+    if (rand() < (spot >= 88 ? 0.12 : clamp(0.55 - hang * 0.012, 0.3, 0.75))) {
+      ret = Math.round(Math.max(0, 8 + (r - 85) * 0.22 - ((o.stCov ?? 70) - 70) * 0.05 - hang * 0.12 + gauss(rand) * 5.5));
       if (rand() < 0.024 * Math.exp((r - 85) / 8)) ret += 15 + Math.round(rand() * 60); // breaks one
       add(rl, "pr", 1);
       if (rand() < 0.008) { // muffed: the punting team recovers

@@ -42,6 +42,18 @@ export function clubMode(t) {
   return "middle";
 }
 
+// Would he actually help this club? He has to start for them, or fill a spot where they're thin.
+// Quarterbacks are strict: a club with a real starter (the Texans with Stroud) doesn't call about
+// yours unless he's clearly better.
+const STARTS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, EDGE: 2, DT: 2, LB: 3, CB: 2, S: 2, K: 1, P: 1 };
+export function fitsTeam(t, p) {
+  const mine = (t?.roster || []).filter((x) => x.pos === p.pos && x.id !== p.id).sort((a, b) => (b.ovr || 0) - (a.ovr || 0));
+  if (p.pos === "QB") { const qb1 = mine[0]?.ovr || 0; return (p.ovr || 0) >= qb1 + 3 || qb1 < 72; }
+  const n = STARTS[p.pos] || 1;
+  const nth = mine[n - 1]?.ovr || 0; // their worst starter there
+  return (p.ovr || 0) > nth || mine.filter((x) => (x.ovr || 0) >= 65).length < n + 1;
+}
+
 // Would this club trade for him at all?
 export function wantsPlayer(t, p) {
   const mode = clubMode(t);
@@ -99,10 +111,7 @@ export function genTradeOffer(teams, ui, picks, pkV, rand = Math.random) {
   const block = (usT?.roster || []).filter((p) => p.onBlock && !p.ftag && !p.injured);
   if (block.length && rand() < 0.8) {
     const want = block[ri(0, block.length - 1)];
-    const fits = teams.map((t, i) => i).filter((i) => i !== ui && wantsPlayer(teams[i], want)).filter((i) => {
-      const best = Math.max(0, ...teams[i].roster.filter((p) => p.pos === want.pos).map((p) => p.ovr));
-      return best < want.ovr || clubMode(teams[i]) === "contend";
-    });
+    const fits = teams.map((t, i) => i).filter((i) => i !== ui && wantsPlayer(teams[i], want) && fitsTeam(teams[i], want));
     for (let k = fits.length - 1; k > 0; k--) { const j = ri(0, k); [fits[k], fits[j]] = [fits[j], fits[k]]; }
     for (const fromTm of fits.slice(0, 6)) { const o = buildOffer(teams, fromTm, want, picks, pkV, rand); if (o) return o; }
   }
@@ -112,6 +121,6 @@ export function genTradeOffer(teams, ui, picks, pkV, rand = Math.random) {
   const needs = POS.filter((pos) => aiT.roster.filter((p) => p.pos === pos && p.ovr >= 65).length < 2 && usT.roster.filter((p) => p.pos === pos && p.ovr >= 70).length >= 3);
   if (!needs.length) return null;
   const wPos = needs[ri(0, needs.length - 1)];
-  const want = usT.roster.filter((p) => p.pos === wPos && p.ovr >= 70 && !p.ftag && wantsPlayer(aiT, p)).sort((a, b) => a.tradeVal - b.tradeVal)[0];
+  const want = usT.roster.filter((p) => p.pos === wPos && p.ovr >= 70 && !p.ftag && wantsPlayer(aiT, p) && fitsTeam(aiT, p)).sort((a, b) => a.tradeVal - b.tradeVal)[0];
   return want ? buildOffer(teams, fromTm, want, picks, pkV, rand) : null;
 }

@@ -1,4 +1,5 @@
 // The Development Focus card on the dashboard.
+import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { C, oC, pC, Bdg, CloseX } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
@@ -81,10 +82,10 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
       )}
       {MOBILE && <button onClick={() => setPicking(true)} style={{ width: "100%", minHeight: 46, background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "8px 12px", fontSize: 15, fontWeight: 700, textAlign: "left", cursor: "pointer" }}>{p ? `Change ${label.toLowerCase()} player ›` : `Choose ${label.toLowerCase()} player ›`}</button>}
       {MOBILE && picking && <Picker label={label} groups={by === "pos" ? groups : [["Fastest growers first", options]]} current={p?.id} onClose={() => setPicking(false)} onPick={(id) => { setFocus((f) => ({ ...f, [side]: id })); setPicking(false); }} />}
-      {!MOBILE && <select value={p?.id || ""} onChange={(e) => setFocus((f) => ({ ...f, [side]: e.target.value || null }))} aria-label={`${label} development focus`} style={{ width: "100%", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
+      {!MOBILE && <Select value={p?.id || ""} onChange={(e) => setFocus((f) => ({ ...f, [side]: e.target.value || null }))} aria-label={`${label} development focus`} style={{ width: "100%", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
         <option value="">— choose {label.toLowerCase()} —</option>
         {by === "pos" ? groups.map(([pos, list]) => <optgroup key={pos} label={pos}>{list.map(opt)}</optgroup>) : options.map(opt)}
-      </select>}
+      </Select>}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 // The trade screen, laid out like the original Gridiron GM: pick a team, tick players and
 // picks on two big roster tables, and the summary tells you plainly whether they'd take it.
+import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face, TeamLogo } from "./ui.jsx";
 import { deadMoney, proration } from "./bonus.js";
@@ -22,9 +23,9 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color }}>{title}</div>
           <div style={{ fontSize: 18, fontWeight: 900 }}>{team.city} {team.name} <span style={{ fontSize: 14, color: C.mt, fontWeight: 600 }}>{team.w}-{team.l}{team.t ? `-${team.t}` : ""}</span></div>
         </div>
-        <select value={pos} onChange={(e) => setPos(e.target.value)} aria-label="Position" style={{ ...sel, padding: "6px 8px", fontSize: 14 }}>
+        <Select value={pos} onChange={(e) => setPos(e.target.value)} aria-label="Position" style={{ ...sel, padding: "6px 8px", fontSize: 14 }}>
           {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? "All positions" : x}</option>)}
-        </select>
+        </Select>
       </div>
       <div style={{ maxHeight: 460, overflowY: "auto", overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -127,10 +128,10 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
       <style>{"@media (max-width: 640px) { .tr-hide { display: none } }"}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <span style={{ fontSize: 24, fontWeight: 900 }}>Trade with</span>
-        {(!MOBILE || them) && <select value={trTm ?? ""} onChange={(e) => pick(e.target.value === "" ? null : +e.target.value)} aria-label="Trade partner" style={{ ...sel, fontSize: 17, fontWeight: 700, minWidth: 240 }}>
+        {(!MOBILE || them) && <Select value={trTm ?? ""} onChange={(e) => pick(e.target.value === "" ? null : +e.target.value)} aria-label="Trade partner" style={{ ...sel, fontSize: 17, fontWeight: 700, minWidth: 240 }}>
           <option value="">Choose a team…</option>
           {teams.filter((t) => t.id !== ui).sort((a, b) => a.city.localeCompare(b.city)).map((t) => <option key={t.id} value={t.id}>{t.city} {t.name} ({t.w}-{t.l}){modes?.[t.id] === "buyer" ? " · buying" : modes?.[t.id] === "seller" ? " · selling" : ""}</option>)}
-        </select>}
+        </Select>}
         <span style={{ fontSize: 14, color: C.mt }}>Your cap space: <b style={{ color: capSpace(me) >= 0 ? C.gn : C.rd }}>{money(capSpace(me))}</b></span>
       </div>
 

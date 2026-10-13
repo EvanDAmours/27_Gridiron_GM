@@ -1,5 +1,6 @@
 // League history: every Super Bowl champion, the award winners year by year, career leaders
 // since the league began, and the Hall of Fame.
+import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { C, TeamLogo, Bdg } from "./ui.jsx";
 import { CAREER_STATS, careerLeaders } from "./history.js";
@@ -56,9 +57,9 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
 
       <div style={panel}>
         <div style={{ ...head, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>📊 CAREER LEADERS <span style={{ color: C.mt, fontWeight: 600, letterSpacing: 0 }}>(in your league)</span>
-          <select value={stat} onChange={(e) => setStat(e.target.value)} style={{ marginLeft: "auto", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "4px 8px", fontSize: 13 }}>
+          <Select value={stat} onChange={(e) => setStat(e.target.value)} style={{ marginLeft: "auto", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "4px 8px", fontSize: 13 }}>
             {CAREER_STATS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-          </select>
+          </Select>
         </div>
         {leaders.map((r, i) => (
           <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: `1px solid ${C.bd}66` }}>

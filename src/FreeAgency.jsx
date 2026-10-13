@@ -1,5 +1,6 @@
 // Free agency, laid out like the trade screen: one big sortable table of real free agents, your
 // cap and needs up top, and a real negotiation (years and money) when you go to sign someone.
+import Select from "./Select.jsx";
 import { MOBILE } from "./mobile.js";
 import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
@@ -45,18 +46,18 @@ export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSe
       {sheets}
       <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12 }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
-          <select value={pos} onChange={(e) => { setPos(e.target.value); setN(50); }} aria-label="Position" style={sel}>
+          <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(50); }} aria-label="Position" style={sel}>
             {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? "All positions" : x}</option>)}
-          </select>
+          </Select>
           <button onClick={() => setNeedOnly((v) => !v)} style={{ ...sel, cursor: "pointer", background: needOnly ? `${C.bl}33` : C.bg, borderColor: needOnly ? C.bl : C.bd, fontWeight: 700 }}>Your needs: {needs.slice(0, 4).join(", ") || "none"}</button>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search free agents" style={{ ...sel, flex: "1 1 160px" }} />
         </div>
         {MOBILE && (
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
             <span style={{ fontSize: 13, color: C.mt }}>Sort</span>
-            <select value={sort[0]} onChange={(e) => setSort([e.target.value, ["name", "pos"].includes(e.target.value) ? 1 : -1])} aria-label="Sort free agents" style={{ ...sel, flex: 1, minHeight: 44 }}>
+            <Select value={sort[0]} onChange={(e) => setSort([e.target.value, ["name", "pos"].includes(e.target.value) ? 1 : -1])} aria-label="Sort free agents" style={{ ...sel, flex: 1, minHeight: 44 }}>
               {[["ovr", "Overall"], ["ask", "Asking price"], ["age", "Age"], ["pos", "Position"], ["name", "Name"]].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-            </select>
+            </Select>
           </div>
         )}
         {MOBILE ? (
