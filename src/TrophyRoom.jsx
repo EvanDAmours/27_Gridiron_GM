@@ -226,7 +226,8 @@ function Shelf({ title, items, empty, perRow, on, setOn, start = 0, small, spot 
 // team: your club. champs: this league's champions. awards: season award winners by year.
 export default function TrophyRoom({ team, ui, champs = [], awards = [], teams = [], spotlight = null, retired = [], yr = 2026, book = null, onInduct, onRetireNum }) {
   const [on, setOn] = useState(null);
-  const [sec, setSec] = useState(spotlight != null ? "trophies" : "banners");
+  const [sec, setSec] = useState(spotlight === "ring" ? "ring" : spotlight != null ? "trophies" : "banners");
+  useEffect(() => { if (spotlight === "ring") setSec("ring"); else if (spotlight != null) setSec("trophies"); }, [spotlight]);
   const width = useWidth();
   const full = `${team.city} ${team.name}`;
   const lombardis = [
@@ -287,7 +288,7 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
         const divs = [...h.d, ...(team.divTitles || []).map((y) => [y, `${team.c} ${team.d}`])];
         return <Rafters team={team} sbs={sbs} titles={h.l} confs={confs} divs={divs} />;
       })()}
-      {sec === "trophies" && <><Shelf title="Super Bowl Championships" items={lombardis} empty="No Super Bowls yet. Win one and the Lombardi Trophy goes here." perRow={perRow} on={on} setOn={setOn} small={width <= 640} spot={spotlight != null ? `sb${sbNumber(spotlight)}` : null} />
+      {sec === "trophies" && <><Shelf title="Super Bowl Championships" items={lombardis} empty="No Super Bowls yet. Win one and the Lombardi Trophy goes here." perRow={perRow} on={on} setOn={setOn} small={width <= 640} spot={spotlight != null && spotlight !== "ring" ? `sb${sbNumber(spotlight)}` : null} />
       <Shelf title="Player Awards" items={mine} empty="Win MVP, Offensive or Defensive Player of the Year, Super Bowl MVP or a Rookie of the Year award with you as GM and the trophy goes here." perRow={perRow} on={on} setOn={setOn} start={lombardis.length} small={width <= 640} /></>}
       {sec === "jackets" && <GoldJackets team={team} hofers={retiredHere.filter((r) => r.hof)} yr={yr} />}
       {sec === "ring" && <RingOfHonor team={team} retired={retiredHere} hall={hall} onInduct={onInduct || (() => {})} onRetireNum={onRetireNum || (() => {})} />}

@@ -772,4 +772,10 @@ export const PATCH_NOTES = [
     "Deadline Day: your phone actually rings. Clubs now call about any of your players who'd start for them, not just in rare roster situations; expect around 8-10 calls over the day, more with a star on the block.",
     "Clubs also approach you more in the weeks before the deadline, and a proposal you haven't answered is withdrawn once the deadline passes.",
   ] },
+  { v: "2.50", date: "2026-10-13", title: "Gold Jackets and Combine Busts", notes: [
+    "Gold Jackets: every club's real Pro Football Hall of Famers, through the 2026 class, now hang in its Legacy Hall (the Giants: Lawrence Taylor, Michael Strahan, Sam Huff, Frank Gifford, Bill Parcells, the Maras and more), alongside the legends who retire there in your league.",
+    "Ring of Honor: when one of your notable players retires (a Hall of Famer or a legacy of 20+), Needs Attention tells you he's a Ring of Honor candidate and opens the Ring of Honor tab, where you induct him.",
+    "The Combine has busts: every year a few early names test poorly and slide down the board. Some are real concerns (the tape agrees: they were overrated); some are flukes (a tight hamstring, a bad start). The league can't tell which. An interview tells you, and a private workout shows his true ratings.",
+    "Stock Down shows how far each early name slid (#18 → #41).",
+  ] },
 ];

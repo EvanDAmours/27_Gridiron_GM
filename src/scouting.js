@@ -731,11 +731,37 @@ const NEWS = {
 // After the playoffs: grade the Combine results, publish the final rankings, hand out interview
 // slots and bonus points. Prospects need their `combine` (invitees) and `proDay` results
 // already; this mutates them and re-sorts the class.
+// A bad day in Indianapolis: a few early names test poorly every year. For some it's real (the
+// tape agrees: they're overrated, and their true ratings show it); for others it's a fluke (a tight
+// hamstring, a slip at the start). The league can't tell which; your interviews and private
+// workouts can. Marks p.combDip = "real" | "fluke" and worsens his numbers, once per class.
+function plantCombineDips(invited) {
+  if (!invited.length || invited.some((p) => p.combDip !== undefined)) return;
+  const early = [...invited].sort((a, b) => (a.cons?.mid ?? 999) - (b.cons?.mid ?? 999)).slice(0, 64);
+  const r = stream(`${invited[0].id}|dips`);
+  // overrated: the consensus thinks more of him than his true ratings do
+  const gap = (p) => csScore(p) - kpValue(p, (p.truePot ?? p.pot) * 0.78 + (p.trueOvr ?? p.ovr) * 0.22);
+  const real = [...early].filter((p) => gap(p) > 1.2).sort((a, b) => gap(b) - gap(a)).slice(0, 2 + (r.next() < 0.5 ? 1 : 0));
+  const rest = early.filter((p) => !real.includes(p) && gap(p) <= 0.5);
+  const fluke = [];
+  for (let k = 0; k < 2 + (r.next() < 0.4 ? 1 : 0) && rest.length; k++) fluke.push(rest.splice(Math.floor(r.next() * rest.length), 1)[0]);
+  for (const p of invited) p.combDip = real.includes(p) ? "real" : fluke.includes(p) ? "fluke" : null;
+  for (const p of [...real, ...fluke]) {
+    const c = { ...p.combine };
+    for (const t of COMBINE_TESTS) {
+      if (c[t.k] == null) continue;
+      c[t.k] = t.lowGood ? +(c[t.k] * (1.03 + r.next() * 0.02)).toFixed(t.dp) : t.dp ? +(c[t.k] * (0.84 + r.next() * 0.05)).toFixed(t.dp) : Math.round(c[t.k] * (0.84 + r.next() * 0.05));
+    }
+    p.combine = c;
+  }
+}
+
 export function runCombine(sc, cls, { quiet = false } = {}) {
   rankClass(cls);
   plantGems(cls);
   plantBusts(cls);
   const invited = cls.filter((p) => p.combine);
+  plantCombineDips(invited);
   const groups = {};
   for (const p of invited) (groups[combineGroup(p.pos)] ||= []).push(p);
   for (const ps of Object.values(groups)) {
@@ -765,7 +791,7 @@ export function runCombine(sc, cls, { quiet = false } = {}) {
   }
   for (const p of cls) {
     if (p.cons.final != null) continue;
-    p.cons.fscore = p.cons.score + (p.combine ? (p.combPct - 0.5) * 2.6 : -0.4) + (p.newsDelta || 0) + stream(`${p.id}|final`).gauss(0, 0.9);
+    p.cons.fscore = p.cons.score + (p.combine ? (p.combPct - 0.5) * 2.6 : -0.4) + (p.combDip ? -2.6 : 0) + (p.newsDelta || 0) + stream(`${p.id}|final`).gauss(0, 0.9);
   }
   [...cls].sort((a, b) => b.cons.fscore - a.cons.fscore).forEach((p, i) => (p.cons.final = i + 1));
   sortByRank(cls);
@@ -843,11 +869,14 @@ export function interviewProspect(sc, sp, p) {
   const good = sorted.filter((t) => t.v >= 82).slice(0, 2).map((t) => r.pick(INTERVIEW_GOOD[t.k]));
   const bad = sorted.filter((t) => t.v < 74).slice(-2).map((t) => r.pick(INTERVIEW_BAD[t.k]));
   if (!good.length && !bad.length) good.push(r.pick(INTERVIEW_NOTES.mid));
+  // A bad Combine: in the room you find out whether it was real.
+  if (p.combDip === "real") bad.unshift("About the Combine: the numbers match his tape. He isn't as explosive as his reputation.");
+  if (p.combDip === "fluke") good.unshift("About the Combine: he tested with a tight hamstring; his pro day numbers were back to normal. The tape says he's fine.");
   const avg = traits.reduce((s2, t) => s2 + t.v, 0) / traits.length;
   const verdict = char || avg < 70 ? "Concerning" : avg >= 86 ? "Impressive" : avg >= 78 ? "Solid" : "Mixed";
   const intv = { grade: potGrade(v), overall: potGrade(avg), verdict, traits: traits.map(({ label, grade }) => ({ label, grade })), good, bad, note: r.pick(INTERVIEW_NOTES[v >= 85 ? "high" : v >= 77 ? "mid" : "low"]), ...(char ? { flag: `🚩 Red flag from the interview: ${p.bust.why}.` } : {}) };
   const icon = { Impressive: "🌟", Solid: "👍", Mixed: "🤔", Concerning: "⚠️" }[verdict];
-  const msg = `${icon} Interview with ${p.name}: ${verdict.toLowerCase()} (${intv.overall}). ${good[0] || bad[0] || ""}${char ? " Red flag raised." : ""} Full notes are on his profile.`;
+  const msg = `${icon} Interview with ${p.name}: ${verdict.toLowerCase()} (${intv.overall}). ${p.combDip === "real" ? bad[0] : p.combDip === "fluke" ? good[0] : good[0] || bad[0] || ""}${char ? " Red flag raised." : ""} Full notes are on his profile.`;
   return { ok: true, msg, sc: { ...sc, interviewsLeft: sc.interviewsLeft - 1 }, p: { ...p, scout: { ...(p.scout || { lvl: 0 }), intv } } };
 }
 

@@ -3,11 +3,12 @@
 // records wall.
 import React from "react";
 import { C, Btn, TeamLogo } from "./ui.jsx";
-import { CAREER_STATS, careerTotals } from "./history.js";
+import { CAREER_STATS, careerTotals, ringCandidates } from "./history.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 import { RECORD_DEFS, recordValue, everyone } from "./records.js";
 import goldJacket from "./assets/gold-jacket.webp";
 import { RING_OF_HONOR } from "./data/ringOfHonor.js";
+import { HALL_OF_FAME } from "./data/hallOfFame.js";
 
 const DIV = { AFC: "AFC", NFC: "NFC" };
 const fmt = (n) => Math.round(n).toLocaleString();
@@ -73,23 +74,35 @@ export function Rafters({ team, sbs = [], titles = [], confs = [], divs = [] }) 
 }
 
 // A gold jacket on a hanger.
-function GoldJacket() {
-  return <img src={goldJacket} alt="Hall of Fame gold jacket" width={96} height={102} style={{ objectFit: "contain", filter: "drop-shadow(0 8px 12px #000c)" }} />;
+function GoldJacket({ size = 96 }) {
+  return <img src={goldJacket} alt="Hall of Fame gold jacket" width={size} height={Math.round(size * 1.06)} style={{ objectFit: "contain", filter: "drop-shadow(0 8px 12px #000c)" }} />;
 }
 
 export function GoldJackets({ team, hofers, yr }) {
+  // the club's real Hall of Famers (newest class first), and any made in your league
+  const real = [...(HALL_OF_FAME[team.ab] || [])].sort((a, b) => b.cls - a.cls || a.n.localeCompare(b.n));
+  const total = real.length + hofers.length;
   return (
     <div style={{ marginBottom: 22 }}>
-      <H sub="Hall of Famers who finished their careers here">Gold Jackets</H>
-      <div style={{ background: "radial-gradient(ellipse at 50% 0%,#3b2f2455,transparent 70%),#0f0c0a", border: "1px solid #2b211b", borderRadius: 12, padding: 14, display: "flex", gap: 14, flexWrap: "wrap" }}>
-        {hofers.length ? hofers.map((h) => (
-          <div key={h.id} style={{ width: 120, textAlign: "center" }}>
-            <GoldJacket />
-            <div style={{ fontWeight: 900, fontSize: 14, marginTop: 4 }}>{h.name}</div>
-            <div style={{ fontSize: 12, color: "#fde68a" }}>{h.pos} · Class of {h.hofClass}</div>
-            {h.hofClass > yr && <div style={{ fontSize: 11, color: C.mt }}>enshrined in {h.hofClass}</div>}
+      <H sub={`${total} Hall of Famer${total === 1 ? "" : "s"}: the club's real enshrinees in Canton, and the legends who retire here in your league`}>Gold Jackets</H>
+      <div style={{ background: "radial-gradient(ellipse at 50% 0%,#3b2f2455,transparent 70%),#0f0c0a", border: "1px solid #2b211b", borderRadius: 12, padding: 14, display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(112px,1fr))", gap: 12 }}>
+        {hofers.map((h) => (
+          <div key={h.id} style={{ textAlign: "center" }}>
+            <GoldJacket size={78} />
+            <div style={{ fontWeight: 900, fontSize: 13, marginTop: 4 }}>{h.name}</div>
+            <div style={{ fontSize: 11, color: "#fde68a" }}>{h.pos} · Class of {h.hofClass}</div>
+            <div style={{ fontSize: 10, fontWeight: 900, color: "#f59e0b" }}>{h.hofClass > yr ? `ENSHRINED IN ${h.hofClass}` : "YOUR LEAGUE"}</div>
           </div>
-        )) : <div style={{ color: "#a8a29e", fontSize: 14, padding: "26px 6px" }}>No Hall of Famers yet. A legend who retires here gets his gold jacket hung on this wall.</div>}
+        ))}
+        {real.map((h) => (
+          <div key={h.n} style={{ textAlign: "center" }} title={`${h.n}: ${h.pos}, ${h.yrs} season${h.yrs === 1 ? "" : "s"} with the club, enshrined ${h.cls}`}>
+            <GoldJacket size={64} />
+            <div style={{ fontWeight: 800, fontSize: 13, marginTop: 3, lineHeight: 1.2 }}>{h.n}</div>
+            <div style={{ fontSize: 11, color: "#d6c7a1" }}>{h.pos}</div>
+            <div style={{ fontSize: 11, color: "#a8a29e" }}>Class of {h.cls}</div>
+          </div>
+        ))}
+        {!total && <div style={{ color: "#a8a29e", fontSize: 14, padding: "26px 6px", gridColumn: "1 / -1" }}>No Hall of Famers yet. A legend who retires here gets his gold jacket hung on this wall.</div>}
       </div>
     </div>
   );
@@ -99,7 +112,8 @@ export function GoldJackets({ team, hofers, yr }) {
 // notable players who retired here (history entries).
 export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum }) {
   const ring = retired.filter((r) => hall.ring.includes(r.id));
-  const cands = retired.filter((r) => !hall.ring.includes(r.id) && (r.hof || r.legacy >= 20)).sort((a, b) => b.legacy - a.legacy).slice(0, 8);
+  // candidates: this club's own retired greats (they hung it up here), not the whole league's
+  const cands = ringCandidates(retired, team, hall).slice(0, 8);
   const taken = new Set(hall.nums.map((n) => n.num));
   const real = RING_OF_HONOR[team.ab] || { name: null, members: [] };
   const trim = team.ac || "#e5e7eb", bg = team.clr || "#1e3a8a";

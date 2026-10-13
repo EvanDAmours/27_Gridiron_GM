@@ -81,3 +81,7 @@ export function careerLeaders(teams, retired = [], key, n = 10) {
   const seen = new Set();
   return rows.sort((a, b) => b.v - a.v).filter((r) => (seen.has(r.id) ? false : seen.add(r.id))).slice(0, n);
 }
+
+// A club's Ring of Honor candidates: players who retired with it, Hall of Famers or a legacy of
+// 20+, not yet inducted. Best first.
+export const ringCandidates = (retired, team, hall) => (retired || []).filter((r) => r.team === team?.ab && !(hall?.ring || []).includes(r.id) && (r.hof || r.legacy >= 20)).sort((a, b) => b.legacy - a.legacy);

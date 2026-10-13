@@ -442,14 +442,15 @@ export function CombineView({ g, buzz }) {
   const rows = all.filter((p) => inGroup(p, g0) && (!mine || isNeed(p))).sort((x, y) => val(y) - val(x));
   // stock up: tested great relative to where the board has him; stock down: the reverse
   const up = all.filter((p) => (GRADE_ORDER[p.combGrade] || 0) >= 11 && csRank(p) > 40).sort((x, y) => (GRADE_ORDER[y.combGrade] - GRADE_ORDER[x.combGrade]) || csRank(x) - csRank(y)).slice(0, 4);
-  const down = all.filter((p) => (GRADE_ORDER[p.combGrade] || 0) <= 4 && csRank(p) <= 64).sort((x, y) => csRank(x) - csRank(y)).slice(0, 4);
+  // early names (preseason top 64) who tested poorly; the biggest slides first
+  const down = all.filter((p) => ((GRADE_ORDER[p.combGrade] || 0) <= 4 || p.combDip) && p.combine && (p.cons?.mid ?? csRank(p)) <= 64).sort((x, y) => (csRank(y) - (y.cons?.mid ?? 0)) - (csRank(x) - (x.cons?.mid ?? 0))).slice(0, 4);
   const th = { padding: "7px 6px", textAlign: "right", color: C.mt, fontWeight: 800, whiteSpace: "nowrap", fontSize: 12, cursor: "pointer", userSelect: "none" };
   const td = { padding: "7px 6px", textAlign: "right", whiteSpace: "nowrap", fontSize: 14 };
   const pill = (on) => ({ ...chipBtn(on), fontSize: 13, padding: "5px 11px" });
   const Mover = ({ p, tone }) => (
     <div onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: `1px solid ${C.bd}66`, cursor: "pointer" }}>
       <Bdg pos={posTag(p)} /><span style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
-      <span style={{ fontSize: 12, color: C.mt }}>#{csRank(p)}</span><GradeChip g={p.combGrade} small />
+      <span style={{ fontSize: 12, color: C.mt, whiteSpace: "nowrap" }}>{p.cons?.mid && p.cons.mid !== csRank(p) ? `#${p.cons.mid} → #${csRank(p)}` : `#${csRank(p)}`}</span><GradeChip g={p.combGrade} small />
     </div>
   );
   return (
@@ -470,7 +471,7 @@ export function CombineView({ g, buzz }) {
       {(up.length > 0 || down.length > 0 || buzz?.length > 0) && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 10, marginBottom: 10 }}>
           <div style={panel}><div style={{ ...head, color: C.gn }}>📈 STOCK UP · tested like a higher pick</div>{up.map((p) => <Mover key={p.id} p={p} />)}{!up.length && <div style={muted}>Nobody from the back of the board blew up the Combine.</div>}</div>
-          <div style={panel}><div style={{ ...head, color: C.rd }}>📉 STOCK DOWN · early names who tested poorly</div>{down.map((p) => <Mover key={p.id} p={p} />)}{!down.length && <div style={muted}>The early names all held up.</div>}</div>
+          <div style={panel}><div style={{ ...head, color: C.rd }}>📉 STOCK DOWN · early names who tested poorly</div>{down.length > 0 && <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 2 }}>A real concern or a bad day? Interview him or bring him in for a private workout to find out.</div>}{down.map((p) => <Mover key={p.id} p={p} />)}{!down.length && <div style={muted}>The early names all held up.</div>}</div>
           {/* the week's draft news, in the same card style as the movers */}
           <div style={panel}><div style={{ ...head, color: "#c4b5fd" }}>📡 DRAFT BUZZ</div>
             {(buzz || []).slice(0, 4).map((x, k) => { const tg = { up: ["RISING", C.gn], down: ["FALLING", C.rd], best: ["TOP TEST", "#60a5fa"], news: ["NEWS", C.gd] }[x.kind] || ["NEWS", C.gd]; const pp = (g.dc[g.yr] || []).find((y) => y.id === x.pid); return (

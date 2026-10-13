@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   newScouting, hireScout, releaseScout, swapScoutRoles, creditWeeks, startScoutingYear, coverage, scoutProspect, prospectRead,
   rankClass, csRank, combineInvites, runCombine, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, pickGrade, classGrade, toggleList, moveOnList, listIds,
-  autoPickFrom, aiDraftScore, loadScouting, rollDev, scoutGroup, SCOUT_PTS_START, COMBINE_INVITES,
+  autoPickFrom, aiDraftScore, csScore, kpValue, loadScouting, rollDev, scoutGroup, SCOUT_PTS_START, COMBINE_INVITES,
 } from "../src/scouting.js";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K"];
@@ -129,6 +129,31 @@ test("the Combine invites the top of the board, grades by position, and publishe
   assert.equal(i1.sc.interviewsLeft, r.sc.interviewsLeft - 1);
   assert.equal(interviewProspect(i1.sc, "combine", i1.p).ok, false);
   assert.equal(interviewProspect(r.sc, "draft", invitee).ok, false);
+});
+
+test("some early names test poorly and fall; interviews tell a real concern from a fluke", () => {
+  let real = 0, fluke = 0, fell = 0, overrated = 0;
+  for (let k = 0; k < 6; k++) {
+    const cls = rankClass(Array.from({ length: 240 }, () => prospect()));
+    const inv = combineInvites(cls);
+    for (const p of cls) p.combine = inv.has(p.id) ? fakeCombine(p) : null;
+    const r = runCombine(newScouting(2026), cls);
+    const dips = cls.filter((p) => p.combDip);
+    assert.ok(dips.length >= 3 && dips.length <= 6, `a handful each year (${dips.length})`);
+    for (const p of dips) {
+      assert.ok(p.cons.mid <= 64, "early names");
+      if (p.cons.final > p.cons.mid) fell++;
+      const i = interviewProspect({ ...r.sc, interviewsLeft: 9 }, "combine", p);
+      if (p.combDip === "real") { real++; assert.ok(i.p.scout.intv.bad[0].startsWith("About the Combine")); assert.ok(csScore(p) > kpValue(p, p.truePot * 0.78 + p.trueOvr * 0.22)); overrated++; }
+      else { fluke++; assert.ok(i.p.scout.intv.good[0].startsWith("About the Combine")); }
+    }
+    // a second run (a reload) doesn't knock them down again
+    const before = dips.map((p) => JSON.stringify(p.combine));
+    runCombine(newScouting(2026), cls);
+    assert.deepEqual(dips.map((p) => JSON.stringify(p.combine)), before);
+  }
+  assert.ok(real > 0 && fluke > 0);
+  assert.ok(fell >= (real + fluke) * 0.7, `most of them slide (${fell}/${real + fluke})`);
 });
 
 test("private workouts: Combine week only, a full workup for free, a few a year", () => {
