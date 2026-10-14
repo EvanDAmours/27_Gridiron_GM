@@ -6,6 +6,7 @@ import { HONOR_LABEL, honorBoost, honorsById } from "./honors.js";
 import { C, TeamLogo, Btn, Bdg, CloseX, sheetWrap, sheetBox, SheetGrip } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
+import { posTag } from "./dline.js";
 
 // The Super Bowl MVP: the best line on the winning side of the box score.
 // "three touchdowns", "a touchdown", "12 tackles": numbers the way a newspaper writes them
@@ -95,7 +96,7 @@ function HonorsPage({ yr, h, teams, ui, onBack, onClose, cta }) {
             const g = honorBoost(k, p.ovr || 0);
             return (
               <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, padding: "3px 0" }}>
-                <Bdg pos={p.pos} />
+                <Bdg pos={posTag(p)} />
                 <span style={{ minWidth: 0, flex: 1, lineHeight: 1.3 }}><b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</b><span style={{ color: "#cbd5e1", fontSize: 13 }}>{HONOR_LABEL[k]}</span></span>
                 <span style={{ marginLeft: "auto", fontWeight: 900, color: g ? C.gn : C.mt, fontSize: 14, whiteSpace: "nowrap" }}>{g ? `+${g} OVR` : "already elite"}</span>
               </div>

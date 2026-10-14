@@ -4,6 +4,7 @@
 import React from "react";
 import { C, Bdg } from "./ui.jsx";
 import { capProjection } from "./capProjection.js";
+import { posTag } from "./dline.js";
 
 const GROUPS = [["QB", ["QB"]], ["Skill", ["RB", "WR", "TE"]], ["O-line", ["LT", "LG", "C", "RG", "RT"]], ["D-line", ["DL"]], ["LB", ["LB"]], ["Secondary", ["CB", "S"]], ["Specialists", ["K", "P"]]];
 const $ = (v) => `$${(+v || 0).toFixed(1)}M`;
@@ -53,7 +54,7 @@ export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = 
               <div style={{ fontSize: 12, color: "#94a3b8" }}>room · {$(y.committed)} committed{y.dead > 0 ? ` (${$(y.dead)} dead)` : ""}</div>
               <div style={{ fontSize: 12, color: "#94a3b8" }}>{y.players} player{y.players === 1 ? "" : "s"} signed</div>
               {y.expiring.length > 0 && <div style={{ marginTop: 6, fontSize: 11, fontWeight: 800, letterSpacing: 0.8, color: C.mt }}>DEALS ENDING</div>}
-              {y.expiring.slice(0, 4).map((p) => <div key={p.id} onClick={() => onPlayer?.(p)} style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, padding: "1px 0", cursor: onPlayer ? "pointer" : "default", minWidth: 0 }}><Bdg pos={p.pos} /><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span><b style={{ color: "#cbd5e1" }}>{p.ovr}</b></div>)}
+              {y.expiring.slice(0, 4).map((p) => <div key={p.id} onClick={() => onPlayer?.(p)} style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, padding: "1px 0", cursor: onPlayer ? "pointer" : "default", minWidth: 0 }}><Bdg pos={posTag(p)} /><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span><b style={{ color: "#cbd5e1" }}>{p.ovr}</b></div>)}
               {y.expiring.length > 4 && <div style={{ fontSize: 12, color: C.mt }}>+{y.expiring.length - 4} more</div>}
             </div>
           );
@@ -105,7 +106,7 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
           })}
           <div style={{ fontSize: 12, fontWeight: 800, color: C.mt, margin: "10px 0 4px" }}>BIGGEST CAP HITS</div>
           {onContracts && <button onClick={() => onContracts("all")} style={{ float: "right", marginTop: -22, background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer" }}>All {rows.length} contracts →</button>}
-          {top.map((p) => <div key={p.id} onClick={() => onPlayer(p)} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, padding: "3px 0", cursor: "pointer" }}><Bdg pos={p.pos} /><span style={{ flex: 1 }}>{p.name}</span><b style={{ color: C.gd }}>{$(p.salary)}</b><span style={{ color: C.mt, minWidth: 44, textAlign: "right" }}>{Math.round(((p.salary || 0) / cap) * 100)}%</span></div>)}
+          {top.map((p) => <div key={p.id} onClick={() => onPlayer(p)} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, padding: "3px 0", cursor: "pointer" }}><Bdg pos={posTag(p)} /><span style={{ flex: 1 }}>{p.name}</span><b style={{ color: C.gd }}>{$(p.salary)}</b><span style={{ color: C.mt, minWidth: 44, textAlign: "right" }}>{Math.round(((p.salary || 0) / cap) * 100)}%</span></div>)}
         </div>
         <div style={card}>
           <div style={head}>CAP ADVISOR</div>

@@ -9,8 +9,10 @@ import { yearlyAsk, maxYears } from "./negotiation.js";
 // what the negotiation table opens at: his ask for the default length (two years, or one for a 33+ veteran)
 const askingPrice = (p) => yearlyAsk(p, Math.min(2, maxYears(p)), "fa");
 import Negotiate from "./Negotiate.jsx";
+import { posTag } from "./dline.js";
 
-const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
+// the defensive line is two positions here: edge rushers and interior tackles
+const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P"];
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 
@@ -23,9 +25,9 @@ export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSe
   const [n, setN] = useState(50);
   const [offer, setOffer] = useState(null);
   const cap = capSpace(team);
-  const key = { ovr: (p) => p.ovr, age: (p) => p.age, ask: (p) => askingPrice(p), pos: (p) => POS.indexOf(p.pos), name: (p) => p.name };
+  const key = { ovr: (p) => p.ovr, age: (p) => p.age, ask: (p) => askingPrice(p), pos: (p) => POS.indexOf(posTag(p)), name: (p) => p.name };
   const rows = fa
-    .filter((p) => pos === "ALL" || p.pos === pos)
+    .filter((p) => pos === "ALL" || posTag(p) === pos)
     .filter((p) => !needOnly || fillsNeed(needs, p))
     .filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => { const x = key[sort[0]](a), y = key[sort[0]](b); return (typeof x === "string" ? x.localeCompare(y) : x - y) * sort[1]; });
@@ -80,7 +82,7 @@ export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSe
                     <Face s={p.face} sz={34} />
                     <span style={{ minWidth: 0 }}>
                       <span style={{ display: "block", fontWeight: 800, fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
-                      <span style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}><Bdg pos={p.pos} /><span>Age {p.age}</span><span style={{ color: ask <= cap ? "#e2e8f0" : C.rd, fontWeight: 700 }}>{money(ask)}/yr</span>{from && <span style={{ color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `ex-${from.ab}`}</span>}</span>
+                      <span style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><span>Age {p.age}</span><span style={{ color: ask <= cap ? "#e2e8f0" : C.rd, fontWeight: 700 }}>{money(ask)}/yr</span>{from && <span style={{ color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `ex-${from.ab}`}</span>}</span>
                     </span>
                   </span>
                   <span style={{ fontSize: 22, fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
@@ -110,7 +112,7 @@ export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSe
                         </span>
                       </span>
                     </td>
-                    <td style={td}><Bdg pos={p.pos} /></td>
+                    <td style={td}><Bdg pos={posTag(p)} /></td>
                     <td style={{ ...td, color: "#cbd5e1" }}>{p.age}</td>
                     <td style={{ ...td, fontWeight: 900, fontSize: 18, color: oC(p.ovr) }}>{p.ovr}</td>
                     <td className="fa-hide" style={{ ...td, color: oC(p.pot || p.ovr) }}>{p.pot || p.ovr}</td>

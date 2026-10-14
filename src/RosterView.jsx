@@ -2,7 +2,7 @@
 // large type, grouped by position in depth-chart order, with every column sortable.
 import Select from "./Select.jsx";
 import React, { useState } from "react";
-import { naturalDL } from "./dline.js";
+import { naturalDL, posTag } from "./dline.js";
 import { C, oC, Bdg, Face } from "./ui.jsx";
 import { InjTag } from "./InjuryTag.jsx";
 import { DevChip } from "./ScoutingUI.jsx";
@@ -78,7 +78,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontWeight: 800, fontSize: 15, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}<Badges p={p} focus={focus} mine={mine} /></span>
                   <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}>
-                    <Bdg pos={p.pos} /><span style={{ color: s?.starter ? C.gn : "#94a3b8", fontWeight: 700 }}>{s?.label || "—"}</span><span>Age {p.age}</span><span>${(p.salary || 0).toFixed(1)}M · {p.contract}y</span>
+                    <Bdg pos={posTag(p)} /><span style={{ color: s?.starter ? C.gn : "#94a3b8", fontWeight: 700 }}>{s?.label || "—"}</span><span>Age {p.age}</span><span>${(p.salary || 0).toFixed(1)}M · {p.contract}y</span>
                     <InjTag p={p} wk={wk} />{p.holdout && <span style={{ color: C.gd, fontWeight: 800 }}>Holdout</span>}
                   </span>
                 </span>
@@ -114,7 +114,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
                       </span>
                     </span>
                   </td>
-                  <td style={td}><Bdg pos={p.pos} />{p.pos === "DL" && <span title={naturalDL(p) === "DT" ? "Defensive tackle by trade" : "Edge rusher by trade"} style={{ display: "block", fontSize: 10, fontWeight: 800, color: naturalDL(p) === "DT" ? "#fb923c" : "#f472b6" }}>{naturalDL(p)}</span>}</td>
+                  <td style={td}><Bdg pos={posTag(p)} /></td>
                   <td className="ro-hide" style={{ ...td, fontWeight: 800, color: s?.starter ? C.gn : "#64748b", whiteSpace: "nowrap" }}>{s?.label || "—"}</td>
                   <td style={{ ...td, color: "#cbd5e1" }}>{p.age}</td>
                   <td style={{ ...td, fontWeight: 900, fontSize: 18, color: oC(p.ovr) }}>{p.ovr}</td>

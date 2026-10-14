@@ -2,6 +2,7 @@
 // skill group, a career OVR graph, season-by-season stats, a contract timeline and his honors.
 import React from "react";
 import { C, oC, Bdg, Face } from "./ui.jsx";
+import { posTag } from "./dline.js";
 
 const r1 = (x) => Math.round(x * 10) / 10;
 const money = (n) => `$${r1(+n || 0).toFixed(1)}M`;
@@ -33,7 +34,7 @@ export function CardHeader({ p, team, ovr, pot, sub, dev }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: "#fffb" }}>{team ? `${team.city} ${team.name}`.toUpperCase() : "FREE AGENT"}</div>
           <div style={{ fontSize: 21, fontWeight: 900, color: "#fff", lineHeight: 1.15 }}>{p.name}</div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 3, fontSize: 13, color: "#fffd" }}><Bdg pos={p.pos} />{sub}{dev}</div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 3, fontSize: 13, color: "#fffd" }}><Bdg pos={posTag(p)} />{sub}{dev}</div>
         </div>
         <div style={{ textAlign: "center", marginRight: 34 }}>
           <OvrRing ovr={ovr} />

@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import Select from "./Select.jsx";
 import { C, Btn, Bdg, oC } from "./ui.jsx";
 import { executeLegs } from "./tradeExec.js";
+import { posTag } from "./dline.js";
 
 const value = (ps) => ps.reduce((s, p) => s + (p.tradeVal || 0), 0);
 
@@ -54,7 +55,7 @@ export default function ThreeWayTrade({ teams, ui, closed, ctx, mobile, sm, onDo
                   return (
                     <div key={p.id} onClick={() => toggle(k, p)} style={{ display: "flex", alignItems: "center", gap: 8, padding: mobile ? "9px 10px" : "6px 9px", fontSize: 14, cursor: "pointer", borderBottom: `1px solid ${C.bd}55`, background: on ? `${clr}26` : "transparent" }}>
                       <input type="checkbox" readOnly checked={on} style={{ width: 17, height: 17, accentColor: clr, pointerEvents: "none" }} />
-                      <Bdg pos={p.pos} />
+                      <Bdg pos={posTag(p)} />
                       <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 }}>{p.name}</span>
                       <span style={{ color: oC(p.ovr), fontWeight: 800 }}>{p.ovr}</span>
                       <span style={{ color: "#fbbf24", fontSize: 12, width: 30, textAlign: "right" }}>{p.tradeVal}</span>

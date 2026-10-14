@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face, TeamLogo } from "./ui.jsx";
 import Negotiate from "./Negotiate.jsx";
 import { taggedPlayers, sheetCompensation } from "./contractDepth.js";
+import { posTag } from "./dline.js";
 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 
@@ -22,7 +23,7 @@ export default function OfferSheets({ teams, ui, yr, picks, futures, cap, termsF
             <Face s={p.face} sz={34} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 800, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-              <div style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 12, color: C.mt }}><Bdg pos={p.pos} /><b style={{ color: oC(p.ovr) }}>{p.ovr}</b><TeamLogo t={teams[ti]} sz={16} />{teams[ti].ab} · tag {money(p.salary)}</div>
+              <div style={{ display: "flex", gap: 5, alignItems: "center", fontSize: 12, color: C.mt }}><Bdg pos={posTag(p)} /><b style={{ color: oC(p.ovr) }}>{p.ovr}</b><TeamLogo t={teams[ti]} sz={16} />{teams[ti].ab} · tag {money(p.salary)}</div>
             </div>
             {talkFor(p).walked || talkFor(p).signed ? <span style={{ fontSize: 12, color: C.mt }}>Done</span> : <Btn onClick={() => setOpen({ p, ti })} disabled={!comp.ok} bg="#b45309" style={{ fontSize: 13, padding: "5px 10px" }}>Offer sheet</Btn>}
           </div>

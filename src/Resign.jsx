@@ -4,6 +4,7 @@ import React from "react";
 import { C, oC, Bdg, Btn, Face, TeamLogo } from "./ui.jsx";
 import { yearlyAsk } from "./negotiation.js";
 import { MOBILE } from "./mobile.js";
+import { posTag } from "./dline.js";
 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 
@@ -45,7 +46,7 @@ export default function Resign({ team, yr, nextSpace, talkFor, onNegotiate, setS
                   <Face s={p.face} sz={30} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div onClick={() => setSel(p)} style={{ fontWeight: 800, fontSize: 15, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#94a3b8" }}><Bdg pos={p.pos} /> Age {p.age}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#94a3b8" }}><Bdg pos={posTag(p)} /> Age {p.age}</div>
                     {status(p, talk, signed)}
                   </div>
                   <b style={{ fontSize: 20, color: oC(p.ovr) }}>{p.ovr}</b>
@@ -78,7 +79,7 @@ export default function Resign({ team, yr, nextSpace, talkFor, onNegotiate, setS
                       </span>
                     </span>
                   </td>
-                  <td style={td}><Bdg pos={p.pos} /></td>
+                  <td style={td}><Bdg pos={posTag(p)} /></td>
                   <td className="rs-hide" style={{ ...td, color: "#cbd5e1" }}>{p.age}</td>
                   <td style={{ ...td, fontWeight: 900, fontSize: 18, color: oC(p.ovr) }}>{p.ovr}</td>
                   <td className="rs-hide" style={{ ...td, color: "#cbd5e1" }}>{signed ? "—" : money(p.salary)}</td>

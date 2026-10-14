@@ -9,8 +9,10 @@ import { getCapPhase } from "./cap.js";
 // Years left on his deal as of now (in the off-season his contract count hasn't ticked down yet).
 const yrsLeft = (p) => { const { yr, sp } = getCapPhase(); return yearsLeft(p, yr, sp); };
 import { MOBILE } from "./mobile.js";
+import { posTag } from "./dline.js";
 
-const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
+// the defensive line is two positions here: edge rushers and interior tackles
+const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P"];
 // Ways to order a roster table; dir is the first click's order (-1 = biggest first).
 const SORTS = {
   ovr: { label: "Overall", key: (p) => p.ovr, dir: -1 },
@@ -25,7 +27,7 @@ const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, border
 // The league's best at one position (other clubs' players): pick one and he's loaded into a trade
 // with his team.
 function BestAt({ teams, ui, pos, setPos, onPick, setSel }) {
-  const rows = teams.flatMap((t) => (t.id === ui ? [] : (t.roster || []).filter((p) => p.pos === pos).map((p) => ({ t, p })))).sort((a, b) => b.p.ovr - a.p.ovr || a.p.age - b.p.age).slice(0, 15);
+  const rows = teams.flatMap((t) => (t.id === ui ? [] : (t.roster || []).filter((p) => posTag(p) === pos).map((p) => ({ t, p })))).sort((a, b) => b.p.ovr - a.p.ovr || a.p.age - b.p.age).slice(0, 15);
   return (
     <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 10 }}>
       <div style={{ display: "flex", gap: 5, flexWrap: MOBILE ? "nowrap" : "wrap", overflowX: MOBILE ? "auto" : undefined, marginBottom: 8, paddingBottom: 2 }}>
@@ -55,7 +57,7 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
   const [q, setQ] = useState("");
   const needle = q.trim().toLowerCase();
   const rows = [...(players || [])]
-    .filter((p) => (pos === "ALL" || p.pos === pos) && (!needle || p.name.toLowerCase().includes(needle)))
+    .filter((p) => (pos === "ALL" || posTag(p) === pos) && (!needle || p.name.toLowerCase().includes(needle)))
     .sort((a, b) => dir * (SORTS[sort].key(a) - SORTS[sort].key(b)) || b.ovr - a.ovr);
   // Click a column to sort by it; click it again to flip the order.
   const by = (k) => { if (k === sort) setDir(-dir); else { setSort(k); setDir(SORTS[k].dir); } };
@@ -100,7 +102,7 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
                       {p.injured && <span title="Injured" style={{ fontSize: 12, color: C.rd, fontWeight: 900 }}>+</span>}
                     </span>
                   </td>
-                  <td style={td}><Bdg pos={p.pos} /></td>
+                  <td style={td}><Bdg pos={posTag(p)} /></td>
                   <td className="tr-hide" style={{ ...td, color: "#cbd5e1" }}>{p.age}</td>
                   <td style={{ ...td, fontWeight: 900, fontSize: 17, color: oC(p.ovr) }}>{p.ovr}</td>
                   <td className="tr-hide" style={{ ...td, color: "#cbd5e1", whiteSpace: "nowrap", fontSize: 14 }}>{money(p.salary)} · {yrsLeft(p)}y</td>
@@ -197,7 +199,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
             <div style={{ flex: "1 1 260px", minWidth: 0 }}>
               <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.rd, marginBottom: 6 }}>YOU SEND · worth {ev.gv} to them</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {trOff.g.map((p) => chip(p, "g", <><Bdg pos={p.pos} /> <b>{p.name}</b> <span style={{ color: oC(p.ovr) }}>{p.ovr}</span></>, C.rd))}
+                {trOff.g.map((p) => chip(p, "g", <><Bdg pos={posTag(p)} /> <b>{p.name}</b> <span style={{ color: oC(p.ovr) }}>{p.ovr}</span></>, C.rd))}
                 {trOff.gPk.map((pk) => chip(pk, "gPk", <b>{pkLabel(pk)}</b>, C.gd))}
                 {!trOff.g.length && !trOff.gPk.length && <span style={{ color: C.mt, fontSize: 14 }}>Tick players or picks on your side</span>}
               </div>
@@ -205,7 +207,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
             <div style={{ flex: "1 1 260px", minWidth: 0 }}>
               <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.gn, marginBottom: 6 }}>YOU RECEIVE · value {ev.rv}{ev.ask > ev.rv ? ` · they ask ${ev.ask}` : ""}</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {trOff.r.map((p) => chip(p, "r", <><Bdg pos={p.pos} /> <b>{p.name}</b> <span style={{ color: oC(p.ovr) }}>{p.ovr}</span></>, C.gn))}
+                {trOff.r.map((p) => chip(p, "r", <><Bdg pos={posTag(p)} /> <b>{p.name}</b> <span style={{ color: oC(p.ovr) }}>{p.ovr}</span></>, C.gn))}
                 {trOff.rPk.map((pk) => chip(pk, "rPk", <b>{pkLabel(pk)}</b>, C.gd))}
                 {!trOff.r.length && !trOff.rPk.length && <span style={{ color: C.mt, fontSize: 14 }}>Tick players or picks on their side</span>}
               </div>

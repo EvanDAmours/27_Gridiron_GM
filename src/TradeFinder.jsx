@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { C, Bdg, Btn, Face, TeamLogo, oC } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
+import { posTag } from "./dline.js";
 
 function PlayerSide({ label, p, tone, onPlayer }) {
   return (
@@ -11,7 +12,7 @@ function PlayerSide({ label, p, tone, onPlayer }) {
       <Face s={p.face} sz={28} />
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", display: "flex", gap: 5, alignItems: "center", whiteSpace: "nowrap" }}><Bdg pos={p.pos} /> Age {p.age} · ${(p.salary || 0).toFixed(1)}M · {p.contract || 0} yr</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", display: "flex", gap: 5, alignItems: "center", whiteSpace: "nowrap" }}><Bdg pos={posTag(p)} /> Age {p.age} · ${(p.salary || 0).toFixed(1)}M · {p.contract || 0} yr</div>
       </div>
       <b style={{ fontSize: 19, color: oC(p.ovr) }}>{p.ovr}</b>
     </div>

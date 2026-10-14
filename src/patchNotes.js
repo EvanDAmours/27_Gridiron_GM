@@ -1018,4 +1018,8 @@ export const PATCH_NOTES = [
     "Fixed: a veteran whose deal ran out at the new league year could be announced as retired while he had actually gone to free agency, and an expiring player past 35 quietly vanished instead of reaching the market.",
     "A veteran whose contract is up and who is well past his position's retirement age now retires at the Combine instead of when free agency opens.",
   ] },
+  { v: "2.86", date: "2026-10-14", title: "EDGE or DT, Everywhere", notes: [
+    "Every player list now tells edge rushers from interior tackles: re-sign week, free agency, offer sheets, trades and the trade finder, Deadline Day, the Front Office, the roster, camp, development focus, the draft and the player card show EDGE or DT instead of DL.",
+    "Free agency and the trade screen filter by EDGE and DT separately (the old DL filter mixed them).",
+  ] },
 ];

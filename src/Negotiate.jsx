@@ -10,6 +10,7 @@ import { SIGN_BONUS, signingStructure } from "./bonus.js";
 import { leagueMin, leagueCap } from "./cap.js";
 import { VOID_YEARS, INCENTIVE_SIZES } from "./contractDepth.js";
 import { incentiveOptions } from "./league.js";
+import { posTag } from "./dline.js";
 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const r1 = (x) => Math.round(x * 10) / 10;
@@ -76,7 +77,7 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt }}>{mode === "resign" ? "RE-SIGN" : mode === "extend" ? "CONTRACT EXTENSION" : "FREE AGENT"}</div>
             <div style={{ fontSize: 22, fontWeight: 900 }}>{p.name}</div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, color: "#cbd5e1" }}><Bdg pos={p.pos} /> Age {p.age}{(mode === "resign" || mode === "extend") && p.salary ? ` · now ${money(p.salary)}${mode === "extend" ? ` · ${p.contract} yr${p.contract === 1 ? "" : "s"} left` : ""}` : ""}</div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, color: "#cbd5e1" }}><Bdg pos={posTag(p)} /> Age {p.age}{(mode === "resign" || mode === "extend") && p.salary ? ` · now ${money(p.salary)}${mode === "extend" ? ` · ${p.contract} yr${p.contract === 1 ? "" : "s"} left` : ""}` : ""}</div>
           </div>
           <div style={{ textAlign: "right", marginRight: 40 }}><div style={{ fontSize: 32, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</div><div style={{ fontSize: 12, color: C.mt }}>OVR</div></div>
         </div>

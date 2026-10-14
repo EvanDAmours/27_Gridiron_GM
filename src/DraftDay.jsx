@@ -4,6 +4,7 @@ import { MOBILE } from "./mobile.js";
 import React, { useEffect, useRef } from "react";
 import { C, Bdg, Btn, TeamLogo, SheetGrip, CloseX } from "./ui.jsx";
 import { pickValueTag, pickLabel } from "./draftTrade.js";
+import { posTag } from "./dline.js";
 
 const ord = (n) => { const s = ["th", "st", "nd", "rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
 const TAG = { steal: { txt: "STEAL", bg: "#14532d", c: "#86efac" }, reach: { txt: "REACH", bg: "#7f1d1d", c: "#fca5a5" } };
@@ -53,7 +54,7 @@ export function PickIsIn({ entry, team, yr, onDone, ms = 2300 }) {
             <div style={{ fontSize: 13, color: "#fffd", fontStyle: "italic", lineHeight: 1.35, margin: "2px 0 4px" }}>"With the {ord(entry.overall)} pick in the {yr} NFL Draft, the {team.city} {team.name} select…"</div>
             <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 4, fontSize: 13, color: "#fffc" }}>
-              <Bdg pos={p.pos} /><span>{p.college || ""}</span>{entry.grade && <span style={{ background: "#0008", borderRadius: 4, padding: "1px 6px", fontWeight: 800 }}>Grade {entry.grade}</span>}<ValueTag overall={entry.overall} csr={entry.csr} />
+              <Bdg pos={posTag(p)} /><span>{p.college || ""}</span>{entry.grade && <span style={{ background: "#0008", borderRadius: 4, padding: "1px 6px", fontWeight: 800 }}>Grade {entry.grade}</span>}<ValueTag overall={entry.overall} csr={entry.csr} />
             </div>
           </div>
         </div>

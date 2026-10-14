@@ -6,6 +6,7 @@ import { MOBILE } from "./mobile.js";
 import { devOf, DEV_TRAITS } from "./scouting.js";
 import { OFFENSE, DEFENSE, focusChance, perSeason } from "./development.js";
 import { DevChip } from "./ScoutingUI.jsx";
+import { posTag } from "./dline.js";
 
 // The order positions are listed in the picker.
 const POS_ORDER = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "OL", "EDGE", "DL", "DT", "LB", "CB", "S", "K", "P"];
@@ -34,7 +35,7 @@ function Picker({ label, groups, current, onPick, onClose }) {
               <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.mt, margin: "8px 4px 4px" }}>{pos}</div>
               {rows.map((x) => (
                 <button key={x.id} onClick={() => onPick(x.id)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, minHeight: 56, marginBottom: 4, background: String(current) === String(x.id) ? `${C.gn}22` : C.cd, border: `1px solid ${String(current) === String(x.id) ? C.gn : C.bd}`, borderRadius: 10, padding: "6px 12px", color: C.tx, textAlign: "left", cursor: "pointer" }}>
-                  <Bdg pos={x.pos} />
+                  <Bdg pos={posTag(x)} />
                   <span style={{ flex: 1, minWidth: 0 }}><b style={{ display: "block", fontSize: 15 }}>{x.name}</b><span style={{ fontSize: 12, color: C.mt }}>Age {x.age} · {(DEV_TRAITS[devOf(x)]?.name || "Normal")} · ~{perSeason(x)}/season</span></span>
                   <b style={{ fontSize: 20, color: oC(x.ovr) }}>{x.ovr}</b>
                 </button>

@@ -3,6 +3,7 @@ import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
 import { yearlyAsk } from "./negotiation.js";
+import { posTag } from "./dline.js";
 
 const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "14px 16px", marginBottom: 12, flex: "1 1 420px", minWidth: 0 };
 const title = (t, sub) => (
@@ -71,7 +72,7 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
           {!rookies.length && <div style={{ fontSize: 15, color: C.mt }}>No rookies or second-year players on the roster.</div>}
           {rookies.map((p) => (
             <div key={p.id} style={row}>
-              <Face s={p.face} sz={28} /><span onClick={() => setSel(p)} style={{ flex: 1, fontWeight: 700, cursor: "pointer" }}>{p.name}</span><Bdg pos={p.pos} />
+              <Face s={p.face} sz={28} /><span onClick={() => setSel(p)} style={{ flex: 1, fontWeight: 700, cursor: "pointer" }}>{p.name}</span><Bdg pos={posTag(p)} />
               <span style={{ fontWeight: 900, color: oC(p.ovr), minWidth: 28, textAlign: "center" }}>{p.ovr}</span>
               <span style={{ fontSize: 13, color: C.mt, minWidth: 54 }}>POT {p.pot || p.ovr}</span>
               <Btn onClick={() => onDevCamp(p)} disabled={!pre || campUsed || scPts < 3 || p.ovr >= (p.pot || p.ovr)} bg={C.bl} style={{ fontSize: 14, padding: "6px 12px" }}>{p.ovr >= (p.pot || p.ovr) ? "At ceiling" : "Boost"}</Btn>
@@ -122,7 +123,7 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
           {!expiring.length && <div style={{ fontSize: 15, color: C.mt }}>Nobody is in a contract year.</div>}
           {expiring.map((p) => (
             <div key={p.id} style={row}>
-              <span onClick={() => setSel(p)} style={{ flex: 1, fontWeight: 700, cursor: "pointer" }}>{p.name} <span style={{ fontSize: 13, color: C.mt, fontWeight: 400 }}>{p.age}</span></span><Bdg pos={p.pos} />
+              <span onClick={() => setSel(p)} style={{ flex: 1, fontWeight: 700, cursor: "pointer" }}>{p.name} <span style={{ fontSize: 13, color: C.mt, fontWeight: 400 }}>{p.age}</span></span><Bdg pos={posTag(p)} />
               <span style={{ fontWeight: 900, color: oC(p.ovr), minWidth: 28, textAlign: "center" }}>{p.ovr}</span>
               {p.ext ? <span style={{ fontSize: 14, color: C.gn, fontWeight: 700 }}>Extended {p.ext.yrs}y · {money(p.ext.apy ?? p.ext.sal)}</span>
                 : p.resigned?.yr === yr ? <span style={{ fontSize: 14, color: C.gn, fontWeight: 700 }}>Extended {p.resigned.yrs}y · {money(p.resigned.sal)}</span>
