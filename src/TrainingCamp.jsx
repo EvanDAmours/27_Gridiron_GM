@@ -25,7 +25,7 @@ const groupByPos = (ps) => {
 };
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
 
-export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk, onSimGame, onReport, onDevCamp, onTrain, battlesDone, onBattle, otcFocus, onOtc, onExtend, setSel }) {
+export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk, onSimGame, onReport, onDevCamp, onTrain, onAutoTrain, battlesDone, onBattle, onBattleAll, otcFocus, onOtc, onExtend, setSel }) {
   const roster = team.roster;
   const [pick, setPick] = useState("");
   const [attr, setAttr] = useState("ovr");
@@ -95,11 +95,13 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
             {ATTRS.map(([k, l]) => <button key={k} onClick={() => setAttr(k)} style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: "pointer", background: attr === k ? `${C.bl}33` : C.bg, color: attr === k ? "#fff" : "#cbd5e1", border: `1px solid ${attr === k ? C.bl : C.bd}` }}>{l}</button>)}
           </div>
           <Btn onClick={() => { const p = roster.find((x) => x.id === pick); if (p) { onTrain(p, attr); setPick(""); } }} disabled={!pre || !pick || scPts < 2} bg={C.gn} style={{ fontSize: 15, padding: "8px 14px" }}>Train (+1 {ATTRS.find(([k]) => k === attr)[1]})</Btn>
+          {onAutoTrain && (() => { const n = Math.min(5, trainable.length, Math.floor(scPts / 2)); return <Btn onClick={() => onAutoTrain(5)} disabled={!pre || n < 1} bg={C.bd} c="#7dd3fc" style={{ fontSize: 15, padding: "8px 14px", marginLeft: 8 }} title="Picks players at random: young players under their ceiling work on overall, the rest on a physical tool">🎲 Auto-pick {n > 0 ? `${n} player${n > 1 ? "s" : ""} · ${n * 2} SP` : ""}</Btn>; })()}
           {trained.length > 0 && <div style={{ fontSize: 14, color: C.mt, marginTop: 8 }}>Trained: {trained.map((p) => p.name).join(", ")}</div>}
         </div>
 
         <div style={card}>
           {title("Position battles · 1 SP each", "The top two at a spot compete; the winner (usually the better player) gains +1 OVR.")}
+          {onBattleAll && (() => { const open = POS.filter((pos) => !battlesDone.includes(pos) && roster.filter((p) => p.pos === pos).length >= 2); const n = Math.min(open.length, scPts); return open.length > 0 && <Btn onClick={() => onBattleAll(open)} disabled={!pre || n < 1} bg={C.bd} c="#7dd3fc" style={{ fontSize: 15, padding: "8px 14px", marginBottom: 10 }}>⚔️ Run all {n < open.length ? `${n} of ${open.length}` : open.length} battle{open.length > 1 ? "s" : ""} · {n} SP</Btn>; })()}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 8 }}>
             {POS.map((pos) => {
               const top2 = roster.filter((p) => p.pos === pos).sort((a, b) => b.ovr - a.ovr).slice(0, 2);

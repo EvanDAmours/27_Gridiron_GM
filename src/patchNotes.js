@@ -1006,4 +1006,7 @@ export const PATCH_NOTES = [
     "A retired great keeps his player card: Hall of Famers and your own retired players can be opened from the Hall of Fame (League History), the Gold Jackets and the Ring of Honor (Legacy Hall), with his ratings, rating history, every season's stats including his last one, and his career totals. Players who retired before this update open a card with what was kept (peak rating and career totals).",
     "Player cards on desktop no longer leave big empty gaps: the ratings, pedigree, Combine, college, scouting report, season stats, OVR history and contract all flow into two balanced columns.",
   ] },
+  { v: "2.83", date: "2026-10-14", title: "Quick Camp", notes: [
+    "Training camp has one-click buttons: ⚔️ Run all position battles (every open battle your points cover, 1 SP each) and 🎲 Auto-pick for training focus (up to five players at random, 2 SP each: young players short of their ceiling work on their overall, everyone else on a physical tool). You can still pick them one by one.",
+  ] },
 ];
