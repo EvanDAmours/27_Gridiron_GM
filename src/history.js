@@ -149,8 +149,28 @@ export function retireEntry(p, team, yr, opts = {}) {
     id: p.id, name: p.name, pos: p.pos, num: p.num, team: team?.ab || p.formerTeam || "FA", age: p.age, retYr: yr,
     peak: L.peak, legacy: L.legacy, career: L.career, won: L.won, seasons: L.seasonsHere, tc,
     hof, hofClass: hof ? yr + HOF_WAIT : null,
+    // his player card, kept for Hall of Famers and your own retired players (opts.keepCard)
+    ...(hof || opts.keepCard ? { card: cardOf(p, team, yr) } : {}),
   };
 }
+
+// What a retired player's card keeps: ratings, bio, his rating history and every season's stats
+// (the last one, still on his ss when he retires, becomes a line of its own); nothing about a
+// contract, injury or this week.
+const GONE = ["ss", "pss", "gl", "cyr", "perf", "tradeVal", "hurt", "injured", "injWk", "injType", "injSev", "injRecWks", "holdout", "holdoutStone", "onBlock", "psCallUp", "av", "dk", "ext", "inc", "voidYrs", "voidDead", "sb", "baseBack", "restructures", "restructured", "confHistory", "trainedThisCamp", "cy", "ftag", "opt5"];
+export function cardOf(p, team, yr) {
+  const c = { ...p, contract: 0, salary: 0, retiredYr: yr, retiredFrom: team?.ab || p.formerTeam || null };
+  if (p.ss?.gp) {
+    const line = { y: yr, tm: team?.ab || "" };
+    for (const [k, v] of Object.entries(p.ss)) if (typeof v === "number" && v) line[k] = v;
+    c.sh = [...(p.sh || []).filter((x) => x.y !== yr), line];
+    c.oh = [...(p.oh || []).filter((x) => x.y !== yr), { y: yr, o: p.ovr }];
+  }
+  for (const k of GONE) delete c[k];
+  return c;
+}
+// A card for a retired-player entry (one saved before cards were kept: what the entry knows).
+export const retiredCard = (r) => (r.card ? { ...r.card, hof: r.hof, hofClass: r.hofClass, career: r.career } : { id: r.id, name: r.name, pos: r.pos, num: r.num, age: r.age, ovr: r.peak, pot: r.peak, retiredYr: r.retYr, retiredFrom: r.team, hof: r.hof, hofClass: r.hofClass, career: r.career });
 
 // Career leaders in this league: active players (with this season so far) and retired ones.
 export function careerLeaders(teams, retired = [], key, n = 10) {

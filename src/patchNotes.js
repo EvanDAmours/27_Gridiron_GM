@@ -1002,4 +1002,8 @@ export const PATCH_NOTES = [
     "Next season's cap room told you too good a story: it left out your coordinators' salaries, the incentives your players already earned, void-year money coming due and your incoming rookie class, so a team that looked fine started the new season deep in the red. The Front Office card and the Long View now count all of it, the same way the cap does.",
     "Franchise History keeps every season in its log and all-time record (it stopped at the last ten).",
   ] },
+  { v: "2.82", date: "2026-10-14", title: "Legends' Cards", notes: [
+    "A retired great keeps his player card: Hall of Famers and your own retired players can be opened from the Hall of Fame (League History), the Gold Jackets and the Ring of Honor (Legacy Hall), with his ratings, rating history, every season's stats including his last one, and his career totals. Players who retired before this update open a card with what was kept (peak rating and career totals).",
+    "Player cards on desktop no longer leave big empty gaps: the ratings, pedigree, Combine, college, scouting report, season stats, OVR history and contract all flow into two balanced columns.",
+  ] },
 ];

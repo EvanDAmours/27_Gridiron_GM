@@ -25,3 +25,15 @@ test("career leaders combine active players (with this season) and retired ones"
   const L = careerLeaders(teams, retired, "rushYds");
   assert.deepEqual(L.map((x) => [x.name, x.v]), [["Old Back", 6000], ["Active", 5800]]);
 });
+
+test("a retired great keeps his card: ratings, his last season as a line, no contract", async () => {
+  const { cardOf, retiredCard } = await import("../src/history.js");
+  const p = { id: 7, name: "X", pos: "WR", age: 34, ovr: 80, salary: 20, contract: 1, sh: [{ y: 2030, tm: "NYG", gp: 17, recYds: 1200 }], oh: [{ y: 2030, o: 84 }], ss: { gp: 16, recYds: 900, rec: 60 }, gl: [{}], spd: 88 };
+  const c = cardOf(p, { ab: "NYG" }, 2031);
+  assert.equal(c.ss, undefined); assert.equal(c.gl, undefined); assert.equal(c.salary, 0);
+  assert.deepEqual(c.sh.map((x) => [x.y, x.recYds]), [[2030, 1200], [2031, 900]]);
+  assert.equal(c.oh.at(-1).o, 80); assert.equal(c.spd, 88); assert.equal(c.retiredYr, 2031);
+  // an older entry without a card still opens one
+  const old = retiredCard({ id: 1, name: "Y", pos: "QB", peak: 91, retYr: 2029, team: "KC", career: { passYds: 40000 } });
+  assert.equal(old.ovr, 91); assert.equal(old.career.passYds, 40000);
+});

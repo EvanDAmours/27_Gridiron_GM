@@ -46,13 +46,12 @@ export function CardHeader({ p, team, ovr, pot, sub, dev }) {
 }
 
 const GROUPS = [["PHYSICAL", [["SPD", "spd"], ["ACC", "acc"], ["AGI", "agi"], ["STR", "str"], ["JMP", "jmp"], ["END", "end"]]]];
-export function RatingBars({ p, labels = {}, showPos = true, posLimit = 99 }) {
+// bare: just the cards (for a parent that lays them out, e.g. the player card's balanced columns)
+export function RatingBars({ p, labels = {}, showPos = true, posLimit = 99, bare = false }) {
   const pos = showPos && p.posAttrs ? Object.entries(p.posAttrs).slice(0, posLimit) : [];
   const groups = [...GROUPS.map(([g, list]) => [g, list.map(([l, k]) => [l, p[k]]).filter(([, v]) => v != null)]), ...(pos.length ? [["POSITION SKILLS", pos.map(([k, v]) => [labels[k] || k, v])]] : []), ["MENTAL", [["CONFIDENCE", p.conf || 60]]]];
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10, marginBottom: 12 }}>
-      {groups.map(([g, rows]) => (
-        <div key={g} style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px" }}>
+  const cards = groups.map(([g, rows]) => (
+        <div key={g} style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px", ...(bare ? { breakInside: "avoid", marginBottom: 12 } : {}) }}>
           <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: C.mt, marginBottom: 6 }}>{g}</div>
           {rows.map(([l, v]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
@@ -62,9 +61,9 @@ export function RatingBars({ p, labels = {}, showPos = true, posLimit = 99 }) {
             </div>
           ))}
         </div>
-      ))}
-    </div>
-  );
+      ));
+  if (bare) return cards;
+  return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 10, marginBottom: 12 }}>{cards}</div>;
 }
 
 // Career OVR, season by season (p.oh) plus now.

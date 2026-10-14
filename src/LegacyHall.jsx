@@ -78,7 +78,7 @@ function GoldJacket({ size = 96 }) {
   return <img src={goldJacket} alt="Hall of Fame gold jacket" width={size} height={Math.round(size * 1.06)} style={{ objectFit: "contain", filter: "drop-shadow(0 8px 12px #000c)" }} />;
 }
 
-export function GoldJackets({ team, hofers, yr }) {
+export function GoldJackets({ team, hofers, yr, onOpen }) {
   // the club's real Hall of Famers (newest class first), and any made in your league
   const real = [...(HALL_OF_FAME[team.ab] || [])].sort((a, b) => b.cls - a.cls || a.n.localeCompare(b.n));
   const total = real.length + hofers.length;
@@ -87,7 +87,7 @@ export function GoldJackets({ team, hofers, yr }) {
       <H sub={`${total} Hall of Famer${total === 1 ? "" : "s"}: the club's real enshrinees in Canton, and the legends who retire here in your league`}>Gold Jackets</H>
       <div style={{ background: "radial-gradient(ellipse at 50% 0%,#3b2f2455,transparent 70%),#0f0c0a", border: "1px solid #2b211b", borderRadius: 12, padding: 14, display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(112px,1fr))", gap: 12 }}>
         {hofers.map((h) => (
-          <div key={h.id} style={{ textAlign: "center" }}>
+          <div key={h.id} onClick={onOpen ? () => onOpen(h) : undefined} title={onOpen ? "Open his player card" : undefined} style={{ textAlign: "center", cursor: onOpen ? "pointer" : "default" }}>
             <GoldJacket size={78} />
             <div style={{ fontWeight: 900, fontSize: 13, marginTop: 4 }}>{h.name}</div>
             <div style={{ fontSize: 11, color: "#fde68a" }}>{h.pos} · Class of {h.hofClass}</div>
@@ -110,7 +110,7 @@ export function GoldJackets({ team, hofers, yr }) {
 
 // The Ring of Honor and retired numbers. ring: inducted ids; nums: retired numbers. candidates:
 // notable players who retired here (history entries).
-export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum }) {
+export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum, onOpen }) {
   const ring = retired.filter((r) => hall.ring.includes(r.id));
   // candidates: this club's own retired greats (they hung it up here), not the whole league's
   const cands = ringCandidates(retired, team, hall).slice(0, 8);
@@ -119,7 +119,7 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum }) {
   const trim = team.ac || "#e5e7eb", bg = team.clr || "#1e3a8a";
   // retired numbers: the club's real ones, then any retired in this league
   const nums = [...real.members.filter((m) => m.ret && m.num != null).map((m) => ({ num: m.num, name: m.n })), ...(real.fans12 ? [{ num: 12, name: "The 12s (fans)" }] : []), ...hall.nums.filter((n) => !real.members.some((m) => m.ret && m.num === n.num)).map((n) => ({ ...n, mine: true }))].sort((a, b) => a.num - b.num);
-  const plaques = [...real.members.map((m) => ({ key: m.n, name: m.n, num: m.num, pos: m.pos, yrs: m.yrs, ind: m.ind, ret: m.ret })), ...ring.map((r) => ({ key: r.id, name: r.name, num: r.num, pos: r.pos, ind: r.retYr, mine: true }))];
+  const plaques = [...real.members.map((m) => ({ key: m.n, name: m.n, num: m.num, pos: m.pos, yrs: m.yrs, ind: m.ind, ret: m.ret })), ...ring.map((r) => ({ key: r.id, name: r.name, num: r.num, pos: r.pos, ind: r.retYr, mine: true, r }))];
   return (
     <div style={{ marginBottom: 22 }}>
       <H sub={real.name ? `${team.city} ${team.name} ${real.name}${real.members.length ? `, ${plaques.length} members` : ""}` : "Honor the greats who played here"}>{real.name || "Ring of Honor"} & Retired Numbers</H>
@@ -144,7 +144,7 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum }) {
         {!plaques.length && <span style={{ color: "#fffa", fontSize: 14 }}>{real.name === null ? "The club has never had a Ring of Honor. Start one: induct a retired great below." : "The Ring of Honor is empty. Induct a retired great below."}</span>}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 8 }}>
           {plaques.map((m) => (
-            <div key={m.key} style={{ display: "flex", alignItems: "center", gap: 10, background: "#0006", border: `1px solid ${m.mine ? "#fde68a" : trim + "66"}`, borderRadius: 8, padding: "7px 10px" }}>
+            <div key={m.key} onClick={m.r && onOpen ? () => onOpen(m.r) : undefined} title={m.r && onOpen ? "Open his player card" : undefined} style={{ display: "flex", alignItems: "center", gap: 10, background: "#0006", border: `1px solid ${m.mine ? "#fde68a" : trim + "66"}`, borderRadius: 8, padding: "7px 10px", cursor: m.r && onOpen ? "pointer" : "default" }}>
               <div style={{ minWidth: 38, height: 38, borderRadius: 19, display: "flex", alignItems: "center", justifyContent: "center", background: m.ret ? "#fde68a" : "#fff", color: m.ret ? "#3b2a0a" : bg, fontFamily: "Georgia, serif", fontWeight: 900, fontSize: 17 }}>{m.num ?? "★"}</div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontFamily: "Georgia, serif", fontWeight: 900, fontSize: 14, letterSpacing: 0.5, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name.toUpperCase()}</div>
@@ -157,7 +157,7 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum }) {
       {(cands.length > 0 || ring.some((r) => r.num != null && !taken.has(r.num))) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 8, marginTop: 8 }}>
         {cands.map((r) => (
           <div key={r.id} style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 800, fontSize: 14 }}>{r.name} {r.hof && <span style={{ color: "#fde68a", fontSize: 11 }}>HOF</span>}</div><div style={{ fontSize: 12, color: C.mt }}>{r.pos} · retired {r.retYr} · legacy {r.legacy}</div></div>
+            <div onClick={onOpen ? () => onOpen(r) : undefined} title={onOpen ? "Open his player card" : undefined} style={{ flex: 1, minWidth: 0, cursor: onOpen ? "pointer" : "default" }}><div style={{ fontWeight: 800, fontSize: 14, textDecoration: onOpen ? "underline dotted #ffffff55" : "none" }}>{r.name} {r.hof && <span style={{ color: "#fde68a", fontSize: 11 }}>HOF</span>}</div><div style={{ fontSize: 12, color: C.mt }}>{r.pos} · retired {r.retYr} · legacy {r.legacy}</div></div>
             <Btn onClick={() => onInduct(r)} bg="#b45309" style={{ fontSize: 12, padding: "4px 10px" }}>Induct</Btn>
           </div>
         ))}

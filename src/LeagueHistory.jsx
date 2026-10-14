@@ -3,7 +3,7 @@
 import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { C, TeamLogo, Bdg } from "./ui.jsx";
-import { CAREER_STATS, careerLeaders } from "./history.js";
+import { CAREER_STATS, careerLeaders, retiredCard } from "./history.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 
 const AW = [["mvp", "MVP"], ["opoy", "OPOY"], ["dpoy", "DPOY"], ["oroy", "OROY"], ["droy", "DROY"], ["sbmvp", "SB MVP"]];
@@ -76,7 +76,7 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
       <div style={{ ...panel, borderColor: "#d4a01788" }}>
         <div style={head}>🏛️ HALL OF FAME</div>
         {hof.map((r) => (
-          <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${C.bd}66` }}>
+          <div key={r.id} onClick={setSel ? () => setSel(retiredCard(r)) : undefined} title="Open his player card" style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${C.bd}66`, cursor: setSel ? "pointer" : "default" }}>
             <span style={{ width: 92, fontSize: 12, fontWeight: 800, color: r.hofClass <= yr ? "#fcd34d" : C.mt }}>{r.hofClass <= yr ? `Class of ${r.hofClass}` : `Enshrined ${r.hofClass}`}</span>
             <Bdg pos={r.pos} />
             <div style={{ flex: 1, minWidth: 0 }}><b>{r.name}</b> <span style={{ color: C.mt, fontSize: 13 }}>{r.team} · retired {r.retYr} at {r.age} · peak {r.peak} OVR</span>
