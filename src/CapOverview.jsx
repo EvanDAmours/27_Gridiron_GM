@@ -29,8 +29,8 @@ export function capAdvice({ rows, space, nextRoom, canExtend, starters }) {
 
 // Four seasons of cap: committed money against each year's cap, the room left, how many players
 // are signed, and the good players whose deals end that year (next year's re-sign calls).
-export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = null, title = "THE LONG VIEW" }) {
-  const yrs = capProjection(team, cy, { extra, room0 });
+export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = null, rookies = 0, title = "THE LONG VIEW" }) {
+  const yrs = capProjection(team, cy, { extra, room0, rookies });
   const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
   return (
     <div style={card}>
@@ -64,7 +64,7 @@ export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = 
   );
 }
 
-export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext, rows, canExtend, starters, onPlayer, mobile, leagueAvg, onContracts, cy }) {
+export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext, rows, canExtend, starters, onPlayer, mobile, leagueAvg, onContracts, cy, rookies = 0 }) {
   const used = cap - space;
   const byGroup = GROUPS.map(([g, ps]) => [g, team.roster.filter((p) => ps.includes(p.pos)).reduce((s, p) => s + (p.salary || 0), 0), leagueAvg ? leagueAvg(ps) : null]);
   const top = [...team.roster].sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, 5);
@@ -74,7 +74,7 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
   return (
     <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
       <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${mobile ? 150 : 180}px,1fr))`, gap: 8 }}>
-        {[["CAP SPACE", $(space), space < 0 ? C.rd : space < 15 ? C.gd : C.gn, `of ${$(cap)}${team?.rollover > 0 ? `, incl. ${$(team.rollover)} rolled over` : ""}`], ["NEXT SEASON'S ROOM", $(nextRoom), nextRoom < 0 ? C.rd : C.gn, "before re-signings"], ["DEAD MONEY", $(dead), dead > 0 ? C.rd : C.mt, deadNext ? `+${$(deadNext)} next year` : "none next year"], ["EXPIRING DEALS", rows.filter((r) => r.yl <= 1).length, C.tx, onContracts ? "after this season · see them →" : "after this season", "expiring"]].map(([l, v, c, sub, f]) => (
+        {[["CAP SPACE", $(space), space < 0 ? C.rd : space < 15 ? C.gd : C.gn, `of ${$(cap)}${team?.rollover > 0 ? `, incl. ${$(team.rollover)} rolled over` : ""}`], ["NEXT SEASON'S ROOM", $(nextRoom), nextRoom < 0 ? C.rd : C.gn, rookies > 0 ? `after coaches and ~${$(rookies)} of rookies, before re-signings` : "after coaches, before re-signings"], ["DEAD MONEY", $(dead), dead > 0 ? C.rd : C.mt, deadNext ? `+${$(deadNext)} next year` : "none next year"], ["EXPIRING DEALS", rows.filter((r) => r.yl <= 1).length, C.tx, onContracts ? "after this season · see them →" : "after this season", "expiring"]].map(([l, v, c, sub, f]) => (
           <div key={l} onClick={f && onContracts ? () => onContracts(f) : undefined} style={{ ...card, cursor: f && onContracts ? "pointer" : "default" }}>
             <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt }}>{l}</div>
             <div style={{ fontSize: 24, fontWeight: 900, color: c }}>{v}</div>
@@ -82,7 +82,7 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
           </div>
         ))}
       </div>
-      {cy != null && <CapLongView team={team} cy={cy} room0={space} onPlayer={onPlayer} mobile={mobile} />}
+      {cy != null && <CapLongView team={team} cy={cy} room0={space} rookies={rookies} onPlayer={onPlayer} mobile={mobile} />}
       <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${mobile ? 280 : 340}px,1fr))`, gap: 10 }}>
         <div style={card}>
           <div style={head}>WHERE THE MONEY GOES</div>

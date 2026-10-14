@@ -12,16 +12,21 @@ export const canExtend = (p, sp) => EXT_PHASES.has(sp) && (p.contract || 0) >= 1
 // Money already on next season's books: deals still running then, extensions that start then,
 // and dead money pushed to next year. "Next season" is the one after the league year in force
 // (from re-sign week through the draft that's already yr + 1, so the next is yr + 2).
-export function nextYearCommitted(t, yr = 0, sp = "regular") {
-  let s = t.deadNext || 0;
+// Also on those books, like the cap itself counts them: your coordinators' salaries, incentives
+// already earned this season, void-year money that comes due when a deal ends, and (until the
+// draft) the rookie class your picks will sign (rookies: that total).
+export function nextYearCommitted(t, yr = 0, sp = "regular", { rookies = 0 } = {}) {
+  let s = (t.deadNext || 0) + coachPay(t) + (t.incNext || 0) + rookies;
   for (const p of [...(t.roster || []), ...(t.ir || [])]) {
     const left = yearsLeft(p, yr, sp);
     if (left >= 2) s += (p.salary || 0) + (p.baseBack || 0);
     else if (left === 1 && p.ext) s += p.ext.sal;
+    if (left === 1) s += p.voidDead || 0;
   }
   return r1(s);
 }
-export const nextYearRoom = (t, yr, sp = "regular") => r1(capFor(capYearFor(yr, sp) + 1) - nextYearCommitted(t, yr, sp));
+export const coachPay = (t) => (t.coach?.oc?.salary || 0) + (t.coach?.dc?.salary || 0) + (t.coach?.st?.salary || 0);
+export const nextYearRoom = (t, yr, sp = "regular", opts) => r1(capFor(capYearFor(yr, sp) + 1) - nextYearCommitted(t, yr, sp, opts));
 // Room for this player's new deal (a player with two years left is already counted next year).
 export const extRoom = (t, p, yr) => r1(nextYearRoom(t, yr) + ((p.contract || 0) >= 2 ? (p.salary || 0) + (p.baseBack || 0) : 0));
 

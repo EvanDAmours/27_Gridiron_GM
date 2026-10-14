@@ -996,4 +996,10 @@ export const PATCH_NOTES = [
     "Star players develop faster (up to +2 OVR a year from the trait while young, superstars up to +3, generational up to +4) but age like everyone else once their prime is over.",
     "Free agents age too: an unsigned veteran used to keep his rating frozen while he waited for a call; now he declines like anyone else his age.",
   ] },
+  { v: "2.81", date: "2026-10-14", title: "Documentaries and Honest Cap Room", notes: [
+    "The franchise documentary is back and worth watching: every five seasons it tells your era's story (your record, your titles, the high and low points, the faces of the era by All-Pro and Pro Bowl honors). It now survives a reload, and every one you've earned can be rewatched from Franchise History. Older saves get theirs built from the seasons they kept.",
+    "Fixed the documentary card: it counted your all-time wins as the era's, could show another team's MVP, and read \"After 2026–2030 seasons\".",
+    "Next season's cap room told you too good a story: it left out your coordinators' salaries, the incentives your players already earned, void-year money coming due and your incoming rookie class, so a team that looked fine started the new season deep in the red. The Front Office card and the Long View now count all of it, the same way the cap does.",
+    "Franchise History keeps every season in its log and all-time record (it stopped at the last ten).",
+  ] },
 ];

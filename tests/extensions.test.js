@@ -49,3 +49,18 @@ test("a signing bonus lowers an extension's cap hit, starting this season", asyn
   assert.equal(t.roster[0].sb, big.pr, "the bonus proration carries into the new deal (dead money if he's cut)");
   assert.equal(t.roster[0].contract, 5);
 });
+
+test("next season's room counts what the cap will: coordinators, earned incentives, void years, rookies", async () => {
+  const { nextYearCommitted } = await import("../src/extensions.js");
+  const { capProjection } = await import("../src/capProjection.js");
+  const t = {
+    roster: [{ id: 1, salary: 10, contract: 3 }, { id: 2, salary: 5, contract: 1, voidDead: 4 }],
+    coach: { oc: { salary: 6 }, dc: { salary: 5 }, st: { salary: 2 } },
+    incNext: 3, deadNext: 1,
+  };
+  // 10 (still under contract) + 13 coaches + 3 incentives + 4 void + 1 dead + 8 rookies
+  assert.equal(nextYearCommitted(t, 2026, "regular", { rookies: 8 }), 39);
+  const p = capProjection(t, 2026, { yr: 2026, sp: "regular", rookies: 8 });
+  assert.equal(p[1].committed, 39);
+  assert.equal(p[2].committed, 10 + 13); // later years: deals and coordinators
+});
