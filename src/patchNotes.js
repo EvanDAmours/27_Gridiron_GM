@@ -984,4 +984,9 @@ export const PATCH_NOTES = [
     "The Mock Draft keeps up with the season: it used to hold onto the first projection until the top pick changed, ignoring standings moves, traded picks and roster changes further down the order.",
     "Deadline Day's auto-clock always works from your current roster.",
   ] },
+  { v: "2.79", date: "2026-10-14", title: "Retirement Ages", notes: [
+    "Players retire around the age real NFL veterans do at their position: running backs near 30, corners and linebackers around 31, receivers, tight ends, safeties and defensive linemen around 32, offensive linemen 33, quarterbacks 36, kickers and punters 38. Stars play on a little longer; fringe veterans leave sooner. Before, a running back started thinking about it at 31, a lineman at 36 and a quarterback at 38, so the league kept getting older.",
+    "Unsigned free agents retire too: a veteran nobody signs is usually done, and a fringe player who sits unsigned all year moves on.",
+    "AI clubs build depth like real ones: at cut-down and when filling the bottom of the roster they favor a young player with upside over a veteran near the end, and veterans 30 and up re-sign for one or two years instead of up to four.",
+  ] },
 ];

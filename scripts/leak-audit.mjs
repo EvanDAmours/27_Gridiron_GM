@@ -122,6 +122,7 @@ async function census(where) {
   const m = new Map();
   d.teams.forEach((t) => { for (const k of ["roster", "ps", "ir"]) for (const p of t[k] || []) m.set(p.id, p); });
   for (const p of [...(d.fa || []), ...(d.waivers || []), ...(d.retired || [])]) if (!m.has(p.id)) m.set(p.id, p);
+  for (const x of d.exits || []) if (!m.has(x.id)) m.set(x.id, x);
   if (prevC) {
     const gone = [...prevC.values()].filter((p) => !m.has(p.id) && (p.contract || 0) >= 2 && (p.age || 30) <= 30);
     if (gone.length) fail(`${gone.length} players under contract vanished (${where}): ${gone.slice(0, 5).map((p) => `${p.name} ${p.pos} age ${p.age}`).join(", ")}`);
@@ -140,7 +141,7 @@ async function audit(where) {
   for (const p of d.fa || []) put(p, "FA");
   for (const p of d.waivers || []) put(p, "waivers");
   for (const p of d.udfaPool || []) put(p, "udfa");
-  const retired = new Set((d.retired || []).map((r) => r.id));
+  const retired = new Set([...(d.retired || []), ...(d.exits || [])].map((r) => r.id));
   const prospects = new Map(); for (const [y, cls] of Object.entries(d.dc || {})) for (const p of cls || []) prospects.set(p.id, y);
   const out = [];
   if (dups.length) problems.push(`${where}: ${dups.length} players in two places`);

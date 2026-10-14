@@ -96,6 +96,8 @@ function measure(d) {
     rookieSnapPct: { r1: byRd(1), r2: byRd(2), r3: byRd(3), r4_7: (() => { const xs = rk.filter((p) => p.draftPk > 96).map((p) => p.cs?.snp || 0); return xs.length ? Math.round(mean(xs) / 17) : null; })() },
     // how many players rate 80+ (more over time = rating inflation) and what an 80-84 WR is paid, as % of the cap
     n80: all.filter((p) => p.ovr >= 80).length,
+    // roster ages (the NFL sits near 26.5) and the free-agent pool (it shouldn't grow without end)
+    avgAge: +mean(all.map((p) => p.age)).toFixed(2), n33: all.filter((p) => p.age >= 33).length, n24: all.filter((p) => p.age <= 24).length, faPool: (d.fa || []).length,
     // where the 80+ players are: young (24 and under), prime (25-29), veterans (30+); and this year's rookies
     n80Age: [[0, 24], [25, 29], [30, 99]].map(([a, b]) => all.filter((p) => p.ovr >= 80 && p.age >= a && p.age <= b).length), rook80: all.filter((p) => p.ovr >= 80 && p.draftYr === d.yr - 1).length,
     wr80: all.filter((p) => p.pos === "WR" && p.ovr >= 80).length,
@@ -156,7 +158,7 @@ try {
     if (d.yr !== 2027 + s) fail(`expected ${2027 + s}, got ${d.yr}`);
     const m = measure(d); rows.push(m); console.log(JSON.stringify(m));
     // DUMP=dir: keep each season's rosters for a closer look
-    if (process.env.DUMP) (await import("node:fs")).writeFileSync(`${process.env.DUMP}/league-${d.yr}.json`, JSON.stringify(d.teams.map((t) => t.roster.map(({ name, pos, age, ovr, pot, truePot, dev, honors, oh }) => ({ name, pos, age, ovr, pot, truePot, dev, honors, oh })))));
+    if (process.env.DUMP) (await import("node:fs")).writeFileSync(`${process.env.DUMP}/league-${d.yr}.json`, JSON.stringify({ fa: (d.fa || []).map(({ id, name, pos, age, ovr, draftYr, draftPk }) => ({ id, name, pos, age, ovr, draftYr, draftPk })), teams: d.teams.map((t) => t.roster.map(({ id, name, pos, age, ovr, pot, truePot, dev, honors, oh, draftYr, draftPk, contract, salary }) => ({ id, name, pos, age, ovr, pot, truePot, dev, honors, oh, draftYr, draftPk, contract, salary }))) }));
   }
 } catch (e) {
   code = 1; console.error(`HEALTH FAILED after ${rows.length} seasons: ${e.message}`);

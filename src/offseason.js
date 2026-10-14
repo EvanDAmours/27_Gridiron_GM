@@ -5,6 +5,7 @@
 
 import { leagueCap, leagueMin, getLeagueYear } from "./cap.js";
 import { freshDeal, deadMoney, chargeDead } from "./bonus.js";
+import { retireAge } from "./retirement.js";
 
 // A club releases a player into the pool. His remaining signing-bonus proration stays on its cap
 // as dead money, the same rule as your releases (AI cuts used to cost nothing, so by the late 2020s
@@ -20,7 +21,9 @@ import { priorities, teamFit, fitPull } from "./negotiation.js";
 
 // Fewest players a club carries at each position.
 // How much a club wants to keep a player: his rating, plus half his remaining upside while he's young.
-const keepScore = (p) => (p.ovr || 0) + (p.age <= 24 ? Math.max(0, (p.pot ?? p.ovr) - p.ovr) * 0.5 : 0);
+// Who a club keeps at cut-down: rating, plus a young player's upside; a veteran nearing his
+// position's retirement age has to be clearly better than the kid behind him to stay.
+export const keepScore = (p) => (p.ovr || 0) + (p.age <= 24 ? Math.max(0, (p.pot ?? p.ovr) - p.ovr) * 0.5 : 0) + (p.age <= 25 ? 2 : 0) - Math.max(0, (p.age || 0) - (retireAge(p) - 4)) * 1.5;
 export const ROSTER_MIN = { QB: 2, RB: 3, WR: 5, TE: 3, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 7, LB: 5, CB: 5, S: 4, K: 1, P: 1 };
 export const ROSTER_TARGET = 53;
 
@@ -28,7 +31,7 @@ const roll = (rand, a, b) => a + Math.floor(rand() * (b - a + 1));
 
 // Opening free agency for the season after `yr`. Every contract loses a year; the ones that
 // run out either get re-signed (AI clubs keep most of their core) or hit the market. Players
-// 36+ or rated under 45 retire instead. Everyone touched is stamped cy = yr + 1 so the season
+// three years past their position's retirement age or rated under 45 retire instead. Everyone touched is stamped cy = yr + 1 so the season
 // rollover does not count the year twice.
 export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = leagueCap(), room = cap * 0.06 } = {}) {
   const cy = yr + 1;
@@ -90,14 +93,15 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
       if (i !== ui && (star || (rand() < keep && payroll + salary <= limit))) {
         // A franchise player who still doesn't fit a long-term deal gets the franchise tag.
         const tag = star && payroll + salary > limit && !tagged;
-        const deal = tag ? { ...freshDeal(p), sb: 0, contract: 1, salary: tagPrice(teams, p, cap), ftag: true, tagYr: yr, cy } : { ...freshDeal(p), contract: roll(rand, 2, 4), salary, cy };
+        const deal = tag ? { ...freshDeal(p), sb: 0, contract: 1, salary: tagPrice(teams, p, cap), ftag: true, tagYr: yr, cy } : { ...freshDeal(p), contract: p.age >= 30 ? roll(rand, 1, 2) : roll(rand, 2, 4), salary, cy }; // veterans get short deals
         if (tag) tagged = true;
         roster.push(deal);
         payroll += deal.salary;
         resigned.push({ p, team: i, how: tag ? "tag" : "deal" });
         continue;
       }
-      if (p.age >= 36 || p.ovr < 45) { retired.push({ p, team: i }); continue; }
+      // well past his position's retirement age, or no longer an NFL player
+      if (p.age >= retireAge(p) + 3 || p.ovr < 45) { retired.push({ p, team: i }); continue; }
       const fa = { ...p, contract: 0, cy, formerTeam: i, ss: p.ss, gl: [], av: 0 };
       pool.push(fa);
       if (i === ui) mine.push(fa);
@@ -188,6 +192,8 @@ function needs(t) {
 // Mutates the teams and the pool; returns the signings.
 export function aiSignings(teams, pool, ui, { perTeam = 2, minOvr = 60, capSpace, cy, skip = () => false, rand = Math.random } = {}) {
   const signed = [];
+  // depth is signed like it's kept: a young player with upside before a veteran near the end
+  pool.sort((a, b) => keepScore(b) - keepScore(a));
   const order = teams.map((_, i) => i).filter((i) => i !== ui).sort(() => rand() - 0.5);
   for (let round = 0; round < perTeam; round++) {
     for (const i of order) {
@@ -254,6 +260,7 @@ export function starterSignings(teams, pool, ui, { minOvr = 72, perTeam = 2, cap
 // it's never filled for you (shortGaps says where you're short).
 export function fillRosters(teams, pool, ui, { capSpace, cy, rand = Math.random } = {}) {
   const signed = [];
+  pool.sort((a, b) => keepScore(b) - keepScore(a)); // depth: upside before a veteran near the end
   const sign = (t, i, k) => {
     const [p] = pool.splice(k, 1);
     const deal = { ...freshDeal(p), salary: capSpace(t) >= askingPrice(p) ? askingPrice(p) : leagueMin(), contract: roll(rand, 1, 2), cy, formerTeam: undefined };
