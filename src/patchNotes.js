@@ -989,4 +989,11 @@ export const PATCH_NOTES = [
     "Unsigned free agents retire too: a veteran nobody signs is usually done, and a fringe player who sits unsigned all year moves on.",
     "AI clubs build depth like real ones: at cut-down and when filling the bottom of the roster they favor a young player with upside over a veteran near the end, and veterans 30 and up re-sign for one or two years instead of up to four.",
   ] },
+  { v: "2.80", date: "2026-10-14", title: "The Wall at 33", notes: [
+    "From age 33, most players hit the wall: the body gives out and the explosiveness goes, costing 2-4 OVR a year on top of normal aging. Quarterbacks, kickers, punters and high-quality offensive linemen (85+) are spared.",
+    "Generational talents last like the real greats (a Brady, an Aaron Donald, a Randy Moss): their prime runs three years longer, they decline at half the usual pace, they never hit the wall and they retire about four years later.",
+    "Superstars stay good for a long time too: a prime two years longer, a slower decline, a softer wall from 34 and about two extra years before retiring.",
+    "Star players develop faster (up to +2 OVR a year from the trait while young, superstars up to +3, generational up to +4) but age like everyone else once their prime is over.",
+    "Free agents age too: an unsigned veteran used to keep his rating frozen while he waited for a call; now he declines like anyone else his age.",
+  ] },
 ];

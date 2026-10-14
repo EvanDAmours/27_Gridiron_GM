@@ -9,7 +9,7 @@ test("players retire around their position's age, backs first and kickers last",
   assert.ok(retireChance({ pos: "QB", age: 37, ovr: 75 }) > 0.3);
   assert.equal(retireChance({ pos: "K", age: 34, ovr: 75 }), 0);
   for (const pos of Object.keys(RETIRE_AGE)) {
-    const at = (a) => retireChance({ pos, age: a, ovr: 75 });
+    const at = (a) => retireChance({ pos, age: a, ovr: 75, dev: "normal" });
     assert.ok(at(RETIRE_AGE[pos] + 2) > at(RETIRE_AGE[pos]) && at(RETIRE_AGE[pos]) > at(RETIRE_AGE[pos] - 2), pos);
   }
 });

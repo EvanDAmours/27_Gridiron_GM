@@ -4,7 +4,10 @@
 // years before that age and keeps climbing after it. Stars play on longer; fringe veterans leave
 // sooner. Unsigned free agents retire far more readily: most careers end when nobody calls.
 export const RETIRE_AGE = { QB: 36, RB: 30, WR: 32, TE: 32, LT: 33, LG: 33, C: 33, RG: 33, RT: 33, DL: 32, LB: 31, CB: 31, S: 32, K: 38, P: 38 };
-export const retireAge = (p) => RETIRE_AGE[p.pos] ?? 32;
+import { devOf } from "./scouting.js";
+// generational talents and superstars play years longer (see agingEnd in development.js)
+const LONGEVITY = { generational: 4, superstar: 2 };
+export const retireAge = (p) => (RETIRE_AGE[p.pos] ?? 32) + (LONGEVITY[devOf(p)] || 0);
 // chance by years from his position's retirement age: 3 before, 2 before, ... 3+ after
 const BY_YEAR = [0.06, 0.12, 0.22, 0.38, 0.55, 0.7, 0.8];
 

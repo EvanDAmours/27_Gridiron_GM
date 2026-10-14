@@ -578,9 +578,9 @@ export const devOf = (p) => p.dev || rollDev(p.id, p.truePot ?? p.pot);
 export function devGrowth(p, age) {
   const d = devOf(p);
   if (age > 26) return { ovr: 0, pot: 0 };
-  if (d === "generational") return { ovr: rint(2, 3), pot: rint(1, 3) };
-  if (d === "superstar") return { ovr: rint(1, 2), pot: rint(0, 2) };
-  if (d === "star") return { ovr: rint(0, 1), pot: rint(0, 1) };
+  if (d === "generational") return { ovr: rint(2, 4), pot: rint(1, 3) };
+  if (d === "superstar") return { ovr: rint(1, 3), pot: rint(0, 2) };
+  if (d === "star") return { ovr: rint(0, 2), pot: rint(0, 1) };
   if (d === "late") return age <= 22 ? { ovr: -rint(0, 1), pot: 0 } : { ovr: rint(1, 2), pot: rint(0, 1) };
   return { ovr: 0, pot: 0 };
 }

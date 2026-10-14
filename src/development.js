@@ -57,12 +57,38 @@ const ri = (rand, a, b) => a + Math.floor(rand() * (b - a + 1));
 export const PRIME_END = { RB: 27, WR: 29, CB: 29, LB: 29, S: 30, DL: 30, TE: 30, LT: 32, LG: 32, C: 32, RG: 32, RT: 32, QB: 34, K: 36, P: 36 };
 export const primeEnd = (p) => PRIME_END[p.pos] ?? 30;
 // Years past his prime (negative while he's in or before it).
-export const yearsPastPrime = (p, age = p.age) => age - primeEnd(p);
+export const yearsPastPrime = (p, age = p.age) => age - agingEnd(p);
+
+// Development traits and aging. The great ones last: a generational talent (a Brady, an Aaron
+// Donald, a Randy Moss) keeps his prime three years longer and declines at half the usual pace;
+// a superstar two years longer, at 85%. A Star develops fast but ages like everyone else.
+export const PRIME_BONUS = { generational: 3, superstar: 2 };
+const DECLINE_PACE = { generational: 0.5, superstar: 0.85 };
+export const agingEnd = (p, trait = devOf(p)) => primeEnd(p) + (PRIME_BONUS[trait] || 0);
+// The wall: from 33 on, most players' bodies give out and the explosiveness goes. Quarterbacks,
+// kickers and punters, high-quality offensive linemen and generational talents escape it; a
+// superstar meets a softer one a year later.
+export const WALL_AGE = 33;
+const OL = new Set(["LT", "LG", "C", "RG", "RT"]);
+const exempt = (p) => p.pos === "QB" || p.pos === "K" || p.pos === "P" || (OL.has(p.pos) && (p.ovr || 0) >= 85);
+export const hitsTheWall = (p, trait = devOf(p)) => !exempt(p) && trait !== "generational" && trait !== "superstar";
+// the wall's toll this off-season (age: the season just played)
+export function wallToll(p, trait = devOf(p), rand = Math.random) {
+  const next = p.age + 1;
+  if (hitsTheWall(p, trait) && next >= WALL_AGE) return ri(rand, 2, 4);
+  if (trait === "superstar" && !exempt(p) && next >= WALL_AGE + 1) return ri(rand, 1, 2);
+  return 0;
+}
 
 export function seasonGrowth(p, share, rand = Math.random) {
+  const g = baseGrowth(p, share, rand);
+  const toll = wallToll(p, devOf(p), rand);
+  return toll ? Math.min(g, 0) - toll : g;
+}
+function baseGrowth(p, share, rand) {
   // his real ceiling drives growth, whatever the club believes it is (see scoutMiss.js)
   const ovr = p.ovr, pot = p.truePot ?? p.pot ?? ovr;
-  const end = primeEnd(p);
+  const trait = devOf(p), end = agingEnd(p, trait);
   if (p.age < Math.min(27, end - 2)) {
     let g = ri(rand, -1, Math.round((pot - ovr) / 4) + 2);
     if (g > 0) g = Math.round(g * (0.4 + share));
@@ -85,7 +111,8 @@ export function seasonGrowth(p, share, rand = Math.random) {
   }
   // Past his prime: the decline speeds up the further past it he is.
   const over = p.age - end;
-  return -ri(rand, over >= 3 ? 2 : 1, over >= 4 ? 5 : over >= 2 ? 4 : 3);
+  const g = -ri(rand, over >= 3 ? 2 : 1, over >= 4 ? 5 : over >= 2 ? 4 : 3);
+  return DECLINE_PACE[trait] ? Math.round(g * DECLINE_PACE[trait]) : g;
 }
 
 // Development-trait growth, scaled by playing time (a generational talent still needs the field).

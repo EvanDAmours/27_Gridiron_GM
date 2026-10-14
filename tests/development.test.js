@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { focusChance, perSeason, runFocusWeeks, seasonGrowth, seasonSnapShare, seasonAwards, awardGrowth, driftCorrection, isLandslide, LEADERS } from "../src/development.js";
+import { focusChance, perSeason, runFocusWeeks, seasonGrowth, seasonSnapShare, seasonAwards, awardGrowth, driftCorrection, isLandslide, LEADERS, agingEnd, hitsTheWall } from "../src/development.js";
+import { retireAge } from "../src/retirement.js";
 import { leagueShift } from "../src/offseason.js";
 
 const player = (o) => ({ id: "p" + Math.random(), pos: "DL", age: 22, ovr: 80, pot: 90, dev: "superstar", ...o });
@@ -103,10 +104,32 @@ test("growth leans against league drift; earned boosts don't", () => {
 });
 
 test("players age by position: backs decline first, quarterbacks and kickers last", () => {
-  const at = (pos, age) => avg(() => seasonGrowth({ pos, age, ovr: 85, pot: 85 }, 1));
+  const at = (pos, age) => avg(() => seasonGrowth({ pos, age, ovr: 85, pot: 85, dev: "normal" }, 1));
   assert.ok(at("RB", 29) < -1.5, `RB at 29: ${at("RB", 29)}`);
   assert.ok(at("QB", 29) > -0.5, `QB at 29: ${at("QB", 29)}`);
   assert.ok(at("WR", 31) < at("LT", 31), "receivers fade before tackles");
   assert.ok(at("QB", 34) > at("RB", 34) + 2);
   assert.ok(at("K", 35) > -0.5, "kickers kick into their late 30s");
+});
+
+test("the wall at 33: most players fall off, the great ones and quarterbacks don't", () => {
+  const at = (pos, age, dev, ovr = 85) => avg(() => seasonGrowth({ pos, age, ovr, pot: ovr, dev }, 1));
+  // a Star receiver going into his age-33 season falls hard; a year earlier much less
+  assert.ok(at("WR", 32, "star") < -4.5, `WR 33: ${at("WR", 32, "star")}`);
+  assert.ok(at("WR", 32, "star") < at("WR", 31, "star") - 2);
+  // a superstar and a generational talent at the same age hold on
+  assert.ok(at("WR", 32, "superstar") > at("WR", 32, "star") + 3);
+  // a superstar meets a softer wall a year later; a generational talent never does
+  assert.ok(at("S", 34, "superstar") < at("S", 34, "generational") - 1);
+  assert.ok(at("WR", 32, "generational") > at("WR", 32, "superstar"));
+  assert.ok(at("DL", 33, "generational") > -2, "an Aaron Donald plays on");
+  // quarterbacks and kickers skip the wall; so does a high-quality lineman, but not an average one
+  assert.ok(at("QB", 33, "normal") > -1);
+  assert.ok(at("LT", 33, "normal", 88) > at("LT", 33, "normal", 78) + 2);
+  assert.ok(hitsTheWall({ pos: "CB", ovr: 90, dev: "star" }));
+  assert.ok(!hitsTheWall({ pos: "CB", ovr: 90, dev: "superstar" }));
+  // a longer prime and a later retirement
+  assert.equal(agingEnd({ pos: "RB", dev: "generational" }) - agingEnd({ pos: "RB", dev: "star" }), 3);
+  assert.ok(retireAge({ pos: "WR", dev: "generational" }) > retireAge({ pos: "WR", dev: "superstar" }));
+  assert.equal(retireAge({ pos: "WR", dev: "star" }), retireAge({ pos: "WR", dev: "normal" }));
 });
