@@ -1013,4 +1013,9 @@ export const PATCH_NOTES = [
     "Good players no longer retire early: nobody rated 75 or better hangs it up before his position's usual retirement age (an 89 edge rusher at 29 could, about 3% a year on a roster and 30% if he was a free agent at season's end). The early years are left to fading veterans.",
     "A good free agent short of that age is between teams, not done; only fringe or aging free agents retire for going unsigned.",
   ] },
+  { v: "2.85", date: "2026-10-14", title: "Retirement Day", notes: [
+    "Players retire once a year, at the Combine after the Super Bowl, and nowhere else. The \"franchise legend\" farewell and the Hall of Fame ceremony for your veteran stars now come with that announcement, not at the start of the next preseason.",
+    "Fixed: a veteran whose deal ran out at the new league year could be announced as retired while he had actually gone to free agency, and an expiring player past 35 quietly vanished instead of reaching the market.",
+    "A veteran whose contract is up and who is well past his position's retirement age now retires at the Combine instead of when free agency opens.",
+  ] },
 ];
