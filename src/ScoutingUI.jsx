@@ -200,7 +200,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
   const [n, setN] = useState(page);
   const [mine, setMine] = useState(false);
   const [searching, setSearching] = useState(false);
-  const all = g.dc[cy] || [];
+  const all = useMemo(() => g.dc[cy] || [], [g.dc, cy]);
   const ranks = useMemo(() => (mine ? myBoard(g.scouting, all) : null), [mine, g.scouting, all]);
   const ids = listIds(g.scouting, cy);
   const list = all
@@ -772,7 +772,9 @@ export function MockDraft({ g }) {
   const [rounds, setRounds] = useState(1);
   const order = projectedOrder(g, 2);
   const cls = (g.dc?.[g.yr] || []);
-  const mock = useMemo(() => mockDraft({ order, cls, teams: g.teams, seed: `${g.yr}:${order[0]?.overall || 0}` }), [cls.length, order.length, order[0]?.id, g.yr]);
+  // redone when the order, the class or the clubs' rosters change (standings shift the order all season)
+  const orderKey = order.map((pk) => `${pk.id}:${pk.owner}`).join(",");
+  const mock = useMemo(() => mockDraft({ order, cls, teams: g.teams, seed: `${g.yr}:${order[0]?.overall || 0}` }), [orderKey, cls, g.teams, g.yr]); // eslint-disable-line react-hooks/exhaustive-deps -- order is rebuilt each render; orderKey stands for it
   const listed = new Set(listIds(g.scouting, g.yr));
   const myNext = order.find((pk) => pk.owner === g.ui);
   const before = myNext ? mock.filter((m) => listed.has(m.player.id) && m.pick.overall < myNext.overall) : [];

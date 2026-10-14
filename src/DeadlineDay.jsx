@@ -3,7 +3,7 @@
 // offers coming in, and the board lists who's buying and who's selling.
 import { fillsNeed } from "./needs.js";
 import Select from "./Select.jsx";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { C, oC, Bdg, Btn, TeamLogo } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { DEADLINE_HOURS, LAST_HOUR, marketBoard, leagueTradeBlock } from "./deadline.js";
@@ -136,9 +136,12 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
   const me = teams[ui];
   const { buyers, sellers } = marketBoard(teams, ui);
   // Auto-advance the clock, pausing whenever your phone has offers waiting.
+  // the latest onAdvance (it reads the rosters as they are when the hour ticks over, not 4.5s earlier)
+  const advanceRef = useRef(onAdvance);
+  useEffect(() => { advanceRef.current = onAdvance; });
   useEffect(() => {
     if (!auto || dl.done || dl.offers.length) return;
-    const t = setTimeout(onAdvance, 4500);
+    const t = setTimeout(() => advanceRef.current(), 4500);
     return () => clearTimeout(t);
   }, [auto, dl.hour, dl.done, dl.offers.length]);
   const panel = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: 12, minWidth: 0 };

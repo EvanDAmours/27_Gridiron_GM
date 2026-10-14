@@ -979,4 +979,9 @@ export const PATCH_NOTES = [
   { v: "2.77", date: "2026-10-14", title: "Rare Breakouts", notes: [
     "Breakout seasons and Grinder bumps are back, but rare: a young Star (or better) now has a 3% chance at a +3 breakout (was 12%), a young Normal developer 1.5% at +2 (was 5%), and a Grinder 28 or younger a 3% chance at +1 (was 10%).",
   ] },
+  { v: "2.78", date: "2026-10-14", title: "Save and Mock Draft Fixes", notes: [
+    "Autosave now catches every change: a depth chart or snap-share edit, a playoff round, a traded pick or spent scouting points were only saved once something else changed, so a reload right after could lose them.",
+    "The Mock Draft keeps up with the season: it used to hold onto the first projection until the top pick changed, ignoring standings moves, traded picks and roster changes further down the order.",
+    "Deadline Day's auto-clock always works from your current roster.",
+  ] },
 ];
