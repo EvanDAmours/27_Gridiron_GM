@@ -976,4 +976,7 @@ export const PATCH_NOTES = [
     "Removed the random breakout and Grinder rating bumps: a young player's jump now comes from playing time, his development trait and what he does on the field.",
     "A player in his prime who has reached his ceiling holds steady instead of creeping past it, and past his prime a Pro Bowl or All-Pro year slows his decline but no longer turns back the clock.",
   ] },
+  { v: "2.77", date: "2026-10-14", title: "Rare Breakouts", notes: [
+    "Breakout seasons and Grinder bumps are back, but rare: a young Star (or better) now has a 3% chance at a +3 breakout (was 12%), a young Normal developer 1.5% at +2 (was 5%), and a Grinder 28 or younger a 3% chance at +1 (was 10%).",
+  ] },
 ];

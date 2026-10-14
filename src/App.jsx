@@ -856,6 +856,8 @@ const _awards=seasonAwards(teams),_awardLog=[];/* how far each position has drif
 // MOVE 2: extra aging decline
 {const _past=yearsPastPrime(p,p.age+1);if(_past>=4&&Math.random()<0.30){no=Math.max(no-1,40);}
 else if(_past>=0&&Math.random()<0.15){no=Math.max(no-1,40);}}
+/* breakout seasons and Grinders: rare surprises on top of earned growth */if(p.age<=24&&Math.random()<(['star','superstar','generational'].includes(devOf(p))?0.03:devOf(p)==='normal'?0.015:0)){no=Math.min(no+(devOf(p)==='normal'?2:3),99);}
+if(p.personality==='Grinder'&&p.age<=28&&Math.random()<0.03){no=Math.min(no+1,99);}
 // Development traits: young players grow on their own curve
 const _dg=devGrowth(p,p.age);const _dgo=Math.round(_dg.ovr*traitGrowthScale(_share));no=cl(no+(_dgo>0?driftCorrection(_dgo,_shift[p.pos]):_dgo),30,99);
 /* All-Pro and Pro Bowl: a boost for the honor (the best one counts) */const _hk=_hon[p.id];if(_hk){const _hb=honorBoost(_hk,no);no=cl(no+_hb,30,99);p={...p,honors:[...(p.honors||[]),{yr,k:_hk}]};if(ti===ui)_honLog.push(`🏅 ${p.name} (${p.pos}): ${HONOR_LABEL[_hk]}${_hb?` → +${_hb} OVR`:''}`);}const _aw=awardGrowth(p,_awards[p.id],devOf(p));if(_aw.notes.length){no=cl(no+_aw.ovr,30,99);if(_aw.dev)p={...p,dev:_aw.dev};if(ti===ui||_aw.dev||_aw.boost||_aw.ovr>=2)_awardLog.push({p,team:ti,..._aw});}/* past his prime, honors and big seasons slow the decline but don't turn back the clock (a landslide's boost still counts, below) */if(p.age>primeEnd(p)&&no>p.ovr)no=p.ovr;
