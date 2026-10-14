@@ -970,4 +970,10 @@ export const PATCH_NOTES = [
     "Depth chart field view: the 'Here' marker no longer jumps while you drag a snap slider, and starters are labeled by who actually starts on game day.",
     "The game plan card grades the lineup you just set (it could be one change behind).",
   ] },
+  { v: "2.76", date: "2026-10-14", title: "Cornerstone Seasons", notes: [
+    "Lead the NFL by a landslide (a running back far ahead in rushing yards, a corner with 11 picks when nobody else has 8) and a player becomes a cornerstone: +3 OVR on top of the usual off-season growth, a higher ceiling and a better development trait (up to age 29; a Superstar or better gets another point instead). They're marked 🌟 in the off-season log.",
+    "Ratings no longer creep up over the years. Ordinary growth now leans against how far each position has drifted from the real 2026 league, so a long dynasty keeps about as many 80s and 90s as day one. Earned boosts (All-Pro, Pro Bowl, big seasons, league leads) aren't affected.",
+    "Removed the random breakout and Grinder rating bumps: a young player's jump now comes from playing time, his development trait and what he does on the field.",
+    "A player in his prime who has reached his ceiling holds steady instead of creeping past it, and past his prime a Pro Bowl or All-Pro year slows his decline but no longer turns back the clock.",
+  ] },
 ];

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { focusChance, perSeason, runFocusWeeks, seasonGrowth, seasonSnapShare, seasonAwards, awardGrowth } from "../src/development.js";
+import { focusChance, perSeason, runFocusWeeks, seasonGrowth, seasonSnapShare, seasonAwards, awardGrowth, driftCorrection, isLandslide, LEADERS } from "../src/development.js";
+import { leagueShift } from "../src/offseason.js";
 
 const player = (o) => ({ id: "p" + Math.random(), pos: "DL", age: 22, ovr: 80, pot: 90, dev: "superstar", ...o });
 
@@ -56,12 +57,49 @@ test("milestones and league leads pay off", () => {
   const aw = seasonAwards(teams);
   assert.deepEqual(aw.a.hits, ["10 sacks"]);
   assert.ok(aw.a.leads[0].includes("sacks"));
-  assert.ok(aw.c.leads.length && !aw.c.hits.length); // only receiver: leads but no milestone
+  assert.ok(aw.c.landslides.length && !aw.c.hits.length); // only receiver: far ahead, no milestone
   const young = awardGrowth(teams[0].roster[0], aw.a, "normal");
   assert.equal(young.ovr, 1); assert.equal(young.dev, "star");
   const vet = awardGrowth({ age: 31 }, { hits: ["10 sacks"], leads: ["led the NFL in sacks (11)"] }, "normal");
   assert.equal(vet.ovr, 2); assert.equal(vet.dev, null);
-  assert.deepEqual(awardGrowth({}, undefined, "normal"), { ovr: 0, dev: null, notes: [] });
+  assert.deepEqual(awardGrowth({}, undefined, "normal"), { ovr: 0, boost: 0, pot: 0, dev: null, notes: [] });
+});
+
+test("leading the league by a landslide makes a cornerstone", () => {
+  const ints = LEADERS.find((l) => l.key === "ints"), rush = LEADERS.find((l) => l.key === "rushYds");
+  assert.ok(isLandslide(ints, 11, 7)); assert.ok(!isLandslide(ints, 8, 7));
+  assert.ok(isLandslide(rush, 1900, 1550)); assert.ok(!isLandslide(rush, 1600, 1450));
+  const teams = [{ roster: [
+    { id: "cb", pos: "CB", age: 27, ss: { ints: 11 } },
+    { id: "s", pos: "S", age: 25, ss: { ints: 7 } },
+    { id: "rb", pos: "RB", age: 23, ss: { rushYds: 1600 } },
+    { id: "rb2", pos: "RB", age: 26, ss: { rushYds: 1480 } },
+  ] }];
+  const aw = seasonAwards(teams);
+  assert.equal(aw.cb.landslides.length, 1); assert.ok(aw.cb.landslides[0].includes("by a landslide"));
+  assert.equal(aw.rb.leads.length, 1); assert.ok(!aw.rb.landslides.length); // a close lead is an ordinary one
+  // a 27-year-old still gets the trait (an ordinary lead stops at 26), a bigger ceiling and +3
+  const cb = awardGrowth(teams[0].roster[0], aw.cb, "star");
+  assert.equal(cb.dev, "superstar"); assert.equal(cb.boost, 3); assert.equal(cb.pot, 4);
+  // a Superstar already: another point instead of a trait
+  const top = awardGrowth({ age: 25 }, aw.cb, "superstar");
+  assert.equal(top.dev, null); assert.equal(top.boost, 4);
+  // past 29: the points, no trait
+  assert.equal(awardGrowth({ age: 31 }, aw.cb, "normal").dev, null);
+});
+
+test("growth leans against league drift; earned boosts don't", () => {
+  const seq = (xs) => { let i = 0; return () => xs[i++ % xs.length]; };
+  assert.equal(driftCorrection(3, 0), 3);
+  assert.equal(driftCorrection(-2, 4, seq([0])), -3); // well above 2026: a little more decline
+  assert.equal(driftCorrection(-2, 4, seq([0.99])), -2);
+  assert.equal(driftCorrection(3, 3, seq([0])), 0); // a league well above 2026: growth lost
+  assert.equal(driftCorrection(3, 3, seq([0.99])), 3);
+  assert.equal(driftCorrection(0, -3, seq([0])), 1); // below 2026: a point back
+  assert.equal(driftCorrection(0, 0.1, seq([0])), 0); // inside the noise: nothing
+  // the league's shift by position, against the real 2026 starters
+  const roster = Array.from({ length: 40 }, (_, i) => ({ pos: "QB", ovr: 88 }));
+  assert.equal(leagueShift([{ roster }]).QB, 4.4);
 });
 
 test("players age by position: backs decline first, quarterbacks and kickers last", () => {

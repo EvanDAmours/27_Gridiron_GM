@@ -151,6 +151,11 @@ let marketShift = {};
 // Call with every club when the league changes (the app does it each time the rosters change).
 // Returns the shift per position (how many points better the league's starters are than in 2026).
 export function setMarket(teams) {
+  marketShift = leagueShift(teams);
+  return marketShift;
+}
+// How many points better the league's starters are than in 2026, per position (-4..8).
+export function leagueShift(teams) {
   const by = {};
   for (const t of teams || []) for (const p of t.roster || []) (by[p.pos] ||= []).push(p.ovr || 0);
   const out = {};
@@ -158,7 +163,6 @@ export function setMarket(teams) {
     const o = (by[pos] || []).sort((a, b) => b - a).slice(0, 32 * MARKET_N[pos]);
     if (o.length >= 16 * MARKET_N[pos]) out[pos] = Math.max(-4, Math.min(8, +(o.reduce((a, b) => a + b, 0) / o.length - base).toFixed(1)));
   }
-  marketShift = out;
   return out;
 }
 export const marketRating = (p) => (p.ovr || 0) - (marketShift[p.pos] || 0);

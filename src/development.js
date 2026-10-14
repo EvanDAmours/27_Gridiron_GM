@@ -75,8 +75,10 @@ export function seasonGrowth(p, share, rand = Math.random) {
   }
   if (p.age <= end) {
     let g = ri(rand, -2, 2);
-    if (share >= 0.75 && rand() < 0.35) g += 1;
+    // a starter still short of his ceiling keeps improving; one at it holds steady
+    if (share >= 0.75 && ovr < pot && rand() < 0.35) g += 1;
     if (share < 0.1 && rand() < 0.35) g -= 1;
+    if (g > 0 && ovr >= pot && rand() < 0.5) g -= 1;
     // The last few points come hard: an elite player in his prime rarely climbs further.
     if (g > 0 && ovr >= 93) g = rand() < (ovr >= 96 ? 0.15 : 0.35) ? 1 : 0;
     return g;
@@ -103,40 +105,78 @@ export const MILESTONES = [
   { key: "ints", pos: ["CB", "S", "LB"], at: 6, label: "6 interceptions" },
 ];
 // League leaders. Leading the NFL in one of these earns a development-trait upgrade (or +1 OVR
-// once a player is past the age where traits matter).
+// once a player is past the age where traits matter). gap: how far ahead of the next man a lead
+// has to be (and at least a fifth more) to count as a landslide.
 export const LEADERS = [
-  { key: "passYds", label: "passing yards" }, { key: "passTD", label: "TD passes" },
-  { key: "rushYds", label: "rushing yards" }, { key: "rushTD", label: "rushing TDs" },
-  { key: "recYds", label: "receiving yards" }, { key: "rec", label: "receptions" }, { key: "recTD", label: "TD catches" },
-  { key: "sacks", label: "sacks" }, { key: "ints", label: "interceptions" }, { key: "tkl", label: "tackles" },
+  { key: "passYds", label: "passing yards", gap: 450 }, { key: "passTD", label: "TD passes", gap: 6 },
+  { key: "rushYds", label: "rushing yards", gap: 250 }, { key: "rushTD", label: "rushing TDs", gap: 4 },
+  { key: "recYds", label: "receiving yards", gap: 250 }, { key: "rec", label: "receptions", gap: 18 }, { key: "recTD", label: "TD catches", gap: 4 },
+  { key: "sacks", label: "sacks", gap: 4 }, { key: "ints", label: "interceptions", gap: 3 }, { key: "tkl", label: "tackles", gap: 25 },
 ];
 const NEXT_TRAIT = { late: "star", normal: "star", star: "superstar" };
+export const isLandslide = (l, best, next) => best - next >= l.gap && best >= next * 1.2;
 
-// Who earned what this season across the league: id -> { hits: [labels], leads: [labels] }.
+// Who earned what this season across the league: id -> { hits: [labels], leads: [labels], landslides: [labels] }.
 export function seasonAwards(teams) {
   const all = teams.flatMap((t) => t.roster || []);
   const out = {};
-  const get = (p) => (out[p.id] ||= { hits: [], leads: [] });
+  const get = (p) => (out[p.id] ||= { hits: [], leads: [], landslides: [] });
   for (const m of MILESTONES) for (const p of all) if (m.pos.includes(p.pos) && (p.ss?.[m.key] || 0) >= m.at) get(p).hits.push(m.label);
   for (const l of LEADERS) {
-    let best = null;
-    for (const p of all) if ((p.ss?.[l.key] || 0) > (best?.ss?.[l.key] || 0)) best = p;
-    if (best) get(best).leads.push(`led the NFL in ${l.label} (${best.ss[l.key]})`);
+    let best = null, next = 0;
+    for (const p of all) {
+      const v = p.ss?.[l.key] || 0;
+      if (v > (best?.ss?.[l.key] || 0)) { if (best) next = best.ss[l.key]; best = p; } else if (v > next) next = v;
+    }
+    if (!best) continue;
+    const v = best.ss[l.key];
+    if (isLandslide(l, v, next)) get(best).landslides.push(`led the NFL in ${l.label} by a landslide (${v}, next best ${next})`);
+    else get(best).leads.push(`led the NFL in ${l.label} (${v})`);
   }
   return out;
 }
 
-// What a player's season earns him. devTrait: his trait now (devOf). Returns { ovr, dev, notes }.
+// What a player's season earns him. devTrait: his trait now (devOf). Returns { ovr, boost, pot,
+// dev, notes }: ovr counts toward the usual taper at the top; boost (a landslide season) is added
+// on top of it, since a season like that is earned; pot raises his ceiling.
+// A landslide makes a cornerstone: +3 OVR, a higher ceiling and a better development trait for any
+// player still short of 30 (a Superstar or better gets another point instead).
 export function awardGrowth(p, award, devTrait) {
-  if (!award) return { ovr: 0, dev: null, notes: [] };
-  let ovr = Math.min(2, award.hits.length), dev = null;
+  if (!award) return { ovr: 0, boost: 0, pot: 0, dev: null, notes: [] };
+  let ovr = Math.min(2, award.hits.length), boost = 0, pot = 0, dev = null;
   const notes = [...award.hits];
-  if (award.leads.length) {
+  const ls = award.landslides || [];
+  if (ls.length) {
+    notes.push(...ls, ...award.leads);
+    boost = 3;
+    pot = 4;
+    if (p.age <= 29 && NEXT_TRAIT[devTrait]) dev = NEXT_TRAIT[devTrait];
+    else boost += 1;
+  } else if (award.leads.length) {
     notes.push(...award.leads);
     if (p.age <= 26 && NEXT_TRAIT[devTrait]) dev = NEXT_TRAIT[devTrait];
     else ovr += 1;
   }
-  return { ovr, dev, notes };
+  return { ovr, boost, pot, dev, notes };
+}
+
+// League drift: how many points a position's starters sit above (or below) the real 2026 league
+// (shift from leagueShift in offseason.js). Ordinary growth leans against it, so the league keeps
+// its shape over the seasons: above the baseline a point of growth is sometimes lost (or, with no
+// growth, a point of rating), below it a
+// starter-level player sometimes gains one. Earned boosts (honors, big seasons) are left alone.
+export function driftCorrection(gain, shift, rand = Math.random) {
+  if (!shift) return gain;
+  if (shift > 0.2 && gain > 0) {
+    const p = Math.min(0.8, 0.2 + shift * 0.35);
+    let g = gain;
+    for (let i = 0; i < gain; i++) if (rand() < p) g--;
+    return g;
+  }
+  // a season without growth costs a point now and then, so the top doesn't fill up with veterans
+  if (shift > 0.2 && rand() < Math.min(0.3, shift * 0.15)) return gain - 1;
+  if (shift < -0.2 && gain >= 0 && rand() < Math.min(0.4, -shift * 0.12)) return gain + 1;
+  return gain;
 }
 
 // Off-season taper at the top: any rise into the 90s has to be earned point by point (60% a

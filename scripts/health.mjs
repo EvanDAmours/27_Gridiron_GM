@@ -95,7 +95,10 @@ function measure(d) {
     thinTeams: thin, olDepth: +olDepth.toFixed(1), noP: ai.filter((t) => !t.roster.some((p) => p.pos === "P")).length,
     rookieSnapPct: { r1: byRd(1), r2: byRd(2), r3: byRd(3), r4_7: (() => { const xs = rk.filter((p) => p.draftPk > 96).map((p) => p.cs?.snp || 0); return xs.length ? Math.round(mean(xs) / 17) : null; })() },
     // how many players rate 80+ (more over time = rating inflation) and what an 80-84 WR is paid, as % of the cap
-    n80: all.filter((p) => p.ovr >= 80).length, wr80: all.filter((p) => p.pos === "WR" && p.ovr >= 80).length,
+    n80: all.filter((p) => p.ovr >= 80).length,
+    // where the 80+ players are: young (24 and under), prime (25-29), veterans (30+); and this year's rookies
+    n80Age: [[0, 24], [25, 29], [30, 99]].map(([a, b]) => all.filter((p) => p.ovr >= 80 && p.age >= a && p.age <= b).length), rook80: all.filter((p) => p.ovr >= 80 && p.draftYr === d.yr - 1).length,
+    wr80: all.filter((p) => p.pos === "WR" && p.ovr >= 80).length,
     wr80Pct: (() => { const xs = all.filter((p) => p.pos === "WR" && p.ovr >= 80 && p.ovr <= 84 && (p.salary || 0) > 2).map((p) => p.salary).sort((a, b) => a - b); return xs.length ? +((100 * xs[Math.floor(xs.length / 2)]) / capFor(d.yr)).toFixed(1) : null; })(),
     records: (d.recordBook?.history || d.recordBook?.broken || []).length,
     // the market at the top: the five biggest salaries at a position, as % of the cap (2025 NFL: QB ~16%, DL/WR ~12%, CB ~9%)
@@ -152,6 +155,8 @@ try {
     for (let w = 0; w < 6 && d.yr !== 2027 + s; w++) d = await save();
     if (d.yr !== 2027 + s) fail(`expected ${2027 + s}, got ${d.yr}`);
     const m = measure(d); rows.push(m); console.log(JSON.stringify(m));
+    // DUMP=dir: keep each season's rosters for a closer look
+    if (process.env.DUMP) (await import("node:fs")).writeFileSync(`${process.env.DUMP}/league-${d.yr}.json`, JSON.stringify(d.teams.map((t) => t.roster.map(({ name, pos, age, ovr, pot, truePot, dev, honors, oh }) => ({ name, pos, age, ovr, pot, truePot, dev, honors, oh })))));
   }
 } catch (e) {
   code = 1; console.error(`HEALTH FAILED after ${rows.length} seasons: ${e.message}`);
