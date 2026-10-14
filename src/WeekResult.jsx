@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { WinProbChart } from "./GameRecap.jsx";
 import { C, Btn, TeamLogo } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
+import { isScorigami } from "./scorigami.js";
 
 const fmtRec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const pct = (t) => (t.w + t.t * 0.5) / Math.max(1, t.w + t.l + t.t);
@@ -82,7 +83,15 @@ export default function WeekResult(props) {
   );
 }
 
-function Card({ result, teams, ui, sched, onClose, onBox, onTeam }) {
+// A final never seen in NFL history (or in this league before).
+const Scorigami = ({ us, them, compact }) => (
+  <div style={{ marginTop: compact ? 4 : 8, background: "linear-gradient(90deg,#7c3aed33,#db277733)", border: "1px solid #a855f7", borderRadius: 8, padding: compact ? "3px 8px" : "6px 10px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+    <b style={{ fontSize: compact ? 13 : 15, letterSpacing: 1.5, color: "#e9d5ff" }}>🎲 SCORIGAMI</b>
+    <span style={{ fontSize: compact ? 12 : 13, color: "#ddd6fe" }}>{Math.max(us, them)}-{Math.min(us, them)} has never been a final score in NFL history</span>
+  </div>
+);
+
+function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam }) {
   const [showOthers, setShowOthers] = useState(false);
   if (!result) return null;
   const me = teams[ui];
@@ -131,6 +140,7 @@ function Card({ result, teams, ui, sched, onClose, onBox, onTeam }) {
   const stars = topLines(home ? g.boxH : g.boxA);
   const others = result.others || (sched || []).filter((x) => x.wk === result.wk && x.played && x !== g && x.h !== ui && x.a !== ui);
   const champs = result.playoff && result.champ === ui;
+  const sg = isScorigami(g, sgLog, yr);
   // Phones: a compact two-line strip.
   if (MOBILE) {
     const top = stars[0];
@@ -150,6 +160,7 @@ function Card({ result, teams, ui, sched, onClose, onBox, onTeam }) {
           <button onClick={() => onBox(g)} style={{ background: C.bl, color: "#fff", border: 0, borderRadius: 5, padding: "3px 8px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Box</button>
           {others.length > 0 && <button onClick={() => setShowOthers((v) => !v)} style={{ background: "transparent", color: C.mt, border: `1px solid ${C.bd}`, borderRadius: 5, padding: "3px 8px", fontSize: 12, cursor: "pointer" }}>Scores {showOthers ? "▴" : "▾"}</button>}
         </div>
+        {sg && <Scorigami us={us} them={them} compact />}
         {showOthers && <Others list={others} teams={teams} onBox={onBox} />}
       </div>
     );
@@ -184,6 +195,7 @@ function Card({ result, teams, ui, sched, onClose, onBox, onTeam }) {
           <div style={{ marginTop: 8 }}><Btn onClick={() => onBox(g)} bg={C.bl} style={{ fontSize: 13 }}>{g.gd ? "Game recap & box score" : "Box score"}</Btn></div>
         </div>
       </div>
+      {sg && <Scorigami us={us} them={them} />}
       {g.gd?.wp && <div style={{ marginTop: 10 }}><WinProbChart wp={g.gd.wp} home={teams[g.h]} away={teams[g.a]} height={70} /></div>}
       {others.length > 0 && <Others list={others} teams={teams} onBox={onBox} />}
     </div>

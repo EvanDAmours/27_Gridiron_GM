@@ -111,3 +111,12 @@ test("AI free agency: a player picks the club that fits what he wants, and good 
   assert.ok(n > 50);
   assert.ok(toFit > n * 0.3, `scheme-minded players pick the West Coast club (${toFit}/${n})`);
 });
+
+test("a loyal player takes 10% less to stay, not to sign elsewhere", async () => {
+  const { yearlyAsk } = await import("../src/negotiation.js");
+  const p = { pos: "WR", ovr: 84, age: 27, id: 9 };
+  const L = { ...p, loyal: true };
+  assert.ok(Math.abs(yearlyAsk(L, 3, "resign") - yearlyAsk(p, 3, "resign") * 0.9) < 0.2);
+  assert.ok(Math.abs(yearlyAsk(L, 3, "extend") - yearlyAsk(p, 3, "extend") * 0.9) < 0.2);
+  assert.equal(yearlyAsk(L, 3, "fa"), yearlyAsk(p, 3, "fa"));
+});

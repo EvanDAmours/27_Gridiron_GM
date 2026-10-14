@@ -18,7 +18,9 @@ export const perfFactor = (p, yrs, mode) => {
   const f = (mode === "resign" || mode === "extend") && p.perf?.f ? p.perf.f : 1;
   return f < 1 && yrs === 1 ? 1 - (1 - f) * 0.25 : f;
 };
-export const yearlyAsk = (p, yrs, mode) => r1(askingPrice(p) * (1 + (yrs - 2) * (p.age >= 30 ? 0.06 : -0.03)) * perfFactor(p, yrs, mode));
+// A loyal player (three seasons with your club) gives you a hometown discount to stay: 10% off.
+export const loyalDiscount = (p, mode) => (p.loyal && (mode === "resign" || mode === "extend") ? 0.9 : 1);
+export const yearlyAsk = (p, yrs, mode) => r1(askingPrice(p) * (1 + (yrs - 2) * (p.age >= 30 ? 0.06 : -0.03)) * perfFactor(p, yrs, mode) * loyalDiscount(p, mode));
 export const maxYears = (p) => (p.age >= 33 ? 1 : p.age >= 30 ? 3 : 5);
 
 // What a player wants besides money. Every player weighs four things: the money, playing time,

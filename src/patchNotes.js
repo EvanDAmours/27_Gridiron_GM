@@ -1022,4 +1022,8 @@ export const PATCH_NOTES = [
     "Every player list now tells edge rushers from interior tackles: re-sign week, free agency, offer sheets, trades and the trade finder, Deadline Day, the Front Office, the roster, camp, development focus, the draft and the player card show EDGE or DT instead of DL.",
     "Free agency and the trade screen filter by EDGE and DT separately (the old DL filter mixed them).",
   ] },
+  { v: "2.87", date: "2026-10-14", title: "Scorigami", notes: [
+    "Scorigami! When your game ends in a final score that has never happened in NFL history (every final since 1920, through Week 6 of the real 2026 season), the result card and the live game's final screen say so. Each new score counts once: after your league puts it up, it isn't new any more. Every scorigami in the league goes in the log.",
+    "\"Loyal\" means something now: a player who has spent three seasons with your club (48 weeks on the roster) takes 10% less to re-sign or extend with you. The pop-up used to promise a trade-value change that never happened.",
+  ] },
 ];

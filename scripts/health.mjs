@@ -97,6 +97,8 @@ function measure(d) {
     // how many players rate 80+ (more over time = rating inflation) and what an 80-84 WR is paid, as % of the cap
     n80: all.filter((p) => p.ovr >= 80).length,
     // roster ages (the NFL sits near 26.5) and the free-agent pool (it shouldn't grow without end)
+    // finals never seen in NFL history, league-wide so far (the real NFL averages a few a season)
+    scorigamis: (d.sgLog || []).length, sgLast: (d.sgLog || []).slice(-3).map((e) => `${e.s} (${e.yr} wk ${e.wk})`),
     avgAge: +mean(all.map((p) => p.age)).toFixed(2), n33: all.filter((p) => p.age >= 33).length, n24: all.filter((p) => p.age <= 24).length, faPool: (d.fa || []).length,
     // where the 80+ players are: young (24 and under), prime (25-29), veterans (30+); and this year's rookies
     n80Age: [[0, 24], [25, 29], [30, 99]].map(([a, b]) => all.filter((p) => p.ovr >= 80 && p.age >= a && p.age <= b).length), rook80: all.filter((p) => p.ovr >= 80 && p.draftYr === d.yr - 1).length,
