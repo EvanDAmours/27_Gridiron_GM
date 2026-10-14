@@ -1009,4 +1009,8 @@ export const PATCH_NOTES = [
   { v: "2.83", date: "2026-10-14", title: "Quick Camp", notes: [
     "Training camp has one-click buttons: ⚔️ Run all position battles (every open battle your points cover, 1 SP each) and 🎲 Auto-pick for training focus (up to five players at random, 2 SP each: young players short of their ceiling work on their overall, everyone else on a physical tool). You can still pick them one by one.",
   ] },
+  { v: "2.84", date: "2026-10-14", title: "No More Early Exits", notes: [
+    "Good players no longer retire early: nobody rated 75 or better hangs it up before his position's usual retirement age (an 89 edge rusher at 29 could, about 3% a year on a roster and 30% if he was a free agent at season's end). The early years are left to fading veterans.",
+    "A good free agent short of that age is between teams, not done; only fringe or aging free agents retire for going unsigned.",
+  ] },
 ];

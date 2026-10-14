@@ -20,9 +20,12 @@ export function retireChance(p, { freeAgent = false } = {}) {
     if ((p.age || 0) >= 26) return o < 60 ? 0.5 : o < 68 ? 0.25 : 0.05;
     return o < 55 ? 0.3 : 0;
   }
+  // a good player doesn't walk away before his time: the early years are for fading veterans only
+  if (d < 0 && o >= 75) return 0;
   let ch = BY_YEAR[Math.min(6, d + 3)];
   if (o >= 88) ch *= 0.55; else if (o >= 80) ch *= 0.8; else if (o < 70) ch *= 1.5;
-  if (freeAgent) ch = Math.max(ch * 2, 0.3);
+  // unsigned: a fringe or aging player is usually done; a good one is just between teams
+  if (freeAgent && (o < 75 || d >= 0)) ch = Math.max(ch * 2, o >= 80 ? ch * 2 : 0.3);
   return Math.min(0.95, ch);
 }
 export const retires = (p, opts, rand = Math.random) => rand() < retireChance(p, opts);

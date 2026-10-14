@@ -26,3 +26,18 @@ test("stars play on; fringe veterans and unsigned free agents leave sooner", () 
   assert.equal(retires({ pos: "RB", age: 34, ovr: 60 }, {}, () => 0.5), true);
   assert.equal(retires({ pos: "RB", age: 24, ovr: 60 }, {}, () => 0), false);
 });
+
+test("good players never retire early, on a roster or between teams", () => {
+  // Brian Burns: an 89 DL at 29 (the DL retirement age is 32)
+  const burns = { pos: "DL", age: 29, ovr: 89, dev: "star" };
+  assert.equal(retireChance(burns), 0);
+  assert.equal(retireChance(burns, { freeAgent: true }), 0);
+  assert.equal(retireChance({ ...burns, age: 31, ovr: 78 }), 0);
+  // a fading 68 at the same age can still call it a career
+  assert.ok(retireChance({ ...burns, age: 31, ovr: 68 }) > 0);
+  // at his position's age even a star might (less often than an average player)
+  assert.ok(retireChance({ ...burns, age: 32 }) > 0);
+  assert.ok(retireChance({ ...burns, age: 32 }) < retireChance({ ...burns, age: 32, ovr: 76 }));
+  // a good free agent short of his position's age is between teams, not done
+  assert.equal(retireChance({ pos: "WR", age: 29, ovr: 80, dev: "normal" }, { freeAgent: true }), 0);
+});
