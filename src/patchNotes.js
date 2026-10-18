@@ -1078,4 +1078,7 @@ export const PATCH_NOTES = [
     "Depth chart field: the running back sits a little lower so he doesn't cover the quarterback's name.",
     "Standings are just the standings now: the old Playoff Picture list, power index, power rankings and league cap outlook under the tables are gone (the Playoffs tab has the bracket, and cap space shows on the trade screen).",
   ] },
+  { v: "2.95", date: "2026-10-18", title: "Slimmer Strip", notes: [
+    "The franchise strip at the top of Home (needs attention, record, cap space, roster health, owner and locker room) is about half as tall on a computer: each tile's number and its detail share one line.",
+  ] },
 ];
