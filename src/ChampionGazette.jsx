@@ -67,7 +67,7 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
 
   return (
     <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 3000, background: "radial-gradient(ellipse at 50% 30%, #2b2620, #0a0907 75%)", overflowY: "auto", padding: "18px 10px 90px" }}>
-      <style>{CSS}</style>
+      <style>{GAZETTE_CSS}</style>
       <article className="gz">
         <div className="gz-ears">
           <div className="gz-ear">"All the Football<br />That's Fit to Print"</div>
@@ -125,7 +125,8 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
   );
 }
 
-const CSS = `
+export const GAZETTE_FONTS = FONTS;
+export const GAZETTE_CSS = `
 .gz { max-width: 980px; margin: 0 auto; background: #f3eee2; color: #151310; padding: 22px 28px 18px; box-shadow: 0 30px 80px #000c; font-family: 'Old Standard TT', Georgia, 'Times New Roman', serif;
   background-image: radial-gradient(ellipse at 20% 10%, #fffaf0 0%, transparent 55%), radial-gradient(ellipse at 90% 90%, #e2d9c4 0%, transparent 50%); }
 .gz-ears { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
@@ -159,6 +160,9 @@ const CSS = `
 .gz-index { margin-top: 10px; padding-top: 6px; border-top: 3px double #151310; font-size: 11.5px; text-align: center; }
 .gz-next { position: fixed; left: 0; right: 0; bottom: 0; padding: 14px; display: flex; justify-content: center; background: linear-gradient(transparent, #000c 40%); }
 .gz-next button { font: 900 17px system-ui, sans-serif; letter-spacing: .5px; padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; color: #111; background: linear-gradient(180deg, #fde68a, #d4a017); box-shadow: 0 6px 20px #d4a01766; }
+/* a computer screen: the whole front page in view, no scrolling */
+@media (min-width: 761px) { .gz { zoom: .8; } .gz-mvp img { width: min(100%, 230px); } }
+@media (min-width: 761px) and (max-height: 860px) { .gz { zoom: .7; } }
 @media (max-width: 760px) {
   .gz { padding: 14px 12px; }
   .gz-ears { grid-template-columns: 1fr; } .gz-ear { display: none; }

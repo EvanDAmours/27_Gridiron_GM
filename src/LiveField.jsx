@@ -6,6 +6,7 @@ import SpritePlayer from "./pixel/SpritePlayer.jsx";
 import { snapPose, celebrationPose, SPRITES as ART } from "./pixel/sprites.js";
 import { UNIFORMS, teamKey, uniformFor } from "./teamUniforms.js";
 import { logoUrl } from "./ui.jsx";
+import lombardiArt from "./assets/lombardi.webp";
 import { MOBILE } from "./mobile.js";
 
 const FORMATION = {
@@ -63,7 +64,9 @@ function Player({ p, pos, x, y, team, side, away, td }) {
   );
 }
 
-export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay }) {
+// sb: the Super Bowl's name ("Super Bowl LXI") on a neutral field: end zones in each club's color,
+// the Lombardi Trophy at midfield, the game's numerals at the 25s and gold trim.
+export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb }) {
   const los = clamp(ballYard, 1, 99);
   const x0 = xOf(los);
   const o = starters(off, offDepth, offOrder), d = starters(def, defDepth, defOrder);
@@ -106,12 +109,22 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
           outline), its logo painted at each end, and orange pylons at the four corners */}
       {[[0, off, -90], [W - EZ, def, 90]].map(([x, t, rot], i) => t && (
         <g key={i}>
-          <text x={x + EZ / 2} y={H / 2} fill={t.clr || "#334155"} fontSize="34" fontWeight="900" fontFamily="'Arial Black', Arial, sans-serif" textAnchor="middle" dominantBaseline="central" textLength={H - 120} lengthAdjust="spacingAndGlyphs" stroke="#fff" strokeWidth="2.5" paintOrder="stroke" opacity=".92" transform={`rotate(${rot} ${x + EZ / 2} ${H / 2})`}>{(t.name || "").toUpperCase()}</text>
+          {sb && <rect x={x} y="0" width={EZ} height={H} fill={t.clr || "#334155"} />}
+          <text x={x + EZ / 2} y={H / 2} fill={sb ? "#fff" : t.clr || "#334155"} fontSize="34" fontWeight="900" fontFamily="'Arial Black', Arial, sans-serif" textAnchor="middle" dominantBaseline="central" textLength={H - 120} lengthAdjust="spacingAndGlyphs" stroke="#fff" strokeWidth="2.5" paintOrder="stroke" opacity=".92" transform={`rotate(${rot} ${x + EZ / 2} ${H / 2})`}>{(t.name || "").toUpperCase()}</text>
+          {sb && <text x={x + EZ / 2} y={H / 2} fill="#e8c45a" fontSize="9" fontWeight="900" fontFamily="system-ui" textAnchor="middle" dominantBaseline="central" letterSpacing="2" transform={`rotate(${rot} ${x + EZ / 2} ${H / 2}) translate(0 ${rot < 0 ? 26 : -26})`}>{sb.toUpperCase()}</text>}
           {[30, H - 30].map((cy) => <image key={cy} href={logoUrl(t.ab)} x={x + EZ / 2 - 16} y={cy - 16} width="32" height="32" opacity=".5" filter="url(#lf-paint)" transform={`rotate(${rot} ${x + EZ / 2} ${cy})`} />)}
         </g>
       ))}
       {/* the home club's logo at midfield */}
-      {(offHome ? off : def)?.ab && <image href={logoUrl((offHome ? off : def).ab)} x={W / 2 - 44} y={H / 2 - 44} width="88" height="88" opacity=".26" filter="url(#lf-paint)" />}
+      {!sb && (offHome ? off : def)?.ab && <image href={logoUrl((offHome ? off : def).ab)} x={W / 2 - 44} y={H / 2 - 44} width="88" height="88" opacity=".26" filter="url(#lf-paint)" />}
+      {/* the Super Bowl: no home team, so the trophy takes midfield, ringed in gold with the game's name */}
+      {sb && <g opacity=".9">
+        <circle cx={W / 2} cy={H / 2} r="62" fill="#0b1220" fillOpacity=".55" stroke="#e8c45a" strokeWidth="3" />
+        <circle cx={W / 2} cy={H / 2} r="55" fill="none" stroke="#e8c45a" strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" />
+        <image href={lombardiArt} x={W / 2 - 22} y={H / 2 - 52} width="44" height="84" preserveAspectRatio="xMidYMid meet" />
+        <text x={W / 2} y={H / 2 + 46} textAnchor="middle" fill="#fde68a" fontSize="11" fontWeight="900" fontFamily="system-ui" letterSpacing="1.5">{sb.toUpperCase()}</text>
+      </g>}
+      {sb && [25, 75].map((y) => <text key={y} x={xOf(y)} y={H / 2} textAnchor="middle" dominantBaseline="central" fill="#e8c45a" fillOpacity=".55" fontSize="26" fontWeight="900" fontFamily="Georgia, serif" stroke="#fff" strokeOpacity=".35" strokeWidth="1" transform={`rotate(${y < 50 ? -90 : 90} ${xOf(y)} ${H / 2})`}>{sb.replace(/^Super Bowl\s*/i, "")}</text>)}
       <rect x="0" y="0" width={W} height={H} filter="url(#lf-grain)" opacity=".55" />
       {/* yard lines every five, goal lines heavier */}
       {[...Array(21)].map((_, i) => <line key={i} x1={xOf(i * 5)} y1="0" x2={xOf(i * 5)} y2={H} stroke="#fff" strokeOpacity={i % 20 === 0 ? 0.95 : i % 2 ? 0.4 : 0.7} strokeWidth={i % 20 === 0 ? 3 : i % 2 ? 1.2 : 1.8} />)}
@@ -128,7 +141,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
         </g>
       ))}
       <rect x="0" y="0" width={W} height={H} fill="url(#lf-shade)" />
-      <rect x="1" y="1" width={W - 2} height={H - 2} fill="none" stroke="#fff" strokeOpacity=".85" strokeWidth="2" rx="9" />
+      <rect x="1" y="1" width={W - 2} height={H - 2} fill="none" stroke={sb ? "#e8c45a" : "#fff"} strokeOpacity=".85" strokeWidth={sb ? 4 : 2} rx="9" />
       {[2, EZ - 3, W - EZ - 3, W - 8].flatMap((x) => [2, H - 8].map((y) => <rect key={`${x}-${y}`} x={x} y={y} width="6" height="6" rx="1" fill="#f97316" stroke="#7c2d12" strokeWidth=".6" />))}
       {/* line of scrimmage and the line to gain, with a soft glow */}
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#3b82f6" strokeWidth="8" strokeOpacity=".25" />

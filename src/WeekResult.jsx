@@ -91,7 +91,7 @@ const Scorigami = ({ us, them, compact }) => (
   </div>
 );
 
-function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam }) {
+function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam, onPaper }) {
   const [showOthers, setShowOthers] = useState(false);
   if (!result) return null;
   const me = teams[ui];
@@ -158,6 +158,7 @@ function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam }) {
           {top && <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#cbd5e1" }}><b style={{ color: "#fff" }}>{top.name}</b> {top.line}</span>}
           {!top && <span style={{ flex: 1 }} />}
           <button onClick={() => onBox(g)} style={{ background: C.bl, color: "#fff", border: 0, borderRadius: 5, padding: "3px 8px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Box</button>
+          {result.paper && onPaper && <button onClick={() => onPaper(result.paper)} style={{ background: "#d4a017", color: "#111", border: 0, borderRadius: 5, padding: "3px 8px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>📰 Paper</button>}
           {others.length > 0 && <button onClick={() => setShowOthers((v) => !v)} style={{ background: "transparent", color: C.mt, border: `1px solid ${C.bd}`, borderRadius: 5, padding: "3px 8px", fontSize: 12, cursor: "pointer" }}>Scores {showOthers ? "▴" : "▾"}</button>}
         </div>
         {sg && <Scorigami us={us} them={them} compact />}
@@ -192,7 +193,7 @@ function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam }) {
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 4 }}>{g.gd?.top ? "TOP PERFORMERS" : "YOUR STARS"}</div>
           {(g.gd?.top || stars).map((s) => <div key={s.name} style={{ fontSize: 14, padding: "1px 0" }}><b>{s.name}</b> <span style={{ color: C.mt, fontSize: 12 }}>{s.pos}{s.side ? ` · ${teams[s.side === "h" ? g.h : g.a]?.ab}` : ""}</span> <span style={{ color: "#cbd5e1" }}>{s.line}</span></div>)}
           {!(g.gd?.top || stars).length && <div style={{ color: C.mt }}>No standout performances.</div>}
-          <div style={{ marginTop: 8 }}><Btn onClick={() => onBox(g)} bg={C.bl} style={{ fontSize: 13 }}>{g.gd ? "Game recap & box score" : "Box score"}</Btn></div>
+          <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}><Btn onClick={() => onBox(g)} bg={C.bl} style={{ fontSize: 13 }}>{g.gd ? "Game recap & box score" : "Box score"}</Btn>{result.paper && onPaper && <Btn onClick={() => onPaper(result.paper)} bg="#d4a017" c="#111" style={{ fontSize: 13, fontWeight: 800 }}>📰 Read the Gazette</Btn>}</div>
         </div>
       </div>
       {sg && <Scorigami us={us} them={them} />}

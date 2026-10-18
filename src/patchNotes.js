@@ -1043,4 +1043,9 @@ export const PATCH_NOTES = [
     "The trade finder shows each team's cap space now and after the deal, plus yours, with a warning when a deal would put someone over the cap.",
     "Draft day: a big Pause / Resume button sits right next to the clock.",
   ] },
+  { v: "2.90", date: "2026-10-18", title: "Super Bowl Sunday", notes: [
+    "The Super Bowl looks like the Super Bowl: a neutral field with each club's end zone painted in its colors, the Lombardi Trophy at midfield, the game's numerals at the 25s and gold trim. A gold Super Bowl banner with the trophy sits over the scoreboard, and a title card (trophy, both teams, \"One game for everything\") opens the game.",
+    "The Gazette after every playoff game you're in, played live or simmed: the story of the game, the star, the numbers, what went wrong for the loser and their off-season blueprint (biggest needs, expiring deals, aging stars). Read it from the result card (\"Read the Gazette\") or your inbox.",
+    "The championship front page is a bit smaller on a computer, so the whole paper fits on screen without scrolling.",
+  ] },
 ];
