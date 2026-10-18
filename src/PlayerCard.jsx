@@ -1,6 +1,6 @@
 // The player card: a header in his team's colors with his number and an OVR ring, rating bars by
 // skill group, a career OVR graph, season-by-season stats, a contract timeline and his honors.
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { C, oC, Bdg, Face } from "./ui.jsx";
 import { posTag } from "./dline.js";
 
@@ -48,8 +48,13 @@ export function CardHeader({ p, team, ovr, pot, sub, dev }) {
 
 const GROUPS = [["PHYSICAL", [["SPD", "spd"], ["ACC", "acc"], ["AGI", "agi"], ["STR", "str"], ["JMP", "jmp"], ["END", "end"]]]];
 // bare: just the cards (for a parent that lays them out, e.g. the player card's balanced columns)
+// Position skills: his best three, the rest a tap away (a partial scouting read shows what it has).
 export function RatingBars({ p, labels = {}, showPos = true, posLimit = 99, bare = false }) {
-  const pos = showPos && p.posAttrs ? Object.entries(p.posAttrs).slice(0, posLimit) : [];
+  const [allSkills, setAllSkills] = useState(false);
+  const known = showPos && p.posAttrs ? Object.entries(p.posAttrs).slice(0, posLimit) : [];
+  const ranked = posLimit >= 99 ? [...known].sort((a, b) => b[1] - a[1]) : known;
+  const pos = allSkills ? ranked : ranked.slice(0, 3);
+  const more = ranked.length - pos.length;
   const groups = [...GROUPS.map(([g, list]) => [g, list.map(([l, k]) => [l, p[k]]).filter(([, v]) => v != null)]), ...(pos.length ? [["POSITION SKILLS", pos.map(([k, v]) => [labels[k] || k, v])]] : []), ["MENTAL", [["CONFIDENCE", p.conf || 60]]]];
   const cards = groups.map(([g, rows]) => (
         <div key={g} style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px", ...(bare ? { breakInside: "avoid", marginBottom: 12 } : {}) }}>
@@ -61,6 +66,7 @@ export function RatingBars({ p, labels = {}, showPos = true, posLimit = 99, bare
               <b style={{ fontSize: 12, color: oC(v), width: 22, textAlign: "right" }}>{v}</b>
             </div>
           ))}
+          {g === "POSITION SKILLS" && (more > 0 || allSkills) && <button onClick={() => setAllSkills((v) => !v)} style={{ marginTop: 4, background: "transparent", border: 0, color: "#7dd3fc", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>{allSkills ? "Top 3 only ▴" : `All ${ranked.length} skills ▾`}</button>}
         </div>
       ));
   if (bare) return cards;
@@ -99,23 +105,46 @@ export const SEASON_KEYS = ["gp", "gs", "comp", "att", "passYds", "passTD", "pas
 // A season's stats, trimmed to what the card shows (stored on the player at each rollover).
 export const seasonLine = (ss, y, tm) => { const o = { y, tm }; for (const k of SEASON_KEYS) if (ss?.[k]) o[k] = ss[k]; return o; };
 
+// Real players' NFL seasons before the league starts (nflverse), loaded once on first use.
+let realSeasons = null, realLoad = null;
+const loadRealSeasons = () => (realLoad ||= import("./data/realSeasons.json").then((m) => (realSeasons = m.default || m)));
+const normName = (n) => (n || "").toLowerCase().replace(/[.'’]/g, "").replace(/\b(jr|sr|ii|iii|iv|v)\b/g, "").replace(/[^a-z]+/g, " ").trim();
+const GROUP = { QB: "QB", RB: "RB", WR: "WR", TE: "TE", LT: "OL", LG: "OL", C: "OL", RG: "OL", RT: "OL", DL: "DL", LB: "LB", CB: "DB", S: "DB", K: "SPEC", P: "SPEC" };
+export function realPast(p, data) {
+  const list = p?.src === "m27" && data?.[normName(p.name)];
+  if (!list?.length) return [];
+  const gp = (e) => e.s.reduce((t, r) => t + (r.gp || 0), 0);
+  const hit = list.length === 1 ? list[0] : list.find((e) => e.g === GROUP[p.pos]) || [...list].sort((x, y) => gp(y) - gp(x))[0];
+  return hit.s.map((r) => ({ ...r, real: true }));
+}
+
 export function SeasonTable({ p, yr, teamAb }) {
+  const [all, setAll] = useState(false);
+  const [data, setData] = useState(realSeasons);
+  useEffect(() => { if (!data && p?.src === "m27") loadRealSeasons().then(setData).catch(() => {}); }, [data, p?.src]);
   const cols = COLS[p.pos] || [["GS", "gs"]];
-  const rows = [...(p.sh || []), ...(p.ss?.gp ? [seasonLine(p.ss, yr, teamAb)] : [])];
+  const league = [...(p.sh || []), ...(p.ss?.gp ? [seasonLine(p.ss, yr, teamAb)] : [])];
+  const first = league.length ? Math.min(...league.map((r) => r.y)) : yr;
+  const rows = [...realPast(p, data).filter((r) => r.y < first), ...league];
   if (!rows.length) return null;
   const tot = {}; for (const r of rows) for (const k of SEASON_KEYS) if (r[k]) tot[k] = (tot[k] || 0) + r[k];
+  const shown = all ? rows : rows.slice(-3);
   const td = { padding: "5px 6px", textAlign: "right", fontSize: 13, borderBottom: `1px solid ${C.bd}55`, whiteSpace: "nowrap" };
   const fmt = (v) => (v == null ? "–" : Number.isInteger(v) ? v.toLocaleString() : r1(v));
   return (
     <div style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px", marginBottom: 12, overflowX: "auto" }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: "#38bdf8", marginBottom: 4 }}>SEASON BY SEASON</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: "#38bdf8", flex: 1 }}>SEASON BY SEASON</div>
+        {rows.length > 3 && <button onClick={() => setAll(!all)} style={{ background: "transparent", border: `1px solid ${C.bd}`, color: C.mt, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{all ? "Last 3 only ▴" : `All ${rows.length} seasons ▾`}</button>}
+      </div>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead><tr>{["YEAR", "TM", "GP", ...cols.map(([l]) => l)].map((h, i) => <th key={h} style={{ ...td, textAlign: i < 2 ? "left" : "right", fontSize: 11, color: C.mt, fontWeight: 800 }}>{h}</th>)}</tr></thead>
         <tbody>
-          {rows.map((r, i) => <tr key={i}><td style={{ ...td, textAlign: "left" }}>{r.y}</td><td style={{ ...td, textAlign: "left", color: C.mt }}>{r.tm || ""}</td><td style={td}>{fmt(r.gp)}</td>{cols.map(([, k]) => <td key={k} style={td}>{fmt(r[k])}</td>)}</tr>)}
+          {shown.map((r, i) => <tr key={i} style={r.real ? { color: "#cbd5e1" } : undefined}><td style={{ ...td, textAlign: "left" }} title={r.real ? "Real NFL season, before your league" : undefined}>{r.y}{r.real && <span style={{ color: C.mt, fontSize: 10, marginLeft: 3 }}>NFL</span>}</td><td style={{ ...td, textAlign: "left", color: C.mt }}>{r.tm || ""}</td><td style={td}>{fmt(r.gp)}</td>{cols.map(([, k]) => <td key={k} style={td}>{fmt(r[k])}</td>)}</tr>)}
           {rows.length > 1 && <tr style={{ fontWeight: 800 }}><td style={{ ...td, textAlign: "left" }} colSpan={2}>Career</td><td style={td}>{fmt(tot.gp)}</td>{cols.map(([, k]) => <td key={k} style={td}>{fmt(tot[k])}</td>)}</tr>}
         </tbody>
       </table>
+      {rows.some((r) => r.real) && <div style={{ fontSize: 10, color: C.mt, marginTop: 4 }}>NFL = real season before your league began</div>}
     </div>
   );
 }

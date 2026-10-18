@@ -32,7 +32,7 @@ export function serveSuspensions(teams, played, ui = -1) {
 }
 
 // The off-field incidents, with the league's response (games out).
-const OFF_FIELD = [
+export const OFF_FIELD = [
   { k: "dv", w: 3, wks: [6, 8], head: (n) => `${n} arrested on domestic violence charges`,
     text: (n, t, pos, wks) => `The ${t.name} say they are "aware of the situation and gathering information." The league has placed the ${pos} on the Commissioner's Exempt List while it investigates; he is out at least ${wks} weeks.` },
   { k: "sa", w: 2, wks: [6, 10], head: (n) => `${n} faces sexual assault allegations; league opens investigation`,
@@ -46,6 +46,25 @@ const OFF_FIELD = [
   { k: "rules", w: 3, wks: [1, 1], head: (n, wks, t) => `${t.name} bench ${n} for violating team rules`,
     text: (n, t, pos) => `The ${pos} missed meetings and the team flight. He'll sit this week; the coaching staff called it "an internal matter."` },
 ];
+
+// What each incident is, for the suspension decision and the player card. legal: a court case comes
+// with it (criminal charges or a civil lawsuit), open for the season it happened and the next.
+export const INCIDENT_INFO = {
+  dv: { label: "Arrested on domestic violence charges", legal: "Criminal case: domestic violence charges" },
+  sa: { label: "Sexual assault allegations", legal: "Civil lawsuit: sexual assault allegations" },
+  ped: { label: "Suspended for performance-enhancing drugs" },
+  gamble: { label: "Banned for betting on NFL games" },
+  dui: { label: "Arrested for DUI", legal: "Criminal case: DUI charge" },
+  rules: { label: "Benched for violating team rules" },
+};
+export const legalCases = (p, yr) => (p?.incidents || []).filter((i) => INCIDENT_INFO[i.k]?.legal && yr - i.yr <= 1);
+// One incident, weighted like the real league's (PEDs and DUIs most often, gambling rarely).
+export function pickIncident(rand = Math.random) {
+  const tot = OFF_FIELD.reduce((s, e) => s + e.w, 0);
+  let x = rand() * tot;
+  for (const e of OFF_FIELD) { x -= e.w; if (x <= 0) return e; }
+  return OFF_FIELD[0];
+}
 
 export function leagueDrama({ teams, sched, wk, ui, yr, weeks = 1, offField = [], rand = Math.random }) {
   const out = [], log = [];
@@ -102,9 +121,9 @@ export function leagueDrama({ teams, sched, wk, ui, yr, weeks = 1, offField = []
 
 // One week off the field, run right after that week's games (so a suspension keeps a player out of
 // the next ones, even in Sim to Deadline / Sim All): suspensions served, then maybe new trouble.
-// Returns { stories, log }; pass the stories on to leagueDrama as offField.
+// Returns { stories, log, mine } (mine: your players' new incidents); pass the stories on to leagueDrama as offField.
 export function offFieldWeek({ teams, sched, wk, ui, yr, rand = Math.random }) {
-  const out = [], log = [];
+  const out = [], log = [], mine = [];
   const add = (s) => out.push({ id: `${yr}-${wk}-o${out.length}`, kind: "drama", ...s, mine: s.team === ui });
   const played = new Set();
   for (const g of sched || []) if (g.wk === wk && g.played) { played.add(g.h); played.add(g.a); }
@@ -114,15 +133,15 @@ export function offFieldWeek({ teams, sched, wk, ui, yr, rand = Math.random }) {
     const pool = teams.flatMap((t, ti) => (t.roster || []).filter((p) => isFictional(p) && !p.suspended && p.ovr >= 62).map((p) => ({ p, t, ti })));
     const c = pool[Math.floor(rand() * pool.length)];
     if (c) {
-      const tot = OFF_FIELD.reduce((s, e) => s + e.w, 0);
-      let x = rand() * tot, ev = OFF_FIELD[0];
-      for (const e of OFF_FIELD) { x -= e.w; if (x <= 0) { ev = e; break; } }
+      const ev = pickIncident(rand);
       const wks = ev.wks[0] + Math.floor(rand() * (ev.wks[1] - ev.wks[0] + 1));
       c.p.suspended = true; c.p.suspWksLeft = wks;
       (c.p.incidents ||= []).push({ yr, wk, k: ev.k, wks });
       add({ team: c.ti, breaking: ev.k !== "rules", head: ev.head(c.p.name, wks, c.t), text: ev.text(c.p.name, c.t, c.p.pos, wks) });
+      // yours: you decide whether he stays (the suspension popup shows why)
+      if (c.ti === ui) mine.push({ pid: c.p.id, k: ev.k, wks, head: ev.head(c.p.name, wks, c.t), text: ev.text(c.p.name, c.t, c.p.pos, wks) });
       if (c.ti === ui) log.push(`🚨 ${c.p.name} (${c.p.pos}) is out ${wks} game${wks > 1 ? "s" : ""}: ${ev.head(c.p.name, wks, c.t)}.`);
     }
   }
-  return { stories: out, log };
+  return { stories: out, log, mine };
 }

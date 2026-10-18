@@ -3,6 +3,7 @@
 import React from "react";
 import { C, Btn, TeamLogo } from "./ui.jsx";
 import { ROUND_NAMES, seedLabel } from "./playoffs.js";
+import { MOBILE } from "./mobile.js";
 
 function Game({ teams, pb, g, ui, onBox }) {
   if (!g) return <div style={{ border: `1px dashed ${C.bd}`, borderRadius: 8, padding: "10px", color: C.mt, fontSize: 13, textAlign: "center" }}>TBD</div>;
@@ -61,7 +62,42 @@ export default function PlayoffBracket({ pb, teams, ui, onBox, onSim, onPlay, ti
           </span>
         )}
       </div>
-      {["AFC", "NFC"].map((c) => (
+      {!MOBILE && (() => {
+        // desktop: a real bracket, AFC left to right, the Super Bowl in the middle, NFC right to left
+        const stack = (title, list, n, extra, color) => (
+          <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, color: color || C.mt, marginBottom: 8, textAlign: "center", whiteSpace: "nowrap" }}>{title}</div>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-around", gap: 8 }}>
+              {extra}
+              {[...Array(n)].map((_, i) => <Game key={i} teams={teams} pb={pb} g={list[i]} ui={ui} onBox={onBox} />)}
+            </div>
+          </div>
+        );
+        return (
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr)) minmax(0,1.15fr) repeat(3,minmax(0,1fr))", gap: 10, marginBottom: 4 }}>
+              <div style={{ gridColumn: "1 / 4", fontSize: 16, fontWeight: 900, textAlign: "center", borderBottom: `2px solid ${C.bd}`, paddingBottom: 4 }}>AFC</div>
+              <div />
+              <div style={{ gridColumn: "5 / 8", fontSize: 16, fontWeight: 900, textAlign: "center", borderBottom: `2px solid ${C.bd}`, paddingBottom: 4 }}>NFC</div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr)) minmax(0,1.15fr) repeat(3,minmax(0,1fr))", gap: 10, alignItems: "stretch", minHeight: 400 }}>
+              {stack("WILD CARD", games(1, "AFC"), 3, bye("AFC"))}
+              {stack("DIVISIONAL", games(2, "AFC"), 2)}
+              {stack("CONFERENCE", games(3, "AFC"), 1)}
+              <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+                <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.5, color: C.gd, marginBottom: 8, textAlign: "center" }}>🏆 SUPER BOWL</div>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                  <div style={{ border: `2px solid ${C.gd}`, borderRadius: 10, padding: 3, boxShadow: `0 0 18px ${C.gd}33` }}><Game teams={teams} pb={pb} g={sb} ui={ui} onBox={onBox} /></div>
+                </div>
+              </div>
+              {stack("CONFERENCE", games(3, "NFC"), 1)}
+              {stack("DIVISIONAL", games(2, "NFC"), 2)}
+              {stack("WILD CARD", games(1, "NFC"), 3, bye("NFC"))}
+            </div>
+          </div>
+        );
+      })()}
+      {MOBILE && ["AFC", "NFC"].map((c) => (
         <div key={c} style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>{c}</div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
@@ -71,10 +107,10 @@ export default function PlayoffBracket({ pb, teams, ui, onBox, onSim, onPlay, ti
           </div>
         </div>
       ))}
-      <div style={{ maxWidth: 360 }}>
+      {MOBILE && <div style={{ maxWidth: 360 }}>
         <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.gd, marginBottom: 8 }}>SUPER BOWL</div>
         <Game teams={teams} pb={pb} g={sb} ui={ui} onBox={onBox} />
-      </div>
+      </div>}
     </div>
   );
 }

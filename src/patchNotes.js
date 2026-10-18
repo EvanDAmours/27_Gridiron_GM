@@ -1026,4 +1026,12 @@ export const PATCH_NOTES = [
     "Scorigami! When your game ends in a final score that has never happened in NFL history (every final since 1920, through Week 6 of the real 2026 season), the result card and the live game's final screen say so. Each new score counts once: after your league puts it up, it isn't new any more. Every scorigami in the league goes in the log.",
     "\"Loyal\" means something now: a player who has spent three seasons with your club (48 weeks on the roster) takes 10% less to re-sign or extend with you. The pop-up used to promise a trade-value change that never happened.",
   ] },
+  { v: "2.88", date: "2026-10-18", title: "Legacy", notes: [
+    "Retire as GM: League → Franchise History → Career & retire shows your whole career (seasons, record, Super Bowls, playoff trips, the best players you drafted and the records your teams set) with a legacy score, ranked against the ten greatest GMs in NFL history (Belichick, Schramm, Polian, Colbert, Newsome and more). Retire to put it in the books, or come back out of retirement later.",
+    "Playoff heroes grow: a huge playoff game, two big ones, or a big game in a conference title game or Super Bowl adds a point or more of OVR at the new league year, and the Super Bowl MVP gets +2 (three at most; veterans past their prime get one). The player card shows their big playoff games.",
+    "The playoff tree on a computer is a real bracket now: AFC on the left, NFC on the right, the Super Bowl in the middle instead of below everything.",
+    "The season and year are big and clear at the top of every screen, with the phase spelled out (Regular season · Week 7, Off-season · Free agency).",
+    "Suspensions say why: the keep-or-cut decision names the offense (DUI, PEDs, gambling, domestic violence and so on). Player cards show a pending lawsuit or legal case, a suspension's games left, and an off-field record.",
+    "Leaner player cards: only a player's top 3 position skills show (tap All skills for the rest), and season stats show the last 3 seasons with the rest a tap away. Real players' cards now include their real NFL seasons from before your league began (2016–2025).",
+  ] },
 ];
