@@ -53,31 +53,34 @@ function Others({ list, teams, onBox }) {
   );
 }
 
-const SHOW_MS = 10000;
+const SHOW_MS = 6000;
 export default function WeekResult(props) {
   const { result, onClose } = props;
-  const [left, setLeft] = useState(SHOW_MS);
   const [hover, setHover] = useState(false);
   const [kept, setKept] = useState(false);
   const startY = useRef(null); // phones: swipe the card down to dismiss it
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
-  useEffect(() => { setLeft(SHOW_MS); setKept(false); }, [result]);
+  // one timer, not a re-render every tick (that made the card stutter): it pauses while you hover,
+  // and the bar below runs as a CSS animation that pauses with it
+  const left = useRef(SHOW_MS), since = useRef(0);
+  useEffect(() => { left.current = SHOW_MS; setKept(false); }, [result]);
   useEffect(() => {
     if (!result || hover || kept) return;
-    if (left <= 0) { closeRef.current(); return; }
-    const t = setTimeout(() => setLeft((v) => v - 100), 100);
-    return () => clearTimeout(t);
-  }, [result, left, hover, kept]);
+    since.current = Date.now();
+    const t = setTimeout(() => closeRef.current(), left.current);
+    return () => { clearTimeout(t); left.current = Math.max(0, left.current - (Date.now() - since.current)); };
+  }, [result, hover, kept]);
   if (!result) return null;
   return (
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onClickCapture={() => setKept(true)}
       onTouchStart={MOBILE ? (e) => { startY.current = e.touches[0].clientY; } : undefined}
       onTouchEnd={MOBILE ? (e) => { if (startY.current != null && e.changedTouches[0].clientY - startY.current > 60) onClose(); startY.current = null; } : undefined}
-      style={MOBILE ? { position: "fixed", left: 8, right: 8, bottom: "calc(126px + env(safe-area-inset-bottom))", zIndex: 392, animation: "sheetUp .25s ease-out", boxShadow: "0 -8px 30px #000b", borderRadius: 12 } : { position: "relative", marginBottom: 12 }}>
+      style={MOBILE ? { position: "fixed", left: 8, right: 8, bottom: "calc(126px + env(safe-area-inset-bottom))", zIndex: 392, animation: "sheetUp .25s ease-out", boxShadow: "0 -8px 30px #000b", borderRadius: 12 } : { position: "relative", marginBottom: 10 }}>
+      <style>{"@keyframes wrBar{from{width:100%}to{width:0%}}"}</style>
       <Card {...props} />
       {!kept && <div style={{ position: "absolute", left: 12, right: 12, bottom: 1, height: 3, borderRadius: 2, background: "#ffffff14", overflow: "hidden", pointerEvents: "none" }}>
-        <div style={{ height: "100%", width: `${(left / SHOW_MS) * 100}%`, background: hover ? "#64748b" : "#94a3b8", transition: "width .1s linear" }} />
+        <div key={String(result?.wk ?? "") + String(result?.round ?? "")} style={{ height: "100%", background: hover ? "#64748b" : "#94a3b8", animation: `wrBar ${SHOW_MS}ms linear forwards`, animationPlayState: hover ? "paused" : "running" }} />
       </div>}
     </div>
   );
@@ -168,12 +171,12 @@ function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam, onP
   }
   const Side = ({ t, pts, win }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-      <TeamLogo t={t} sz={40} />
+      <TeamLogo t={t} sz={32} />
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 13, color: C.mt, whiteSpace: "nowrap" }}>{t.city}</div>
-        <div style={{ fontSize: 18, fontWeight: 900, whiteSpace: "nowrap" }}>{t.name}</div>
+        <div style={{ fontSize: 16, fontWeight: 900, whiteSpace: "nowrap" }}>{t.name}</div>
       </div>
-      <span style={{ marginLeft: "auto", fontSize: 38, fontWeight: 900, color: win ? "#fff" : "#64748b", fontVariantNumeric: "tabular-nums" }}>{pts}</span>
+      <span style={{ marginLeft: "auto", fontSize: 30, fontWeight: 900, color: win ? "#fff" : "#64748b", fontVariantNumeric: "tabular-nums" }}>{pts}</span>
     </div>
   );
   return (
@@ -184,7 +187,7 @@ function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam, onP
         <span style={{ fontSize: 15, color: "#cbd5e1" }}>{fmtRec(me)} · {divPlace(teams, me)}</span>
       </div>
       <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap", marginTop: 4 }}>
-        <div style={{ fontSize: champs ? 34 : 46, fontWeight: 900, fontStyle: "italic", color: champs ? C.gd : col, lineHeight: 1, minWidth: 140 }}>{champs ? "SUPER BOWL CHAMPIONS" : result.playoff && outcome === "LOSS" ? "ELIMINATED" : outcome}</div>
+        <div style={{ fontSize: champs ? 28 : 36, fontWeight: 900, fontStyle: "italic", color: champs ? C.gd : col, lineHeight: 1, minWidth: 120 }}>{champs ? "SUPER BOWL CHAMPIONS" : result.playoff && outcome === "LOSS" ? "ELIMINATED" : outcome}</div>
         <div style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
           <Side t={me} pts={us} win={us >= them} />
           <Side t={opp} pts={them} win={them >= us} />

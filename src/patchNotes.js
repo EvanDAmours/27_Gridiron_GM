@@ -1072,4 +1072,10 @@ export const PATCH_NOTES = [
     "Injury news looks like every other notice, says it plainly (\"Jon Runyan (LG) is out 5 weeks\"), and stacks above other notices instead of hiding under them.",
     "Unsolicited trade offers (the offer bar and the \"urgent\" QB offers) are off for now; too many were bad deals. Trades you start, the trade finder and the trade block still work.",
   ] },
+  { v: "2.94", date: "2026-10-18", title: "Sleeker Depth Chart", notes: [
+    "Depth chart: the schemes and playbook fold into one slim Game Plan bar under the field (your offense and defense schemes, their roster fit, and core plays picked). Schemes, Core plays and Coaching each open on their own when you want them. The Field/List switch is a small toggle up top. The whole screen fits without scrolling.",
+    "The week's result card closes after 6 seconds instead of 10, is a little smaller, and no longer stutters: its countdown used to redraw the whole card ten times a second.",
+    "Depth chart field: the running back sits a little lower so he doesn't cover the quarterback's name.",
+    "Standings are just the standings now: the old Playoff Picture list, power index, power rankings and league cap outlook under the tables are gone (the Playoffs tab has the bracket, and cap space shows on the trade screen).",
+  ] },
 ];

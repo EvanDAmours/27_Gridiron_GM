@@ -21,7 +21,9 @@ const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, 
 const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8 };
 
 // team: your team; fit(team, role): the fit bonus (0-2) for its current schemes; schemes: { oc: [...], dc: [...] }
-export default function GamePlan({ team, sp, fit, schemes, onScheme, playbook, setPlaybook, plays, coachSpec = {}, onSpecialize, compact }) {
+export default function GamePlan({ team, sp, fit, schemes, onScheme, playbook, setPlaybook, plays, coachSpec = {}, onSpecialize, compact, strip }) {
+  // strip: under the depth chart, a one-line summary; each part opens on its own when you want it
+  const [open, setOpen] = React.useState(null);
   const coach = team.coach || {};
   const trans = team._schemeTransWks || 0;
   const SchemeCard = ({ role, title }) => {
@@ -53,14 +55,23 @@ export default function GamePlan({ team, sp, fit, schemes, onScheme, playbook, s
       </div>
     );
   };
+  const show = (k) => !strip || open === k;
+  const tab = (k, label) => <button key={k} onClick={() => setOpen(open === k ? null : k)} style={{ background: open === k ? `${C.bl}33` : "transparent", color: open === k ? "#bfdbfe" : "#93c5fd", border: `1px solid ${open === k ? C.bl : C.bd}`, borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>{label} {open === k ? "▴" : "▾"}</button>;
   return (
     <div style={{ display: "grid", gap: 10 }}>
-      {trans > 0 && <div style={{ ...card, borderColor: "#f8717166", color: "#fca5a5", fontSize: 14, fontWeight: 700 }}>⚠️ A new scheme is still being installed: {trans} game{trans > 1 ? "s" : ""} to go.</div>}
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${compact ? 280 : 360}px,1fr))`, gap: 10 }}>
+      {strip && <div style={{ ...card, padding: "8px 12px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: C.gd }}>📋 GAME PLAN</span>
+        <span style={{ fontSize: 13 }}>Offense <b>{coach.oc?.scheme || "—"}</b>{coach.oc && fit(team, "oc") > 0 && <span style={{ color: C.gn, fontWeight: 800 }}> +{fit(team, "oc")}</span>}</span>
+        <span style={{ fontSize: 13 }}>Defense <b>{coach.dc?.scheme || "—"}</b>{coach.dc && fit(team, "dc") > 0 && <span style={{ color: C.gn, fontWeight: 800 }}> +{fit(team, "dc")}</span>}</span>
+        <span style={{ fontSize: 13, color: playbook.length < 3 ? C.gd : C.tx }}>Core plays <b>{playbook.length}/3</b></span>
+        <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>{tab("schemes", "Schemes")}{tab("plays", "Core plays")}{onSpecialize && tab("spec", "Coaching")}</span>
+      </div>}
+      {show("schemes") && trans > 0 && <div style={{ ...card, borderColor: "#f8717166", color: "#fca5a5", fontSize: 14, fontWeight: 700 }}>⚠️ A new scheme is still being installed: {trans} game{trans > 1 ? "s" : ""} to go.</div>}
+      {show("schemes") && <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${compact ? 280 : 300}px,1fr))`, gap: 10 }}>
         <SchemeCard role="oc" title="OFFENSIVE SCHEME" />
         <SchemeCard role="dc" title="DEFENSIVE SCHEME" />
-      </div>
-      <div style={card}>
+      </div>}
+      {show("plays") && <div style={card}>
         <div style={{ ...head, display: "flex" }}>CORE PLAYS <span style={{ marginLeft: "auto", color: C.mt, letterSpacing: 0 }}>{playbook.length}/3 picked</span></div>
         <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 10 }}>Pick three plays to build the game plan around. They get a boost when the situation calls for them.</div>
         <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill,minmax(${compact ? 150 : 190}px,1fr))`, gap: 6 }}>
@@ -77,8 +88,8 @@ export default function GamePlan({ team, sp, fit, schemes, onScheme, playbook, s
             );
           })}
         </div>
-      </div>
-      {onSpecialize && (
+      </div>}
+      {onSpecialize && show("spec") && (
         <div style={card}>
           <div style={head}>COACHING SPECIALIZATION · 5 SP each · +3 to that coach's rating</div>
           <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${compact ? 240 : 260}px,1fr))`, gap: 8 }}>

@@ -1219,7 +1219,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     else if(sp==="draft"){to="next season";fn=newSeason;}
     if(fn)setAdvanceAsk({to,fn,checks});};
   const changeScheme=(role,sc)=>{if(scPts<2||!teams[ui]?.coach?.[role])return;setTeams(t=>t.map((tm,i)=>i!==ui?tm:{...tm,coach:{...tm.coach,[role]:{...tm.coach[role],scheme:sc}},_schemeTransWks:2}));setScPts(p=>p-2);setLog(l=>[`📋 ${role.toUpperCase()} scheme → ${sc} (−2SP, 2-game install)`,...l.slice(0,149)]);sm(`Installing the ${sc}: two games to get it down`);};
-  const gamePlanEl=ut?<GamePlan team={ut} sp={scPts} fit={(t,r)=>r==="oc"?getOCFit(t):getDCFit(t)} schemes={{oc:OC_SCHEMES,dc:DC_SCHEMES}} onScheme={changeScheme} playbook={playbook} setPlaybook={setPlaybook} plays={PLAYS_POOL} coachSpec={coachSpec} onSpecialize={specializeCoach} compact={MOBILE}/>:null;
+  const gamePlanEl=ut?<GamePlan team={ut} sp={scPts} fit={(t,r)=>r==="oc"?getOCFit(t):getDCFit(t)} schemes={{oc:OC_SCHEMES,dc:DC_SCHEMES}} onScheme={changeScheme} playbook={playbook} setPlaybook={setPlaybook} plays={PLAYS_POOL} coachSpec={coachSpec} onSpecialize={specializeCoach} compact={MOBILE} strip/>:null;
   // Your pick when the clock runs out or the draft is simmed: your own list first, otherwise the
   // best fit for your roster's needs (not five quarterbacks in a row).
   const userAutoPick=(cls,roster)=>listedPick(scouting,yr,cls)||aiBestPick(roster||[],cls,'analytics');
@@ -1637,8 +1637,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
           </div>);})}
         </div>);})}
       </div>);
-      const viewBtns=<div style={{display:'flex',gap:8}}>{[['field','🏈 Field'],['list','☰ List']].map(([k,l])=><button key={k} onClick={()=>setDepthView(k)} style={{background:depthView===k?'#1e3a5f':'transparent',color:depthView===k?'#7dd3fc':'#94a3b8',border:`2px solid ${depthView===k?'#3b82f6':C.bd}`,borderRadius:8,padding:'10px 22px',fontSize:17,fontWeight:800,cursor:'pointer',minWidth:110}}>{l}</button>)}</div>;
-      if(depthView==='field')return(<div><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}><div style={{fontSize:20,fontWeight:900,color:'#e2e8f0'}}>Depth Chart</div>{viewBtns}</div><DepthChart roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} setSel={setSel} onAutoFill={autoFillAll} onMovePos={movePlayerTo} previewPos={movePreview} gamePlan={gamePlanEl} setPositions={moves=>setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(p=>moves[p.id]?{...p,pos:moves[p.id]}:p)}))}/></div>);
+      const viewBtns=<div role="tablist" style={{display:'inline-flex',background:'#0b1220',border:`1px solid ${C.bd}`,borderRadius:999,padding:3}}>{[['field','🏈 Field'],['list','☰ List']].map(([k,l])=><button key={k} role="tab" aria-selected={depthView===k} onClick={()=>setDepthView(k)} style={{background:depthView===k?'#1e3a5f':'transparent',color:depthView===k?'#e0f2fe':'#94a3b8',border:0,borderRadius:999,padding:'5px 14px',fontSize:13,fontWeight:800,cursor:'pointer'}}>{l}</button>)}</div>;
+      if(depthView==='field')return(<div><div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',margin:'-38px 0 6px'}}>{viewBtns}</div><DepthChart roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} setSel={setSel} onAutoFill={autoFillAll} onMovePos={movePlayerTo} previewPos={movePreview} gamePlan={gamePlanEl} setPositions={moves=>setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(p=>moves[p.id]?{...p,pos:moves[p.id]}:p)}))}/></div>);
       return(<div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8,gap:8,flexWrap:'wrap'}}>
           <div style={{fontSize:20,fontWeight:900,color:'#e2e8f0'}}>Depth Chart</div>{viewBtns}
@@ -1668,36 +1668,6 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
             <td style={{...td,color:C.mt}} className="st-x">{t.pf}</td><td style={{...td,color:C.mt}} className="st-x">{t.pa}</td>
             {(()=>{const k=streakOf(t.id);return<td style={{...td,color:k>0?C.gn:k<0?C.rd:C.mt}} className="st-x">{k?`${k>0?"W":"L"}${Math.abs(k)}`:"–"}</td>;})()}</tr>;})}</tbody></table></div>)}</div>;
       })()}
-      <div style={{marginTop:10,borderTop:`1px solid ${C.bd}`,paddingTop:8}}>
-        <div style={{fontSize:12,fontWeight:700,color:C.gd,marginBottom:5}}>PLAYOFF PICTURE</div>
-        {['AFC','NFC'].map(conf=>{
-          const ct=[...teams].filter(t=>TEAMS[t.id]?.c===conf);
-          const divMap={};ct.forEach(t=>{const dk=TEAMS[t.id]?.d||'X';(divMap[dk]||(divMap[dk]=[])).push(t);});
-          Object.values(divMap).forEach(d=>d.sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)));
-          const divWins=Object.values(divMap).map(d=>d[0]).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa));
-          const wcs=ct.filter(t=>!divWins.find(d=>d.id===t.id)).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)).slice(0,4-divWins.length);
-          const qualifiers=[...divWins,...wcs].slice(0,4);
-          return(<div key={conf} style={{marginBottom:6}}>
-            <div style={{fontSize:11,color:C.mt,fontWeight:700,marginBottom:2}}>{conf}</div>
-            {qualifiers.map((t,i)=>(
-              <div key={t.id} style={{display:"flex",alignItems:"center",gap:5,padding:"2px 4px",fontSize:12,background:t.id===ui?`${C.gn}11`:"transparent",borderRadius:2}}>
-                <span style={{color:C.mt,minWidth:12}}>{i+1}</span>
-                <span style={{fontSize:10,fontWeight:700,color:i<divWins.length?C.gd:"#a78bfa",minWidth:22}}>{i<divWins.length?'DIV':'WC'}</span>
-                <div style={{width:8,height:8,borderRadius:2,background:TEAMS[t.id]?.clr}}/>
-                <TeamLogo t={t} sz={22}/><span style={{flex:1,fontWeight:t.id===ui?800:400}}>{t.city} {t.name}</span>
-                <span style={{fontWeight:700,fontSize:12}}>{t.w}-{t.l}</span>
-              </div>
-            ))}
-          </div>);
-        })}
-      </div>
-      {/* v27 I43: Conference Power Index — top 3 by W-L */}
-      {(()=>{return['AFC','NFC'].map(conf=>{const top3=[...teams].filter(t=>TEAMS[t.id]?.c===conf).sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)).slice(0,3);return(<div key={conf} style={{marginTop:6,background:'#0d1a2d',border:'1px solid #1e3a5f',borderRadius:5,padding:'5px 8px',marginBottom:4}}><div style={{fontSize:11,fontWeight:700,color:'#60a5fa',marginBottom:3}}>⚡ {conf} POWER INDEX</div>{top3.map((t,i)=>{const _pct=t.w+t.l>0?Math.round(t.w/(t.w+t.l)*100):0;return(<div key={t.id} style={{display:'flex',alignItems:'center',gap:5,fontSize:11,padding:'1px 0',borderBottom:i<2?`1px solid ${C.bd}22`:'none'}}><span style={{color:['#f59e0b','#94a3b8','#b45309'][i],fontWeight:800,minWidth:12}}>#{i+1}</span><div style={{width:8,height:8,borderRadius:2,background:TEAMS[t.id]?.clr||'#475569'}}/><span style={{flex:1,fontWeight:t.id===ui?800:400,color:t.id===ui?C.gn:'#e2e8f0'}}>{t.city} {t.name}</span><span style={{color:C.mt,fontWeight:700}}>{t.w}-{t.l}</span><span style={{fontSize:10,color:C.mt}}> {_pct}%</span></div>);})} </div>);});})()}
-      {powerRankings.length>0&&<div style={{marginTop:10,borderTop:`1px solid ${C.bd}`,paddingTop:8}}>
-        <div style={{fontSize:12,fontWeight:700,color:'#f59e0b',marginBottom:5}}>⚡ POWER RANKINGS</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:2}}>{powerRankings.map(r=><div key={r.ab} style={{display:"flex",alignItems:"center",gap:4,padding:"2px 5px",fontSize:12,background:teams[ui]?.ab===r.ab?`${C.gn}11`:"transparent",borderRadius:2}}><span style={{color:C.mt,minWidth:16,fontWeight:700}}>#{r.rank}</span><div style={{width:8,height:8,borderRadius:2,background:r.clr||'#475569'}}/><span style={{flex:1,fontWeight:teams[ui]?.ab===r.ab?800:400}}>{r.ab}</span><span style={{fontSize:11,color:r.trend==='▲'?C.gn:r.trend==='▽'?C.rd:C.mt,fontWeight:700}}>{r.trend}</span></div>)}</div>
-      </div>}
-      <div style={{marginTop:10,borderTop:`1px solid ${C.bd}`,paddingTop:8}}><div onClick={()=>setCapOutlookOpen(o=>!o)} style={{fontSize:12,fontWeight:700,color:'#60a5fa',cursor:'pointer',userSelect:'none',marginBottom:capOutlookOpen?5:0}}>💰 LEAGUE CAP OUTLOOK {capOutlookOpen?'▲':'▼'}</div>{capOutlookOpen&&<div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:2}}>{[...teams].map((t,i)=>{const nxHit=+(t.roster.filter(p=>p.contract>=2).reduce((s,p)=>s+(p.salary||0),0)+((t.coach?.oc?.salary||0)+(t.coach?.dc?.salary||0)+(t.coach?.st?.salary||0))).toFixed(1);const nxSpc=+(leagueCap()-nxHit).toFixed(1);return<div key={i} style={{display:'flex',alignItems:'center',gap:3,padding:'2px 4px',fontSize:11,background:i===ui?`${C.gn}11`:'transparent',borderRadius:2}}><div style={{width:6,height:6,borderRadius:1,background:TEAMS[t.id]?.clr||'#475569'}}/><span style={{flex:1,fontWeight:i===ui?700:400}}>{TEAMS[t.id]?.ab}</span><span style={{color:nxSpc>=30?C.gn:nxSpc>=10?C.gd:C.rd,fontWeight:700}}>${nxSpc.toFixed(0)}M</span></div>;})}  </div>}</div>
     </div>}
 
     {/* SCHEDULE */}
