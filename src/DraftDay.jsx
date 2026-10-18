@@ -2,6 +2,7 @@
 // steal/reach ticker and the trade-up phone bank.
 import { MOBILE } from "./mobile.js";
 import React, { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { C, Bdg, Btn, TeamLogo, SheetGrip, CloseX } from "./ui.jsx";
 import { pickValueTag, pickLabel } from "./draftTrade.js";
 import { posTag } from "./dline.js";
@@ -187,3 +188,39 @@ export function TradeUpPanel({ offers, yr, onAccept, onPass, onClose }) {
     </div></PhoneSheet>
   );
 }
+
+// The phone rings while you're on the clock: a club behind you wants your pick. The best offer comes
+// in as a call (logo, who they're after, what they'll give) with a few seconds to answer before
+// they hang up and try someone else. The full list of offers stays below the clock.
+export function IncomingCall({ offer, team, curPick, yr, onAccept, onMore, onDecline, secs = 20 }) {
+  const drop = useRef(onDecline);
+  drop.current = onDecline;
+  useEffect(() => { const t = setTimeout(() => drop.current(), secs * 1000); return () => clearTimeout(t); }, [offer.id, secs]);
+  // on the page itself, above the draft board (inside it, the board's layers covered it)
+  return createPortal(
+    <div style={{ position: "fixed", right: MOBILE ? 8 : "auto", left: MOBILE ? 8 : 18, top: MOBILE ? 64 : "auto", bottom: MOBILE ? "auto" : 18, zIndex: 2400, fontFamily: C.f, color: C.tx, width: MOBILE ? "auto" : 380, borderRadius: 16, overflow: "hidden", background: "linear-gradient(160deg,#1e1b4b,#0b1120 70%)", border: "1px solid #a78bfa88", boxShadow: "0 20px 60px #000d, 0 0 0 1px #000", animation: "dd-in .3s ease-out" }}>
+      <style>{"@keyframes dd-in{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}} @keyframes callRing{0%{box-shadow:0 0 0 0 #a78bfa99}70%{box-shadow:0 0 0 16px #a78bfa00}100%{box-shadow:0 0 0 0 #a78bfa00}} @keyframes callBar{from{width:100%}to{width:0%}} @keyframes callShake{0%,100%{transform:rotate(0)}10%,30%{transform:rotate(-12deg)}20%,40%{transform:rotate(12deg)}50%{transform:rotate(0)}}"}</style>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px 10px" }}>
+        <div style={{ borderRadius: "50%", padding: 6, background: "#0b1120", animation: "callRing 1.4s infinite" }}><TeamLogo t={team} sz={46} /></div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#c4b5fd" }}><span style={{ display: "inline-block", animation: "callShake 1.2s infinite" }}>📞</span> INCOMING CALL</div>
+          <div style={{ fontSize: 17, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{team.city} {team.name}</div>
+          <div style={{ fontSize: 12.5, color: "#cbd5e1" }}>"We'd like to move up to #{curPick.overall}{offer.target ? ` for ${offer.target.name}` : ""}."</div>
+        </div>
+      </div>
+      <div style={{ padding: "0 16px 12px" }}>
+        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: C.mt, marginBottom: 4 }}>THEY OFFER</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>{[offer.theirPick, ...offer.extras].map((a, i) => <span key={i} style={{ fontSize: 13, fontWeight: 800, padding: "3px 9px", borderRadius: 6, background: i ? "#1e293b" : "#14532d", color: i ? "#e2e8f0" : "#86efac" }}>{pickLabel(a, yr)}</span>)}</div>
+        <div style={{ fontSize: 12, color: offer.pct >= 0 ? C.gn : C.gd, marginTop: 6 }}>Trade chart: {offer.pct >= 0 ? `+${offer.pct}% in your favor` : `${offer.pct}% (they're asking a discount)`}</div>
+        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+          <Btn onClick={onAccept} bg={C.gn} style={{ flex: 1, fontSize: 14, padding: "8px 0", fontWeight: 900 }}>Accept</Btn>
+          <Btn onClick={onMore} bg="#1e3a5f" c="#7dd3fc" style={{ flex: 1, fontSize: 14, padding: "8px 0" }}>Ask for more</Btn>
+          <Btn onClick={onDecline} bg="#7f1d1d" c="#fecaca" style={{ fontSize: 14, padding: "8px 12px" }}>Hang up</Btn>
+        </div>
+      </div>
+      <div style={{ height: 4, background: "#ffffff14" }}><div key={offer.id} style={{ height: "100%", background: "#a78bfa", animation: `callBar ${secs}s linear forwards` }} /></div>
+    </div>,
+    document.body
+  );
+}
+

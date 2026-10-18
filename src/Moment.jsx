@@ -5,6 +5,7 @@ import React from "react";
 import { C, TeamLogo, Face, Bdg } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import goldJacket from "./assets/gold-jacket.webp";
+import { Jersey } from "./Jersey.jsx";
 
 const CONFETTI = Array.from({ length: 42 }, (_, i) => ({ left: (i * 37) % 100, delay: (i * 0.13) % 2.4, dur: 2.6 + ((i * 7) % 10) / 10, rot: (i * 47) % 360, size: 6 + (i % 4) * 2 }));
 const CSS = `
@@ -57,9 +58,84 @@ function HofCeremony({ m, onClose }) {
   );
 }
 
+// Jersey night: his number goes up to the rafters (or his name onto the Ring of Honor) under the lights.
+function RaftersNight({ m, onClose }) {
+  const t = m.team, ring = m.kind === "ring";
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2600, background: `radial-gradient(ellipse at 50% 0%, ${t.clr || "#1e3a8a"}cc, #02040af5 65%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <style>{CSS + "@keyframes raise{0%{transform:translateY(160px) scale(.9);opacity:0}70%{transform:translateY(-6px)}100%{transform:none;opacity:1}} @keyframes beam{0%,100%{opacity:.35}50%{opacity:.7}}"}</style>
+      <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "conic-gradient(from 160deg at 20% -5%, transparent 0deg, #ffffff22 12deg, transparent 26deg), conic-gradient(from 174deg at 80% -5%, transparent 0deg, #ffffff22 12deg, transparent 26deg)", animation: "beam 4s ease-in-out infinite" }} />
+      <div role="dialog" aria-label={ring ? "Ring of Honor" : "Jersey retirement"} onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(560px, 100%)", textAlign: "center", color: "#fff", animation: "mmIn .45s ease-out" }}>
+        <div style={{ fontSize: 12.5, fontWeight: 900, letterSpacing: 4, color: t.ac === "#ffffff" ? "#fde68a" : (t.ac || "#fde68a") }}>{ring ? "RING OF HONOR" : "JERSEY RETIREMENT NIGHT"}</div>
+        <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 2 }}>{t.city} {t.name} · {m.yr}</div>
+        <div style={{ display: "flex", justifyContent: "center", margin: "18px 0 6px", animation: "raise 1.6s cubic-bezier(.2,.8,.3,1) both" }}>
+          {ring ? (
+            <div style={{ border: `3px solid ${t.ac || "#fde68a"}`, borderRadius: 10, background: `linear-gradient(180deg, ${t.clr}, #0b1220)`, padding: "14px 26px", boxShadow: "0 10px 40px #000c" }}>
+              <div style={{ fontSize: 11, letterSpacing: 3, color: "#fde68a", fontWeight: 900 }}>{t.name.toUpperCase()} RING OF HONOR</div>
+              <div style={{ fontSize: MOBILE ? 26 : 34, fontWeight: 900, letterSpacing: 2 }}>{m.p.name.toUpperCase()}</div>
+              <div style={{ fontSize: 13, color: "#cbd5e1" }}>{m.p.pos}{m.p.num ? ` · #${m.p.num}` : ""}</div>
+            </div>
+          ) : (
+            <div style={{ position: "relative", padding: "10px 18px 4px", border: `3px solid ${t.ac || "#fde68a"}`, borderRadius: "6px 6px 50% 50% / 6px 6px 18% 18%", background: `linear-gradient(180deg, ${t.clr}, #0b1220)`, boxShadow: "0 12px 50px #000c" }}>
+              <Jersey team={t} name={m.p.name} num={m.p.num} size={MOBILE ? 150 : 190} />
+              <div style={{ fontSize: 12, letterSpacing: 2, fontWeight: 900, color: "#fde68a", paddingBottom: 10 }}>NO ONE WILL WEAR #{m.p.num} AGAIN</div>
+            </div>
+          )}
+        </div>
+        <div className="mm-title" style={{ fontSize: MOBILE ? 26 : 34, fontWeight: 900, fontStyle: "italic", marginTop: 8 }}>{m.p.name}</div>
+        {m.sub && <div style={{ fontSize: 15, color: "#e2e8f0", marginTop: 6, lineHeight: 1.45 }}>{m.sub}</div>}
+        {m.lines?.length > 0 && <div style={{ marginTop: 10, textAlign: "left", background: "#00000055", borderRadius: 12, padding: "4px 14px" }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone} />)}</div>}
+        <button onClick={onClose} style={{ marginTop: 16, width: "100%", background: t.ac || "#fde68a", color: "#0b1220", border: 0, borderRadius: 10, padding: "12px 0", fontSize: 16, fontWeight: 900, letterSpacing: 1, cursor: "pointer" }}>CONTINUE →</button>
+      </div>
+    </div>
+  );
+}
+
+// Ring night: before the home opener the champions get their rings and the banner goes up.
+function ChampionRing({ t, yr, size }) {
+  const gold = "#e8c45a";
+  return (
+    <svg viewBox="0 0 200 200" width={size} height={size} style={{ filter: "drop-shadow(0 16px 30px #000c) drop-shadow(0 0 30px #fbbf2455)" }}>
+      <defs>
+        <linearGradient id="rg-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fff7d6" /><stop offset=".35" stopColor={gold} /><stop offset=".7" stopColor="#8a6d1d" /><stop offset="1" stopColor="#f6e3a1" /></linearGradient>
+        <radialGradient id="rg-s" cx=".35" cy=".3" r=".8"><stop offset="0" stopColor="#ffffff" /><stop offset=".25" stopColor="#dbeafe" /><stop offset="1" stopColor="#94a3b8" /></radialGradient>
+      </defs>
+      <ellipse cx="100" cy="150" rx="62" ry="26" fill="none" stroke="url(#rg-g)" strokeWidth="16" />
+      <rect x="44" y="38" width="112" height="100" rx="22" fill="url(#rg-g)" />
+      <rect x="54" y="48" width="92" height="80" rx="16" fill={t.clr || "#1e3a8a"} />
+      {Array.from({ length: 14 }, (_, i) => { const a = (i / 14) * Math.PI * 2; return <circle key={i} cx={100 + Math.cos(a) * 40} cy={88 + Math.sin(a) * 34} r="4.2" fill="url(#rg-s)" />; })}
+      <text x="100" y="84" textAnchor="middle" fontSize="13" fontWeight="900" fill="#fff" fontFamily="system-ui">{t.ab}</text>
+      <text x="100" y="102" textAnchor="middle" fontSize="11" fontWeight="900" fill={gold} fontFamily="Georgia, serif">{yr}</text>
+      <text x="100" y="146" textAnchor="middle" fontSize="8" fontWeight="900" fill="#3b2a0a" fontFamily="system-ui" letterSpacing="1">WORLD CHAMPIONS</text>
+    </svg>
+  );
+}
+function RingNight({ m, onClose }) {
+  const t = m.team;
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2600, background: "radial-gradient(ellipse at 50% 30%, #3b2a0acc, #02040af5 70%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <style>{CSS + "@keyframes ringSpin{0%{transform:rotateY(80deg) scale(.6);opacity:0}100%{transform:none;opacity:1}}"}</style>
+      <Confetti colors={[t.clr || "#1e3a8a", "#e8c45a", "#fde68a", "#ffffff"]} />
+      <div role="dialog" aria-label="Ring night" onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(600px, 100%)", textAlign: "center", color: "#fff", background: "linear-gradient(170deg,#1c1206,#0b0703 70%)", border: "2px solid #d4a017", borderRadius: 18, padding: MOBILE ? "18px 16px" : "22px 28px", boxShadow: "0 0 80px #d4a01744", animation: "mmIn .45s ease-out" }}>
+        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 4, color: "#d4a017" }}>RING NIGHT · {m.yr + 1} HOME OPENER</div>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 8, perspective: 600 }}><div style={{ animation: "ringSpin 1.3s cubic-bezier(.2,.8,.3,1) both" }}><ChampionRing t={t} yr={m.yr} size={MOBILE ? 170 : 210} /></div></div>
+        <div className="mm-title" style={{ fontSize: MOBILE ? 26 : 34, fontWeight: 900, fontStyle: "italic", marginTop: 4 }}>{m.sbName || `${m.yr} WORLD CHAMPIONS`}</div>
+        <div style={{ fontSize: 15, color: "#e2e8f0", marginTop: 6, lineHeight: 1.45 }}>The {t.city} {t.name} raise the banner and hand out the rings before the {m.yr + 1} opener.</div>
+        {m.names?.length > 0 && <div style={{ marginTop: 12, background: "#00000055", borderRadius: 12, padding: "10px 14px", textAlign: "left" }}>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#d4a017", marginBottom: 4 }}>GETTING THEIR RINGS</div>
+          <div style={{ fontSize: 14, color: "#fde68a", lineHeight: 1.6 }}>{m.names.join(" · ")}</div>
+        </div>}
+        <button onClick={onClose} style={{ marginTop: 16, width: "100%", background: "linear-gradient(90deg,#b45309,#fbbf24,#b45309)", color: "#1c1206", border: 0, borderRadius: 10, padding: "12px 0", fontSize: 16, fontWeight: 900, letterSpacing: 2, cursor: "pointer" }}>DEFEND THE TITLE →</button>
+      </div>
+    </div>
+  );
+}
+
 export default function Moment({ m, onClose }) {
   if (!m?.team) return null;
   if (m.kind === "hof") return <HofCeremony m={m} onClose={onClose} />;
+  if (m.kind === "jersey" || m.kind === "ring") return <RaftersNight m={m} onClose={onClose} />;
+  if (m.kind === "rings") return <RingNight m={m} onClose={onClose} />;
   const t = m.team;
   const clr = t.clr || "#1e3a8a", ac = t.ac || "#f59e0b";
   const party = m.kind === "clinch" || m.kind === "record";

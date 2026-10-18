@@ -1137,4 +1137,12 @@ export const PATCH_NOTES = [
     "A done deal closes the negotiation on its own: no more \"Done deal\" sheet to dismiss. The toast confirms it, and a star (80+ from another club) gets the Signing Day card.",
     "Kickers and punters no longer get the Signing Day card.",
   ] },
+  { v: "3.4", date: "2026-10-18", title: "Draft Night", notes: [
+    "Finishing free agency takes you straight to the draft board (it used to drop you on Home and make you click Go to the draft). The clock starts once you're there.",
+    "The green room: when you make a pick he walks up under the stage lights holding your jersey, his name across the back and his number on the front. First-rounders come from the green room.",
+    "The phone rings on the clock: the best trade-down offer comes in as an incoming call (who's calling, who they're after, what they'll give) with 20 seconds to accept, ask for more or hang up. Every offer is still listed below the clock.",
+    "Jersey retirement night: retiring a number raises his jersey to the rafters under the lights. Ring of Honor inductions get their own night too.",
+    "Ring night: the season after a title opens with the championship ring (your colors, the year, the stones) and the players getting theirs, before the kickoff preview.",
+    "Milestone watch in live games: your players closing in on a season milestone (1,000 yards, 4,000 passing, 10 sacks...) show above the field with what they need, and it lights up when they get there.",
+  ] },
 ];

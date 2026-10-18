@@ -8,6 +8,7 @@ import { MOBILE } from "./mobile.js";
 import React, { useState, useMemo, useEffect } from "react";
 import { mockDraft } from "./mockDraft.js";
 import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo } from "./ui.jsx";
+import { Jersey, rookieNum } from "./Jersey.jsx";
 import {
   prospectRead, scoutProspect, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, scoutsShortlist, coverage, csRank, riskLabel, gradeTone,
   SCOUT_GROUPS, SCOUT_ROLES, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
@@ -691,7 +692,8 @@ export function topRatings(p, n = 3) {
   return all.sort((a, b) => b[1] - a[1]).slice(0, n);
 }
 
-// The moment you make a pick: who you got, his development trait and his three best ratings.
+// The moment you make a pick: who you got, his development trait and his three best ratings. The
+// stage first: he walks up from the green room (a first-rounder) and holds up your jersey.
 export function DraftReveal({ pick, team, onClose }) {
   const p = pick.p;
   const dev = devOf(p);
@@ -700,7 +702,13 @@ export function DraftReveal({ pick, team, onClose }) {
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(2,6,15,.86)", zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Your draft pick" style={{ width: "100%", maxWidth: 460, borderRadius: 16, overflow: "hidden", border: `2px solid ${fg}`, background: "#0b1220", boxShadow: `0 0 70px ${fg}44`, animation: "drPop .45s cubic-bezier(.2,.9,.3,1.3) both" }}>
         <style>{"@keyframes drPop { from { opacity: 0; transform: scale(.7) } to { opacity: 1; transform: none } } @keyframes drFlip { from { opacity: 0; transform: rotateX(90deg) } to { opacity: 1; transform: none } }"}</style>
-        <div style={{ padding: "16px 20px 12px", background: `linear-gradient(135deg, ${team.clr}cc, #0b1220)`, textAlign: "center" }}>
+        <div style={{ position: "relative", padding: "16px 20px 12px", background: `radial-gradient(ellipse at 50% -10%, #ffffff40, transparent 55%), linear-gradient(135deg, ${team.clr}cc, #0b1220)`, textAlign: "center", overflow: "hidden" }}>
+          <div aria-hidden style={{ position: "absolute", inset: 0, background: "conic-gradient(from 200deg at 15% -10%, transparent 0deg, #ffffff18 10deg, transparent 22deg), conic-gradient(from 148deg at 85% -10%, transparent 0deg, #ffffff18 10deg, transparent 22deg)", pointerEvents: "none" }} />
+          {pick.rd === 1 && <div style={{ position: "relative", fontSize: 11, fontWeight: 900, letterSpacing: 3, color: "#fde68a", marginBottom: 2 }}>★ FROM THE GREEN ROOM ★</div>}
+          <div style={{ position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 10, marginBottom: 8, animation: "drPop .5s ease-out both" }}>
+            <Face s={p.face} sz={76} />
+            <div style={{ transform: "rotate(-6deg)", marginBottom: -4 }}><Jersey team={team} name={p.name} num={rookieNum(p)} size={92} /></div>
+          </div>
           <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: "#ffffffb0" }}>ROUND {pick.rd} · PICK #{pick.overall}</div>
           <div style={{ fontSize: 13, color: "#ffffffb0", marginTop: 2 }}>The {team.city} {team.name} select</div>
           <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.15, marginTop: 6 }}>{p.name}</div>
