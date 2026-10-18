@@ -1128,4 +1128,9 @@ export const PATCH_NOTES = [
     "A franchise legend retiring (one of your stars) gets a farewell card: his peak, his honors and where he's headed next.",
     "Coaching uses the full screen, and the coach market is a grid instead of a long list.",
   ] },
+  { v: "3.2", date: "2026-10-18", title: "Canton", notes: [
+    "The Hall of Fame ceremony: when one of your players retires a Hall of Famer, the gold jacket comes down under the lights, his bust is unveiled and the Class he'll be enshrined with is announced. Your franchise legends' Hall of Fame card opens the same ceremony.",
+    "The live game's field is much bigger on a computer (it takes most of the screen, with the play-by-play beside it).",
+    "Standings: a playoff race panel beside the division tables, with each conference's seven seeds, the teams in the hunt, games back, and clinch marks (z: No. 1 seed, y: division, x: playoff spot, e: eliminated).",
+  ] },
 ];

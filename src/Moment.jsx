@@ -4,6 +4,7 @@
 import React from "react";
 import { C, TeamLogo, Face, Bdg } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
+import goldJacket from "./assets/gold-jacket.webp";
 
 const CONFETTI = Array.from({ length: 42 }, (_, i) => ({ left: (i * 37) % 100, delay: (i * 0.13) % 2.4, dur: 2.6 + ((i * 7) % 10) / 10, rot: (i * 47) % 360, size: 6 + (i % 4) * 2 }));
 const CSS = `
@@ -32,8 +33,33 @@ const Line = ({ k, v, tone }) => (
 );
 
 // m: { kind: clinch | record | signing | kickoff, team, ... } (see App for each one's fields)
+// The Hall of Fame: the gold jacket comes down, the bust is unveiled, Canton welcomes him.
+function HofCeremony({ m, onClose }) {
+  const t = m.team;
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 4300, background: "radial-gradient(ellipse at 50% 25%, #78350fcc, #0a0603f5 70%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <style>{CSS + "@keyframes hofDrop{0%{transform:translateY(-120px) rotate(-6deg);opacity:0}60%{transform:translateY(8px) rotate(2deg);opacity:1}100%{transform:none}} @keyframes hofSway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}} @keyframes hofRays{to{transform:rotate(360deg)}}"}</style>
+      <div aria-hidden style={{ position: "absolute", width: 900, height: 900, top: "50%", left: "50%", marginLeft: -450, marginTop: -560, background: "repeating-conic-gradient(#fde68a14 0 6deg, transparent 6deg 18deg)", animation: "hofRays 60s linear infinite", pointerEvents: "none", borderRadius: "50%", maskImage: "radial-gradient(circle, #000 20%, transparent 65%)", WebkitMaskImage: "radial-gradient(circle, #000 20%, transparent 65%)" }} />
+      <div role="dialog" aria-label="Hall of Fame" onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(620px, 100%)", maxHeight: "calc(var(--vh, 100vh) - 32px)", overflowY: "auto", textAlign: "center", background: "linear-gradient(170deg, #1c1206, #0b0703 70%)", border: "2px solid #d4a017", borderRadius: 18, padding: MOBILE ? "18px 16px" : "22px 30px 26px", color: "#fff", boxShadow: "0 0 90px #d4a01744, 0 30px 80px #000c", animation: "mmIn .5s ease-out" }}>
+        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 4, color: "#d4a017" }}>PRO FOOTBALL HALL OF FAME</div>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: MOBILE ? 15 : 17, color: "#fde68a", letterSpacing: 3, marginTop: 2 }}>CLASS OF {m.cls}</div>
+        <div style={{ position: "relative", height: MOBILE ? 190 : 230, marginTop: 6 }}>
+          <img src={goldJacket} alt="The gold jacket" style={{ position: "absolute", left: "50%", marginLeft: MOBILE ? -95 : -115, width: MOBILE ? 190 : 230, height: MOBILE ? 190 : 230, objectFit: "contain", animation: "hofDrop 1.2s cubic-bezier(.2,.8,.3,1) both, hofSway 5s 1.2s ease-in-out infinite", filter: "drop-shadow(0 12px 28px #000c) drop-shadow(0 0 22px #fbbf2455)" }} />
+          {m.p.face && <div style={{ position: "absolute", left: "50%", bottom: -6, transform: "translateX(-50%)", borderRadius: "50%", padding: 4, background: "linear-gradient(135deg,#fde68a,#b45309,#fde68a)", boxShadow: "0 6px 20px #000b", animation: "mmIn .6s 1s ease-out both" }}><Face s={m.p.face} sz={MOBILE ? 64 : 78} /></div>}
+        </div>
+        <div className="mm-title" style={{ fontFamily: "Georgia, serif", fontSize: MOBILE ? 30 : 42, fontWeight: 900, letterSpacing: 1, marginTop: 14, lineHeight: 1.05 }}>{m.p.name}</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 6 }}><Bdg pos={m.p.pos} /><TeamLogo t={t} sz={24} /><span style={{ fontSize: 14, color: "#e7cf8a" }}>{m.tagline || `${t.city} ${t.name}`}</span></div>
+        {m.sub && <div style={{ fontSize: MOBILE ? 14 : 15.5, color: "#e2e8f0", marginTop: 12, lineHeight: 1.5, fontStyle: "italic" }}>{m.sub}</div>}
+        {m.lines?.length > 0 && <div style={{ marginTop: 12, textAlign: "left" }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone || "#fde68a"} />)}</div>}
+        <button onClick={onClose} style={{ marginTop: 18, width: "100%", background: "linear-gradient(90deg,#b45309,#fbbf24,#b45309)", color: "#1c1206", border: 0, borderRadius: 10, padding: "12px 0", fontSize: 16, fontWeight: 900, letterSpacing: 2, cursor: "pointer" }}>WELCOME TO CANTON →</button>
+      </div>
+    </div>
+  );
+}
+
 export default function Moment({ m, onClose }) {
   if (!m?.team) return null;
+  if (m.kind === "hof") return <HofCeremony m={m} onClose={onClose} />;
   const t = m.team;
   const clr = t.clr || "#1e3a8a", ac = t.ac || "#f59e0b";
   const party = m.kind === "clinch" || m.kind === "record";
