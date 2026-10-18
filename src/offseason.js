@@ -187,6 +187,14 @@ function needs(t) {
     .map((x) => x.pos);
 }
 
+// How long a free agent signs for: a starter in his prime gets a real multi-year deal, a veteran
+// near the end a short one, a depth player a year or two.
+export const faYears = (p, rand = Math.random) => {
+  const age = p.age || 27, ovr = p.ovr || 0;
+  const [lo, hi] = ovr < 72 ? [1, 2] : age <= 27 ? (ovr >= 80 ? [3, 5] : [2, 4]) : age <= 29 ? [2, 4] : age <= 32 ? [1, 3] : [1, 2];
+  return roll(rand, lo, hi);
+};
+
 // AI clubs sign from the pool. perTeam caps signings each; skip() can keep players off-limits
 // (e.g. your own free agents in the first wave). capSpace(t) says what a club can still spend.
 // Mutates the teams and the pool; returns the signings.
@@ -204,7 +212,7 @@ export function aiSignings(teams, pool, ui, { perTeam = 2, minOvr = 60, capSpace
         const k = pool.findIndex((p) => p.pos === pos && p.ovr >= bar && !skip(p) && askingPrice(p) <= capSpace(t));
         if (k < 0) continue;
         const [p] = pool.splice(k, 1);
-        const deal = { ...freshDeal(p), salary: askingPrice(p), contract: roll(rand, 1, p.age >= 30 ? 2 : 4), cy, formerTeam: undefined };
+        const deal = { ...freshDeal(p), salary: askingPrice(p), contract: faYears(p, rand), cy, formerTeam: undefined };
         t.roster.push(deal);
         signed.push({ p: deal, team: i, from: p.formerTeam });
         break;
@@ -242,7 +250,7 @@ export function starterSignings(teams, pool, ui, { minOvr = 72, perTeam = 2, cap
     if (best < 0) continue;
     pool.splice(pool.indexOf(p), 1);
     const salary = +(askingPrice(p) * (1 - Math.max(0, bestPull) * 0.5)).toFixed(1);
-    const deal = { ...freshDeal(p), salary, contract: roll(rand, 1, p.age >= 30 ? 2 : 4), cy, formerTeam: undefined };
+    const deal = { ...freshDeal(p), salary, contract: faYears(p, rand), cy, formerTeam: undefined };
     const t = teams[best];
     t.roster.push(deal);
     if (cut && t.roster.length > ROSTER_TARGET) {

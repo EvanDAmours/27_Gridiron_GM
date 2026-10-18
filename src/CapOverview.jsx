@@ -68,7 +68,7 @@ export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = 
 export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext, rows, canExtend, starters, onPlayer, mobile, leagueAvg, onContracts, cy, rookies = 0 }) {
   const used = cap - space;
   const byGroup = GROUPS.map(([g, ps]) => [g, team.roster.filter((p) => ps.includes(p.pos)).reduce((s, p) => s + (p.salary || 0), 0), leagueAvg ? leagueAvg(ps) : null]);
-  const top = [...team.roster].sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, 5);
+  const top = [...team.roster].sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, 8);
   const tips = capAdvice({ rows, space, nextRoom, canExtend, starters });
   const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
   const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8 };
@@ -84,7 +84,7 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
         ))}
       </div>
       {cy != null && <CapLongView team={team} cy={cy} room0={space} rookies={rookies} onPlayer={onPlayer} mobile={mobile} />}
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${mobile ? 280 : 340}px,1fr))`, gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${mobile ? 280 : 320}px,1fr))`, gap: 10 }}>
         <div style={card}>
           <div style={head}>WHERE THE MONEY GOES</div>
           <div style={{ height: 12, borderRadius: 6, background: C.bd, overflow: "hidden", display: "flex", marginBottom: 10 }} title={`${$(used)} used of ${$(cap)}`}>
@@ -104,8 +104,9 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
               </div>
             );
           })}
-          <div style={{ fontSize: 12, fontWeight: 800, color: C.mt, margin: "10px 0 4px" }}>BIGGEST CAP HITS</div>
-          {onContracts && <button onClick={() => onContracts("all")} style={{ float: "right", marginTop: -22, background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer" }}>All {rows.length} contracts →</button>}
+        </div>
+        <div style={card}>
+          <div style={{ ...head, display: "flex" }}><span style={{ flex: 1 }}>BIGGEST CAP HITS</span>{onContracts && <button onClick={() => onContracts("all")} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", letterSpacing: 0, fontWeight: 700 }}>All {rows.length} contracts →</button>}</div>
           {top.map((p) => <div key={p.id} onClick={() => onPlayer(p)} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, padding: "3px 0", cursor: "pointer" }}><Bdg pos={posTag(p)} /><span style={{ flex: 1 }}>{p.name}</span><b style={{ color: C.gd }}>{$(p.salary)}</b><span style={{ color: C.mt, minWidth: 44, textAlign: "right" }}>{Math.round(((p.salary || 0) / cap) * 100)}%</span></div>)}
         </div>
         <div style={card}>

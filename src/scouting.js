@@ -405,7 +405,8 @@ export function prospectRead(sc, p) {
 
 // ---------- Grades, projections and reports ----------
 
-const LETTERS = [[92, "A+"], [88, "A"], [85, "A-"], [82, "B+"], [79, "B"], [76, "B-"], [73, "C+"], [70, "C"], [67, "C-"], [-Infinity, "D"]];
+// the top of a class runs 90-99, so the A grades are split finely there
+const LETTERS = [[95, "A+"], [92, "A"], [89, "A-"], [85, "B+"], [81, "B"], [77, "B-"], [73, "C+"], [70, "C"], [67, "C-"], [-Infinity, "D"]];
 export function potGrade(v) {
   for (const [min, g] of LETTERS) if (v >= min) return g;
   return "D";

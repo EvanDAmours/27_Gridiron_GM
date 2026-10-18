@@ -1,10 +1,8 @@
-// The schedule: your 17 games and bye week as one clean list, the playoff tree under it (live
-// once the playoffs start, projected before), and every week's league games in a second tab.
+// The schedule: your 17 games and bye week (two columns on a computer), and every week's league
+// games in a second tab. The playoff tree has its own tab.
 import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { C, Btn, TeamLogo, kickoff } from "./ui.jsx";
-import PlayoffBracket from "./PlayoffBracket.jsx";
-import { nflSeeds, makeBracket } from "./playoffs.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const tabBtn = (on) => ({ background: on ? `${C.bl}33` : "transparent", color: on ? "#fff" : C.mt, border: `1px solid ${on ? C.bl : C.bd}`, padding: "8px 16px", borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: "pointer" });
@@ -15,13 +13,17 @@ function MySchedule({ g }) {
   const me = teams[ui];
   const next = sp === "regular" ? sched.find((x) => !x.played && (x.h === ui || x.a === ui)) : null;
   const rows = Array.from({ length: 18 }, (_, i) => i + 1).map((week) => ({ week, game: sched.find((x) => x.wk === week && (x.h === ui || x.a === ui)) }));
-  const td = { padding: "10px 8px", borderBottom: `1px solid ${C.bd}55`, fontSize: 16, verticalAlign: "middle" };
+  const td = { padding: "7px 8px", borderBottom: `1px solid ${C.bd}55`, fontSize: 15, verticalAlign: "middle" };
+  // desktop: weeks 1-9 and 10-18 side by side, so the whole season fits on one screen
+  const halves = typeof window !== "undefined" && window.innerWidth >= 1000 ? [rows.slice(0, 9), rows.slice(9)] : [rows];
   return (
     <div style={panel}>
       <style>{"@media (max-width: 640px) { .sch-btn { display: none } .sch-t td { padding-left: 4px !important; padding-right: 4px !important; font-size: 15px !important } } @media (min-width: 641px) { .sch-show { display: none } }"}</style>
-      <table className="sch-t" style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${halves.length}, minmax(0, 1fr))`, gap: 14 }}>
+      {halves.map((half, hi) => (
+      <table key={hi} className="sch-t" style={{ width: "100%", borderCollapse: "collapse" }}>
         <tbody>
-          {rows.map(({ week, game }) => {
+          {half.map(({ week, game }) => {
             if (!game) {
               return (
                 <tr key={week} style={{ background: "#7c3aed14" }}>
@@ -41,7 +43,7 @@ function MySchedule({ g }) {
                 <td style={td}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
                     <span style={{ color: C.mt, fontWeight: 700, width: 22 }}>{game.neutral ? "vs" : home ? "vs" : "@"}</span>
-                    <TeamLogo t={opp} sz={34} />
+                    <TeamLogo t={opp} sz={28} />
                     <span>
                       <span style={{ fontWeight: 800 }}>{opp.city} {opp.name}</span>
                       <span style={{ display: "block", fontSize: 13, color: C.mt }}>
@@ -63,6 +65,8 @@ function MySchedule({ g }) {
           })}
         </tbody>
       </table>
+      ))}
+      </div>
     </div>
   );
 }
@@ -118,10 +122,8 @@ function LeagueSchedule({ g }) {
 
 export default function SchedulePage(g) {
   const [view, setView] = useState("mine");
-  const { teams, ui, pb, yr, extras, onBox } = g;
+  const { teams, ui, yr, extras } = g;
   const me = teams[ui];
-  // Before the playoffs: the bracket as it would look if the season ended today.
-  const projected = !pb?.seeds && teams.length >= 32 ? makeBracket(nflSeeds(teams, "AFC"), nflSeeds(teams, "NFC")) : null;
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: "8px 18px", flexWrap: "wrap", marginBottom: 12 }}>
@@ -135,11 +137,6 @@ export default function SchedulePage(g) {
       {view === "mine" ? (
         <>
           <MySchedule g={g} />
-          <div style={panel}>
-            {pb?.seeds
-              ? <PlayoffBracket pb={pb} teams={teams} ui={ui} onBox={onBox} />
-              : projected && <PlayoffBracket pb={projected} teams={teams} ui={ui} onBox={onBox} title="Playoff picture · if the season ended today" />}
-          </div>
           {extras}
         </>
       ) : <LeagueSchedule g={g} />}

@@ -12,13 +12,13 @@ function Game({ teams, pb, g, ui, onBox }) {
     const t = teams[id];
     const won = played && g.w === id, lost = played && g.w !== id;
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 8px", opacity: lost ? 0.5 : 1 }}>
-        <TeamLogo t={t} sz={30} />
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 8px", opacity: lost ? 0.5 : 1 }}>
+        <TeamLogo t={t} sz={24} />
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: won ? 900 : 700, color: id === ui ? C.gn : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
-          <div style={{ fontSize: 11, color: C.mt }}>{seedLabel(pb, id).split(" ")[1]} · {t.w}-{t.l}{t.t ? `-${t.t}` : ""}{home && !played ? " · home" : ""}</div>
+          <div style={{ fontSize: 13.5, fontWeight: won ? 900 : 700, lineHeight: 1.2, color: id === ui ? C.gn : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+          <div style={{ fontSize: 10.5, color: C.mt, lineHeight: 1.2 }}>{seedLabel(pb, id).split(" ")[1]} · {t.w}-{t.l}{t.t ? `-${t.t}` : ""}{home && !played ? " · home" : ""}</div>
         </div>
-        {played && <b style={{ fontSize: 20, color: won ? "#fff" : C.mt }}>{pts}</b>}
+        {played && <b style={{ fontSize: 18, color: won ? "#fff" : C.mt }}>{pts}</b>}
       </div>
     );
   };

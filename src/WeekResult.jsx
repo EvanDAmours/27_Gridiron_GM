@@ -76,7 +76,7 @@ export default function WeekResult(props) {
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onClickCapture={() => setKept(true)}
       onTouchStart={MOBILE ? (e) => { startY.current = e.touches[0].clientY; } : undefined}
       onTouchEnd={MOBILE ? (e) => { if (startY.current != null && e.changedTouches[0].clientY - startY.current > 60) onClose(); startY.current = null; } : undefined}
-      style={MOBILE ? { position: "fixed", left: 8, right: 8, bottom: "calc(126px + env(safe-area-inset-bottom))", zIndex: 392, animation: "sheetUp .25s ease-out", boxShadow: "0 -8px 30px #000b", borderRadius: 12 } : { position: "relative", marginBottom: 10 }}>
+      style={MOBILE ? { position: "fixed", left: 8, right: 8, bottom: "calc(126px + env(safe-area-inset-bottom))", zIndex: 392, animation: "sheetUp .25s ease-out", boxShadow: "0 -8px 30px #000b", borderRadius: 12 } : { position: "fixed", top: 92, right: 16, width: "min(780px, calc(100% - 32px))", zIndex: 380, animation: "toastDown .25s ease-out", boxShadow: "0 14px 44px #000d", borderRadius: 12 }}>
       <style>{"@keyframes wrBar{from{width:100%}to{width:0%}}"}</style>
       <Card {...props} />
       {!kept && <div style={{ position: "absolute", left: 12, right: 12, bottom: 1, height: 3, borderRadius: 2, background: "#ffffff14", overflow: "hidden", pointerEvents: "none" }}>
@@ -94,7 +94,7 @@ const Scorigami = ({ us, them, compact }) => (
   </div>
 );
 
-function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam, onPaper }) {
+function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam, onPaper, onRecap }) {
   const [showOthers, setShowOthers] = useState(false);
   if (!result) return null;
   const me = teams[ui];
@@ -109,6 +109,7 @@ function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam, onP
         <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.gd }}>REGULAR SEASON COMPLETE</div>
         <div style={{ fontSize: MOBILE ? 22 : 34, fontWeight: 900, lineHeight: 1.1, marginTop: 4 }}>{me.city} {me.name} {fmtRec(me)}</div>
         <div style={{ fontSize: MOBILE ? 13 : 16, color: "#cbd5e1", marginTop: 4 }}>{divPlace(teams, me)} · {result.playoffs ? "Playoff bound!" : "Missed the playoffs"}</div>
+        {onRecap && <Btn onClick={onRecap} bg={C.bd} c="#7dd3fc" style={{ fontSize: 13, padding: "6px 12px", marginTop: 8 }}>📊 Season recap card</Btn>}
       </div>
     );
   }

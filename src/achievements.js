@@ -9,6 +9,7 @@ export const ACHIEVEMENTS = [
   { id: "twelve", icon: "🔥", name: "Juggernaut", desc: "Win 12 or more games in a season.", test: ({ seasons }) => seasons.some((s) => s.w >= 12) },
   { id: "perfect", icon: "💯", name: "Perfection", desc: "Go undefeated in the regular season.", test: ({ seasons }) => seasons.some((s) => s.l === 0 && s.w >= 17) },
   { id: "turnaround", icon: "🔄", name: "Worst to First", desc: "Win 6 more games than the season before.", test: ({ seasons }) => { const s = [...seasons].sort((a, b) => a.yr - b.yr); return s.some((x, i) => i > 0 && x.w - s[i - 1].w >= 6); } },
+  { id: "division", icon: "🚩", name: "Division Champs", desc: "Win your division.", test: ({ seasons }) => seasons.some((s) => s.div) },
   { id: "playoffs", icon: "🎟️", name: "Postseason Bound", desc: "Make the playoffs.", test: ({ career }) => career.playoffs >= 1 },
   { id: "champ", icon: "🏆", name: "World Champions", desc: "Win the Super Bowl.", test: ({ titles }) => titles.length >= 1 },
   { id: "repeat", icon: "🔁", name: "Repeat", desc: "Win back-to-back Super Bowls.", test: ({ titles }) => titles.some((y) => titles.includes(y - 1)) },

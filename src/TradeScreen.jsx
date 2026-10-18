@@ -10,6 +10,7 @@ import { getCapPhase } from "./cap.js";
 const yrsLeft = (p) => { const { yr, sp } = getCapPhase(); return yearsLeft(p, yr, sp); };
 import { MOBILE } from "./mobile.js";
 import { posTag } from "./dline.js";
+import { topNeeds, needGroup, needName } from "./needs.js";
 
 // the defensive line is two positions here: edge rushers and interior tackles
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P"];
@@ -257,6 +258,33 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
             );
           })}
         </div>}
+        {view !== "best" && !MOBILE && (() => {
+          // under the logos: the best players around the league at the spots you need most
+          const needs = topNeeds(me.roster, 3);
+          if (!needs.length) return null;
+          return (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8 }}>TARGETS FOR YOUR NEEDS</div>
+              <div style={{ display: "grid", gridTemplateColumns: `repeat(${needs.length}, minmax(0, 1fr))`, gap: 10 }}>
+                {needs.map((pos) => {
+                  const list = teams.filter((t) => t.id !== ui).flatMap((t) => t.roster.filter((p) => needGroup(p) === pos && !p.injured).map((p) => ({ p, t }))).sort((a, b) => b.p.ovr - a.p.ovr).slice(0, 5);
+                  return (
+                    <div key={pos} style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "10px 12px" }}>
+                      <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 6, textTransform: "capitalize" }}>{needName(pos)}</div>
+                      {list.map(({ p, t }) => (
+                        <button key={p.id} onClick={() => { setTrTm(t.id); setTrOff({ g: [], r: [p], gPk: [], rPk: [] }); }} title={`Open a trade with the ${t.name} for ${p.name}`} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", background: "transparent", border: 0, borderBottom: `1px solid ${C.bd}55`, padding: "5px 0", color: "#e2e8f0", cursor: "pointer", textAlign: "left" }}>
+                          <TeamLogo t={t} sz={22} />
+                          <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 400 }}>{p.age} · {money(p.salary)}</span></span>
+                          <b style={{ color: oC(p.ovr) }}>{p.ovr}</b>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
       </>)}
     </div>
   );
