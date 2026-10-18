@@ -1,0 +1,69 @@
+// Every fourth week the sim stops here: your scouting points (they cap out, so spend them), how the
+// college season moved the public board, and the prospects your scouts want eyes on near your pick.
+import React from "react";
+import { C, Bdg, CloseX, sheetWrap, sheetBox, SheetGrip } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
+import { prospectRead, SCOUT_PTS_CAP, scoutCost } from "./scouting.js";
+import { posTag } from "./dline.js";
+import { ScoutPtsBadge, ScoutButton, GradeChip } from "./ScoutingUI.jsx";
+
+const box = { background: "#ffffff08", border: "1px solid #ffffff14", borderRadius: 10, padding: "10px 12px", marginBottom: 10 };
+const head = (c) => ({ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: c, marginBottom: 6 });
+
+export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick, onOpen, onClose }) {
+  const cls = g.dc?.[g.yr] || [];
+  const byId = new Map(cls.map((p) => [p.id, p]));
+  const targets = targetIds.map((id) => byId.get(id)).filter(Boolean);
+  const sc = g.scouting || {};
+  const pts = sc.pts || 0, full = pts >= SCOUT_PTS_CAP - 1;
+  const cheapest = Math.min(...targets.map((p) => scoutCost(p) || 99), 99);
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(2,6,15,.86)", zIndex: 2200, display: "flex", alignItems: "center", justifyContent: "center", padding: 14, ...sheetWrap(MOBILE) }}>
+      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Scouting checkpoint" style={{ position: "relative", width: "100%", maxWidth: 760, maxHeight: "90vh", overflowY: "auto", borderRadius: 16, background: "#0b1220", border: "1px solid #38bdf866", padding: 14, color: C.tx, fontFamily: C.f, ...sheetBox(MOBILE) }}>
+        {MOBILE && <SheetGrip onClose={onClose} />}
+        <CloseX onClick={onClose} />
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 10, paddingRight: 40 }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#38bdf8" }}>🔭 SCOUTING CHECKPOINT · WEEK {wk}</div>
+            <div style={{ fontSize: MOBILE ? 19 : 23, fontWeight: 900 }}>Your scouts are back from the road</div>
+            <div style={{ fontSize: 13, color: "#cbd5e1" }}>You pick around <b>#{pick}</b> right now. Every report you file now is a pick you don't make blind in April.</div>
+          </div>
+          <ScoutPtsBadge pts={pts} sc={sc} />
+        </div>
+        {(full || sc.lost > 0) && <div style={{ ...box, background: "#7c2d1222", border: "1px solid #f9731666", fontSize: 13, color: "#fdba74" }}>
+          ⚠ Your scouts carry at most <b>{SCOUT_PTS_CAP}</b> points of unfiled work; past that, each week's point is lost.{sc.lost > 0 ? <> You've already lost <b>{sc.lost}</b> this year.</> : " You're at the cap: spend some now."}
+        </div>}
+        <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "1fr 1.2fr", gap: 10 }}>
+          <div style={box}>
+            <div style={head("#fbbf24")}>📈 COLLEGE STOCK WATCH</div>
+            <div style={{ fontSize: 11, color: C.mt, marginBottom: 4 }}>The public board moved. Some of it is real, some of it is hype; only a report tells you which.</div>
+            {news.length ? news.map((n) => <div key={n.pid} style={{ display: "flex", gap: 6, alignItems: "baseline", fontSize: 13, padding: "4px 0", borderBottom: "1px solid #ffffff0d" }}>
+              <b style={{ color: n.dir > 0 ? C.gn : C.rd, width: 14 }}>{n.dir > 0 ? "▲" : "▼"}</b>
+              <span style={{ flex: 1, minWidth: 0 }}><b>{n.name}</b> <span style={{ color: C.mt }}>{n.pos} · {n.college}</span><div style={{ fontSize: 12, color: "#94a3b8" }}>#{n.from} → #{n.to}: {n.why}</div></span>
+            </div>) : <div style={{ fontSize: 13, color: C.mt }}>A quiet month on the college beat.</div>}
+          </div>
+          <div style={box}>
+            <div style={head("#38bdf8")}>🎯 YOUR SCOUTS WANT EYES ON</div>
+            {targets.length ? targets.map((p) => {
+              const r = prospectRead(sc, p);
+              return <div key={p.id} style={{ display: "flex", gap: 8, alignItems: "center", padding: "5px 0", borderBottom: "1px solid #ffffff0d" }}>
+                <Bdg pos={posTag(p)} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                  <div style={{ fontSize: 12, color: C.mt }}>Board #{p.cons?.now ?? p.cons?.mid} · {p.bio?.college} · {r.lvl === 0 ? "no report yet" : "report filed; workup next"}</div>
+                </div>
+                <span title="Your read on his ceiling">{r.grade ? <GradeChip g={r.grade} small /> : <span style={{ color: C.mt, fontWeight: 800 }}>??</span>}</span>
+                <ScoutButton g={g} p={p} read={r} small />
+              </div>;
+            }) : <div style={{ fontSize: 13, color: C.mt }}>Everyone near your pick is scouted. Nice work.</div>}
+            {targets.length > 0 && pts < cheapest && <div style={{ fontSize: 12, color: "#fca5a5", marginTop: 6 }}>Not enough points for these. More come in every week.</div>}
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+          <button onClick={onClose} style={{ background: "#1e293b", color: C.tx, border: 0, borderRadius: 8, padding: "9px 14px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Back to the season</button>
+          <button onClick={onOpen} style={{ background: "#0369a1", color: "#fff", border: 0, borderRadius: 8, padding: "9px 14px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>🔭 Open the scouting board</button>
+        </div>
+      </div>
+    </div>
+  );
+}

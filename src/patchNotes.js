@@ -1048,4 +1048,11 @@ export const PATCH_NOTES = [
     "The Gazette after every playoff game you're in, played live or simmed: the story of the game, the star, the numbers, what went wrong for the loser and their off-season blueprint (biggest needs, expiring deals, aging stars). Read it from the result card (\"Read the Gazette\") or your inbox.",
     "The championship front page is a bit smaller on a computer, so the whole paper fits on screen without scrolling.",
   ] },
+  { v: "2.91", date: "2026-10-18", title: "Scouting Season", notes: [
+    "Fixed: scouting points never arrived during the season. You were scouting a whole draft class on the 8 points you started with. Your scouts now earn a point every week of the regular season.",
+    "Spend them or lose them: your scouts carry at most 14 points of unfiled work. Past that, each week's point is lost (the scouting screens say how many).",
+    "Scouting checkpoints: every fourth week (weeks 4, 8, 12 and 16) the sim stops for a report from the road: your points, where you pick right now, and the prospects your scouts want eyes on near your pick (fits for your needs first), with Scout buttons right there.",
+    "College stock watch: at each checkpoint the college season moves the public board. Prospects rise and fall, and about half the moves are real and half are hype; only a scouting report tells you which. The AI clubs lean on the board, so they reach for fake risers and let real ones slide to whoever did the homework.",
+    "Draft day says whether you did the work: your pick's analyst take now notes a full workup, a report, or a pick made blind.",
+  ] },
 ];

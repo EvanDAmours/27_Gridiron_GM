@@ -44,12 +44,12 @@ test("staff changes only in the preseason and free agency; both scouts can work 
   assert.equal(swapScoutRoles(r.sc, "preseason").sc.major.id, r.sc.minor.id);
 });
 
-test("points arrive weekly, catch up after a sim-all, and reset each year", () => {
+test("points arrive weekly (up to the cap), catch up after a sim-all, and reset each year", () => {
   let sc = { ...newScouting(2026), major: null, minor: null, major2: null, minor2: null };
   sc = creditWeeks(sc, 3);
   assert.equal(sc.pts, SCOUT_PTS_START + 3);
   sc = creditWeeks(sc, 18);
-  assert.equal(sc.pts, SCOUT_PTS_START + 18);
+  assert.equal(sc.pts, Math.min(SCOUT_PTS_START + 18, 14)); // capped: unspent work past the cap is lost
   assert.equal(creditWeeks(sc, 18).pts, sc.pts, "no double credit");
   assert.equal(startScoutingYear(sc, 2027).pts, SCOUT_PTS_START);
 });
@@ -255,4 +255,21 @@ test("second major and minor scouts: each covers its own group, and stacking thr
   const fresh = newScouting(2026);
   const r = hireScout(fresh, "preseason", fresh.pool[0].id, "minor2");
   assert.ok(r.ok); assert.equal(r.sc.minor2.id, fresh.pool[0].id);
+});
+
+test("weekly points cap out: past the cap they're lost", async () => {
+  const { creditWeeks, SCOUT_PTS_CAP } = await import("../src/scouting.js");
+  const sc = creditWeeks({ pts: 8, wkPaid: 0 }, 17);
+  assert.equal(sc.pts, SCOUT_PTS_CAP);
+  assert.equal(sc.lost, 8 + 17 - SCOUT_PTS_CAP);
+});
+
+test("the college stock watch moves the board once per checkpoint", async () => {
+  const { stockWatch } = await import("../src/scouting.js");
+  const cls = Array.from({ length: 60 }, (_, i) => ({ id: `p${i}`, name: `P ${i}`, pos: "WR", truePot: 70 + (i % 20), trueOvr: 60, bio: { college: "State" }, cons: { score: 80 - i * 0.3, mid: i + 1 } }));
+  const news = stockWatch(cls, 2027, 4);
+  assert.equal(news.length, 6);
+  assert.ok(news.every((n) => n.from !== undefined && n.to >= 1));
+  assert.ok(cls.every((p) => p.cons.now >= 1 && p.cons.mid >= 1));
+  assert.equal(stockWatch(cls, 2027, 4).length, 0); // not twice for the same week
 });

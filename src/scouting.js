@@ -50,6 +50,10 @@ const rint = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
 export const SCOUT_PTS_START = 8; // in the bank when the season starts
 export const SCOUT_PTS_WEEKLY = 1; // earned each week of the regular season
 export const SCOUT_PTS_COMBINE = 4; // extra budget at the Combine
+// Your scouts can only carry so much unfiled work: past the cap, a week's point is lost. Spend them.
+export const SCOUT_PTS_CAP = 14;
+// Every fourth week of the regular season the sim stops for a scouting checkpoint.
+export const SCOUT_CHECKPOINTS = [4, 8, 12, 16];
 export const COMBINE_INVITES = 180;
 export const COMBINE_INTERVIEWS = 4;
 
@@ -172,16 +176,17 @@ export function creditWeeks(sc, wk) {
   const paid = sc.wkPaid || 0;
   if (wk <= paid) return sc;
   const workhorse = staffHas(sc, "workhorse");
-  let pts = sc.pts || 0;
+  let pts = sc.pts || 0, lost = 0;
   for (let w = paid + 1; w <= wk; w++) {
     pts += SCOUT_PTS_WEEKLY;
     if (workhorse && w % 4 === 0) pts++;
+    if (pts > SCOUT_PTS_CAP) { lost += pts - SCOUT_PTS_CAP; pts = SCOUT_PTS_CAP; }
   }
-  return { ...sc, pts, rpts: (sc.rpts ?? RPTS_START) + (wk - paid) * RPTS_WEEKLY, wkPaid: wk };
+  return { ...sc, pts, lost: (sc.lost || 0) + lost, rpts: (sc.rpts ?? RPTS_START) + (wk - paid) * RPTS_WEEKLY, wkPaid: wk };
 }
 
 // A new season: points left over from last year's class expire.
-export const startScoutingYear = (sc, year) => ({ ...sc, pts: SCOUT_PTS_START, rpts: RPTS_START, regions: {}, regionsYr: year, wkPaid: 0, interviewsLeft: 0, list: { yr: year, ids: [] } });
+export const startScoutingYear = (sc, year) => ({ ...sc, lost: 0, pts: SCOUT_PTS_START, rpts: RPTS_START, regions: {}, regionsYr: year, wkPaid: 0, interviewsLeft: 0, list: { yr: year, ids: [] } });
 
 // ---------- Regional scouting ----------
 // Your area scouts work conferences, not players. Every trip to a region gives you a rough read
@@ -609,6 +614,42 @@ export function rankClass(cls) {
   if (cls.some((p) => p.cons.mid == null)) [...cls].sort((a, b) => b.cons.score - a.cons.score).forEach((p, i) => (p.cons.mid = i + 1));
   return sortByRank(cls);
 }
+// ---------- College stock watch ----------
+// At each checkpoint the college season moves the public board: a handful of prospects rise or fall.
+// Half the moves are real (toward what he truly is), half are hype or a bad stretch; only your
+// scouts can tell which. The AI clubs lean on the board too, so a fake riser goes too early.
+const RISE = ["a three-touchdown game against a ranked opponent", "a dominant stretch in conference play", "NFL scouts packing the stands for his last two games", "tape that has evaluators talking first round", "a breakout month after a slow start"];
+const FALL = ["a quiet stretch against weak competition", "two missed games with a hamstring injury", "questions about his effort on film", "a rough outing in a rivalry game", "turnover problems that keep showing up"];
+export function stockWatch(cls, yr, wk) {
+  if ((cls || []).some((p) => p.cons?.moves?.some((m) => m.wk === wk))) return []; // this week's moves are in
+  const r = stream(`${yr}|${wk}|stock`);
+  const pool = (cls || []).filter((p) => !SPECIALIST(p) && (p.cons?.now ?? p.cons?.mid ?? 999) <= 160 && p.cons?.final == null);
+  const news = [];
+  for (let i = 0; i < 6 && pool.length; i++) {
+    const p = pool.splice(Math.floor(r.next() * pool.length), 1)[0];
+    const truth = kpValue(p, p.truePot * 0.78 + p.trueOvr * 0.22) - p.cons.score;
+    const real = r.next() < 0.5;
+    const dir = real ? (truth >= 0 ? 1 : -1) : r.next() < 0.5 ? 1 : -1;
+    const mag = 1.6 + r.next() * 2.6;
+    const before = p.cons.now ?? p.cons.mid;
+    p.cons.score += dir * mag;
+    p.cons.moves = [...(p.cons.moves || []), { wk, d: dir, real }];
+    news.push({ p, dir, before, why: (dir > 0 ? RISE : FALL)[Math.floor(r.next() * 5)] });
+  }
+  // the board re-ranks (the preseason rank, cons.mid, stays as it was)
+  [...(cls || [])].sort((a, b) => b.cons.score - a.cons.score).forEach((p, i) => (p.cons.now = i + 1));
+  return news.map((n) => ({ pid: n.p.id, name: n.p.name, pos: n.p.pos, college: n.p.bio?.college, dir: n.dir, from: n.before, to: n.p.cons.now, why: n.why }));
+}
+
+// Who your scouts want eyes on at a checkpoint: prospects the board has near your pick (and fits for
+// your needs, and this week's movers) that you haven't fully worked up.
+export function scoutTargets(cls, { pick = 16, needs = [], movers = [], n = 4 } = {}) {
+  const near = (p) => Math.abs((p.cons?.now ?? p.cons?.mid ?? 999) - pick);
+  return (cls || []).filter((p) => !SPECIALIST(p) && (p.scout?.lvl || 0) < 2 && near(p) <= 24)
+    .map((p) => ({ p, s: near(p) - (needs.includes(p.pos === "DL" ? posTag(p) : p.pos) ? 10 : 0) - (movers.includes(p.id) ? 8 : 0) - ((p.scout?.lvl || 0) === 0 ? 3 : 0) }))
+    .sort((a, b) => a.s - b.s).slice(0, n).map((x) => x.p);
+}
+
 // ---------- Hidden gems ----------
 // Every class has a few sleepers: players far better than anyone's board says (Brock Purdy,
 // Davante Adams, Antonio Brown...). The consensus board and most AI teams see only what the
@@ -681,7 +722,7 @@ export function plantGems(cls, yr) {
   for (const p of cls) p.gemChk = 1;
   return cls;
 }
-export const csRank = (p) => p.cons?.final ?? p.cons?.mid ?? 999;
+export const csRank = (p) => p.cons?.final ?? p.cons?.now ?? p.cons?.mid ?? 999;
 // Your scouts' own board: everyone ranked on what your scouts think of him (their estimates,
 // plus the development traits they've seen). Where they have no read, they go with the
 // consensus. Returns Map id -> your rank.

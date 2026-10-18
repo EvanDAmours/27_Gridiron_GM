@@ -61,9 +61,10 @@ export function CovTag({ read }) {
 
 function Arrow({ p }) {
   const c = p.cons;
-  if (!c?.final || c.final === c.mid) return null;
-  const up = c.final < c.mid;
-  return <span title={`Preseason #${c.mid} → final #${c.final}`} style={{ display: "block", fontSize: 9, fontWeight: 700, color: up ? C.gn : C.rd }}>{up ? "▲" : "▼"}{Math.abs(c.mid - c.final)}</span>;
+  const cur = c?.final ?? c?.now;
+  if (!cur || cur === c.mid) return null;
+  const up = cur < c.mid;
+  return <span title={`Preseason #${c.mid} → ${c.final ? "final" : "now"} #${cur}`} style={{ display: "block", fontSize: 9, fontWeight: 700, color: up ? C.gn : C.rd }}>{up ? "▲" : "▼"}{Math.abs(c.mid - cur)}</span>;
 }
 
 // On your scouts' board: where the consensus has him, and whether your scouts like him more or less.
