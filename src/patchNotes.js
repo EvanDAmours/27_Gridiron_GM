@@ -1154,4 +1154,13 @@ export const PATCH_NOTES = [
   { v: "3.6", date: "2026-10-18", title: "Checkpoints Pause, Not Stop", notes: [
     "Sim to Deadline / Sim All pause at each scouting checkpoint, then pick back up on their own: press Keep simming, or just scout everyone it lists and the sim carries on. Open the scouting board mid-sim and a Resume sim / Stop bar waits for you. Stop the sim ends it where it is. No more pressing Sim All again after every checkpoint.",
   ] },
+  { v: "3.7", date: "2026-10-18", title: "A Real Market", notes: [
+    "Contracts now pile up at the top, like the real NFL: a 90 gets about 70% of the top deal at his position, an 85 under half, an 80 about a quarter. No more 85-rated linemen out-earning Micah Parsons. Quarterbacks stay the exception: any real starter is paid like one.",
+    "A big contract year still earns a raise on a re-signing, but up to 10%, not 22%.",
+    "Draft classes are more realistic: Superstar and Star traits follow a prospect's ceiling, so a class has a handful of Superstars, mostly early, instead of a dozen spread through the late rounds. Generational talents turn up about once every five drafts.",
+    "Home-field advantage is worth more: home teams now win about 54% of games, like the NFL (it was about 52%).",
+    "Build your 53: during the combine, re-sign week, free agency and the draft, Home shows every position group, how many you have against a typical 53, your cap space, and the best free agent left at each spot with his asking price. Tap a row to open free agency filtered to that position.",
+    "Coaching: one way to hire. The staff-point Coach Market is gone; every coach you can hire is in Available Coaches.",
+    "Owner's review: \"an 8-9 season\", not \"a 8-9\"; and a quiet year that cost you some patience reads STEADY, not PLEASED.",
+  ] },
 ];

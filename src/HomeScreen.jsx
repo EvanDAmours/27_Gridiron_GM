@@ -12,6 +12,7 @@ import PixelMatchup from "./PixelMatchup.jsx";
 import MatchupStakes from "./MatchupStakes.jsx";
 import { teamNeeds, needName } from "./needs.js";
 import { primeSlot } from "./seasonPreview.js";
+import { rosterPlan } from "./rosterPlan.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const PHASE = { preseason: "Preseason", combine: "Offseason: NFL Combine", resign: "Offseason: Re-sign Week", freeagency: "Offseason: Free Agency", draft: "Offseason: NFL Draft" };
@@ -138,7 +139,38 @@ function OffseasonBoard({ me, sp, onNav }) {
   );
 }
 
-export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory, rivalId }) {
+// Build your 53: every position group with how many you have against a typical roster, and the best
+// free agent still out there at each. A tap opens free agency filtered to that spot.
+const money = (n) => `$${(+n || 0).toFixed(1)}M`;
+function RosterChecklist({ me, sp, fa, capRoom, onFa, mobile }) {
+  const plan = rosterPlan(me.roster, fa, { nextYear: sp === "combine" || sp === "resign" });
+  const pct = Math.min(100, (100 * plan.count) / plan.target);
+  const tone = (r) => (r.have === 0 ? C.rd : r.short ? C.gd : C.gn);
+  return (
+    <div style={{ background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 10, padding: "10px 12px", marginTop: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#94a3b8" }}>BUILD YOUR 53</span>
+        <b style={{ fontSize: 15, color: plan.open ? C.gd : C.gn }}>{plan.count}/{plan.target}</b>
+        <div style={{ flex: "1 1 80px", height: 6, borderRadius: 3, background: "#ffffff14", overflow: "hidden", minWidth: 60 }}><div style={{ width: `${pct}%`, height: "100%", background: plan.open ? C.gd : C.gn }} /></div>
+        <span style={{ fontSize: 12.5, color: "#cbd5e1" }}>{plan.open ? `${plan.open} spot${plan.open > 1 ? "s" : ""} to fill` : "Full roster"}{sp === "combine" || sp === "resign" ? " next season" : ""} · <b style={{ color: capRoom >= 0 ? C.gn : C.rd }}>{money(capRoom)}</b> cap space</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", columnGap: 14 }}>
+        {plan.rows.map((r) => (
+          <button key={r.key} onClick={() => onFa(r.pos)} title={r.best ? `Best free agent: ${r.best.name} (${r.best.pos} ${r.best.ovr}), asking about ${money(r.ask)} a year` : "Nobody left on the market here"} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minWidth: 0, textAlign: "left", background: "transparent", border: 0, borderBottom: "1px solid #ffffff10", padding: "4px 0", color: "#fff", cursor: "pointer" }}>
+            <span style={{ width: 9, height: 9, borderRadius: 5, background: tone(r), flexShrink: 0 }} />
+            <span style={{ fontSize: 13.5, fontWeight: 700, width: mobile ? 112 : 104, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</span>
+            <b style={{ fontSize: 13, color: tone(r), width: 34, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{r.have}/{r.want}</b>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: r.short ? "#e2e8f0" : "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "right" }}>
+              {r.best ? <>{r.best.name} <b style={{ color: oC(r.best.ovr) }}>{r.best.ovr}</b> · {money(r.ask)}</> : "market empty"}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory, rivalId }) {
   const me = teams[ui];
   // a tall window (big desktop) has room for the full-size matchup art
   const roomy = !mobile && typeof window !== "undefined" && window.innerHeight / (parseFloat(document.documentElement.style.zoom) || 1) >= 900;
@@ -247,6 +279,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
               </div>
             </div>
             <OffseasonBoard me={me} sp={sp} onNav={onNav} />
+            {["combine", "resign", "freeagency", "draft"].includes(sp) && onFa && <RosterChecklist me={me} sp={sp} fa={fa} capRoom={capRoom} onFa={onFa} mobile={mobile} />}
           </>)}
         </div>
 

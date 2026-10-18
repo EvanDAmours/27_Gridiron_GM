@@ -7,6 +7,8 @@ import { MOBILE } from "./mobile.js";
 
 const TONE = { fine: C.gn, warning: C.gd, ultimatum: C.rd, fired: C.rd };
 const HEAD = { fine: "PLEASED", warning: "UNEASY", ultimatum: "ULTIMATUM", fired: "FIRED" };
+// a quiet year reads as steady, not pleased, when his patience slipped
+const head = (r) => r.verdict !== "fine" ? HEAD[r.verdict] || "REVIEW" : r.champ ? "THRILLED" : r.playoffs ? "PLEASED" : r.after >= r.before ? "SATISFIED" : "STEADY";
 
 function Patience({ before, after }) {
   const col = (v) => (v >= 60 ? C.gn : v >= 35 ? C.gd : C.rd);
@@ -39,7 +41,7 @@ export default function OwnerReview({ r, team, onClose }) {
         {MOBILE && <SheetGrip onClose={onClose} />}
         <CloseX onClick={onClose} />
         <div style={{ padding: "16px 56px 12px 18px", background: `linear-gradient(135deg, ${tone}33, #0b1220)` }}>
-          <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 2, color: tone }}>OWNER'S REVIEW · {r.yr} · {HEAD[r.verdict] || "REVIEW"}</div>
+          <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 2, color: tone }}>OWNER'S REVIEW · {r.yr} · {head(r)}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
             {team && <TeamLogo t={team} sz={40} />}
             <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.3 }}>{r.msg}</div>

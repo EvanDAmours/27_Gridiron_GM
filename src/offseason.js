@@ -70,7 +70,7 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
         }
       }
       const keep = keepChance(p);
-      const salary = +Math.max(Math.min(p.salary || 1, askingPrice(p)), askingPrice(p) * (0.95 + rand() * 0.15) * (p.perf?.f ?? 1)).toFixed(1); // market, not a small raise; his last season counts
+      const salary = +Math.max(Math.min(p.salary || 1, askingPrice(p)), askingPrice(p) * (0.95 + rand() * 0.15) * Math.min(1.1, p.perf?.f ?? 1)).toFixed(1); // market, not a small raise; his last season counts (up to +10%)
       // A young franchise player is kept even if it means cap casualties: the club cuts its
       // priciest non-core contracts (up to five) to make room, as real teams do before tagging; it
       // refills the roster in free agency and the draft. A club that still can't fit him is truly
@@ -140,11 +140,14 @@ export function keepChance(p) {
 
 // What a player asks for on a new deal: a share of the salary cap set by his position and
 // rating, from real contracts. A 99 earns the top of his position's market (QB ~20% of the
-// cap, elite WR or pass rusher ~15%, down to kickers ~2%); an 88 gets ~87% of that, an 80 half,
-// a 70 a tenth, and anyone below starter level the minimum. Less once he's past his prime (QBs
-// age four years later). cap: the cap for the league year the deal starts.
+// cap, elite WR or pass rusher ~15%, down to kickers ~2%); a 90 gets ~70% of that, an 85 under
+// half, an 80 about a quarter, a 75 a tenth, and anyone below starter level the minimum, the way
+// real money piles up at the very top (quarterbacks excepted: see curve). Less once he's past his prime (QBs age four years later).
+// cap: the cap for the league year the deal starts.
 export const TOP_SHARE = { QB: 0.2, WR: 0.15, DL: 0.15, LT: 0.115, CB: 0.11, RT: 0.09, LB: 0.09, S: 0.085, TE: 0.08, LG: 0.08, RG: 0.08, RB: 0.07, C: 0.07, K: 0.02, P: 0.015 };
-const curve = (ovr) => Math.min(1, 1 / (1 + Math.exp(-(ovr - 80) / 4.5)) / 0.985);
+const logit = (ovr, mid, k) => 1 / (1 + Math.exp(-(ovr - mid) / k));
+// quarterbacks are the exception: any real starter is paid like one, so their curve is flatter
+const curve = (ovr, pos) => { const [mid, k] = pos === "QB" ? [80, 4.5] : [87, 5.5]; return Math.min(1, logit(ovr, mid, k) / logit(99, mid, k)); };
 // Players are priced against today's league, not a fixed rating. Ratings drift up over the seasons
 // (development outpaces aging at the top), so an 80 in 2032 is a more ordinary starter than an 80
 // in 2026. The market knows: each position is priced by how its rating compares with the league's
@@ -174,7 +177,7 @@ export const marketRating = (p) => (p.ovr || 0) - (marketShift[p.pos] || 0);
 export const askingPrice = (p, cap = leagueCap()) => {
   const a = p.pos === "QB" ? p.age - 4 : p.age;
   const age = a >= 34 ? 0.5 : a >= 32 ? 0.7 : a >= 30 ? 0.85 : 1;
-  return +Math.max(cap * 0.0033, cap * (TOP_SHARE[p.pos] ?? 0.08) * curve(marketRating(p)) * age).toFixed(1);
+  return +Math.max(cap * 0.0033, cap * (TOP_SHARE[p.pos] ?? 0.08) * curve(marketRating(p), p.pos) * age).toFixed(1);
 };
 
 // The position a club most needs: furthest below its minimum, then the weakest starter.

@@ -21,8 +21,8 @@ const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 
-export default function FreeAgency({ fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk, cy }) {
-  const [pos, setPos] = useState("ALL");
+export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk, cy }) {
+  const [pos, setPos] = useState(startPos || "ALL");
   const [q, setQ] = useState("");
   const [find, setFind] = useState(false);
   const [needOnly, setNeedOnly] = useState(false);

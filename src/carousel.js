@@ -67,11 +67,12 @@ export function ownerReview(patience, team, { madePlayoffs = false, champion = f
   if (!madePlayoffs && p < 0.42) d -= p < 0.35 ? 10 : 6;
   const next = Math.max(0, Math.min(100, Math.round((patience ?? 70) + d)));
   const rec = `${team.w || 0}-${team.l || 0}${team.t ? `-${team.t}` : ""}`;
-  if (noFire && next < 35) return { patience: Math.max(next, 10), verdict: "warning", msg: `The owner is furious about a ${rec} season, but you can't be fired in this franchise.` };
-  if (next <= 5) return { patience: 0, verdict: "fired", msg: `After a ${rec} season the owner has seen enough: you've been fired.` };
+  const aRec = `${/^(8|11|18)-/.test(rec) ? "an" : "a"} ${rec}`; // "an 8-9 season", "a 10-7 season"
+  if (noFire && next < 35) return { patience: Math.max(next, 10), verdict: "warning", msg: `The owner is furious about ${aRec} season, but you can't be fired in this franchise.` };
+  if (next <= 5) return { patience: 0, verdict: "fired", msg: `After ${aRec} season the owner has seen enough: you've been fired.` };
   if (next < 35) return { patience: next, verdict: "ultimatum", msg: `Owner's ultimatum: after going ${rec}, things have to turn around next season or you're gone.` };
-  if (d <= -10) return { patience: next, verdict: "warning", msg: `The owner isn't happy with a ${rec} season. His patience is wearing thin.` };
-  return { patience: next, verdict: "fine", msg: champion ? "The owner is thrilled: champions!" : madePlayoffs ? `The owner is pleased with a ${rec} playoff season.` : `The owner noted a ${rec} season.` };
+  if (d <= -10) return { patience: next, verdict: "warning", msg: `The owner isn't happy with ${aRec} season. His patience is wearing thin.` };
+  return { patience: next, verdict: "fine", msg: champion ? "The owner is thrilled: champions!" : madePlayoffs ? `The owner is pleased with ${aRec} playoff season.` : `The owner noted ${aRec} season.` };
 }
 
 // Teams that would hire you after a firing: the clubs that just had the worst seasons.

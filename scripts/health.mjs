@@ -106,6 +106,8 @@ function measure(d) {
     wr80Pct: (() => { const xs = all.filter((p) => p.pos === "WR" && p.ovr >= 80 && p.ovr <= 84 && (p.salary || 0) > 2).map((p) => p.salary).sort((a, b) => a - b); return xs.length ? +((100 * xs[Math.floor(xs.length / 2)]) / capFor(d.yr)).toFixed(1) : null; })(),
     records: (d.recordBook?.history || d.recordBook?.broken || []).length,
     // the market at the top: the five biggest salaries at a position, as % of the cap (2025 NFL: QB ~16%, DL/WR ~12%, CB ~9%)
+    // club payrolls as % of the cap: lowest, average, highest (real NFL clubs mostly spend 85-100%)
+    payPct: (() => { const xs = ai.map((t) => (100 * capOf(t)) / capFor(d.yr)); return [Math.round(Math.min(...xs)), Math.round(mean(xs)), Math.round(Math.max(...xs))]; })(),
     top5Pct: Object.fromEntries(["QB", "DL", "WR", "CB", "LT"].map((pos) => [pos, +((100 * mean(all.filter((p) => p.pos === pos).map((p) => p.salary || 0).sort((x, y) => y - x).slice(0, 5))) / capFor(d.yr)).toFixed(1)])),
   };
 }
@@ -146,8 +148,9 @@ try {
       const done = () => ((t) => !/Sim All/.test(t) && /Sim Round/.test(t))([...document.querySelectorAll("button")].map((b) => b.innerText).join(" "));
       if (await page.evaluate(done)) break;
       for (const t of ["Sim to 4:00 PM", "Back to the season", "Meet Demands", "Decide later", "Later", "Got it"]) { const b = page.locator("button:visible", { hasText: t }); if (await b.count()) { await b.first().click().catch(() => {}); await page.waitForTimeout(300); } }
-      const b = page.locator("button:visible", { hasText: "Sim All" }); if (await b.count()) await b.first().click();
-      for (let t = 0; t < 80 && !(await page.evaluate(done)); t++) await page.waitForTimeout(500);
+      const b = page.locator("button:visible", { hasText: "Sim All" }); if (await b.count()) await b.first().click({ timeout: 3000 }).catch(() => {});
+      // a scouting checkpoint pauses the sim: Keep simming carries it on
+      for (let t = 0; t < 80 && !(await page.evaluate(done)); t++) { const k = page.locator("button:visible", { hasText: "Keep simming" }); if (await k.count()) await k.first().click().catch(() => {}); await page.waitForTimeout(500); }
     }
     if (!(await page.evaluate(() => /Sim Round/.test([...document.querySelectorAll("button")].map((b) => b.innerText).join(" "))))) fail("Sim All never reached the playoffs");
     if (process.env.SCORING) { let r = await save(); for (let w = 0; w < 6 && r.sp !== "playoffs"; w++) r = await save(); console.log("SCORING " + JSON.stringify(scoring(r))); }

@@ -568,13 +568,18 @@ export const DEV_TRAITS = {
 };
 
 // A player's trait is fixed by who he is (his id), not by the main random stream.
+// The odds follow his ceiling, as real classes do: a 90-ceiling prospect is a Superstar about 1 time
+// in 16, a 78 about 1 in 50, a 65 almost never; Stars are about 1 in 5 at the top, 1 in 10 for a
+// 75 and 1 in 20 at the bottom. A class of ~250 has a handful of Superstars, mostly early, and a
+// Generational talent turns up only at the very top, about once every five drafts.
 export function rollDev(id, pot = 75) {
   const x = stream(`${id}|dev`).next();
-  const lift = clamp((pot - 78) / 100, -0.06, 0.1);
-  if (x < 0.006 + lift * 0.08) return "generational";
-  if (x < 0.04 + lift * 0.4) return "superstar";
-  if (x < 0.2 + lift) return "star";
-  if (x < 0.38 + lift) return "late";
+  const q = clamp((pot - 65) / 25, 0, 1);
+  const gen = 0.02 * q ** 6, sup = gen + 0.004 + 0.06 * q * q, star = sup + 0.05 + 0.17 * q;
+  if (x < gen) return "generational";
+  if (x < sup) return "superstar";
+  if (x < star) return "star";
+  if (x < star + 0.18) return "late";
   return "normal";
 }
 export const devOf = (p) => p.dev || rollDev(p.id, p.truePot ?? p.pot);

@@ -489,7 +489,6 @@ export function schemeRunPct(t){const s=t.coach?.oc?.scheme;if(s==="Power Run")r
 export const OFF_POS_SET=new Set(['QB','RB','WR','TE','LT','LG','C','RG','RT']);const DEF_POS_SET=new Set(['DL','LB','CB','S']);
 export function calcOffStr(t){const r=t.roster.filter(p=>!p.injured&&!p.holdout&&OFF_POS_SET.has(p.pos));return r.length?Math.round(r.reduce((s,p)=>s+p.ovr,0)/r.length):65;}
 export function calcDefStr(t){const r=t.roster.filter(p=>!p.injured&&!p.holdout&&DEF_POS_SET.has(p.pos));return r.length?Math.round(r.reduce((s,p)=>s+p.ovr,0)/r.length):65;}
-export function genCoachMarket(){const n=R(5,8);const roles=['OC','DC','ST'];const specs=['pass','run','defense','special'];return Array.from({length:n},()=>({id:uid(),name:`${pick(FN)} ${pick(LN)}`,pos:pick(roles),rating:R(65,85),specialty:pick(specs),cost:R(1,2),face:genFace()}));}
 
 // Cap rollover (t.rollover): half of last year's unused room, up to 5% of the cap, counts as a credit.
 // Injured reserve still counts (an injured player is paid); deals ending in re-sign week don't.

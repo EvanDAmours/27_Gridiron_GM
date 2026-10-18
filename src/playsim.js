@@ -29,7 +29,7 @@ const last = (p) => (p?.name || "").split(" ").slice(-1)[0] || "Player";
 
 // Home-field advantage and how much the game-day modifiers (game plan, coaches,
 // weather...) count: both in "edge" units, where 1 unit is worth about 2.5 points a game.
-export const HOME_EDGE = 0.42; // home teams win ~55%, like the NFL
+export const HOME_EDGE = 1.0; // home teams win ~54%, like the NFL (measured over thousands of games by scripts/scoring.mjs)
 let HOME = HOME_EDGE;
 export const POINTS_PER_EDGE = 2.5;
 

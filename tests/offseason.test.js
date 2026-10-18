@@ -75,7 +75,8 @@ test("AI clubs keep their young stars; veterans and cap-strapped stars reach the
   assert.ok(kept >= 45, `kept ${kept}/50`);
   // Truly cap-strapped (every dollar committed to non-stars): a very good player who isn't a
   // franchise player reaches the market; a franchise player never does.
-  const good = { id: "g", pos: "DL", ovr: 88, age: 28, contract: 1, salary: 5 };
+  // (a 28-year-old 88 is kept like a young star now that he costs less: the club cuts depth for him)
+  const good = { id: "g", pos: "DL", ovr: 88, age: 29, contract: 1, salary: 5 };
   const broke = openFreeAgency([{ id: 0, roster: [] }, { id: 1, roster: [good, ...filler.map((f) => ({ ...f, salary: 5.9 }))] }], 0, 2026, rand, { cap: 301.2 });
   assert.ok(broke.pool.some((p) => p.id === "g"));
   const brokeStar = openFreeAgency([{ id: 0, roster: [] }, { id: 1, roster: [star, ...filler.map((f) => ({ ...f, salary: 5.9 }))] }], 0, 2026, rand, { cap: 301.2 });
