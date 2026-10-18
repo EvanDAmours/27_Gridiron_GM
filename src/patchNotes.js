@@ -1133,4 +1133,8 @@ export const PATCH_NOTES = [
     "The live game's field is much bigger on a computer (it takes most of the screen, with the play-by-play beside it).",
     "Standings: a playoff race panel beside the division tables, with each conference's seven seeds, the teams in the hunt, games back, and clinch marks (z: No. 1 seed, y: division, x: playoff spot, e: eliminated).",
   ] },
+  { v: "3.2.1", date: "2026-10-18", title: "Cleaner Signings", notes: [
+    "A done deal closes the negotiation on its own: no more \"Done deal\" sheet to dismiss. The toast confirms it, and a star (80+ from another club) gets the Signing Day card.",
+    "Kickers and punters no longer get the Signing Day card.",
+  ] },
 ];

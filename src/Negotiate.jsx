@@ -1,7 +1,7 @@
 // The negotiation table: pick the years, set the money, make an offer, and read his answer.
 // Used for re-signing your own players and for free agents.
 import { capProjection } from "./capProjection.js";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { C, oC, Bdg, Btn, Face, CloseX, sheetWrap, sheetBox, SheetGrip } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { yearlyAsk, maxYears, respond, interest } from "./negotiation.js";
@@ -55,6 +55,8 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   const perfNote = mode !== "fa" && Math.abs(f - 1) >= 0.05 ? (f > 1 ? `Coming off a big season: he's asking about ${Math.round((f - 1) * 100)}% more than his rating alone would get.` : `Coming off a down season: he'd take about ${Math.round((1 - f) * 100)}% less on a multi-year deal, or bet on himself with a 1-year prove-it deal near full price.`) : null;
   const [sal, setSal] = useState(r1(ask * 0.9));
   const done = talk.walked || talk.signed;
+  // a signed deal closes the table: the toast (and, for a star, the signing-day card) says the rest
+  useEffect(() => { if (talk.signed) onClose(); }, [talk.signed]); // eslint-disable-line react-hooks/exhaustive-deps
   const last = talk.last;
   const offer = (amount) => {
     const s = shape(r1(amount));
