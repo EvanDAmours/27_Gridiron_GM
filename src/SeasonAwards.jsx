@@ -117,6 +117,9 @@ function HonorsPage({ yr, h, teams, ui, onBack, onClose, cta }) {
 export default function SeasonAwards({ show, teams, ui, onClose, cta = "Continue" }) {
   const { yr, champ, opp, score, sbmvp, awards = {} } = show;
   const [page, setPage] = useState(1);
+  // awards night: the envelopes open one at a time (a click shows them all)
+  const [all, setAll] = useState(false);
+  const step = (i) => ({ animation: `awIn .55s ease-out ${all ? 0 : 0.5 + i * 0.75}s both` });
   const ct = teams[champ], ot = opp != null ? teams[opp] : null;
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(2,6,15,.88)", zIndex: 2300, display: "flex", alignItems: "center", justifyContent: "center", padding: 14, ...sheetWrap(MOBILE) }}>
@@ -135,8 +138,11 @@ export default function SeasonAwards({ show, teams, ui, onClose, cta = "Continue
           </div>
         </div>
         <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 8 }}>
-          <Row label="Super Bowl MVP" w={sbmvp} teams={teams} ui={ui} big />
-          {ROWS.map(([k, l]) => <Row key={k} label={l} w={awards[k]} teams={teams} ui={ui} />)}
+          <style>{"@keyframes awIn{from{opacity:0;transform:translateY(14px) scale(.97);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}"}</style>
+          <div onClick={() => setAll(true)} style={{ display: "flex", flexDirection: "column", gap: 8, cursor: all ? "default" : "pointer" }} title={all ? undefined : "Show every award"}>
+            <div style={step(0)}><Row label="Super Bowl MVP" w={sbmvp} teams={teams} ui={ui} big /></div>
+            {ROWS.map(([k, l], i) => <div key={k} style={step(i + 1)}><Row label={l} w={awards[k]} teams={teams} ui={ui} /></div>)}
+          </div>
           <div style={stickyFoot}><Btn onClick={awards.honors ? () => setPage(2) : onClose} bg={C.gn} style={{ width: "100%", fontSize: 16, padding: "11px 0", fontWeight: 900, letterSpacing: 1 }}>{awards.honors ? "CONTINUE →" : cta}</Btn></div>
         </div>
         </>}

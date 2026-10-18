@@ -1121,4 +1121,11 @@ export const PATCH_NOTES = [
     "Needs Attention flags a clearly better player sitting behind your starter. New achievement: Division Champs.",
     "Draft day and Trade Deadline Day use the short tab names so the bar fits, and Deadline Day no longer shows twice. Unscheduled kickoff times read \"time TBD\" instead of 12:00 AM.",
   ] },
+  { v: "3.1", date: "2026-10-18", title: "Awards Night", notes: [
+    "Awards Night: the season's honors are revealed one envelope at a time, Super Bowl MVP first. Click to show them all.",
+    "The live game's final is a proper scoreboard: both logos and scores on your colors, the primetime slot if it was a night game, and a VICTORY or DEFEAT stamp.",
+    "Night games look like night games: the live field goes dark with four pools of stadium light.",
+    "A franchise legend retiring (one of your stars) gets a farewell card: his peak, his honors and where he's headed next.",
+    "Coaching uses the full screen, and the coach market is a grid instead of a long list.",
+  ] },
 ];

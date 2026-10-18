@@ -39,10 +39,11 @@ export default function Moment({ m, onClose }) {
   const party = m.kind === "clinch" || m.kind === "record";
   const kicker = m.kind === "clinch" ? (m.level === "top" ? "NO. 1 SEED CLINCHED" : m.level === "div" ? "DIVISION CLINCHED" : "PLAYOFF BERTH CLINCHED")
     : m.kind === "record" ? (m.nfl ? "NEW NFL RECORD" : "NEW FRANCHISE RECORD")
-    : m.kind === "signing" ? "SIGNING DAY" : m.kind === "trade" ? "BREAKING · BLOCKBUSTER TRADE" : `THE ${m.yr} SEASON`;
+    : m.kind === "signing" ? "SIGNING DAY" : m.kind === "trade" ? "BREAKING · BLOCKBUSTER TRADE" : m.kind === "legend" ? "A FRANCHISE LEGEND RETIRES" : `THE ${m.yr} SEASON`;
   const title = m.kind === "clinch" ? (m.level === "top" ? `${KICKER.top} ${t.city.toUpperCase()}` : m.level === "div" ? `${t.c || ""} ${(t.d || "").toUpperCase()} CHAMPIONS`.trim() : `${t.name.toUpperCase()} ARE ${KICKER.berth}`)
     : m.kind === "record" ? m.p.name.toUpperCase()
     : m.kind === "signing" ? `WELCOME TO ${t.city.toUpperCase()}`
+    : m.kind === "legend" ? m.p.name.toUpperCase()
     : m.kind === "trade" ? (m.got ? `${t.name.toUpperCase()} LAND ${m.p.name.split(" ").slice(-1)[0].toUpperCase()}` : `${m.p.name.split(" ").slice(-1)[0].toUpperCase()} TRADED`)
     : `${t.city.toUpperCase()} ${t.name.toUpperCase()}`;
   return (
@@ -66,6 +67,15 @@ export default function Moment({ m, onClose }) {
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Bdg pos={m.p.pos} /><span style={{ fontSize: 14, color: "#cbd5e1" }}>{m.label}</span></div>
               <div style={{ fontSize: MOBILE ? 40 : 56, fontWeight: 900, lineHeight: 1, color: "#fde68a" }}>{m.value}</div>
               {m.prev && <div style={{ fontSize: 13.5, color: "#cbd5e1", marginTop: 4 }}>Passing {m.prev}</div>}
+            </div>
+          </div>
+        )}
+        {m.kind === "legend" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 16, background: "linear-gradient(135deg,#78350f66,#00000040)", border: "1px solid #f59e0b55", borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ borderRadius: "50%", padding: 3, background: "linear-gradient(135deg,#fde68a,#b45309)" }}><Face s={m.p.face} sz={MOBILE ? 72 : 96} /></div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Bdg pos={m.p.pos} /><span style={{ fontSize: 14, color: "#fde68a", fontWeight: 800 }}>Thank you, {m.p.name.split(" ").slice(-1)[0]}.</span></div>
+              <div style={{ fontSize: MOBILE ? 36 : 48, fontWeight: 900, lineHeight: 1, color: "#fde68a", marginTop: 4 }}>{m.p.peak || m.p.ovr}<span style={{ fontSize: 14, color: "#cbd5e1", marginLeft: 6 }}>peak OVR</span></div>
             </div>
           </div>
         )}
