@@ -12,6 +12,9 @@ import CapOverview from "./CapOverview.jsx";
 import DevFocusCard from "./DevFocus.jsx";
 import WeekResult from "./WeekResult.jsx";
 import LiveField from "./LiveField.jsx";
+// Unsolicited AI trade offers (the weekly offer bar and the "urgent" QB offers) are off until they're
+// reworked into a proper offer screen; trades you start, and the trade block, still work.
+const AI_TRADE_OFFERS = false;
 const TradeScreen = lazyScreen(() => import("./TradeScreen.jsx")); // loaded when first opened
 const GmRetire = lazyScreen(() => import("./GmRetire.jsx")); // loaded when first opened
 const PlayoffPaper = lazyScreen(() => import("./PlayoffPaper.jsx")); // loaded when first opened
@@ -56,6 +59,7 @@ import { seasonHonors, honorsById, honorBoost, HONOR_LABEL, stampPerformance } f
 import { stampPlayoffs, playoffBoost } from "./playoffGrowth.js";
 import { gmCareer, legacyRank } from "./gmLegacy.js";
 import IncidentPaper from "./IncidentPaper.jsx";
+import FranchiseHistory from "./FranchiseHistory.jsx";
 import { headshotSave } from "./headshots.js";
 import { buildPlayoffPaper } from "./playoffPaper.js";
 import { coachingCarousel, describeMove, ownerReview, jobOffers } from "./carousel.js";
@@ -317,7 +321,9 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   // the scouting checkpoint every fourth week (stops a sim): { wk, news, targetIds, pick }
   const[scoutCheck,setScoutCheck]=useState(null);
   // the season's retirement class (top story + list); retireShow opens the list
-  const[retireClass,setRetireClass]=useState(null);const[retireShow,setRetireShow]=useState(false);
+  const[retireClass,setRetireClass]=useState(null);
+  // the Menu closes when you move to another screen
+  useEffect(()=>{setMenuOpen(false);},[tab]);const[retireShow,setRetireShow]=useState(false);
   const[papers,setPapers]=useState([]);const[paperOpen,setPaperOpen]=useState(null);
   // retiring as GM: the career as it stood then (gmLook opens the look-back)
   const[gmRetired,setGmRetired]=useState(null);const[gmLook,setGmLook]=useState(false);
@@ -369,7 +375,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   const[newspaper,setNewspaper]=useState(null);
   const[faCombine,setFaCombine]=useState(null);
   // v31.0 state — GM Rep bar, Stats Hub, Trade Finder, Mobile, Season Recap
-  const[hubSection,setHubSection]=useState('franchise');
+
   const[tradeFinderResults,setTradeFinderResults]=useState([]);
   // the new-franchise walkthrough: offered on a new franchise, replayable from the Menu
   const[tourOffer,setTourOffer]=useState(false);const[tourStep,setTourStep]=useState(null);
@@ -588,7 +594,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   useEffect(()=>{if(trProp&&(sp!=='regular'||wk>TRADE_DEADLINE_WEEK))setTrProp(null);},[wk,sp]);
   useEffect(()=>{if(urgentTrade&&urgentTrade.wk!=null&&(wk!==urgentTrade.wk||sp!=='regular')){setUrgentTradeActive(false);setUrgentTrade(null);}},[wk,sp]);// an urgent offer is good until you advance the week
   // v32: fire urgent trade offer at wk4 and wk8
-  useEffect(()=>{if(sp!=='regular'||!teams.length||urgentTrade)return;if(wk===4||wk===8){const donor=teams.find((t,i)=>{if(i===ui)return false;const qbs=t.roster?.filter(p=>p.pos==='QB');return qbs&&qbs.length>=2;});if(donor){const extra=[...donor.roster].filter(p=>p.pos==='QB').sort((a,b)=>a.ovr-b.ovr)[0];if(extra&&extra.ovr>=65&&extra.ovr<=78&&!extra.xf&&!['generational','superstar'].includes(devOf(extra))){setUrgentTrade({player:extra,fromTm:donor.id,fromAb:TEAMS[donor.id]?.ab||donor.ab,wk,offer:`${extra.name} (${extra.pos} ${extra.ovr}ovr) for your 3rd-round pick`});setUrgentTradeTimer(45);setUrgentTradeActive(true);}}}},[ wk,sp]);
+  useEffect(()=>{if(!AI_TRADE_OFFERS||sp!=='regular'||!teams.length||urgentTrade)return;if(wk===4||wk===8){const donor=teams.find((t,i)=>{if(i===ui)return false;const qbs=t.roster?.filter(p=>p.pos==='QB');return qbs&&qbs.length>=2;});if(donor){const extra=[...donor.roster].filter(p=>p.pos==='QB').sort((a,b)=>a.ovr-b.ovr)[0];if(extra&&extra.ovr>=65&&extra.ovr<=78&&!extra.xf&&!['generational','superstar'].includes(devOf(extra))){setUrgentTrade({player:extra,fromTm:donor.id,fromAb:TEAMS[donor.id]?.ab||donor.ab,wk,offer:`${extra.name} (${extra.pos} ${extra.ovr}ovr) for your 3rd-round pick`});setUrgentTradeTimer(45);setUrgentTradeActive(true);}}}},[ wk,sp]);
   // Commit live sim result to game state when game ends
   useEffect(()=>{
     if(!liveDone||!liveSim)return;
@@ -799,7 +805,7 @@ if(intlGameWk===nw){const ig=ns.find(g=>g.wk===nw&&g.intl&&(g.h===ui||g.a===ui))
 const fanSatSpMod=fanSat<30?-1:fanSat>70?1:0;// v18: vet presence, owner patience, coach synergy, weekly resets
 applyVetPresence(nt);const _syn=calcCoachSynergy(nt[ui]);refreshPosDemand();setLkrMeetingUsed(false);
 // INNO I75: collect injury toasts from this week's games
-{const _injEvents=[];ns.filter(g=>g.wk===nw&&g.played&&(g.h===ui||g.a===ui)).forEach(g=>{const _b=g.h===ui?g.boxH:g.boxA;Object.values(_b||{}).forEach(s=>{if(s._injured)_injEvents.push(`🚑 ${(s.name||'').split(' ').pop()||s.pos} — injured`);});});const _allInjured=nt[ui].roster.filter(p=>p.injured&&p.injWk===p.injRecWks);_allInjured.slice(0,3).forEach(p=>_injEvents.push(`🚑 ${p.name?.split(' ').pop()||p.pos} — ${p.injSev||'inj'} — ${p.injRecWks||'?'}wk`));const _loyalEvts=(_newLoyalPlayers||[]).map(p=>`❤️ LOYAL: ${p.name?.split(' ').pop()||p.pos} (${p.pos}): three seasons with you, so he'll take 10% less to re-sign or extend`);const _allEvts=[..._injEvents,..._loyalEvts];if(_allEvts.length){setInjToasts(_allEvts.slice(0,4));setTimeout(()=>setInjToasts([]),4000);if(_injEvents.length)track('injury_event');}}
+{const _injEvents=[];ns.filter(g=>g.wk===nw&&g.played&&(g.h===ui||g.a===ui)).forEach(g=>{const _b=g.h===ui?g.boxH:g.boxA;Object.values(_b||{}).forEach(s=>{if(s._injured)_injEvents.push(`🚑 ${s.name||s.pos} was hurt in the game`);});});const _allInjured=nt[ui].roster.filter(p=>p.injured&&p.injWk===p.injRecWks);_allInjured.slice(0,3).forEach(p=>_injEvents.push(`🚑 ${p.name||p.pos} (${p.pos}) is out ${p.injRecWks||'?'} week${p.injRecWks===1?'':'s'}${p.injSev?` · ${p.injSev}`:''}`));const _loyalEvts=(_newLoyalPlayers||[]).map(p=>`❤️ LOYAL: ${p.name?.split(' ').pop()||p.pos} (${p.pos}): three seasons with you, so he'll take 10% less to re-sign or extend`);const _allEvts=[..._injEvents,..._loyalEvts];if(_allEvts.length){setInjToasts(_allEvts.slice(0,4));setTimeout(()=>setInjToasts([]),6000);if(_injEvents.length)track('injury_event');}}
 // INNO I71: win streak achievement
 if((nt[ui].streak||0)>=5&&!(achievements||[]).find(a=>a.id==='win_streak_5'))
   setAchievements(prev=>[...(prev||[]),{id:'win_streak_5',earnedWk:nw,earnedSeason:yr}]);
@@ -822,7 +828,7 @@ track('week_simmed');
 if(speedrun){const _uChamp=champs.filter(c=>typeof c==='object'?c.yr===yr:c===yr).length;if(_uChamp>speedrun.championships)setSpeedrun(s=>({...s,championships:_uChamp}));}
 // Feature 9: Power Rankings after each week
 const _pr={};powerRankings.forEach(r=>{_pr[r.ab]=r.rank;});const _ranked=[...nt].map(t=>({ab:t.ab,score:t.w*3-t.l+teamStr(t)/10,clr:TEAMS[t.id]?.clr})).sort((a,b)=>b.score-a.score).map((t,i)=>{const rank=i+1;const prev=_pr[t.ab];return{ab:t.ab,rank,trend:prev===undefined?'—':rank<prev?'▲':rank>prev?'▽':'—',clr:t.clr};});setPowerRankings(_ranked);
-if(moraleEvLogs.length)setLog(l=>[...moraleEvLogs,...l.slice(0,150-moraleEvLogs.length)]);if(ur){setLog(p=>[ur,...(lkrEv?[`🎭 ${lkrEv.txt}`]:[]),...p].slice(0,150));sm(ur);}else if(lkrEv)setLog(p=>[`🎭 ${lkrEv.txt}`,...p].slice(0,150));if(!trProp&&nw<TRADE_DEADLINE_WEEK&&Math.random()<(nw>=7?0.44:0.22)){const off=genTradeOffer(nt,ui,draftPicks,pkV);if(off)setTrProp(off);}
+if(moraleEvLogs.length)setLog(l=>[...moraleEvLogs,...l.slice(0,150-moraleEvLogs.length)]);if(ur){setLog(p=>[ur,...(lkrEv?[`🎭 ${lkrEv.txt}`]:[]),...p].slice(0,150));sm(ur);}else if(lkrEv)setLog(p=>[`🎭 ${lkrEv.txt}`,...p].slice(0,150));if(AI_TRADE_OFFERS&&!trProp&&nw<TRADE_DEADLINE_WEEK&&Math.random()<(nw>=7?0.44:0.22)){const off=genTradeOffer(nt,ui,draftPicks,pkV);if(off)setTrProp(off);}
 /* incoming offers come from one place: tradeOffers.js (trProp above) */
 // League wire: real trades between AI clubs up to the deadline.
 if(nw===TRADE_DEADLINE_WEEK){setDeadline(startDeadline(nt,ui,yr));setTimeout(()=>setTab("deadline"),0);}
@@ -1125,7 +1131,7 @@ const scoutG={dc,setDc,yr,sp,teams,ui,pb,scouting,setScouting,sm,setSel,draftLog
   const fullSaveData=()=>slimSave({v:3,powerRankings,capv:2,injuriesOn,noFire,deadline,recordBook,retired,ownerPatience,draftHistory,yr,wk,sp,ui,teams,sched,byeMap,fa,waivers,dc,draftPicks,futurePicks,draftIdx,draftLog,log,champs,pb,scouting,devFocus,scPts,faCoaches,rivalry,ownerGoals,news,fanSat,coachMarket,stadium,ownerGoalHistory,ownerGoalStreak,awards,draftClassRating,deadCapLog,dynastyStats,fanSatLog,fanSatDriver,psFocus,coachLegacy,franchiseQB,battlesDone,tradeHistory,breakoutAlerts,faLostVal,faGainedVal,otcFocus,fanLoyalty,injInsurance,mvpRaceLeader,seasonHistory,ownerPromises,onboardDone,socialFeed,ownerPersonality,playbook,stadiumAtm,achievements:achievements||[],depthOrder,dlSlots:1,playingTime,stories,talks,gamePlan,hotSeat,lkrMeetingUsed,playerArcs,rehabChoices,legacyRecords,udfaPool,exits,docs,gmRetired,papers,retireClass,docCard,sgLog,preseasonGames,preseasonRisk,coachSpec,milestones,intlGameWk,trProp,inboxDismissed,campSeenYr,coachSeenYr,suspensionEvent,coordPoachEvent,lrVotePending,conductEvent,speedrun});
   const saveGame=()=>{const d=fullSaveData();const b=new Blob([JSON.stringify(d)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=`gm-${yr}-wk${wk}.json`;a.click();const _ts=new Date().toLocaleTimeString();setLastSaved(_ts);sm("Saved!");try{saveJSON('gm_autosave',d);}catch{}};
   const applyFullSave=(d,msg="Loaded!")=>{setSimBatch(null);setInjuryCalls([]);setInjuryPick(null);_prevRoster.current=null;// I39: merge against defaults to ensure no missing fields
-const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)d[k]=_def[k];});headshotSave(d);/* real players get their ESPN photo, saves from before it too */setYr(d.yr);setWk(d.wk);setSp(d.sp);setUi(d.ui);setTeams(withTradeValues(withRealPicks(tagRookieYears(addPunters(repairSave(migrateCap(d)).d),REAL_ROOKIE_YRS))));setInjuriesOn(d.injuriesOn!==false);setDeadline(d.deadline||null);setRecordBook(loadRecordBook(d.recordBook));setRetired(d.retired||[]);setDraftHistory(d.draftHistory||{});setNoFire(!!d.noFire);setOwnerPatience(d.ownerPatience??70);setSched(wholeScores(d.sched));setFa(d.fa||[]);setWaivers(d.waivers||[]);setDc(reshapeDC(d.dc||{},d.yr,d.sp,d.draftIdx));setDraftPicks(d.draftPicks||[]);setFuturePicks(d.futurePicks||[]);setDraftIdx(d.draftIdx||0);setDraftLog(d.draftLog||[]);{/* a save made mid-draft picks up where it left off, paused */}const _dp=d.draftPicks||[];if(d.sp==="draft"&&_dp.length&&(d.draftIdx||0)<_dp.length){setDraftActive(true);setDraftPaused(true);setDraftTimer(120);}setLog(d.log||[]);setChamps(d.champs||[]);setPb(d.pb||null);setScouting(loadScouting(d,genFace));setDevFocus(d.devFocus||{off:null,def:null});setScPts(d.scPts??10);setFaCoaches(d.faCoaches?.length?d.faCoaches:newCoachPool([]));setByeMap(d.byeMap||{});setRivalry(d.rivalry||null);setOwnerGoals(d.ownerGoals||null);setNews(d.news||[]);setFanSat(d.fanSat??50);setCoachMarket(d.coachMarket||[]);setStadium(d.stadium||{lvl:0,upgrades:[]});setOwnerGoalHistory(d.ownerGoalHistory||[]);setOwnerGoalStreak(d.ownerGoalStreak||0);setAwards(d.awards||[]);setDraftClassRating(d.draftClassRating||'Average');setDeadCapLog(d.deadCapLog||[]);setDynastyStats(d.dynastyStats||{wins:0,losses:0,playoffApps:0,championships:0,seasons:0});setFanSatLog(d.fanSatLog||[]);setFanSatDriver(d.fanSatDriver||'');setPsFocus(d.psFocus||null);setCoachLegacy(d.coachLegacy||{});setFranchiseQB(d.franchiseQB||null);setBattlesDone(d.battlesDone||[]);setTradeHistory(d.tradeHistory||[]);setBreakoutAlerts(d.breakoutAlerts||[]);setFaLostVal(d.faLostVal||0);setFaGainedVal(d.faGainedVal||0);setOtcFocus(d.otcFocus||null);setFanLoyalty(d.fanLoyalty||0);setInjInsurance(d.injInsurance||[]);setMvpRaceLeader(d.mvpRaceLeader||null);setSeasonHistory(d.seasonHistory||[]);setOwnerPromises(d.ownerPromises||[]);setOnboardDone(d.onboardDone||[]);setSocialFeed(d.socialFeed||[]);setOwnerPersonality(d.ownerPersonality||null);setPlaybook(d.playbook||[]);setStadiumAtm(d.stadiumAtm??50);setStories(d.stories||[]);setAchievements(d.achievements||[]);setTalks(d.talks||{});setGamePlan(d.gamePlan||{off:'balanced',def:'balanced',twoPoint:false});setHotSeat(Array.isArray(d.hotSeat)?d.hotSeat:[]);setLkrMeetingUsed(!!d.lkrMeetingUsed);setPlayerArcs(d.playerArcs||{});setRehabChoices(d.rehabChoices||{});setLegacyRecords(d.legacyRecords||{});setUdfaPool(d.udfaPool||[]);setExits(d.exits||[]);setDocCard(d.docCard||null);setSgLog(d.sgLog||[]);setGmRetired(d.gmRetired||null);setPapers(d.papers||[]);setRetireClass(d.retireClass||null);setDocs(d.docs||pastEras(2026,(d.yr||2026)-1).map(([a,b])=>buildDocumentary({seasons:d.seasonHistory||[],titles:(d.champs||[]).filter(c=>c.ti===(c.gm??d.ui)).map(c=>c.yr),roster:d.teams?.[d.ui]?.roster||[],team:d.teams?.[d.ui]||{},from:a,to:b})).filter(x=>x.w+x.l>0));setPreseasonGames(d.preseasonGames||[]);setPreseasonRisk(d.preseasonRisk!==false);setCoachSpec(d.coachSpec||{});setMilestones(d.milestones||[]);setIntlGameWk(d.intlGameWk??null);setTrProp(d.trProp||null);setInboxDismissed(d.inboxDismissed||{});setCampSeenYr(d.campSeenYr??null);setCoachSeenYr(d.coachSeenYr??null);setSuspensionEvent(d.suspensionEvent||null);setCoordPoachEvent(d.coordPoachEvent||null);setLrVotePending(d.lrVotePending||null);setConductEvent(d.conductEvent||null);setSpeedrun(d.speedrun||null);setDepthOrder(dlSlotsMigrate(d));setPlayingTime(d.playingTime||{});setPowerRankings(Array.isArray(d.powerRankings)?d.powerRankings:[]);setPhase("main");setTab("dashboard");sm(msg);};
+const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)d[k]=_def[k];});headshotSave(d);/* real players get their ESPN photo, saves from before it too */setYr(d.yr);setWk(d.wk);setSp(d.sp);setUi(d.ui);setTeams(withTradeValues(withRealPicks(tagRookieYears(addPunters(repairSave(migrateCap(d)).d),REAL_ROOKIE_YRS))));setInjuriesOn(d.injuriesOn!==false);setDeadline(d.deadline||null);setRecordBook(loadRecordBook(d.recordBook));setRetired(d.retired||[]);setDraftHistory(d.draftHistory||{});setNoFire(!!d.noFire);setOwnerPatience(d.ownerPatience??70);setSched(wholeScores(d.sched));setFa(d.fa||[]);setWaivers(d.waivers||[]);setDc(reshapeDC(d.dc||{},d.yr,d.sp,d.draftIdx));setDraftPicks(d.draftPicks||[]);setFuturePicks(d.futurePicks||[]);setDraftIdx(d.draftIdx||0);setDraftLog(d.draftLog||[]);{/* a save made mid-draft picks up where it left off, paused */}const _dp=d.draftPicks||[];if(d.sp==="draft"&&_dp.length&&(d.draftIdx||0)<_dp.length){setDraftActive(true);setDraftPaused(true);setDraftTimer(120);}setLog(d.log||[]);setChamps(d.champs||[]);setPb(d.pb||null);setScouting(loadScouting(d,genFace));setDevFocus(d.devFocus||{off:null,def:null});setScPts(d.scPts??10);setFaCoaches(d.faCoaches?.length?d.faCoaches:newCoachPool([]));setByeMap(d.byeMap||{});setRivalry(d.rivalry||null);setOwnerGoals(d.ownerGoals||null);setNews(d.news||[]);setFanSat(d.fanSat??50);setCoachMarket(d.coachMarket||[]);setStadium(d.stadium||{lvl:0,upgrades:[]});setOwnerGoalHistory(d.ownerGoalHistory||[]);setOwnerGoalStreak(d.ownerGoalStreak||0);setAwards(d.awards||[]);setDraftClassRating(d.draftClassRating||'Average');setDeadCapLog(d.deadCapLog||[]);setDynastyStats(d.dynastyStats||{wins:0,losses:0,playoffApps:0,championships:0,seasons:0});setFanSatLog(d.fanSatLog||[]);setFanSatDriver(d.fanSatDriver||'');setPsFocus(d.psFocus||null);setCoachLegacy(d.coachLegacy||{});setFranchiseQB(d.franchiseQB||null);setBattlesDone(d.battlesDone||[]);setTradeHistory(d.tradeHistory||[]);setBreakoutAlerts(d.breakoutAlerts||[]);setFaLostVal(d.faLostVal||0);setFaGainedVal(d.faGainedVal||0);setOtcFocus(d.otcFocus||null);setFanLoyalty(d.fanLoyalty||0);setInjInsurance(d.injInsurance||[]);setMvpRaceLeader(d.mvpRaceLeader||null);setSeasonHistory(d.seasonHistory||[]);setOwnerPromises(d.ownerPromises||[]);setOnboardDone(d.onboardDone||[]);setSocialFeed(d.socialFeed||[]);setOwnerPersonality(d.ownerPersonality||null);setPlaybook(d.playbook||[]);setStadiumAtm(d.stadiumAtm??50);setStories(d.stories||[]);setAchievements(d.achievements||[]);setTalks(d.talks||{});setGamePlan(d.gamePlan||{off:'balanced',def:'balanced',twoPoint:false});setHotSeat(Array.isArray(d.hotSeat)?d.hotSeat:[]);setLkrMeetingUsed(!!d.lkrMeetingUsed);setPlayerArcs(d.playerArcs||{});setRehabChoices(d.rehabChoices||{});setLegacyRecords(d.legacyRecords||{});setUdfaPool(d.udfaPool||[]);setExits(d.exits||[]);setDocCard(d.docCard||null);setSgLog(d.sgLog||[]);setGmRetired(d.gmRetired||null);setPapers(d.papers||[]);setRetireClass(d.retireClass||null);setDocs(d.docs||pastEras(2026,(d.yr||2026)-1).map(([a,b])=>buildDocumentary({seasons:d.seasonHistory||[],titles:(d.champs||[]).filter(c=>c.ti===(c.gm??d.ui)).map(c=>c.yr),roster:d.teams?.[d.ui]?.roster||[],team:d.teams?.[d.ui]||{},from:a,to:b})).filter(x=>x.w+x.l>0));setPreseasonGames(d.preseasonGames||[]);setPreseasonRisk(d.preseasonRisk!==false);setCoachSpec(d.coachSpec||{});setMilestones(d.milestones||[]);setIntlGameWk(d.intlGameWk??null);setTrProp(AI_TRADE_OFFERS?d.trProp||null:null);setInboxDismissed(d.inboxDismissed||{});setCampSeenYr(d.campSeenYr??null);setCoachSeenYr(d.coachSeenYr??null);setSuspensionEvent(d.suspensionEvent||null);setCoordPoachEvent(d.coordPoachEvent||null);setLrVotePending(d.lrVotePending||null);setConductEvent(d.conductEvent||null);setSpeedrun(d.speedrun||null);setDepthOrder(dlSlotsMigrate(d));setPlayingTime(d.playingTime||{});setPowerRankings(Array.isArray(d.powerRankings)?d.powerRankings:[]);setPhase("main");setTab("dashboard");sm(msg);};
   const loadGame=e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.teams||!d.v){sm("Invalid save");return;}applyFullSave(d);}catch{sm("Load failed");}};r.readAsText(f);};
   // ═══ PLAYER MODAL ═══
   const PM=({p,onClose})=>{if(!p)return null;const AB={fontSize:13,padding:"7px 12px",fontWeight:700,minHeight:36,borderRadius:8};const TAG={fontSize:12,fontWeight:800,padding:"7px 10px",borderRadius:8,display:"inline-flex",alignItems:"center",gap:4};const _prospect=p.draftYear&&(dc[p.draftYear]||[]).find(x=>x.id===p.id);if(_prospect)return <ProspectModal g={scoutG} p={_prospect} onClose={onClose}/>;const ss=p.ss||{};const dO=p.scoutLvl>=2?p.trueOvr:p.scoutedOvr||p.ovr;const dP=p.scoutLvl>=2?p.truePot:p.scoutedPot||p.pot;
@@ -1309,7 +1315,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
 
   return(<div style={{minHeight:"100vh",background:C.bg,fontFamily:C.f,color:C.tx,display:"flex",flexDirection:"column",fontSize:'clamp(12px,1.6vw,14px)'}}>
     {/* INNO I75: injury toasts */}
-    {injToasts.length>0&&<div style={{position:'fixed',...(MOBILE?{top:'calc(56px + env(safe-area-inset-top))',left:12,right:12,pointerEvents:'none'}:{bottom:20,right:16}),zIndex:200,display:'flex',flexDirection:'column',gap:4}}>{injToasts.map((t,i)=><div key={i} style={{background:'#1c0a0a',border:'1px solid #ef4444',borderRadius:4,padding:'6px 10px',fontSize:12,color:'#ef4444',fontFamily:'monospace',fontWeight:'bold'}}>{t}</div>)}</div>}
+    {/* injury news: the same toast style as everything else, stacked above the main toast so neither hides the other */}{injToasts.length>0&&<div style={{position:'fixed',...(MOBILE?{top:msg?'calc(76px + env(safe-area-inset-top))':'calc(8px + env(safe-area-inset-top))',left:12,right:12,pointerEvents:'none'}:{bottom:msg?104:20,right:20,maxWidth:'min(92vw,420px)'}),zIndex:4400,display:'flex',flexDirection:'column',gap:6,transition:'bottom .2s'}}>{injToasts.map((t,i)=><div key={i} role="status" style={{background:'#0b1220f2',border:`1px solid ${t.startsWith('❤️')?'#f472b666':'#ef444466'}`,borderLeft:`4px solid ${t.startsWith('❤️')?'#f472b6':'#ef4444'}`,borderRadius:10,padding:MOBILE?'8px 12px':'10px 14px',fontSize:MOBILE?13:14,color:'#e2e8f0',fontWeight:600,boxShadow:'0 8px 28px #000a'}}>{t}</div>)}</div>}
     {extTalk&&ut&&(()=>{const p=ut.roster.find(x=>x.id===extTalk.id);if(!p)return null;const k=`ext:${yr}:${p.id}`;const loyalty=cl(((ut?.morale||50)-50)/50,0,1)*0.5+((ut?.w||0)>(ut?.l||0)?0.5:0);const t=talks[k]?.t||talkTerms(p,{yr,mode:"extend",loyalty,culture:hcCulture(ut?.coach?.hc)});const startYr=yr+p.contract;return<Negotiate team={ut} cy={capYearFor(yr,sp)} p={p} mode="extend" cap={extRoom(ut,p,yr)} nowRoom={capSpace(ut)} t={t} talk={talks[k]||{}} note={`The new deal starts in ${startYr}, when his current contract runs out, so it has to fit under next season's cap. Walk away and he'll wait for re-sign week.`} onResult={(r,o)=>{setTalks(m=>({...m,[k]:{t,tries:r.tries,last:r,walked:r.result==="walk",signed:r.result==="accept"}}));if(r.result==="accept"){setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(x=>x.id===p.id?{...x,...(o.pr?{salary:+((x.salary||0)+o.pr).toFixed(1),sb:+(proration(x)+o.pr).toFixed(1)}:{}),ext:{sal:o.hit??o.sal,apy:o.sal,yrs:o.yrs,yr,...(o.pr?{sb:o.pr}:{})},holdout:false,holdoutStone:false,holdoutWks:0}:x)}));setLog(l=>[`✍️ EXTENDED: ${p.name} (${p.pos} ${p.ovr}) — ${o.yrs} yr${o.yrs>1?"s":""}, $${o.sal}M/yr starting ${startYr}${o.bonus?` ($${o.bonus}M signing bonus; cap hit $${o.hit}M a year)`:""}`,...l.slice(0,149)]);sm(`${p.name} extended: $${o.sal}M x ${o.yrs} from ${startYr}`);}}} onClose={()=>setExtTalk(null)}/>;})()}
     {resignTalk&&ut&&(()=>{const _cap=sp==="resign"?capSpace(ut):capSpace(ut)+(resignTalk.salary||0);return<Negotiate team={ut} cy={capYearFor(yr,sp)} p={ut.roster.find(x=>x.id===resignTalk.id)||resignTalk} mode="resign" cap={_cap} t={termsFor(resignTalk,"resign")} talk={talkFor(resignTalk)} onResult={(r,o)=>onTalk(resignTalk,"resign",r,o)} onClose={()=>setResignTalk(null)}/>;})()}
     {/* PM is called, not mounted: it is defined inside App, so <PM/> would remount (and lose its scroll) on every re-render */}
@@ -1416,22 +1422,27 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         <Btn onClick={()=>setSearchOpen(true)} bg="#1e293b" c="#cbd5e1" style={{fontSize:13}} title="Search players, teams and screens (press /)">🔍{MOBILE?"":" Search"}</Btn>{!MOBILE&&<Btn onClick={saveGame} bg="#334155" style={{fontSize:13}}>💾 Save</Btn>}{!MOBILE&&<Btn onClick={()=>setGmLook(true)} bg="#78350f" c="#fde68a" style={{fontSize:13}} title="Your GM career, legacy score and where you rank among the greats. Retire from here.">🎓 {gmRetired?"Retired":"Legacy"}</Btn>}{lastSaved&&!isMobile&&!MOBILE&&<span style={{fontSize:10,color:'#334155',whiteSpace:'nowrap'}}>✓ {lastSaved}</span>}
         <div style={{position:"relative",display:MOBILE?"none":undefined}}>
           <Btn onClick={()=>setMenuOpen(o=>!o)} bg="#1e293b" c="#cbd5e1" style={{fontSize:13}}>☰ Menu</Btn>
-          {menuOpen&&<div onClick={()=>setMenuOpen(false)} style={{position:"absolute",right:0,top:"110%",zIndex:300,background:C.cd,border:`1px solid ${C.bd}`,borderRadius:8,padding:8,display:"flex",flexDirection:"column",gap:6,minWidth:190,boxShadow:"0 8px 24px #000a"}}>
-          <Btn onClick={()=>setTourStep(0)} bg="#1e293b" c="#e2e8f0" style={{padding:"6px 9px",fontSize:13,textAlign:"left"}} title="A quick tour of the key screens">🧭 Take the tour</Btn>
-          <Btn onClick={()=>{const t=theme==="light"?"dark":"light";applyTheme(t);setTheme(t);}} bg="#1e293b" c="#e2e8f0" style={{padding:"6px 9px",fontSize:13,textAlign:"left"}} title="Switch between light and dark mode">{theme==="light"?"🌙 Dark mode":"☀️ Light mode"}</Btn>
-          <Btn onClick={toggleInjuries} bg="#1e293b" c={injuriesOn?"#e2e8f0":"#fca5a5"} style={{padding:"6px 9px",fontSize:13,textAlign:"left",display:"flex",alignItems:"center",gap:8}} title="Turn injuries on or off for every team in the league"><span style={{width:30,height:16,borderRadius:8,background:injuriesOn?C.gn:"#475569",position:"relative",flex:"0 0 auto"}}><span style={{position:"absolute",top:2,left:injuriesOn?16:2,width:12,height:12,borderRadius:6,background:"#fff",transition:"left .15s"}}/></span>🩹 Injuries {injuriesOn?"on":"off"}</Btn>
-          {<Btn onClick={()=>setShowRecapCard(true)} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Season Recap Card">📊 Season recap</Btn>}
-          <Btn onClick={()=>{setLeaderboardOpen(true);loadLeaderboard();}} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Leaderboard">🏅 Leaderboard</Btn>
-          <Btn onClick={()=>setTab("trophies")} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Legacy Hall">🏆 Legacy Hall</Btn>
-          <Btn onClick={()=>setTab("saves")} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Save slots and the cap glossary">💾 Saves & Cap 101</Btn><Btn onClick={()=>setTab("gameinfo")} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Game Updates: patch notes">📝 Game updates</Btn>
-          <Btn onClick={()=>setMultiOpen(true)} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Multiplayer">👥 Multiplayer</Btn>
-          {proUnlocked&&<span style={{fontSize:10,background:'#f59e0b',color:'#000',borderRadius:3,padding:'1px 5px',fontWeight:900,letterSpacing:1}}>PRO</span>}
-          <Btn onClick={()=>setGodMode(g=>!g)} bg={godMode?"#7f1d1d":"#1e293b"} c={godMode?"#fca5a5":"#94a3b8"} style={{padding:"3px 7px",fontSize:11}} title={proUnlocked?"God Mode (Pro)":"God Mode — Upgrade to Pro"}>⚡ God mode</Btn>
-          <label style={{cursor:"pointer",display:"flex",alignItems:"center"}}><span style={{background:"#334155",color:C.mt,padding:"3px 7px",borderRadius:4,fontWeight:700,fontSize:12,cursor:"pointer"}}>📂 Load game</span><input type="file" accept=".json" style={{display:"none"}} onChange={loadGame}/></label>
-          <Btn onClick={exportLeague} bg="#1e293b" c="#94a3b8" style={{padding:"3px 7px",fontSize:11}} title="Export League JSON">📤 Export league</Btn>
-          <label style={{cursor:"pointer",display:"flex",alignItems:"center"}} title="Import League JSON"><span style={{background:"#1e293b",color:"#94a3b8",padding:"3px 7px",borderRadius:4,fontWeight:700,fontSize:12,cursor:"pointer"}}>📥 Import league</span><input ref={importLeagueRef} type="file" accept=".json" style={{display:"none"}} onChange={importLeague}/></label>
-            {(()=>{const _sil=Math.min(50,Math.round((dynastyStats.championships||0)*5+(dynastyStats.playoffApps||0)*2+(myChamps.length*3)+(achievements?.length||0)*2+(seasonHistory.length)));return <span title="Innovation Score" style={{fontSize:10,background:'#1e3a5f',color:'#7dd3fc',borderRadius:3,padding:'1px 5px',fontWeight:700}}>SIL {_sil}/50</span>;})()}
-          </div>}
+          {menuOpen&&(()=>{/* the menu: uniform rows in small groups */const row={display:"flex",alignItems:"center",gap:10,width:"100%",padding:"8px 10px",borderRadius:8,background:"transparent",border:0,color:"#e2e8f0",fontSize:14,fontWeight:700,cursor:"pointer",textAlign:"left",boxSizing:"border-box"};const ic={width:20,textAlign:"center",flex:"0 0 auto"};const grp=t=><div style={{fontSize:10,fontWeight:900,letterSpacing:1.4,color:C.mt,padding:"8px 10px 2px"}}>{t}</div>;const it=(icon,label,onClick,title,extra)=><button className="menu-row" onClick={onClick} title={title} style={row}><span style={ic}>{icon}</span><span style={{flex:1}}>{label}</span>{extra}</button>;const file=(icon,label,onChange,ref)=><label className="menu-row" style={row}><span style={ic}>{icon}</span><span style={{flex:1}}>{label}</span><input ref={ref} type="file" accept=".json" style={{display:"none"}} onChange={onChange}/></label>;return<><div onClick={()=>setMenuOpen(false)} style={{position:"fixed",inset:0,zIndex:299}}/><div onClick={()=>setMenuOpen(false)} style={{position:"absolute",right:0,top:"110%",zIndex:300,background:C.cd,border:`1px solid ${C.bd}`,borderRadius:12,padding:6,display:"flex",flexDirection:"column",minWidth:240,boxShadow:"0 12px 32px #000b"}}>
+            <style>{".menu-row:hover{background:#ffffff12 !important}"}</style>
+            {grp("FRANCHISE")}
+            {it("🎓","GM legacy & retire",()=>setGmLook(true),"Your career, legacy score and the all-time GM rankings")}
+            {it("🏆","Legacy Hall",()=>setTab("trophies"),"Banners, trophies, the Ring of Honor and records")}
+            {it("📊","Season recap",()=>setShowRecapCard(true),"This season on one card")}
+            {it("🏅","Leaderboard",()=>{setLeaderboardOpen(true);loadLeaderboard();},"Leaderboard")}
+            {grp("SETTINGS")}
+            {it(theme==="light"?"🌙":"☀️",theme==="light"?"Dark mode":"Light mode",()=>{const t=theme==="light"?"dark":"light";applyTheme(t);setTheme(t);},"Switch between light and dark mode")}
+            {it("🩹","Injuries",toggleInjuries,"Turn injuries on or off for every team in the league",<span style={{width:30,height:16,borderRadius:8,background:injuriesOn?C.gn:"#475569",position:"relative",flex:"0 0 auto"}}><span style={{position:"absolute",top:2,left:injuriesOn?16:2,width:12,height:12,borderRadius:6,background:"#fff",transition:"left .15s"}}/></span>)}
+            {it("🧭","Take the tour",()=>setTourStep(0),"A quick tour of the key screens")}
+            {grp("SAVES & FILES")}
+            {it("💾","Saves & Cap 101",()=>setTab("saves"),"Save slots and the cap glossary")}
+            {file("📂","Load game",loadGame)}
+            {it("📤","Export league",exportLeague,"Export League JSON")}
+            {file("📥","Import league",importLeague,importLeagueRef)}
+            {grp("MORE")}
+            {it("📝","Game updates",()=>setTab("gameinfo"),"Patch notes")}
+            {it("👥","Multiplayer",()=>setMultiOpen(true),"Multiplayer")}
+            {it("⚡","God mode",()=>setGodMode(g=>!g),proUnlocked?"God Mode (Pro)":"God Mode — Upgrade to Pro",<span style={{fontSize:11,fontWeight:900,color:godMode?"#fca5a5":C.mt}}>{godMode?"ON":proUnlocked?"PRO":""}</span>)}
+          </div></>;})()}
         </div>
       </div>
     </div>
@@ -1519,14 +1530,6 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         const _tiles=[...(inboxItems.length?[{label:"NEEDS ATTENTION",value:inboxItems.length?`${inboxItems.length} item${inboxItems.length>1?"s":""}`:"All clear",tone:inboxItems.some(i=>i.tone==="urgent")?C.rd:inboxItems.length?C.gd:C.gn,sub:inboxItems[0]?.title,wide:true,onClick:()=>setInboxOpen(true)}]:[]),{label:"RECORD",value:`${ut.w}-${ut.l}${ut.t?`-${ut.t}`:""}`,sub:`${["","1st","2nd","3rd","4th"][_rk]||_rk} in the ${ut.c} ${ut.d}`,onClick:()=>setTab("standings")},{label:"CAP SPACE",value:`$${_cs.toFixed(1)}M`,tone:_cs<0?C.rd:_cs<15?C.gd:C.gn,sub:_exp?`${_exp} expiring deal${_exp>1?"s":""}`:"No deals expiring",onClick:()=>setTab("contracts")},{label:"ROSTER HEALTH",value:_inj?`${_inj} injured`:"Healthy",tone:_starsOut?C.rd:_inj?C.gd:C.gn,sub:_starsOut?`${_starsOut} starter-level out`:`${ut.roster.length} on the roster`,onClick:()=>{setRosterView("players");setTab("roster");}},{label:"OWNER & LOCKER ROOM",value:_op<35?"Hot seat":_op<60?"Uneasy":"Secure",tone:_op<35?C.rd:_op<60?C.gd:C.gn,sub:`Morale ${_mor} · Fans ${fanSat}% · Rep ${(ut.gmRep||50)>=90?"Legend":(ut.gmRep||50)>=75?"Elite":(ut.gmRep||50)>=60?"Respected":(ut.gmRep||50)>=40?"Veteran":"Rookie"}${ownerPersonality?` · ${ownerPersonality} owner`:""}`,onClick:()=>setTab("coaching")}];
         return<><FranchiseStrip tiles={_tiles} accent={teamAccent} mobile={MOBILE}/>
       <HomeScreen side={<div data-tour="devfocus"><DevFocusCard roster={ut.roster} focus={devFocus} setFocus={setDevFocus} setSel={setSel}/></div>} onStory={st=>st.retire?setRetireShow(true):setIncStory(st.inc)} mobile={MOBILE} teams={teams} ui={ui} depthOrder={depthOrder} playingTime={playingTime} sched={sched} wk={wk} sp={sp} yr={yr} pb={pb} byeMap={byeMap} news={news} stories={sp==='regular'||sp==='playoffs'?stories:(stories||[]).filter(s=>s.retire&&s.id===`ret-${yr}`)} messages={inboxItems.length} menu={menu} primary={primary} onNav={t=>t==="inbox"?setInboxOpen(true):setTab(t)} planCard={planCardEl}/></>;})()}
-      {/* Quick Actions (on phones the header has them, and Save is under More) */}
-      {!MOBILE&&<div style={{display:'flex',gap:6,marginTop:10,flexWrap:'wrap'}}>
-        {sp==="preseason"&&<Btn onClick={startSeasonAsk} bg={C.gn} style={{padding:'8px 18px',fontSize:13}}>Start Season</Btn>}
-        {sp==="regular"&&<Btn onClick={()=>{setSimming(true);setTimeout(()=>{simWk();setSimming(false);},50);}} style={{padding:'8px 18px',fontSize:13}}>Sim Week</Btn>}
-        {sp==="regular"&&wk<TRADE_DEADLINE_WEEK&&<Btn onClick={()=>simAll(TRADE_DEADLINE_WEEK)} bg="#b91c1c" style={{padding:'8px 18px',fontSize:13}}>Sim to Deadline</Btn>}
-        {sp==="regular"&&<Btn onClick={()=>simAll()} bg="#6366f1" style={{padding:'8px 18px',fontSize:13}}>Sim All</Btn>}
-        <Btn onClick={saveGame} bg="#1e293b" c={C.mt} style={{padding:'8px 18px',fontSize:13}}>Save Game</Btn>
-      </div>}
     </div>}
 
     {/* ROSTER */}
@@ -1732,115 +1735,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     {/* STATS */}
     {tab==="stats"&&<StatsScreen teams={teams} ui={ui} onPlayer={setSel} grade={glGrade} mobile={MOBILE}/>}
 
-    {/* HUB — Stats Hub, career leaders, franchise history, roster grades */}
-    {tab==="hub"&&<div style={{maxWidth:1100}}>
-      {/* Section switcher */}
-      <div style={{display:'flex',gap:3,marginBottom:10,flexWrap:'wrap'}}>
-        {[['franchise','🏆 Franchise History'],['roster','💪 Roster Grades']].map(([k,l])=><button key={k} onClick={()=>setHubSection(k)} style={{background:hubSection===k?C.gn+'22':'transparent',color:hubSection===k?C.gn:C.mt,border:`1px solid ${hubSection===k?C.gn:C.bd}`,borderRadius:4,padding:'3px 10px',fontSize:12,fontWeight:700,cursor:'pointer'}}>{l}</button>)}
-      </div>
-
-      {/* SECTION: Season Leaders */}
-      {hubSection==='leaders'&&(()=>{
-        const allP=[];teams.forEach((t,ti)=>t.roster.forEach(p=>{if(p.ss&&p.ss.gp>0)allP.push({...p,_ti:ti});}));
-        const cats=[
-          {lbl:'QB RATING',key:'rate',fmt:v=>v.toFixed(1),filter:p=>p.pos==='QB'&&(p.ss.att||0)>0},
-          {lbl:'PASS YDS',key:'passYds',fmt:v=>v+'y',filter:p=>p.pos==='QB'&&(p.ss.att||0)>=(wk*2)},
-          {lbl:'RUSH YDS',key:'rushYds',fmt:v=>v+'y',filter:p=>['QB','RB'].includes(p.pos)&&(p.ss.rushAtt||0)>=(wk*2)},
-          {lbl:'REC YDS',key:'recYds',fmt:v=>v+'y',filter:p=>['WR','TE','RB'].includes(p.pos)},
-          {lbl:'SACKS',key:'sacks',fmt:v=>v,filter:p=>['DL','LB'].includes(p.pos)},
-          {lbl:'TACKLES',key:'tkl',fmt:v=>v,filter:p=>['LB','CB','S','DL'].includes(p.pos)},
-          {lbl:'INT',key:'ints',fmt:v=>v,filter:p=>['CB','S','LB'].includes(p.pos)},
-          {lbl:'PASS TD',key:'passTD',fmt:v=>v,filter:p=>p.pos==='QB'&&(p.ss.att||0)>0},
-        ];
-        if(!allP.length)return<div style={{background:C.cd,border:`1px dashed ${C.bd}`,borderRadius:12,padding:24,textAlign:'center',color:C.mt,fontSize:15}}>No games played yet. The league's leaders show up here after Week 1.</div>;
-        return<div><div style={{fontSize:13,fontWeight:800,color:C.gd,letterSpacing:2,marginBottom:8}}>SEASON LEADERS{sp==='regular'?` · AFTER WEEK ${wk}`:''}</div>
-          <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(auto-fill,minmax(240px,1fr))',gap:10}}>
-            {cats.map(cat=>{const leaders=[...allP].filter(cat.filter).sort((a,b)=>(b.ss[cat.key]||0)-(a.ss[cat.key]||0)).slice(0,5);if(!leaders.length)return null;return(
-              <div key={cat.lbl} style={{background:C.cd,borderRadius:10,padding:'10px 12px',border:`1px solid ${C.bd}`}}>
-                <div style={{fontSize:12,fontWeight:900,color:C.gd,marginBottom:6,letterSpacing:1.5}}>{cat.lbl}</div>
-                {leaders.map((p,i)=><div key={p.id} style={{display:'flex',gap:6,padding:'4px 0',fontSize:14,alignItems:'center',borderTop:i?`1px solid ${C.bd}55`:'none'}}>
-                  <span style={{color:i===0?C.gd:C.mt,fontSize:10,minWidth:10}}>{i+1}.</span>
-                  <Face s={p.face} sz={14}/>
-                  <span style={{flex:1,color:i===0?C.tx:'#94a3b8',fontWeight:i===0?700:400,fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.name.split(' ').slice(-1)[0]}</span>
-                  <span style={{color:p._ti===ui?C.gn:C.mt,fontSize:10}}>{TEAMS[p._ti]?.ab}</span>
-                  <span style={{fontWeight:800,color:i===0?C.gd:C.tx,minWidth:32,textAlign:'right'}}>{cat.fmt(p.ss[cat.key]||0)}</span>
-                </div>)}
-              </div>);
-            })}
-          </div>
-        </div>;
-      })()}
-
-      {/* SECTION: Franchise History */}
-      {hubSection==='franchise'&&(()=>{
-        const ds=dynastyStats;
-        const allTimeW=seasonHistory.reduce((s,h)=>s+(h.w||0),0)+(ut?.w||0);
-        const allTimeL=seasonHistory.reduce((s,h)=>s+(h.l||0),0)+(ut?.l||0);
-        const winPct=allTimeW+allTimeL>0?((allTimeW/(allTimeW+allTimeL))*100).toFixed(1):0;
-        const legacyScore=Math.min(1000,Math.round((ds.wins||0)*2+(ds.championships||0)*150+(ds.playoffApps||0)*25+myChamps.length*50+(achievements?.length||0)*10));
-        const tier=legacyScore>=800?'DYNASTY LEGEND':legacyScore>=500?'FRANCHISE CONTENDER':legacyScore>=250?'RISING POWER':'EXPANSION ERA';
-        const tierClr=legacyScore>=800?'#f59e0b':legacyScore>=500?'#a78bfa':legacyScore>=250?'#22c55e':'#60a5fa';
-        return<div>
-          <div style={{fontSize:13,fontWeight:800,color:C.gd,letterSpacing:2,marginBottom:8}}>FRANCHISE HISTORY — {ut?.city} {ut?.name}</div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,marginBottom:10}}>
-            {[['ALL-TIME W-L',`${allTimeW}-${allTimeL}`],['WIN %',winPct+'%'],['TITLES',myChamps.length],['PLAYOFF APPS',ds.playoffApps||0],['SEASONS',Math.max(1,(seasonHistory.length||0)+(sp!=='preseason'?1:0))],['LEGACY',legacyScore]].map(([l,v])=><div key={l} style={{background:C.cd,borderRadius:6,padding:'8px 4px',textAlign:'center',border:`1px solid ${C.bd}`}}><div style={{fontSize:l==='LEGACY'?16:14,fontWeight:900,color:l==='TITLES'&&myChamps.length>0?'#f59e0b':l==='LEGACY'?tierClr:'#e2e8f0'}}>{v}</div><div style={{fontSize:10,color:'#64748b',marginTop:2}}>{l}</div></div>)}
-          </div>
-          <div style={{textAlign:'center',marginBottom:10}}><span style={{fontSize:14,fontWeight:800,color:tierClr,background:`${tierClr}22`,borderRadius:5,padding:'4px 14px'}}>{tier}</span></div>
-          <div style={{background:'linear-gradient(135deg,#78350f33,transparent)',border:'1px solid #f59e0b55',borderRadius:8,padding:'10px 12px',marginBottom:10,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}><div style={{flex:1,minWidth:180}}><div style={{fontSize:13,fontWeight:900,color:'#fcd34d'}}>🎓 {gmRetired?`Retired after ${gmRetired.yr} · legacy ${gmRetired.career.score}${gmRetired.rank<=10?` · #${gmRetired.rank} all time`:''}`:'Your GM legacy'}</div><div style={{fontSize:12,color:C.mt}}>{gmRetired?'Your career is in the books. Look back on it, or come out of retirement.':'Your whole career, a legacy score, and where you rank among the greatest GMs ever.'}</div></div><button onClick={()=>setGmLook(true)} style={{background:'#b45309',color:'#fff',border:'none',borderRadius:6,padding:'7px 12px',fontWeight:800,fontSize:13,cursor:'pointer'}}>{gmRetired?'View career':'Career & retire'}</button></div>
-          {champs.length>0&&<div style={{background:C.cd,borderRadius:6,padding:'8px 10px',border:`1px solid #f59e0b44`,marginBottom:8}}>
-            <div style={{fontSize:11,fontWeight:800,color:'#f59e0b',marginBottom:4}}>🏆 CHAMPIONSHIPS</div>
-            <div style={{display:'flex',flexWrap:'wrap',gap:4}}>{myChamps.map((c,i)=><span key={i} style={{fontSize:11,background:'#92400e33',color:'#fbbf24',borderRadius:3,padding:'1px 6px',fontWeight:700}}>{c.yr}</span>)}</div>
-          </div>}
-          {docs.length>0&&<div style={{background:C.cd,borderRadius:6,padding:'8px 10px',border:`1px solid #f59e0b44`,marginBottom:8}}>
-            <div style={{fontSize:11,fontWeight:800,color:'#f59e0b',marginBottom:4}}>🎬 DOCUMENTARIES</div>
-            {docs.map(d=><div key={d.yrs} style={{display:'flex',alignItems:'center',gap:8,padding:'3px 0',fontSize:12}}><span style={{flex:1}}>The {d.yrs} Era <span style={{color:'#64748b'}}>· {d.w}-{d.l} · {d.tier}</span></span><button onClick={()=>{setDocCard(d);setInboxShow('docCard');}} style={{background:'#92400e33',color:'#fcd34d',border:'1px solid #f59e0b55',borderRadius:4,padding:'3px 10px',fontSize:11,fontWeight:700,cursor:'pointer'}}>Watch</button></div>)}
-          </div>}
-          {docs.length===0&&<div style={{fontSize:11,color:'#64748b',marginBottom:8}}>🎬 Your first franchise documentary comes out after the 2030 season.</div>}
-          {seasonHistory.length>0&&<div style={{background:C.cd,borderRadius:6,padding:'8px 10px',border:`1px solid ${C.bd}`}}>
-            <div style={{fontSize:11,fontWeight:800,color:C.mt,marginBottom:4}}>SEASON LOG</div>
-            <div style={{maxHeight:160,overflowY:'auto'}}>
-              {[...seasonHistory].reverse().map((s,i)=><div key={i} style={{display:'flex',gap:6,alignItems:'center',padding:'2px 0',borderBottom:`1px solid ${C.bd}22`,fontSize:11}}>
-                <span style={{color:'#64748b',minWidth:32}}>{s.yr||'?'}</span>
-                <span style={{fontWeight:700,color:s.w>s.l?C.gn:C.rd,minWidth:36}}>{s.w}-{s.l}</span>
-                <span style={{color:'#64748b',flex:1,fontSize:10}}>{s.result||'Season'}</span>
-                {s.champ&&<span style={{fontSize:11}}>🏆</span>}
-              </div>)}
-            </div>
-          </div>}
-          <button onClick={()=>{const shareStr=`🏈 ${ut?.city} ${ut?.name} — ${allTimeW}W all-time, ${myChamps.length} titles, Legacy ${legacyScore}. ${tier} #FootballGM`;navigator.clipboard?.writeText(shareStr).then(()=>sm('Copied!'));}} style={{marginTop:8,width:'100%',background:'#1e3a5f',color:'#7dd3fc',border:'1px solid #1e3a5f',borderRadius:6,padding:'7px 0',fontSize:12,fontWeight:700,cursor:'pointer'}}>📋 Share Franchise Story</button>
-        </div>;
-      })()}
-
-      {/* SECTION: Roster Grades */}
-      {hubSection==='roster'&&(()=>{
-        const posGroups=[{lbl:'OFFENSE',poss:['QB','RB','WR','TE']},{lbl:'O-LINE',poss:['LT','LG','C','RG','RT']},{lbl:'DEFENSE',poss:['DL','LB','CB','S']},{lbl:'SPECIAL',poss:['K','P']}];
-        const glGradeClr=g=>g==='A+'?'#f59e0b':g==='A'?'#22c55e':g==='B'?'#60a5fa':g==='C'?'#94a3b8':g==='D'?'#f97316':'#ef4444';
-        const avgGrade=poss=>{const ps=(ut?.roster||[]).filter(p=>poss.includes(p.pos));if(!ps.length)return{g:'—',ovr:0};const avg=Math.round(ps.reduce((s,p)=>s+(p.ovr||0),0)/ps.length);const g=avg>=88?'A+':avg>=82?'A':avg>=76?'B':avg>=70?'C':avg>=64?'D':'F';return{g,ovr:avg,clr:glGradeClr(g)};};
-        return<div>
-          <div style={{fontSize:13,fontWeight:800,color:C.gd,letterSpacing:2,marginBottom:8}}>ROSTER GRADES</div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginBottom:10}}>
-            {posGroups.map(grp=>{const{g,ovr,clr}=avgGrade(grp.poss);return<div key={grp.lbl} style={{background:C.cd,borderRadius:6,padding:'8px 10px',border:`1px solid ${clr}44`}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-                <span style={{fontSize:12,fontWeight:800,color:C.mt}}>{grp.lbl}</span>
-                <span style={{fontSize:18,fontWeight:900,color:clr}}>{g}</span>
-              </div>
-              <div style={{fontSize:11,color:'#64748b'}}>Avg OVR: <b style={{color:clr}}>{ovr||'—'}</b></div>
-              <div style={{display:'flex',gap:2,flexWrap:'wrap',marginTop:4}}>{grp.poss.map(pos=>{const best=(ut?.roster||[]).filter(p=>p.pos===pos).sort((a,b)=>b.ovr-a.ovr)[0];if(!best)return<span key={pos} style={{fontSize:10,background:'#1e293b',color:'#334155',borderRadius:2,padding:'1px 4px'}}>{pos} —</span>;return<span key={pos} style={{fontSize:10,background:`${oC(best.ovr)}22`,color:oC(best.ovr),borderRadius:2,padding:'1px 4px',fontWeight:700}}>{pos} {best.ovr}</span>;})}
-              </div>
-            </div>;})}
-          </div>
-          {/* Overall team strength */}
-          {(()=>{const allOvr=(ut?.roster||[]).map(p=>p.ovr||0);const avg=allOvr.length?Math.round(allOvr.reduce((s,v)=>s+v,0)/allOvr.length):0;const capStr=`$${capSpace(ut||{}).toFixed(1)}M`;return<div style={{background:'#0a1520',borderRadius:6,padding:'8px 10px',border:'1px solid #1e293b',display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>
-            <div style={{textAlign:'center'}}><div style={{fontSize:20,fontWeight:900,color:oC(avg)}}>{avg}</div><div style={{fontSize:10,color:'#64748b'}}>TEAM OVR</div></div>
-            <div style={{textAlign:'center'}}><div style={{fontSize:16,fontWeight:900,color:(ut?.chemistry||75)>=80?C.gn:(ut?.chemistry||75)>=60?C.gd:C.rd}}>{ut?.chemistry||75}</div><div style={{fontSize:10,color:'#64748b'}}>CHEMISTRY</div></div>
-            <div style={{textAlign:'center'}}><div style={{fontSize:16,fontWeight:900,color:(ut?.morale||50)>=70?C.gn:(ut?.morale||50)>=45?C.gd:C.rd}}>{ut?.morale||50}</div><div style={{fontSize:10,color:'#64748b'}}>MORALE</div></div>
-            <div style={{textAlign:'center'}}><div style={{fontSize:16,fontWeight:900,color:capSpace(ut||{})>=20?C.gn:capSpace(ut||{})>=0?C.gd:C.rd}}>{capStr}</div><div style={{fontSize:10,color:'#64748b'}}>CAP SPACE</div></div>
-          </div>;})()}
-        </div>;
-      })()}
-
-
-    </div>}
+    {/* LEAGUE: your franchise's history */}
+    {tab==="hub"&&ut&&<div style={{maxWidth:1100}}><FranchiseHistory team={ut} seasons={seasonHistory} current={{yr,w:ut.w||0,l:ut.l||0}} titles={myChamps} champs={champs} teams={teams} playoffs={dynastyStats.playoffApps||0} docs={docs} career={gmRetired?.career||gmCareerNow()} gmRetired={gmRetired} onLegacy={()=>setGmLook(true)} onWatch={d=>{setDocCard(d);setInboxShow('docCard');}} onShare={()=>{const _c=gmCareerNow();navigator.clipboard?.writeText(`🏈 ${ut.city} ${ut.name}: ${_c.w}-${_c.l} over ${_c.seasons} seasons, ${myChamps.length} Super Bowl${myChamps.length===1?'':'s'}, GM legacy ${_c.score}. #FootballGM`).then(()=>sm('Copied!'));}}/></div>}
 
     {/* SCOUTING */}
     {tab==="scouting"&&<ScoutingPage g={scoutG}/>}
@@ -2189,7 +2085,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     {tab==="history"&&<LeagueHistory teams={teams} champs={champs} awards={awards} retired={retired} yr={yr} ui={ui} setSel={setSel} findPlayer={findPlayer}/>}
     {tab==="records"&&<RecordBook book={recordBook} teams={teams} yr={yr} inSeason={sp==="regular"} setSel={setSel} findPlayer={findPlayer}/>}
     {tab==="deadline"&&deadline&&ut&&<DeadlineDay dl={deadline} teams={teams} ui={ui} yr={yr} capSpace={capSpace(ut)} pickValue={pkV} needs={getTeamNeed(ut.roster)} onInquire={(p,ti)=>{setTrTm(ti);setTrOff({g:[],r:[p],gPk:[],rPk:[]});setTab("trade");}} onAdvance={dlAdvance} onFinish={dlFinish} onAccept={dlAccept} onDecline={dlDecline} onOpenTrade={()=>setTab("trade")} onClose={()=>setTab("dashboard")} setSel={setSel}/>}
-    {tab==="trophies"&&ut&&<TrophyRoom team={ut} ui={ui} teams={teams} champs={champs} awards={awards} spotlight={trophySpot} retired={retired} yr={yr} book={recordBook} onRetired={r=>setSel(retiredCard(r))} onInduct={r=>{setTeams(ts=>ts.map((t,i)=>i!==ui?t:{...t,legacyHall:{ring:[...(t.legacyHall?.ring||[]),r.id],nums:t.legacyHall?.nums||[]}}));setLog(l=>[`🏟️ RING OF HONOR: ${r.name} (${r.pos}) is inducted`,...l].slice(0,150));sm(`${r.name} inducted into the Ring of Honor`);}} onRetireNum={r=>{setTeams(ts=>ts.map((t,i)=>i!==ui?t:{...t,legacyHall:{ring:t.legacyHall?.ring||[],nums:[...(t.legacyHall?.nums||[]),{num:r.num,name:r.name,id:r.id,yr}]}}));setLog(l=>[`🎽 #${r.num} RETIRED in honor of ${r.name}`,...l].slice(0,150));sm(`#${r.num} retired for ${r.name}`);}}/>}
+    {tab==="trophies"&&ut&&<TrophyRoom team={ut} ui={ui} teams={teams} champs={champs} awards={awards} spotlight={trophySpot} retired={retired} yr={yr} book={recordBook} onRetired={r=>setSel(retiredCard(r))} onInduct={r=>{setTeams(ts=>ts.map((t,i)=>i!==ui?t:{...t,legacyHall:{...(t.legacyHall||{}),ring:[...(t.legacyHall?.ring||[]),r.id],nums:t.legacyHall?.nums||[]}}));setLog(l=>[`🏟️ RING OF HONOR: ${r.name} (${r.pos}) is inducted`,...l].slice(0,150));sm(`${r.name} inducted into the Ring of Honor`);}} onRetireNum={r=>{setTeams(ts=>ts.map((t,i)=>i!==ui?t:{...t,legacyHall:{...(t.legacyHall||{}),ring:t.legacyHall?.ring||[],nums:[...(t.legacyHall?.nums||[]),{num:r.num,name:r.name,id:r.id,yr}]}}));setLog(l=>[`🎽 #${r.num} RETIRED in honor of ${r.name}`,...l].slice(0,150));sm(`#${r.num} retired for ${r.name}`);}} onPass={(r,what)=>{setTeams(ts=>ts.map((t,i)=>{if(i!==ui)return t;const h={ring:[],nums:[],...(t.legacyHall||{})};return{...t,legacyHall:what==='num'?{...h,numPass:[...(h.numPass||[]),r.id]}:{...h,pass:[...(h.pass||[]),r.id]}};}));sm(what==='num'?`#${r.num} stays in circulation`:`${r.name} won't be offered for the Ring of Honor again`);}}/>}
     {tab==="log"&&<div style={{maxWidth:820}}>
     <div style={{fontSize:26,fontWeight:900}}>Timeline</div>
     <div style={{fontSize:14,color:C.mt,marginBottom:12}}>Everything that's happened to your club, newest first, and its story season by season.</div>

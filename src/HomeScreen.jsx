@@ -138,8 +138,9 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
 
         {/* Matchup */}
         <div className="hm-main" style={{ flex: "3 1 460px", minWidth: 0, padding: 18 }}>
-          <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>{label}</div>
-          {primary.length > 0 && !(mobile && (sp === "regular" || sp === "preseason")) && (
+          <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>{label}</div>
+          {/* in season the top bar has Play/Sim, so the buttons here only show off-season and in the playoffs */}
+          {primary.length > 0 && sp !== "regular" && !(mobile && sp === "preseason") && (
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-start", flexWrap: "wrap", marginBottom: 14 }}>
               {primary.map((b, i) => <Btn key={b.label} onClick={b.onClick} bg={i === 0 ? C.gn : "#ffffff22"} c="#fff" style={{ fontSize: 16, padding: "10px 20px", fontWeight: 900 }}>{b.label}</Btn>)}
             </div>
@@ -170,7 +171,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
               away={away} home={home}
               awayPlayer={highestRatedPlayer(away)}
               homePlayer={highestRatedPlayer(home)}
-              awayRating={ra} homeRating={rh}
+              awayRating={ra} homeRating={rh} compact={!mobile}
               label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} • Week ${game.wk ?? nextWk}`}
               kickoff={game.date ? kickoff(game) : "Kickoff TBD"}
               venue={sp === "playoffs" && pb?.rd === 4 ? "Super Bowl • neutral site" : [game.venue || home.city, game.intl && game.city].filter(Boolean).join(", ")}

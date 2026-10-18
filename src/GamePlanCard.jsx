@@ -11,6 +11,7 @@ const GRADE_C = { A: "#22c55e", B: "#84cc16", C: "#eab308", D: "#f97316", F: "#e
 // key (a pick for another week doesn't count). onPick(side, key): set one side for this game;
 // onAuto(): back to your coaches' pick.
 export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto, onTwoPoint, mobile, last }) {
+  const [open, setOpen] = React.useState(false);
   if (!units || !opp) return null;
   const opts = planOptions(units.mine, units.theirs);
   const best = bestPlan(units.mine, units.theirs);
@@ -41,12 +42,14 @@ export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
         <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd }}>🎯 GAME PLAN vs {opp.ab || opp.name}</span>
         <span style={{ fontSize: 12, color: set ? "#fde68a" : C.mt }}>{set ? "your call for this game" : "your coaches' pick (best fit)"}</span>
-        {set && <button onClick={onAuto} style={{ marginLeft: "auto", background: "none", border: "none", color: "#93c5fd", textDecoration: "underline", cursor: "pointer", fontSize: 12, padding: 0 }}>Use the coaches' pick</button>}
+        {(() => { const lbl = (list, k) => list.find((x) => x.key === k); const o = lbl(OFF_PLANS, cur.off), d = lbl(DEF_PLANS, cur.def); return !open && <span style={{ fontSize: 13, fontWeight: 800 }}>{o?.icon} {o?.label} <b style={{ color: GRADE_C[planGrade(opts.off[cur.off].v)] }}>{planGrade(opts.off[cur.off].v)}</b> · {d?.icon} {d?.label} <b style={{ color: GRADE_C[planGrade(opts.def[cur.def].v)] }}>{planGrade(opts.def[cur.def].v)}</b></span>; })()}
+        <button onClick={() => setOpen(!open)} style={{ marginLeft: "auto", background: "transparent", border: `1px solid ${C.bd}`, color: "#93c5fd", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 800, padding: "3px 10px" }}>{open ? "Done ▴" : "Change ▾"}</button>
+        {set && open && <button onClick={onAuto} style={{ marginLeft: "auto", background: "none", border: "none", color: "#93c5fd", textDecoration: "underline", cursor: "pointer", fontSize: 12, padding: 0 }}>Use the coaches' pick</button>}
       </div>
-      <Row side="off" list={OFF_PLANS} />
-      <Row side="def" list={DEF_PLANS} />
-      {last?.snaps > 0 && <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 8, lineHeight: 1.45 }}>Last game vs {last.opp}: your defense blitzed on <b style={{ color: "#e2e8f0" }}>{Math.round((last.blitz / last.snaps) * 100)}%</b> of snaps, loaded the box on <b style={{ color: "#e2e8f0" }}>{Math.round((last.box / last.snaps) * 100)}%</b> and dropped into coverage on <b style={{ color: "#e2e8f0" }}>{Math.round((last.cover / last.snaps) * 100)}%</b>. Your plan, your coordinator's scheme and his specialty all move these.</div>}
-      {onTwoPoint && <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, fontSize: 12, color: C.mt, cursor: "pointer" }}><input type="checkbox" checked={!!plan?.twoPoint} onChange={onTwoPoint} /> Go for two after touchdowns</label>}
+      {open && <Row side="off" list={OFF_PLANS} />}
+      {open && <Row side="def" list={DEF_PLANS} />}
+      {open && last?.snaps > 0 && <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 8, lineHeight: 1.45 }}>Last game vs {last.opp}: your defense blitzed on <b style={{ color: "#e2e8f0" }}>{Math.round((last.blitz / last.snaps) * 100)}%</b> of snaps, loaded the box on <b style={{ color: "#e2e8f0" }}>{Math.round((last.box / last.snaps) * 100)}%</b> and dropped into coverage on <b style={{ color: "#e2e8f0" }}>{Math.round((last.cover / last.snaps) * 100)}%</b>. Your plan, your coordinator's scheme and his specialty all move these.</div>}
+      {open && onTwoPoint && <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, fontSize: 12, color: C.mt, cursor: "pointer" }}><input type="checkbox" checked={!!plan?.twoPoint} onChange={onTwoPoint} /> Go for two after touchdowns</label>}
     </div>
   );
 }

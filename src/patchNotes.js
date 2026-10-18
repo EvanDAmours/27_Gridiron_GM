@@ -1063,4 +1063,13 @@ export const PATCH_NOTES = [
     "Depth chart: the schemes and playbook sit right under the field instead of on their own tab (the field is a little smaller to make room).",
     "Trades: each team's cap space shows under its logo when you pick who to trade with.",
   ] },
+  { v: "2.93", date: "2026-10-18", title: "Cleaner Screens", notes: [
+    "Ring of Honor: every candidate gets a Yes or No. Say no and he's never offered again (same for retiring a number). Candidates also need three or more seasons with your club unless they're a Hall of Famer, so a one-year rental isn't on the list.",
+    "The home screen fits on a computer screen: the matchup card is tighter, the game plan folds into one line (Change ▾ to adjust it), the Play/Sim buttons live only in the top bar during the season, the leftover button row at the bottom is gone, and the week's result card drops the win-probability chart (it's in the game recap) with league scores a tap away.",
+    "League History is rebuilt into sections (Champions, Awards, Career leaders, Hall of Fame, Retirements) with team logos, faces and cards instead of one long scroll.",
+    "Franchise History matches the rest of the game: record, titles, playoff trips and your GM legacy up top, your Super Bowls and documentaries side by side, and every season with a bar. Roster Grades is gone.",
+    "The Menu is tidier: grouped (Franchise, Settings, Saves & files, More) with even rows, and it closes when you click away.",
+    "Injury news looks like every other notice, says it plainly (\"Jon Runyan (LG) is out 5 weeks\"), and stacks above other notices instead of hiding under them.",
+    "Unsolicited trade offers (the offer bar and the \"urgent\" QB offers) are off for now; too many were bad deals. Trades you start, the trade finder and the trade block still work.",
+  ] },
 ];

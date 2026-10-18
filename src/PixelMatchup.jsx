@@ -45,9 +45,9 @@ function TeamSummary({ team, rating, other }) {
 // Ratings, records, players, venue and kickoff are passed from the live game.
 // Uniform overrides are optional for alternate jerseys or neutral-site games.
 export default function PixelMatchup({ away, home, awayPlayer, homePlayer, awayRating,
-  homeRating, label, kickoff, venue, awayUniform = 'away', homeUniform = 'home' }) {
+  homeRating, label, kickoff, venue, awayUniform = 'away', homeUniform = 'home', compact = false }) {
   if (!away || !home) return null;
-  return h('article', { className: 'pxm-card keep-dark', 'aria-label': `${away.city} ${away.name} at ${home.city} ${home.name}` },
+  return h('article', { className: `pxm-card keep-dark${compact ? ' pxm-compact' : ''}`, 'aria-label': `${away.city} ${away.name} at ${home.city} ${home.name}` },
     h('header', { className: 'pxm-label' }, label),
     h('div', { className: 'pxm-field' },
       h('div', { className: 'pxm-yardmarks', 'aria-hidden': true }, ...['30', '40', '50', '40', '30'].map((mark, i) => h('span', { key: i }, mark))),

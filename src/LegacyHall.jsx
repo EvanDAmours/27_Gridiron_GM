@@ -118,11 +118,12 @@ export function GoldJackets({ team, hofers, yr, onOpen }) {
 
 // The Ring of Honor and retired numbers. ring: inducted ids; nums: retired numbers. candidates:
 // notable players who retired here (history entries).
-export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum, onOpen }) {
+export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum, onOpen, onPass }) {
   const ring = retired.filter((r) => hall.ring.includes(r.id));
   // candidates: this club's own retired greats (they hung it up here), not the whole league's
   const cands = ringCandidates(retired, team, hall).slice(0, 8);
   const taken = new Set(hall.nums.map((n) => n.num));
+  const numPass = new Set(hall.numPass || []);
   const real = RING_OF_HONOR[team.ab] || { name: null, members: [] };
   const trim = team.ac || "#e5e7eb", bg = team.clr || "#1e3a8a";
   // retired numbers: the club's real ones, then any retired in this league
@@ -162,17 +163,19 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum, onOpen
           ))}
         </div>
       </div>
-      {(cands.length > 0 || ring.some((r) => r.num != null && !taken.has(r.num))) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 8, marginTop: 8 }}>
+      {(cands.length > 0 || ring.some((r) => r.num != null && !taken.has(r.num) && !numPass.has(r.id))) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 8, marginTop: 8 }}>
         {cands.map((r) => (
           <div key={r.id} style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
             <div onClick={onOpen ? () => onOpen(r) : undefined} title={onOpen ? "Open his player card" : undefined} style={{ flex: 1, minWidth: 0, cursor: onOpen ? "pointer" : "default" }}><div style={{ fontWeight: 800, fontSize: 14, textDecoration: onOpen ? "underline dotted #ffffff55" : "none" }}>{r.name} {r.hof && <span style={{ color: "#fde68a", fontSize: 11 }}>HOF</span>}</div><div style={{ fontSize: 12, color: C.mt }}>{r.pos} · retired {r.retYr} · legacy {r.legacy}</div></div>
-            <Btn onClick={() => onInduct(r)} bg="#b45309" style={{ fontSize: 12, padding: "4px 10px" }}>Induct</Btn>
+            <Btn onClick={() => onInduct(r)} bg="#b45309" style={{ fontSize: 12, padding: "4px 10px" }}>Yes, induct</Btn>
+            {onPass && <Btn onClick={() => onPass(r)} bg="transparent" c={C.mt} style={{ fontSize: 12, padding: "4px 10px", border: `1px solid ${C.bd}` }} title="He won't be offered again">No</Btn>}
           </div>
         ))}
-        {ring.filter((r) => r.num != null && !taken.has(r.num)).map((r) => (
+        {ring.filter((r) => r.num != null && !taken.has(r.num) && !numPass.has(r.id)).map((r) => (
           <div key={`n${r.id}`} style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 800, fontSize: 14 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt }}>Ring of Honor · wore #{r.num}</div></div>
             <Btn onClick={() => onRetireNum(r)} bg="#1e3a5f" c="#7dd3fc" style={{ fontSize: 12, padding: "4px 10px" }}>Retire #{r.num}</Btn>
+            {onPass && <Btn onClick={() => onPass(r, "num")} bg="transparent" c={C.mt} style={{ fontSize: 12, padding: "4px 10px", border: `1px solid ${C.bd}` }} title="Keep the number in circulation">No</Btn>}
           </div>
         ))}
       </div>}

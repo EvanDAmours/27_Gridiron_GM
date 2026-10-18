@@ -183,7 +183,9 @@ export function careerLeaders(teams, retired = [], key, n = 10) {
 
 // A club's Ring of Honor candidates: players who retired with it, Hall of Famers or a legacy of
 // 20+, not yet inducted. Best first.
-export const ringCandidates = (retired, team, hall) => (retired || []).filter((r) => r.team === team?.ab && !(hall?.ring || []).includes(r.id) && (r.hof || r.legacy >= 20)).sort((a, b) => b.legacy - a.legacy);
+// Ring of Honor candidates: this club's retired greats (a Hall of Famer, or a real legacy built over
+// three or more seasons here), minus anyone you've inducted or passed on.
+export const ringCandidates = (retired, team, hall) => (retired || []).filter((r) => r.team === team?.ab && !(hall?.ring || []).includes(r.id) && !(hall?.pass || []).includes(r.id) && (r.hof || (r.legacy >= 20 && (r.seasons ?? 3) >= 3))).sort((a, b) => b.legacy - a.legacy);
 
 // A player's accolades in this league, each with the years: Super Bowls (on the champion's roster
 // that season), MVP and the other awards, All-Pro and Pro Bowl selections. teams: today's clubs

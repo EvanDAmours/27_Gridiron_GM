@@ -1,99 +1,115 @@
-// League history: every Super Bowl champion, the award winners year by year, career leaders
-// since the league began, and the Hall of Fame.
-import Select from "./Select.jsx";
+// League history, one section at a time: the Super Bowl champions, the award winners year by year,
+// career leaders since the league began, the Hall of Fame and notable retirements.
 import React, { useState } from "react";
-import { C, TeamLogo, Bdg } from "./ui.jsx";
+import { C, TeamLogo, Bdg, Face, oC } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 import { CAREER_STATS, careerLeaders, retiredCard } from "./history.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 
-const AW = [["mvp", "MVP"], ["opoy", "OPOY"], ["dpoy", "DPOY"], ["oroy", "OROY"], ["droy", "DROY"], ["sbmvp", "SB MVP"]];
+const AW = [["mvp", "Most Valuable Player"], ["opoy", "Offensive Player"], ["dpoy", "Defensive Player"], ["oroy", "Offensive Rookie"], ["droy", "Defensive Rookie"], ["sbmvp", "Super Bowl MVP"]];
+const AW_SHORT = { mvp: "MVP", opoy: "OPOY", dpoy: "DPOY", oroy: "OROY", droy: "DROY", sbmvp: "SB MVP" };
 const num = (v) => (Number.isInteger(v) ? v.toLocaleString("en-US") : (+v).toFixed(1));
+const SECTIONS = [["champs", "🏆 Champions"], ["awards", "🏅 Awards"], ["leaders", "📊 Career leaders"], ["hof", "🏛️ Hall of Fame"], ["retired", "👋 Retirements"]];
 
 export default function LeagueHistory({ teams, champs = [], awards = [], retired = [], yr, ui, setSel, findPlayer }) {
+  const [sec, setSec] = useState("champs");
   const [stat, setStat] = useState("passYds");
-  const panel = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: 14, marginBottom: 12 };
-  const head = { fontSize: 13, fontWeight: 900, letterSpacing: 1.5, color: "#fcd34d", marginBottom: 10 };
-  const open = (pid) => { const p = pid && findPlayer(pid); if (p) setSel(p); };
-  const titles = champs.filter((c) => typeof c === "object" && c.yr).sort((a, b) => b.yr - a.yr);
   const years = [...new Set(awards.map((a) => a.yr))].sort((a, b) => b - a);
-  const leaders = careerLeaders(teams, retired, stat, 10);
-  const hof = retired.filter((r) => r.hof).sort((a, b) => b.hofClass - a.hofClass || b.legacy - a.legacy);
-  const notable = retired.filter((r) => !r.hof).sort((a, b) => b.retYr - a.retYr || b.legacy - a.legacy).slice(0, 12);
+  const [awYr, setAwYr] = useState(years[0]);
+  const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: 12 };
   const team = (ab) => teams.find((t) => t.ab === ab);
+  const retiredById = new Map(retired.map((r) => [r.id, r]));
+  // a player wherever he is now: on a roster, or retired (his saved card)
+  const who = (pid) => { const p = pid != null && findPlayer(pid); if (p) return p; const r = retiredById.get(pid); return r ? retiredCard(r) : null; };
+  const open = (pid) => { const p = who(pid); if (p && setSel) setSel(p); };
+  const titles = champs.filter((c) => typeof c === "object" && c.yr).sort((a, b) => b.yr - a.yr);
+  const myTitles = titles.filter((c) => c.ti === ui).length;
+  const hof = retired.filter((r) => r.hof).sort((a, b) => b.hofClass - a.hofClass || b.legacy - a.legacy);
+  const notable = retired.filter((r) => !r.hof).sort((a, b) => b.retYr - a.retYr || b.legacy - a.legacy).slice(0, 40);
+  const empty = (t) => <div style={{ ...card, textAlign: "center", color: C.mt, fontSize: 15, padding: 28 }}>{t}</div>;
+
   return (
     <div style={{ maxWidth: 1100 }}>
-      <div style={{ fontSize: 26, fontWeight: 900 }}>League History</div>
-      <div style={{ fontSize: 14, color: C.mt, marginBottom: 12 }}>Champions, award winners, career leaders and the Hall of Fame since your league began in 2026.</div>
-
-      <div style={panel}>
-        <div style={head}>🏆 SUPER BOWL CHAMPIONS</div>
-        {titles.map((c) => (
-          <div key={c.yr} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: `1px solid ${C.bd}66`, background: c.ti === ui ? "#22c55e12" : "transparent" }}>
-            <b style={{ width: 44 }}>{c.yr}</b>
-            {teams[c.ti] && <TeamLogo t={teams[c.ti]} sz={28} />}
-            <div style={{ flex: 1, minWidth: 0, fontSize: 15 }}><b>{c.t}</b>{c.opp != null && teams[c.opp] ? <span style={{ color: C.mt }}> beat the {teams[c.opp].name}{c.score ? ` ${c.score}` : ""}</span> : null}</div>
-            <span style={{ fontSize: 12, color: C.mt }}>{sbName(sbNumber(c.yr))}</span>
-          </div>
-        ))}
-        {!titles.length && <div style={{ fontSize: 14, color: C.mt }}>No Super Bowl has been played in your league yet.</div>}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 26, fontWeight: 900 }}>League History</div>
+        <div style={{ fontSize: 14, color: C.mt }}>Since your league began in 2026 · {titles.length} Super Bowl{titles.length === 1 ? "" : "s"} played{myTitles ? ` · ${myTitles} yours` : ""} · {hof.length} Hall of Famer{hof.length === 1 ? "" : "s"}</div>
+      </div>
+      <div role="tablist" style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "10px 0 12px" }}>
+        {SECTIONS.map(([k, l]) => <button key={k} role="tab" aria-selected={sec === k} onClick={() => setSec(k)} style={{ background: sec === k ? "#1e3a5f" : "transparent", color: sec === k ? "#e0f2fe" : C.mt, border: `1px solid ${sec === k ? "#38bdf8" : C.bd}`, borderRadius: 999, padding: "7px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
       </div>
 
-      <div style={panel}>
-        <div style={head}>🏅 AWARD WINNERS</div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 760, fontSize: 13 }}>
-            <thead><tr><th style={{ textAlign: "left", color: C.mt, padding: 4 }}>YEAR</th>{AW.map(([, l]) => <th key={l} style={{ textAlign: "left", color: C.mt, padding: 4 }}>{l}</th>)}</tr></thead>
-            <tbody>
-              {years.map((y) => { const a = awards.find((x) => x.yr === y) || {}; return (
-                <tr key={y} style={{ borderTop: `1px solid ${C.bd}66` }}>
-                  <td style={{ padding: "6px 4px", fontWeight: 800 }}>{y}</td>
-                  {AW.map(([k]) => <td key={k} style={{ padding: "6px 4px" }}>{a[k] ? <span onClick={() => open(a[k].pid)} style={{ cursor: "pointer" }}><b>{a[k].name}</b> <span style={{ color: C.mt }}>{a[k].pos} · {teams[a[k].ti]?.ab || a[k].team || ""}</span></span> : <span style={{ color: C.mt }}>—</span>}</td>)}
-                </tr>); })}
-            </tbody>
-          </table>
-          {!years.length && <div style={{ fontSize: 14, color: C.mt }}>Awards are handed out after the Super Bowl.</div>}
-        </div>
-      </div>
-
-      <div style={panel}>
-        <div style={{ ...head, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>📊 CAREER LEADERS <span style={{ color: C.mt, fontWeight: 600, letterSpacing: 0 }}>(in your league)</span>
-          <Select value={stat} onChange={(e) => setStat(e.target.value)} style={{ marginLeft: "auto", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "4px 8px", fontSize: 13 }}>
-            {CAREER_STATS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-          </Select>
-        </div>
-        {leaders.map((r, i) => (
-          <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: `1px solid ${C.bd}66` }}>
-            <b style={{ width: 24, color: C.mt }}>{i + 1}</b>
-            {team(r.team) ? <TeamLogo t={team(r.team)} sz={22} /> : <span style={{ width: 22 }} />}
-            <Bdg pos={r.pos} />
-            <span onClick={() => r.active && open(r.id)} style={{ flex: 1, fontWeight: 800, cursor: r.active ? "pointer" : "default" }}>{r.name}{!r.active && <span style={{ fontSize: 11, color: C.mt, fontWeight: 600 }}> · retired {r.retYr}</span>}</span>
-            <b style={{ fontSize: 16 }}>{num(r.v)}</b>
-          </div>
-        ))}
-        {!leaders.length && <div style={{ fontSize: 14, color: C.mt }}>Career totals start counting with your league's first games.</div>}
-      </div>
-
-      <div style={{ ...panel, borderColor: "#d4a01788" }}>
-        <div style={head}>🏛️ HALL OF FAME</div>
-        {hof.map((r) => (
-          <div key={r.id} onClick={setSel ? () => setSel(retiredCard(r)) : undefined} title="Open his player card" style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${C.bd}66`, cursor: setSel ? "pointer" : "default" }}>
-            <span style={{ width: 92, fontSize: 12, fontWeight: 800, color: r.hofClass <= yr ? "#fcd34d" : C.mt }}>{r.hofClass <= yr ? `Class of ${r.hofClass}` : `Enshrined ${r.hofClass}`}</span>
-            <Bdg pos={r.pos} />
-            <div style={{ flex: 1, minWidth: 0 }}><b>{r.name}</b> <span style={{ color: C.mt, fontSize: 13 }}>{r.team} · retired {r.retYr} at {r.age} · peak {r.peak} OVR</span>
-              <div style={{ fontSize: 12, color: "#cbd5e1" }}>{[...Object.entries(r.won || {}).map(([k, ys]) => `${ys.length}× ${(AW.find((a) => a[0] === k) || [k, k.toUpperCase()])[1]}`), ...CAREER_STATS.filter((c) => (r.career?.[c.key] || 0) >= c.per * 2).map((c) => `${num(r.career[c.key])} ${c.label.toLowerCase()}`)].join(" · ") || "A legendary career"}</div>
+      {sec === "champs" && (titles.length ? <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "repeat(auto-fill,minmax(250px,1fr))", gap: 10 }}>
+        {titles.map((c) => { const t = teams[c.ti], o = c.opp != null ? teams[c.opp] : null, mine = c.ti === ui; return (
+          <div key={c.yr} style={{ ...card, display: "flex", alignItems: "center", gap: 12, borderColor: mine ? "#f59e0b" : C.bd, background: mine ? "linear-gradient(135deg,#78350f44,#111827)" : C.cd }}>
+            {t && <TeamLogo t={t} sz={48} />}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: "#fcd34d" }}>{sbName(sbNumber(c.yr)).toUpperCase()} · {c.yr}</div>
+              <div style={{ fontSize: 17, fontWeight: 900 }}>{c.t}</div>
+              <div style={{ fontSize: 13, color: C.mt }}>{o ? `beat the ${o.name}` : ""}{c.score ? ` ${c.score}` : ""}{mine ? " · yours" : ""}</div>
             </div>
-            <b style={{ color: "#fcd34d" }}>{r.legacy}</b>
-          </div>
-        ))}
-        {!hof.length && <div style={{ fontSize: 14, color: C.mt }}>Nobody has been elected yet. Great careers earn a place when the player retires (legacy 60+), enshrined five years later.</div>}
-      </div>
+          </div>); })}
+      </div> : empty("No Super Bowl has been played in your league yet."))}
 
-      {notable.length > 0 && (
-        <div style={panel}>
-          <div style={head}>👋 NOTABLE RETIREMENTS</div>
-          {notable.map((r) => <div key={r.id} style={{ fontSize: 14, padding: "5px 0", borderBottom: `1px solid ${C.bd}66` }}><b>{r.retYr}</b> · {r.name} <span style={{ color: C.mt }}>({r.pos}, {r.team}) · {r.seasons} season{r.seasons > 1 ? "s" : ""} in the league · peak {r.peak} · legacy {r.legacy}</span></div>)}
+      {sec === "awards" && (years.length ? <>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+          {years.map((y) => <button key={y} onClick={() => setAwYr(y)} style={{ background: awYr === y ? `${C.gd}22` : "transparent", color: awYr === y ? "#fde68a" : C.mt, border: `1px solid ${awYr === y ? C.gd : C.bd}`, borderRadius: 8, padding: "4px 10px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{y}</button>)}
         </div>
-      )}
+        {(() => { const a = awards.find((x) => x.yr === awYr) || {}; return (
+          <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "repeat(auto-fill,minmax(320px,1fr))", gap: 10 }}>
+            {AW.map(([k, l]) => { const w = a[k], p = w && who(w.pid), t = w && teams[w.ti]; return (
+              <div key={k} onClick={w ? () => open(w.pid) : undefined} style={{ ...card, display: "flex", alignItems: "center", gap: 12, cursor: w && p ? "pointer" : "default", borderColor: w?.ti === ui ? C.gn : C.bd }}>
+                {p ? <Face s={p.face} sz={52} /> : <div style={{ width: 52 }} />}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: k === "sbmvp" ? "#fcd34d" : "#7dd3fc" }}>{l.toUpperCase()}</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w ? w.name : "—"}</div>
+                  {w && <div style={{ fontSize: 13, color: C.mt }}>{w.pos}{t ? ` · ${t.city} ${t.name}` : ""}{w.stat ? ` · ${w.stat}` : ""}</div>}
+                </div>
+                {t && <TeamLogo t={t} sz={30} />}
+              </div>); })}
+          </div>); })()}
+      </> : empty("Awards are handed out after the Super Bowl."))}
+
+      {sec === "leaders" && <>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+          {CAREER_STATS.map((c) => <button key={c.key} onClick={() => setStat(c.key)} style={{ background: stat === c.key ? `${C.bl}33` : "transparent", color: stat === c.key ? "#bfdbfe" : C.mt, border: `1px solid ${stat === c.key ? C.bl : C.bd}`, borderRadius: 8, padding: "4px 10px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{c.label}</button>)}
+        </div>
+        {(() => { const leaders = careerLeaders(teams, retired, stat, 10); return leaders.length ? <div style={card}>
+          {leaders.map((r, i) => { const p = who(r.id), t = team(r.team); return (
+            <div key={r.id} onClick={p ? () => open(r.id) : undefined} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 4px", borderBottom: i < leaders.length - 1 ? `1px solid ${C.bd}66` : "none", cursor: p ? "pointer" : "default" }}>
+              <b style={{ width: 24, fontSize: 16, color: i < 3 ? "#fcd34d" : C.mt }}>{i + 1}</b>
+              {p ? <Face s={p.face} sz={34} /> : <span style={{ width: 34 }} />}
+              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={r.pos} /> {r.active ? `active · ${r.team}` : `retired ${r.retYr} · ${r.team}`}</div></div>
+              {t && <TeamLogo t={t} sz={24} />}
+              <b style={{ fontSize: 20, minWidth: 70, textAlign: "right" }}>{num(r.v)}</b>
+            </div>); })}
+        </div> : empty("Career totals start counting with your league's first games."); })()}
+      </>}
+
+      {sec === "hof" && (hof.length ? <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "repeat(auto-fill,minmax(300px,1fr))", gap: 10 }}>
+        {hof.map((r) => { const c = retiredCard(r), in_ = r.hofClass <= yr; return (
+          <div key={r.id} onClick={setSel ? () => setSel(c) : undefined} title="Open his player card" style={{ ...card, cursor: "pointer", borderColor: in_ ? "#d4a017" : C.bd, background: in_ ? "linear-gradient(160deg,#3b2a0a,#111827 70%)" : C.cd }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Face s={c.face} sz={52} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: in_ ? "#fcd34d" : C.mt }}>{in_ ? `CLASS OF ${r.hofClass}` : `ENSHRINED ${r.hofClass}`}</div>
+                <div style={{ fontSize: 17, fontWeight: 900 }}>{r.name}</div>
+                <div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={r.pos} /> {r.team} · retired {r.retYr} at {r.age}</div>
+              </div>
+              <div style={{ textAlign: "right" }}><div style={{ fontSize: 20, fontWeight: 900, color: oC(r.peak) }}>{r.peak}</div><div style={{ fontSize: 10, color: C.mt, fontWeight: 800 }}>PEAK</div></div>
+            </div>
+            <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 6 }}>{[...Object.entries(r.won || {}).map(([k, ys]) => `${ys.length}× ${AW_SHORT[k] || k.toUpperCase()}`), ...CAREER_STATS.filter((s) => (r.career?.[s.key] || 0) >= s.per * 2).map((s) => `${num(r.career[s.key])} ${s.label.toLowerCase()}`)].join(" · ") || "A legendary career"}</div>
+          </div>); })}
+      </div> : empty("Nobody has been elected yet. Great careers earn a place when the player retires (legacy 60+), and he's enshrined five years later."))}
+
+      {sec === "retired" && (notable.length ? <div style={card}>
+        {notable.map((r, i) => { const c = retiredCard(r); return (
+          <div key={r.id} onClick={setSel ? () => setSel(c) : undefined} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 4px", borderBottom: i < notable.length - 1 ? `1px solid ${C.bd}66` : "none", cursor: "pointer" }}>
+            <b style={{ width: 44, color: C.mt }}>{r.retYr}</b>
+            <Face s={c.face} sz={34} />
+            <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={r.pos} /> {r.team} · {r.seasons} season{r.seasons > 1 ? "s" : ""} in the league · legacy {r.legacy}</div></div>
+            <div style={{ textAlign: "right" }}><div style={{ fontSize: 18, fontWeight: 900, color: oC(r.peak) }}>{r.peak}</div><div style={{ fontSize: 10, color: C.mt, fontWeight: 800 }}>PEAK</div></div>
+          </div>); })}
+      </div> : empty("No notable retirements yet."))}
     </div>
   );
 }

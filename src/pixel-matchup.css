@@ -32,3 +32,18 @@
 .pxm-rating--ahead span { background: #22c55e; }
 @container (min-width: 640px) { .pxm-matchup { max-width: 540px; margin: 0 auto; } .pxm-sprite { max-width: 130px; margin: 0 auto; } .pxm-field { padding-top: 28px; } .pxm-teams { max-width: 760px; margin: 0 auto; } }
 
+/* the home screen on a computer: the same card, tighter, so the whole screen fits without scrolling */
+.pxm-compact .pxm-label { padding: 8px 12px; }
+.pxm-compact .pxm-field { padding: 4px 8px 0; }
+.pxm-compact .pxm-yardmarks { display: none; }
+.pxm-compact .pxm-sprite, .pxm-compact .pxm-sprite-fallback { width: min(70%, 92px) !important; max-width: 92px !important; }
+.pxm-compact .pxm-logos { padding-top: 4%; }
+.pxm-compact .pxm-logos > :not(b) { width: 36% !important; }
+.pxm-compact .pxm-player figcaption { padding-top: 2px; font-size: 14px; }
+.pxm-compact .pxm-kickoff { padding: 2px 10px 8px; font-size: 13px; gap: 1px; }
+.pxm-compact .pxm-teams { padding: 0 12px 10px; }
+.pxm-compact .pxm-city { font-size: 12px; }
+.pxm-compact .pxm-team h3 { font-size: 18px; }
+.pxm-compact .pxm-record { margin: 1px 0 6px; font-size: 13px; }
+.pxm-compact .pxm-rating strong { font-size: 18px; padding: 3px 0; }
+.pxm-compact .pxm-rating span { font-size: 10px; padding: 2px 0; }

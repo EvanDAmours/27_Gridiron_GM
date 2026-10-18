@@ -197,8 +197,9 @@ function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam, onP
         </div>
       </div>
       {sg && <Scorigami us={us} them={them} />}
-      {g.gd?.wp && <div style={{ marginTop: 10 }}><WinProbChart wp={g.gd.wp} home={teams[g.h]} away={teams[g.a]} height={70} /></div>}
-      {others.length > 0 && <Others list={others} teams={teams} onBox={onBox} />}
+      {/* league scores a tap away (the win probability lives in the game recap) */}
+      {others.length > 0 && <button onClick={() => setShowOthers((v) => !v)} style={{ marginTop: 8, background: "transparent", color: C.mt, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Scores around the league {showOthers ? "▴" : "▾"}</button>}
+      {showOthers && <Others list={others} teams={teams} onBox={onBox} />}
     </div>
   );
 }
