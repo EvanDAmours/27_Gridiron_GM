@@ -49,26 +49,34 @@ function Banner({ team, line1, line2, year, years, gold }) {
 // confs: [[yr, "AFC" | "NFC" | ...]] conference championships; divs: [[yr, "AFC West"]] division titles.
 export function Rafters({ team, sbs = [], titles = [], confs = [], divs = [] }) {
   const LG = { NFL: "NFL", AFL: "AFL", AAFC: "AAFC" };
-  const big = [
+  // three rafters: world championships on their own, then conference titles, then division titles
+  // four years to a banner (oldest first), the way clubs hang them
+  const champs = [
     ...sbs.map((s) => ({ key: `sb${s.yr}`, yr: s.yr, el: <Banner key={`sb${s.yr}`} team={team} line1={sbName(s.n ?? sbNumber(s.yr)).toUpperCase()} line2="CHAMPIONS" year={s.yr} gold /> })),
     ...titles.map(([y, k]) => ({ key: `l${y}${k}`, yr: y, el: <Banner key={`l${y}${k}`} team={team} line1={`${LG[k] || k}`} line2="CHAMPIONS" year={y} gold /> })),
-    ...confs.map(([y, k]) => ({ key: `c${y}`, yr: y, el: <Banner key={`c${y}`} team={team} line1={`${k}`.toUpperCase()} line2="CHAMPIONS" year={y} /> })),
   ].sort((a, b) => a.yr - b.yr || (a.key < b.key ? -1 : 1));
+  const confBanners = [...confs].sort((a, b) => a[0] - b[0]).map(([y, k]) => <Banner key={`c${y}`} team={team} line1={`${k}`.toUpperCase()} line2="CHAMPIONS" year={y} />);
   const groups = {};
   for (const [y, n] of divs) (groups[n] ||= []).push(y);
-  const order = Object.entries(groups).sort((a, b) => Math.min(...a[1]) - Math.min(...b[1]));
-  const wall = (children) => (
-    <div className="keep-dark" style={{ background: "linear-gradient(180deg,#0b0f19,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: "0 12px 14px", position: "relative", overflowX: "auto", marginBottom: 10 }}>
+  const divBanners = Object.entries(groups).sort((a, b) => Math.min(...a[1]) - Math.min(...b[1])).flatMap(([name, ys]) => {
+    const sorted = [...ys].sort((a, b) => a - b), out = [];
+    for (let i = 0; i < sorted.length; i += 4) out.push(<Banner key={`${name}${sorted[i]}`} team={team} line1={name.toUpperCase()} line2="CHAMPIONS" years={sorted.slice(i, i + 4)} />);
+    return out;
+  });
+  const wall = (label, children) => (
+    <div className="keep-dark" style={{ background: "linear-gradient(180deg,#0b0f19,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: "0 12px 14px", position: "relative", marginBottom: 10 }}>
       <div style={{ height: 8, margin: "0 -12px 0", background: "repeating-linear-gradient(90deg,#374151 0 14px,#1f2937 14px 28px)" }} />
-      <div style={{ display: "flex", gap: 12, paddingTop: 2, minHeight: 190, alignItems: "flex-start" }}>{children}</div>
+      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#94a3b8", padding: "6px 2px 0" }}>{label}</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, paddingTop: 2, minHeight: 190, alignItems: "flex-start" }}>{children}</div>
     </div>
   );
   const nDiv = divs.length, nTitles = sbs.length + titles.length;
   return (
     <div style={{ marginBottom: 22 }}>
       <H sub={`${nTitles} championship${nTitles === 1 ? "" : "s"} · ${confs.length} conference title${confs.length === 1 ? "" : "s"} · ${nDiv} division title${nDiv === 1 ? "" : "s"}`}>The Rafters</H>
-      {wall(big.length ? big.map((x) => x.el) : <div style={{ color: C.mt, fontSize: 14, padding: "40px 6px" }}>No championship banners yet. Win the conference or the Super Bowl and one goes up here.</div>)}
-      {order.length > 0 && wall(order.map(([name, ys]) => <Banner key={name} team={team} line1={name.toUpperCase()} line2="CHAMPIONS" years={[...ys].sort((a, b) => a - b)} />))}
+      {wall("🏆 WORLD CHAMPIONS", champs.length ? champs.map((x) => x.el) : <div style={{ color: C.mt, fontSize: 14, padding: "40px 6px" }}>No championship banners yet. Win the Super Bowl and one goes up here.</div>)}
+      {confBanners.length > 0 && wall("CONFERENCE CHAMPIONS", confBanners)}
+      {divBanners.length > 0 && wall("DIVISION CHAMPIONS", divBanners)}
     </div>
   );
 }
@@ -205,6 +213,7 @@ export function RecordsWall({ team, retired, book, teams = [], allRetired = reti
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", flex: 1 }}>{r.label}</span>{mine && <span style={{ fontSize: 10, fontWeight: 900, background: "#b45309", color: "#fff", borderRadius: 4, padding: "1px 5px" }}>SET IN YOUR LEAGUE</span>}</div>
                 <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 900, lineHeight: 1.15 }}>{recordValue(r.key, r.rec.val)}</div>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>{r.rec.name}{r.rec.yr ? ` · ${r.rec.yr}` : " · tied"}</div>
+                {(r.rec.ties || []).map((x, j) => <div key={j} style={{ fontSize: 11, fontWeight: 800, color: "#9a3412" }}>🤝 Tied by {x.name} ({x.yr})</div>)}
                 {r.rec.prev && mine && <div style={{ fontSize: 11, color: "#78350f" }}>Broke {r.rec.prev.name}'s {recordValue(r.key, r.rec.prev.val)}{r.rec.prev.yr ? ` (${r.rec.prev.yr})` : ""}</div>}
                 {r.lead && !(mine && r.rec.name === r.lead.name) && <div style={{ marginTop: 6 }}>
                   <div style={{ height: 5, background: "#0f172a22", borderRadius: 3 }}><div style={{ width: `${pct}%`, height: "100%", background: pct >= 90 ? "#dc2626" : "#2563eb", borderRadius: 3 }} /></div>

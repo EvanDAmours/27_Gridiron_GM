@@ -43,7 +43,7 @@ function CompactMatchup({ away, home, ra, rh, label, kickoff }) {
 }
 
 // This week's top stories (written after every week), with the league wire as a fallback.
-function Stories({ stories, news, teams }) {
+function Stories({ stories, news, teams, onStory }) {
   if (!stories.length && !news.length) return <div style={{ fontSize: 15, color: "#cbd5e1" }}>Quiet around the league so far. Stories arrive after every week.</div>;
   if (!stories.length) return news.map((n, i) => (
     <div key={i} style={{ background: "#ffffff0d", border: "1px solid #ffffff1a", borderRadius: 10, padding: 12, marginBottom: 10 }}>
@@ -54,7 +54,7 @@ function Stories({ stories, news, teams }) {
   return stories.map((st, i) => {
     const t = teams[st.team];
     return (
-      <div key={st.id} style={{ background: i === 0 ? `linear-gradient(135deg, ${t?.clr || "#1e3a5f"}cc, #0b1220)` : "#ffffff0d", border: `1px solid ${st.mine ? "#f97316" : "#ffffff1a"}`, borderRadius: 10, padding: 12, marginBottom: 10 }}>
+      <div key={st.id} onClick={st.inc && onStory ? () => onStory(st) : undefined} title={st.inc ? "Read the full story" : undefined} style={{ cursor: st.inc && onStory ? "pointer" : "default", background: i === 0 ? `linear-gradient(135deg, ${t?.clr || "#1e3a5f"}cc, #0b1220)` : "#ffffff0d", border: `1px solid ${st.mine ? "#f97316" : "#ffffff1a"}`, borderRadius: 10, padding: 12, marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
           {t && <TeamLogo t={t} sz={i === 0 ? 40 : 26} />}
           {st.breaking && <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: "#fff", background: "#dc2626", borderRadius: 4, padding: "2px 6px" }}>BREAKING</span>}
@@ -62,6 +62,7 @@ function Stories({ stories, news, teams }) {
         </div>
         <div style={{ fontSize: i === 0 ? 17 : 15, fontWeight: 800, lineHeight: 1.3 }}>{st.head}</div>
         <div style={{ fontSize: 13, color: "#cbd5e1", lineHeight: 1.45, marginTop: 4 }}>{st.text}</div>
+        {st.inc && onStory && <div style={{ fontSize: 12, fontWeight: 800, color: "#7dd3fc", marginTop: 6 }}>📰 Read the full story →</div>}
       </div>
     );
   });
@@ -91,7 +92,7 @@ function Injuries({ teams, ui, onNav, wk }) {
   );
 }
 
-export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard }) {
+export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory }) {
   const me = teams[ui];
   const [panel, setPanel] = useState("stories");
   const inSeason = sp === "regular" || sp === "preseason";
@@ -200,7 +201,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
             ))}
           </div>
           <div style={{ maxHeight: side ? 300 : 520, overflowY: "auto", paddingRight: 2 }}>
-            {panel === "stories" ? <Stories stories={stories} news={news} teams={teams} /> : <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />}
+            {panel === "stories" ? <Stories stories={stories} news={news} teams={teams} onStory={onStory} /> : <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />}
           </div>
           {side && !mobile && <div style={{ marginTop: "auto" }}>{side}</div>}
         </div>

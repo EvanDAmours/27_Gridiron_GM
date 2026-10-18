@@ -66,6 +66,45 @@ export function pickIncident(rand = Math.random) {
   return OFF_FIELD[0];
 }
 
+// The morning paper on an off-field incident: headline, what happened, and what it means for him
+// and his club (games, pay, the legal case, his job and his value). inc: a story's inc payload.
+const GAME_CHECKS = 18;
+export function incidentArticle(inc) {
+  const { k, wks, name, pos, age, ovr, salary, contract, city, club, prior = 0, yr, wk } = inc;
+  const ln = last(name), lost = Math.round((salary * wks / GAME_CHECKS) * 100) / 100;
+  const star = ovr >= 80, vet = age >= 30, repeat = prior > 0;
+  const W = (n) => `${n} game${n === 1 ? "" : "s"}`;
+  const A = {
+    dv: { head: `${name} ARRESTED`, dek: `${club} ${pos} faces domestic violence charges; league hands down ${W(wks)} suspension`,
+      body: [`${city} police arrested ${name} early this week on domestic violence charges, according to court records. He was released on bond and is due in court next month.`, `The league placed him on its exempt list and then suspended him ${W(wks)} under the personal conduct policy. The ${club} said only that they are "aware of the situation and gathering information."`],
+      legal: `The criminal case runs on its own clock. A conviction could bring further league discipline, and a plea deal could be months away.` },
+    sa: { head: `LAWSUIT ROCKS ${club.toUpperCase()}`, dek: `${name} named in civil suit alleging sexual assault; ${W(wks)} suspension`,
+      body: [`A civil lawsuit filed this week accuses ${name} of sexual assault. His attorney called the allegations "false and financially motivated."`, `The league opened an investigation and suspended the ${pos} ${W(wks)} while it continues. More plaintiffs could come forward.`],
+      legal: `Civil suits like this often drag on for a year or more before a settlement or trial. Each new filing tends to bring the story back.` },
+    ped: { head: `${ln.toUpperCase()} FLAGGED`, dek: `${club} ${pos} suspended ${W(wks)} for performance-enhancing drugs`,
+      body: [`${name} tested positive for a banned substance and has been suspended ${W(wks)} without pay, the league announced.`, `In a statement, ${ln} said he "never knowingly took anything banned" and blamed a supplement. He will not appeal.`],
+      legal: null },
+    gamble: { head: `BETTING SCANDAL`, dek: `${name} banned ${W(wks)} for wagering on NFL games`,
+      body: [`The league suspended ${name} ${W(wks)} after an investigation found he placed bets on NFL games, a violation of the gambling policy.`, `Investigators found no evidence he bet on his own team's games, a league source said, which kept the ban from being indefinite.`],
+      legal: null },
+    dui: { head: `${ln.toUpperCase()} CHARGED WITH DUI`, dek: `${club} ${pos} arrested; out ${W(wks)}`,
+      body: [`${name} was arrested for driving under the influence after a traffic stop in the early morning hours, police said. No one was hurt.`, `The league suspended him ${W(wks)}. "${ln} made a bad decision and he knows it," a team spokesman said.`],
+      legal: `The DUI charge is expected to be resolved with a plea in the coming months; a second offense would carry a much longer ban.` },
+    rules: { head: `${ln.toUpperCase()} BENCHED`, dek: `${club} sit their ${pos} ${W(wks)} for violating team rules`,
+      body: [`The ${club} have benched ${name} ${W(wks)} for what the head coach called "a violation of team rules," declining to give details.`, `Teammates said ${ln} missed meetings this week. "He's got to be where he's supposed to be," one veteran said.`],
+      legal: null },
+  }[k] || { head: `${ln.toUpperCase()} SUSPENDED`, dek: `${club} ${pos} out ${W(wks)}`, body: [`${name} has been suspended ${W(wks)}.`], legal: null };
+  const fallout = [
+    `Out ${W(wks)}${k === "rules" ? " (a team benching)" : ", unpaid"}${k !== "rules" && lost > 0 ? `: about $${lost.toFixed(2)}M in lost game checks` : ""}.`,
+    A.legal && `Legal: ${A.legal}`,
+    contract > 1 ? `His deal runs ${contract} more season${contract > 1 ? "s" : ""}. Teams can void guarantees for conduct, and he'll be an easy cut if he struggles when he returns.` : `He's in the last year of his deal. This could be the end of his time in ${city}.`,
+    star ? `As ${/^(8|11|18)/.test(String(ovr)) ? "an" : "a"} ${ovr}-rated starter, his absence is a real hit for the ${club}, and his trade value takes a dent until it's behind him.` : `The ${club} have depth to cover him, and he'll have to earn his spot back.`,
+    repeat ? `It's not his first incident. Repeat offenders get longer bans, and clubs run out of patience.` : `It's his first incident. Players who stay clean usually come back without lasting damage.`,
+    ["dv", "sa"].includes(k) ? `Expect sponsors to pull back and fans to call for his release.` : vet ? `At ${age}, he doesn't have many second chances left.` : `He's young enough to put this behind him.`,
+  ].filter(Boolean);
+  return { head: A.head, dek: A.dek, body: A.body, fallout, dateline: `${city.toUpperCase()} · ${yr}${wk ? ` · WEEK ${wk}` : ""}` };
+}
+
 export function leagueDrama({ teams, sched, wk, ui, yr, weeks = 1, offField = [], rand = Math.random }) {
   const out = [], log = [];
   const add = (s) => out.push({ id: `${yr}-${wk}-d${out.length}`, kind: "drama", ...s, mine: s.team === ui });
@@ -137,7 +176,10 @@ export function offFieldWeek({ teams, sched, wk, ui, yr, rand = Math.random }) {
       const wks = ev.wks[0] + Math.floor(rand() * (ev.wks[1] - ev.wks[0] + 1));
       c.p.suspended = true; c.p.suspWksLeft = wks;
       (c.p.incidents ||= []).push({ yr, wk, k: ev.k, wks });
-      add({ team: c.ti, breaking: ev.k !== "rules", head: ev.head(c.p.name, wks, c.t), text: ev.text(c.p.name, c.t, c.p.pos, wks) });
+      const prior = c.p.incidents.length - 1;
+      add({ team: c.ti, breaking: ev.k !== "rules", head: ev.head(c.p.name, wks, c.t), text: ev.text(c.p.name, c.t, c.p.pos, wks),
+        // the full newspaper write-up (tap the story)
+        inc: { k: ev.k, wks, yr, wk, pid: c.p.id, name: c.p.name, pos: c.p.pos, age: c.p.age, ovr: c.p.ovr, salary: c.p.salary || 0, contract: c.p.contract || 0, city: c.t.city, club: c.t.name, prior } });
       // yours: you decide whether he stays (the suspension popup shows why)
       if (c.ti === ui) mine.push({ pid: c.p.id, k: ev.k, wks, head: ev.head(c.p.name, wks, c.t), text: ev.text(c.p.name, c.t, c.p.pos, wks) });
       if (c.ti === ui) log.push(`🚨 ${c.p.name} (${c.p.pos}) is out ${wks} game${wks > 1 ? "s" : ""}: ${ev.head(c.p.name, wks, c.t)}.`);

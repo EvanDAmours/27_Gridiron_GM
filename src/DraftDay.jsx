@@ -64,8 +64,10 @@ export function PickIsIn({ entry, team, yr, onDone, ms = 2300 }) {
 }
 
 // The on-the-clock stage. needs: positions the club is short at; fits: best available for them.
-export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = [], fits = [], onSim, onSimPick, onCalls, callsOpen, onForPick, forPickOpen }) {
+export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = [], fits = [], onSim, onSimPick, onCalls, callsOpen, onForPick, forPickOpen, onPause }) {
   const clock = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
+  // Pause sits right by the clock, big enough to find in a hurry.
+  const pauseBtn = (big) => onPause && <button onClick={onPause} aria-label={paused ? "Resume the draft" : "Pause the draft"} style={{ background: paused ? C.gn : "#f97316", color: "#fff", border: "2px solid #ffffff55", borderRadius: 10, padding: big ? "10px 18px" : "6px 10px", fontSize: big ? 17 : 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 12px #0007", flexShrink: 0 }}>{paused ? "▶ Resume" : "⏸ Pause"}</button>;
   // Phones: a compact clock bar pinned under the header, the buttons in one swipeable row.
   if (MOBILE) return (
     <div style={{ position: "sticky", top: "calc(56px + env(safe-area-inset-top))", zIndex: 20, borderRadius: 12, overflow: "hidden", marginBottom: 10, border: mine ? `2px solid ${C.gn}` : `1px solid ${C.bd}`, boxShadow: "0 8px 20px #0009" }}>
@@ -77,6 +79,7 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
           {!mine && nextMine && <div style={{ fontSize: 12, color: "#fffc" }}>Your pick: #{nextMine.overall} ({nextMine.overall - pick.overall} away)</div>}
         </div>
         <div style={{ fontSize: 26, fontWeight: 900, color: timer <= 10 ? C.rd : mine ? C.gd : "#fff", fontVariantNumeric: "tabular-nums" }}>{clock}</div>
+        {pauseBtn(false)}
       </div>
       {!mine && (onSimPick || nextMine) && (
         <div className="pill-row" style={{ background: "#0b1120", padding: "6px 8px", display: "flex", gap: 6, overflowX: "auto" }}>
@@ -105,9 +108,9 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
           {mine && <div style={{ fontSize: 14, color: "#fffc", marginTop: 2 }}>{paused ? "Draft paused" : "Make your pick from the board below"}</div>}
         </div>
         {mine ? (
-          <div style={{ textAlign: "right" }}><div style={{ fontSize: 40, fontWeight: 900, color: timer <= 10 ? C.rd : C.gd, fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</div><div style={{ fontSize: 12, color: "#fffa" }}>TIME LEFT</div></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>{pauseBtn(true)}<div style={{ textAlign: "right" }}><div style={{ fontSize: 40, fontWeight: 900, color: timer <= 10 ? C.rd : C.gd, fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</div><div style={{ fontSize: 12, color: "#fffa" }}>TIME LEFT</div></div></div>
         ) : (
-          <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>{pauseBtn(true)}
             <div style={{ textAlign: "right", lineHeight: 1 }}><span style={{ fontSize: 28, fontWeight: 900, color: timer <= 10 ? C.rd : "#fff", fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</span><div style={{ fontSize: 11, color: "#fffa", marginTop: 2 }}>ON THE CLOCK</div></div>
           </div>
         )}

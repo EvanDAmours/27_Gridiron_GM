@@ -20,14 +20,22 @@ function PlayerSide({ label, p, tone, onPlayer }) {
 }
 
 // results: [{ team, get, send, rating, ratingColor }]
-export default function TradeFinder({ results, needs = [], onRun, onLoad, onPlayer }) {
+const m1 = (n) => `${n < 0 ? "-" : ""}$${Math.abs(n).toFixed(1)}M`;
+// Their cap room now and after the deal (they take on who you send and lose who you get).
+function CapNote({ space, inSal, outSal, who }) {
+  if (space == null) return null;
+  const after = space - inSal + outSal, bad = after < 0;
+  return <span title={`${who} cap space now ${m1(space)}; after this trade ${m1(after)}`} style={{ fontSize: 12, fontWeight: 700, color: bad ? C.rd : after < 5 ? "#fbbf24" : "#94a3b8", whiteSpace: "nowrap" }}>{who === "You" ? "You" : "Cap"} {m1(space)} → <b style={{ color: bad ? C.rd : after < 5 ? "#fbbf24" : C.gn }}>{m1(after)}</b>{bad ? " ⚠" : ""}</span>;
+}
+
+export default function TradeFinder({ results, needs = [], onRun, onLoad, onPlayer, capOf, myCap }) {
   useEffect(() => { if (!results.length) onRun(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ fontSize: 20, fontWeight: 900 }}>Trade finder</div>
-          <div style={{ fontSize: 14, color: C.mt }}>Deals for your biggest needs{needs.length ? `: ${needs.join(", ")}` : ""}. {MOBILE ? "They'd accept every one." : "Every deal here is one they would accept; the tag says how much you overpay to get it."}</div>
+          <div style={{ fontSize: 14, color: C.mt }}>Deals for your biggest needs{needs.length ? `: ${needs.join(", ")}` : ""}. {MOBILE ? "They'd accept every one." : "Every deal here is one they would accept; the tag says how much you overpay to get it. Cap shows their room now → after the deal (and yours on the right)."}</div>
         </div>
         <Btn onClick={onRun} bg="#1e3a5f" c="#bfdbfe" style={{ fontSize: 15, padding: "9px 16px" }}>↺ Find new deals</Btn>
       </div>
@@ -35,11 +43,12 @@ export default function TradeFinder({ results, needs = [], onRun, onLoad, onPlay
       <div style={{ display: "grid", gap: 6 }}>
         {results.map((r, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: C.cd, border: `1px solid ${C.bd}`, borderLeft: `4px solid ${r.ratingColor}`, borderRadius: 10, padding: "6px 10px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, width: MOBILE ? "auto" : 128, flex: MOBILE ? 1 : "none", minWidth: 0, order: 0 }} title={`${r.team.city} ${r.team.name}`}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, width: MOBILE ? "auto" : 170, flex: MOBILE ? 1 : "none", minWidth: 0, order: 0 }} title={`${r.team.city} ${r.team.name}`}>
               <TeamLogo t={r.team} sz={26} glow />
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.team.name}{MOBILE && <span style={{ color: C.mt, fontWeight: 600, fontSize: 12 }}> {r.team.w}-{r.team.l}</span>}</div>
                 <div style={{ display: MOBILE ? "none" : "block", fontSize: 12, color: C.mt }}>{r.team.w}-{r.team.l}</div>
+                {capOf && <CapNote space={capOf(r.team)} inSal={r.send.salary || 0} outSal={r.get.salary || 0} who={r.team.name} />}
               </div>
             </div>
             <div style={{ flex: "1 1 460px", minWidth: 0, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", order: MOBILE ? 2 : 1 }}>
@@ -48,6 +57,7 @@ export default function TradeFinder({ results, needs = [], onRun, onLoad, onPlay
               <PlayerSide label="SEND" p={r.send} tone={C.rd} onPlayer={onPlayer} />
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto", order: MOBILE ? 1 : 2 }}>
+              {myCap != null && !MOBILE && <CapNote space={myCap} inSal={r.get.salary || 0} outSal={r.send.salary || 0} who="You" />}
               <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: r.ratingColor, background: `${r.ratingColor}22`, borderRadius: 999, padding: "3px 9px", whiteSpace: "nowrap" }}>{r.rating}</span>
               <Btn onClick={() => onLoad(r)} bg={C.bl} style={{ fontSize: 13, padding: "6px 12px", whiteSpace: "nowrap" }}>Load →</Btn>
             </div>

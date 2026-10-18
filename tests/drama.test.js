@@ -70,3 +70,12 @@ test("box scores make stories: an interception-riddled loss, a kicker's misses",
   assert.ok(stories.some((s) => s.head.includes(qb.name.split(" ").slice(1).join(" ")) && /interceptions|picks/.test(s.head)));
   assert.ok(stories.some((s) => s.head.includes(k.name) && /misses/.test(s.head)));
 });
+
+test("an incident reads as a newspaper story with what it means", async () => {
+  const { incidentArticle } = await import("../src/drama.js");
+  const a = incidentArticle({ k: "sa", wks: 4, yr: 2029, wk: 3, name: "Sam Hill", pos: "LB", age: 31, ovr: 84, salary: 9, contract: 1, city: "Denver", club: "Broncos", prior: 1 });
+  assert.match(a.dek, /civil suit/);
+  assert.ok(a.fallout.some((f) => f.startsWith("Legal:")));
+  assert.ok(a.fallout.some((f) => /not his first/.test(f)));
+  assert.ok(a.fallout.some((f) => /an 84-rated/.test(f)));
+});

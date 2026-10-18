@@ -1034,4 +1034,13 @@ export const PATCH_NOTES = [
     "Suspensions say why: the keep-or-cut decision names the offense (DUI, PEDs, gambling, domestic violence and so on). Player cards show a pending lawsuit or legal case, a suspension's games left, and an off-field record.",
     "Leaner player cards: only a player's top 3 position skills show (tap All skills for the rest), and season stats show the last 3 seasons with the rest a tap away. Real players' cards now include their real NFL seasons from before your league began (2016–2025).",
   ] },
+  { v: "2.89", date: "2026-10-18", title: "One Screen Game Day", notes: [
+    "The live game fits on one desktop screen: the field with the win probability and drive chart under it on the left, the play-by-play beside it and the box score under that on the right. No more scrolling down to find them.",
+    "Franchise documentaries play again: Watch (from the inbox or League → Franchise History) used to open nothing unless you were on the Log screen.",
+    "Tying a record counts: matching the NFL or a club's single-season mark goes in the record book and the Legacy Hall as a tie (\"Tied by …\"), makes the log and top stories, and lists with the records broken.",
+    "Legacy Hall banners are tidier: Super Bowl champions hang on their own rafter, conference titles on the next, and division titles four years to a banner instead of one giant banner.",
+    "Off-field trouble reads like the paper: tap a suspension or arrest story (or \"Read the full story\" on your player's suspension) for a newspaper write-up: what happened, the legal case, lost pay, and what it means for his job and value.",
+    "The trade finder shows each team's cap space now and after the deal, plus yours, with a warning when a deal would put someone over the cap.",
+    "Draft day: a big Pause / Resume button sits right next to the clock.",
+  ] },
 ];
