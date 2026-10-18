@@ -373,7 +373,7 @@ export function rollGameWeather(){const r=Math.random();return r<0.70?'clear':r<
 // Live-game box score in the shape the live screen shows (yards, TDs, tackles...).
 export function liveView(box){const out={h:{},a:{}};for(const side of["h","a"])for(const[id,l]of Object.entries(box[side]||{}))out[side][id]={name:l.name,pos:l.pos,passYds:l.passYds||0,rushYds:l.rushYds||0,recYds:l.recYds||0,td:(l.passTD||0)+(l.rushTD||0)+(l.recTD||0),comp:l.comp||0,att:l.att||0,rec:l.rec||0,tkl:l.tkl||0,sack:l.sacks||0,int:l.ints||0,rushAtt:l.rushAtt||0};return out;}
 // The shared setup for quick sims and live games: each side's depth chart, snap shares and
-// game-day modifiers (coaches, schemes, game plan, morale, weather, matchups, difficulty).
+// game-day modifiers (coaches, schemes, game plan, weather, matchups, difficulty).
 export function gameSetup(ht,at,hPlan,aPlan,wxOverride){
 const wx=wxOverride||rollGameWeather();
   const hOC=ht.coach?.oc?(ht.coach.oc.rating-60)*.1:0,hDC=ht.coach?.dc?(ht.coach.dc.rating-60)*.1:0;
@@ -388,7 +388,6 @@ const wx=wxOverride||rollGameWeather();
   const hU=unitRatings(hOrd),aU=unitRatings(aOrd);
   hPlan=ht.isUser&&hPlan&&!hPlan.auto?hPlan:{...(hPlan||{}),...bestPlan(hU,aU),auto:true};aPlan=at.isUser&&aPlan&&!aPlan.auto?aPlan:{...(aPlan||{}),...bestPlan(aU,hU),auto:true};
   const _pe=planEdge(hPlan,aPlan,hU,aU);
-  const hMorB=((ht.morale||50)-50)*0.06,aMorB=((at.morale||50)-50)*0.06;
   const wxM=wx==='snow'?-4:wx==='rain'?-2:wx==='wind'?-1:0;
   // Everything that tilts a game, in points for each offense (the engine turns it into play-by-play odds).
   const _pmAvg=arr=>arr.length?arr.reduce((s,p)=>s+p.ovr,0)/arr.length:70;
@@ -399,8 +398,8 @@ const wx=wxOverride||rollGameWeather();
   const _dda=DDA;
   // A scheme change takes a couple of weeks to install: the team plays a bit worse until it's in.
   const _trans=t=>(t._schemeTransWks||0)>0?-2:0;
-  let hMod=_trans(ht)+hOC-aDC+hFit*.5+_pe.h+hMorB+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+((hPlan?.playbook?.length||0)>=3?1:0)+_hClash+hHC+(ht.isUser?_dda:0);
-  let aMod=_trans(at)+aOC-hDC+aFit*.5+_pe.a+aMorB+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+((aPlan?.playbook?.length||0)>=3?1:0)+_aClash-hHC+(at.isUser?_dda:0);
+  let hMod=_trans(ht)+hOC-aDC+hFit*.5+_pe.h+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+((hPlan?.playbook?.length||0)>=3?1:0)+_hClash+hHC+(ht.isUser?_dda:0);
+  let aMod=_trans(at)+aOC-hDC+aFit*.5+_pe.a+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+((aPlan?.playbook?.length||0)>=3?1:0)+_aClash-hHC+(at.isUser?_dda:0);
   const hSnaps=teamSnaps(hOrd,ht.isUser?USER_SNAPS:{}),aSnaps=teamSnaps(aOrd,at.isUser?USER_SNAPS:{});
   // Play-calling tendency: the game plan, plus the coordinator's scheme (Air Raid throws more, Power Run runs more).
   const lean=(t,pl)=>(pl?.off==="pass_heavy"?0.07:pl?.off==="run_heavy"?-0.07:0)+(0.42-schemeRunPct(t))*0.5;

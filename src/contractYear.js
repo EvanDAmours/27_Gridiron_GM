@@ -37,7 +37,6 @@ export function contractYearWeek(team, yr, wk, rand = Math.random) {
     if (!c.asked && (p.ovr || 0) >= 85 && wk >= 7 && games >= 6 && pct(team) <= 0.4 && rand() < 0.12) {
       c.asked = true;
       p.tradeRequest = true;
-      team.morale = Math.max(0, (team.morale || 50) - 4);
       news.push(`😤 CONTRACT YEAR: ${p.name} (${p.pos}), playing out his deal on a ${team.w}-${team.l} team, wants out. He's asked for a trade.`);
     }
   }

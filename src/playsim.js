@@ -27,7 +27,7 @@ const gauss = (rand) => { let u = 0, v = 0; while (!u) u = rand(); while (!v) v 
 const expo = (rand, mean) => -Math.log(1 - rand() * 0.9999) * mean;
 const last = (p) => (p?.name || "").split(" ").slice(-1)[0] || "Player";
 
-// Home-field advantage and how much the game-day modifiers (game plan, coaches, morale,
+// Home-field advantage and how much the game-day modifiers (game plan, coaches,
 // weather...) count: both in "edge" units, where 1 unit is worth about 2.5 points a game.
 export const HOME_EDGE = 0.42; // home teams win ~55%, like the NFL
 let HOME = HOME_EDGE;
