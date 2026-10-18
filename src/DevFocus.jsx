@@ -57,13 +57,23 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
   const groups = [...new Set(players.map((x) => x.pos))].sort((a, b) => posRank(a) - posRank(b)).map((pos) => [pos, options.filter((x) => x.pos === pos)]);
   const opt = (x) => <option key={x.id} value={x.id}>{x.name} ({x.pos}, {x.ovr} OVR, {(DEV_TRAITS[devOf(x)]?.name || "Normal").toUpperCase()}) · ~{perSeason(x)}/season</option>;
   return (
-    <div style={{ marginBottom: 12 }}>
+    <div style={{ marginBottom: MOBILE ? 12 : 8 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
         <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: C.mt }}>{label.toUpperCase()}</span>
         <span style={{ marginLeft: "auto", fontSize: 11, color: C.mt }}>Sort</span>
         {[["pos", "Position"], ["growth", "Growth"]].map(([k, l]) => <button key={k} onClick={() => setBy(k)} style={{ fontSize: 11, fontWeight: 800, padding: "3px 8px", borderRadius: 999, cursor: "pointer", border: `1px solid ${by === k ? C.bl : C.bd}`, background: by === k ? `${C.bl}33` : "transparent", color: by === k ? "#fff" : C.mt }}>{l}</button>)}
       </div>
-      {p ? (
+      {p && !MOBILE ? (
+        // desktop: one slim row so Home fits on one screen
+        <div onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 8, borderRadius: 8, border: "1px solid #8a6d1d", background: "#f5c5420d", padding: "6px 10px", marginBottom: 6, cursor: "pointer", minWidth: 0 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: pC(p.pos), borderRadius: 4, padding: "2px 6px" }}>{p.pos}</span>
+          <span style={{ minWidth: 0, flex: 1 }}>
+            <span style={{ display: "block", fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+            <span style={{ display: "block", fontSize: 11.5, color: "#fbbf24", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Age {p.age} · {(DEV_TRAITS[devOf(p)]?.name || "Normal")} · {p.labGains ? `+${p.labGains} OVR from the lab` : "in the lab this week"}</span>
+          </span>
+          <span style={{ fontSize: 22, fontWeight: 900, fontStyle: "italic", color: oC(p.ovr) }}>{p.ovr}</span>
+        </div>
+      ) : p ? (
         <div style={{ borderRadius: 10, overflow: "hidden", border: "1px solid #8a6d1d", marginBottom: 6, cursor: "pointer" }} onClick={() => setSel(p)}>
           <div style={{ background: "linear-gradient(135deg,#0b1a3a,#13244a)", padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 34, height: 34, borderRadius: 8, border: "2px solid #dc2626", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12, color: "#fff" }}>{initials(p.name)}</span>
@@ -78,7 +88,7 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
             </div>
           </div>
         </div>
-      ) : (
+      ) : !MOBILE ? null : (
         <div style={{ border: `1px dashed ${C.bd}`, borderRadius: 10, padding: "14px 12px", color: C.mt, fontSize: 13, marginBottom: 6 }}>Nobody in the lab. Pick a player below.</div>
       )}
       {MOBILE && <button onClick={() => setPicking(true)} style={{ width: "100%", minHeight: 46, background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "8px 12px", fontSize: 15, fontWeight: 700, textAlign: "left", cursor: "pointer" }}>{p ? `Change ${label.toLowerCase()} player ›` : `Choose ${label.toLowerCase()} player ›`}</button>}
@@ -94,10 +104,10 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
 export default function DevFocusCard({ roster, focus, setFocus, setSel }) {
   return (
     <div style={{ background: C.cd, borderRadius: 8, padding: "12px 14px", border: `1px solid ${C.bd}` }}>
-      <div style={{ fontSize: 11, color: C.mt, letterSpacing: 1, marginBottom: 8, fontWeight: 700 }}>DEVELOPMENT FOCUS</div>
+      <div title="Each regular-season week a focused player can gain a point. Young + high development trait = faster gains." style={{ fontSize: 11, color: C.mt, letterSpacing: 1, marginBottom: 8, fontWeight: 700 }}>DEVELOPMENT FOCUS{!MOBILE && <span style={{ letterSpacing: 0, fontWeight: 600, marginLeft: 6, cursor: "help" }}>ⓘ</span>}</div>
       <FocusSlot label="Offense" side="off" players={roster.filter((p) => OFFENSE.includes(p.pos))} focus={focus} setFocus={setFocus} setSel={setSel} />
       <FocusSlot label="Defense" side="def" players={roster.filter((p) => DEFENSE.includes(p.pos))} focus={focus} setFocus={setFocus} setSel={setSel} />
-      <div style={{ fontSize: 12, color: C.mt }}>Each regular-season week a focused player can gain a point. Young + high development trait = faster gains.</div>
+      {MOBILE && <div style={{ fontSize: 12, color: C.mt }}>Each regular-season week a focused player can gain a point. Young + high development trait = faster gains.</div>}
     </div>
   );
 }

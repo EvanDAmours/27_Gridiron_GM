@@ -124,45 +124,49 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
       <style>{"@media (max-width: 760px) { .hm-main { order: -1; padding: 12px !important } .hm-menu, .hm-side { max-width: none !important; border: 0 !important } .hm-logo > * { width: clamp(48px, 15vw, 96px) !important; height: clamp(48px, 15vw, 96px) !important } }"}</style>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 0 }}>
         {/* Menu */}
-        <div className="hm-menu" style={{ flex: "1 1 220px", maxWidth: 300, padding: 18, borderRight: `1px solid #ffffff14`, display: mobile ? "none" : "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-          <div style={{ fontSize: 18, fontWeight: 800, paddingBottom: 8, borderBottom: "1px solid #ffffff22", marginBottom: 8 }}>This week</div>
+        <div className="hm-menu" style={{ flex: "1 1 220px", maxWidth: 300, padding: "14px 14px", borderRight: `1px solid #ffffff14`, display: mobile ? "none" : "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+          <div style={{ fontSize: 16, fontWeight: 800, paddingBottom: 6, borderBottom: "1px solid #ffffff22", marginBottom: 6 }}>This week</div>
+          {/* the to-do list scrolls inside its column, so it never makes the page taller */}
+          <div style={{ flex: "1 1 0", minHeight: 120, position: "relative" }}><div style={{ position: "absolute", inset: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
           {menu.map((m, i) => (
-            <button key={m.label} onClick={m.onClick} style={{ textAlign: "left", background: i === 0 ? "#00000055" : "transparent", border: i === 0 ? "1px solid #f97316" : "1px solid transparent", borderLeft: i > 0 && m.tone ? `3px solid ${m.tone === "urgent" ? C.rd : m.tone === "action" ? C.gd : "#38bdf8"}` : undefined, borderRadius: 8, padding: i === 0 ? "10px 12px" : "6px 10px", color: "#fff", cursor: "pointer" }}>
-              <div style={{ fontSize: i === 0 ? 17 : 14, fontWeight: i === 0 ? 800 : 600, lineHeight: 1.35 }}>{m.label}</div>
-              {i === 0 && m.sub && <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 2 }}>{m.sub}</div>}
+            <button key={m.label} onClick={m.onClick} style={{ textAlign: "left", background: i === 0 ? "#00000055" : "transparent", border: i === 0 ? "1px solid #f97316" : "1px solid transparent", borderLeft: i > 0 && m.tone ? `3px solid ${m.tone === "urgent" ? C.rd : m.tone === "action" ? C.gd : "#38bdf8"}` : undefined, borderRadius: 8, padding: i === 0 ? "8px 10px" : "4px 10px", color: "#fff", cursor: "pointer" }}>
+              <div style={{ fontSize: i === 0 ? 16 : 13.5, fontWeight: i === 0 ? 800 : 600, lineHeight: 1.3 }}>{m.label}</div>
+              {i === 0 && m.sub && <div style={{ fontSize: 12.5, color: "#cbd5e1", marginTop: 2 }}>{m.sub}</div>}
             </button>
           ))}
           {menu.length <= 1 && <div style={{ fontSize: 14, color: "#94a3b8", padding: "6px 12px" }}>Nothing else needs you this week.</div>}
-          <div style={{ fontSize: 12, color: "#64748b", padding: "10px 12px 0", marginTop: "auto" }}>Every screen is in the bar above. Press / to search.</div>
-        </div>
+          </div></div>
+                  </div>
 
         {/* Matchup */}
-        <div className="hm-main" style={{ flex: "3 1 460px", minWidth: 0, padding: 18 }}>
-          <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>{label}</div>
+        <div className="hm-main" style={{ flex: "3 1 460px", minWidth: 0, padding: "14px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: mobile ? "wrap" : "nowrap" }}>
+          <div style={{ fontSize: 16, fontWeight: 800, whiteSpace: "nowrap" }}>{label}</div>
           {/* in season the top bar has Play/Sim, so the buttons here only show off-season and in the playoffs */}
-          {primary.length > 0 && sp !== "regular" && !(mobile && sp === "preseason") && (
+          {primary.length > 0 && sp !== "regular" && sp !== "preseason" && (
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-start", flexWrap: "wrap", marginBottom: 14 }}>
               {primary.map((b, i) => <Btn key={b.label} onClick={b.onClick} bg={i === 0 ? C.gn : "#ffffff22"} c="#fff" style={{ fontSize: 16, padding: "10px 20px", fontWeight: 900 }}>{b.label}</Btn>)}
             </div>
           )}
           {strip.length > 0 && (
-            <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto" }}>
+            <div style={{ display: "flex", gap: 6, overflowX: "auto", flex: 1, minWidth: 0, justifyContent: "flex-end" }}>
               {strip.map((w) => {
                 const g = sched.find((x) => x.wk === w && (x.h === ui || x.a === ui));
                 const opp = g && teams[g.h === ui ? g.a : g.h];
                 const us = g?.played ? (g.h === ui ? g.hs : g.as) : null, them = g?.played ? (g.h === ui ? g.as : g.hs) : null;
                 const cur = w === nextWk;
                 return (
-                  <div key={w} style={{ flex: "1 0 82px", textAlign: "center" }}>
-                    <div style={{ height: 44, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", background: cur ? me.clr : "#ffffff10", border: `2px solid ${cur ? "#fff" : "#ffffff40"}`, opacity: g?.played || cur ? 1 : 0.75 }}>
-                      {opp ? <TeamLogo t={opp} sz={34} /> : <span style={{ fontWeight: 900, fontSize: 18 }}>BYE</span>}
+                  <div key={w} style={{ flex: "0 1 64px", minWidth: 48, textAlign: "center" }}>
+                    <div style={{ height: 28, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", background: cur ? me.clr : "#ffffff10", border: `2px solid ${cur ? "#fff" : "#ffffff40"}`, opacity: g?.played || cur ? 1 : 0.75 }}>
+                      {opp ? <TeamLogo t={opp} sz={22} /> : <span style={{ fontWeight: 900, fontSize: 13 }}>BYE</span>}
                     </div>
-                    <div style={{ fontSize: 12, fontWeight: 800, marginTop: 4, color: us == null ? "#cbd5e1" : us > them ? C.gn : us < them ? C.rd : "#cbd5e1" }}>{us == null ? `WEEK ${w}` : `${us > them ? "W" : us < them ? "L" : "T"} ${us}-${them}`}</div>
+                    <div style={{ fontSize: 10, fontWeight: 800, marginTop: 1, whiteSpace: "nowrap", color: us == null ? "#cbd5e1" : us > them ? C.gn : us < them ? C.rd : "#cbd5e1" }}>{us == null ? `WK ${w}` : `${us > them ? "W" : us < them ? "L" : "T"} ${us}-${them}`}</div>
                   </div>
                 );
               })}
             </div>
           )}
+          </div>
           {game && mobile ? (
             <CompactMatchup away={away} home={home} ra={ra} rh={rh} label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} · Week ${game.wk ?? nextWk}`} kickoff={game.date ? kickoff(game) : "Kickoff TBD"} />
           ) : game ? (
@@ -202,16 +206,18 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
 
         {/* Top stories */}
         {/* the news up top, your development focus underneath (always on Home) */}
-        <div className="hm-side" style={{ flex: "1 1 260px", maxWidth: 340, padding: 18, borderLeft: `1px solid #ffffff14`, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
-          <div role="tablist" style={{ display: "flex", gap: 4, paddingBottom: 8, borderBottom: "1px solid #ffffff22", marginBottom: 10 }}>
+        <div className="hm-side" style={{ flex: "1 1 260px", maxWidth: 340, padding: "14px 14px", borderLeft: `1px solid #ffffff14`, minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div role="tablist" style={{ display: "flex", gap: 4, paddingBottom: 6, borderBottom: "1px solid #ffffff22" }}>
             {[["stories", "Top Stories"], ["injuries", "Injury Report"]].map(([k, l]) => (
-              <button key={k} role="tab" aria-selected={panel === k} onClick={() => setPanel(k)} style={{ flex: 1, background: panel === k ? "#ffffff1f" : "transparent", border: `1px solid ${panel === k ? "#ffffff40" : "transparent"}`, borderRadius: 8, padding: "7px 6px", color: panel === k ? "#fff" : "#94a3b8", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{l}</button>
+              <button key={k} role="tab" aria-selected={panel === k} onClick={() => setPanel(k)} style={{ flex: 1, background: panel === k ? "#ffffff1f" : "transparent", border: `1px solid ${panel === k ? "#ffffff40" : "transparent"}`, borderRadius: 8, padding: "5px 6px", color: panel === k ? "#fff" : "#94a3b8", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>
             ))}
           </div>
-          <div style={{ maxHeight: side ? 300 : 520, overflowY: "auto", paddingRight: 2 }}>
-            {panel === "stories" ? <Stories stories={stories} news={news} teams={teams} onStory={onStory} /> : <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />}
+          <div style={mobile ? { maxHeight: side ? 300 : 520, overflowY: "auto", paddingRight: 2 } : { flex: "1 1 0", minHeight: 200, position: "relative" }}>
+            <div style={mobile ? undefined : { position: "absolute", inset: 0, overflowY: "auto", paddingRight: 2 }}>
+              {panel === "stories" ? <Stories stories={stories} news={news} teams={teams} onStory={onStory} /> : <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />}
+            </div>
           </div>
-          {side && !mobile && <div style={{ marginTop: "auto" }}>{side}</div>}
+          {side && !mobile && <div>{side}</div>}
         </div>
       </div>
     </div>

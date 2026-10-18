@@ -86,14 +86,15 @@ export default function MatchupStakes({ teams, ui, game, sched, wk, ra, rh, play
   const box = { background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 10, padding: "10px 12px", minWidth: 0 };
   const head = { fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#94a3b8", marginBottom: 6 };
   return (
-    <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-      {lines.length > 0 && (
-        <div style={{ ...box, border: `1px solid ${C.gd}55`, background: `${C.gd}12` }}>
-          <div style={{ ...head, color: C.gd }}>WHAT'S AT STAKE</div>
-          {lines.map((l, i) => <div key={i} style={{ fontSize: i ? 14 : 16, fontWeight: i ? 600 : 800, color: i ? "#cbd5e1" : "#fff", lineHeight: 1.4 }}>{l}</div>)}
-        </div>
-      )}
-      <button onClick={toggle} style={{ alignSelf: "flex-start", background: "transparent", border: `1px solid #ffffff2a`, color: "#cbd5e1", borderRadius: 999, padding: "5px 12px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{more ? "▲ Less on this matchup" : "▼ More on this matchup: form, the line, injuries, key matchups"}</button>
+    <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+      {/* the stakes and the details toggle share one row */}
+      <div style={{ ...box, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", ...(lines.length ? { border: `1px solid ${C.gd}55`, background: `${C.gd}12`, padding: "8px 12px" } : { background: "transparent", border: 0, padding: 0 }) }}>
+        {lines.length > 0 && <div style={{ flex: "1 1 260px", minWidth: 0 }}>
+          <div style={{ ...head, color: C.gd, marginBottom: 2 }}>WHAT'S AT STAKE</div>
+          {lines.map((l, i) => <div key={i} style={{ fontSize: i ? 13.5 : 15, fontWeight: i ? 600 : 800, color: i ? "#cbd5e1" : "#fff", lineHeight: 1.35 }}>{l}</div>)}
+        </div>}
+        <button onClick={toggle} title="Form, the line, injuries, key matchups" style={{ background: "#00000033", border: `1px solid #ffffff2a`, color: "#cbd5e1", borderRadius: 999, padding: "5px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>{more ? "▲ Less on this matchup" : "▼ More on this matchup"}</button>
+      </div>
       {more && <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 8 }}>
         <div style={box}>

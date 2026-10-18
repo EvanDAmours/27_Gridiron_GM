@@ -1484,10 +1484,9 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         wkBoxes.push(<div key={wi} title={tip} style={{width:isBye?30:22,height:22,borderRadius:5,background:bg,border:`1px solid ${isCur?C.gn:res||isBye?"transparent":"#1e293b"}`,boxShadow:isCur?`0 0 0 2px ${C.gn}55`:undefined,display:"flex",alignItems:"center",justifyContent:"center",fontSize:res||isBye?11:10,fontWeight:900,color:fg,flexShrink:0}}>{res||(isBye?"BYE":wi)}</div>);
       }
       const rec=sp==="regular"||sp==="playoffs"?` · ${ut?.w||0}-${ut?.l||0}${ut?.t?`-${ut.t}`:""}`:"";
-      const _phase=sp==='preseason'?'Preseason':sp==='regular'?(wk>0?`Regular season · Week ${Math.min(18,wk+1)}`:'Regular season · Week 1'):sp==='playoffs'?'Playoffs':sp==='combine'?'Off-season · Combine':sp==='resign'?'Off-season · Re-sign week':sp==='freeagency'?'Off-season · Free agency':'Off-season · Draft';
       return(<div data-tour="phases" style={{background:"#080f1e",borderBottom:"1px solid #1e293b",padding:"6px 12px",display:"flex",alignItems:"center",gap:6,overflowX:"auto"}}>
         {/* the season you're in, big enough to read at a glance */}
-        <div style={{flexShrink:0,display:"flex",alignItems:"baseline",gap:8,paddingRight:10,marginRight:4,borderRight:"1px solid #1e293b"}}><span style={{fontSize:MOBILE?20:26,fontWeight:900,letterSpacing:.5,color:"#fff",lineHeight:1}}>{yr}</span><span style={{display:"flex",flexDirection:"column",lineHeight:1.15}}><span style={{fontSize:11,fontWeight:900,letterSpacing:1.5,color:C.gd}}>SEASON</span><span style={{fontSize:11,color:"#94a3b8",whiteSpace:"nowrap"}}>{_phase}</span></span></div>
+        <div style={{flexShrink:0,display:"flex",alignItems:"baseline",gap:8,paddingRight:10,marginRight:4,borderRight:"1px solid #1e293b"}}><span style={{fontSize:MOBILE?20:26,fontWeight:900,letterSpacing:.5,color:"#fff",lineHeight:1}}>{yr}</span></div>
         {stageList.map((s,si)=>{
           const active=si===curIdx,done=si<curIdx;
           const pill=(label)=><span style={{fontSize:12,fontWeight:800,letterSpacing:.4,whiteSpace:"nowrap",padding:"4px 10px",borderRadius:999,background:active?`${C.gn}22`:"transparent",border:`1px solid ${active?C.gn:done?"#334155":"#1e293b"}`,color:active?C.gn:done?"#94a3b8":"#64748b"}}>{done?"✓ ":""}{label}</span>;

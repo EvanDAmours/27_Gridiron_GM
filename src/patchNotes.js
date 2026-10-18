@@ -1085,4 +1085,10 @@ export const PATCH_NOTES = [
     "On a computer the two top bars are one: your logo, then the screens, then the actions. Sim Week sits next to Play Week, and Sim to Deadline and Sim All are in the ⏩ menu beside it. Search, Save, GM legacy and the Menu are icon buttons (hover for what each does). Saves and Game Updates live in the Menu. On narrower screens a few tab names shorten so everything fits.",
     "Depth chart: the running back lines up beside the quarterback (shotgun), so nobody's name is covered: not the center's, not the quarterback's.",
   ] },
+  { v: "2.97", date: "2026-10-18", title: "Camp and Home Fit the Screen", notes: [
+    "Training Camp is rebuilt: preseason games and camp focus share one slim row up top, and position battles, training focus, rookie camp and extensions are tabs below, each showing its progress. No dead space, no scrolling.",
+    "Home fits a laptop screen without scrolling. The week strip sits beside the week's title, What's at Stake and the matchup details toggle share one row, Development Focus is a slim card (hover the ⓘ for how it works), and the to-do list and top stories scroll inside their own columns.",
+    "Preseason Home drops its second Start Season button (it's already in the top bar).",
+    "The season label in the tracker is just the year: the tracker already shows the phase and week.",
+  ] },
 ];
