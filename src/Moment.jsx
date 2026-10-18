@@ -1,6 +1,6 @@
 // The big moments, each its own full-screen card in your team's colors: clinching a playoff spot,
 // the division or the top seed; one of your players breaking a record; signing a star in free
-// agency; and the season kickoff preview. One look for all of them, like the Super Bowl's.
+// agency; a blockbuster trade; and the season kickoff preview. One look for all of them, like the Super Bowl's.
 import React from "react";
 import { C, TeamLogo, Face, Bdg } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
@@ -39,10 +39,11 @@ export default function Moment({ m, onClose }) {
   const party = m.kind === "clinch" || m.kind === "record";
   const kicker = m.kind === "clinch" ? (m.level === "top" ? "NO. 1 SEED CLINCHED" : m.level === "div" ? "DIVISION CLINCHED" : "PLAYOFF BERTH CLINCHED")
     : m.kind === "record" ? (m.nfl ? "NEW NFL RECORD" : "NEW FRANCHISE RECORD")
-    : m.kind === "signing" ? "SIGNING DAY" : `THE ${m.yr} SEASON`;
+    : m.kind === "signing" ? "SIGNING DAY" : m.kind === "trade" ? "BREAKING · BLOCKBUSTER TRADE" : `THE ${m.yr} SEASON`;
   const title = m.kind === "clinch" ? (m.level === "top" ? `${KICKER.top} ${t.city.toUpperCase()}` : m.level === "div" ? `${t.c || ""} ${(t.d || "").toUpperCase()} CHAMPIONS`.trim() : `${t.name.toUpperCase()} ARE ${KICKER.berth}`)
     : m.kind === "record" ? m.p.name.toUpperCase()
     : m.kind === "signing" ? `WELCOME TO ${t.city.toUpperCase()}`
+    : m.kind === "trade" ? (m.got ? `${t.name.toUpperCase()} LAND ${m.p.name.split(" ").slice(-1)[0].toUpperCase()}` : `${m.p.name.split(" ").slice(-1)[0].toUpperCase()} TRADED`)
     : `${t.city.toUpperCase()} ${t.name.toUpperCase()}`;
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2600, background: `radial-gradient(ellipse at 50% 20%, ${clr}cc, #030712f2 70%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
@@ -79,6 +80,18 @@ export default function Moment({ m, onClose }) {
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}><Bdg pos={m.p.pos} /><span style={{ fontSize: 14, color: "#cbd5e1" }}>{m.p.ovr} OVR · age {m.p.age}</span></div>
               <div style={{ fontSize: MOBILE ? 18 : 22, fontWeight: 900, color: "#fde68a", marginTop: 6 }}>{m.yrs} years · ${(+m.sal).toFixed(1)}M a year</div>
             </div>
+          </div>
+        )}
+        {m.kind === "trade" && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 16, background: "#00000040", borderRadius: 12, padding: "14px 16px" }}>
+            <TeamLogo t={m.got ? m.other : t} sz={MOBILE ? 44 : 60} />
+            <div style={{ textAlign: "center" }}>
+              <Face s={m.p.face} sz={MOBILE ? 64 : 84} />
+              <div style={{ fontSize: MOBILE ? 16 : 19, fontWeight: 900, marginTop: 4 }}>{m.p.name}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}><Bdg pos={m.p.pos} /><span style={{ fontSize: 13, color: "#cbd5e1" }}>{m.p.ovr} OVR · age {m.p.age}</span></div>
+            </div>
+            <span style={{ fontSize: 28, color: "#fde68a", fontWeight: 900 }}>→</span>
+            <TeamLogo t={m.got ? t : m.other} sz={MOBILE ? 44 : 60} />
           </div>
         )}
         {m.lines?.length > 0 && <div style={{ marginTop: 14 }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone} />)}</div>}

@@ -39,6 +39,8 @@ export function kickoff(g) {
   if (isNaN(d)) return "";
   const day = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "America/New_York" });
   const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+  // the league hasn't set it yet (late-season flex games come through as midnight)
+  if (time === "12:00 AM") return `${day} · time TBD`;
   return `${day} · ${time} ET`;
 }
 
