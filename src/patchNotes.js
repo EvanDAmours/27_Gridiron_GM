@@ -1097,4 +1097,10 @@ export const PATCH_NOTES = [
     "Locker-room morale settles toward what your record says, so random knocks fade instead of piling up (a winning team no longer sits at morale 14).",
     "Roster health warns when the roster is short (under 46 in the off-season) instead of calling 32 players healthy.",
   ] },
+  { v: "2.99", date: "2026-10-18", title: "Display Size, Off-season News, Achievements", notes: [
+    "Display size, in the ☰ menu: Laptop shrinks the whole game so more fits on a small screen, Desktop scales it up for a big monitor, and Auto picks for your window (the default). Your choice is remembered on that computer. On a tall screen Home fills the window and shows the full-size matchup art.",
+    "Off-season news: Top Stories now cover the whole off-season. The biggest free-agent signings (with the deal and who they left), trades, the best player still on the market, your own players who walk, the No. 1 overall pick and your first pick, and head coaching hires once the preseason starts.",
+    "GM achievements: 15 milestones to chase over a career (first win, a 12-win season, worst to first, a ring, back-to-back, a dynasty, 100 wins, a draftee who makes All-Pro or the Hall of Fame, passing a top-10 GM of all time and more). You get a note when you earn one, and they're all on your GM legacy page (🎓).",
+    "The Super Bowl result is a final scoreboard (both teams, the score and the box score) instead of repeating the champion headline over the bracket.",
+  ] },
 ];

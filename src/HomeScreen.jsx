@@ -139,6 +139,8 @@ function OffseasonBoard({ me, sp, onNav }) {
 
 export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory }) {
   const me = teams[ui];
+  // a tall window (big desktop) has room for the full-size matchup art
+  const roomy = !mobile && typeof window !== "undefined" && window.innerHeight / (parseFloat(document.documentElement.style.zoom) || 1) >= 900;
   const [panel, setPanel] = useState("stories");
   const inSeason = sp === "regular" || sp === "preseason";
   const nextWk = sp === "preseason" ? 1 : wk + 1;
@@ -160,7 +162,8 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
   return (
     <div className="keep-dark" style={{ borderRadius: 14, overflow: "hidden", background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, position: "relative" }}>
       <style>{"@media (max-width: 760px) { .hm-main { order: -1; padding: 12px !important } .hm-menu, .hm-side { max-width: none !important; border: 0 !important } .hm-logo > * { width: clamp(48px, 15vw, 96px) !important; height: clamp(48px, 15vw, 96px) !important } }"}</style>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 0 }}>
+      {/* desktop: Home fills the window, so a big screen has no empty band under it */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 0, minHeight: mobile ? undefined : "calc(var(--vh, 100vh) - 200px)" }}>
         {/* Menu */}
         <div className="hm-menu" style={{ flex: "1 1 220px", maxWidth: 300, padding: "14px 14px", borderRight: `1px solid #ffffff14`, display: mobile ? "none" : "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
           <div style={{ fontSize: 16, fontWeight: 800, paddingBottom: 6, borderBottom: "1px solid #ffffff22", marginBottom: 6 }}>This week</div>
@@ -213,7 +216,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
               away={away} home={home}
               awayPlayer={highestRatedPlayer(away)}
               homePlayer={highestRatedPlayer(home)}
-              awayRating={ra} homeRating={rh} compact={!mobile}
+              awayRating={ra} homeRating={rh} compact={!mobile && !roomy}
               label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} • Week ${game.wk ?? nextWk}`}
               kickoff={game.date ? kickoff(game) : "Kickoff TBD"}
               venue={sp === "playoffs" && pb?.rd === 4 ? "Super Bowl • neutral site" : [game.venue || home.city, game.intl && game.city].filter(Boolean).join(", ")}

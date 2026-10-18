@@ -2,10 +2,14 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import GridironGM from "./App.jsx";
 import { applyTheme, getTheme } from "./theme.js";
+import { applyDisplay, getDisplay } from "./display.js";
 import { errorDetails } from "./Boundary.jsx";
 
 // Light or dark before the first paint, so there's no flash.
 applyTheme(getTheme());
+// Display size (Auto / Laptop / Desktop), and again when the window changes in Auto.
+applyDisplay(getDisplay());
+window.addEventListener("resize", () => { if (getDisplay() === "auto") applyDisplay("auto"); });
 
 // Last line of defense: shows what went wrong and ways back into the game.
 class ErrorBoundary extends React.Component{

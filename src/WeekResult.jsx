@@ -116,6 +116,29 @@ function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam, onP
   const g = result.game;
   if (!g && result.playoff) {
     const champ = result.champ != null ? teams[result.champ] : null;
+    // the Super Bowl: a final scoreboard (the bracket below already names the champion)
+    const sb = champ && (result.others || []).find((x) => x.h === result.champ || x.a === result.champ);
+    if (sb) {
+      const loser = teams[sb.h === result.champ ? sb.a : sb.h];
+      const ws = sb.h === result.champ ? sb.hs : sb.as, ls = sb.h === result.champ ? sb.as : sb.hs;
+      const side = (t, sc, win) => (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, opacity: win ? 1 : 0.6 }}>
+          <TeamLogo t={t} sz={MOBILE ? 30 : 40} />
+          <span style={{ fontSize: MOBILE ? 15 : 18, fontWeight: 800 }}>{t.city} {t.name}</span>
+          <span style={{ fontSize: MOBILE ? 24 : 32, fontWeight: 900, color: win ? C.gd : C.mt, marginLeft: 4 }}>{sc}</span>
+        </div>
+      );
+      return (
+        <div style={{ ...card, borderColor: C.gd }}>
+          {close}
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.gd, marginBottom: 6 }}>🏆 SUPER BOWL · FINAL</div>
+          <div style={{ display: "flex", alignItems: "center", gap: MOBILE ? 10 : 22, flexWrap: "wrap" }}>
+            {side(champ, ws, true)}<span style={{ color: C.mt, fontWeight: 800 }}>–</span>{side(loser, ls, false)}
+            <Btn onClick={() => onBox(sb)} bg={C.bd} c="#7dd3fc" style={{ fontSize: 13, padding: "6px 12px", marginLeft: "auto" }}>Box score</Btn>
+          </div>
+        </div>
+      );
+    }
     return (
       <div style={{ ...card, borderColor: champ ? C.gd : C.bd }}>
         {close}

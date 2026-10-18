@@ -4,12 +4,13 @@ import React from "react";
 import { C, TeamLogo, CloseX, sheetWrap, sheetBox, SheetGrip } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { GREATS, legacyRank, legacyTier } from "./gmLegacy.js";
+import { ACHIEVEMENTS } from "./achievements.js";
 
 const box = { background: "#ffffff08", border: "1px solid #ffffff14", borderRadius: 10, padding: "10px 12px", marginBottom: 10 };
 const head = (c) => ({ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: c, marginBottom: 6 });
 const btn = (bg, fg = "#fff") => ({ background: bg, color: fg, border: "none", borderRadius: 8, padding: "9px 14px", fontWeight: 800, fontSize: 14, cursor: "pointer" });
 
-export default function GmRetire({ career: c, team, gmName, retired, yr, onRetire, onUnretire, onMenu, onClose }) {
+export default function GmRetire({ career: c, team, gmName, retired, yr, achievements = {}, onRetire, onUnretire, onMenu, onClose }) {
   const rank = legacyRank(c.score);
   const board = [...GREATS.map((g) => ({ ...g, you: false })), { name: gmName || "You", club: team ? `${team.city} ${team.name}` : "", yrs: c.seasons ? `${yr - c.seasons + 1}–${yr}` : `${yr}`, score: c.score, titles: c.titles.length, you: true }].sort((a, b) => b.score - a.score || (a.you ? 1 : -1));
   const youAt = board.findIndex((g) => g.you);
@@ -54,6 +55,17 @@ export default function GmRetire({ career: c, team, gmName, retired, yr, onRetir
           <div style={box}>
             <div style={head("#a78bfa")}>📜 RECORDS YOUR TEAMS SET</div>
             {c.records.length ? c.records.map((r, i) => <div key={i} style={{ fontSize: 13, padding: "3px 0", borderBottom: "1px solid #ffffff0d" }}><span style={{ color: C.mt }}>{r.yr}</span> · <b>{r.name}</b> · {r.label} <span style={{ color: "#c4b5fd" }}>{r.val}</span>{r.league && <span style={{ color: "#fcd34d" }}> · NFL record</span>}</div>) : <div style={{ fontSize: 13, color: C.mt }}>No records set yet.</div>}
+          </div>
+        </div>
+        <div style={box}>
+          <div style={head("#34d399")}>🏅 ACHIEVEMENTS · {ACHIEVEMENTS.filter((a) => achievements[a.id]).length}/{ACHIEVEMENTS.length}</div>
+          <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr 1fr" : "repeat(5,1fr)", gap: 6 }}>
+            {ACHIEVEMENTS.map((a) => { const got = achievements[a.id]; return (
+              <div key={a.id} title={a.desc} style={{ borderRadius: 8, padding: "6px 8px", background: got ? "#064e3b55" : "#ffffff06", border: `1px solid ${got ? "#34d39966" : "#ffffff10"}`, opacity: got ? 1 : 0.55 }}>
+                <div style={{ fontSize: 13, fontWeight: 800 }}>{got ? a.icon : "🔒"} {a.name}</div>
+                <div style={{ fontSize: 11, color: got ? "#a7f3d0" : C.mt, marginTop: 1 }}>{got ? `Earned ${got}` : a.desc}</div>
+              </div>
+            ); })}
           </div>
         </div>
         <div style={box}>
