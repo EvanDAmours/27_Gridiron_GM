@@ -11,6 +11,7 @@ import { playerValue, pickValue as chartPickValue } from "./trade.js";
 import { arrangeDL, dlAsPlayed, naturalDL } from "./dline.js";
 import { teamNeeds, topNeeds } from "./needs.js";
 import { bestPlan, planEdge } from "./gamePlan.js";
+import { withHeadshot } from "./headshots.js";
 import { makeSide, createGame, playGame, setLeague } from "./playsim.js";
 import { unitRatings } from "./gamesim.js";
 import { DATA_TO_DOLLARS, leagueCap, expiringNow } from "./cap.js";
@@ -265,7 +266,7 @@ export function calcSOS(teamId,sched,teams){const played=sched.filter(g=>g.playe
 // A Madden 27 player as a full game player: real name, size, ratings and position skills.
 export function realPlayer(d){const p=genPlayer(d.pos,d.age,d.ovr);const devLift=d.age<=26?({generational:8,superstar:5,star:2}[d.dev]||0):0;const pot=cl((d.age<=22?d.ovr+R(5,12):d.age<=25?d.ovr+R(1,6):d.ovr)+devLift,d.ovr,99);
   Object.assign(p,{name:d.name,mpos:d.mpos,ht_:d.ht,wt:d.wt,spd:d.spd,str:d.str,agi:d.agi,acc:d.acc,jmp:d.jmp,end:d.end,posAttrs:d.attrs,salary:+((d.sal||0)*DATA_TO_DOLLARS).toFixed(1),contract:d.yrs,pot,truePot:pot,scoutedOvr:d.ovr,scoutedPot:pot,num:d.num,arch:d.arch,src:'m27',
-    bio:{...p.bio,college:d.college||p.bio.college}});if(d.dev)p.dev=d.dev;if(d.xf)p.xf=d.xf;if(d.dk!=null)p.dk=d.dk;if(d.yp!=null){p.draftYr=(M27.season||2026)-d.yp;p.rkYr=p.draftYr;}if(d.pk)p.pk=d.pk;p.tradeVal=tradeValue(p);return p;}
+    bio:{...p.bio,college:d.college||p.bio.college}});if(d.dev)p.dev=d.dev;if(d.xf)p.xf=d.xf;if(d.dk!=null)p.dk=d.dk;if(d.yp!=null){p.draftYr=(M27.season||2026)-d.yp;p.rkYr=p.draftYr;}if(d.pk)p.pk=d.pk;p.tradeVal=tradeValue(p);return withHeadshot(p);}
 // Real players without a club (cut from the 53 and the practice squad) are the free agents.
 export function realFA(d){const p=realPlayer(d);p.contract=0;return p;}
 // Punters (the roster file has none): each club's real punter joins its 53, and the club's

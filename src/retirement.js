@@ -29,3 +29,10 @@ export function retireChance(p, { freeAgent = false } = {}) {
   return Math.min(0.95, ch);
 }
 export const retires = (p, opts, rand = Math.random) => rand() < retireChance(p, opts);
+
+// A free agent nobody has signed for two full seasons is done: the last season he played (or the
+// year he hit the market, for one who never has) is two or more seasons back.
+export function faStale(p, yr) {
+  const last = Math.max(p?.ss?.gp ? yr : -Infinity, ...(p?.sh || []).map((x) => x.y), p?.faSince ?? -Infinity);
+  return Number.isFinite(last) && yr - last >= 2;
+}

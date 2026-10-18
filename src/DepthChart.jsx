@@ -44,7 +44,7 @@ function Field({ los, children }) {
   for (let i = 0; i <= 10; i++) lines.push(<div key={i} style={{ position: "absolute", left: 0, right: 0, top: `${i * 10}%`, borderTop: `1px solid rgba(255,255,255,${i % 2 ? 0.08 : 0.16})` }} />);
   return (
     <div style={{ overflowX: "auto" }}>
-      <div style={{ position: "relative", width: "100%", maxWidth: 620, margin: "0 auto", minWidth: narrow() ? 340 : 0, aspectRatio: narrow() ? "4 / 3.3" : "16 / 9", borderRadius: 10, overflow: "hidden", border: "2px solid #14532d", background: "repeating-linear-gradient(180deg,#166534 0 10%,#15803d 10% 20%)" }}>
+      <div style={{ position: "relative", width: "100%", maxWidth: 540, margin: "0 auto", minWidth: narrow() ? 340 : 0, aspectRatio: narrow() ? "4 / 3.3" : "16 / 9", borderRadius: 10, overflow: "hidden", border: "2px solid #14532d", background: "repeating-linear-gradient(180deg,#166534 0 10%,#15803d 10% 20%)" }}>
         {lines}
         {[25, 75].map((x) => <div key={x} style={{ position: "absolute", top: 0, bottom: 0, left: `${x}%`, borderLeft: "2px dashed rgba(255,255,255,0.12)" }} />)}
         <div title="Line of scrimmage" style={{ position: "absolute", left: 0, right: 0, top: `${los + 4.5}%`, borderTop: "2px solid #60a5fa" }} />
@@ -134,12 +134,11 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-        {[...Object.entries(SETS).map(([k, s]) => [k, s.label]), ...(gamePlan ? [["gameplan", "📋 Schemes & Playbook"]] : [])].map(([k, l]) => (
+        {Object.entries(SETS).map(([k, s]) => [k, s.label]).map(([k, l]) => (
           <button key={k} onClick={() => { setSide(k); setPick(null); }} style={{ background: side === k ? C.bl : "transparent", color: side === k ? "#fff" : "#94a3b8", border: `1px solid ${side === k ? C.bl : C.bd}`, borderRadius: 6, padding: "6px 14px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>{l}</button>
         ))}
-        {side !== "gameplan" && <span style={{ marginLeft: "auto" }}><Btn onClick={onAutoFill} bg={`${C.gn}22`} c={C.gn} style={{ fontSize: 13 }}>Auto-fill by OVR</Btn></span>}
+        <span style={{ marginLeft: "auto" }}><Btn onClick={onAutoFill} bg={`${C.gn}22`} c={C.gn} style={{ fontSize: 13 }}>Auto-fill by OVR</Btn></span>
       </div>
-      {side === "gameplan" ? gamePlan : <>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
         <div style={{ flex: "3 1 480px", minWidth: 0, maxWidth: 640 }}>
           <Field los={set.los}>
@@ -148,6 +147,8 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
             ))}
           </Field>
           <div style={{ fontSize: 12, color: C.mt, marginTop: 6, textAlign: "center" }}>Tap a spot to change the starter and set snap shares. Red rings are injured starters.</div>
+          {/* the schemes and playbook sit right under the field, with the players they're built for */}
+          {gamePlan && <div style={{ marginTop: 12 }}>{gamePlan}</div>}
         </div>
         <div style={{ flex: "1 1 300px", minWidth: 0, background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 8, padding: 10 }}>
           {!pick ? (
@@ -212,7 +213,6 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
           )}
         </div>
       </div>
-      </>}
     </div>
   );
 }

@@ -1049,10 +1049,18 @@ export const PATCH_NOTES = [
     "The championship front page is a bit smaller on a computer, so the whole paper fits on screen without scrolling.",
   ] },
   { v: "2.91", date: "2026-10-18", title: "Scouting Season", notes: [
-    "Fixed: scouting points never arrived during the season. You were scouting a whole draft class on the 8 points you started with. Your scouts now earn a point every week of the regular season.",
     "Spend them or lose them: your scouts carry at most 14 points of unfiled work. Past that, each week's point is lost (the scouting screens say how many).",
     "Scouting checkpoints: every fourth week (weeks 4, 8, 12 and 16) the sim stops for a report from the road: your points, where you pick right now, and the prospects your scouts want eyes on near your pick (fits for your needs first), with Scout buttons right there.",
     "College stock watch: at each checkpoint the college season moves the public board. Prospects rise and fall, and about half the moves are real and half are hype; only a scouting report tells you which. The AI clubs lean on the board, so they reach for fake risers and let real ones slide to whoever did the homework.",
     "Draft day says whether you did the work: your pick's analyst take now notes a full workup, a report, or a pick made blind.",
+  ] },
+  { v: "2.92", date: "2026-10-18", title: "Real Faces", notes: [
+    "Real NFL players show their real headshots from ESPN: on the player card, the roster, free agency, trades and everywhere else a portrait appears (1,863 of 1,875 real players matched). Draft picks and other players the game creates keep their drawn faces, and so does anyone whose photo can't load (offline, say).",
+    "The retirement class: when the season ends, a top story lists everyone who hung it up. Tap it to see them all, best careers first, with your own players marked.",
+    "Free agents nobody signs for two full seasons retire. No more 36-year-olds who last played five years ago clogging the market.",
+    "Free agents' development traits show on their cards and in the free agency list.",
+    "Your GM legacy is one click away: the 🎓 Legacy button sits next to Save in the top bar (in the More menu on phones).",
+    "Depth chart: the schemes and playbook sit right under the field instead of on their own tab (the field is a little smaller to make room).",
+    "Trades: each team's cap space shows under its logo when you pick who to trade with.",
   ] },
 ];

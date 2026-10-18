@@ -41,3 +41,13 @@ test("good players never retire early, on a roster or between teams", () => {
   // a good free agent short of his position's age is between teams, not done
   assert.equal(retireChance({ pos: "WR", age: 29, ovr: 80, dev: "normal" }, { freeAgent: true }), 0);
 });
+
+test("a free agent unsigned for two full seasons retires; a fresh one doesn't", async () => {
+  const { faStale } = await import("../src/retirement.js");
+  assert.equal(faStale({ sh: [{ y: 2031 }] }, 2036), true);
+  assert.equal(faStale({ sh: [{ y: 2035 }] }, 2036), false);
+  assert.equal(faStale({ sh: [{ y: 2034 }] }, 2036), true);
+  assert.equal(faStale({ sh: [], ss: { gp: 3 } }, 2036), false);
+  assert.equal(faStale({ faSince: 2034 }, 2036), true);
+  assert.equal(faStale({}, 2036), false);
+});

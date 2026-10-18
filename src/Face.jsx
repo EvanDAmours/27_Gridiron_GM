@@ -2,6 +2,10 @@
 // numbers every player carries (skin, hair color and style, jaw, eyes, nose, mouth, brow). The
 // same numbers always draw the same face; a beard or goatee comes from them too.
 import React from "react";
+import { headshotUrl } from "./headshots.js";
+
+// photos that wouldn't load (offline, or none on file): drawn faces from then on
+const BAD = new Set();
 
 // Darken or lighten a #rrggbb color by f (-1..1).
 function shade(hex, f) {
@@ -13,7 +17,14 @@ function shade(hex, f) {
 let uid = 0;
 export const Face = ({ s: se, sz = 40, jersey }) => {
   const id = React.useMemo(() => `fc${++uid}`, []);
+  const [, setBad] = React.useState(0);
   if (!se) return null;
+  // a real player: his ESPN headshot, in the same round frame
+  if (se.espn && !BAD.has(se.espn)) return (
+    <span style={{ width: sz, height: sz, borderRadius: "50%", overflow: "hidden", display: "inline-block", flexShrink: 0, verticalAlign: "middle", background: "radial-gradient(circle at 50% 30%, #64748b, #1f2937 72%)", boxShadow: jersey ? `inset 0 0 0 2px ${jersey}` : undefined }}>
+      <img src={headshotUrl(se.espn, sz > 90 ? 320 : 160)} alt="" loading="lazy" draggable="false" onError={() => { BAD.add(se.espn); setBad((x) => x + 1); }} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%", display: "block" }} />
+    </span>
+  );
   const cx = 50;
   const W = 30 + ((se.jw ?? 21) - 18) * 1.1; // head width
   const L = W / 2;

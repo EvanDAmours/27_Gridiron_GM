@@ -251,6 +251,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
                 <TeamLogo t={t} sz={34} />
                 <b style={{ fontSize: 13 }}>{t.ab}</b>
                 <span style={{ fontSize: 11, color: C.mt }}>{t.w}-{t.l}</span>
+                {(() => { const cs = capSpace(t); return <span title={`${t.name} cap space`} style={{ fontSize: 11, fontWeight: 800, color: cs < 0 ? C.rd : cs < 10 ? C.gd : C.gn }}>{cs < 0 ? `-${money(-cs)}` : money(cs)}</span>; })()}
                 {m && <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.8, color: m === "buyer" ? C.gn : C.gd }}>{m === "buyer" ? "BUYING" : "SELLING"}</span>}
               </button>
             );
