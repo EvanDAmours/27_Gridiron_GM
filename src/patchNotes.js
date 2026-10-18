@@ -1091,4 +1091,10 @@ export const PATCH_NOTES = [
     "Preseason Home drops its second Start Season button (it's already in the top bar).",
     "The season label in the tracker is just the year: the tracker already shows the phase and week.",
   ] },
+  { v: "2.98", date: "2026-10-18", title: "Camp Split, Off-season Board", notes: [
+    "Training Camp: position battles and rookie camp are always open side by side. Training focus and extensions each show their top 5, with the rest one click away (a player dropdown for training, Show all for extensions). Season points get their own tile, and the whole camp fits on a laptop screen.",
+    "Off-season Home: the big empty logo is replaced by your biggest needs (and why) next to the deals ending, or your young core once free agency opens. Each row takes you to the screen where you fix it.",
+    "Locker-room morale settles toward what your record says, so random knocks fade instead of piling up (a winning team no longer sits at morale 14).",
+    "Roster health warns when the roster is short (under 46 in the off-season) instead of calling 32 players healthy.",
+  ] },
 ];

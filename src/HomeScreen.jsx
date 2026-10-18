@@ -1,7 +1,7 @@
 // The franchise hub, laid out like Madden's: a menu on the left, this week's matchup in the
 // middle (week strip, both logos, team ratings), and top stories on the right.
 import React, { useState } from "react";
-import { C, TeamLogo, Btn, kickoff } from "./ui.jsx";
+import { C, TeamLogo, Btn, kickoff, Bdg, oC } from "./ui.jsx";
 import { unitRatings } from "./gamesim.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import { ROUND_NAMES } from "./playoffs.js";
@@ -10,6 +10,7 @@ import { InjTag } from "./InjuryTag.jsx";
 import { injuryReport } from "./injuries.js";
 import PixelMatchup from "./PixelMatchup.jsx";
 import MatchupStakes from "./MatchupStakes.jsx";
+import { teamNeeds, needName } from "./needs.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const PHASE = { preseason: "Preseason", combine: "Offseason: NFL Combine", resign: "Offseason: Re-sign Week", freeagency: "Offseason: Free Agency", draft: "Offseason: NFL Draft" };
@@ -96,6 +97,43 @@ function Injuries({ teams, ui, onNav, wk }) {
       {league.length ? league.map(({ p, t, st }) => row(p, t, st)) : <div style={{ fontSize: 14, color: "#cbd5e1", padding: "6px 0" }}>No big names out.</div>}
       {mine.length > 0 && <button onClick={() => onNav("roster")} style={{ marginTop: 10, background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", padding: 0 }}>Manage roster →</button>}
     </>
+  );
+}
+
+// The off-season (and bye weeks) has no matchup: the middle shows the club's needs and the
+// players whose futures are on the table, each a shortcut to the screen where you act on it.
+function OffseasonBoard({ me, sp, onNav }) {
+  const needs = teamNeeds(me.roster).list.filter((x) => x.score >= 0.2).slice(0, 4);
+  const expiring = me.roster.filter((p) => (p.contract ?? 2) <= 1).sort((a, b) => b.ovr - a.ovr).slice(0, 5);
+  const young = me.roster.filter((p) => (p.age || 30) <= 24).sort((a, b) => b.ovr - a.ovr).slice(0, 5);
+  const keep = sp === "combine" || sp === "resign" || sp === "regular";
+  const list = keep && expiring.length ? expiring : young;
+  const box = { background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 10, padding: "10px 12px", minWidth: 0, flex: "1 1 260px" };
+  const head = { fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#94a3b8", marginBottom: 6 };
+  const go = sp === "freeagency" ? "freeagency" : sp === "draft" ? "draft" : sp === "combine" ? "scouting" : "contracts";
+  return (
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 4 }}>
+      <div style={box}>
+        <div style={head}>BIGGEST NEEDS</div>
+        {needs.length ? needs.map((n) => (
+          <button key={n.pos} onClick={() => onNav(go)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", background: "transparent", border: 0, borderBottom: "1px solid #ffffff10", padding: "5px 0", color: "#fff", cursor: "pointer" }}>
+            <Bdg pos={n.pos} /><b style={{ fontSize: 14, textTransform: "capitalize" }}>{needName(n.pos)}</b>
+            <span style={{ fontSize: 12.5, color: "#94a3b8", marginLeft: "auto", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.why[0] || ""}</span>
+          </button>
+        )) : <div style={{ fontSize: 14, color: "#cbd5e1" }}>No glaring holes. Build depth and stay young.</div>}
+      </div>
+      <div style={box}>
+        <div style={head}>{list === expiring ? "DEALS ENDING" : "YOUR YOUNG CORE"}</div>
+        {list.map((p) => (
+          <button key={p.id} onClick={() => onNav(list === expiring ? (sp === "resign" ? "freeagency" : "contracts") : "roster")} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", background: "transparent", border: 0, borderBottom: "1px solid #ffffff10", padding: "5px 0", color: "#fff", cursor: "pointer" }}>
+            <Bdg pos={p.pos} /><span style={{ fontSize: 14, fontWeight: 700, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+            <span style={{ fontSize: 12, color: "#94a3b8" }}>{p.age}</span>
+            <b style={{ color: oC(p.ovr), minWidth: 22, textAlign: "right" }}>{p.ovr}</b>
+          </button>
+        ))}
+        {!list.length && <div style={{ fontSize: 14, color: "#cbd5e1" }}>Nobody yet.</div>}
+      </div>
+    </div>
   );
 }
 
@@ -195,13 +233,16 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
             </div>
           )}
           {mobile && side && <div style={{ marginTop: 12 }}>{side}</div>}
-          {game ? null : (
-            <div style={{ textAlign: "center", padding: "20px 10px" }}>
-              <div style={{ display: "inline-flex" }}><TeamLogo t={me} sz={mobile ? 130 : 160} glow /></div>
-              <div style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, textTransform: "uppercase", marginTop: 10 }}>{sp === "regular" ? "Bye week" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>
-              <div style={{ fontSize: 16, color: "#cbd5e1", marginTop: 4 }}>{me.city} {me.name} · {rec(me)}</div>
+          {game ? null : (<>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, padding: mobile ? "12px 4px" : "8px 4px 14px", justifyContent: mobile ? "center" : "flex-start" }}>
+              <div style={{ display: "inline-flex" }}><TeamLogo t={me} sz={mobile ? 72 : 88} glow /></div>
+              <div>
+                <div style={{ fontSize: "clamp(24px, 3vw, 34px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 1.05 }}>{sp === "regular" ? "Bye week" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>
+                <div style={{ fontSize: 15, color: "#cbd5e1", marginTop: 4 }}>{me.city} {me.name} · {rec(me)}</div>
+              </div>
             </div>
-          )}
+            <OffseasonBoard me={me} sp={sp} onNav={onNav} />
+          </>)}
         </div>
 
         {/* Top stories */}
