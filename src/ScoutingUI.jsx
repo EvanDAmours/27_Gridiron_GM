@@ -173,6 +173,9 @@ function ProspectCard({ g, p, onDraft, canDraft, myRank }) {
   const listed = listIds(g.scouting, p.draftYear).includes(p.id);
   const [st, stc] = STATUS(read);
   const drafting = onDraft && canDraft;
+  // a pick can't be taken back, so on a phone the first tap arms the button and the second drafts
+  const [arm, setArm] = useState(false);
+  useEffect(() => { if (!arm) return; const t = setTimeout(() => setArm(false), 3000); return () => clearTimeout(t); }, [arm]);
   return (
     <div onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 6, background: C.bg, border: `1px solid ${drafting ? `${C.gn}66` : C.bd}`, borderRadius: 8, padding: "4px 8px 4px 4px", cursor: "pointer" }}>
       <span style={{ width: 26, textAlign: "center", fontWeight: 900, fontSize: 14, color: myRank ? "#fcd34d" : "#94a3b8" }}>{myRank || csRank(p)}</span>
@@ -184,7 +187,7 @@ function ProspectCard({ g, p, onDraft, canDraft, myRank }) {
       <span style={{ textAlign: "center", minWidth: 28, lineHeight: 1.1 }}><Val txt={read.ovr} /><span style={{ display: "block", fontSize: 9, color: C.mt }}>OVR</span></span>
       <span style={{ textAlign: "center", minWidth: 28, lineHeight: 1.1 }}><Val txt={read.pot} /><span style={{ display: "block", fontSize: 9, color: C.mt }}>POT</span></span>
       <span onClick={(e) => e.stopPropagation()} style={{ minWidth: 66, display: "flex", justifyContent: "flex-end" }}>
-        {drafting ? <Btn onClick={() => onDraft(p)} bg={C.gn} style={{ minHeight: 36, padding: "4px 12px", fontSize: 14, fontWeight: 900 }}>Draft</Btn> : <ScoutButton g={g} p={p} read={read} small />}
+        {drafting ? <Btn onClick={() => (arm ? onDraft(p) : setArm(true))} bg={arm ? C.gd : C.gn} c={arm ? "#111" : undefined} style={{ minHeight: 40, padding: "4px 12px", fontSize: 14, fontWeight: 900 }}>{arm ? "Confirm" : "Draft"}</Btn> : <ScoutButton g={g} p={p} read={read} small />}
       </span>
     </div>
   );
@@ -637,9 +640,15 @@ export function DraftGrades({ g }) {
 
 // Scouting points left, big enough to read at a glance.
 // Pass the scouting state as sc to show the area scouts' points beside it.
-export function ScoutPtsBadge({ pts = 0, sc }) {
+export function ScoutPtsBadge({ pts = 0, sc, slim }) {
   const on = pts > 0;
   const area = sc ? sc.rpts ?? RPTS_START : null;
+  // slim: one small pill for draft day, where the clock and the board need the room
+  if (slim) return (
+    <span title="Scouting points left (and area-scout points)" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 999, background: on ? `${C.gd}22` : C.cd, border: `1px solid ${on ? C.gd : C.bd}`, fontSize: 13, fontWeight: 800, color: on ? "#fde68a" : C.mt, whiteSpace: "nowrap" }}>
+      🔎 {pts} pts{area != null && <span style={{ color: "#7dd3fc" }}>· {area} area</span>}
+    </span>
+  );
   return (
     <div style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "8px 16px", borderRadius: 12, background: on ? `linear-gradient(135deg, ${C.gd}33, #0b1220)` : C.cd, border: `2px solid ${on ? C.gd : C.bd}` }}>
       <span title="Spend them on scouting reports and workups" style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
@@ -655,7 +664,7 @@ export function ScoutPtsBadge({ pts = 0, sc }) {
 }
 
 // Your picks in this year's draft, round by round. Picks you've used gray out and show who you took.
-export function PickTracker({ g }) {
+export function PickTracker({ g, slim }) {
   const picks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr)).sort((a, b) => a.overall - b.overall);
   const made = new Map((g.draftLog || []).map((d) => [d.id, d]));
   const left = picks.filter((pk) => !made.has(pk.id)).length;
@@ -669,9 +678,9 @@ export function PickTracker({ g }) {
     return mine.length ? mine.map((pk) => ({ rd, pk, d: made.get(pk.id) })) : [{ rd }];
   });
   return (
-    <div style={{ ...panel, marginBottom: 12, padding: "10px 12px" }}>
+    <div style={slim ? {} : { ...panel, marginBottom: 12, padding: "10px 12px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 15, fontWeight: 900, marginRight: 2 }}>Your picks</span>
+        <span style={{ fontSize: slim ? 13 : 15, fontWeight: 900, marginRight: 2 }}>Your picks</span>
         <span style={{ fontSize: 13, color: left ? C.gn : C.mt, fontWeight: 800, marginRight: 6 }}>{left} of {picks.length} left</span>
         {chips.map(({ rd, pk, d }, k) => (
           <span key={pk?.id ?? `r${rd}`} title={!pk ? `No round ${rd} pick` : d ? `Round ${rd}: ${d.player?.name || d.name || "used"}` : g.sp === "draft" ? `Round ${rd}, pick ${pk.overall}` : `Round ${rd}, projected from the standings`} style={{ display: "inline-flex", alignItems: "baseline", gap: 5, borderRadius: 999, padding: "3px 10px", fontSize: 13, whiteSpace: "nowrap", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", background: pk && !d ? `${C.bl}1f` : "#0b1220", border: `1px solid ${pk && !d ? C.bl + "99" : C.bd}`, opacity: pk ? 1 : 0.5, color: pk && !d ? "#e2e8f0" : C.mt }}>

@@ -63,12 +63,13 @@ export function MoreSheet({ tabs, labels, tab, go, onClose, actions }) {
 // Phones: the week's main action sits right above the tab bar, where your thumb is. Anything else
 // (Sim All, Sim to Deadline, draft speed...) is one tap away behind the ▾.
 // actions: [{ label, onClick, bg, c, small }], first = the main one; small = a compact pill
-// on the right (for steps like Finish Re-signing that shouldn't shout).
+// on the left, over names rather than the Offer / Draft buttons down the right edge (for steps
+// like Finish Re-signing that shouldn't shout, and for the week's action off the Home screen).
 export function MobileActionBar({ actions }) {
   const [open, setOpen] = React.useState(false);
   if (!actions?.length) return null;
   const [main, ...rest] = actions;
-  const bar = { position: "fixed", left: 0, right: 0, bottom: "calc(58px + env(safe-area-inset-bottom))", zIndex: 395, padding: "8px 10px", background: "linear-gradient(180deg, #0b122000, #0b1220f2 35%)", display: "flex", gap: 8 };
+  const bar = { position: "fixed", left: 0, right: 0, bottom: "calc(58px + env(safe-area-inset-bottom))", zIndex: 395, padding: "8px 10px 12px", background: "linear-gradient(180deg, #0b122000, #0b1220f2 35%)", display: "flex", gap: 8 };
   return (
     <>
       {open && rest.length > 0 && (
@@ -81,7 +82,7 @@ export function MobileActionBar({ actions }) {
         </div>
       )}
       <div data-tour="actions" style={main.small ? { ...bar, background: "transparent", pointerEvents: "none" } : bar}>
-        <button onClick={main.onClick} style={{ flex: main.small ? "0 0 auto" : 1, marginLeft: main.small ? "auto" : 0, padding: main.small ? "0 18px" : 0, minHeight: main.small ? 40 : 48, borderRadius: main.small ? 999 : 12, border: 0, background: main.bg || C.gn, color: main.c || "#fff", fontSize: main.small ? 15 : 17, fontWeight: 900, cursor: "pointer", boxShadow: "0 6px 20px #0008", pointerEvents: "auto" }}>{main.label}</button>
+        <button onClick={main.onClick} style={{ flex: main.small ? "0 0 auto" : 1, marginLeft: 0, padding: main.small ? "0 18px" : 0, minHeight: main.small ? 40 : 48, borderRadius: main.small ? 999 : 12, border: 0, background: main.bg || C.gn, color: main.c || "#fff", fontSize: main.small ? 15 : 17, fontWeight: 900, cursor: "pointer", boxShadow: "0 6px 20px #0008", pointerEvents: "auto" }}>{main.label}</button>
         {rest.length > 0 && <button onClick={() => setOpen((o) => !o)} aria-label="More actions" style={{ pointerEvents: "auto", width: 56, minHeight: 48, borderRadius: 12, border: `1px solid ${C.bd}`, background: open ? C.bl : C.cd, color: "#fff", fontSize: 18, fontWeight: 900, cursor: "pointer" }}>{open ? "✕" : "▾"}</button>}
       </div>
     </>

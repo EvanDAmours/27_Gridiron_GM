@@ -298,9 +298,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   // v20.0 Wave 2
   const[compareSlots,setCompareSlots]=useState([]);const[socialFeed,setSocialFeed]=useState([]);const[draftTicker,setDraftTicker]=useState([]);const[pickIsIn,setPickIsIn]=useState(null);const[forPick,setForPick]=useState(null);const[searchOpen,setSearchOpen]=useState(false);const simPickLock=useRef(-1);useEffect(()=>{if(MOBILE)window.scrollTo(0,0);},[tab]);const[online,setOnline]=useState(typeof navigator==="undefined"||navigator.onLine!==false);useEffect(()=>{const on=()=>setOnline(true),off=()=>setOnline(false);addEventListener("online",on);addEventListener("offline",off);return()=>{removeEventListener("online",on);removeEventListener("offline",off);};},[]);
   // Phones: swipe sideways between a screen's tabs (Depth Chart ↔ Roster...).
-  const touch0=useRef(null);
-  const touchStart=e=>{const t=e.touches[0];let el=e.target,sx=false;while(el&&el!==e.currentTarget){if(el.scrollWidth>el.clientWidth+4&&getComputedStyle(el).overflowX!=="visible"){sx=true;break;}if(el.tagName==="svg"||el.tagName==="INPUT"||el.tagName==="SELECT")sx=true;el=el.parentElement;}touch0.current={x:t.clientX,y:t.clientY,sx};};
-  const touchEnd=e=>{const t0=touch0.current;touch0.current=null;if(!t0)return;const t=e.changedTouches[0],dx=t.clientX-t0.x,dy=t.clientY-t0.y;if(t0.sx||Math.abs(dx)<80||Math.abs(dy)>50)return;const gp=TAB_GROUPS.find(g=>g.tabs.includes(tab));if(!gp)return;const i=gp.tabs.indexOf(tab),n=i+(dx<0?1:-1);if(n<0||n>=gp.tabs.length)return;setTab(gp.tabs[n]);};useEffect(()=>{const k=e=>{const t=e.target,typing=t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable);if(((e.key==="/"&&!typing)||((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"))){e.preventDefault();setSearchOpen(true);}};addEventListener("keydown",k);return()=>removeEventListener("keydown",k);},[]);const[inboxOpen,setInboxOpen]=useState(false);const[inboxShow,setInboxShow]=useState(null);const[inboxDismissed,setInboxDismissed]=useState({});const[upCalls,setUpCalls]=useState(false);const[upPassed,setUpPassed]=useState({});const[ownerPersonality,setOwnerPersonality]=useState(null);
+  useEffect(()=>{const k=e=>{const t=e.target,typing=t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"||t.isContentEditable);if(((e.key==="/"&&!typing)||((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"))){e.preventDefault();setSearchOpen(true);}};addEventListener("keydown",k);return()=>removeEventListener("keydown",k);},[]);const[inboxOpen,setInboxOpen]=useState(false);const[inboxShow,setInboxShow]=useState(null);const[inboxDismissed,setInboxDismissed]=useState({});const[upCalls,setUpCalls]=useState(false);const[upPassed,setUpPassed]=useState({});const[ownerPersonality,setOwnerPersonality]=useState(null);
   // v21.0 Wave 3
   const[playbook,setPlaybook]=useState([]);const[stadiumAtm,setStadiumAtm]=useState(50);
   // v22.0 Wave 5
@@ -1296,7 +1294,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
   // Sim several weeks (simAll): one Sim Week after another until the target week, the end of the
   // regular season, or a decision that needs you.
   useEffect(()=>{if(!simBatch)return;
-    if(scoutCheck){setSimBatch(null);sm(`Week ${scoutCheck.wk}: scouting checkpoint. Sim again when you're ready.`);return;}
+    /* a scouting checkpoint pops up but the sim keeps going: read it whenever you like */
     if(sp!=="regular"){setSimBatch(null);if(sp==="playoffs"){track('season_simmed');const _s=pb?.seeds?[...pb.seeds.AFC,...pb.seeds.NFC]:[];setWeekResult({season:true,playoffs:_s.includes(ui)});/* one banner (with the recap card a click away), not a stack of popups */}return;}
     if(liveSim){setSimBatch(null);return;}
     if(wk>=simBatch.to){setSimBatch(null);const _r=teams[ui];sm(`Simmed to week ${wk}: ${_r?.w}-${_r?.l}${_r?.t?`-${_r.t}`:""}.${wk===TRADE_DEADLINE_WEEK&&dlActive?" It's Trade Deadline Day!":""}`);return;}
@@ -1522,7 +1520,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         })}
       </div>);
     })()}
-    <div onTouchStart={MOBILE?touchStart:undefined} onTouchEnd={MOBILE?touchEnd:undefined} style={{flex:1,minWidth:0,padding:isMobile?"6px 8px":"8px 12px",overflowY:MOBILE?"visible":"auto",maxHeight:MOBILE?"none":"calc(var(--vh, 100vh) - 120px)",paddingBottom:MOBILE?"calc(150px + env(safe-area-inset-bottom))":undefined,fontSize:MOBILE?'15px':isMobile?'13px':'inherit'}}>
+    <div style={{flex:1,minWidth:0,padding:isMobile?"6px 8px":"8px 12px",overflowY:MOBILE?"visible":"auto",maxHeight:MOBILE?"none":"calc(var(--vh, 100vh) - 120px)",paddingBottom:MOBILE?"calc(150px + env(safe-area-inset-bottom))":undefined,fontSize:MOBILE?'15px':isMobile?'13px':'inherit'}}>
     <ScreenBoundary key={tab+rosterView} onHome={()=>{setRosterView("players");setRosterTeam(null);setTab("dashboard");}} onGo={t=>{setRosterView("players");setRosterTeam(null);setTab(t);}}>
     <React.Suspense fallback={<div style={{padding:24,color:C.mt,fontSize:14}}>Loading…</div>}>
 
@@ -1771,23 +1769,27 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         </>);})()}
       {/* Scouting points and your picks, round by round */}
       {/* phones mid-draft: the clock bar already says where your next pick is */}
-      {!(MOBILE&&sp==="draft"&&draftActive)&&<div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"flex-start"}}><div style={{flex:"0 0 auto",marginBottom:12}}><ScoutPtsBadge pts={scoutG.scouting?.pts||0} sc={scoutG.scouting||{}}/></div><div style={{flex:"1 1 560px",minWidth:0}}><PickTracker g={scoutG}/></div></div>}
+      {!MOBILE&&sp==="draft"&&draftActive&&<div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",marginBottom:8}}><ScoutPtsBadge slim pts={scoutG.scouting?.pts||0} sc={scoutG.scouting||{}}/><div style={{flex:1,minWidth:0}}><PickTracker g={scoutG} slim/></div></div>}
+      {!(sp==="draft"&&draftActive)&&<div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"flex-start"}}><div style={{flex:"0 0 auto",marginBottom:12}}><ScoutPtsBadge pts={scoutG.scouting?.pts||0} sc={scoutG.scouting||{}}/></div><div style={{flex:"1 1 560px",minWidth:0}}><PickTracker g={scoutG}/></div></div>}
       {sp==="draft"&&draftActive&&curPick&&<>
-        {curPick.owner===ui&&(()=>{const _cls=[...(dc[yr]||[])].sort((a,b)=>csRank(a)-csRank(b));const _need=getTeamNeed(ut?.roster||[]).slice(0,2);const _best=_cls[0];const _fit=_need.map(n=>_cls.find(x=>needGroup(x)===n)).filter(Boolean)[0];if(!_best)return null;return<div style={{background:'#0a1520',border:'1px solid #3b82f644',borderRadius:8,padding:'8px 12px',marginBottom:6,display:'flex',gap:8,alignItems:'flex-start'}}><span style={{fontSize:16,flexShrink:0}}>🎙️</span><div style={{flex:1,fontSize:14,color:'#e2e8f0',lineHeight:1.45}}><div style={{fontSize:11,color:'#60a5fa',fontWeight:800,letterSpacing:1.5,marginBottom:2}}>WAR ROOM</div>Best player left: <b>{_best.name}</b> ({_best.pos}).{_fit&&_fit.id!==_best.id?<> For your biggest need ({_need.join(", ")}), the top one left is <b>{_fit.name}</b> ({_fit.pos}, #{csRank(_fit)} on the board).</>:_fit?<> He fills a need, too.</>:null}</div></div>;})()}
-        {curPick.owner===ui&&<div style={{marginBottom:10,background:C.cd,border:`1px solid ${C.gn}`,borderRadius:10,padding:'12px 14px'}}>
+                {curPick.owner===ui&&<div style={{marginBottom:10,background:C.cd,border:`1px solid ${C.gn}`,borderRadius:10,padding:'8px 12px'}}>
           {/* I49: Draft war room live clock */}
           {draftClockActive&&<div style={{fontSize:13,color:draftClock<=15?'#ef4444':'#f59e0b',fontWeight:700,marginBottom:4}}>⏱ ON THE CLOCK: {draftClock}s {draftClock<=10?'— AUTO-DRAFT SOON':''}</div>}
-          <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>{!MOBILE&&<span style={{fontSize:18,color:C.gn,fontWeight:900}}>🎯 You're on the clock!</span>}{!draftClockActive&&<Btn onClick={()=>{setDraftClock(90);setDraftClockActive(true);}} bg="#1e3a5f" c="#7dd3fc" style={{fontSize:11,padding:'2px 8px'}}>⏱ Clock</Btn>}</div>
+          {/* the war room's read, the rookie wage at this slot and the clock, on one line */}
+          <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+            {(()=>{const _cls=[...(dc[yr]||[])].sort((a,b)=>csRank(a)-csRank(b));const _need=getTeamNeed(ut?.roster||[]).slice(0,2);const _best=_cls[0];const _fit=_need.map(n=>_cls.find(x=>needGroup(x)===n)).filter(Boolean)[0];if(!_best)return<span style={{flex:1}}/>;return<span style={{flex:'1 1 320px',minWidth:0,fontSize:14,color:'#e2e8f0',lineHeight:1.4}}><b style={{fontSize:11,color:'#60a5fa',letterSpacing:1.5,marginRight:6}}>🎙️ WAR ROOM</b>Best left: <b>{_best.name}</b> ({_best.pos}).{_fit&&_fit.id!==_best.id?<> Top {_need.join("/")}: <b>{_fit.name}</b> ({_fit.pos}, #{csRank(_fit)}).</>:_fit?<> Fills a need, too.</>:null}</span>;})()}
+            <span style={{fontSize:12,color:'#fbbf24',fontWeight:700,whiteSpace:'nowrap'}} title="What a rookie taken here earns">Wage at #{curPick.overall}: ${rookieSalary(curPick.overall)}M/yr</span>
+            {!draftClockActive&&<Btn onClick={()=>{setDraftClock(90);setDraftClockActive(true);}} bg="#1e3a5f" c="#7dd3fc" style={{fontSize:12,padding:'4px 10px'}}>⏱ Clock</Btn>}
+          </div>
           {/* Draft-day calls: clubs behind you offering to move up (you can only trade down) */}
           {(()=>{const _tgt=tm=>{const b=[...(dc[yr]||[])].sort((a,b)=>csRank(a)-csRank(b));return b[(tm*7+draftIdx)%Math.min(4,b.length||1)]||null;};const _bump={};Object.entries(tdCalls).forEach(([k,v])=>{if(v.bump)_bump[v.team]=v.bump;});const offers=tradeDownOffers({picks:draftPicks,futures:futurePicks,idx:draftIdx,ui,yr,teams,target:_tgt,bump:_bump}).filter(o=>!tdCalls[o.id]?.gone);
             const accept=o=>{const r=acceptOffer(draftPicks,futurePicks,o,ui);setDraftPicks(r.picks);setFuturePicks(r.futures);setDraftTimer(120);const got=[pickLabel(o.theirPick,yr),...o.extras.map(a=>pickLabel(a,yr))].join(', ');setLog(l=>[`🔁 DRAFT-DAY TRADE: ${TEAMS[ui].ab} trade #${curPick.overall} to ${TEAMS[o.team].ab} for ${got}`,...l.slice(0,149)]);sm(`Traded down: ${got}`);};
             const askMore=o=>{const k=o.id;const tries=(tdCalls[k]?.tries||0)+1;const yes=((draftIdx*31+o.team*17+tries*7)%10)<5;setTdCalls(c=>({...c,[k]:yes?{team:o.team,bump:(c[k]?.bump||0)+0.12,tries}:{team:o.team,gone:true,tries}}));sm(yes?`${TEAMS[o.team].name} sweeten the offer`:`${TEAMS[o.team].name} hang up — they'll look elsewhere`);};
             const _call=offers.filter(o=>!callSeen[o.id]).sort((a,b)=>b.pct-a.pct)[0];
-            return<div style={{marginTop:6}}>
+            return<div style={{marginTop:offers.length?8:0}}>
               {_call&&!draftReveal&&<IncomingCall offer={_call} team={teams[_call.team]} curPick={curPick} yr={yr} onAccept={()=>{setCallSeen(m=>({...m,[_call.id]:true}));accept(_call);}} onMore={()=>{setCallSeen(m=>({...m,[_call.id]:true}));askMore(_call);}} onDecline={()=>setCallSeen(m=>({...m,[_call.id]:true}))}/>}
-              {MOBILE?(offers.length>0&&<button onClick={()=>setTdOpen(o=>!o)} style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',background:'#1e1b4b',border:'1px solid #7c3aed66',borderRadius:8,color:'#c4b5fd',fontSize:14,fontWeight:800,padding:'8px 12px',marginBottom:tdOpen?8:0,cursor:'pointer'}}><span>📞 {offers.length} trade offer{offers.length>1?'s':''}: clubs want to move up</span><span>{tdOpen?'▲':'▼'}</span></button>):<div style={{fontSize:14,fontWeight:800,color:'#c4b5fd',marginBottom:6}}>📞 Trade offers {offers.length?`(${offers.length})`:''} <span style={{fontSize:12,color:C.mt,fontWeight:500}}>· clubs behind you want to move up. Values from the draft trade chart.</span></div>}
-              {!offers.length&&!MOBILE&&<div style={{fontSize:13,color:C.mt}}>The phones are quiet for this pick.</div>}
-              {(!MOBILE||tdOpen)&&<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:8}}>
+              {offers.length>0&&<button onClick={()=>setTdOpen(o=>!o)} style={{width:MOBILE?'100%':'auto',gap:16,display:'flex',alignItems:'center',justifyContent:'space-between',background:'#1e1b4b',border:'1px solid #7c3aed66',borderRadius:8,color:'#c4b5fd',fontSize:14,fontWeight:800,padding:'8px 12px',marginBottom:tdOpen?8:0,cursor:'pointer'}}><span>📞 {offers.length} trade offer{offers.length>1?'s':''}: clubs want to move up</span><span>{tdOpen?'▲':'▼'}</span></button>}
+              {tdOpen&&offers.length>0&&<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:8}}>
               {offers.map(o=>{const t=teams[o.team];return<div key={o.id} style={{background:'#0d1020',border:`1px solid ${o.pct>=5?C.gn:'#7c3aed66'}`,borderRadius:10,padding:'10px 12px'}}>
                 <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}><TeamLogo t={t} sz={28}/><div style={{flex:1,minWidth:0}}><div style={{fontWeight:800,fontSize:15}}>{t.city} {t.name}</div><div style={{fontSize:12,color:C.mt}}>Move up {o.theirPick.overall-curPick.overall} spots{o.target?` · eyeing ${o.target.name} (${o.target.pos})`:''}</div></div></div>
                 <div style={{fontSize:13,color:C.mt,marginTop:4}}>You get</div>
@@ -1798,7 +1800,6 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
               </div>}
             </div>;})()}
         </div>}
-        {curPick.owner===ui&&<div style={{fontSize:11,color:'#fbbf24',fontWeight:700,marginBottom:4}}>Rookie wage scale at #{curPick.overall}: ${rookieSalary(curPick.overall)}M a year</div>}
       </>}
         {sp==="combine"&&<div style={{background:"#7c3aed22",border:"1px solid #7c3aed44",borderRadius:5,padding:"8px 12px",fontSize:14,color:"#c4b5fd",marginBottom:6}}>✅ Combine & Pro Days complete! Interview prospects and spend your last scouting points in the Scouting tab.</div>}
       {sp==="draft"&&!draftActive&&<DraftGrades g={scoutG}/>}
@@ -2395,6 +2396,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       else if(sp==="resign")A.push({label:"Finish Re-signing →",onClick:askAdvance,bg:C.gd,c:"#000",small:true});
       else if(sp==="freeagency")A.push({label:"Finish Free Agency →",onClick:askAdvance,bg:C.gd,c:"#000",small:true});
       else if(sp==="draft"){if(draftActive){if(curPick&&curPick.owner!==ui&&draftPicks.slice(draftIdx).some(pk=>pk.owner===ui))A.push({label:"⏩ Sim to my pick",onClick:()=>simEntireDraft(true)});A.push({label:draftPaused?"▶ Resume draft":"⏸ Pause draft",onClick:()=>setDraftPaused(p=>!p),bg:draftPaused?C.gn:"#f97316"});A.push({label:"⏭ Sim the whole draft",onClick:()=>simEntireDraft(),bg:"#6366f1"});A.push({label:`Speed: ${draftSpeed}`,onClick:()=>setDraftSpeed(s=>{const n=DRAFT_SPEEDS[(DRAFT_SPEEDS.indexOf(s)+1)%DRAFT_SPEEDS.length];try{localStorage.setItem("gm_draft_speed",n);}catch{}return n;}),bg:C.bd});}else if(draftPicks.length>0&&draftIdx>=draftPicks.length)A.push({label:"→ Next Season",onClick:newSeason});}
+      // off Home and the draft, the week's action shrinks to a pill so a tap meant for the screen can't sim
+      if(A[0]&&tab!=="dashboard"&&tab!=="draft")A[0]={...A[0],small:true};
       return<MobileActionBar actions={A}/>;})()}
     {MOBILE&&<TapTips/>}
     {MOBILE&&<MobileNav tab={tab} sp={sp} rosterView={rosterView} moreOpen={moreOpen} onMore={()=>setMoreOpen(o=>!o)} go={(t,sub)=>{setMoreOpen(false);setRosterTeam(null);setRosterView(sub||"players");setTab(t);}}/>}

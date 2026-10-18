@@ -1145,4 +1145,11 @@ export const PATCH_NOTES = [
     "Ring night: the season after a title opens with the championship ring (your colors, the year, the stones) and the players getting theirs, before the kickoff preview.",
     "Milestone watch in live games: your players closing in on a season milestone (1,000 yards, 4,000 passing, 10 sacks...) show above the field with what they need, and it lights up when they get there.",
   ] },
+  { v: "3.5", date: "2026-10-18", title: "Cleaner Draft, Steadier Thumbs", notes: [
+    "Draft screen decluttered: mid-draft, your scouting points and picks sit on one slim line, and the war room's read, the rookie wage and the clock share one row. The trade offers fold behind a button, so the board is right there when you're on the clock.",
+    "Sim to End keeps going through scouting checkpoints: the checkpoint pops up for whenever you want it, and the season sims on.",
+    "Phones: no more swiping sideways to change screens.",
+    "Phones: off the Home screen, Play Week / Sim / Start Season shrinks to a small button on the left, clear of the Offer and Draft buttons down the right edge. No more simming a week by accident.",
+    "Phones: drafting takes two taps (Draft, then Confirm), so a stray tap can't spend your pick. The clock bar's buttons are an even row of three (Sim pick, Get this pick, Trade up); Sim to my pick is the big button at the bottom.",
+  ] },
 ];
