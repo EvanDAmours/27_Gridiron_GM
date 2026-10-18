@@ -45,10 +45,15 @@ function TeamSummary({ team, rating, other }) {
 // Ratings, records, players, venue and kickoff are passed from the live game.
 // Uniform overrides are optional for alternate jerseys or neutral-site games.
 export default function PixelMatchup({ away, home, awayPlayer, homePlayer, awayRating,
-  homeRating, label, kickoff, venue, awayUniform = 'away', homeUniform = 'home', compact = false }) {
+  homeRating, label, kickoff, venue, awayUniform = 'away', homeUniform = 'home', compact = false, prime = null, rivalry = false }) {
   if (!away || !home) return null;
-  return h('article', { className: `pxm-card keep-dark${compact ? ' pxm-compact' : ''}`, 'aria-label': `${away.city} ${away.name} at ${home.city} ${home.name}` },
-    h('header', { className: 'pxm-label' }, label),
+  // big games dress up: a night game under the lights, a rivalry in both clubs' colors
+  const cls = `pxm-card keep-dark${compact ? ' pxm-compact' : ''}${prime ? ' pxm-prime' : ''}${rivalry ? ' pxm-rival' : ''}`;
+  return h('article', { className: cls, style: rivalry ? { '--pxm-a': away.clr || '#334155', '--pxm-h': home.clr || '#334155' } : undefined, 'aria-label': `${away.city} ${away.name} at ${home.city} ${home.name}` },
+    h('header', { className: 'pxm-label' }, label,
+      (prime || rivalry) && h('span', { className: 'pxm-badges' },
+        rivalry && h('span', { className: 'pxm-badge pxm-badge--rival' }, 'RIVALRY WEEK'),
+        prime && h('span', { className: 'pxm-badge pxm-badge--prime' }, `★ ${prime.toUpperCase()}`))),
     h('div', { className: 'pxm-field' },
       h('div', { className: 'pxm-yardmarks', 'aria-hidden': true }, ...['30', '40', '50', '40', '30'].map((mark, i) => h('span', { key: i }, mark))),
       h('div', { className: 'pxm-matchup' },

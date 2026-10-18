@@ -66,7 +66,7 @@ function Player({ p, pos, x, y, team, side, away, td }) {
 
 // sb: the Super Bowl's name ("Super Bowl LXI") on a neutral field: end zones in each club's color,
 // the Lombardi Trophy at midfield, the game's numerals at the 25s and gold trim.
-export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb }) {
+export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, night }) {
   const los = clamp(ballYard, 1, 99);
   const x0 = xOf(los);
   const o = starters(off, offDepth, offOrder), d = starters(def, defDepth, defOrder);
@@ -95,6 +95,8 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
           <stop offset="0" stopColor="#000" stopOpacity=".18" /><stop offset=".25" stopColor="#000" stopOpacity="0" />
           <stop offset=".75" stopColor="#000" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".22" />
         </linearGradient>
+        {/* a night game: the stadium lights throw four pools of light onto a darker field */}
+        <radialGradient id="lf-light" cx=".5" cy=".5" r=".5"><stop offset="0" stopColor="#fffbe6" stopOpacity=".22" /><stop offset="1" stopColor="#fffbe6" stopOpacity="0" /></radialGradient>
         {/* painted on the grass: a white border around the logo, like a real midfield logo */}
         <filter id="lf-paint" x="-10%" y="-10%" width="120%" height="120%">
           <feMorphology in="SourceAlpha" operator="dilate" radius="2.2" result="d" />
@@ -141,6 +143,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
         </g>
       ))}
       <rect x="0" y="0" width={W} height={H} fill="url(#lf-shade)" />
+      {night && <g pointerEvents="none"><rect x="0" y="0" width={W} height={H} fill="#06102a" opacity=".32" />{[[0.18, 0], [0.82, 0], [0.18, 1], [0.82, 1]].map(([fx, fy], i) => <ellipse key={i} cx={W * fx} cy={H * fy} rx={W * 0.34} ry={H * 0.7} fill="url(#lf-light)" />)}</g>}
       <rect x="1" y="1" width={W - 2} height={H - 2} fill="none" stroke={sb ? "#e8c45a" : "#fff"} strokeOpacity=".85" strokeWidth={sb ? 4 : 2} rx="9" />
       {[2, EZ - 3, W - EZ - 3, W - 8].flatMap((x) => [2, H - 8].map((y) => <rect key={`${x}-${y}`} x={x} y={y} width="6" height="6" rx="1" fill="#f97316" stroke="#7c2d12" strokeWidth=".6" />))}
       {/* line of scrimmage and the line to gain, with a soft glow */}

@@ -47,3 +47,17 @@
 .pxm-compact .pxm-record { margin: 1px 0 6px; font-size: 13px; }
 .pxm-compact .pxm-rating strong { font-size: 18px; padding: 3px 0; }
 .pxm-compact .pxm-rating span { font-size: 10px; padding: 2px 0; }
+
+/* big games: primetime under the lights, rivalry week in both clubs' colors */
+.pxm-label { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pxm-badges { margin-left: auto; display: inline-flex; gap: 6px; }
+.pxm-badge { font-size: 11px; letter-spacing: 1.4px; font-weight: 900; padding: 3px 9px; border-radius: 999px; }
+.pxm-badge--prime { color: #fde68a; background: #1e1b4b; border: 1px solid #a5b4fc88; box-shadow: 0 0 12px #818cf855; }
+.pxm-badge--rival { color: #fff; background: #b91c1c; border: 1px solid #fca5a5aa; }
+.pxm-prime { background: radial-gradient(ellipse at 50% -20%, #312e8199, transparent 65%), #040817; border-color: #6366f1; box-shadow: 0 0 30px #6366f133, inset 0 1px 0 #a5b4fc33; }
+.pxm-prime .pxm-field { background: linear-gradient(to bottom, #1e1b4b55, #04081700 90%); }
+.pxm-prime .pxm-field::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: conic-gradient(from 160deg at 0% 0%, transparent 0deg, #fef9c31f 14deg, transparent 28deg), conic-gradient(from 172deg at 100% 0%, transparent 0deg, #fef9c31f 14deg, transparent 28deg); }
+.pxm-prime .pxm-label { color: #c7d2fe; }
+.pxm-rival { border-color: #ef4444; background: linear-gradient(90deg, color-mix(in srgb, var(--pxm-a) 30%, #071b27), #071b27 45%, #071b27 55%, color-mix(in srgb, var(--pxm-h) 30%, #071b27)); box-shadow: 0 0 26px #ef444433; }
+.pxm-rival.pxm-prime { border-color: #a855f7; }

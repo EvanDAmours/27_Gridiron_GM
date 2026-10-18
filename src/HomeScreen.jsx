@@ -11,6 +11,7 @@ import { injuryReport } from "./injuries.js";
 import PixelMatchup from "./PixelMatchup.jsx";
 import MatchupStakes from "./MatchupStakes.jsx";
 import { teamNeeds, needName } from "./needs.js";
+import { primeSlot } from "./seasonPreview.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const PHASE = { preseason: "Preseason", combine: "Offseason: NFL Combine", resign: "Offseason: Re-sign Week", freeagency: "Offseason: Free Agency", draft: "Offseason: NFL Draft" };
@@ -137,7 +138,7 @@ function OffseasonBoard({ me, sp, onNav }) {
   );
 }
 
-export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory }) {
+export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory, rivalId }) {
   const me = teams[ui];
   // a tall window (big desktop) has room for the full-size matchup art
   const roomy = !mobile && typeof window !== "undefined" && window.innerHeight / (parseFloat(document.documentElement.style.zoom) || 1) >= 900;
@@ -217,6 +218,7 @@ export default function HomeScreen({ mobile, teams, ui, depthOrder, playingTime,
               awayPlayer={highestRatedPlayer(away)}
               homePlayer={highestRatedPlayer(home)}
               awayRating={ra} homeRating={rh} compact={!mobile && !roomy}
+              prime={sp !== "playoffs" ? primeSlot(game) : null} rivalry={rivalId != null && (game.h === rivalId || game.a === rivalId) && (game.h === ui || game.a === ui)}
               label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} • Week ${game.wk ?? nextWk}`}
               kickoff={game.date ? kickoff(game) : "Kickoff TBD"}
               venue={sp === "playoffs" && pb?.rd === 4 ? "Super Bowl • neutral site" : [game.venue || home.city, game.intl && game.city].filter(Boolean).join(", ")}
