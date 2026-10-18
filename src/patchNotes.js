@@ -1081,4 +1081,8 @@ export const PATCH_NOTES = [
   { v: "2.95", date: "2026-10-18", title: "Slimmer Strip", notes: [
     "The franchise strip at the top of Home (needs attention, record, cap space, roster health, owner and locker room) is about half as tall on a computer: each tile's number and its detail share one line.",
   ] },
+  { v: "2.96", date: "2026-10-18", title: "One Top Bar", notes: [
+    "On a computer the two top bars are one: your logo, then the screens, then the actions. Sim Week sits next to Play Week, and Sim to Deadline and Sim All are in the ⏩ menu beside it. Search, Save, GM legacy and the Menu are icon buttons (hover for what each does). Saves and Game Updates live in the Menu. On narrower screens a few tab names shorten so everything fits.",
+    "Depth chart: the running back lines up beside the quarterback (shotgun), so nobody's name is covered: not the center's, not the quarterback's.",
+  ] },
 ];

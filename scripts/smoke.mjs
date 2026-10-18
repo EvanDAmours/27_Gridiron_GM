@@ -77,7 +77,9 @@ async function simUntil(text, done, where) {
   for (let i = 0; i < 12; i++) {
     if (await page.evaluate(done)) return;
     await dismiss();
-    const b = page.locator("button:visible", { hasText: text });
+    let b = page.locator("button:visible", { hasText: text });
+    // Sim to Deadline and Sim All live in the ⏩ menu next to Sim Week
+    if (!(await b.count())) { const m = page.locator("button:visible", { hasText: "⏩" }); if (await m.count()) { await m.first().click(); await page.waitForTimeout(200); } b = page.locator("button:visible", { hasText: text }); }
     if (await b.count()) await b.first().click();
     for (let t = 0; t < 60 && !(await page.evaluate(done)); t++) await page.waitForTimeout(500);
   }
@@ -169,15 +171,16 @@ try {
   await healthy("new game"); log("new game"); await census("start");
   { const d0 = await save(); const real = (d0.dc?.[2026] || []).filter((p) => p.real); if (real.length < 100 || !real.some((p) => p.name === "Jeremiah Smith")) fail("new game didn't load the real 2027 draft class"); log(`real draft class (${real.length} real prospects)`); }
   const seen = [];
-  for (const tab of ["Depth Chart", "Roster", "Front Office", "Schedule & Standings", "Standings", "Playoffs", "Draft & Scouting", "Draft Recap", "League", "Stats", "Legacy Hall", "Record Book", "League History", "Trade", "Free Agency", "Saves", "Game Updates", "Timeline", "Home"]) {
+  // (the smoke runs 1280 wide, where the top bar uses its short tab names: Schedule, Draft, FA, Legacy)
+  for (const tab of ["Depth Chart", "Roster", "Front Office", "Schedule", "Standings", "Playoffs", "Draft", "Draft Recap", "League", "Stats", "Legacy Hall", "Record Book", "League History", "Trade", "Free Agency", "Saves", "Game Updates", "Timeline", "Home"]) {
     await dismiss();
     let t = page.locator(`button:text-is("${tab}")`);
     if (!(await t.count())) t = page.getByText(tab, { exact: true });
     if (await t.count()) { await t.first().click(); await page.waitForTimeout(400); await healthy(tab); seen.push(tab); }
   }
-  for (const want of ["Depth Chart", "Front Office", "Schedule & Standings", "Standings", "Draft & Scouting", "League"]) if (!seen.includes(want)) fail(`couldn't open ${want}`);
+  for (const want of ["Depth Chart", "Front Office", "Schedule", "Standings", "Draft", "League"]) if (!seen.includes(want)) fail(`couldn't open ${want}`);
   log("every main screen opens");
-  await dismiss(); await page.getByText("Draft & Scouting", { exact: true }).first().click(); await page.waitForTimeout(400); await page.locator('button:text-is("Scouting")').first().click(); await page.waitForTimeout(500);
+  await dismiss(); await page.locator(`button:text-is("Draft")`).first().click(); await page.waitForTimeout(400); await page.locator('button:text-is("Scouting")').first().click(); await page.waitForTimeout(500);
   await must("Regions", 500); await must("Send area scouts", 600); await healthy("regional scouting");
   if (!(await page.evaluate(() => /trip 1 of|●/.test(document.body.innerText)))) fail("regional trip didn't register");
   log("regional scouting");
