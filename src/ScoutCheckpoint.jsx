@@ -1,6 +1,8 @@
 // Every fourth week the sim stops here: your scouting points (they cap out, so spend them), how the
 // college season moved the public board, and the prospects your scouts want eyes on near your pick.
-import React from "react";
+// Mid-sim (simTo set) the sim only pauses: closing this, or scouting everyone it lists, picks it back
+// up, and Stop the sim ends it where it is.
+import React, { useEffect, useRef } from "react";
 import { C, Bdg, CloseX, sheetWrap, sheetBox, SheetGrip } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { prospectRead, SCOUT_PTS_CAP, scoutCost } from "./scouting.js";
@@ -10,13 +12,21 @@ import { ScoutPtsBadge, ScoutButton, GradeChip } from "./ScoutingUI.jsx";
 const box = { background: "#ffffff08", border: "1px solid #ffffff14", borderRadius: 10, padding: "10px 12px", marginBottom: 10 };
 const head = (c) => ({ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: c, marginBottom: 6 });
 
-export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick, onOpen, onClose }) {
+export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick, onOpen, onClose, simTo, onStop }) {
   const cls = g.dc?.[g.yr] || [];
   const byId = new Map(cls.map((p) => [p.id, p]));
   const targets = targetIds.map((id) => byId.get(id)).filter(Boolean);
   const sc = g.scouting || {};
   const pts = sc.pts || 0, full = pts >= SCOUT_PTS_CAP - 1;
   const cheapest = Math.min(...targets.map((p) => scoutCost(p) || 99), 99);
+  // everyone it asked for now has a report: mid-sim, carry on by itself (only once you've scouted here)
+  const allDone = targets.length > 0 && targets.every((p) => prospectRead(sc, p).lvl > 0);
+  const startedDone = useRef(allDone);
+  useEffect(() => {
+    if (!simTo || !allDone || startedDone.current) return;
+    const t = setTimeout(onClose, 1200);
+    return () => clearTimeout(t);
+  }, [allDone, simTo]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(2,6,15,.86)", zIndex: 2200, display: "flex", alignItems: "center", justifyContent: "center", padding: 14, ...sheetWrap(MOBILE) }}>
       <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Scouting checkpoint" style={{ position: "relative", width: "100%", maxWidth: 760, maxHeight: "90vh", overflowY: "auto", borderRadius: 16, background: "#0b1220", border: "1px solid #38bdf866", padding: 14, color: C.tx, fontFamily: C.f, ...sheetBox(MOBILE) }}>
@@ -27,6 +37,7 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick
             <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#38bdf8" }}>🔭 SCOUTING CHECKPOINT · WEEK {wk}</div>
             <div style={{ fontSize: MOBILE ? 19 : 23, fontWeight: 900 }}>Your scouts are back from the road</div>
             <div style={{ fontSize: 13, color: "#cbd5e1" }}>You pick around <b>#{pick}</b> right now. Every report you file now is a pick you don't make blind in April.</div>
+            {simTo && <div style={{ fontSize: 13, color: "#7dd3fc", fontWeight: 700, marginTop: 4 }}>{allDone && !startedDone.current ? "✓ All scouted. Back to the sim…" : `⏸ Sim paused. It carries on to week ${simTo} when you're done here.`}</div>}
           </div>
           <ScoutPtsBadge pts={pts} sc={sc} />
         </div>
@@ -60,7 +71,8 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-          <button onClick={onClose} style={{ background: "#1e293b", color: C.tx, border: 0, borderRadius: 8, padding: "9px 14px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Back to the season</button>
+          {simTo && onStop && <button onClick={onStop} style={{ background: "transparent", color: "#fca5a5", border: "1px solid #ef444466", borderRadius: 8, padding: "9px 14px", fontWeight: 800, fontSize: 14, cursor: "pointer", marginRight: "auto" }}>■ Stop the sim</button>}
+          <button onClick={onClose} style={{ background: simTo ? C.gn : "#1e293b", color: simTo ? "#fff" : C.tx, border: 0, borderRadius: 8, padding: "9px 14px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>{simTo ? "▶ Keep simming" : "Back to the season"}</button>
           <button onClick={onOpen} style={{ background: "#0369a1", color: "#fff", border: 0, borderRadius: 8, padding: "9px 14px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>🔭 Open the scouting board</button>
         </div>
       </div>

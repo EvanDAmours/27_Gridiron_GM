@@ -40,7 +40,7 @@ await page.addInitScript(() => { localStorage.setItem("gm_intro_shown", "1"); se
 // Close full-screen overlays (result cards, popups) by clicking the backdrop corner.
 async function dismiss() {
   for (let i = 0; i < 6; i++) {
-    for (const t of ["Continue to the awards", "CONTINUE →", "To the Legacy Hall", "Close (offers expire", "Standard", "Meet Demands", "STAY CALM", "Let Go (coach departs)", "Decide later", "Later", "Got it"]) {
+    for (const t of ["Continue to the awards", "CONTINUE →", "To the Legacy Hall", "Close (offers expire", "Standard", "Meet Demands", "STAY CALM", "Let Go (coach departs)", "Decide later", "Later", "Got it", "Keep simming"]) {
       const b = page.locator("button", { hasText: t });
       if (await b.count()) { await b.first().click(); await page.waitForTimeout(150); }
     }
@@ -80,8 +80,9 @@ async function simUntil(text, done, where) {
     let b = page.locator("button:visible", { hasText: text });
     // Sim to Deadline and Sim All live in the ⏩ menu next to Sim Week
     if (!(await b.count())) { const m = page.locator("button:visible", { hasText: "⏩" }); if (await m.count()) { await m.first().click(); await page.waitForTimeout(200); } b = page.locator("button:visible", { hasText: text }); }
-    if (await b.count()) await b.first().click();
-    for (let t = 0; t < 60 && !(await page.evaluate(done)); t++) await page.waitForTimeout(500);
+    if (await b.count()) await b.first().click({ timeout: 3000 }).catch(() => {});
+    // a scouting checkpoint pauses the sim: Keep simming carries it on without pressing Sim again
+    for (let t = 0; t < 60 && !(await page.evaluate(done)); t++) { const k = page.locator("button:visible", { hasText: "Keep simming" }); if (await k.count()) await k.first().click().catch(() => {}); await page.waitForTimeout(500); }
   }
   if (!(await page.evaluate(done))) fail(`${where}: never finished`);
 }
