@@ -1399,4 +1399,11 @@ export const PATCH_NOTES = [
     "New Year's games. Each season now has a New Year's Eve game and a New Year's Day game in the week of January 1. In 2026 that's the real New Year's Eve game: Ravens at Bengals. An existing save picks them up for the current season.",
     "Playing one live opens with a 3, 2, 1 countdown, then New Year's Eve (or Day) over a midnight sky full of fireworks and gold and silver confetti. Fireworks and confetti fill the game screen, gold and silver sequins twinkle down the sidelines, and confetti litters the end zones. The final gets its own card: 'Ringing in the new year with a win' or 'Not the resolution we wanted', plus the player of the game.",
   ] },
+  { v: "3.54", date: "2026-10-20", title: "Premium Holiday Decorations", notes: [
+    "Holiday games get the full premium treatment, with illustrated art for Halloween, Thanksgiving, Christmas and New Year's.",
+    "A holiday frame surrounds the live field: haunted vines and bats that flicker, an autumn leaf garland, evergreen garland with glowing lights, and gold corner flourishes joined by a shimmering gold rule on New Year's. The scoreboard gets matching trim at both ends.",
+    "Two of the holiday's characters keep the corners of the game screen, bobbing gently: a jack-o'-lantern and a ghost, a turkey and a cornucopia, a snowman and a gift, champagne and the midnight clock. Real bats now fly across the Halloween sky.",
+    "Every touchdown pops a holiday piece onto the field: a jack-o'-lantern, a football with an autumn leaf, a golden ornament or a firework burst.",
+    "The intros open with the holiday's hero art flanked by two more pieces sliding in. The result card has art pinned to its corners, and the holiday badge carries the art too.",
+  ] },
 ];
