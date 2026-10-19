@@ -1409,4 +1409,7 @@ export const PATCH_NOTES = [
   { v: "3.55", date: "2026-10-20", title: "Light Snow Matches Heavy Snow", notes: [
     "Light snow now matches heavy snow. It's a lighter version of the same snowfall: drifts collect along the sidelines, in the end zones and around the plowed yard-number boxes, and the middle of the field, where the players run, stays mostly clear. The odd white strips and scattered blobs are gone.",
   ] },
+  { v: "3.56", date: "2026-10-20", title: "Snow in the Number Boxes", notes: [
+    "The plowed yard-number boxes in snow games no longer look untouchable. Snow drifts back in over their edges and leaves a light, patchy dusting inside, so they read like spots the grounds crew cleared before kickoff. The numbers stay readable. This applies in both light and heavy snow.",
+  ] },
 ];
