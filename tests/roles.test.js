@@ -144,3 +144,17 @@ test("coordinators: running the OC's favorite identity helps, one outside his sy
   assert.ok(coordFit({ ...t, defPkg: "base" }, "heavy").def < 0);
   assert.equal(coordFit({}, "heavy").off, 0, "no coordinator, no effect");
 });
+
+test("contract value by role: a SAM and a slot corner ask less than a MIKE and an outside corner of the same rating", async () => {
+  const { askingPrice } = await import("../src/offseason.js");
+  const sam = { ...thumper, age: 26, ovr: 84 }, mike = LB("m", "MIKE", { wt: 236, str: 75, spd: 85, cov: 72, shed: 76, ins: 90, zone: 86 });
+  const m = { ...mike, age: 26, ovr: 84 };
+  assert.ok(askingPrice(sam) < askingPrice(m) * 0.85, `${askingPrice(sam)} vs ${askingPrice(m)}`);
+  const { naturalRole } = await import("../src/roles.js");
+  const slotCB = { id: "n", pos: "CB", ovr: 84, age: 26, ht_: 69, agi: 95, acc: 95, spd: 89, jmp: 82, posAttrs: { zoneCov: 92, footwork: 92, playRec: 88, tackling: 85, manCov: 70, press: 55, recovery: 70, ballSkills: 70 } };
+  const outCB = { id: "o", pos: "CB", ovr: 84, age: 26, ht_: 74, agi: 84, acc: 88, spd: 95, jmp: 92, posAttrs: { zoneCov: 74, footwork: 75, playRec: 72, tackling: 60, manCov: 92, press: 90, recovery: 88, ballSkills: 86 } };
+  assert.deepEqual([naturalRole(slotCB), naturalRole(outCB)], ["NB", "OUT"]);
+  assert.ok(askingPrice(slotCB) < askingPrice(outCB));
+  const qb = { pos: "QB", ovr: 84, age: 26 };
+  assert.equal(askingPrice(qb), askingPrice({ ...qb }), "other positions unchanged");
+});

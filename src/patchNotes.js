@@ -1299,4 +1299,9 @@ export const PATCH_NOTES = [
     "It counts on game day. Running your coordinator's favorite is worth about +0.6 points a game, a set he likes +0.25, and one outside his system costs about half a point. A defense he believes in takes the same off the other team's offense. Auto always runs your DC's favorite.",
     "The Personnel tab shows what each coordinator wants and where you stand, with an OC'S FAVORITE or NOT OC'S SYSTEM chip on every option (DC chips on the defensive side). So swapping identities, or hiring a coordinator, is a real trade-off with your roster's best fit.",
   ] },
+  { v: "3.32", date: "2026-10-20", title: "Contract Value by Role", notes: [
+    "Contract value by role: the market now pays roles the way the NFL does. At the same rating, a SAM linebacker asks about 20% less than a MIKE, a WILL about 5% less, a nickel corner about 16% less than an outside corner, and a slot receiver about 8% less than an X or Z.",
+    "This applies to free agency, re-signings and extensions (existing deals don't change until they're up). So a good slot corner or SAM is a real bargain, and a team that plays a lot of base or 12 personnel can build cheaper.",
+    "Role tags on draft and free-agent lists show · $ on the bargain roles. Hover a tag to see how much less the market pays.",
+  ] },
 ];

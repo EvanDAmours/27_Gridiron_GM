@@ -6,6 +6,7 @@
 import { leagueCap, leagueMin, getLeagueYear } from "./cap.js";
 import { freshDeal, deadMoney, chargeDead, restructure } from "./bonus.js";
 import { retireAge } from "./retirement.js";
+import { rolePay } from "./roles.js";
 
 // A club releases a player into the pool. His remaining signing-bonus proration stays on its cap
 // as dead money, the same rule as your releases (AI cuts used to cost nothing, so by the late 2020s
@@ -177,7 +178,7 @@ export const marketRating = (p) => (p.ovr || 0) - (marketShift[p.pos] || 0);
 export const askingPrice = (p, cap = leagueCap()) => {
   const a = p.pos === "QB" ? p.age - 4 : p.age;
   const age = a >= 34 ? 0.5 : a >= 32 ? 0.7 : a >= 30 ? 0.85 : 1;
-  return +Math.max(cap * 0.0033, cap * (TOP_SHARE[p.pos] ?? 0.08) * curve(marketRating(p), p.pos) * age).toFixed(1);
+  return +Math.max(cap * 0.0033, cap * (TOP_SHARE[p.pos] ?? 0.08) * curve(marketRating(p), p.pos) * age * rolePay(p)).toFixed(1); // a SAM or slot corner costs less than a MIKE or outside corner
 };
 
 // The position a club most needs: furthest below its minimum, then the weakest starter.

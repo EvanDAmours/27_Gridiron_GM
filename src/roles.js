@@ -233,3 +233,9 @@ export function roleGrowth(posAttrs, rl, age) {
   for (const k of Object.keys(posAttrs)) if (typeof posAttrs[k] === "number") out[k] = w[k] ? adapt * w[k] * 9 : -adapt * 0.8;
   return { ...r, nudge: out };
 }
+
+// The market pays roles differently, as the NFL does: a SAM (a two-down linebacker) and a slot
+// corner earn well under an outside corner or a MIKE of the same rating; slot receivers a little
+// under outside ones. Applied to asking prices (offseason.js askingPrice).
+export const ROLE_PAY = { SAM: 0.8, MIKE: 1, WILL: 0.95, OUT: 1, NB: 0.84, X: 1, Z: 1, SLOT: 0.92 };
+export const rolePay = (p) => (["LB", "CB", "WR"].includes(p?.pos) ? ROLE_PAY[naturalRole(p)] ?? 1 : 1);
