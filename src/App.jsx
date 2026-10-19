@@ -151,7 +151,7 @@ import {
   PA, ACH_DEFS, AI_GM_NAMES, AI_GM_VOICE, PLAYS_POOL, LKR_EVENTS, pkV, genFace, qbRate, calcAV,
   genCombine, genProDay, combToPhys, growAttrs, SCREENS, gameClock, emptySS, tradeValue, REAL_ROOKIE_YRS, withRealPicks, tradeWireText,
   dlSlotsMigrate, withTradeValues, wholeScores, genPlayer, genDC, genRealDC, REAL_DC_YEARS, calibrateLeague, weeklyTick, matchupUnits, getTeamNeed, aiBestPick, draftNeeds, scGrade, MEDIA_HEADLINES, calcSOS,
-  realFA, initialFA, addPunters, reshapeDC, initTeams, genSched, simPG, teamStr, rollGameWeather, liveView, gameSetup, tickInjuries, applyGame,
+  realFA, initialFA, addPunters, reshapeDC, initTeams, genSched, simPG, teamStr, rollGameWeather, liveView, gameSetup, tickInjuries, applyGame, addPersonnelStats,
   simGame, OC_SCHEMES, DC_SCHEMES, POS_MARKET, glGrade, genCoach, newCoachPool, getOCFit, getDCFit, schemeRunPct, calcOffStr,
   calcDefStr, capHit, capSpace, sL, LIVE_SPEEDS, DRAFT_SPEEDS, clockTick, aiPickAt, DRAFT_CLOCK, setInjuries, injuriesEnabled, setUserLineup, setDifficultyAdj, REAL_OVR0,
   fitIncentive,
@@ -644,7 +644,7 @@ const _wireLog=useRef(null);
     const L=liveGameRef.current;if(!L)return;
     // The engine's full box score: season stats and injury checks for both teams.
     const nt=[...teams];
-    const bH=applyGame(nt[liveSim.h],L.hSnaps,L.g.box.h,!!liveSim.playoff),bA=applyGame(nt[liveSim.a],L.aSnaps,L.g.box.a,!!liveSim.playoff);
+    const bH=applyGame(nt[liveSim.h],L.hSnaps,L.g.box.h,!!liveSim.playoff),bA=applyGame(nt[liveSim.a],L.aSnaps,L.g.box.a,!!liveSim.playoff);addPersonnelStats(nt[liveSim.h],L.g.stats?.h);addPersonnelStats(nt[liveSim.a],L.g.stats?.a);
     liveGameRef.current=null;
     if(liveSim.playoff){simPR({h:liveSim.h,a:liveSim.a,hs:liveScore.h,as:liveScore.a,boxH:bH,boxA:bA});return;}
     const ns=[...sched];const gi=ns.findIndex(g=>!g.played&&g.h===liveSim.h&&g.a===liveSim.a&&g.wk===liveSim.wk);

@@ -150,3 +150,14 @@ test("the play-by-play names the matchup on big catches, and each play carries i
   for (let i = 0; i < 3; i++) { const r = simGame(T[i], T[i + 10], null, null, "clear", { dry: true, rec: true }); for (const e of r.game.pl) { plays++; if (/beating (the |CB1)/.test(e.x)) notes++; } }
   assert.ok(notes >= 3 && notes < plays * 0.2, `${notes} of ${plays}`);
 });
+
+test("personnel stats add up by grouping and package over a season", async () => {
+  const { initTeams, simGame, calibrateLeague, addPersonnelStats } = await import("../src/league.js");
+  const T = initTeams(-1); calibrateLeague(T);
+  for (let i = 1; i <= 3; i++) simGame(T[0], T[i], null, null, "clear", {});
+  const st = T[0].persSt, off = Object.values(st.off), def = Object.values(st.def);
+  assert.ok(off.reduce((t, r) => t + r.n, 0) > 150 && def.reduce((t, r) => t + r.n, 0) > 150);
+  for (const r of [...off, ...def]) assert.ok(r.ok <= r.n);
+  addPersonnelStats(T[0], { persY: { 11: { n: 1, yds: 5, ok: 1 } } }, st.yr + 1);
+  assert.deepEqual(T[0].persSt.off, { 11: { n: 1, yds: 5, ok: 1 } }, "a new season starts fresh");
+});

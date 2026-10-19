@@ -14,7 +14,7 @@ import { bestPlan, planEdge } from "./gamePlan.js";
 import { withHeadshot } from "./headshots.js";
 import { makeSide, createGame, playGame, setLeague, teamPersonnel, setPkgOff } from "./playsim.js";
 import { unitRatings, defUnits } from "./gamesim.js";
-import { DATA_TO_DOLLARS, leagueCap, expiringNow } from "./cap.js";
+import { DATA_TO_DOLLARS, leagueCap, expiringNow, getLeagueYear } from "./cap.js";
 import { teamSnaps } from "./snaps.js";
 import { roleNeeds, roleFit } from "./roleNeeds.js";
 import { REAL_STAFF, HC_RATING, HC_TRAIT, COORD } from "./data/realCoaches.js";
@@ -480,10 +480,18 @@ export function calibrateLeague(teams){
 // Each club's unit ratings for a matchup, from the lineup that would take the field (for the game
 // plan screen; gameSetup builds the same).
 export function matchupUnits(ht,at){const _ord=t=>{const _healthy=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const _dO=t.isUser?USER_DEPTH:{};const _pt=t.isUser?USER_SNAPS:null;const memo={};return pos=>memo[pos]||(memo[pos]=depthOrderFor(_healthy,_dO,pos,_pt));};const oh=_ord(ht),oa=_ord(at);return{mine:unitRatings(oh,teamPersonnel(ht,oh)),theirs:unitRatings(oa,teamPersonnel(at,oa))};}
+// A club's season personnel stats (Stats screen): its offense by grouping and its defense by
+// package, added up game by game. st: the game's stats for its side (playsim persY / pkgY).
+export function addPersonnelStats(t,st,yr=getLeagueYear()){
+  if(!t||!st)return;if(!t.persSt||t.persSt.yr!==yr)t.persSt={yr,off:{},def:{}};
+  const add=(dst,src)=>{for(const[k,r]of Object.entries(src||{})){const d=(dst[k]||={n:0,yds:0,ok:0});d.n+=r.n;d.yds+=r.yds;d.ok+=r.ok;}};
+  add(t.persSt.off,st.persY);add(t.persSt.def,st.pkgY);
+}
 export function simGame(ht,at,hPlan,aPlan,wxOverride,opts={}){
   const su=gameSetup(ht,at,hPlan,aPlan,wxOverride);
   const g=playGame(createGame(su.home,su.away,{playoff:!!opts.playoff,neutral:!!opts.neutral,rec:!!opts.rec}));
   if(opts.dry)return{hsc:g.score.h,asc:g.score.a,boxH:g.box.h,boxA:g.box.a,wx:su.wx,game:g};
+  addPersonnelStats(ht,g.stats.h);addPersonnelStats(at,g.stats.a);
   return{hsc:g.score.h,asc:g.score.a,boxH:applyGame(ht,su.hSnaps,g.box.h,!!opts.playoff),boxA:applyGame(at,su.aSnaps,g.box.a,!!opts.playoff),wx:su.wx,...(g.pl?{game:g}:{})};
 }
 // ═══════════ SCOUTS ═══════════

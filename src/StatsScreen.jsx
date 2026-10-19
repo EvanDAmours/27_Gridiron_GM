@@ -73,6 +73,44 @@ function AwardRaces({ teams, ui, yr, onPlayer, mobile }) {
   );
 }
 
+// A club's personnel season (league.js addPersonnelStats): its offense in each grouping and its
+// defense against each package: how often, yards a snap, and the share of successful snaps, each
+// beside the league's rate so the good and the bad stand out.
+const PERS_NAME = { 10: "1 RB · 4 WR", 11: "1 RB · 1 TE · 3 WR", 12: "1 RB · 2 TE · 2 WR", 13: "1 RB · 3 TE · 1 WR", 21: "2 RB · 1 TE · 2 WR" };
+function PersonnelStats({ team, teams, mobile }) {
+  const st = team.persSt;
+  if (!st || !Object.keys(st.off || {}).length) return null;
+  const league = (side) => { const o = {}; for (const t of teams) if (t.persSt?.yr === st.yr) for (const [k, r] of Object.entries(t.persSt[side] || {})) { const d = (o[k] ||= { n: 0, yds: 0, ok: 0 }); d.n += r.n; d.yds += r.yds; d.ok += r.ok; } return o; };
+  const L = { off: league("off"), def: league("def") };
+  const Table = ({ side, title, keys, name, good }) => {
+    const rows = keys.filter((k) => st[side][k]?.n), tot = rows.reduce((t, k) => t + st[side][k].n, 0);
+    const cell = (v, lg, hi) => { const d = v - lg, c = Math.abs(d) < (hi ? 0.03 : 0.25) ? "#e2e8f0" : (d > 0) === good ? "#4ade80" : "#f87171"; return <span style={{ color: c, fontWeight: 800 }}>{hi ? `${Math.round(v * 100)}%` : v.toFixed(1)}</span>; };
+    const th = { fontSize: 11, fontWeight: 900, letterSpacing: 0.8, color: C.mt, textAlign: "right", padding: "4px 6px" };
+    return (
+      <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "10px 12px", minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.2, color: C.gd, marginBottom: 4 }}>{title}</div>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead><tr><th style={{ ...th, textAlign: "left" }}>{side === "off" ? "GROUPING" : "PACKAGE"}</th><th style={th}>SNAPS</th><th style={th}>YDS/PLAY</th><th style={th}>SUCCESS</th></tr></thead>
+          <tbody>{rows.map((k) => { const r = st[side][k], lg = L[side][k] || r; return (
+            <tr key={k}><td style={{ padding: "5px 6px", fontSize: 14, fontWeight: 800 }}>{side === "off" ? k : k[0].toUpperCase() + k.slice(1)}{!mobile && side === "off" && <span style={{ fontSize: 11, color: C.mt, fontWeight: 600, marginLeft: 6 }}>{name[k]}</span>}</td>
+              <td style={{ padding: "5px 6px", fontSize: 14, textAlign: "right" }}>{Math.round((r.n / tot) * 100)}%</td>
+              <td style={{ padding: "5px 6px", fontSize: 14, textAlign: "right" }}>{cell(r.yds / r.n, lg.yds / lg.n, false)} <span style={{ fontSize: 11, color: C.mt }}>/ {(lg.yds / lg.n).toFixed(1)}</span></td>
+              <td style={{ padding: "5px 6px", fontSize: 14, textAlign: "right" }}>{cell(r.ok / r.n, lg.ok / lg.n, true)} <span style={{ fontSize: 11, color: C.mt }}>/ {Math.round((lg.ok / lg.n) * 100)}%</span></td></tr>); })}</tbody>
+        </table>
+      </div>
+    );
+  };
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 13, color: C.mt, marginBottom: 6 }}>Personnel this season: the club's numbers, then the league's (after the slash). Success: a snap that gains 40% of the yards needed on first down, 60% on second, all of them on third and fourth.</div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${mobile ? 280 : 360}px,1fr))`, gap: 8 }}>
+        <Table side="off" title="OFFENSE BY GROUPING" keys={["11", "12", "21", "13", "10"]} name={PERS_NAME} good />
+        <Table side="def" title="DEFENSE BY PACKAGE (allowed)" keys={["base", "nickel", "dime"]} name={{}} good={false} />
+      </div>
+    </div>
+  );
+}
+
 export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) {
   const me = teams[ui];
   const [scope, setScope] = useState("league"); // league | AFC | NFC | div | team:<id>
@@ -113,6 +151,7 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
             <TeamLogo t={team} sz={40} glow />
             <div><div style={{ fontSize: 20, fontWeight: 900 }}>{team.city} {team.name}</div><div style={{ fontSize: 13, color: C.mt }}>Leader at every position · {team.w}-{team.l}{team.t ? `-${team.t}` : ""}</div></div>
           </div>
+          <PersonnelStats team={team} teams={teams} mobile={mobile} />
           <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill,minmax(${mobile ? 260 : 300}px,1fr))`, gap: 8, marginBottom: 16 }}>
             {POS_LEAD.map(([pos, val, line]) => {
               const best = players.filter((x) => x.p.pos === pos && val(x.p.ss) > 0).sort((a, b) => val(b.p.ss) - val(a.p.ss))[0];

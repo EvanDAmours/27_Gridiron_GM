@@ -51,6 +51,15 @@ const TK = { DL: [0.07, 0.07, 0.06, 0.06, 0.03, 0.02], LB: [0.14, 0.12, 0.08, 0.
 const ROLE_TGT = { X: 0.21, Z: 0.2, SLOT: 0.2, WR4: 0.14, TE1: 0.19, TE2: 0.12, TE3: 0.06, FB: 0.05 };
 const ROLE_TK = { SAM: 0.11, MIKE: 0.14, WILL: 0.12, CB1: 0.07, CB2: 0.06, NB: 0.07, CB4: 0.03 };
 const WR_ROLES = ["X", "Z", "SLOT", "WR4"];
+// Personnel stats: for each offense, every grouping it played (snaps, yards, successful snaps: 40%
+// of the yards needed on first down, 60% on second, all of them on third and fourth); for each
+// defense, the same against each package it played.
+function persLog(g, off, def, pers, pkg, yards, ok) {
+  const add = (o, k) => { const r = (o[k] ||= { n: 0, yds: 0, ok: 0 }); r.n++; r.yds += yards; if (ok) r.ok++; };
+  if (g.stats?.[off]) add((g.stats[off].persY ||= {}), pers);
+  if (g.stats?.[def]) add((g.stats[def].pkgY ||= {}), pkg);
+}
+
 // The play-by-play names the matchup when it decided the play: a big catch, or a mismatch.
 const COVER_NAME = { SAM: "the SAM", MIKE: "the MIKE", WILL: "the WILL", CB1: "CB1", CB2: "the No. 2 corner", NB: "the nickel" };
 const SPOT = { SLOT: " in the slot", TE1: "", TE2: "", RB: " out of the backfield", FB: " out of the backfield" };
@@ -625,6 +634,7 @@ function stepPlay(g, call, bonus = 1) {
         type = "int"; desc = `${qb?.name || "QB"}'s pass is INTERCEPTED${db ? ` by ${db.name}` : ""}!`;
         const ret = Math.round(clamp(expo(rand, 9), 0, 60));
         ev.turnover = true; ev.player = db; ev.defPlay = true;
+        persLog(g, off, def, pers, pkg, 0, false);
         ev.type = type; ev.text = desc;
         ev.note = tick(g, 6);
         if (!g.done) newPossession(g, 100 - g.yard - Math.round(8 + rand() * 12) + ret);
@@ -673,6 +683,9 @@ function stepPlay(g, call, bonus = 1) {
     desc = `${carrier?.name || "Runner"} ${keeper ? "keeps it" : outside ? "bounces outside" : edgeRun ? ["off left tackle", "off right tackle", "around left end", "around right end"][Math.floor(rand() * 4)] : ["up the middle", "inside", "up the middle"][Math.floor(rand() * 3)]} for ${yards}${edgeRun && !keeper && yards >= 9 && !sam && nb ? `, getting outside the nickel, ${last(nb)}` : edgeRun && !keeper && yards <= 0 && sam ? `, the SAM ${last(sam)} sets the edge` : !edgeRun && !keeper && yards <= 0 && mike ? `, ${last(mike)} fills the hole` : ""}.`;
     if (yards < 0) { const t = pickW(rand, dP.tackleW); if (t) add(line(g, def, t), "tfl", 1); }
   }
+
+  // each snap's grouping and package, and how it went (personnel stats)
+  persLog(g, off, def, pers, pkg, yards, !ev.turnover && type !== "fumble" && yards >= (g.down === 1 ? 0.4 : g.down === 2 ? 0.6 : 1) * g.toGo);
 
   // Ball carrier: yardage, touchdowns, fumbles, tackles.
   if (type === "run" || type === "pass") {

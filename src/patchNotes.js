@@ -1266,4 +1266,8 @@ export const PATCH_NOTES = [
     "Live games show each play's personnel against the defense's package in the last-play header (\"12 PERSONNEL vs BASE\"), so you can watch your identity at work.",
     "Run descriptions now match where the run went (off tackle and around the end on the edge, up the middle inside).",
   ] },
+  { v: "3.25", date: "2026-10-20", title: "By the Numbers", notes: [
+    "Personnel stats: Stats → My team (or any team) now shows the season by personnel. Offense by grouping (11, 12, 21, 13, 10): how often, yards a play and success rate. Defense by package (base, nickel, dime): the same, allowed. Each number sits next to the league's, green when it's better and red when it's worse, so you can see which groupings are working and where the defense is getting hurt.",
+    "Success is the standard measure: a snap that gains 40% of the yards needed on first down, 60% on second, and all of them on third and fourth. Counted in simmed and live games alike.",
+  ] },
 ];
