@@ -1406,4 +1406,7 @@ export const PATCH_NOTES = [
     "Every touchdown pops a holiday piece onto the field: a jack-o'-lantern, a football with an autumn leaf, a golden ornament or a firework burst.",
     "The intros open with the holiday's hero art flanked by two more pieces sliding in. The result card has art pinned to its corners, and the holiday badge carries the art too.",
   ] },
+  { v: "3.55", date: "2026-10-20", title: "Light Snow Matches Heavy Snow", notes: [
+    "Light snow now matches heavy snow. It's a lighter version of the same snowfall: drifts collect along the sidelines, in the end zones and around the plowed yard-number boxes, and the middle of the field, where the players run, stays mostly clear. The odd white strips and scattered blobs are gone.",
+  ] },
 ];

@@ -34,7 +34,7 @@ const WX_CSS = `@keyframes lfRain { from { transform: translate(0, -30px) } to {
 const BASE = import.meta.env?.BASE_URL ?? "/";
 // where each overlay sits on the field, [x, y, width, height]: full field unless the art was drawn
 // on a tighter canvas (heavy snow: its cleared lanes measured against the yard numbers)
-const PLACE = { heavySnow: [-12.7, -46.4, 825, 456] };
+const PLACE = { heavySnow: [-12.7, -46.4, 825, 456], lightSnow: [-12.7, -46.4, 825, 456] };
 function Ground({ wx, kind }) {
   if (!wx.rain && !wx.snow) return null;
   return (
