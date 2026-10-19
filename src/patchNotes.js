@@ -1294,4 +1294,9 @@ export const PATCH_NOTES = [
     "Rival papers: lose badly and you'll read about it. After a loss by 17 or more, or by a touchdown or more to a division rival, the winner's hometown paper runs its own front page (The Dallas Courier, The Philadelphia Clarion and so on) with its own masthead, headline, columnist and a jab or two at your front office.",
     "It lands in your inbox and is kept in the Legacy Hall's Gazette archive with the rest, under RIVAL PAPER, in case you want a reminder.",
   ] },
+  { v: "3.31", date: "2026-10-20", title: "Coordinator Preferences", notes: [
+    "Coordinators have a preferred identity. A Power Run OC wants Heavy (and is fine with Fullback or Two TE). Air Raid wants Spread. A Spread OC wants Spread or Balanced. West Coast wants Balanced, Two TE or Fullback. On defense, a 3-4 DC wants Base, a 4-3 DC Match, Cover 2 Nickel, and Zone Blitz Match.",
+    "It counts on game day. Running your coordinator's favorite is worth about +0.6 points a game, a set he likes +0.25, and one outside his system costs about half a point. A defense he believes in takes the same off the other team's offense. Auto always runs your DC's favorite.",
+    "The Personnel tab shows what each coordinator wants and where you stand, with an OC'S FAVORITE or NOT OC'S SYSTEM chip on every option (DC chips on the defensive side). So swapping identities, or hiring a coordinator, is a real trade-off with your roster's best fit.",
+  ] },
 ];

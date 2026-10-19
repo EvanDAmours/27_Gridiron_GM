@@ -18,6 +18,7 @@ import { unitRatings, defUnits } from "./gamesim.js";
 import { DATA_TO_DOLLARS, leagueCap, expiringNow, getLeagueYear } from "./cap.js";
 import { teamSnaps } from "./snaps.js";
 import { roleNeeds, roleFit } from "./roleNeeds.js";
+import { coordFit } from "./personnel.js";
 import { REAL_STAFF, HC_RATING, HC_TRAIT, COORD } from "./data/realCoaches.js";
 import { HC_TRAIT_NAMES, hcGameEdge } from "./headCoach.js";
 import { nflSchedule, divisionPlaces } from "./schedule.js";
@@ -418,6 +419,8 @@ const wx=wxOverride||rollGameWeather();
   const _trans=t=>(t._schemeTransWks||0)>0?-2:0;
   let hMod=_trans(ht)+hOC-aDC+hFit*.5+_pe.h+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+((hPlan?.playbook?.length||0)>=3?1:0)+_hClash+hHC+(ht.isUser?_dda:0);
   let aMod=_trans(at)+aOC-hDC+aFit*.5+_pe.a+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+((aPlan?.playbook?.length||0)>=3?1:0)+_aClash-hHC+(at.isUser?_dda:0);
+  // coordinators running what they believe in (personnel.js coordFit): a little for the offense, a little off the other side's
+  {const hc=coordFit(ht,hP.offSet),ac=coordFit(at,aP.offSet);hMod+=hc.off-ac.def;aMod+=ac.off-hc.def;}
   const hSnaps=teamSnaps(hOrd,ht.isUser?USER_SNAPS:{},hP.shape),aSnaps=teamSnaps(aOrd,at.isUser?USER_SNAPS:{},aP.shape);
   // who started at which role (SAM, nickel, slot...), kept off the snap list itself
   const _roles=(snaps,ord)=>{const r={};for(const pos of Object.keys(ROLE_SLOTS))ord(pos).slice(0,3).forEach((p,i)=>{r[p.id]=ROLE_SLOTS[pos][i];});Object.defineProperty(snaps,"roles",{value:r,enumerable:false});};_roles(hSnaps,hOrd);_roles(aSnaps,aOrd);

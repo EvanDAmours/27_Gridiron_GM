@@ -173,3 +173,17 @@ export function sitPkg(sit, s) {
   if (s.long && sit.longD && sit.longD !== "auto") return sit.longD;
   return null;
 }
+
+// What each coordinator wants to run. His favorite identity first, then the ones he's comfortable
+// in. Running his favorite gets the most out of him; a set he doesn't believe in costs a little
+// (the calls, the practice reps and the install all fight it).
+export const OC_PREFS = { "Power Run": ["heavy", "fullback", "twoTE"], "Air Raid": ["spread", "balanced"], Spread: ["spread", "balanced"], "West Coast": ["balanced", "twoTE", "fullback"] };
+export const DC_PREFS = { "3-4": ["base", "match"], "4-3": ["match", "base"], "Cover 2": ["nickel", "match"], "Zone Blitz": ["match", "nickel"] };
+const fitPts = (prefs, key) => (!prefs ? 0 : prefs[0] === key ? 0.6 : prefs.includes(key) ? 0.25 : -0.5);
+// offSet: the identity the offense actually runs (auto resolved). Points: off for the club's own
+// offense, def taken off the opponent's.
+export function coordFit(team, offSet) {
+  const oc = team?.coach?.oc?.scheme, dc = team?.coach?.dc?.scheme;
+  const dKey = team?.defPkg && team.defPkg !== "auto" ? team.defPkg : DC_PREFS[dc]?.[0]; // auto: his call
+  return { off: fitPts(OC_PREFS[oc], offSet), def: fitPts(DC_PREFS[dc], dKey), ocWants: OC_PREFS[oc]?.[0], dcWants: DC_PREFS[dc]?.[0], ocOk: OC_PREFS[oc] || [], dcOk: DC_PREFS[dc] || [] };
+}

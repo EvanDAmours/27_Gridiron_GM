@@ -134,3 +134,13 @@ test("games record which role each starter played", async () => {
   const roles = new Set(lbs.flatMap((p) => Object.keys(p.ss.rl)));
   for (const r of ["SAM", "MIKE", "CB1", "NB", "X", "SLOT"]) assert.ok(roles.has(r), `${r} in ${[...roles]}`);
 });
+
+test("coordinators: running the OC's favorite identity helps, one outside his system costs; auto defense is the DC's call", async () => {
+  const { coordFit } = await import("../src/personnel.js");
+  const t = { coach: { oc: { scheme: "Power Run" }, dc: { scheme: "Cover 2" } } };
+  assert.ok(coordFit(t, "heavy").off > 0.5 && coordFit(t, "spread").off < 0);
+  assert.ok(coordFit(t, "twoTE").off > 0 && coordFit(t, "twoTE").off < 0.5);
+  assert.ok(coordFit(t, "heavy").def > 0.5, "auto: he plays his nickel");
+  assert.ok(coordFit({ ...t, defPkg: "base" }, "heavy").def < 0);
+  assert.equal(coordFit({}, "heavy").off, 0, "no coordinator, no effect");
+});
