@@ -199,7 +199,7 @@ export const ringCandidates = (retired, team, hall) => (retired || []).filter((r
 const ACCOLADES = [
   ["sb", "🏆", "Super Bowl"], ["mvp", "🏅", "MVP"], ["sbmvp", "🏟️", "Super Bowl MVP"], ["opoy", "⭐", "Off. Player of the Year"],
   ["dpoy", "🛡️", "Def. Player of the Year"], ["oroy", "🌱", "Off. Rookie of the Year"], ["droy", "🌱", "Def. Rookie of the Year"],
-  ["ap1", "🥇", "First-team All-Pro"], ["ap2", "🥈", "Second-team All-Pro"], ["pb", "🎖️", "Pro Bowl"],
+  ["ap1", "🥇", "First-team All-Pro"], ["ap2", "🥈", "Second-team All-Pro"], ["pb", "🎖️", "Pro Bowl"], ["potw", "📣", "Player of the Week"],
 ];
 export function accoladesOf(p, { awards = [], champs = [], teams = [], yr, teamAb } = {}) {
   if (!p) return [];
@@ -212,11 +212,13 @@ export function accoladesOf(p, { awards = [], champs = [], teams = [], yr, teamA
     for (const k of ["ap1", "ap2", "pb"]) if (flat(a?.honors?.[k]).some((h) => h?.pid === p.id)) add(k, a.yr);
   }
   for (const h of Array.isArray(p.honors) ? p.honors : []) if (h?.k && h.yr) add(h.k, h.yr);
+  // Player of the Week: every week counts, so each one is its own entry ("2027 wk 5")
+  for (const w of Array.isArray(p.potw) ? p.potw : []) if (w?.y) (got.potw ||= []).push(`${w.y} wk ${w.w}`);
   // rings: his club in each season (his season lines), and this season's club
   const clubIn = new Map((p.sh || []).map((s) => [s.y, s.tm]));
   if (teamAb && (p.ss?.gp || 0) > 0) clubIn.set(yr, teamAb);
   for (const c of champs) { const ab = teams[c.ti]?.ab; if (ab && clubIn.get(c.yr) === ab) add("sb", c.yr); }
-  return ACCOLADES.filter(([k]) => got[k]?.length).map(([k, icon, label]) => ({ k, icon, label, years: got[k].sort((a, b) => a - b) }));
+  return ACCOLADES.filter(([k]) => got[k]?.length).map(([k, icon, label]) => ({ k, icon, label, years: k === "potw" ? got[k] : got[k].sort((a, b) => a - b) }));
 }
 
 // After a week: has anyone taken over his club's all-time lead in a stat? book.cc holds the league

@@ -220,9 +220,12 @@ export function topEndNudge(age, ovr, n95, rand = Math.random) {
 // point into the low 90s, 66% from 94 up). At 45% for the last three points the league's 99s aged
 // out faster than new ones arrived (ten in year three, one or two by year ten), so the top end
 // stays stocked at about the 2026 count instead.
-export function eliteTaper(before, after, rand = Math.random) {
+// rising: a young player (27 or under) still short of his ceiling climbs from 93 up at 80% a point.
+// Without it the league's young stars stalled in the low 90s and the 95+ club aged out (40 at the
+// start, 27 twenty years on, only three of them 25 or under).
+export function eliteTaper(before, after, rand = Math.random, rising = false) {
   if (after <= before || after <= 89) return after;
   let v = Math.max(before, 89);
-  for (let x = v + 1; x <= after; x++) { if (rand() < (x >= 94 ? 0.66 : 0.6)) v = x; else break; }
+  for (let x = v + 1; x <= after; x++) { if (rand() < (rising && x >= 93 ? 0.8 : x >= 94 ? 0.66 : 0.6)) v = x; else break; }
   return Math.max(before, v);
 }

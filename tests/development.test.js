@@ -143,3 +143,12 @@ test("the top end holds steady: a thin league nudges young stars up, a full one 
   assert.equal(topEndNudge(25, 84, 10, always), 84, "only near the top");
   assert.equal(topEndNudge(25, 99, 10, always), 99, "never past 99");
 });
+
+test("a rising young star climbs past 93 more easily than a veteran", async () => {
+  const { eliteTaper } = await import("../src/development.js");
+  const seq = (xs) => { let i = 0; return () => xs[i++ % xs.length]; };
+  // every roll 0.7: a veteran doesn't make it to 93 (60%), a rising player goes all the way (80% from 93)
+  assert.equal(eliteTaper(92, 96, seq([0.7])), 92);
+  assert.equal(eliteTaper(92, 96, seq([0.7]), true), 96);
+  assert.equal(eliteTaper(80, 88, seq([0.99]), true), 88, "below 90 nothing is tapered");
+});

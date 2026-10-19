@@ -1192,4 +1192,10 @@ export const PATCH_NOTES = [
     "The top of the league stays stocked: over long careers the 95+ and 99 club thinned out as the 2026 stars retired (forty 95s down to the low twenties, one to four 99s). Climbing the last few points to 99 is a little easier, and when the league is short of elite players, young stars near the top break through a bit more often.",
     "Calmer pop-ups: players becoming loyal no longer throw a stack of cards over the screen; it's one line in your news. Injuries from a game show as one small card (tap it to close) instead of up to four.",
   ] },
+  { v: "3.12", date: "2026-10-20", title: "Players of the Week", notes: [
+    "Players of the Week: after every regular-season week the league names the best offensive and defensive game in each conference, from the real box scores (a win counts a little extra). They lead the week's stories when one is yours, and every award goes on the player's card (📣 Player of the Week, with the weeks).",
+    "Every club starts the season under the cap. AI clubs could keep a star they couldn't afford and stay over all year (in a 2039 test league twelve were over, the Chiefs by $54M). Now an over-the-cap club restructures its biggest deals first, then releases its most overpaid veteran, never a franchise player. Cap casualties show up on the Transactions page.",
+    "Young stars break through: a player 27 or under who hasn't reached his ceiling now climbs from 93 up much more readily. In a 20-season test the 95+ club still thinned to the high twenties, with only three of them 25 or younger.",
+    "Desktop: in season the top bar uses short names a little sooner, so the last screen isn't hidden behind Play Week and Sim Week.",
+  ] },
 ];

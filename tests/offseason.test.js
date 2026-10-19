@@ -151,3 +151,23 @@ test("an in-season promotion never takes a club past 53", async () => {
   assert.equal(t.roster.length, 53);
   assert.ok(t.roster.some((p) => p.id === "QB9"), "the backup quarterback came up");
 });
+
+test("an AI club over the cap restructures first, then cuts veterans, and never its franchise player", async () => {
+  const { capCompliance } = await import("../src/offseason.js");
+  const cap = 300;
+  const space = (t) => cap - t.roster.reduce((s, p) => s + (p.salary || 0), 0) - (t.deadCap || 0);
+  const filler = (n, sal) => Array.from({ length: n }, (_, k) => ({ id: `f${k}`, pos: "WR", ovr: 60, age: 25, salary: sal, contract: 1, cy: 2030 }));
+  // over by 20, but with long deals: restructures cover it
+  const a = { roster: [{ id: "q", pos: "QB", ovr: 92, age: 27, salary: 60, contract: 4, cy: 2030 }, { id: "w", pos: "WR", ovr: 88, age: 28, salary: 40, contract: 4, cy: 2030 }, ...filler(50, 4.4)] };
+  // over by 30 on one-year deals: a veteran goes, the young star stays
+  const b = { roster: [{ id: "s", pos: "QB", ovr: 93, age: 25, salary: 70, contract: 1, cy: 2030 }, { id: "v", pos: "DL", ovr: 82, age: 33, salary: 45, contract: 1, cy: 2030 }, ...filler(50, 4.3)] };
+  const mine = { roster: [{ id: "m", pos: "QB", ovr: 80, age: 30, salary: 400, contract: 1, cy: 2030 }] };
+  const pool = [];
+  const moves = capCompliance([a, b, mine], pool, 2, { capSpace: space, yr: 2030, sp: "preseason", minSal: 1 });
+  assert.ok(space(a) >= 0 && space(b) >= 0, `${space(a)} ${space(b)}`);
+  assert.ok(moves.some((m) => m.team === 0 && m.how === "restructure"));
+  assert.ok(!moves.some((m) => m.team === 0 && m.how === "release"), "restructures were enough");
+  assert.ok(b.roster.some((p) => p.id === "s"), "the young star stays");
+  assert.ok(pool.some((p) => p.id === "v"), "the expensive veteran is the cap casualty");
+  assert.equal(mine.roster.length, 1, "your club is yours to fix");
+});

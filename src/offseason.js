@@ -4,7 +4,7 @@
 // ever invented here.
 
 import { leagueCap, leagueMin, getLeagueYear } from "./cap.js";
-import { freshDeal, deadMoney, chargeDead } from "./bonus.js";
+import { freshDeal, deadMoney, chargeDead, restructure } from "./bonus.js";
 import { retireAge } from "./retirement.js";
 
 // A club releases a player into the pool. His remaining signing-bonus proration stays on its cap
@@ -431,4 +431,37 @@ export function keepBackups(teams, fa, { ui, minSal = leagueMin() } = {}) {
     }
   });
   return mine;
+}
+
+// ---------- Cap compliance ----------
+// Every club has to be under the cap when the season starts. Keeping a franchise player can push an
+// AI club over in re-sign week (it tags him and sorts the cap out later), and in a 2039 test league
+// twelve clubs opened the season over, the Chiefs by $54M. An AI club over the cap does what real
+// clubs do: restructures its biggest deals first (up to four), then releases veterans whose cut
+// saves the most room over his market value, never a franchise player and never below 46 players. Mutates the teams
+// (pool gets the released players); returns [{ team, p, how: "restructure" | "release", saved }].
+export function capCompliance(teams, pool, ui, { capSpace, yr, sp = "preseason", minSal = leagueMin() } = {}) {
+  const moves = [];
+  teams.forEach((t, i) => {
+    if (i === ui || capSpace(t) >= 0) return;
+    const big = [...t.roster].sort((a, b) => (b.salary || 0) - (a.salary || 0));
+    for (const p of big.slice(0, 8)) {
+      if (capSpace(t) >= 0 || moves.filter((m) => m.team === i && m.how === "restructure").length >= 4) break;
+      const r = restructure(p, { yr, sp, minSal });
+      if (!r || r.plan.saved < 1) continue;
+      t.roster[t.roster.indexOf(p)] = r.p;
+      moves.push({ team: i, p: r.p, how: "restructure", saved: r.plan.saved });
+    }
+    const saves = (p) => (p.salary || 0) - deadMoney(p, { yr, sp }).now;
+    while (capSpace(t) < 0 && t.roster.length > 46) {
+      // the most overpaid first (what a cut saves over what he'd cost on the market), veterans ahead
+      const over = (p) => saves(p) - askingPrice(p) + (p.age >= 30 ? 2 : 0);
+      const cut = t.roster.filter((p) => !isFranchisePlayer(p) && saves(p) > 0).sort((a, b) => over(b) - over(a))[0];
+      if (!cut) break;
+      const saved = saves(cut);
+      release(t, cut, pool, i);
+      moves.push({ team: i, p: cut, how: "release", saved: +saved.toFixed(1) });
+    }
+  });
+  return moves;
 }

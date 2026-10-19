@@ -91,7 +91,7 @@ function measure(d) {
     yr: d.yr, players: all.length, avgOvr: +mean(all.map((p) => p.ovr)).toFixed(1), starterOvr: +mean(starters.map((p) => p.ovr)).toFixed(1),
     n90: all.filter((p) => p.ovr >= 90).length, n95: all.filter((p) => p.ovr >= 95).length, n99: all.filter((p) => p.ovr >= 99).length,
     minRoster: Math.min(...ai.map((t) => t.roster.length)), maxRoster: Math.max(...ai.map((t) => t.roster.length)),
-    overCap: ai.filter((t) => capOf(t) > (d.capCur || 1e9)).length, avgDead: +mean(ai.map((t) => t.deadCap || 0)).toFixed(1), maxDead: +Math.max(...ai.map((t) => t.deadCap || 0)).toFixed(1),
+    overCap: ai.filter((t) => capOf(t) > capFor(d.yr)).length, maxOver: +Math.max(0, ...ai.map((t) => capOf(t) - capFor(d.yr))).toFixed(1), avgDead: +mean(ai.map((t) => t.deadCap || 0)).toFixed(1), maxDead: +Math.max(...ai.map((t) => t.deadCap || 0)).toFixed(1),
     thinTeams: thin, olDepth: +olDepth.toFixed(1), noP: ai.filter((t) => !t.roster.some((p) => p.pos === "P")).length,
     rookieSnapPct: { r1: byRd(1), r2: byRd(2), r3: byRd(3), r4_7: (() => { const xs = rk.filter((p) => p.draftPk > 96).map((p) => p.cs?.snp || 0); return xs.length ? Math.round(mean(xs) / 17) : null; })() },
     // how many players rate 80+ (more over time = rating inflation) and what an 80-84 WR is paid, as % of the cap
