@@ -204,6 +204,21 @@ export function HolidayScoreTrim({ holiday, children }) {
 // The week's gameday card on a holiday: a glow in the holiday's colors, the scoreboard trim along
 // its top, the holiday's characters on two corners, its weather (snow, leaves, bats, confetti)
 // drifting across the card, and the holiday's name. Children: the card.
+// One end of the score-bar art, cut out and pinned to a card corner at a fixed size, so it sits
+// on the corner however wide the card is. BAR_ENDS: each end's box in the 1800 x 120 art; drop:
+// how much of the piece hangs above the card's top edge (New Year's bows hang from the knot).
+const BAR_ENDS = { newyear: { L: [144, 306], R: [1493, 1655], drop: 0.3 }, christmas: { L: [91, 357], R: [1442, 1706] }, halloween: { L: [140, 308], R: [1493, 1656] }, thanksgiving: { L: [72, 377], R: [1424, 1724] } };
+function BarCorner({ holiday, side, h }) {
+  const e = BAR_ENDS[themeOf(holiday)];
+  if (!e) return null;
+  const [x0, x1] = e[side], y0 = 4, k = h / (86 - y0), w = (x1 - x0 + 1) * k;
+  return (
+    <div className="at-deco" style={{ position: "absolute", top: -h * (e.drop ?? 0.5), [side === "L" ? "left" : "right"]: -h * 0.12, width: w, height: h, overflow: "hidden", pointerEvents: "none", zIndex: 3 }}>
+      <img alt="" src={holArt(holiday, "bar")} style={{ position: "absolute", left: -x0 * k, top: -y0 * k, width: 1800 * k, height: 120 * k, maxWidth: "none" }} />
+    </div>
+  );
+}
+
 export function HolidayCard({ holiday, children }) {
   const h = HOLIDAYS[holiday];
   if (!h) return children;
@@ -215,7 +230,7 @@ export function HolidayCard({ holiday, children }) {
         {children}
         <Sky holiday={holiday} contained density={0.45} z={2} />
       </div>
-      <img alt="" src={holArt(holiday, "bar")} className="at-deco" style={{ position: "absolute", left: 0, top: 0, width: "100%", aspectRatio: "15 / 1", transform: "translateY(-48%)", pointerEvents: "none", zIndex: 3 }} />
+      {["L", "R"].map((side) => <BarCorner key={side} holiday={holiday} side={side} h={MOBILE ? 34 : 64} />)}
       {!MOBILE && <img alt="" src={sticker(holiday, a.hero)} className="at-deco hol-corner" style={{ position: "absolute", left: MOBILE ? -8 : -22, bottom: MOBILE ? -12 : -18, width: MOBILE ? 56 : 92, transform: "rotate(-8deg)", filter: "drop-shadow(0 8px 14px #000b)", pointerEvents: "none", zIndex: 3, animation: "atBob 4.5s ease-in-out infinite" }} />}
       {!MOBILE && <img alt="" src={sticker(holiday, a.side[1])} className="at-deco hol-corner" style={{ position: "absolute", right: MOBILE ? -6 : -18, bottom: MOBILE ? -10 : -16, width: MOBILE ? 46 : 74, transform: "rotate(10deg)", filter: "drop-shadow(0 8px 14px #000b)", pointerEvents: "none", zIndex: 3, animation: "atDrift 5.5s ease-in-out infinite" }} />}
       <div style={{ position: "absolute", left: "50%", top: 0, transform: "translate(-50%, -55%)", zIndex: 4 }}><HolidayBadge holiday={holiday} style={{ fontSize: MOBILE ? 12 : 14, padding: "4px 12px 4px 6px", boxShadow: `0 4px 14px ${h.c1}66` }} /></div>

@@ -1433,4 +1433,7 @@ export const PATCH_NOTES = [
     "Removed an old weather roll the game no longer used (game weather comes from each city's climate), an unused difficulty setting that had no menu, and two stadium bonuses that only ever applied to your team and could no longer be earned. Unused code and an unused player-art file were removed too.",
     "A personnel-stats check that now and then failed on a slow, run-heavy simulated game is steadier, so builds don't stall on it.",
   ] },
+  { v: "3.62", date: "2026-10-20", title: "Holiday Ribbons", notes: [
+    "The holiday trim on the home screen's gameday card now sits on the card's corners at any screen size. On wide screens the New Year's ribbons used to float above the card, up by the week title; now each bow ties onto a corner with its ribbons hanging over the card. The Christmas garland, Halloween webs and Thanksgiving harvest sit on the corners the same way.",
+  ] },
 ];
