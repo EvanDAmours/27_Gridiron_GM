@@ -1208,4 +1208,13 @@ export const PATCH_NOTES = [
     "AI clubs restructure a player's deal only once, and never a player 33 or older. In a 20-season test, quarterbacks restructured twice were carrying a quarter of the cap into their mid-30s.",
     "A suspension that's been served no longer sits in Needs Attention waiting for a Keep or Release.",
   ] },
+  { v: "3.15", date: "2026-10-20", title: "Down the Stretch", notes: [
+    "Playoff race: from week 13, Home shows what this week means for you: \"You clinch a playoff spot with a win\", \"...with a win and a Cowboys loss\", or \"A loss knocks you out\", plus the other games that matter to you this week and who to root for in each.",
+    "Records fall live: during a game, a Record Watch strip shows your players closing in on their club's single-season record or the NFL's (\"Hughes needs 61 receiving yards for the Giants record\"), counting what they've done so far today, and calls it the moment one falls.",
+    "Your drafted stars want to get paid: at the Combine, a player still on his rookie deal (two years left) rated 84 or better asks for a new contract. Extend him now and he takes less; make him wait and you keep the cheap deal, but there's a good chance he holds out of camp next season.",
+    "Veterans ask before they retire: when one of your players rated 78 or better decides to hang it up, he comes to you first. Offer one more year (a one-year deal if his contract is up; he might still say no, more likely the older he is) or let him go. Anyone you haven't talked to by re-sign week retires.",
+    "Draft day: when a star slides past where every board had him, the club behind you that needs his position calls first, urgently, and overpays (15-35% over the trade chart) to jump you for him.",
+    "The very top stays stocked: when the league has fewer than six 99s, young players at 96-98 take the last step more often.",
+    "Fixed: an Elite class's can't-miss prospect could be picked as one of the class's hidden busts.",
+  ] },
 ];
