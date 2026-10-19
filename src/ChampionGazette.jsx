@@ -52,7 +52,7 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
   const vol = `VOL. ${["CLXXV", "CLXXVI", "CLXXVII", "CLXXVIII", "CLXXIX", "CLXXX"][Math.max(0, Math.min(5, yr - 2026))]}`;
 
   return (
-    <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 3000, background: "radial-gradient(ellipse at 50% 30%, #2b2620, #0a0907 75%)", overflowY: "auto", padding: "18px 10px 90px" }}>
+    <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 3000, background: "radial-gradient(ellipse at 50% 30%, #2b2620, #0a0907 75%)", overflowY: "auto", padding: "18px 10px 90px", display: "flex", flexDirection: "column", alignItems: "center" }}>
       <style>{GAZETTE_CSS}</style>
       {/* confetti still falling while you read the paper (it never blocks a click) */}
       <ConfettiRain colors={[t.clr || "#1e3a8a", t.ac || "#f59e0b", "#fbbf24", "#fde68a", "#ffffff"]} count={60} z={3001} />
@@ -141,7 +141,7 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
 
 export const GAZETTE_FONTS = FONTS;
 export const GAZETTE_CSS = `
-.gz { max-width: 980px; margin: 0 auto; background: #f3eee2; color: #151310; padding: 22px 28px 18px; box-shadow: 0 30px 80px #000c; font-family: 'IM Fell English', 'Old Standard TT', Georgia, 'Times New Roman', serif;
+.gz { max-width: 980px; width: 100%; box-sizing: border-box; margin: 0 auto; background: #f3eee2; color: #151310; padding: 22px 28px 18px; box-shadow: 0 30px 80px #000c; font-family: 'IM Fell English', 'Old Standard TT', Georgia, 'Times New Roman', serif;
   background-image: radial-gradient(ellipse at 20% 10%, #fffaf0 0%, transparent 55%), radial-gradient(ellipse at 90% 90%, #e2d9c4 0%, transparent 50%); }
 .gz-ears { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
 .gz-ear { font-family: 'IM Fell English SC', 'IM Fell English', serif; font-size: 11.5px; line-height: 1.3; border: 1px solid #151310; padding: 5px 8px; max-width: 160px; font-style: italic; }
@@ -177,6 +177,7 @@ export const GAZETTE_CSS = `
 /* a computer screen: the whole front page in view, no scrolling */
 @media (min-width: 761px) { .gz { zoom: .8; } .gz-mvp img { width: min(100%, 230px); } }
 @media (min-width: 761px) and (max-height: 860px) { .gz { zoom: .7; } }
+@media (min-width: 1400px) and (min-height: 1000px) { .gz { zoom: .95; } }
 /* the photo-led page: the picture across the top, the story in three columns under it */
 .gz-hero .gz-photo-hero { border-top: 1px solid #151310; padding: 10px 0 4px; }
 .gz-photo-hero .gz-photo-frame { padding: 8px 0 6px; }

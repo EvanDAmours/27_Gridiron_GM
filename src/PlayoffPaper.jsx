@@ -17,6 +17,9 @@ const CSS = `
 .pp-box ul { margin: 0; padding-left: 16px; font-size: 12.5px; line-height: 1.4; }
 .pp-next { position: sticky; bottom: 0; display: flex; justify-content: center; padding: 12px 0 0; }
 .pp-next button { font: 900 15px system-ui, sans-serif; padding: 10px 24px; border-radius: 10px; border: none; cursor: pointer; color: #111; background: linear-gradient(180deg, #fde68a, #d4a017); }
+/* the editions and game papers are shorter than the championship page: on a computer they read at full size, larger on a big screen */
+@media (min-width: 761px) { .pp { zoom: 1; max-width: 1040px; } }
+@media (min-width: 1400px) and (min-height: 900px) { .pp { zoom: 1.15; } }
 @media (max-width: 760px) { .pp-grid { grid-template-columns: 1fr; } .pp-grid > * + * { border-left: none; border-top: 1px solid #15131055; } }
 `;
 
@@ -54,14 +57,14 @@ export default function PlayoffPaper({ paper: p, onClose }) {
     const l = document.createElement("link"); l.id = "gz-fonts"; l.rel = "stylesheet"; l.href = GAZETTE_FONTS; document.head.appendChild(l);
   }, []);
   if (p.kind) return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2950, background: "radial-gradient(ellipse at 50% 30%, #2b2620, #0a0907 75%)", overflowY: "auto", padding: "14px 10px 20px" }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2950, background: "radial-gradient(ellipse at 50% 30%, #2b2620, #0a0907 75%)", overflowY: "auto", padding: "14px 10px 20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
       <style>{GAZETTE_CSS + CSS}</style>
       <Edition p={p} onClose={onClose} />
     </div>
   );
   const you = p.youWon ? p.winner : p.loser;
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2950, background: "radial-gradient(ellipse at 50% 30%, #2b2620, #0a0907 75%)", overflowY: "auto", padding: "14px 10px 20px" }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2950, background: "radial-gradient(ellipse at 50% 30%, #2b2620, #0a0907 75%)", overflowY: "auto", padding: "14px 10px 20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
       <style>{GAZETTE_CSS + CSS}</style>
       <article className="gz pp" onClick={(e) => e.stopPropagation()}>
         <div className="gz-ears">

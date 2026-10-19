@@ -1354,4 +1354,8 @@ export const PATCH_NOTES = [
     "Winning the Super Bowl now has its own moment before the paper. Fireworks go off over the stadium, confetti falls in your team's colors and gold, and the final score shows. The Lombardi Trophy rises into the spotlight with the words WORLD CHAMPIONS. The screen says what the title means for the franchise (a first title, back-to-back, a dynasty) and shows the Super Bowl MVP. Then one button opens the morning paper.",
     "Confetti now keeps falling while you read the champions' paper. It never blocks a tap.",
   ] },
+  { v: "3.43", date: "2026-10-20", title: "Retired Player Cards and a Bigger Gazette", notes: [
+    "Tapping a retired player who isn't in the Hall of Fame now shows a clean card. You see the club he retired from, his age when he retired, his peak rating, his career totals and his honors. Before, the card showed a 'Free Agent' label, a broken height and weight, a 'Dev ?' chip and empty ratings and scouting boxes.",
+    "The Gazette is bigger on a computer. Special editions (Hall of Fame, deadline day, the draft extra) and the playoff papers now read at full size, and larger again on big screens. The championship page also grows on tall screens. Every paper stays centered whatever display size you use.",
+  ] },
 ];

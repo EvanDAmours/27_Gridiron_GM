@@ -21,7 +21,7 @@ export function OvrRing({ ovr, size = 70, label = "OVR" }) {
 }
 
 // team: { clr, ac, city, name, ab } or null for a free agent.
-export function CardHeader({ p, team, ovr, pot, sub, dev }) {
+export function CardHeader({ p, team, ovr, pot, sub, dev, label, ovrLabel }) {
   const bg = team?.clr || "#334155", ac = team?.ac || "#94a3b8";
   return (
     <div style={{ position: "relative", overflow: "hidden", borderRadius: 12, margin: "-4px -4px 12px", background: `linear-gradient(120deg, ${bg} 0%, ${bg}cc 45%, #0b1220 100%)`, border: `1px solid ${ac}66` }}>
@@ -33,12 +33,12 @@ export function CardHeader({ p, team, ovr, pot, sub, dev }) {
           {p.num != null && <div style={{ position: "absolute", right: -6, bottom: -4, minWidth: 26, height: 22, padding: "0 4px", borderRadius: 6, background: "#fff", color: bg, fontWeight: 900, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${ac}` }}>#{p.num}</div>}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: "#fffb" }}>{team ? `${team.city} ${team.name}`.toUpperCase() : "FREE AGENT"}</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: "#fffb" }}>{(label || (team ? `${team.city} ${team.name}` : "FREE AGENT")).toUpperCase()}</div>
           <div style={{ fontSize: 21, fontWeight: 900, color: "#fff", lineHeight: 1.15 }}>{p.name}</div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 3, fontSize: 13, color: "#fffd" }}><Bdg pos={posTag(p)} />{sub}{dev}</div>
         </div>
         <div style={{ textAlign: "center", marginRight: 34 }}>
-          <OvrRing ovr={ovr} />
+          <OvrRing ovr={ovr} label={ovrLabel} />
           {pot != null && <div style={{ fontSize: 11, color: "#fffc", fontWeight: 700 }} title={p.potRev && p.potRev.stage < 3 ? "Your staff's current read. A young player's real ceiling becomes clear over his first two seasons." : undefined}>POT <b style={{ color: oC(pot) }}>{p.potRev && p.potRev.stage < 3 ? "~" : ""}{pot}</b></div>}
           {p.potRev && p.potRev.stage < 3 && <div style={{ fontSize: 10, color: "#fffa" }}>{p.potRev.stage === 0 ? "draft-day read" : "still unproven"}</div>}
         </div>
