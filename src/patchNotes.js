@@ -1392,4 +1392,7 @@ export const PATCH_NOTES = [
   { v: "3.51", date: "2026-10-20", title: "Illustrated Weather Fields", notes: [
     "New illustrated weather on the field. Light snow scatters soft patches across the grass and banks it along the sidelines. Heavy snow buries the field, leaves a worn, slushy strip down the middle and clears lanes for the yard numbers. Light rain leaves a wet sheen, scuffed turf and small puddles. Heavy rain churns up mud between the hashes and leaves standing water. The lines, players and falling rain or snow are drawn on top as before.",
   ] },
+  { v: "3.52", date: "2026-10-20", title: "New Heavy Snow", notes: [
+    "New heavy-snow field. Deep drifts bury the field, with a slushy, trampled strip down the middle and patches of grass showing through. Each yard number sits in its own plowed-out box, lined up with the numbers. The snow stays inside the field's border.",
+  ] },
 ];
