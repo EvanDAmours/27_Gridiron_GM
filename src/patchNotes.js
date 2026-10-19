@@ -1252,4 +1252,8 @@ export const PATCH_NOTES = [
   { v: "3.21", date: "2026-10-20", title: "Easier on the Eyes", notes: [
     "The Legacy Hall's Records page is much easier to read: the bright gold and parchment cards are gone for the game's own dark (or light) cards, each record's number big and plain, the holder under it, the details in quieter type. A gold edge and a small \u2605 YOURS tag mark records set in your league, a green edge a career leader who's still playing, and the season-pace bar now shows how close this year's leader is in percent.",
   ] },
+  { v: "3.22", date: "2026-10-20", title: "Know Your Opponent", notes: [
+    "A scouting report on every opponent, right in the week's game plan card: how he lines up on offense (his personnel identity and how often he plays 11, 12, 21...), how often his defense plays base, nickel and dime, and the matchups to go after or worry about: a weak nickel back against your slot receiver, a linebacker who'll be covering your tight end, the corner across from your second receiver, a star you have to stop.",
+    "It also runs every one of your personnel identities against the defense he actually fields, and every defensive lean against his offense, and names the best of each (with how big the edge is, so it doesn't tell you to change things for nothing). One tap switches you to it; the closed card shows the report's top finding in one line.",
+  ] },
 ];
