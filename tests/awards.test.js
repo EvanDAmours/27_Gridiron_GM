@@ -64,3 +64,13 @@ test("Comeback Player and Coach of the Year", async () => {
   assert.equal(a.coy?.name, "Turnaround Coach", "13 wins, up from 4, beats 14 wins with no jump");
   assert.match(a.coy.stat, /13-4, up from 4 wins/);
 });
+
+test("award races rank the contenders the way the awards do", async () => {
+  const { awardRaces, seasonAwardWinners } = await import("../src/awards.js");
+  const P = (id, pos, ss) => ({ id, name: id, pos, ss: { gp: 9, ...ss } });
+  const teams = [{ ab: "A", w: 8, roster: [P("q1", "QB", { passYds: 2600, passTD: 22 }), P("e1", "DL", { sacks: 10 }), P("e2", "DL", { sacks: 6 })] }, { ab: "B", w: 2, roster: [P("q2", "QB", { passYds: 2500, passTD: 18 })] }];
+  const r = awardRaces(teams, 2030, 2);
+  assert.deepEqual(r.mvp.map((x) => x.name), ["q1", "q2"]);
+  assert.deepEqual(r.dpoy.map((x) => x.name), ["e1", "e2"]);
+  assert.equal(r.mvp[0].name, seasonAwardWinners(teams, 2030).mvp.name);
+});

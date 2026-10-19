@@ -3,6 +3,7 @@
 import Select from "./Select.jsx";
 import React, { useMemo, useState } from "react";
 import { C, Bdg, Face, TeamLogo } from "./ui.jsx";
+import { awardRaces } from "./awards.js";
 
 const pct = (a, b) => (b ? ((a / b) * 100).toFixed(1) : "–");
 const avg = (a, b) => (b ? (a / b).toFixed(1) : "–");
@@ -46,7 +47,33 @@ const POS_LEAD = [
 
 const GRADE_C = { "A+": "#f59e0b", A: "#22c55e", B: "#60a5fa", C: "#94a3b8", D: "#f97316", F: "#ef4444" };
 
-export default function StatsScreen({ teams, ui, onPlayer, grade, mobile }) {
+// The award races: the top five for each award, by the awards' own scoring, as the season goes.
+const RACES = [["mvp", "MVP"], ["opoy", "Offensive Player"], ["dpoy", "Defensive Player"], ["oroy", "Offensive Rookie"], ["droy", "Defensive Rookie"]];
+function AwardRaces({ teams, ui, yr, onPlayer, mobile }) {
+  const r = useMemo(() => awardRaces(teams, yr), [teams, yr]);
+  const find = (e) => teams[e.ti]?.roster.find((p) => p.id === e.pid);
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill,minmax(${mobile ? 280 : 300}px,1fr))`, gap: 8, marginBottom: 16 }}>
+      {RACES.map(([k, l]) => (
+        <div key={k} style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "10px 12px" }}>
+          <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.2, color: "#fcd34d", marginBottom: 6 }}>🏆 {l.toUpperCase()}</div>
+          {r[k].length ? r[k].map((e, i) => (
+            <div key={e.pid} onClick={() => { const p = find(e); if (p) onPlayer(p); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderTop: i ? `1px solid ${C.bd}55` : "none", cursor: "pointer", background: e.ti === ui ? `${C.gn}14` : "transparent" }}>
+              <span style={{ width: 16, fontSize: 13, fontWeight: 900, color: i ? C.mt : "#fcd34d" }}>{i + 1}</span>
+              <TeamLogo t={teams[e.ti]} sz={20} />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 14.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: e.ti === ui ? "#86efac" : "#e2e8f0" }}>{e.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>{e.pos}</span></div>
+                <div style={{ fontSize: 12.5, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.stat}</div>
+              </div>
+            </div>
+          )) : <div style={{ fontSize: 13, color: C.mt }}>No games yet.</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) {
   const me = teams[ui];
   const [scope, setScope] = useState("league"); // league | AFC | NFC | div | team:<id>
   const [cat, setCat] = useState("Passing");
@@ -73,13 +100,14 @@ export default function StatsScreen({ teams, ui, onPlayer, grade, mobile }) {
       {/* phones: each row of chips is one swipeable line instead of wrapping onto two */}
       <div style={{ display: "flex", gap: 6, flexWrap: mobile ? "nowrap" : "wrap", overflowX: mobile ? "auto" : undefined, alignItems: "center", marginBottom: 12, paddingBottom: mobile ? 2 : 0 }}>
         {[["league", "League"], ["AFC", "AFC"], ["NFC", "NFC"], ["div", `${me.c} ${me.d}`], [`team:${ui}`, mobile ? me.ab : `My team (${me.ab})`]].map(([k, l]) => <button key={k} onClick={() => setScope(k)} style={{ ...pill(scope === k), flex: "0 0 auto", whiteSpace: "nowrap" }}>{l}</button>)}
+        <button onClick={() => setScope("races")} style={{ ...pill(scope === "races"), flex: "0 0 auto" }}>🏆 Award races</button>
         <Select value={teamId != null && teamId !== ui ? scope : ""} onChange={(e) => e.target.value && setScope(e.target.value)} style={{ background: C.cd, color: C.tx, border: `1px solid ${teamId != null && teamId !== ui ? C.bl : C.bd}`, borderRadius: 999, padding: "6px 10px", fontSize: 14, fontWeight: 700, flex: "0 0 auto" }}>
           <option value="">{mobile ? "Other team…" : "Another team…"}</option>
           {teams.map((t, i) => ({ t, i })).sort((a, b) => a.t.city.localeCompare(b.t.city)).map(({ t, i }) => <option key={i} value={`team:${i}`}>{t.city} {t.name}</option>)}
         </Select>
       </div>
 
-      {team ? (
+      {scope === "races" ? <AwardRaces teams={teams} ui={ui} yr={yr} onPlayer={onPlayer} mobile={mobile} /> : team ? (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
             <TeamLogo t={team} sz={40} glow />
@@ -128,6 +156,7 @@ export default function StatsScreen({ teams, ui, onPlayer, grade, mobile }) {
         </div>
       )}
 
+      {scope !== "races" && <>
       <div style={{ display: "flex", gap: 6, flexWrap: mobile ? "nowrap" : "wrap", overflowX: mobile ? "auto" : undefined, marginBottom: 8, paddingBottom: mobile ? 2 : 0 }}>
         {Object.keys(TABLES).map((k) => <button key={k} onClick={() => { setCat(k); setSort(null); }} style={{ ...pill(cat === k), flex: "0 0 auto", whiteSpace: "nowrap" }}>{k}</button>)}
       </div>
@@ -152,6 +181,7 @@ export default function StatsScreen({ teams, ui, onPlayer, grade, mobile }) {
           </tbody>
         </table>
       </div>
+      </>}
     </div>
   );
 }

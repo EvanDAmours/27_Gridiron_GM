@@ -18,7 +18,7 @@ const statLine = (p) => {
     return ry >= cy ? `${ry} rush yds · ${td} TD` : `${s(p, "rec")} rec · ${cy} yds · ${td} TD`;
   }
   const bits = [];
-  if (s(p, "sacks")) bits.push(`${s(p, "sacks")} sacks`);
+  if (s(p, "sacks")) bits.push(`${s(p, "sacks")} sack${s(p, "sacks") === 1 ? "" : "s"}`);
   if (s(p, "ints")) bits.push(`${s(p, "ints")} INT`);
   bits.push(`${s(p, "tkl")} tkl`);
   return bits.join(" · ");
@@ -89,4 +89,25 @@ export function seasonAwardWinners(teams, yr) {
     if (sc > best) { best = sc; coy = { pid: hc.id, name: hc.name, pos: "HC", ti, team: t.ab, stat: `${w}-${t.l || 0}${t.t ? `-${t.t}` : ""}${t.lw != null && jump > 0 ? `, up from ${t.lw} wins` : ""}` }; }
   });
   return { yr, mvp, opoy, dpoy, oroy, droy, cpoy, coy };
+}
+
+// The award races during the season: the top n for each award by the same scoring as the awards
+// themselves (no minimum games yet, so a hot start shows up). { mvp: [...], opoy, dpoy, oroy, droy },
+// each entry { pid, name, pos, ti, team, stat }.
+export function awardRaces(teams, yr, n = 5) {
+  const all = [];
+  teams.forEach((t, ti) => (t.roster || []).forEach((p) => { if (s(p, "gp") >= 1) all.push({ p, ti, w: t.w || 0 }); }));
+  const top = (list, score) => [...list].sort((a, b) => score(b) - score(a)).slice(0, n).map((b) => ({ pid: b.p.id, name: b.p.name, pos: b.p.pos, ti: b.ti, team: teams[b.ti].ab, stat: statLine(b.p) }));
+  const off = all.filter((x) => ["QB", "RB", "WR", "TE"].includes(x.p.pos));
+  const def = all.filter((x) => ["DL", "LB", "CB", "S"].includes(x.p.pos));
+  const rookie = (x) => rookieSeason(x.p) === yr;
+  const mvp = top(off, (x) => offScore(x.p) * (x.p.pos === "QB" ? 1 : 0.8) + x.w * 8);
+  return {
+    mvp,
+    // like the award, the MVP front-runner isn't in this race too
+    opoy: top(off.filter((x) => x.p.id !== mvp[0]?.pid), (x) => offScore(x.p) * (x.p.pos === "QB" ? 0.7 : 1)),
+    dpoy: top(def, (x) => defScore(x.p)),
+    oroy: top(off.filter(rookie), (x) => offScore(x.p)),
+    droy: top(def.filter(rookie), (x) => defScore(x.p)),
+  };
 }
