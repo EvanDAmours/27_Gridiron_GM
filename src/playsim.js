@@ -51,6 +51,16 @@ const TK = { DL: [0.07, 0.07, 0.06, 0.06, 0.03, 0.02], LB: [0.14, 0.12, 0.08, 0.
 const ROLE_TGT = { X: 0.21, Z: 0.2, SLOT: 0.2, WR4: 0.14, TE1: 0.19, TE2: 0.12, TE3: 0.06, FB: 0.05 };
 const ROLE_TK = { SAM: 0.11, MIKE: 0.14, WILL: 0.12, CB1: 0.07, CB2: 0.06, NB: 0.07, CB4: 0.03 };
 const WR_ROLES = ["X", "Z", "SLOT", "WR4"];
+// The play-by-play names the matchup when it decided the play: a big catch, or a mismatch.
+const COVER_NAME = { SAM: "the SAM", MIKE: "the MIKE", WILL: "the WILL", CB1: "CB1", CB2: "the No. 2 corner", NB: "the nickel" };
+const SPOT = { SLOT: " in the slot", TE1: "", TE2: "", RB: " out of the backfield", FB: " out of the backfield" };
+function matchupNote(cm, role, mm, yards, pkg) {
+  if (!cm || !(yards >= 15 || (mm >= 9 && yards >= 8))) return "";
+  const who = COVER_NAME[cm.role] || (cm.pos === "S" ? "the safety" : cm.pos === "CB" ? "the corner" : "the linebacker");
+  const mis = cm.pos === "LB" && (role === "SLOT" || role === "X" || role === "Z") ? `, a linebacker on a receiver${pkg === "base" ? " with the defense in base" : ""}` : "";
+  return `, beating ${who}, ${last(cm)},${SPOT[role] ?? ""}${mis}`.replace(/,$/, "");
+}
+
 // A receiver's matchup: how much his rating beats his cover man's moves completion odds and yards.
 // MM0 centers it on the league's typical matchup, so only a mismatch (a slot receiver on a
 // linebacker, a great nickel on a so-so slot) moves the needle.
@@ -630,7 +640,7 @@ function stepPlay(g, call, bonus = 1) {
         if (screen && rand() < 0.15) yards = -Math.round(rand() * 3);
         completed = true; carrier = target; type = "pass";
         add(qbl, "comp", 1); add(tl, "rec", 1); st.comp++;
-        desc = `${qb?.name || "QB"} finds ${target?.name || "his receiver"} for ${yards}.`;
+        desc = `${qb?.name || "QB"} finds ${target?.name || "his receiver"} for ${yards}${matchupNote(cm, role, mm, yards, pkg)}.`;
       } else {
         type = "inc"; clockStops = true;
         if (rand() < 0.3) { const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW); if (db) add(line(g, def, db), "pd", 1); desc = `${qb?.name || "QB"}'s pass for ${last(target)} is broken up${db ? ` by ${db.name}` : ""}.`; }
@@ -660,7 +670,7 @@ function stepPlay(g, call, bonus = 1) {
     const cl = line(g, off, carrier);
     add(cl, "rushAtt", 1); st.rushAtt++;
     type = "run";
-    desc = `${carrier?.name || "Runner"} ${keeper ? "keeps it" : outside ? "bounces outside" : ["up the middle", "off left tackle", "off right tackle"][Math.floor(rand() * 3)]} for ${yards}.`;
+    desc = `${carrier?.name || "Runner"} ${keeper ? "keeps it" : outside ? "bounces outside" : edgeRun ? ["off left tackle", "off right tackle", "around left end", "around right end"][Math.floor(rand() * 4)] : ["up the middle", "inside", "up the middle"][Math.floor(rand() * 3)]} for ${yards}${edgeRun && !keeper && yards >= 9 && !sam && nb ? `, getting outside the nickel, ${last(nb)}` : edgeRun && !keeper && yards <= 0 && sam ? `, the SAM ${last(sam)} sets the edge` : !edgeRun && !keeper && yards <= 0 && mike ? `, ${last(mike)} fills the hole` : ""}.`;
     if (yards < 0) { const t = pickW(rand, dP.tackleW); if (t) add(line(g, def, t), "tfl", 1); }
   }
 

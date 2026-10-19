@@ -142,3 +142,11 @@ test("overtime: a first-possession field goal gives the other team the ball", ()
   }
   assert.fail("never kicked");
 });
+
+test("the play-by-play names the matchup on big catches, and each play carries its personnel and package", async () => {
+  const { initTeams, simGame, calibrateLeague } = await import("../src/league.js");
+  const T = initTeams(-1); calibrateLeague(T);
+  let notes = 0, plays = 0;
+  for (let i = 0; i < 3; i++) { const r = simGame(T[i], T[i + 10], null, null, "clear", { dry: true, rec: true }); for (const e of r.game.pl) { plays++; if (/beating (the |CB1)/.test(e.x)) notes++; } }
+  assert.ok(notes >= 3 && notes < plays * 0.2, `${notes} of ${plays}`);
+});

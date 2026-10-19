@@ -1261,4 +1261,9 @@ export const PATCH_NOTES = [
     "The position filter on the big board and in free agency has role options too (LB · SAM, CB · Nickel, WR · Slot...).",
     "AI clubs draft for roles as well: a club whose nickel or slot receiver is a hole looks harder at the prospects built for it.",
   ] },
+  { v: "3.24", date: "2026-10-20", title: "Who Beat Whom", notes: [
+    "The play-by-play names the matchup when it decided the play: \"finds Dalton Schultz for 44, beating the SAM, Andreessen\", \"beating the nickel, Alford, in the slot\", a linebacker caught on a receiver with the defense in base. Runs too: getting outside a light nickel on the edge, the SAM setting the edge, the MIKE filling the hole.",
+    "Live games show each play's personnel against the defense's package in the last-play header (\"12 PERSONNEL vs BASE\"), so you can watch your identity at work.",
+    "Run descriptions now match where the run went (off tackle and around the end on the edge, up the middle inside).",
+  ] },
 ];
