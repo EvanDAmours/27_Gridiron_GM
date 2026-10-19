@@ -1221,4 +1221,7 @@ export const PATCH_NOTES = [
     "Fixed: in a live playoff game, Record Watch and Milestone Watch added the game to a player's regular-season totals and could say he was about to break (or had broken) a single-season record. Records and season milestones count regular-season games only, so neither shows in the playoffs now.",
     "Removed a random news headline that called a player \"on pace for a record-breaking season\" whatever his stats were. Real record chases still get their own stories.",
   ] },
+  { v: "3.17", date: "2026-10-20", title: "Your Own Ring", notes: [
+    "Ring Night now hands out a real championship ring for every team: all 32 have their own design with the team's logo, colors and name on the side.",
+  ] },
 ];

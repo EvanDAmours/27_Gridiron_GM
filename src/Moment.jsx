@@ -92,6 +92,13 @@ function RaftersNight({ m, onClose }) {
   );
 }
 
+// Each team's own ring art (public/rings/{AB}.webp); falls back to the drawn ring if a file is missing.
+function TeamRing({ t, yr, titles, size }) {
+  const [bad, setBad] = React.useState(false);
+  if (bad || !t?.ab) return <ChampionRing t={t} yr={yr} titles={titles} size={size} />;
+  return <img src={`${import.meta.env.BASE_URL}rings/${String(t.ab).toUpperCase()}.webp`} alt={`${t.city || ""} ${t.name || t.ab} championship ring`.trim()} width={size} height={size} onError={() => setBad(true)} style={{ display: "block", objectFit: "contain", filter: "drop-shadow(0 18px 26px #000d) drop-shadow(0 0 34px #fbbf2440)" }} />;
+}
+
 // Ring night: before the home opener the champions get their rings and the banner goes up.
 function RingNight({ m, onClose }) {
   const t = m.team;
@@ -101,7 +108,7 @@ function RingNight({ m, onClose }) {
       <Confetti colors={[t.clr || "#1e3a8a", "#e8c45a", "#fde68a", "#ffffff"]} />
       <div role="dialog" aria-label="Ring night" onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(600px, 100%)", textAlign: "center", color: "#fff", background: "linear-gradient(170deg,#1c1206,#0b0703 70%)", border: "2px solid #d4a017", borderRadius: 18, padding: MOBILE ? "18px 16px" : "22px 28px", boxShadow: "0 0 80px #d4a01744", animation: "mmIn .45s ease-out" }}>
         <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 4, color: "#d4a017" }}>RING NIGHT · {m.yr + 1} HOME OPENER</div>
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 8, perspective: 600 }}><div style={{ animation: "ringSpin 1.3s cubic-bezier(.2,.8,.3,1) both" }}><ChampionRing t={t} yr={m.yr} titles={m.titles} size={MOBILE ? 220 : 270} /></div></div>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 8, perspective: 600 }}><div style={{ animation: "ringSpin 1.3s cubic-bezier(.2,.8,.3,1) both" }}><TeamRing t={t} yr={m.yr} titles={m.titles} size={MOBILE ? 230 : 290} /></div></div>
         <div className="mm-title" style={{ fontSize: MOBILE ? 26 : 34, fontWeight: 900, fontStyle: "italic", marginTop: 4 }}>{m.sbName || `${m.yr} WORLD CHAMPIONS`}</div>
         <div style={{ fontSize: 15, color: "#e2e8f0", marginTop: 6, lineHeight: 1.45 }}>{m.score ? <>Champions by {m.score}{m.opp ? <> over the {m.opp}</> : null}. </> : null}The {t.city} {t.name} raise the banner and hand out the rings before the {m.yr + 1} opener.</div>
         {m.names?.length > 0 && <div style={{ marginTop: 12, background: "#00000055", borderRadius: 12, padding: "10px 14px", textAlign: "left" }}>
