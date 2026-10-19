@@ -15,7 +15,6 @@ export const HOLIDAYS = {
   nye: { key: "nye", theme: "newyear", name: "New Year's Eve", short: "New Year's Eve", icon: "🎆", c1: "#fbbf24", c2: "#94a3b8", bg: "#0a0b1f", line: "The last game of the year, and the clock runs out at midnight." },
   nyd: { key: "nyd", theme: "newyear", name: "New Year's Day", short: "New Year's Day", icon: "🎆", c1: "#fbbf24", c2: "#94a3b8", bg: "#0a0b1f", line: "A new year, a clean slate, and a game the whole country wakes up to." },
 };
-export const holidayOf = (g) => (g?.holiday && HOLIDAYS[g.holiday]) || null;
 // the look a holiday uses (New Year's Eve and Day share one)
 export const themeOf = (key) => HOLIDAYS[key]?.theme || key;
 

@@ -1428,4 +1428,9 @@ export const PATCH_NOTES = [
     "The field is a little smaller while you watch a game, and the play-by-play beside it gets a little more room.",
     "The holiday characters in the corners of the game screen now sit on top of everything. The snowman is no longer hidden behind the Christmas wreath on the field's frame.",
   ] },
+  { v: "3.61", date: "2026-10-20", title: "Code Cleanup", notes: [
+    "Housekeeping release: after a long run of new features (weather, holidays, the free agent market, coach growth), the code was swept for leftovers. Nothing you play changes.",
+    "Removed an old weather roll the game no longer used (game weather comes from each city's climate), an unused difficulty setting that had no menu, and two stadium bonuses that only ever applied to your team and could no longer be earned. Unused code and an unused player-art file were removed too.",
+    "A personnel-stats check that now and then failed on a slow, run-heavy simulated game is steadier, so builds don't stall on it.",
+  ] },
 ];

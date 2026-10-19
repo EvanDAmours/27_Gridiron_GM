@@ -14,7 +14,7 @@ const SESSION_ONLY = new Set([
   "advanceAsk autoSaveTs awardsShow beatReports boxView",
   "capOutlookOpen capRollover celebrate challengeSeason chemGraph coachExt coachNag",
   "compareOpen compareSel compareSlots cutWarnPending deadlineUrgency",
-  "depthView difficulty draftActive draftAnalyst draftAnalystLoading draftBuzz draftClock",
+  "depthView draftActive draftAnalyst draftAnalystLoading draftBuzz draftClock",
   "draftClockActive draftPaused draftPickTrade",
   "draftReveal draftRumors draftSpeed draftTicker draftTimer draftView dynastyEndOpen",
   "dynastyShareOpen expansionModal expansionMode expansionResults extTalk faBid faCombine",
