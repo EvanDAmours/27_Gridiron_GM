@@ -21,6 +21,8 @@ const artOf = (holiday) => ART[themeOf(holiday)] || ART.christmas;
 const rnd = (i, k) => { const x = Math.sin(i * 91.7 + k * 47.3) * 24634.6345; return x - Math.floor(x); };
 const CSS = `
 @keyframes atRain { from { transform: translate(0, -12vh) } to { transform: translate(-8vh, 112vh) } }
+@keyframes atPour { from { transform: translate(0, -14vh) rotate(18deg) } to { transform: translate(-16vh, 114vh) rotate(18deg) } }
+@keyframes atBlizzard { 0% { transform: translate(0, -6vh) } 50% { transform: translate(-12vw, 50vh) } 100% { transform: translate(-24vw, 108vh) } }
 @keyframes atSnow { 0% { transform: translate(0, -6vh) } 50% { transform: translate(3vw, 50vh) } 100% { transform: translate(-2vw, 108vh) } }
 @keyframes atLeaf { 0% { transform: translate(0, -8vh) rotate(0) } 25% { transform: translate(6vw, 22vh) rotate(120deg) } 50% { transform: translate(-3vw, 50vh) rotate(220deg) } 75% { transform: translate(5vw, 78vh) rotate(320deg) } 100% { transform: translate(0, 110vh) rotate(420deg) } }
 @keyframes atBat { 0% { transform: translate(-10vw, 0) scaleY(1) } 25% { transform: translate(25vw, -4vh) scaleY(.6) } 50% { transform: translate(55vw, 3vh) scaleY(1) } 75% { transform: translate(85vw, -3vh) scaleY(.6) } 100% { transform: translate(115vw, 0) scaleY(1) } }
@@ -75,7 +77,8 @@ export function Sky({ wx, holiday, z = 0, density = 1, corners = false }) {
   const w = wxOf(wx), h = HOLIDAYS[holiday], th = themeOf(holiday);
   const heavy = (w.rain || w.snow) === 2;
   const snow = w.snow || th === "christmas";
-  const nSnow = Math.round((w.snow ? (heavy ? 110 : 60) : 35) * density), nRain = Math.round((heavy ? 120 : 60) * density);
+  // as heavy as what's on the field: a drizzle or a downpour, flurries or a blizzard
+  const nSnow = Math.round((w.snow ? (heavy ? 260 : 55) : 35) * density), nRain = Math.round((heavy ? 260 : 30) * density);
   return (
     <div className="at-sky" aria-hidden style={{ position: "fixed", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: z }}>
       <style>{CSS}</style>
@@ -83,8 +86,11 @@ export function Sky({ wx, holiday, z = 0, density = 1, corners = false }) {
       {th === "newyear" && <><div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% -10%, #fbbf2422, transparent 55%)" }} /><Fireworks n={Math.round(7 * density)} />{[...Array(Math.round(50 * density))].map((_, i) => <span key={`c${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 41) * 100}%`, width: 5, height: 9, borderRadius: 1, background: ["#fbbf24", "#e5e7eb", "#fde68a", "#cbd5e1"][i % 4], opacity: 0.85, animation: `atConf ${5 + rnd(i, 42) * 5}s ${-rnd(i, 43) * 10}s linear infinite` }} />)}</>}
       {th === "halloween" && <div style={{ position: "absolute", right: "6vw", top: "6vh", width: 90, height: 90, borderRadius: "50%", background: "radial-gradient(circle at 40% 40%, #fff7d6, #fde68a 55%, #f59e0b 100%)", boxShadow: "0 0 60px 20px #fde68a44", animation: "atGlow 5s ease-in-out infinite" }} />}
       {th === "christmas" && <Lights />}
-      {w.rain && [...Array(nRain)].map((_, i) => <span key={`r${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 1) * 110}%`, width: 1.5, height: 18 + rnd(i, 2) * 14, background: "linear-gradient(#cbd5e100, #cbd5e1aa)", transform: "rotate(14deg)", animation: `atRain ${0.6 + rnd(i, 3) * 0.4}s ${-rnd(i, 4)}s linear infinite` }} />)}
-      {snow && [...Array(nSnow)].map((_, i) => { const big = i % 6 === 0; return <span key={`s${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 5) * 100}%`, width: big ? 7 : 3 + rnd(i, 6) * 3, height: big ? 7 : 3 + rnd(i, 6) * 3, borderRadius: "50%", background: "#fff", opacity: big ? 0.5 : 0.75, filter: big ? "blur(1.5px)" : undefined, animation: `atSnow ${6 + rnd(i, 7) * 6}s ${-rnd(i, 8) * 12}s linear infinite` }} />; })}
+      {heavy && (w.rain || w.snow) && <div style={{ position: "absolute", inset: 0, background: w.snow ? "#e2e8f0" : "#64748b", opacity: w.snow ? 0.05 : 0.08 }} />}
+      {w.rain && [...Array(nRain)].map((_, i) => heavy
+        ? <span key={`r${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 1) * 125}%`, width: 1.6 + rnd(i, 5) * 0.8, height: 30 + rnd(i, 2) * 26, background: "linear-gradient(#cbd5e100, #cbd5e1bb)", animation: `atPour ${0.38 + rnd(i, 3) * 0.22}s ${-rnd(i, 4)}s linear infinite` }} />
+        : <span key={`r${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 1) * 110}%`, width: 1, height: 8 + rnd(i, 2) * 6, background: "linear-gradient(#cbd5e100, #cbd5e177)", transform: "rotate(10deg)", animation: `atRain ${0.9 + rnd(i, 3) * 0.5}s ${-rnd(i, 4)}s linear infinite` }} />)}
+      {snow && [...Array(nSnow)].map((_, i) => { const big = i % 6 === 0, bz = w.snow === 2, sz = bz ? (big ? 9 : 3 + rnd(i, 6) * 4) : big ? 6 : 2.5 + rnd(i, 6) * 2.5, dur = bz ? 2.4 + rnd(i, 7) * 2.4 : 7 + rnd(i, 7) * 6; return <span key={`s${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 5) * (bz ? 130 : 100)}%`, width: sz, height: sz, borderRadius: "50%", background: "#fff", opacity: big ? 0.5 : 0.78, filter: big ? "blur(1.5px)" : undefined, animation: `${bz ? "atBlizzard" : "atSnow"} ${dur}s ${-rnd(i, 8) * dur}s linear infinite` }} />; })}
       {th === "thanksgiving" && [...Array(Math.round(18 * density))].map((_, i) => <span key={`l${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 9) * 100}%`, fontSize: 14 + rnd(i, 10) * 14, opacity: 0.8, animation: `atLeaf ${9 + rnd(i, 11) * 7}s ${-rnd(i, 12) * 16}s linear infinite` }}>{["🍂", "🍁", "🍂"][i % 3]}</span>)}
       {th === "halloween" && [...Array(Math.round(7 * density))].map((_, i) => <img key={`b${i}`} alt="" src={sticker(holiday, 1)} style={{ position: "absolute", left: 0, top: `${8 + rnd(i, 13) * 40}%`, width: 34 + rnd(i, 14) * 34, animation: `atBat ${11 + rnd(i, 15) * 8}s ${-rnd(i, 16) * 18}s linear infinite` }} />)}
       {/* two of the holiday's stickers keep the bottom corners, bobbing gently */}

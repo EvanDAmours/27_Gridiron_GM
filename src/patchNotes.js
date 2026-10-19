@@ -1412,4 +1412,8 @@ export const PATCH_NOTES = [
   { v: "3.56", date: "2026-10-20", title: "Snow in the Number Boxes", notes: [
     "The plowed yard-number boxes in snow games no longer look untouchable. Snow drifts back in over their edges and leaves a light, patchy dusting inside, so they read like spots the grounds crew cleared before kickoff. The numbers stay readable. This applies in both light and heavy snow.",
   ] },
+  { v: "3.57", date: "2026-10-20", title: "Weather You Can Feel", notes: [
+    "What falls from the sky now matches the field. Light rain is a fine drizzle, and heavy rain is a slanting downpour with splashes on the turf and a gray haze. Light snow is gentle flurries, and heavy snow is a wind-driven blizzard with the far side of the field half lost in white. The game screen behind the field matches too.",
+    "Light snow no longer leaves a faint white haze around the edges of the field. The drifts are solid snow now.",
+  ] },
 ];

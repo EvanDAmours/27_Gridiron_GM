@@ -27,7 +27,11 @@ const yOf = (lat) => H / 2 + lat * (H / 53.3);
 // over the whole field. Positions come from a fixed sequence so nothing jumps between plays.
 const rnd = (i, k) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
 const WX_CSS = `@keyframes lfRain { from { transform: translate(0, -30px) } to { transform: translate(-36px, ${H + 30}px) } }
+@keyframes lfPour { from { transform: translate(0, -40px) } to { transform: translate(-90px, ${H + 40}px) } }
 @keyframes lfSnow { 0% { transform: translate(0, -10px) } 50% { transform: translate(10px, ${H / 2}px) } 100% { transform: translate(-6px, ${H + 10}px) } }
+@keyframes lfBlizzard { 0% { transform: translate(0, -10px) } 50% { transform: translate(-70px, ${H / 2}px) } 100% { transform: translate(-150px, ${H + 10}px) } }
+@keyframes lfSplash { 0%, 70% { transform: scale(.1); opacity: 0 } 75% { opacity: .7 } 100% { transform: scale(1); opacity: 0 } }
+@keyframes lfGust { 0%,100% { opacity: .14 } 50% { opacity: .26 } }
 @media (prefers-reduced-motion: reduce) { .lf-fall * { animation: none !important } }`;
 // The ground under rain and snow: illustrated overlays (public/weather/, one per condition) laid
 // over the turf with the field's own geometry, under the paint, the players and the falling weather.
@@ -77,20 +81,38 @@ function HolidayDecor({ holiday: hk }) {
   );
   return null;
 }
+// What's falling matches the ground: light rain a fine drizzle, heavy rain a slanting downpour
+// with splashes on the turf; light snow gentle flurries, heavy snow a wind-driven blizzard with
+// the far side of the field half lost in white.
 function Falling({ wx }) {
-  const heavy = (wx.rain || wx.snow) === 2;
   if (!wx.rain && !wx.snow) return null;
-  const n = wx.rain ? (heavy ? 150 : 70) : heavy ? 140 : 60;
+  const heavy = (wx.rain || wx.snow) === 2;
+  if (wx.rain) {
+    const n = heavy ? 300 : 45;
+    return (
+      <g className="lf-fall" pointerEvents="none">
+        <style>{WX_CSS}</style>
+        {heavy && <rect x="0" y="0" width={W} height={H} fill="#94a3b8" style={{ animation: "lfGust 3s ease-in-out infinite" }} />}
+        {[...Array(n)].map((_, i) => {
+          const x = rnd(i, 11) * (W + (heavy ? 110 : 40)), dur = heavy ? 0.32 + rnd(i, 12) * 0.2 : 0.7 + rnd(i, 12) * 0.4, delay = -rnd(i, 13) * dur;
+          return heavy
+            ? <line key={i} x1={x} y1="0" x2={x - 9} y2={22 + rnd(i, 14) * 16} stroke="#e2e8f0" strokeOpacity={0.4 + rnd(i, 15) * 0.4} strokeWidth={1.2 + rnd(i, 16) * 0.8} style={{ animation: `lfPour ${dur}s ${delay}s linear infinite` }} />
+            : <line key={i} x1={x} y1="0" x2={x - 2} y2={6 + rnd(i, 14) * 5} stroke="#e2e8f0" strokeOpacity={0.3 + rnd(i, 15) * 0.25} strokeWidth=".9" style={{ animation: `lfRain ${dur}s ${delay}s linear infinite` }} />;
+        })}
+        {/* splashes where it lands */}
+        {heavy && [...Array(28)].map((_, i) => { const dur = 0.9 + rnd(i, 61) * 0.7; return <ellipse key={`sp${i}`} cx={rnd(i, 62) * W} cy={rnd(i, 63) * H} rx="7" ry="2.6" fill="none" stroke="#e2e8f0" strokeWidth="1" style={{ transformBox: "fill-box", transformOrigin: "center", animation: `lfSplash ${dur}s ${-rnd(i, 64) * dur}s ease-out infinite` }} />; })}
+      </g>
+    );
+  }
+  const n = heavy ? 320 : 70;
   return (
     <g className="lf-fall" pointerEvents="none">
       <style>{WX_CSS}</style>
-      {heavy && <rect x="0" y="0" width={W} height={H} fill={wx.snow ? "#f8fafc" : "#cbd5e1"} opacity=".12" />}
+      {heavy && <rect x="0" y="0" width={W} height={H} fill="#f1f5f9" style={{ animation: "lfGust 4s ease-in-out infinite" }} />}
       {[...Array(n)].map((_, i) => {
-        const x = rnd(i, 11) * (W + 40), dur = wx.rain ? 0.45 + rnd(i, 12) * 0.35 : 4 + rnd(i, 12) * 4, delay = -rnd(i, 13) * dur;
-        const st = { animation: `${wx.rain ? "lfRain" : "lfSnow"} ${dur}s ${delay}s linear infinite` };
-        return wx.rain
-          ? <line key={i} x1={x} y1="0" x2={x - 4} y2={12 + rnd(i, 14) * 8} stroke="#e2e8f0" strokeOpacity={0.45 + rnd(i, 15) * 0.35} strokeWidth="1.4" style={st} />
-          : <circle key={i} cx={x} cy="0" r={i % 7 === 0 ? 3.5 + rnd(i, 14) * 2 : 1.1 + rnd(i, 14) * 1.8} fill="#fff" opacity={i % 7 === 0 ? 0.55 : 0.65 + rnd(i, 15) * 0.3} style={{ ...st, filter: i % 7 === 0 ? "blur(1.2px)" : undefined }} />;
+        const big = i % 6 === 0, x = rnd(i, 11) * (W + (heavy ? 160 : 20)), dur = heavy ? 1.8 + rnd(i, 12) * 1.6 : 5 + rnd(i, 12) * 4, delay = -rnd(i, 13) * dur;
+        const r = heavy ? (big ? 3.2 + rnd(i, 14) * 2.4 : 1.2 + rnd(i, 14) * 1.8) : big ? 2.2 + rnd(i, 14) * 1.2 : 0.9 + rnd(i, 14) * 1.2;
+        return <circle key={i} cx={x} cy="0" r={r} fill="#fff" opacity={big ? 0.6 : 0.7 + rnd(i, 15) * 0.25} style={{ animation: `${heavy ? "lfBlizzard" : "lfSnow"} ${dur}s ${delay}s linear infinite`, filter: big ? "blur(1.1px)" : undefined }} />;
       })}
     </g>
   );
