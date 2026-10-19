@@ -1249,4 +1249,7 @@ export const PATCH_NOTES = [
     "Fixed: saying No to a Ring of Honor candidate now takes him off the list.",
     "Draft-day trade calls now ring in from the bottom right, so they never cover the big board.",
   ] },
+  { v: "3.21", date: "2026-10-20", title: "Easier on the Eyes", notes: [
+    "The Legacy Hall's Records page is much easier to read: the bright gold and parchment cards are gone for the game's own dark (or light) cards, each record's number big and plain, the holder under it, the details in quieter type. A gold edge and a small \u2605 YOURS tag mark records set in your league, a green edge a career leader who's still playing, and the season-pace bar now shows how close this year's leader is in percent.",
+  ] },
 ];

@@ -183,6 +183,15 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum, onOpen
   );
 }
 
+// Record cards: the app's dark cards, a colored edge for what kind of mark it is (gold: set in your
+// league; slate: the club's real history; green: held by an active player), the number big and
+// plain, everything else in quieter type underneath.
+const recCard = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "10px 12px 11px", minWidth: 0 };
+const recLabel = { fontSize: 11.5, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: "#94a3b8" };
+const recValue = { fontSize: 28, fontWeight: 900, lineHeight: 1.1, color: C.tx, marginTop: 3, fontVariantNumeric: "tabular-nums" };
+const recWho = { fontSize: 14, fontWeight: 800, color: C.tx, marginTop: 1 };
+const recNote = { fontSize: 12, color: C.mt, marginTop: 2, lineHeight: 1.35 };
+
 // Franchise records: the club's all-time career leaders (its real history through 2025 plus
 // everything done in your league) and the league records your players hold.
 export function RecordsWall({ team, retired, book, teams = [], allRetired = retired }) {
@@ -208,19 +217,22 @@ export function RecordsWall({ team, retired, book, teams = [], allRetired = reti
     <div style={{ marginBottom: 22 }}>
       {season.length > 0 && <>
         <H sub="The club's best single seasons, through 2025 and in your league. Beat one and it's yours.">Single-Season Records</H>
-        <div style={{ background: "linear-gradient(180deg,#13202e,#0c1520)", border: "1px solid #1e3a5f", borderRadius: 12, padding: 12, display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 8, marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 10, marginBottom: 18 }}>
           {season.map((r) => {
             const mine = !r.rec.real, pct = r.lead ? Math.min(100, (r.lead.v / r.rec.val) * 100) : 0;
             return (
-              <div key={r.key} style={{ background: mine ? "linear-gradient(180deg,#fef3c7,#fcd34d)" : "linear-gradient(180deg,#e2e8f0,#cbd5e1)", borderRadius: 8, padding: "9px 11px", color: "#0f172a", boxShadow: "0 3px 8px #0008" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", flex: 1 }}>{r.label}</span>{mine && <span style={{ fontSize: 10, fontWeight: 900, background: "#b45309", color: "#fff", borderRadius: 4, padding: "1px 5px" }}>SET IN YOUR LEAGUE</span>}</div>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 900, lineHeight: 1.15 }}>{recordValue(r.key, r.rec.val)}</div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>{r.rec.name}{r.rec.yr ? ` · ${r.rec.yr}` : " · tied"}</div>
-                {(r.rec.ties || []).map((x, j) => <div key={j} style={{ fontSize: 11, fontWeight: 800, color: "#9a3412" }}>🤝 Tied by {x.name} ({x.yr})</div>)}
-                {r.rec.prev && mine && <div style={{ fontSize: 11, color: "#78350f" }}>Broke {r.rec.prev.name}'s {recordValue(r.key, r.rec.prev.val)}{r.rec.prev.yr ? ` (${r.rec.prev.yr})` : ""}</div>}
-                {r.lead && !(mine && r.rec.name === r.lead.name) && <div style={{ marginTop: 6 }}>
-                  <div style={{ height: 5, background: "#0f172a22", borderRadius: 3 }}><div style={{ width: `${pct}%`, height: "100%", background: pct >= 90 ? "#dc2626" : "#2563eb", borderRadius: 3 }} /></div>
-                  <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>This season: {r.lead.name}, {recordValue(r.key, r.lead.v)}</div>
+              <div key={r.key} style={{ ...recCard, borderLeft: `4px solid ${mine ? "#f59e0b" : "#475569"}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={recLabel}>{r.label}</span>
+                  {mine && <span title="Set in your league" style={{ marginLeft: "auto", whiteSpace: "nowrap", fontSize: 10.5, fontWeight: 900, letterSpacing: 0.6, color: "#fbbf24", border: "1px solid #f59e0b88", background: "#f59e0b1a", borderRadius: 999, padding: "1px 8px" }}>★ YOURS</span>}
+                </div>
+                <div style={recValue}>{recordValue(r.key, r.rec.val)}</div>
+                <div style={recWho}>{r.rec.name}<span style={{ color: C.mt, fontWeight: 600 }}>{r.rec.yr ? ` · ${r.rec.yr}` : " · tied"}</span></div>
+                {(r.rec.ties || []).map((x, j) => <div key={j} style={recNote}>🤝 Tied by {x.name} ({x.yr})</div>)}
+                {r.rec.prev && mine && <div style={recNote}>Broke {r.rec.prev.name}'s {recordValue(r.key, r.rec.prev.val)}{r.rec.prev.yr ? ` (${r.rec.prev.yr})` : ""}</div>}
+                {r.lead && !(mine && r.rec.name === r.lead.name) && <div style={{ marginTop: 8 }}>
+                  <div style={{ height: 6, background: "#ffffff14", borderRadius: 3 }}><div style={{ width: `${pct}%`, height: "100%", background: pct >= 90 ? "#ef4444" : "#3b82f6", borderRadius: 3 }} /></div>
+                  <div style={{ ...recNote, marginTop: 4 }}>This season: <b style={{ color: C.tx }}>{r.lead.name}</b>, {recordValue(r.key, r.lead.v)} <span style={{ color: pct >= 90 ? "#fca5a5" : C.mt }}>({Math.round(pct)}%)</span></div>
                 </div>}
               </div>
             );
@@ -228,23 +240,23 @@ export function RecordsWall({ team, retired, book, teams = [], allRetired = reti
         </div>
       </>}
       <H sub="Each stat's all-time leaders with the club: its real history through 2025, plus everything done in your league.">Franchise Career Leaders</H>
-      <div style={{ background: "linear-gradient(180deg,#2a1d13,#1a120c)", border: "1px solid #3d2a1a", borderRadius: 12, padding: 12, display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 10 }}>
         {rows.length ? rows.map((r) => {
           const top = r.board[0], tenth = r.board[r.board.length - 1];
           return (
-            <div key={r.key} style={{ background: "linear-gradient(180deg,#f6e7b8,#d9bf7a)", borderRadius: 6, padding: "9px 11px", color: "#2b1d0e", boxShadow: "inset 0 0 0 2px #8a6a2a, 0 3px 6px #0008" }}>
-              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase" }}>{r.label}</div>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 900, lineHeight: 1.15 }}>{recordValue(r.key, top.v)}</div>
-              <div style={{ fontSize: 13, fontWeight: 800 }}>{top.name}{top.active ? <span style={{ color: "#166534" }}> · active</span> : null}</div>
-              <div style={{ marginTop: 5, borderTop: "1px solid #8a6a2a55", paddingTop: 4 }}>
+            <div key={r.key} style={{ ...recCard, borderLeft: `4px solid ${top.active ? "#22c55e" : "#a16207"}` }}>
+              <div style={recLabel}>{r.label}</div>
+              <div style={recValue}>{recordValue(r.key, top.v)}</div>
+              <div style={recWho}>{top.name}{top.active ? <span style={{ color: "#4ade80", fontWeight: 800 }}> · active</span> : null}</div>
+              <div style={{ marginTop: 7, borderTop: `1px solid ${C.bd}`, paddingTop: 5 }}>
                 {r.board.slice(1, 5).map((b, i) => (
-                  <div key={b.name} style={{ display: "flex", gap: 6, fontSize: 12, lineHeight: 1.45, fontWeight: b.active ? 800 : 500 }}>
-                    <span style={{ width: 18, color: "#6b4f22" }}>{i + 2}.</span><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.name}{b.active ? " ●" : ""}</span><span>{recordValue(r.key, b.v)}</span>
+                  <div key={b.name} style={{ display: "flex", gap: 8, fontSize: 13, lineHeight: 1.6, color: b.active ? "#86efac" : "#cbd5e1", fontWeight: b.active ? 800 : 500 }}>
+                    <span style={{ width: 16, color: C.mt, fontWeight: 700 }}>{i + 2}</span><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.name}{b.active ? " ●" : ""}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{recordValue(r.key, b.v)}</span>
                   </div>
                 ))}
               </div>
               {r.mine && r.rank !== 1 && (
-                <div style={{ marginTop: 5, fontSize: 11.5, background: "#2b1d0e14", borderRadius: 4, padding: "3px 6px", fontWeight: 700 }}>
+                <div style={{ marginTop: 7, fontSize: 12, background: "#3b82f61a", border: "1px solid #3b82f644", color: "#bfdbfe", borderRadius: 6, padding: "4px 8px", fontWeight: 700, lineHeight: 1.35 }}>
                   {r.rank > 0
                     ? <>{r.mine.name}: #{r.rank}, {recordValue(r.key, top.v - r.mine.v)} behind {top.name}</>
                     : <>{r.mine.name}: {recordValue(r.key, r.mine.v)} · {recordValue(r.key, tenth.v - r.mine.v + 1)} from the top 10</>}
@@ -252,9 +264,9 @@ export function RecordsWall({ team, retired, book, teams = [], allRetired = reti
               )}
             </div>
           );
-        }) : <div style={{ color: "#d6c3a0", fontSize: 14, padding: 10 }}>No records yet.</div>}
+        }) : <div style={{ color: C.mt, fontSize: 14, padding: 10 }}>No records yet.</div>}
       </div>
-      <div style={{ marginTop: 6, fontSize: 12, color: "#d6c3a0" }}>● still playing. Real players carry what they did here before 2026; anyone who passes #1 makes the news.</div>
+      <div style={{ marginTop: 8, fontSize: 12, color: C.mt }}>● still playing. Real players carry what they did here before 2026; anyone who passes #1 makes the news.</div>
       {held.length > 0 && <div style={{ marginTop: 8, fontSize: 13, color: "#fde68a" }}>🏅 League records held: {held.map((b) => `${b.label}: ${b.name}, ${b.yr}`).join(" · ")}</div>}
     </div>
   );
