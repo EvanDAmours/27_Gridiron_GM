@@ -98,7 +98,7 @@ import Moment from "./Moment.jsx";
 import PlayoffRace from "./PlayoffRace.jsx";
 import { clinchStatus, newClinches } from "./clinch.js";
 import { seasonPreview, primeSlot } from "./seasonPreview.js";
-import { milestoneWatch } from "./milestoneWatch.js";
+import { milestoneWatch, recordChase } from "./milestoneWatch.js";
 import { applyTheme, getTheme } from "./theme.js";
 import { fallerCall, tradeDownOffers, acceptOffer, applyFutures, pickLabel, tradeUpOffers, quoteTradeUp, acceptTradeUp, futurePickList, moveFuture } from "./draftTrade.js";
 import { DraftTickerBar, PickIsIn, OnTheClock, TradeUpPanel, ForPickPanel, IncomingCall } from "./DraftDay.jsx";
@@ -458,7 +458,8 @@ const _wireLog=useRef(null);
   // milestone watch: your players chasing a season milestone in this game; reaching one is called out
   const[msSeen,setMsSeen]=useState({});
   const _myLive=liveSim&&(liveSim.h===ui||liveSim.a===ui)?liveStats?.[liveSim.h===ui?"h":"a"]:null;
-  const _mw=_myLive&&teams[ui]?milestoneWatch(teams[ui].roster,_myLive):null;
+  const _mw=_myLive&&teams[ui]?milestoneWatch(teams[ui].roster,_myLive):null;const _rc=_myLive&&teams[ui]&&recordBook?recordChase(teams[ui],_myLive,recordBook):null;useEffect(()=>{/* a record falls during the game: say so now, once */if(!_rc?.hit.length)return;const nw=_rc.hit.filter(e=>!msSeen[`rec-${e.id}-${e.label}-${e.scope}`]);if(!nw.length)return;setMsSeen(m=>({...m,...Object.fromEntries(nw.map(e=>[`rec-${e.id}-${e.label}-${e.scope}`,true]))}));const e=nw[0];sm(`🏆 RECORD! ${e.name} passes ${e.holder} for the ${e.scope==="NFL"?"NFL":`${e.scope}`} single-season ${e.label} record!`);},[liveStats]);// eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(()=>{if(!_mw?.hit.length)return;const nw=_mw.hit.filter(e=>!msSeen[`${e.id}-${e.label}-${e.target}`]);if(!nw.length)return;setMsSeen(m=>({...m,...Object.fromEntries(nw.map(e=>[`${e.id}-${e.label}-${e.target}`,true]))}));sm(`🎯 MILESTONE: ${nw[0].name} reaches ${nw[0].target.toLocaleString()} ${nw[0].label}!`);setLog(l=>[...nw.map(e=>`🎯 MILESTONE: ${e.name} reaches ${e.target.toLocaleString()} ${e.label} on the season`),...l].slice(0,150));},[liveStats]);// eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{if(!livePO||tab!=='livesim'||liveDone)return;setPoIntro(true);const t=setTimeout(()=>setPoIntro(false),4200);return()=>clearTimeout(t);},[livePO,liveSim?.h,liveSim?.a]);// eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{if(!liveSB||tab!=='livesim'||liveDone)return;setSbIntro(true);const t=setTimeout(()=>setSbIntro(false),4200);return()=>clearTimeout(t);},[liveSB,liveSim?.h,liveSim?.a]);// eslint-disable-line react-hooks/exhaustive-deps
@@ -2024,6 +2025,11 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         </div>;
       })()}
       {/* Field */}
+      {_rc&&(_rc.chase.length>0||_rc.hit.length>0)&&<div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",margin:"0 0 6px",fontSize:13}}>
+        <span style={{fontSize:11,fontWeight:900,letterSpacing:1.4,color:"#fca5a5"}}>🏆 RECORD WATCH</span>
+        {_rc.hit.map(e=><span key={`rh${e.id}${e.label}`} style={{background:"linear-gradient(90deg,#7f1d1d,#b91c1c)",color:"#fff",fontWeight:900,borderRadius:999,padding:"3px 10px",boxShadow:"0 0 14px #ef444466"}}>🏆 {e.name.split(" ").slice(-1)[0]}: {e.scope==="NFL"?"NFL":e.scope} record, {e.label}!</span>)}
+        {_rc.chase.map(e=><span key={`rc${e.id}${e.label}`} style={{background:C.cd,border:"1px solid #ef444455",borderRadius:999,padding:"3px 10px",color:"#e2e8f0"}}><b>{e.name.split(" ").slice(-1)[0]}</b> needs <b style={{color:"#fca5a5"}}>{e.need}</b> {e.label} for the {e.scope==="NFL"?"NFL":e.scope} record ({e.holder})</span>)}
+      </div>}
       {_mw&&(_mw.chase.length>0||_mw.hit.length>0)&&<div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",margin:"0 0 6px",fontSize:13}}>
         <span style={{fontSize:11,fontWeight:900,letterSpacing:1.4,color:C.gd}}>🎯 MILESTONE WATCH</span>
         {_mw.hit.map(e=><span key={`h${e.id}${e.label}`} style={{background:"linear-gradient(90deg,#78350f,#b45309)",color:"#fde68a",fontWeight:900,borderRadius:999,padding:"3px 10px",boxShadow:"0 0 14px #f59e0b66"}}>✨ {e.name.split(" ").slice(-1)[0]}: {e.target.toLocaleString()} {e.label}!</span>)}
