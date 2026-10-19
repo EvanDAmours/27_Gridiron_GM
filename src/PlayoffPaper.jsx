@@ -20,11 +20,45 @@ const CSS = `
 @media (max-width: 760px) { .pp-grid { grid-template-columns: 1fr; } .pp-grid > * + * { border-left: none; border-top: 1px solid #15131055; } }
 `;
 
+const H5 = { margin: "0 0 4px", fontFamily: "'IM Fell English SC', 'IM Fell English', serif", fontSize: 15 };
+// The special editions (editions.js): deadline day, the draft extra, the Hall of Fame page.
+function Edition({ p, onClose }) {
+  return (
+    <article className="gz pp" onClick={(e) => e.stopPropagation()}>
+      <div className="gz-ears">
+        <div className="gz-ear">"All the Football<br />That's Fit to Print"</div>
+        <h1 className="gz-mast">The Gridiron Gazette</h1>
+        <div className="gz-ear gz-ear-r"><b>{p.edition}</b><br />{p.yr} season</div>
+      </div>
+      <div className="gz-dateline"><span>SPORTS</span><span>{String(p.city || "").toUpperCase()} · {p.round.toUpperCase()}</span><span>$2.50</span></div>
+      <h2 className="gz-banner" style={{ fontSize: 42 }}>{p.head}</h2>
+      <h3 className="gz-deck1" style={{ marginBottom: 8 }}>{p.deck}</h3>
+      <div className="pp-grid">
+        <section style={{ paddingLeft: 0 }}>
+          <div className="gz-byline">{String(p.byline || "").toUpperCase()}</div>
+          <div className="gz-cols">{p.story.map((t, i) => <p key={i} className={i === 0 ? "gz-drop" : ""}>{t}</p>)}</div>
+        </section>
+        <aside style={{ paddingRight: 0 }}>
+          {p.boxes.map((b) => <div key={b.title} className="pp-box" style={{ marginTop: 0, marginBottom: 10 }}><h5>{b.title}</h5><ul>{b.items.map((x, i) => <li key={i}>{x}</li>)}</ul></div>)}
+          {p.table && <><h5 style={H5}>{p.table.title}</h5><table className="pp-stats"><tbody>{p.table.rows.map(([a, b], i) => <tr key={i}><td>{a}</td><td><b>{b}</b></td></tr>)}</tbody></table></>}
+        </aside>
+      </div>
+      <div className="pp-next"><button onClick={onClose}>Close the paper</button></div>
+    </article>
+  );
+}
+
 export default function PlayoffPaper({ paper: p, onClose }) {
   useEffect(() => {
     if (document.getElementById("gz-fonts")) return;
     const l = document.createElement("link"); l.id = "gz-fonts"; l.rel = "stylesheet"; l.href = GAZETTE_FONTS; document.head.appendChild(l);
   }, []);
+  if (p.kind) return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2950, background: "radial-gradient(ellipse at 50% 30%, #2b2620, #0a0907 75%)", overflowY: "auto", padding: "14px 10px 20px" }}>
+      <style>{GAZETTE_CSS + CSS}</style>
+      <Edition p={p} onClose={onClose} />
+    </div>
+  );
   const you = p.youWon ? p.winner : p.loser;
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2950, background: "radial-gradient(ellipse at 50% 30%, #2b2620, #0a0907 75%)", overflowY: "auto", padding: "14px 10px 20px" }}>

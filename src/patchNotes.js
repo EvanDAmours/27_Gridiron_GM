@@ -1279,4 +1279,11 @@ export const PATCH_NOTES = [
     "So moving a player is a long-term call. A speed linebacker you keep at SAM becomes a better SAM over two or three seasons; a corner you move inside learns the slot. Young players adapt most; past 30, little changes.",
     "The player card's ROLE FIT shows ↗ next to the role a player grew into last off-season.",
   ] },
+  { v: "3.28", date: "2026-10-20", title: "Gazette Special Editions", notes: [
+    "More Gazette editions. Three new front pages, written from what actually happened and in the same old-style type as the championship paper.",
+    "Deadline Edition: when the 4 PM bell rings on Trade Deadline Day. It leads with the biggest deal (or a quiet day, if nobody moved), lists every trade, and covers your own moves.",
+    "Draft Extra: once the last pick is in. It covers the first overall pick, the top of the board, the steal of the weekend and the biggest reach, the first round, the best and worst classes, and your class with its grade.",
+    "Hall of Fame Edition: when a Hall of Famer retires. It leads with the headliner and lists the full class with seasons, rings and peak rating. If one of them played for you, it says so.",
+    "Each edition picks its headline, deck and byline from a bank, so no two seasons read alike. New editions show up in your inbox.",
+  ] },
 ];
