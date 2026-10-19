@@ -1362,4 +1362,8 @@ export const PATCH_NOTES = [
     "The depth chart's field view no longer snaps back to 11 personnel and nickel. It now opens on what your team actually lines up in most: your offensive identity (two tight ends shows 12, fullback shows 21) and your defensive lean (base-heavy shows base). On auto, it follows your coordinators' call. The grouping you last looked at stays put until you change your identity or lean in Strategy.",
     "The defense field view now shows your defensive lean next to the package buttons, the way the offense shows your identity. The buttons only change which grouping the field shows. Your identity and lean are set in Strategy, and the game plays them.",
   ] },
+  { v: "3.45", date: "2026-10-20", title: "AI Coaches Grow Too", notes: [
+    "AI coordinators now grow the way yours do. Every game gives each AI coordinator the same experience yours get (3 for a win, 1 for a loss, +1 rating per 20 experience, up to 95). Before, only your staff ever improved and AI coaches stayed at their hiring rating.",
+    "Each off-season, most AI clubs also put their coordinators through the development work you can buy for yours (+5, once a year), and now and then one takes on a specialty that fits his scheme (+3). A rival's staff now gets better over a dynasty instead of standing still while yours climbs to 95.",
+  ] },
 ];
