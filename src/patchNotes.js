@@ -1342,4 +1342,9 @@ export const PATCH_NOTES = [
     "New: the defensive field has Base, Nickel and Dime buttons, like the offense's personnel buttons, and shows the defense the way it lines up in each: three linebackers in base, two and a nickel back in nickel, one linebacker and two extra defensive backs in dime.",
     "Fixed: the draft's first round always runs in real time again. If the speed had been left on Fast from an earlier draft, the clock flew from pick one. Round 1 now ticks in real seconds at any speed (Sim this pick and Sim to my pick still skip ahead), and every draft starts at Normal speed.",
   ] },
+  { v: "3.40", date: "2026-10-20", title: "NFL Record Ceremony", notes: [
+    "Breaking an NFL record is now a big event. When one of your players sets a new single-season league record, a full-screen ceremony plays, in the spirit of the Super Bowl celebration: spotlights sweep a gold-and-black stadium, gold confetti falls, his photo appears in a gold ring, and the record number counts up to the new mark.",
+    "The old record and its holder appear underneath and get struck through, and the ball goes 'into the record book'.",
+    "Franchise records keep their team-colored card, so you can tell at a glance whether he broke the club record or the league's.",
+  ] },
 ];

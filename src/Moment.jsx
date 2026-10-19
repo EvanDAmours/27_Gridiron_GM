@@ -121,8 +121,56 @@ function RingNight({ m, onClose }) {
   );
 }
 
+// A new NFL record: the league stops for it. Lights sweep the stadium, the number climbs to the new
+// mark, the old one is struck through, and the ball goes to Canton. (Franchise records keep the
+// team-colored card.)
+function CountUp({ value, ms = 1700 }) {
+  const m = String(value).match(/[\d,]+(\.\d+)?/);
+  const target = m ? +m[0].replace(/,/g, "") : null, dec = m?.[1] ? m[1].length - 1 : 0;
+  const [v, setV] = React.useState(target == null ? null : 0);
+  React.useEffect(() => {
+    if (target == null) return;
+    let raf, t0;
+    const step = (t) => { t0 ??= t; const k = Math.min(1, (t - t0) / ms); setV(target * (1 - Math.pow(1 - k, 3))); if (k < 1) raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms]);
+  if (target == null) return value;
+  const shown = v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  return String(value).replace(m[0], shown);
+}
+function RecordNight({ m, onClose }) {
+  const t = m.team, clr = t.clr || "#1e3a8a";
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 4300, background: "radial-gradient(ellipse at 50% 18%, #2a1d05f2, #030303fa 72%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflow: "hidden" }}>
+      <style>{CSS + "@keyframes rnBeamL{0%,100%{transform:rotate(-28deg)}50%{transform:rotate(-8deg)}} @keyframes rnBeamR{0%,100%{transform:rotate(28deg)}50%{transform:rotate(8deg)}} @keyframes rnPop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:none}} @keyframes rnGlow{0%,100%{text-shadow:0 0 18px #fbbf2466}50%{text-shadow:0 0 42px #fbbf24cc}} @keyframes rnStrike{from{width:0}to{width:100%}}"}</style>
+      {[["rnBeamL", "18%"], ["rnBeamR", "82%"]].map(([a, x]) => <div key={a} aria-hidden style={{ position: "absolute", top: -60, left: x, width: 220, marginLeft: -110, height: "120vh", transformOrigin: "50% 0", background: "linear-gradient(180deg, #fde68a55, #fde68a00 75%)", clipPath: "polygon(45% 0, 55% 0, 100% 100%, 0 100%)", animation: `${a} 6s ease-in-out infinite`, pointerEvents: "none", mixBlendMode: "screen" }} />)}
+      <Confetti colors={["#fbbf24", "#fde68a", "#d4a017", clr, "#ffffff"]} />
+      <div role="dialog" aria-label="New NFL record" onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(640px, 100%)", maxHeight: "calc(var(--vh, 100vh) - 32px)", overflowY: "auto", textAlign: "center", color: "#fff", background: "linear-gradient(170deg, #1a1305, #070604 70%)", border: "2px solid #d4a017", borderRadius: 20, padding: MOBILE ? "20px 16px" : "26px 34px 28px", boxShadow: "0 0 120px #fbbf2440, 0 30px 90px #000e", animation: "mmIn .5s ease-out" }}>
+        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 5, color: "#d4a017" }}>★ ★ ★ HISTORY ★ ★ ★</div>
+        <div className="mm-title" style={{ fontSize: MOBILE ? 34 : 50, fontWeight: 900, fontStyle: "italic", lineHeight: 1, marginTop: 4, letterSpacing: 1 }}>NEW NFL RECORD</div>
+        <div style={{ fontSize: MOBILE ? 13 : 15, fontWeight: 800, letterSpacing: 2, color: "#fde68a", marginTop: 6 }}>THE MOST {String(m.label || "").toUpperCase()} IN LEAGUE HISTORY</div>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 14 }}>
+          <div style={{ borderRadius: "50%", padding: 5, background: "conic-gradient(from 0deg, #fde68a, #b45309, #fde68a, #b45309, #fde68a)", boxShadow: "0 0 40px #fbbf2466", animation: "rnPop .8s .2s cubic-bezier(.2,.8,.3,1) both" }}><Face s={m.p.face} sz={MOBILE ? 96 : 124} jersey={clr} /></div>
+        </div>
+        <div style={{ fontSize: MOBILE ? 24 : 32, fontWeight: 900, marginTop: 10 }}>{m.p.name}</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 }}><Bdg pos={m.p.pos} /><TeamLogo t={t} sz={22} /><span style={{ fontSize: 14, color: "#e7cf8a" }}>{t.city} {t.name}{m.yr ? ` · ${m.yr}` : ""}</span></div>
+        <div style={{ fontSize: MOBILE ? 64 : 92, fontWeight: 900, lineHeight: 1, color: "#fde68a", marginTop: 12, fontVariantNumeric: "tabular-nums", animation: "rnGlow 2.4s 1.8s ease-in-out infinite" }}><CountUp value={m.value} /></div>
+        <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 2, color: "#d4a017", marginTop: 2 }}>{String(m.label || "").toUpperCase()}</div>
+        {m.prev && <div style={{ display: "inline-block", position: "relative", marginTop: 12, fontSize: MOBILE ? 14 : 15, color: "#94a3b8" }}>
+          <span style={{ fontWeight: 900, letterSpacing: 1.5, fontSize: 11, color: "#78716c", marginRight: 6 }}>OLD RECORD</span>{m.prev}
+          <span aria-hidden style={{ position: "absolute", left: 0, top: "52%", height: 2, background: "#ef4444", animation: "rnStrike .7s 1.9s ease-out both" }} />
+        </div>}
+        {m.sub && <div style={{ fontSize: MOBILE ? 14 : 15, color: "#e2e8f0", marginTop: 12, lineHeight: 1.5, fontStyle: "italic" }}>{m.sub}</div>}
+        <button onClick={onClose} style={{ marginTop: 18, width: "100%", background: "linear-gradient(90deg,#b45309,#fbbf24,#b45309)", color: "#1c1206", border: 0, borderRadius: 10, padding: "13px 0", fontSize: 16, fontWeight: 900, letterSpacing: 2, cursor: "pointer" }}>INTO THE RECORD BOOK →</button>
+      </div>
+    </div>
+  );
+}
+
 export default function Moment({ m, onClose }) {
   if (!m?.team) return null;
+  if (m.kind === "record" && m.nfl) return <RecordNight m={m} onClose={onClose} />;
   if (m.kind === "hof") return <HofCeremony m={m} onClose={onClose} />;
   if (m.kind === "jersey" || m.kind === "ring") return <RaftersNight m={m} onClose={onClose} />;
   if (m.kind === "rings") return <RingNight m={m} onClose={onClose} />;
