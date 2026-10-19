@@ -224,7 +224,7 @@ function Shelf({ title, items, empty, perRow, on, setOn, start = 0, small, spot 
 }
 
 // team: your club. champs: this league's champions. awards: season award winners by year.
-export default function TrophyRoom({ team, ui, champs = [], awards = [], teams = [], spotlight = null, retired = [], yr = 2026, book = null, onInduct, onRetireNum, onRetired, onPass }) {
+export default function TrophyRoom({ team, ui, champs = [], awards = [], teams = [], spotlight = null, retired = [], yr = 2026, book = null, onInduct, onRetireNum, onRetired, onPass, papers = [], onPaper }) {
   const [on, setOn] = useState(null);
   const [sec, setSec] = useState(spotlight === "ring" ? "ring" : spotlight != null ? "trophies" : "banners");
   useEffect(() => { if (spotlight === "ring") setSec("ring"); else if (spotlight != null) setSec("trophies"); }, [spotlight]);
@@ -275,7 +275,7 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
         </div>
       </div>
       <div role="tablist" style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14, position: "sticky", top: 0, zIndex: 5, background: C.bg, padding: "6px 0" }}>
-        {[["banners", "🚩 Banners"], ["trophies", "🏆 Trophies"], ["jackets", "🧥 Gold Jackets"], ["ring", "💍 Ring of Honor"], ["records", "📊 Records"]].map(([k, l]) => (
+        {[["banners", "🚩 Banners"], ["trophies", "🏆 Trophies"], ["jackets", "🧥 Gold Jackets"], ["ring", "💍 Ring of Honor"], ["records", "📊 Records"], ...(onPaper ? [["gazette", "📰 Gazette"]] : [])].map(([k, l]) => (
           <button key={k} role="tab" aria-selected={sec === k} onClick={() => setSec(k)} style={{ background: sec === k ? "#d4a01722" : C.cd, color: sec === k ? "#fde68a" : "#cbd5e1", border: `1px solid ${sec === k ? "#d4a017" : C.bd}`, borderRadius: 999, padding: "7px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>
         ))}
       </div>
@@ -293,6 +293,41 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
       {sec === "jackets" && <GoldJackets team={team} hofers={retiredHere.filter((r) => r.hof)} yr={yr} onOpen={onRetired} />}
       {sec === "ring" && <RingOfHonor team={team} retired={retiredHere} hall={hall} onInduct={onInduct || (() => {})} onRetireNum={onRetireNum || (() => {})} onOpen={onRetired} onPass={onPass} />}
       {sec === "records" && <RecordsWall team={team} retired={retiredHere} book={book} teams={teams} allRetired={retired} />}
+      {sec === "gazette" && <GazetteArchive papers={papers} onOpen={onPaper} />}
+    </div>
+  );
+}
+
+// Every Gazette front page from your seasons, newest first: championships, playoff games and the
+// special editions (deadline day, the draft, the Hall of Fame). Tap one to read it again.
+const KIND_TAG = { champ: ["CHAMPIONSHIP", "#b8860b"], deadline: ["DEADLINE", "#7c3aed"], draft: ["DRAFT EXTRA", "#0e7490"], hof: ["HALL OF FAME", "#a16207"], rival: ["RIVAL PAPER", "#b91c1c"] };
+function GazetteArchive({ papers, onOpen }) {
+  useEffect(() => {
+    if (document.getElementById("gz-fonts")) return;
+    const l = document.createElement("link"); l.id = "gz-fonts"; l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=IM+Fell+Double+Pica:ital@0;1&display=swap"; document.head.appendChild(l);
+  }, []);
+  if (!papers.length) return <div style={{ color: C.mt, fontSize: 15, padding: 20, textAlign: "center" }}>No papers yet. Playoff games, Trade Deadline Day, the draft and Hall of Fame classes all make the front page.</div>;
+  const years = [...new Set(papers.map((p) => p.yr))].sort((a, b) => b - a);
+  const order = (p) => (p.kind === "champ" ? 9 : p.kind ? { deadline: 1, draft: 7, hof: 8, rival: 2 }[p.kind] ?? 3 : 3 + (p.rd || 0) * 0.5);
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      {years.map((y) => (
+        <div key={y}>
+          <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.6, color: C.mt, marginBottom: 6 }}>{y} SEASON</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 10 }}>
+            {papers.filter((p) => p.yr === y).sort((a, b) => order(b) - order(a)).map((p, i) => {
+              const [tag, clr] = KIND_TAG[p.kind] || [String(p.round || "PLAYOFFS").toUpperCase(), p.youWon ? "#15803d" : "#57534e"];
+              return (
+                <button key={i} onClick={() => onOpen(p)} style={{ textAlign: "left", cursor: "pointer", background: "#f3eddf", color: "#151310", border: p.kind === "champ" ? "2px solid #d4a017" : "1px solid #d6cdb8", borderRadius: 6, padding: "10px 12px 12px", boxShadow: "0 2px 8px #0006", fontFamily: "'IM Fell English', Georgia, serif" }}>
+                  <div style={{ fontFamily: "'UnifrakturMaguntia', 'IM Fell English', serif", fontSize: 15, textAlign: "center", borderBottom: "1px solid #151310", paddingBottom: 3, marginBottom: 6 }}>The Gridiron Gazette</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.2, color: clr, fontFamily: "system-ui, sans-serif" }}>{tag}</div>
+                  <div style={{ fontSize: 16, lineHeight: 1.15, fontWeight: 700, marginTop: 2 }}>{p.head}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -1286,4 +1286,8 @@ export const PATCH_NOTES = [
     "Hall of Fame Edition: when a Hall of Famer retires. It leads with the headliner and lists the full class with seasons, rings and peak rating. If one of them played for you, it says so.",
     "Each edition picks its headline, deck and byline from a bank, so no two seasons read alike. New editions show up in your inbox.",
   ] },
+  { v: "3.29", date: "2026-10-20", title: "Gazette Archive", notes: [
+    "Gazette archive: the Legacy Hall has a new 📰 Gazette wing. Every front page from your seasons is kept there, newest season first: championship editions, the morning paper after each playoff game, Deadline Day, the Draft Extra and the Hall of Fame page. Tap any one to read it again.",
+    "Championship front pages are saved with the records as they were that night, so an old title paper still reads right years later. The archive always keeps every championship paper; once it gets long, the oldest other papers drop off.",
+  ] },
 ];

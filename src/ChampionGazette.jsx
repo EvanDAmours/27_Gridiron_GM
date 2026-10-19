@@ -27,7 +27,7 @@ function paperDate(yr) {
   return `${DAYS[d.getUTCDay()]}, ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 }
 
-export default function ChampionGazette({ show, teams, ui, path = [], titles = 1, repeat = false, streak, onNext }) {
+export default function ChampionGazette({ show, teams, ui, path = [], titles = 1, repeat = false, streak, onNext, cta = "Continue to the awards →" }) {
   useEffect(() => {
     if (document.getElementById("gz-fonts")) return;
     const l = document.createElement("link"); l.id = "gz-fonts"; l.rel = "stylesheet"; l.href = FONTS; document.head.appendChild(l);
@@ -131,7 +131,7 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
         })()}
         <div className="gz-index"><b>INSIDE</b> · {gz.index.join(" · ")}</div>
       </article>
-      <div className="gz-next"><button onClick={onNext}>Continue to the awards →</button></div>
+      <div className="gz-next"><button onClick={onNext}>{cta}</button></div>
     </div>
   );
 }
