@@ -4,6 +4,7 @@
 // the paper's bank of writers (gazetteBank.js): a different headline, voice and front page each
 // year. Set in old letterpress type throughout (IM Fell, cut in the 1680s), with a blackletter flag.
 import React, { useEffect } from "react";
+import { ConfettiRain } from "./SuperBowlWin.jsx";
 import { LombardiStill } from "./Lombardi.jsx";
 import { matchupPortraitPath } from "./matchupPortraitAssets.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
@@ -53,6 +54,8 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
   return (
     <div onClick={(e) => e.stopPropagation()} style={{ position: "fixed", inset: 0, zIndex: 3000, background: "radial-gradient(ellipse at 50% 30%, #2b2620, #0a0907 75%)", overflowY: "auto", padding: "18px 10px 90px" }}>
       <style>{GAZETTE_CSS}</style>
+      {/* confetti still falling while you read the paper (it never blocks a click) */}
+      <ConfettiRain colors={[t.clr || "#1e3a8a", t.ac || "#f59e0b", "#fbbf24", "#fde68a", "#ffffff"]} count={60} z={3001} />
       <article className="gz">
         <div className="gz-ears">
           <div className="gz-ear" dangerouslySetInnerHTML={{ __html: gz.earL }} />

@@ -1350,4 +1350,8 @@ export const PATCH_NOTES = [
   { v: "3.41", date: "2026-10-20", title: "Playoff Injury Returns", notes: [
     "Injury returns in the playoffs now read the way you'd say them. A player due back after the regular season shows as back for the Wild Card round, the Divisional round, the Conference Championship or the Super Bowl, instead of 'back wk 20'. This applies everywhere: injury tags, the injury report, player cards and the injured reserve list. Regular-season returns still show the week.",
   ] },
+  { v: "3.42", date: "2026-10-20", title: "Super Bowl Champions Moment", notes: [
+    "Winning the Super Bowl now has its own moment before the paper. Fireworks go off over the stadium, confetti falls in your team's colors and gold, and the final score shows. The Lombardi Trophy rises into the spotlight with the words WORLD CHAMPIONS. The screen says what the title means for the franchise (a first title, back-to-back, a dynasty) and shows the Super Bowl MVP. Then one button opens the morning paper.",
+    "Confetti now keeps falling while you read the champions' paper. It never blocks a tap.",
+  ] },
 ];
