@@ -33,8 +33,8 @@ function Scout({ r, opp, onPersonnel }) {
   );
 }
 
-export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto, onTwoPoint, mobile, last, report, onPersonnel }) {
-  const [open, setOpen] = React.useState(false);
+export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto, onTwoPoint, mobile, last, report, onPersonnel, defaultOpen = false, onHub }) {
+  const [open, setOpen] = React.useState(defaultOpen);
   if (!units || !opp) return null;
   const opts = planOptions(units.mine, units.theirs);
   const best = bestPlan(units.mine, units.theirs);
@@ -66,7 +66,8 @@ export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto
         <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd }}>🎯 GAME PLAN vs {opp.ab || opp.name}</span>
         <span style={{ fontSize: 12, color: set ? "#fde68a" : C.mt }}>{set ? "your call for this game" : "your coaches' pick (best fit)"}</span>
         {(() => { const lbl = (list, k) => list.find((x) => x.key === k); const o = lbl(OFF_PLANS, cur.off), d = lbl(DEF_PLANS, cur.def); return !open && <span style={{ fontSize: 13, fontWeight: 800 }}>{o?.icon} {o?.label} <b style={{ color: GRADE_C[planGrade(opts.off[cur.off].v)] }}>{planGrade(opts.off[cur.off].v)}</b> · {d?.icon} {d?.label} <b style={{ color: GRADE_C[planGrade(opts.def[cur.def].v)] }}>{planGrade(opts.def[cur.def].v)}</b></span>; })()}
-        <button onClick={() => setOpen(!open)} style={{ marginLeft: "auto", background: "transparent", border: `1px solid ${C.bd}`, color: "#93c5fd", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 800, padding: "3px 10px" }}>{open ? "Done ▴" : "Change ▾"}</button>
+        {onHub && <button onClick={onHub} title="Everything for this game on one screen" style={{ marginLeft: "auto", background: `${C.gd}22`, border: `1px solid ${C.gd}88`, color: "#fde68a", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 800, padding: "3px 9px" }}>📋 Week prep</button>}
+        <button onClick={() => setOpen(!open)} style={{ marginLeft: onHub ? 0 : "auto", background: "transparent", border: `1px solid ${C.bd}`, color: "#93c5fd", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 800, padding: "3px 10px" }}>{open ? "Done ▴" : "Change ▾"}</button>
         {set && open && <button onClick={onAuto} style={{ marginLeft: "auto", background: "none", border: "none", color: "#93c5fd", textDecoration: "underline", cursor: "pointer", fontSize: 12, padding: 0 }}>Use the coaches' pick</button>}
       </div>
       {!open && report?.notes?.[0] && <div style={{ fontSize: 12.5, marginTop: 6, color: report.notes[0].tone === "watch" ? "#fcd34d" : "#86efac", lineHeight: 1.4 }}>🔎 {report.notes[0].text}</div>}

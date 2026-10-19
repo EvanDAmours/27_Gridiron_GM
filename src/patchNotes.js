@@ -1309,4 +1309,9 @@ export const PATCH_NOTES = [
     "For a receiver spot, a receiving tight end is an option too (marked SPLITS OUT). Start him and he moves out wide on your depth chart, rated as a receiver at that spot.",
     "Fixed: with roles, the next man up could land at any linebacker, corner or receiver spot, so a backup was sometimes left off the list. The options now show everyone who isn't already starting.",
   ] },
+  { v: "3.34", date: "2026-10-20", title: "Week Prep", notes: [
+    "Week Prep: everything for this week's game on one screen. Open it with 📋 Week prep on the Home game-plan card. On the left are the scouting report on your opponent and your game plan. On the right are a Ready Check, your situational packages, and Play and Sim buttons.",
+    "The Ready Check flags what's worth a look before kickoff, with a one-tap fix where there is one: a starter who's hurt and still needs a replacement (Choose), an identity or defensive lean that rates worse against this opponent than another (Use it), and a set your OC or DC doesn't believe in. When everything checks out, it says ✓ Ready.",
+    "Built to fit without scrolling on a laptop; on a phone it stacks into one column.",
+  ] },
 ];
