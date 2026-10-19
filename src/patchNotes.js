@@ -1324,4 +1324,10 @@ export const PATCH_NOTES = [
     "A player keeps his portrait for good: through trades, position changes and new seasons.",
     "Real players keep their ESPN photos. A real player or real draft prospect without a photo keeps the drawn face; a fictional photo never stands in for a real person.",
   ] },
+  { v: "3.37", date: "2026-10-20", title: "Code Cleanup", notes: [
+    "Housekeeping: a code cleanup with no gameplay changes.",
+    "Removed the Multiplayer menu item, which only opened a feature list for online leagues that don't exist, and the \"Upgrade to Pro\" label on God Mode (God Mode is free and works as before).",
+    "Removed leftover code that was never reached: an old press-conference screen, four unused player-sprite renderers and the 3D library only they used, and a handful of unused helpers. The download is lighter as a result.",
+    "A records test that played random games could fail by chance; it now replays the same games every time. Releases now stop on any code-check error.",
+  ] },
 ];

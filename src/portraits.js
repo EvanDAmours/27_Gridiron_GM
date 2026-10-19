@@ -100,7 +100,7 @@ export function nameFit(name) {
 // League-wide and per-team use of each portrait, to spread them out.
 const usage = new Map(), teamUse = new Map();
 export function resetPortraitUse() { usage.clear(); teamUse.clear(); }
-function use(pid, team) {
+function countUse(pid, team) {
   usage.set(pid, (usage.get(pid) || 0) + 1);
   if (team != null) { const m = teamUse.get(team) || new Map(); m.set(pid, (m.get(pid) || 0) + 1); teamUse.set(team, m); }
 }
@@ -118,7 +118,7 @@ export function pickPortrait(pos, { name, team, rand = Math.random } = {}) {
   // least used per unit of weight (so the league ends up near the makeup), with a little noise
   const score = (p) => (tm.get(p.id) || 0) * 10 + ((usage.get(p.id) || 0) + 1) / (WEIGHT[p.id] || 0.05) * (0.85 + rand() * 0.3);
   const pick = pool.reduce((a, b) => (score(b) < score(a) ? b : a));
-  use(pick.id, team);
+  countUse(pick.id, team);
   return pick.id;
 }
 
@@ -144,7 +144,7 @@ export function portraitSave(d) {
   (d?.teams || []).forEach((t, ti) => { for (const k of ["roster", "ps", "ir"]) for (const p of t[k] || []) all.push([p, ti]); });
   for (const k of ["fa", "waivers"]) for (const p of d?.[k] || []) all.push([p, null]);
   for (const cls of Object.values(d?.dc || {})) for (const p of cls || []) all.push([p, null]);
-  for (const [p, ti] of all) if (p.face?.pid && BY_ID[p.face.pid]) use(p.face.pid, ti);
+  for (const [p, ti] of all) if (p.face?.pid && BY_ID[p.face.pid]) countUse(p.face.pid, ti);
   for (const [p, ti] of all) if (isFictional(p) && !(p.face?.pid && BY_ID[p.face.pid])) p.face = { ...(p.face || {}), pid: pickPortrait(p.pos, { name: p.name, team: ti }) };
   return d;
 }

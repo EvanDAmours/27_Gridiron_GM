@@ -12,7 +12,6 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 // Edge or tackle by trade: Madden's position, else body weight (older saves).
 export const naturalDL = (p) => (p.mpos ? (p.mpos === "DT" ? "DT" : "EDGE") : (p.wt || 280) >= 292 ? "DT" : "EDGE");
-export const dlLabel = (p) => naturalDL(p);
 // The position to show: an edge rusher or a defensive tackle instead of a generic DL.
 export const posTag = (p) => (p?.pos === "DL" ? naturalDL(p) : p?.pos);
 

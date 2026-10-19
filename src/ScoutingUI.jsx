@@ -595,29 +595,6 @@ export function CombineView({ g, buzz }) {
 
 // ---------- Draft day ----------
 
-export function TopProspects({ g }) {
-  const top = (g.dc[g.yr] || []).slice(0, 5);
-  if (!top.length) return null;
-  return (
-    <div style={{ marginBottom: 8 }}>
-      <div style={{ fontSize: 12, color: "#475569", letterSpacing: 2, marginBottom: 4 }}>📋 TOP OF THE BOARD</div>
-      <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 4 }}>
-        {top.map((p) => {
-          const read = prospectRead(g.scouting, p);
-          return (
-            <div key={p.id} onClick={() => g.setSel(p)} style={{ minWidth: 112, background: "#0d1424", border: "1px solid #1e3a5f", borderRadius: 4, padding: "6px 8px", flexShrink: 0, cursor: "pointer" }}>
-              <div style={{ fontSize: 10, color: "#475569" }}>CONSENSUS #{csRank(p)}</div>
-              <div style={{ fontSize: 12, fontWeight: "bold", color: "#e2e8f0" }}>{p.name}</div>
-              <div style={{ fontSize: 11, color: "#64748b" }}>{p.pos} • {p.bio?.college}</div>
-              <div style={{ display: "flex", gap: 3, marginTop: 4, alignItems: "center" }}><Read label="OVR" txt={read.ovr} /><Read label="POT" txt={read.pot} />{p.combGrade && <GradeChip g={p.combGrade} small title="Combine" />}</div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 // The analysts' grades for every team's class, once the draft is over.
 export function DraftGrades({ g }) {
   const by = {};

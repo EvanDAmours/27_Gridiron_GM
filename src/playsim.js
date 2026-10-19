@@ -294,7 +294,6 @@ export function setLeague(base) {
 export let SENSITIVITY = 0.6; // edge units per spread of advantage
 // How much a team's play swings from one game to the next (edge units, per side of the ball).
 export let GAME_DAY_SD = 0.45; // with SENSITIVITY 0.6: win totals spread like the NFL's (~3 wins), no routine 16-1 or 1-16 teams
-export const tune = (o) => { if (o.SENSITIVITY != null) SENSITIVITY = o.SENSITIVITY; if (o.GAME_DAY_SD != null) GAME_DAY_SD = o.GAME_DAY_SD; if (o.HOME_EDGE != null) HOME = o.HOME_EDGE; };
 const z = (v, k) => (v - LEAGUE[k][0]) / LEAGUE[k][1];
 
 // Matchup edges for the team with the ball (passing and running), in edge units. Big offensive

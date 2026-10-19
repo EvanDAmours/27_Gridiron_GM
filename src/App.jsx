@@ -310,7 +310,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   // v7.0 new features
   const[awards,setAwards]=useState([]);
   const[draftClassRating,setDraftClassRating]=useState('Average');
-  const[pressConf,setPressConf]=useState({active:false,q:0,answered:false});
+  
   // Live sim
   const[liveSim,setLiveSim]=useState(null);const[liveLog,setLiveLog]=useState([]);
   const[liveScore,setLiveScore]=useState({h:0,a:0});const[liveQtr,setLiveQtr]=useState(1);const[liveClock,setLiveClock]=useState(900);
@@ -318,7 +318,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   const[liveDown,setLiveDown]=useState(1);const[liveToGo,setLiveToGo]=useState(10);
   const[livePlay,setLivePlay]=useState(0);const[liveDone,setLiveDone]=useState(false);
   const[livePaused,setLivePaused]=useState(false);const[livePOG,setLivePOG]=useState(null);
-  const[liveStats,setLiveStats]=useState({h:{},a:{}});const[lastLivePlay,setLastLivePlay]=useState(null);const[showLiveEnd,setShowLiveEnd]=useState(false);const[pcTimer,setPcTimer]=useState(15);
+  const[liveStats,setLiveStats]=useState({h:{},a:{}});const[lastLivePlay,setLastLivePlay]=useState(null);const[showLiveEnd,setShowLiveEnd]=useState(false);
   const[boxView,setBoxView]=useState(null);
   // v19.0 audit improvements
   const[onboardDone,setOnboardDone]=useState([]);const[lastSaved,setLastSaved]=useState(null);const[seasonHistory,setSeasonHistory]=useState([]);const[ownerPromises,setOwnerPromises]=useState([]);
@@ -448,7 +448,7 @@ const _wireLog=useRef(null);
   // v32: Player Comparison
   const[compareSel,setCompareSel]=useState(null);const[compareOpen,setCompareOpen]=useState(false);
   // v32: Trophy Room, Multiplayer stub, Real Roster stub
-  const[multiOpen,setMultiOpen]=useState(false);
+  
   // v33: auto-save, dead cap warning, enhanced share
   const[autoSaveTs,setAutoSaveTs]=useState(null);const[cutWarnPending,setCutWarnPending]=useState(null);const[deadline,setDeadline]=useState(null);
   // v34: login streak
@@ -456,7 +456,7 @@ const _wireLog=useRef(null);
   // v36: Dynasty Record Book, HOF Modal, Pro GM unlock, Global LB, League Export
   useEffect(()=>{try{localStorage.removeItem('gm_dynasty_book');}catch{/* private mode */}},[]);
   const[hofModal,setHofModal]=useState(null);
-  const[proUnlocked,setProUnlocked]=useState(()=>localStorage.getItem('gm_pro')==='1');
+  
   const[globalLB,setGlobalLB]=useState([]);const[globalLBLoading,setGlobalLBLoading]=useState(false);const[lbTab,setLbTab]=useState('local');
   // v37: Dynasty share prompt, Season Pass annual tier, Draft Analyst
   const[dynastyShareOpen,setDynastyShareOpen]=useState(false);
@@ -564,8 +564,6 @@ const _wireLog=useRef(null);
   const shareViaWebAPI=(title,text)=>{if(navigator.share){navigator.share({title,text,url:'https://evandamours.github.io/27_Gridiron_GM/'}).catch(()=>navigator.clipboard?.writeText(text).then(()=>sm('Copied!')));}else{navigator.clipboard?.writeText(text).then(()=>sm('Copied to clipboard!'));}};
   
 
-  // Press conf auto-dismiss after 15s + countdown timer
-  useEffect(()=>{if(!pressConf.active||pressConf.answered)return;setPcTimer(15);const t=setTimeout(()=>setPressConf(p=>({...p,active:false,answered:true})),15000);const tick=setInterval(()=>setPcTimer(n=>Math.max(0,n-1)),1000);return()=>{clearTimeout(t);clearInterval(tick);};},[pressConf.active,pressConf.answered]);
   // Live sim end modal
   useEffect(()=>{if(liveDone)setShowLiveEnd(true);},[liveDone]);
   useEffect(()=>{setUserLineup(depthOrder,playingTime);},[depthOrder,playingTime]);
@@ -1512,8 +1510,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
             {file("📥","Import save file",loadGame,importLeagueRef)}
             {grp("MORE")}
             {it("📝","Game updates",()=>setTab("gameinfo"),"Patch notes")}
-            {it("👥","Multiplayer",()=>setMultiOpen(true),"Multiplayer")}
-            {it("⚡","God mode",()=>setGodMode(g=>!g),proUnlocked?"God Mode (Pro)":"God Mode — Upgrade to Pro",<span style={{fontSize:11,fontWeight:900,color:godMode?"#fca5a5":C.mt}}>{godMode?"ON":proUnlocked?"PRO":""}</span>)}
+            {it("⚡","God mode",()=>setGodMode(g=>!g),"Edit any player or team freely",<span style={{fontSize:11,fontWeight:900,color:godMode?"#fca5a5":C.mt}}>{godMode?"ON":""}</span>)}
           </div></>;})()}
         </div>
       </div>
@@ -2294,45 +2291,6 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       </div>
     </div>);})()}
 
-    {/* PRESS CONFERENCE MODAL */}
-    {pressConf.active&&!pressConf.answered&&(()=>{
-      const _prevGoalProm=ownerPromises.find(p=>p.qi===7&&p.yr===yr);const _prevGoal=_prevGoalProm?.ans;const _isLosing=ut&&ut.l>ut.w;
-      const PQ=[
-        {q:"How do you feel about the team's performance this week?",a:["We're building momentum","We have work to do","No comment"]},
-        {q:"A star player is unhappy — what's your message?",a:["We support him","Team first","Decline comment"]},
-        {q:"Fan base wants more wins — thoughts?",a:["We hear them","Trust the process","One game at a time"]},
-        {q:"Will you make trades before deadline?",a:["Actively looking","Happy with roster","No comment"]},
-        {q:"Any injury updates?",a:["Day to day","No updates","Addressing it internally"]},
-        {q:"How's the young talent developing?",a:["Excited about them","They need time","We're patient"]},
-        {q:"Are you satisfied with your coaching staff?",a:["Full confidence","Always evaluating","No comment"]},
-        {q:_prevGoal&&_isLosing?`You promised "${_prevGoal}" earlier — now ${ut?.w||0}-${ut?.l||0}. How do you respond?`:_prevGoal&&!_isLosing?`You committed to "${_prevGoal}" and the team is ${ut?.w||0}-${ut?.l||0}. On track?`:"What's the goal for the rest of the season?",a:_prevGoal&&_isLosing?["Adjusting expectations","Still chasing it","No comment"]:`${_prevGoal}`?["Still on target","Playoffs at minimum","Championship or bust"]:["Championship","Playoffs","Improvement daily"]},
-      ];
-      const qi=pressConf.q%PQ.length;const cq=PQ[qi];
-      const handleAns=(idx)=>{
-        setPressConf(p=>({...p,answered:true,active:false}));
-        if(qi===7){const _ans=(cq.a||[])[idx]||'';setOwnerPromises(p=>[...p,{wk,qi,ans:_ans,yr}].slice(0,20));}
-        const nt=[...teams];
-        if(qi===0){if(idx===0){nt[ui].roster.forEach(p=>{p.conf=Math.min(100,(p.conf||60)+2);});setTeams(nt);sm("Player confidence +2");}else if(idx===1){nt[ui].gmRep=cl((nt[ui].gmRep||50)+1,0,100);setTeams(nt);sm("gmRep +1");}}
-        else if(qi===1){if(idx===0){const ho=nt[ui].roster.find(p=>p.holdout);if(ho)ho.holdout=false;setTeams(nt);sm("Holdout cleared!");}else if(idx===1){nt[ui].gmRep=cl((nt[ui].gmRep||50)+1,0,100);const star=nt[ui].roster.find(p=>p.ovr>=82);if(star)star.conf=Math.max(0,(star.conf||60)-1);setTeams(nt);sm("gmRep +1");}}
-        else if(qi===2){if(idx===0){setFanSat(f=>cl(f+5,0,100));sm("Fan satisfaction +5!");}else if(idx===1){nt[ui].gmRep=cl((nt[ui].gmRep||50)+2,0,100);setTeams(nt);sm("gmRep +2");}}
-        else if(qi===4){if(idx===0){nt[ui].roster.forEach(p=>{p.conf=Math.min(100,(p.conf||60)+1);});setTeams(nt);sm("Player confidence +1");}}
-        else if(qi===3){if(idx===0){setFanSat(f=>cl(f+4,0,100));sm("Trade buzz — fan sat +4!");}else if(idx===1){nt[ui].gmRep=cl((nt[ui].gmRep||50)+1,0,100);setTeams(nt);sm("gmRep +1");}}
-        else if(qi===5){if(idx===0){const yng=nt[ui].roster.filter(p=>p.age<=23);if(yng.length){const rp=yng[R(0,yng.length-1)];rp.ovr=Math.min(99,rp.ovr+1);rp.trueOvr=rp.ovr;}setTeams(nt);sm("Young player got dev boost!");}}
-        else if(qi===6){if(idx===0){const c=nt[ui].coach;if(c){['oc','dc','st'].forEach(r=>{if(c[r])c[r].rating=Math.min(95,c[r].rating+1);});setTeams(nt);}sm("Staff confidence boost!");}else if(idx===1){nt[ui].gmRep=cl((nt[ui].gmRep||50)+1,0,100);setTeams(nt);sm("gmRep +1");}}
-        else if(qi===7){if(idx===0){setFanSat(f=>cl(f+3,0,100));sm("Fan sat +3!");}else if(idx===2){nt[ui].gmRep=cl((nt[ui].gmRep||50)+1,0,100);setTeams(nt);sm("gmRep +1");}}
-      };
-      return(<div style={{position:"fixed",inset:0,zIndex:2000,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:16,pointerEvents:"none"}}>
-        <div style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:10,padding:14,maxWidth:420,width:"100%",pointerEvents:"all",boxShadow:"0 8px 32px #000a"}}>
-          <div style={{fontSize:12,color:C.gd,fontWeight:700,marginBottom:4}}>📰 PRESS CONFERENCE</div>
-          <div style={{fontSize:14,fontWeight:700,color:"#e2e8f0",marginBottom:10}}>{cq.q}</div>
-          <div style={{display:"flex",flexDirection:"column",gap:4}}>
-            {cq.a.map((ans,i)=><button key={i} onClick={()=>handleAns(i)} style={{background:`${C.bl}22`,color:C.bl,border:`1px solid ${C.bl}44`,borderRadius:5,padding:"5px 10px",fontSize:12,fontWeight:700,cursor:"pointer",textAlign:"left"}}>"{ans}"</button>)}
-          </div>
-          <div style={{marginTop:8}}><div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.mt,marginBottom:2}}><span>Auto-dismiss</span><span>{pcTimer}s</span></div><div style={{height:3,background:C.bd,borderRadius:2}}><div style={{height:"100%",background:pcTimer>8?C.gn:pcTimer>4?"#f59e0b":C.rd,borderRadius:2,width:`${(pcTimer/15)*100}%`,transition:"width 1s linear"}}/></div></div>
-        </div>
-      </div>);
-    })()}
-
     {/* v13: Suspension Event Modal */}
     {scoutCheck&&tab!=='livesim'&&<ScoutCheckpoint g={scoutG} wk={scoutCheck.wk} news={scoutCheck.news} targetIds={scoutCheck.targetIds} pick={scoutCheck.pick} simTo={simBatch?Math.min(simBatch.to,18):null} onStop={stopSim} onClose={()=>setScoutCheck(null)} onOpen={()=>{if(simBatch)setSimHold(true);setScoutCheck(null);setTab('scouting');}}/>}
     {/* went to the scouting board mid-sim: the sim waits here until you resume or stop it */}
@@ -2432,8 +2390,6 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     {/* v32: Player Comparison modal */}
     {compareOpen&&compareSel&&ut&&(()=>{const p1=compareSel;const p2=ut.roster.find(r=>r.pos===p1.pos&&r.id!==p1.id&&r.ovr>=(p1.ovr-10));if(!p2)return<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",zIndex:3500,display:"flex",alignItems:"center",justifyContent:"center",padding:12}} onClick={()=>setCompareOpen(false)}><div style={{background:C.cd,borderRadius:12,padding:16,maxWidth:320,width:"100%"}}><div style={{textAlign:"center",fontSize:13,color:C.mt,padding:16}}>No comparable {p1.pos} to compare with on your roster.</div><Btn onClick={()=>setCompareOpen(false)} bg="#334155" style={{width:"100%"}}>Close</Btn></div></div>;const attrs=[["OVR","ovr"],["Age","age"],["SPD","spd"],["STR","str"],["AGI","agi"],["ACC","acc"],["Salary","salary"],["Contract","contract"]];return<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",zIndex:3500,display:"flex",alignItems:"center",justifyContent:"center",padding:12}} onClick={()=>setCompareOpen(false)}><div onClick={e=>e.stopPropagation()} style={{background:C.cd,borderRadius:12,padding:16,maxWidth:440,width:"100%",border:"1px solid #7c3aed"}}><div style={{fontSize:14,fontWeight:900,color:"#a78bfa",marginBottom:10}}>⚖️ PLAYER COMPARISON</div><div style={{display:"grid",gridTemplateColumns:"1fr 60px 1fr",gap:4,fontSize:12}}><div style={{textAlign:"right",fontWeight:800,color:"#e2e8f0"}}>{p1.name}</div><div style={{textAlign:"center",color:C.mt}}><Bdg pos={p1.pos}/></div><div style={{fontWeight:800,color:"#e2e8f0"}}>{p2.name}</div>{attrs.map(([lbl,key])=>{const v1=p1[key]||0,v2=p2[key]||0;const better1=key==='age'||key==='salary'?v1<v2:v1>v2;const better2=key==='age'||key==='salary'?v2<v1:v2>v1;return[<div key={lbl+"1"} style={{textAlign:"right",color:better1?"#22c55e":C.tx,fontWeight:better1?700:400,padding:"2px 0",borderBottom:`1px solid ${C.bd}22`}}>{key==="salary"?`$${v1}M`:v1}</div>,<div key={lbl+"m"} style={{textAlign:"center",color:C.mt,padding:"2px 0",borderBottom:`1px solid ${C.bd}22`,fontSize:10}}>{lbl}</div>,<div key={lbl+"2"} style={{color:better2?"#22c55e":C.tx,fontWeight:better2?700:400,padding:"2px 0",borderBottom:`1px solid ${C.bd}22`}}>{key==="salary"?`$${v2}M`:v2}</div>];})}</div><Btn onClick={()=>setCompareOpen(false)} bg="#334155" style={{width:"100%",marginTop:10}}>Close</Btn></div></div>;})()}
     {/* v32: Trophy Room modal */}
-    {/* v32: Multiplayer stub modal */}
-    {multiOpen&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.88)",zIndex:3700,display:"flex",alignItems:"center",justifyContent:"center",padding:12}} onClick={()=>setMultiOpen(false)}><div onClick={e=>e.stopPropagation()} style={{background:C.cd,borderRadius:12,padding:20,maxWidth:420,width:"100%",border:"1px solid #7c3aed"}}><div style={{fontSize:15,fontWeight:900,color:"#a78bfa",marginBottom:4}}>👥 MULTIPLAYER — ONLINE LEAGUE</div><div style={{fontSize:12,color:C.mt,marginBottom:10}}>Async multiplayer with up to 8 GMs. Each GM controls one franchise — commish simulates the week. No real-time requirement.</div><div style={{background:C.bg,borderRadius:6,padding:"10px 12px",marginBottom:8,border:"1px solid #334155"}}><div style={{fontSize:12,fontWeight:700,color:"#a78bfa",marginBottom:6}}>FEATURE SET</div>{[["🏈 Live Draft Room","Snake draft with 90s timer per pick — all 8 GMs in sync"],["📊 Weekly Sim Results","Commissioner simulates, all GMs see standings update"],["💬 GM Trade Desk","Propose trades directly to other human GMs"],["🏆 Season Leaderboard","Global rankings by wins, championships, GM Rep"],["📱 Push Notifications","'Draft day tomorrow!' alerts via browser notifications"],["💾 Cloud Franchise Saves","Your franchise persists across devices via Supabase"]].map(([title,desc])=><div key={title} style={{marginBottom:5,padding:"4px 0",borderBottom:`1px solid ${C.bd}22`}}><div style={{fontSize:11,fontWeight:700,color:"#e2e8f0"}}>{title}</div><div style={{fontSize:10,color:C.mt}}>{desc}</div></div>)}</div><div style={{background:"#0f172a",borderRadius:4,padding:"8px 10px",marginBottom:10,border:"1px solid #1e293b"}}><div style={{fontSize:10,fontWeight:700,color:"#475569",marginBottom:3}}>SETUP REQUIRED</div><div style={{fontSize:10,color:"#334155",lineHeight:1.5}}>Supabase project → schema from docs/MULTIPLAYER_SETUP.md → set VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY in .env.local → redeploy</div></div><div style={{display:"flex",gap:5}}><Btn onClick={()=>{navigator.clipboard?.writeText('https://evandamours.github.io/27_Gridiron_GM/').then(()=>sm('Link copied — share with friends!'));}} bg="#7c3aed22" c="#a78bfa" style={{flex:1,fontSize:12}}>🔗 Copy Link</Btn><Btn onClick={()=>setMultiOpen(false)} bg="#334155" style={{flex:1}}>Close</Btn></div></div></div>}
 
     {/* v33: Dead Cap Warning modal */}
     {coachNag&&inboxShow==='coachNag'&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.85)',zIndex:3800,display:'flex',alignItems:'center',justifyContent:'center',padding:12}} onClick={()=>setCoachNag(null)}><div onClick={e=>e.stopPropagation()} style={{background:C.cd,borderRadius:12,padding:18,maxWidth:380,width:'100%',border:'2px solid #f59e0b'}}><div style={{fontSize:15,fontWeight:900,color:'#fbbf24',marginBottom:6}}>📋 Your coaching staff has openings</div><div style={{fontSize:14,color:'#e2e8f0',marginBottom:6}}>You're starting the season without a:</div>{coachNag.map(l=><div key={l} style={{fontSize:14,color:'#fca5a5',fontWeight:700}}>• {l}</div>)}<div style={{fontSize:12,color:C.mt,margin:'8px 0 12px'}}>Coordinators boost your offense, defense and special teams every game (and the special teams coach runs your coverage units). Hire from the coaching market on the Coaching tab.</div><div style={{display:'flex',gap:6}}><Btn onClick={()=>{setCoachNag(null);setTab('coaching');}} bg='#78350f' c='#fcd34d' style={{flex:1}}>Go to Coaching</Btn><Btn onClick={()=>setCoachNag(null)} bg='#334155' style={{flex:1}}>Later</Btn></div></div></div>}

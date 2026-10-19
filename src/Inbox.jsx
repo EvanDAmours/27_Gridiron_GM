@@ -6,15 +6,6 @@ import { C, Btn, CloseX } from "./ui.jsx";
 
 const TONE = { urgent: C.rd, action: C.gd, info: "#38bdf8" };
 
-export function InboxButton({ count, onClick, open }) {
-  return (
-    <button onClick={onClick} aria-label={`Inbox, ${count} item${count === 1 ? "" : "s"}`} style={{ position: "relative", background: open ? "#1e3a5f" : "#1e293b", color: "#e2e8f0", border: `1px solid ${open ? "#3b82f6" : "#334155"}`, borderRadius: 6, padding: "4px 10px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-      📥 Inbox
-      {count > 0 && <span style={{ position: "absolute", top: -7, right: -7, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: C.rd, color: "#fff", fontSize: 11, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #0b1220" }}>{count}</span>}
-    </button>
-  );
-}
-
 // items: [{ key, icon, title, sub, tone: "urgent" | "action" | "info", cta, onOpen, onDismiss, dismissLabel }]
 const RANK = { urgent: 0, action: 1, info: 2 };
 export default function Inbox({ items: raw, onClose, mobile }) {

@@ -13,4 +13,3 @@ function Trophy({ size }) {
 
 export default function Lombardi({ size = 120 }) { return <Trophy size={size} />; }
 export const LombardiStill = ({ size = 100 }) => <Trophy size={size} />;
-export const LombardiSpin = ({ size = 100 }) => <Trophy size={size} />;

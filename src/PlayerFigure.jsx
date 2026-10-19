@@ -171,5 +171,3 @@ export default function PlayerFigure({ p, t, away = false, h = 180, label = true
   );
 }
 
-// A club's best healthy player (kickers and punters aside).
-export const starOf = (t) => [...(t?.roster || [])].filter((p) => !p.injured && !p.holdout && p.pos !== "K" && p.pos !== "P").sort((a, b) => (b.ovr || 0) - (a.ovr || 0))[0] || null;

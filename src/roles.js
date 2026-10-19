@@ -32,7 +32,6 @@ const ht = (p) => p?.ht_ ?? p?.ht ?? 73;
 export const ROLE_SLOTS = { LB: ["SAM", "MIKE", "WILL"], CB: ["CB1", "CB2", "NB"], WR: ["X", "Z", "SLOT"] };
 // the role kind each slot plays (CB1 and CB2 are both outside corners)
 const KIND = { SAM: "SAM", MIKE: "MIKE", WILL: "WILL", CB1: "OUT", CB2: "OUT", NB: "NB", X: "X", Z: "Z", SLOT: "SLOT" };
-export const slotRole = (pos, i) => ROLE_SLOTS[pos]?.[i];
 export const roleKind = (slot) => KIND[slot] || slot;
 export const ROLE_NAME = {
   SAM: "strong-side linebacker", MIKE: "middle linebacker", WILL: "weak-side linebacker",

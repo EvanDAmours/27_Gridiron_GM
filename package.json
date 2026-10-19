@@ -1,6 +1,6 @@
 {
   "name": "gridiron-gm",
-  "version": "3.36.0",
+  "version": "3.37.0",
   "description": "Gridiron GM is a realistic football general manager simulation game based off the National Football League (NFL).",
   "homepage": "https://evandamours.github.io/27_Gridiron_GM/",
   "repository": {
@@ -28,8 +28,7 @@
   "dependencies": {
     "lz-string": "^1.5.0",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "three": "^0.169.0"
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.1.4",

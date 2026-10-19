@@ -8,7 +8,6 @@ import SPECIAL from "./data/special.json" with { type: "json" };
 import M27 from "./data/madden27.json" with { type: "json" };
 
 export const RET_POS = ["WR", "RB", "CB", "S"];
-export const RET_ROLES = ["KR", "PR"];
 const REAL_KR = SPECIAL.kr || {};
 const REAL = new Set([...(M27.teams || []).flatMap((t) => [...(t.roster || []), ...(t.ps || [])]), ...(M27.fa || [])].map((d) => `${d.name}|${d.pos}`));
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
