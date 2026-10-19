@@ -1179,4 +1179,9 @@ export const PATCH_NOTES = [
     "Hall of Fame: a league-era player now needs a legacy of 100 and a peak of 92 (about six a year; it was eleven or twelve by year 15). The real veterans who opened the league still get in on what they did before it.",
     "Home field: home teams win about 54-55% in your league, like the NFL (it measured near 57% over twenty seasons).",
   ] },
+  { v: "3.10", date: "2026-10-19", title: "Spreading the Sacks", notes: [
+    "Sack leaders look like the NFL again: usually 17-22 a season, a record-chasing year from a true elite rusher now and then, instead of 25-30 most years. Only who gets credit changed: how often quarterbacks go down, and every score and result, works exactly as before (checked over thousands of simulated games).",
+    "Credit spreads the way it does on a real line: each sack a rusher already has in a game makes the next one harder, about one sack in five is shared (half a sack each), and an elite rusher's edge in getting home is smaller.",
+    "Off-ball linebackers top out around 9-12 sacks instead of 12-15 on top of their tackles, so tackle-machine linebackers stop posting edge-rusher numbers.",
+  ] },
 ];

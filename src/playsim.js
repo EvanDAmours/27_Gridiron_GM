@@ -57,7 +57,7 @@ function pickW(rand, list) {
 // else body weight (an edge ~250-285 lbs, a tackle ~295+).
 function rushRole(p) {
   if (p.pos === "DL") return p.dlKind ? (p.dlKind === "DT" ? 0.6 : 1) : p.mpos ? (p.mpos === "DT" ? 0.6 : 1) : (p.wt || 280) >= 292 ? 0.6 : 1;
-  if (p.pos === "LB") return p.mpos === "SAM" ? 0.5 : 0.25;
+  if (p.pos === "LB") return p.mpos === "SAM" ? 0.3 : 0.14;
   return 0.08;
 }
 
@@ -121,7 +121,7 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
   const qb = on("QB")[0] || order("QB")[0];
   const defs = [];
   for (const pos of ["DL", "LB", "CB", "S"]) on(pos).forEach((p, i) => defs.push([p, (TK[pos][i] ?? 0.01) * share(p) * q(p, 0.01)]));
-  const rushW = defs.map(([p, w]) => [p, rushRole(p) * w * q(p, 0.012)]);
+  const rushW = defs.map(([p, w]) => [p, rushRole(p) * w * q(p, 0.002)]);
   const covW = defs.map(([p, w]) => [p, (p.pos === "CB" ? 1.4 : p.pos === "S" ? 1.1 : p.pos === "LB" ? 0.35 : 0.05) * w * q(p, 0.035)]);
   const tackleW = defs.map(([p, w]) => [p, w]);
   const k = on("K")[0] || order("K")[0];
@@ -476,11 +476,12 @@ function stepPlay(g, call, bonus = 1) {
     const qbl = line(g, off, qb);
     if (!screen && rand() < sackP) {
       const loss = Math.round(5 + rand() * 5);
-      // Multi-sack games happen, but a rusher who already has two gets chipped and doubled.
-      const rusher = pickW(rand, d.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, n < 2 ? w : w * 0.45 ** (n - 1)]; }));
+      // Multi-sack games happen, but each sack a rusher already has makes the next one harder (he gets
+      // chipped and doubled).
+      const rusher = pickW(rand, d.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, w * 0.6 ** n]; }));
       add(qbl, "sk", 1); add(qbl, "skYds", loss); st.sacks++;
-      // About one sack in seven is shared by two rushers: half a sack each.
-      const helper = rusher && rand() < 0.14 ? pickW(rand, d.rushW.filter(([p]) => p !== rusher)) : null;
+      // About one sack in five is shared by two rushers: half a sack each.
+      const helper = rusher && rand() < 0.22 ? pickW(rand, d.rushW.filter(([p]) => p !== rusher)) : null;
       if (rusher) { const rl = line(g, def, rusher); add(rl, "sacks", helper ? 0.5 : 1); add(rl, "qbH", 1); add(rl, "tkl", 1); }
       if (helper) { const hl = line(g, def, helper); add(hl, "sacks", 0.5); add(hl, "qbH", 1); }
       yards = -loss; type = "sack"; desc = `${qb?.name || "QB"} is SACKED${rusher ? ` by ${rusher.name}` : ""} for a loss of ${loss}.`;
