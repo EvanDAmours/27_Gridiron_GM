@@ -18,26 +18,30 @@ const STARTERS = { ...STARTERS0, KR: 1, PR: 1 };
 const shown = (p, pos) => (RET[pos] ? retRating(p) : p.ovr);
 
 // Spots on the field (x, y in % of the field). Offense drives up the screen; the defense faces it.
-const LINE = [["LT", 0, 33, 46], ["LG", 0, 41.5, 46], ["C", 0, 50, 46], ["RG", 0, 58.5, 46], ["RT", 0, 67, 46]];
+// A spot (circle, badge and name) is about 68px tall, so spots in the same column sit at least
+// 17% apart and keep clear of the edges; every grouping and package is laid out that way.
+const LINE = [["LT", 0, 33, 36], ["LG", 0, 41.5, 36], ["C", 0, 50, 36], ["RG", 0, 58.5, 36], ["RT", 0, 67, 36]];
 // The offense in each personnel grouping (FB: the back the fullback role goes to).
 const FORMS = {
-  11: [["WR", 0, 5, 46], ["TE", 0, 76, 47], ["WR", 2, 85, 55], ["WR", 1, 95, 46], ["QB", 0, 50, 72], ["RB", 0, 63, 72]],
-  12: [["WR", 0, 5, 46], ["TE", 1, 24, 47], ["TE", 0, 76, 47], ["WR", 1, 95, 46], ["QB", 0, 50, 72], ["RB", 0, 63, 72]],
-  21: [["WR", 0, 5, 46], ["TE", 0, 76, 47], ["WR", 1, 95, 46], ["QB", 0, 50, 62], ["FB", 0, 50, 74], ["RB", 0, 50, 87]],
-  10: [["WR", 0, 5, 46], ["WR", 3, 16, 55], ["WR", 2, 84, 55], ["WR", 1, 95, 46], ["QB", 0, 50, 72], ["RB", 0, 63, 72]],
-  13: [["WR", 0, 5, 46], ["TE", 1, 24, 47], ["TE", 0, 76, 47], ["TE", 2, 86, 55], ["QB", 0, 50, 72], ["RB", 0, 63, 72]],
+  11: [["WR", 0, 5, 36], ["TE", 0, 77, 37], ["WR", 2, 86, 53], ["WR", 1, 95, 36], ["QB", 0, 50, 55], ["RB", 0, 63, 55]],
+  12: [["WR", 0, 5, 36], ["TE", 1, 23, 37], ["TE", 0, 77, 37], ["WR", 1, 95, 36], ["QB", 0, 50, 55], ["RB", 0, 63, 55]],
+  21: [["WR", 0, 5, 36], ["TE", 0, 77, 37], ["WR", 1, 95, 36], ["QB", 0, 50, 54], ["FB", 0, 40, 71], ["RB", 0, 50, 88]],
+  10: [["WR", 0, 5, 36], ["WR", 3, 15, 53], ["WR", 2, 85, 53], ["WR", 1, 95, 36], ["QB", 0, 50, 55], ["RB", 0, 63, 55]],
+  13: [["WR", 0, 5, 36], ["TE", 1, 23, 37], ["TE", 0, 77, 37], ["TE", 2, 86, 53], ["QB", 0, 50, 55], ["RB", 0, 63, 55]],
+};
+// The defense in each package: base (3 linebackers), nickel (the SAM off, a nickel back on), dime
+// (one linebacker, two extra defensive backs). The front four, the outside corners and the safeties
+// are the same in all three.
+const DEF_CORE = [["CB", 0, 6, 62], ["DL", 0, 35, 62], ["DL", 1, 45, 62], ["DL", 2, 55, 62], ["DL", 3, 65, 62], ["CB", 1, 94, 62], ["S", 0, 30, 17], ["S", 1, 70, 17]];
+const DEF_FORMS = {
+  base: [["LB", 0, 70, 39], ["LB", 1, 50, 37], ["LB", 2, 30, 39]],
+  nickel: [["LB", 1, 58, 38], ["LB", 2, 38, 38], ["CB", 2, 82, 44]],
+  dime: [["LB", 1, 50, 38], ["CB", 2, 82, 44], ["CB", 3, 18, 44]],
 };
 const SETS = {
-  offense: { label: "Offense", los: 46, spots: [...FORMS[11], ...LINE] },
-  defense: {
-    label: "Defense",
-    los: 62,
-    spots: [
-      ["CB", 0, 6, 57], ["DL", 0, 37, 57], ["DL", 1, 45.5, 57], ["DL", 2, 54.5, 57], ["DL", 3, 63, 57], ["CB", 1, 94, 57], ["CB", 2, 82, 44],
-      ["LB", 0, 68, 34], ["LB", 1, 50, 30], ["LB", 2, 32, 34], ["S", 0, 33, 10], ["S", 1, 67, 10],
-    ],
-  },
-  special: { label: "Special teams", los: 46, spots: [["K", 0, 40, 70], ["P", 0, 60, 70], ["KR", 0, 35, 10], ["PR", 0, 65, 10]] },
+  offense: { label: "Offense", los: 36, spots: [...FORMS[11], ...LINE] },
+  defense: { label: "Defense", los: 62, spots: [...DEF_CORE, ...DEF_FORMS.base, ["CB", 2, 82, 44]] },
+  special: { label: "Special teams", los: 46, spots: [["K", 0, 40, 70], ["P", 0, 60, 70], ["KR", 0, 35, 18], ["PR", 0, 65, 18]] },
 };
 
 // "Michael Schmidt Jr" -> "Schmidt": the name that fits under a spot
@@ -49,7 +53,7 @@ function Field({ los, children }) {
   for (let i = 0; i <= 10; i++) lines.push(<div key={i} style={{ position: "absolute", left: 0, right: 0, top: `${i * 10}%`, borderTop: `1px solid rgba(255,255,255,${i % 2 ? 0.08 : 0.16})` }} />);
   return (
     <div style={{ overflowX: "auto" }}>
-      <div style={{ position: "relative", width: "100%", maxWidth: 540, margin: "0 auto", minWidth: narrow() ? 340 : 0, aspectRatio: narrow() ? "4 / 3.3" : "16 / 9", borderRadius: 10, overflow: "hidden", border: "2px solid #14532d", background: "repeating-linear-gradient(180deg,#166534 0 10%,#15803d 10% 20%)" }}>
+      <div style={{ position: "relative", width: "100%", maxWidth: 540, margin: "0 auto", minWidth: narrow() ? 340 : 0, aspectRatio: narrow() ? "1 / 1.08" : "16 / 11", borderRadius: 10, overflow: "hidden", border: "2px solid #14532d", background: "repeating-linear-gradient(180deg,#166534 0 10%,#15803d 10% 20%)" }}>
         {lines}
         {[25, 75].map((x) => <div key={x} style={{ position: "absolute", top: 0, bottom: 0, left: `${x}%`, borderLeft: "2px dashed rgba(255,255,255,0.12)" }} />)}
         <div title="Line of scrimmage" style={{ position: "absolute", left: 0, right: 0, top: `${los + 4.5}%`, borderTop: "2px solid #60a5fa" }} />
@@ -90,7 +94,8 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
   const [pick, setPick] = useState(null); // [pos, idx]
   const [form, setForm] = useState("11"); // the personnel grouping the offense field shows
   const set0 = SETS[side] || SETS.offense;
-  const set = side === "offense" ? { ...set0, spots: [...FORMS[form], ...LINE] } : set0;
+  const [pkg, setPkg] = useState("nickel"); // the package the defense field shows
+  const set = side === "offense" ? { ...set0, spots: [...FORMS[form], ...LINE] } : side === "defense" ? { ...set0, spots: [...DEF_CORE, ...DEF_FORMS[pkg]] } : set0;
   // snap shares at a position, the way game day will hand them out (your personnel decides the shape)
   const shares = (pos) => positionSnaps(pos, depthList(pos).filter((p) => !p.injured), snaps || {}, shape);
   const setShare = (pos, p, v) => { if (!setSnaps) return; const others = depthList(pos).filter((x) => x.id !== p.id && !x.injured && snaps?.[x.id] != null).reduce((t, x) => t + snaps[x.id], 0); setSnaps((sn) => ({ ...sn, [p.id]: Math.max(0, Math.min(v, 100, snapBudget(pos, shape) - others)) })); };
@@ -174,6 +179,10 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
             <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt }}>PERSONNEL</span>
             {Object.keys(FORMS).map((k) => <button key={k} onClick={() => { setForm(k); setPick(null); }} title={{ 11: "1 back, 1 tight end, 3 receivers", 12: "1 back, 2 tight ends, 2 receivers", 21: "2 backs (a fullback), 1 tight end, 2 receivers", 10: "1 back, 4 receivers", 13: "1 back, 3 tight ends, 1 receiver" }[k]} style={{ background: form === k ? `${C.bl}33` : "transparent", color: form === k ? "#bfdbfe" : "#94a3b8", border: `1px solid ${form === k ? C.bl : C.bd}`, borderRadius: 6, padding: "2px 9px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>{k}</button>)}
             {personnel && <span style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}>Your identity: <b style={{ color: "#e2e8f0" }}>{personnel}</b></span>}
+          </div>}
+          {side === "defense" && <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt }}>PACKAGE</span>
+            {Object.keys(DEF_FORMS).map((k) => <button key={k} onClick={() => { setPkg(k); setPick(null); }} title={{ base: "3 linebackers: against heavy sets", nickel: "2 linebackers and a nickel back: against 3 receivers", dime: "1 linebacker and 2 extra defensive backs: passing downs" }[k]} style={{ background: pkg === k ? `${C.bl}33` : "transparent", color: pkg === k ? "#bfdbfe" : "#94a3b8", border: `1px solid ${pkg === k ? C.bl : C.bd}`, borderRadius: 6, padding: "3px 10px", fontSize: 13, fontWeight: 800, cursor: "pointer", textTransform: "capitalize" }}>{k}</button>)}
           </div>}
           <Field los={set.los}>
             {set.spots.map(([pos, idx, x, y]) => (

@@ -1336,4 +1336,10 @@ export const PATCH_NOTES = [
     "A photo is only used when the match is certain (right name, right school). The five prospects ESPN lists at a different school after a transfer keep the drawn face for now.",
     "Made-up players in later draft classes use the new portrait bank from 3.36.",
   ] },
+  { v: "3.39", date: "2026-10-20", title: "Signing Card, Field View and Draft Clock Fixes", notes: [
+    "Fixed: signing a star in free agency (80+ OVR) now always brings up the Signing Day card. It was missing when you won a bidding war or signed a player straight off the list; only negotiated signings showed it.",
+    "Fixed: the depth chart field no longer gets jumbled. Every personnel grouping (10, 11, 12, 13 and 21) is spaced so no one sits on top of anyone else; in 21 the fullback lines up offset from the quarterback and running back. The safeties and returners no longer touch the top edge, and the outside corners line up with the front four.",
+    "New: the defensive field has Base, Nickel and Dime buttons, like the offense's personnel buttons, and shows the defense the way it lines up in each: three linebackers in base, two and a nickel back in nickel, one linebacker and two extra defensive backs in dime.",
+    "Fixed: the draft's first round always runs in real time again. If the speed had been left on Fast from an earlier draft, the clock flew from pick one. Round 1 now ticks in real seconds at any speed (Sim this pick and Sim to my pick still skip ahead), and every draft starts at Normal speed.",
+  ] },
 ];
