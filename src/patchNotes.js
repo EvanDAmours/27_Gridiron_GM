@@ -1190,5 +1190,6 @@ export const PATCH_NOTES = [
     "Super Bowl rings worth wearing: Ring Night shows a real championship ring: a polished gold band engraved with your club, the Super Bowl and the year, a raised crown in your colors set with a diamond border, your logo in a diamond halo between two Lombardi trophies, and light running across the metal. It also tells you the score and who you beat.",
     "More first-round busts, and scouting still finds them: seven to ten prospects a class (was three to five) aren't what the board thinks, all in the board's top 40, so a real share of every first round misses. A scouting report always red-flags them.",
     "The top of the league stays stocked: over long careers the 95+ and 99 club thinned out as the 2026 stars retired (forty 95s down to the low twenties, one to four 99s). Climbing the last few points to 99 is a little easier, and when the league is short of elite players, young stars near the top break through a bit more often.",
+    "Calmer pop-ups: players becoming loyal no longer throw a stack of cards over the screen; it's one line in your news. Injuries from a game show as one small card (tap it to close) instead of up to four.",
   ] },
 ];
