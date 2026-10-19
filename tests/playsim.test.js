@@ -161,3 +161,19 @@ test("personnel stats add up by grouping and package over a season", async () =>
   addPersonnelStats(T[0], { persY: { 11: { n: 1, yds: 5, ok: 1 } } }, st.yr + 1);
   assert.deepEqual(T[0].persSt.off, { 11: { n: 1, yds: 5, ok: 1 } }, "a new season starts fresh");
 });
+
+test("situational packages: a club's short-yardage and 3rd-and-long calls override its identity on those snaps", async () => {
+  const { situationOf } = await import("../src/personnel.js");
+  const h = { ...teams[0].side, team: { ...teams[0].side.team, sit: { short: "13", long: "10", longD: "dime", shortD: "base" } } };
+  const a = { ...teams[1].side, team: { ...teams[1].side.team, sit: { short: "13", long: "10", longD: "dime", shortD: "base" } } };
+  const g = createGame(h, a, { rand });
+  let short = 0, long = 0;
+  for (let i = 0; i < 400 && !g.done; i++) {
+    const s = situationOf({ down: g.down, toGo: g.toGo, yard: g.yard, qtr: g.qtr, clock: g.clock, lead: 1 });
+    const ev = step(g);
+    if (!ev.pers || s.twoMin) continue;
+    if (s.short) { short++; assert.equal(ev.pers, "13"); assert.equal(ev.pkg, "base"); }
+    else if (s.long) { long++; assert.equal(ev.pers, "10"); assert.equal(ev.pkg, "dime"); }
+  }
+  assert.ok(short + long > 3, `${short} short, ${long} long snaps`);
+});

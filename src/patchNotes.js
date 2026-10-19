@@ -1270,4 +1270,8 @@ export const PATCH_NOTES = [
     "Personnel stats: Stats → My team (or any team) now shows the season by personnel. Offense by grouping (11, 12, 21, 13, 10): how often, yards a play and success rate. Defense by package (base, nickel, dime): the same, allowed. Each number sits next to the league's, green when it's better and red when it's worse, so you can see which groupings are working and where the defense is getting hurt.",
     "Success is the standard measure: a snap that gains 40% of the yards needed on first down, 60% on second, and all of them on third and fourth. Counted in simmed and live games alike.",
   ] },
+  { v: "3.26", date: "2026-10-20", title: "Situational Packages", notes: [
+    "Situational packages: the Personnel tab has a new Situations card. Set what you run in short yardage and at the goal line (13, 12, 21 or 11), on 3rd and long (10 or 11) and in the two-minute drill, and what your defense answers with on 3rd and long (dime or nickel) and in short yardage (base or nickel).",
+    "These override your identity only on those snaps; everything else follows your chosen identity and lean. Leave any on Auto and the coaches decide as before. The play-by-play shows the grouping and package on every snap, so you can watch your calls come in.",
+  ] },
 ];

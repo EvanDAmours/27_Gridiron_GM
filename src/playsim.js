@@ -23,7 +23,7 @@ import { retRating } from "./special.js";
 import { unitRatings, offUnits, defUnits, lbCover } from "./gamesim.js";
 import { dlAsPlayed } from "./dline.js";
 import { ROLE_SLOTS, rolesAsPlayed } from "./roles.js";
-import { PERS, PKGS, PERS_LEAN, offMix, defTilt, pickPers, pickPkg, pkgOdds, bestOffSet, snapShape } from "./personnel.js";
+import { PERS, PKGS, PERS_LEAN, offMix, defTilt, pickPers, pickPkg, pkgOdds, bestOffSet, snapShape, situationOf, sitPers, sitPkg } from "./personnel.js";
 import { roleOvr } from "./roles.js";
 import { getLeagueYear } from "./cap.js";
 import { hurtPen } from "./injuries.js";
@@ -449,8 +449,10 @@ function stepPlay(g, call, bonus = 1) {
   const off = g.poss, def = other(off);
   // Personnel for this snap (heavier in short yardage, lighter on passing downs) and the defense's answer.
   const so = g.sides[off], sd = g.sides[def];
-  const pers = so.mix ? pickPers(rand, so.mix, { down: g.down, toGo: g.toGo, yard: g.yard }) : "11";
-  const pkg = sd.dU ? pickPkg(rand, pers, sd.tilt || 0, g.down >= 3 && g.toGo >= 6) : "nickel";
+  // a club's situational packages (personnel.js SITUATIONS) win when they apply
+  const sitn = situationOf({ down: g.down, toGo: g.toGo, yard: g.yard, qtr: g.qtr, clock: g.clock, lead: g.score[off] - g.score[def] });
+  const pers = sitPers(so.team?.sit, sitn) || (so.mix ? pickPers(rand, so.mix, { down: g.down, toGo: g.toGo, yard: g.yard }) : "11");
+  const pkg = sitPkg(sd.team?.sit, sitn) || (sd.dU ? pickPkg(rand, pers, sd.tilt || 0, g.down >= 3 && g.toGo >= 6) : "nickel");
   const { o, d, passE, runE, rushE } = edges(g, pers, pkg);
   const st = g.stats[off];
   const lead = g.score[off] - g.score[def];

@@ -137,3 +137,39 @@ export function snapShape(mix, tilt = 0) {
     CB: [97, 93, r(95 * u.CB[2]), r(95 * u.CB[3]) + 3, 4],
   };
 }
+
+// Situational packages: what a club plays in the moments that matter, if it sets them (each
+// "auto" leaves it to the usual mix, tilted by down and distance as above).
+//   short   short yardage and the goal line (3rd/4th and 1-2, or inside the 5): heavy sets
+//   long    3rd and 7 or more: spread it out
+//   twoMin  the last two minutes of a half when chasing points: hurry-up groupings
+//   longD   the defense on 3rd and long: nickel or dime
+//   shortD  the defense in short yardage and at the goal line: base (or stay in nickel)
+export const SITUATIONS = [
+  { key: "short", label: "Short yardage & goal line", side: "off", opts: ["auto", "13", "12", "21", "11"] },
+  { key: "long", label: "3rd and long", side: "off", opts: ["auto", "10", "11"] },
+  { key: "twoMin", label: "Two-minute drill", side: "off", opts: ["auto", "10", "11"] },
+  { key: "longD", label: "Defense on 3rd and long", side: "def", opts: ["auto", "dime", "nickel"] },
+  { key: "shortD", label: "Defense in short yardage", side: "def", opts: ["auto", "base", "nickel"] },
+];
+// Which situation a snap is: { short, long, twoMin } for the offense on that snap.
+export function situationOf({ down, toGo, yard, qtr, clock, lead }) {
+  const short = (down >= 3 && toGo <= 2) || (yard >= 95 && toGo <= 5);
+  const long = down >= 3 && toGo >= 7;
+  const twoMin = (qtr === 2 || qtr === 4) && clock <= 120 && (qtr === 2 || lead <= 0);
+  return { short, long, twoMin };
+}
+// The grouping a club's settings call for in this situation (null: no setting applies).
+export function sitPers(sit, s) {
+  if (!sit) return null;
+  if (s.twoMin && sit.twoMin && sit.twoMin !== "auto") return sit.twoMin;
+  if (s.short && sit.short && sit.short !== "auto") return sit.short;
+  if (s.long && sit.long && sit.long !== "auto") return sit.long;
+  return null;
+}
+export function sitPkg(sit, s) {
+  if (!sit) return null;
+  if (s.short && sit.shortD && sit.shortD !== "auto") return sit.shortD;
+  if (s.long && sit.longD && sit.longD !== "auto") return sit.longD;
+  return null;
+}

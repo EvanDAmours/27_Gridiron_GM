@@ -4,7 +4,7 @@
 // SAM and nickel back play. Sits in the game plan strip under the depth chart.
 import React from "react";
 import { C, oC } from "./ui.jsx";
-import { OFF_SETS, DEF_SETS, PERS, pkgShare, defTilt } from "./personnel.js";
+import { OFF_SETS, DEF_SETS, PERS, SITUATIONS, pkgShare, defTilt } from "./personnel.js";
 import { unitRatings, offUnits, defUnits, pickFB, teBlock } from "./gamesim.js";
 import { roleOvr } from "./roles.js";
 import { depthOrderFor } from "./depth.js";
@@ -89,6 +89,25 @@ export default function Personnel({ team, depthOrder, snaps, onSet, compact }) {
                 </div>
                 <div style={{ fontSize: 11, color: C.mt, marginTop: 3 }}>Base {Math.round(sh.base * 100)}% · Nickel {Math.round(sh.nickel * 100)}% · Dime {Math.round(sh.dime * 100)}%: SAM plays ~{Math.round(sh.base * 100)}% of snaps, the nickel ~{Math.round((sh.nickel + sh.dime) * 100)}%</div>
               </button>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ ...card, gridColumn: "1 / -1" }}>
+        <div style={{ ...head, display: "flex" }}>SITUATIONS <span style={{ marginLeft: "auto", color: C.mt, letterSpacing: 0, fontWeight: 700 }}>Overrides your identity on these snaps</span></div>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${compact ? 260 : 300}px,1fr))`, gap: "6px 14px" }}>
+          {SITUATIONS.map((x) => {
+            const cur = team.sit?.[x.key] || "auto";
+            return (
+              <div key={x.key} style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                <span style={{ fontSize: 12, color: x.side === "off" ? C.tx : "#fca5a5", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.label}</span>
+                <span style={{ marginLeft: "auto", display: "flex", gap: 3 }}>
+                  {x.opts.map((o) => {
+                    const on = cur === o;
+                    return <button key={o} onClick={() => onSet("sit", { ...(team.sit || {}), [x.key]: o })} style={{ fontSize: 11, fontWeight: 800, padding: "3px 7px", borderRadius: 6, cursor: "pointer", background: on ? `${PCLR[o] || C.bl}33` : C.bg, color: on ? (PCLR[o] || C.tx) : C.mt, border: `1px solid ${on ? PCLR[o] || C.bl : C.bd}` }}>{o === "auto" ? "Auto" : /^\d/.test(o) ? o : o[0].toUpperCase() + o.slice(1)}</button>;
+                  })}
+                </span>
+              </div>
             );
           })}
         </div>
