@@ -3,6 +3,16 @@
 // same numbers always draw the same face; a beard or goatee comes from them too.
 import React from "react";
 import { headshotUrl } from "./headshots.js";
+import { COACH_HEADSHOTS } from "./data/coachHeadshots.js";
+
+// A real coach's photo (his club's staff page, cropped to the face; or ESPN's), by name.
+export const coachPhoto = (name, w = 160) => {
+  const p = COACH_HEADSHOTS[name];
+  if (!p) return null;
+  if (p.startsWith("espn:")) return `https://a.espncdn.com/i/headshots/nfl/coaches/${p.slice(5)}`;
+  const [type, path] = [p.slice(0, p.indexOf("/")), p.slice(p.indexOf("/") + 1)];
+  return `https://static.clubs.nfl.com/image/${type}/c_thumb,g_face,w_${w},h_${w}/f_auto/${path}`;
+};
 
 // photos that wouldn't load (offline, or none on file): drawn faces from then on
 const BAD = new Set();
@@ -15,9 +25,16 @@ function shade(hex, f) {
 }
 
 let uid = 0;
-export const Face = ({ s: se, sz = 40, jersey }) => {
+// coach: a coach's name; a real coach shows his photo instead of the drawn face.
+export const Face = ({ s: se, sz = 40, jersey, coach }) => {
   const id = React.useMemo(() => `fc${++uid}`, []);
   const [, setBad] = React.useState(0);
+  const cp = coach && !BAD.has(`c:${coach}`) && coachPhoto(coach, sz > 90 ? 320 : 160);
+  if (cp) return (
+    <span style={{ width: sz, height: sz, borderRadius: "50%", overflow: "hidden", display: "inline-block", flexShrink: 0, verticalAlign: "middle", background: "radial-gradient(circle at 50% 30%, #64748b, #1f2937 72%)" }}>
+      <img src={cp} alt="" loading="lazy" draggable="false" onError={() => { BAD.add(`c:${coach}`); setBad((x) => x + 1); }} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+    </span>
+  );
   if (!se) return null;
   // a real player: his ESPN headshot, in the same round frame
   if (se.espn && !BAD.has(se.espn)) return (

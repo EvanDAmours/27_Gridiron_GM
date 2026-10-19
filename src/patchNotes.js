@@ -1160,6 +1160,7 @@ export const PATCH_NOTES = [
     "Draft classes are more realistic: Superstar and Star traits follow a prospect's ceiling, so a class has a handful of Superstars, mostly early, instead of a dozen spread through the late rounds. Generational talents turn up about once every five drafts.",
     "Home-field advantage is worth more: home teams now win about 54% of games, like the NFL (it was about 52%).",
     "Build your 53: during the combine, re-sign week, free agency and the draft, Home shows every position group, how many you have against a typical 53, your cap space, and the best free agent left at each spot with his asking price. Tap a row to open free agency filtered to that position.",
+    "Real coaches have real faces: every head coach, coordinator and special teams coach in the league shows his official headshot (from his club's staff page) on the Coaching page and in League Coaching Staffs, the way players show theirs.",
     "Coaching: one way to hire. The staff-point Coach Market is gone; every coach you can hire is in Available Coaches.",
     "Owner's review: \"an 8-9 season\", not \"a 8-9\"; and a quiet year that cost you some patience reads STEADY, not PLEASED.",
   ] },
