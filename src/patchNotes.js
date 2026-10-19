@@ -1172,4 +1172,11 @@ export const PATCH_NOTES = [
     "Canton is harder to reach: a legacy of 80 and either a peak of 88 or a great career before the league began. About six or seven a year, like the real Hall (it was thirteen, and receivers who never rated past the low 80s got in).",
     "A GM who has run the club six seasons or more without a winning legacy reads as \"The Long Rebuild\", not \"Short Tenure\".",
   ] },
+  { v: "3.9", date: "2026-10-19", title: "Twenty Years On", notes: [
+    "Coaches age and retire. Every coach has an age now (real coaches from their real birth year), shown on the Coaching page; from 62 on, each off-season might be his last. Andy Reid no longer coaches the Chiefs into his eighties. When one of yours retires you're told, and the empty job stays in Needs Attention until you hire.",
+    "Defensive Player of the Year goes to pass rushers again: sacks count for more and tackles for less (a linebacker won it 19 years out of 20). A linebacker can still win it with a monster season.",
+    "Offensive Player of the Year usually goes to the best back or receiver, like the NFL (a quarterback won it 13 years out of 20, often the same year another quarterback was MVP).",
+    "Hall of Fame: a league-era player now needs a legacy of 100 and a peak of 92 (about six a year; it was eleven or twelve by year 15). The real veterans who opened the league still get in on what they did before it.",
+    "Home field: home teams win about 54-55% in your league, like the NFL (it measured near 57% over twenty seasons).",
+  ] },
 ];

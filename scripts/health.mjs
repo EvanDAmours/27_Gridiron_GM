@@ -106,6 +106,10 @@ function measure(d) {
     wr80Pct: (() => { const xs = all.filter((p) => p.pos === "WR" && p.ovr >= 80 && p.ovr <= 84 && (p.salary || 0) > 2).map((p) => p.salary).sort((a, b) => a - b); return xs.length ? +((100 * xs[Math.floor(xs.length / 2)]) / capFor(d.yr)).toFixed(1) : null; })(),
     records: (d.recordBook?.history || d.recordBook?.broken || []).length,
     // the market at the top: the five biggest salaries at a position, as % of the cap (2025 NFL: QB ~16%, DL/WR ~12%, CB ~9%)
+    // skill shape at the top of each position (3.8: generated players kept fast and position-shaped)
+    shape: (() => { const top = (pos, n) => all.filter((p) => p.pos === pos).sort((a, b) => b.ovr - a.ovr).slice(0, n); const m = (xs, f) => Math.round(mean(xs.map(f).filter((v) => typeof v === "number"))); return { qbArm: m(top("QB", 32), (p) => p.posAttrs?.armStr), rbSpd: m(top("RB", 32), (p) => p.spd), wrSpd: m(top("WR", 96), (p) => p.spd), cbSpd: m(top("CB", 64), (p) => p.spd), olStr: m(top("LT", 32), (p) => p.str) }; })(),
+    oldest: all.filter((p) => p.age >= 38 && !["QB", "K", "P"].includes(p.pos)).length,
+    hofTotal: (d.retired || []).filter((r) => r.hof).length,
     // club payrolls as % of the cap: lowest, average, highest (real NFL clubs mostly spend 85-100%)
     payPct: (() => { const xs = ai.map((t) => (100 * capOf(t)) / capFor(d.yr)); return [Math.round(Math.min(...xs)), Math.round(mean(xs)), Math.round(Math.max(...xs))]; })(),
     top5Pct: Object.fromEntries(["QB", "DL", "WR", "CB", "LT"].map((pos) => [pos, +((100 * mean(all.filter((p) => p.pos === pos).map((p) => p.salary || 0).sort((x, y) => y - x).slice(0, 5))) / capFor(d.yr)).toFixed(1)])),

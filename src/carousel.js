@@ -8,6 +8,18 @@
 // Owner patience (0-100): winning, the playoffs and titles build it; losing seasons drain it.
 // Below 35 the owner issues an ultimatum; at 5 or less he fires you.
 import { genCoach } from "./league.js";
+import { BORN } from "./data/coachAges.js";
+
+// Coaches age too. A real coach's age comes from his birth year; anyone else gets a believable one for
+// his job (the same every time for the same coach). From 62 on, each off-season may be his last.
+const hash = (s) => { let h = 0; for (const ch of String(s || "")) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h); };
+export function coachAge(c, yr) {
+  if (typeof c?.age === "number") return c.age;
+  if (BORN[c?.name]) return yr - BORN[c.name];
+  const base = { HC: 52, OC: 45, DC: 47, ST: 47 }[(c?.role || "").toUpperCase()] ?? 48;
+  return base + (hash(c?.id || c?.name) % 13) - 6;
+}
+export const coachRetireChance = (age) => (age >= 71 ? 0.5 : age >= 68 ? 0.3 : age >= 65 ? 0.15 : age >= 62 ? 0.06 : 0);
 
 const ROLE = { hc: "HC", oc: "OC", dc: "DC", st: "ST" };
 const TITLE = { hc: "head coach", oc: "offensive coordinator", dc: "defensive coordinator", st: "special teams coordinator" };
@@ -16,7 +28,7 @@ const pct = (t) => ((t.w || 0) + 0.5 * (t.t || 0)) / Math.max(1, (t.w || 0) + (t
 // coachTeams: the clubs whose coaches change (this off-season's copies); perf: last season's
 // standings (w/l/pf/pa) by the same index. pool: coaches on the market. Returns { moves, pool };
 // mutates coachTeams[i].coach for AI clubs.
-export function coachingCarousel(coachTeams, perf, ui, { pool = [], rand = Math.random } = {}) {
+export function coachingCarousel(coachTeams, perf, ui, { pool = [], rand = Math.random, yr = 2026 } = {}) {
   const moves = [];
   const n = perf.length;
   const rank = (key, low) => perf.map((t, i) => [i, t[key] || 0]).sort((a, b) => (low ? a[1] - b[1] : b[1] - a[1])).map(([i]) => i);
@@ -24,9 +36,17 @@ export function coachingCarousel(coachTeams, perf, ui, { pool = [], rand = Math.
   const bottom = (order, i) => order.indexOf(i) >= n - 10;
   let market = [...pool];
   coachTeams.forEach((t, i) => {
-    if (i === ui) return;
-    const p = pct(perf[i]);
     const coach = { ...(t.coach || {}) };
+    // a year older, and maybe done (your staff too: the job opens on your Coaching page)
+    for (const role of ["hc", "oc", "dc", "st"]) {
+      const c = coach[role];
+      if (!c) continue;
+      const age = coachAge(c, yr) + 1;
+      if (rand() < coachRetireChance(age)) { moves.push({ ti: i, role, kind: "retired", name: c.name, age }); coach[role] = null; }
+      else coach[role] = { ...c, age };
+    }
+    if (i === ui) { t.coach = coach; return; }
+    const p = pct(perf[i]);
     const fire = (role, why) => { const c = coach[role]; if (!c) return; moves.push({ ti: i, role, kind: "fired", name: c.name, why }); market.push({ ...c, contract: 2, fired: true, from: t.ab }); coach[role] = null; };
     // a losing season can cost the head coach his job too (rarely a great one)
     if (p < 0.3 && coach.hc && rand() < (coach.hc.rating >= 88 ? 0.08 : 0.35)) fire("hc", `a ${perf[i].w}-${perf[i].l} season`);
@@ -48,11 +68,14 @@ export function coachingCarousel(coachTeams, perf, ui, { pool = [], rand = Math.
     }
     t.coach = coach;
   });
+  // the market ages with everyone else; past 70, a coach between jobs has coached his last
+  market = market.map((c) => ({ ...c, age: coachAge(c, yr) + (c.age == null ? 0 : 1) })).filter((c) => c.age < 70);
   return { moves, pool: market.slice(-24) };
 }
 
 export const describeMove = (m, teams) => {
   const t = teams[m.ti];
+  if (m.kind === "retired") return `👋 ${t.city} ${t.name} ${TITLE[m.role]} ${m.name} retires at ${m.age}.`;
   return m.kind === "fired"
     ? `🔥 The ${t.city} ${t.name} fire ${TITLE[m.role]} ${m.name} after ${m.why}.`
     : `🤝 The ${t.city} ${t.name} hire ${m.name} as ${TITLE[m.role]}${m.scheme && m.role !== "st" ? ` (${m.scheme})` : ""}, rated ${m.rating}.`;

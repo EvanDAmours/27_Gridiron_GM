@@ -5,7 +5,10 @@ const s = (p, k) => p.ss?.[k] || 0;
 const qbScore = (p) => s(p, "passYds") / 20 + s(p, "passTD") * 5 - s(p, "passInt") * 4 + s(p, "rushYds") / 10 + s(p, "rushTD") * 6;
 const skillScore = (p) => (s(p, "rushYds") + s(p, "recYds")) / 10 + (s(p, "rushTD") + s(p, "recTD")) * 6;
 const offScore = (p) => (p.pos === "QB" ? qbScore(p) : skillScore(p) * 1.25);
-const defScore = (p) => s(p, "sacks") * 5 + s(p, "ints") * 6 + s(p, "tkl") * 0.3 + s(p, "ff") * 4 + s(p, "pd") * 1.2 + s(p, "tfl") * 1.5;
+// Sacks carry Defensive Player of the Year, like the real award (pass rushers win most years); at 0.3 a
+// tackle, a 155-tackle linebacker outscored an 18-sack edge and linebackers won 19 years out of 20. A
+// linebacker still wins with a monster season (double-digit sacks on top of his tackles).
+const defScore = (p) => s(p, "sacks") * 8 + s(p, "ints") * 5 + s(p, "tkl") * 0.1 + s(p, "ff") * 4 + s(p, "pd") * 1 + s(p, "tfl") * 1;
 
 const statLine = (p) => {
   if (p.pos === "QB") return `${s(p, "passYds")} yds · ${s(p, "passTD")} TD · ${s(p, "passInt")} INT`;
@@ -64,7 +67,9 @@ export function seasonAwardWinners(teams, yr) {
   const off = all.filter((x) => ["QB", "RB", "WR", "TE"].includes(x.p.pos));
   const def = all.filter((x) => ["DL", "LB", "CB", "S"].includes(x.p.pos));
   const mvp = pick(off, (x) => offScore(x.p) * (x.p.pos === "QB" ? 1 : 0.8) + x.w * 8);
-  const opoy = pick(off.filter((x) => x.p.id !== mvp?.pid), (x) => offScore(x.p));
+  // Offensive Player of the Year goes to the best non-quarterback most years, as it does in the NFL: a
+  // quarterback has to outdo the top back or receiver by a lot (a quarterback won 13 of 20 at full weight)
+  const opoy = pick(off.filter((x) => x.p.id !== mvp?.pid), (x) => offScore(x.p) * (x.p.pos === "QB" ? 0.7 : 1));
   const dpoy = pick(def, (x) => defScore(x.p));
   const rookie = (x) => rookieSeason(x.p) === yr;
   const oroy = pick(off.filter(rookie), (x) => offScore(x.p));

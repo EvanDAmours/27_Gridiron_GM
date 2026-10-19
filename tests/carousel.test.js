@@ -39,3 +39,19 @@ test("with firing turned off the owner grumbles but never fires you", async () =
   for (let i = 0; i < 4; i++) { const r = ownerReview(pat, { w: 2, l: 15 }, { noFire: true }); assert.ok(!["fired", "ultimatum"].includes(r.verdict)); pat = r.patience; }
   assert.equal(ownerReview(8, { w: 2, l: 15 }).verdict, "fired");
 });
+
+test("coaches age and retire: a 70-year-old head coach is usually done within a few years", async () => {
+  const { coachingCarousel, coachAge } = await import("../src/carousel.js");
+  assert.equal(coachAge({ name: "Andy Reid", role: "HC" }, 2026), 68);
+  let retired = 0;
+  for (let k = 0; k < 200; k++) {
+    const teams = [{ ab: "KC", coach: { hc: { id: "r", name: "Old Coach", role: "HC", rating: 90, age: 70 } } }, { ab: "X", coach: {} }];
+    const r = coachingCarousel(teams, [{ w: 12, l: 5 }, { w: 8, l: 9 }], 1, { yr: 2030 });
+    if (r.moves.some((m) => m.kind === "retired")) retired++;
+  }
+  assert.ok(retired > 60 && retired < 140, `retired ${retired}/200`);
+  const young = [{ ab: "KC", coach: { hc: { id: "y", name: "Young Coach", role: "HC", rating: 80, age: 45 } } }, { ab: "X", coach: {} }];
+  const r = coachingCarousel(young, [{ w: 12, l: 5 }, { w: 8, l: 9 }], 1, { yr: 2030 });
+  assert.equal(young[0].coach.hc.age, 46, "a year older");
+  assert.ok(!r.moves.some((m) => m.kind === "retired"));
+});

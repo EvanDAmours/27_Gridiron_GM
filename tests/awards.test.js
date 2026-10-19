@@ -36,3 +36,18 @@ test("rookie awards find this year's draft class", () => {
   assert.equal(a.droy.pid, "r2");
   assert.notEqual(seasonAwardWinners(teams, 2028).oroy?.pid, "r1", "not a rookie a year later");
 });
+
+test("pass rushers win Defensive Player of the Year over tackle piles; a receiver beats the second-best QB for Offensive", () => {
+  const P = (id, pos, ss) => ({ id, name: id, pos, ss: { gp: 17, ...ss } });
+  const teams = [{ ab: "A", w: 12, roster: [
+    P("qb1", "QB", { passYds: 5100, passTD: 42, passInt: 8 }),
+    P("qb2", "QB", { passYds: 4800, passTD: 36, passInt: 10 }),
+    P("wr", "WR", { rec: 115, recYds: 1620, recTD: 12 }),
+    P("lb", "LB", { tkl: 158, sacks: 6, tfl: 14, pd: 5, ints: 1 }),
+    P("edge", "DL", { tkl: 48, sacks: 16, tfl: 18, ff: 3 }),
+  ] }];
+  const a = seasonAwardWinners(teams, 2030);
+  assert.equal(a.mvp.pid, "qb1");
+  assert.equal(a.opoy.pid, "wr");
+  assert.equal(a.dpoy.pid, "edge");
+});
