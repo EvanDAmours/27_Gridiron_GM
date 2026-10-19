@@ -152,3 +152,10 @@ test("a rising young star climbs past 93 more easily than a veteran", async () =
   assert.equal(eliteTaper(92, 96, seq([0.7]), true), 96);
   assert.equal(eliteTaper(80, 88, seq([0.99]), true), 88, "below 90 nothing is tapered");
 });
+
+test("a league short of 99s lets a young 96-98 take the last step more often", () => {
+  assert.equal(topEndNudge(26, 97, 40, () => 0.2, 2), 98, "two 99s: 40% chance");
+  assert.equal(topEndNudge(26, 97, 40, () => 0.2, 7), 97, "enough 99s: nothing");
+  assert.equal(topEndNudge(31, 97, 40, () => 0, 0), 97, "not for veterans");
+  assert.equal(topEndNudge(26, 94, 40, () => 0, 0), 94, "only from 96 up");
+});

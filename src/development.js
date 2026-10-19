@@ -210,10 +210,15 @@ export function driftCorrection(gain, shift, rand = Math.random) {
 // tail used to thin (40 to under 30 in ten years) while the 90+ count held. When the league is short
 // of 95s, young players near the top get an extra point now and then, more the thinner it is.
 export const TOP_95 = 40;
-export function topEndNudge(age, ovr, n95, rand = Math.random) {
+// The same for the very top: the league starts with about eight 99s, and in long careers they thinned
+// to three or four. When there are fewer than six, a young player at 96-98 gets the last step more often.
+export const TOP_99 = 8;
+export function topEndNudge(age, ovr, n95, rand = Math.random, n99 = TOP_99) {
   if (age > 29 || ovr < 88 || ovr >= 99) return ovr;
   const gap = (TOP_95 - n95) / TOP_95;
-  return gap > 0.05 && rand() < Math.min(0.5, gap * 1.6) ? ovr + 1 : ovr;
+  if (gap > 0.05 && rand() < Math.min(0.5, gap * 1.6)) return ovr + 1;
+  if (ovr >= 96 && n99 < 6 && rand() < (6 - n99) * 0.1) return ovr + 1;
+  return ovr;
 }
 
 // Off-season taper at the top: any rise into the 90s has to be earned point by point (60% a

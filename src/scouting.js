@@ -696,7 +696,7 @@ export function plantBusts(cls, yr) {
   // the top 64, still 77%): seven to ten a class, all in the board's top 40, so nearly all go in the
   // first round. The board can't see them; a scouting report can.
   const n = 7 + (r.chance(0.5) ? 1 : 0) + (r.chance(0.5) ? 1 : 0) + (r.chance(0.25) ? 1 : 0);
-  const pool = cls.filter((p) => !p.gem && !(p.scout?.lvl > 0) && (p.cons?.mid ?? 999) <= 40 && p.pos !== "K" && p.pos !== "P");
+  const pool = cls.filter((p) => !p.gem && !p.sure && !(p.scout?.lvl > 0) && (p.cons?.mid ?? 999) <= 40 && p.pos !== "K" && p.pos !== "P");
   for (let i = 0; i < n && pool.length; i++) {
     const p = pool.splice(Math.floor(r.next() * pool.length), 1)[0];
     const target = p.truePot - r.int(10, 18);
