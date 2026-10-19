@@ -1347,4 +1347,7 @@ export const PATCH_NOTES = [
     "The old record and its holder appear underneath and get struck through, and the ball goes 'into the record book'.",
     "Franchise records keep their team-colored card, so you can tell at a glance whether he broke the club record or the league's.",
   ] },
+  { v: "3.41", date: "2026-10-20", title: "Playoff Injury Returns", notes: [
+    "Injury returns in the playoffs now read the way you'd say them. A player due back after the regular season shows as back for the Wild Card round, the Divisional round, the Conference Championship or the Super Bowl, instead of 'back wk 20'. This applies everywhere: injury tags, the injury report, player cards and the injured reserve list. Regular-season returns still show the week.",
+  ] },
 ];

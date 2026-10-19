@@ -5,6 +5,9 @@
 // The last week anyone plays: Week 18, then four playoff rounds (the Super Bowl is week 22). An
 // injury that heals after that is season-ending: the report says so instead of "back wk 25".
 export const SEASON_LAST_WK = 22;
+// When he's back, in words: a regular-season week, or the playoff round (weeks 19-22) he returns for.
+const ROUND_BACK = { 19: "for the Wild Card round", 20: "for the Divisional round", 21: "for the Conference Championship", 22: "for the Super Bowl" };
+export const backText = (wk) => (wk == null ? "" : ROUND_BACK[wk] || `wk ${wk}`);
 const seasonEnding = (st) => (st && st.back > SEASON_LAST_WK ? { ...st, back: null, seasonOver: true, label: `${st.label}: out for the season`, note: `${st.note} · out for the season` } : st);
 
 export function injStatus(p, opts = {}) {
