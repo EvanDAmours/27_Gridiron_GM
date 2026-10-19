@@ -196,9 +196,10 @@ export function IncomingCall({ offer, team, curPick, yr, onAccept, onMore, onDec
   const drop = useRef(onDecline);
   drop.current = onDecline;
   useEffect(() => { const t = setTimeout(() => drop.current(), secs * 1000); return () => clearTimeout(t); }, [offer.id, secs]);
-  // on the page itself, above the draft board (inside it, the board's layers covered it)
+  // on the page itself (inside the board, its layers covered it), bottom right over the recent
+  // picks, so it never hides the board you're picking from
   return createPortal(
-    <div style={{ position: "fixed", right: MOBILE ? 8 : "auto", left: MOBILE ? 8 : 18, top: MOBILE ? 64 : "auto", bottom: MOBILE ? "auto" : 18, zIndex: 2400, fontFamily: C.f, color: C.tx, width: MOBILE ? "auto" : 380, borderRadius: 16, overflow: "hidden", background: "linear-gradient(160deg,#1e1b4b,#0b1120 70%)", border: "1px solid #a78bfa88", boxShadow: "0 20px 60px #000d, 0 0 0 1px #000", animation: "dd-in .3s ease-out" }}>
+    <div style={{ position: "fixed", right: MOBILE ? 8 : 18, left: MOBILE ? 8 : "auto", top: MOBILE ? 64 : "auto", bottom: MOBILE ? "auto" : 18, zIndex: 2400, fontFamily: C.f, color: C.tx, width: MOBILE ? "auto" : 380, borderRadius: 16, overflow: "hidden", background: "linear-gradient(160deg,#1e1b4b,#0b1120 70%)", border: "1px solid #a78bfa88", boxShadow: "0 20px 60px #000d, 0 0 0 1px #000", animation: "dd-in .3s ease-out" }}>
       <style>{"@keyframes dd-in{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}} @keyframes callRing{0%{box-shadow:0 0 0 0 #a78bfa99}70%{box-shadow:0 0 0 16px #a78bfa00}100%{box-shadow:0 0 0 0 #a78bfa00}} @keyframes callBar{from{width:100%}to{width:0%}} @keyframes callShake{0%,100%{transform:rotate(0)}10%,30%{transform:rotate(-12deg)}20%,40%{transform:rotate(12deg)}50%{transform:rotate(0)}}"}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px 10px" }}>
         <div style={{ borderRadius: "50%", padding: 6, background: "#0b1120", animation: "callRing 1.4s infinite" }}><TeamLogo t={team} sz={46} /></div>

@@ -123,7 +123,7 @@ export default function SeasonAwards({ show, teams, ui, onClose, cta = "Continue
   const ct = teams[champ], ot = opp != null ? teams[opp] : null;
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(2,6,15,.88)", zIndex: 2300, display: "flex", alignItems: "center", justifyContent: "center", padding: 14, ...sheetWrap(MOBILE) }}>
-      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Season awards" key={page} style={{ position: "relative", width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", borderRadius: 16, background: "#0b1220", border: "2px solid #d4a017", boxShadow: "0 0 70px #d4a01744", ...sheetBox(MOBILE) }}>
+      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Season awards" key={page} style={{ position: "relative", width: "100%", maxWidth: MOBILE ? 560 : page === 1 ? 860 : 620, maxHeight: "92vh", overflowY: "auto", borderRadius: 16, background: "#0b1220", border: "2px solid #d4a017", boxShadow: "0 0 70px #d4a01744", ...sheetBox(MOBILE) }}>
         <CloseX onClick={onClose} />
         {page === 2 ? <HonorsPage yr={yr} h={awards.honors} teams={teams} ui={ui} onBack={() => setPage(1)} onClose={onClose} cta={cta} /> : <>
         <div style={{ padding: MOBILE ? "14px 56px 12px 16px" : "18px 20px 14px", textAlign: "center", background: `linear-gradient(135deg, ${ct?.clr || "#1e3a5f"}dd, #0b1220)` }}>
@@ -139,8 +139,9 @@ export default function SeasonAwards({ show, teams, ui, onClose, cta = "Continue
         </div>
         <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 8 }}>
           <style>{"@keyframes awIn{from{opacity:0;transform:translateY(14px) scale(.97);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}"}</style>
-          <div onClick={() => setAll(true)} style={{ display: "flex", flexDirection: "column", gap: 8, cursor: all ? "default" : "pointer" }} title={all ? undefined : "Show every award"}>
-            <div style={step(0)}><Row label="Super Bowl MVP" w={sbmvp} teams={teams} ui={ui} big /></div>
+          {/* two columns on a computer (eight awards fit without scrolling), the Super Bowl MVP across both */}
+          <div onClick={() => setAll(true)} style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "1fr 1fr", gap: 8, cursor: all ? "default" : "pointer" }} title={all ? undefined : "Show every award"}>
+            <div style={{ ...step(0), gridColumn: "1 / -1" }}><Row label="Super Bowl MVP" w={sbmvp} teams={teams} ui={ui} big /></div>
             {ROWS.filter(([k]) => awards[k] || !["cpoy", "coy"].includes(k)).map(([k, l], i) => <div key={k} style={step(i + 1)}><Row label={l} w={awards[k]} teams={teams} ui={ui} /></div>)}
           </div>
           <div style={stickyFoot}><Btn onClick={awards.honors ? () => setPage(2) : onClose} bg={C.gn} style={{ width: "100%", fontSize: 16, padding: "11px 0", fontWeight: 900, letterSpacing: 1 }}>{awards.honors ? "CONTINUE →" : cta}</Btn></div>

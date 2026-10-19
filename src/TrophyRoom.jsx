@@ -253,7 +253,7 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
   }
   const perRow = Math.max(3, Math.floor(Math.min(width, 1300) / 132));
   const retiredHere = retired.filter((r) => r.team === team.ab);
-  const hall = { ring: team.legacyHall?.ring || [], nums: team.legacyHall?.nums || [] };
+  const hall = { ring: [], nums: [], pass: [], numPass: [], ...(team.legacyHall || {}) }; // pass / numPass: the ones you said no to
   const count = (k) => mine.filter((t) => t.kind === k).length;
   return (
     <div className="tr-room">

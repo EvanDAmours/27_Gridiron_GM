@@ -13,7 +13,7 @@ const CSS = `
 .pp-stats td, .pp-stats th { padding: 3px 4px; border-bottom: 1px dotted #15131044; text-align: right; }
 .pp-stats td:first-child, .pp-stats th:first-child { text-align: left; }
 .pp-box { border: 1px solid #151310; padding: 8px 10px; margin-top: 10px; background: #ebe4d2; }
-.pp-box h5 { margin: 0 0 4px; font-family: 'Playfair Display', serif; font-size: 15px; }
+.pp-box h5 { margin: 0 0 4px; font-family: 'IM Fell English SC', 'IM Fell English', serif; font-size: 15px; }
 .pp-box ul { margin: 0; padding-left: 16px; font-size: 12.5px; line-height: 1.4; }
 .pp-next { position: sticky; bottom: 0; display: flex; justify-content: center; padding: 12px 0 0; }
 .pp-next button { font: 900 15px system-ui, sans-serif; padding: 10px 24px; border-radius: 10px; border: none; cursor: pointer; color: #111; background: linear-gradient(180deg, #fde68a, #d4a017); }
@@ -49,8 +49,8 @@ export default function PlayoffPaper({ paper: p, onClose }) {
           </section>
           <aside style={{ paddingRight: 0 }}>
             {p.rd === 4 && <div className="gz-photo-frame" style={{ marginBottom: 8 }}><LombardiStill size={90} /></div>}
-            {p.star && <><h5 style={{ margin: "0 0 4px", fontFamily: "'Playfair Display', serif", fontSize: 15 }}>Star of the Game</h5><p className="gz-small"><b>{p.star.name}</b> ({p.star.pos}): {p.star.line}.</p><div className="gz-rule thin" /></>}
-            <h5 style={{ margin: "0 0 4px", fontFamily: "'Playfair Display', serif", fontSize: 15 }}>By the Numbers</h5>
+            {p.star && <><h5 style={{ margin: "0 0 4px", fontFamily: "'IM Fell English SC', 'IM Fell English', serif", fontSize: 15 }}>Star of the Game</h5><p className="gz-small"><b>{p.star.name}</b> ({p.star.pos}): {p.star.line}.</p><div className="gz-rule thin" /></>}
+            <h5 style={{ margin: "0 0 4px", fontFamily: "'IM Fell English SC', 'IM Fell English', serif", fontSize: 15 }}>By the Numbers</h5>
             <table className="pp-stats"><thead><tr><th></th><th>{p.winner}</th><th>{p.loser}</th></tr></thead>
               <tbody><tr><td>Points</td><td><b>{p.ws}</b></td><td>{p.ls}</td></tr>{p.stats.map(([l, a, b]) => <tr key={l}><td>{l}</td><td>{a}</td><td>{b}</td></tr>)}</tbody></table>
             <div className="pp-box">

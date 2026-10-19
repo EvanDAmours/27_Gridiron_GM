@@ -154,6 +154,8 @@ export function retireEntry(p, team, yr, opts = {}) {
   return {
     id: p.id, name: p.name, pos: p.pos, num: p.num, team: team?.ab || p.formerTeam || "FA", age: p.age, retYr: yr,
     peak: L.peak, legacy: L.legacy, career: L.career, won: L.won, seasons: L.seasonsHere, tc,
+    // Super Bowls he won (on the champion's roster that season)
+    rings: (accoladesOf(p, { awards: opts.awards || [], champs: opts.champs || [], teams: opts.teams || [], yr, teamAb: team?.ab }).find((a) => a.k === "sb")?.years || []).length,
     hof, hofClass: hof ? yr + HOF_WAIT : null,
     // his player card, kept for Hall of Famers and your own retired players (opts.keepCard)
     ...(hof || opts.keepCard ? { card: cardOf(p, team, yr) } : {}),

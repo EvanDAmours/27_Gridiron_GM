@@ -1240,4 +1240,13 @@ export const PATCH_NOTES = [
     "Snap counts follow it all: your TE2 plays a lot more in a two-tight-end offense, your SAM only in base, your nickel most of the time, so their stats and development do too. In two-receiver sets your best two receivers play, a star slot man moving outside.",
     "The depth chart shows every role with each player's rating there and what the role wants; the offense field switches between groupings; the defense shows the nickel back. A new Personnel panel (game plan strip) shows what each identity does for your roster. Player cards show a role-fit rating at every role. Team needs follow your identity, and your game plan card shows the personnel and packages from your last game.",
   ] },
+  { v: "3.20", date: "2026-10-20", title: "Stop the Presses", notes: [
+    "The Gridiron Gazette has a newsroom now: a bank of headlines for every kind of title (a first ever, a repeat, a three-peat, a rout, a thriller, a shootout, a defensive struggle), four writers with their own voices (the wire reporter, the columnist, the feature writer at the scene, the numbers man), new quotes from the MVP, the coach and the fans, and rotating ears, editions, parade plans and inside pages. The same season always prints the same paper; no two seasons read alike.",
+    "Three front pages: the classic (story, photo, sidebar), a photo-led cover with the picture across the page, and a two-story page with a columnist's take beside the news.",
+    "The Gazette is set in old letterpress type throughout (IM Fell, the inky 17th-century faces), with the blackletter flag, instead of a mix of smooth and old fonts. The playoff papers too, with varied headlines and ledes of their own.",
+    "Season awards fit on one screen again: two columns on a computer, the Super Bowl MVP across the top.",
+    "Fixed: the Hall of Fame card said \"[object Object]\" for rings; it now shows how many Super Bowls he won.",
+    "Fixed: saying No to a Ring of Honor candidate now takes him off the list.",
+    "Draft-day trade calls now ring in from the bottom right, so they never cover the big board.",
+  ] },
 ];

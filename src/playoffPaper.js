@@ -3,6 +3,7 @@
 import { teamNeeds, needName } from "./needs.js";
 import { playoffScore } from "./playoffGrowth.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
+import { playoffHeadline } from "./gazetteBank.js";
 
 export const PAPER_ROUNDS = ["", "Wild Card", "Divisional Round", "Conference Championship", "Super Bowl"];
 const NUM = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
@@ -44,15 +45,14 @@ export function buildPlayoffPaper({ g, rd, yr, teams, ui }) {
   const round = PAPER_ROUNDS[rd] || "Playoffs";
   const sb = rd === 4 ? sbName(sbNumber(yr)) : null;
   const youWon = wi === ui;
-  const head = rd === 4 ? `${W.name.toUpperCase()} WIN ${sb.toUpperCase()}`
-    : m >= 17 ? `${W.name.toUpperCase()} ROUT ${L.name.toUpperCase()}`
-    : m <= 3 ? `${W.name.toUpperCase()} SURVIVE ${L.name.toUpperCase()}, ${ws}-${ls}`
-    : `${W.name.toUpperCase()} TOP ${L.name.toUpperCase()}, ${ws}-${ls}`;
+  // the headline and the lede's verdict, from the paper's bank (a different one each game)
+  const ph = playoffHeadline({ W, L, ws, ls, rd, yr });
+  const head = rd === 4 ? `${W.name.toUpperCase()} WIN ${sb.toUpperCase()}` : ph.head;
   const next = rd < 4 ? (rd === 3 ? "the Super Bowl" : `the ${PAPER_ROUNDS[rd + 1]}`) : null;
   const deck = rd === 4 ? `${W.city} are champions; ${L.city}'s season ends one game short`
     : `${W.city} advance to ${next}; ${L.city}'s season is over`;
   const story = [
-    `${W.city.toUpperCase()} — The ${W.name} beat the ${L.city} ${L.name}, ${ws}-${ls}, in the ${round}${sb ? ` (${sb})` : ""}, ${m >= 17 ? "a statement from the opening drive" : m <= 3 ? "a game that was not decided until the final minutes" : m <= 8 ? "pulling away just enough in the fourth quarter" : "in control for most of the afternoon"}.`,
+    `${W.city.toUpperCase()} — The ${W.name} beat the ${L.city} ${L.name}, ${ws}-${ls}, in the ${round}${sb ? ` (${sb})` : ""}, ${ph.how}.`,
     star ? `${star.name} led the way with ${lineProse(star)}.${wt.takeaways + lt.giveaways > 0 && lt.giveaways >= 2 ? ` The ${W.name} defense forced ${n2w(lt.giveaways)} turnovers.` : ""} The ${W.name} ran for ${wt.rush} yards and threw for ${wt.pass}.` : `It was a team win, built on ${wt.rush} rushing yards and ${wt.pass} through the air.`,
     goat ? `For the ${L.name}, ${goat.name} finished with ${lineProse(goat) || "a quiet afternoon"}, but it wasn't enough.` : `The ${L.name} never found their footing.`,
   ];
