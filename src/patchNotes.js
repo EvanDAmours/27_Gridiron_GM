@@ -1204,4 +1204,8 @@ export const PATCH_NOTES = [
     "Head to head: the weekly matchup preview now tells you your record against this week's opponent while you've been GM, and how the last meeting went.",
     "Wording: \"suspended 1 game\" (not \"1 games\"), \"1 year\" in contract offers, and an open coaching staff reads \"Your staff needs 3 coaches: OC, DC, ST\" instead of a string of \"or\"s.",
   ] },
+  { v: "3.14", date: "2026-10-20", title: "Housekeeping", notes: [
+    "AI clubs restructure a player's deal only once, and never a player 33 or older. In a 20-season test, quarterbacks restructured twice were carrying a quarter of the cap into their mid-30s.",
+    "A suspension that's been served no longer sits in Needs Attention waiting for a Keep or Release.",
+  ] },
 ];

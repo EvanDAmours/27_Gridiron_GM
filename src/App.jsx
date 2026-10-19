@@ -256,7 +256,8 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   // v13.0 GM features (v11 spec)
   const[capRollover,setCapRollover]=useState(0);
   const[hotSeat,setHotSeat]=useState([]);
-  const[suspensionEvent,setSuspensionEvent]=useState(null);
+  const[suspensionEvent,setSuspensionEvent]=useState(null);useEffect(()=>{/* a ban that's been served (or a player who's gone) no longer needs a decision */if(!suspensionEvent||!teams[ui])return;const _p=teams[ui].roster.find(r=>r.id===suspensionEvent.player?.id);if(!_p||!_p.suspended)setSuspensionEvent(null);},[teams]);// eslint-disable-line react-hooks/exhaustive-deps
+
   const[preseasonRisk,setPreseasonRisk]=useState(true);const[psReport,setPsReport]=useState(null);
   // v13.0 new features
   const[milestones,setMilestones]=useState([]);
