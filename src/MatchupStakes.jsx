@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { C, TeamLogo } from "./ui.jsx";
 import { nflSeeds } from "./playoffs.js";
 import { injuryReport } from "./injuries.js";
+import { h2hLine } from "./h2h.js";
 
 const pct = (t) => (t.w + 0.5 * (t.t || 0)) / Math.max(1, t.w + t.l + (t.t || 0));
 const better = (a, b) => pct(b) - pct(a) || (b.pf - b.pa) - (a.pf - a.pa);
@@ -64,14 +65,16 @@ function Pill({ r }) {
 }
 
 const SHOW_KEY = "gm_matchup_details";
-export default function MatchupStakes({ teams, ui, game, sched, wk, ra, rh, playoff, neutral }) {
+export default function MatchupStakes({ teams, ui, game, sched, wk, ra, rh, playoff, neutral, h2h }) {
   // the details (form, line, injuries, key matchups) fold away; the choice is remembered
   const [more, setMore] = useState(() => { try { return localStorage.getItem(SHOW_KEY) === "1"; } catch { return false; } });
   const toggle = () => setMore((m) => { try { localStorage.setItem(SHOW_KEY, m ? "0" : "1"); } catch { /* private mode */ } return !m; });
   if (!game) return null;
   const home = teams[game.h], away = teams[game.a];
   const oppI = game.h === ui ? game.a : game.h, me = teams[ui], opp = teams[oppI];
-  const lines = stakesLines({ teams, ui, opp: oppI, wk, playoff });
+  const series = h2hLine(h2h?.[oppI], opp?.name);
+  const stakes = stakesLines({ teams, ui, opp: oppI, wk, playoff });
+  const lines = [...stakes, ...(series ? [series] : [])];
   const line = ra && rh ? pointSpread(ra, rh, neutral) : null;
   const fav = line && (line.home ? home : away);
   const hurt = (t) => injuryReport(t, wk).filter((r) => ["OUT", "IR", "D"].includes(r.st.tag) && (r.p.ovr || 0) >= 72).slice(0, 3);
@@ -90,7 +93,7 @@ export default function MatchupStakes({ teams, ui, game, sched, wk, ra, rh, play
       {/* the stakes and the details toggle share one row */}
       <div style={{ ...box, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", ...(lines.length ? { border: `1px solid ${C.gd}55`, background: `${C.gd}12`, padding: "8px 12px" } : { background: "transparent", border: 0, padding: 0 }) }}>
         {lines.length > 0 && <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-          <div style={{ ...head, color: C.gd, marginBottom: 2 }}>WHAT'S AT STAKE</div>
+          <div style={{ ...head, color: C.gd, marginBottom: 2 }}>{stakes.length ? "WHAT'S AT STAKE" : "THE SERIES"}</div>
           {lines.map((l, i) => <div key={i} style={{ fontSize: i ? 13.5 : 15, fontWeight: i ? 600 : 800, color: i ? "#cbd5e1" : "#fff", lineHeight: 1.35 }}>{l}</div>)}
         </div>}
         <button onClick={toggle} title="Form, the line, injuries, key matchups" style={{ background: "#00000033", border: `1px solid #ffffff2a`, color: "#cbd5e1", borderRadius: 999, padding: "5px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>{more ? "▲ Less on this matchup" : "▼ More on this matchup"}</button>

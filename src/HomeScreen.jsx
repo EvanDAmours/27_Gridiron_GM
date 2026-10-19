@@ -170,7 +170,7 @@ function RosterChecklist({ me, sp, fa, capRoom, onFa, mobile }) {
   );
 }
 
-export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory, rivalId }) {
+export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory, rivalId, h2h }) {
   const me = teams[ui];
   // a tall window (big desktop) has room for the full-size matchup art
   const roomy = !mobile && typeof window !== "undefined" && window.innerHeight / (parseFloat(document.documentElement.style.zoom) || 1) >= 900;
@@ -256,7 +256,7 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
               venue={sp === "playoffs" && pb?.rd === 4 ? "Super Bowl • neutral site" : [game.venue || home.city, game.intl && game.city].filter(Boolean).join(", ")}
             />
           ) : null}
-          {game && (sp === "regular" || sp === "playoffs" || sp === "preseason") && <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={sp === "playoffs"} neutral={!!game.neutral || (sp === "playoffs" && pb?.rd === 4)} />}
+          {game && (sp === "regular" || sp === "playoffs" || sp === "preseason") && <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={sp === "playoffs"} h2h={sp === "preseason" ? null : h2h} neutral={!!game.neutral || (sp === "playoffs" && pb?.rd === 4)} />}
           {game && (sp === "regular" || sp === "playoffs") && planCard && <div style={{ marginTop: 12 }}>{planCard}</div>}
           {mobile && menu.length > 0 && (
             <div style={{ marginTop: 12, background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 12, padding: "10px 10px 6px" }}>
