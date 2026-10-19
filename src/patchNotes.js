@@ -1420,4 +1420,7 @@ export const PATCH_NOTES = [
     "The gameday card on the home screen now dresses up for holiday games. It glows in the holiday's colors, with the holiday's trim along the top and its name on a badge. Snow, leaves, bats or confetti drift across the card, and on a computer the holiday's characters sit on its corners.",
     "Christmas Eve is a holiday game now too, with the Christmas look, intro and result card. In 2026 that's the real Christmas Eve game: Texans at Eagles on Thursday night. A season already in progress picks it up.",
   ] },
+  { v: "3.59", date: "2026-10-20", title: "Softer Stadium Lights", notes: [
+    "The stadium lights on the gameday card for night games blend in now. The two light beams have soft edges and fade out gradually over the players, instead of ending in a hard line across the card.",
+  ] },
 ];

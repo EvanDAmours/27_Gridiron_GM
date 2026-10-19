@@ -56,8 +56,11 @@
 .pxm-badge--rival { color: #fff; background: #b91c1c; border: 1px solid #fca5a5aa; }
 .pxm-prime { background: radial-gradient(ellipse at 50% -20%, #312e8199, transparent 65%), #040817; border-color: #6366f1; box-shadow: 0 0 30px #6366f133, inset 0 1px 0 #a5b4fc33; }
 .pxm-prime .pxm-field { background: linear-gradient(to bottom, #1e1b4b55, #04081700 90%); }
-.pxm-prime .pxm-field::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: conic-gradient(from 160deg at 0% 0%, transparent 0deg, #fef9c31f 14deg, transparent 28deg), conic-gradient(from 172deg at 100% 0%, transparent 0deg, #fef9c31f 14deg, transparent 28deg); }
+/* the stadium lights: two soft beams from the top corners that fade out over the players
+   (feathered edges and a long fade, so nothing ends in a hard line) */
+.pxm-prime .pxm-field::after { content: ''; position: absolute; inset: 0 0 -24px; z-index: -1; pointer-events: none; filter: blur(5px);
+  background: conic-gradient(from 160deg at 0% 0%, transparent 0deg, #fef9c30c 7deg, #fef9c31f 14deg, #fef9c30c 21deg, transparent 28deg), conic-gradient(from 172deg at 100% 0%, transparent 0deg, #fef9c30c 7deg, #fef9c31f 14deg, #fef9c30c 21deg, transparent 28deg);
+  -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent 100%); mask-image: linear-gradient(to bottom, #000 35%, transparent 100%); }
 .pxm-prime .pxm-label { color: #c7d2fe; }
 .pxm-rival { border-color: #ef4444; background: linear-gradient(90deg, color-mix(in srgb, var(--pxm-a) 30%, #071b27), #071b27 45%, #071b27 55%, color-mix(in srgb, var(--pxm-h) 30%, #071b27)); box-shadow: 0 0 26px #ef444433; }
 .pxm-rival.pxm-prime { border-color: #a855f7; }
