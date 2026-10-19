@@ -9,13 +9,15 @@ const team = (ab) => { const t = d.teams.find((x) => x.ab === ab); return { ...t
 const side = (t, over = {}, season = 2026) => { const ord = (pos) => t.roster.filter((p) => p.pos === pos).sort((a, b) => (a.dk ?? 99) - (b.dk ?? 99) || b.ovr - a.ovr); return makeSide({ team: t, order: ord, snaps: teamSnaps(ord, over), season }); };
 
 test("a back on 100% of the snaps has workhorse seasons; a record one only now and then", () => {
+  // a fixed seed: the same games every run, so the test never fails on a lucky season
+  let seed = 11; const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const atl = team("ATL");
   const bijan = atl.roster.find((p) => p.name === "Bijan Robinson");
   const seasons = [];
   for (let season = 2026; season < 2034; season++) {
     let att = 0, yds = 0;
     for (const o of d.teams.filter((x) => x.ab !== "ATL").slice(0, 17)) {
-      const g = createGame(side(atl, { [bijan.id]: 100 }, season), side(team(o.ab), {}, season));
+      const g = createGame(side(atl, { [bijan.id]: 100 }, season), side(team(o.ab), {}, season), { rand });
       playGame(g);
       att += boxOf(g).h[bijan.id]?.rushAtt || 0; yds += boxOf(g).h[bijan.id]?.rushYds || 0;
     }

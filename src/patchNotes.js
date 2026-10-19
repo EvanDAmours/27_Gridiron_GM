@@ -1318,4 +1318,10 @@ export const PATCH_NOTES = [
     "Behind the scenes: a balance watchdog. The long health runs (npm run health) now check every simulated season against NFL-like ranges: points a game, completion rate, passing and rushing yards, home-field edge, blowouts, ties, league age, 99-rated players, payrolls, the QB market, AI clubs over the cap or missing a starter, and rating inflation from the first season.",
     "Anything out of range is flagged in the log. A key number out of range two seasons running fails the run, so drift gets caught before it shows up in your league. A two-season check after this update came back clean: about 21 points a game and a 64.5% completion rate.",
   ] },
+  { v: "3.36", date: "2026-10-20", title: "New Player Portraits", notes: [
+    "Real headshots for fictional players: generated draft prospects and other made-up players now show a real media-day photo instead of the old drawn face. There are 48 new portraits, eight for each build (QB, WR, OL, DL, LB, DB), each fitted to the position.",
+    "A fictional player's name and face now fit each other. New players get their portrait and a name to match, chosen together, and fictional players already in your save get the portrait that best fits the name they already have. The league's mix looks like the NFL's at each position, and the portraits are spread out so teammates rarely share a face.",
+    "A player keeps his portrait for good: through trades, position changes and new seasons.",
+    "Real players keep their ESPN photos. A real player or real draft prospect without a photo keeps the drawn face; a fictional photo never stands in for a real person.",
+  ] },
 ];

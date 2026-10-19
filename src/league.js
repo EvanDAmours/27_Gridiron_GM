@@ -13,6 +13,7 @@ import { arrangeDL, dlAsPlayed, naturalDL } from "./dline.js";
 import { teamNeeds, topNeeds } from "./needs.js";
 import { bestPlan, planEdge } from "./gamePlan.js";
 import { withHeadshot } from "./headshots.js";
+import { genIdentity } from "./portraits.js";
 import { makeSide, createGame, playGame, setLeague, teamPersonnel, setPkgOff } from "./playsim.js";
 import { unitRatings, defUnits } from "./gamesim.js";
 import { DATA_TO_DOLLARS, leagueCap, expiringNow, getLeagueYear } from "./cap.js";
@@ -169,9 +170,10 @@ export function genPlayer(pos,age,ovrO,isDraft){
   const sP=[...(STRS[pos]||[])];for(let i=0;i<3&&sP.length;i++){const x=R(0,sP.length-1);bio.strengths.push(sP.splice(x,1)[0]);}
   const wP=[...(WKNS[pos]||[])];for(let i=0;i<2&&wP.length;i++){const x=R(0,wP.length-1);bio.weaknesses.push(wP.splice(x,1)[0]);}
   const colYrs=isDraft?cl(age-18,1,4):R(1,4);
-  return{id:uid(),name:`${pick(FN)} ${pick(LN)}`,pos,age,ovr,pot,ht_:h_,wt:w_,...phys,posAttrs:genPAttrs(pos,ovr),
+  /* a fictional player: his portrait and a name that fits it, chosen together (portraits.js) */const idn=genIdentity(pos);
+  return{id:uid(),name:idn.name,pos,age,ovr,pot,ht_:h_,wt:w_,...phys,posAttrs:genPAttrs(pos,ovr),
     salary:isDraft?0:Math.round((ovr/99)*Rf(1,9)*100)/100,contract:isDraft?0:R(1,4),
-    injured:false,injWk:0,injType:"",injCount:0,fragile:false,offsznExt:false,bio,combine:comb,proDay:isDraft?null:null,face:genFace(),
+    injured:false,injWk:0,injType:"",injCount:0,fragile:false,offsznExt:false,bio,combine:comb,proDay:isDraft?null:null,face:{...genFace(),pid:idn.pid},
     draftYr:0,draftPk:0,ss:emptySS(pos),cs:{},gl:[],av:0,
     tradeVal:playerValue({pos,age,ovr,pot}),
     scoutLvl:isDraft?0:2,trueOvr:ovr,truePot:pot,
@@ -228,7 +230,7 @@ export function genRealDC(yr){
   const dc=[];let minScore=Infinity,minPot=99,minOvr=99,prev=Infinity;
   for(const d of [...list].sort((a,b)=>a.rank-b.rank)){
     const p=genPlayer(d.pos,d.age,d.ovr,true);
-    Object.assign(p,{name:d.name,ht_:d.ht||p.ht_,wt:d.wt||p.wt,pot:d.pot,truePot:d.pot,trueOvr:d.ovr,ovr:d.ovr,ovrV:2,draftYear:yr,real:1});
+    /* a real prospect: never a fictional photo, the drawn face */Object.assign(p,{face:genFace(),name:d.name,ht_:d.ht||p.ht_,wt:d.wt||p.wt,pot:d.pot,truePot:d.pot,trueOvr:d.ovr,ovr:d.ovr,ovrV:2,draftYear:yr,real:1});
     if(d.mpos)p.mpos=d.mpos;
     p.scoutedPot=cl(d.pot+R(-12,12),d.pot-5,99);p.bio.college=d.college;p.bio.backstory=d.note||"";
     // The consensus board follows the real boards' order.

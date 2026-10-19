@@ -3,6 +3,7 @@
 // same numbers always draw the same face; a beard or goatee comes from them too.
 import React from "react";
 import { headshotUrl } from "./headshots.js";
+import { portraitSrc } from "./portraits.js";
 import { COACH_HEADSHOTS } from "./data/coachHeadshots.js";
 
 // A real coach's photo (his club's staff page, cropped to the face; or ESPN's), by name.
@@ -40,6 +41,13 @@ export const Face = ({ s: se, sz = 40, jersey, coach }) => {
   if (se.espn && !BAD.has(se.espn)) return (
     <span style={{ width: sz, height: sz, borderRadius: "50%", overflow: "hidden", display: "inline-block", flexShrink: 0, verticalAlign: "middle", background: "radial-gradient(circle at 50% 30%, #64748b, #1f2937 72%)", boxShadow: jersey ? `inset 0 0 0 2px ${jersey}` : undefined }}>
       <img src={headshotUrl(se.espn, sz > 90 ? 320 : 160)} alt="" loading="lazy" draggable="false" onError={() => { BAD.add(se.espn); setBad((x) => x + 1); }} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%", display: "block" }} />
+    </span>
+  );
+  // a fictional player: his photo from the portrait bank (portraits.js), whole, on a team-color circle
+  const ps = se.pid && !BAD.has(se.pid) && portraitSrc(se.pid);
+  if (ps) return (
+    <span style={{ width: sz, height: sz, borderRadius: "50%", overflow: "hidden", display: "inline-block", flexShrink: 0, verticalAlign: "middle", background: `radial-gradient(circle at 50% 35%, ${jersey ? shade(jersey, 0.25) : "#64748b"}, ${jersey ? shade(jersey, -0.55) : "#1f2937"} 75%)` }}>
+      <img src={ps} alt="" loading="lazy" draggable="false" onError={() => { BAD.add(se.pid); setBad((x) => x + 1); }} style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
     </span>
   );
   const cx = 50;
