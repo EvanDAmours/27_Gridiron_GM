@@ -14,6 +14,7 @@ import MatchupStakes from "./MatchupStakes.jsx";
 import RaceWatch from "./RaceWatch.jsx";
 import { teamNeeds, needName } from "./needs.js";
 import { primeSlot } from "./seasonPreview.js";
+import { HolidayCard } from "./Atmosphere.jsx";
 import { rosterPlan } from "./rosterPlan.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
@@ -244,8 +245,8 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
           )}
           </div>
           {game && mobile ? (
-            <CompactMatchup away={away} home={home} ra={ra} rh={rh} label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} · Week ${game.wk ?? nextWk}`} kickoff={game.date ? kickoff(game) : "Kickoff TBD"} />
-          ) : game ? (
+            <HolidayCard holiday={game.holiday}><CompactMatchup away={away} home={home} ra={ra} rh={rh} label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} · Week ${game.wk ?? nextWk}`} kickoff={game.date ? kickoff(game) : "Kickoff TBD"} /></HolidayCard>
+          ) : game ? (<HolidayCard holiday={game.holiday}>
             <PixelMatchup
               key={`${sp}-${game.wk ?? pb?.rd ?? 0}-${game.a}-${game.h}`}
               away={away} home={home}
@@ -256,7 +257,7 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
               label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} • Week ${game.wk ?? nextWk}`}
               kickoff={game.date ? kickoff(game) : "Kickoff TBD"}
               venue={sp === "playoffs" && pb?.rd === 4 ? `Super Bowl • ${sbSite(yr) ? `${sbSite(yr).stadium}, ${sbSite(yr).city}` : "neutral site"}` : [game.venue || home.city, game.intl && game.city].filter(Boolean).join(", ")}
-            />
+            /></HolidayCard>
           ) : null}
           {game && sp === "regular" && <RaceWatch teams={teams} sched={sched} ui={ui} wk={game.wk} mobile={mobile} />}
           {game && (sp === "regular" || sp === "playoffs" || sp === "preseason") && <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={sp === "playoffs"} h2h={sp === "preseason" ? null : h2h} neutral={!!game.neutral || (sp === "playoffs" && pb?.rd === 4)} />}

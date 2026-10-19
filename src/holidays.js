@@ -9,6 +9,7 @@
 export const HOLIDAYS = {
   halloween: { key: "halloween", name: "Halloween Night", short: "Halloween", icon: "🎃", c1: "#f97316", c2: "#7c3aed", bg: "#1a0b2e", line: "Under the full moon, a costume-party crowd and a game nobody forgets." },
   thanksgiving: { key: "thanksgiving", name: "Thanksgiving Day", short: "Thanksgiving", icon: "🦃", c1: "#d97706", c2: "#9a3412", bg: "#2a1406", line: "Football and family: the whole country is watching." },
+  xmaseve: { key: "xmaseve", theme: "christmas", name: "Christmas Eve", short: "Christmas Eve", icon: "🎄", c1: "#dc2626", c2: "#15803d", bg: "#0b2015", line: "The night before Christmas, and the whole league is watching." },
   christmas: { key: "christmas", name: "Christmas Day", short: "Christmas", icon: "🎄", c1: "#dc2626", c2: "#15803d", bg: "#0b2015", line: "The league's gift to everyone home for the holiday." },
   // New Year's Eve and Day share one look (theme): midnight, gold and silver, fireworks
   nye: { key: "nye", theme: "newyear", name: "New Year's Eve", short: "New Year's Eve", icon: "🎆", c1: "#fbbf24", c2: "#94a3b8", bg: "#0a0b1f", line: "The last game of the year, and the clock runs out at midnight." },
@@ -45,7 +46,7 @@ const nyDay = (iso) => { const d = new Date(iso); if (isNaN(d)) return null; con
 // in Detroit and Dallas are flipped so they host (with the other meeting flipped too when the two
 // clubs play twice, so home games stay even). abOf(i): a club's abbreviation.
 // Safe to run again on a tagged season: a holiday that already has its games is left alone.
-export const HOLIDAY_TAGS = 2; // bump when a holiday is added, so running seasons pick it up
+export const HOLIDAY_TAGS = 3; // bump when a holiday is added, so running seasons pick it up
 export function tagHolidays(sched, yr, teams, abOf) {
   const out = sched.map((g) => ({ ...g }));
   const has = (...keys) => out.some((g) => keys.includes(g.holiday));
@@ -75,6 +76,8 @@ export function tagHolidays(sched, yr, teams, abOf) {
   let xm = has("christmas") ? [] : dated ? on("12/25") : [];
   if (!xm.length && !has("christmas")) xm = best(reg(wk.christmas), 3);
   xm.forEach((g) => { g.holiday = "christmas"; });
+  // Christmas Eve: the games actually played on Dec 24 (the real schedule has them)
+  if (dated && !has("xmaseve")) on("12/24").forEach((g) => { if (!g.holiday) g.holiday = "xmaseve"; });
   // Halloween: the game on the night itself, or the week's marquee game
   let hw = has("halloween") ? [] : dated ? on("10/31") : [];
   if (!hw.length && !has("halloween")) hw = best(reg(wk.halloween), 1);

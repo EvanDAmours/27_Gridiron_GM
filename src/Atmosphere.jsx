@@ -44,6 +44,7 @@ const CSS = `
 @keyframes atSlideL { from { transform: translateX(-60px) rotate(-20deg); opacity: 0 } to { transform: rotate(-10deg); opacity: 1 } }
 @keyframes atSlideR { from { transform: translateX(60px) rotate(20deg); opacity: 0 } to { transform: rotate(10deg); opacity: 1 } }
 @media (prefers-reduced-motion: reduce) { .at-sky *, .at-deco { animation: none !important } }
+@media (max-width: 700px) { .hol-corner { display: none } }
 `;
 
 // String lights: a sagging wire with bulbs in red, green and gold, twinkling out of step.
@@ -73,19 +74,19 @@ function Fireworks({ n = 7 }) {
 }
 
 // wx: weather key; holiday: holidays.js key; z: stacking (0 behind the screen's panels).
-export function Sky({ wx, holiday, z = 0, density = 1, corners = false }) {
+export function Sky({ wx, holiday, z = 0, density = 1, corners = false, contained = false }) {
   const w = wxOf(wx), h = HOLIDAYS[holiday], th = themeOf(holiday);
   const heavy = (w.rain || w.snow) === 2;
   const snow = w.snow || th === "christmas";
   // as heavy as what's on the field: a drizzle or a downpour, flurries or a blizzard
   const nSnow = Math.round((w.snow ? (heavy ? 260 : 55) : 35) * density), nRain = Math.round((heavy ? 260 : 30) * density);
   return (
-    <div className="at-sky" aria-hidden style={{ position: "fixed", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: z }}>
+    <div className="at-sky" aria-hidden style={{ position: contained ? "absolute" : "fixed", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: z, borderRadius: contained ? "inherit" : undefined }}>
       <style>{CSS}</style>
       {h && <div style={{ position: "absolute", inset: 0, background: th === "newyear" ? "radial-gradient(ellipse at 50% 120%, #fbbf2418, transparent 60%)" : th === "halloween" ? "radial-gradient(ellipse at 50% 120%, #7c3aed33, transparent 60%)" : th === "thanksgiving" ? "radial-gradient(ellipse at 50% 110%, #d9770624, transparent 60%)" : "radial-gradient(ellipse at 50% 110%, #15803d26, transparent 60%)" }} />}
       {th === "newyear" && <><div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% -10%, #fbbf2422, transparent 55%)" }} /><Fireworks n={Math.round(7 * density)} />{[...Array(Math.round(50 * density))].map((_, i) => <span key={`c${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 41) * 100}%`, width: 5, height: 9, borderRadius: 1, background: ["#fbbf24", "#e5e7eb", "#fde68a", "#cbd5e1"][i % 4], opacity: 0.85, animation: `atConf ${5 + rnd(i, 42) * 5}s ${-rnd(i, 43) * 10}s linear infinite` }} />)}</>}
-      {th === "halloween" && <div style={{ position: "absolute", right: "6vw", top: "6vh", width: 90, height: 90, borderRadius: "50%", background: "radial-gradient(circle at 40% 40%, #fff7d6, #fde68a 55%, #f59e0b 100%)", boxShadow: "0 0 60px 20px #fde68a44", animation: "atGlow 5s ease-in-out infinite" }} />}
-      {th === "christmas" && <Lights />}
+      {th === "halloween" && !contained && <div style={{ position: "absolute", right: "6vw", top: "6vh", width: 90, height: 90, borderRadius: "50%", background: "radial-gradient(circle at 40% 40%, #fff7d6, #fde68a 55%, #f59e0b 100%)", boxShadow: "0 0 60px 20px #fde68a44", animation: "atGlow 5s ease-in-out infinite" }} />}
+      {th === "christmas" && !contained && <Lights />}
       {heavy && (w.rain || w.snow) && <div style={{ position: "absolute", inset: 0, background: w.snow ? "#e2e8f0" : "#64748b", opacity: w.snow ? 0.05 : 0.08 }} />}
       {w.rain && [...Array(nRain)].map((_, i) => heavy
         ? <span key={`r${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 1) * 125}%`, width: 1.6 + rnd(i, 5) * 0.8, height: 30 + rnd(i, 2) * 26, background: "linear-gradient(#cbd5e100, #cbd5e1bb)", animation: `atPour ${0.38 + rnd(i, 3) * 0.22}s ${-rnd(i, 4)}s linear infinite` }} />
@@ -128,9 +129,9 @@ export function HolidayIntro({ holiday, home, away, wx, onDone }) {
 
 // The holiday result card (Moment kind "holiday"): m = { team (yours), holiday, won, us, them,
 // opp, pog: { name, line }, home }.
-const WIN = { thanksgiving: "A Thanksgiving to remember", christmas: "Christmas came early", halloween: "All treat, no trick", nye: "Ringing in the new year with a win", nyd: "Starting the year right" };
-const LOSS = { thanksgiving: "A tough day to give thanks", christmas: "Coal in the stocking", halloween: "Tricked on Halloween night", nye: "Not how we wanted to end the year", nyd: "Not the resolution we wanted" };
-const AWARD = { thanksgiving: "The turkey leg goes to", christmas: "Player of the game", halloween: "Player of the game", nye: "Player of the game", nyd: "Player of the game" };
+const WIN = { thanksgiving: "A Thanksgiving to remember", christmas: "Christmas came early", xmaseve: "The best gift came a day early", halloween: "All treat, no trick", nye: "Ringing in the new year with a win", nyd: "Starting the year right" };
+const LOSS = { thanksgiving: "A tough day to give thanks", christmas: "Coal in the stocking", xmaseve: "A lump of coal on Christmas Eve", halloween: "Tricked on Halloween night", nye: "Not how we wanted to end the year", nyd: "Not the resolution we wanted" };
+const AWARD = { thanksgiving: "The turkey leg goes to", christmas: "Player of the game", xmaseve: "Player of the game", halloween: "Player of the game", nye: "Player of the game", nyd: "Player of the game" };
 export function HolidayResult({ m, onClose }) {
   const h = HOLIDAYS[m.holiday];
   if (!h) return null;
@@ -194,6 +195,28 @@ export function HolidayScoreTrim({ holiday, children }) {
     <div style={{ position: "relative" }}>
       {children}
       <img alt="" src={holArt(holiday, "bar")} className="at-deco" style={{ position: "absolute", left: 0, top: "50%", width: "100%", aspectRatio: "15 / 1", transform: "translateY(-64%)", pointerEvents: "none", zIndex: 2, animation: FRAME_ANIM[themeOf(holiday)] }} />
+    </div>
+  );
+}
+
+// The week's gameday card on a holiday: a glow in the holiday's colors, the scoreboard trim along
+// its top, the holiday's characters on two corners, its weather (snow, leaves, bats, confetti)
+// drifting across the card, and the holiday's name. Children: the card.
+export function HolidayCard({ holiday, children }) {
+  const h = HOLIDAYS[holiday];
+  if (!h) return children;
+  const a = artOf(holiday);
+  return (
+    <div style={{ position: "relative", marginTop: MOBILE ? 18 : 22 }}>
+      <style>{CSS}</style>
+      <div style={{ position: "relative", borderRadius: 16, boxShadow: `0 0 0 1px ${h.c1}88, 0 0 30px ${h.c1}44`, animation: themeOf(holiday) === "christmas" ? "atLightsGlow 2.6s ease-in-out infinite" : undefined }}>
+        {children}
+        <Sky holiday={holiday} contained density={0.45} z={2} />
+      </div>
+      <img alt="" src={holArt(holiday, "bar")} className="at-deco" style={{ position: "absolute", left: 0, top: 0, width: "100%", aspectRatio: "15 / 1", transform: "translateY(-48%)", pointerEvents: "none", zIndex: 3 }} />
+      {!MOBILE && <img alt="" src={sticker(holiday, a.hero)} className="at-deco hol-corner" style={{ position: "absolute", left: MOBILE ? -8 : -22, bottom: MOBILE ? -12 : -18, width: MOBILE ? 56 : 92, transform: "rotate(-8deg)", filter: "drop-shadow(0 8px 14px #000b)", pointerEvents: "none", zIndex: 3, animation: "atBob 4.5s ease-in-out infinite" }} />}
+      {!MOBILE && <img alt="" src={sticker(holiday, a.side[1])} className="at-deco hol-corner" style={{ position: "absolute", right: MOBILE ? -6 : -18, bottom: MOBILE ? -10 : -16, width: MOBILE ? 46 : 74, transform: "rotate(10deg)", filter: "drop-shadow(0 8px 14px #000b)", pointerEvents: "none", zIndex: 3, animation: "atDrift 5.5s ease-in-out infinite" }} />}
+      <div style={{ position: "absolute", left: "50%", top: 0, transform: "translate(-50%, -55%)", zIndex: 4 }}><HolidayBadge holiday={holiday} style={{ fontSize: MOBILE ? 12 : 14, padding: "4px 12px 4px 6px", boxShadow: `0 4px 14px ${h.c1}66` }} /></div>
     </div>
   );
 }

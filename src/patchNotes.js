@@ -1416,4 +1416,8 @@ export const PATCH_NOTES = [
     "What falls from the sky now matches the field. Light rain is a fine drizzle, and heavy rain is a slanting downpour with splashes on the turf and a gray haze. Light snow is gentle flurries, and heavy snow is a wind-driven blizzard with the far side of the field half lost in white. The game screen behind the field matches too.",
     "Light snow no longer leaves a faint white haze around the edges of the field. The drifts are solid snow now.",
   ] },
+  { v: "3.58", date: "2026-10-20", title: "Holiday Gameday Cards", notes: [
+    "The gameday card on the home screen now dresses up for holiday games. It glows in the holiday's colors, with the holiday's trim along the top and its name on a badge. Snow, leaves, bats or confetti drift across the card, and on a computer the holiday's characters sit on its corners.",
+    "Christmas Eve is a holiday game now too, with the Christmas look, intro and result card. In 2026 that's the real Christmas Eve game: Texans at Eagles on Thursday night. A season already in progress picks it up.",
+  ] },
 ];

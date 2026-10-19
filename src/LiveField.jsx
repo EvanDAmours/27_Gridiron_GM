@@ -9,6 +9,7 @@ import { logoUrl } from "./ui.jsx";
 import lombardiArt from "./assets/lombardi.webp";
 import { MOBILE } from "./mobile.js";
 import { wxOf } from "./weather.js";
+import { themeOf } from "./holidays.js";
 
 const FORMATION = {
   // [pos, depth index, yards behind (-) / past (+) the line, yards from the middle].
@@ -55,7 +56,7 @@ function Ground({ wx, kind }) {
 const HOL_CSS = `@keyframes lfTw { 0%,100% { opacity: 1 } 50% { opacity: .3 } } @keyframes lfFlick { 0%,100% { opacity: .9 } 40% { opacity: .55 } 70% { opacity: 1 } }`;
 function HolidayDecor({ holiday: hk }) {
   // New Year's Eve and Day share one look
-  const holiday = hk === "nye" || hk === "nyd" ? "newyear" : hk;
+  const holiday = themeOf(hk);
   if (holiday === "newyear") return (
     <g pointerEvents="none"><style>{HOL_CSS}</style>
       {/* gold and silver sequins down both sidelines, confetti scattered in the end zones */}
