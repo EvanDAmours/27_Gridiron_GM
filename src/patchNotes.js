@@ -1395,4 +1395,8 @@ export const PATCH_NOTES = [
   { v: "3.52", date: "2026-10-20", title: "New Heavy Snow", notes: [
     "New heavy-snow field. Deep drifts bury the field, with a slushy, trampled strip down the middle and patches of grass showing through. Each yard number sits in its own plowed-out box, lined up with the numbers. The snow stays inside the field's border.",
   ] },
+  { v: "3.53", date: "2026-10-20", title: "New Year's Games", notes: [
+    "New Year's games. Each season now has a New Year's Eve game and a New Year's Day game in the week of January 1. In 2026 that's the real New Year's Eve game: Ravens at Bengals. An existing save picks them up for the current season.",
+    "Playing one live opens with a 3, 2, 1 countdown, then New Year's Eve (or Day) over a midnight sky full of fireworks and gold and silver confetti. Fireworks and confetti fill the game screen, gold and silver sequins twinkle down the sidelines, and confetti litters the end zones. The final gets its own card: 'Ringing in the new year with a win' or 'Not the resolution we wanted', plus the player of the game.",
+  ] },
 ];

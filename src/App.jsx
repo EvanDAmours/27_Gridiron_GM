@@ -67,7 +67,7 @@ import { portraitSave } from "./portraits.js";
 import { deadlineEdition, draftEdition, hofEdition, rivalEdition, rivalWorthy } from "./editions.js";
 import { aiCoachWeek, aiCoachOffseason } from "./coachGrowth.js";
 import { gameWeather, wxOf, isWet } from "./weather.js";
-import { tagHolidays } from "./holidays.js";
+import { tagHolidays, themeOf, HOLIDAY_TAGS } from "./holidays.js";
 import { Sky, HolidayIntro, HolidayBadge } from "./Atmosphere.jsx";
 import { FA_DAYS, MARKET_MIN, openMarket, aiBids, resolveDay, placeBid, bidsFor, decideDay, isOverpay } from "./faMarket.js";
 import { coachingCarousel, describeMove, ownerReview, jobOffers, coachAge } from "./carousel.js";
@@ -477,9 +477,9 @@ const _wireLog=useRef(null);
   const liveSB=liveSim&&sp==='playoffs'&&pb&&(pb.ch!=null||(pb.seeds?pb.rd===4:pb.m.length===1))?sbName(sbNumber(yr)):null;
   const[sbIntro,setSbIntro]=useState(false);const[holIntro,setHolIntro]=useState(false);
   /* the season's holiday games (holidays.js): tagged once per schedule */
-  useEffect(()=>{if(!sched?.length||!teams.length||sched.some(g=>g.holiday))return;if(!sched.some(g=>typeof g.wk==="number"&&g.wk>=1&&g.wk<=18))return;setSched(tagHolidays(sched,yr,teams,i=>TEAMS[i]?.ab));},[sched]);// eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(()=>{if(!sched?.length||!teams.length||sched[0]?.holTag===HOLIDAY_TAGS)return;if(!sched.some(g=>typeof g.wk==="number"&&g.wk>=1&&g.wk<=18))return;setSched(tagHolidays(sched,yr,teams,i=>TEAMS[i]?.ab));},[sched]);// eslint-disable-line react-hooks/exhaustive-deps
   /* a holiday game you play live opens with the day's intro */
-  useEffect(()=>{if(!liveSim?.holiday||tab!=='livesim'||liveDone)return;setHolIntro(true);const t=setTimeout(()=>setHolIntro(false),4600);return()=>clearTimeout(t);},[liveSim?.h,liveSim?.a,liveSim?.holiday]);// eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(()=>{if(!liveSim?.holiday||tab!=='livesim'||liveDone)return;setHolIntro(true);const t=setTimeout(()=>setHolIntro(false),themeOf(liveSim.holiday)==='newyear'?5600:4600);return()=>clearTimeout(t);},[liveSim?.h,liveSim?.a,liveSim?.holiday]);// eslint-disable-line react-hooks/exhaustive-deps
   // every other playoff game you play gets its own walkout: the round, both seeds, what's at stake
   const livePO=liveSim&&!liveSB&&sp==='playoffs'&&pb?.seeds&&pb.ch==null?pb.rd:null;
   const[poIntro,setPoIntro]=useState(false);

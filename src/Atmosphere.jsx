@@ -4,7 +4,7 @@
 import React from "react";
 import { TeamLogo } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
-import { HOLIDAYS } from "./holidays.js";
+import { HOLIDAYS, themeOf } from "./holidays.js";
 import { wxOf } from "./weather.js";
 
 const rnd = (i, k) => { const x = Math.sin(i * 91.7 + k * 47.3) * 24634.6345; return x - Math.floor(x); };
@@ -17,6 +17,9 @@ const CSS = `
 @keyframes atGlow { 0%,100% { opacity: .55 } 50% { opacity: .85 } }
 @keyframes atIn { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
 @keyframes atFade { 0% { opacity: 0 } 8% { opacity: 1 } 88% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes atBurst { 0% { transform: scale(.05); opacity: 0 } 10% { opacity: 1 } 60% { opacity: .9 } 100% { transform: scale(1); opacity: 0 } }
+@keyframes atConf { 0% { transform: translate(0, -8vh) rotate(0) } 100% { transform: translate(4vw, 110vh) rotate(900deg) } }
+@keyframes atCount { 0% { transform: scale(2.2); opacity: 0 } 15% { transform: scale(1); opacity: 1 } 75% { opacity: 1 } 100% { transform: scale(.6); opacity: 0 } }
 @media (prefers-reduced-motion: reduce) { .at-sky * { animation: none !important } }
 `;
 
@@ -34,23 +37,36 @@ function Lights({ top = 0 }) {
   );
 }
 
+// Fireworks: rings of sparks bursting at spots across the sky, out of step, in gold, silver and color.
+function Fireworks({ n = 7 }) {
+  return [...Array(n)].map((_, i) => {
+    const c = ["#fbbf24", "#e5e7eb", "#f472b6", "#60a5fa", "#fde68a", "#a78bfa", "#34d399"][i % 7], size = 90 + rnd(i, 31) * 120, dur = 2.2 + rnd(i, 32) * 1.6;
+    return (
+      <div key={`f${i}`} style={{ position: "absolute", left: `${8 + rnd(i, 33) * 84}%`, top: `${6 + rnd(i, 34) * 42}%`, width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2, animation: `atBurst ${dur}s ${-rnd(i, 35) * dur}s ease-out infinite` }}>
+        {[...Array(16)].map((__, k) => { const a = (k / 16) * Math.PI * 2; return <span key={k} style={{ position: "absolute", left: "50%", top: "50%", width: 5, height: 5, marginLeft: -2.5, marginTop: -2.5, borderRadius: "50%", background: c, boxShadow: `0 0 8px ${c}`, transform: `translate(${Math.cos(a) * size / 2}px, ${Math.sin(a) * size / 2}px)` }} />; })}
+      </div>
+    );
+  });
+}
+
 // wx: weather key; holiday: holidays.js key; z: stacking (0 behind the screen's panels).
 export function Sky({ wx, holiday, z = 0, density = 1 }) {
-  const w = wxOf(wx), h = HOLIDAYS[holiday];
+  const w = wxOf(wx), h = HOLIDAYS[holiday], th = themeOf(holiday);
   const heavy = (w.rain || w.snow) === 2;
-  const snow = w.snow || holiday === "christmas";
+  const snow = w.snow || th === "christmas";
   const nSnow = Math.round((w.snow ? (heavy ? 110 : 60) : 35) * density), nRain = Math.round((heavy ? 120 : 60) * density);
   return (
     <div className="at-sky" aria-hidden style={{ position: "fixed", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: z }}>
       <style>{CSS}</style>
-      {h && <div style={{ position: "absolute", inset: 0, background: holiday === "halloween" ? "radial-gradient(ellipse at 50% 120%, #7c3aed33, transparent 60%)" : holiday === "thanksgiving" ? "radial-gradient(ellipse at 50% 110%, #d9770624, transparent 60%)" : "radial-gradient(ellipse at 50% 110%, #15803d26, transparent 60%)" }} />}
-      {holiday === "halloween" && <div style={{ position: "absolute", right: "6vw", top: "6vh", width: 90, height: 90, borderRadius: "50%", background: "radial-gradient(circle at 40% 40%, #fff7d6, #fde68a 55%, #f59e0b 100%)", boxShadow: "0 0 60px 20px #fde68a44", animation: "atGlow 5s ease-in-out infinite" }} />}
-      {holiday === "christmas" && <Lights />}
+      {h && <div style={{ position: "absolute", inset: 0, background: th === "newyear" ? "radial-gradient(ellipse at 50% 120%, #fbbf2418, transparent 60%)" : th === "halloween" ? "radial-gradient(ellipse at 50% 120%, #7c3aed33, transparent 60%)" : th === "thanksgiving" ? "radial-gradient(ellipse at 50% 110%, #d9770624, transparent 60%)" : "radial-gradient(ellipse at 50% 110%, #15803d26, transparent 60%)" }} />}
+      {th === "newyear" && <><div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% -10%, #fbbf2422, transparent 55%)" }} /><Fireworks n={Math.round(7 * density)} />{[...Array(Math.round(50 * density))].map((_, i) => <span key={`c${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 41) * 100}%`, width: 5, height: 9, borderRadius: 1, background: ["#fbbf24", "#e5e7eb", "#fde68a", "#cbd5e1"][i % 4], opacity: 0.85, animation: `atConf ${5 + rnd(i, 42) * 5}s ${-rnd(i, 43) * 10}s linear infinite` }} />)}</>}
+      {th === "halloween" && <div style={{ position: "absolute", right: "6vw", top: "6vh", width: 90, height: 90, borderRadius: "50%", background: "radial-gradient(circle at 40% 40%, #fff7d6, #fde68a 55%, #f59e0b 100%)", boxShadow: "0 0 60px 20px #fde68a44", animation: "atGlow 5s ease-in-out infinite" }} />}
+      {th === "christmas" && <Lights />}
       {w.rain && [...Array(nRain)].map((_, i) => <span key={`r${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 1) * 110}%`, width: 1.5, height: 18 + rnd(i, 2) * 14, background: "linear-gradient(#cbd5e100, #cbd5e1aa)", transform: "rotate(14deg)", animation: `atRain ${0.6 + rnd(i, 3) * 0.4}s ${-rnd(i, 4)}s linear infinite` }} />)}
       {snow && [...Array(nSnow)].map((_, i) => { const big = i % 6 === 0; return <span key={`s${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 5) * 100}%`, width: big ? 7 : 3 + rnd(i, 6) * 3, height: big ? 7 : 3 + rnd(i, 6) * 3, borderRadius: "50%", background: "#fff", opacity: big ? 0.5 : 0.75, filter: big ? "blur(1.5px)" : undefined, animation: `atSnow ${6 + rnd(i, 7) * 6}s ${-rnd(i, 8) * 12}s linear infinite` }} />; })}
-      {holiday === "thanksgiving" && [...Array(Math.round(18 * density))].map((_, i) => <span key={`l${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 9) * 100}%`, fontSize: 14 + rnd(i, 10) * 14, opacity: 0.8, animation: `atLeaf ${9 + rnd(i, 11) * 7}s ${-rnd(i, 12) * 16}s linear infinite` }}>{["🍂", "🍁", "🍂"][i % 3]}</span>)}
-      {holiday === "halloween" && [...Array(Math.round(7 * density))].map((_, i) => <span key={`b${i}`} style={{ position: "absolute", left: 0, top: `${8 + rnd(i, 13) * 40}%`, fontSize: 16 + rnd(i, 14) * 16, animation: `atBat ${11 + rnd(i, 15) * 8}s ${-rnd(i, 16) * 18}s linear infinite` }}>🦇</span>)}
-      {holiday === "halloween" && <><span style={{ position: "absolute", left: 14, bottom: 8, fontSize: 38, opacity: 0.85 }}>🎃</span><span style={{ position: "absolute", right: 14, bottom: 8, fontSize: 30, opacity: 0.85 }}>🎃</span></>}
+      {th === "thanksgiving" && [...Array(Math.round(18 * density))].map((_, i) => <span key={`l${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 9) * 100}%`, fontSize: 14 + rnd(i, 10) * 14, opacity: 0.8, animation: `atLeaf ${9 + rnd(i, 11) * 7}s ${-rnd(i, 12) * 16}s linear infinite` }}>{["🍂", "🍁", "🍂"][i % 3]}</span>)}
+      {th === "halloween" && [...Array(Math.round(7 * density))].map((_, i) => <span key={`b${i}`} style={{ position: "absolute", left: 0, top: `${8 + rnd(i, 13) * 40}%`, fontSize: 16 + rnd(i, 14) * 16, animation: `atBat ${11 + rnd(i, 15) * 8}s ${-rnd(i, 16) * 18}s linear infinite` }}>🦇</span>)}
+      {th === "halloween" && <><span style={{ position: "absolute", left: 14, bottom: 8, fontSize: 38, opacity: 0.85 }}>🎃</span><span style={{ position: "absolute", right: 14, bottom: 8, fontSize: 30, opacity: 0.85 }}>🎃</span></>}
     </div>
   );
 }
@@ -59,28 +75,30 @@ export function Sky({ wx, holiday, z = 0, density = 1 }) {
 export function HolidayIntro({ holiday, home, away, wx, onDone }) {
   const h = HOLIDAYS[holiday];
   if (!h) return null;
+  const ny = themeOf(holiday) === "newyear", late = ny ? 1.5 : 0;
   const tradition = holiday === "thanksgiving" && home?.ab === "DET" ? "A Thanksgiving tradition in Detroit since 1934" : holiday === "thanksgiving" && home?.ab === "DAL" ? "A Thanksgiving tradition in Dallas since 1966" : h.line;
   return (
-    <div onClick={onDone} style={{ position: "fixed", inset: 0, zIndex: 2500, background: `radial-gradient(ellipse at 50% 40%, ${h.bg}ee, #000 78%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, color: "#fff", textAlign: "center", padding: 20, animation: "atFade 4.6s ease forwards", cursor: "pointer" }}>
+    <div onClick={onDone} style={{ position: "fixed", inset: 0, zIndex: 2500, background: `radial-gradient(ellipse at 50% 40%, ${h.bg}ee, #000 78%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, color: "#fff", textAlign: "center", padding: 20, animation: `atFade ${ny ? 5.6 : 4.6}s ease forwards`, cursor: "pointer" }}>
       <Sky wx={wx} holiday={holiday} z={0} density={1.4} />
-      <div style={{ position: "relative", fontSize: MOBILE ? 54 : 72, animation: "atIn .6s ease-out both" }}>{h.icon}</div>
-      <div style={{ position: "relative", fontSize: MOBILE ? 34 : 58, fontWeight: 900, letterSpacing: 2, lineHeight: 1, background: `linear-gradient(90deg, ${h.c1}, #fff 50%, ${h.c1})`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: "atIn .7s .2s ease-out both" }}>{h.name.toUpperCase()}</div>
-      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: MOBILE ? 14 : 28, marginTop: 8, animation: "atIn .7s .5s ease-out both" }}>
+      {ny && <div style={{ position: "absolute", top: "38%", left: 0, right: 0, height: 0 }}>{[3, 2, 1].map((n, i) => <div key={n} style={{ position: "absolute", left: 0, right: 0, textAlign: "center", fontSize: MOBILE ? 110 : 160, fontWeight: 900, color: "#fde68a", textShadow: "0 0 40px #fbbf24aa", opacity: 0, animation: `atCount .5s ${i * 0.5}s ease-out both`, transform: "translateY(-50%)" }}>{n}</div>)}</div>}
+      <div style={{ position: "relative", fontSize: MOBILE ? 54 : 72, animation: `atIn .6s ${late}s ease-out both` }}>{h.icon}</div>
+      <div style={{ position: "relative", fontSize: MOBILE ? 34 : 58, fontWeight: 900, letterSpacing: 2, lineHeight: 1, background: `linear-gradient(90deg, ${h.c1}, #fff 50%, ${h.c1})`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: `atIn .7s ${late + 0.2}s ease-out both` }}>{h.name.toUpperCase()}</div>
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: MOBILE ? 14 : 28, marginTop: 8, animation: `atIn .7s ${late + 0.5}s ease-out both` }}>
         <TeamLogo t={away} sz={MOBILE ? 52 : 76} glow />
         <span style={{ fontSize: MOBILE ? 18 : 24, fontWeight: 900, color: h.c1 }}>at</span>
         <TeamLogo t={home} sz={MOBILE ? 52 : 76} glow />
       </div>
-      <div style={{ position: "relative", fontSize: MOBILE ? 16 : 20, fontWeight: 800, animation: "atIn .7s .7s ease-out both" }}>{away?.city} {away?.name} at {home?.city} {home?.name}</div>
-      <div style={{ position: "relative", fontSize: 14, color: "#e2e8f0", fontStyle: "italic", maxWidth: 520, animation: "atIn .7s .9s ease-out both" }}>{tradition}</div>
+      <div style={{ position: "relative", fontSize: MOBILE ? 16 : 20, fontWeight: 800, animation: `atIn .7s ${late + 0.7}s ease-out both` }}>{away?.city} {away?.name} at {home?.city} {home?.name}</div>
+      <div style={{ position: "relative", fontSize: 14, color: "#e2e8f0", fontStyle: "italic", maxWidth: 520, animation: `atIn .7s ${late + 0.9}s ease-out both` }}>{tradition}</div>
     </div>
   );
 }
 
 // The holiday result card (Moment kind "holiday"): m = { team (yours), holiday, won, us, them,
 // opp, pog: { name, line }, home }.
-const WIN = { thanksgiving: "A Thanksgiving to remember", christmas: "Christmas came early", halloween: "All treat, no trick" };
-const LOSS = { thanksgiving: "A tough day to give thanks", christmas: "Coal in the stocking", halloween: "Tricked on Halloween night" };
-const AWARD = { thanksgiving: "The turkey leg goes to", christmas: "Player of the game", halloween: "Player of the game" };
+const WIN = { thanksgiving: "A Thanksgiving to remember", christmas: "Christmas came early", halloween: "All treat, no trick", nye: "Ringing in the new year with a win", nyd: "Starting the year right" };
+const LOSS = { thanksgiving: "A tough day to give thanks", christmas: "Coal in the stocking", halloween: "Tricked on Halloween night", nye: "Not how we wanted to end the year", nyd: "Not the resolution we wanted" };
+const AWARD = { thanksgiving: "The turkey leg goes to", christmas: "Player of the game", halloween: "Player of the game", nye: "Player of the game", nyd: "Player of the game" };
 export function HolidayResult({ m, onClose }) {
   const h = HOLIDAYS[m.holiday];
   if (!h) return null;

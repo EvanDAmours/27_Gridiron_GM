@@ -49,7 +49,16 @@ function Ground({ wx, kind }) {
 // Holiday touches on the field: Christmas lights strung down both sidelines, a Halloween dusk with
 // glowing jack-o'-lanterns at the pylons, autumn leaves blown onto the Thanksgiving sidelines.
 const HOL_CSS = `@keyframes lfTw { 0%,100% { opacity: 1 } 50% { opacity: .3 } } @keyframes lfFlick { 0%,100% { opacity: .9 } 40% { opacity: .55 } 70% { opacity: 1 } }`;
-function HolidayDecor({ holiday }) {
+function HolidayDecor({ holiday: hk }) {
+  // New Year's Eve and Day share one look
+  const holiday = hk === "nye" || hk === "nyd" ? "newyear" : hk;
+  if (holiday === "newyear") return (
+    <g pointerEvents="none"><style>{HOL_CSS}</style>
+      {/* gold and silver sequins down both sidelines, confetti scattered in the end zones */}
+      {[4, H - 4].map((y) => [...Array(40)].map((_, i) => { const c = ["#fbbf24", "#e5e7eb", "#fde68a", "#cbd5e1"][i % 4]; return <g key={`${y}-${i}`} style={{ animation: `lfTw ${0.8 + (i % 4) * 0.3}s ${-(i % 6) * 0.2}s ease-in-out infinite` }}><circle cx={10 + i * ((W - 20) / 39)} cy={y} r="2" fill={c} /><circle cx={10 + i * ((W - 20) / 39)} cy={y} r="5" fill={c} opacity=".3" /></g>; }))}
+      {[...Array(28)].map((_, i) => { const x = i < 14 ? 6 + rnd(i, 51) * (EZ - 12) : W - EZ + 6 + rnd(i, 51) * (EZ - 12), y = 14 + rnd(i, 52) * (H - 28); return <rect key={`c${i}`} x={x} y={y} width="3.5" height="6" rx=".8" fill={["#fbbf24", "#e5e7eb", "#fde68a", "#94a3b8"][i % 4]} opacity=".85" transform={`rotate(${rnd(i, 53) * 360} ${x} ${y})`} />; })}
+    </g>
+  );
   if (holiday === "christmas") return (
     <g pointerEvents="none"><style>{HOL_CSS}</style>
       {[4, H - 4].map((y) => [...Array(32)].map((_, i) => { const c = ["#ef4444", "#22c55e", "#facc15", "#3b82f6"][i % 4]; return <g key={`${y}-${i}`} style={{ animation: `lfTw ${1.2 + (i % 3) * 0.4}s ${-(i % 5) * 0.25}s ease-in-out infinite` }}><circle cx={12 + i * ((W - 24) / 31)} cy={y} r="2.6" fill={c} /><circle cx={12 + i * ((W - 24) / 31)} cy={y} r="6" fill={c} opacity=".3" /></g>; }))}
