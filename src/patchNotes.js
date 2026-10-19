@@ -1198,4 +1198,10 @@ export const PATCH_NOTES = [
     "Young stars break through: a player 27 or under who hasn't reached his ceiling now climbs from 93 up much more readily. In a 20-season test the 95+ club still thinned to the high twenties, with only three of them 25 or younger.",
     "Desktop: in season the top bar uses short names a little sooner, so the last screen isn't hidden behind Play Week and Sim Week.",
   ] },
+  { v: "3.13", date: "2026-10-20", title: "Races and Rivals", notes: [
+    "Award races: Stats has a new 🏆 Award races view with the top five for MVP, Offensive and Defensive Player and both Rookie of the Year awards, updated every week by the same scoring the awards use. Your players are highlighted; tap one for his card.",
+    "Two new awards at season's end: Comeback Player of the Year (a big season after missing most of the last one) and Coach of the Year (the most wins, with a turnaround counting extra). A Coach of the Year shows it on his card on the Coaching page.",
+    "Head to head: the weekly matchup preview now tells you your record against this week's opponent while you've been GM, and how the last meeting went.",
+    "Wording: \"suspended 1 game\" (not \"1 games\"), \"1 year\" in contract offers, and an open coaching staff reads \"Your staff needs 3 coaches: OC, DC, ST\" instead of a string of \"or\"s.",
+  ] },
 ];
