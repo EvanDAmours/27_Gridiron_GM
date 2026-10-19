@@ -9,6 +9,7 @@ import { yearlyAsk, maxYears } from "./negotiation.js";
 // what the negotiation table opens at: his ask for the default length (two years, or one for a 33+ veteran)
 const askingPrice = (p) => yearlyAsk(p, Math.min(2, maxYears(p)), "fa");
 import Negotiate from "./Negotiate.jsx";
+import { FA_DAYS, MARKET_MIN, bidsFor, committed, decideDay } from "./faMarket.js";
 import { posTag } from "./dline.js";
 import { devOf, DEV_TRAITS } from "./scouting.js";
 import RoleTag from "./RoleTag.jsx";
@@ -19,12 +20,25 @@ import { ROLE_FILTERS, roleFilterMatch } from "./roleNeeds.js";
 const DEV_C = { generational: "#f472b6", superstar: "#f5c542", star: "#60a5fa", late: "#34d399" };
 const DevTag = ({ p }) => { const d = devOf(p); return DEV_C[d] ? <span title={DEV_TRAITS[d]?.desc} style={{ fontSize: 11, fontWeight: 900, color: DEV_C[d], border: `1px solid ${DEV_C[d]}66`, borderRadius: 999, padding: "0 6px", marginLeft: 6, whiteSpace: "nowrap" }}>{DEV_TRAITS[d]?.name}</span> : null; };
 
+// The market on a player: how many clubs have offered, yours if you have, and when he decides.
+function MarketTag({ p, market, ui }) {
+  if (!market || p.ovr < MARKET_MIN) return null;
+  const bids = bidsFor(market, p.id), mine = bids.find((b) => b.team === ui), others = bids.length - (mine ? 1 : 0);
+  const dd = Math.max(market.day, decideDay(p, market.yr));
+  if (!bids.length) return <span style={{ fontSize: 12, color: C.mt, whiteSpace: "nowrap" }}>decides day {dd}</span>;
+  return (
+    <span style={{ fontSize: 12, fontWeight: 800, whiteSpace: "nowrap", color: mine ? "#93c5fd" : "#fca5a5" }} title={`He decides ${dd <= market.day ? "at the end of today" : `on day ${dd}`}`}>
+      {mine ? `Your offer $${mine.sal}M` : ""}{mine && others ? " · " : ""}{others ? `${others} other offer${others > 1 ? "s" : ""}` : ""}{` · day ${dd}`}
+    </span>
+  );
+}
+
 // the defensive line is two positions here: edge rushers and interior tackles
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P"];
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 
-export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk, cy }) {
+export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk, cy, market, onNextDay }) {
   const [pos, setPos] = useState(startPos || "ALL");
   const [q, setQ] = useState("");
   const [find, setFind] = useState(false);
@@ -32,7 +46,9 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
   const [sort, setSort] = useState(["ovr", -1]);
   const [n, setN] = useState(50);
   const [offer, setOffer] = useState(null);
-  const cap = capSpace(team);
+  // your open offers hold their money until the player decides
+  const out = market ? committed(market, ui) : 0, nOut = market ? Object.values(market.bids).flat().filter((b) => b.team === ui).length : 0;
+  const cap = capSpace(team) - out;
   const key = { ovr: (p) => p.ovr, age: (p) => p.age, ask: (p) => askingPrice(p), pos: (p) => POS.indexOf(posTag(p)), name: (p) => p.name };
   const rows = fa
     .filter((p) => pos === "ALL" || posTag(p) === pos || (pos.startsWith("R:") && roleFilterMatch(p, pos)))
@@ -50,11 +66,18 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
       <style>{"@media (max-width: 640px) { .fa-hide { display: none } }"}</style>
       <div style={{ display: "flex", alignItems: "baseline", gap: "6px 20px", flexWrap: "wrap", marginBottom: 12 }}>
         <span style={{ fontSize: 24, fontWeight: 900 }}>Free Agency</span>
-        <span style={{ fontSize: 15, color: C.mt }}>Cap space <b style={{ fontSize: 20, color: cap >= 0 ? C.gn : C.rd }}>{money(cap)}</b></span>
+        <span style={{ fontSize: 15, color: C.mt }}>Cap space <b style={{ fontSize: 20, color: cap >= 0 ? C.gn : C.rd }}>{money(cap)}</b>{out > 0 && <span style={{ fontSize: 13 }}> after {nOut} open offer{nOut > 1 ? "s" : ""} ({money(out)})</span>}</span>
         <span style={{ fontSize: 15, color: C.mt }}>Roster <b style={{ fontSize: 20, color: "#fff" }}>{team.roster.length}</b>/53</span>
         <span style={{ fontSize: 15, color: C.mt }}>{fa.length} free agents</span>
       </div>
       {!open && <div style={{ background: `${C.gd}18`, border: `1px solid ${C.gd}55`, borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 15, color: "#fde68a" }}>The big free agency period opens after the Combine. Right now it's whoever is left on the market.</div>}
+      {market && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: `${C.bl}14`, border: `1px solid ${C.bl}55`, borderRadius: 10, padding: "10px 14px", marginBottom: 12 }}>
+          <span style={{ fontSize: 18, fontWeight: 900 }}>📅 Day {market.day} of {FA_DAYS}</span>
+          <span style={{ flex: "1 1 260px", fontSize: 13, color: "#cbd5e1", lineHeight: 1.4 }}>Clubs make offers every day. Each player takes the best one on his day: the money, plus the role, scheme and winning he wants. Only a big overpay signs him on the spot.</span>
+          {market.day < FA_DAYS ? <Btn onClick={onNextDay} bg={C.bl} style={{ fontSize: 15, padding: "9px 18px", fontWeight: 900 }}>Next day →</Btn> : <span style={{ fontSize: 13, color: "#fde68a", fontWeight: 700 }}>Last day: everyone still deciding chooses when you finish free agency.</span>}
+        </div>
+      )}
       {sheets}
       <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12 }}>
         {MOBILE ? (
@@ -91,7 +114,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
                     <Face s={p.face} sz={34} />
                     <span style={{ minWidth: 0 }}>
                       <span style={{ display: "block", fontWeight: 800, fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}<DevTag p={p} /></span>
-                      <span style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span>Age {p.age}</span><span style={{ color: ask <= cap ? "#e2e8f0" : C.rd, fontWeight: 700 }}>{money(ask)}/yr</span>{from && <span style={{ color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `ex-${from.ab}`}</span>}</span>
+                      <span style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span>Age {p.age}</span><span style={{ color: ask <= cap ? "#e2e8f0" : C.rd, fontWeight: 700 }}>{money(ask)}/yr</span>{from && <span style={{ color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `ex-${from.ab}`}</span>}<MarketTag p={p} market={market} ui={ui} /></span>
                     </span>
                   </span>
                   <span style={{ fontSize: 22, fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
@@ -118,6 +141,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
                           <span onClick={() => setSel(p)} style={{ fontWeight: 700, color: "#f1f5f9", cursor: "pointer", textDecoration: "underline", textDecorationColor: "#334155", textUnderlineOffset: 3 }}>{p.name}</span>
                           {p.xf && <span title={`X-Factor: ${p.xf}`} style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, color: "#f472b6" }}>XF</span>}<DevTag p={p} />
                           {from && <span style={{ display: "block", fontSize: 12, color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `Last with ${from.ab}`}</span>}
+                          {market && p.ovr >= MARKET_MIN && <span style={{ display: "block" }}><MarketTag p={p} market={market} ui={ui} /></span>}
                         </span>
                       </span>
                     </td>
@@ -138,7 +162,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
         {rows.length > n && <div style={{ textAlign: "center", marginTop: 10 }}><Btn onClick={() => setN(n + 50)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 14, padding: "6px 14px" }}>Show more ({rows.length - n} left)</Btn></div>}
       </div>
       {extras}
-      {offer && <Negotiate team={team} cy={cy} p={offer} mode="fa" cap={cap} t={termsFor(offer, "fa")} talk={talkFor(offer)} onResult={(r, o) => onTalk(offer, "fa", r, o)} onClose={() => setOffer(null)} rivalName={(id) => teams[id] && `${teams[id].city} ${teams[id].name}`} />}
+      {offer && <Negotiate note={market && offer.ovr >= MARKET_MIN ? (() => { const o = bidsFor(market, offer.id).filter((b) => b.team !== ui).length, dd = Math.max(market.day, decideDay(offer, market.yr)); return `📋 ${o ? `${o} club${o > 1 ? "s have" : " has"} made him an offer.` : "No offers yet."} He decides ${dd <= market.day ? "at the end of today" : `on day ${dd}`}. He takes the best offer for him: more money, or a club with what he wants. Only a big overpay (20%+ over his ask) signs him on the spot.`; })() : null} team={team} cy={cy} p={offer} mode="fa" cap={cap + (bidsFor(market, offer.id).find((b) => b.team === ui)?.sal || 0)} t={termsFor(offer, "fa")} talk={talkFor(offer)} onResult={(r, o) => onTalk(offer, "fa", r, o)} onClose={() => setOffer(null)} rivalName={(id) => teams[id] && `${teams[id].city} ${teams[id].name}`} />}
     </div>
   );
 }

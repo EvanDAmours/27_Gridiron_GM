@@ -203,7 +203,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
             ))}
           </Field>
           <div style={{ fontSize: 12, color: C.mt, marginTop: 6, textAlign: "center" }}>{side === "defense" ? "The SAM plays in base (against heavy sets), the nickel back (NB) in nickel and dime. " : ""}Tap a spot to change the starter and set snap shares. Red rings are injured starters.</div>
-          {/* the schemes and playbook sit right under the field, with the players they're built for */}
+          {/* the schemes and personnel sit right under the field, with the players they're built for */}
           {gamePlan && <div style={{ marginTop: 12 }}>{gamePlan}</div>}
         </div>
         <div style={{ flex: "1 1 300px", minWidth: 0, background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 8, padding: 10 }}>

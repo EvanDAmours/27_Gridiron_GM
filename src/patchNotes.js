@@ -1369,4 +1369,11 @@ export const PATCH_NOTES = [
   { v: "3.46", date: "2026-10-20", title: "No Free Playbook Bonus", notes: [
     "Core plays are gone. Picking any three plays gave your team a flat +1 point a game that AI teams never got, and the plays did nothing else. Your game plan is now your schemes, personnel, situations and the weekly plan, with no free bonus.",
   ] },
+  { v: "3.47", date: "2026-10-20", title: "A Real Free-Agent Market", notes: [
+    "Free agency is a real market now, played over four days. AI clubs no longer wait for you to finish before going after the top free agents: from day one they make offers on every player who would start for them, alongside yours.",
+    "Players don't sign the first offer they get. Each one decides on his own day: depth players right away, good starters after a day or two, stars after shopping around for two or three days. On that day he takes the best offer on the table, weighing the money plus the role, the scheme and the winning he cares about. Get outbid and he signs elsewhere, and the log shows what he took against what you offered.",
+    "Making an offer puts it on the table. You see how many other clubs have offered and when he decides, and you can raise yours any time before then. Only an extreme overpay (20% or more over his ask) signs him on the spot. Your open offers hold their money, so cap space shows what's left after them.",
+    "A Next day button moves the market along. Finishing free agency plays out the remaining days, so your open offers still get their answer. Players rated under 70 still sign the first fair deal right away, as before.",
+    "The leftover mentions of core plays (the walkthrough and the preseason reminder) are gone.",
+  ] },
 ];
