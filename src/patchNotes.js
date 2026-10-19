@@ -1224,4 +1224,9 @@ export const PATCH_NOTES = [
   { v: "3.17", date: "2026-10-20", title: "Your Own Ring", notes: [
     "Ring Night now hands out a real championship ring for every team: all 32 have their own design with the team's logo, colors and name on the side.",
   ] },
+  { v: "3.18", date: "2026-10-20", title: "Super Bowl Sunday", notes: [
+    "The Super Bowl field got a premium look: each club's end zone is painted in its colors with pinstripes and a gold frame, its name big across it and its logo at both ends.",
+    "Midfield has a gold medallion with the Lombardi Trophy, the game's name and the host city, and each club's logo is painted at its own 25.",
+    "Every Super Bowl now has a real host stadium instead of a \"neutral site\": the announced ones first (Santa Clara, Inglewood, Atlanta), then a mix of the usual hosts like New Orleans, Miami, Las Vegas and Glendale. It shows on the game banner, the Home preview and the result card.",
+  ] },
 ];

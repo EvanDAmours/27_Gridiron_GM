@@ -5,6 +5,7 @@ import { C, TeamLogo, Btn, kickoff, Bdg, oC } from "./ui.jsx";
 import { unitRatings } from "./gamesim.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import { ROUND_NAMES } from "./playoffs.js";
+import { sbSite } from "./data/superbowls.js";
 import { highestRatedPlayer } from "./spriteAssets.js";
 import { InjTag } from "./InjuryTag.jsx";
 import { injuryReport } from "./injuries.js";
@@ -254,7 +255,7 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
               prime={sp !== "playoffs" ? primeSlot(game) : null} rivalry={rivalId != null && (game.h === rivalId || game.a === rivalId) && (game.h === ui || game.a === ui)}
               label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} • Week ${game.wk ?? nextWk}`}
               kickoff={game.date ? kickoff(game) : "Kickoff TBD"}
-              venue={sp === "playoffs" && pb?.rd === 4 ? "Super Bowl • neutral site" : [game.venue || home.city, game.intl && game.city].filter(Boolean).join(", ")}
+              venue={sp === "playoffs" && pb?.rd === 4 ? `Super Bowl • ${sbSite(yr) ? `${sbSite(yr).stadium}, ${sbSite(yr).city}` : "neutral site"}` : [game.venue || home.city, game.intl && game.city].filter(Boolean).join(", ")}
             />
           ) : null}
           {game && sp === "regular" && <RaceWatch teams={teams} sched={sched} ui={ui} wk={game.wk} mobile={mobile} />}

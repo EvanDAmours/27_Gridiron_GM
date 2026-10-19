@@ -25,3 +25,30 @@ export function sbName(n) {
 }
 // The Super Bowl played after a given season.
 export const sbNumber = (season) => season - 1965;
+
+// Where each Super Bowl is played (season = the season it ends). The announced hosts first, then
+// a fixed pick per year from the usual warm-weather and dome stadiums, never a repeat of the last
+// four, so the same save always sends the same game to the same city.
+const SB_HOSTS = { 2025: 0, 2026: 1, 2027: 2 };
+export const SB_SITES = [
+  ["Levi's Stadium", "Santa Clara"], ["SoFi Stadium", "Inglewood"], ["Mercedes-Benz Stadium", "Atlanta"],
+  ["Caesars Superdome", "New Orleans"], ["Hard Rock Stadium", "Miami Gardens"], ["State Farm Stadium", "Glendale"],
+  ["Allegiant Stadium", "Las Vegas"], ["Raymond James Stadium", "Tampa"], ["AT&T Stadium", "Arlington"],
+  ["NRG Stadium", "Houston"], ["U.S. Bank Stadium", "Minneapolis"], ["Lucas Oil Stadium", "Indianapolis"],
+  ["Ford Field", "Detroit"], ["MetLife Stadium", "East Rutherford"], ["Nissan Stadium", "Nashville"],
+];
+// the classic hosts come around more often
+const SB_WEIGHT = [2, 3, 2, 3, 3, 2, 3, 2, 2, 2, 1, 1, 1, 1, 1];
+const sbSiteMemo = { ...SB_HOSTS };
+export function sbSite(season) {
+  if (!(season >= 2025)) return null;
+  for (let y = 2028; y <= season; y++) {
+    if (sbSiteMemo[y] != null) continue;
+    const recent = [1, 2, 3, 4].map((k) => sbSiteMemo[y - k]);
+    let h = (y * 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519) >>> 0; h = (h ^ (h >>> 13)) >>> 0;
+    const pool = SB_SITES.flatMap((_, i) => (recent.includes(i) ? [] : Array(SB_WEIGHT[i]).fill(i)));
+    sbSiteMemo[y] = pool[h % pool.length];
+  }
+  const [stadium, city] = SB_SITES[sbSiteMemo[season]];
+  return { stadium, city };
+}

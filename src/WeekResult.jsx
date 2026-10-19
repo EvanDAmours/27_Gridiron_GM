@@ -7,6 +7,7 @@ import { WinProbChart } from "./GameRecap.jsx";
 import { C, Btn, TeamLogo } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { isScorigami } from "./scorigami.js";
+import { sbSite } from "./data/superbowls.js";
 
 const fmtRec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const pct = (t) => (t.w + t.t * 0.5) / Math.max(1, t.w + t.l + t.t);
@@ -207,7 +208,7 @@ function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam, onP
     <div style={{ ...card, borderColor: col, boxShadow: `0 0 0 1px ${col}55, 0 10px 30px #0008` }}>
       {close}
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.mt }}>{result.playoff ? result.round.toUpperCase() : `WEEK ${result.wk}`} · {result.round === "Super Bowl" || g.neutral ? `NEUTRAL SITE${g.intl ? ` · ${(g.city || "").toUpperCase()}` : ""}` : home ? "HOME" : "AWAY"}</span>
+        <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.mt }}>{result.playoff ? result.round.toUpperCase() : `WEEK ${result.wk}`} · {result.round === "Super Bowl" && sbSite(yr) ? sbSite(yr).city.toUpperCase() : result.round === "Super Bowl" || g.neutral ? `NEUTRAL SITE${g.intl ? ` · ${(g.city || "").toUpperCase()}` : ""}` : home ? "HOME" : "AWAY"}</span>
         <span style={{ fontSize: 15, color: "#cbd5e1" }}>{fmtRec(me)} · {divPlace(teams, me)}</span>
       </div>
       <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap", marginTop: 4 }}>

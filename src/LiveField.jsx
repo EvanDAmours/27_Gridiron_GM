@@ -64,9 +64,10 @@ function Player({ p, pos, x, y, team, side, away, td }) {
   );
 }
 
-// sb: the Super Bowl's name ("Super Bowl LXI") on a neutral field: end zones in each club's color,
-// the Lombardi Trophy at midfield, the game's numerals at the 25s and gold trim.
-export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, night }) {
+// sb: the Super Bowl's name ("Super Bowl LXI") on a neutral field: pinstriped end zones in each
+// club's color framed in gold, a gold medallion at midfield with the trophy, the game's name and the
+// host city (sbCity), each club's logo at its own 25, and gold trim around the field.
+export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night }) {
   const los = clamp(ballYard, 1, 99);
   const x0 = xOf(los);
   const o = starters(off, offDepth, offOrder), d = starters(def, defDepth, defOrder);
@@ -103,30 +104,50 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
           <feFlood floodColor="#fff" result="w" /><feComposite in="w" in2="d" operator="in" result="edge" />
           <feMerge><feMergeNode in="edge" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
+        {sb && <>
+          <linearGradient id="lf-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fff1b8" /><stop offset=".35" stopColor="#e8c45a" /><stop offset=".65" stopColor="#a8822a" /><stop offset="1" stopColor="#f5d77a" /></linearGradient>
+          <radialGradient id="lf-medal" cx=".5" cy=".4" r=".65"><stop offset="0" stopColor="#1e2a44" /><stop offset="1" stopColor="#070b16" /></radialGradient>
+          <linearGradient id="lf-ezshade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#000" stopOpacity=".38" /><stop offset=".5" stopColor="#000" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".38" /></linearGradient>
+          <pattern id="lf-pin" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="none" /><line x1="0" y1="0" x2="0" y2="10" stroke="#fff" strokeOpacity=".07" strokeWidth="3" /></pattern>
+          <path id="lf-arc-top" d={`M ${W / 2 - 55} ${H / 2 + 6} A 55 55 0 0 1 ${W / 2 + 55} ${H / 2 + 6}`} />
+          <path id="lf-arc-bot" d={`M ${W / 2 - 57} ${H / 2} A 57 57 0 0 0 ${W / 2 + 57} ${H / 2}`} />
+        </>}
       </defs>
       {/* mowed stripes, five yards each, running through the end zones */}
       {[...Array(24)].map((_, i) => <rect key={`e${i}`} x={i < 12 ? i * (EZ / 12) : W - EZ + (i - 12) * (EZ / 12)} y="0" width={EZ / 12 + 0.5} height={H} fill={i % 2 ? "#2f8a3a" : "#287c33"} />)}
       {[...Array(20)].map((_, i) => <rect key={i} x={xOf(i * 5)} y="0" width={xOf(5) - xOf(0) + 0.5} height={H} fill={i % 2 ? "#2f8a3a" : "#287c33"} />)}
       {/* end zones: plain grass with the club's wordmark painted big across it (club color, white
           outline), its logo painted at each end, and orange pylons at the four corners */}
-      {[[0, off, -90], [W - EZ, def, 90]].map(([x, t, rot], i) => t && (
+      {[[0, off, -90], [W - EZ, def, 90]].map(([x, t, rot], i) => t && (sb ? (
+        // the Super Bowl: each club's end zone painted solid in its color, pinstriped, framed in gold,
+        // its name big in white with a trim in its second color, and its logo at both ends
         <g key={i}>
-          {sb && <rect x={x} y="0" width={EZ} height={H} fill={t.clr || "#334155"} />}
-          <text x={x + EZ / 2} y={H / 2} fill={sb ? "#fff" : t.clr || "#334155"} fontSize="34" fontWeight="900" fontFamily="'Arial Black', Arial, sans-serif" textAnchor="middle" dominantBaseline="central" textLength={H - 120} lengthAdjust="spacingAndGlyphs" stroke="#fff" strokeWidth="2.5" paintOrder="stroke" opacity=".92" transform={`rotate(${rot} ${x + EZ / 2} ${H / 2})`}>{(t.name || "").toUpperCase()}</text>
-          {sb && <text x={x + EZ / 2} y={H / 2} fill="#e8c45a" fontSize="9" fontWeight="900" fontFamily="system-ui" textAnchor="middle" dominantBaseline="central" letterSpacing="2" transform={`rotate(${rot} ${x + EZ / 2} ${H / 2}) translate(0 ${rot < 0 ? 26 : -26})`}>{sb.toUpperCase()}</text>}
+          <rect x={x} y="0" width={EZ} height={H} fill={t.clr || "#334155"} />
+          <rect x={x} y="0" width={EZ} height={H} fill="url(#lf-pin)" />
+          <rect x={x} y="0" width={EZ} height={H} fill="url(#lf-ezshade)" />
+          <rect x={x + 6} y="6" width={EZ - 12} height={H - 12} rx="4" fill="none" stroke="url(#lf-gold)" strokeWidth="2" />
+          <text x={x + EZ / 2} y={H / 2} fill="#fff" fontSize="40" fontWeight="900" fontStyle="italic" fontFamily="'Arial Black', Arial, sans-serif" textAnchor="middle" dominantBaseline="central" textLength={H - 170} lengthAdjust="spacingAndGlyphs" stroke={t.ac && t.ac !== t.clr ? t.ac : "#0b1220"} strokeWidth="5" paintOrder="stroke" strokeLinejoin="round" transform={`rotate(${rot} ${x + EZ / 2} ${H / 2})`}>{(t.name || "").toUpperCase()}</text>
+          {[44, H - 44].map((cy) => <image key={cy} href={logoUrl(t.ab)} x={x + EZ / 2 - 22} y={cy - 22} width="44" height="44" filter="url(#lf-paint)" transform={`rotate(${rot} ${x + EZ / 2} ${cy})`} />)}
+        </g>
+      ) : (
+        <g key={i}>
+          <text x={x + EZ / 2} y={H / 2} fill={t.clr || "#334155"} fontSize="34" fontWeight="900" fontFamily="'Arial Black', Arial, sans-serif" textAnchor="middle" dominantBaseline="central" textLength={H - 120} lengthAdjust="spacingAndGlyphs" stroke="#fff" strokeWidth="2.5" paintOrder="stroke" opacity=".92" transform={`rotate(${rot} ${x + EZ / 2} ${H / 2})`}>{(t.name || "").toUpperCase()}</text>
           {[30, H - 30].map((cy) => <image key={cy} href={logoUrl(t.ab)} x={x + EZ / 2 - 16} y={cy - 16} width="32" height="32" opacity=".5" filter="url(#lf-paint)" transform={`rotate(${rot} ${x + EZ / 2} ${cy})`} />)}
         </g>
-      ))}
+      )))}
       {/* the home club's logo at midfield */}
       {!sb && (offHome ? off : def)?.ab && <image href={logoUrl((offHome ? off : def).ab)} x={W / 2 - 44} y={H / 2 - 44} width="88" height="88" opacity=".26" filter="url(#lf-paint)" />}
       {/* the Super Bowl: no home team, so the trophy takes midfield, ringed in gold with the game's name */}
-      {sb && <g opacity=".9">
-        <circle cx={W / 2} cy={H / 2} r="62" fill="#0b1220" fillOpacity=".55" stroke="#e8c45a" strokeWidth="3" />
-        <circle cx={W / 2} cy={H / 2} r="55" fill="none" stroke="#e8c45a" strokeOpacity=".6" strokeWidth="1" strokeDasharray="3 3" />
-        <image href={lombardiArt} x={W / 2 - 22} y={H / 2 - 52} width="44" height="84" preserveAspectRatio="xMidYMid meet" />
-        <text x={W / 2} y={H / 2 + 46} textAnchor="middle" fill="#fde68a" fontSize="11" fontWeight="900" fontFamily="system-ui" letterSpacing="1.5">{sb.toUpperCase()}</text>
+      {sb && <g>
+        <circle cx={W / 2} cy={H / 2} r="76" fill="#000" opacity=".25" />
+        <circle cx={W / 2} cy={H / 2} r="72" fill="url(#lf-medal)" stroke="url(#lf-gold)" strokeWidth="5" />
+        <circle cx={W / 2} cy={H / 2} r="44" fill="none" stroke="url(#lf-gold)" strokeWidth="1.5" strokeOpacity=".8" />
+        <text fill="url(#lf-gold)" fontSize="11" fontWeight="900" fontFamily="Georgia, serif" letterSpacing="1.2" textAnchor="middle"><textPath href="#lf-arc-top" startOffset="50%" textAnchor="middle">{sb.toUpperCase()}</textPath></text>
+        {sbCity && <text fill="#fde68a" fontSize="9" fontWeight="800" fontFamily="system-ui" letterSpacing="2" textAnchor="middle"><textPath href="#lf-arc-bot" startOffset="50%" textAnchor="middle">{sbCity.toUpperCase()}</textPath></text>}
+        <image href={lombardiArt} x={W / 2 - 18} y={H / 2 - 38} width="36" height="72" preserveAspectRatio="xMidYMid meet" />
       </g>}
-      {sb && [25, 75].map((y) => <text key={y} x={xOf(y)} y={H / 2} textAnchor="middle" dominantBaseline="central" fill="#e8c45a" fillOpacity=".55" fontSize="26" fontWeight="900" fontFamily="Georgia, serif" stroke="#fff" strokeOpacity=".35" strokeWidth="1" transform={`rotate(${y < 50 ? -90 : 90} ${xOf(y)} ${H / 2})`}>{sb.replace(/^Super Bowl\s*/i, "")}</text>)}
+      {/* each club's logo painted at its own 25 */}
+      {sb && [[25, off, -90], [75, def, 90]].map(([y, t, rot]) => t?.ab && <image key={y} href={logoUrl(t.ab)} x={xOf(y) - 30} y={H / 2 - 30} width="60" height="60" opacity=".8" filter="url(#lf-paint)" transform={`rotate(${rot} ${xOf(y)} ${H / 2})`} />)}
       <rect x="0" y="0" width={W} height={H} filter="url(#lf-grain)" opacity=".55" />
       {/* yard lines every five, goal lines heavier */}
       {[...Array(21)].map((_, i) => <line key={i} x1={xOf(i * 5)} y1="0" x2={xOf(i * 5)} y2={H} stroke="#fff" strokeOpacity={i % 20 === 0 ? 0.95 : i % 2 ? 0.4 : 0.7} strokeWidth={i % 20 === 0 ? 3 : i % 2 ? 1.2 : 1.8} />)}
@@ -144,7 +165,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       ))}
       <rect x="0" y="0" width={W} height={H} fill="url(#lf-shade)" />
       {night && <g pointerEvents="none"><rect x="0" y="0" width={W} height={H} fill="#050c24" opacity=".55" />{[[0.18, 0], [0.82, 0], [0.18, 1], [0.82, 1]].map(([fx, fy], i) => <ellipse key={i} cx={W * fx} cy={H * fy} rx={W * 0.34} ry={H * 0.7} fill="url(#lf-light)" />)}</g>}
-      <rect x="1" y="1" width={W - 2} height={H - 2} fill="none" stroke={sb ? "#e8c45a" : "#fff"} strokeOpacity=".85" strokeWidth={sb ? 4 : 2} rx="9" />
+      <rect x="1" y="1" width={W - 2} height={H - 2} fill="none" stroke={sb ? "url(#lf-gold)" : "#fff"} strokeOpacity=".85" strokeWidth={sb ? 5 : 2} rx="9" />
       {[2, EZ - 3, W - EZ - 3, W - 8].flatMap((x) => [2, H - 8].map((y) => <rect key={`${x}-${y}`} x={x} y={y} width="6" height="6" rx="1" fill="#f97316" stroke="#7c2d12" strokeWidth=".6" />))}
       {/* line of scrimmage and the line to gain, with a soft glow */}
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#3b82f6" strokeWidth="8" strokeOpacity=".25" />
