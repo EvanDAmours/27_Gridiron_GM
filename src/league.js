@@ -7,6 +7,7 @@ import REAL_SCHED from "./data/schedule2026.json" with { type: "json" };
 import REAL_DC from "./data/realProspects.json" with { type: "json" };
 import REAL_CONTRACTS from "./data/contracts2026.json" with { type: "json" };
 import { depthOrderFor } from "./depth.js";
+import { roleGrowth, ROLE_SLOTS } from "./roles.js";
 import { playerValue, pickValue as chartPickValue } from "./trade.js";
 import { arrangeDL, dlAsPlayed, naturalDL } from "./dline.js";
 import { teamNeeds, topNeeds } from "./needs.js";
@@ -116,7 +117,7 @@ export function genPAttrs(pos,ovr){const at={},sh=PA_SHAPE[pos]||{};(PA[pos]||[]
 // point), and the body ages: speed, acceleration and agility start to fade at 29 and fall faster past 32,
 // a little quicker for the positions that live on speed. age: his age in the season just finished.
 const SPEED_POS=new Set(["RB","WR","CB","S","LB"]);
-export function growAttrs(p,delta,age){const out={};if(p.posAttrs){const pa={};for(const[k,v]of Object.entries(p.posAttrs))pa[k]=typeof v==="number"?cl(Math.round(v+delta+R(-1,1)),30,99):v;out.posAttrs=pa;}
+export function growAttrs(p,delta,age){const out={};if(p.posAttrs){/* the role he started at this season shapes which skills grow */const rg=roleGrowth(p.posAttrs,p.ss?.rl,age);const pa={};for(const[k,v]of Object.entries(p.posAttrs))pa[k]=typeof v==="number"?cl(Math.round(v+delta+(rg?.nudge[k]||0)+R(-1,1)),30,99):v;out.posAttrs=pa;if(rg&&rg.share>=0.5)out.grewAs={slot:rg.slot,age};}
   const fade=age>=32?R(1,3)+(SPEED_POS.has(p.pos)?1:0):age>=29?R(0,2):age<=23?-R(0,1):0;
   for(const k of["spd","acc","agi"])if(typeof p[k]==="number")out[k]=cl(p[k]-fade,30,99);return out;}
 export const SCREENS=new Set(['dashboard','roster','depth','schedule','standings','stats','scouting','draft','trade','freeagency','coaching','playoffs','hub','trophies','records','history','wire','draftrecap','contracts','log','gameinfo','saves','deadline','livesim','god','dev']);
@@ -418,6 +419,8 @@ const wx=wxOverride||rollGameWeather();
   let hMod=_trans(ht)+hOC-aDC+hFit*.5+_pe.h+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+((hPlan?.playbook?.length||0)>=3?1:0)+_hClash+hHC+(ht.isUser?_dda:0);
   let aMod=_trans(at)+aOC-hDC+aFit*.5+_pe.a+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+((aPlan?.playbook?.length||0)>=3?1:0)+_aClash-hHC+(at.isUser?_dda:0);
   const hSnaps=teamSnaps(hOrd,ht.isUser?USER_SNAPS:{},hP.shape),aSnaps=teamSnaps(aOrd,at.isUser?USER_SNAPS:{},aP.shape);
+  // who started at which role (SAM, nickel, slot...), kept off the snap list itself
+  const _roles=(snaps,ord)=>{const r={};for(const pos of Object.keys(ROLE_SLOTS))ord(pos).slice(0,3).forEach((p,i)=>{r[p.id]=ROLE_SLOTS[pos][i];});Object.defineProperty(snaps,"roles",{value:r,enumerable:false});};_roles(hSnaps,hOrd);_roles(aSnaps,aOrd);
   // Play-calling tendency: the game plan, plus the coordinator's scheme (Air Raid throws more, Power Run runs more).
   const lean=(t,pl)=>(pl?.off==="pass_heavy"?0.07:pl?.off==="run_heavy"?-0.07:0)+(0.42-schemeRunPct(t))*0.5;
   return{wx,hPlan,aPlan,hSnaps,aSnaps,home:makeSide({team:ht,order:hOrd,snaps:hSnaps,mod:hMod,lean:lean(ht,hPlan),plan:hPlan}),away:makeSide({team:at,order:aOrd,snaps:aSnaps,mod:aMod,lean:lean(at,aPlan),plan:aPlan})};
@@ -458,7 +461,7 @@ export function applyGame(t,snaps,lines,playoff=false){
   const box={};
   t.roster.forEach(p=>{if(p.injured||p.holdout)return;const _sh=snaps[p.id]||0;if(_sh<=0&&!lines[p.id])return;
     const gs={...(lines[p.id]||{})};delete gs.name;delete gs.pos;if(p.pos==="QB"&&gs.att)gs.rate=qbRate(gs.comp||0,gs.att,gs.passYds||0,gs.passTD||0,gs.passInt||0);
-    const S=playoff?(p.pss=p.pss||{}):p.ss;S.gp=(S.gp||0)+1;if(!playoff)p.ss.snp=(p.ss.snp||0)+_sh;if(_sh>=50)S.gs=(S.gs||0)+1;
+    const S=playoff?(p.pss=p.pss||{}):p.ss;S.gp=(S.gp||0)+1;if(!playoff)p.ss.snp=(p.ss.snp||0)+_sh;if(_sh>=50)S.gs=(S.gs||0)+1;/* the role he started at (role-shaped development) */const _rl=snaps.roles?.[p.id];if(_rl&&_sh>=20&&!playoff)p.ss.rl={...(p.ss.rl||{}),[_rl]:((p.ss.rl||{})[_rl]||0)+1};
     if(Object.keys(gs).length){addS(S,gs);if(p.pos==="QB"&&S.att>0)S.rate=qbRate(S.comp,S.att,S.passYds||0,S.passTD||0,S.passInt||0);if(!playoff)p.gl.push({...gs,gp:1});box[p.id]={...gs,name:p.name,pos:p.pos};}
     const injMult=(p.fragile?1.5:1)*(p.traits?.includes('Injury Prone')?2.5:p.traits?.includes('Ironman')?0:1);if(INJ_ON&&Math.random()<.025*injMult*Math.max(.15,_sh/100)){p.injured=true;p.injCount=(p.injCount||0)+1;p.fragile=p.injCount>=2;const injCauses=['high-impact collision','awkward landing','non-contact','blocked low','tackled from behind','turf contact','pile-up'];p.injType=`${pick(["Hamstring","Ankle","Knee (MCL)","Shoulder","Concussion","Quad","Calf","Back"])} (${pick(injCauses)})`;const sevRoll=Math.random();if(sevRoll<0.25){/* questionable: he plays through it, at a reduced rating */p.injured=false;p.injCount--;p.fragile=p.injCount>=2;p.hurt={wks:R(1,2),pen:R(3,7),type:p.injType.replace(/ \(.*\)$/,"")};p.hurtNew=true;p.injType="";return;}if(sevRoll<0.45){p.injSev="minor";p.injRecWks=R(1,2);}else if(sevRoll<0.8){p.injSev="moderate";p.injRecWks=R(3,5);}else{p.injSev="major";p.injRecWks=R(6,8);}p.injWk=p.injRecWks;p.injNew=true;}
   });

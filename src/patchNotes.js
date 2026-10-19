@@ -1274,4 +1274,9 @@ export const PATCH_NOTES = [
     "Situational packages: the Personnel tab has a new Situations card. Set what you run in short yardage and at the goal line (13, 12, 21 or 11), on 3rd and long (10 or 11) and in the two-minute drill, and what your defense answers with on 3rd and long (dime or nickel) and in short yardage (base or nickel).",
     "These override your identity only on those snaps; everything else follows your chosen identity and lean. Leave any on Auto and the coaches decide as before. The play-by-play shows the grouping and package on every snap, so you can watch your calls come in.",
   ] },
+  { v: "3.27", date: "2026-10-20", title: "Role-Shaped Development", notes: [
+    "Role-shaped development: players now grow into the role they play. Every game records who started at SAM, MIKE, WILL, CB1, CB2, nickel, X, Z and slot. In the off-season, the skills that role leans on grow a little faster (block shedding and run fits at SAM, instincts at MIKE, zone coverage and footwork at nickel, release and contested catches at X), and the skills it never asks of him grow a little slower.",
+    "So moving a player is a long-term call. A speed linebacker you keep at SAM becomes a better SAM over two or three seasons; a corner you move inside learns the slot. Young players adapt most; past 30, little changes.",
+    "The player card's ROLE FIT shows ↗ next to the role a player grew into last off-season.",
+  ] },
 ];

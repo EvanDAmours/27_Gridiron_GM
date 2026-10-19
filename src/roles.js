@@ -201,3 +201,35 @@ export function roleBase(players) {
   }
   return out;
 }
+
+// Role-shaped development: the skills each role leans on (from the role scores above). A player
+// who starts a season at a role grows toward it in the off-season: those skills come along a
+// little faster and the ones the role never asks of him a little slower. A light linebacker
+// playing SAM learns to shed blocks; a corner moved inside learns the slot's zone eyes.
+export const ROLE_SKILLS = {
+  SAM: { shedBlock: 0.2, runFit: 0.15, tackling: 0.15, blitzing: 0.1, coverage: 0.1 },
+  MIKE: { instincts: 0.25, zoneAwr: 0.15, runFit: 0.2, tackling: 0.15, shedBlock: 0.1, pursuit: 0.1 },
+  WILL: { pursuit: 0.15, coverage: 0.2, zoneAwr: 0.1, tackling: 0.15, instincts: 0.1 },
+  OUT: { manCov: 0.2, press: 0.15, recovery: 0.1, ballSkills: 0.1, zoneCov: 0.1 },
+  NB: { zoneCov: 0.2, footwork: 0.15, playRec: 0.1, tackling: 0.15, manCov: 0.1 },
+  X: { release: 0.2, catchTraffic: 0.2, routeRun: 0.15, bodyCtrl: 0.15, deepSpd: 0.05 },
+  Z: { deepSpd: 0.25, separation: 0.2, routeRun: 0.15, catching: 0.15, release: 0.1 },
+  SLOT: { routeRun: 0.25, separation: 0.2, catching: 0.15, yac: 0.1 },
+};
+// rl: games started at each slot this season ({ SAM: 12, ... }). The role he mostly played, and
+// how settled he was in it (0-1: a full season at one role is 1).
+export function seasonRole(rl) {
+  const e = Object.entries(rl || {}).filter(([, n]) => n > 0);
+  if (!e.length) return null;
+  const tot = e.reduce((t, [, n]) => t + n, 0), [slot, n] = e.sort((a, b) => b[1] - a[1])[0];
+  return { slot, kind: roleKind(slot), share: Math.min(1, n / 12) * (n / tot) };
+}
+// The off-season nudge for each skill (added to his ordinary growth): up to about +2 for the
+// role's main skills, -1 for skills it doesn't use. Young players adapt most; past 30, little.
+export function roleGrowth(posAttrs, rl, age) {
+  const r = seasonRole(rl), w = r && ROLE_SKILLS[r.kind];
+  if (!w || !posAttrs) return null;
+  const adapt = r.share * (age <= 25 ? 1 : age <= 29 ? 0.7 : 0.35), out = {};
+  for (const k of Object.keys(posAttrs)) if (typeof posAttrs[k] === "number") out[k] = w[k] ? adapt * w[k] * 9 : -adapt * 0.8;
+  return { ...r, nudge: out };
+}

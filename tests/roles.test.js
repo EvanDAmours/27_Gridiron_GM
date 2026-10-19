@@ -110,3 +110,27 @@ test("role needs: a hole at nickel shows up as a need, weighted by how much the 
   assert.ok(roleFilterMatch({ pos: "LB", mpos: "SAM", ovr: 70, posAttrs: {} }, "R:SAM") && !roleFilterMatch({ pos: "LB", mpos: "MIKE", ovr: 70, posAttrs: {} }, "R:SAM"));
   assert.ok(roleFit({ pos: "LB", mpos: "SAM", ovr: 70 }, { SAM: 0.6 }) === 0.6);
 });
+
+test("role-shaped development: a season at SAM grows a speed backer's block shedding, not his coverage", async () => {
+  const { roleGrowth } = await import("../src/roles.js");
+  const { growAttrs } = await import("../src/league.js");
+  const g = roleGrowth(runner.posAttrs, { SAM: 16 }, 24);
+  assert.equal(g.kind, "SAM");
+  assert.ok(g.nudge.shedBlock > 1.5 && g.nudge.pursuit < 0, JSON.stringify(g.nudge));
+  assert.ok(roleGrowth(runner.posAttrs, { SAM: 16 }, 32).nudge.shedBlock < g.nudge.shedBlock / 2, "veterans adapt less");
+  assert.equal(roleGrowth(runner.posAttrs, {}, 24), null);
+  // over a few off-seasons at SAM he becomes a better SAM than the same player left at WILL
+  let atSam = { ...runner, ss: { rl: { SAM: 17 } } }, atWill = { ...runner, ss: { rl: { WILL: 17 } } };
+  for (let i = 0; i < 3; i++) { atSam = { ...atSam, ...growAttrs(atSam, 0, 24) }; atWill = { ...atWill, ...growAttrs(atWill, 0, 24) }; }
+  assert.ok(roleOvr(atSam, "SAM") > roleOvr(atWill, "SAM"), `${roleOvr(atSam, "SAM")} vs ${roleOvr(atWill, "SAM")}`);
+  assert.equal(atSam.grewAs.slot, "SAM");
+});
+
+test("games record which role each starter played", async () => {
+  const { initTeams, simGame, calibrateLeague } = await import("../src/league.js");
+  const T = initTeams(-1); calibrateLeague(T);
+  for (let i = 0; i < 4; i++) simGame(T[i], T[i + 4], null, null, "clear", {});
+  const lbs = T.slice(0, 8).flatMap((t) => t.roster).filter((p) => p.ss?.rl);
+  const roles = new Set(lbs.flatMap((p) => Object.keys(p.ss.rl)));
+  for (const r of ["SAM", "MIKE", "CB1", "NB", "X", "SLOT"]) assert.ok(roles.has(r), `${r} in ${[...roles]}`);
+});
