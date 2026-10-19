@@ -59,7 +59,7 @@ export function DeviceTransfer({ onExport, onImport, mobile }) {
   const go = async () => { setBusy(true); try { await onExport(); } finally { setBusy(false); } };
   const btn = { borderRadius: 8, padding: mobile ? "12px 14px" : "9px 16px", fontSize: 14, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, flex: mobile ? 1 : "0 0 auto" };
   return (
-    <div style={{ background: `linear-gradient(120deg,#1e3a5f55,${C.cd} 65%)`, border: "1px solid #3b82f655", borderRadius: 12, padding: "12px 14px", marginBottom: 14, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+    <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderLeft: "4px solid #3b82f6", borderRadius: 12, padding: "12px 14px", marginBottom: 14, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
       <div style={{ fontSize: 30, lineHeight: 1 }}>📲</div>
       <div style={{ flex: "1 1 260px", minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 1, color: "#7dd3fc" }}>PLAY ON ANOTHER DEVICE</div>
