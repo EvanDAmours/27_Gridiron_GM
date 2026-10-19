@@ -11,6 +11,11 @@ import { retRating } from "./special.js";
 import { positionSnaps, snapBudget } from "./snaps.js";
 import { ROLE_SLOTS, roleOvr, naturalRole, ROLE_WANTS, ROLE_NAME, roleKind } from "./roles.js";
 import { pickFB } from "./gamesim.js";
+import { viewFor, DEF_SETS } from "./personnel.js";
+
+// The field view opens on what your team lines up in most (viewFor) and keeps the grouping you
+// last looked at until you change your identity or lean in Strategy.
+let VIEW = { key: null, form: "11", pkg: "nickel" };
 
 // Kick and punt returners: any receiver, back or defensive back, rated as a returner.
 const RET = { KR: "kick returner", PR: "punt returner" };
@@ -89,12 +94,19 @@ export const PARTNER = { LT: "RT", RT: "LT", LG: "RG", RG: "LG" };
 // and tackles, guards and centers along the line (left/right swaps go through PARTNER instead).
 const CROSS = { CB: ["S"], S: ["CB"], LT: ["LG", "RG", "C"], RT: ["LG", "RG", "C"], LG: ["LT", "RT", "C"], RG: ["LT", "RT", "C"], C: ["LG", "RG", "LT", "RT"] };
 
-export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps, onMovePos, previewPos, gamePlan, shape, personnel }) {
+export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps, onMovePos, previewPos, gamePlan, shape, personnel, team }) {
+  const leanKey = `${team?.personnel || "auto"}|${team?.defPkg || "auto"}|${team?.coach?.oc?.scheme}|${team?.coach?.dc?.scheme}`;
+  if (VIEW.key !== leanKey) VIEW = { key: leanKey, ...viewFor(team) };
   const [side, setSide] = useState("offense");
   const [pick, setPick] = useState(null); // [pos, idx]
-  const [form, setForm] = useState("11"); // the personnel grouping the offense field shows
+  const [form, setForm0] = useState(VIEW.form);
+  const setForm = (k) => { VIEW.form = k; setForm0(k); }; // the personnel grouping the offense field shows
   const set0 = SETS[side] || SETS.offense;
-  const [pkg, setPkg] = useState("nickel"); // the package the defense field shows
+  const [pkg, setPkg0] = useState(VIEW.pkg);
+  const setPkg = (k) => { VIEW.pkg = k; setPkg0(k); };
+  // you changed your identity or lean in Strategy (or a coordinator changed): show that
+  const [vk, setVk] = useState(leanKey);
+  if (vk !== leanKey) { setVk(leanKey); setForm0(VIEW.form); setPkg0(VIEW.pkg); } // the package the defense field shows
   const set = side === "offense" ? { ...set0, spots: [...FORMS[form], ...LINE] } : side === "defense" ? { ...set0, spots: [...DEF_CORE, ...DEF_FORMS[pkg]] } : set0;
   // snap shares at a position, the way game day will hand them out (your personnel decides the shape)
   const shares = (pos) => positionSnaps(pos, depthList(pos).filter((p) => !p.injured), snaps || {}, shape);
@@ -183,6 +195,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
           {side === "defense" && <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6, flexWrap: "wrap" }}>
             <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt }}>PACKAGE</span>
             {Object.keys(DEF_FORMS).map((k) => <button key={k} onClick={() => { setPkg(k); setPick(null); }} title={{ base: "3 linebackers: against heavy sets", nickel: "2 linebackers and a nickel back: against 3 receivers", dime: "1 linebacker and 2 extra defensive backs: passing downs" }[k]} style={{ background: pkg === k ? `${C.bl}33` : "transparent", color: pkg === k ? "#bfdbfe" : "#94a3b8", border: `1px solid ${pkg === k ? C.bl : C.bd}`, borderRadius: 6, padding: "3px 10px", fontSize: 13, fontWeight: 800, cursor: "pointer", textTransform: "capitalize" }}>{k}</button>)}
+            {team && <span style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}>Your lean: <b style={{ color: "#e2e8f0" }}>{(DEF_SETS.find((d) => d.key === (team.defPkg || "auto")) || DEF_SETS[0]).label}</b></span>}
           </div>}
           <Field los={set.los}>
             {set.spots.map(([pos, idx, x, y]) => (

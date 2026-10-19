@@ -187,3 +187,8 @@ export function coordFit(team, offSet) {
   const dKey = team?.defPkg && team.defPkg !== "auto" ? team.defPkg : DC_PREFS[dc]?.[0]; // auto: his call
   return { off: fitPts(OC_PREFS[oc], offSet), def: fitPts(DC_PREFS[dc], dKey), ocWants: OC_PREFS[oc]?.[0], dcWants: DC_PREFS[dc]?.[0], ocOk: OC_PREFS[oc] || [], dcOk: DC_PREFS[dc] || [] };
 }
+
+// What a club lines up in most: the grouping (from its identity, or its OC's favorite on auto)
+// and the package (from its lean). The depth chart's field view opens on these.
+const topKey = (o) => Object.entries(o).sort((a, b) => b[1] - a[1])[0]?.[0];
+export const viewFor = (team) => ({ form: topKey(offMix(team, OC_PREFS[team?.coach?.oc?.scheme]?.[0])) || "11", pkg: topKey(pkgShare(defTilt(team))) || "nickel" });

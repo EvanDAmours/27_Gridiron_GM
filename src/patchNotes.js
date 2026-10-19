@@ -1358,4 +1358,8 @@ export const PATCH_NOTES = [
     "Tapping a retired player who isn't in the Hall of Fame now shows a clean card. You see the club he retired from, his age when he retired, his peak rating, his career totals and his honors. Before, the card showed a 'Free Agent' label, a broken height and weight, a 'Dev ?' chip and empty ratings and scouting boxes.",
     "The Gazette is bigger on a computer. Special editions (Hall of Fame, deadline day, the draft extra) and the playoff papers now read at full size, and larger again on big screens. The championship page also grows on tall screens. Every paper stays centered whatever display size you use.",
   ] },
+  { v: "3.44", date: "2026-10-20", title: "Field View Follows Your Strategy", notes: [
+    "The depth chart's field view no longer snaps back to 11 personnel and nickel. It now opens on what your team actually lines up in most: your offensive identity (two tight ends shows 12, fullback shows 21) and your defensive lean (base-heavy shows base). On auto, it follows your coordinators' call. The grouping you last looked at stays put until you change your identity or lean in Strategy.",
+    "The defense field view now shows your defensive lean next to the package buttons, the way the offense shows your identity. The buttons only change which grouping the field shows. Your identity and lean are set in Strategy, and the game plays them.",
+  ] },
 ];
