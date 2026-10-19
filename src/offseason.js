@@ -447,6 +447,9 @@ export function capCompliance(teams, pool, ui, { capSpace, yr, sp = "preseason",
     const big = [...t.roster].sort((a, b) => (b.salary || 0) - (a.salary || 0));
     for (const p of big.slice(0, 8)) {
       if (capSpace(t) >= 0 || moves.filter((m) => m.team === i && m.how === "restructure").length >= 4) break;
+      // once per player, and not at 33 or older: in a 20-season test, quarterbacks restructured twice
+      // carried cap hits of a quarter of the cap into their mid-30s
+      if ((p.restructures || 0) >= 1 || (p.age || 0) >= 33) continue;
       const r = restructure(p, { yr, sp, minSal });
       if (!r || r.plan.saved < 1) continue;
       t.roster[t.roster.indexOf(p)] = r.p;

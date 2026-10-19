@@ -171,3 +171,13 @@ test("an AI club over the cap restructures first, then cuts veterans, and never 
   assert.ok(pool.some((p) => p.id === "v"), "the expensive veteran is the cap casualty");
   assert.equal(mine.roster.length, 1, "your club is yours to fix");
 });
+
+test("an AI club restructures a player only once, and never a veteran of 33 or more", async () => {
+  const { capCompliance } = await import("../src/offseason.js");
+  const space = (t) => 300 - t.roster.reduce((s, p) => s + (p.salary || 0), 0) - (t.deadCap || 0);
+  const filler = Array.from({ length: 50 }, (_, k) => ({ id: `f${k}`, pos: "WR", ovr: 60, age: 25, salary: 4, contract: 1, cy: 2030 }));
+  const t = { roster: [{ id: "old", pos: "QB", ovr: 95, age: 34, salary: 60, contract: 4, cy: 2030 }, { id: "done", pos: "WR", ovr: 90, age: 28, salary: 50, contract: 4, cy: 2030, restructures: 1 }, ...filler] };
+  const moves = capCompliance([t], [], -1, { capSpace: space, yr: 2030, sp: "preseason", minSal: 1 });
+  assert.ok(!moves.some((m) => m.how === "restructure"));
+  assert.ok(space(t) >= 0);
+});
