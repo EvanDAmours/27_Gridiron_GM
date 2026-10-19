@@ -1290,4 +1290,8 @@ export const PATCH_NOTES = [
     "Gazette archive: the Legacy Hall has a new 📰 Gazette wing. Every front page from your seasons is kept there, newest season first: championship editions, the morning paper after each playoff game, Deadline Day, the Draft Extra and the Hall of Fame page. Tap any one to read it again.",
     "Championship front pages are saved with the records as they were that night, so an old title paper still reads right years later. The archive always keeps every championship paper; once it gets long, the oldest other papers drop off.",
   ] },
+  { v: "3.30", date: "2026-10-20", title: "Rival Papers", notes: [
+    "Rival papers: lose badly and you'll read about it. After a loss by 17 or more, or by a touchdown or more to a division rival, the winner's hometown paper runs its own front page (The Dallas Courier, The Philadelphia Clarion and so on) with its own masthead, headline, columnist and a jab or two at your front office.",
+    "It lands in your inbox and is kept in the Legacy Hall's Gazette archive with the rest, under RIVAL PAPER, in case you want a reminder.",
+  ] },
 ];

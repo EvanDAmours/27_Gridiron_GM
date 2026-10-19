@@ -63,7 +63,7 @@ import IncidentPaper from "./IncidentPaper.jsx";
 import FranchiseHistory from "./FranchiseHistory.jsx";
 import { headshotSave } from "./headshots.js";
 import { buildPlayoffPaper } from "./playoffPaper.js";
-import { deadlineEdition, draftEdition, hofEdition } from "./editions.js";
+import { deadlineEdition, draftEdition, hofEdition, rivalEdition, rivalWorthy } from "./editions.js";
 import { coachingCarousel, describeMove, ownerReview, jobOffers, coachAge } from "./carousel.js";
 import { newRecordBook, loadRecordBook, updateRecords, recordWatch, recordStories, recordValue, updateFranchiseRecords, franchiseWatch } from "./records.js";
 import { arrangeDL, naturalDL, slotKind, DL_SLOTS, posTag } from "./dline.js";
@@ -629,6 +629,8 @@ const _wireLog=useRef(null);
   // The Gazette's special editions: Deadline Day once the 4 PM bell rings, the Draft Extra once the last pick is in.
   useEffect(()=>{if(!deadline?.done||deadline.yr!==yr||!teams.length||papers.some(x=>x.kind==='deadline'&&x.yr===yr))return;try{const _ed=deadlineEdition({state:deadline,teams,ui,yr});addPaper(_ed);}catch(e){console.error(e);}},[deadline?.done,yr]);// eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{if(!draftPicks.length||draftIdx<draftPicks.length||draftLog.length<32||!teams.length||papers.some(x=>x.kind==='draft'&&x.yr===yr))return;try{const _ed=draftEdition({log:draftLog,teams,ui,yr});addPaper(_ed);}catch(e){console.error(e);}},[draftIdx,draftLog.length,yr]);// eslint-disable-line react-hooks/exhaustive-deps
+  // After a bad loss the winner's hometown paper has its say (editions.js).
+  useEffect(()=>{const g=weekResult?.game;if(!g||weekResult.playoff||!teams.length||!rivalWorthy(g,teams,ui)||papers.some(x=>x.kind==='rival'&&x.yr===yr&&x.wk===weekResult.wk))return;try{addPaper(rivalEdition({g,teams,ui,yr,wk:weekResult.wk}));}catch(e){console.error(e);}},[weekResult]);// eslint-disable-line react-hooks/exhaustive-deps
   // v34: login streak tracking
   useEffect(()=>{const today=new Date().toDateString();const last=localStorage.getItem('gm_last_login');const prev=parseInt(localStorage.getItem('gm_login_streak')||'0',10);const yesterday=new Date(Date.now()-86400000).toDateString();const ns=last===today?prev:last===yesterday?prev+1:1;setLoginStreak(ns);localStorage.setItem('gm_login_streak',String(ns));localStorage.setItem('gm_last_login',today);},[]);
   // v37: PostHog funnel — splash_view

@@ -4,6 +4,7 @@
 // seasons never read alike. Every edition is a plain object the paper component lays out:
 // { kind, yr, round, edition, head, deck, city, byline, story: [...], boxes: [{ title, items }], table }.
 import { seeded, curly } from "./gazetteBank.js";
+import { boxTotals, lineProse } from "./playoffPaper.js";
 
 const NUM = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
 const n2w = (n) => NUM[n] || String(n);
@@ -115,3 +116,46 @@ export function hofEdition({ entries, yr, abName = (ab) => ab, mineAb }) {
     table: { title: "Last Team", rows: list.map((e) => [e.name, abName(e.team)]) },
   });
 }
+
+// ---------- The rival's paper ----------
+// After a bad loss (by 17 or more, or by a touchdown to a division rival), the winner's hometown
+// paper has its fun with you: their masthead, their headline, their columnist.
+const RV_MASTS = ["The {C} Courier", "The {C} Clarion", "The {C} Morning Bugle", "The {C} Evening Ledger", "The {C} Herald-Tribune"];
+const RV_HEADS = {
+  rout: ["{W} BURY {L}, {S}", "NOT EVEN CLOSE: {W} {S}", "{W} RUN {L} OUT OF THE BUILDING", "A LESSON FOR {L}: {S}"],
+  rival: ["{W} PUT {L} IN THEIR PLACE", "BRAGGING RIGHTS STAY IN {C}", "{W} 'WIN' THE DIVISION GRUDGE MATCH, {S}", "{L} SENT HOME QUIET"],
+};
+const RV_JABS = [
+  "Somewhere, the {L} front office is drafting an explanation.",
+  "The {L} came to town talking. They left in a hurry.",
+  "If the {L} have a plan, it was not on display.",
+  "Our advice to the {L}: keep the receipts on that roster.",
+  "Fans in {LC} are welcome to keep watching. We'll be here.",
+];
+// g: the game ({ h, a, hs, as, boxH, boxA }); ui: your (losing) club; wk.
+export function rivalEdition({ g, teams, ui, yr, wk }) {
+  const youHome = g.h === ui, us = youHome ? g.hs : g.as, them = youHome ? g.as : g.hs;
+  const W = teams[youHome ? g.a : g.h], L = teams[ui], m = them - us;
+  const rand = seeded(`rv|${yr}|${wk}|${W.ab}`), pick = (a) => a[Math.floor(rand() * a.length)];
+  const div = W.c && W.c === L.c && W.d === L.d;
+  const wBox = youHome ? g.boxA : g.boxH, lBox = youHome ? g.boxH : g.boxA;
+  const wt = boxTotals(wBox), lt = boxTotals(lBox);
+  const star = Object.values(wBox || {}).map((l) => ({ ...l, s: (l.passYds || 0) / 25 + (l.rushYds || 0) / 10 + (l.recYds || 0) / 10 + ((l.passTD || 0) + (l.rushTD || 0) + (l.recTD || 0)) * 6 + (l.sacks || 0) * 4 + (l.ints || 0) * 5 })).sort((a, b) => b.s - a.s)[0];
+  const v = { W: W.name.toUpperCase(), L: L.name.toUpperCase(), S: `${them}-${us}`, C: W.city.toUpperCase() };
+  const head = fill(pick(RV_HEADS[m >= 17 ? "rout" : "rival"]), v);
+  const story = [
+    `${W.city.toUpperCase()} — ${pick([`The ${W.name} made it look easy on ${youHome ? "the road" : "their own field"}`, `It was over early`, `The ${W.name} did whatever they wanted`])}, beating the ${L.city} ${L.name} ${them}-${us} in week ${wk}${div ? " and keeping the division in its proper order" : ""}.`,
+    star ? `${star.name} ${pick(["was the best player on the field", "had his way with the visitors", "put on a show"])}: ${lineProse(star)}. The ${W.name} out-gained the ${L.name} ${wt.pass + wt.rush} yards to ${lt.pass + lt.rush}${lt.giveaways >= 2 ? ` and took the ball away ${n2w(lt.giveaways)} times` : ""}.` : `The ${W.name} out-gained them ${wt.pass + wt.rush} yards to ${lt.pass + lt.rush}.`,
+    fill(pick(RV_JABS), { L: L.name, LC: L.city }),
+  ];
+  return finish({
+    kind: "rival", yr, wk, round: `Week ${wk}`, motto: pick(["\"Home of the<br />Home Team\"", "\"Our Town,<br />Our Team\"", "\"First With the<br />Final Score\""]), edition: `${W.city.toUpperCase()} SPORTS FINAL`, mast: fill(pick(RV_MASTS), { C: W.city }), city: W.city,
+    byline: `By ${pick(COLUMNISTS)}, ${W.city} Sports`, head, deck: pick([`${W.city} fans enjoy every minute of a ${m}-point win`, `The ${L.name} have questions; the ${W.name} have answers`, youHome ? `A quiet walk to the parking lots in ${L.city}` : `${L.city} has a long ride home to think about it`]), story,
+    boxes: [{ title: "By the Numbers", items: [`Points: ${W.name} ${them}, ${L.name} ${us}`, `Passing: ${wt.pass} to ${lt.pass}`, `Rushing: ${wt.rush} to ${lt.rush}`, `Turnovers: ${wt.giveaways} to ${lt.giveaways}`] }],
+  });
+}
+export const rivalWorthy = (g, teams, ui) => {
+  if (!g || !g.played || (g.h !== ui && g.a !== ui)) return false;
+  const us = g.h === ui ? g.hs : g.as, them = g.h === ui ? g.as : g.hs, o = teams[g.h === ui ? g.a : g.h], me = teams[ui];
+  return them - us >= 17 || (them - us >= 7 && o?.c === me?.c && o?.d === me?.d);
+};

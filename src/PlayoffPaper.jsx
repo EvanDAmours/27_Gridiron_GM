@@ -26,8 +26,8 @@ function Edition({ p, onClose }) {
   return (
     <article className="gz pp" onClick={(e) => e.stopPropagation()}>
       <div className="gz-ears">
-        <div className="gz-ear">"All the Football<br />That's Fit to Print"</div>
-        <h1 className="gz-mast">The Gridiron Gazette</h1>
+        {p.motto ? <div className="gz-ear" dangerouslySetInnerHTML={{ __html: p.motto }} /> : <div className="gz-ear">"All the Football<br />That's Fit to Print"</div>}
+        <h1 className="gz-mast" style={p.mast ? { fontSize: "clamp(30px, 6vw, 56px)" } : undefined}>{p.mast || "The Gridiron Gazette"}</h1>
         <div className="gz-ear gz-ear-r"><b>{p.edition}</b><br />{p.yr} season</div>
       </div>
       <div className="gz-dateline"><span>SPORTS</span><span>{String(p.city || "").toUpperCase()} · {p.round.toUpperCase()}</span><span>$2.50</span></div>

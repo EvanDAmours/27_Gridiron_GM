@@ -319,7 +319,7 @@ function GazetteArchive({ papers, onOpen }) {
               const [tag, clr] = KIND_TAG[p.kind] || [String(p.round || "PLAYOFFS").toUpperCase(), p.youWon ? "#15803d" : "#57534e"];
               return (
                 <button key={i} onClick={() => onOpen(p)} style={{ textAlign: "left", cursor: "pointer", background: "#f3eddf", color: "#151310", border: p.kind === "champ" ? "2px solid #d4a017" : "1px solid #d6cdb8", borderRadius: 6, padding: "10px 12px 12px", boxShadow: "0 2px 8px #0006", fontFamily: "'IM Fell English', Georgia, serif" }}>
-                  <div style={{ fontFamily: "'UnifrakturMaguntia', 'IM Fell English', serif", fontSize: 15, textAlign: "center", borderBottom: "1px solid #151310", paddingBottom: 3, marginBottom: 6 }}>The Gridiron Gazette</div>
+                  <div style={{ fontFamily: "'UnifrakturMaguntia', 'IM Fell English', serif", fontSize: 15, textAlign: "center", borderBottom: "1px solid #151310", paddingBottom: 3, marginBottom: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.mast || "The Gridiron Gazette"}</div>
                   <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.2, color: clr, fontFamily: "system-ui, sans-serif" }}>{tag}</div>
                   <div style={{ fontSize: 16, lineHeight: 1.15, fontWeight: 700, marginTop: 2 }}>{p.head}</div>
                 </button>

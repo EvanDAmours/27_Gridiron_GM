@@ -31,3 +31,16 @@ test("Hall of Fame edition: the headliner, the class and your own", () => {
   assert.ok(e.story.some((s) => /proud day/.test(s)));
   assert.ok(!/"/.test(e.story.join(" ")), "straight quotes become curly");
 });
+
+test("rival paper: a blowout or a division loss gets the winner's hometown take", async () => {
+  const { rivalEdition, rivalWorthy } = await import("../src/editions.js");
+  const T = teams.map((t, i) => ({ ...t, c: i < 16 ? "NFC" : "AFC", d: ["East", "West", "North", "South"][Math.floor(i / 4) % 4] }));
+  const g = { played: true, h: 0, a: 1, hs: 10, as: 34, boxH: {}, boxA: { x: { name: "Their Star", pos: "QB", comp: 22, att: 30, passYds: 310, passTD: 3 } } };
+  assert.ok(rivalWorthy(g, T, 0));
+  assert.ok(!rivalWorthy({ ...g, as: 13 }, T, 0), "a close loss to a non-rival makes no paper");
+  assert.ok(rivalWorthy({ ...g, h: 0, a: 2, as: 18 }, T, 0), "an 8-point loss to a division rival does");
+  const e = rivalEdition({ g, teams: T, ui: 0, yr: 2027, wk: 6 });
+  assert.equal(e.kind, "rival");
+  assert.match(e.mast, /City1/);
+  assert.ok(e.story.some((s) => s.includes("Their Star")));
+});
