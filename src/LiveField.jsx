@@ -29,123 +29,18 @@ const rnd = (i, k) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; 
 const WX_CSS = `@keyframes lfRain { from { transform: translate(0, -30px) } to { transform: translate(-36px, ${H + 30}px) } }
 @keyframes lfSnow { 0% { transform: translate(0, -10px) } 50% { transform: translate(10px, ${H / 2}px) } 100% { transform: translate(-6px, ${H + 10}px) } }
 @media (prefers-reduced-motion: reduce) { .lf-fall * { animation: none !important } }`;
-function Ground({ wx, id }) {
-  const heavy = (wx.rain || wx.snow) === 2;
-  const full = { x: 0, y: 0, width: W, height: H, filterUnits: "userSpaceOnUse" };
-  if (wx.snow) {
-    // Light snow: a fine dusting over the grass, thicker toward the sidelines and end zones where
-    // nobody runs. Heavy snow: a white blanket with soft drifts, slush churned up between the
-    // hashes, the yard lines swept clear by the grounds crew, and plowed banks along the sidelines.
-    const fine = (
-      <filter id={`${id}-fr`} {...full}>
-        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="3" result="g" />
-        <feTurbulence type="fractalNoise" baseFrequency="0.012 0.025" numOctaves="3" seed="13" result="v" />
-        <feColorMatrix in="g" type="matrix" values="0 0 0 0 0.97  0 0 0 0 0.98  0 0 0 0 1  0 0 0 2.2 -0.75" result="grain" />
-        <feColorMatrix in="v" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 2.6 -0.6" result="vary" />
-        <feComposite in="grain" in2="vary" operator="in" result="dust" />
-        <feGaussianBlur in="dust" stdDeviation="0.6" result="soft" />
-        <feFlood floodColor="#eef3f8" floodOpacity="0.55" result="w" />
-        <feComposite in="w" in2="vary" operator="in" result="wash" />
-        <feMerge><feMergeNode in="wash" /><feMergeNode in="soft" /></feMerge>
-      </filter>
-    );
-    const edges = (
-      <linearGradient id={`${id}-eg`} x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stopColor="#fff" stopOpacity="1" /><stop offset="0.3" stopColor="#fff" stopOpacity={heavy ? 1 : 0.75} />
-        <stop offset="0.5" stopColor="#fff" stopOpacity={heavy ? 1 : 0.5} /><stop offset="0.7" stopColor="#fff" stopOpacity={heavy ? 1 : 0.75} /><stop offset="1" stopColor="#fff" stopOpacity="1" />
-      </linearGradient>
-    );
-    if (!heavy) return (
-      <g pointerEvents="none">
-        <defs>{fine}{edges}<mask id={`${id}-em`}><rect x="0" y="0" width={W} height={H} fill={`url(#${id}-eg)`} /></mask></defs>
-        <g mask={`url(#${id}-em)`}>
-          <rect x="0" y="0" width={W} height={H} fill="#e8eef5" opacity=".18" />
-          <rect x="0" y="0" width={W} height={H} filter={`url(#${id}-fr)`} opacity=".85" />
-          <rect x="0" y="0" width={EZ} height={H} fill="#f1f5f9" opacity=".3" /><rect x={W - EZ} y="0" width={EZ} height={H} fill="#f1f5f9" opacity=".3" />
-        </g>
-      </g>
-    );
-    return (
-      <g pointerEvents="none">
-        <defs>
-          {fine}
-          <filter id={`${id}-bl`} {...full}>
-            <feTurbulence type="fractalNoise" baseFrequency="0.006 0.012" numOctaves="3" seed="8" result="b" />
-            <feDiffuseLighting in="b" surfaceScale="7" lightingColor="#ffffff" result="lit"><feDistantLight azimuth="240" elevation="62" /></feDiffuseLighting>
-            <feColorMatrix in="lit" type="matrix" values="0.86 0 0 0 0.15  0 0.88 0 0 0.14  0 0 0.9 0 0.13  0 0 0 0 1" />
-          </filter>
-          <filter id={`${id}-sl`} {...full}>
-            <feTurbulence type="fractalNoise" baseFrequency="0.025 0.05" numOctaves="4" seed="21" result="n" />
-            <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.5  0 0 0 0 0.53  0 0 0 0 0.47  0 0 0 2.8 -0.95" result="slush" />
-            <feTurbulence type="fractalNoise" baseFrequency="0.3" numOctaves="1" seed="2" result="f" />
-            <feColorMatrix in="f" type="matrix" values="0 0 0 0 0.3  0 0 0 0 0.34  0 0 0 0 0.3  0 0 0 3.5 -2.2" result="prints" />
-            <feMerge result="m"><feMergeNode in="slush" /><feMergeNode in="prints" /></feMerge>
-            <feGaussianBlur in="m" stdDeviation="0.8" result="ms" />
-            <feComposite in="ms" in2="SourceGraphic" operator="in" />
-          </filter>
-          <linearGradient id={`${id}-tb`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0.26" stopColor="#fff" stopOpacity="0" /><stop offset="0.38" stopColor="#fff" stopOpacity="1" />
-            <stop offset="0.62" stopColor="#fff" stopOpacity="1" /><stop offset="0.74" stopColor="#fff" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id={`${id}-tx`} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0.08" stopColor="#fff" stopOpacity="0" /><stop offset="0.25" stopColor="#fff" stopOpacity="1" />
-            <stop offset="0.75" stopColor="#fff" stopOpacity="1" /><stop offset="0.92" stopColor="#fff" stopOpacity="0" />
-          </linearGradient>
-          <mask id={`${id}-tm`}><rect x="0" y="0" width={W} height={H} fill={`url(#${id}-tx)`} /></mask>
-          <filter id={`${id}-rag`} {...full}><feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" seed="5" result="t" /><feDisplacementMap in="SourceGraphic" in2="t" scale="4" /></filter>
-          <linearGradient id={`${id}-bank`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset="1" stopColor="#c7d2df" /></linearGradient>
-        </defs>
-        {/* the blanket */}
-        <rect x="0" y="0" width={W} height={H} filter={`url(#${id}-bl)`} />
-        <rect x="0" y="0" width={W} height={H} filter={`url(#${id}-fr)`} opacity=".25" />
-        {/* churned between the hashes: slush with footprint streaks, thinning toward the goal lines */}
-        <g mask={`url(#${id}-tm)`}><rect x="0" y="0" width={W} height={H} fill={`url(#${id}-tb)`} filter={`url(#${id}-sl)`} opacity=".7" /></g>
-        {/* swept yard lines: the grounds crew clears a strip of grass under each line */}
-        <g filter={`url(#${id}-rag)`}>{[...Array(21)].map((_, i) => <rect key={i} x={xOf(i * 5) - (i % 20 === 0 ? 4.5 : 3.5)} y="10" width={i % 20 === 0 ? 9 : 7} height={H - 20} fill="#4f8a55" opacity=".7" />)}</g>
-        {/* plowed banks along both sidelines */}
-        <rect x="0" y="0" width={W} height="9" fill={`url(#${id}-bank)`} /><rect x="0" y={H - 9} width={W} height="9" fill={`url(#${id}-bank)`} transform={`rotate(180 ${W / 2} ${H - 4.5})`} />
-      </g>
-    );
-  }
-  if (wx.rain) {
-    // soaked grass, mud churned up between the hashes (thickest in the middle of the field) and
-    // standing water that catches the light
-    return (
-      <g pointerEvents="none">
-        <defs>
-          <filter id={`${id}-md`} {...full}>
-            <feTurbulence type="fractalNoise" baseFrequency="0.014 0.03" numOctaves="4" seed="5" result="n" />
-            <feColorMatrix in="n" type="matrix" values={`0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 3.4 ${heavy ? -0.55 : -0.95}`} result="mask0" />
-            <feComposite in="mask0" in2="SourceGraphic" operator="in" result="mask" />
-            <feFlood floodColor="#3b2614" result="dark" />
-            <feComposite in="dark" in2="mask" operator="in" result="base" />
-            <feTurbulence type="fractalNoise" baseFrequency="0.11" numOctaves="2" seed="9" result="bump" />
-            <feDiffuseLighting in="bump" surfaceScale="4" lightingColor="#a8784a" result="lit"><feDistantLight azimuth="225" elevation="42" /></feDiffuseLighting>
-            <feComposite in="lit" in2="mask" operator="in" result="clumps" />
-            <feComponentTransfer in="clumps" result="soft"><feFuncA type="linear" slope="0.55" /></feComponentTransfer>
-            <feMerge><feMergeNode in="base" /><feMergeNode in="soft" /></feMerge>
-          </filter>
-          <radialGradient id={`${id}-mz`} cx=".5" cy=".5" r=".55">
-            <stop offset="0" stopColor="#fff" stopOpacity="1" /><stop offset=".6" stopColor="#fff" stopOpacity=".75" /><stop offset="1" stopColor="#fff" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id={`${id}-hb`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0.12" stopColor="#fff" stopOpacity="0" /><stop offset="0.32" stopColor="#fff" stopOpacity="1" />
-            <stop offset="0.68" stopColor="#fff" stopOpacity="1" /><stop offset="0.88" stopColor="#fff" stopOpacity="0" />
-          </linearGradient>
-          <mask id={`${id}-mm`}><rect x={EZ} y="0" width={W - 2 * EZ} height={H} fill={`url(#${id}-hb)`} /></mask>
-          <filter id={`${id}-pd`} {...full}>
-            <feTurbulence type="fractalNoise" baseFrequency="0.018 0.045" numOctaves="2" seed="31" result="n" />
-            <feColorMatrix in="n" type="matrix" values={`0 0 0 0 0.1  0 0 0 0 0.15  0 0 0 0 0.19  0 0 0 9 ${heavy ? -5.0 : -5.5}`} result="pool" />
-            <feGaussianBlur in="pool" stdDeviation="1.2" />
-          </filter>
-        </defs>
-        <rect x="0" y="0" width={W} height={H} fill="#041008" opacity={heavy ? 0.36 : 0.24} />
-        <g mask={`url(#${id}-mm)`}><rect x="0" y="0" width={W} height={H} fill={`url(#${id}-mz)`} filter={`url(#${id}-md)`} opacity={heavy ? 0.95 : 0.8} /></g>
-        <rect x="0" y="0" width={W} height={H} filter={`url(#${id}-pd)`} opacity={heavy ? 0.75 : 0.6} />
-      </g>
-    );
-  }
-  return null;
+// The ground under rain and snow: illustrated overlays (public/weather/, one per condition) laid
+// over the turf with the field's own geometry, under the paint, the players and the falling weather.
+const BASE = import.meta.env?.BASE_URL ?? "/";
+function Ground({ wx, kind }) {
+  if (!wx.rain && !wx.snow) return null;
+  return (
+    <g pointerEvents="none">
+      {/* rain darkens the whole field a touch: wet grass */}
+      {wx.rain && <rect x="0" y="0" width={W} height={H} fill="#041008" opacity={wx.rain === 2 ? 0.24 : 0.14} />}
+      <image href={`${BASE}weather/${kind}.webp`} x="0" y="0" width={W} height={H} preserveAspectRatio="none" />
+    </g>
+  );
 }
 // Holiday touches on the field: Christmas lights strung down both sidelines, a Halloween dusk with
 // glowing jack-o'-lanterns at the pylons, autumn leaves blown onto the Thanksgiving sidelines.
@@ -235,7 +130,7 @@ function Player({ p, pos, x, y, team, side, away, td }) {
 // club's color framed in gold, a gold medallion at midfield with the trophy, the game's name and the
 // host city (sbCity), each club's logo at its own 25, and gold trim around the field.
 export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday }) {
-  const W8 = wxOf(wx), gid = `lfw-${wx || "c"}`;
+  const W8 = wxOf(wx);
   const los = clamp(ballYard, 1, 99);
   const x0 = xOf(los);
   const o = starters(off, offDepth, offOrder), d = starters(def, defDepth, defOrder);
@@ -317,7 +212,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       {/* each club's logo painted at its own 25 */}
       {sb && [[25, off, -90], [75, def, 90]].map(([y, t, rot]) => t?.ab && <image key={y} href={logoUrl(t.ab)} x={xOf(y) - 30} y={H / 2 - 30} width="60" height="60" opacity=".8" filter="url(#lf-paint)" transform={`rotate(${rot} ${xOf(y)} ${H / 2})`} />)}
       <rect x="0" y="0" width={W} height={H} filter="url(#lf-grain)" opacity=".55" />
-      <Ground wx={W8} id={gid} />
+      <Ground wx={W8} kind={wx} />
       {/* yard lines every five, goal lines heavier */}
       {[...Array(21)].map((_, i) => <line key={i} x1={xOf(i * 5)} y1="0" x2={xOf(i * 5)} y2={H} stroke="#fff" strokeOpacity={i % 20 === 0 ? 0.95 : i % 2 ? 0.4 : 0.7} strokeWidth={i % 20 === 0 ? 3 : i % 2 ? 1.2 : 1.8} />)}
       {/* hash marks every yard: along both sidelines and the two inbound rows */}

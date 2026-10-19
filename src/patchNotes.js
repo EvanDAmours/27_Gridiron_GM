@@ -1389,4 +1389,7 @@ export const PATCH_NOTES = [
     "Holiday games. Each season has a Halloween night game, three Thanksgiving games (Detroit and Dallas always host, plus the night game) and three Christmas Day games. The 2026 season uses the real NFL slate for those days.",
     "Holiday games feel like an event. They're marked on your weekly preview. Playing one live opens with its own intro, and the game screen gets the holiday's touches: autumn leaves on Thanksgiving, lights strung down the sidelines and snow on Christmas, bats, a full moon and jack-o'-lanterns at the pylons on Halloween. Afterward a holiday card shows the result and the player of the game; on Thanksgiving he gets the turkey leg.",
   ] },
+  { v: "3.51", date: "2026-10-20", title: "Illustrated Weather Fields", notes: [
+    "New illustrated weather on the field. Light snow scatters soft patches across the grass and banks it along the sidelines. Heavy snow buries the field, leaves a worn, slushy strip down the middle and clears lanes for the yard numbers. Light rain leaves a wet sheen, scuffed turf and small puddles. Heavy rain churns up mud between the hashes and leaves standing water. The lines, players and falling rain or snow are drawn on top as before.",
+  ] },
 ];
