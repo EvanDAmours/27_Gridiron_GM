@@ -36,7 +36,7 @@ export const CAREER_STATS = [
   { key: "recTD", label: "Receiving TDs", per: 10 }, { key: "sacks", label: "Sacks", per: 12 },
   { key: "ints", label: "Interceptions", per: 6 },
 ];
-const AWARD_PTS = { mvp: 25, opoy: 15, dpoy: 15, sbmvp: 10, oroy: 5, droy: 5 };
+const AWARD_PTS = { mvp: 25, opoy: 15, dpoy: 15, sbmvp: 10, oroy: 5, droy: 5, cpoy: 5 };
 const level = (ovr) => (ovr >= 95 ? 4 : ovr >= 90 ? 3 : ovr >= 85 ? 2 : ovr >= 80 ? 1 : 0);
 
 // Where a player was drafted: { yr, rd, pk, tm } (tm: the club's abbreviation), or { undrafted, yr }.
@@ -198,7 +198,7 @@ export const ringCandidates = (retired, team, hall) => (retired || []).filter((r
 // (champs carry the club's index); yr: the current season (its stats aren't in his season lines yet).
 const ACCOLADES = [
   ["sb", "🏆", "Super Bowl"], ["mvp", "🏅", "MVP"], ["sbmvp", "🏟️", "Super Bowl MVP"], ["opoy", "⭐", "Off. Player of the Year"],
-  ["dpoy", "🛡️", "Def. Player of the Year"], ["oroy", "🌱", "Off. Rookie of the Year"], ["droy", "🌱", "Def. Rookie of the Year"],
+  ["dpoy", "🛡️", "Def. Player of the Year"], ["oroy", "🌱", "Off. Rookie of the Year"], ["droy", "🌱", "Def. Rookie of the Year"], ["cpoy", "💪", "Comeback Player of the Year"],
   ["ap1", "🥇", "First-team All-Pro"], ["ap2", "🥈", "Second-team All-Pro"], ["pb", "🎖️", "Pro Bowl"], ["potw", "📣", "Player of the Week"],
 ];
 export function accoladesOf(p, { awards = [], champs = [], teams = [], yr, teamAb } = {}) {
@@ -206,7 +206,7 @@ export function accoladesOf(p, { awards = [], champs = [], teams = [], yr, teamA
   const got = {};
   const add = (k, y) => { if (y != null && !(got[k] ||= []).includes(y)) got[k].push(y); };
   for (const a of awards) {
-    for (const k of ["mvp", "sbmvp", "opoy", "dpoy", "oroy", "droy"]) if (a?.[k]?.pid === p.id) add(k, a.yr);
+    for (const k of ["mvp", "sbmvp", "opoy", "dpoy", "oroy", "droy", "cpoy"]) if (a?.[k]?.pid === p.id) add(k, a.yr);
     // a list, or split by conference ({ AFC: [...], NFC: [...] } for the Pro Bowl)
     const flat = (v) => (Array.isArray(v) ? v : v && typeof v === "object" ? Object.values(v).flat() : []);
     for (const k of ["ap1", "ap2", "pb"]) if (flat(a?.honors?.[k]).some((h) => h?.pid === p.id)) add(k, a.yr);

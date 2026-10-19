@@ -108,7 +108,7 @@ export function respond(p, offer, t, state = {}) {
       const base = { team: t.rival.team, sal: rivalSal, yrs: rYrs, why, tries };
       // First time he'd rather go there, his agent uses the other offer as leverage: here's what
       // they're paying, give him a reason. Beating that number is no guarantee: it's his call.
-      if (!state.last?.rivalBid && uR > v * (t.fitMe ? 1.02 : 1.05)) return { ...base, result: "counter", rivalBid: true, counter: r1(Math.max(offer.sal + 0.5, uR / (1 + pullMe) / (1 + 0.06 * (offer.share || 0)) + 0.3)), msg: `He has $${rivalSal}M a year for ${rYrs} years elsewhere. Give him a reason to pick you.` };
+      if (!state.last?.rivalBid && uR > v * (t.fitMe ? 1.02 : 1.05)) return { ...base, result: "counter", rivalBid: true, counter: r1(Math.max(offer.sal + 0.5, uR / (1 + pullMe) / (1 + 0.06 * (offer.share || 0)) + 0.3)), msg: `He has $${rivalSal}M a year for ${rYrs} year${rYrs === 1 ? "" : "s"} elsewhere. Give him a reason to pick you.` };
       if (state.last?.rivalBid && uR * (1 + (t.edge || 0)) > v) return { ...base, result: "lost", msg: `He took the other offer: $${rivalSal}M a year.` };
       if (rivalSal > money_) { const w = whyBetter(t.prio, t.fitMe, t.rival.fit); return { result: "accept", tries, msg: `He took less to sign with you${w ? `: ${w.replace(/there/g, "here").replace("their", "your")}` : ""}.` }; }
     }

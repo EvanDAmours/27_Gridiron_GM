@@ -6,8 +6,8 @@ import { MOBILE } from "./mobile.js";
 import { CAREER_STATS, careerLeaders, retiredCard } from "./history.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 
-const AW = [["mvp", "Most Valuable Player"], ["opoy", "Offensive Player"], ["dpoy", "Defensive Player"], ["oroy", "Offensive Rookie"], ["droy", "Defensive Rookie"], ["sbmvp", "Super Bowl MVP"]];
-const AW_SHORT = { mvp: "MVP", opoy: "OPOY", dpoy: "DPOY", oroy: "OROY", droy: "DROY", sbmvp: "SB MVP" };
+const AW = [["mvp", "Most Valuable Player"], ["opoy", "Offensive Player"], ["dpoy", "Defensive Player"], ["oroy", "Offensive Rookie"], ["droy", "Defensive Rookie"], ["cpoy", "Comeback Player"], ["coy", "Coach of the Year"], ["sbmvp", "Super Bowl MVP"]];
+const AW_SHORT = { mvp: "MVP", opoy: "OPOY", dpoy: "DPOY", oroy: "OROY", droy: "DROY", cpoy: "CPOY", coy: "COY", sbmvp: "SB MVP" };
 const num = (v) => (Number.isInteger(v) ? v.toLocaleString("en-US") : (+v).toFixed(1));
 const SECTIONS = [["champs", "🏆 Champions"], ["awards", "🏅 Awards"], ["leaders", "📊 Career leaders"], ["hof", "🏛️ Hall of Fame"], ["retired", "👋 Retirements"]];
 

@@ -41,7 +41,7 @@ export function superBowlMvp(box, ti) {
 // The sheet's main button stays in view at the bottom while the list scrolls.
 const stickyFoot = { position: "sticky", bottom: MOBILE ? "calc(-16px - env(safe-area-inset-bottom))" : -14, margin: MOBILE ? "4px -14px calc(-16px - env(safe-area-inset-bottom))" : "4px -14px -14px", padding: MOBILE ? "10px 14px calc(16px + env(safe-area-inset-bottom))" : "10px 14px 14px", background: "linear-gradient(180deg, #0b122000, #0b1220 30%)", zIndex: 2 };
 
-const ROWS = [["mvp", "Most Valuable Player"], ["opoy", "Offensive Player of the Year"], ["dpoy", "Defensive Player of the Year"], ["oroy", "Offensive Rookie of the Year"], ["droy", "Defensive Rookie of the Year"]];
+const ROWS = [["mvp", "Most Valuable Player"], ["opoy", "Offensive Player of the Year"], ["dpoy", "Defensive Player of the Year"], ["oroy", "Offensive Rookie of the Year"], ["droy", "Defensive Rookie of the Year"], ["cpoy", "Comeback Player of the Year"], ["coy", "Coach of the Year"]];
 
 function Row({ label, w, teams, ui, big }) {
   const t = w ? teams[w.ti] : null;
@@ -141,7 +141,7 @@ export default function SeasonAwards({ show, teams, ui, onClose, cta = "Continue
           <style>{"@keyframes awIn{from{opacity:0;transform:translateY(14px) scale(.97);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}"}</style>
           <div onClick={() => setAll(true)} style={{ display: "flex", flexDirection: "column", gap: 8, cursor: all ? "default" : "pointer" }} title={all ? undefined : "Show every award"}>
             <div style={step(0)}><Row label="Super Bowl MVP" w={sbmvp} teams={teams} ui={ui} big /></div>
-            {ROWS.map(([k, l], i) => <div key={k} style={step(i + 1)}><Row label={l} w={awards[k]} teams={teams} ui={ui} /></div>)}
+            {ROWS.filter(([k]) => awards[k] || !["cpoy", "coy"].includes(k)).map(([k, l], i) => <div key={k} style={step(i + 1)}><Row label={l} w={awards[k]} teams={teams} ui={ui} /></div>)}
           </div>
           <div style={stickyFoot}><Btn onClick={awards.honors ? () => setPage(2) : onClose} bg={C.gn} style={{ width: "100%", fontSize: 16, padding: "11px 0", fontWeight: 900, letterSpacing: 1 }}>{awards.honors ? "CONTINUE →" : cta}</Btn></div>
         </div>

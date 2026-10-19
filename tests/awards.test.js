@@ -51,3 +51,16 @@ test("pass rushers win Defensive Player of the Year over tackle piles; a receive
   assert.equal(a.opoy.pid, "wr");
   assert.equal(a.dpoy.pid, "edge");
 });
+
+test("Comeback Player and Coach of the Year", async () => {
+  const { seasonAwardWinners } = await import("../src/awards.js");
+  const P = (id, pos, ss, sh) => ({ id, name: id, pos, ss: { gp: 16, ...ss }, sh });
+  const teams = [
+    { ab: "AAA", w: 13, l: 4, lw: 4, coach: { hc: { id: "c1", name: "Turnaround Coach" } }, roster: [P("qb1", "QB", { passYds: 5000, passTD: 40 }), P("back", "WR", { rec: 90, recYds: 1300, recTD: 9 }, [{ y: 2029, gp: 4 }])] },
+    { ab: "BBB", w: 14, l: 3, lw: 14, coach: { hc: { id: "c2", name: "Steady Coach" } }, roster: [P("wr2", "WR", { rec: 100, recYds: 1500, recTD: 12 }, [{ y: 2029, gp: 17 }])] },
+  ];
+  const a = seasonAwardWinners(teams, 2030);
+  assert.equal(a.cpoy?.name, "back", "missed most of last season, big one now");
+  assert.equal(a.coy?.name, "Turnaround Coach", "13 wins, up from 4, beats 14 wins with no jump");
+  assert.match(a.coy.stat, /13-4, up from 4 wins/);
+});

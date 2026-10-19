@@ -1,5 +1,6 @@
 // End-of-regular-season awards from everyone's season stats: MVP, Offensive and Defensive Player
-// of the Year, and the two Rookie of the Year awards. Winning teams help an MVP case.
+// of the Year, the two Rookie of the Year awards, Comeback Player of the Year and Coach of the Year.
+// Winning teams help an MVP case.
 const s = (p, k) => p.ss?.[k] || 0;
 
 const qbScore = (p) => s(p, "passYds") / 20 + s(p, "passTD") * 5 - s(p, "passInt") * 4 + s(p, "rushYds") / 10 + s(p, "rushTD") * 6;
@@ -74,5 +75,18 @@ export function seasonAwardWinners(teams, yr) {
   const rookie = (x) => rookieSeason(x.p) === yr;
   const oroy = pick(off.filter(rookie), (x) => offScore(x.p));
   const droy = pick(def.filter(rookie), (x) => defScore(x.p));
-  return { yr, mvp, opoy, dpoy, oroy, droy };
+  // Comeback Player of the Year: eight games or fewer last season (hurt or benched), a big one now.
+  const lostLast = (p) => { const l = (p.sh || []).find((x) => x.y === yr - 1); return !!l && (l.gp || 0) <= 8; };
+  const back = (x) => (["QB", "RB", "WR", "TE"].includes(x.p.pos) ? offScore(x.p) * (x.p.pos === "QB" ? 0.6 : 1) : defScore(x.p) * 1.6);
+  const cpoy = pick([...off, ...def].filter((x) => s(x.p, "gp") >= 12 && lostLast(x.p) && x.p.id !== mvp?.pid), back);
+  // Coach of the Year: the head coach whose club won the most, with a big jump from last season (lw)
+  // counting extra, the way the real voting rewards turnarounds.
+  let coy = null, best = -1e9;
+  teams.forEach((t, ti) => {
+    const hc = t.coach?.hc;
+    if (!hc) return;
+    const w = t.w || 0, jump = t.lw != null ? w - t.lw : 0, sc = w + jump * 0.8;
+    if (sc > best) { best = sc; coy = { pid: hc.id, name: hc.name, pos: "HC", ti, team: t.ab, stat: `${w}-${t.l || 0}${t.t ? `-${t.t}` : ""}${t.lw != null && jump > 0 ? `, up from ${t.lw} wins` : ""}` }; }
+  });
+  return { yr, mvp, opoy, dpoy, oroy, droy, cpoy, coy };
 }
