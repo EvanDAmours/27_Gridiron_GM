@@ -1314,4 +1314,8 @@ export const PATCH_NOTES = [
     "The Ready Check flags what's worth a look before kickoff, with a one-tap fix where there is one: a starter who's hurt and still needs a replacement (Choose), an identity or defensive lean that rates worse against this opponent than another (Use it), and a set your OC or DC doesn't believe in. When everything checks out, it says ✓ Ready.",
     "Built to fit without scrolling on a laptop; on a phone it stacks into one column.",
   ] },
+  { v: "3.35", date: "2026-10-20", title: "Balance Watchdog", notes: [
+    "Behind the scenes: a balance watchdog. The long health runs (npm run health) now check every simulated season against NFL-like ranges: points a game, completion rate, passing and rushing yards, home-field edge, blowouts, ties, league age, 99-rated players, payrolls, the QB market, AI clubs over the cap or missing a starter, and rating inflation from the first season.",
+    "Anything out of range is flagged in the log. A key number out of range two seasons running fails the run, so drift gets caught before it shows up in your league. A two-season check after this update came back clean: about 21 points a game and a 64.5% completion rate.",
+  ] },
 ];

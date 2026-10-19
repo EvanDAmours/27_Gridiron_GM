@@ -15,11 +15,11 @@ export const BANDS = [
   { k: "ties", lo: 0, hi: 4, what: "ties" },
   // the league's players and money
   { k: "avgAge", lo: 25.3, hi: 27.8, hard: true, what: "average age" },
-  { k: "n99", lo: 0, hi: 4, what: "players rated 99" },
+  { k: "n99", lo: 0, hi: 14, what: "players rated 99" }, // development aims for about 8 (TOP_99),
   { k: "overCap", lo: 0, hi: 2, hard: true, what: "AI clubs over the cap" },
   { k: "thinTeams", lo: 0, hi: 2, hard: true, what: "AI clubs missing a QB2, C, K, P or OL starter" },
   { k: "minRoster", lo: 46, hi: 99, hard: true, what: "smallest AI roster" },
-  { k: "payAvg", lo: 78, hi: 101, what: "average payroll, % of the cap" },
+  { k: "payAvg", lo: 72, hi: 101, what: "average payroll, % of the cap" },
   { k: "qbTop5", lo: 10, hi: 21, what: "top-5 QB salary, % of the cap" },
 ];
 // change from the first season that counts as drift
