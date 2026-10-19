@@ -10,7 +10,12 @@ import { DRAFT_PEDIGREE, pedigreeKey } from "./data/draftPedigree.js";
 import { FRANCHISE_CAREER } from "./data/franchiseCareer.js";
 import { TEAM_CAREER_BASE, TEAM_CAREER_KEYS } from "./data/teamCareerBase.js";
 
-export const HOF_LINE = 60;
+// Canton: a legacy of 80 and real greatness, a peak of 88 or a great career before the league began.
+// About six or seven a year, like the real Hall (it was 60 with no peak bar: thirteen a year, and
+// long-career receivers who never rated past the low 80s got in).
+export const HOF_LINE = 80;
+export const HOF_PEAK = 88;
+export const HOF_PRE = 40;
 export const HOF_WAIT = 5;
 
 // What the established greats had already done before 2026 (MVPs, titles, All-Pro years), as
@@ -140,7 +145,7 @@ const tenth = (ab, key) => { const l = FRANCHISE_CAREER[ab]?.[key] || []; return
 // A player hanging it up. Returns his history entry (or null if he isn't notable enough to keep).
 export function retireEntry(p, team, yr, opts = {}) {
   const L = legacyOf(p, { ...opts, yr });
-  const hof = L.legacy >= HOF_LINE;
+  const hof = L.legacy >= HOF_LINE && (L.peak >= HOF_PEAK || L.pre >= HOF_PRE);
   const tc = teamCareers(p, team?.ab);
   // a top-10 career with a club keeps him in the books even without a big legacy
   const clubGreat = Object.entries(tc).some(([ab, c]) => CAREER_STATS.some(({ key }) => c[key] >= tenth(ab, key)));

@@ -167,6 +167,9 @@ try {
     const m = measure(d); rows.push(m); console.log(JSON.stringify(m));
     // the franchise documentary (every five seasons): built, saved and waiting in the inbox
     if ((d.docs || []).length) console.log(`  🎬 documentaries: ${d.docs.map((x) => `${x.yrs} ${x.w}-${x.l} ${x.tier}`).join(" | ")}${d.docCard ? " (new one waiting)" : ""}`);
+    // FULLSAVE=dir: the whole save after each season (save.json parsed, autosave.txt as stored, to load
+    // into the browser later); a long run that dies late still leaves its last season behind
+    if (process.env.FULLSAVE) { const fs = await import("node:fs"); fs.writeFileSync(`${process.env.FULLSAVE}/save.json`, JSON.stringify(d)); fs.writeFileSync(`${process.env.FULLSAVE}/autosave.txt`, await page.evaluate(() => localStorage.getItem("gm_autosave"))); }
     // DUMP=dir: keep each season's rosters for a closer look
     if (process.env.DUMP) (await import("node:fs")).writeFileSync(`${process.env.DUMP}/league-${d.yr}.json`, JSON.stringify({ fa: (d.fa || []).map(({ id, name, pos, age, ovr, draftYr, draftPk }) => ({ id, name, pos, age, ovr, draftYr, draftPk })), teams: d.teams.map((t) => t.roster.map(({ id, name, pos, age, ovr, pot, truePot, dev, honors, oh, draftYr, draftPk, contract, salary }) => ({ id, name, pos, age, ovr, pot, truePot, dev, honors, oh, draftYr, draftPk, contract, salary }))) }));
   }

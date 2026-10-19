@@ -35,7 +35,7 @@ export default function GmRetire({ career: c, team, gmName, retired, yr, achieve
             <div style={{ fontSize: MOBILE ? 36 : 44, fontWeight: 900, color: "#fde68a", lineHeight: 1 }}>{c.score}</div>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 17, fontWeight: 900 }}>{legacyTier(c.score)}</div>
+            <div style={{ fontSize: 17, fontWeight: 900 }}>{legacyTier(c.score, c.seasons)}</div>
             <div style={{ fontSize: 13, color: "#cbd5e1" }}>{rank <= 10 ? `#${rank} among the greatest GMs of all time` : "Outside the all-time top 10"}{rank <= 10 && rank > 1 ? `, behind ${GREATS[rank - 2].name}` : rank === 1 ? ", ahead of Bill Belichick" : ""}.</div>
             <div style={{ fontSize: 11, color: C.mt, marginTop: 3 }}>100 per title · 15 per playoff trip · 2 per game over .500 · 4 per season · 25 per Hall of Famer you drafted · 6 per All-Pro season from your picks · 3 per record set</div>
           </div>

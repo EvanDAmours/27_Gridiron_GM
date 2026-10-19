@@ -1164,4 +1164,12 @@ export const PATCH_NOTES = [
     "Coaching: one way to hire. The staff-point Coach Market is gone; every coach you can hire is in Available Coaches.",
     "Owner's review: \"an 8-9 season\", not \"a 8-9\"; and a quiet year that cost you some patience reads STEADY, not PLEASED.",
   ] },
+  { v: "3.8", date: "2026-10-19", title: "The Long Game", notes: [
+    "Found in a 15-season playtest: drafted players came in slower and stronger than the real players they replaced (a 4.4 forty read as an 80 speed), so over the years the league got slower, rushing fell from 119 to 95 yards a game and scoring from 22 to 19.5 points. Combine numbers now convert like the real players (a 4.4 forty is a 92), so the league stays as fast as it starts.",
+    "Generated players have their position's real shape: a quarterback's arm sits above his overall and a running back's pass blocking well below, instead of every skill landing near the overall.",
+    "Skills now develop with the player: when his overall climbs or falls, the skills under it move too, and speed starts to fade from 29 (faster past 32, and for the speed positions). Before, a rookie drafted at 65 who became an 85 still played on his rookie skills.",
+    "Practice-squad veterans retire and age like everyone else. Before, a 42-year-old corner could sit on a practice squad at 71 OVR and get promoted every preseason.",
+    "Canton is harder to reach: a legacy of 80 and either a peak of 88 or a great career before the league began. About six or seven a year, like the real Hall (it was thirteen, and receivers who never rated past the low 80s got in).",
+    "A GM who has run the club six seasons or more without a winning legacy reads as \"The Long Rebuild\", not \"Short Tenure\".",
+  ] },
 ];

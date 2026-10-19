@@ -37,3 +37,10 @@ test("a retired great keeps his card: ratings, his last season as a line, no con
   const old = retiredCard({ id: 1, name: "Y", pos: "QB", peak: 91, retYr: 2029, team: "KC", career: { passYds: 40000 } });
   assert.equal(old.ovr, 91); assert.equal(old.career.passYds, 40000);
 });
+
+test("a long career that never reached greatness stays out of Canton", () => {
+  const steady = { id: "w", name: "Steady Receiver", pos: "WR", age: 34, ovr: 78, peak: 83, draftYr: 2026, draftPk: 40, cs: { rec: 1000, recYds: 13000, recTD: 80 } };
+  const e = retireEntry(steady, { ab: "IND" }, 2038, {});
+  assert.ok(e && e.legacy >= HOF_LINE, `a big legacy (${e?.legacy}), the kind that used to get in`);
+  assert.equal(e.hof, false);
+});

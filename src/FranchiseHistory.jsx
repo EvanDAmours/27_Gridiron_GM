@@ -34,7 +34,7 @@ export default function FranchiseHistory({ team, seasons = [], current, titles =
       <div style={{ ...card, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "linear-gradient(135deg,#78350f44,#111827)", border: "1px solid #f59e0b66" }}>
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={head("#fcd34d")}>🎓 YOUR GM LEGACY</div>
-          <div style={{ fontSize: 17, fontWeight: 900 }}>{gmRetired ? `Retired after ${gmRetired.yr}` : career ? legacyTier(career.score) : "Just getting started"}{rank && rank <= 10 ? ` · #${rank} all time` : ""}</div>
+          <div style={{ fontSize: 17, fontWeight: 900 }}>{gmRetired ? `Retired after ${gmRetired.yr}` : career ? legacyTier(career.score, career.seasons) : "Just getting started"}{rank && rank <= 10 ? ` · #${rank} all time` : ""}</div>
           <div style={{ fontSize: 13, color: "#cbd5e1" }}>{gmRetired ? "Your career is in the books. Look back on it, or come out of retirement." : "Your whole career, a legacy score, and where you rank among the greatest GMs ever."}</div>
         </div>
         <button onClick={onLegacy} style={{ background: "#b45309", color: "#fff", border: 0, borderRadius: 8, padding: "9px 14px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>{gmRetired ? "View career" : "Career & retire"}</button>

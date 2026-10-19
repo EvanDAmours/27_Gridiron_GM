@@ -102,8 +102,22 @@ export function qbRate(c,a,y,t,i){if(!a)return 0;const aa=cl(((c/a)-.3)*5,0,2.37
 export function calcAV(p){const s=p.ss||{};if(!s.gp)return 0;let v=0;if(p.pos==="QB")v=(s.passYds||0)/350+(s.passTD||0)*1.5-(s.passInt||0)+(s.rushYds||0)/150;else if(p.pos==="RB")v=(s.rushYds||0)/200+(s.rushTD||0)*2+(s.recYds||0)/200;else if(p.pos==="WR")v=(s.recYds||0)/200+(s.recTD||0)*2+(s.rec||0)*.2;else if(p.pos==="TE")v=(s.recYds||0)/200+(s.recTD||0)*2;else if(p.pos==="DL")v=(s.sacks||0)*2+(s.tkl||0)*.1+(s.tfl||0)*.5;else if(p.pos==="LB")v=(s.tkl||0)*.15+(s.sacks||0)*1.5+(s.ints||0)*2;else if(p.pos==="CB")v=(s.ints||0)*3+(s.pd||0)*.8;else if(p.pos==="S")v=(s.ints||0)*2.5+(s.tkl||0)*.12;else if(p.pos==="K")v=(s.fgM||0)+(s.xpM||0)*.2;else v=p.ovr*.05*(s.gp||0);return Math.round(cl(v,0,25));}
 export function genCombine(pos,ovr){const a=CA[pos];if(!a)return null;const oM=(ovr-60)/100;return{fortyYd:Math.round((a.f-oM*.3+Rf(-.15,.15))*100)/100,bench:Math.max(0,Math.round(a.b+oM*8+R(-4,4))),vert:Math.max(15,Math.round(a.v+oM*6+R(-3,3))),broad:Math.max(80,Math.round(a.br+oM*10+R(-5,5))),threeCone:Math.round((a.t-oM*.25+Rf(-.15,.15))*100)/100,shuttle:Math.round((a.s-oM*.15+Rf(-.1,.1))*100)/100};}
 export function genProDay(pos,ovr){const c=genCombine(pos,ovr);if(!c)return null;return{fortyYd:Math.round((c.fortyYd+Rf(-.05,.05))*100)/100,bench:Math.max(0,c.bench+R(-2,3)),vert:Math.max(15,c.vert+R(-2,2)),broad:Math.max(80,c.broad+R(-3,4)),threeCone:Math.round((c.threeCone+Rf(-.08,.08))*100)/100,shuttle:Math.round((c.shuttle+Rf(-.05,.05))*100)/100};}
-export function combToPhys(c){if(!c)return{spd:60,str:60,agi:60,end:60,acc:60,jmp:60};return{spd:cl(Math.round(80-(c.fortyYd-4.4)*30),30,99),str:cl(Math.round(40+c.bench*2.2),30,99),agi:cl(Math.round(80-(c.threeCone-6.8)*25),30,99),jmp:cl(Math.round(20+c.vert*1.8),30,99),acc:cl(Math.round(80-(c.shuttle-4.1)*30),30,99),end:cl(Gc(70,8,40,99),40,99)};}
-export function genPAttrs(pos,ovr){const at={};(PA[pos]||[]).forEach(a=>{at[a]=cl(Gc(ovr,8,30,99),30,99);});return at;}
+// Combine numbers to ratings, fitted to the real players at each position (a 4.4 forty is a 92 speed,
+// 15 bench reps a 61 strength and 27 an 87), so drafted players are as fast and as strong as the
+// veterans they replace and the league doesn't slow down and bulk up over the seasons.
+export function combToPhys(c){if(!c)return{spd:60,str:60,agi:60,end:60,acc:60,jmp:60};return{spd:cl(Math.round(92-(c.fortyYd-4.4)*26),30,99),str:cl(Math.round(61+(c.bench-15)*2.15),30,99),agi:cl(Math.round(87-(c.threeCone-6.8)*29),30,99),jmp:cl(Math.round(20+c.vert*1.8),30,99),acc:cl(Math.round(91.5-(c.shuttle-4.1)*32),30,99),end:cl(Gc(70,8,40,99),40,99)};}
+// Each position's skill shape, from the real players: how far each skill sits from the overall on average
+// (a quarterback's arm above it, a running back's pass blocking well below). Generated players get the same
+// shape, so a drafted back reads like a back and not a flat row of numbers near his overall.
+const PA_SHAPE=(()=>{const sum={},n={};for(const d of(M27.teams||[]).flatMap(t=>[...(t.roster||[]),...(t.ps||[])])){if(!d.attrs||!d.ovr)continue;const sp=(sum[d.pos]||={}),np=(n[d.pos]||={});for(const[k,v]of Object.entries(d.attrs))if(typeof v==="number"){sp[k]=(sp[k]||0)+v-d.ovr;np[k]=(np[k]||0)+1;}}return Object.fromEntries(Object.entries(sum).map(([pos,o])=>[pos,Object.fromEntries(Object.entries(o).map(([k,v])=>[k,v/n[pos][k]]))]));})();
+export function genPAttrs(pos,ovr){const at={},sh=PA_SHAPE[pos]||{};(PA[pos]||[]).forEach(a=>{at[a]=cl(Math.round(ovr+(sh[a]??0)+Gc(0,5,-12,12)),30,99);});return at;}
+// A season's change in overall carries into the skills under it (each skill moves with it, give or take a
+// point), and the body ages: speed, acceleration and agility start to fade at 29 and fall faster past 32,
+// a little quicker for the positions that live on speed. age: his age in the season just finished.
+const SPEED_POS=new Set(["RB","WR","CB","S","LB"]);
+export function growAttrs(p,delta,age){const out={};if(p.posAttrs){const pa={};for(const[k,v]of Object.entries(p.posAttrs))pa[k]=typeof v==="number"?cl(Math.round(v+delta+R(-1,1)),30,99):v;out.posAttrs=pa;}
+  const fade=age>=32?R(1,3)+(SPEED_POS.has(p.pos)?1:0):age>=29?R(0,2):age<=23?-R(0,1):0;
+  for(const k of["spd","acc","agi"])if(typeof p[k]==="number")out[k]=cl(p[k]-fade,30,99);return out;}
 export const SCREENS=new Set(['dashboard','roster','depth','schedule','standings','stats','scouting','draft','trade','freeagency','coaching','playoffs','hub','trophies','records','history','draftrecap','contracts','log','gameinfo','saves','deadline','livesim','god','dev']);
 // Game clock as m:ss.
 export const gameClock=s=>{const t=Math.max(0,Math.round(s||0));return`${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;};

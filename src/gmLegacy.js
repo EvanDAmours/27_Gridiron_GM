@@ -53,4 +53,5 @@ export function gmCareer({ seasons = [], current = null, titles = [], playoffApp
 
 // Where a score lands among the greats: 1 = the best ever.
 export const legacyRank = (score) => GREATS.filter((g) => g.score > score).length + 1;
-export const legacyTier = (score) => (score >= 1400 ? "Greatest of All Time" : score >= 900 ? "Hall of Fame GM" : score >= 600 ? "Legendary Builder" : score >= 350 ? "Respected Executive" : score >= 150 ? "Solid Steward" : "Short Tenure");
+// Below the honors, a short run reads as one; a long run that never got going reads as a long rebuild.
+export const legacyTier = (score, seasons = 0) => (score >= 1400 ? "Greatest of All Time" : score >= 900 ? "Hall of Fame GM" : score >= 600 ? "Legendary Builder" : score >= 350 ? "Respected Executive" : score >= 150 ? "Solid Steward" : seasons >= 6 ? "The Long Rebuild" : "Short Tenure");
