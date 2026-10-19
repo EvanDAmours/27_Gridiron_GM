@@ -1379,4 +1379,7 @@ export const PATCH_NOTES = [
   { v: "3.48", date: "2026-10-20", title: "Fairness Check", notes: [
     "Behind the scenes: the long balance runs now check whether the game favors you. At the start of a run they pick the three AI clubs whose starters rated closest to yours, then compare your win rate with theirs every season. The run reports the average gap in wins a season and flags it when one side gains more than about 2.5 wins a season beyond what the rosters explain.",
   ] },
+  { v: "3.49", date: "2026-10-20", title: "Signing Cards for Market Wins", notes: [
+    "Every free agent you win on the market now gets the signing card, whoever he is: when he picks you over the other offers, the card shows the deal. Before, only players rated 80+ from another club got one, so most market wins just slipped into the log. Your own former players get a 'comes back to' card, and the card's line fits the player (a star, a starter, or depth with a job to win).",
+  ] },
 ];
