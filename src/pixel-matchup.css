@@ -64,3 +64,9 @@
 .pxm-prime .pxm-label { color: #c7d2fe; }
 .pxm-rival { border-color: #ef4444; background: linear-gradient(90deg, color-mix(in srgb, var(--pxm-a) 30%, #071b27), #071b27 45%, #071b27 55%, color-mix(in srgb, var(--pxm-h) 30%, #071b27)); box-shadow: 0 0 26px #ef444433; }
 .pxm-rival.pxm-prime { border-color: #a855f7; }
+/* the forecast for the game, under the kickoff and stadium */
+.pxm-wx { display: inline-block; margin: 8px auto 0; padding: 4px 12px; border-radius: 999px; background: #0b122099; border: 1px solid #33415588; color: #cbd5e1; font-size: 13px; }
+.pxm-wx b { color: #f1f5f9; font-weight: 800; }
+.pxm-wx--snow { border-color: #bfdbfe88; background: #1e3a5f55; }
+.pxm-wx--rain { border-color: #60a5fa88; background: #1e293b99; }
+.pxm-wx--wind { border-color: #fbbf2466; }

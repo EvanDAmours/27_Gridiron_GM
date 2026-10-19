@@ -1423,4 +1423,9 @@ export const PATCH_NOTES = [
   { v: "3.59", date: "2026-10-20", title: "Softer Stadium Lights", notes: [
     "The stadium lights on the gameday card for night games blend in now. The two light beams have soft edges and fade out gradually over the players, instead of ending in a hard line across the card.",
   ] },
+  { v: "3.60", date: "2026-10-20", title: "Forecast on the Gameday Card", notes: [
+    "The gameday card on the home screen now shows the forecast for your game: the weather it will be played in (indoors, clear, windy, light or heavy rain, light or heavy snow). Rain, snow and wind come with a short note on what to expect. On a phone the forecast shows next to the kickoff time.",
+    "The field is a little smaller while you watch a game, and the play-by-play beside it gets a little more room.",
+    "The holiday characters in the corners of the game screen now sit on top of everything. The snowman is no longer hidden behind the Christmas wreath on the field's frame.",
+  ] },
 ];

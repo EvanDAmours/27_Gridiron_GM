@@ -81,6 +81,7 @@ export function Sky({ wx, holiday, z = 0, density = 1, corners = false, containe
   // as heavy as what's on the field: a drizzle or a downpour, flurries or a blizzard
   const nSnow = Math.round((w.snow ? (heavy ? 260 : 55) : 35) * density), nRain = Math.round((heavy ? 260 : 30) * density);
   return (
+    <>
     <div className="at-sky" aria-hidden style={{ position: contained ? "absolute" : "fixed", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: z, borderRadius: contained ? "inherit" : undefined }}>
       <style>{CSS}</style>
       {h && <div style={{ position: "absolute", inset: 0, background: th === "newyear" ? "radial-gradient(ellipse at 50% 120%, #fbbf2418, transparent 60%)" : th === "halloween" ? "radial-gradient(ellipse at 50% 120%, #7c3aed33, transparent 60%)" : th === "thanksgiving" ? "radial-gradient(ellipse at 50% 110%, #d9770624, transparent 60%)" : "radial-gradient(ellipse at 50% 110%, #15803d26, transparent 60%)" }} />}
@@ -94,9 +95,10 @@ export function Sky({ wx, holiday, z = 0, density = 1, corners = false, containe
       {snow && [...Array(nSnow)].map((_, i) => { const big = i % 6 === 0, bz = w.snow === 2, sz = bz ? (big ? 9 : 3 + rnd(i, 6) * 4) : big ? 6 : 2.5 + rnd(i, 6) * 2.5, dur = bz ? 2.4 + rnd(i, 7) * 2.4 : 7 + rnd(i, 7) * 6; return <span key={`s${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 5) * (bz ? 130 : 100)}%`, width: sz, height: sz, borderRadius: "50%", background: "#fff", opacity: big ? 0.5 : 0.78, filter: big ? "blur(1.5px)" : undefined, animation: `${bz ? "atBlizzard" : "atSnow"} ${dur}s ${-rnd(i, 8) * dur}s linear infinite` }} />; })}
       {th === "thanksgiving" && [...Array(Math.round(18 * density))].map((_, i) => <span key={`l${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 9) * 100}%`, fontSize: 14 + rnd(i, 10) * 14, opacity: 0.8, animation: `atLeaf ${9 + rnd(i, 11) * 7}s ${-rnd(i, 12) * 16}s linear infinite` }}>{["🍂", "🍁", "🍂"][i % 3]}</span>)}
       {th === "halloween" && [...Array(Math.round(7 * density))].map((_, i) => <img key={`b${i}`} alt="" src={sticker(holiday, 1)} style={{ position: "absolute", left: 0, top: `${8 + rnd(i, 13) * 40}%`, width: 34 + rnd(i, 14) * 34, animation: `atBat ${11 + rnd(i, 15) * 8}s ${-rnd(i, 16) * 18}s linear infinite` }} />)}
-      {/* two of the holiday's stickers keep the bottom corners, bobbing gently */}
-      {corners && h && artOf(holiday).corners.map((t, i) => <img key={`k${i}`} alt="" src={sticker(holiday, t)} className="at-deco" style={{ position: "absolute", bottom: MOBILE ? 64 : 10, [i ? "right" : "left"]: MOBILE ? 4 : 14, width: MOBILE ? 64 : 112, filter: "drop-shadow(0 8px 16px #000a)", animation: `${i ? "atDrift" : "atBob"} ${4.5 + i}s ease-in-out infinite` }} />)}
     </div>
+      {/* two of the holiday's stickers keep the bottom corners, bobbing gently */}
+          {corners && h && artOf(holiday).corners.map((t, i) => <img key={`k${i}`} alt="" src={sticker(holiday, t)} className="at-deco" style={{ position: "fixed", zIndex: 40, pointerEvents: "none", bottom: MOBILE ? 64 : 10, [i ? "right" : "left"]: MOBILE ? 4 : 14, width: MOBILE ? 64 : 112, filter: "drop-shadow(0 8px 16px #000a)", animation: `${i ? "atDrift" : "atBob"} ${4.5 + i}s ease-in-out infinite` }} />)}
+    </>
   );
 }
 

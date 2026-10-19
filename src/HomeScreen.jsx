@@ -15,6 +15,7 @@ import RaceWatch from "./RaceWatch.jsx";
 import { teamNeeds, needName } from "./needs.js";
 import { primeSlot } from "./seasonPreview.js";
 import { HolidayCard } from "./Atmosphere.jsx";
+import { gameWeather, wxOf } from "./weather.js";
 import { rosterPlan } from "./rosterPlan.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
@@ -194,6 +195,14 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
   const away = game && teams[game.a], home = game && teams[game.h];
   const mine = (t) => (t === me ? [depthOrder, playingTime] : []);
   const ra = away && teamRatings(away, ...mine(away)), rh = home && teamRatings(home, ...mine(home));
+  // the forecast: the weather this game is played in (weather.js), and what it means for it
+  const forecast = (() => {
+    if (!game || !home || (sp === "playoffs" && pb?.rd === 4)) return null;
+    const k = gameWeather(sp === "playoffs" ? { ...game, wk: game.wk ?? 18 + (pb?.rd || 1) } : game, yr, home.ab), w = wxOf(k);
+    const kind = w.snow ? "snow" : w.rain ? "rain" : k === "wind" ? "wind" : "clear";
+    const note = w.snow === 2 || w.rain === 2 ? "expect a ground game and a loose ball" : w.snow || w.rain ? "a slick ball: more runs, fewer completions" : k === "wind" ? "tough day to throw deep or kick long" : null;
+    return { kind, icon: w.icon, label: w.label, note };
+  })();
   const bg = `radial-gradient(ellipse at 50% 35%, ${me.clr}55, transparent 60%), linear-gradient(160deg, #0b2a33, #050b12 70%)`;
   return (
     <div className="keep-dark" style={{ borderRadius: 14, overflow: "hidden", background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, position: "relative" }}>
@@ -245,7 +254,7 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
           )}
           </div>
           {game && mobile ? (
-            <HolidayCard holiday={game.holiday}><CompactMatchup away={away} home={home} ra={ra} rh={rh} label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} · Week ${game.wk ?? nextWk}`} kickoff={game.date ? kickoff(game) : "Kickoff TBD"} /></HolidayCard>
+            <HolidayCard holiday={game.holiday}><CompactMatchup away={away} home={home} ra={ra} rh={rh} label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} · Week ${game.wk ?? nextWk}`} kickoff={`${game.date ? kickoff(game) : "Kickoff TBD"}${forecast ? ` · ${forecast.icon} ${forecast.label}` : ""}`} /></HolidayCard>
           ) : game ? (<HolidayCard holiday={game.holiday}>
             <PixelMatchup
               key={`${sp}-${game.wk ?? pb?.rd ?? 0}-${game.a}-${game.h}`}
@@ -256,6 +265,7 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
               prime={sp !== "playoffs" ? primeSlot(game) : null} rivalry={rivalId != null && (game.h === rivalId || game.a === rivalId) && (game.h === ui || game.a === ui)}
               label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} • Week ${game.wk ?? nextWk}`}
               kickoff={game.date ? kickoff(game) : "Kickoff TBD"}
+              weather={forecast}
               venue={sp === "playoffs" && pb?.rd === 4 ? `Super Bowl • ${sbSite(yr) ? `${sbSite(yr).stadium}, ${sbSite(yr).city}` : "neutral site"}` : [game.venue || home.city, game.intl && game.city].filter(Boolean).join(", ")}
             /></HolidayCard>
           ) : null}

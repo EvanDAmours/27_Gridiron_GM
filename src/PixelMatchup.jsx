@@ -45,7 +45,7 @@ function TeamSummary({ team, rating, other }) {
 // Ratings, records, players, venue and kickoff are passed from the live game.
 // Uniform overrides are optional for alternate jerseys or neutral-site games.
 export default function PixelMatchup({ away, home, awayPlayer, homePlayer, awayRating,
-  homeRating, label, kickoff, venue, awayUniform = 'away', homeUniform = 'home', compact = false, prime = null, rivalry = false }) {
+  homeRating, label, kickoff, venue, weather = null, awayUniform = 'away', homeUniform = 'home', compact = false, prime = null, rivalry = false }) {
   if (!away || !home) return null;
   // big games dress up: a night game under the lights, a rivalry in both clubs' colors
   const cls = `pxm-card keep-dark${compact ? ' pxm-compact' : ''}${prime ? ' pxm-prime' : ''}${rivalry ? ' pxm-rival' : ''}`;
@@ -62,7 +62,8 @@ export default function PixelMatchup({ away, home, awayPlayer, homePlayer, awayR
           h(TeamLogo, { t: away, sz: 96, glow: true }), h('b', null, 'AT'), h(TeamLogo, { t: home, sz: 96, glow: true })),
         h(PixelPlayer, { player: homePlayer, team: home, uniform: homeUniform }))),
     h('div', { className: 'pxm-kickoff' },
-      kickoff && h('strong', null, kickoff), venue && h('span', null, venue)),
+      kickoff && h('strong', null, kickoff), venue && h('span', null, venue),
+        weather && h('span', { className: `pxm-wx pxm-wx--${weather.kind}` }, h('b', null, `${weather.icon} ${weather.label}`), weather.note ? ` · ${weather.note}` : '')),
     h('div', { className: 'pxm-teams' },
       h(TeamSummary, { team: away, rating: awayRating, other: homeRating }),
       h(TeamSummary, { team: home, rating: homeRating, other: awayRating })));
