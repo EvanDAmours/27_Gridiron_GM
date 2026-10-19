@@ -9,6 +9,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import { mockDraft } from "./mockDraft.js";
 import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo } from "./ui.jsx";
 import { Jersey, rookieNum } from "./Jersey.jsx";
+import RoleTag from "./RoleTag.jsx";
+import { ROLE_FILTERS, roleFilterMatch } from "./roleNeeds.js";
 import {
   prospectRead, scoutProspect, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, scoutsShortlist, coverage, csRank, riskLabel, gradeTone,
   SCOUT_GROUPS, SCOUT_ROLES, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
@@ -149,10 +151,10 @@ function ProspectRow({ g, p, onDraft, canDraft, myRank }) {
         <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} title={listed ? "Remove from your list" : "Add to your list"} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ background: "transparent", border: 0, cursor: "pointer", color: listed ? "#f5c542" : "#475569", fontSize: 20, padding: 0, lineHeight: 1 }}>{listed ? "★" : "☆"}</button>
       </td>
       <td style={{ ...td, minWidth: 0 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.name} <span className="sc-show"><Bdg pos={posTag(p)} /></span>{read.flag && <span title={read.flagWhy || "Your scouts red-flagged him: high bust risk."} style={{ fontSize: 11, fontWeight: 800, color: "#fee2e2", background: "#991b1b", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>🚩 red flag</span>}{read.sleeper ? <span title={`${read.who} have seen through the board: he's a sleeper, much better than where he's ranked.`} style={{ fontSize: 11, fontWeight: 800, color: "#fdf2f8", background: "#be185d", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>💎 sleeper</span> : read.hunch && <span title={`${read.who} has a hunch there's more to him than the board says. A report will tell.`} style={{ fontSize: 11, fontWeight: 800, color: "#f9a8d4", background: "#831843", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>👀 hunch</span>}{read.devEarly && ["generational", "superstar"].includes(read.dev) && <span title={`${read.who} already see a ${read.dev} development trait.`} style={{ fontSize: 11, fontWeight: 800, color: read.dev === "generational" ? "#f472b6" : "#f5c542", border: `1px solid currentColor`, borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>{read.dev === "generational" ? "Generational" : "Superstar"}</span>}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.name} <span className="sc-show"><Bdg pos={posTag(p)} /><RoleTag p={p} /></span>{read.flag && <span title={read.flagWhy || "Your scouts red-flagged him: high bust risk."} style={{ fontSize: 11, fontWeight: 800, color: "#fee2e2", background: "#991b1b", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>🚩 red flag</span>}{read.sleeper ? <span title={`${read.who} have seen through the board: he's a sleeper, much better than where he's ranked.`} style={{ fontSize: 11, fontWeight: 800, color: "#fdf2f8", background: "#be185d", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>💎 sleeper</span> : read.hunch && <span title={`${read.who} has a hunch there's more to him than the board says. A report will tell.`} style={{ fontSize: 11, fontWeight: 800, color: "#f9a8d4", background: "#831843", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>👀 hunch</span>}{read.devEarly && ["generational", "superstar"].includes(read.dev) && <span title={`${read.who} already see a ${read.dev} development trait.`} style={{ fontSize: 11, fontWeight: 800, color: read.dev === "generational" ? "#f472b6" : "#f5c542", border: `1px solid currentColor`, borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>{read.dev === "generational" ? "Generational" : "Superstar"}</span>}</div>
         <div className="sc-sub" style={{ fontSize: 13, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260 }}>{p.bio?.college} ({regionName(regionOf(p))}) · {p.age} yrs · {htS(p.ht_)} {p.wt}</div>
       </td>
-      <td className="sc-hide" style={{ ...td, textAlign: "center" }}><Bdg pos={posTag(p)} /></td>
+      <td className="sc-hide" style={{ ...td, textAlign: "center" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /></td>
       <td style={{ ...td, textAlign: "center" }}><Val txt={read.ovr} /></td>
       <td style={{ ...td, textAlign: "center" }}><Val txt={read.pot} title={read.tier ? `Projects as: ${read.tier}` : undefined} /></td>
       <td className="sc-hide" style={{ ...td, textAlign: "center", fontSize: 13, color: stc, whiteSpace: "nowrap" }}>{st}</td>
@@ -181,7 +183,7 @@ function ProspectCard({ g, p, onDraft, canDraft, myRank }) {
       <span style={{ width: 26, textAlign: "center", fontWeight: 900, fontSize: 14, color: myRank ? "#fcd34d" : "#94a3b8" }}>{myRank || csRank(p)}</span>
       <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ width: 30, minHeight: 36, background: "transparent", border: 0, fontSize: 18, color: listed ? C.gd : "#64748b", cursor: "pointer", padding: 0 }}>{listed ? "★" : "☆"}</button>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 15 }}><Bdg pos={posTag(p)} /><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>{read.flag && <span title={read.flagWhy || "Red flag"} style={{ fontSize: 12 }}>🚩</span>}</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 15 }}><Bdg pos={posTag(p)} /><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><RoleTag p={p} />{read.flag && <span title={read.flagWhy || "Red flag"} style={{ fontSize: 12 }}>🚩</span>}</span>
         <span style={{ display: "block", fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.bio?.college}{read.lvl > 0 ? <> · <span style={{ color: stc }}>{st}</span></> : ""}</span>
       </span>
       <span style={{ textAlign: "center", minWidth: 28, lineHeight: 1.1 }}><Val txt={read.ovr} /><span style={{ display: "block", fontSize: 9, color: C.mt }}>OVR</span></span>
@@ -209,7 +211,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
   const ranks = useMemo(() => (mine ? myBoard(g.scouting, all) : null), [mine, g.scouting, all]);
   const ids = listIds(g.scouting, cy);
   const list = all
-    .filter((p) => pos === "ALL" || p.pos === pos)
+    .filter((p) => pos === "ALL" || p.pos === pos || (pos.startsWith("R:") && roleFilterMatch(p, pos)))
     .filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()) || (p.bio?.college || "").toLowerCase().includes(q.toLowerCase()))
     .filter((p) => {
       if (show === "all") return true;
@@ -241,6 +243,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
         )}
         <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(page); }} aria-label="Position" style={MOBILE ? { ...sel, flex: "1 1 0", minWidth: 0 } : sel}>
           {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? (MOBILE ? "All pos." : "All positions") : x}</option>)}
+          {ROLE_FILTERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </Select>
         <Select value={show} onChange={(e) => { setShow(e.target.value); setN(page); }} aria-label="Show" style={MOBILE ? { ...sel, flex: "1 1 0", minWidth: 0 } : sel}>
           <option value="all">{MOBILE ? "All" : "Everyone"}</option>

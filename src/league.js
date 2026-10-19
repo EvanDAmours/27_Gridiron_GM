@@ -16,6 +16,7 @@ import { makeSide, createGame, playGame, setLeague, teamPersonnel, setPkgOff } f
 import { unitRatings, defUnits } from "./gamesim.js";
 import { DATA_TO_DOLLARS, leagueCap, expiringNow } from "./cap.js";
 import { teamSnaps } from "./snaps.js";
+import { roleNeeds, roleFit } from "./roleNeeds.js";
 import { REAL_STAFF, HC_RATING, HC_TRAIT, COORD } from "./data/realCoaches.js";
 import { HC_TRAIT_NAMES, hcGameEdge } from "./headCoach.js";
 import { nflSchedule, divisionPlaces } from "./schedule.js";
@@ -257,6 +258,8 @@ const groupOf=(p)=>(p.pos==="DL"?naturalDL(p):p.pos);
 export const draftNeeds=(roster)=>teamNeeds(roster).score;
 export function aiBestPick(roster,available,gmStyle){
   const need=draftNeeds(roster),needW=gmStyle==='rebuilder'?0.05:gmStyle==='win-now'?0.09:0.07;
+  // roles too: a club whose nickel or slot receiver is a hole looks harder at the ones built for it
+  const rNeed=roleNeeds(roster);
   let best=null,bs=-Infinity;
   for(const p of available){
     const g=groupOf(p),n=need[g]??0;
@@ -264,7 +267,7 @@ export function aiBestPick(roster,available,gmStyle){
     // a running back only goes early if he's elite or the team has nothing at the position
     if(g==="RB"&&((p.truePot||0)>=90||n>=0.75))val=1;
     if(g==="QB"&&n<=0.1)val=0.94; // set at quarterback: only a rare one is worth it
-    const sc=aiDraftScore(p,gmStyle)*val*(1+needW*n);
+    const sc=aiDraftScore(p,gmStyle)*val*(1+needW*n+0.05*roleFit(p,rNeed));
     if(sc>bs){bs=sc;best=p;}
   }
   return best||available[0];

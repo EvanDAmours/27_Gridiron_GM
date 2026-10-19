@@ -11,6 +11,9 @@ const askingPrice = (p) => yearlyAsk(p, Math.min(2, maxYears(p)), "fa");
 import Negotiate from "./Negotiate.jsx";
 import { posTag } from "./dline.js";
 import { devOf, DEV_TRAITS } from "./scouting.js";
+import RoleTag from "./RoleTag.jsx";
+import { ROLE_FILTERS, roleFilterMatch } from "./roleNeeds.js";
+
 
 // his development trait as a small tag (normal shows nothing)
 const DEV_C = { generational: "#f472b6", superstar: "#f5c542", star: "#60a5fa", late: "#34d399" };
@@ -32,7 +35,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
   const cap = capSpace(team);
   const key = { ovr: (p) => p.ovr, age: (p) => p.age, ask: (p) => askingPrice(p), pos: (p) => POS.indexOf(posTag(p)), name: (p) => p.name };
   const rows = fa
-    .filter((p) => pos === "ALL" || posTag(p) === pos)
+    .filter((p) => pos === "ALL" || posTag(p) === pos || (pos.startsWith("R:") && roleFilterMatch(p, pos)))
     .filter((p) => !needOnly || fillsNeed(needs, p))
     .filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => { const x = key[sort[0]](a), y = key[sort[0]](b); return (typeof x === "string" ? x.localeCompare(y) : x - y) * sort[1]; });
@@ -72,6 +75,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
         ) : <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
           <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(50); }} aria-label="Position" style={sel}>
             {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? "All positions" : x}</option>)}
+            {ROLE_FILTERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </Select>
           <button onClick={() => setNeedOnly((v) => !v)} style={{ ...sel, cursor: "pointer", background: needOnly ? `${C.bl}33` : C.bg, borderColor: needOnly ? C.bl : C.bd, fontWeight: 700 }}>Your needs: {needs.slice(0, 4).join(", ") || "none"}</button>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search free agents" style={{ ...sel, flex: "1 1 160px" }} />
@@ -87,7 +91,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
                     <Face s={p.face} sz={34} />
                     <span style={{ minWidth: 0 }}>
                       <span style={{ display: "block", fontWeight: 800, fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}<DevTag p={p} /></span>
-                      <span style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><span>Age {p.age}</span><span style={{ color: ask <= cap ? "#e2e8f0" : C.rd, fontWeight: 700 }}>{money(ask)}/yr</span>{from && <span style={{ color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `ex-${from.ab}`}</span>}</span>
+                      <span style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span>Age {p.age}</span><span style={{ color: ask <= cap ? "#e2e8f0" : C.rd, fontWeight: 700 }}>{money(ask)}/yr</span>{from && <span style={{ color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `ex-${from.ab}`}</span>}</span>
                     </span>
                   </span>
                   <span style={{ fontSize: 22, fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
@@ -117,7 +121,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
                         </span>
                       </span>
                     </td>
-                    <td style={td}><Bdg pos={posTag(p)} /></td>
+                    <td style={td}><Bdg pos={posTag(p)} /><RoleTag p={p} /></td>
                     <td style={{ ...td, color: "#cbd5e1" }}>{p.age}</td>
                     <td style={{ ...td, fontWeight: 900, fontSize: 18, color: oC(p.ovr) }}>{p.ovr}</td>
                     <td className="fa-hide" style={{ ...td, color: oC(p.pot || p.ovr) }}>{p.pot || p.ovr}</td>

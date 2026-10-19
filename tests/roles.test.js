@@ -97,3 +97,16 @@ test("units by package: base is stouter against the run, nickel better in covera
   const off = (pos) => [...P("QB", 1, 80), ...P("RB", 2, 80), ...P("WR", 3, 80), ...P("TE", 2, 80, { posAttrs: { blocking: 80, receiving: 60, passBlock: 70 } }), ...P("LT", 1, 80), ...P("LG", 1, 80), ...P("C", 1, 80), ...P("RG", 1, 80), ...P("RT", 1, 80)].filter((p) => p.pos === pos);
   assert.ok(offUnits(off, "12").run > offUnits(off, "11").run, "an extra tight end blocks for the run game");
 });
+
+test("role needs: a hole at nickel shows up as a need, weighted by how much the role plays; the filter finds the role", async () => {
+  const { roleNeeds, roleFit, roleFilterMatch } = await import("../src/roleNeeds.js");
+  const { snapShape, OFF_SETS } = await import("../src/personnel.js");
+  const cb = (id, ovr, extra = {}) => ({ id, name: id, pos: "CB", ovr, ...extra });
+  const roster = [cb("c1", 88), cb("c2", 86), cb("c3", 58)];
+  const n = roleNeeds(roster);
+  assert.ok(n.NB > 0.5 && n.OUT < 0.1, JSON.stringify(n));
+  const base = snapShape(OFF_SETS.find((s) => s.key === "balanced").mix, 0.22);
+  assert.ok(roleNeeds(roster, base).NB < n.NB, "a base-heavy defense plays its nickel less, so needs him less");
+  assert.ok(roleFilterMatch({ pos: "LB", mpos: "SAM", ovr: 70, posAttrs: {} }, "R:SAM") && !roleFilterMatch({ pos: "LB", mpos: "MIKE", ovr: 70, posAttrs: {} }, "R:SAM"));
+  assert.ok(roleFit({ pos: "LB", mpos: "SAM", ovr: 70 }, { SAM: 0.6 }) === 0.6);
+});

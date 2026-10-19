@@ -109,6 +109,10 @@ import Walkthrough, { TourOffer, tourSteps } from "./Walkthrough.jsx";
 import GameRecap, { vivid, ScoreBug, WinProbChart, DriveChart, KeyPlays, TopPerformers, BoxScore } from "./GameRecap.jsx";
 import { CardHeader, RatingBars, CareerOvrGraph, SeasonTable, ContractTimeline, seasonLine } from "./PlayerCard.jsx";
 import Personnel from "./Personnel.jsx";
+import { roleNeedsRef } from "./RoleTag.jsx";
+import { roleNeeds } from "./roleNeeds.js";
+const _rnMemo={k:null,v:null};
+const roleNeedsFor=(t,shape)=>{if(_rnMemo.k&&_rnMemo.k[0]===t.roster&&_rnMemo.k[1]===shape)return _rnMemo.v;const v=roleNeeds(t.roster,shape||undefined);_rnMemo.k=[t.roster,shape];_rnMemo.v=v;return v;};
 import { scoutReport } from "./scoutReport.js";
 // the week's scouting report on your next opponent (scoutReport.js), recomputed only when either
 // club, your depth chart or your snap settings change
@@ -1268,6 +1272,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
   const changeScheme=(role,sc)=>{if(scPts<2||!teams[ui]?.coach?.[role])return;setTeams(t=>t.map((tm,i)=>i!==ui?tm:{...tm,coach:{...tm.coach,[role]:{...tm.coach[role],scheme:sc}},_schemeTransWks:2}));setScPts(p=>p-2);setLog(l=>[`📋 ${role.toUpperCase()} scheme → ${sc} (−2SP, 2-game install)`,...l.slice(0,149)]);sm(`Installing the ${sc}: two games to get it down`);};
   // your snap-share shape from your personnel (a two-TE identity plays its TE2 more, its WR3 less)
   const userShape=ut?personnelShape(ut,depthOrder,playingTime):null;
+  // your role needs (roleNeeds.js) for the role tags in the draft and free agency
+  roleNeedsRef.cur=ut?roleNeedsFor(ut,userShape):null;
   const gamePlanEl=ut?<GamePlan team={ut} sp={scPts} fit={(t,r)=>r==="oc"?getOCFit(t):getDCFit(t)} schemes={{oc:OC_SCHEMES,dc:DC_SCHEMES}} onScheme={changeScheme} playbook={playbook} setPlaybook={setPlaybook} plays={PLAYS_POOL} coachSpec={coachSpec} onSpecialize={specializeCoach} compact={MOBILE} strip personnel={<Personnel team={ut} depthOrder={depthOrder} snaps={playingTime} compact={MOBILE} onSet={(f,k)=>setTeams(ts=>ts.map((t,i)=>i===ui?{...t,[f]:k}:t))}/>}/>:null;
   // Your pick when the clock runs out or the draft is simmed: your own list first, otherwise the
   // best fit for your roster's needs (not five quarterbacks in a row).

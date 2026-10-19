@@ -1256,4 +1256,9 @@ export const PATCH_NOTES = [
     "A scouting report on every opponent, right in the week's game plan card: how he lines up on offense (his personnel identity and how often he plays 11, 12, 21...), how often his defense plays base, nickel and dime, and the matchups to go after or worry about: a weak nickel back against your slot receiver, a linebacker who'll be covering your tight end, the corner across from your second receiver, a star you have to stop.",
     "It also runs every one of your personnel identities against the defense he actually fields, and every defensive lean against his offense, and names the best of each (with how big the edge is, so it doesn't tell you to change things for nothing). One tap switches you to it; the closed card shows the report's top finding in one line.",
   ] },
+  { v: "3.23", date: "2026-10-20", title: "Built for the Role", notes: [
+    "Draft prospects and free agents at linebacker, corner and receiver now show their natural role (SAM, MIKE, WILL, OUTSIDE, NICKEL, X, Z, SLOT). The tag turns green with NEED when it's a role your lineup is thin at, weighted by how much your personnel plays it: a two-tight-end team barely needs a slot receiver, a base-heavy defense really needs its SAM.",
+    "The position filter on the big board and in free agency has role options too (LB · SAM, CB · Nickel, WR · Slot...).",
+    "AI clubs draft for roles as well: a club whose nickel or slot receiver is a hole looks harder at the prospects built for it.",
+  ] },
 ];
