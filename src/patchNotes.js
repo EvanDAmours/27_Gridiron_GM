@@ -1436,4 +1436,9 @@ export const PATCH_NOTES = [
   { v: "3.62", date: "2026-10-20", title: "Holiday Ribbons", notes: [
     "The holiday trim on the home screen's gameday card now sits on the card's corners at any screen size. On wide screens the New Year's ribbons used to float above the card, up by the week title; now each bow ties onto a corner with its ribbons hanging over the card. The Christmas garland, Halloween webs and Thanksgiving harvest sit on the corners the same way.",
   ] },
+  { v: "3.63", date: "2026-10-20", title: "Snow Season", notes: [
+    "Fixed a weather bug: almost every rainy or snowy game came out as heavy rain or heavy snow, and light rain and light snow almost never happened. Now about two in three wet games are light (drizzle, flurries) and one in three is heavy, as intended.",
+    "More snow, and at the right time of year. Snow is rare before Thanksgiving, more common in December and January, and most common in the playoffs. Green Bay and Buffalo get the most: Lambeau now sees about two snow games a season, and about half of its playoff games are played in snow. Chicago, Cleveland, Denver, New England and Pittsburgh come next.",
+    "Rain is unchanged in how often it falls (Seattle still the wettest), but it is now mostly light rain, with a downpour now and then.",
+  ] },
 ];

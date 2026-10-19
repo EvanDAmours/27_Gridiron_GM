@@ -8,7 +8,7 @@
 
 export const ROOF = new Set(["ARI", "ATL", "DAL", "DET", "HOU", "IND", "LV", "LAR", "LAC", "MIN", "NO"]);
 // late-season snow chance in each open-air city, and its rain chance in any week
-const SNOW = { BUF: 0.3, GB: 0.28, CHI: 0.2, CLE: 0.2, DEN: 0.2, NE: 0.18, PIT: 0.16, KC: 0.12, NYG: 0.12, NYJ: 0.12, CIN: 0.12, PHI: 0.1, BAL: 0.08, WAS: 0.06, SEA: 0.04, TEN: 0.04, CAR: 0.02 };
+const SNOW = { GB: 0.36, BUF: 0.36, CHI: 0.26, CLE: 0.25, DEN: 0.24, NE: 0.23, PIT: 0.2, KC: 0.14, NYG: 0.14, NYJ: 0.14, CIN: 0.15, PHI: 0.12, BAL: 0.09, WAS: 0.07, SEA: 0.04, TEN: 0.04, CAR: 0.02 };
 const RAIN = { SEA: 0.28, MIA: 0.15, TB: 0.15, JAX: 0.14, PIT: 0.13, NE: 0.12, PHI: 0.12, NYG: 0.12, NYJ: 0.12, CLE: 0.12, BAL: 0.12, WAS: 0.12, CAR: 0.12, CIN: 0.12, TEN: 0.12, BUF: 0.11, CHI: 0.11, KC: 0.1, SF: 0.1, GB: 0.08, DEN: 0.05 };
 const HEAVY = 0.35, WIND = 0.05;
 
@@ -26,13 +26,16 @@ export const WX = {
 export const wxOf = (key) => WX[key] || WX.clear;
 export const isWet = (key) => !!(WX[key]?.rain || WX[key]?.snow);
 
-const hash = (s) => { let h = 2166136261; for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
+// FNV-1a with a final mix: keys that differ only at the end (the weather roll and the heavy roll)
+// must give unrelated numbers, or every wet game comes out heavy
+const hash = (s) => { let h = 2166136261; for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); h = Math.imul(h ^ (h >>> 16), 0x85ebca6b); h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
 
-// How far into snow season a week is: none before November, a little early November, full from
-// mid-November and in the playoffs (weeks after 18, or "P1"-style playoff weeks).
+// How far into snow season a week is: none before November, a little in early November, more by
+// Thanksgiving, the most in December and January, and the playoffs most of all (weeks after 18,
+// or "P1"-style playoff weeks).
 export function snowSeason(wk) {
   const w = typeof wk === "number" ? wk : 19;
-  return w >= 11 ? (w > 18 ? 1.2 : 1) : w >= 9 ? 0.3 : 0;
+  return w > 18 ? 1.5 : w >= 14 ? 1.25 : w >= 11 ? 0.7 : w >= 9 ? 0.3 : 0;
 }
 
 // The weather for one game (fixed for that game, so the preview and the game agree).
