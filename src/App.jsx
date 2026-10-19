@@ -70,7 +70,7 @@ import { makeSide, createGame, step as playStep, playGame } from "./playsim.js";
 import PlayoffBracket from "./PlayoffBracket.jsx";
 import { makeBracket, nextRound, ROUND_NAMES, nflSeeds, draftOrder } from "./playoffs.js";
 import { reprojectPicks, inDraftOrder } from "./draftProjection.js";
-import { needGroup, fillsNeed, NEED_STARTERS } from "./needs.js";
+import { needGroup, fillsNeed, NEED_STARTERS, teamNeeds } from "./needs.js";
 import GamePlanCard from "./GamePlanCard.jsx";
 import { startersHurt, replacementOptions, chooseStarter } from "./injuryCall.js";
 import { bestPlan } from "./gamePlan.js";
@@ -100,7 +100,7 @@ import { clinchStatus, newClinches } from "./clinch.js";
 import { seasonPreview, primeSlot } from "./seasonPreview.js";
 import { milestoneWatch } from "./milestoneWatch.js";
 import { applyTheme, getTheme } from "./theme.js";
-import { tradeDownOffers, acceptOffer, applyFutures, pickLabel, tradeUpOffers, quoteTradeUp, acceptTradeUp, futurePickList, moveFuture } from "./draftTrade.js";
+import { fallerCall, tradeDownOffers, acceptOffer, applyFutures, pickLabel, tradeUpOffers, quoteTradeUp, acceptTradeUp, futurePickList, moveFuture } from "./draftTrade.js";
 import { DraftTickerBar, PickIsIn, OnTheClock, TradeUpPanel, ForPickPanel, IncomingCall } from "./DraftDay.jsx";
 import { InjTag } from "./InjuryTag.jsx";
 import { summarize } from "./gameday.js";
@@ -1796,16 +1796,16 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
             {!draftClockActive&&<Btn onClick={()=>{setDraftClock(90);setDraftClockActive(true);}} bg="#1e3a5f" c="#7dd3fc" style={{fontSize:12,padding:'4px 10px'}}>⏱ Clock</Btn>}
           </div>
           {/* Draft-day calls: clubs behind you offering to move up (you can only trade down) */}
-          {(()=>{const _tgt=tm=>{const b=[...(dc[yr]||[])].sort((a,b)=>csRank(a)-csRank(b));return b[(tm*7+draftIdx)%Math.min(4,b.length||1)]||null;};const _bump={};Object.entries(tdCalls).forEach(([k,v])=>{if(v.bump)_bump[v.team]=v.bump;});const offers=tradeDownOffers({picks:draftPicks,futures:futurePicks,idx:draftIdx,ui,yr,teams,target:_tgt,bump:_bump}).filter(o=>!tdCalls[o.id]?.gone);
+          {(()=>{const _tgt=tm=>{const b=[...(dc[yr]||[])].sort((a,b)=>csRank(a)-csRank(b));return b[(tm*7+draftIdx)%Math.min(4,b.length||1)]||null;};const _bump={};Object.entries(tdCalls).forEach(([k,v])=>{if(v.bump)_bump[v.team]=v.bump;});/* a star sliding past where the board had him: the club behind you that needs him calls first, and pays more */const _fc=curPick?.owner===ui?fallerCall({picks:draftPicks,futures:futurePicks,idx:draftIdx,ui,yr,teams,board:dc[yr]||[],bump:_bump,needOf:(tm,p)=>teamNeeds(teams[tm]?.roster||[]).score[needGroup(p)]||0}):null;const offers=[...(_fc&&!tdCalls[_fc.id]?.gone?[_fc]:[]),...tradeDownOffers({picks:draftPicks,futures:futurePicks,idx:draftIdx,ui,yr,teams,target:_tgt,bump:_bump}).filter(o=>!tdCalls[o.id]?.gone&&o.team!==_fc?.team)];
             const accept=o=>{const r=acceptOffer(draftPicks,futurePicks,o,ui);setDraftPicks(r.picks);setFuturePicks(r.futures);setDraftTimer(120);const got=[pickLabel(o.theirPick,yr),...o.extras.map(a=>pickLabel(a,yr))].join(', ');setLog(l=>[`🔁 DRAFT-DAY TRADE: ${TEAMS[ui].ab} trade #${curPick.overall} to ${TEAMS[o.team].ab} for ${got}`,...l.slice(0,149)]);sm(`Traded down: ${got}`);};
             const askMore=o=>{const k=o.id;const tries=(tdCalls[k]?.tries||0)+1;const yes=((draftIdx*31+o.team*17+tries*7)%10)<5;setTdCalls(c=>({...c,[k]:yes?{team:o.team,bump:(c[k]?.bump||0)+0.12,tries}:{team:o.team,gone:true,tries}}));sm(yes?`${TEAMS[o.team].name} sweeten the offer`:`${TEAMS[o.team].name} hang up — they'll look elsewhere`);};
-            const _call=offers.filter(o=>!callSeen[o.id]).sort((a,b)=>b.pct-a.pct)[0];
+            const _call=offers.filter(o=>!callSeen[o.id]).sort((a,b)=>(b.faller?1:0)-(a.faller?1:0)||b.pct-a.pct)[0];
             return<div style={{marginTop:offers.length?8:0}}>
               {_call&&!draftReveal&&<IncomingCall offer={_call} team={teams[_call.team]} curPick={curPick} yr={yr} onAccept={()=>{setCallSeen(m=>({...m,[_call.id]:true}));accept(_call);}} onMore={()=>{setCallSeen(m=>({...m,[_call.id]:true}));askMore(_call);}} onDecline={()=>setCallSeen(m=>({...m,[_call.id]:true}))}/>}
               {offers.length>0&&<button onClick={()=>setTdOpen(o=>!o)} style={{width:MOBILE?'100%':'auto',gap:16,display:'flex',alignItems:'center',justifyContent:'space-between',background:'#1e1b4b',border:'1px solid #7c3aed66',borderRadius:8,color:'#c4b5fd',fontSize:14,fontWeight:800,padding:'8px 12px',marginBottom:tdOpen?8:0,cursor:'pointer'}}><span>📞 {offers.length} trade offer{offers.length>1?'s':''}: clubs want to move up</span><span>{tdOpen?'▲':'▼'}</span></button>}
               {tdOpen&&offers.length>0&&<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:8}}>
               {offers.map(o=>{const t=teams[o.team];return<div key={o.id} style={{background:'#0d1020',border:`1px solid ${o.pct>=5?C.gn:'#7c3aed66'}`,borderRadius:10,padding:'10px 12px'}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}><TeamLogo t={t} sz={28}/><div style={{flex:1,minWidth:0}}><div style={{fontWeight:800,fontSize:15}}>{t.city} {t.name}</div><div style={{fontSize:12,color:C.mt}}>Move up {o.theirPick.overall-curPick.overall} spots{o.target?` · eyeing ${o.target.name} (${o.target.pos})`:''}</div></div></div>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}><TeamLogo t={t} sz={28}/><div style={{flex:1,minWidth:0}}><div style={{fontWeight:800,fontSize:15}}>{t.city} {t.name}</div><div style={{fontSize:12,color:C.mt}}>Move up {o.theirPick.overall-curPick.overall} spots{o.target?` · eyeing ${o.target.name} (${o.target.pos})`:''}{o.faller&&<b style={{color:'#fca5a5'}}> · he's sliding</b>}</div></div></div>
                 <div style={{fontSize:13,color:C.mt,marginTop:4}}>You get</div>
                 <div style={{display:'flex',flexWrap:'wrap',gap:4,margin:'2px 0 6px'}}>{[o.theirPick,...o.extras].map((a,i)=><span key={i} style={{fontSize:13,fontWeight:800,padding:'3px 8px',borderRadius:6,background:i?'#1e293b':'#14532d',color:i?'#e2e8f0':'#86efac'}}>{pickLabel(a,yr)}</span>)}</div>
                 <div style={{fontSize:12,color:o.pct>=0?C.gn:C.gd,marginBottom:6}}>Chart value {o.get} for your {o.give} ({o.pct>=0?'+':''}{o.pct}%)</div>

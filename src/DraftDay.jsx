@@ -203,9 +203,9 @@ export function IncomingCall({ offer, team, curPick, yr, onAccept, onMore, onDec
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px 10px" }}>
         <div style={{ borderRadius: "50%", padding: 6, background: "#0b1120", animation: "callRing 1.4s infinite" }}><TeamLogo t={team} sz={46} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#c4b5fd" }}><span style={{ display: "inline-block", animation: "callShake 1.2s infinite" }}>📞</span> INCOMING CALL</div>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#c4b5fd" }}><span style={{ display: "inline-block", animation: "callShake 1.2s infinite" }}>📞</span> {offer.faller ? <span style={{ color: "#fca5a5" }}>URGENT CALL · HE'S SLIDING</span> : "INCOMING CALL"}</div>
           <div style={{ fontSize: 17, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{team.city} {team.name}</div>
-          <div style={{ fontSize: 12.5, color: "#cbd5e1" }}>"We'd like to move up to #{curPick.overall}{offer.target ? ` for ${offer.target.name}` : ""}."</div>
+          <div style={{ fontSize: 12.5, color: "#cbd5e1" }}>{offer.faller ? `"${offer.target.name} (${offer.target.pos}) was a top-${Math.max(5, Math.ceil(curPick.overall - offer.fell))} player on every board and he's still there. We'll overpay to jump you at #${curPick.overall}."` : `"We'd like to move up to #${curPick.overall}${offer.target ? ` for ${offer.target.name}` : ""}."`}</div>
         </div>
       </div>
       <div style={{ padding: "0 16px 12px" }}>

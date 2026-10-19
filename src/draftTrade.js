@@ -72,6 +72,51 @@ export function tradeDownOffers({ picks, futures = [], idx, ui, yr, teams, targe
   return offers.sort((a, b) => a.theirPick.overall - b.theirPick.overall);
 }
 
+// A faller: the best prospect left is someone the board had well above your pick (6+ spots). The
+// club behind you that needs his position most calls to jump you for him, and pays extra for it
+// (more the farther he's fallen). board: the prospects still on the board; needOf(team, p): how
+// badly that club needs his position (0..1). Returns one offer (faller: true) or null.
+export function fallerCall({ picks, futures = [], idx, ui, yr, teams, board = [], needOf = () => 0, bump = {} }) {
+  const cur = picks[idx];
+  if (!cur || cur.owner !== ui || !cur.overall) return null;
+  const rank = (p) => p.cons?.final ?? p.cons?.now ?? p.cons?.mid ?? 999;
+  const p = [...board].filter((x) => x.pos !== "K" && x.pos !== "P").sort((a, b) => rank(a) - rank(b))[0];
+  const fell = p ? cur.overall - rank(p) : 0;
+  if (!p || fell < 6) return null;
+  const window = cur.rd === 1 ? 14 : 20;
+  const seen = new Set();
+  let best = null;
+  for (const pk of picks.slice(idx + 1, idx + 1 + window)) {
+    if (pk.owner === ui || seen.has(pk.owner) || pk.yr !== yr) continue;
+    seen.add(pk.owner);
+    const n = needOf(pk.owner, p);
+    if (n >= 0.3 && (!best || n > best.n)) best = { pk, n };
+  }
+  if (!best) return null;
+  const rand = seeded(`${cur.id}|faller|${p.id}`);
+  const theirPick = best.pk, team = theirPick.owner;
+  const mine = chartValue(cur.overall);
+  // priced on your whole pick, not just the gap: they'll pay 15-35% over the chart to get him
+  const premium = 1.15 + rand() * 0.1 + Math.min(0.1, fell * 0.008) + (bump[best.pk.owner] || 0);
+  const need = mine * premium - chartValue(theirPick.overall);
+  const pool = assets(team, picks, futures, idx, theirPick, yr).map((a) => ({ a, v: pickChartValue(a, yr) })).sort((x, y) => y.v - x.v);
+  const extras = [];
+  let got = 0;
+  while (got < need * 0.97 && extras.length < 3 && pool.length) {
+    const left = need - got;
+    const fit = pool.filter((x) => x.v <= left * 1.35);
+    const pickOne = (fit.length ? fit : pool.slice(-1))[0];
+    if (!fit.length && pickOne.v > left * 2.5) break;
+    extras.push(pickOne.a);
+    got += pickOne.v;
+    pool.splice(pool.indexOf(pickOne), 1);
+  }
+  if (got < need * 0.85) return null;
+  const value = chartValue(theirPick.overall) + got;
+  const t = teams[team];
+  return { id: `${cur.id}-${team}-faller`, mine: cur.id, team, theirPick, extras, give: mine, get: Math.round(value), pct: Math.round((value / mine - 1) * 100), target: p, faller: true, fell, from: `${t.city} ${t.name}` };
+}
+
 // Accept an offer: swap the picks and record the future picks you receive.
 // Returns { picks, futures }.
 export function acceptOffer(picks, futures, offer, ui) {
