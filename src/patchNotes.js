@@ -1366,4 +1366,7 @@ export const PATCH_NOTES = [
     "AI coordinators now grow the way yours do. Every game gives each AI coordinator the same experience yours get (3 for a win, 1 for a loss, +1 rating per 20 experience, up to 95). Before, only your staff ever improved and AI coaches stayed at their hiring rating.",
     "Each off-season, most AI clubs also put their coordinators through the development work you can buy for yours (+5, once a year), and now and then one takes on a specialty that fits his scheme (+3). A rival's staff now gets better over a dynasty instead of standing still while yours climbs to 95.",
   ] },
+  { v: "3.46", date: "2026-10-20", title: "No Free Playbook Bonus", notes: [
+    "Core plays are gone. Picking any three plays gave your team a flat +1 point a game that AI teams never got, and the plays did nothing else. Your game plan is now your schemes, personnel, situations and the weekly plan, with no free bonus.",
+  ] },
 ];

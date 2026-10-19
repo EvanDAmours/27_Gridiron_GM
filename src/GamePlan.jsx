@@ -1,5 +1,5 @@
-// Schemes and playbook: your coordinators' offensive and defensive schemes (with how well each
-// one fits the roster you have), the three core plays you lean on, and coaching specializations.
+// Schemes: your coordinators' offensive and defensive schemes (with how well each
+// one fits the roster you have), your personnel, and coaching specializations.
 // The same panel sits on the depth chart and on the coaching screen.
 import React from "react";
 import { C } from "./ui.jsx";
@@ -14,14 +14,13 @@ export const SCHEME_INFO = {
   "Cover 2": "Two deep safeties and zone underneath. Doesn't need a specific star.",
   "Zone Blitz": "Pressure from anywhere with zone behind it. Fits a linebacker rated 66+.",
 };
-const TYPE_C = { run: "#22c55e", pass: "#38bdf8", hybrid: "#a78bfa" };
 const SPECS = [{ role: "oc", lbl: "Offensive coordinator", specs: ["Run Game", "Play-Action", "Spread"], clr: "#22c55e" }, { role: "dc", lbl: "Defensive coordinator", specs: ["Blitz Pkg", "Zone Cov", "Press", "Run Stop"], clr: "#ef4444" }, { role: "st", lbl: "Special teams", specs: ["Kick Return", "Coverage", "Block FG"], clr: "#f59e0b" }];
 
 const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
 const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8 };
 
 // team: your team; fit(team, role): the fit bonus (0-2) for its current schemes; schemes: { oc: [...], dc: [...] }
-export default function GamePlan({ team, sp, fit, schemes, onScheme, playbook, setPlaybook, plays, coachSpec = {}, onSpecialize, compact, strip, personnel }) {
+export default function GamePlan({ team, sp, fit, schemes, onScheme, coachSpec = {}, onSpecialize, compact, strip, personnel }) {
   // strip: under the depth chart, a one-line summary; each part opens on its own when you want it
   const [open, setOpen] = React.useState(null);
   const coach = team.coach || {};
@@ -63,33 +62,14 @@ export default function GamePlan({ team, sp, fit, schemes, onScheme, playbook, s
         <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: C.gd }}>📋 GAME PLAN</span>
         <span style={{ fontSize: 13 }}>Offense <b>{coach.oc?.scheme || "—"}</b>{coach.oc && fit(team, "oc") > 0 && <span style={{ color: C.gn, fontWeight: 800 }}> +{fit(team, "oc")}</span>}</span>
         <span style={{ fontSize: 13 }}>Defense <b>{coach.dc?.scheme || "—"}</b>{coach.dc && fit(team, "dc") > 0 && <span style={{ color: C.gn, fontWeight: 800 }}> +{fit(team, "dc")}</span>}</span>
-        <span style={{ fontSize: 13, color: playbook.length < 3 ? C.gd : C.tx }}>Core plays <b>{playbook.length}/3</b></span>
         {personnel && <span style={{ fontSize: 13 }}>Personnel <b>{({ auto: "Auto", balanced: "Balanced", spread: "Spread", twoTE: "Two TE", fullback: "Fullback", heavy: "Heavy" })[team.personnel || "auto"]}</b> / <b>{({ auto: "Auto", match: "Match", base: "Base", nickel: "Nickel" })[team.defPkg || "auto"]}</b></span>}
-        <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>{personnel && tab("pers", "Personnel")}{tab("schemes", "Schemes")}{tab("plays", "Core plays")}{onSpecialize && tab("spec", "Coaching")}</span>
+        <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>{personnel && tab("pers", "Personnel")}{tab("schemes", "Schemes")}{onSpecialize && tab("spec", "Coaching")}</span>
       </div>}
       {personnel && show("pers") && personnel}
       {show("schemes") && trans > 0 && <div style={{ ...card, borderColor: "#f8717166", color: "#fca5a5", fontSize: 14, fontWeight: 700 }}>⚠️ A new scheme is still being installed: {trans} game{trans > 1 ? "s" : ""} to go.</div>}
       {show("schemes") && <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${compact ? 280 : 300}px,1fr))`, gap: 10 }}>
         <SchemeCard role="oc" title="OFFENSIVE SCHEME" />
         <SchemeCard role="dc" title="DEFENSIVE SCHEME" />
-      </div>}
-      {show("plays") && <div style={card}>
-        <div style={{ ...head, display: "flex" }}>CORE PLAYS <span style={{ marginLeft: "auto", color: C.mt, letterSpacing: 0 }}>{playbook.length}/3 picked</span></div>
-        <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 10 }}>Pick three plays to build the game plan around. They get a boost when the situation calls for them.</div>
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill,minmax(${compact ? 150 : 190}px,1fr))`, gap: 6 }}>
-          {plays.map((pl) => {
-            const on = playbook.some((x) => x.id === pl.id), full = !on && playbook.length >= 3;
-            return (
-              <button key={pl.id} onClick={() => !full && setPlaybook((pb) => (on ? pb.filter((x) => x.id !== pl.id) : [...pb, pl]))} title={full ? "Three plays already picked: remove one first" : pl.desc} style={{ textAlign: "left", background: on ? `${TYPE_C[pl.type]}1f` : C.bg, border: `1px solid ${on ? TYPE_C[pl.type] : C.bd}`, borderRadius: 8, padding: "8px 10px", color: C.tx, cursor: full ? "not-allowed" : "pointer", opacity: full ? 0.5 : 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 15, fontWeight: 800 }}>{on ? "✓ " : ""}{pl.name}</span>
-                  <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 900, color: TYPE_C[pl.type], textTransform: "uppercase" }}>{pl.type}</span>
-                </div>
-                <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{pl.desc}</div>
-              </button>
-            );
-          })}
-        </div>
       </div>}
       {onSpecialize && show("spec") && (
         <div style={card}>
