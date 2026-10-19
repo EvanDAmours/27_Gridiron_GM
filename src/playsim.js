@@ -6,6 +6,11 @@
 // depth chart): a better offense gains more yards, completes more passes and turns it over less;
 // a better defense gets more stops, sacks and takeaways. Players get the ball by depth chart,
 // snap share AND talent, so a star WR1 or RB1 sees a star's share of the touches.
+// Every snap the offense picks a personnel grouping from its identity (11, 12, 21...) and the
+// defense answers with a package (base, nickel, dime); the units on the field are rated for that
+// snap, players at the roles they're playing (SAM/MIKE/WILL, CB1/CB2/nickel, X/Z/slot), and each
+// throw is a matchup: the receiver against whoever has him (a corner, or a linebacker if the
+// defense stayed in base against three receivers).
 //
 // Tuned to the modern NFL (checked over whole simulated seasons with scripts/scoring.mjs):
 // ~22 points a team, ~63 offensive plays, ~11.5 drives, ~40% on third down, ~235 passing and
@@ -15,8 +20,11 @@
 // come down to the last drives (and the field goal at the end), and lopsided mismatches have
 // diminishing returns, so blowouts and 50-point games stay rare.
 import { retRating } from "./special.js";
-import { unitRatings } from "./gamesim.js";
+import { unitRatings, offUnits, defUnits, lbCover } from "./gamesim.js";
 import { dlAsPlayed } from "./dline.js";
+import { ROLE_SLOTS, rolesAsPlayed } from "./roles.js";
+import { PERS, PKGS, PERS_LEAN, offMix, defTilt, pickPers, pickPkg, pkgOdds, bestOffSet, snapShape } from "./personnel.js";
+import { roleOvr } from "./roles.js";
 import { getLeagueYear } from "./cap.js";
 import { hurtPen } from "./injuries.js";
 import { recPlay } from "./gameday.js";
@@ -39,6 +47,14 @@ export const POINTS_PER_EDGE = 2.5;
 const TALENT = 0.019;
 const TGT_RATE = { WR: [0.23, 0.21, 0.19, 0.18, 0.18], TE: [0.21, 0.17, 0.15], RB: [0.13, 0.12, 0.1] };
 const TK = { DL: [0.07, 0.07, 0.06, 0.06, 0.03, 0.02], LB: [0.14, 0.12, 0.08, 0.03], CB: [0.07, 0.06, 0.03], S: [0.09, 0.08, 0.02] };
+// By role on the field: how often each spot is thrown to, and how often each defender makes the tackle.
+const ROLE_TGT = { X: 0.21, Z: 0.2, SLOT: 0.2, WR4: 0.14, TE1: 0.19, TE2: 0.12, TE3: 0.06, FB: 0.05 };
+const ROLE_TK = { SAM: 0.11, MIKE: 0.14, WILL: 0.12, CB1: 0.07, CB2: 0.06, NB: 0.07, CB4: 0.03 };
+const WR_ROLES = ["X", "Z", "SLOT", "WR4"];
+// A receiver's matchup: how much his rating beats his cover man's moves completion odds and yards.
+// MM0 centers it on the league's typical matchup, so only a mismatch (a slot receiver on a
+// linebacker, a great nickel on a so-so slot) moves the needle.
+const MM0 = 4.3;
 
 function pickW(rand, list) {
   const sum = list.reduce((s, [, w]) => s + Math.max(0, w), 0);
@@ -57,7 +73,7 @@ function pickW(rand, list) {
 // else body weight (an edge ~250-285 lbs, a tackle ~295+).
 function rushRole(p) {
   if (p.pos === "DL") return p.dlKind ? (p.dlKind === "DT" ? 0.6 : 1) : p.mpos ? (p.mpos === "DT" ? 0.6 : 1) : (p.wt || 280) >= 292 ? 0.6 : 1;
-  if (p.pos === "LB") return p.mpos === "SAM" ? 0.3 : 0.14;
+  if (p.pos === "LB") return (p.role || p.mpos) === "SAM" ? 0.3 : 0.14;
   return 0.08;
 }
 
@@ -100,14 +116,50 @@ export function defStyle(team, plan) {
 // The offensive coordinator's specialty tilts the play calling too.
 const OC_LEAN = { "Run Game": -0.04, Spread: 0.04, "Play-Action": 0 };
 
+// How a typical defense rates in each package against its own average (pass D, run D): base is
+// stouter against the run and weaker in coverage. Measured over the league (calibrateLeague).
+export const PKG_OFF = { base: { passD: -0.75, runD: 0.44 }, nickel: { passD: 0.33, runD: -0.2 }, dime: { passD: 0.21, runD: -0.08 } };
+export const setPkgOff = (o) => { for (const k of PKGS) if (o?.[k]) PKG_OFF[k] = o[k]; };
+
+// The personnel identity that fits a roster best: each grouping valued by how its passing and
+// running measure up against the league AND against the package defenses answer it with (two
+// tight ends pull a defense into base, so the passing game sees a linebacker in coverage),
+// weighted by how often it throws. A pass play is worth more than a run on its own (PASS_PREMIUM,
+// in the same units: set so an average roster is about even between the balanced, spread and
+// two-tight-end identities), so running more costs something unless the roster makes it pay.
+const PASS_PREMIUM = 1.5;
+export function autoOffSet(team, order) {
+  const val = (pers) => {
+    const u = offUnits(order, pers), pl = 0.58 + PERS_LEAN[pers], odds = pkgOdds(pers, 0);
+    const dp = PKGS.reduce((t, k, i) => t + odds[i] * PKG_OFF[k].passD, 0), dr = PKGS.reduce((t, k, i) => t + odds[i] * PKG_OFF[k].runD, 0);
+    return pl * (PASS_PREMIUM + z(u.pass, "pass") - dp / LEAGUE.passD[1]) + (1 - pl) * (z(u.run, "run") - dr / LEAGUE.runD[1]);
+  };
+  return bestOffSet(val, team?.coach?.oc?.scheme);
+}
+
+// A club's personnel picture: its offensive identity (set, or the auto pick), the mix that comes
+// with it, its defense's lean toward base or nickel, and the snap shares those add up to.
+// order(pos): its players in depth order (raw or already rated at their roles).
+export function teamPersonnel(team, order) {
+  const auto = autoOffSet(team, order), mix = offMix(team, auto);
+  const sam = order("LB")[0], nb = order("CB")[2];
+  const tilt = defTilt(team, sam ? (sam.natOvr != null ? sam.ovr : roleOvr(sam, "SAM")) : 60, nb ? (nb.natOvr != null ? nb.ovr : roleOvr(nb, "NB")) : 60);
+  return { offSet: team?.personnel && team.personnel !== "auto" ? team.personnel : auto, auto, mix, tilt, shape: snapShape(mix, tilt) };
+}
+
 export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = null, season = getLeagueYear() }) {
   // Everyone plays at his rating plus his form this season; the defensive line at its spots
   // (edges at LE/RE, tackles inside, each rated for his spot).
   // A player playing hurt (questionable) suits up at a reduced rating.
   const formed = (list) => list.map((p) => { const f = seasonForm(p.id, season) - hurtPen(p); return f ? { ...p, ovr: clamp((p.ovr || 70) + f, 30, 105), form: f } : p; });
   const memo = {};
-  const order = (pos) => (memo[pos] ||= pos === "DL" ? dlAsPlayed(formed(depth("DL"))) : formed(depth(pos)));
-  const u = unitRatings(order);
+  // linebackers, corners and receivers at their roles (roles.js), rated for the spot they play
+  const order = (pos) => (memo[pos] ||= pos === "DL" ? dlAsPlayed(formed(depth("DL"))) : ROLE_SLOTS[pos] ? rolesAsPlayed(pos, formed(depth(pos))) : formed(depth(pos)));
+  // the offense's personnel identity (yours, or the one that fits the roster) and the defense's lean
+  const { mix, tilt } = teamPersonnel(team, order);
+  const u = unitRatings(order, { mix, tilt });
+  const oU = Object.fromEntries(PERS.map((p) => [p, offUnits(order, p)]));
+  const dU = Object.fromEntries(PKGS.map((k) => [k, defUnits(order, k)]));
   const on = (pos) => order(pos).filter((p) => (snaps[p.id] || 0) > 0);
   const share = (p) => (snaps[p.id] || 0) / 100;
   const q = (p, k) => Math.exp(((p.ovr || 70) - 75) * k);
@@ -124,6 +176,45 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
   const rushW = defs.map(([p, w]) => [p, rushRole(p) * w * q(p, 0.002)]);
   const covW = defs.map(([p, w]) => [p, (p.pos === "CB" ? 1.4 : p.pos === "S" ? 1.1 : p.pos === "LB" ? 0.35 : 0.05) * w * q(p, 0.035)]);
   const tackleW = defs.map(([p, w]) => [p, w]);
+  // Who's out there in each grouping: the receivers by role, plus the backs (by snaps, as before).
+  // A backup in the rotation (snaps you gave him) still sees the odd target.
+  const backs = receivers.filter(([p]) => p.pos === "RB");
+  const recvBy = Object.fromEntries(PERS.map((pers) => {
+    const on_ = oU[pers].on, list = [];
+    on_.wr.forEach((p, i) => { const r = on_.wr.length < 3 ? p.role : WR_ROLES[i]; list.push([p, (ROLE_TGT[r] ?? 0.1) * q(p, TALENT), r]); });
+    on_.te.forEach((p, i) => list.push([p, (ROLE_TGT[`TE${i + 1}`] ?? 0.05) * q(p, TALENT), `TE${i + 1}`]));
+    if (on_.fb) list.push([on_.fb, ROLE_TGT.FB, "FB"]);
+    for (const [p, w] of backs) if (!list.some(([x]) => x === p)) list.push([p, w, "RB"]);
+    for (const [p, w] of receivers) if (p.pos !== "RB" && !list.some(([x]) => x === p) && (snaps[p.id] || 0) >= 10) list.push([p, w * 0.25, "ROT"]);
+    return [pers, list];
+  }));
+  // The defense in each package: who's on the field, who makes tackles, gets home, makes plays on the ball.
+  const dlOn = defs.filter(([p]) => p.pos === "DL");
+  const sOn = order("S").slice(0, 2);
+  const defBy = Object.fromEntries(PKGS.map((k) => {
+    const on_ = dU[k].on, list = [...dlOn];
+    on_.lbs.forEach((p) => list.push([p, (ROLE_TK[p.role] ?? 0.1) * q(p, 0.01)]));
+    on_.cbs.forEach((p, i) => list.push([p, (ROLE_TK[p.role || (i === 3 ? "CB4" : "")] ?? 0.03) * q(p, 0.01)]));
+    sOn.forEach((p, i) => list.push([p, (TK.S[i] ?? 0.02) * q(p, 0.01)]));
+    return [k, {
+      tackleW: list, rushW: list.map(([p, w]) => [p, rushRole(p) * w * q(p, 0.002)]),
+      covW: list.map(([p, w]) => [p, (p.pos === "CB" ? 1.4 : p.pos === "S" ? 1.1 : p.pos === "LB" ? 0.35 : 0.05) * w * q(p, 0.035)]),
+      on: on_,
+    }];
+  }));
+  // Who covers a receiver in a package. CB1 takes the better of the two outside receivers.
+  const L = order("LB"), CBs = order("CB"), Ss = order("S");
+  const cover = (pkg, role, target, onWR) => {
+    if (role === "X" || role === "Z") {
+      const other = onWR.find((p, i) => i < 2 && p !== target);
+      return (!other || (target.ovr || 0) >= (other.ovr || 0)) ? CBs[0] : CBs[1];
+    }
+    if (role === "SLOT") return pkg === "base" ? L[2] || L[1] : CBs[2];
+    if (role === "WR4") return pkg === "dime" ? CBs[3] || Ss[1] : Ss[1];
+    if (role === "TE1") return pkg === "base" ? L[0] : pkg === "nickel" ? L[2] || Ss[1] : Ss[1];
+    if (role === "TE2" || role === "TE3") return Ss[1] || L[1];
+    return L[1] || L[2]; // backs: the MIKE (or WILL)
+  };
   const k = on("K")[0] || order("K")[0];
   // Special teams: the returners, and the coverage units (the special teams coach).
   const kr = order("KR")?.[0], pr = order("PR")?.[0];
@@ -137,7 +228,7 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
   // Measured against the league's balance, so league-wide rating drift doesn't tilt everyone's play-calling.
   const passLean = clamp(0.6 + ((u.pass - LEAGUE.pass[0]) - (u.run - LEAGUE.run[0])) * 0.006 + lean + (OC_LEAN[team?.coach?.oc?.spec] || 0), 0.45, 0.75);
   const dStyle = defStyle(team, plan), paSpec = team?.coach?.oc?.spec === "Play-Action";
-  return { team, order, u, mod, passLean, dStyle, paSpec, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, hcAgg, kLeg, p, pOvr, pPow, pAcc, pHang };
+  return { team, order, u, oU, dU, mix, tilt, recvBy, defBy, cover, mod, passLean, dStyle, paSpec, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, hcAgg, kLeg, p, pOvr, pPow, pAcc, pHang };
 }
 
 const emptyTeam = () => ({ blitz: 0, box: 0, cover: 0, dropbacks: 0, plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
@@ -205,11 +296,13 @@ export function gameScript(qtr, margin, clock = 900) {
   if (margin <= -9) return qtr >= 4 ? 0.35 : 0.15; // prevent coverage gives up yards underneath
   return 0;
 }
-function edges(g) {
+function edges(g, pers = "11", pkg = "nickel") {
   const o = g.sides[g.poss], d = g.sides[other(g.poss)];
+  // this snap's units: the offense in its grouping, the defense in its package
+  const ou = o.oU?.[pers] || o.u, du = d.dU?.[pkg] || d.u;
   const dd = g.day ? g.day[g.poss].o - g.day[other(g.poss)].d : 0;
   const extra = o.mod / POINTS_PER_EDGE + (g.poss === "h" && !g.neutral ? HOME : 0) + dd + gameScript(g.ot ? 3 : g.qtr, g.score[g.poss] - g.score[other(g.poss)], g.clock);
-  return { o, d, passE: soft((z(o.u.pass, "pass") - z(d.u.passD, "passD")) * SENSITIVITY + extra), runE: soft((z(o.u.run, "run") - z(d.u.runD, "runD")) * SENSITIVITY + extra), rushE: z(d.u.rush, "rush") - z(o.u.ol, "ol") };
+  return { o, d, passE: soft((z(ou.pass, "pass") - z(du.passD, "passD")) * SENSITIVITY + extra), runE: soft((z(ou.run, "run") - z(du.runD, "runD")) * SENSITIVITY + extra), rushE: z(du.rush, "rush") - z(o.u.ol, "ol") };
 }
 
 // Field goal odds from a distance (yards) and the kicker's rating.
@@ -299,13 +392,15 @@ export const fgRange = (leg = 93, stretch = false) => Math.round(clamp(44 + (leg
 // Late with the game tied (or down 3 or less) and in comfortable range: play for the field goal.
 const forTheKick = (g, lead) => ((g.qtr === 4 && g.clock < 150) || (g.ot && g.down >= 2)) && lead <= 0 && lead >= -3 && 100 - g.yard + 17 <= 45;
 // Play style from the situation (or the user's call).
-function chooseCall(g, o) {
+function chooseCall(g, o, pers = "11") {
   const rand = g.rand, lead = g.score[g.poss] - g.score[other(g.poss)];
   const late = g.qtr >= 4 && g.clock < 300, twoMin = (g.qtr === 2 || g.qtr === 4) && g.clock < 120;
   let pass = o.passLean;
   if (g.down === 3) pass = g.toGo >= 7 ? 0.86 : g.toGo <= 2 ? 0.42 : 0.68;
   else if (g.down === 2 && g.toGo >= 8) pass += 0.08;
   else if (g.down === 1) pass -= 0.08;
+  // the grouping tips it: two tight ends and a fullback run more, four wide throws more
+  pass += (PERS_LEAN[pers] || 0) * 0.8;
   // Game script: protect a big second-half lead on the ground; chase one through the air.
   if (g.qtr >= 3 && lead >= 14) pass -= g.qtr >= 4 ? 0.2 : 0.1;
   if (g.qtr >= 3 && lead <= -14) pass = Math.max(pass + 0.12, g.qtr >= 4 ? 0.75 : 0);
@@ -332,14 +427,18 @@ export function step(g, call, bonus = 1) {
 function stepPlay(g, call, bonus = 1) {
   if (g.done) return null;
   const rand = g.rand;
-  const { o, d, passE, runE, rushE } = edges(g);
   const off = g.poss, def = other(off);
+  // Personnel for this snap (heavier in short yardage, lighter on passing downs) and the defense's answer.
+  const so = g.sides[off], sd = g.sides[def];
+  const pers = so.mix ? pickPers(rand, so.mix, { down: g.down, toGo: g.toGo, yard: g.yard }) : "11";
+  const pkg = sd.dU ? pickPkg(rand, pers, sd.tilt || 0, g.down >= 3 && g.toGo >= 6) : "nickel";
+  const { o, d, passE, runE, rushE } = edges(g, pers, pkg);
   const st = g.stats[off];
   const lead = g.score[off] - g.score[def];
   const hurry = ((g.qtr === 2 || g.qtr === 4) && g.clock < 120) || (g.qtr === 4 && g.clock < 300 && lead < 0) || (g.qtr === 4 && lead <= -9) || (g.ot && g.clock < 150 && lead <= 0);
   const fgDist = 100 - g.yard + 17;
   const before = { yard: g.yard, down: g.down, toGo: g.toGo, qtr: g.qtr, clock: g.clock, poss: off };
-  const ev = { ...before, yards: 0, type: "", text: "", td: false, turnover: false, score: 0 };
+  const ev = { ...before, yards: 0, type: "", text: "", td: false, turnover: false, score: 0, pers, pkg };
   g.plays++;
 
   // Victory formation: ahead in the 4th with few enough seconds left that kneeling runs it out.
@@ -456,7 +555,11 @@ function stepPlay(g, call, bonus = 1) {
   let style = call && call.startsWith("pass_") ? "pass" : call && (call.startsWith("run_") || call === "scramble") ? "run" : null;
   if (call === "pass_rpo") style = rand() < 0.55 ? "pass" : "run";
   if (call === "run_screen") style = "screen";
-  if (!style) style = chooseCall(g, o);
+  if (!style) style = chooseCall(g, o, pers);
+  const st0 = g.stats[off], dst0 = g.stats[def];
+  if (st0) (st0.pers ||= {})[pers] = (st0.pers[pers] || 0) + 1;
+  if (dst0) (dst0.pkg ||= {})[pkg] = (dst0.pkg[pkg] || 0) + 1;
+  const dP = d.defBy?.[pkg] || d; // the defenders on the field this snap
   const qb = o.qb;
   let yards = 0, desc = "", type = "", carrier = null, completed = false, clockStops = false;
   // The defense's call this snap (defStyle): more blitzes on third and long.
@@ -478,10 +581,10 @@ function stepPlay(g, call, bonus = 1) {
       const loss = Math.round(5 + rand() * 5);
       // Multi-sack games happen, but each sack a rusher already has makes the next one harder (he gets
       // chipped and doubled).
-      const rusher = pickW(rand, d.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, w * 0.6 ** n]; }));
+      const rusher = pickW(rand, dP.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, w * 0.6 ** n]; }));
       add(qbl, "sk", 1); add(qbl, "skYds", loss); st.sacks++;
       // About one sack in five is shared by two rushers: half a sack each.
-      const helper = rusher && rand() < 0.22 ? pickW(rand, d.rushW.filter(([p]) => p !== rusher)) : null;
+      const helper = rusher && rand() < 0.22 ? pickW(rand, dP.rushW.filter(([p]) => p !== rusher)) : null;
       if (rusher) { const rl = line(g, def, rusher); add(rl, "sacks", helper ? 0.5 : 1); add(rl, "qbH", 1); add(rl, "tkl", 1); }
       if (helper) { const hl = line(g, def, helper); add(hl, "sacks", 0.5); add(hl, "qbH", 1); }
       yards = -loss; type = "sack"; desc = `${qb?.name || "QB"} is SACKED${rusher ? ` by ${rusher.name}` : ""} for a loss of ${loss}.`;
@@ -496,12 +599,17 @@ function stepPlay(g, call, bonus = 1) {
     } else {
       // Once a receiver has had a big day the ball spreads around (no 15-catch games every week).
       const busy = ([p, w]) => { const n = g.box[off][p.id]?.tgt || 0, s0 = 8 + Math.max(0, p.form || 0) * 0.5; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 4)]; };
-      const target = screen ? (o.rushers[0]?.[0] || pickW(rand, o.receivers.map(busy))) : pickW(rand, o.receivers.map(busy));
+      const recv = o.recvBy?.[pers] || o.receivers;
+      const target = screen ? (o.rushers[0]?.[0] || pickW(rand, recv.map(busy))) : pickW(rand, recv.map(busy));
       const tl = line(g, off, target);
+      // the matchup: who has him in this package, and by how much the receiver wins it
+      const role = recv.find(([p]) => p === target)?.[2] || "RB";
+      const cm = !screen && d.cover ? d.cover(pkg, role, target, o.oU?.[pers]?.on?.wr || []) : null;
+      const mm = cm ? clamp((target?.ovr || 75) - (cm.pos === "LB" ? lbCover(cm) : cm.ovr || 75) - MM0, -25, 25) : 0;
       add(qbl, "att", 1); add(tl, "tgt", 1); st.passAtt++;
-      const intP = clamp(0.024 - passE * 0.004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0), 0.006, 0.08);
+      const intP = clamp(0.024 - passE * 0.004 - mm * 0.0004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0), 0.006, 0.08);
       if (rand() < intP) {
-        const db = pickW(rand, d.covW);
+        const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW);
         add(qbl, "passInt", 1); st.ints++;
         if (db) { add(line(g, def, db), "ints", 1); add(line(g, def, db), "pd", 1); }
         type = "int"; desc = `${qb?.name || "QB"}'s pass is INTERCEPTED${db ? ` by ${db.name}` : ""}!`;
@@ -512,10 +620,10 @@ function stepPlay(g, call, bonus = 1) {
         if (!g.done) newPossession(g, 100 - g.yard - Math.round(8 + rand() * 12) + ret);
         return ev;
       }
-      const compP = clamp(0.655 + passE * 0.018 + ((target?.ovr || 75) - 75) * 0.0025 + (deep ? -0.22 : quick ? 0.08 : 0) + (screen ? 0.18 : 0) + (B ? -0.03 : X ? 0.04 + (o.paSpec ? 0.03 : 0) : V ? (deep ? -0.1 : -0.03) : 0), 0.25, 0.92);
+      const compP = clamp(0.658 + passE * 0.018 + ((target?.ovr || 75) - 75) * 0.0012 + mm * 0.0035 + (deep ? -0.22 : quick ? 0.08 : 0) + (screen ? 0.18 : 0) + (B ? -0.03 : X ? 0.04 + (o.paSpec ? 0.03 : 0) : V ? (deep ? -0.1 : -0.03) : 0), 0.25, 0.92);
       if (rand() < compP) {
         const mean = screen ? 5.5 : deep ? 24 : quick ? 6.5 : 9.9;
-        yards = Math.round((2 + expo(rand, mean - 2 + passE * 0.45 + ((target?.ovr || 75) - 75) * 0.055 + Math.max(0, (target?.ovr || 75) - 90) * 0.08)) * (bonus || 1));
+        yards = Math.round((2 + expo(rand, mean - 2 + passE * 0.45 + mm * 0.06 + ((target?.ovr || 75) - 75) * 0.035 + Math.max(0, (target?.ovr || 75) - 90) * 0.08)) * (bonus || 1));
         // Now and then a catch turns into a big play after the catch (missed tackle, busted coverage).
         if (!deep && rand() < clamp(0.02 + Math.max(0, (target?.spd || 85) - 88) * 0.0015 + passE * 0.008 + (B ? 0.045 : X ? 0.02 : V ? -0.012 : 0), 0.004, 0.1)) yards += Math.round(12 + expo(rand, 16));
         if (V && yards > 6) yards = Math.round(yards * 0.85); // tackled in space by a deep safety
@@ -525,7 +633,7 @@ function stepPlay(g, call, bonus = 1) {
         desc = `${qb?.name || "QB"} finds ${target?.name || "his receiver"} for ${yards}.`;
       } else {
         type = "inc"; clockStops = true;
-        if (rand() < 0.3) { const db = pickW(rand, d.covW); if (db) add(line(g, def, db), "pd", 1); desc = `${qb?.name || "QB"}'s pass for ${last(target)} is broken up${db ? ` by ${db.name}` : ""}.`; }
+        if (rand() < 0.3) { const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW); if (db) add(line(g, def, db), "pd", 1); desc = `${qb?.name || "QB"}'s pass for ${last(target)} is broken up${db ? ` by ${db.name}` : ""}.`; }
         else desc = `${qb?.name || "QB"}'s pass ${deep ? "deep " : ""}for ${last(target)} falls incomplete.`;
       }
     }
@@ -540,7 +648,12 @@ function stepPlay(g, call, bonus = 1) {
     const outside = call === "run_outside";
     // Heavy workloads wear a back down: past ~18 carries in a game he averages a little less.
     const load = carrier && !keeper ? Math.max(0, (g.box[off][carrier.id]?.rushAtt || 0) - 18) : 0;
-    const mean = 3.85 + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.022 + (keeper ? 0.6 : 0) - load * 0.06 + (X ? -0.9 : V ? 0.6 : B ? -0.3 : 0);
+    // who's at the point of attack: the MIKE fills inside; outside, the SAM sets the edge in base,
+    // and in nickel the corner in the box has to make the tackle (a lighter edge)
+    const edgeRun = outside || rand() < 0.33, lbsOn = dP.on?.lbs || [];
+    const mike = lbsOn.find((p) => p.role === "MIKE"), sam = lbsOn.find((p) => p.role === "SAM"), nb = dP.on?.cbs?.[2];
+    const poa = edgeRun ? (sam ? ((sam.ovr || 75) - 74) * 0.045 : nb ? ((nb.posAttrs?.tackling ?? 65) - 68) * 0.03 - 0.15 : 0) : mike ? ((mike.ovr || 75) - 76) * 0.035 : 0;
+    const mean = 3.85 - poa + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.022 + (keeper ? 0.6 : 0) - load * 0.06 + (X ? -0.9 : V ? 0.6 : B ? -0.3 : 0);
     const breakaway = rand() < clamp(0.047 + ((carrier?.spd || 80) - 82) * 0.0018 - load * 0.003 + runE * 0.005 + (outside ? 0.025 : 0) + (B ? 0.025 : X ? -0.015 : 0), 0.01, 0.14);
     yards = breakaway ? Math.round(mean + 5 + expo(rand, 11)) : Math.round(clamp(mean - 0.6 + gauss(rand) * (outside ? 3.3 : 2.5), -4, 14));
     if (yards > 0) yards = Math.round(yards * (bonus || 1));
@@ -548,7 +661,7 @@ function stepPlay(g, call, bonus = 1) {
     add(cl, "rushAtt", 1); st.rushAtt++;
     type = "run";
     desc = `${carrier?.name || "Runner"} ${keeper ? "keeps it" : outside ? "bounces outside" : ["up the middle", "off left tackle", "off right tackle"][Math.floor(rand() * 3)]} for ${yards}.`;
-    if (yards < 0) { const t = pickW(rand, d.tackleW); if (t) add(line(g, def, t), "tfl", 1); }
+    if (yards < 0) { const t = pickW(rand, dP.tackleW); if (t) add(line(g, def, t), "tfl", 1); }
   }
 
   // Ball carrier: yardage, touchdowns, fumbles, tackles.
@@ -564,11 +677,11 @@ function stepPlay(g, call, bonus = 1) {
       desc = type === "run" ? `${carrier?.name || "Runner"} runs it in from ${room} — TOUCHDOWN!` : `${qb?.name || "QB"} hits ${carrier?.name || "his receiver"} for a ${room}-yard TOUCHDOWN!`;
     } else if (rand() < (type === "run" ? 0.0055 : 0.004) - Math.max(-0.002, Math.min(0.002, (type === "run" ? runE : passE) * 0.0006))) {
       add(cl, "fum", 1); st.fumLost++;
-      const t = pickW(rand, d.tackleW); if (t) add(line(g, def, t), "ff", 1);
+      const t = pickW(rand, dP.tackleW); if (t) add(line(g, def, t), "ff", 1);
       ev.turnover = true; type = "fumble"; desc += ` FUMBLE — the defense recovers!`;
     } else {
-      const t = pickW(rand, d.tackleW);
-      if (t) { add(line(g, def, t), "tkl", 1); if (rand() < 0.3) { const t2 = pickW(rand, d.tackleW); if (t2 && t2 !== t) add(line(g, def, t2), "ast", 1); } }
+      const t = pickW(rand, dP.tackleW);
+      if (t) { add(line(g, def, t), "tkl", 1); if (rand() < 0.3) { const t2 = pickW(rand, dP.tackleW); if (t2 && t2 !== t) add(line(g, def, t2), "ast", 1); } }
       if (rand() < 0.14) clockStops = true; // out of bounds
     }
   }

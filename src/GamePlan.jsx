@@ -21,7 +21,7 @@ const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, 
 const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8 };
 
 // team: your team; fit(team, role): the fit bonus (0-2) for its current schemes; schemes: { oc: [...], dc: [...] }
-export default function GamePlan({ team, sp, fit, schemes, onScheme, playbook, setPlaybook, plays, coachSpec = {}, onSpecialize, compact, strip }) {
+export default function GamePlan({ team, sp, fit, schemes, onScheme, playbook, setPlaybook, plays, coachSpec = {}, onSpecialize, compact, strip, personnel }) {
   // strip: under the depth chart, a one-line summary; each part opens on its own when you want it
   const [open, setOpen] = React.useState(null);
   const coach = team.coach || {};
@@ -64,8 +64,10 @@ export default function GamePlan({ team, sp, fit, schemes, onScheme, playbook, s
         <span style={{ fontSize: 13 }}>Offense <b>{coach.oc?.scheme || "—"}</b>{coach.oc && fit(team, "oc") > 0 && <span style={{ color: C.gn, fontWeight: 800 }}> +{fit(team, "oc")}</span>}</span>
         <span style={{ fontSize: 13 }}>Defense <b>{coach.dc?.scheme || "—"}</b>{coach.dc && fit(team, "dc") > 0 && <span style={{ color: C.gn, fontWeight: 800 }}> +{fit(team, "dc")}</span>}</span>
         <span style={{ fontSize: 13, color: playbook.length < 3 ? C.gd : C.tx }}>Core plays <b>{playbook.length}/3</b></span>
-        <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>{tab("schemes", "Schemes")}{tab("plays", "Core plays")}{onSpecialize && tab("spec", "Coaching")}</span>
+        {personnel && <span style={{ fontSize: 13 }}>Personnel <b>{({ auto: "Auto", balanced: "Balanced", spread: "Spread", twoTE: "Two TE", fullback: "Fullback", heavy: "Heavy" })[team.personnel || "auto"]}</b> / <b>{({ auto: "Auto", match: "Match", base: "Base", nickel: "Nickel" })[team.defPkg || "auto"]}</b></span>}
+        <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>{personnel && tab("pers", "Personnel")}{tab("schemes", "Schemes")}{tab("plays", "Core plays")}{onSpecialize && tab("spec", "Coaching")}</span>
       </div>}
+      {personnel && show("pers") && personnel}
       {show("schemes") && trans > 0 && <div style={{ ...card, borderColor: "#f8717166", color: "#fca5a5", fontSize: 14, fontWeight: 700 }}>⚠️ A new scheme is still being installed: {trans} game{trans > 1 ? "s" : ""} to go.</div>}
       {show("schemes") && <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${compact ? 280 : 300}px,1fr))`, gap: 10 }}>
         <SchemeCard role="oc" title="OFFENSIVE SCHEME" />

@@ -20,13 +20,18 @@ export const needName = (g) => NAME[g] || g;
 const clamp = (v) => Math.max(0, Math.min(1, v));
 const PAR = 82, SPAN = 16;
 
+// A club's personnel identity changes how many it needs at a spot: a two-tight-end offense starts
+// two tight ends and two receivers (a third receiver barely plays), a fullback team two receivers.
+const PERS_STARTERS = { twoTE: { WR: 2, TE: 2 }, heavy: { WR: 2, TE: 2 }, fullback: { WR: 2 } };
+
 // roster: the club's 53 (injured players out for the season don't count now, but do next year).
+// personnel: its offensive identity, if it set one (personnel.js).
 // Returns { score: { [group]: 0..1 }, list: [{ pos, score, why }] neediest first }.
-export function teamNeeds(roster) {
+export function teamNeeds(roster, personnel) {
   const by = {};
   for (const p of roster || []) { const g = needGroup(p); if (g in NEED_STARTERS) (by[g] ||= []).push(p); }
   const score = {}, list = [];
-  for (const [g, n] of Object.entries(NEED_STARTERS)) {
+  for (const [g, n] of Object.entries({ ...NEED_STARTERS, ...(PERS_STARTERS[personnel] || {}) })) {
     const all = [...(by[g] || [])].sort((a, b) => (b.ovr || 0) - (a.ovr || 0));
     const healthy = all.filter((p) => !(p.injured && (p.injWk || 0) > 8));
     const starters = healthy.slice(0, n);

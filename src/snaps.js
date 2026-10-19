@@ -2,19 +2,29 @@
 // and nobody plays more than 100%. Your own settings are fixed first; the rest of the budget goes
 // to the other players at that position by depth, the way NFL rotations actually look (no
 // backup QB snaps, almost no backup O-line snaps, a real rotation on the defensive line).
-export const SNAP_SLOTS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1, P: 1 };
+import { wrOnField } from "./gamesim.js";
+
+export const SNAP_SLOTS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 3, S: 2, K: 1, P: 1 };
 // Typical share by depth rank (each list adds up to the position's budget).
 const DEFAULT = {
   QB: [100], RB: [62, 30, 8], WR: [93, 88, 72, 34, 13], TE: [70, 25, 5],
   LT: [100], LG: [100], C: [100], RG: [100], RT: [100],
-  DL: [82, 82, 78, 72, 46, 30, 10], LB: [98, 92, 68, 28, 14], CB: [88, 82, 30], S: [95, 88, 17], K: [100], P: [100],
+  DL: [82, 82, 78, 72, 46, 30, 10], LB: [28, 98, 85, 12, 6], CB: [97, 93, 66, 10, 4], S: [95, 88, 17], K: [100], P: [100],
 };
-export const snapBudget = (pos) => (SNAP_SLOTS[pos] || 1) * 100;
+// shape: a club's own shares by depth for some positions (snapShape in personnel.js: a
+// two-tight-end team plays its TE2 a lot more and its WR3 less; a base-heavy defense its SAM).
+// The budget is what that shape adds up to.
+const shareList = (pos, shape) => shape?.[pos] || DEFAULT[pos] || [100];
+export const snapBudget = (pos, shape) => (shape?.[pos] ? Math.round(shape[pos].slice(0, SNAP_SLOTS[pos] + 2).reduce((s, x) => s + Math.min(100, x), 0)) : (SNAP_SLOTS[pos] || 1) * 100);
 
 // players: healthy players at one position in depth order. overrides: id -> % you've set.
 // Returns id -> % (whole numbers; the total never exceeds the budget).
-export function positionSnaps(pos, players, overrides = {}) {
-  const budget = snapBudget(pos);
+export function positionSnaps(pos, players0, overrides = {}, shape) {
+  const budget = snapBudget(pos, shape);
+  // receivers: the two who play in two-receiver sets come first (a star slot man moves outside
+  // rather than sitting), the third after them
+  let players = players0;
+  if (pos === "WR" && players0.length >= 3) { const two = wrOnField(players0, 2).map((p) => p.id); players = [...players0.filter((p) => two.includes(p.id)), ...players0.filter((p) => !two.includes(p.id))]; }
   const out = {};
   const fixed = players.filter((p) => overrides[p.id] != null);
   let fixedSum = fixed.reduce((s, p) => s + Math.min(100, Math.max(0, overrides[p.id])), 0);
@@ -24,7 +34,7 @@ export function positionSnaps(pos, players, overrides = {}) {
   // Everyone else shares what's left, weighted by where they sit among the players you haven't
   // set (bench your QB1 at 0% and the next QB in line takes his snaps).
   const free = players.filter((p) => overrides[p.id] == null);
-  const base = DEFAULT[pos] || [100];
+  const base = shareList(pos, shape);
   const weight = (i) => base[i] ?? 0;
   let left = budget - fixedSum;
   const wts = free.map((p, i) => weight(i));
@@ -52,9 +62,9 @@ export function positionSnaps(pos, players, overrides = {}) {
 }
 
 // Every player's share for one team. order(pos) -> healthy players at pos in depth order.
-export function teamSnaps(order, overrides = {}) {
+export function teamSnaps(order, overrides = {}, shape) {
   const out = {};
-  for (const pos of Object.keys(SNAP_SLOTS)) Object.assign(out, positionSnaps(pos, order(pos), overrides));
+  for (const pos of Object.keys(SNAP_SLOTS)) Object.assign(out, positionSnaps(pos, order(pos), overrides, shape));
   return out;
 }
 

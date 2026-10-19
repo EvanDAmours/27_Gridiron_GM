@@ -2,7 +2,8 @@
 // skill group, a career OVR graph, season-by-season stats, a contract timeline and his honors.
 import React, { useEffect, useState } from "react";
 import { C, oC, Bdg, Face } from "./ui.jsx";
-import { posTag } from "./dline.js";
+import { posTag, dlOvrAt, naturalDL } from "./dline.js";
+import { roleCard, naturalRole } from "./roles.js";
 
 const r1 = (x) => Math.round(x * 10) / 10;
 const money = (n) => `$${r1(+n || 0).toFixed(1)}M`;
@@ -46,6 +47,14 @@ export function CardHeader({ p, team, ovr, pot, sub, dev }) {
   );
 }
 
+// His rating at each role his position plays (roles.js; the line in dline.js), natural role starred.
+const ROLE_LBL = { SAM: "SAM", MIKE: "MIKE", WILL: "WILL", OUT: "OUTSIDE CB", NB: "NICKEL", X: "X (OUTSIDE)", Z: "Z (FLANKER)", SLOT: "SLOT", EDGE: "EDGE", DT: "INSIDE (DT)" };
+function roleRows(p) {
+  if (p.pos === "DL" && p.posAttrs) { const nat = naturalDL(p); return ["EDGE", "DT"].map((k) => [`${ROLE_LBL[k]}${k === nat ? " ★" : ""}`, dlOvrAt(p, k)]).sort((a, b) => b[1] - a[1]); }
+  const rc = p.posAttrs ? roleCard(p) : null, nat = rc && naturalRole(p);
+  if (rc && p.pos === "TE") return rc.map(([k, v]) => [`WIDE: ${k}`, v]); // split out as a receiver
+  return rc ? rc.map(([k, v]) => [`${ROLE_LBL[k] || k}${k === nat ? " ★" : ""}`, v]) : null;
+}
 const GROUPS = [["PHYSICAL", [["SPD", "spd"], ["ACC", "acc"], ["AGI", "agi"], ["STR", "str"], ["JMP", "jmp"], ["END", "end"]]]];
 // bare: just the cards (for a parent that lays them out, e.g. the player card's balanced columns)
 // Position skills: his best three, the rest a tap away (a partial scouting read shows what it has).
@@ -55,7 +64,7 @@ export function RatingBars({ p, labels = {}, showPos = true, posLimit = 99, bare
   const ranked = posLimit >= 99 ? [...known].sort((a, b) => b[1] - a[1]) : known;
   const pos = allSkills ? ranked : ranked.slice(0, 3);
   const more = ranked.length - pos.length;
-  const groups = [...GROUPS.map(([g, list]) => [g, list.map(([l, k]) => [l, p[k]]).filter(([, v]) => v != null)]), ...(pos.length ? [["POSITION SKILLS", pos.map(([k, v]) => [labels[k] || k, v])]] : []), ["MENTAL", [["CONFIDENCE", p.conf || 60]]]];
+  const groups = [...GROUPS.map(([g, list]) => [g, list.map(([l, k]) => [l, p[k]]).filter(([, v]) => v != null)]), ...(pos.length ? [["POSITION SKILLS", pos.map(([k, v]) => [labels[k] || k, v])]] : []), ...(showPos && posLimit >= 99 && roleRows(p) ? [["ROLE FIT", roleRows(p)]] : []), ["MENTAL", [["CONFIDENCE", p.conf || 60]]]];
   const cards = groups.map(([g, rows]) => (
         <div key={g} style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px", ...(bare ? { breakInside: "avoid", marginBottom: 12 } : {}) }}>
           <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: C.mt, marginBottom: 6 }}>{g}</div>

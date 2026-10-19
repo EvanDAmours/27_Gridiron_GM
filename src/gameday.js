@@ -60,8 +60,9 @@ export function summarize(g, final = g.score, box = g.box) {
   if (cur) drives.push(cur);
   for (const d of drives) if (!d.res) d.res = "Downs/End";
   if (!g.done && drives.length && !drives[drives.length - 1].res.match(/TD|FG|Punt|INT|FUM|Safety/)) drives[drives.length - 1].res = "Live";
-  // what each defense called (playsim.js defStyle): blitzes, loaded boxes, coverage, out of its snaps
-  const calls = Object.fromEntries(["h", "a"].map((k) => { const d = g.stats?.[k] || {}, o = g.stats?.[k === "h" ? "a" : "h"] || {}; return [k, { blitz: d.blitz || 0, box: d.box || 0, cover: d.cover || 0, snaps: (o.passAtt || 0) + (o.rushAtt || 0) + (o.sacks || 0) }]; }));
+  // what each defense called (playsim.js defStyle): blitzes, loaded boxes, coverage, out of its snaps;
+  // the personnel each offense played (11, 12...) and the packages each defense answered with
+  const calls = Object.fromEntries(["h", "a"].map((k) => { const d = g.stats?.[k] || {}, o = g.stats?.[k === "h" ? "a" : "h"] || {}; return [k, { blitz: d.blitz || 0, box: d.box || 0, cover: d.cover || 0, snaps: (o.passAtt || 0) + (o.rushAtt || 0) + (o.sacks || 0), pers: g.stats?.[k]?.pers || {}, pkg: d.pkg || {} }]; }));
   return { wp: line, live: !g.done, keys, drives: drives.slice(0, 30), top: topPerformers(box), calls };
 }
 

@@ -108,6 +108,12 @@ import Inbox from "./Inbox.jsx";
 import Walkthrough, { TourOffer, tourSteps } from "./Walkthrough.jsx";
 import GameRecap, { vivid, ScoreBug, WinProbChart, DriveChart, KeyPlays, TopPerformers, BoxScore } from "./GameRecap.jsx";
 import { CardHeader, RatingBars, CareerOvrGraph, SeasonTable, ContractTimeline, seasonLine } from "./PlayerCard.jsx";
+import Personnel from "./Personnel.jsx";
+// your personnel's snap shape, recomputed only when the team, depth chart or snap settings change
+const _shapeMemo={k:null,v:null};
+const personnelShape=(t,dOrd,pt)=>{if(_shapeMemo.k&&_shapeMemo.k[0]===t&&_shapeMemo.k[1]===dOrd&&_shapeMemo.k[2]===pt)return _shapeMemo.v;const h=(t.roster||[]).filter(p=>!p.injured&&!p.holdout&&!p.suspended),m={};const v=teamPersonnel(t,pos=>m[pos]||(m[pos]=depthOrderFor(h,dOrd||{},pos,pt))).shape;_shapeMemo.k=[t,dOrd,pt];_shapeMemo.v=v;return v;};
+import { teamPersonnel } from "./playsim.js";
+import { ROLE_SLOTS, arrangeRoles } from "./roles.js";
 import OfferSheets from "./OfferSheets.jsx";
 import { settleIncentives, accelerateVoid, taggedPlayers, sheetCompensation, clubMatches } from "./contractDepth.js";
 import { injStatus, injuryReport } from "./injuries.js";
@@ -1255,7 +1261,9 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     else if(sp==="draft"){to="next season";fn=newSeason;}
     if(fn)setAdvanceAsk({to,fn,checks,toDraft:fn===leaveFreeAgency});};
   const changeScheme=(role,sc)=>{if(scPts<2||!teams[ui]?.coach?.[role])return;setTeams(t=>t.map((tm,i)=>i!==ui?tm:{...tm,coach:{...tm.coach,[role]:{...tm.coach[role],scheme:sc}},_schemeTransWks:2}));setScPts(p=>p-2);setLog(l=>[`📋 ${role.toUpperCase()} scheme → ${sc} (−2SP, 2-game install)`,...l.slice(0,149)]);sm(`Installing the ${sc}: two games to get it down`);};
-  const gamePlanEl=ut?<GamePlan team={ut} sp={scPts} fit={(t,r)=>r==="oc"?getOCFit(t):getDCFit(t)} schemes={{oc:OC_SCHEMES,dc:DC_SCHEMES}} onScheme={changeScheme} playbook={playbook} setPlaybook={setPlaybook} plays={PLAYS_POOL} coachSpec={coachSpec} onSpecialize={specializeCoach} compact={MOBILE} strip/>:null;
+  // your snap-share shape from your personnel (a two-TE identity plays its TE2 more, its WR3 less)
+  const userShape=ut?personnelShape(ut,depthOrder,playingTime):null;
+  const gamePlanEl=ut?<GamePlan team={ut} sp={scPts} fit={(t,r)=>r==="oc"?getOCFit(t):getDCFit(t)} schemes={{oc:OC_SCHEMES,dc:DC_SCHEMES}} onScheme={changeScheme} playbook={playbook} setPlaybook={setPlaybook} plays={PLAYS_POOL} coachSpec={coachSpec} onSpecialize={specializeCoach} compact={MOBILE} strip personnel={<Personnel team={ut} depthOrder={depthOrder} snaps={playingTime} compact={MOBILE} onSet={(f,k)=>setTeams(ts=>ts.map((t,i)=>i===ui?{...t,[f]:k}:t))}/>}/>:null;
   // Your pick when the clock runs out or the draft is simmed: your own list first, otherwise the
   // best fit for your roster's needs (not five quarterbacks in a row).
   const userAutoPick=(cls,roster)=>listedPick(scouting,yr,cls)||aiBestPick(roster||[],cls,'analytics');
@@ -1619,8 +1627,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       const getOrder=(pos)=>depthOrderFor(roster,depthOrder,pos);
       const movePlayer=(pos,idx,dir)=>{const order=getOrder(pos).map(p=>p.id);const ni=idx+dir;if(ni<0||ni>=order.length)return;[order[idx],order[ni]]=[order[ni],order[idx]];setDepthOrder(prev=>({...prev,[pos]:order}));};
       const autoFillPos=(pos)=>{const sorted=roster.filter(p=>p.pos===pos).sort((a,b)=>b.ovr-a.ovr).map(p=>p.id);setDepthOrder(prev=>({...prev,[pos]:sorted}));};
-      const autoFillAll=()=>{const o={};POS.forEach(pos=>{const ps=roster.filter(p=>p.pos===pos).sort((a,b)=>b.ovr-a.ovr);o[pos]=(pos==="DL"?arrangeDL(ps):ps).map(p=>p.id);});setDepthOrder(o);sm('Depth chart auto-filled by OVR');};
-      const snapsFor=(pos,players)=>positionSnaps(pos,players.filter(p=>!p.injured),playingTime);
+      const autoFillAll=()=>{const o={};POS.forEach(pos=>{const ps=roster.filter(p=>p.pos===pos).sort((a,b)=>b.ovr-a.ovr);o[pos]=(pos==="DL"?arrangeDL(ps):ROLE_SLOTS[pos]?arrangeRoles(pos,ps):ps).map(p=>p.id);});setDepthOrder(o);sm('Depth chart auto-filled by OVR');};
+      const snapsFor=(pos,players)=>positionSnaps(pos,players.filter(p=>!p.injured),playingTime,userShape);
       const OFF_POS=['QB','RB','WR','TE','LT','LG','C','RG','RT'];const DEF_POS=['DL','LB','CB','S'];const ST_POS=['K','P'];
       const renderGroup=(label,positions)=>(<div key={label} style={{marginBottom:12}}>
         <div style={{fontSize:14,fontWeight:800,color:'#94a3b8',letterSpacing:1,marginBottom:6,borderBottom:`1px solid ${C.bd}`,paddingBottom:4}}>{label}</div>
@@ -1682,7 +1690,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         </div>);})}
       </div>);
       const viewBtns=<div role="tablist" style={{display:'inline-flex',background:'#0b1220',border:`1px solid ${C.bd}`,borderRadius:999,padding:3}}>{[['field','🏈 Field'],['list','☰ List']].map(([k,l])=><button key={k} role="tab" aria-selected={depthView===k} onClick={()=>setDepthView(k)} style={{background:depthView===k?'#1e3a5f':'transparent',color:depthView===k?'#e0f2fe':'#94a3b8',border:0,borderRadius:999,padding:'5px 14px',fontSize:13,fontWeight:800,cursor:'pointer'}}>{l}</button>)}</div>;
-      if(depthView==='field')return(<div><div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',margin:'-38px 0 6px'}}>{viewBtns}</div><DepthChart roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} setSel={setSel} onAutoFill={autoFillAll} onMovePos={movePlayerTo} previewPos={movePreview} gamePlan={gamePlanEl} setPositions={moves=>setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(p=>moves[p.id]?{...p,pos:moves[p.id]}:p)}))}/></div>);
+      if(depthView==='field')return(<div><div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',margin:'-38px 0 6px'}}>{viewBtns}</div><DepthChart roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} setSel={setSel} onAutoFill={autoFillAll} onMovePos={movePlayerTo} previewPos={movePreview} gamePlan={gamePlanEl} shape={userShape} personnel={{auto:"Auto",balanced:"Balanced",spread:"Spread",twoTE:"Two TE",fullback:"Fullback",heavy:"Heavy"}[ut?.personnel||"auto"]} setPositions={moves=>setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(p=>moves[p.id]?{...p,pos:moves[p.id]}:p)}))}/></div>);
       return(<div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8,gap:8,flexWrap:'wrap'}}>
           <div style={{fontSize:20,fontWeight:900,color:'#e2e8f0'}}>Depth Chart</div>{viewBtns}
@@ -1803,7 +1811,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
             {!draftClockActive&&<Btn onClick={()=>{setDraftClock(90);setDraftClockActive(true);}} bg="#1e3a5f" c="#7dd3fc" style={{fontSize:12,padding:'4px 10px'}}>⏱ Clock</Btn>}
           </div>
           {/* Draft-day calls: clubs behind you offering to move up (you can only trade down) */}
-          {(()=>{const _tgt=tm=>{const b=[...(dc[yr]||[])].sort((a,b)=>csRank(a)-csRank(b));return b[(tm*7+draftIdx)%Math.min(4,b.length||1)]||null;};const _bump={};Object.entries(tdCalls).forEach(([k,v])=>{if(v.bump)_bump[v.team]=v.bump;});/* a star sliding past where the board had him: the club behind you that needs him calls first, and pays more */const _fc=curPick?.owner===ui?fallerCall({picks:draftPicks,futures:futurePicks,idx:draftIdx,ui,yr,teams,board:dc[yr]||[],bump:_bump,needOf:(tm,p)=>teamNeeds(teams[tm]?.roster||[]).score[needGroup(p)]||0}):null;const offers=[...(_fc&&!tdCalls[_fc.id]?.gone?[_fc]:[]),...tradeDownOffers({picks:draftPicks,futures:futurePicks,idx:draftIdx,ui,yr,teams,target:_tgt,bump:_bump}).filter(o=>!tdCalls[o.id]?.gone&&o.team!==_fc?.team)];
+          {(()=>{const _tgt=tm=>{const b=[...(dc[yr]||[])].sort((a,b)=>csRank(a)-csRank(b));return b[(tm*7+draftIdx)%Math.min(4,b.length||1)]||null;};const _bump={};Object.entries(tdCalls).forEach(([k,v])=>{if(v.bump)_bump[v.team]=v.bump;});/* a star sliding past where the board had him: the club behind you that needs him calls first, and pays more */const _fc=curPick?.owner===ui?fallerCall({picks:draftPicks,futures:futurePicks,idx:draftIdx,ui,yr,teams,board:dc[yr]||[],bump:_bump,needOf:(tm,p)=>teamNeeds(teams[tm]?.roster||[],teams[tm]?.personnel).score[needGroup(p)]||0}):null;const offers=[...(_fc&&!tdCalls[_fc.id]?.gone?[_fc]:[]),...tradeDownOffers({picks:draftPicks,futures:futurePicks,idx:draftIdx,ui,yr,teams,target:_tgt,bump:_bump}).filter(o=>!tdCalls[o.id]?.gone&&o.team!==_fc?.team)];
             const accept=o=>{const r=acceptOffer(draftPicks,futurePicks,o,ui);setDraftPicks(r.picks);setFuturePicks(r.futures);setDraftTimer(120);const got=[pickLabel(o.theirPick,yr),...o.extras.map(a=>pickLabel(a,yr))].join(', ');setLog(l=>[`🔁 DRAFT-DAY TRADE: ${TEAMS[ui].ab} trade #${curPick.overall} to ${TEAMS[o.team].ab} for ${got}`,...l.slice(0,149)]);sm(`Traded down: ${got}`);};
             const askMore=o=>{const k=o.id;const tries=(tdCalls[k]?.tries||0)+1;const yes=((draftIdx*31+o.team*17+tries*7)%10)<5;setTdCalls(c=>({...c,[k]:yes?{team:o.team,bump:(c[k]?.bump||0)+0.12,tries}:{team:o.team,gone:true,tries}}));sm(yes?`${TEAMS[o.team].name} sweeten the offer`:`${TEAMS[o.team].name} hang up — they'll look elsewhere`);};
             const _call=offers.filter(o=>!callSeen[o.id]).sort((a,b)=>(b.faller?1:0)-(a.faller?1:0)||b.pct-a.pct)[0];

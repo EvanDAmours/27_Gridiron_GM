@@ -107,7 +107,7 @@ function Injuries({ teams, ui, onNav, wk }) {
 // The off-season (and bye weeks) has no matchup: the middle shows the club's needs and the
 // players whose futures are on the table, each a shortcut to the screen where you act on it.
 function OffseasonBoard({ me, sp, onNav }) {
-  const needs = teamNeeds(me.roster).list.filter((x) => x.score >= 0.2).slice(0, 4);
+  const needs = teamNeeds(me.roster, me.personnel).list.filter((x) => x.score >= 0.2).slice(0, 4);
   const expiring = me.roster.filter((p) => (p.contract ?? 2) <= 1).sort((a, b) => b.ovr - a.ovr).slice(0, 5);
   const young = me.roster.filter((p) => (p.age || 30) <= 24).sort((a, b) => b.ovr - a.ovr).slice(0, 5);
   const keep = sp === "combine" || sp === "resign" || sp === "regular";

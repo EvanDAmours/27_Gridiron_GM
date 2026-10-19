@@ -12,8 +12,8 @@ import { arrangeDL, dlAsPlayed, naturalDL } from "./dline.js";
 import { teamNeeds, topNeeds } from "./needs.js";
 import { bestPlan, planEdge } from "./gamePlan.js";
 import { withHeadshot } from "./headshots.js";
-import { makeSide, createGame, playGame, setLeague } from "./playsim.js";
-import { unitRatings } from "./gamesim.js";
+import { makeSide, createGame, playGame, setLeague, teamPersonnel, setPkgOff } from "./playsim.js";
+import { unitRatings, defUnits } from "./gamesim.js";
 import { DATA_TO_DOLLARS, leagueCap, expiringNow } from "./cap.js";
 import { teamSnaps } from "./snaps.js";
 import { REAL_STAFF, HC_RATING, HC_TRAIT, COORD } from "./data/realCoaches.js";
@@ -399,7 +399,7 @@ const wx=wxOverride||rollGameWeather();
   const hOrd=_ord(ht),aOrd=_ord(at);
   // The game plans: yours if you picked one for this week, otherwise (and for every AI club) the
   // one that suits the matchup best (gamePlan.js).
-  const hU=unitRatings(hOrd),aU=unitRatings(aOrd);
+  const hP=teamPersonnel(ht,hOrd),aP=teamPersonnel(at,aOrd);const hU=unitRatings(hOrd,hP),aU=unitRatings(aOrd,aP);
   hPlan=ht.isUser&&hPlan&&!hPlan.auto?hPlan:{...(hPlan||{}),...bestPlan(hU,aU),auto:true};aPlan=at.isUser&&aPlan&&!aPlan.auto?aPlan:{...(aPlan||{}),...bestPlan(aU,hU),auto:true};
   const _pe=planEdge(hPlan,aPlan,hU,aU);
   const wxM=wx==='snow'?-4:wx==='rain'?-2:wx==='wind'?-1:0;
@@ -414,7 +414,7 @@ const wx=wxOverride||rollGameWeather();
   const _trans=t=>(t._schemeTransWks||0)>0?-2:0;
   let hMod=_trans(ht)+hOC-aDC+hFit*.5+_pe.h+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+((hPlan?.playbook?.length||0)>=3?1:0)+_hClash+hHC+(ht.isUser?_dda:0);
   let aMod=_trans(at)+aOC-hDC+aFit*.5+_pe.a+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+((aPlan?.playbook?.length||0)>=3?1:0)+_aClash-hHC+(at.isUser?_dda:0);
-  const hSnaps=teamSnaps(hOrd,ht.isUser?USER_SNAPS:{}),aSnaps=teamSnaps(aOrd,at.isUser?USER_SNAPS:{});
+  const hSnaps=teamSnaps(hOrd,ht.isUser?USER_SNAPS:{},hP.shape),aSnaps=teamSnaps(aOrd,at.isUser?USER_SNAPS:{},aP.shape);
   // Play-calling tendency: the game plan, plus the coordinator's scheme (Air Raid throws more, Power Run runs more).
   const lean=(t,pl)=>(pl?.off==="pass_heavy"?0.07:pl?.off==="run_heavy"?-0.07:0)+(0.42-schemeRunPct(t))*0.5;
   return{wx,hPlan,aPlan,hSnaps,aSnaps,home:makeSide({team:ht,order:hOrd,snaps:hSnaps,mod:hMod,lean:lean(ht,hPlan),plan:hPlan}),away:makeSide({team:at,order:aOrd,snaps:aSnaps,mod:aMod,lean:lean(at,aPlan),plan:aPlan})};
@@ -465,7 +465,10 @@ export function applyGame(t,snaps,lines,playoff=false){
 export function weeklyTick(teams,weeks=1){for(const t of teams||[])if((t._schemeTransWks||0)>0)t._schemeTransWks=Math.max(0,t._schemeTransWks-weeks);}
 // The league's unit-rating averages and spreads, for the game engine to measure teams against.
 export function calibrateLeague(teams){
-  const us=(teams||[]).filter(t=>t?.roster?.length).map(t=>{const h=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const memo={};const order=pos=>memo[pos]||(memo[pos]=pos==="DL"?dlAsPlayed(depthOrderFor(h,{},"DL")):depthOrderFor(h,{},pos));return unitRatings(order);});
+  const _po={base:[0,0],nickel:[0,0],dime:[0,0]};let _pn=0;
+  const us=(teams||[]).filter(t=>t?.roster?.length).map(t=>{const h=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const memo={};const order=pos=>memo[pos]||(memo[pos]=pos==="DL"?dlAsPlayed(depthOrderFor(h,{},"DL")):depthOrderFor(h,{},pos));const u=unitRatings(order,teamPersonnel(t,order));const u0=unitRatings(order);_pn++;for(const k of Object.keys(_po)){const d=defUnits(order,k);_po[k][0]+=d.passD-u0.passD;_po[k][1]+=d.runD-u0.runD;}return u;});
+  // how defenses rate in each package against their average, for the auto personnel pick
+  if(_pn)setPkgOff(Object.fromEntries(Object.entries(_po).map(([k,[a,b]])=>[k,{passD:a/_pn,runD:b/_pn}])));
   if(us.length<8)return null;
   const base={};for(const k of ["pass","run","passD","runD","rush","ol"]){const xs=us.map(u=>u[k]).filter(Number.isFinite);const m=xs.reduce((a,b)=>a+b,0)/xs.length;base[k]=[m,Math.sqrt(xs.reduce((a,b)=>a+(b-m)**2,0)/xs.length)];}
   setLeague(base);return base;
@@ -473,7 +476,7 @@ export function calibrateLeague(teams){
 // Sim a game start to finish on the play-by-play engine. dry: a preview that changes nothing.
 // Each club's unit ratings for a matchup, from the lineup that would take the field (for the game
 // plan screen; gameSetup builds the same).
-export function matchupUnits(ht,at){const _ord=t=>{const _healthy=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const _dO=t.isUser?USER_DEPTH:{};const _pt=t.isUser?USER_SNAPS:null;const memo={};return pos=>memo[pos]||(memo[pos]=depthOrderFor(_healthy,_dO,pos,_pt));};return{mine:unitRatings(_ord(ht)),theirs:unitRatings(_ord(at))};}
+export function matchupUnits(ht,at){const _ord=t=>{const _healthy=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const _dO=t.isUser?USER_DEPTH:{};const _pt=t.isUser?USER_SNAPS:null;const memo={};return pos=>memo[pos]||(memo[pos]=depthOrderFor(_healthy,_dO,pos,_pt));};const oh=_ord(ht),oa=_ord(at);return{mine:unitRatings(oh,teamPersonnel(ht,oh)),theirs:unitRatings(oa,teamPersonnel(at,oa))};}
 export function simGame(ht,at,hPlan,aPlan,wxOverride,opts={}){
   const su=gameSetup(ht,at,hPlan,aPlan,wxOverride);
   const g=playGame(createGame(su.home,su.away,{playoff:!!opts.playoff,neutral:!!opts.neutral,rec:!!opts.rec}));
