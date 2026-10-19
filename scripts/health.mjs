@@ -10,7 +10,8 @@ import path from "node:path";
 import { preview } from "vite";
 import { chromium } from "playwright-core";
 import LZ from "lz-string";
-import { capFor } from "../src/cap.js";
+import { capFor, setLeagueYear, setCapPhase } from "../src/cap.js";
+import { capSpace } from "../src/league.js";
 
 const findChromium = () => {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
@@ -80,6 +81,7 @@ function measure(d) {
   const all = d.teams.flatMap((t) => t.roster);
   const mean = (xs) => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length);
   const starters = d.teams.flatMap((t) => [...t.roster].sort((a, b) => b.ovr - a.ovr).slice(0, 22));
+  setLeagueYear(["resign", "freeagency", "draft"].includes(d.sp) ? d.yr + 1 : d.yr); setCapPhase(d.yr, d.sp);
   const ai = d.teams.filter((_, i) => i !== d.ui);
   const capOf = (t) => t.roster.reduce((a, p) => a + (p.salary || 0), 0) + (t.deadCap || 0);
   const thin = ai.filter((t) => ["QB", "C", "K", "P", ...OL].some((pos) => t.roster.filter((p) => p.pos === pos).length < (pos === "QB" ? 2 : 1))).length;
@@ -91,7 +93,7 @@ function measure(d) {
     yr: d.yr, players: all.length, avgOvr: +mean(all.map((p) => p.ovr)).toFixed(1), starterOvr: +mean(starters.map((p) => p.ovr)).toFixed(1),
     n90: all.filter((p) => p.ovr >= 90).length, n95: all.filter((p) => p.ovr >= 95).length, n99: all.filter((p) => p.ovr >= 99).length,
     minRoster: Math.min(...ai.map((t) => t.roster.length)), maxRoster: Math.max(...ai.map((t) => t.roster.length)),
-    overCap: ai.filter((t) => capOf(t) > capFor(d.yr)).length, maxOver: +Math.max(0, ...ai.map((t) => capOf(t) - capFor(d.yr))).toFixed(1), avgDead: +mean(ai.map((t) => t.deadCap || 0)).toFixed(1), maxDead: +Math.max(...ai.map((t) => t.deadCap || 0)).toFixed(1),
+    overCap: ai.filter((t) => capSpace(t) < 0).length, maxOver: +Math.max(0, ...ai.map((t) => -capSpace(t))).toFixed(1), avgDead: +mean(ai.map((t) => t.deadCap || 0)).toFixed(1), maxDead: +Math.max(...ai.map((t) => t.deadCap || 0)).toFixed(1),
     thinTeams: thin, olDepth: +olDepth.toFixed(1), noP: ai.filter((t) => !t.roster.some((p) => p.pos === "P")).length,
     rookieSnapPct: { r1: byRd(1), r2: byRd(2), r3: byRd(3), r4_7: (() => { const xs = rk.filter((p) => p.draftPk > 96).map((p) => p.cs?.snp || 0); return xs.length ? Math.round(mean(xs) / 17) : null; })() },
     // how many players rate 80+ (more over time = rating inflation) and what an 80-84 WR is paid, as % of the cap
