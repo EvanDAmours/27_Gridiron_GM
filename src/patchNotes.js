@@ -1217,4 +1217,8 @@ export const PATCH_NOTES = [
     "The very top stays stocked: when the league has fewer than six 99s, young players at 96-98 take the last step more often.",
     "Fixed: an Elite class's can't-miss prospect could be picked as one of the class's hidden busts.",
   ] },
+  { v: "3.16", date: "2026-10-20", title: "Regular Season Only", notes: [
+    "Fixed: in a live playoff game, Record Watch and Milestone Watch added the game to a player's regular-season totals and could say he was about to break (or had broken) a single-season record. Records and season milestones count regular-season games only, so neither shows in the playoffs now.",
+    "Removed a random news headline that called a player \"on pace for a record-breaking season\" whatever his stats were. Real record chases still get their own stories.",
+  ] },
 ];
