@@ -6,6 +6,7 @@ import { C, TeamLogo, Face, Bdg } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import goldJacket from "./assets/gold-jacket.webp";
 import { Jersey } from "./Jersey.jsx";
+import ChampionRing from "./ChampionRing.jsx";
 
 const CONFETTI = Array.from({ length: 42 }, (_, i) => ({ left: (i * 37) % 100, delay: (i * 0.13) % 2.4, dur: 2.6 + ((i * 7) % 10) / 10, rot: (i * 47) % 360, size: 6 + (i % 4) * 2 }));
 const CSS = `
@@ -92,24 +93,6 @@ function RaftersNight({ m, onClose }) {
 }
 
 // Ring night: before the home opener the champions get their rings and the banner goes up.
-function ChampionRing({ t, yr, size }) {
-  const gold = "#e8c45a";
-  return (
-    <svg viewBox="0 0 200 200" width={size} height={size} style={{ filter: "drop-shadow(0 16px 30px #000c) drop-shadow(0 0 30px #fbbf2455)" }}>
-      <defs>
-        <linearGradient id="rg-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fff7d6" /><stop offset=".35" stopColor={gold} /><stop offset=".7" stopColor="#8a6d1d" /><stop offset="1" stopColor="#f6e3a1" /></linearGradient>
-        <radialGradient id="rg-s" cx=".35" cy=".3" r=".8"><stop offset="0" stopColor="#ffffff" /><stop offset=".25" stopColor="#dbeafe" /><stop offset="1" stopColor="#94a3b8" /></radialGradient>
-      </defs>
-      <ellipse cx="100" cy="150" rx="62" ry="26" fill="none" stroke="url(#rg-g)" strokeWidth="16" />
-      <rect x="44" y="38" width="112" height="100" rx="22" fill="url(#rg-g)" />
-      <rect x="54" y="48" width="92" height="80" rx="16" fill={t.clr || "#1e3a8a"} />
-      {Array.from({ length: 14 }, (_, i) => { const a = (i / 14) * Math.PI * 2; return <circle key={i} cx={100 + Math.cos(a) * 40} cy={88 + Math.sin(a) * 34} r="4.2" fill="url(#rg-s)" />; })}
-      <text x="100" y="84" textAnchor="middle" fontSize="13" fontWeight="900" fill="#fff" fontFamily="system-ui">{t.ab}</text>
-      <text x="100" y="102" textAnchor="middle" fontSize="11" fontWeight="900" fill={gold} fontFamily="Georgia, serif">{yr}</text>
-      <text x="100" y="146" textAnchor="middle" fontSize="8" fontWeight="900" fill="#3b2a0a" fontFamily="system-ui" letterSpacing="1">WORLD CHAMPIONS</text>
-    </svg>
-  );
-}
 function RingNight({ m, onClose }) {
   const t = m.team;
   return (
@@ -118,9 +101,9 @@ function RingNight({ m, onClose }) {
       <Confetti colors={[t.clr || "#1e3a8a", "#e8c45a", "#fde68a", "#ffffff"]} />
       <div role="dialog" aria-label="Ring night" onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(600px, 100%)", textAlign: "center", color: "#fff", background: "linear-gradient(170deg,#1c1206,#0b0703 70%)", border: "2px solid #d4a017", borderRadius: 18, padding: MOBILE ? "18px 16px" : "22px 28px", boxShadow: "0 0 80px #d4a01744", animation: "mmIn .45s ease-out" }}>
         <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 4, color: "#d4a017" }}>RING NIGHT · {m.yr + 1} HOME OPENER</div>
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 8, perspective: 600 }}><div style={{ animation: "ringSpin 1.3s cubic-bezier(.2,.8,.3,1) both" }}><ChampionRing t={t} yr={m.yr} size={MOBILE ? 170 : 210} /></div></div>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 8, perspective: 600 }}><div style={{ animation: "ringSpin 1.3s cubic-bezier(.2,.8,.3,1) both" }}><ChampionRing t={t} yr={m.yr} titles={m.titles} size={MOBILE ? 220 : 270} /></div></div>
         <div className="mm-title" style={{ fontSize: MOBILE ? 26 : 34, fontWeight: 900, fontStyle: "italic", marginTop: 4 }}>{m.sbName || `${m.yr} WORLD CHAMPIONS`}</div>
-        <div style={{ fontSize: 15, color: "#e2e8f0", marginTop: 6, lineHeight: 1.45 }}>The {t.city} {t.name} raise the banner and hand out the rings before the {m.yr + 1} opener.</div>
+        <div style={{ fontSize: 15, color: "#e2e8f0", marginTop: 6, lineHeight: 1.45 }}>{m.score ? <>Champions by {m.score}{m.opp ? <> over the {m.opp}</> : null}. </> : null}The {t.city} {t.name} raise the banner and hand out the rings before the {m.yr + 1} opener.</div>
         {m.names?.length > 0 && <div style={{ marginTop: 12, background: "#00000055", borderRadius: 12, padding: "10px 14px", textAlign: "left" }}>
           <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#d4a017", marginBottom: 4 }}>GETTING THEIR RINGS</div>
           <div style={{ fontSize: 14, color: "#fde68a", lineHeight: 1.6 }}>{m.names.join(" · ")}</div>

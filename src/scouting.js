@@ -691,11 +691,15 @@ const BUST_WHY = {
 export function plantBusts(cls, yr) {
   if (!cls?.length || cls.some((p) => p.bustChk)) return cls;
   const r = stream(`busts|${yr ?? cls[0]?.draftYear}|${cls.length}`);
-  const n = 3 + (r.chance(0.5) ? 1 : 0) + (r.chance(0.25) ? 1 : 0);
-  const pool = cls.filter((p) => !p.gem && !(p.scout?.lvl > 0) && (p.cons?.mid ?? 999) <= 70 && p.pos !== "K" && p.pos !== "P");
+  // A quarter to a third of the first round misses, like real drafts (with three to five busts a class
+  // a 15-season playtest had 73% of first-rounders become 80+ players; with seven to ten spread over
+  // the top 64, still 77%): seven to ten a class, all in the board's top 40, so nearly all go in the
+  // first round. The board can't see them; a scouting report can.
+  const n = 7 + (r.chance(0.5) ? 1 : 0) + (r.chance(0.5) ? 1 : 0) + (r.chance(0.25) ? 1 : 0);
+  const pool = cls.filter((p) => !p.gem && !(p.scout?.lvl > 0) && (p.cons?.mid ?? 999) <= 40 && p.pos !== "K" && p.pos !== "P");
   for (let i = 0; i < n && pool.length; i++) {
     const p = pool.splice(Math.floor(r.next() * pool.length), 1)[0];
-    const target = p.truePot - r.int(8, 15);
+    const target = p.truePot - r.int(10, 18);
     // He isn't as good as he looks today either, when his ceiling drops below his current rating.
     if (target <= p.trueOvr) { p.trueOvr = Math.max(50, target - 2); if (p.ovr > p.trueOvr) p.ovr = p.trueOvr; }
     const kind = p.pos === "QB" && r.chance(0.5) ? "system" : r.pick(["character", "character", "medical", "oneyear", "workout"]);

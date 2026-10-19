@@ -79,16 +79,16 @@ test("a deep, sharp crew on one group flags its sleepers and special traits earl
 });
 
 import { plantBusts, bustGap, interviewProspect } from "../src/scouting.js";
-test("every class has a few red-flag prospects the board loves", () => {
+test("every class has seven to ten red-flag prospects the board loves", () => {
   let n = 0, early = 0, flagged = 0;
   for (let y = 0; y < 6; y++) {
     const cls = genDC(2400 + y);
     const busts = cls.filter((p) => p.bust);
-    assert.ok(busts.length >= 3 && busts.length <= 5, `${busts.length} busts`);
+    assert.ok(busts.length >= 7 && busts.length <= 10, `${busts.length} busts`);
     for (const p of busts) {
       n++;
-      assert.ok(bustGap(p) >= 8 && publicPot(p) > p.truePot);
-      if (p.cons.mid <= 70) early++;
+      assert.ok(bustGap(p) >= 10 && publicPot(p) > p.truePot);
+      if (p.cons.mid <= 40) early++;
       // a report always red-flags him
       const rep = prospectRead({}, { ...p, scout: { lvl: 1, eOvr: p.trueOvr, ePot: p.truePot, notes: { flag: "🚩" } } });
       if (rep.flag) flagged++;

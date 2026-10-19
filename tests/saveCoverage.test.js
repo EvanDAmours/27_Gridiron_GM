@@ -60,14 +60,15 @@ test("the automatic save and Continue use the full save and the full loader", ()
 
 test("no save path builds its own partial save, and every load path uses the full loader", () => {
   assert.equal((src.match(/=\{v:3,/g) || []).length, 0, "a hand-built save object (use fullSaveData())");
-  for (const fn of ["exportLeague", "saveGame", "saveSavSlot", "autoSave"]) {
+  for (const fn of ["saveGame", "saveSavSlot", "autoSave"]) {
     const body = src.slice(src.indexOf(`const ${fn}=`), src.indexOf("\n", src.indexOf(`const ${fn}=`)));
     assert.match(body, /fullSaveData\(\)/, `${fn} writes the full save`);
   }
-  for (const fn of ["importLeague", "loadGame", "loadSavSlot", "applyAutoSave"]) {
+  for (const fn of ["importSave", "loadSavSlot", "applyAutoSave"]) {
     const body = src.slice(src.indexOf(`const ${fn}=`), src.indexOf("\n", src.indexOf(`const ${fn}=`)));
     assert.match(body, /applyFullSave\(/, `${fn} loads through applyFullSave`);
   }
+  assert.match(src.slice(src.indexOf("const loadGame="), src.indexOf("\n", src.indexOf("const loadGame="))), /importSave\(/, "a picked file loads through importSave");
 });
 
 test("loading a save keeps a zero: no `d.x||N` defaults for numbers that can reach 0", async () => {

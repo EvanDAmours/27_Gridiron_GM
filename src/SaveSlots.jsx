@@ -53,6 +53,26 @@ export function SaveSlots({ teams, onSave, onLoad, title = "Save slots", version
   );
 }
 
+// One save across phone and computer: export the franchise as a file, import it on the other device.
+export function DeviceTransfer({ onExport, onImport, mobile }) {
+  const [busy, setBusy] = useState(false);
+  const go = async () => { setBusy(true); try { await onExport(); } finally { setBusy(false); } };
+  const btn = { borderRadius: 8, padding: mobile ? "12px 14px" : "9px 16px", fontSize: 14, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, flex: mobile ? 1 : "0 0 auto" };
+  return (
+    <div style={{ background: `linear-gradient(120deg,#1e3a5f55,${C.cd} 65%)`, border: "1px solid #3b82f655", borderRadius: 12, padding: "12px 14px", marginBottom: 14, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+      <div style={{ fontSize: 30, lineHeight: 1 }}>📲</div>
+      <div style={{ flex: "1 1 260px", minWidth: 0 }}>
+        <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 1, color: "#7dd3fc" }}>PLAY ON ANOTHER DEVICE</div>
+        <div style={{ fontSize: 13, color: C.mt, lineHeight: 1.45 }}>Export this franchise as a save file, send it over (AirDrop, Messages, email, a cloud drive), then import it on your phone or computer. Import also works from the title screen.</div>
+      </div>
+      <div style={{ display: "flex", gap: 8, width: mobile ? "100%" : "auto" }}>
+        <button onClick={go} disabled={busy} style={{ ...btn, background: "#1d4ed8", color: "#fff", border: "1px solid #3b82f6", opacity: busy ? 0.6 : 1 }}>{busy ? "Packing…" : mobile ? "📤 Share save" : "⬇ Export save"}</button>
+        <label style={{ ...btn, background: "transparent", color: "#e0f2fe", border: "1px solid #3b82f6" }}>📂 Import save<input type="file" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) onImport(f); }} /></label>
+      </div>
+    </div>
+  );
+}
+
 export const CAP_TERMS = [
   ["Salary cap", "The most a team can spend on players this season ($301.2M in 2026, growing every year). You can't sign anyone who'd put you over it."],
   ["Cap hit", "What a player counts against the cap this season: his base salary plus his signing bonus proration. It's the number that matters, not the headline value of the deal."],

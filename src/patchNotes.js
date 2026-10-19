@@ -1184,4 +1184,11 @@ export const PATCH_NOTES = [
     "Credit spreads the way it does on a real line: each sack a rusher already has in a game makes the next one harder, about one sack in five is shared (half a sack each), and an elite rusher's edge in getting home is smaller.",
     "Off-ball linebackers top out around 9-12 sacks instead of 12-15 on top of their tackles, so tackle-machine linebackers stop posting edge-rusher numbers.",
   ] },
+  { v: "3.11", date: "2026-10-19", title: "The Wire", notes: [
+    "Transactions: a new page under League lists every trade, notable signing, coaching hire and firing, and retirement around the league, by season and week. Filter by kind, club and season; your club's moves are highlighted.",
+    "One franchise on your phone and your computer: on the Saves page, Export save packs the whole franchise into one small file (share it from a phone with AirDrop, Messages or Files; download it on a computer) and Import save opens it on the other device. The title screen's Import Save File works on a device with no game yet. Files are about a sixth the size of the old exports, and old .json exports still import.",
+    "Super Bowl rings worth wearing: Ring Night shows a real championship ring: a polished gold band engraved with your club, the Super Bowl and the year, a raised crown in your colors set with a diamond border, your logo in a diamond halo between two Lombardi trophies, and light running across the metal. It also tells you the score and who you beat.",
+    "More first-round busts, and scouting still finds them: seven to ten prospects a class (was three to five) aren't what the board thinks, all in the board's top 40, so a real share of every first round misses. A scouting report always red-flags them.",
+    "The top of the league stays stocked: over long careers the 95+ and 99 club thinned out as the 2026 stars retired (forty 95s down to the low twenties, one to four 99s). Climbing the last few points to 99 is a little easier, and when the league is short of elite players, young stars near the top break through a bit more often.",
+  ] },
 ];

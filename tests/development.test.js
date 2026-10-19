@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { focusChance, perSeason, runFocusWeeks, seasonGrowth, seasonSnapShare, seasonAwards, awardGrowth, driftCorrection, isLandslide, LEADERS, agingEnd, hitsTheWall } from "../src/development.js";
+import { focusChance, perSeason, runFocusWeeks, seasonGrowth, seasonSnapShare, seasonAwards, awardGrowth, driftCorrection, isLandslide, LEADERS, agingEnd, hitsTheWall, topEndNudge } from "../src/development.js";
 import { retireAge } from "../src/retirement.js";
 import { leagueShift } from "../src/offseason.js";
 
@@ -132,4 +132,14 @@ test("the wall at 33: most players fall off, the great ones and quarterbacks don
   assert.equal(agingEnd({ pos: "RB", dev: "generational" }) - agingEnd({ pos: "RB", dev: "star" }), 3);
   assert.ok(retireAge({ pos: "WR", dev: "generational" }) > retireAge({ pos: "WR", dev: "superstar" }));
   assert.equal(retireAge({ pos: "WR", dev: "star" }), retireAge({ pos: "WR", dev: "normal" }));
+});
+
+test("the top end holds steady: a thin league nudges young stars up, a full one doesn't", () => {
+  const always = () => 0, never = () => 0.99;
+  assert.equal(topEndNudge(25, 92, 28, always), 93, "short of 95s: +1");
+  assert.equal(topEndNudge(25, 92, 40, always), 92, "at the 2026 count: nothing");
+  assert.equal(topEndNudge(25, 92, 28, never), 92, "only now and then");
+  assert.equal(topEndNudge(31, 92, 10, always), 92, "not for veterans");
+  assert.equal(topEndNudge(25, 84, 10, always), 84, "only near the top");
+  assert.equal(topEndNudge(25, 99, 10, always), 99, "never past 99");
 });
