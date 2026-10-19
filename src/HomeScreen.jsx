@@ -10,6 +10,7 @@ import { InjTag } from "./InjuryTag.jsx";
 import { injuryReport } from "./injuries.js";
 import PixelMatchup from "./PixelMatchup.jsx";
 import MatchupStakes from "./MatchupStakes.jsx";
+import RaceWatch from "./RaceWatch.jsx";
 import { teamNeeds, needName } from "./needs.js";
 import { primeSlot } from "./seasonPreview.js";
 import { rosterPlan } from "./rosterPlan.js";
@@ -256,6 +257,7 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
               venue={sp === "playoffs" && pb?.rd === 4 ? "Super Bowl • neutral site" : [game.venue || home.city, game.intl && game.city].filter(Boolean).join(", ")}
             />
           ) : null}
+          {game && sp === "regular" && <RaceWatch teams={teams} sched={sched} ui={ui} wk={game.wk} mobile={mobile} />}
           {game && (sp === "regular" || sp === "playoffs" || sp === "preseason") && <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={sp === "playoffs"} h2h={sp === "preseason" ? null : h2h} neutral={!!game.neutral || (sp === "playoffs" && pb?.rd === 4)} />}
           {game && (sp === "regular" || sp === "playoffs") && planCard && <div style={{ marginTop: 12 }}>{planCard}</div>}
           {mobile && menu.length > 0 && (
