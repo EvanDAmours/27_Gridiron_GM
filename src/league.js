@@ -395,7 +395,7 @@ export function liveView(box){const out={h:{},a:{}};for(const side of["h","a"])f
 // The shared setup for quick sims and live games: each side's depth chart, snap shares and
 // game-day modifiers (coaches, schemes, game plan, weather, matchups, difficulty).
 export function gameSetup(ht,at,hPlan,aPlan,wxOverride){
-const wx=wxOverride||rollGameWeather();
+const wx=wxOverride||'clear';/* the weather is set per game (weather.js) and played out in the engine */
   const hOC=ht.coach?.oc?(ht.coach.oc.rating-60)*.1:0,hDC=ht.coach?.dc?(ht.coach.dc.rating-60)*.1:0;
   const aOC=at.coach?.oc?(at.coach.oc.rating-60)*.1:0,aDC=at.coach?.dc?(at.coach.dc.rating-60)*.1:0;
   const hFit=getOCFit(ht)+getDCFit(ht),aFit=getOCFit(at)+getDCFit(at);
@@ -408,7 +408,6 @@ const wx=wxOverride||rollGameWeather();
   const hP=teamPersonnel(ht,hOrd),aP=teamPersonnel(at,aOrd);const hU=unitRatings(hOrd,hP),aU=unitRatings(aOrd,aP);
   hPlan=ht.isUser&&hPlan&&!hPlan.auto?hPlan:{...(hPlan||{}),...bestPlan(hU,aU),auto:true};aPlan=at.isUser&&aPlan&&!aPlan.auto?aPlan:{...(aPlan||{}),...bestPlan(aU,hU),auto:true};
   const _pe=planEdge(hPlan,aPlan,hU,aU);
-  const wxM=wx==='snow'?-4:wx==='rain'?-2:wx==='wind'?-1:0;
   // Everything that tilts a game, in points for each offense (the engine turns it into play-by-play odds).
   const _pmAvg=arr=>arr.length?arr.reduce((s,p)=>s+p.ovr,0)/arr.length:70;
   const _grp=(t,ps)=>t.roster.filter(p=>ps.includes(p.pos)&&!p.injured);
@@ -418,8 +417,8 @@ const wx=wxOverride||rollGameWeather();
   const _dda=DDA;
   // A scheme change takes a couple of weeks to install: the team plays a bit worse until it's in.
   const _trans=t=>(t._schemeTransWks||0)>0?-2:0;
-  let hMod=_trans(ht)+hOC-aDC+hFit*.5+_pe.h+wxM+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+_hClash+hHC+(ht.isUser?_dda:0);
-  let aMod=_trans(at)+aOC-hDC+aFit*.5+_pe.a+wxM+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+_aClash-hHC+(at.isUser?_dda:0);
+  let hMod=_trans(ht)+hOC-aDC+hFit*.5+_pe.h+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+_hClash+hHC+(ht.isUser?_dda:0);
+  let aMod=_trans(at)+aOC-hDC+aFit*.5+_pe.a+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+_aClash-hHC+(at.isUser?_dda:0);
   // coordinators running what they believe in (personnel.js coordFit): a little for the offense, a little off the other side's
   {const hc=coordFit(ht,hP.offSet),ac=coordFit(at,aP.offSet);hMod+=hc.off-ac.def;aMod+=ac.off-hc.def;}
   const hSnaps=teamSnaps(hOrd,ht.isUser?USER_SNAPS:{},hP.shape),aSnaps=teamSnaps(aOrd,at.isUser?USER_SNAPS:{},aP.shape);
@@ -496,7 +495,7 @@ export function addPersonnelStats(t,st,yr=getLeagueYear()){
 }
 export function simGame(ht,at,hPlan,aPlan,wxOverride,opts={}){
   const su=gameSetup(ht,at,hPlan,aPlan,wxOverride);
-  const g=playGame(createGame(su.home,su.away,{playoff:!!opts.playoff,neutral:!!opts.neutral,rec:!!opts.rec}));
+  const g=playGame(createGame(su.home,su.away,{playoff:!!opts.playoff,neutral:!!opts.neutral,rec:!!opts.rec,wx:su.wx}));
   if(opts.dry)return{hsc:g.score.h,asc:g.score.a,boxH:g.box.h,boxA:g.box.a,wx:su.wx,game:g};
   addPersonnelStats(ht,g.stats.h);addPersonnelStats(at,g.stats.a);
   return{hsc:g.score.h,asc:g.score.a,boxH:applyGame(ht,su.hSnaps,g.box.h,!!opts.playoff),boxA:applyGame(at,su.aSnaps,g.box.a,!!opts.playoff),wx:su.wx,...(g.pl?{game:g}:{})};

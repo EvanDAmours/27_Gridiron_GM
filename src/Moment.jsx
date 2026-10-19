@@ -2,6 +2,7 @@
 // the division or the top seed; one of your players breaking a record; signing a star in free
 // agency; a blockbuster trade; and the season kickoff preview. One look for all of them, like the Super Bowl's.
 import React from "react";
+import { HolidayResult } from "./Atmosphere.jsx";
 import { C, TeamLogo, Face, Bdg } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import goldJacket from "./assets/gold-jacket.webp";
@@ -172,6 +173,7 @@ export default function Moment({ m, onClose }) {
   if (!m?.team) return null;
   if (m.kind === "record" && m.nfl) return <RecordNight m={m} onClose={onClose} />;
   if (m.kind === "hof") return <HofCeremony m={m} onClose={onClose} />;
+  if (m.kind === "holiday") return <HolidayResult m={m} onClose={onClose} />;
   if (m.kind === "jersey" || m.kind === "ring") return <RaftersNight m={m} onClose={onClose} />;
   if (m.kind === "rings") return <RingNight m={m} onClose={onClose} />;
   const t = m.team;

@@ -20,6 +20,7 @@
 // come down to the last drives (and the field goal at the end), and lopsided mismatches have
 // diminishing returns, so blowouts and 50-point games stay rare.
 import { retRating } from "./special.js";
+import { wxOf } from "./weather.js";
 import { unitRatings, offUnits, defUnits, lbCover } from "./gamesim.js";
 import { dlAsPlayed } from "./dline.js";
 import { ROLE_SLOTS, rolesAsPlayed } from "./roles.js";
@@ -252,10 +253,12 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
 
 const emptyTeam = () => ({ blitz: 0, box: 0, cover: 0, dropbacks: 0, plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
 
-export function createGame(home, away, { playoff = false, neutral = false, rand = Math.random, rec = false } = {}) {
+export function createGame(home, away, { playoff = false, neutral = false, rand = Math.random, rec = false, wx = "clear" } = {}) {
   const first = rand() < 0.5 ? "h" : "a";
   const g = {
     sides: { h: home, a: away }, playoff, neutral, rand,
+    // the weather (weather.js): wx its key, wxE what it does to the game
+    wx, wxE: wxOf(wx),
     poss: first, firstPoss: first, yard: 25, down: 1, toGo: 10, qtr: 1, clock: 900,
     score: { h: 0, a: 0 }, done: false, ot: false, otScored: false, plays: 0, to: { h: 3, a: 3 },
     box: { h: {}, a: {} }, stats: { h: emptyTeam(), a: emptyTeam() },
@@ -419,6 +422,8 @@ function chooseCall(g, o, pers = "11") {
   else if (g.down === 1) pass -= 0.08;
   // the grouping tips it: two tight ends and a fullback run more, four wide throws more
   pass += (PERS_LEAN[pers] || 0) * 0.8;
+  // rain, snow and wind keep the ball on the ground
+  pass -= g.wxE?.run || 0;
   // Game script: protect a big second-half lead on the ground; chase one through the air.
   if (g.qtr >= 3 && lead >= 14) pass -= g.qtr >= 4 ? 0.2 : 0.1;
   if (g.qtr >= 3 && lead <= -14) pass = Math.max(pass + 0.12, g.qtr >= 4 ? 0.75 : 0);
@@ -499,7 +504,7 @@ function stepPlay(g, call, bonus = 1) {
     }
   }
   if (decision === "fg") {
-    const made = rand() < fgOdds(fgDist, o.kOvr, o.kLeg);
+    const made = rand() < fgOdds(fgDist, o.kOvr, o.kLeg) + (g.wxE?.fg || 0) * (fgDist >= 40 ? 1.4 : 0.6); // weather costs the long ones most
     const kl = line(g, off, o.k);
     add(kl, "fgA", 1); st.fgA++;
     ev.type = made ? "fg" : "fg_miss"; ev.player = o.k;
@@ -627,7 +632,7 @@ function stepPlay(g, call, bonus = 1) {
       const cm = !screen && d.cover ? d.cover(pkg, role, target, o.oU?.[pers]?.on?.wr || []) : null;
       const mm = cm ? clamp((target?.ovr || 75) - (cm.pos === "LB" ? lbCover(cm) : cm.ovr || 75) - MM0, -25, 25) : 0;
       add(qbl, "att", 1); add(tl, "tgt", 1); st.passAtt++;
-      const intP = clamp(0.024 - passE * 0.004 - mm * 0.0004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0), 0.006, 0.08);
+      const intP = clamp(0.024 - passE * 0.004 - mm * 0.0004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0) + (g.wxE?.int || 0), 0.006, 0.08);
       if (rand() < intP) {
         const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW);
         add(qbl, "passInt", 1); st.ints++;
@@ -641,7 +646,7 @@ function stepPlay(g, call, bonus = 1) {
         if (!g.done) newPossession(g, 100 - g.yard - Math.round(8 + rand() * 12) + ret);
         return ev;
       }
-      const compP = clamp(0.658 + passE * 0.018 + ((target?.ovr || 75) - 75) * 0.0012 + mm * 0.0035 + (deep ? -0.22 : quick ? 0.08 : 0) + (screen ? 0.18 : 0) + (B ? -0.03 : X ? 0.04 + (o.paSpec ? 0.03 : 0) : V ? (deep ? -0.1 : -0.03) : 0), 0.25, 0.92);
+      const compP = clamp(0.658 + passE * 0.018 + ((target?.ovr || 75) - 75) * 0.0012 + mm * 0.0035 + (deep ? -0.22 : quick ? 0.08 : 0) + (screen ? 0.18 : 0) + (B ? -0.03 : X ? 0.04 + (o.paSpec ? 0.03 : 0) : V ? (deep ? -0.1 : -0.03) : 0) + (g.wxE?.comp || 0) * (deep ? 1.5 : 1), 0.25, 0.92);
       if (rand() < compP) {
         const mean = screen ? 5.5 : deep ? 24 : quick ? 6.5 : 9.9;
         yards = Math.round((2 + expo(rand, mean - 2 + passE * 0.45 + mm * 0.06 + ((target?.ovr || 75) - 75) * 0.035 + Math.max(0, (target?.ovr || 75) - 90) * 0.08)) * (bonus || 1));
@@ -674,7 +679,7 @@ function stepPlay(g, call, bonus = 1) {
     const edgeRun = outside || rand() < 0.33, lbsOn = dP.on?.lbs || [];
     const mike = lbsOn.find((p) => p.role === "MIKE"), sam = lbsOn.find((p) => p.role === "SAM"), nb = dP.on?.cbs?.[2];
     const poa = edgeRun ? (sam ? ((sam.ovr || 75) - 74) * 0.045 : nb ? ((nb.posAttrs?.tackling ?? 65) - 68) * 0.03 - 0.15 : 0) : mike ? ((mike.ovr || 75) - 76) * 0.035 : 0;
-    const mean = 3.85 - poa + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.022 + (keeper ? 0.6 : 0) - load * 0.06 + (X ? -0.9 : V ? 0.6 : B ? -0.3 : 0);
+    const mean = 3.85 - poa + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.022 + (keeper ? 0.6 : 0) - load * 0.06 + (X ? -0.9 : V ? 0.6 : B ? -0.3 : 0) + (g.wxE?.runYds || 0);
     const breakaway = rand() < clamp(0.047 + ((carrier?.spd || 80) - 82) * 0.0018 - load * 0.003 + runE * 0.005 + (outside ? 0.025 : 0) + (B ? 0.025 : X ? -0.015 : 0), 0.01, 0.14);
     yards = breakaway ? Math.round(mean + 5 + expo(rand, 11)) : Math.round(clamp(mean - 0.6 + gauss(rand) * (outside ? 3.3 : 2.5), -4, 14));
     if (yards > 0) yards = Math.round(yards * (bonus || 1));
@@ -699,7 +704,7 @@ function stepPlay(g, call, bonus = 1) {
       ev.td = true; st.tds++;
       if (type === "run") add(cl, "rushTD", 1); else { add(cl, "recTD", 1); add(line(g, off, qb), "passTD", 1); }
       desc = type === "run" ? `${carrier?.name || "Runner"} runs it in from ${room} — TOUCHDOWN!` : `${qb?.name || "QB"} hits ${carrier?.name || "his receiver"} for a ${room}-yard TOUCHDOWN!`;
-    } else if (rand() < (type === "run" ? 0.0055 : 0.004) - Math.max(-0.002, Math.min(0.002, (type === "run" ? runE : passE) * 0.0006))) {
+    } else if (rand() < ((type === "run" ? 0.0055 : 0.004) - Math.max(-0.002, Math.min(0.002, (type === "run" ? runE : passE) * 0.0006))) * (g.wxE?.fum || 1)) {
       add(cl, "fum", 1); st.fumLost++;
       const t = pickW(rand, dP.tackleW); if (t) add(line(g, def, t), "ff", 1);
       ev.turnover = true; type = "fumble"; desc += ` FUMBLE — the defense recovers!`;
