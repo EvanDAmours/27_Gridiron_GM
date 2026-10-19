@@ -1376,4 +1376,7 @@ export const PATCH_NOTES = [
     "A Next day button moves the market along. Finishing free agency plays out the remaining days, so your open offers still get their answer. Players rated under 70 still sign the first fair deal right away, as before.",
     "The leftover mentions of core plays (the walkthrough and the preseason reminder) are gone.",
   ] },
+  { v: "3.48", date: "2026-10-20", title: "Fairness Check", notes: [
+    "Behind the scenes: the long balance runs now check whether the game favors you. At the start of a run they pick the three AI clubs whose starters rated closest to yours, then compare your win rate with theirs every season. The run reports the average gap in wins a season and flags it when one side gains more than about 2.5 wins a season beyond what the rosters explain.",
+  ] },
 ];

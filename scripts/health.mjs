@@ -12,7 +12,7 @@ import { chromium } from "playwright-core";
 import LZ from "lz-string";
 import { capFor, setLeagueYear, setCapPhase } from "../src/cap.js";
 import { capSpace } from "../src/league.js";
-import { checkSeason, watchRun, flagText } from "../src/balanceWatch.js";
+import { checkSeason, watchRun, flagText, matchedClubs, matchedSeason, matchedRun } from "../src/balanceWatch.js";
 
 const findChromium = () => {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
@@ -147,6 +147,9 @@ let code = 0;
 try {
   await page.goto(url); await page.waitForTimeout(1200);
   await must("NEW GAME"); await page.locator("button", { hasText: "Giants" }).first().click(); await page.waitForTimeout(1500);
+  // your club vs the AI clubs that started level with it (balanceWatch.js)
+  let match = null; const vs = [];
+  { const d0 = await save(); match = matchedClubs(d0.teams, d0.ui); console.log(`MATCHED: ${d0.teams[d0.ui].ab} vs ${match.map((i) => d0.teams[i].ab).join(", ")}`); }
   for (let s = 0; s < N; s++) {
     await must("Start Season", 1500);
     { const go = page.locator("button", { hasText: "Start the season anyway" }); if (await go.count()) { await go.first().click(); await page.waitForTimeout(1500); } }
@@ -165,7 +168,8 @@ try {
     if (!(await page.evaluate(() => /Sim Round/.test([...document.querySelectorAll("button")].map((b) => b.innerText).join(" "))))) fail("Sim All never reached the playoffs");
     // scoring for the regular season just played (the balance watchdog reads it with the season's numbers)
     let sc = null;
-    { let r = await save(); for (let w = 0; w < 6 && r.sp !== "playoffs"; w++) r = await save(); sc = scoring(r); if (process.env.SCORING) console.log("SCORING " + JSON.stringify(sc)); }
+    { let r = await save(); for (let w = 0; w < 6 && r.sp !== "playoffs"; w++) r = await save(); sc = scoring(r); if (process.env.SCORING) console.log("SCORING " + JSON.stringify(sc));
+      if (match) { const v = { yr: r.yr, ...matchedSeason(r.teams, r.ui, match) }; vs.push(v); console.log(`  ⚖ USER vs MATCHED ${v.yr}: ${v.user} vs ${v.matched} (${v.gap >= 0 ? "+" : ""}${v.gap})`); } }
     for (let i = 0; i < 6; i++) { await click("Sim Round", 1000); const c = page.locator("button", { hasText: /^Continue$/ }); if (await c.count()) await c.first().click(); }
     await must("→ Combine"); await advance("Finish Combine →"); await advance("Finish Re-signing →", 2500); await advance("Finish Free Agency →", 1500);
     for (let k = 0; k < 3; k++) { await click("Sim Draft", 3000); const cont = page.locator("button", { hasText: "Continue the draft" }); if (await cont.count()) await cont.click(); }
@@ -188,6 +192,7 @@ try {
   // a hard band broken two seasons running is drift that won't fix itself: the run fails
   const w = watchRun(rows);
   console.log(`BALANCE: ${w.seasons.reduce((t, x) => t + x.flags.length, 0)} warning(s) over ${rows.length} seasons, ${w.failures.length} failure(s)`);
+  if (vs.length) { const mr = matchedRun(vs); console.log(`USER vs MATCHED: ${mr.gap >= 0 ? "+" : ""}${mr.gap} win rate (${mr.wins >= 0 ? "+" : ""}${mr.wins} wins a season)${mr.flag ? " ⚠ past the band: one side is favored" : ""}`); }
   if (w.failures.length) fail(`balance: ${w.failures.map((f) => `${f.yr} ${flagText(f)}`).join("; ")}`);
 } catch (e) {
   code = 1; console.error(`HEALTH FAILED after ${rows.length} seasons: ${e.message}`);
