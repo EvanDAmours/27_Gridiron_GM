@@ -48,3 +48,20 @@ test("only fictional players get a bank portrait, once; real players and prospec
   portraitSave(d);
   assert.equal(fic.face.pid, was, "never reassigned");
 });
+
+test("real draft prospects show their real (college) photo, in new classes and in saves from before", async () => {
+  const { genRealDC } = await import("../src/league.js");
+  const { headshotSave } = await import("../src/headshots.js");
+  const cls = genRealDC(2026);
+  const js = cls.find((p) => p.name === "Jeremiah Smith");
+  assert.equal(js.face.espn, 5079720);
+  assert.equal(js.face.cfb, 1);
+  assert.ok(!js.face.pid, "never a bank portrait");
+  const real = cls.filter((p) => p.real);
+  assert.ok(real.filter((p) => p.face?.espn).length >= real.length - 5, "nearly every real prospect has a photo");
+  assert.ok(cls.filter((p) => !p.real).every((p) => p.face?.pid), "the made-up rest of the class gets bank portraits");
+  // an older save: the prospect drafted onto a roster with a drawn face
+  const old = { ...js, face: { sk: "#000" }, draftYear: undefined, draftYr: 2026 };
+  headshotSave({ teams: [{ roster: [old] }] });
+  assert.equal(old.face.espn, 5079720);
+});

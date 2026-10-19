@@ -12,7 +12,7 @@ import { playerValue, pickValue as chartPickValue } from "./trade.js";
 import { arrangeDL, dlAsPlayed, naturalDL } from "./dline.js";
 import { teamNeeds, topNeeds } from "./needs.js";
 import { bestPlan, planEdge } from "./gamePlan.js";
-import { withHeadshot } from "./headshots.js";
+import { withHeadshot, prospectPhoto } from "./headshots.js";
 import { genIdentity } from "./portraits.js";
 import { makeSide, createGame, playGame, setLeague, teamPersonnel, setPkgOff } from "./playsim.js";
 import { unitRatings, defUnits } from "./gamesim.js";
@@ -232,7 +232,7 @@ export function genRealDC(yr){
     const p=genPlayer(d.pos,d.age,d.ovr,true);
     /* a real prospect: never a fictional photo, the drawn face */Object.assign(p,{face:genFace(),name:d.name,ht_:d.ht||p.ht_,wt:d.wt||p.wt,pot:d.pot,truePot:d.pot,trueOvr:d.ovr,ovr:d.ovr,ovrV:2,draftYear:yr,real:1});
     if(d.mpos)p.mpos=d.mpos;
-    p.scoutedPot=cl(d.pot+R(-12,12),d.pot-5,99);p.bio.college=d.college;p.bio.backstory=d.note||"";
+    prospectPhoto(p);/* his real photo (headshots.js) */p.scoutedPot=cl(d.pot+R(-12,12),d.pot-5,99);p.bio.college=d.college;p.bio.backstory=d.note||"";
     // The consensus board follows the real boards' order.
     const kp=d.pos==="K"||d.pos==="P";const sc=kp?kpValue(d,d.pot*0.78+d.ovr*0.22):Math.min(d.pot*0.78+d.ovr*0.22,prev-0.05);if(!kp)prev=sc;p.cons={score:sc,kp:1};
     if(d.dev)p.dev=d.dev;

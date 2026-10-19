@@ -1330,4 +1330,10 @@ export const PATCH_NOTES = [
     "Removed leftover code that was never reached: an old press-conference screen, four unused player-sprite renderers and the 3D library only they used, and a handful of unused helpers. The download is lighter as a result.",
     "A records test that played random games could fail by chance; it now replays the same games every time. Releases now stop on any code-check error.",
   ] },
+  { v: "3.38", date: "2026-10-20", title: "Real Prospect Photos", notes: [
+    "Real faces for real draft prospects: 215 of the 220 real college prospects in the 2026 and 2027 classes now show their actual ESPN photo, from Jeremiah Smith and Arch Manning down the board, instead of a drawn face.",
+    "The photo stays with him: on the Big Board, his profile, draft day, and your roster once you pick him. Saves already in progress pick the photos up the next time they load, for prospects still on the board and ones already drafted.",
+    "A photo is only used when the match is certain (right name, right school). The five prospects ESPN lists at a different school after a transfer keep the drawn face for now.",
+    "Made-up players in later draft classes use the new portrait bank from 3.36.",
+  ] },
 ];

@@ -37,10 +37,10 @@ export const Face = ({ s: se, sz = 40, jersey, coach }) => {
     </span>
   );
   if (!se) return null;
-  // a real player: his ESPN headshot, in the same round frame
+  // a real player: his ESPN headshot (a prospect's college one), in the same round frame
   if (se.espn && !BAD.has(se.espn)) return (
     <span style={{ width: sz, height: sz, borderRadius: "50%", overflow: "hidden", display: "inline-block", flexShrink: 0, verticalAlign: "middle", background: "radial-gradient(circle at 50% 30%, #64748b, #1f2937 72%)", boxShadow: jersey ? `inset 0 0 0 2px ${jersey}` : undefined }}>
-      <img src={headshotUrl(se.espn, sz > 90 ? 320 : 160)} alt="" loading="lazy" draggable="false" onError={() => { BAD.add(se.espn); setBad((x) => x + 1); }} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%", display: "block" }} />
+      <img src={headshotUrl(se.espn, sz > 90 ? 320 : 160, !!se.cfb)} alt="" loading="lazy" draggable="false" onError={() => { BAD.add(se.espn); setBad((x) => x + 1); }} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%", display: "block" }} />
     </span>
   );
   // a fictional player: his photo from the portrait bank (portraits.js), whole, on a team-color circle
