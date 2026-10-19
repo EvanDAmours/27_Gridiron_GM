@@ -158,3 +158,20 @@ test("contract value by role: a SAM and a slot corner ask less than a MIKE and a
   const qb = { pos: "QB", ovr: 84, age: 26 };
   assert.equal(askingPrice(qb), askingPrice({ ...qb }), "other positions unchanged");
 });
+
+test("injury replacements by role: options are rated at the hurt starter's role, a receiving tight end can fill in at receiver", async () => {
+  const { replacementOptions } = await import("../src/injuryCall.js");
+  const mike = LB("mike", "MIKE", { wt: 236, str: 75, spd: 85, cov: 72, shed: 76, ins: 90, zone: 86 });
+  const backupSam = LB("bsam", "SAM", { wt: 250, str: 85, spd: 79, cov: 58, shed: 85 });
+  const backupWill = { ...LB("bwill", "WILL", { wt: 220, str: 60, spd: 93, cov: 85, shed: 58, pur: 92 }), ovr: 81 };
+  const team = { roster: [{ ...thumper, injured: true }, mike, runner, { ...backupWill }, { ...backupSam, ovr: 77 }] };
+  const o = replacementOptions(team, { pid: "sam", pos: "LB", slot: 0, role: "SAM" }, {}, null);
+  assert.ok(!o.roster.some((p) => ["mike", "bwill"].includes(p.id)), "the other starters aren't options");
+  assert.equal(o.role, "SAM");
+  const s = o.roster.find((p) => p.id === "bsam"), w = o.roster.find((p) => p.id === "will");
+  assert.ok(s.roleR > w.roleR, `the backup thumper (${s.roleR}) is a better SAM than the speed backer (${w.roleR})`);
+  const te = { id: "te", name: "TE", pos: "TE", ovr: 90, spd: 86, agi: 80, ht_: 77, wt: 250, jmp: 85, posAttrs: { blocking: 64, receiving: 95, routeRun: 82, redZone: 90, passBlock: 60, yac: 80, seaming: 85, toughness: 85 } };
+  const wr = (id, ovr) => ({ id, name: id, pos: "WR", ovr });
+  const r = replacementOptions({ roster: [wr("w1", 85), wr("w2", 80), { ...wr("w3", 82), injured: true }, wr("w4", 62), te] }, { pid: "w3", pos: "WR", slot: 2, role: "SLOT" }, {}, null);
+  assert.ok(r.roster.some((p) => p.id === "te") && r.bestId === "te", JSON.stringify(r.roster.map((p) => [p.id, p.roleR])));
+});

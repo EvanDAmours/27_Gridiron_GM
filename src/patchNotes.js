@@ -1304,4 +1304,9 @@ export const PATCH_NOTES = [
     "This applies to free agency, re-signings and extensions (existing deals don't change until they're up). So a good slot corner or SAM is a real bargain, and a team that plays a lot of base or 12 personnel can build cheaper.",
     "Role tags on draft and free-agent lists show · $ on the bargain roles. Hover a tag to see how much less the market pays.",
   ] },
+  { v: "3.33", date: "2026-10-20", title: "Injury Replacements by Role", notes: [
+    "Injury replacements by role: when a linebacker, corner or receiver goes down, the Starter Down call now knows his role. It says who's out at SAM, nickel, slot and so on, rates every option at that role (\"at SAM 74\"), and marks the BEST FIT when that isn't the next man up.",
+    "For a receiver spot, a receiving tight end is an option too (marked SPLITS OUT). Start him and he moves out wide on your depth chart, rated as a receiver at that spot.",
+    "Fixed: with roles, the next man up could land at any linebacker, corner or receiver spot, so a backup was sometimes left off the list. The options now show everyone who isn't already starting.",
+  ] },
 ];
