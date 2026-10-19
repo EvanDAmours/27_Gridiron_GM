@@ -12,6 +12,7 @@ import { chromium } from "playwright-core";
 import LZ from "lz-string";
 import { capFor, setLeagueYear, setCapPhase } from "../src/cap.js";
 import { capSpace } from "../src/league.js";
+import { checkSeason, watchRun, flagText } from "../src/balanceWatch.js";
 
 const findChromium = () => {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
@@ -162,7 +163,9 @@ try {
       for (let t = 0; t < 80 && !(await page.evaluate(done)); t++) { const k = page.locator("button:visible", { hasText: "Keep simming" }); if (await k.count()) await k.first().click().catch(() => {}); await page.waitForTimeout(500); }
     }
     if (!(await page.evaluate(() => /Sim Round/.test([...document.querySelectorAll("button")].map((b) => b.innerText).join(" "))))) fail("Sim All never reached the playoffs");
-    if (process.env.SCORING) { let r = await save(); for (let w = 0; w < 6 && r.sp !== "playoffs"; w++) r = await save(); console.log("SCORING " + JSON.stringify(scoring(r))); }
+    // scoring for the regular season just played (the balance watchdog reads it with the season's numbers)
+    let sc = null;
+    { let r = await save(); for (let w = 0; w < 6 && r.sp !== "playoffs"; w++) r = await save(); sc = scoring(r); if (process.env.SCORING) console.log("SCORING " + JSON.stringify(sc)); }
     for (let i = 0; i < 6; i++) { await click("Sim Round", 1000); const c = page.locator("button", { hasText: /^Continue$/ }); if (await c.count()) await c.first().click(); }
     await must("→ Combine"); await advance("Finish Combine →"); await advance("Finish Re-signing →", 2500); await advance("Finish Free Agency →", 1500);
     for (let k = 0; k < 3; k++) { await click("Sim Draft", 3000); const cont = page.locator("button", { hasText: "Continue the draft" }); if (await cont.count()) await cont.click(); }
@@ -171,7 +174,9 @@ try {
     // a late-career save is ~9 MB and takes seconds to compress, so give the new year time to land
     for (let w = 0; w < 20 && d.yr !== 2027 + s; w++) d = await save();
     if (d.yr !== 2027 + s) fail(`expected ${2027 + s}, got ${d.yr}`);
-    const m = measure(d); rows.push(m); console.log(JSON.stringify(m));
+    const m = { ...measure(d), ...(sc ? { ppg: sc.ppg, compPct: sc.compPct, passYds: sc.passYds, rushYds: sc.rushYds, homeWin: sc.homeWin, blowout28: sc.blowout28, ties: sc.ties } : {}) }; rows.push(m); console.log(JSON.stringify(m));
+    // the balance watchdog: anything out of its NFL band this season
+    for (const f of checkSeason(m, rows[0])) console.log(`  ⚠ BALANCE ${m.yr}: ${flagText(f)}`);
     // the franchise documentary (every five seasons): built, saved and waiting in the inbox
     if ((d.docs || []).length) console.log(`  🎬 documentaries: ${d.docs.map((x) => `${x.yrs} ${x.w}-${x.l} ${x.tier}`).join(" | ")}${d.docCard ? " (new one waiting)" : ""}`);
     // FULLSAVE=dir: the whole save after each season (save.json parsed, autosave.txt as stored, to load
@@ -180,6 +185,10 @@ try {
     // DUMP=dir: keep each season's rosters for a closer look
     if (process.env.DUMP) (await import("node:fs")).writeFileSync(`${process.env.DUMP}/league-${d.yr}.json`, JSON.stringify({ fa: (d.fa || []).map(({ id, name, pos, age, ovr, draftYr, draftPk }) => ({ id, name, pos, age, ovr, draftYr, draftPk })), teams: d.teams.map((t) => t.roster.map(({ id, name, pos, age, ovr, pot, truePot, dev, honors, oh, draftYr, draftPk, contract, salary }) => ({ id, name, pos, age, ovr, pot, truePot, dev, honors, oh, draftYr, draftPk, contract, salary }))) }));
   }
+  // a hard band broken two seasons running is drift that won't fix itself: the run fails
+  const w = watchRun(rows);
+  console.log(`BALANCE: ${w.seasons.reduce((t, x) => t + x.flags.length, 0)} warning(s) over ${rows.length} seasons, ${w.failures.length} failure(s)`);
+  if (w.failures.length) fail(`balance: ${w.failures.map((f) => `${f.yr} ${flagText(f)}`).join("; ")}`);
 } catch (e) {
   code = 1; console.error(`HEALTH FAILED after ${rows.length} seasons: ${e.message}`);
   try { await page.screenshot({ path: "health-failure.png" }); } catch {}
