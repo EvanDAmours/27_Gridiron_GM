@@ -165,7 +165,7 @@ function Player({ p, pos, x, y, team, side, away, td }) {
 // sb: the Super Bowl's name ("Super Bowl LXI") on a neutral field: pinstriped end zones in each
 // club's color framed in gold, a gold medallion at midfield with the trophy, the game's name and the
 // host city (sbCity), each club's logo at its own 25, and gold trim around the field.
-export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday }) {
+export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday, tall }) {
   const W8 = wxOf(wx);
   const los = clamp(ballYard, 1, 99);
   const x0 = xOf(los);
@@ -184,7 +184,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       return <Player key={`${side}${pos}${i}`} p={list[pos]?.[i]} pos={pos} x={x} y={y} team={team} side={side} away={awayFor(side)} td={!!lastPlay?.td} />;
     });
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, maxHeight: MOBILE ? "min(42vh, 390px)" : "min(calc(var(--vh, 100vh) - 330px), 570px)" }}>
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, maxHeight: MOBILE ? "min(42vh, 390px)" : tall ? "min(calc(var(--vh, 100vh) - 330px), 760px)" : "min(calc(var(--vh, 100vh) - 330px), 570px)" }}>
       <defs>
         {/* turf grain: fine noise over the grass */}
         <filter id="lf-grain" x="0" y="0" width="100%" height="100%">

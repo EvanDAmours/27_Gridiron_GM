@@ -1461,4 +1461,10 @@ export const PATCH_NOTES = [
     "Older saves: real players who retired before this update get their card rebuilt from the real ratings they came into the league with.",
     "A retired free agent's card now names the club he last played for, instead of '(FA)'. A player who never signed anywhere says he retired as an unsigned free agent.",
   ] },
+  { v: "3.68", date: "2026-10-20", title: "Broadcast View", notes: [
+    "A real TV view for live games. The old BCAST button only restyled the play-by-play; now 📺 TV view puts the field full width with each play captioned under it, broadcast style: the team's logo, the quarter and clock, the personnel matchup, and touchdowns and turnovers called out. Switch back to 📊 Full desk for the play-by-play and box score beside the field. The game remembers which one you like.",
+    "Cleaner situation line: one line reads like a broadcast ('NYG ball · 3rd & 4 on the DAL 27', or '& Goal' inside the 10), with the offense's momentum (Hot, Even, Cold) beside it. It replaces the old 'Ball at 73 yd line' text and the unlabeled DEF/OFF bar.",
+    "The live game buttons say what they do: Call plays On/Off, TV view or Full desk, Pause/Resume and Finish.",
+    "Fixes: the Live Game tab no longer shows up twice in the top bar, and in a narrow browser window the live game stacks (field, then play-by-play, then charts) instead of squeezing the field to a sliver.",
+  ] },
 ];
