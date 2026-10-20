@@ -21,3 +21,11 @@ test("heavy snow: more runs, fewer completions, more giveaways", () => {
   assert.ok(s.comp / s.att < c.comp / c.att - 0.02);
   assert.ok(s.to > c.to * 1.1, `turnovers ${s.to} vs ${c.to}`);
 });
+
+test("coaches adjust to the weather: fewer field-goal tries and more fourth-down goes in heavy snow", () => {
+  const teams = initTeams();
+  const run = (wx) => { const t = { fga: 0, go: 0, n: 0 }; for (let i = 0; i < 240; i++) { const r = simGame(teams[i % 32], teams[(i + 7) % 32], null, null, wx, { dry: true, rec: true }); for (const s of [r.game.stats.h, r.game.stats.a]) t.fga += s.fgA; for (const e of r.game.pl) if (e.d === 4 && e.tg <= 2 && e.y >= 40) { t.n++; if (e.t !== "punt" && !/field goal|-yard try/.test(e.x)) t.go++; } } return t; };
+  const c = run("clear"), s = run("heavySnow");
+  assert.ok(s.fga < c.fga * 0.9, `field-goal tries ${s.fga} vs ${c.fga}`);
+  assert.ok(s.go / s.n > c.go / c.n + 0.05, `fourth-and-short goes ${(s.go / s.n).toFixed(2)} vs ${(c.go / c.n).toFixed(2)}`);
+});

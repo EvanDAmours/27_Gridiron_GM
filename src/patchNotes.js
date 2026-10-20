@@ -1445,4 +1445,9 @@ export const PATCH_NOTES = [
     "New York gets more snow: the Giants and Jets now see about one snow game a season each at MetLife, about two between them, in line with New England.",
     "Lambeau is snowier still: Green Bay now averages a little over two snow games a season, and close to two in three of its home playoff games are played in snow. The rest of the league is unchanged.",
   ] },
+  { v: "3.65", date: "2026-10-20", title: "Weather Coaching", notes: [
+    "Coaches now coach to the weather. They already ran the ball more in rain, snow and wind; now their kicking and fourth-down calls change too.",
+    "Field-goal range shrinks with the conditions: about 2 yards in light rain, 4 in light snow, 5 in heavy rain, 6 in wind and 8 in heavy snow. A coach who would try a 52-yarder on a clear day punts or goes for it in a blizzard.",
+    "Fourth and short: with kicking unreliable, coaches go for it more often, from about 54% of the time on a clear day to about 68% in heavy snow. The same rules apply to your opponents and to your own coach when you sim.",
+  ] },
 ];

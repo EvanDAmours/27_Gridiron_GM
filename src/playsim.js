@@ -479,7 +479,8 @@ function stepPlay(g, call, bonus = 1) {
   }
 
   // Fourth down (or the end of a half in range): kick, punt or go for it.
-  const maxFG = fgRange(o.kLeg), longFG = fgRange(o.kLeg, true);
+  // weather pulls in the longest kick a coach will try (wind and snow the most)
+  const wxKick = g.wxE?.kick || 0, maxFG = fgRange(o.kLeg) - wxKick, longFG = fgRange(o.kLeg, true) - wxKick;
   const endOfHalf = ((g.qtr === 2 || g.qtr === 4 || g.ot) && g.clock <= 25 && fgDist <= longFG && !(g.qtr >= 4 && lead < -3)) || (!call && forTheKick(g, lead) && g.down >= 3 && (g.clock <= 40 || g.ot));
   let decision = call === "punt" || call === "fg" ? call : null;
   if (!decision && (g.down === 4 || endOfHalf || (g.ot && g.down >= 3 && fgDist <= maxFG && lead <= 0 && lead >= -3))) {
@@ -498,7 +499,7 @@ function stepPlay(g, call, bonus = 1) {
       if (call) decision = null; // the user chose to go for it
       else if (needTD || (g.qtr === 4 && g.clock < 240 && lead < 0 && fgDist > longFG)) decision = null;
       else if (kickToLead) decision = rand() < gamble ? null : "fg";
-      else if (!protecting && rand() < Math.min(0.95, goShort * (o.hcAgg ?? 1)) * (fgDist <= 40 ? 0.6 : 1)) decision = null;
+      else if (!protecting && rand() < Math.min(0.95, goShort * (o.hcAgg ?? 1) * (g.wxE?.go || 1)) * (fgDist <= 40 ? 0.6 : 1)) decision = null;
       else if (fgDist <= maxFG) decision = "fg";
       else decision = "punt";
     }
