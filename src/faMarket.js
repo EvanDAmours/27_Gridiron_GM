@@ -79,6 +79,16 @@ export function aiBids(teams, pool, ui, market, { capSpace, perTeam = 1, rand = 
   return m;
 }
 
+// Where a club's offer stands today: "lead" if he'd take it over the others right now, "behind"
+// if another club's is better for him, null if that club hasn't offered. (His agent tells you.)
+export function standing(p, market, teams, team) {
+  const list = bidsFor(market, p.id);
+  if (!list.some((b) => b.team === team)) return null;
+  let best = null, top = -1;
+  for (const b of list) { const v = offerValue(p, b, teams[b.team]) * (1 + hash(`${p.id}:${b.team}:gut`) * 0.03); if (v > top) { top = v; best = b; } }
+  return best.team === team ? "lead" : "behind";
+}
+
 // The end of a day: everyone due to decide looks at his offers and takes the best one that meets
 // his minimum. Nothing good enough yet: he waits for more (on the last day he takes the best
 // within 10% of his minimum, or stays unsigned). Returns { market, signings: [{ p, bid }] } with
@@ -92,7 +102,8 @@ export function resolveDay(teams, pool, market, { last = false } = {}) {
     let best = null, top = -1;
     for (const b of list) {
       const v = offerValue(p, b, teams[b.team]) * (1 + hash(`${p.id}:${b.team}:gut`) * 0.03);
-      if (v >= needFor(p, b.yrs, market.yr) * (last ? 0.9 : 1) && v > top) { top = v; best = b; }
+      // an offer he already said yes to at the table (ok) always counts
+      if ((b.ok || v >= needFor(p, b.yrs, market.yr) * (last ? 0.9 : 1)) && v > top) { top = v; best = b; }
     }
     if (!best) continue;
     signings.push({ p, bid: best });

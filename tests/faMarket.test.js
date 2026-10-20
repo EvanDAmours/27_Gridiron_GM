@@ -1,7 +1,7 @@
 // The free-agent market: offers from every club, players decide on their day and take the best.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { decideDay, openMarket, placeBid, bidsFor, committed, resolveDay, aiBids, isOverpay, MARKET_MIN } from "../src/faMarket.js";
+import { decideDay, openMarket, placeBid, bidsFor, committed, resolveDay, aiBids, isOverpay, standing, MARKET_MIN } from "../src/faMarket.js";
 import { yearlyAsk } from "../src/negotiation.js";
 
 const pl = (id, ovr, pos = "WR", age = 27) => ({ id, name: `P${id}`, pos, ovr, age });
@@ -71,4 +71,26 @@ test("a player draws only so many suitors; a club that signs at a position drops
   const r = resolveDay([club(), club(), club()], [b, a], m2);
   assert.equal(r.signings.length, 1);
   assert.deepEqual(bidsFor(r.market, b.id).map((x) => x.team), [2]);
+});
+
+test("an offer he accepted at the table always counts on his day, even under the market's bar", () => {
+  const p = pl(77, 80), ask = yearlyAsk(p, 2, "fa");
+  const teams = [club(), club()];
+  let m = { ...openMarket(2027), day: 3 };
+  m = placeBid(m, p.id, { team: 0, sal: +(ask * 0.6).toFixed(1), yrs: 2, day: 1 });
+  assert.equal(resolveDay(teams, [p], m).signings.length, 0, "a lowball he never agreed to doesn't sign him");
+  m = placeBid(m, p.id, { team: 0, sal: +(ask * 0.6).toFixed(1), yrs: 2, day: 1, ok: true });
+  assert.equal(resolveDay(teams, [p], m).signings[0]?.bid.team, 0);
+});
+
+test("standing: your offer leads until another club's is better for him", () => {
+  const p = pl(88, 82), ask = yearlyAsk(p, 2, "fa");
+  const teams = [club(), club()];
+  let m = openMarket(2027);
+  assert.equal(standing(p, m, teams, 0), null);
+  m = placeBid(m, p.id, { team: 0, sal: +ask.toFixed(1), yrs: 2 });
+  assert.equal(standing(p, m, teams, 0), "lead");
+  m = placeBid(m, p.id, { team: 1, sal: +(ask * 1.3).toFixed(1), yrs: 2 });
+  assert.equal(standing(p, m, teams, 0), "behind");
+  assert.equal(standing(p, m, teams, 1), "lead");
 });

@@ -1450,4 +1450,10 @@ export const PATCH_NOTES = [
     "Field-goal range shrinks with the conditions: about 2 yards in light rain, 4 in light snow, 5 in heavy rain, 6 in wind and 8 in heavy snow. A coach who would try a 52-yarder on a clear day punts or goes for it in a blizzard.",
     "Fourth and short: with kicking unreliable, coaches go for it more often, from about 54% of the time on a clear day to about 68% in heavy snow. The same rules apply to your opponents and to your own coach when you sim.",
   ] },
+  { v: "3.66", date: "2026-10-20", title: "Smoother Free Agency", notes: [
+    "Free agency bidding is smoother. Once your offer is on the table, it counts. Before, a player could say yes to your offer at the table and then quietly pass it over on his decision day, because the market judged it a little differently. If he accepts your offer, it's in the running on his day.",
+    "You can see where you stand. Each player you've bid on shows ✓ leading or ▲ outbid, and the negotiation window tells you whether another club's offer is better for him right now. (You still don't see their numbers.)",
+    "Raising your offer no longer costs you. Raising it doesn't lower his interest, and a short offer while yours is on the table doesn't end talks: he just tells you it's short and keeps your earlier offer.",
+    "Clearer days: players show 'decides today' instead of a day number that's already here, players with no offers say so, and 'Next day' tells you how many signed and who was the biggest name. If a player picks you but you have no cap or roster room, you're told he's back on the market.",
+  ] },
 ];

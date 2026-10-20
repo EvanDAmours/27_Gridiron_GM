@@ -9,7 +9,7 @@ import { yearlyAsk, maxYears } from "./negotiation.js";
 // what the negotiation table opens at: his ask for the default length (two years, or one for a 33+ veteran)
 const askingPrice = (p) => yearlyAsk(p, Math.min(2, maxYears(p)), "fa");
 import Negotiate from "./Negotiate.jsx";
-import { FA_DAYS, MARKET_MIN, bidsFor, committed, decideDay } from "./faMarket.js";
+import { FA_DAYS, MARKET_MIN, bidsFor, committed, decideDay, standing } from "./faMarket.js";
 import { posTag } from "./dline.js";
 import { devOf, DEV_TRAITS } from "./scouting.js";
 import RoleTag from "./RoleTag.jsx";
@@ -20,15 +20,18 @@ import { ROLE_FILTERS, roleFilterMatch } from "./roleNeeds.js";
 const DEV_C = { generational: "#f472b6", superstar: "#f5c542", star: "#60a5fa", late: "#34d399" };
 const DevTag = ({ p }) => { const d = devOf(p); return DEV_C[d] ? <span title={DEV_TRAITS[d]?.desc} style={{ fontSize: 11, fontWeight: 900, color: DEV_C[d], border: `1px solid ${DEV_C[d]}66`, borderRadius: 999, padding: "0 6px", marginLeft: 6, whiteSpace: "nowrap" }}>{DEV_TRAITS[d]?.name}</span> : null; };
 
-// The market on a player: how many clubs have offered, yours if you have, and when he decides.
-function MarketTag({ p, market, ui }) {
+// The market on a player: how many clubs have offered, yours and where it stands if you have, and
+// when he decides.
+const whenOf = (p, market) => { const dd = Math.max(market.day, decideDay(p, market.yr)); return dd <= market.day ? "decides today" : `decides day ${dd}`; };
+function MarketTag({ p, market, ui, teams }) {
   if (!market || p.ovr < MARKET_MIN) return null;
   const bids = bidsFor(market, p.id), mine = bids.find((b) => b.team === ui), others = bids.length - (mine ? 1 : 0);
-  const dd = Math.max(market.day, decideDay(p, market.yr));
-  if (!bids.length) return <span style={{ fontSize: 12, color: C.mt, whiteSpace: "nowrap" }}>decides day {dd}</span>;
+  const when = whenOf(p, market);
+  if (!bids.length) return <span style={{ fontSize: 12, color: C.mt, whiteSpace: "nowrap" }}>No offers · {when}</span>;
+  const st = mine ? standing(p, market, teams, ui) : null;
   return (
-    <span style={{ fontSize: 12, fontWeight: 800, whiteSpace: "nowrap", color: mine ? "#93c5fd" : "#fca5a5" }} title={`He decides ${dd <= market.day ? "at the end of today" : `on day ${dd}`}`}>
-      {mine ? `Your offer $${mine.sal}M` : ""}{mine && others ? " · " : ""}{others ? `${others} other offer${others > 1 ? "s" : ""}` : ""}{` · day ${dd}`}
+    <span style={{ fontSize: 12, fontWeight: 800, whiteSpace: "nowrap", color: mine ? "#93c5fd" : "#fca5a5" }}>
+      {mine ? <>Your offer ${mine.sal}M <span style={{ color: st === "lead" ? C.gn : "#fbbf24" }}>{st === "lead" ? "✓ leading" : "▲ outbid"}</span></> : ""}{mine && others ? " · " : ""}{others ? `${others} other offer${others > 1 ? "s" : ""}` : ""}{` · ${when}`}
     </span>
   );
 }
@@ -114,7 +117,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
                     <Face s={p.face} sz={34} />
                     <span style={{ minWidth: 0 }}>
                       <span style={{ display: "block", fontWeight: 800, fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}<DevTag p={p} /></span>
-                      <span style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span>Age {p.age}</span><span style={{ color: ask <= cap ? "#e2e8f0" : C.rd, fontWeight: 700 }}>{money(ask)}/yr</span>{from && <span style={{ color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `ex-${from.ab}`}</span>}<MarketTag p={p} market={market} ui={ui} /></span>
+                      <span style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span>Age {p.age}</span><span style={{ color: ask <= cap ? "#e2e8f0" : C.rd, fontWeight: 700 }}>{money(ask)}/yr</span>{from && <span style={{ color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `ex-${from.ab}`}</span>}<MarketTag p={p} market={market} ui={ui} teams={teams} /></span>
                     </span>
                   </span>
                   <span style={{ fontSize: 22, fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
@@ -141,7 +144,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
                           <span onClick={() => setSel(p)} style={{ fontWeight: 700, color: "#f1f5f9", cursor: "pointer", textDecoration: "underline", textDecorationColor: "#334155", textUnderlineOffset: 3 }}>{p.name}</span>
                           {p.xf && <span title={`X-Factor: ${p.xf}`} style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, color: "#f472b6" }}>XF</span>}<DevTag p={p} />
                           {from && <span style={{ display: "block", fontSize: 12, color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `Last with ${from.ab}`}</span>}
-                          {market && p.ovr >= MARKET_MIN && <span style={{ display: "block" }}><MarketTag p={p} market={market} ui={ui} /></span>}
+                          {market && p.ovr >= MARKET_MIN && <span style={{ display: "block" }}><MarketTag p={p} market={market} ui={ui} teams={teams} /></span>}
                         </span>
                       </span>
                     </td>
@@ -162,7 +165,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
         {rows.length > n && <div style={{ textAlign: "center", marginTop: 10 }}><Btn onClick={() => setN(n + 50)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 14, padding: "6px 14px" }}>Show more ({rows.length - n} left)</Btn></div>}
       </div>
       {extras}
-      {offer && <Negotiate note={market && offer.ovr >= MARKET_MIN ? (() => { const o = bidsFor(market, offer.id).filter((b) => b.team !== ui).length, dd = Math.max(market.day, decideDay(offer, market.yr)); return `📋 ${o ? `${o} club${o > 1 ? "s have" : " has"} made him an offer.` : "No offers yet."} He decides ${dd <= market.day ? "at the end of today" : `on day ${dd}`}. He takes the best offer for him: more money, or a club with what he wants. Only a big overpay (20%+ over his ask) signs him on the spot.`; })() : null} team={team} cy={cy} p={offer} mode="fa" cap={cap + (bidsFor(market, offer.id).find((b) => b.team === ui)?.sal || 0)} t={termsFor(offer, "fa")} talk={talkFor(offer)} onResult={(r, o) => onTalk(offer, "fa", r, o)} onClose={() => setOffer(null)} rivalName={(id) => teams[id] && `${teams[id].city} ${teams[id].name}`} />}
+      {offer && <Negotiate note={market && offer.ovr >= MARKET_MIN ? (() => { const o = bidsFor(market, offer.id).filter((b) => b.team !== ui).length, dd = Math.max(market.day, decideDay(offer, market.yr)); const st = standing(offer, market, teams, ui); return `📋 ${o ? `${o} club${o > 1 ? "s have" : " has"} made him an offer.` : "No offers yet."}${st === "lead" ? " Your offer is the best one for him right now." : st === "behind" ? " Another club's offer is better for him right now." : ""} He decides ${dd <= market.day ? "at the end of today" : `on day ${dd}`}. He takes the best offer for him: more money, or a club with what he wants. Only a big overpay (20%+ over his ask) signs him on the spot.`; })() : null} team={team} cy={cy} p={offer} mode="fa" cap={cap + (bidsFor(market, offer.id).find((b) => b.team === ui)?.sal || 0)} t={termsFor(offer, "fa")} talk={talkFor(offer)} onResult={(r, o) => onTalk(offer, "fa", r, o)} onClose={() => setOffer(null)} rivalName={(id) => teams[id] && `${teams[id].city} ${teams[id].name}`} />}
     </div>
   );
 }
