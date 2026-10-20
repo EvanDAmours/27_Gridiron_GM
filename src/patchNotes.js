@@ -1456,4 +1456,9 @@ export const PATCH_NOTES = [
     "Raising your offer no longer costs you. Raising it doesn't lower his interest, and a short offer while yours is on the table doesn't end talks: he just tells you it's short and keeps your earlier offer.",
     "Clearer days: players show 'decides today' instead of a day number that's already here, players with no offers say so, and 'Next day' tells you how many signed and who was the biggest name. If a player picks you but you have no cap or roster room, you're told he's back on the market.",
   ] },
+  { v: "3.67", date: "2026-10-20", title: "Retired Player Cards", notes: [
+    "Retired players now have a full player card: ratings, bio, rating history and every season's stats. Before, only Hall of Famers and your own players kept theirs, and everyone else showed a bare card with just a name and a peak rating.",
+    "Older saves: real players who retired before this update get their card rebuilt from the real ratings they came into the league with.",
+    "A retired free agent's card now names the club he last played for, instead of '(FA)'. A player who never signed anywhere says he retired as an unsigned free agent.",
+  ] },
 ];

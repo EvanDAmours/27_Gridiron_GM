@@ -44,3 +44,15 @@ test("a long career that never reached greatness stays out of Canton", () => {
   assert.ok(e && e.legacy >= HOF_LINE, `a big legacy (${e?.legacy}), the kind that used to get in`);
   assert.equal(e.hof, false);
 });
+
+test("every retired player in the books keeps his full card, and a free agent's last club is named", () => {
+  const teams = [{ ab: "BUF" }, { ab: "PIT" }];
+  const star = { id: 501, name: "Vet Star", pos: "DL", age: 37, ovr: 88, spd: 70, sh: [], cs: { sacks: 120, gp: 220 }, formerTeam: 1 };
+  const e = retireEntry(star, null, 2027, { teams, startOvr: 95 });
+  assert.ok(e, "a 120-sack career is notable");
+  assert.equal(e.team, "PIT", "the club index becomes its abbreviation");
+  assert.equal(e.card?.spd, 70, "his ratings are kept");
+  assert.equal(e.card.retiredFrom, "PIT");
+  const never = retireEntry({ ...star, id: 502, formerTeam: undefined }, null, 2027, { teams, startOvr: 95 });
+  assert.equal(never.team, "FA");
+});

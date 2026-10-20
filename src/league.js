@@ -288,6 +288,9 @@ export function realPlayer(d){const p=genPlayer(d.pos,d.age,d.ovr);const devLift
   Object.assign(p,{name:d.name,mpos:d.mpos,ht_:d.ht,wt:d.wt,spd:d.spd,str:d.str,agi:d.agi,acc:d.acc,jmp:d.jmp,end:d.end,posAttrs:d.attrs,salary:+((d.sal||0)*DATA_TO_DOLLARS).toFixed(1),contract:d.yrs,pot,truePot:pot,scoutedOvr:d.ovr,scoutedPot:pot,num:d.num,arch:d.arch,src:'m27',
     bio:{...p.bio,college:d.college||p.bio.college}});if(d.dev)p.dev=d.dev;if(d.xf)p.xf=d.xf;if(d.dk!=null)p.dk=d.dk;if(d.yp!=null){p.draftYr=(M27.season||2026)-d.yp;p.rkYr=p.draftYr;}if(d.pk)p.pk=d.pk;p.tradeVal=tradeValue(p);return withHeadshot(p);}
 // Real players without a club (cut from the 53 and the practice squad) are the free agents.
+// A retired player kept only as a line in the books (a save from before every card was kept): his
+// card rebuilt from the real ratings he came into the league with, his entry on top. null: not a real player.
+export function upgradeRetired(r){const all=[...(M27.teams||[]).flatMap(t=>[...(t.roster||[]),...(t.ps||[])]),...(M27.fa||[])];const d=all.find(x=>x.name===r.name&&x.pos===r.pos)||all.find(x=>x.name===r.name);if(!d)return null;return{...realPlayer(d),contract:0,salary:0,...r};}
 export function realFA(d){const p=realPlayer(d);p.contract=0;return p;}
 // Punters (the roster file has none): each club's real punter joins its 53, and the club's
 // lowest-rated backup (never a QB or kicker) starts the game as a free agent to make room.

@@ -151,23 +151,27 @@ export function retireEntry(p, team, yr, opts = {}) {
   // a top-10 career with a club keeps him in the books even without a big legacy
   const clubGreat = Object.entries(tc).some(([ab, c]) => CAREER_STATS.some(({ key }) => c[key] >= tenth(ab, key)));
   if (!hof && L.legacy < 12 && !clubGreat) return null;
+  const from = clubOf(p, team, opts.teams);
   return {
-    id: p.id, name: p.name, pos: p.pos, num: p.num, team: team?.ab || p.formerTeam || "FA", age: p.age, retYr: yr,
+    id: p.id, name: p.name, pos: p.pos, num: p.num, team: from || "FA", age: p.age, retYr: yr,
     peak: L.peak, legacy: L.legacy, career: L.career, won: L.won, seasons: L.seasonsHere, tc,
     // Super Bowls he won (on the champion's roster that season)
     rings: (accoladesOf(p, { awards: opts.awards || [], champs: opts.champs || [], teams: opts.teams || [], yr, teamAb: team?.ab }).find((a) => a.k === "sb")?.years || []).length,
     hof, hofClass: hof ? yr + HOF_WAIT : null,
-    // his player card, kept for Hall of Famers and your own retired players (opts.keepCard)
-    ...(hof || opts.keepCard ? { card: cardOf(p, team, yr) } : {}),
+    // his player card (ratings, bio, every season), so clicking him in the books shows the real thing
+    card: cardOf(p, team, yr, opts.teams),
   };
 }
+// The club he last played for: the one he retired from, or (an unsigned free agent) his last one.
+// formerTeam is a club's index; an abbreviation is kept as is. null: he never had one.
+const clubOf = (p, team, teams) => team?.ab || (typeof p.formerTeam === "number" ? teams?.[p.formerTeam]?.ab : p.formerTeam) || null;
 
 // What a retired player's card keeps: ratings, bio, his rating history and every season's stats
 // (the last one, still on his ss when he retires, becomes a line of its own); nothing about a
 // contract, injury or this week.
 const GONE = ["ss", "pss", "gl", "cyr", "perf", "tradeVal", "hurt", "injured", "injWk", "injType", "injSev", "injRecWks", "holdout", "holdoutStone", "onBlock", "psCallUp", "av", "dk", "ext", "inc", "voidYrs", "voidDead", "sb", "baseBack", "restructures", "restructured", "confHistory", "trainedThisCamp", "cy", "ftag", "opt5"];
-export function cardOf(p, team, yr) {
-  const c = { ...p, contract: 0, salary: 0, retiredYr: yr, retiredFrom: team?.ab || p.formerTeam || null };
+export function cardOf(p, team, yr, teams) {
+  const c = { ...p, contract: 0, salary: 0, retiredYr: yr, retiredFrom: clubOf(p, team, teams) };
   if (p.ss?.gp) {
     const line = { y: yr, tm: team?.ab || "" };
     for (const [k, v] of Object.entries(p.ss)) if (typeof v === "number" && v) line[k] = v;
