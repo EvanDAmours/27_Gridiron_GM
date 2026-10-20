@@ -1467,4 +1467,8 @@ export const PATCH_NOTES = [
     "The live game buttons say what they do: Call plays On/Off, TV view or Full desk, Pause/Resume and Finish.",
     "Fixes: the Live Game tab no longer shows up twice in the top bar, and in a narrow browser window the live game stacks (field, then play-by-play, then charts) instead of squeezing the field to a sliver.",
   ] },
+  { v: "3.69", date: "2026-10-20", title: "TV View Fit", notes: [
+    "TV view: the play-by-play is back. The field is a bit smaller, and under it the play caption, then the play-by-play beside the win probability and drive chart, all on one screen without scrolling.",
+    "The TV caption no longer flickers or fades: it slides in with each new play and stays fully readable.",
+  ] },
 ];
