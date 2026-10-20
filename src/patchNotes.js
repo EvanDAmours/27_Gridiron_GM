@@ -1441,4 +1441,8 @@ export const PATCH_NOTES = [
     "More snow, and at the right time of year. Snow is rare before Thanksgiving, more common in December and January, and most common in the playoffs. Green Bay and Buffalo get the most: Lambeau now sees about two snow games a season, and about half of its playoff games are played in snow. Chicago, Cleveland, Denver, New England and Pittsburgh come next.",
     "Rain is unchanged in how often it falls (Seattle still the wettest), but it is now mostly light rain, with a downpour now and then.",
   ] },
+  { v: "3.64", date: "2026-10-20", title: "Snowy Lambeau and New York", notes: [
+    "New York gets more snow: the Giants and Jets now see about one snow game a season each at MetLife, about two between them, in line with New England.",
+    "Lambeau is snowier still: Green Bay now averages a little over two snow games a season, and close to two in three of its home playoff games are played in snow. The rest of the league is unchanged.",
+  ] },
 ];

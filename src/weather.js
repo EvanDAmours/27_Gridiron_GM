@@ -8,7 +8,7 @@
 
 export const ROOF = new Set(["ARI", "ATL", "DAL", "DET", "HOU", "IND", "LV", "LAR", "LAC", "MIN", "NO"]);
 // late-season snow chance in each open-air city, and its rain chance in any week
-const SNOW = { GB: 0.36, BUF: 0.36, CHI: 0.26, CLE: 0.25, DEN: 0.24, NE: 0.23, PIT: 0.2, KC: 0.14, NYG: 0.14, NYJ: 0.14, CIN: 0.15, PHI: 0.12, BAL: 0.09, WAS: 0.07, SEA: 0.04, TEN: 0.04, CAR: 0.02 };
+const SNOW = { GB: 0.42, BUF: 0.36, CHI: 0.26, CLE: 0.25, DEN: 0.24, NE: 0.23, PIT: 0.2, KC: 0.14, NYG: 0.23, NYJ: 0.23, CIN: 0.15, PHI: 0.12, BAL: 0.09, WAS: 0.07, SEA: 0.04, TEN: 0.04, CAR: 0.02 };
 const RAIN = { SEA: 0.28, MIA: 0.15, TB: 0.15, JAX: 0.14, PIT: 0.13, NE: 0.12, PHI: 0.12, NYG: 0.12, NYJ: 0.12, CLE: 0.12, BAL: 0.12, WAS: 0.12, CAR: 0.12, CIN: 0.12, TEN: 0.12, BUF: 0.11, CHI: 0.11, KC: 0.1, SF: 0.1, GB: 0.08, DEN: 0.05 };
 const HEAVY = 0.35, WIND = 0.05;
 
