@@ -1,6 +1,7 @@
 // The live-game field: both teams' starters lined up in formation at the line of scrimmage,
 // redrawn (and slid into place) after every play. Offense drives left to right.
 import React from "react";
+import { calloutOf } from "./callout.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import SpritePlayer from "./pixel/SpritePlayer.jsx";
 import { snapPose, celebrationPose, SPRITES as ART } from "./pixel/sprites.js";
@@ -165,6 +166,20 @@ function Player({ p, pos, x, y, team, side, away, td }) {
 // sb: the Super Bowl's name ("Super Bowl LXI") on a neutral field: pinstriped end zones in each
 // club's color framed in gold, a gold medallion at midfield with the trophy, the game's name and the
 // host city (sbCity), each club's logo at its own 25, and gold trim around the field.
+function Callout({ play, W, H }) {
+  const c = calloutOf(play);
+  if (!c) return null;
+  const big = c.t.length > 12 ? 40 : 52, w = Math.max(c.t.length * big * 0.62, (c.s || "").length * 11) + 60;
+  return (
+    <g pointerEvents="none" style={{ animation: "lfCallout .45s ease-out" }}>
+      <style>{"@keyframes lfCallout { 0% { opacity: 0; transform: scale(.85); transform-origin: center } 100% { opacity: 1; transform: none } }"}</style>
+      <rect x={W / 2 - w / 2} y={H / 2 - 92} width={w} height={c.s ? 104 : 78} rx="14" fill="#060b18" fillOpacity=".82" stroke={c.c} strokeWidth="3" />
+      <text x={W / 2} y={H / 2 - 92 + big + 8} textAnchor="middle" fill={c.c} fontSize={big} fontWeight="900" fontFamily="'Arial Black', Arial, sans-serif">{c.t}</text>
+      {c.s && <text x={W / 2} y={H / 2 - 92 + big + 36} textAnchor="middle" fill="#e2e8f0" fontSize="17" fontWeight="700" fontFamily="system-ui">{c.s}</text>}
+    </g>
+  );
+}
+
 export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday, tall }) {
   const W8 = wxOf(wx);
   const los = clamp(ballYard, 1, 99);
@@ -277,8 +292,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       <Falling wx={W8} />
       {(W8.rain || W8.snow || wx === "wind") && <g pointerEvents="none"><rect x="10" y="12" width={W8.label.length * 7.4 + 34} height="22" rx="11" fill="#0b1220" opacity=".72" /><text x="20" y="27" fontSize="12" fontWeight="800" fill="#e2e8f0" fontFamily="system-ui">{W8.icon} {W8.label}</text></g>}
       {!SPRITES && <ellipse cx={x0 - 4} cy={H / 2} rx="7" ry="4.5" fill="#8B4513" stroke="#fff" strokeWidth="1" style={{ transition: "cx .55s ease" }} />}
-      {lastPlay?.td && <text x={W / 2} y={H / 2 - 40} textAnchor="middle" fill="#facc15" fontSize="54" fontWeight="900" stroke="#000" strokeWidth="3" paintOrder="stroke">TOUCHDOWN!</text>}
-      {lastPlay?.type === "int" && <text x={W / 2} y={H / 2 - 40} textAnchor="middle" fill="#ef4444" fontSize="44" fontWeight="900" stroke="#000" strokeWidth="3" paintOrder="stroke">INTERCEPTED!</text>}
+      <Callout play={lastPlay} W={W} H={H} />
     </svg>
   );
 }

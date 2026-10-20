@@ -1476,4 +1476,8 @@ export const PATCH_NOTES = [
     "Gone: the injury toast, the Starter Down alert in Needs Attention, the pop-up telling you to pick a replacement, and the random rehab prompts that came back week after week. A player going on IR now gets his rehab plan (Aggressive, Standard or Cautious) right on the report, once.",
     "Injury rates are unchanged. A test run of three seasons showed about 8 to 9 game-missing injuries per team per season, with about 2 players out at any time, which is a little lighter than the real NFL.",
   ] },
+  { v: "3.71", date: "2026-10-20", title: "Field Callouts", notes: [
+    "Big plays get called out on the field while you watch: a missed field goal shows NO GOOD! with the distance, a made one shows IT'S GOOD!, and a stop on fourth down shows TURNOVER ON DOWNS, so a change of possession never looks like it came out of nowhere. Fumbles and safeties get one too, alongside touchdowns and interceptions. The TV view caption calls out the same plays.",
+    "Fast speed in live games is a little slower (a play every 0.6 seconds instead of 0.4), so players have time to finish moving before the next snap.",
+  ] },
 ];
