@@ -1471,4 +1471,9 @@ export const PATCH_NOTES = [
     "TV view: the play-by-play is back. The field is a bit smaller, and under it the play caption, then the play-by-play beside the win probability and drive chart, all on one screen without scrolling.",
     "The TV caption no longer flickers or fades: it slides in with each new play and stays fully readable.",
   ] },
+  { v: "3.70", date: "2026-10-20", title: "Weekly Injury Report", notes: [
+    "One weekly injury report instead of a stream of alerts. After each week with injury news for your team, one card in the corner lists who's out and for how long (or injured reserve), who steps in for each injured starter (with a Change button to pick someone else), who's playing through a knock, and who's back.",
+    "Gone: the injury toast, the Starter Down alert in Needs Attention, the pop-up telling you to pick a replacement, and the random rehab prompts that came back week after week. A player going on IR now gets his rehab plan (Aggressive, Standard or Cautious) right on the report, once.",
+    "Injury rates are unchanged. A test run of three seasons showed about 8 to 9 game-missing injuries per team per season, with about 2 players out at any time, which is a little lighter than the real NFL.",
+  ] },
 ];
