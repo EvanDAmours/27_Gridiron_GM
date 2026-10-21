@@ -1618,4 +1618,7 @@ export const PATCH_NOTES = [
   { v: "4.7", date: "2026-10-20", title: "Promo fix", notes: [
     "Fixed the home screen matchup promo from 4.6: the visiting team's star stands in his place again, and the card shrinks properly in a narrower window.",
   ] },
+  { v: "4.8", date: "2026-10-20", title: "Smoother promo centerline", notes: [
+    "The home screen matchup promo blends the two teams' colors through the middle instead of meeting at a hard line down the center.",
+  ] },
 ];

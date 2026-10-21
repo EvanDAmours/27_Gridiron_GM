@@ -35,7 +35,7 @@ function Ratings({ mine = {}, other = {} }) {
 
 function Half({ team, player, rating, other, home }) {
   return (
-    <div className={`bm-half${home ? " bm-half--home" : ""}`} style={{ "--bm-c": team.clr || "#334155" }}>
+    <div className={`bm-half${home ? " bm-half--home" : ""}`}>
       {player && <div className="bm-art"><PlayerArt p={player} ab={team.ab} width={200} crop={0.92} /></div>}
       <div className="bm-info">
         <div className="bm-logo"><TeamLogo t={team} sz={46} glow /></div>
@@ -68,7 +68,7 @@ export default function BroadcastMatchup({ away, home, awayRating, homeRating, l
         {prime && <span className="bm-badge bm-badge--prime">★ {prime.toUpperCase()}</span>}
         <span className="bm-when">{[kickoff, venue].filter(Boolean).join(" · ")}</span>
       </header>
-      <div className="bm-body" style={{ "--bm-font": BLOCK }}>
+      <div className="bm-body" style={{ "--bm-font": BLOCK, "--bm-a": away.clr || "#334155", "--bm-h": home.clr || "#334155" }}>
         <Half team={away} player={featuredPlayer(away)} rating={awayRating} other={homeRating} />
         <Half team={home} player={featuredPlayer(home)} rating={homeRating} other={awayRating} home />
         <div className="bm-at">AT</div>
