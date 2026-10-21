@@ -1639,4 +1639,7 @@ export const PATCH_NOTES = [
   { v: "4.14", date: "2026-10-20", title: "Stage smoke for the big moments", notes: [
     "Stage smoke for the biggest moments: when your player wins MVP, Offensive or Defensive Player of the Year or Super Bowl MVP, or goes into the Hall of Fame, smoke cannons fire up either side of him and a low fog rolls across the floor.",
   ] },
+  { v: "4.15", date: "2026-10-20", title: "New pixel players for all 32 teams", notes: [
+    "New pixel players on the live field, drawn for every club in its own home and road uniform: quarterback, backs, receivers, tight ends, both lines, linebackers and defensive backs each have their own stance. Sharper and cleaner than before, with no recoloring in the game.",
+  ] },
 ];

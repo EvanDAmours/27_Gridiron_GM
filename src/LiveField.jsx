@@ -4,6 +4,7 @@ import React from "react";
 import { calloutOf } from "./callout.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import SpritePlayer from "./pixel/SpritePlayer.jsx";
+import TeamSprite, { hasTeamSprites, teamSpriteHeight } from "./pixel/TeamSprite.jsx";
 import { snapPose, celebrationPose, SPRITES as ART } from "./pixel/sprites.js";
 import { UNIFORMS, teamKey, uniformFor } from "./teamUniforms.js";
 import { logoUrl } from "./ui.jsx";
@@ -154,6 +155,15 @@ function Player({ p, pos, x, y, team, side, away, td }) {
       {SHOW_NAME[side].has(pos) && <text x={side === "off" ? 8 : -8} y="21" textAnchor={side === "off" ? "end" : "start"} fontSize="8.5" fontWeight="700" fill="#fff" stroke="#0009" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>}
     </g>
   );
+  // the club's own sprite sheet (every club has one); the recolored concept art otherwise
+  if (hasTeamSprites(team)) {
+    const h = teamSpriteHeight(team, pos);
+    return (
+      <g style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform .55s ease" }}>
+        <TeamSprite y={Math.round(h * 0.5)} team={team} pos={pos} away={away} facing={side === "off" ? "right" : "left"} title={p ? `${pos} ${p.name} (${p.ovr})` : pos} />
+      </g>
+    );
+  }
   const pose = (side === "off" && td && celebrationPose(pos)) || snapPose(pos, side);
   const hgt = (ART[pose] || ART.DB).h * SPRITE_SCALE;
   return (
