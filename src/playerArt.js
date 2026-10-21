@@ -84,7 +84,7 @@ const made = new Map();
 export function renderArt(a, m) {
   if (made.has(a.key)) return made.get(a.key);
   const job = (async () => {
-    const base = await img(BASE + a.file), w = m.w, h = m.h;
+    const base = await img(BASE + a.file), w = base.naturalWidth, h = base.naturalHeight;   // full size, so it stays sharp
     const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
     const ctx = cv.getContext("2d", { willReadFrequently: true });
     ctx.drawImage(base, 0, 0, w, h);
@@ -96,7 +96,7 @@ export function renderArt(a, m) {
       [...s].forEach((d, i) => { ctx.drawImage(strip, cells[d][0], 0, cells[d][1], dh, x, cy * h - nh / 2, ws[i], nh); x += ws[i] + gap; });
     }
     grade(ctx, w, h);
-    const blob = await new Promise((ok) => cv.toBlob(ok, "image/webp", 0.9));
+    const blob = await new Promise((ok) => cv.toBlob(ok, "image/webp", 0.92));
     return URL.createObjectURL(blob);
   })().catch(() => null);
   made.set(a.key, job);

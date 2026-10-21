@@ -1,8 +1,8 @@
 """Exports the player art the game loads, into public/players/:
 
-  {TEAM}/{Lean|Athletic|Big}_{Dark|Light}.webp   blank players, cropped helmet to mid-thigh, 480x640
-  nums/{TEAM}.webp                               the team's ten digits in a row (160 px tall)
-  NYG/n/{NN}.webp                                the numbered Giants renders (new Giants)
+  {TEAM}/{Lean|Athletic|Big}_{Dark|Light}.webp   blank players, cropped helmet to mid-thigh (684x912)
+  nums/{TEAM}.webp                               the team's ten digits in a row (260 px tall)
+  NYG/n/{NN}.webp                                the numbered Giants renders (new Giants, 1086x1448)
   NYG/c/{Last}_{NN}.webp                         the custom Giants renders
   manifest.json                                  where each number goes, digit cells, which art exists
 
@@ -16,17 +16,16 @@ from compose import ART, sprites, clean_alpha, jersey_box, path
 
 ROOT = os.path.join(ART, "..")
 OUT = os.path.join(ROOT, "public", "players")
-W, H = 480, 640
 CROP = (170, 0, 854, 912)             # x0, y0, x1, y1 of a 1024x1536 sprite: helmet to mid-thigh
 KINDS = [f"{b}_{s}" for b in ("Lean", "Athletic", "Big") for s in ("Dark", "Light")]
 
 KEEP = "--keep" in sys.argv   # leave files that already exist (just rebuild the manifest)
 
-def webp(img_bgra, dst, size=(W, H)):
+# Full resolution: the spotlight shows a player up to ~1,500 screen pixels tall on a sharp display.
+def webp(img_bgra, dst):
     if KEEP and os.path.exists(dst): return
     os.makedirs(os.path.dirname(dst), exist_ok=True)
-    im = Image.fromarray(cv2.cvtColor(img_bgra, cv2.COLOR_BGRA2RGBA)).resize(size, Image.LANCZOS)
-    im.save(dst, "WEBP", quality=82, method=6)
+    Image.fromarray(cv2.cvtColor(img_bgra, cv2.COLOR_BGRA2RGBA)).save(dst, "WEBP", quality=84, method=4)
 
 def number_spot(img):
     """Same placement as compose.add_number: centre and height of the number, in crop units (0-1)."""
@@ -40,7 +39,7 @@ def number_spot(img):
     return [round((cx - x0) / (x1 - x0), 4), round((cy - y0) / (y1 - y0), 4), round(nh / (y1 - y0), 4)]
 
 def digits(ab, dst):
-    S = sprites(ab); dh = 160; cells, ims, x = [], [], 0
+    S = sprites(ab); dh = 260; cells, ims, x = [], [], 0
     for d in "0123456789":
         g = S[d]; w = max(1, int(g.shape[1] * dh / g.shape[0]))
         ims.append(cv2.resize(g, (w, dh), interpolation=cv2.INTER_AREA)); cells.append([x, w]); x += w + 4
@@ -55,7 +54,7 @@ def norm(n):   # the game's name key (src/playerArt.js)
     return re.sub(r"[^a-z]+", " ", n).strip()
 
 def main():
-    man = {"w": W, "h": H, "teams": {}, "nygNumbered": [], "custom": {}, "nygOriginal": [], "dark": []}
+    man = {"teams": {}, "nygNumbered": [], "custom": {}, "nygOriginal": [], "dark": []}
     for d in sorted(glob.glob(os.path.join(ART, "players", "*"))):
         ab = os.path.basename(d)
         if not (len(ab) <= 3 and all(os.path.exists(path(ab, k)) for k in KINDS)): continue

@@ -1499,4 +1499,7 @@ export const PATCH_NOTES = [
   { v: "3.76", date: "2026-10-20", title: "Super Bowl MVP with the Lombardi", notes: [
     "When your player is Super Bowl MVP, his spotlight page now has him standing beside the Lombardi Trophy as world champions.",
   ] },
+  { v: "3.77", date: "2026-10-20", title: "Sharper player renders", notes: [
+    "Player renders in the spotlight are now sharp: they were stored at a smaller size and stretched on big and high-resolution screens. They now load at full resolution (jersey numbers too).",
+  ] },
 ];
