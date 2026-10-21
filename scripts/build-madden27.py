@@ -14,6 +14,8 @@ from collections import defaultdict
 SEASON = 2026
 CAP = 200  # the game's cap, in $M; real deals keep their share of the cap
 ROSTER, PS = 53, 10
+# real moves EA's ratings haven't caught up with yet: player -> his new club (EA label)
+MOVES = {"Marvin Harrison Jr": "Houston Texans"}
 src = sys.argv[1]
 eap = json.load(open(f"{src}/m27.json"))
 
@@ -149,6 +151,7 @@ for p in eap:
     p.update(OVERRIDES.get(f'{p["firstName"]} {p["lastName"]}', {}))
     pos = POS.get(p["position"]["id"])
     if not pos or not p.get("team"): continue
+    p["team"]["label"] = MOVES.get(f'{p["firstName"]} {p["lastName"]}', p["team"]["label"])
     s = {k: v["value"] for k, v in p["stats"].items()}
     sal, yrs = contract(pos, p["overallRating"], p["age"], p["yearsPro"])
     dev = dev_trait(p)

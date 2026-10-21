@@ -1527,4 +1527,7 @@ export const PATCH_NOTES = [
   { v: "3.84", date: "2026-10-20", title: "Custom Texans and Mauigoa", notes: [
     "Custom renders for seven more players: Francis Mauigoa for the Giants, and the Texans' C.J. Stroud, Nico Collins, Marvin Harrison Jr., Will Anderson Jr., Danielle Hunter and Derek Stingley Jr. A custom render shows while the player is on that team; anywhere else he wears his new team's uniform.",
   ] },
+  { v: "3.85", date: "2026-10-20", title: "Marvin Harrison Jr. to Houston", notes: [
+    "Marvin Harrison Jr. is now on the Texans, following his real trade from the Cardinals: he starts as Houston's No. 2 receiver behind Nico Collins (in his custom Texans render). To keep the 53, linebacker Jamal Hill starts as a free agent. New franchises only; a save already in progress keeps its rosters.",
+  ] },
 ];
