@@ -1583,4 +1583,9 @@ export const PATCH_NOTES = [
     "Career milestones count real careers. A veteran's years before your league began count toward them, so Josh Allen passing 50,000 career yards happens when it really would, not 20,000 yards into your save.",
     "More milestones, and news the week they happen: passing yards every 10,000 from 20,000, touchdown passes every 50 from 100, 5,000 / 7,500 / 10,000+ rushing and receiving yards, 500 / 750 / 1,000+ catches, 50 / 75 / 100+ sacks, 25 / 40 / 50+ interceptions, and more. Each one is in the log once, with your scouting-point bonus as before. Milestones a veteran passed before the league began never come up.",
   ] },
+  { v: "4.0", date: "2026-10-20", title: "Real careers and louder dev traits", notes: [
+    "Real careers on the card. The front of the player card has an NFL Career strip: his real career totals (everything before your league began, plus everything since) for the stats his position is about, and where each ranks all-time: Aaron Rodgers is #5 in passing yards with Brett Favre next, Derrick Henry #4 in rushing touchdowns with Marcus Allen next, Myles Garrett #20 in sacks. Top-10 ranks are gold. Someone closing in on the all-time top 25 shows how far he has to go.",
+    "The ranks are live: your league's players count at their current totals, so as careers grow, so do the ranks.",
+    "The development trait is much easier to see. It's a big badge beside the OVR ring on the card, on your scouts' read of a prospect, and right under the name on draft night. Generational and Superstar glow, Star stands out. On the Big Board, a prospect your scouts know to be Generational, Superstar or Star gets a tag next to his name.",
+  ] },
 ];

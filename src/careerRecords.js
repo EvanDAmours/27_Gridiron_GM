@@ -6,6 +6,7 @@
 import { TEAM_CAREER_BASE, TEAM_CAREER_KEYS } from "./data/teamCareerBase.js";
 import { careerTotals, normName } from "./history.js";
 import { everyone } from "./records.js";
+import { NFL_CAREER_LEADERS } from "./data/nflCareerLeaders.js";
 
 const QB = ["QB"], RUSH = ["RB", "QB", "WR", "FB"], CATCH = ["WR", "TE", "RB", "FB"];
 const OFF = new Set(["QB", "RB", "FB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "OL", "K", "P"]);
@@ -96,6 +97,33 @@ export function newMilestones(p) {
   for (const d of CAREER_DEFS) {
     const now = nflCareer(p, d.key), start = now - (counts(d, p.pos) ? p.ss?.[d.key] || 0 : 0);
     for (const m of MILESTONES[d.key] || []) if (start < m && now >= m && !(p.ms || []).includes(`${d.key}:${m}`)) out.push({ key: d.key, label: d.label, m, val: now });
+  }
+  return out;
+}
+
+// Where his career stands all-time, for the stats his position is about: [{ key, label, val, rank,
+// next, toList }]. The real top 25 (StatMuse) with everyone in your league counted at his live total
+// instead of the real list's number (a real player's entry is replaced by him). rank: his place, when
+// he's at least the real #25's total (below it, players outside the list could be ahead: toList is
+// how far he has to go). next: the man just above him. league: every player in the league (active,
+// free agents, retired cards).
+// [his position's own stats, others shown only when he ranks in them]
+const SHOW = { QB: [["passYds", "passTD"], ["rushYds", "rushTD"]], RB: [["rushYds", "rushTD"], ["rec", "recYds"]], FB: [["rushYds"], ["recYds"]], WR: [["rec", "recYds", "recTD"], []], TE: [["rec", "recYds", "recTD"], []], CB: [["ints"], ["sacks"]], S: [["ints"], ["sacks"]] };
+export function careerStanding(p, league = []) {
+  if (!p) return [];
+  const [main, extra] = SHOW[p.pos] || (OFF.has(p.pos) ? [[], []] : [["sacks"], ["ints"]]), keys = [...main, ...extra];
+  const me = normName(p.name), others = league.filter((q) => q && q.id !== p.id && normName(q.name) !== me);
+  const live = new Set([me, ...others.map((q) => normName(q.name))]);
+  const out = [];
+  for (const key of keys) {
+    const val = nflCareer(p, key);
+    if (!(val > 0)) continue;
+    const real = NFL_CAREER_LEADERS[key] || [], v25 = real.length ? real[real.length - 1].v : Infinity;
+    const board = [...real.filter((r) => !live.has(normName(r.n))).map((r) => ({ name: r.n, v: r.v })), ...others.map((q) => ({ name: q.name, v: nflCareer(q, key) })).filter((r) => r.v > 0)];
+    const above = board.filter((r) => r.v > val).sort((a, b) => a.v - b.v);
+    const rank = val >= v25 ? above.length + 1 : null;
+    if (!rank && !main.includes(key)) continue;
+    out.push({ key, label: CAREER_DEFS.find((d) => d.key === key).label, val, rank, next: rank && rank > 1 ? above[0] : null, toList: rank ? 0 : v25 - val });
   }
   return out;
 }

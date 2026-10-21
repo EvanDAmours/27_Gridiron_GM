@@ -55,6 +55,21 @@ export function DevChip({ dev, hint = "Development trait unknown. Your major sco
   return <span title={DEV_TRAITS[dev].desc} style={{ fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 999, border: `1px solid ${b}`, color: c, background: c + "14", whiteSpace: "nowrap" }}>{DEV_TRAITS[dev].name}</span>;
 }
 
+// The development trait, big: on the player card, the prospect's read and draft night, where it
+// matters most. The rarer the trait, the louder the badge. size: "md" or "lg".
+const DEV_ICON = { generational: "💎", superstar: "⚡", star: "⭐", late: "🌱", normal: "" };
+export function DevBadge({ dev, size = "md", hint = "Development trait unknown. Your major scout reveals it with a full workup." }) {
+  const lg = size === "lg", fs = lg ? 15 : 13, pad = lg ? "6px 14px" : "4px 11px";
+  if (!dev || !DEV_STYLE[dev] || !DEV_TRAITS[dev]) return <span title={hint} style={{ display: "inline-flex", alignItems: "center", fontSize: fs, fontWeight: 900, letterSpacing: 1, padding: pad, borderRadius: 8, border: `1px dashed ${C.bd}`, color: "#64748b", whiteSpace: "nowrap" }}>DEV ?</span>;
+  const [c, b] = DEV_STYLE[dev], hot = dev === "generational" || dev === "superstar";
+  return (
+    <span title={DEV_TRAITS[dev].desc} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: fs, fontWeight: 900, letterSpacing: 1.2, textTransform: "uppercase", padding: pad, borderRadius: 8, whiteSpace: "nowrap",
+      color: hot ? "#1c1206" : c, border: `1.5px solid ${hot ? c : b}`, background: hot ? `linear-gradient(135deg, ${c}, ${c}bb)` : c + "1f", boxShadow: hot ? `0 0 18px ${c}66` : dev === "star" ? `0 0 10px ${c}33` : "none" }}>
+      {DEV_ICON[dev] && <span style={{ fontSize: fs + 1 }}>{DEV_ICON[dev]}</span>}{DEV_TRAITS[dev].name}{dev === "normal" ? " dev" : ""}
+    </span>
+  );
+}
+
 export function CovTag({ read }) {
   const role = read.cov;
   const c = role === "major" ? "#f5c542" : role === "minor" ? "#60a5fa" : "#64748b";
@@ -152,7 +167,7 @@ function ProspectRow({ g, p, onDraft, canDraft, myRank }) {
         <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} title={listed ? "Remove from your list" : "Add to your list"} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ background: "transparent", border: 0, cursor: "pointer", color: listed ? "#f5c542" : "#475569", fontSize: 20, padding: 0, lineHeight: 1 }}>{listed ? "★" : "☆"}</button>
       </td>
       <td style={{ ...td, minWidth: 0 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.name} <span className="sc-show"><Bdg pos={posTag(p)} /><RoleTag p={p} /></span>{read.flag && <span title={read.flagWhy || "Your scouts red-flagged him: high bust risk."} style={{ fontSize: 11, fontWeight: 800, color: "#fee2e2", background: "#991b1b", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>🚩 red flag</span>}{read.sleeper ? <span title={`${read.who} have seen through the board: he's a sleeper, much better than where he's ranked.`} style={{ fontSize: 11, fontWeight: 800, color: "#fdf2f8", background: "#be185d", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>💎 sleeper</span> : read.hunch && <span title={`${read.who} has a hunch there's more to him than the board says. A report will tell.`} style={{ fontSize: 11, fontWeight: 800, color: "#f9a8d4", background: "#831843", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>👀 hunch</span>}{read.devEarly && ["generational", "superstar"].includes(read.dev) && <span title={`${read.who} already see a ${read.dev} development trait.`} style={{ fontSize: 11, fontWeight: 800, color: read.dev === "generational" ? "#f472b6" : "#f5c542", border: `1px solid currentColor`, borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>{read.dev === "generational" ? "Generational" : "Superstar"}</span>}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.name} <span className="sc-show"><Bdg pos={posTag(p)} /><RoleTag p={p} /></span>{["generational", "superstar", "star"].includes(read.dev) && <span title={DEV_TRAITS[read.dev].desc} style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, letterSpacing: 0.6, padding: "1px 7px", borderRadius: 999, color: DEV_STYLE[read.dev][0], border: `1px solid ${DEV_STYLE[read.dev][1]}`, background: DEV_STYLE[read.dev][0] + "1a", whiteSpace: "nowrap" }}>{DEV_ICON[read.dev]} {DEV_TRAITS[read.dev].name.toUpperCase()}</span>}{read.flag && <span title={read.flagWhy || "Your scouts red-flagged him: high bust risk."} style={{ fontSize: 11, fontWeight: 800, color: "#fee2e2", background: "#991b1b", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>🚩 red flag</span>}{read.sleeper ? <span title={`${read.who} have seen through the board: he's a sleeper, much better than where he's ranked.`} style={{ fontSize: 11, fontWeight: 800, color: "#fdf2f8", background: "#be185d", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>💎 sleeper</span> : read.hunch && <span title={`${read.who} has a hunch there's more to him than the board says. A report will tell.`} style={{ fontSize: 11, fontWeight: 800, color: "#f9a8d4", background: "#831843", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>👀 hunch</span>}{read.devEarly && ["generational", "superstar"].includes(read.dev) && <span title={`${read.who} already see a ${read.dev} development trait.`} style={{ fontSize: 11, fontWeight: 800, color: read.dev === "generational" ? "#f472b6" : "#f5c542", border: `1px solid currentColor`, borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>{read.dev === "generational" ? "Generational" : "Superstar"}</span>}</div>
         <div className="sc-sub" style={{ fontSize: 13, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260 }}>{p.bio?.college} ({regionName(regionOf(p))}) · {p.age} yrs · {htS(p.ht_)} {p.wt}</div>
       </td>
       <td className="sc-hide" style={{ ...td, textAlign: "center" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /></td>
@@ -698,7 +713,6 @@ const Mini = ([l, v]) => (
 export function DraftReveal({ pick, team, onClose, onCard }) {
   const p = pick.p;
   const dev = devOf(p);
-  const [fg] = DEV_STYLE[dev] || DEV_STYLE.normal;
   const num = rookieNum(p);
   const skills = Object.entries(p.posAttrs || {}).map(([k, v]) => [PA_LABELS[k] || k, v]).sort((a, b) => b[1] - a[1]).slice(0, 4);
   const phys = PHYS.filter(([, k]) => typeof p[k] === "number").map(([l, k]) => [l, p[k]]);
@@ -707,7 +721,8 @@ export function DraftReveal({ pick, team, onClose, onCard }) {
   return (
     <Spotlight p={p} team={team} num={num} kicker={`🏈 ${p.draftYr ?? ""} NFL Draft · Round ${pick.rd} · Pick ${pick.overall}`} title={p.name} bg={`#${pick.overall}`} cta="CONTINUE THE DRAFT →" onNext={onClose} label="Your draft pick"
       more={onCard ? { label: "Full card", onClick: onCard } : null} confetti={pick.rd === 1 ? [team.clr, team.ac, "#ffffff", "#fde68a"] : null}>
-      <div>{posTag(p)}{p.bio?.college || p.college ? ` · ${p.bio?.college || p.college}` : ""}{p.age ? ` · age ${p.age}` : ""} · <b style={{ color: fg }}>{DEV_TRAITS[dev]?.name || dev}</b></div>
+      <div>{posTag(p)}{p.bio?.college || p.college ? ` · ${p.bio?.college || p.college}` : ""}{p.age ? ` · age ${p.age}` : ""}</div>
+      <div style={{ marginTop: 8 }}><DevBadge dev={dev} size="lg" /></div>
       <div style={{ display: "flex", gap: 18, marginTop: 8, fontSize: MOBILE ? 15 : 18 }}>
         <span style={{ color: "#94a3b8" }}>OVR <b style={{ color: oC(p.ovr) }}>{p.ovr}</b></span>
         <span style={{ color: "#94a3b8" }}>POT <b style={{ color: C.bl }}>{p.pot}</b></span>
@@ -1029,7 +1044,7 @@ export function ProspectProfile({ g, p }) {
         <div style={{ display: "flex", gap: 16, alignItems: "baseline", flexWrap: "wrap" }}>
           <span style={{ fontSize: 13, color: C.mt }}>OVR <Val txt={read.ovr} /></span>
           <span style={{ fontSize: 13, color: C.mt }}>POT <Val txt={read.pot} /></span>
-          <DevChip dev={read.dev} />
+          <DevBadge dev={read.dev} />
           {read.tier && <span style={{ fontSize: 15 }}>Projects as <b>{read.tier}</b></span>}
           {read.lvl > 0 && <span style={{ fontSize: 12, background: C.bd, borderRadius: 3, padding: "1px 6px", color: "#cbd5e1" }}>{riskLabel(s.eOvr, s.ePot)}</span>}
         </div>
