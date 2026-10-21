@@ -1,11 +1,11 @@
 // The week's matchup on the home screen, like a TV game promo: each club's half in its colors, its
-// star standing large toward the middle with his number faint behind him, the club's record and
-// ratings on the outside, AT between them. Prime-time and rivalry games dress up; the holiday trim
+// star standing large toward the middle (his number is on his jersey: a big one behind each man read
+// as one long number across the two halves), the club's record and ratings on the outside, AT
+// between them. Prime-time and rivalry games dress up; the holiday trim
 // goes around it (HolidayCard). The phone keeps its compact card (HomeScreen CompactMatchup).
 import React from "react";
 import { TeamLogo } from "./ui.jsx";
 import PlayerArt from "./PlayerArt.jsx";
-import { jerseyNum } from "./playerArt.js";
 import { BLOCK, FONT_CSS } from "./Spotlight.jsx";
 import "./broadcast-matchup.css";
 
@@ -34,10 +34,8 @@ function Ratings({ mine = {}, other = {} }) {
 }
 
 function Half({ team, player, rating, other, home }) {
-  const num = player ? jerseyNum(player) : null;
   return (
     <div className={`bm-half${home ? " bm-half--home" : ""}`} style={{ "--bm-c": team.clr || "#334155" }}>
-      {num != null && <div className="bm-num" aria-hidden>{num}</div>}
       {player && <div className="bm-art"><PlayerArt p={player} ab={team.ab} width={200} crop={0.92} /></div>}
       <div className="bm-info">
         <div className="bm-logo"><TeamLogo t={team} sz={46} glow /></div>

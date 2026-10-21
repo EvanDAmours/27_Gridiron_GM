@@ -1612,4 +1612,7 @@ export const PATCH_NOTES = [
     "The star to watch is each team's best player who isn't a lineman, kicker or punter, leaning toward the quarterback and then a receiver: Dak Prescott for Dallas, Lamar Jackson for Baltimore, Malik Nabers for the Giants. An injured player sits it out. Players with their own custom render show in it; everyone else wears his team's uniform with his number.",
     "On a phone the home screen keeps its compact matchup card.",
   ] },
+  { v: "4.6", date: "2026-10-20", title: "Promo without the big numbers", notes: [
+    "The home screen matchup promo no longer puts a big faint jersey number behind each star: side by side, the two read as one long number. Each player's number is on his jersey.",
+  ] },
 ];

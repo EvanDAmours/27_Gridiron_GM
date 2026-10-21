@@ -13,11 +13,8 @@
 .bm-body { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .bm-half { position: relative; overflow: hidden; min-height: 300px; background: linear-gradient(110deg, var(--bm-c), color-mix(in srgb, var(--bm-c) 66%, transparent) 55%, #0b1220); }
 .bm-half--home { background: linear-gradient(250deg, var(--bm-c), color-mix(in srgb, var(--bm-c) 66%, transparent) 55%, #0b1220); }
-/* his number, faint, behind him; he stands toward the middle */
-/* (kept clear of the middle, so the two numbers never read as one: 4 and 1 as "41") */
-.bm-num { position: absolute; right: 16%; top: -20px; font-family: var(--bm-font); font-weight: 700; font-size: 230px; line-height: 1; color: #ffffff12; pointer-events: none; }
-.bm-half--home .bm-num { right: auto; left: 16%; }
-.bm-art { position: absolute; bottom: 0; right: 6px; filter: drop-shadow(0 12px 18px #000a); transform-origin: bottom center; }
+/* he stands toward the middle */
+.bm-half--home .bm-art { position: absolute; bottom: 0; right: 6px; filter: drop-shadow(0 12px 18px #000a); transform-origin: bottom center; }
 .bm-half--home .bm-art { right: auto; left: 6px; }
 .bm-info { position: relative; padding: 16px 18px; max-width: 58%; }
 .bm-half--home .bm-info { margin-left: auto; text-align: right; }
@@ -47,8 +44,7 @@
 .bm-compact .bm-info { padding: 12px 16px; }
 .bm-compact .bm-kicker { margin-top: 12px; }
 .bm-compact .bm-ratings { margin-top: 10px; }
-.bm-compact .bm-num { font-size: 180px; }
-
+.bm-compact 
 /* a narrower column: the star shrinks before he can crowd the words */
 @container (max-width: 780px) {
   .bm-art { transform: scale(.7); }
@@ -58,8 +54,7 @@
   .bm-info { max-width: 62%; }
   .bm-ratings { width: 160px; }
   .bm-rating b { font-size: 19px; }
-  .bm-num { font-size: 170px; }
-}
+  }
 @container (max-width: 600px) {
   .bm-art { transform: scale(.52); }
   .bm-compact .bm-art { transform: scale(.48); }
