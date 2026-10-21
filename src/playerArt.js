@@ -58,17 +58,22 @@ export function artFor(p, ab, m) {
 
 const img = (src) => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
 
-// The lighting every render gets: brighter at the helmet, falling off toward the thighs and the
-// edges, a little extra contrast (the same grade as art/tools/compose.py).
+// The lighting every render gets: a spotlight from above. The helmet and chest catch it, the arms,
+// hands and legs fall into shadow (which also hides the small mistakes in the art), the edges darken,
+// and the colour is pulled back a little, with extra contrast.
 function grade(ctx, w, h) {
   const d = ctx.getImageData(0, 0, w, h), px = d.data;
   for (let y = 0; y < h; y++) {
-    const ly = Math.min(1.05, Math.max(0.38, 1.12 - (y / h) * 0.85));
+    const ly = Math.min(1.04, Math.max(0.2, 1.16 - Math.pow(y / h, 1.25) * 1.1));
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
       if (!px[i + 3]) continue;
-      const dx = (x - w / 2) / (w / 2), lit = ly * (1 - 0.3 * dx * dx);
-      for (let c = 0; c < 3; c++) px[i + c] = Math.max(0, Math.min(255, ((px[i + c] / 255) * lit - 0.5) * 1.12 * 255 + 127.5));
+      const dx = (x - w / 2) / (w / 2), lit = ly * (1 - 0.5 * dx * dx);
+      const g = (px[i] * 0.3 + px[i + 1] * 0.59 + px[i + 2] * 0.11) / 255;
+      for (let c = 0; c < 3; c++) {
+        const v = (px[i + c] / 255) * 0.85 + g * 0.15;   // 15% less colour
+        px[i + c] = Math.max(0, Math.min(255, ((v * lit - 0.5) * 1.15 + 0.5) * 255));
+      }
     }
   }
   ctx.putImageData(d, 0, 0);

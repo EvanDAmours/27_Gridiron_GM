@@ -1480,4 +1480,10 @@ export const PATCH_NOTES = [
     "Big plays get called out on the field while you watch: a missed field goal shows NO GOOD! with the distance, a made one shows IT'S GOOD!, and a stop on fourth down shows TURNOVER ON DOWNS, so a change of possession never looks like it came out of nowhere. Fumbles and safeties get one too, alongside touchdowns and interceptions. The TV view caption calls out the same plays.",
     "Fast speed in live games is a little slower (a play every 0.6 seconds instead of 0.4), so players have time to finish moving before the next snap.",
   ] },
+  { v: "3.72", date: "2026-10-20", title: "Spotlight moments", notes: [
+    "Big moments now have a full-screen spotlight: the player standing in his team's uniform with his own number, lit from above, beside a big headline.",
+    "When one of your players wins an award (MVP, Offensive or Defensive Player of the Year, either Rookie of the Year, Comeback Player, Super Bowl MVP), he gets his own page with the trophy before the league's full awards list.",
+    "Breaking an NFL or franchise record now takes the spotlight too: the number counts up and the old record is struck through.",
+    "Player renders cover 18 teams so far; players on the other 14 show their photo in the spotlight until their team's art is in. Seven Giants have custom renders (Dart, Nabers, Carter, Reese, Skattebo, Burns, Hood), and players who join the Giants later get a Giants render made for their number.",
+  ] },
 ];

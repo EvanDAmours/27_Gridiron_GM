@@ -7,6 +7,13 @@ import { C, TeamLogo, Btn, Bdg, CloseX, sheetWrap, sheetBox, SheetGrip } from ".
 import { MOBILE } from "./mobile.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 import { posTag } from "./dline.js";
+import Spotlight from "./Spotlight.jsx";
+import mvpArt from "./assets/mvp.webp";
+import opoyArt from "./assets/opoy.webp";
+import dpoyArt from "./assets/dpoy.webp";
+import oroyArt from "./assets/oroy.webp";
+import droyArt from "./assets/droy.webp";
+import sbmvpArt from "./assets/sbmvp.webp";
 
 // The Super Bowl MVP: the best line on the winning side of the box score.
 // "three touchdowns", "a touchdown", "12 tackles": numbers the way a newspaper writes them
@@ -71,6 +78,22 @@ const Pick = ({ e, ui }) => (
   </div>
 );
 
+const TROPHY = { sbmvp: sbmvpArt, mvp: mvpArt, opoy: opoyArt, dpoy: dpoyArt, oroy: oroyArt, droy: droyArt };
+const findPlayer = (t, w) => (t && w?.pid != null ? [...(t.roster || []), ...(t.ir || []), ...(t.ps || [])].find((x) => x.id === w.pid) : null);
+
+// Your player won it: his own page, standing in the spotlight with the trophy, before the league's list.
+function YourWinner({ yr, k, label, w, teams, onNext, last }) {
+  const t = teams[w.ti], p = findPlayer(t, w) || { name: w.name, pos: w.pos };
+  return (
+    <Spotlight p={p} team={t} kicker={`🏆 ${yr} ${label}`} title={w.name} bg={p.num != null ? `#${p.num}` : null} confetti={["#fbbf24", "#fde68a", t.clr, t.ac, "#ffffff"]} label={`${label}: ${w.name}`}
+      side={TROPHY[k] && <img src={TROPHY[k]} alt="" style={{ height: MOBILE ? 110 : "min(40vh, 360px)", maxWidth: "100%", objectFit: "contain", filter: "drop-shadow(0 16px 24px #000c)" }} />}
+      cta={last ? "THE LEAGUE'S AWARDS →" : "NEXT AWARD →"} onNext={onNext}>
+      <div>{posTag(p)} · {t.city} {t.name}</div>
+      {(w.prose || w.stat) && <div style={{ color: "#fcd34d", marginTop: 2 }}>{w.prose ? `${w.name.split(" ").slice(-1)[0]} was the difference, ${w.prose}.` : w.stat}</div>}
+    </Spotlight>
+  );
+}
+
 // Page two: your honorees first (with what they gain), then the first and second teams.
 function HonorsPage({ yr, h, teams, ui, onBack, onClose, cta }) {
   const best = honorsById(h);
@@ -116,11 +139,15 @@ function HonorsPage({ yr, h, teams, ui, onBack, onClose, cta }) {
 
 export default function SeasonAwards({ show, teams, ui, onClose, cta = "Continue" }) {
   const { yr, champ, opp, score, sbmvp, awards = {} } = show;
+  // your own winners (players, not the coach) get their spotlight first, one at a time
+  const mine = [["sbmvp", "Super Bowl MVP", sbmvp], ...ROWS.filter(([k]) => k !== "coy").map(([k, l]) => [k, l, awards[k]])].filter(([, , w]) => w && w.ti === ui && w.pid != null);
+  const [spot, setSpot] = useState(0);
   const [page, setPage] = useState(1);
   // awards night: the envelopes open one at a time (a click shows them all)
   const [all, setAll] = useState(false);
   const step = (i) => ({ animation: `awIn .55s ease-out ${all ? 0 : 0.5 + i * 0.75}s both` });
   const ct = teams[champ], ot = opp != null ? teams[opp] : null;
+  if (spot < mine.length) { const [k, l, w] = mine[spot]; return <YourWinner key={k} yr={yr} k={k} label={l} w={w} teams={teams} onNext={() => setSpot(spot + 1)} last={spot === mine.length - 1} />; }
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(2,6,15,.88)", zIndex: 2300, display: "flex", alignItems: "center", justifyContent: "center", padding: 14, ...sheetWrap(MOBILE) }}>
       <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Season awards" key={page} style={{ position: "relative", width: "100%", maxWidth: MOBILE ? 560 : page === 1 ? 860 : 620, maxHeight: "92vh", overflowY: "auto", borderRadius: 16, background: "#0b1220", border: "2px solid #d4a017", boxShadow: "0 0 70px #d4a01744", ...sheetBox(MOBILE) }}>
