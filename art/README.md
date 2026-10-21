@@ -19,7 +19,7 @@ six number-less Giants sprites are the fallback. Missing numbers are retired by 
 with his number added.
 
 Custom Giants: `players/NYG_custom/NYG_{Last}_{##}.png`, realistic renders of named players in the same
-pose and framing (done: Dart, Carter). These take priority over the numbered set for that player.
+pose and framing (done: Dart, Carter, Reese). These take priority over the numbered set for that player.
 
 Open notes:
 - **MIA** numbers are aqua with orange trim (for a white jersey). If the Dolphins sprites come back
