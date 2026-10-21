@@ -27,7 +27,8 @@ export const FACETS = { qb: "Passing", rc: "Receiving", ru: "Rushing", pr: "Pass
 export const GRADE_KEYS = ["qbG", "qbN", "rcG", "rcN", "ruG", "ruN", "prG", "prN", "cvG", "cvN", "rdG", "rdN"];
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const scale = (z) => Math.round(clamp(65 + 12 * z, 30, 99.5) * 10) / 10;
+// 65 at average, 12 points a spread; past 83 each step counts for less (a 99 is rare)
+const scale = (z) => Math.round(clamp(z <= 1.5 ? 65 + 12 * z : 83 + 16 * (1 - Math.exp(-(z - 1.5) / 1.3)), 30, 99) * 10) / 10;
 
 // A season line's grades for a position: { overall, facets: { key: grade } }, or null until he's
 // played enough to say anything (a few games as a regular). A small sample is pulled toward

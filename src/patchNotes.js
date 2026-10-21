@@ -1595,4 +1595,10 @@ export const PATCH_NOTES = [
     "Pressures are now a defensive stat. Every pressure on the quarterback is credited to the rusher who got there (sacks count as pressures too). A team gets about 200 a season, and the best edge rushers get 90-120, like the NFL's leaders. Corners now show targets and yards allowed in coverage.",
     "Where to see them: the front of the player card shows this season's grade beside the OVR ring (with pass-rush and run-defense grades for a defensive lineman, and so on), and the season-by-season table has a GRADE column and a PRES column for pass rushers. Games play out exactly as before: the grading is bookkeeping only.",
   ] },
+  { v: "4.2", date: "2026-10-20", title: "O-Line leaderboard and Grades table", notes: [
+    "O-Line leaderboard. Stats has an O-Line table: every lineman's sacks and pressures allowed, pass-block win rate, pass and run block grades, and his overall grade, sorted best first. Filter it to a conference, your division or one team like the other tables.",
+    "A Grades table in Stats: every player's season grade, with a position filter (QB, RB, WR, TE, OL, DL, LB, CB, S) and his grade in each part of his game (passing, receiving, rushing, pass rush, run defense, coverage, pass and run blocking). Grades are colored from red to green.",
+    "Pressures get a leader board on the Stats front page, and a PRES column in the Defense table.",
+    "Grades near the top are harder to earn: an 83 means what it did, but each step past it counts for less, so a true outlier season lands in the mid-90s and a 99 is rare.",
+  ] },
 ];

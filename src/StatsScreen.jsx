@@ -4,17 +4,25 @@ import Select from "./Select.jsx";
 import React, { useMemo, useState } from "react";
 import { C, Bdg, Face, TeamLogo } from "./ui.jsx";
 import { awardRaces } from "./awards.js";
+import { olLine, OL_POS } from "./olStats.js";
+import { gradesOf, gradeColor } from "./grades.js";
 
 const pct = (a, b) => (b ? ((a / b) * 100).toFixed(1) : "–");
 const avg = (a, b) => (b ? (a / b).toFixed(1) : "–");
 const n = (v) => (typeof v === "number" ? (Number.isInteger(v) ? v.toLocaleString() : v.toFixed(1)) : v ?? 0);
 
-// Each table: who's in it, its columns ([label, value(ss), sort?]) and the default sort column.
+// Each table: who's in it, its columns ([label, value(ss, player), sort?]) and the default sort column.
+const gr = (s, p) => gradesOf(s, p.pos);
+const fac = (k) => [k === "pb" ? "PASS BLK" : k === "rb" ? "RUN BLK" : { qb: "PASS", rc: "RECV", ru: "RUSH", pr: "PASS RUSH", cv: "COV", rd: "RUN D" }[k], (s, p) => gr(s, p)?.facets[k] ?? "–", (s, p) => gr(s, p)?.facets[k] ?? -1];
 const TABLES = {
   Passing: { has: (s) => (s.att || 0) >= 10, sort: "YDS", cols: [["CMP", (s) => s.comp || 0], ["ATT", (s) => s.att || 0], ["PCT", (s) => pct(s.comp || 0, s.att || 0), (s) => (s.att ? s.comp / s.att : 0)], ["YDS", (s) => s.passYds || 0], ["TD", (s) => s.passTD || 0], ["INT", (s) => s.passInt || 0], ["RATE", (s) => s.rate || 0]] },
   Rushing: { has: (s) => (s.rushAtt || 0) > 0, sort: "YDS", cols: [["ATT", (s) => s.rushAtt || 0], ["YDS", (s) => s.rushYds || 0], ["AVG", (s) => avg(s.rushYds || 0, s.rushAtt || 0), (s) => (s.rushAtt ? s.rushYds / s.rushAtt : 0)], ["TD", (s) => s.rushTD || 0], ["FUM", (s) => s.fum || 0]] },
   Receiving: { has: (s) => (s.rec || 0) > 0, sort: "YDS", cols: [["TGT", (s) => s.tgt || 0], ["REC", (s) => s.rec || 0], ["YDS", (s) => s.recYds || 0], ["AVG", (s) => avg(s.recYds || 0, s.rec || 0), (s) => (s.rec ? s.recYds / s.rec : 0)], ["TD", (s) => s.recTD || 0]] },
-  Defense: { has: (s) => (s.tkl || 0) + (s.ast || 0) + (s.sacks || 0) + (s.ints || 0) + (s.pd || 0) > 0, sort: "TKL", cols: [["TKL", (s) => (s.tkl || 0) + (s.ast || 0)], ["SCK", (s) => s.sacks || 0], ["TFL", (s) => s.tfl || 0], ["INT", (s) => s.ints || 0], ["PD", (s) => s.pd || 0], ["FF", (s) => s.ff || 0]] },
+  Defense: { has: (s) => (s.tkl || 0) + (s.ast || 0) + (s.sacks || 0) + (s.ints || 0) + (s.pd || 0) > 0, sort: "TKL", cols: [["TKL", (s) => (s.tkl || 0) + (s.ast || 0)], ["SCK", (s) => s.sacks || 0], ["PRES", (s) => s.pres || 0], ["TFL", (s) => s.tfl || 0], ["INT", (s) => s.ints || 0], ["PD", (s) => s.pd || 0], ["FF", (s) => s.ff || 0]] },
+  // the line: what each man gave up and how he blocked (olStats.js), and his grade
+  "O-Line": { has: (s, p) => OL_POS.has(p.pos) && olLine(s), sort: "GRADE", cols: [["GS", (s) => s.gs || 0], ["SK ALW", (s) => s.sackA || 0], ["PRES ALW", (s) => s.presA || 0], ["PB WIN%", (s) => olLine(s)?.pbPct ?? "–", (s) => olLine(s)?.pbPct ?? 0], ["PASS BLK", (s) => olLine(s)?.passGrade ?? "–", (s) => olLine(s)?.passGrade ?? 0], ["RUN BLK", (s) => olLine(s)?.runGrade ?? "–", (s) => olLine(s)?.runGrade ?? 0], ["GRADE", (s, p) => gr(s, p)?.overall ?? "–", (s, p) => gr(s, p)?.overall ?? 0]] },
+  // every player's grade (grades.js): his own play against an average player in the same spot
+  Grades: { has: (s, p) => !!gr(s, p), sort: "GRADE", cols: [["GRADE", (s, p) => gr(s, p)?.overall ?? "–", (s, p) => gr(s, p)?.overall ?? 0], ...["qb", "rc", "ru", "pr", "rd", "cv", "pb", "rb"].map(fac)] },
   Kicking: { has: (s) => (s.fgA || 0) + (s.xpA || 0) > 0, sort: "PTS", cols: [["FGM", (s) => s.fgM || 0], ["FGA", (s) => s.fgA || 0], ["FG%", (s) => pct(s.fgM || 0, s.fgA || 0), (s) => (s.fgA ? s.fgM / s.fgA : 0)], ["XPM", (s) => s.xpM || 0], ["LNG", (s) => s.lng || 0], ["PTS", (s) => s.pts || (s.fgM || 0) * 3 + (s.xpM || 0)]] },
   Punting: { has: (s) => (s.punts || 0) > 0, sort: "AVG", cols: [["PUNTS", (s) => s.punts || 0], ["YDS", (s) => s.puntYds || 0], ["AVG", (s) => avg(s.puntYds || 0, s.punts || 0), (s) => (s.punts ? s.puntYds / s.punts : 0)], ["IN20", (s) => s.in20 || 0]] },
   Returns: { has: (s) => (s.kr || 0) + (s.pr || 0) + (s.krYds || 0) + (s.prYds || 0) > 0, sort: "KR YDS", cols: [["KR", (s) => s.kr || 0], ["KR YDS", (s) => s.krYds || 0], ["KR TD", (s) => s.krTD || 0], ["PR", (s) => s.pr || 0], ["PR YDS", (s) => s.prYds || 0], ["PR TD", (s) => s.prTD || 0]] },
@@ -27,6 +35,7 @@ const BOARDS = [
   ["Rushing yards", (s) => s.rushYds || 0, "yds", () => true],
   ["Receiving yards", (s) => s.recYds || 0, "yds", () => true],
   ["Sacks", (s) => s.sacks || 0, "sk", () => true],
+  ["Pressures", (s) => s.pres || 0, "pres", () => true],
   ["Tackles", (s) => (s.tkl || 0) + (s.ast || 0), "tkl", () => true],
   ["Interceptions", (s) => s.ints || 0, "INT", () => true],
 ];
@@ -116,6 +125,7 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
   const [scope, setScope] = useState("league"); // league | AFC | NFC | div | team:<id>
   const [cat, setCat] = useState("Passing");
   const [sort, setSort] = useState(null);
+  const [gpos, setGpos] = useState("All"); // the Grades table's position
   const teamId = scope.startsWith("team:") ? +scope.slice(5) : null;
   const inScope = (t) => scope === "league" || (scope === "AFC" || scope === "NFC" ? t.c === scope : scope === "div" ? t.c === me.c && t.d === me.d : t.id === teamId);
   const players = useMemo(() => {
@@ -126,8 +136,11 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
 
   const T = TABLES[cat];
   const col = T.cols.find((c) => c[0] === (sort || T.sort)) || T.cols[0];
-  const sv = (x) => (col[2] || col[1])(x.p.ss);
-  const rows = players.filter((x) => T.has(x.p.ss)).sort((a, b) => sv(b) - sv(a)).slice(0, teamId != null ? 60 : 40);
+  const sv = (x) => (col[2] || col[1])(x.p.ss, x.p);
+  const posOk = (p) => cat !== "Grades" || gpos === "All" || (gpos === "OL" ? OL_POS.has(p.pos) : p.pos === gpos);
+  const rows = players.filter((x) => posOk(x.p) && T.has(x.p.ss, x.p)).sort((a, b) => sv(b) - sv(a)).slice(0, teamId != null ? 60 : 40);
+  // the Grades table shows only the columns its players have (a QB table isn't nine columns of dashes)
+  const cols = cat === "Grades" ? T.cols.filter(([l, f], i) => i === 0 || rows.some((x) => f(x.p.ss, x.p) !== "–")) : T.cols;
   const team = teamId != null ? teams[teamId] : null;
   const pill = (on) => ({ background: on ? "#3b82f633" : C.cd, color: on ? "#fff" : "#cbd5e1", border: `1px solid ${on ? C.bl : C.bd}`, borderRadius: 999, padding: "6px 13px", fontSize: 14, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" });
   const th = { padding: "8px 8px", fontSize: 12, fontWeight: 900, letterSpacing: 0.8, color: C.mt, textAlign: "right", borderBottom: `1px solid ${C.bd}`, whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" };
@@ -199,11 +212,15 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
       <div style={{ display: "flex", gap: 6, flexWrap: mobile ? "nowrap" : "wrap", overflowX: mobile ? "auto" : undefined, marginBottom: 8, paddingBottom: mobile ? 2 : 0 }}>
         {Object.keys(TABLES).map((k) => <button key={k} onClick={() => { setCat(k); setSort(null); }} style={{ ...pill(cat === k), flex: "0 0 auto", whiteSpace: "nowrap" }}>{k}</button>)}
       </div>
+      {cat === "Grades" && <div style={{ display: "flex", gap: 5, flexWrap: mobile ? "nowrap" : "wrap", overflowX: mobile ? "auto" : undefined, alignItems: "center", marginBottom: 8 }}>
+        {["All", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((k) => <button key={k} onClick={() => setGpos(k)} style={{ ...pill(gpos === k), padding: "4px 11px", fontSize: 13, flex: "0 0 auto" }}>{k}</button>)}
+        {!mobile && <span style={{ fontSize: 12.5, color: C.mt, marginLeft: 6 }}>Graded play by play against an average player in the same spot: how well he played, not how good his team is. 90+ elite · 80s high quality · 70s above average · 60s average.</span>}
+      </div>}
       <div style={{ overflowX: "auto", background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10 }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr>
             <th style={{ ...th, textAlign: "left", position: "sticky", left: 0, background: C.cd, cursor: "default" }}>PLAYER</th>
-            {T.cols.map(([l]) => <th key={l} onClick={() => setSort(l)} style={{ ...th, color: l === col[0] ? "#fde68a" : C.mt }}>{l}{l === col[0] ? " ▼" : ""}</th>)}
+            {cols.map(([l]) => <th key={l} onClick={() => setSort(l)} style={{ ...th, color: l === col[0] ? "#fde68a" : C.mt }}>{l}{l === col[0] ? " ▼" : ""}</th>)}
           </tr></thead>
           <tbody>
             {rows.map((x, i) => (
@@ -213,10 +230,10 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
                   <span style={{ fontWeight: 700 }}>{x.p.name}</span>
                   <span style={{ marginLeft: 6, fontSize: 12, color: C.mt }}>{x.p.pos} · {x.t.ab}</span>
                 </td>
-                {T.cols.map(([l, f]) => <td key={l} style={{ ...td, fontWeight: l === col[0] ? 900 : 500, color: l === col[0] ? "#fff" : "#cbd5e1" }}>{n(f(x.p.ss))}</td>)}
+                {cols.map(([l, f]) => { const v = f(x.p.ss, x.p), g = l === "GRADE" || (cat === "Grades" && typeof v === "number"); return <td key={l} style={{ ...td, fontWeight: l === col[0] ? 900 : 500, color: g && typeof v === "number" ? gradeColor(v) : l === col[0] ? "#fff" : "#cbd5e1" }}>{n(v)}</td>; })}
               </tr>
             ))}
-            {!rows.length && <tr><td colSpan={T.cols.length + 1} style={{ ...td, textAlign: "center", color: C.mt }}>No {cat.toLowerCase()} stats yet.</td></tr>}
+            {!rows.length && <tr><td colSpan={cols.length + 1} style={{ ...td, textAlign: "center", color: C.mt }}>No {cat.toLowerCase()} stats yet.</td></tr>}
           </tbody>
         </table>
       </div>
