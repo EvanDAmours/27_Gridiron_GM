@@ -1513,4 +1513,7 @@ export const PATCH_NOTES = [
     "Player renders now cover all 32 teams: the Falcons and Browns are in, so every team's players stand in their own uniform in the spotlight.",
     "Browns numbers are orange with a white outline, like the real home jersey.",
   ] },
+  { v: "3.81", date: "2026-10-20", title: "Custom Andrew Thomas", notes: [
+    "Andrew Thomas gets his own custom render (captain's patch, knee brace and all), making eight custom Giants.",
+  ] },
 ];

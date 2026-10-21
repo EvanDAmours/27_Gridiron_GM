@@ -19,7 +19,7 @@ six number-less Giants sprites are the fallback. Missing numbers are retired by 
 with his number added.
 
 Custom Giants: `players/NYG_custom/NYG_{Last}_{##}.png`, realistic renders of named players in the same
-pose and framing (Dart, Carter, Reese, Nabers, Skattebo, Burns, Hood). These take priority over the numbered set for that player.
+pose and framing (Dart, Carter, Reese, Nabers, Skattebo, Burns, Hood, Thomas). These take priority over the numbered set for that player.
 
 Open notes:
 - **MIA**: the sheet came back aqua with orange trim (made for a white jersey); the home jersey is aqua,
