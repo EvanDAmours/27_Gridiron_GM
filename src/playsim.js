@@ -248,7 +248,9 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
   // Measured against the league's balance, so league-wide rating drift doesn't tilt everyone's play-calling.
   const passLean = clamp(0.6 + ((u.pass - LEAGUE.pass[0]) - (u.run - LEAGUE.run[0])) * 0.006 + lean + (OC_LEAN[team?.coach?.oc?.spec] || 0), 0.45, 0.75);
   const dStyle = defStyle(team, plan), paSpec = team?.coach?.oc?.spec === "Play-Action";
-  return { team, order, u, oU, dU, mix, tilt, recvBy, defBy, cover, mod, passLean, dStyle, paSpec, receivers, rushers, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, hcAgg, kLeg, p, pOvr, pPow, pAcc, pHang };
+  // the five up front, left to right (the line's own stats: who allowed what)
+  const ol = ["LT", "LG", "C", "RG", "RT"].map((pos) => on(pos)[0] || order(pos)[0] || null);
+  return { team, order, u, oU, dU, mix, tilt, recvBy, defBy, cover, mod, passLean, dStyle, paSpec, receivers, rushers, ol, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, hcAgg, kLeg, p, pOvr, pPow, pAcc, pHang };
 }
 
 const emptyTeam = () => ({ blitz: 0, box: 0, cover: 0, dropbacks: 0, plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
@@ -269,6 +271,44 @@ export function createGame(home, away, { playoff = false, neutral = false, rand 
   const day = () => ({ o: gauss(rand) * GAME_DAY_SD, d: gauss(rand) * GAME_DAY_SD });
   g.day = { h: day(), a: day() };
   return g;
+}
+
+// ---------- The offensive line's stats ----------
+// Who allowed the sack or the pressure, and whose gap a run went through. Pure bookkeeping on its
+// own dice (olRand), so the play itself plays out exactly as it would without it.
+function olRand(g) { g.olS = (Math.imul(g.olS ?? 0x2545f491, 1664525) + 1013904223) >>> 0; return g.olS / 4294967296; }
+const olPick = (g, list, w) => { const ws = list.map(w), t = ws.reduce((a, b) => a + b, 0); let r = olRand(g) * t; for (let i = 0; i < list.length; i++) { r -= ws[i]; if (r <= 0) return list[i]; } return list[list.length - 1]; };
+// a lineman's chance of losing a rep: the weaker the blocker, the more often it's him
+const pbW = (p) => (100 - (p?.posAttrs?.passBlock ?? p?.ovr ?? 70)) / 20 + 0.8;
+const rbW = (p) => (100 - (p?.posAttrs?.runBlock ?? p?.posAttrs?.anchor ?? p?.ovr ?? 70)) / 20 + 0.8;
+function olBook(g, side, ol, k, type, yards, desc) {
+  const five = (ol || []).filter(Boolean);
+  if (!five.length) return;
+  const [lt, lg, c, rg, rt] = ol;
+  if (k.pass) {
+    five.forEach((p) => add(line(g, side, p), "pbSnp", 1));
+    if (k.sacked) {
+      // an edge rusher beat a tackle, an interior rusher a guard or the center. Not every sack is
+      // on the line: the quarterback held it, the coverage held up, a back or tight end missed his
+      // man, or a blitzer came free (as in the NFL, a little over half are charged up front).
+      const r = k.rusher, inside = r?.dlKind === "DT", edge = r?.dlKind === "EDGE" || (r?.pos === "DL" && !inside);
+      const who = olRand(g) < (edge || inside ? 0.6 : 0.4) ? (edge ? [lt, rt] : inside ? [lg, c, rg] : five) : [];
+      const lost = who.filter(Boolean).length ? olPick(g, who.filter(Boolean), pbW) : null;
+      if (lost) add(line(g, side, lost), "sackA", 1);
+    } else if (olRand(g) < Math.min(0.45, Math.max(0.15, k.sackP * 4.2))) {
+      // a pressure: the throw still came out, but someone up front lost his man (most of them do;
+      // the rest are a back or tight end, or a free rusher)
+      if (olRand(g) < 0.85) add(line(g, side, olPick(g, five, pbW)), "presA", 1);
+    }
+  } else if (k.run) {
+    // the gap it went through: off a tackle, around an end, or inside
+    const gap = /left (tackle|end)/.test(desc) ? [lt, lg] : /right (tackle|end)/.test(desc) ? [rt, rg] : /outside/.test(desc) ? [lt, rt] : [lg, c, rg];
+    const at = gap.filter(Boolean);
+    if (!at.length) return;
+    at.forEach((p) => add(line(g, side, p), "rbSnp", 1));
+    if (yards >= 4) at.forEach((p) => add(line(g, side, p), "rbWin", 1));
+    else if (yards <= 0) add(line(g, side, olPick(g, at, rbW)), "rbStuff", 1);
+  }
 }
 
 const other = (s) => (s === "h" ? "a" : "h");
@@ -603,11 +643,13 @@ function stepPlay(g, call, bonus = 1) {
     const deep = call === "pass_deep", quick = call === "pass_quick" || call === "pass_rpo", screen = style === "screen";
     const sackP = clamp(0.064 + rushE * 0.008 - passE * 0.004 + (deep ? 0.025 : quick || screen ? -0.035 : 0) + (B ? (quick || screen ? 0.02 : 0.06) : V ? -0.015 : 0), 0.02, 0.2);
     const qbl = line(g, off, qb);
+    if (!screen) ev._ol = { pass: true, sackP };
     if (!screen && rand() < sackP) {
       const loss = Math.round(5 + rand() * 5);
       // Multi-sack games happen, but each sack a rusher already has makes the next one harder (he gets
       // chipped and doubled).
       const rusher = pickW(rand, dP.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, w * 0.6 ** n]; }));
+      ev._ol.sacked = true; ev._ol.rusher = rusher;
       add(qbl, "sk", 1); add(qbl, "skYds", loss); st.sacks++;
       // About one sack in five is shared by two rushers: half a sack each.
       const helper = rusher && rand() < 0.22 ? pickW(rand, dP.rushW.filter(([p]) => p !== rusher)) : null;
@@ -687,9 +729,12 @@ function stepPlay(g, call, bonus = 1) {
     const cl = line(g, off, carrier);
     add(cl, "rushAtt", 1); st.rushAtt++;
     type = "run";
+    ev._ol = { run: true };
     desc = `${carrier?.name || "Runner"} ${keeper ? "keeps it" : outside ? "bounces outside" : edgeRun ? ["off left tackle", "off right tackle", "around left end", "around right end"][Math.floor(rand() * 4)] : ["up the middle", "inside", "up the middle"][Math.floor(rand() * 3)]} for ${yards}${edgeRun && !keeper && yards >= 9 && !sam && nb ? `, getting outside the nickel, ${last(nb)}` : edgeRun && !keeper && yards <= 0 && sam ? `, the SAM ${last(sam)} sets the edge` : !edgeRun && !keeper && yards <= 0 && mike ? `, ${last(mike)} fills the hole` : ""}.`;
     if (yards < 0) { const t = pickW(rand, dP.tackleW); if (t) add(line(g, def, t), "tfl", 1); }
   }
+
+  if (ev._ol) { olBook(g, off, o.ol, ev._ol, type, yards, desc); delete ev._ol; }
 
   // each snap's grouping and package, and how it went (personnel stats)
   persLog(g, off, def, pers, pkg, yards, !ev.turnover && type !== "fumble" && yards >= (g.down === 1 ? 0.4 : g.down === 2 ? 0.6 : 1) * g.toGo);

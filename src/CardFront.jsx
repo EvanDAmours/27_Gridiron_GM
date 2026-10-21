@@ -8,6 +8,7 @@ import PlayerArt from "./PlayerArt.jsx";
 import { jerseyNum } from "./playerArt.js";
 import { BLOCK, FONT_CSS } from "./Spotlight.jsx";
 import { OvrRing, COLS, loadRealSeasons, realPast } from "./PlayerCard.jsx";
+import { olLine, OL_POS } from "./olStats.js";
 import { DevChip, topRatings } from "./ScoutingUI.jsx";
 import { posTag } from "./dline.js";
 
@@ -21,6 +22,12 @@ function seasonTiles(p, yr, real) {
   const past = realPast(p, real).slice(-1)[0];
   const cur = p.ss?.gp ? { ...p.ss, y: yr } : (p.sh || []).slice(-1)[0] || (past && { ...past, y: `${past.y} NFL` });
   if (!cur) return { y: null, tiles: [] };
+  // a lineman: what he allowed and how he graded
+  if (OL_POS.has(p.pos)) {
+    const o = olLine(cur);
+    if (!o) return { y: cur.y, tiles: cur.gs ? [["GS", cur.gs]] : [] };
+    return { y: cur.y, ol: o, tiles: [["GS", cur.gs || 0], ["SK ALW", o.sacks], ["PRES", o.pres], ["PB WIN", o.pbPct != null ? `${o.pbPct}%` : "–"], ["PASS GR", o.passGrade ?? "–"], ["RUN GR", o.runGrade ?? "–"]] };
+  }
   const cols = COLS[GROUP[p.pos] || p.pos] || [];
   const tiles = [["GP", cur.gp], ["GS", cur.gs], ...cols.map(([l, k]) => [l, cur[k]])].filter(([, v]) => v != null);
   return { y: cur.y, tiles: tiles.slice(-6) };
@@ -32,7 +39,7 @@ export default function CardFront({ p, team, lastTeam, ovr, pot, dev, label, yr,
   const kit = team || lastTeam, clr = kit?.clr || "#334155", jn = jerseyNum(p);
   const [real, setReal] = useState(null);
   useEffect(() => { if (p?.src === "m27" && !p.ss?.gp && !p.sh?.length) loadRealSeasons().then(setReal).catch(() => {}); }, [p?.src, p?.ss?.gp, p?.sh?.length]);
-  const { y, tiles } = seasonTiles(p, yr, real);
+  const { y, tiles, ol } = seasonTiles(p, yr, real);
   const rat = topRatings(p, 6);
   const artW = MOBILE ? 176 : 255;
   const photo = <div style={{ borderRadius: "50%", padding: 2, background: `linear-gradient(135deg, ${kit?.ac || "#94a3b8"}, ${clr})`, flexShrink: 0 }}><Face s={p.face} sz={MOBILE ? 46 : 58} /></div>;
@@ -63,7 +70,8 @@ export default function CardFront({ p, team, lastTeam, ovr, pot, dev, label, yr,
             <OvrRing ovr={ovr} size={MOBILE ? 64 : 80} />
             <div style={{ fontSize: MOBILE ? 12.5 : 14, color: "#cbd5e1", lineHeight: 1.5 }}>
               {pot != null && <div>POT <b style={{ color: oC(pot) }}>{pot}</b></div>}
-              {y && tiles.length > 0 && <div>{y}: {tiles.slice(-3).map(([l, v]) => `${num(v)} ${l.toLowerCase()}`).join(" · ")}</div>}
+              {y && ol && <div>{y}: {ol.sacks} sack{ol.sacks === 1 ? "" : "s"} allowed · {ol.pres} pressures{ol.passGrade != null ? ` · ${ol.passGrade} pass grade` : ""}</div>}
+              {y && !ol && tiles.length > 0 && <div>{y}: {tiles.slice(-3).map(([l, v]) => `${num(v)} ${l.toLowerCase()}`).join(" · ")}</div>}
             </div>
           </div>
         </div>

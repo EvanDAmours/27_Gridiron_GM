@@ -1551,4 +1551,8 @@ export const PATCH_NOTES = [
     "Draft night shows more about your pick: his six physical ratings and his top four position skills as rating bars, his combine numbers (40, bench, vertical, broad), plus his age.",
     "A Full card button on the draft-night reveal opens the new player's complete card.",
   ] },
+  { v: "3.92", date: "2026-10-20", title: "Offensive line stats", notes: [
+    "Offensive linemen now have real stats. Every sack and pressure is charged to the blocker who lost his man (an edge rusher beats a tackle, an interior rusher a guard or the center; about half of sacks are on the line, the rest on the quarterback, coverage or a free rusher), and every run is logged for the linemen whose gap it went through: wins (4+ yards) and stuffs.",
+    "Their card front shows games started, sacks allowed, pressures, pass-block win rate and 0-100 pass and run block grades; the season-by-season table on the back keeps them year by year. Game results are unchanged: the line's stats are pure bookkeeping.",
+  ] },
 ];

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { C, oC, Bdg, Face } from "./ui.jsx";
 import { posTag, dlOvrAt, naturalDL } from "./dline.js";
 import { roleCard, naturalRole, roleKind } from "./roles.js";
+import { olLine } from "./olStats.js";
 
 const r1 = (x) => Math.round(x * 10) / 10;
 const money = (n) => `$${r1(+n || 0).toFixed(1)}M`;
@@ -112,7 +113,10 @@ export const COLS = {
   CB: [["TKL", "tkl"], ["INT", "ints"], ["PD", "pd"]], S: [["TKL", "tkl"], ["INT", "ints"], ["PD", "pd"]],
   K: [["FGM", "fgM"], ["FGA", "fgA"], ["XPM", "xpM"]], P: [["PUNTS", "punts"], ["YDS", "puntYds"]],
 };
-export const SEASON_KEYS = ["gp", "gs", "comp", "att", "passYds", "passTD", "passInt", "rushAtt", "rushYds", "rushTD", "rec", "recYds", "recTD", "tkl", "sacks", "tfl", "ff", "ints", "pd", "fgM", "fgA", "xpM", "punts", "puntYds"];
+// The line: sacks and pressures allowed, pass-block win rate and the block grades (olStats.js).
+const OL_COLS = [["GS", "gs"], ["SK", "sackA"], ["PRES", "presA"], ["PB%", (r) => olLine(r)?.pbPct], ["PASS", (r) => olLine(r)?.passGrade], ["RUN", (r) => olLine(r)?.runGrade]];
+for (const pos of ["LT", "LG", "C", "RG", "RT"]) COLS[pos] = OL_COLS;
+export const SEASON_KEYS = ["gp", "gs", "comp", "att", "passYds", "passTD", "passInt", "rushAtt", "rushYds", "rushTD", "rec", "recYds", "recTD", "tkl", "sacks", "tfl", "ff", "ints", "pd", "fgM", "fgA", "xpM", "punts", "puntYds", "pbSnp", "sackA", "presA", "rbSnp", "rbWin", "rbStuff"];
 // A season's stats, trimmed to what the card shows (stored on the player at each rollover).
 export const seasonLine = (ss, y, tm) => { const o = { y, tm }; for (const k of SEASON_KEYS) if (ss?.[k]) o[k] = ss[k]; return o; };
 
@@ -151,8 +155,8 @@ export function SeasonTable({ p, yr, teamAb }) {
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead><tr>{["YEAR", "TM", "GP", ...cols.map(([l]) => l)].map((h, i) => <th key={h} style={{ ...td, textAlign: i < 2 ? "left" : "right", fontSize: 11, color: C.mt, fontWeight: 800 }}>{h}</th>)}</tr></thead>
         <tbody>
-          {shown.map((r, i) => <tr key={i} style={r.real ? { color: "#cbd5e1" } : undefined}><td style={{ ...td, textAlign: "left" }} title={r.real ? "Real NFL season, before your league" : undefined}>{r.y}{r.real && <span style={{ color: C.mt, fontSize: 10, marginLeft: 3 }}>NFL</span>}</td><td style={{ ...td, textAlign: "left", color: C.mt }}>{r.tm || ""}</td><td style={td}>{fmt(r.gp)}</td>{cols.map(([, k]) => <td key={k} style={td}>{fmt(r[k])}</td>)}</tr>)}
-          {rows.length > 1 && <tr style={{ fontWeight: 800 }}><td style={{ ...td, textAlign: "left" }} colSpan={2}>Career</td><td style={td}>{fmt(tot.gp)}</td>{cols.map(([, k]) => <td key={k} style={td}>{fmt(tot[k])}</td>)}</tr>}
+          {shown.map((r, i) => <tr key={i} style={r.real ? { color: "#cbd5e1" } : undefined}><td style={{ ...td, textAlign: "left" }} title={r.real ? "Real NFL season, before your league" : undefined}>{r.y}{r.real && <span style={{ color: C.mt, fontSize: 10, marginLeft: 3 }}>NFL</span>}</td><td style={{ ...td, textAlign: "left", color: C.mt }}>{r.tm || ""}</td><td style={td}>{fmt(r.gp)}</td>{cols.map(([l, k]) => <td key={l} style={td}>{fmt(typeof k === "function" ? k(r) : r[k])}</td>)}</tr>)}
+          {rows.length > 1 && <tr style={{ fontWeight: 800 }}><td style={{ ...td, textAlign: "left" }} colSpan={2}>Career</td><td style={td}>{fmt(tot.gp)}</td>{cols.map(([l, k]) => <td key={l} style={td}>{fmt(typeof k === "function" ? k(tot) : tot[k])}</td>)}</tr>}
         </tbody>
       </table>
       {rows.some((r) => r.real) && <div style={{ fontSize: 10, color: C.mt, marginTop: 4 }}>NFL = real season before your league began</div>}
