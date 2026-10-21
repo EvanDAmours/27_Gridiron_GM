@@ -1540,4 +1540,7 @@ export const PATCH_NOTES = [
   { v: "3.88", date: "2026-10-20", title: "No face flash before renders", notes: [
     "Fixed a flash of the player's face before his render appeared on the spotlight screens (awards, records, draft night, signings, the Hall of Fame) and the card front: the space now stays empty for the moment the render takes to make, and the face only shows when there's no render for him.",
   ] },
+  { v: "3.89", date: "2026-10-20", title: "Smaller card front", notes: [
+    "The player card front is a touch smaller on computers: a narrower card, smaller render, name and OVR ring, and tighter spacing. The phone layout is unchanged.",
+  ] },
 ];

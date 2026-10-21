@@ -33,24 +33,24 @@ export default function CardFront({ p, team, ovr, pot, dev, label, yr, onFlip })
   useEffect(() => { if (p?.src === "m27" && !p.ss?.gp && !p.sh?.length) loadRealSeasons().then(setReal).catch(() => {}); }, [p?.src, p?.ss?.gp, p?.sh?.length]);
   const { y, tiles } = seasonTiles(p, yr, real);
   const rat = topRatings(p, 6);
-  const artW = MOBILE ? 176 : 300;
+  const artW = MOBILE ? 176 : 255;
   const photo = <div style={{ borderRadius: "50%", padding: 2, background: `linear-gradient(135deg, ${team?.ac || "#94a3b8"}, ${clr})`, flexShrink: 0 }}><Face s={p.face} sz={MOBILE ? 46 : 58} /></div>;
   return (
     <div style={{ borderRadius: 14, overflow: "hidden", border: `1px solid ${C.bd}`, background: "#0b1220", animation: "cfIn .4s ease-out" }}>
       <style>{FONT_CSS + "@keyframes cfIn{from{opacity:0;transform:perspective(900px) rotateY(-70deg)}to{opacity:1;transform:none}}"}</style>
       {/* the top: who he is, and him */}
-      <div style={{ position: "relative", overflow: "hidden", minHeight: MOBILE ? 230 : 400, background: `radial-gradient(ellipse at 78% 40%, ${clr}cc, transparent 62%), linear-gradient(135deg, ${clr}55, #0b1220 70%)` }}>
-        {jn != null && <div aria-hidden style={{ position: "absolute", right: MOBILE ? 6 : 60, top: -10, fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 200 : 380, lineHeight: 1, color: "#ffffff0c", pointerEvents: "none" }}>{jn}</div>}
+      <div style={{ position: "relative", overflow: "hidden", minHeight: MOBILE ? 230 : 340, background: `radial-gradient(ellipse at 78% 40%, ${clr}cc, transparent 62%), linear-gradient(135deg, ${clr}55, #0b1220 70%)` }}>
+        {jn != null && <div aria-hidden style={{ position: "absolute", right: MOBILE ? 6 : 60, top: -10, fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 200 : 320, lineHeight: 1, color: "#ffffff0c", pointerEvents: "none" }}>{jn}</div>}
         <div style={{ position: "absolute", right: MOBILE ? -6 : 40, bottom: 0 }}>
           <PlayerArt p={p} ab={team?.ab} width={artW} crop={MOBILE ? 0.7 : 0.75} style={{ filter: `drop-shadow(0 0 30px ${clr}66) drop-shadow(0 16px 20px #000b)` }} fallback={null} />
         </div>
-        <div style={{ position: "relative", padding: MOBILE ? "16px 14px" : "26px 30px", maxWidth: MOBILE ? "62%" : "56%" }}>
+        <div style={{ position: "relative", padding: MOBILE ? "16px 14px" : "22px 26px", maxWidth: MOBILE ? "62%" : "56%" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: MOBILE ? 10.5 : 12.5, fontWeight: 900, letterSpacing: MOBILE ? 1.2 : 2, color: "#cbd5e1", textTransform: "uppercase" }}>
             {team && <TeamLogo t={team} sz={MOBILE ? 22 : 30} />}<span>{label || (team ? `${team.city} ${team.name}` : "Free agent")} · {posTag(p)}{jn != null ? ` · #${jn}` : ""}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: MOBILE ? 10 : 14, marginTop: MOBILE ? 8 : 12 }}>
             {photo}
-            <div style={{ fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 32 : 58, lineHeight: 0.98, textTransform: "uppercase", color: "#fff", minWidth: 0 }}>{p.name}</div>
+            <div style={{ fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 32 : 50, lineHeight: 0.98, textTransform: "uppercase", color: "#fff", minWidth: 0 }}>{p.name}</div>
           </div>
           <div style={{ fontSize: MOBILE ? 12.5 : 15, color: "#cbd5e1", marginTop: 8 }}>{[p.age && `Age ${p.age}`, p.ht_ && `${ht(p.ht_)} ${p.wt} lbs`, p.bio?.college || p.college].filter(Boolean).join(" · ")}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
@@ -58,8 +58,8 @@ export default function CardFront({ p, team, ovr, pot, dev, label, yr, onFlip })
             {p.xf && <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 9px", borderRadius: 999, border: "1px solid #8a6d1d", color: "#fde68a", background: "#f5c54214" }}>⚡ {p.xf}</span>}
             {p.contract > 0 && !p.retiredYr && <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 9px", borderRadius: 999, border: `1px solid ${C.bd}`, color: "#e2e8f0" }}>Contract: {p.contract} yr{p.contract === 1 ? "" : "s"}</span>}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: MOBILE ? 10 : 18 }}>
-            <OvrRing ovr={ovr} size={MOBILE ? 64 : 92} />
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: MOBILE ? 10 : 14 }}>
+            <OvrRing ovr={ovr} size={MOBILE ? 64 : 80} />
             <div style={{ fontSize: MOBILE ? 12.5 : 14, color: "#cbd5e1", lineHeight: 1.5 }}>
               {pot != null && <div>POT <b style={{ color: oC(pot) }}>{pot}</b></div>}
               {y && tiles.length > 0 && <div>{y}: {tiles.slice(-3).map(([l, v]) => `${num(v)} ${l.toLowerCase()}`).join(" · ")}</div>}
@@ -68,7 +68,7 @@ export default function CardFront({ p, team, ovr, pot, dev, label, yr, onFlip })
         </div>
       </div>
       {/* the bottom: his best ratings and his season */}
-      <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "1fr 1fr", gap: MOBILE ? 14 : 28, padding: MOBILE ? "14px" : "20px 30px", borderTop: `1px solid ${C.bd}` }}>
+      <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "1fr 1fr", gap: MOBILE ? 14 : 28, padding: MOBILE ? "14px" : "16px 26px", borderTop: `1px solid ${C.bd}` }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
           {rat.map(([l, v]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
@@ -81,7 +81,7 @@ export default function CardFront({ p, team, ovr, pot, dev, label, yr, onFlip })
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, alignContent: "center" }}>
           {tiles.map(([l, v]) => (
             <div key={l} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: MOBILE ? 22 : 28, fontWeight: 900, color: "#fff", lineHeight: 1.1 }}>{num(v)}</div>
+              <div style={{ fontSize: MOBILE ? 22 : 24, fontWeight: 900, color: "#fff", lineHeight: 1.1 }}>{num(v)}</div>
               <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.2, color: "#64748b" }}>{l}</div>
             </div>
           ))}
