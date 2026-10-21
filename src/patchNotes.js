@@ -1569,4 +1569,7 @@ export const PATCH_NOTES = [
     "When one of your players becomes your club's all-time leader in a stat (passing yards, rushing, receiving, sacks, interceptions), he now gets his own spotlight too, not just a notice.",
     "Fixed: a few current players were credited with a namesake's numbers before the league began (Asante Samuel Jr. with his father's interceptions, Marvin Harrison Jr. with his father's Colts catches, and a handful more). That affected club all-time leader boards, and now it's corrected.",
   ] },
+  { v: "3.96", date: "2026-10-20", title: "Phone scoreboard fit", notes: [
+    "On a phone, the live scoreboard no longer cuts off the home team's score when it has the ball. It's a little more compact, so both scores always show in full, holiday trim or not.",
+  ] },
 ];

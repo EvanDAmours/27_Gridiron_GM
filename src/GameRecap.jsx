@@ -2,6 +2,7 @@
 // key plays and the game's top three performers, plus a box score that reads on a phone.
 import React from "react";
 import { C, Bdg, TeamLogo } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 
 // A team color that shows up on a dark background: very dark primaries fall back to the accent.
 const lum = (hex) => { const h = String(hex || "").replace("#", ""); if (h.length < 6) return 0.5; const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
@@ -13,17 +14,17 @@ const clk = (c) => `${Math.floor((c || 0) / 60)}:${String(Math.max(0, Math.round
 // The score bug. live: { q, clock, poss, down, toGo, yard } while a game is on, else FINAL.
 export function ScoreBug({ home, away, hs, as, live, final = true, label }) {
   const side = (t, pts, me) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, background: `linear-gradient(90deg, ${t.clr} 0%, ${t.clr}cc 70%, #0b1220 100%)`, padding: "6px 10px", minWidth: 0, flex: 1, position: "relative" }}>
-      <TeamLogo t={t} sz={28} />
-      <b style={{ fontSize: 18, color: "#fff", letterSpacing: 1 }}>{t.ab}</b>
-      {live?.poss === me && <span title="Ball" style={{ fontSize: 13 }}>🏈</span>}
-      <span style={{ marginLeft: "auto", fontSize: 26, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums", textShadow: "0 2px 4px #0008" }}>{pts}</span>
+    <div style={{ display: "flex", alignItems: "center", gap: MOBILE ? 5 : 8, background: `linear-gradient(90deg, ${t.clr} 0%, ${t.clr}cc 70%, #0b1220 100%)`, padding: MOBILE ? "6px 8px" : "6px 10px", minWidth: 0, flex: 1, position: "relative" }}>
+      <TeamLogo t={t} sz={MOBILE ? 22 : 28} />
+      <b style={{ fontSize: MOBILE ? 16 : 18, color: "#fff", letterSpacing: MOBILE ? 0.5 : 1 }}>{t.ab}</b>
+      {live?.poss === me && <span title="Ball" style={{ fontSize: MOBILE ? 11 : 13 }}>🏈</span>}
+      <span style={{ marginLeft: "auto", fontSize: MOBILE ? 22 : 26, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums", textShadow: "0 2px 4px #0008" }}>{pts}</span>
     </div>
   );
   return (
     <div style={{ display: "flex", alignItems: "stretch", borderRadius: 10, overflow: "hidden", border: "1px solid #ffffff22", boxShadow: "0 6px 20px #0008", marginBottom: 12 }}>
       {side(away, as, "a")}
-      <div style={{ background: "#020617", color: "#fff", padding: "4px 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: 86 }}>
+      <div style={{ background: "#020617", color: "#fff", padding: MOBILE ? "4px 8px" : "4px 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: MOBILE ? 68 : 86 }}>
         {live && !final ? (<>
           <b style={{ fontSize: 14 }}>{qLabel(live.q)} {clk(live.clock)}</b>
           {live.down ? <span style={{ fontSize: 11, color: "#fbbf24", fontWeight: 800 }}>{["", "1st", "2nd", "3rd", "4th"][live.down]} & {live.toGo}</span> : null}
