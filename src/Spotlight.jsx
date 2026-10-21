@@ -7,6 +7,7 @@ import { Face } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import PlayerArt from "./PlayerArt.jsx";
 import oswald from "./assets/oswald-latin.woff2";
+import SpotlightSmoke from "./SpotlightSmoke.jsx";
 
 export const BLOCK = "'Oswald', 'Arial Narrow', Impact, sans-serif";
 // the block lettering (bundled, so it works offline); any screen that uses BLOCK includes FONT_CSS
@@ -28,7 +29,8 @@ function useVh() {
 // kicker: the small gold line on top. title: the big words (a string; "\n" breaks lines).
 // children: what goes under the title. bg: the faint word or number behind him. side: something
 // at his side (a trophy). confetti: colors, or nothing. gold: the gold stage instead of team colors.
-export default function Spotlight({ p, team, num, kicker, title, children, bg, side, confetti, gold, cta = "CONTINUE →", onNext, label, more }) {
+// smoke: stage smoke (cannons either side of him, then floor fog).
+export default function Spotlight({ p, team, num, kicker, title, children, bg, side, confetti, gold, smoke, cta = "CONTINUE →", onNext, label, more }) {
   const vh = useVh();
   const clr = gold ? "#a16207" : team?.clr || "#1e3a8a";
   const artH = MOBILE ? Math.round(vh * 0.5) : Math.min(Math.round(vh * 0.92), 900);
@@ -46,6 +48,8 @@ export default function Spotlight({ p, team, num, kicker, title, children, bg, s
         {BITS.map((b, i) => <span key={i} style={{ position: "absolute", top: -20, left: `${b.left}%`, width: b.w, height: b.w * 1.6, background: confetti[i % confetti.length], borderRadius: 1, transform: `rotate(${b.rot}deg)`, animation: `spFall ${b.dur}s ${b.delay}s linear infinite` }} />)}
       </div>}
       {bg != null && <div aria-hidden style={{ position: "absolute", ...(MOBILE ? { top: 20, left: 0, right: 0, textAlign: "center" } : { right: "6%", top: "8%" }), fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? vh * 0.36 : vh * 0.62, lineHeight: 1, color: "#ffffff0d", pointerEvents: "none", whiteSpace: "nowrap" }}>{bg}</div>}
+      {/* on a phone the smoke stays under him, off the words below */}
+      {smoke && <div aria-hidden style={{ position: "absolute", left: 0, right: 0, top: 0, height: MOBILE ? artH + 12 : "100%", pointerEvents: "none" }}><SpotlightSmoke color={clr} at={MOBILE ? 0.5 : side ? 0.62 : 0.68} /></div>}
       {/* the player */}
       <div style={{ position: "absolute", bottom: MOBILE ? "auto" : 0, top: MOBILE ? 12 : "auto", ...(MOBILE ? { left: 0, right: 0 } : { right: side ? "14%" : "9%" }), display: "flex", justifyContent: "center", alignItems: "flex-end", animation: "spRise .7s .1s ease-out both" }}>
         <div style={{ position: "relative" }}>
@@ -54,6 +58,7 @@ export default function Spotlight({ p, team, num, kicker, title, children, bg, s
         {side && <div style={{ position: "absolute", left: MOBILE ? "72%" : "78%", bottom: MOBILE ? 24 : "5vh", width: MOBILE ? 120 : "19vw", zIndex: 1 }}>{side}</div>}
         </div>
       </div>
+      {smoke && <div aria-hidden style={{ position: "absolute", left: 0, right: 0, top: 0, height: MOBILE ? artH + 12 : "100%", pointerEvents: "none" }}><SpotlightSmoke color={clr} front cannons={false} /></div>}
       {/* the words */}
       <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", cursor: "default", ...(MOBILE ? { left: 18, right: 18, top: artH - 10, bottom: 18, display: "flex", flexDirection: "column" } : { left: "6%", top: 0, bottom: 0, width: "40%", display: "flex", flexDirection: "column", justifyContent: "center" }) }}>
         <div style={{ animation: "spIn .6s .25s ease-out both" }}>
