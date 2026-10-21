@@ -28,7 +28,7 @@ function useVh() {
 // kicker: the small gold line on top. title: the big words (a string; "\n" breaks lines).
 // children: what goes under the title. bg: the faint word or number behind him. side: something
 // at his side (a trophy). confetti: colors, or nothing. gold: the gold stage instead of team colors.
-export default function Spotlight({ p, team, num, kicker, title, children, bg, side, confetti, gold, cta = "CONTINUE →", onNext, label }) {
+export default function Spotlight({ p, team, num, kicker, title, children, bg, side, confetti, gold, cta = "CONTINUE →", onNext, label, more }) {
   const vh = useVh();
   const clr = gold ? "#a16207" : team?.clr || "#1e3a8a";
   const artH = MOBILE ? Math.round(vh * 0.5) : Math.min(Math.round(vh * 0.92), 900);
@@ -62,7 +62,11 @@ export default function Spotlight({ p, team, num, kicker, title, children, bg, s
           <div style={{ marginTop: MOBILE ? 8 : 14, fontSize: MOBILE ? 15 : 20, lineHeight: 1.45, color: "#e2e8f0" }}>{children}</div>
         </div>
         <div style={{ flex: MOBILE ? 1 : "0 0 auto" }} />
-        <button onClick={onNext} style={{ marginTop: MOBILE ? 12 : 34, alignSelf: MOBILE ? "stretch" : "flex-start", background: gold ? "linear-gradient(90deg,#b45309,#fbbf24,#b45309)" : "#fff", color: gold ? "#1c1206" : "#0b1220", border: 0, borderRadius: 10, padding: MOBILE ? "13px 0" : "13px 34px", fontSize: 16, fontWeight: 900, letterSpacing: 2, cursor: "pointer", animation: "spIn .5s .9s ease-out both", boxShadow: "0 8px 24px #0008" }}>{cta}</button>
+        <div style={{ display: "flex", gap: 10, marginTop: MOBILE ? 12 : 34, animation: "spIn .5s .9s ease-out both", ...(MOBILE ? {} : { alignSelf: "flex-start" }) }}>
+          <button onClick={onNext} style={{ flex: MOBILE ? 1 : "0 0 auto", background: gold ? "linear-gradient(90deg,#b45309,#fbbf24,#b45309)" : "#fff", color: gold ? "#1c1206" : "#0b1220", border: 0, borderRadius: 10, padding: MOBILE ? "13px 0" : "13px 34px", fontSize: 16, fontWeight: 900, letterSpacing: 2, cursor: "pointer", boxShadow: "0 8px 24px #0008" }}>{cta}</button>
+          {/* more: a second, quieter button { label, onClick } */}
+          {more && <button onClick={more.onClick} style={{ background: "#ffffff14", color: "#fff", border: "1px solid #ffffff40", borderRadius: 10, padding: MOBILE ? "13px 14px" : "13px 22px", fontSize: 15, fontWeight: 800, letterSpacing: 1, cursor: "pointer" }}>{more.label}</button>}
+        </div>
       </div>
     </div>
   );

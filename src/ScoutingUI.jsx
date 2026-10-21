@@ -684,22 +684,45 @@ export function topRatings(p, n = 3) {
 
 // The moment you make a pick: he stands in the spotlight in your uniform with his rookie number, with
 // his development trait, his three best ratings and the analysts' grade.
-export function DraftReveal({ pick, team, onClose }) {
+const PHYS = [["Speed", "spd"], ["Accel", "acc"], ["Agility", "agi"], ["Strength", "str"], ["Jumping", "jmp"], ["Stamina", "end"]];
+// One rating as a short bar, for the reveal's grid.
+const Mini = ([l, v]) => (
+  <div key={l} style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr 46px 24px" : "84px 70px 26px", alignItems: "center", gap: 8, fontSize: MOBILE ? 12.5 : 14 }}>
+    <span style={{ color: "#cbd5e1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l}</span>
+    <span style={{ height: 5, borderRadius: 3, background: "#ffffff1a" }}><span style={{ display: "block", width: `${v}%`, height: "100%", borderRadius: 3, background: oC(v) }} /></span>
+    <b style={{ textAlign: "right", color: "#fff" }}>{v}</b>
+  </div>
+);
+
+// onCard: open his full player card.
+export function DraftReveal({ pick, team, onClose, onCard }) {
   const p = pick.p;
   const dev = devOf(p);
   const [fg] = DEV_STYLE[dev] || DEV_STYLE.normal;
   const num = rookieNum(p);
+  const skills = Object.entries(p.posAttrs || {}).map(([k, v]) => [PA_LABELS[k] || k, v]).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const phys = PHYS.filter(([, k]) => typeof p[k] === "number").map(([l, k]) => [l, p[k]]);
+  const comb = p.combine && COMBINE_TESTS.filter((t) => p.combine[t.k] != null).slice(0, 4);
+  const head = { fontSize: 11, fontWeight: 900, letterSpacing: 1.6, color: "#94a3b8", marginBottom: 4 };
   return (
     <Spotlight p={p} team={team} num={num} kicker={`🏈 ${p.draftYr ?? ""} NFL Draft · Round ${pick.rd} · Pick ${pick.overall}`} title={p.name} bg={`#${pick.overall}`} cta="CONTINUE THE DRAFT →" onNext={onClose} label="Your draft pick"
-      confetti={pick.rd === 1 ? [team.clr, team.ac, "#ffffff", "#fde68a"] : null}>
-      <div>{posTag(p)}{p.bio?.college || p.college ? ` · ${p.bio?.college || p.college}` : ""} · <b style={{ color: fg }}>{DEV_TRAITS[dev]?.name || dev}</b></div>
-      <Dim>Top traits revealed: {topRatings(p).map(([l, v]) => `${l} ${v}`).join(" · ")}</Dim>
-      <div style={{ display: "flex", gap: 18, marginTop: 10, fontSize: MOBILE ? 15 : 18 }}>
+      more={onCard ? { label: "Full card", onClick: onCard } : null} confetti={pick.rd === 1 ? [team.clr, team.ac, "#ffffff", "#fde68a"] : null}>
+      <div>{posTag(p)}{p.bio?.college || p.college ? ` · ${p.bio?.college || p.college}` : ""}{p.age ? ` · age ${p.age}` : ""} · <b style={{ color: fg }}>{DEV_TRAITS[dev]?.name || dev}</b></div>
+      <div style={{ display: "flex", gap: 18, marginTop: 8, fontSize: MOBILE ? 15 : 18 }}>
         <span style={{ color: "#94a3b8" }}>OVR <b style={{ color: oC(p.ovr) }}>{p.ovr}</b></span>
         <span style={{ color: "#94a3b8" }}>POT <b style={{ color: C.bl }}>{p.pot}</b></span>
         {pick.grade && <span style={{ color: "#94a3b8" }}>Grade <b style={{ color: C.gd }}>{pick.grade}</b></span>}
       </div>
-      {pick.take && <div style={{ fontSize: MOBILE ? 13.5 : 15, color: "#94a3b8", marginTop: 8, fontStyle: "italic" }}>{pick.take}</div>}
+      {/* his ratings: what his body does, what his position needs */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: MOBILE ? 12 : 22, marginTop: 12, maxWidth: 560 }}>
+        <div><div style={head}>PHYSICAL</div><div style={{ display: "grid", gap: 3 }}>{phys.map(Mini)}</div></div>
+        <div><div style={head}>{posTag(p)} SKILLS</div><div style={{ display: "grid", gap: 3 }}>{skills.map(Mini)}</div></div>
+      </div>
+      {comb?.length > 0 && <div style={{ display: "flex", gap: MOBILE ? 12 : 20, marginTop: 10, fontSize: MOBILE ? 12.5 : 14, color: "#94a3b8" }}>
+        <span style={{ ...head, marginBottom: 0, alignSelf: "center" }}>COMBINE</span>
+        {comb.map((t) => <span key={t.k}>{t.short} <b style={{ color: "#fff" }}>{(+p.combine[t.k]).toFixed(t.dp)}{t.unit === "s" ? "s" : t.unit === "in" ? '"' : ""}</b></span>)}
+      </div>}
+      {pick.take && <div style={{ fontSize: MOBILE ? 13.5 : 15, color: "#94a3b8", marginTop: 10, fontStyle: "italic" }}>{pick.take}</div>}
     </Spotlight>
   );
 }

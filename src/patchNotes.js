@@ -1547,4 +1547,8 @@ export const PATCH_NOTES = [
     "Free agents now show on their card front in their last team's uniform, as they were last seen (the club they left, or their last season's team).",
     "Fixed signing day showing no number (and \"#NaN\" in the background) for some free agents: a newly signed player now wears his own number, or the steady number his position gives him if he has none.",
   ] },
+  { v: "3.91", date: "2026-10-20", title: "Fuller draft night reveal", notes: [
+    "Draft night shows more about your pick: his six physical ratings and his top four position skills as rating bars, his combine numbers (40, bench, vertical, broad), plus his age.",
+    "A Full card button on the draft-night reveal opens the new player's complete card.",
+  ] },
 ];
