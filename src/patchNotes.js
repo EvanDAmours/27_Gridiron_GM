@@ -1601,4 +1601,7 @@ export const PATCH_NOTES = [
     "Pressures get a leader board on the Stats front page, and a PRES column in the Defense table.",
     "Grades near the top are harder to earn: an 83 means what it did, but each step past it counts for less, so a true outlier season lands in the mid-90s and a 99 is rare.",
   ] },
+  { v: "4.3", date: "2026-10-20", title: "Team select by division", notes: [
+    "Choosing your team is easier: the teams are laid out like the standings, the AFC on the left and the NFC on the right, each division its own labeled row of four, so you can go straight to your team. On a phone the divisions stack, two teams to a row.",
+  ] },
 ];
