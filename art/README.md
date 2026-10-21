@@ -11,6 +11,13 @@ screens will load processed copies from `public/` once they are built.
 | Player sprites (6 per team) | 12 / 32 | ARI BAL BUF CAR CHI CIN DAL DEN DET GB HOU NYG |
 | Number sheets | 32 / 32 | all (Giants use `numbers/NYG_original.png`) |
 
+Giants: `players/NYG_numbered/NYG_{00-99}.png` are full renders with the real number already on the
+chest, shoulders and helmet (1086 x 1448, one per available number, 88 in all). The build follows the
+number (slimmer in the teens and 80s, heaviest in the 60s and 70s). Use these for Giants players; the
+six number-less Giants sprites are the fallback. Missing numbers are retired by the Giants: 4, 7, 10,
+11, 14, 16, 32, 40, 42, 50, 56, 92. A player who arrives wearing one of those uses a fallback sprite
+with his number added.
+
 Open notes:
 - **MIA** numbers are aqua with orange trim (for a white jersey). If the Dolphins sprites come back
   in aqua jerseys, the sheet needs white numbers instead.
