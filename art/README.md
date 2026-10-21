@@ -18,6 +18,9 @@ six number-less Giants sprites are the fallback. Missing numbers are retired by 
 11, 14, 16, 32, 40, 42, 50, 56, 92. A player who arrives wearing one of those uses a fallback sprite
 with his number added.
 
+Custom Giants: `players/NYG_custom/NYG_{Last}_{##}.png`, realistic renders of named players in the same
+pose and framing (done: Dart). These take priority over the numbered set for that player.
+
 Open notes:
 - **MIA** numbers are aqua with orange trim (for a white jersey). If the Dolphins sprites come back
   in aqua jerseys, the sheet needs white numbers instead.
