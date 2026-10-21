@@ -1630,4 +1630,7 @@ export const PATCH_NOTES = [
   { v: "4.11", date: "2026-10-20", title: "Pixel-art players on the field", notes: [
     "Live games now show pixel-art players on the field in each club's home or road uniform: linemen in their stance, the quarterback with the ball, defenders set, and the scorers celebrating after a touchdown.",
   ] },
+  { v: "4.12", date: "2026-10-20", title: "No pop-in on the promo", notes: [
+    "The stars in the home screen promo no longer pop in after you sim a week: next week's pictures are made ahead of time, and both players appear with the card, fully drawn.",
+  ] },
 ];

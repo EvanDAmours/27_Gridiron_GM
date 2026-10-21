@@ -105,6 +105,7 @@ export function renderArt(a, m) {
     grade(ctx, w, h);
     const blob = await new Promise((ok) => cv.toBlob(ok, "image/webp", 0.92));
     const url = URL.createObjectURL(blob);
+    await new Promise((ok) => { const i = new Image(); i.onload = i.onerror = ok; i.src = url; });   // decoded, so it shows the moment it's asked for
     done.set(a.key, url);
     return url;
   })().catch(() => null);
@@ -118,4 +119,10 @@ export function artNow(p, ab) {
   if (!manifest) return undefined;
   const a = artFor(p, ab, manifest);
   return a ? done.get(a.key) : false;
+}
+
+// Make his picture ahead of time (the next screen's player), so it's ready when that screen opens.
+export function primeArt(p, ab) {
+  if (!p) return Promise.resolve(null);
+  return loadArt().then((m) => { const a = m && artFor(p, ab, m); return a ? renderArt(a, m) : null; });
 }

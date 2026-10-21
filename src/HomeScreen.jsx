@@ -1,6 +1,6 @@
 // The franchise hub, laid out like Madden's: a menu on the left, this week's matchup in the
 // middle (week strip, both logos, team ratings), and top stories on the right.
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { C, TeamLogo, Btn, kickoff, Bdg, oC } from "./ui.jsx";
 import { unitRatings } from "./gamesim.js";
 import { depthOrderFor } from "./DepthChart.jsx";
@@ -8,7 +8,8 @@ import { ROUND_NAMES } from "./playoffs.js";
 import { sbSite } from "./data/superbowls.js";
 import { InjTag } from "./InjuryTag.jsx";
 import { injuryReport } from "./injuries.js";
-import BroadcastMatchup from "./BroadcastMatchup.jsx";
+import BroadcastMatchup, { featuredPlayer } from "./BroadcastMatchup.jsx";
+import { primeArt } from "./playerArt.js";
 import MatchupStakes from "./MatchupStakes.jsx";
 import RaceWatch from "./RaceWatch.jsx";
 import { teamNeeds, needName } from "./needs.js";
@@ -189,6 +190,13 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
     if (m) game = { h: m[0], a: m[1] };
     label = pb.ch != null ? `${yr} Season Complete` : `${yr} Playoffs: ${ROUND_NAMES[pb.rd]}`;
   }
+  // Next week's promo stars, made now while this week sits on screen, so after the sim their
+  // pictures are ready the moment the new card opens (none on a phone: its card has no art).
+  const after = sp === "regular" || sp === "preseason" ? sched.find((g) => g.wk === nextWk + 1 && (g.h === ui || g.a === ui)) : null;
+  useEffect(() => {
+    if (mobile || !after) return;
+    for (const t of [teams[after.a], teams[after.h]]) primeArt(featuredPlayer(t), t?.ab);
+  }, [mobile, after?.a, after?.h, after?.wk]); // eslint-disable-line react-hooks/exhaustive-deps
   // Week strip: last week, this week, and the next few.
   const strip = inSeason ? Array.from({ length: 5 }, (_, i) => Math.max(1, Math.min(14, nextWk - 1)) + i).filter((w) => w <= 18) : [];
   const away = game && teams[game.a], home = game && teams[game.h];

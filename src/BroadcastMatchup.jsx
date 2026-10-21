@@ -3,9 +3,9 @@
 // as one long number across the two halves), the club's record and ratings on the outside, AT
 // between them. Prime-time and rivalry games dress up; the holiday trim
 // goes around it (HolidayCard). The phone keeps its compact card (HomeScreen CompactMatchup).
-import React from "react";
+import React, { useState } from "react";
 import { TeamLogo } from "./ui.jsx";
-import PlayerArt from "./PlayerArt.jsx";
+import PlayerArt, { usePlayerArt } from "./PlayerArt.jsx";
 import { BLOCK, FONT_CSS } from "./Spotlight.jsx";
 import "./broadcast-matchup.css";
 
@@ -69,11 +69,12 @@ function Ratings({ mine = {}, other = {} }) {
   );
 }
 
-function Half({ team, player, rating, other, home, teams }) {
+// art: show his picture (both men's are ready). late: they weren't when the card opened, so they ease in.
+function Half({ team, player, rating, other, home, teams, art, late }) {
   const line = headline(player, teams);
   return (
     <div className={`bm-half${home ? " bm-half--home" : ""}`}>
-      {player && <div className="bm-art"><PlayerArt p={player} ab={team.ab} width={200} crop={0.92} /></div>}
+      {player && art && <div className={`bm-art${late ? " bm-art--late" : ""}`}><PlayerArt p={player} ab={team.ab} width={200} crop={0.92} /></div>}
       <div className="bm-info">
         <div className="bm-logo"><TeamLogo t={team} sz={46} glow /></div>
         <div className="bm-city">{team.city}</div>
@@ -93,7 +94,13 @@ function Half({ team, player, rating, other, home, teams }) {
 // away, home: the clubs. awayRating, homeRating: { ovr, off, def }. label: the week. kickoff, venue,
 // weather ({ kind, icon, label, note }): the game. prime: the night slot's name. rivalry: a division
 // rival. compact: a shorter card (a small laptop screen, so the home screen fits without scrolling).
+// Both stars appear together and only once their pictures are made (Home makes next week's ahead
+// of time, so after a sim they're usually there the moment the card is).
 export default function BroadcastMatchup({ away, home, teams, awayRating, homeRating, label, kickoff, venue, weather = null, prime = null, rivalry = false, compact = false }) {
+  const pa = featuredPlayer(away), ph = featuredPlayer(home);
+  const sa = usePlayerArt(pa, away?.ab), sh = usePlayerArt(ph, home?.ab);
+  const art = (!pa || sa !== undefined) && (!ph || sh !== undefined);
+  const [late] = useState(() => !art);
   if (!away || !home) return null;
   const cls = `bm-card keep-dark${compact ? " bm-compact" : ""}${prime ? " bm-prime" : ""}${rivalry ? " bm-rival" : ""}`;
   return (
@@ -106,8 +113,8 @@ export default function BroadcastMatchup({ away, home, teams, awayRating, homeRa
         <span className="bm-when">{[kickoff, venue].filter(Boolean).join(" · ")}</span>
       </header>
       <div className="bm-body" style={{ "--bm-font": BLOCK, "--bm-a": away.clr || "#334155", "--bm-h": home.clr || "#334155" }}>
-        <Half team={away} player={featuredPlayer(away)} rating={awayRating} other={homeRating} teams={teams} />
-        <Half team={home} player={featuredPlayer(home)} rating={homeRating} other={awayRating} teams={teams} home />
+        <Half team={away} player={pa} rating={awayRating} other={homeRating} teams={teams} art={art} late={late} />
+        <Half team={home} player={ph} rating={homeRating} other={awayRating} teams={teams} art={art} late={late} home />
         <div className="bm-at">AT</div>
         {weather && <div className={`bm-wx bm-wx--${weather.kind}`}><b>{weather.icon} {weather.label}</b>{weather.note ? ` · ${weather.note}` : ""}</div>}
       </div>
