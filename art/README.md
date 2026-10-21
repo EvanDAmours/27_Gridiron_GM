@@ -20,7 +20,7 @@ with his number added.
 
 Custom renders: `players/{TEAM}_custom/{TEAM}_{Last}_{##}.png`, realistic renders of named players in the same
 pose and framing, shown while the player is on that team. Giants: Dart, Carter, Reese, Nabers, Skattebo, Burns,
-Hood, Thomas, Mauigoa. Texans: Stroud, Collins, Harrison, Anderson, Hunter, Stingley (Dell to come, as #1).
+Hood, Thomas, Mauigoa. Texans: Stroud, Collins, Harrison, Anderson, Hunter, Stingley, Dell.
 
 Open notes:
 - **MIA**: the sheet came back aqua with orange trim (made for a white jersey); the home jersey is aqua,

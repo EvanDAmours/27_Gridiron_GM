@@ -1530,4 +1530,7 @@ export const PATCH_NOTES = [
   { v: "3.85", date: "2026-10-20", title: "Marvin Harrison Jr. to Houston", notes: [
     "Marvin Harrison Jr. is now on the Texans, following his real trade from the Cardinals: he starts as Houston's No. 2 receiver behind Nico Collins (in his custom Texans render). To keep the 53, linebacker Jamal Hill starts as a free agent. New franchises only; a save already in progress keeps its rosters.",
   ] },
+  { v: "3.86", date: "2026-10-20", title: "Custom Tank Dell", notes: [
+    "Tank Dell gets his custom Texans render (#1), completing seven custom Texans.",
+  ] },
 ];
