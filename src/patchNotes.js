@@ -1506,4 +1506,7 @@ export const PATCH_NOTES = [
     "Player renders now cover 30 of 32 teams: the Dolphins, Vikings, Patriots, Saints, Jets, Eagles, Steelers, Seahawks, 49ers, Buccaneers, Titans and Commanders join. The Falcons and Browns are still to come.",
     "Dolphins numbers are white with orange trim, so they show on the aqua home jersey.",
   ] },
+  { v: "3.79", date: "2026-10-20", title: "TV caption logo outline", notes: [
+    "TV view: the team logo in the play caption now has a white outline, so logos in the team's own color (like the Giants' blue on blue) stand out.",
+  ] },
 ];
