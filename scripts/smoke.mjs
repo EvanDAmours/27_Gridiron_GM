@@ -168,6 +168,7 @@ try {
   await page.waitForTimeout(1200);
   await must("NEW GAME");
   await page.locator("button", { hasText: TEAM }).first().click(); // SMOKE_TEAM=Chiefs npm run smoke: any club
+  await page.locator("button", { hasText: "START YOUR" }).first().click(); // the career setup: Week 1, injuries on
   await page.waitForTimeout(1200);
   await healthy("new game"); log("new game"); await census("start");
   { const d0 = await save(); const real = (d0.dc?.[2026] || []).filter((p) => p.real); if (real.length < 100 || !real.some((p) => p.name === "Jeremiah Smith")) fail("new game didn't load the real 2027 draft class"); log(`real draft class (${real.length} real prospects)`); }

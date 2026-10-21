@@ -146,7 +146,7 @@ async function advance(text, wait = 1500) {
 let code = 0;
 try {
   await page.goto(url); await page.waitForTimeout(1200);
-  await must("NEW GAME"); await page.locator("button", { hasText: "Giants" }).first().click(); await page.waitForTimeout(1500);
+  await must("NEW GAME"); await page.locator("button", { hasText: "Giants" }).first().click(); await page.locator("button", { hasText: "START YOUR" }).first().click(); await page.waitForTimeout(1500);
   // your club vs the AI clubs that started level with it (balanceWatch.js)
   let match = null; const vs = [];
   { const d0 = await save(); match = matchedClubs(d0.teams, d0.ui); console.log(`MATCHED: ${d0.teams[d0.ui].ab} vs ${match.map((i) => d0.teams[i].ab).join(", ")}`); }

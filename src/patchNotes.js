@@ -1604,4 +1604,7 @@ export const PATCH_NOTES = [
   { v: "4.3", date: "2026-10-20", title: "Team select by division", notes: [
     "Choosing your team is easier: the teams are laid out like the standings, the AFC on the left and the NFC on the right, each division its own labeled row of four, so you can go straight to your team. On a phone the divisions stack, two teams to a row.",
   ] },
+  { v: "4.4", date: "2026-10-20", title: "New career setup", notes: [
+    "Starting a new career is clearer. Pick your team first, then a setup screen asks two things with big, easy-to-read choices: start at Week 1 or from the current week of the real 2026 season, and injuries on or off. Then start your career, or go back and pick another team. (Injuries can still be switched any time from the menu, under Settings.)",
+  ] },
 ];
