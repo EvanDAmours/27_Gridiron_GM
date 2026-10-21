@@ -1562,4 +1562,11 @@ export const PATCH_NOTES = [
   { v: "3.94", date: "2026-10-20", title: "No MVP spoiler", notes: [
     "The Super Bowl win screen no longer names the Super Bowl MVP, so the reveal is saved for the screens that follow.",
   ] },
+  { v: "3.95", date: "2026-10-20", title: "Career records", notes: [
+    "Career records. League → Record Book now has a Single season / Career switch. The career page lists the NFL's all-time marks: Tom Brady's 89,214 passing yards and 649 touchdown passes, Emmitt Smith's 18,355 rushing yards and 164 rushing touchdowns, Jerry Rice's 1,549 catches, 22,895 receiving yards and 197 receiving touchdowns, Bruce Smith's 200 sacks and Paul Krause's 81 interceptions.",
+    "Each career record shows the closest active player and how far he has to go. Real players count their real NFL careers before your league began plus everything they do in it, so Aaron Rodgers starts 22,947 yards behind Brady and Derrick Henry starts 5,337 behind Emmitt.",
+    "When one of your players breaks an NFL career record, he gets the gold spotlight: ★ New NFL career record ★, the new number counting up and the old mark struck through. Every career record that falls in your league goes in the log and the record book's history.",
+    "When one of your players becomes your club's all-time leader in a stat (passing yards, rushing, receiving, sacks, interceptions), he now gets his own spotlight too, not just a notice.",
+    "Fixed: a few current players were credited with a namesake's numbers before the league began (Asante Samuel Jr. with his father's interceptions, Marvin Harrison Jr. with his father's Colts catches, and a handful more). That affected club all-time leader boards, and now it's corrected.",
+  ] },
 ];

@@ -27,7 +27,7 @@ const freshFranchise = () => Object.fromEntries(Object.entries(FRANCHISE_RECORDS
 export function newRecordBook() {
   const best = {};
   for (const d of RECORD_DEFS) best[d.key] = { ...d.nfl, nfl: true };
-  return { best, history: [], franchise: freshFranchise(), fhistory: [] };
+  return { best, history: [], franchise: freshFranchise(), fhistory: [], career: {} };
 }
 
 // Saves from before the record book (or missing a stat or the franchise records added later) get
@@ -37,7 +37,7 @@ export function loadRecordBook(book) {
   if (!book?.best) return fresh;
   const franchise = { ...fresh.franchise };
   for (const [ab, recs] of Object.entries(book.franchise || {})) franchise[ab] = { ...franchise[ab], ...recs };
-  return { best: { ...fresh.best, ...book.best }, history: book.history || [], franchise, fhistory: book.fhistory || [], cc: book.cc || {} };
+  return { best: { ...fresh.best, ...book.best }, history: book.history || [], franchise, fhistory: book.fhistory || [], cc: book.cc || {}, career: book.career || {} };
 }
 
 // After a week: each club's own records. A player passes his club's mark with the stats he's put up

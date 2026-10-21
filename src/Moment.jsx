@@ -134,7 +134,7 @@ function CountUp({ value, ms = 1700 }) {
 function RecordSpot({ m, onClose }) {
   const t = m.team;
   return (
-    <Spotlight p={m.p} team={t} gold={m.nfl} kicker={m.nfl ? "★ New NFL record ★" : `New ${t.name} record`} title={m.p.name} bg={jerseyNum(m.p) != null ? `#${jerseyNum(m.p)}` : null}
+    <Spotlight p={m.p} team={t} gold={m.nfl} kicker={m.nfl ? (m.career ? "★ New NFL career record ★" : "★ New NFL record ★") : m.career ? `${t.name} all-time record` : `New ${t.name} record`} title={m.p.name} bg={jerseyNum(m.p) != null ? `#${jerseyNum(m.p)}` : null}
       confetti={m.nfl ? ["#fbbf24", "#fde68a", "#d4a017", t.clr, "#ffffff"] : [t.clr, t.ac, "#fde68a", "#ffffff"]} cta={m.nfl ? "INTO THE RECORD BOOK →" : "CONTINUE →"} onNext={onClose} label={m.nfl ? "New NFL record" : "New franchise record"}>
       <style>{"@keyframes rsStrike{from{width:0}to{width:100%}}"}</style>
       <div>{m.p.pos} · {t.city} {t.name}{m.yr ? ` · ${m.yr}` : ""}</div>

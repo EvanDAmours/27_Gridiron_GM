@@ -1,6 +1,8 @@
 # What today's real players did for each club before the league starts: regular-season totals with
 # every club they played for, 2004-2025, from nflverse weekly player stats (a mid-season trade splits
-# his numbers between the two clubs). Only players in the game's data are kept. Writes
+# his numbers between the two clubs). Only players in the game's data are kept; when two players
+# share a name (a father and son, Asante Samuel and Asante Samuel Jr.), only the ones still playing
+# (2024 or later) count. Writes
 # src/data/teamCareerBase.js.
 #   python3 scripts/build-team-career-base.py [cache_dir]
 import csv, json, os, re, sys, urllib.request
@@ -34,7 +36,8 @@ def walk(x):
 walk(m27)
 print(len(names), "player names in the game data")
 
-tot = {}
+tot = {}   # (player id, name, club) -> totals
+last = {}  # player id -> his last season
 for yr in YEARS:
     path = os.path.join(CACHE, f"w{yr}.csv")
     if not os.path.exists(path):
@@ -47,7 +50,9 @@ for yr in YEARS:
             if n not in names:
                 continue
             ab = TEAM.get(r["team"], r["team"])
-            row = tot.setdefault(f"{n}|{ab}", [0] * len(KEYS))
+            pid = r.get("player_id") or n
+            last[pid] = yr
+            row = tot.setdefault((pid, n, ab), [0] * len(KEYS))
             for i, c in enumerate(COLS):
                 v = r.get(c) or ""
                 if v and v != "NA":
@@ -55,8 +60,19 @@ for yr in YEARS:
     os.remove(path)  # keep the disk light: each season's file is ~9MB
     print(yr, len(tot), flush=True)
 
+# a name worn by more than one player: keep only those still playing
+ids = {}
+for pid, n, _ in tot:
+    ids.setdefault(n, set()).add(pid)
+merged = {}
+for (pid, n, ab), row in tot.items():
+    if len(ids[n]) > 1 and last[pid] < 2024:
+        continue
+    m = merged.setdefault(f"{n}|{ab}", [0] * len(KEYS))
+    for i, v in enumerate(row):
+        m[i] += v
 out = {}
-for k, row in tot.items():
+for k, row in merged.items():
     row = [round(v * 2) / 2 if i == 7 else int(round(v)) for i, v in enumerate(row)]
     if any(row):
         out[k] = row
