@@ -1555,4 +1555,8 @@ export const PATCH_NOTES = [
     "Offensive linemen now have real stats. Every sack and pressure is charged to the blocker who lost his man (an edge rusher beats a tackle, an interior rusher a guard or the center; about half of sacks are on the line, the rest on the quarterback, coverage or a free rusher), and every run is logged for the linemen whose gap it went through: wins (4+ yards) and stuffs.",
     "Their card front shows games started, sacks allowed, pressures, pass-block win rate and 0-100 pass and run block grades; the season-by-season table on the back keeps them year by year. Game results are unchanged: the line's stats are pure bookkeeping.",
   ] },
+  { v: "3.93", date: "2026-10-20", title: "Holiday frame fixes", notes: [
+    "Thanksgiving games in TV view: the autumn-leaf border now wraps the field itself, instead of a huge empty box with the field small in the middle.",
+    "The holiday trim on the live scoreboard now sits on its top corners, so the pumpkins and leaves no longer cover the team names or the score.",
+  ] },
 ];

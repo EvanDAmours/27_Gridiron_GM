@@ -172,9 +172,11 @@ export function HolidayBadge({ holiday, style }) {
 // border hangs 100 art pixels outside every edge). The lights glow, Halloween flickers, the New
 // Year's gold shimmers. Children: the field.
 const FRAME_ANIM = { christmas: "atLightsGlow 2.6s ease-in-out infinite", halloween: "atFlicker 3.2s ease-in-out infinite", newyear: "atShimmer 3s ease-in-out infinite", thanksgiving: "atWarm 4s ease-in-out infinite" };
-export function HolidayFrame({ holiday, children, tdKey }) {
+// maxW: the field's own width cap (it can stop short of the full width), so the frame hugs it.
+export function HolidayFrame({ holiday, children, tdKey, maxW }) {
   if (!HOLIDAYS[holiday]) return children;
   return (
+    <div style={{ maxWidth: maxW && `calc(${maxW} / 0.912)`, margin: "0 auto" }}>
     <div style={{ position: "relative", padding: MOBILE ? "3.6% 4.4%" : "3.4% 4.4%" }}>
       <style>{CSS}</style>
       <div style={{ position: "relative" }}>
@@ -186,17 +188,19 @@ export function HolidayFrame({ holiday, children, tdKey }) {
         {tdKey != null && <img key={tdKey} alt="" src={sticker(holiday, artOf(holiday).td)} className="at-deco" style={{ position: "absolute", left: "50%", top: "38%", width: "18%", pointerEvents: "none", zIndex: 4, filter: "drop-shadow(0 12px 24px #000c)", animation: "atPop 1.8s ease-out both" }} />}
       </div>
     </div>
+    </div>
   );
 }
 
-// Trim over the scoreboard: the art's ends frame the two teams; its middle (the score and clock)
-// is clear. Children: the scoreboard.
+// Trim on the scoreboard: the art's two ends perch on its top corners, above the logos, so the
+// names and scores stay clear. Children: the scoreboard.
 export function HolidayScoreTrim({ holiday, children }) {
   if (!HOLIDAYS[holiday]) return children;
+  const h = MOBILE ? 26 : 32;
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", paddingTop: Math.round(h * 0.72) }}>
       {children}
-      <img alt="" src={holArt(holiday, "bar")} className="at-deco" style={{ position: "absolute", left: 0, top: "50%", width: "100%", aspectRatio: "15 / 1", transform: "translateY(-64%)", pointerEvents: "none", zIndex: 2, animation: FRAME_ANIM[themeOf(holiday)] }} />
+      {["L", "R"].map((side) => <BarCorner key={side} holiday={holiday} side={side} h={h} top={0} />)}
     </div>
   );
 }
@@ -208,12 +212,12 @@ export function HolidayScoreTrim({ holiday, children }) {
 // on the corner however wide the card is. BAR_ENDS: each end's box in the 1800 x 120 art; drop:
 // how much of the piece hangs above the card's top edge (New Year's bows hang from the knot).
 const BAR_ENDS = { newyear: { L: [144, 306], R: [1493, 1655], drop: 0.3 }, christmas: { L: [91, 357], R: [1442, 1706] }, halloween: { L: [140, 308], R: [1493, 1656] }, thanksgiving: { L: [72, 377], R: [1424, 1724] } };
-function BarCorner({ holiday, side, h }) {
+function BarCorner({ holiday, side, h, top }) {
   const e = BAR_ENDS[themeOf(holiday)];
   if (!e) return null;
   const [x0, x1] = e[side], y0 = 4, k = h / (86 - y0), w = (x1 - x0 + 1) * k;
   return (
-    <div className="at-deco" style={{ position: "absolute", top: -h * (e.drop ?? 0.5), [side === "L" ? "left" : "right"]: -h * 0.12, width: w, height: h, overflow: "hidden", pointerEvents: "none", zIndex: 3 }}>
+    <div className="at-deco" style={{ position: "absolute", top: top ?? -h * (e.drop ?? 0.5), [side === "L" ? "left" : "right"]: -h * 0.12, width: w, height: h, overflow: "hidden", pointerEvents: "none", zIndex: 3 }}>
       <img alt="" src={holArt(holiday, "bar")} style={{ position: "absolute", left: -x0 * k, top: -y0 * k, width: 1800 * k, height: 120 * k, maxWidth: "none" }} />
     </div>
   );

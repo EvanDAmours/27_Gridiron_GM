@@ -180,6 +180,10 @@ function Callout({ play, W, H }) {
   );
 }
 
+// How wide the field may get (it keeps its shape, so this caps its height to fit the screen).
+// A frame around it (HolidayFrame) takes the same cap, so it hugs the field.
+export const fieldMaxW = (tall) => `calc(${MOBILE ? "min(42vh, 390px)" : tall ? "min(calc(var(--vh, 100vh) - 470px), 700px)" : "min(calc(var(--vh, 100vh) - 330px), 570px)"} * ${W / H})`;
+
 export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday, tall }) {
   const W8 = wxOf(wx);
   const los = clamp(ballYard, 1, 99);
@@ -199,7 +203,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       return <Player key={`${side}${pos}${i}`} p={list[pos]?.[i]} pos={pos} x={x} y={y} team={team} side={side} away={awayFor(side)} td={!!lastPlay?.td} />;
     });
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, maxHeight: MOBILE ? "min(42vh, 390px)" : tall ? "min(calc(var(--vh, 100vh) - 470px), 700px)" : "min(calc(var(--vh, 100vh) - 330px), 570px)" }}>
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, maxWidth: fieldMaxW(tall), margin: "0 auto" }}>
       <defs>
         {/* turf grain: fine noise over the grass */}
         <filter id="lf-grain" x="0" y="0" width="100%" height="100%">
