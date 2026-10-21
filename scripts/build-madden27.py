@@ -16,6 +16,8 @@ CAP = 200  # the game's cap, in $M; real deals keep their share of the cap
 ROSTER, PS = 53, 10
 # real moves EA's ratings haven't caught up with yet: player -> his new club (EA label)
 MOVES = {"Marvin Harrison Jr": "Houston Texans"}
+# real form EA's ratings haven't caught up with yet: player -> fields to set (and his position ratings)
+UPDATES = {"Isaiah Likely": {"ovr": 83, "dev": "star", "attrs": {"receiving": 90, "routeRun": 74, "redZone": 90}}}
 src = sys.argv[1]
 eap = json.load(open(f"{src}/m27.json"))
 
@@ -163,6 +165,8 @@ for p in eap:
         "spd": s["speed"], "str": s["strength"], "agi": s["agility"], "acc": s["acceleration"], "jmp": s["jumping"], "end": s["stamina"],
         "attrs": ATTRS[pos](s), "sal": sal, "yrs": yrs,
     })
+    u = UPDATES.get(teams[p["team"]["label"]][-1]["name"])
+    if u: me = teams[p["team"]["label"]][-1]; me.update({k: v for k, v in u.items() if k != "attrs"}); me["attrs"].update(u.get("attrs", {}))
 
 # ---------- Depth charts ----------
 # ESPN's depth chart sets each club's pecking order: everyone on it makes the 53, starting

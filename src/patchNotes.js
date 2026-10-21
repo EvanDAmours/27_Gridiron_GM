@@ -1533,4 +1533,8 @@ export const PATCH_NOTES = [
   { v: "3.86", date: "2026-10-20", title: "Custom Tank Dell", notes: [
     "Tank Dell gets his custom Texans render (#1), completing seven custom Texans.",
   ] },
+  { v: "3.87", date: "2026-10-20", title: "Isaiah Likely update", notes: [
+    "Isaiah Likely is up to 83 OVR with a Star development trait after his strong start: his Madden ratings are updated, with 90 catching and 90 spectacular catch (the tight end red-zone rating).",
+    "Likely also gets his own custom Giants render (#9). New franchises only; a save in progress keeps its ratings.",
+  ] },
 ];
