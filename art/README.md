@@ -8,7 +8,7 @@ screens will load processed copies from `public/` once they are built.
 
 | | Done | Teams |
 |---|---|---|
-| Player sprites (6 per team) | 12 / 32 | ARI BAL BUF CAR CHI CIN DAL DEN DET GB HOU NYG |
+| Player sprites (6 per team) | 18 / 32 | ARI BAL BUF CAR CHI CIN DAL DEN DET GB HOU IND JAX KC LAC LAR LV NYG |
 | Number sheets | 32 / 32 | all (Giants use `numbers/NYG_original.png`) |
 
 Giants: `players/NYG_numbered/NYG_{00-99}.png` are full renders with the real number already on the
