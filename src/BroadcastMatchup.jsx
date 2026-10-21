@@ -94,9 +94,10 @@ function Half({ team, player, rating, other, home, teams, art, late }) {
 // away, home: the clubs. awayRating, homeRating: { ovr, off, def }. label: the week. kickoff, venue,
 // weather ({ kind, icon, label, note }): the game. prime: the night slot's name. rivalry: a division
 // rival. compact: a shorter card (a small laptop screen, so the home screen fits without scrolling).
+// scale: drawn this much bigger (a tall window with room to spare under it).
 // Both stars appear together and only once their pictures are made (Home makes next week's ahead
 // of time, so after a sim they're usually there the moment the card is).
-export default function BroadcastMatchup({ away, home, teams, awayRating, homeRating, label, kickoff, venue, weather = null, prime = null, rivalry = false, compact = false }) {
+export default function BroadcastMatchup({ away, home, teams, awayRating, homeRating, label, kickoff, venue, weather = null, prime = null, rivalry = false, compact = false, scale = 1 }) {
   const pa = featuredPlayer(away), ph = featuredPlayer(home);
   const sa = usePlayerArt(pa, away?.ab), sh = usePlayerArt(ph, home?.ab);
   const art = (!pa || sa !== undefined) && (!ph || sh !== undefined);
@@ -112,7 +113,7 @@ export default function BroadcastMatchup({ away, home, teams, awayRating, homeRa
         {prime && <span className="bm-badge bm-badge--prime">★ {prime.toUpperCase()}</span>}
         <span className="bm-when">{[kickoff, venue].filter(Boolean).join(" · ")}</span>
       </header>
-      <div className="bm-body" style={{ "--bm-font": BLOCK, "--bm-a": away.clr || "#334155", "--bm-h": home.clr || "#334155" }}>
+      <div className="bm-body" style={{ "--bm-font": BLOCK, "--bm-a": away.clr || "#334155", "--bm-h": home.clr || "#334155", "--bm-k": scale }}>
         <Half team={away} player={pa} rating={awayRating} other={homeRating} teams={teams} art={art} late={late} />
         <Half team={home} player={ph} rating={homeRating} other={awayRating} teams={teams} art={art} late={late} home />
         <div className="bm-at">AT</div>

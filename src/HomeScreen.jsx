@@ -1,6 +1,6 @@
 // The franchise hub, laid out like Madden's: a menu on the left, this week's matchup in the
 // middle (week strip, both logos, team ratings), and top stories on the right.
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { C, TeamLogo, Btn, kickoff, Bdg, oC } from "./ui.jsx";
 import { unitRatings } from "./gamesim.js";
 import { depthOrderFor } from "./DepthChart.jsx";
@@ -197,6 +197,29 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
     if (mobile || !after) return;
     for (const t of [teams[after.a], teams[after.h]]) primeArt(featuredPlayer(t), t?.ab);
   }, [mobile, after?.a, after?.h, after?.wk]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A tall window: the matchup card grows into the room left under the week's column (never so
+  // far that the page scrolls). Measured after each layout until it settles.
+  const mainRef = useRef(null), fitRef = useRef({ key: null, tries: 0 });
+  const [grow, setGrow] = useState(0);
+  const fitKey = `${mobile}|${sp}|${wk}|${game?.a}|${game?.h}|${!!planCard}`;
+  useLayoutEffect(() => {
+    if (mobile) return;
+    const f = fitRef.current;
+    // a new week (or a resize) starts again from the plain card: grown, the column can't tell
+    // how much room it would have had
+    if (f.key !== fitKey) { f.key = fitKey; f.tries = 0; if (grow) { setGrow(0); return; } }
+    const el = mainRef.current;
+    if (!el?.querySelector(".bm-card") || f.tries++ > 5) return;
+    const last = Math.max(...[...el.children].map((c) => c.getBoundingClientRect().bottom));
+    const spare = el.getBoundingClientRect().bottom - 14 - last;   // its bottom padding
+    const n = Math.max(0, Math.min(260, Math.round(grow + spare - 18)));
+    if (Math.abs(n - grow) > 3) setGrow(n);
+  }, [fitKey, grow]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const again = () => { fitRef.current.key = null; setGrow((g) => g + 0.001); };
+    window.addEventListener("resize", again);
+    return () => window.removeEventListener("resize", again);
+  }, []);
   // Week strip: last week, this week, and the next few.
   const strip = inSeason ? Array.from({ length: 5 }, (_, i) => Math.max(1, Math.min(14, nextWk - 1)) + i).filter((w) => w <= 18) : [];
   const away = game && teams[game.a], home = game && teams[game.h];
@@ -232,7 +255,7 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
                   </div>
 
         {/* Matchup */}
-        <div className="hm-main" style={{ flex: "3 1 460px", minWidth: 0, padding: "14px 16px" }}>
+        <div ref={mainRef} className="hm-main" style={{ flex: "3 1 460px", minWidth: 0, padding: "14px 16px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: mobile ? "wrap" : "nowrap" }}>
           <div style={{ fontSize: 16, fontWeight: 800, whiteSpace: "nowrap" }}>{label}</div>
           {/* in season the top bar has Play/Sim, so the buttons here only show off-season and in the playoffs */}
@@ -266,7 +289,7 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
             <BroadcastMatchup
               key={`${sp}-${game.wk ?? pb?.rd ?? 0}-${game.a}-${game.h}`}
               away={away} home={home} teams={teams}
-              awayRating={ra} homeRating={rh} compact={!mobile && !roomy}
+              awayRating={ra} homeRating={rh} compact={!mobile && !roomy} scale={1 + Math.round(grow) / 330}
               prime={sp !== "playoffs" ? primeSlot(game) : null} rivalry={rivalId != null && (game.h === rivalId || game.a === rivalId) && (game.h === ui || game.a === ui)}
               label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} • Week ${game.wk ?? nextWk}`}
               kickoff={game.date ? kickoff(game) : "Kickoff TBD"}

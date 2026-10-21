@@ -14,27 +14,29 @@
    band in the middle (two halves painted separately left a hard line down the centre) */
 .bm-body { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   background: linear-gradient(90deg, var(--bm-a) 0%, color-mix(in srgb, var(--bm-a) 70%, #0b1220) 30%, color-mix(in srgb, var(--bm-a) 30%, #0b1220) 46%, color-mix(in srgb, var(--bm-h) 30%, #0b1220) 54%, color-mix(in srgb, var(--bm-h) 70%, #0b1220) 70%, var(--bm-h) 100%); }
-.bm-half { position: relative; overflow: hidden; min-height: 300px; }
+/* --bm-k: how much bigger the card is drawn to fill a tall window (Home sets it); the stars grow
+   with it, and the words a little */
+.bm-half { position: relative; overflow: hidden; display: flex; align-items: center; min-height: calc(300px * var(--bm-k, 1)); --bm-t: calc(1 + (var(--bm-k, 1) - 1) * .55); }
 /* he stands toward the middle */
-.bm-art { position: absolute; bottom: 0; right: 6px; filter: drop-shadow(0 12px 18px #000a); transform-origin: bottom center; }
+.bm-art { --bm-s: 1; position: absolute; bottom: 0; right: 6px; filter: drop-shadow(0 12px 18px #000a); transform-origin: bottom center; transform: scale(calc(var(--bm-s) * (1 + (var(--bm-k, 1) - 1) * var(--bm-g, 1)))); }
 .bm-half--home .bm-art { right: auto; left: 6px; }
 /* pictures that weren't ready when the card opened fade in together */
 .bm-art--late { animation: bmArtIn .4s ease-out; }
 @keyframes bmArtIn { from { opacity: 0; } to { opacity: 1; } }
-.bm-info { position: relative; padding: 16px 18px; max-width: 58%; }
+.bm-info { position: relative; padding: 16px 18px; max-width: 58%; box-sizing: border-box; }
 .bm-half--home .bm-info { margin-left: auto; text-align: right; }
 .bm-half--home .bm-logo { display: flex; justify-content: flex-end; }
 .bm-city { margin-top: 6px; font-size: 12px; letter-spacing: 2px; opacity: .85; text-transform: uppercase; }
-.bm-name { font-family: var(--bm-font); font-weight: 700; font-size: 34px; line-height: 1; text-transform: uppercase; }
-.bm-record { margin-top: 4px; font-size: 15px; font-weight: 800; }
-.bm-star { margin-top: 20px; font-family: var(--bm-font); font-weight: 700; font-size: 22px; line-height: 1.05; text-transform: uppercase; }
-.bm-pos { font-size: 13px; color: #e2e8f0; }
+.bm-name { font-family: var(--bm-font); font-weight: 700; font-size: calc(34px * var(--bm-t)); line-height: 1; text-transform: uppercase; }
+.bm-record { margin-top: 4px; font-size: calc(15px * var(--bm-t)); font-weight: 800; }
+.bm-star { margin-top: calc(20px * var(--bm-t)); font-family: var(--bm-font); font-weight: 700; font-size: calc(22px * var(--bm-t)); line-height: 1.05; text-transform: uppercase; }
+.bm-pos { font-size: calc(13px * var(--bm-t)); color: #e2e8f0; }
 /* where he ranks in the league: the line that says why he's the one to watch */
-.bm-line { margin-top: 6px; font-size: 13px; font-weight: 800; color: #fde68a; line-height: 1.3; }
-.bm-ratings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; width: 190px; max-width: 100%; margin-top: 14px; }
+.bm-line { margin-top: 6px; font-size: calc(13px * var(--bm-t)); font-weight: 800; color: #fde68a; line-height: 1.3; }
+.bm-ratings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; width: calc(190px * var(--bm-t)); max-width: 100%; margin-top: calc(14px * var(--bm-t)); }
 .bm-half--home .bm-ratings { margin-left: auto; }
 .bm-rating { text-align: center; }
-.bm-rating b { display: block; padding: 3px 0; font-size: 22px; font-weight: 900; border: 2px solid #94a3b8; border-radius: 6px; background: #0b122055; }
+.bm-rating b { display: block; padding: 3px 0; font-size: calc(22px * var(--bm-t)); font-weight: 900; border: 2px solid #94a3b8; border-radius: 6px; background: #0b122055; }
 .bm-rating span { display: block; margin-top: 2px; font-size: 10px; font-weight: 900; color: #94a3b8; letter-spacing: .5px; }
 .bm-rating--ahead b { border-color: #22c55e; background: #22c55e1f; }
 .bm-at { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 58px; height: 58px; border-radius: 50%; background: #050a18; border: 3px solid #fff; display: flex; align-items: center; justify-content: center; font-family: var(--bm-font); font-weight: 700; font-size: 22px; }
@@ -45,25 +47,27 @@
 .bm-wx--wind { border-color: #fbbf2466; }
 
 /* a smaller laptop: the same promo, shorter, so the home screen fits without scrolling */
-.bm-compact .bm-half { min-height: 236px; }
-.bm-compact .bm-art { transform: scale(.78); }
+.bm-compact .bm-half { min-height: calc(236px * var(--bm-k, 1)); }
+.bm-compact .bm-art { --bm-s: .78; }
 .bm-compact .bm-info { padding: 12px 16px; }
 .bm-compact .bm-star { margin-top: 12px; }
 .bm-compact .bm-ratings { margin-top: 10px; }
 
 /* a narrower column: the star shrinks before he can crowd the words */
 @container (max-width: 780px) {
-  .bm-art { transform: scale(.7); }
-  .bm-compact .bm-art { transform: scale(.6); }
-  .bm-name { font-size: 28px; }
-  .bm-star { font-size: 19px; }
+  /* (and grows less in a tall window: the words need the width) */
+  .bm-art { --bm-s: .7; --bm-g: .35; }
+  .bm-half { --bm-t: calc(1 + (var(--bm-k, 1) - 1) * .25); }
+  .bm-compact .bm-art { --bm-s: .6; }
+  .bm-name { font-size: calc(28px * var(--bm-t)); }
+  .bm-star { font-size: calc(19px * var(--bm-t)); }
   .bm-info { max-width: 62%; }
-  .bm-ratings { width: 160px; }
-  .bm-rating b { font-size: 19px; }
+  .bm-ratings { width: calc(160px * var(--bm-t)); }
+  .bm-rating b { font-size: calc(19px * var(--bm-t)); }
 }
 @container (max-width: 600px) {
-  .bm-art { transform: scale(.52); }
-  .bm-compact .bm-art { transform: scale(.48); }
-  .bm-name { font-size: 24px; }
+  .bm-art { --bm-s: .52; }
+  .bm-compact .bm-art { --bm-s: .48; }
+  .bm-name { font-size: calc(24px * var(--bm-t)); }
   .bm-when { margin-left: 0; width: 100%; }
 }

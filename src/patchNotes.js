@@ -1633,4 +1633,7 @@ export const PATCH_NOTES = [
   { v: "4.12", date: "2026-10-20", title: "No pop-in on the promo", notes: [
     "The stars in the home screen promo no longer pop in after you sim a week: next week's pictures are made ahead of time, and both players appear with the card, fully drawn.",
   ] },
+  { v: "4.13", date: "2026-10-20", title: "Bigger matchup promo", notes: [
+    "On a computer with room to spare, the home screen matchup promo now grows to fill it: bigger stars, bigger names and ratings, and no empty band under the week's column. Smaller laptop screens keep it as it was, so nothing scrolls.",
+  ] },
 ];
