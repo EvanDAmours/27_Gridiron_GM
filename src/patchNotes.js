@@ -1621,4 +1621,7 @@ export const PATCH_NOTES = [
   { v: "4.8", date: "2026-10-20", title: "Smoother promo centerline", notes: [
     "The home screen matchup promo blends the two teams' colors through the middle instead of meeting at a hard line down the center.",
   ] },
+  { v: "4.9", date: "2026-10-20", title: "Promo stat lines", notes: [
+    "The home screen promo now says why each star matters this week instead of a generic \"star to watch\": where he ranks in the league this season in the stat his position is about, the best of them. \"Leads the NFL in touchdown passes (24)\", \"3rd in the NFL in passing yards (2,410)\", \"6th in the NFL in rushing yards (612)\". Before the games start (or if he isn't near the top of anything) it's where he ranks by rating at his position, if he's top 10, or his season so far.",
+  ] },
 ];

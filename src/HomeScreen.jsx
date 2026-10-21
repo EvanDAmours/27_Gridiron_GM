@@ -257,7 +257,7 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
           ) : game ? (<HolidayCard holiday={game.holiday}>
             <BroadcastMatchup
               key={`${sp}-${game.wk ?? pb?.rd ?? 0}-${game.a}-${game.h}`}
-              away={away} home={home}
+              away={away} home={home} teams={teams}
               awayRating={ra} homeRating={rh} compact={!mobile && !roomy}
               prime={sp !== "playoffs" ? primeSlot(game) : null} rivalry={rivalId != null && (game.h === rivalId || game.a === rivalId) && (game.h === ui || game.a === ui)}
               label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} • Week ${game.wk ?? nextWk}`}

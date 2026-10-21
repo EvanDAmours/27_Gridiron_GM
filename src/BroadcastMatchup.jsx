@@ -21,6 +21,41 @@ export function featuredPlayer(team) {
   return (pool.length ? pool : roster).reduce((best, p) => (!best || score(p) > score(best) ? p : best), null);
 }
 
+// His line on the promo: where he ranks in the league this season in the stat his position is
+// about, the best of them ("Leads the NFL in touchdown passes (24)", "3rd in the NFL in sacks
+// (9.5)"). Nowhere near the top of anything: where he ranks by rating at his position if that's
+// top 10 ("The NFL's top-rated QB"), else his season so far ("971 receiving yards this season"),
+// else nothing.
+const STATS = {
+  QB: [["passTD", "touchdown passes"], ["passYds", "passing yards"], ["rushYds", "rushing yards"]],
+  RB: [["rushYds", "rushing yards"], ["rushTD", "rushing touchdowns"], ["recYds", "receiving yards"]],
+  WR: [["recYds", "receiving yards"], ["rec", "catches"], ["recTD", "touchdown catches"]],
+  TE: [["recYds", "receiving yards"], ["rec", "catches"], ["recTD", "touchdown catches"]],
+  DL: [["sacks", "sacks"], ["pres", "pressures"], ["tfl", "tackles for loss"]],
+  LB: [["tkl", "tackles"], ["sacks", "sacks"], ["ints", "interceptions"]],
+  CB: [["ints", "interceptions"], ["pd", "passes defended"]],
+  S: [["ints", "interceptions"], ["tkl", "tackles"], ["pd", "passes defended"]],
+};
+const ord = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"}`;
+const val = (s, k) => (k === "tkl" ? (s?.tkl || 0) + (s?.ast || 0) : s?.[k] || 0);
+const fmt = (k, v) => (k === "sacks" ? String(Math.round(v * 2) / 2) : Math.round(v).toLocaleString("en-US"));
+export function headline(p, teams = []) {
+  if (!p) return "";
+  const all = teams.flatMap((t) => [...(t.roster || []), ...(t.ir || [])]);
+  let best = null;
+  for (const [k, label] of STATS[p.pos] || []) {
+    const mine = val(p.ss, k);
+    if (!(mine > 0)) continue;
+    const rank = 1 + all.filter((q) => val(q.ss, k) > mine).length;
+    if (!best || rank < best.rank) best = { k, label, rank, mine };
+  }
+  if (best && best.rank <= 15) return best.rank === 1 ? `Leads the NFL in ${best.label} (${fmt(best.k, best.mine)})` : `${ord(best.rank)} in the NFL in ${best.label} (${fmt(best.k, best.mine)})`;
+  const r = 1 + all.filter((q) => q.pos === p.pos && (q.ovr || 0) > (p.ovr || 0)).length;
+  if (r <= 10) return r === 1 ? `The NFL's top-rated ${p.pos}` : `The NFL's ${ord(r)}-rated ${p.pos}`;
+  const [k, label] = (STATS[p.pos] || []).find(([key]) => val(p.ss, key) > 0) || [];
+  return k ? `${fmt(k, val(p.ss, k))} ${label} this season` : "";
+}
+
 const show = (v) => (Number.isFinite(v) ? Math.round(v) : "–");
 function Ratings({ mine = {}, other = {} }) {
   return (
@@ -33,7 +68,8 @@ function Ratings({ mine = {}, other = {} }) {
   );
 }
 
-function Half({ team, player, rating, other, home }) {
+function Half({ team, player, rating, other, home, teams }) {
+  const line = headline(player, teams);
   return (
     <div className={`bm-half${home ? " bm-half--home" : ""}`}>
       {player && <div className="bm-art"><PlayerArt p={player} ab={team.ab} width={200} crop={0.92} /></div>}
@@ -43,9 +79,9 @@ function Half({ team, player, rating, other, home }) {
         <div className="bm-name">{team.name}</div>
         <div className="bm-record">{team.w ?? 0}-{team.l ?? 0}{team.t ? `-${team.t}` : ""}</div>
         {player && <>
-          <div className="bm-kicker">STAR TO WATCH</div>
           <div className="bm-star">{player.name}</div>
           <div className="bm-pos">{player.pos} · {player.ovr} OVR</div>
+          {line && <div className="bm-line">{line}</div>}
         </>}
         <Ratings mine={rating} other={other} />
       </div>
@@ -56,7 +92,7 @@ function Half({ team, player, rating, other, home }) {
 // away, home: the clubs. awayRating, homeRating: { ovr, off, def }. label: the week. kickoff, venue,
 // weather ({ kind, icon, label, note }): the game. prime: the night slot's name. rivalry: a division
 // rival. compact: a shorter card (a small laptop screen, so the home screen fits without scrolling).
-export default function BroadcastMatchup({ away, home, awayRating, homeRating, label, kickoff, venue, weather = null, prime = null, rivalry = false, compact = false }) {
+export default function BroadcastMatchup({ away, home, teams, awayRating, homeRating, label, kickoff, venue, weather = null, prime = null, rivalry = false, compact = false }) {
   if (!away || !home) return null;
   const cls = `bm-card keep-dark${compact ? " bm-compact" : ""}${prime ? " bm-prime" : ""}${rivalry ? " bm-rival" : ""}`;
   return (
@@ -69,8 +105,8 @@ export default function BroadcastMatchup({ away, home, awayRating, homeRating, l
         <span className="bm-when">{[kickoff, venue].filter(Boolean).join(" · ")}</span>
       </header>
       <div className="bm-body" style={{ "--bm-font": BLOCK, "--bm-a": away.clr || "#334155", "--bm-h": home.clr || "#334155" }}>
-        <Half team={away} player={featuredPlayer(away)} rating={awayRating} other={homeRating} />
-        <Half team={home} player={featuredPlayer(home)} rating={homeRating} other={awayRating} home />
+        <Half team={away} player={featuredPlayer(away)} rating={awayRating} other={homeRating} teams={teams} />
+        <Half team={home} player={featuredPlayer(home)} rating={homeRating} other={awayRating} teams={teams} home />
         <div className="bm-at">AT</div>
         {weather && <div className={`bm-wx bm-wx--${weather.kind}`}><b>{weather.icon} {weather.label}</b>{weather.note ? ` · ${weather.note}` : ""}</div>}
       </div>
