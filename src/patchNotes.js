@@ -1490,4 +1490,7 @@ export const PATCH_NOTES = [
     "Draft night: your pick now takes the full-screen spotlight. He stands in your uniform wearing his rookie number, with the round and pick, his development trait, his top three ratings and the analysts' grade.",
     "A Giants draft pick gets a Giants render made for his number; other teams' picks wear their team's uniform with his number added.",
   ] },
+  { v: "3.74", date: "2026-10-20", title: "Signing day spotlight", notes: [
+    "Signing day: landing a big free agent now puts him in the full-screen spotlight, standing in your uniform for the first time with his new number, with the deal (years and money a year) beside him.",
+  ] },
 ];

@@ -36,7 +36,7 @@ const Line = ({ k, v, tone }) => (
   </div>
 );
 
-// m: { kind: clinch | record | signing | kickoff, team, ... } (a record goes to the spotlight) (see App for each one's fields)
+// m: { kind: clinch | record | signing | kickoff, team, ... } (a record or a signing goes to the spotlight) (see App for each one's fields)
 // The Hall of Fame: the gold jacket comes down, the bust is unveiled, Canton welcomes him.
 function HofCeremony({ m, onClose }) {
   const t = m.team;
@@ -159,8 +159,22 @@ function RecordSpot({ m, onClose }) {
   );
 }
 
+// Signing day: the new man in your uniform for the first time, and the deal.
+function SigningSpot({ m, onClose }) {
+  const t = m.team;
+  return (
+    <Spotlight p={m.p} team={t} num={m.num} kicker={`✍️ Signing day · Welcome to ${t.city}`} title={m.p.name} bg={m.num != null ? `#${m.num}` : null} onNext={onClose} label={`${m.p.name} signs`}>
+      <div>{m.p.pos} · {m.p.ovr} OVR · age {m.p.age}</div>
+      <div style={{ fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 34 : 54, lineHeight: 1.05, color: "#fde68a", marginTop: MOBILE ? 8 : 14 }}>{m.yrs} {m.yrs === 1 ? "YEAR" : "YEARS"} · ${(+m.sal).toFixed(1)}M A YEAR</div>
+      {m.sub && <div style={{ fontSize: MOBILE ? 14 : 16, color: "#cbd5e1", marginTop: 10 }}>{m.sub}</div>}
+      {m.lines?.length > 0 && <div style={{ marginTop: 10, maxWidth: 520 }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone} />)}</div>}
+    </Spotlight>
+  );
+}
+
 export default function Moment({ m, onClose }) {
   if (!m?.team) return null;
+  if (m.kind === "signing" && m.p) return <SigningSpot m={m} onClose={onClose} />;
   if (m.kind === "record" && m.p) return <RecordSpot m={m} onClose={onClose} />;
   if (m.kind === "hof") return <HofCeremony m={m} onClose={onClose} />;
   if (m.kind === "holiday") return <HolidayResult m={m} onClose={onClose} />;
@@ -198,19 +212,6 @@ export default function Moment({ m, onClose }) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Bdg pos={m.p.pos} /><span style={{ fontSize: 14, color: "#fde68a", fontWeight: 800 }}>Thank you, {m.p.name.split(" ").slice(-1)[0]}.</span></div>
               <div style={{ fontSize: MOBILE ? 36 : 48, fontWeight: 900, lineHeight: 1, color: "#fde68a", marginTop: 4 }}>{m.p.peak || m.p.ovr}<span style={{ fontSize: 14, color: "#cbd5e1", marginLeft: 6 }}>peak OVR</span></div>
-            </div>
-          </div>
-        )}
-        {m.kind === "signing" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 16, background: "#00000040", borderRadius: 12, padding: "14px 16px" }}>
-            <div style={{ position: "relative" }}>
-              <Face s={m.p.face} sz={MOBILE ? 72 : 96} />
-              <span style={{ position: "absolute", right: -8, bottom: -6, background: ac, color: "#0b1220", fontWeight: 900, fontSize: 15, borderRadius: 8, padding: "1px 7px" }}>#{m.num}</span>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: MOBILE ? 20 : 26, fontWeight: 900 }}>{m.p.name}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}><Bdg pos={m.p.pos} /><span style={{ fontSize: 14, color: "#cbd5e1" }}>{m.p.ovr} OVR · age {m.p.age}</span></div>
-              <div style={{ fontSize: MOBILE ? 18 : 22, fontWeight: 900, color: "#fde68a", marginTop: 6 }}>{m.yrs} years · ${(+m.sal).toFixed(1)}M a year</div>
             </div>
           </div>
         )}
