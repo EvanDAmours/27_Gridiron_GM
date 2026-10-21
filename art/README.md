@@ -25,6 +25,12 @@ Baker, Froholdt, Johnson Jr., McBride, Sweat. Ravens: Andrews, Hamilton, Henry, 
 Cook III, Dawkins, Rousseau. Panthers: Brown, Horn, Lewis, Lloyd. A suffix in the file name (JohnsonJr, CookIII) is
 fine; the number picks between two players with the same last name.
 
+The custom PNGs are not kept in git (each is 1-2MB; the repo was nearing GitHub's 1GB guideline). Keep the zips
+they came in as the masters. To add renders: unzip into `players/{TEAM}_custom/`, run
+`python3 tools/export_web.py --keep` (from `art/`), and commit only what it writes in `public/players/`. The
+manifest is built from the exported webp files, so later runs without the PNGs keep every custom render, and
+without a skin list the darker-skin list already in the manifest is kept.
+
 Open notes:
 - **MIA**: the sheet came back aqua with orange trim (made for a white jersey); the home jersey is aqua,
   so `clean_number_sheets.py` fills the digits white and keeps the trim.

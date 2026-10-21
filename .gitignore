@@ -14,3 +14,7 @@ smoke-failure.png
 health-failure.png
 audit-failure.png
 scripts/_*.mjs
+
+# Player render sources (1-2MB PNGs each): the zips they came in are the masters; only the exported
+# webp files in public/players are kept (art/tools/export_web.py builds the manifest from those)
+art/players/*_custom/

@@ -6,7 +6,8 @@
   {TEAM}/c/{Last}_{NN}.webp                      custom renders of named players (any team)
   manifest.json                                  where each number goes, digit cells, which art exists
 
-  python3 export_web.py [skin.json] [--keep]   (skin.json: ESPN ids of players with darker skin, measured from headshots)
+  python3 export_web.py [skin.json] [--keep]   (skin.json: ESPN ids of players with darker skin, measured from
+  headshots; without it the list already in the manifest is kept)
 The game adds the number and the lighting itself (src/playerArt.js), so the files stay blank.
 """
 import os, re, sys, json, glob
@@ -82,12 +83,17 @@ def main():
         man["nygSkin"][int(n)] = render_skin(img)
     roster = json.load(open(os.path.join(ROOT, "src", "data", "madden27.json")))
     nyg = [p["name"] for t in roster["teams"] if t["ab"] == "NYG" for p in t["roster"]]
-    # custom renders, any team: players/{TEAM}_custom/{TEAM}_{Last}_{NN}.png, in that team's uniform
+    # custom renders, any team: players/{TEAM}_custom/{TEAM}_{Last}_{NN}.png, in that team's uniform.
+    # The PNGs aren't kept in git (they're big; the zips they came in are the masters): each one
+    # present is exported once, and the manifest is built from the exported files, so a checkout
+    # without the PNGs keeps every custom render.
     for f in sorted(glob.glob(os.path.join(ART, "players", "*_custom", "*.png"))):
-        ab, rest = os.path.basename(f)[:-4].split("_", 1); last, n = rest.rsplit("_", 1)
+        ab, rest = os.path.basename(f)[:-4].split("_", 1)
         img = clean_alpha(cv2.imread(f, cv2.IMREAD_UNCHANGED))[:1448]
         if img.shape[:2] != (1448, 1086): img = cv2.resize(img, (1086, 1448), interpolation=cv2.INTER_AREA)   # a render a pixel off the standard size
-        webp(img, os.path.join(OUT, ab, "c", f"{last}_{n}.webp"))
+        webp(img, os.path.join(OUT, ab, "c", f"{rest}.webp"))
+    for f in sorted(glob.glob(os.path.join(OUT, "*", "c", "*.webp"))):
+        ab = os.path.basename(os.path.dirname(os.path.dirname(f))); last, n = os.path.basename(f)[:-5].rsplit("_", 1)
         # the player: that last name (a suffix in the file name, JohnsonJr or CookIII, dropped) and,
         # when two share it (Josh and Kyle Allen), that number; on that team's roster (practice squad
         # too), else anywhere (he may arrive by trade)
@@ -98,12 +104,15 @@ def main():
             same = [q for q in pool if norm(q["name"]).split()[-1] == key]
             return [q for q in same if q.get("num") == int(n)] or same
         full = pick(team) or pick(anyone)
-        if not full: sys.exit(f"no player for {os.path.basename(f)}")
+        if not full: sys.exit(f"no player for {ab}/c/{os.path.basename(f)}")
         man["custom"].setdefault(norm(full[0]["name"]), {})[ab] = [f"{last}_{n}", int(n)]
-        print(f"  {os.path.basename(f)} -> {full[0]['name']}")
+        print(f"  {ab} {last}_{n} -> {full[0]['name']}")
     man["nygOriginal"] = nyg
     skin = [a for a in sys.argv[1:] if not a.startswith("--")]
     if skin: man["dark"] = sorted(json.load(open(skin[0])))
+    else:   # no new list: keep the one already in the manifest (it was measured from headshots once)
+        prev = os.path.join(OUT, "manifest.json")
+        man["dark"] = json.load(open(prev)).get("dark", []) if os.path.exists(prev) else []
     json.dump(man, open(os.path.join(OUT, "manifest.json"), "w"), separators=(",", ":"))
     print(len(man["teams"]), "teams,", len(man["nygNumbered"]), "numbered Giants,", len(man["custom"]), "custom")
 
