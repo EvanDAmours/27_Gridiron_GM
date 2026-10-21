@@ -6,10 +6,9 @@ import { unitRatings } from "./gamesim.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import { ROUND_NAMES } from "./playoffs.js";
 import { sbSite } from "./data/superbowls.js";
-import { highestRatedPlayer } from "./spriteAssets.js";
 import { InjTag } from "./InjuryTag.jsx";
 import { injuryReport } from "./injuries.js";
-import PixelMatchup from "./PixelMatchup.jsx";
+import BroadcastMatchup from "./BroadcastMatchup.jsx";
 import MatchupStakes from "./MatchupStakes.jsx";
 import RaceWatch from "./RaceWatch.jsx";
 import { teamNeeds, needName } from "./needs.js";
@@ -256,11 +255,9 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
           {game && mobile ? (
             <HolidayCard holiday={game.holiday}><CompactMatchup away={away} home={home} ra={ra} rh={rh} label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} · Week ${game.wk ?? nextWk}`} kickoff={`${game.date ? kickoff(game) : "Kickoff TBD"}${forecast ? ` · ${forecast.icon} ${forecast.label}` : ""}`} /></HolidayCard>
           ) : game ? (<HolidayCard holiday={game.holiday}>
-            <PixelMatchup
+            <BroadcastMatchup
               key={`${sp}-${game.wk ?? pb?.rd ?? 0}-${game.a}-${game.h}`}
               away={away} home={home}
-              awayPlayer={highestRatedPlayer(away)}
-              homePlayer={highestRatedPlayer(home)}
               awayRating={ra} homeRating={rh} compact={!mobile && !roomy}
               prime={sp !== "playoffs" ? primeSlot(game) : null} rivalry={rivalId != null && (game.h === rivalId || game.a === rivalId) && (game.h === ui || game.a === ui)}
               label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} • Week ${game.wk ?? nextWk}`}

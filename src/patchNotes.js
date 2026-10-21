@@ -1607,4 +1607,9 @@ export const PATCH_NOTES = [
   { v: "4.4", date: "2026-10-20", title: "New career setup", notes: [
     "Starting a new career is clearer. Pick your team first, then a setup screen asks two things with big, easy-to-read choices: start at Week 1 or from the current week of the real 2026 season, and injuries on or off. Then start your career, or go back and pick another team. (Injuries can still be switched any time from the menu, under Settings.)",
   ] },
+  { v: "4.5", date: "2026-10-20", title: "Broadcast matchup promo", notes: [
+    "The week's matchup on the home screen is now a TV-style game promo: each team's half in its colors, its star standing large toward the middle with his number faint behind him, the team's record and ratings on the outside, and AT between them. Prime-time and rivalry games still get their badges, the forecast sits under the AT, and holiday games keep their trim.",
+    "The star to watch is each team's best player who isn't a lineman, kicker or punter, leaning toward the quarterback and then a receiver: Dak Prescott for Dallas, Lamar Jackson for Baltimore, Malik Nabers for the Giants. An injured player sits it out. Players with their own custom render show in it; everyone else wears his team's uniform with his number.",
+    "On a phone the home screen keeps its compact matchup card.",
+  ] },
 ];

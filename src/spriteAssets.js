@@ -13,11 +13,3 @@ export function spriteGroup(pos) {
   if (['TE', 'WR'].includes(pos)) return 'WR';
   return pos === 'QB' ? 'QB' : null;
 }
-// Read the current roster on every render; never retain a stale featured player.
-// Injured/holdout players still count while rostered. Ties keep roster order.
-export function highestRatedPlayer(team) {
-  return (team?.roster || []).reduce((best, player) => {
-    if (!Number.isFinite(player?.ovr)) return best;
-    return !best || player.ovr > best.ovr ? player : best;
-  }, null);
-}
