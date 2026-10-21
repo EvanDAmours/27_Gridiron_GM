@@ -20,7 +20,10 @@ with his number added.
 
 Custom renders: `players/{TEAM}_custom/{TEAM}_{Last}_{##}.png`, realistic renders of named players in the same
 pose and framing, shown while the player is on that team. Giants: Dart, Carter, Reese, Nabers, Skattebo, Burns,
-Hood, Thomas, Mauigoa, Likely. Texans: Stroud, Collins, Harrison, Anderson, Hunter, Stingley, Dell.
+Hood, Thomas, Mauigoa, Likely. Texans: Stroud, Collins, Harrison, Anderson, Hunter, Stingley, Dell. Cardinals:
+Baker, Froholdt, Johnson Jr., McBride, Sweat. Ravens: Andrews, Hamilton, Henry, Jackson, Smith. Bills: Allen, Brown,
+Cook III, Dawkins, Rousseau. Panthers: Brown, Horn, Lewis, Lloyd. A suffix in the file name (JohnsonJr, CookIII) is
+fine; the number picks between two players with the same last name.
 
 Open notes:
 - **MIA**: the sheet came back aqua with orange trim (made for a white jersey); the home jersey is aqua,

@@ -1572,4 +1572,8 @@ export const PATCH_NOTES = [
   { v: "3.96", date: "2026-10-20", title: "Phone scoreboard fit", notes: [
     "On a phone, the live scoreboard no longer cuts off the home team's score when it has the ball. It's a little more compact, so both scores always show in full, holiday trim or not.",
   ] },
+  { v: "3.97", date: "2026-10-20", title: "Custom renders: Cardinals, Ravens, Bills, Panthers", notes: [
+    "Nineteen more stars get their own custom render for the card front and the big moments. Cardinals: Budda Baker, Hjalte Froholdt, Paris Johnson Jr., Trey McBride, Josh Sweat. Ravens: Mark Andrews, Kyle Hamilton, Derrick Henry, Lamar Jackson, Roquan Smith. Bills: Josh Allen, Spencer Brown, James Cook III, Dion Dawkins, Greg Rousseau. Panthers: Derrick Brown, Jaycee Horn, Damien Lewis, Devin Lloyd.",
+    "As before, a custom render shows while the player is with that club. If he moves, he wears the new team's uniform with his number.",
+  ] },
 ];

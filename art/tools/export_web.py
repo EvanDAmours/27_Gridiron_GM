@@ -86,12 +86,21 @@ def main():
     for f in sorted(glob.glob(os.path.join(ART, "players", "*_custom", "*.png"))):
         ab, rest = os.path.basename(f)[:-4].split("_", 1); last, n = rest.rsplit("_", 1)
         img = clean_alpha(cv2.imread(f, cv2.IMREAD_UNCHANGED))[:1448]
+        if img.shape[:2] != (1448, 1086): img = cv2.resize(img, (1086, 1448), interpolation=cv2.INTER_AREA)   # a render a pixel off the standard size
         webp(img, os.path.join(OUT, ab, "c", f"{last}_{n}.webp"))
-        # the player with that last name: on that team's roster, else anywhere (he may arrive by trade)
-        team = [q["name"] for t in roster["teams"] if t["ab"] == ab for q in t["roster"]]
-        anyone = [q["name"] for t in roster["teams"] for q in t["roster"]]
-        full = [q for q in team if norm(q).split()[-1] == last.lower()] or [q for q in anyone if norm(q).split()[-1] == last.lower()]
-        man["custom"].setdefault(norm(full[0]), {})[ab] = [f"{last}_{n}", int(n)]
+        # the player: that last name (a suffix in the file name, JohnsonJr or CookIII, dropped) and,
+        # when two share it (Josh and Kyle Allen), that number; on that team's roster (practice squad
+        # too), else anywhere (he may arrive by trade)
+        key = re.sub(r"(Jr|Sr|II|III|IV|V)$", "", last).lower()
+        team = [q for t in roster["teams"] if t["ab"] == ab for q in t["roster"] + t.get("ps", [])]
+        anyone = [q for t in roster["teams"] for q in t["roster"] + t.get("ps", [])]
+        def pick(pool):
+            same = [q for q in pool if norm(q["name"]).split()[-1] == key]
+            return [q for q in same if q.get("num") == int(n)] or same
+        full = pick(team) or pick(anyone)
+        if not full: sys.exit(f"no player for {os.path.basename(f)}")
+        man["custom"].setdefault(norm(full[0]["name"]), {})[ab] = [f"{last}_{n}", int(n)]
+        print(f"  {os.path.basename(f)} -> {full[0]['name']}")
     man["nygOriginal"] = nyg
     skin = [a for a in sys.argv[1:] if not a.startswith("--")]
     if skin: man["dark"] = sorted(json.load(open(skin[0])))
