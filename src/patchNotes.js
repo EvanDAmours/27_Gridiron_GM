@@ -1559,4 +1559,7 @@ export const PATCH_NOTES = [
     "Thanksgiving games in TV view: the autumn-leaf border now wraps the field itself, instead of a huge empty box with the field small in the middle.",
     "The holiday trim on the live scoreboard now sits on its top corners, so the pumpkins and leaves no longer cover the team names or the score.",
   ] },
+  { v: "3.94", date: "2026-10-20", title: "No MVP spoiler", notes: [
+    "The Super Bowl win screen no longer names the Super Bowl MVP, so the reveal is saved for the screens that follow.",
+  ] },
 ];

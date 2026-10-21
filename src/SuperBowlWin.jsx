@@ -1,8 +1,9 @@
 // The moment you win the Super Bowl, before the newspaper: fireworks over the stadium, confetti in
 // your colors and gold, the final score, the Lombardi Trophy rising into the spotlight, and the
-// words every franchise plays for. One button on to the morning paper.
+// words every franchise plays for. One button on to the morning paper. (The Super Bowl MVP waits
+// for the paper and the awards, so this screen doesn't give him away.)
 import React from "react";
-import { TeamLogo, Face, Bdg } from "./ui.jsx";
+import { TeamLogo } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import Lombardi from "./Lombardi.jsx";
 import { sbName, sbNumber } from "./data/superbowls.js";
@@ -44,13 +45,12 @@ function Burst({ x, y, delay, color }) {
   );
 }
 
-// show: { yr, champ, opp, score, sbmvp }; titles: the franchise's Super Bowl count with this one;
+// show: { yr, champ, opp, score }; titles: the franchise's Super Bowl count with this one;
 // streak: titles in a row.
 export default function SuperBowlWin({ show, teams, titles = 1, streak = 1, onNext }) {
   const t = teams[show.champ] || {}, o = show.opp != null ? teams[show.opp] : null;
   const clr = t.clr || "#1e3a8a", ac = t.ac || "#f59e0b";
   const sb = sbName(sbNumber(show.yr));
-  const mvp = show.sbmvp, mvpP = mvp && (t.roster || []).find((p) => p.name === mvp.name);
   const what = streak >= 3 ? `${streak} straight. A dynasty.` : streak === 2 ? "Back-to-back champions." : titles <= 1 ? "The first Super Bowl title in franchise history." : `The ${ORD[titles] || `${titles}th`} Super Bowl title in franchise history.`;
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 3000, background: `radial-gradient(ellipse at 50% 30%, ${clr}, #050507 72%)`, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
@@ -69,13 +69,6 @@ export default function SuperBowlWin({ show, teams, titles = 1, streak = 1, onNe
         <div className="sw-title" style={{ fontSize: MOBILE ? 34 : 56, fontWeight: 900, fontStyle: "italic", lineHeight: 1, letterSpacing: 1, marginTop: 4, animation: "swIn .7s 1.3s ease-out both" }}>WORLD CHAMPIONS</div>
         <div style={{ fontSize: MOBILE ? 20 : 28, fontWeight: 900, letterSpacing: 2, marginTop: 6, color: "#fff", textShadow: `0 0 24px ${ac}`, animation: "swIn .7s 1.6s ease-out both" }}>{`THE ${(t.city || "").toUpperCase()} ${(t.name || "").toUpperCase()}`}</div>
         <div style={{ fontSize: MOBILE ? 14 : 16, color: "#fde68a", marginTop: 6, fontStyle: "italic", animation: "swIn .7s 1.9s ease-out both" }}>{what}</div>
-        {mvp && <div style={{ display: "inline-flex", alignItems: "center", gap: 12, marginTop: 14, background: "#00000066", border: "1px solid #fbbf2466", borderRadius: 14, padding: "8px 16px", animation: "swIn .7s 2.2s ease-out both" }}>
-          {mvpP?.face && <div style={{ borderRadius: "50%", padding: 3, background: "linear-gradient(135deg,#fde68a,#b45309)" }}><Face s={mvpP.face} sz={MOBILE ? 46 : 58} jersey={clr} /></div>}
-          <div style={{ textAlign: "left" }}>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#fbbf24" }}>SUPER BOWL MVP</div>
-            <div style={{ fontSize: MOBILE ? 17 : 20, fontWeight: 900, display: "flex", alignItems: "center", gap: 6 }}>{mvp.name} {mvp.pos && <Bdg pos={mvp.pos} />}</div>
-          </div>
-        </div>}
         <div style={{ animation: "swIn .7s 2.5s ease-out both" }}>
           <button onClick={onNext} style={{ marginTop: 18, width: "min(420px, 100%)", background: "linear-gradient(90deg,#b45309,#fbbf24,#b45309)", color: "#1c1206", border: 0, borderRadius: 12, padding: "14px 0", fontSize: 17, fontWeight: 900, letterSpacing: 2, cursor: "pointer", boxShadow: "0 8px 30px #fbbf2455" }}>READ ALL ABOUT IT →</button>
         </div>
