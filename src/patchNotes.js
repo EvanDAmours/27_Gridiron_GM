@@ -1624,4 +1624,7 @@ export const PATCH_NOTES = [
   { v: "4.9", date: "2026-10-20", title: "Promo stat lines", notes: [
     "The home screen promo now says why each star matters this week instead of a generic \"star to watch\": where he ranks in the league this season in the stat his position is about, the best of them. \"Leads the NFL in touchdown passes (24)\", \"3rd in the NFL in passing yards (2,410)\", \"6th in the NFL in rushing yards (612)\". Before the games start (or if he isn't near the top of anything) it's where he ranks by rating at his position, if he's top 10, or his season so far.",
   ] },
+  { v: "4.10", date: "2026-10-20", title: "Pass rushers in the promo", notes: [
+    "Defensive linemen can now be the featured star in the home screen promo: pass rushers like T.J. Watt, Micah Parsons and Maxx Crosby, and interior game-wreckers too. Offensive linemen still never are.",
+  ] },
 ];

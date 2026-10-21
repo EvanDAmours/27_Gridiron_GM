@@ -9,10 +9,11 @@ import PlayerArt from "./PlayerArt.jsx";
 import { BLOCK, FONT_CSS } from "./Spotlight.jsx";
 import "./broadcast-matchup.css";
 
-// The face of the club for the promo: its best healthy player who isn't a lineman, kicker or punter,
-// leaning to the quarterback, then a receiver (a QB counts 6 OVR better, a WR 3). Anyone at all if
-// the club has nobody else.
-const NOT_FEATURED = new Set(["LT", "LG", "C", "RG", "RT", "OL", "DL", "K", "P"]);
+// The face of the club for the promo: its best healthy player who isn't an offensive lineman, kicker
+// or punter (a 99 tackle would headline over the quarterback; a pass rusher who wrecks games is the
+// draw he should be), leaning to the quarterback, then a receiver (a QB counts 6 OVR better, a WR 3).
+// Anyone at all if the club has nobody else.
+const NOT_FEATURED = new Set(["LT", "LG", "C", "RG", "RT", "OL", "K", "P"]);
 const LEAN = { QB: 6, WR: 3 };
 export function featuredPlayer(team) {
   const roster = (team?.roster || []).filter((p) => Number.isFinite(p?.ovr));
