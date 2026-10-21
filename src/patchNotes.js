@@ -1516,4 +1516,8 @@ export const PATCH_NOTES = [
   { v: "3.81", date: "2026-10-20", title: "Custom Andrew Thomas", notes: [
     "Andrew Thomas gets his own custom render (captain's patch, knee brace and all), making eight custom Giants.",
   ] },
+  { v: "3.82", date: "2026-10-20", title: "Flip player cards", notes: [
+    "The player card now has a front: the player standing in his team's uniform with his number, his ESPN photo beside his name in big block letters, his OVR and POT, development trait and contract, his six best ratings and his season in numbers (his real 2025 NFL season until he plays in your league).",
+    "Flip the card for the full details you had before (contract, ratings, scouting report, season by season, contract timeline and the roster actions); flip back any time.",
+  ] },
 ];

@@ -104,7 +104,7 @@ export function CareerOvrGraph({ p, yr }) {
 }
 
 // Columns that matter for his position.
-const COLS = {
+export const COLS = {
   QB: [["CMP", "comp"], ["ATT", "att"], ["YDS", "passYds"], ["TD", "passTD"], ["INT", "passInt"], ["RUSH", "rushYds"]],
   RB: [["ATT", "rushAtt"], ["YDS", "rushYds"], ["TD", "rushTD"], ["REC", "rec"], ["REC YDS", "recYds"]],
   WR: [["REC", "rec"], ["YDS", "recYds"], ["TD", "recTD"]], TE: [["REC", "rec"], ["YDS", "recYds"], ["TD", "recTD"]],
@@ -118,7 +118,7 @@ export const seasonLine = (ss, y, tm) => { const o = { y, tm }; for (const k of 
 
 // Real players' NFL seasons before the league starts (nflverse), loaded once on first use.
 let realSeasons = null, realLoad = null;
-const loadRealSeasons = () => (realLoad ||= import("./data/realSeasons.json").then((m) => (realSeasons = m.default || m)));
+export const loadRealSeasons = () => (realLoad ||= import("./data/realSeasons.json").then((m) => (realSeasons = m.default || m)));
 const normName = (n) => (n || "").toLowerCase().replace(/[.'’]/g, "").replace(/\b(jr|sr|ii|iii|iv|v)\b/g, "").replace(/[^a-z]+/g, " ").trim();
 const GROUP = { QB: "QB", RB: "RB", WR: "WR", TE: "TE", LT: "OL", LG: "OL", C: "OL", RG: "OL", RT: "OL", DL: "DL", LB: "LB", CB: "DB", S: "DB", K: "SPEC", P: "SPEC" };
 export function realPast(p, data) {

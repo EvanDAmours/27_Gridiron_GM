@@ -9,8 +9,10 @@ import PlayerArt from "./PlayerArt.jsx";
 import oswald from "./assets/oswald-latin.woff2";
 
 export const BLOCK = "'Oswald', 'Arial Narrow', Impact, sans-serif";
+// the block lettering (bundled, so it works offline); any screen that uses BLOCK includes FONT_CSS
+export const FONT_CSS = `@font-face { font-family: 'Oswald'; font-weight: 200 700; font-display: swap; src: url(${oswald}) format('woff2'); }`;
 const CSS = `
-@font-face { font-family: 'Oswald'; font-weight: 200 700; font-display: swap; src: url(${oswald}) format('woff2'); }
+${FONT_CSS}
 @keyframes spIn { from { opacity: 0; transform: translateX(-22px) } to { opacity: 1; transform: none } }
 @keyframes spRise { from { opacity: 0; transform: translateY(40px) } to { opacity: 1; transform: none } }
 @keyframes spFall { 0% { transform: translateY(-40px) rotate(0deg); opacity: 0 } 8% { opacity: 1 } 100% { transform: translateY(105vh) rotate(540deg); opacity: .9 } }
