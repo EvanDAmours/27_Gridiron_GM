@@ -27,14 +27,15 @@ function seasonTiles(p, yr, real) {
 }
 
 // team: { ab, clr, ac, city, name } or null (a free agent). dev: his trait if known. onFlip: show the back.
-export default function CardFront({ p, team, ovr, pot, dev, label, yr, onFlip }) {
-  const clr = team?.clr || "#334155", jn = jerseyNum(p);
+// lastTeam: a free agent's last club; he's drawn in its uniform (his look as last seen).
+export default function CardFront({ p, team, lastTeam, ovr, pot, dev, label, yr, onFlip }) {
+  const kit = team || lastTeam, clr = kit?.clr || "#334155", jn = jerseyNum(p);
   const [real, setReal] = useState(null);
   useEffect(() => { if (p?.src === "m27" && !p.ss?.gp && !p.sh?.length) loadRealSeasons().then(setReal).catch(() => {}); }, [p?.src, p?.ss?.gp, p?.sh?.length]);
   const { y, tiles } = seasonTiles(p, yr, real);
   const rat = topRatings(p, 6);
   const artW = MOBILE ? 176 : 255;
-  const photo = <div style={{ borderRadius: "50%", padding: 2, background: `linear-gradient(135deg, ${team?.ac || "#94a3b8"}, ${clr})`, flexShrink: 0 }}><Face s={p.face} sz={MOBILE ? 46 : 58} /></div>;
+  const photo = <div style={{ borderRadius: "50%", padding: 2, background: `linear-gradient(135deg, ${kit?.ac || "#94a3b8"}, ${clr})`, flexShrink: 0 }}><Face s={p.face} sz={MOBILE ? 46 : 58} /></div>;
   return (
     <div style={{ borderRadius: 14, overflow: "hidden", border: `1px solid ${C.bd}`, background: "#0b1220", animation: "cfIn .4s ease-out" }}>
       <style>{FONT_CSS + "@keyframes cfIn{from{opacity:0;transform:perspective(900px) rotateY(-70deg)}to{opacity:1;transform:none}}"}</style>
@@ -42,7 +43,7 @@ export default function CardFront({ p, team, ovr, pot, dev, label, yr, onFlip })
       <div style={{ position: "relative", overflow: "hidden", minHeight: MOBILE ? 230 : 340, background: `radial-gradient(ellipse at 78% 40%, ${clr}cc, transparent 62%), linear-gradient(135deg, ${clr}55, #0b1220 70%)` }}>
         {jn != null && <div aria-hidden style={{ position: "absolute", right: MOBILE ? 6 : 60, top: -10, fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 200 : 320, lineHeight: 1, color: "#ffffff0c", pointerEvents: "none" }}>{jn}</div>}
         <div style={{ position: "absolute", right: MOBILE ? -6 : 40, bottom: 0 }}>
-          <PlayerArt p={p} ab={team?.ab} width={artW} crop={MOBILE ? 0.7 : 0.75} style={{ filter: `drop-shadow(0 0 30px ${clr}66) drop-shadow(0 16px 20px #000b)` }} fallback={null} />
+          <PlayerArt p={p} ab={kit?.ab} width={artW} crop={MOBILE ? 0.7 : 0.75} style={{ filter: `drop-shadow(0 0 30px ${clr}66) drop-shadow(0 16px 20px #000b)` }} fallback={null} />
         </div>
         <div style={{ position: "relative", padding: MOBILE ? "16px 14px" : "22px 26px", maxWidth: MOBILE ? "62%" : "56%" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: MOBILE ? 10.5 : 12.5, fontWeight: 900, letterSpacing: MOBILE ? 1.2 : 2, color: "#cbd5e1", textTransform: "uppercase" }}>

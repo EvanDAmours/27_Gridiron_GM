@@ -1543,4 +1543,8 @@ export const PATCH_NOTES = [
   { v: "3.89", date: "2026-10-20", title: "Smaller card front", notes: [
     "The player card front is a touch smaller on computers: a narrower card, smaller render, name and OVR ring, and tighter spacing. The phone layout is unchanged.",
   ] },
+  { v: "3.90", date: "2026-10-20", title: "Free agents in their last uniform", notes: [
+    "Free agents now show on their card front in their last team's uniform, as they were last seen (the club they left, or their last season's team).",
+    "Fixed signing day showing no number (and \"#NaN\" in the background) for some free agents: a newly signed player now wears his own number, or the steady number his position gives him if he has none.",
+  ] },
 ];
