@@ -24,7 +24,7 @@ const isQB1 = (t, p) => p.pos === "QB" && p === [...t.roster].filter((q) => q.po
 function payment(buyer, bi, picks, want, pkV) {
   const lo = want * FAIR[0], hi = want * FAIR[1];
   const own = picks.filter((pk) => pk.owner === bi).map((pk) => ({ pk, v: pkV(pk) })).sort((a, b) => b.v - a.v);
-  const young = buyer.roster.filter((p) => p.age <= 25 && !isFranchisePlayer(p) && !isQB1(buyer, p) && p.tradeVal > 0).map((p) => ({ p, v: p.tradeVal })).sort((a, b) => b.v - a.v);
+  const young = buyer.roster.filter((p) => p.age <= 25 && !isFranchisePlayer(p, buyer) && !isQB1(buyer, p) && p.tradeVal > 0).map((p) => ({ p, v: p.tradeVal })).sort((a, b) => b.v - a.v);
   // One or two picks.
   for (let i = 0; i < own.length; i++) {
     if (own[i].v >= lo && own[i].v <= hi) return { picks: [own[i].pk], players: [], value: own[i].v };
@@ -63,7 +63,7 @@ function aiTradeWeekNow(teams, picks, ui, { week, pkV, capSpace, rand = Math.ran
     const needs = teamNeeds(buyer.roster).list.filter((x) => x.score >= 0.15 && x.pos !== "K" && x.pos !== "P").map(({ pos }) => ({ pos, bar: starterBar(buyer, pos) }));
     for (const { pos, bar } of needs) {
       const options = sellers.flatMap((si) => teams[si].roster
-        .filter((p) => needGroup(p) === pos && p.ovr >= bar + 3 && p.age >= 27 && !p.injured && !isFranchisePlayer(p) && !isQB1(teams[si], p) && !p.ftag && (p.contract || 0) >= 1)
+        .filter((p) => needGroup(p) === pos && p.ovr >= bar + 3 && p.age >= 27 && !p.injured && !isFranchisePlayer(p, teams[si]) && !isQB1(teams[si], p) && !p.ftag && (p.contract || 0) >= 1)
         .map((p) => ({ si, p })))
         .sort((a, b) => b.p.ovr - a.p.ovr);
       for (const { si, p } of options) {

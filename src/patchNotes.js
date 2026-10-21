@@ -1642,4 +1642,7 @@ export const PATCH_NOTES = [
   { v: "4.15", date: "2026-10-20", title: "New pixel players for all 32 teams", notes: [
     "New pixel players on the live field, drawn for every club in its own home and road uniform: quarterback, backs, receivers, tight ends, both lines, linebackers and defensive backs each have their own stance. Sharper and cleaner than before, with no recoloring in the game.",
   ] },
+  { v: "4.16", date: "2026-10-20", title: "Faces of the franchise stay home", notes: [
+    "Faces of the franchise: a club's career-long star (Mahomes in Kansas City, Allen in Buffalo, Watt in Pittsburgh, Jefferson in Minnesota) is re-signed every time his deal runs out, cutting others to fit him if it has to, is never shopped or cap-cut, and only comes loose for an overwhelming trade offer. In almost every league he retires where he played. Players drafted in your league earn it after five seasons with one club.",
+  ] },
 ];

@@ -5,6 +5,7 @@
 // overall pick is worth roughly a young 90-rated star at a premium position.
 
 import { clubMode, fitsTeam } from "./tradeOffers.js";
+import { isFaceOf } from "./faceOfFranchise.js";
 
 export const POS_MULT = { QB: 1.8, DL: 1.15, LT: 1.1, WR: 1.05, CB: 1.0, RT: 0.95, TE: 0.8, LB: 0.8, S: 0.8, C: 0.7, LG: 0.65, RG: 0.65, RB: 0.6, K: 0.2, P: 0.15 };
 const DEV_MULT = { generational: 1.2, superstar: 1.1, star: 1.04 };
@@ -77,6 +78,8 @@ export function evaluateTrade({ send = [], sendPk = [], get = [], getPk = [], th
   let mult = 1.1, why = null;
   if (get.some((p) => p.tradeVal >= 150)) { mult = 1.25; why = "They want a big premium for a star"; }
   if (starter && starter.ovr >= 75 && get.some((p) => p.id === starter.id)) { mult = 1.35; why = "That's their franchise quarterback — they'd need to be blown away"; }
+  // the face of their franchise: only an overwhelming offer
+  if (them && get.some((p) => isFaceOf(p, them))) { mult = Math.max(mult, 1.7); why = "He's the face of their franchise — they'd need to be blown away"; }
   // a contender doesn't hand over a starter it needs without a premium
   if (!why && them && clubMode(them) === "contend" && get.some((p) => p.pos !== "QB" && (p.tradeVal || 0) >= 40 && fitsTeam({ ...them, roster: them.roster.filter((x) => x.id !== p.id) }, p))) { mult = Math.max(mult, 1.2); why = "They're contending and he's one of their starters"; }
   const ask = Math.round(rv * mult);
@@ -96,7 +99,7 @@ export function evaluateTrade({ send = [], sendPk = [], get = [], getPk = [], th
 // re-proposing the same deal or reshuffling it gets the same answer: only more value moves them.
 // ctx: { mode: "rebuild" | "contend" | "middle", season: in-season?, hour: deadline hour or null, key }
 export function closeCall(ev, get = [], ctx = {}) {
-  if (ev.accept || ev.noRoom || !ev.gap || !ev.ask || /franchise quarterback/.test(ev.why || "")) return { ok: false };
+  if (ev.accept || ev.noRoom || !ev.gap || !ev.ask || /franchise quarterback|face of their franchise/.test(ev.why || "")) return { ok: false };
   const reasons = [];
   let tol = 0.03;
   if (ctx.mode === "rebuild" && get.some((p) => (p.age || 0) >= 27)) { tol += 0.05; reasons.push("they're rebuilding and happy to move veterans"); }

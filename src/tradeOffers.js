@@ -5,6 +5,7 @@
 
 import { nflSeeds } from "./playoffs.js";
 import { needGroup, NEED_STARTERS } from "./needs.js";
+import { isFaceOf } from "./faceOfFranchise.js";
 
 export const MAX_OVERPAY = 1.15; // the most an offer can be worth, as a multiple of your player
 const MIN_FAIR = 0.75; // and the least
@@ -87,11 +88,11 @@ function buildOffer(teams, fromTm, want, picks, pkV, rand) {
   const aiPks = (picks || []).filter((pk) => pk.owner === fromTm);
   const roll = rand();
   if (roll < 0.35) {
-    const give = aiT.roster.filter((p) => p.tradeVal >= wv * MIN_FAIR && p.tradeVal <= wv * MAX_OVERPAY && p.pos !== wPos).sort((a, b) => Math.abs(a.tradeVal - wv) - Math.abs(b.tradeVal - wv))[0];
+    const give = aiT.roster.filter((p) => p.tradeVal >= wv * MIN_FAIR && p.tradeVal <= wv * MAX_OVERPAY && p.pos !== wPos && !isFaceOf(p, aiT)).sort((a, b) => Math.abs(a.tradeVal - wv) - Math.abs(b.tradeVal - wv))[0];
     if (give) return { fromTm, give, want, givePicks: [], wantPicks: [] };
   }
   if (roll < 0.75) {
-    const give = aiT.roster.filter((p) => p.tradeVal >= wv * 0.35 && p.tradeVal < wv * 0.85 && p.pos !== wPos).sort((a, b) => b.tradeVal - a.tradeVal)[0];
+    const give = aiT.roster.filter((p) => p.tradeVal >= wv * 0.35 && p.tradeVal < wv * 0.85 && p.pos !== wPos && !isFaceOf(p, aiT)).sort((a, b) => b.tradeVal - a.tradeVal)[0];
     if (give) {
       const gap = wv - give.tradeVal;
       const pks = fairPicks(aiPks, gap, pkV);

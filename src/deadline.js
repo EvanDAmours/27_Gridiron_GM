@@ -40,7 +40,7 @@ const needOf = (t) => teamNeeds(t.roster).list.find((x) => x.pos !== "K" && x.po
 export function rumors(teams, ui, rand, n = 2) {
   const out = [];
   const { buyers, sellers } = marketBoard(teams, ui);
-  const sellerVets = sellers.flatMap((s) => teams[s.ti].roster.filter((p) => p.age >= 27 && p.ovr >= 78 && !isFranchisePlayer(p) && !p.injured).map((p) => ({ s, p })));
+  const sellerVets = sellers.flatMap((s) => teams[s.ti].roster.filter((p) => p.age >= 27 && p.ovr >= 78 && !isFranchisePlayer(p, teams[s.ti]) && !p.injured).map((p) => ({ s, p })));
   const stars = sellers.flatMap((s) => teams[s.ti].roster.filter((p) => isFranchisePlayer(p)).map((p) => ({ s, p })));
   const mine = (teams[ui]?.roster || []).filter((p) => p.onBlock);
   const make = [
@@ -123,7 +123,7 @@ export function leagueTradeBlock(teams, ui) {
     const depth = {};
     for (const pos of Object.keys(STARTERS)) depth[pos] = t.roster.filter((p) => p.pos === pos).sort((a, b) => b.ovr - a.ovr);
     for (const p of t.roster) {
-      if (p === qb1 || p.injured || p.ftag || p.ovr < 68 || p.pos === "K" || p.pos === "P" || isFranchisePlayer(p)) continue;
+      if (p === qb1 || p.injured || p.ftag || p.ovr < 68 || p.pos === "K" || p.pos === "P" || isFranchisePlayer(p, t)) continue;
       const rank = (depth[p.pos] || []).indexOf(p);
       const backup = rank >= (STARTERS[p.pos] || 1);
       let why = null;

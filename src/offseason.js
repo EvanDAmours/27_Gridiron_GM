@@ -6,6 +6,7 @@
 import { leagueCap, leagueMin, getLeagueYear } from "./cap.js";
 import { freshDeal, deadMoney, chargeDead, restructure } from "./bonus.js";
 import { retireAge } from "./retirement.js";
+import { faceOf, isFaceOf } from "./faceOfFranchise.js";
 import { rolePay } from "./roles.js";
 
 // A club releases a player into the pool. His remaining signing-bonus proration stays on its cap
@@ -56,7 +57,9 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
     // The club's starting quarterback (its best, counting the expiring ones) is kept like a
     // franchise player while he's a real starter and not old.
     const qb1 = [...t.roster, ...expiring].filter((p) => p.pos === "QB").sort((a, b) => b.ovr - a.ovr)[0];
-    const isCore = (p) => isFranchisePlayer(p) || (p === qb1 && p.ovr >= 76 && p.age <= 34);
+    // and the face of the franchise (faceOfFranchise.js) is re-signed every time, to the end
+    const face = faceOf({ ...t, roster: [...t.roster, ...expiring] });
+    const isCore = (p) => isFranchisePlayer(p) || (face && p.id === face.id) || (p === qb1 && p.ovr >= 76 && p.age <= 34);
     const core = (p) => (isCore(p) ? 3 : 0) + (keepChance(p) >= 0.95 ? (p.pos === "QB" ? 2 : 1) : 0);
     for (const p of expiring.sort((a, b) => core(b) - core(a) || b.ovr - a.ovr)) {
       // A first-round pick finishing his rookie deal: the club picks up his fifth-year option
@@ -116,8 +119,9 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
 // A franchise player: a superstar in or before his prime (90+ at 29 or younger, or 86+ with an
 // elite development trait or an X-Factor at 27 or younger; QBs three years later). AI clubs build
 // around these players: they never let one walk, cut anyone else to keep him and tag him if
-// they have to.
-export function isFranchisePlayer(p) {
+// they have to. t: his club, when known: its face (a career-long star, faceOfFranchise.js) counts too.
+export function isFranchisePlayer(p, t = null) {
+  if (t && isFaceOf(p, t)) return true;
   const a = p.pos === "QB" ? p.age - 3 : p.age;
   if (p.pos === "K" || p.pos === "P") return false;
   if (p.ovr >= 90 && a <= 29) return true;
@@ -460,7 +464,7 @@ export function capCompliance(teams, pool, ui, { capSpace, yr, sp = "preseason",
     while (capSpace(t) < 0 && t.roster.length > 46) {
       // the most overpaid first (what a cut saves over what he'd cost on the market), veterans ahead
       const over = (p) => saves(p) - askingPrice(p) + (p.age >= 30 ? 2 : 0);
-      const cut = t.roster.filter((p) => !isFranchisePlayer(p) && saves(p) > 0).sort((a, b) => over(b) - over(a))[0];
+      const cut = t.roster.filter((p) => !isFranchisePlayer(p, t) && saves(p) > 0).sort((a, b) => over(b) - over(a))[0];
       if (!cut) break;
       const saved = saves(cut);
       release(t, cut, pool, i);

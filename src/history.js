@@ -93,7 +93,7 @@ export function legacyOf(p, { awards = [], book = null, yr, startYr = 2026, star
 export const normName = (name) => String(name || "").toLowerCase().replace(/[.'’]/g, "").replace(/\b(jr|sr|ii|iii|iv|v)\b/g, "").replace(/[^a-z]+/g, " ").trim();
 const isReal = (p) => !(p?.draftYr >= 2026);
 let clubsByName = null;
-const clubsOf = (name) => {
+export const clubsOf = (name) => {
   if (!clubsByName) { clubsByName = new Map(); for (const k of Object.keys(TEAM_CAREER_BASE)) { const [n, ab] = k.split("|"); (clubsByName.get(n) || clubsByName.set(n, []).get(n)).push(ab); } }
   return clubsByName.get(normName(name)) || [];
 };
