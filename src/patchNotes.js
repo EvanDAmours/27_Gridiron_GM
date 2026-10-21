@@ -1576,4 +1576,7 @@ export const PATCH_NOTES = [
     "Nineteen more stars get their own custom render for the card front and the big moments. Cardinals: Budda Baker, Hjalte Froholdt, Paris Johnson Jr., Trey McBride, Josh Sweat. Ravens: Mark Andrews, Kyle Hamilton, Derrick Henry, Lamar Jackson, Roquan Smith. Bills: Josh Allen, Spencer Brown, James Cook III, Dion Dawkins, Greg Rousseau. Panthers: Derrick Brown, Jaycee Horn, Damien Lewis, Devin Lloyd.",
     "As before, a custom render shows while the player is with that club. If he moves, he wears the new team's uniform with his number.",
   ] },
+  { v: "3.98", date: "2026-10-20", title: "Holiday cards for games you watched", notes: [
+    "The holiday result card (the turkey leg, Christmas Day, Halloween night) now only shows for holiday games you watched live. A simmed holiday game goes straight into the week's results like any other.",
+  ] },
 ];
