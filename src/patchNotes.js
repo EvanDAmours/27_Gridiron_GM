@@ -1486,4 +1486,8 @@ export const PATCH_NOTES = [
     "Breaking an NFL or franchise record now takes the spotlight too: the number counts up and the old record is struck through.",
     "Player renders cover 18 teams so far; players on the other 14 show their photo in the spotlight until their team's art is in. Seven Giants have custom renders (Dart, Nabers, Carter, Reese, Skattebo, Burns, Hood), and players who join the Giants later get a Giants render made for their number.",
   ] },
+  { v: "3.73", date: "2026-10-20", title: "Draft night spotlight", notes: [
+    "Draft night: your pick now takes the full-screen spotlight. He stands in your uniform wearing his rookie number, with the round and pick, his development trait, his top three ratings and the analysts' grade.",
+    "A Giants draft pick gets a Giants render made for his number; other teams' picks wear their team's uniform with his number added.",
+  ] },
 ];

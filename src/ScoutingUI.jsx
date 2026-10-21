@@ -10,6 +10,7 @@ import { mockDraft } from "./mockDraft.js";
 import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo } from "./ui.jsx";
 import { Jersey, rookieNum } from "./Jersey.jsx";
 import RoleTag from "./RoleTag.jsx";
+import Spotlight, { Dim } from "./Spotlight.jsx";
 import { ROLE_FILTERS, roleFilterMatch } from "./roleNeeds.js";
 import {
   prospectRead, scoutProspect, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, scoutsShortlist, coverage, csRank, riskLabel, gradeTone,
@@ -681,52 +682,25 @@ export function topRatings(p, n = 3) {
   return all.sort((a, b) => b[1] - a[1]).slice(0, n);
 }
 
-// The moment you make a pick: who you got, his development trait and his three best ratings. The
-// stage first: he walks up from the green room (a first-rounder) and holds up your jersey.
+// The moment you make a pick: he stands in the spotlight in your uniform with his rookie number, with
+// his development trait, his three best ratings and the analysts' grade.
 export function DraftReveal({ pick, team, onClose }) {
   const p = pick.p;
   const dev = devOf(p);
-  const [fg, bg] = DEV_STYLE[dev] || DEV_STYLE.normal;
+  const [fg] = DEV_STYLE[dev] || DEV_STYLE.normal;
+  const num = rookieNum(p);
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(2,6,15,.86)", zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Your draft pick" style={{ width: "100%", maxWidth: 460, borderRadius: 16, overflow: "hidden", border: `2px solid ${fg}`, background: "#0b1220", boxShadow: `0 0 70px ${fg}44`, animation: "drPop .45s cubic-bezier(.2,.9,.3,1.3) both" }}>
-        <style>{"@keyframes drPop { from { opacity: 0; transform: scale(.7) } to { opacity: 1; transform: none } } @keyframes drFlip { from { opacity: 0; transform: rotateX(90deg) } to { opacity: 1; transform: none } }"}</style>
-        <div style={{ position: "relative", padding: "16px 20px 12px", background: `radial-gradient(ellipse at 50% -10%, #ffffff40, transparent 55%), linear-gradient(135deg, ${team.clr}cc, #0b1220)`, textAlign: "center", overflow: "hidden" }}>
-          <div aria-hidden style={{ position: "absolute", inset: 0, background: "conic-gradient(from 200deg at 15% -10%, transparent 0deg, #ffffff18 10deg, transparent 22deg), conic-gradient(from 148deg at 85% -10%, transparent 0deg, #ffffff18 10deg, transparent 22deg)", pointerEvents: "none" }} />
-          {pick.rd === 1 && <div style={{ position: "relative", fontSize: 11, fontWeight: 900, letterSpacing: 3, color: "#fde68a", marginBottom: 2 }}>★ FROM THE GREEN ROOM ★</div>}
-          <div style={{ position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 10, marginBottom: 8, animation: "drPop .5s ease-out both" }}>
-            <Face s={p.face} sz={76} />
-            <div style={{ transform: "rotate(-6deg)", marginBottom: -4 }}><Jersey team={team} name={p.name} num={rookieNum(p)} size={92} /></div>
-          </div>
-          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: "#ffffffb0" }}>ROUND {pick.rd} · PICK #{pick.overall}</div>
-          <div style={{ fontSize: 13, color: "#ffffffb0", marginTop: 2 }}>The {team.city} {team.name} select</div>
-          <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.15, marginTop: 6 }}>{p.name}</div>
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", alignItems: "center", marginTop: 6, fontSize: 15, color: "#e2e8f0" }}><Bdg pos={posTag(p)} />{p.bio?.college || p.college || ""}{p.age ? ` · Age ${p.age}` : ""}</div>
-        </div>
-        <div style={{ padding: "14px 20px 18px" }}>
-          <div style={{ textAlign: "center", padding: "12px 10px", borderRadius: 12, border: `2px solid ${bg}`, background: `${fg}14`, animation: "drFlip .5s .35s ease-out both" }}>
-            <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 2, color: C.mt }}>DEVELOPMENT TRAIT</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: fg, margin: "2px 0" }}>{DEV_TRAITS[dev]?.name || dev}</div>
-            <div style={{ fontSize: 14, color: "#cbd5e1" }}>{DEV_TRAITS[dev]?.desc}</div>
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            {topRatings(p).map(([l, v], i) => (
-              <div key={l} style={{ flex: 1, textAlign: "center", padding: "10px 4px", borderRadius: 10, background: C.cd, border: `1px solid ${C.bd}`, animation: `drFlip .4s ${0.6 + i * 0.15}s ease-out both` }}>
-                <div style={{ fontSize: 26, fontWeight: 900, color: oC(v) }}>{v}</div>
-                <div style={{ fontSize: 13, color: "#cbd5e1", fontWeight: 700 }}>{l}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 12, fontSize: 15 }}>
-            <span style={{ color: C.mt }}>OVR <b style={{ color: oC(p.ovr), fontSize: 18 }}>{p.ovr}</b></span>
-            <span style={{ color: C.mt }}>POT <b style={{ color: C.bl, fontSize: 18 }}>{p.pot}</b></span>
-            {pick.grade && <span style={{ color: C.mt }}>Grade <b style={{ color: C.gd, fontSize: 18 }}>{pick.grade}</b></span>}
-          </div>
-          {pick.take && <div style={{ fontSize: 14, color: "#94a3b8", textAlign: "center", marginTop: 8, fontStyle: "italic" }}>{pick.take}</div>}
-          <Btn onClick={onClose} bg={C.gn} style={{ width: "100%", marginTop: 14, fontSize: 16, padding: "10px 0", fontWeight: 900 }}>Continue the draft</Btn>
-        </div>
+    <Spotlight p={p} team={team} num={num} kicker={`🏈 ${p.draftYr ?? ""} NFL Draft · Round ${pick.rd} · Pick ${pick.overall}`} title={p.name} bg={`#${pick.overall}`} cta="CONTINUE THE DRAFT →" onNext={onClose} label="Your draft pick"
+      confetti={pick.rd === 1 ? [team.clr, team.ac, "#ffffff", "#fde68a"] : null}>
+      <div>{posTag(p)}{p.bio?.college || p.college ? ` · ${p.bio?.college || p.college}` : ""} · <b style={{ color: fg }}>{DEV_TRAITS[dev]?.name || dev}</b></div>
+      <Dim>Top traits revealed: {topRatings(p).map(([l, v]) => `${l} ${v}`).join(" · ")}</Dim>
+      <div style={{ display: "flex", gap: 18, marginTop: 10, fontSize: MOBILE ? 15 : 18 }}>
+        <span style={{ color: "#94a3b8" }}>OVR <b style={{ color: oC(p.ovr) }}>{p.ovr}</b></span>
+        <span style={{ color: "#94a3b8" }}>POT <b style={{ color: C.bl }}>{p.pot}</b></span>
+        {pick.grade && <span style={{ color: "#94a3b8" }}>Grade <b style={{ color: C.gd }}>{pick.grade}</b></span>}
       </div>
-    </div>
+      {pick.take && <div style={{ fontSize: MOBILE ? 13.5 : 15, color: "#94a3b8", marginTop: 8, fontStyle: "italic" }}>{pick.take}</div>}
+    </Spotlight>
   );
 }
 
