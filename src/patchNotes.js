@@ -1627,4 +1627,7 @@ export const PATCH_NOTES = [
   { v: "4.10", date: "2026-10-20", title: "Pass rushers in the promo", notes: [
     "Defensive linemen can now be the featured star in the home screen promo: pass rushers like T.J. Watt, Micah Parsons and Maxx Crosby, and interior game-wreckers too. Offensive linemen still never are.",
   ] },
+  { v: "4.11", date: "2026-10-20", title: "Pixel-art players on the field", notes: [
+    "Live games now show pixel-art players on the field in each club's home or road uniform: linemen in their stance, the quarterback with the ball, defenders set, and the scorers celebrating after a touchdown.",
+  ] },
 ];

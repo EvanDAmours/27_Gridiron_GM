@@ -133,9 +133,9 @@ function starters(team, depth, order) {
 // One player: a pixel-art sprite in his team's uniform, posed for the snap (linemen down in a
 // three-point stance, the quarterback with the ball, defenders in a ready stance). After a
 // touchdown the scoring team's backs and receivers celebrate. Offense faces right, defense left.
-// Pixel-art players are built but switched off until they're approved; circles until then.
+// The old numbered circles are still there behind ?sprites=0.
 const SPRITE_SCALE = 0.25; // every pose drawn at the same pixel size
-const SPRITES = typeof location !== "undefined" && /[?&]sprites=1\b/.test(location.search); // off unless ?sprites=1
+const SPRITES = !(typeof location !== "undefined" && /[?&]sprites=0\b/.test(location.search));
 const uni = (team, away) => uniformFor(team, { away });
 const SHOW_NAME = { off: new Set(["QB", "RB", "WR", "TE"]), def: new Set(MOBILE ? [] : ["CB", "S"]) };
 function Player({ p, pos, x, y, team, side, away, td }) {
