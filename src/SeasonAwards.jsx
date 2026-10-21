@@ -79,6 +79,8 @@ const Pick = ({ e, ui }) => (
   </div>
 );
 
+// the biggest awards get the stage smoke (not the rookie awards)
+const BIG = new Set(["sbmvp", "mvp", "opoy", "dpoy"]);
 // the Super Bowl MVP stands beside the Lombardi
 const TROPHY = { sbmvp: lombardiArt, mvp: mvpArt, opoy: opoyArt, dpoy: dpoyArt, oroy: oroyArt, droy: droyArt };
 const findPlayer = (t, w) => (t && w?.pid != null ? [...(t.roster || []), ...(t.ir || []), ...(t.ps || [])].find((x) => x.id === w.pid) : null);
@@ -87,7 +89,7 @@ const findPlayer = (t, w) => (t && w?.pid != null ? [...(t.roster || []), ...(t.
 function YourWinner({ yr, k, label, w, teams, onNext, last }) {
   const t = teams[w.ti], p = findPlayer(t, w) || { name: w.name, pos: w.pos };
   return (
-    <Spotlight p={p} team={t} kicker={k === "sbmvp" ? `🏆 ${sbName(sbNumber(yr))} MVP · World Champions` : `🏆 ${yr} ${label}`} title={w.name} bg={jerseyNum(p) != null ? `#${jerseyNum(p)}` : null} confetti={["#fbbf24", "#fde68a", t.clr, t.ac, "#ffffff"]} label={`${label}: ${w.name}`}
+    <Spotlight p={p} team={t} kicker={k === "sbmvp" ? `🏆 ${sbName(sbNumber(yr))} MVP · World Champions` : `🏆 ${yr} ${label}`} title={w.name} bg={jerseyNum(p) != null ? `#${jerseyNum(p)}` : null} smoke={BIG.has(k)} confetti={["#fbbf24", "#fde68a", t.clr, t.ac, "#ffffff"]} label={`${label}: ${w.name}`}
       side={TROPHY[k] && <img src={TROPHY[k]} alt="" style={{ height: MOBILE ? 110 : "min(40vh, 360px)", maxWidth: "100%", objectFit: "contain", filter: "drop-shadow(0 16px 24px #000c)" }} />}
       cta={last ? "THE LEAGUE'S AWARDS →" : "NEXT AWARD →"} onNext={onNext}>
       <div>{posTag(p)} · {t.city} {t.name}</div>

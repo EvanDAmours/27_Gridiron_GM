@@ -42,7 +42,7 @@ const Line = ({ k, v, tone }) => (
 function HofCeremony({ m, onClose }) {
   const t = m.team;
   return (
-    <Spotlight p={m.p} team={t} gold kicker={`Pro Football Hall of Fame · Class of ${m.cls}`} title={m.p.name} bg="HOF" confetti={["#fbbf24", "#fde68a", "#d4a017", "#ffffff"]} cta="WELCOME TO CANTON →" onNext={onClose} label="Hall of Fame"
+    <Spotlight p={m.p} team={t} gold smoke kicker={`Pro Football Hall of Fame · Class of ${m.cls}`} title={m.p.name} bg="HOF" confetti={["#fbbf24", "#fde68a", "#d4a017", "#ffffff"]} cta="WELCOME TO CANTON →" onNext={onClose} label="Hall of Fame"
       side={<img src={goldJacket} alt="The gold jacket" style={{ width: "100%", maxHeight: MOBILE ? 130 : "44vh", objectFit: "contain", filter: "drop-shadow(0 12px 28px #000c) drop-shadow(0 0 22px #fbbf2455)" }} />}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Bdg pos={m.p.pos} /><TeamLogo t={t} sz={24} /><span style={{ color: "#e7cf8a" }}>{m.tagline || `${t.city} ${t.name}`}</span></div>
       {m.sub && <div style={{ fontSize: MOBILE ? 14 : 17, color: "#e2e8f0", marginTop: 10, lineHeight: 1.5, fontStyle: "italic" }}>{m.sub}</div>}

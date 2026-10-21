@@ -1636,4 +1636,7 @@ export const PATCH_NOTES = [
   { v: "4.13", date: "2026-10-20", title: "Bigger matchup promo", notes: [
     "On a computer with room to spare, the home screen matchup promo now grows to fill it: bigger stars, bigger names and ratings, and no empty band under the week's column. Smaller laptop screens keep it as it was, so nothing scrolls.",
   ] },
+  { v: "4.14", date: "2026-10-20", title: "Stage smoke for the big moments", notes: [
+    "Stage smoke for the biggest moments: when your player wins MVP, Offensive or Defensive Player of the Year or Super Bowl MVP, or goes into the Hall of Fame, smoke cannons fire up either side of him and a low fog rolls across the floor.",
+  ] },
 ];
