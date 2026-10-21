@@ -18,8 +18,9 @@ six number-less Giants sprites are the fallback. Missing numbers are retired by 
 11, 14, 16, 32, 40, 42, 50, 56, 92. A player who arrives wearing one of those uses a fallback sprite
 with his number added.
 
-Custom Giants: `players/NYG_custom/NYG_{Last}_{##}.png`, realistic renders of named players in the same
-pose and framing (Dart, Carter, Reese, Nabers, Skattebo, Burns, Hood, Thomas). These take priority over the numbered set for that player.
+Custom renders: `players/{TEAM}_custom/{TEAM}_{Last}_{##}.png`, realistic renders of named players in the same
+pose and framing, shown while the player is on that team. Giants: Dart, Carter, Reese, Nabers, Skattebo, Burns,
+Hood, Thomas, Mauigoa. Texans: Stroud, Collins, Harrison, Anderson, Hunter, Stingley (Dell to come, as #1).
 
 Open notes:
 - **MIA**: the sheet came back aqua with orange trim (made for a white jersey); the home jersey is aqua,

@@ -3,7 +3,7 @@
   {TEAM}/{Lean|Athletic|Big}_{Dark|Light}.webp   blank players, cropped helmet to mid-thigh (684x912)
   nums/{TEAM}.webp                               the team's ten digits in a row (260 px tall)
   NYG/n/{NN}.webp                                the numbered Giants renders (new Giants, 1086x1448)
-  NYG/c/{Last}_{NN}.webp                         the custom Giants renders
+  {TEAM}/c/{Last}_{NN}.webp                      custom renders of named players (any team)
   manifest.json                                  where each number goes, digit cells, which art exists
 
   python3 export_web.py [skin.json] [--keep]   (skin.json: ESPN ids of players with darker skin, measured from headshots)
@@ -82,12 +82,16 @@ def main():
         man["nygSkin"][int(n)] = render_skin(img)
     roster = json.load(open(os.path.join(ROOT, "src", "data", "madden27.json")))
     nyg = [p["name"] for t in roster["teams"] if t["ab"] == "NYG" for p in t["roster"]]
-    for f in sorted(glob.glob(os.path.join(ART, "players", "NYG_custom", "NYG_*.png"))):
-        last, n = os.path.basename(f)[4:-4].rsplit("_", 1)
+    # custom renders, any team: players/{TEAM}_custom/{TEAM}_{Last}_{NN}.png, in that team's uniform
+    for f in sorted(glob.glob(os.path.join(ART, "players", "*_custom", "*.png"))):
+        ab, rest = os.path.basename(f)[:-4].split("_", 1); last, n = rest.rsplit("_", 1)
         img = clean_alpha(cv2.imread(f, cv2.IMREAD_UNCHANGED))[:1448]
-        webp(img, os.path.join(OUT, "NYG", "c", f"{last}_{n}.webp"))
-        full = [q for q in nyg if q.split()[-1].lower() == last.lower()]   # the Giant with that last name
-        man["custom"][norm(full[0])] = [f"{last}_{n}", int(n)]
+        webp(img, os.path.join(OUT, ab, "c", f"{last}_{n}.webp"))
+        # the player with that last name: on that team's roster, else anywhere (he may arrive by trade)
+        team = [q["name"] for t in roster["teams"] if t["ab"] == ab for q in t["roster"]]
+        anyone = [q["name"] for t in roster["teams"] for q in t["roster"]]
+        full = [q for q in team if norm(q).split()[-1] == last.lower()] or [q for q in anyone if norm(q).split()[-1] == last.lower()]
+        man["custom"].setdefault(norm(full[0]), {})[ab] = [f"{last}_{n}", int(n)]
     man["nygOriginal"] = nyg
     skin = [a for a in sys.argv[1:] if not a.startswith("--")]
     if skin: man["dark"] = sorted(json.load(open(skin[0])))

@@ -4,10 +4,10 @@
 // look, and keeps the picture. The files and where each number goes come from
 // public/players/manifest.json (art/tools/export_web.py), loaded the first time art is asked for.
 //
-// The Giants go further: six named players have their own render, the Giants who were on the
-// 2026 roster use the six blanks like everyone else, and a player who joins the Giants later gets
-// a ready-made render with his number already on it (88 of them; retired numbers fall back).
-// A team without art yet: null, and the screen keeps the face it already shows.
+// Some named players have their own custom render (Giants and Texans so far), shown while they
+// play for that club. The Giants go further: a player who joins them later gets a ready-made render
+// with his number already on it when its player looks like him (88 of them; retired numbers and
+// other looks fall back to the blanks). A team without art: null, and the screen keeps the face.
 
 import { PORTRAITS } from "./portraits.js";
 import { rookieNum } from "./rookieNum.js";
@@ -50,9 +50,10 @@ export const jerseyNum = (p) => { const n = p.num ?? rookieNum(p); return n >= 0
 export function artFor(p, ab, m) {
   if (!p || !m || !ab) return null;
   const num = jerseyNum(p);
+  // his own custom render, while he plays for the club whose uniform it shows (number already on it)
+  const c = m.custom[norm(p.name)]?.[ab];
+  if (c) return { key: `c:${ab}:${c[0]}`, file: `${ab}/c/${c[0]}.webp` };
   if (ab === "NYG") {
-    const c = m.custom[norm(p.name)];
-    if (c) return { key: `c:${c[0]}`, file: `NYG/c/${c[0]}.webp` };
     // a new Giant: the render made for his number, if its player looks like him (skin), else the blanks
     if (!m.original.has(norm(p.name)) && num != null && m.numbered.has(num) && m.nygSkin?.[num] === skinOf(p, m)) { const n = String(num).padStart(2, "0"); return { key: `n:${n}`, file: `NYG/n/${n}.webp` }; }
   }

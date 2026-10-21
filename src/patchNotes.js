@@ -1524,4 +1524,7 @@ export const PATCH_NOTES = [
     "Generated players (draft picks, fictional players) now wear a number in their renders and on the card front: the steady number their position gives them, the same one shown on draft night, until they're assigned one.",
     "A new Giant only gets the numbered Giants render for his number when that render's skin tone matches his; otherwise he wears the Giants uniform with his number added.",
   ] },
+  { v: "3.84", date: "2026-10-20", title: "Custom Texans and Mauigoa", notes: [
+    "Custom renders for seven more players: Francis Mauigoa for the Giants, and the Texans' C.J. Stroud, Nico Collins, Marvin Harrison Jr., Will Anderson Jr., Danielle Hunter and Derek Stingley Jr. A custom render shows while the player is on that team; anywhere else he wears his new team's uniform.",
+  ] },
 ];
