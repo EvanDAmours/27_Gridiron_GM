@@ -10,6 +10,7 @@
 // A team without art yet: null, and the screen keeps the face it already shows.
 
 import { PORTRAITS } from "./portraits.js";
+import { rookieNum } from "./rookieNum.js";
 
 const BASE = `${import.meta.env?.BASE_URL ?? "/"}players/`;
 const norm = (n) => String(n || "").toLowerCase().replace(/[.'’]/g, "").replace(/\b(jr|sr|ii|iii|iv|v)\b/g, "").replace(/[^a-z]+/g, " ").trim();
@@ -41,14 +42,19 @@ export function skinOf(p, m) {
   return lum < 0.62 ? "Dark" : "Light";
 }
 
+// His number: the one he wears, or (a generated player who has none yet) the steady number his
+// position would give him, the same one the draft-night jersey shows.
+export const jerseyNum = (p) => { const n = p.num ?? rookieNum(p); return n >= 0 && n <= 99 ? n : null; };
+
 // Which picture a player gets for a team: { key, file, num } (num: digits still to add) or null.
 export function artFor(p, ab, m) {
   if (!p || !m || !ab) return null;
-  const num = p.num != null && p.num >= 0 && p.num <= 99 ? p.num : null;
+  const num = jerseyNum(p);
   if (ab === "NYG") {
     const c = m.custom[norm(p.name)];
     if (c) return { key: `c:${c[0]}`, file: `NYG/c/${c[0]}.webp` };
-    if (!m.original.has(norm(p.name)) && num != null && m.numbered.has(num)) { const n = String(num).padStart(2, "0"); return { key: `n:${n}`, file: `NYG/n/${n}.webp` }; }
+    // a new Giant: the render made for his number, if its player looks like him (skin), else the blanks
+    if (!m.original.has(norm(p.name)) && num != null && m.numbered.has(num) && m.nygSkin?.[num] === skinOf(p, m)) { const n = String(num).padStart(2, "0"); return { key: `n:${n}`, file: `NYG/n/${n}.webp` }; }
   }
   const t = m.teams[ab];
   if (!t) return null;

@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { C, oC, Face, TeamLogo } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import PlayerArt from "./PlayerArt.jsx";
+import { jerseyNum } from "./playerArt.js";
 import { BLOCK, FONT_CSS } from "./Spotlight.jsx";
 import { OvrRing, COLS, loadRealSeasons, realPast } from "./PlayerCard.jsx";
 import { DevChip, topRatings } from "./ScoutingUI.jsx";
@@ -27,7 +28,7 @@ function seasonTiles(p, yr, real) {
 
 // team: { ab, clr, ac, city, name } or null (a free agent). dev: his trait if known. onFlip: show the back.
 export default function CardFront({ p, team, ovr, pot, dev, label, yr, onFlip }) {
-  const clr = team?.clr || "#334155";
+  const clr = team?.clr || "#334155", jn = jerseyNum(p);
   const [real, setReal] = useState(null);
   useEffect(() => { if (p?.src === "m27" && !p.ss?.gp && !p.sh?.length) loadRealSeasons().then(setReal).catch(() => {}); }, [p?.src, p?.ss?.gp, p?.sh?.length]);
   const { y, tiles } = seasonTiles(p, yr, real);
@@ -39,13 +40,13 @@ export default function CardFront({ p, team, ovr, pot, dev, label, yr, onFlip })
       <style>{FONT_CSS + "@keyframes cfIn{from{opacity:0;transform:perspective(900px) rotateY(-70deg)}to{opacity:1;transform:none}}"}</style>
       {/* the top: who he is, and him */}
       <div style={{ position: "relative", overflow: "hidden", minHeight: MOBILE ? 230 : 400, background: `radial-gradient(ellipse at 78% 40%, ${clr}cc, transparent 62%), linear-gradient(135deg, ${clr}55, #0b1220 70%)` }}>
-        {p.num != null && <div aria-hidden style={{ position: "absolute", right: MOBILE ? 6 : 60, top: -10, fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 200 : 380, lineHeight: 1, color: "#ffffff0c", pointerEvents: "none" }}>{p.num}</div>}
+        {jn != null && <div aria-hidden style={{ position: "absolute", right: MOBILE ? 6 : 60, top: -10, fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 200 : 380, lineHeight: 1, color: "#ffffff0c", pointerEvents: "none" }}>{jn}</div>}
         <div style={{ position: "absolute", right: MOBILE ? -6 : 40, bottom: 0 }}>
           <PlayerArt p={p} ab={team?.ab} width={artW} crop={MOBILE ? 0.7 : 0.75} style={{ filter: `drop-shadow(0 0 30px ${clr}66) drop-shadow(0 16px 20px #000b)` }} fallback={null} />
         </div>
         <div style={{ position: "relative", padding: MOBILE ? "16px 14px" : "26px 30px", maxWidth: MOBILE ? "62%" : "56%" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: MOBILE ? 10.5 : 12.5, fontWeight: 900, letterSpacing: MOBILE ? 1.2 : 2, color: "#cbd5e1", textTransform: "uppercase" }}>
-            {team && <TeamLogo t={team} sz={MOBILE ? 22 : 30} />}<span>{label || (team ? `${team.city} ${team.name}` : "Free agent")} · {posTag(p)}{p.num != null ? ` · #${p.num}` : ""}</span>
+            {team && <TeamLogo t={team} sz={MOBILE ? 22 : 30} />}<span>{label || (team ? `${team.city} ${team.name}` : "Free agent")} · {posTag(p)}{jn != null ? ` · #${jn}` : ""}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: MOBILE ? 10 : 14, marginTop: MOBILE ? 8 : 12 }}>
             {photo}

@@ -49,12 +49,21 @@ def digits(ab, dst):
     if not (KEEP and os.path.exists(dst)): Image.fromarray(strip, "RGBA").save(dst, "WEBP", quality=90, method=6)   # sprites() rows are RGBA
     return {"h": dh, "cells": cells}
 
+def render_skin(img):
+    """Dark or Light: the forearms' skin angle (ITA, from L* and b*), as the headshots are measured."""
+    a = img[700:1180, 120:966]; rgb = a[:, :, 2::-1][a[:, :, 3] > 200].reshape(-1, 1, 3)
+    lab = cv2.cvtColor(np.ascontiguousarray(rgb), cv2.COLOR_RGB2LAB).reshape(-1, 3).astype(float)
+    L, A, B = lab[:, 0] * 100 / 255, lab[:, 1] - 128, lab[:, 2] - 128
+    sk = (A > 5) & (B > 8) & (L > 10) & (L < 92)
+    ita = np.degrees(np.arctan2(np.median(L[sk]) - 50, np.median(B[sk])))
+    return "Light" if ita > -8 else "Dark"
+
 def norm(n):   # the game's name key (src/playerArt.js)
     n = re.sub(r"[.'’]", "", n.lower()); n = re.sub(r"\b(jr|sr|ii|iii|iv|v)\b", "", n)
     return re.sub(r"[^a-z]+", " ", n).strip()
 
 def main():
-    man = {"teams": {}, "nygNumbered": [], "custom": {}, "nygOriginal": [], "dark": []}
+    man = {"teams": {}, "nygNumbered": [], "nygSkin": {}, "custom": {}, "nygOriginal": [], "dark": []}
     for d in sorted(glob.glob(os.path.join(ART, "players", "*"))):
         ab = os.path.basename(d)
         if not (len(ab) <= 3 and all(os.path.exists(path(ab, k)) for k in KINDS)): continue
@@ -68,7 +77,9 @@ def main():
         print(ab, "ok")
     for f in sorted(glob.glob(os.path.join(ART, "players", "NYG_numbered", "NYG_*.png"))):
         n = os.path.basename(f)[4:-4]
-        webp(clean_alpha(cv2.imread(f, cv2.IMREAD_UNCHANGED)), os.path.join(OUT, "NYG", "n", f"{n}.webp")); man["nygNumbered"].append(int(n))
+        img = clean_alpha(cv2.imread(f, cv2.IMREAD_UNCHANGED))
+        webp(img, os.path.join(OUT, "NYG", "n", f"{n}.webp")); man["nygNumbered"].append(int(n))
+        man["nygSkin"][int(n)] = render_skin(img)
     roster = json.load(open(os.path.join(ROOT, "src", "data", "madden27.json")))
     nyg = [p["name"] for t in roster["teams"] if t["ab"] == "NYG" for p in t["roster"]]
     for f in sorted(glob.glob(os.path.join(ART, "players", "NYG_custom", "NYG_*.png"))):

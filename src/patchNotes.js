@@ -1520,4 +1520,8 @@ export const PATCH_NOTES = [
     "The player card now has a front: the player standing in his team's uniform with his number, his ESPN photo beside his name in big block letters, his OVR and POT, development trait and contract, his six best ratings and his season in numbers (his real 2025 NFL season until he plays in your league).",
     "Flip the card for the full details you had before (contract, ratings, scouting report, season by season, contract timeline and the roster actions); flip back any time.",
   ] },
+  { v: "3.83", date: "2026-10-20", title: "Numbers for generated players", notes: [
+    "Generated players (draft picks, fictional players) now wear a number in their renders and on the card front: the steady number their position gives them, the same one shown on draft night, until they're assigned one.",
+    "A new Giant only gets the numbered Giants render for his number when that render's skin tone matches his; otherwise he wears the Giants uniform with his number added.",
+  ] },
 ];
