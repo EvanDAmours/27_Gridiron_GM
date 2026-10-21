@@ -1537,4 +1537,7 @@ export const PATCH_NOTES = [
     "Isaiah Likely is up to 83 OVR with a Star development trait after his strong start: his Madden ratings are updated, with 90 catching and 90 spectacular catch (the tight end red-zone rating).",
     "Likely also gets his own custom Giants render (#9). New franchises only; a save in progress keeps its ratings.",
   ] },
+  { v: "3.88", date: "2026-10-20", title: "No face flash before renders", notes: [
+    "Fixed a flash of the player's face before his render appeared on the spotlight screens (awards, records, draft night, signings, the Hall of Fame) and the card front: the space now stays empty for the moment the render takes to make, and the face only shows when there's no render for him.",
+  ] },
 ];

@@ -86,7 +86,7 @@ function grade(ctx, w, h) {
   ctx.putImageData(d, 0, 0);
 }
 
-const made = new Map();
+const made = new Map(), done = new Map();   // key -> the job; key -> its finished picture
 // The finished picture (an object URL), made once per look and kept.
 export function renderArt(a, m) {
   if (made.has(a.key)) return made.get(a.key);
@@ -104,8 +104,18 @@ export function renderArt(a, m) {
     }
     grade(ctx, w, h);
     const blob = await new Promise((ok) => cv.toBlob(ok, "image/webp", 0.92));
-    return URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+    done.set(a.key, url);
+    return url;
   })().catch(() => null);
   made.set(a.key, job);
   return job;
+}
+
+// What a screen can show right now, without waiting: the finished picture, false (no art for him:
+// show the face), or undefined (not known yet: show nothing, the picture is on its way).
+export function artNow(p, ab) {
+  if (!manifest) return undefined;
+  const a = artFor(p, ab, manifest);
+  return a ? done.get(a.key) : false;
 }
