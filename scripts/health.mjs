@@ -42,9 +42,9 @@ await page.addInitScript(() => { localStorage.setItem("gm_nofire", "1"); localSt
 // Close full-screen overlays (result cards, popups) by clicking the backdrop corner.
 async function dismiss() {
   for (let i = 0; i < 6; i++) {
-    for (const t of ["Close (offers expire", "Standard", "Meet Demands", "STAY CALM", "Let Go (coach departs)", "Decide later", "Later", "Play On"]) {
+    for (const t of ["READ ALL ABOUT IT", "NEXT AWARD", "THE LEAGUE'S AWARDS", "WELCOME TO CANTON", "INTO THE RECORD BOOK", "Close the paper", "Close (offers expire", "Standard", "Meet Demands", "STAY CALM", "Let Go (coach departs)", "Decide later", "Later", "Play On"]) {
       const b = page.locator("button", { hasText: t });
-      if (await b.count()) { await b.first().click(); await page.waitForTimeout(150); }
+      if (await b.count()) { await b.first().click({ timeout: 3000 }).catch(() => {}); await page.waitForTimeout(150); }
     }
     const overlay = await page.evaluate(() => [...document.querySelectorAll("div")].some((d) => { const s = getComputedStyle(d); return s.position === "fixed" && d.offsetWidth >= innerWidth - 2 && d.offsetHeight >= innerHeight - 2 && +s.zIndex >= 100; }));
     if (!overlay) return;
