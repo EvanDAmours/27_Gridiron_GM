@@ -157,7 +157,7 @@ try {
     for (let i = 0; i < 15; i++) {
       const done = () => ((t) => !/Sim All/.test(t) && /Sim Round/.test(t))([...document.querySelectorAll("button")].map((b) => b.innerText).join(" "));
       if (await page.evaluate(done)) break;
-      for (const t of ["LET'S GO", "Sim to 4:00 PM", "Back to the season", "Meet Demands", "Decide later", "Later", "Got it"]) { const b = page.locator("button:visible", { hasText: t }); if (await b.count()) { await b.first().click().catch(() => {}); await page.waitForTimeout(300); } }
+      for (const t of ["LET'S GO", "CONTINUE →", "INTO THE RECORD BOOK →", "Sim to 4:00 PM", "Back to the season", "Meet Demands", "Decide later", "Later", "Got it"]) { const b = page.locator("button:visible", { hasText: t }); if (await b.count()) { await b.first().click().catch(() => {}); await page.waitForTimeout(300); } }
       // Sim All lives in the ⏩ menu next to Sim Week
       let b = page.locator("button:visible", { hasText: "Sim All" });
       if (!(await b.count())) { const m = page.locator("button:visible", { hasText: "⏩" }); if (await m.count()) { await m.first().click({ timeout: 3000 }).catch(() => {}); await page.waitForTimeout(200); } b = page.locator("button:visible", { hasText: "Sim All" }); }
