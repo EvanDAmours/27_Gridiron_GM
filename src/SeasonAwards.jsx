@@ -13,7 +13,7 @@ import opoyArt from "./assets/opoy.webp";
 import dpoyArt from "./assets/dpoy.webp";
 import oroyArt from "./assets/oroy.webp";
 import droyArt from "./assets/droy.webp";
-import sbmvpArt from "./assets/sbmvp.webp";
+import lombardiArt from "./assets/lombardi.webp";
 
 // The Super Bowl MVP: the best line on the winning side of the box score.
 // "three touchdowns", "a touchdown", "12 tackles": numbers the way a newspaper writes them
@@ -78,14 +78,15 @@ const Pick = ({ e, ui }) => (
   </div>
 );
 
-const TROPHY = { sbmvp: sbmvpArt, mvp: mvpArt, opoy: opoyArt, dpoy: dpoyArt, oroy: oroyArt, droy: droyArt };
+// the Super Bowl MVP stands beside the Lombardi
+const TROPHY = { sbmvp: lombardiArt, mvp: mvpArt, opoy: opoyArt, dpoy: dpoyArt, oroy: oroyArt, droy: droyArt };
 const findPlayer = (t, w) => (t && w?.pid != null ? [...(t.roster || []), ...(t.ir || []), ...(t.ps || [])].find((x) => x.id === w.pid) : null);
 
 // Your player won it: his own page, standing in the spotlight with the trophy, before the league's list.
 function YourWinner({ yr, k, label, w, teams, onNext, last }) {
   const t = teams[w.ti], p = findPlayer(t, w) || { name: w.name, pos: w.pos };
   return (
-    <Spotlight p={p} team={t} kicker={`🏆 ${yr} ${label}`} title={w.name} bg={p.num != null ? `#${p.num}` : null} confetti={["#fbbf24", "#fde68a", t.clr, t.ac, "#ffffff"]} label={`${label}: ${w.name}`}
+    <Spotlight p={p} team={t} kicker={k === "sbmvp" ? `🏆 ${sbName(sbNumber(yr))} MVP · World Champions` : `🏆 ${yr} ${label}`} title={w.name} bg={p.num != null ? `#${p.num}` : null} confetti={["#fbbf24", "#fde68a", t.clr, t.ac, "#ffffff"]} label={`${label}: ${w.name}`}
       side={TROPHY[k] && <img src={TROPHY[k]} alt="" style={{ height: MOBILE ? 110 : "min(40vh, 360px)", maxWidth: "100%", objectFit: "contain", filter: "drop-shadow(0 16px 24px #000c)" }} />}
       cta={last ? "THE LEAGUE'S AWARDS →" : "NEXT AWARD →"} onNext={onNext}>
       <div>{posTag(p)} · {t.city} {t.name}</div>

@@ -1496,4 +1496,7 @@ export const PATCH_NOTES = [
   { v: "3.75", date: "2026-10-20", title: "Hall of Fame spotlight", notes: [
     "Hall of Fame: when one of your legends retires as a Hall of Famer, he now stands in the spotlight on a gold stage in your uniform with his number, the gold jacket at his side, with his peak and seasons.",
   ] },
+  { v: "3.76", date: "2026-10-20", title: "Super Bowl MVP with the Lombardi", notes: [
+    "When your player is Super Bowl MVP, his spotlight page now has him standing beside the Lombardi Trophy as world champions.",
+  ] },
 ];
