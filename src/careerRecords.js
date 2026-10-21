@@ -79,3 +79,23 @@ export function careerChasers(book, teams) {
   }
   return out;
 }
+
+// Career milestones (the real career, so a veteran's start counts): round numbers worth a line in
+// the log. Each is news once, the week he passes it.
+export const MILESTONES = {
+  passYds: [20000, 30000, 40000, 50000, 60000, 70000, 80000], passTD: [100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600],
+  rushYds: [5000, 7500, 10000, 12500, 15000, 17500], rushTD: [50, 75, 100, 125, 150],
+  rec: [500, 750, 1000, 1250, 1500], recYds: [5000, 7500, 10000, 12500, 15000, 17500, 20000], recTD: [50, 75, 100, 125, 150, 175],
+  sacks: [50, 75, 100, 125, 150, 175], ints: [25, 40, 50, 60, 70],
+};
+// The milestones he has passed this season and not yet been told about: from where he stood when
+// the season began (so a veteran's old milestones never come up) to now. p.ms keeps the ones
+// already announced ("passYds:50000").
+export function newMilestones(p) {
+  const out = [];
+  for (const d of CAREER_DEFS) {
+    const now = nflCareer(p, d.key), start = now - (counts(d, p.pos) ? p.ss?.[d.key] || 0 : 0);
+    for (const m of MILESTONES[d.key] || []) if (start < m && now >= m && !(p.ms || []).includes(`${d.key}:${m}`)) out.push({ key: d.key, label: d.label, m, val: now });
+  }
+  return out;
+}

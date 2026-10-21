@@ -34,3 +34,18 @@ test("passing the mark takes the record once, then it grows quietly", () => {
   assert.ok(b.book.career.passYds.val > a.book.career.passYds.val);
   assert.deepEqual(loadRecordBook(b.book).career, b.book.career);
 });
+
+import { newMilestones } from "../src/careerRecords.js";
+test("milestones: only ones passed this season, each once; a veteran's old ones never come up", () => {
+  const qb = { ...teams.flatMap((t) => t.roster).find((p) => p.name === "Aaron Rodgers") };
+  if (!qb.name) return;
+  qb.ss = { passYds: 0 };
+  assert.equal(newMilestones(qb).length, 0, "66K real yards, no news before he plays");
+  qb.ss = { passYds: 4000 };   // 66,267 + 4,000: past 70,000 this season
+  const m = newMilestones(qb);
+  assert.deepEqual(m.map((x) => `${x.key}:${x.m}`), ["passYds:70000"]);
+  qb.ms = ["passYds:70000"];
+  assert.equal(newMilestones(qb).length, 0, "told once");
+  const rook = { pos: "WR", draftYr: 2030, ss: { recYds: 1200 }, cs: { recYds: 4000 } };
+  assert.deepEqual(newMilestones(rook).map((x) => x.m), [5000]);
+});

@@ -1579,4 +1579,8 @@ export const PATCH_NOTES = [
   { v: "3.98", date: "2026-10-20", title: "Holiday cards for games you watched", notes: [
     "The holiday result card (the turkey leg, Christmas Day, Halloween night) now only shows for holiday games you watched live. A simmed holiday game goes straight into the week's results like any other.",
   ] },
+  { v: "3.99", date: "2026-10-20", title: "Career milestones on real careers", notes: [
+    "Career milestones count real careers. A veteran's years before your league began count toward them, so Josh Allen passing 50,000 career yards happens when it really would, not 20,000 yards into your save.",
+    "More milestones, and news the week they happen: passing yards every 10,000 from 20,000, touchdown passes every 50 from 100, 5,000 / 7,500 / 10,000+ rushing and receiving yards, 500 / 750 / 1,000+ catches, 50 / 75 / 100+ sacks, 25 / 40 / 50+ interceptions, and more. Each one is in the log once, with your scouting-point bonus as before. Milestones a veteran passed before the league began never come up.",
+  ] },
 ];
