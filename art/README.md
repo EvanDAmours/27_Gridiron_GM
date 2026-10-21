@@ -118,3 +118,78 @@ Before generating, describe [TEAM]'s real numbers in 2–3 sentences. After, con
 generation and no code? ten digits 0–9 in order? real [TEAM] style? correct colors? flat, nothing
 else in the image? Fix and regenerate if anything is "no".
 ```
+
+## ChatGPT prompt: custom Giants (one named player per chat message)
+
+Attach two images: the matching `players/NYG_numbered/NYG_{##}.png` (pose reference) and a real
+photo of the player (gear and build reference). Change the `PLAYER =` line each time.
+
+```
+PLAYER = Jaxson Dart
+(Everywhere this prompt says [PLAYER], it means the player named on the line above. Find him in
+the table below for his number, position and build.)
+
+READ ALL OF THIS BEFORE DOING ANYTHING.
+
+I am making a New York Giants card for a football video game. I attached TWO images:
+  - IMAGE A: a Giants player render. This is the EXACT pose, framing, camera angle, lighting and
+    uniform style I want. Copy it.
+  - IMAGE B: a real photo of [PLAYER]. Use it ONLY for his body type, skin tone and gear.
+Make ONE photorealistic image of [PLAYER] standing exactly like IMAGE A.
+
+| Player          | #  | Pos     | Ht    | Wt  | Build notes                                          |
+|-----------------|----|---------|-------|-----|------------------------------------------------------|
+| Jaxson Dart     | 6  | QB      | 6'2"  | 221 | lean quarterback, white                              |
+| Malik Nabers    | 1  | WR      | 6'0"  | 199 | slim, wiry, long arms                                |
+| Abdul Carter    | 3  | EDGE    | 6'4"  | 250 | long, explosive edge rusher, broad shoulders         |
+| Arvell Reese    | 52 | LB      | 6'4"  | 241 | tall, rangy linebacker                               |
+| Cam Skattebo    | 44 | RB      | 5'10" | 216 | short, very thick and stocky, white, beard           |
+| Andrew Thomas   | 78 | LT      | 6'5"  | 315 | big tackle, thick, NOT ripped                        |
+| Francis Mauigoa | 65 | RG      | 6'6"  | 315 | big Samoan lineman, heavy, round, NOT ripped         |
+| Brian Burns     | 0  | EDGE    | 6'5"  | 250 | long, lean, very long arms                           |
+| Colton Hood     | 12 | CB      | 6'0"  | 193 | lean cornerback                                      |
+| Dru Phillips    | 22 | CB      | 5'11" | 180 | compact, slim nickel corner                          |
+| Deonte Banks    | 2  | CB      | 6'2"  | 205 | tall, long cornerback                                |
+
+RULE 1 — ONE PLAYER, ONE IMAGE. NEVER A GROUP.
+- Exactly ONE person in the image. No teammates, no side-by-side, no grid, no collage, no preview,
+  no comparison, no "here are all of them". Only [PLAYER].
+- Use IMAGE GENERATION. Do not write code.
+
+RULE 2 — POSE AND FRAMING: COPY IMAGE A EXACTLY
+- Standing straight, facing the camera, shoulders square.
+- Head bowed DOWN so the helmet and facemask hide his face. No face visible.
+- Arms hanging straight down in front, gloved hands clasped together at the waist.
+- Top of the helmet about 35 px from the top edge. The image is cut off at the upper thigh at the
+  bottom edge, like IMAGE A. Centered left to right.
+- Same camera height and lens as IMAGE A. No tilt, no angle, no action pose.
+
+RULE 3 — HIS REAL BODY (from the table and IMAGE B)
+- Match his real height, weight, proportions and skin tone. He should look like HIM, not a generic
+  player.
+- Real NFL body, NOT a bodybuilder. No exaggerated veins or giant biceps. Linemen (Thomas,
+  Mauigoa) are heavy with a full belly and thick soft arms, not a six-pack.
+
+RULE 4 — HIS REAL GEAR (from IMAGE B and what you know about him)
+- Giants 2026 HOME uniform exactly like IMAGE A: royal blue jersey, white pants with red/blue
+  stripe, blue helmet with red center stripe and white "ny" logos, grey facemask unless he wears a
+  different one.
+- Copy HIS personal gear: facemask style, visor (clear/tinted/none), gloves, arm sleeves, tape,
+  wristbands, towel, under-shirt sleeves, neck roll, anything he is known for.
+- His number [#] in white Giants block numbers, in the SAME places as IMAGE A: big on the chest,
+  on both shoulders, small on the front of the helmet. The digits must be correct and readable.
+- NO name, text, captions or watermarks anywhere.
+
+RULE 5 — IMAGE STYLE
+- PNG, exactly 1086 x 1448, TRANSPARENT background. Same soft studio lighting as IMAGE A.
+- Photorealistic: real fabric, real skin, real helmet shine. Not a cartoon, not a video-game render.
+- No floor, no shadow, no background, no halos or specks around the edges.
+
+DELIVERY
+- One PNG named NYG_[LASTNAME]_[##].png (example: NYG_Dart_06.png, NYG_Burns_00.png).
+- Do NOT show any other image in the chat.
+
+BEFORE YOU DELIVER — answer yes/no: ONE person? face hidden by the bowed helmet? pose and framing
+match IMAGE A? his real build and skin tone? his real gear? correct number on chest, both
+shoulders and helmet? 1086x1448 transparent? no text? Fix and regenerate anything that is "no".
+```
