@@ -19,7 +19,7 @@ six number-less Giants sprites are the fallback. Missing numbers are retired by 
 with his number added.
 
 Custom Giants: `players/NYG_custom/NYG_{Last}_{##}.png`, realistic renders of named players in the same
-pose and framing (Dart, Carter, Reese, Nabers, Skattebo, Burns). These take priority over the numbered set for that player.
+pose and framing (Dart, Carter, Reese, Nabers, Skattebo, Burns, Hood). These take priority over the numbered set for that player.
 
 Open notes:
 - **MIA** numbers are aqua with orange trim (for a white jersey). If the Dolphins sprites come back
@@ -36,6 +36,9 @@ Open notes:
 - `tools/compose.py`: puts a number and the moody grade on a player. `python3 compose.py --sheet NYG`
   renders all six. `tools/clean_number_sheets.py` rebuilds `numbers/` from `numbers/source/`.
   `tools/check_players.py TEAM` checks a batch (size, transparency, stray pieces, build/skin labels).
+
+`tools/export_web.py` writes what the game loads into `public/players/` (blank players cropped to
+helmet-to-thigh, digit strips, the Giants renders, manifest.json); the game adds the number and lighting.
 
 Needs Python 3 with `opencv-python-headless`, `numpy` and `Pillow`.
 
