@@ -8,6 +8,8 @@ DOTS = {"DEN", "DET"}
 # the sheet's fill colour matches the home jersey, so the numbers would vanish: fill them white
 # (keeping the trim). Miami's sheet came back aqua-filled for a white jersey; the home jersey is aqua.
 WHITE_FILL = {"MIA": (70, 100)}   # hue range (OpenCV, 0-180) of the fill to whiten
+# a plain white sheet for a team whose real numbers are coloured: recolour the fill, white outline
+RECOLOR = {"CLE": (255, 60, 0)}    # Browns orange
 for f in sorted(glob.glob(os.path.join(ART, "numbers", "source", "*_Home_Numbers_0-9.png"))):
     ab = os.path.basename(f).split("_")[0]
     im = np.array(Image.open(f).convert("RGBA")).astype(np.float32)
@@ -37,6 +39,11 @@ for f in sorted(glob.glob(os.path.join(ART, "numbers", "source", "*_Home_Numbers
     n, lab, st, _ = cv2.connectedComponentsWithStats((a > 0).astype(np.uint8), 8)
     keep = np.zeros(n, bool); keep[1:] = st[1:, 4] > 400
     a[~keep[lab]] = 0
+    if ab in RECOLOR:
+        k = max(3, int(im.shape[0] * 0.012))                           # outline width
+        inner = cv2.erode((a > 128).astype(np.uint8), np.ones((k, k), np.uint8)).astype(bool)
+        shade = rgb[..., :].mean(-1) / 255                             # keep the sheet's light and shadow
+        rgb[inner] = np.array(RECOLOR[ab], np.float32) * np.clip(shade[inner], 0.75, 1)[:, None]
     res = np.dstack([np.clip(rgb, 0, 255), a]).astype(np.uint8)
     # tight crop to the digits row
     ys = np.where((a > 60).any(1))[0]; res = res[max(0, ys[0] - 4): ys[-1] + 5]

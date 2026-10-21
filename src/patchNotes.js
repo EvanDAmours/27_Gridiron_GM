@@ -1509,4 +1509,8 @@ export const PATCH_NOTES = [
   { v: "3.79", date: "2026-10-20", title: "TV caption logo outline", notes: [
     "TV view: the team logo in the play caption now has a white outline, so logos in the team's own color (like the Giants' blue on blue) stand out.",
   ] },
+  { v: "3.80", date: "2026-10-20", title: "Player art for all 32 teams", notes: [
+    "Player renders now cover all 32 teams: the Falcons and Browns are in, so every team's players stand in their own uniform in the spotlight.",
+    "Browns numbers are orange with a white outline, like the real home jersey.",
+  ] },
 ];

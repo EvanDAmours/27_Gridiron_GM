@@ -8,7 +8,7 @@ screens will load processed copies from `public/` once they are built.
 
 | | Done | Teams |
 |---|---|---|
-| Player sprites (6 per team) | 30 / 32 | all but ATL and CLE |
+| Player sprites (6 per team) | 32 / 32 | all |
 | Number sheets | 32 / 32 | all (Giants use `numbers/NYG_original.png`) |
 
 Giants: `players/NYG_numbered/NYG_{00-99}.png` are full renders with the real number already on the
@@ -24,7 +24,8 @@ pose and framing (Dart, Carter, Reese, Nabers, Skattebo, Burns, Hood). These tak
 Open notes:
 - **MIA**: the sheet came back aqua with orange trim (made for a white jersey); the home jersey is aqua,
   so `clean_number_sheets.py` fills the digits white and keeps the trim.
-- **CLE** numbers are plain white with no outline; real Browns home numbers are orange.
+- **CLE**: the sheet came back plain white; `clean_number_sheets.py` recolours it Browns orange with a
+  white outline.
 
 ## Layout
 
