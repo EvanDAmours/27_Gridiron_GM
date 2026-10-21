@@ -1493,4 +1493,7 @@ export const PATCH_NOTES = [
   { v: "3.74", date: "2026-10-20", title: "Signing day spotlight", notes: [
     "Signing day: landing a big free agent now puts him in the full-screen spotlight, standing in your uniform for the first time with his new number, with the deal (years and money a year) beside him.",
   ] },
+  { v: "3.75", date: "2026-10-20", title: "Hall of Fame spotlight", notes: [
+    "Hall of Fame: when one of your legends retires as a Hall of Famer, he now stands in the spotlight on a gold stage in your uniform with his number, the gold jacket at his side, with his peak and seasons.",
+  ] },
 ];
