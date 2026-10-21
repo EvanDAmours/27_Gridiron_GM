@@ -9,6 +9,7 @@ import { jerseyNum } from "./playerArt.js";
 import { BLOCK, FONT_CSS } from "./Spotlight.jsx";
 import { OvrRing, COLS, loadRealSeasons, realPast } from "./PlayerCard.jsx";
 import { olLine, OL_POS } from "./olStats.js";
+import { gradesOf, gradeWord, gradeColor, FACETS } from "./grades.js";
 import { DevBadge, topRatings } from "./ScoutingUI.jsx";
 import { careerStanding } from "./careerRecords.js";
 import { recordValue } from "./records.js";
@@ -28,11 +29,11 @@ function seasonTiles(p, yr, real) {
   if (OL_POS.has(p.pos)) {
     const o = olLine(cur);
     if (!o) return { y: cur.y, tiles: cur.gs ? [["GS", cur.gs]] : [] };
-    return { y: cur.y, ol: o, tiles: [["GS", cur.gs || 0], ["SK ALW", o.sacks], ["PRES", o.pres], ["PB WIN", o.pbPct != null ? `${o.pbPct}%` : "–"], ["PASS GR", o.passGrade ?? "–"], ["RUN GR", o.runGrade ?? "–"]] };
+    return { y: cur.y, ol: o, cur, tiles: [["GS", cur.gs || 0], ["SK ALW", o.sacks], ["PRES", o.pres], ["PB WIN", o.pbPct != null ? `${o.pbPct}%` : "–"], ["PASS GR", o.passGrade ?? "–"], ["RUN GR", o.runGrade ?? "–"]] };
   }
   const cols = COLS[GROUP[p.pos] || p.pos] || [];
-  const tiles = [["GP", cur.gp], ["GS", cur.gs], ...cols.map(([l, k]) => [l, cur[k]])].filter(([, v]) => v != null);
-  return { y: cur.y, tiles: tiles.slice(-6) };
+  const tiles = [["GP", cur.gp], ["GS", cur.gs], ...cols.filter(([l]) => l !== "GRADE").map(([l, k]) => [l, typeof k === "function" ? k(cur) : cur[k]])].filter(([, v]) => v != null);
+  return { y: cur.y, tiles: tiles.slice(-6), cur };
 }
 
 // team: { ab, clr, ac, city, name } or null (a free agent). dev: his trait if known. onFlip: show the back.
@@ -42,7 +43,8 @@ export default function CardFront({ p, team, lastTeam, ovr, pot, dev, label, yr,
   const kit = team || lastTeam, clr = kit?.clr || "#334155", jn = jerseyNum(p);
   const [real, setReal] = useState(null);
   useEffect(() => { if (p?.src === "m27" && !p.ss?.gp && !p.sh?.length) loadRealSeasons().then(setReal).catch(() => {}); }, [p?.src, p?.ss?.gp, p?.sh?.length]);
-  const { y, tiles, ol } = seasonTiles(p, yr, real);
+  const { y, tiles, ol, cur } = seasonTiles(p, yr, real);
+  const grade = gradesOf(cur, p.pos);   // his own play, graded against the league (grades.js)
   const rat = topRatings(p, 6);
   const career = useMemo(() => careerStanding(p, league || []), [p, league]);
   const artW = MOBILE ? 176 : 255;
@@ -77,6 +79,12 @@ export default function CardFront({ p, team, lastTeam, ovr, pot, dev, label, yr,
               {pot != null && <div>POT <b style={{ color: oC(pot) }}>{pot}</b></div>}
               {y && ol && <div>{y}: {ol.sacks} sack{ol.sacks === 1 ? "" : "s"} allowed · {ol.pres} pressures{ol.passGrade != null ? ` · ${ol.passGrade} pass grade` : ""}</div>}
               {y && !ol && tiles.length > 0 && <div>{y}: {tiles.slice(-3).map(([l, v]) => `${num(v)} ${l.toLowerCase()}`).join(" · ")}</div>}
+              {/* his grade: how well he played, not how good the team around him is */}
+              {grade && <div title="Graded play by play against an average player in the same spot (same teammates, line, coverage and call): how well he played, not how good his team is." style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+                <span style={{ fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 22 : 26, lineHeight: 1, color: gradeColor(grade.overall) }}>{grade.overall.toFixed(1)}</span>
+                <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: "#cbd5e1", textTransform: "uppercase" }}>{y} grade · {gradeWord(grade.overall)}</span>
+                {Object.keys(grade.facets).length > 1 && <span style={{ fontSize: 12, color: "#94a3b8" }}>{Object.entries(grade.facets).map(([f, v]) => `${FACETS[f]} ${v.toFixed(1)}`).join(" · ")}</span>}
+              </div>}
             </div>
           </div>
         </div>

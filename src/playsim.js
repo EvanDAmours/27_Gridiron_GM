@@ -295,10 +295,12 @@ function olBook(g, side, ol, k, type, yards, desc) {
       const who = olRand(g) < (edge || inside ? 0.6 : 0.4) ? (edge ? [lt, rt] : inside ? [lg, c, rg] : five) : [];
       const lost = who.filter(Boolean).length ? olPick(g, who.filter(Boolean), pbW) : null;
       if (lost) add(line(g, side, lost), "sackA", 1);
+      k.lost = lost;
     } else if (olRand(g) < Math.min(0.45, Math.max(0.15, k.sackP * 4.2))) {
       // a pressure: the throw still came out, but someone up front lost his man (most of them do;
       // the rest are a back or tight end, or a free rusher)
       if (olRand(g) < 0.85) add(line(g, side, olPick(g, five, pbW)), "presA", 1);
+      k.pres = true;
     }
   } else if (k.run) {
     // the gap it went through: off a tackle, around an end, or inside
@@ -308,6 +310,57 @@ function olBook(g, side, ol, k, type, yards, desc) {
     at.forEach((p) => add(line(g, side, p), "rbSnp", 1));
     if (yards >= 4) at.forEach((p) => add(line(g, side, p), "rbWin", 1));
     else if (yards <= 0) add(line(g, side, olPick(g, at, rbW)), "rbStuff", 1);
+  }
+}
+
+// ---------- The grades (src/grades.js turns these into 0-100) ----------
+// Every snap, each man involved is graded against what an average player would have done in the
+// same spot: the same teammates, line, coverage, call and score. A quarterback throwing to great
+// receivers is held to a higher bar; a back behind a bad line to a lower one. So a grade says how
+// good he is, not how good his team is. Sums and counts per facet (qb, rc receiving, ru rushing,
+// pr pass rush, cv coverage, rd run defense), plus pressures and coverage stats. Bookkeeping only:
+// the play is already decided (pressure and stop credit use the line's own dice, olRand).
+export const AVG = { qb: 78, rec: 76, cov: 76, rb: 76 };
+const phi = (x) => 0.5 * (1 + Math.tanh(0.7978845608 * (x + 0.044715 * x * x * x)));   // normal CDF
+const cap = (v, a, b) => Math.max(a, Math.min(b, v));
+function gradeBook(g, off, def, dP, k, yards) {
+  const G = (side, p, f, v) => { if (!p) return; const l = line(g, side, p); add(l, f + "G", v); add(l, f + "N", 1); };
+  // the passer and the target
+  if (k.sacked) G(off, k.qb, "qb", k.lost ? -0.15 : -0.6);   // a sack nobody up front gave up: he held it
+  if (k.scr != null) G(off, k.qb, "qb", cap((k.scr - 3) / 8, -0.5, 1.5));
+  const t = k.tgt;
+  if (t) {
+    // the result, plus the process: how much he moved the odds before the ball came down (a great
+    // throw that falls incomplete still graded well; a lucky catch off a bad one doesn't fully count)
+    const done = !!k.comp && !k.int, proc = (c0, y0, yd) => (t.cA - c0) * 2.5 + (t.yA - y0) / yd;
+    G(off, k.qb, "qb", (k.int ? -1.6 : done ? 1 - t.cQ + cap((yards - t.yQ) / 20, -0.5, 1) : -0.7 * t.cQ) + proc(t.cQ, t.yQ, 20));
+    G(off, t.target, "rc", (k.int ? -0.3 : done ? 1 - t.cR + cap((yards - t.yR) / 15, -0.5, 1.5) - (k.fum ? 1.5 : 0) : -0.4 * t.cR) + 0.35 * proc(t.cR, t.yR, 15));
+    if (t.cm) {
+      const cl = line(g, def, t.cm);
+      add(cl, "covT", 1); if (done) { add(cl, "covC", 1); add(cl, "covY", yards); }
+      G(def, t.cm, "cv", (k.int && k.db === t.cm ? 1.5 : done ? -(1 - t.cC) - cap((yards - t.yC) / 20, -0.5, 1) : 0.6 * t.cC + (k.pdBy === t.cm ? 0.3 : 0)) - 0.6 * proc(t.cC, t.yC, 20));
+    }
+  }
+  // the pass rush: who got home (a sack, or a pressure on the throw), against what an average front
+  // gets against this line
+  if (k.dropback) {
+    const rush = (dP.rushW || []).filter(([p, w]) => w > 0 && (p.pos === "DL" || p.pos === "LB"));
+    const W = rush.reduce((a, [, w]) => a + w, 0) || 1;
+    const pres0 = Math.min(0.45, Math.max(0.15, k.sackP0 * 4.2)), e = k.sackP0 * 1.5 + (1 - k.sackP0) * pres0;
+    const got = new Map();
+    if (k.sacked) { if (k.rusher) got.set(k.rusher, 1.5); if (k.helper) got.set(k.helper, 0.75); }
+    else if (k.pres && rush.length) got.set(olPick(g, rush, ([p, w]) => w * Math.exp(((p.ovr || 70) - 75) * 0.03))[0], 1);
+    for (const p of got.keys()) add(line(g, def, p), "pres", 1);
+    for (const [p, w] of rush) G(def, p, "pr", (got.get(p) || 0) - (w / W) * e);
+    for (const [p, v] of got) if (!rush.some(([q]) => q === p)) G(def, p, "pr", v);   // a DB on a blitz
+  }
+  // runs: the back against an average back behind this line; the front's stops against an average front
+  if (k.run) {
+    if (k.carrier && k.carrier.pos !== "QB") G(off, k.carrier, "ru", (k.fum ? -2 : cap((yards - k.yR0) / 4, -1.2, 2.5)) + (k.yA - k.yR0) * 0.25);
+    const front = (dP.tackleW || []).filter(([p, w]) => w > 0 && (p.pos === "DL" || p.pos === "LB" || p.pos === "S"));
+    const W = front.reduce((a, [, w]) => a + w, 0) || 1;
+    const stopper = (yards <= 1 || k.fum) && front.length ? olPick(g, front, ([p, w]) => w * Math.exp(((p.posAttrs?.runStop ?? p.posAttrs?.tackling ?? p.ovr ?? 70) - 75) * 0.06))[0] : null;
+    for (const [p, w] of front) G(def, p, "rd", (p === stopper ? 1 : 0) - (w / W) * k.stopP0);
   }
 }
 
@@ -363,7 +416,9 @@ function edges(g, pers = "11", pkg = "nickel") {
   const ou = o.oU?.[pers] || o.u, du = d.dU?.[pkg] || d.u;
   const dd = g.day ? g.day[g.poss].o - g.day[other(g.poss)].d : 0;
   const extra = o.mod / POINTS_PER_EDGE + (g.poss === "h" && !g.neutral ? HOME : 0) + dd + gameScript(g.ot ? 3 : g.qtr, g.score[g.poss] - g.score[other(g.poss)], g.clock);
-  return { o, d, passE: soft((z(ou.pass, "pass") - z(du.passD, "passD")) * SENSITIVITY + extra), runE: soft((z(ou.run, "run") - z(du.runD, "runD")) * SENSITIVITY + extra), rushE: z(du.rush, "rush") - z(o.u.ol, "ol") };
+  return { o, d, passE: soft((z(ou.pass, "pass") - z(du.passD, "passD")) * SENSITIVITY + extra), runE: soft((z(ou.run, "run") - z(du.runD, "runD")) * SENSITIVITY + extra), rushE: z(du.rush, "rush") - z(o.u.ol, "ol"),
+    // for the grades: the same snap with one man swapped for an average one (gradeBook)
+    gx: { passEWith: (dp) => soft((z(ou.pass + dp, "pass") - z(du.passD, "passD")) * SENSITIVITY + extra), runE0: soft(z(ou.run, "run") * SENSITIVITY + extra), rushE0: -z(o.u.ol, "ol") } };
 }
 
 // Field goal odds from a distance (yards) and the kicker's rating.
@@ -497,7 +552,8 @@ function stepPlay(g, call, bonus = 1) {
   const sitn = situationOf({ down: g.down, toGo: g.toGo, yard: g.yard, qtr: g.qtr, clock: g.clock, lead: g.score[off] - g.score[def] });
   const pers = sitPers(so.team?.sit, sitn) || (so.mix ? pickPers(rand, so.mix, { down: g.down, toGo: g.toGo, yard: g.yard }) : "11");
   const pkg = sitPkg(sd.team?.sit, sitn) || (sd.dU ? pickPkg(rand, pers, sd.tilt || 0, g.down >= 3 && g.toGo >= 6) : "nickel");
-  const { o, d, passE, runE, rushE } = edges(g, pers, pkg);
+  const { o, d, passE, runE, rushE, gx } = edges(g, pers, pkg);
+  let gk = null; // what the grades need to know about this snap (gradeBook)
   const st = g.stats[off];
   const lead = g.score[off] - g.score[def];
   const hurry = ((g.qtr === 2 || g.qtr === 4) && g.clock < 120) || (g.qtr === 4 && g.clock < 300 && lead < 0) || (g.qtr === 4 && lead <= -9) || (g.ot && g.clock < 150 && lead <= 0);
@@ -641,20 +697,22 @@ function stepPlay(g, call, bonus = 1) {
 
   if (style === "pass" || style === "screen") {
     const deep = call === "pass_deep", quick = call === "pass_quick" || call === "pass_rpo", screen = style === "screen";
-    const sackP = clamp(0.064 + rushE * 0.008 - passE * 0.004 + (deep ? 0.025 : quick || screen ? -0.035 : 0) + (B ? (quick || screen ? 0.02 : 0.06) : V ? -0.015 : 0), 0.02, 0.2);
+    const sackAt = (rE) => clamp(0.064 + rE * 0.008 - passE * 0.004 + (deep ? 0.025 : quick || screen ? -0.035 : 0) + (B ? (quick || screen ? 0.02 : 0.06) : V ? -0.015 : 0), 0.02, 0.2);
+    const sackP = sackAt(rushE);
     const qbl = line(g, off, qb);
     if (!screen) ev._ol = { pass: true, sackP };
+    gk = { qb, dropback: !screen, sackP0: sackAt(gx.rushE0) };
     if (!screen && rand() < sackP) {
       const loss = Math.round(5 + rand() * 5);
       // Multi-sack games happen, but each sack a rusher already has makes the next one harder (he gets
       // chipped and doubled).
       const rusher = pickW(rand, dP.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, w * 0.6 ** n]; }));
-      ev._ol.sacked = true; ev._ol.rusher = rusher;
+      ev._ol.sacked = true; ev._ol.rusher = rusher; gk.sacked = true; gk.rusher = rusher;
       add(qbl, "sk", 1); add(qbl, "skYds", loss); st.sacks++;
       // About one sack in five is shared by two rushers: half a sack each.
       const helper = rusher && rand() < 0.22 ? pickW(rand, dP.rushW.filter(([p]) => p !== rusher)) : null;
       if (rusher) { const rl = line(g, def, rusher); add(rl, "sacks", helper ? 0.5 : 1); add(rl, "qbH", 1); add(rl, "tkl", 1); }
-      if (helper) { const hl = line(g, def, helper); add(hl, "sacks", 0.5); add(hl, "qbH", 1); }
+      if (helper) { const hl = line(g, def, helper); add(hl, "sacks", 0.5); add(hl, "qbH", 1); gk.helper = helper; }
       yards = -loss; type = "sack"; desc = `${qb?.name || "QB"} is SACKED${rusher ? ` by ${rusher.name}` : ""} for a loss of ${loss}.`;
       if (rand() < 0.07) { // strip sack
         if (rusher) add(line(g, def, rusher), "ff", 1);
@@ -663,7 +721,7 @@ function stepPlay(g, call, bonus = 1) {
     } else if (!screen && !call && rand() < (qb?.spd >= 78 ? 0.05 : 0.02)) { // scramble
       yards = Math.round(clamp(3 + expo(rand, 4.5) + passE * 0.3, -2, 40));
       add(qbl, "rushAtt", 1); st.rushAtt++;
-      carrier = qb; type = "run"; desc = `${qb?.name || "QB"} scrambles for ${yards}.`;
+      carrier = qb; type = "run"; desc = `${qb?.name || "QB"} scrambles for ${yards}.`; gk.scr = yards;
     } else {
       // Once a receiver has had a big day the ball spreads around (no 15-catch games every week).
       const busy = ([p, w]) => { const n = g.box[off][p.id]?.tgt || 0, s0 = 8 + Math.max(0, p.form || 0) * 0.5; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 4)]; };
@@ -674,12 +732,22 @@ function stepPlay(g, call, bonus = 1) {
       const role = recv.find(([p]) => p === target)?.[2] || "RB";
       const cm = !screen && d.cover ? d.cover(pkg, role, target, o.oU?.[pers]?.on?.wr || []) : null;
       const mm = cm ? clamp((target?.ovr || 75) - (cm.pos === "LB" ? lbCover(cm) : cm.ovr || 75) - MM0, -25, 25) : 0;
+      // completion odds and yards for a throw, as functions of the passing edge, the receiver and the matchup
+      const yMean = screen ? 5.5 : deep ? 24 : quick ? 6.5 : 9.9;
+      const compAt = (pE, t, m) => clamp(0.658 + pE * 0.018 + (t - 75) * 0.0012 + m * 0.0035 + (deep ? -0.22 : quick ? 0.08 : 0) + (screen ? 0.18 : 0) + (B ? -0.03 : X ? 0.04 + (o.paSpec ? 0.03 : 0) : V ? (deep ? -0.1 : -0.03) : 0) + (g.wxE?.comp || 0) * (deep ? 1.5 : 1), 0.25, 0.92);
+      const ydsAt = (pE, t, m) => 2 + Math.max(0, yMean - 2 + pE * 0.45 + m * 0.06 + (t - 75) * 0.035 + Math.max(0, t - 90) * 0.08);
+      { // the grades' baselines: the same throw with an average quarterback, receiver or cover man
+        const tO = target?.ovr || 75, cv = cm ? (cm.pos === "LB" ? lbCover(cm) : cm.ovr || 75) : null, mmOf = (t, c) => (c == null ? 0 : clamp(t - c - MM0, -25, 25));
+        const pEq = gx.passEWith(-0.5 * ((qb?.ovr || 75) - AVG.qb));
+        gk.tgt = { target, cm, cA: compAt(passE, tO, mm), yA: ydsAt(passE, tO, mm), cQ: compAt(pEq, tO, mm), yQ: ydsAt(pEq, tO, mm), cR: compAt(passE, AVG.rec, mmOf(AVG.rec, cv)), yR: ydsAt(passE, AVG.rec, mmOf(AVG.rec, cv)), cC: compAt(passE, tO, mmOf(tO, AVG.cov)), yC: ydsAt(passE, tO, mmOf(tO, AVG.cov)) };
+      }
       add(qbl, "att", 1); add(tl, "tgt", 1); st.passAtt++;
       const intP = clamp(0.024 - passE * 0.004 - mm * 0.0004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0) + (g.wxE?.int || 0), 0.006, 0.08);
       if (rand() < intP) {
         const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW);
         add(qbl, "passInt", 1); st.ints++;
         if (db) { add(line(g, def, db), "ints", 1); add(line(g, def, db), "pd", 1); }
+        gk.int = true; gk.db = db; gradeBook(g, off, def, dP, gk, 0);
         type = "int"; desc = `${qb?.name || "QB"}'s pass is INTERCEPTED${db ? ` by ${db.name}` : ""}!`;
         const ret = Math.round(clamp(expo(rand, 9), 0, 60));
         ev.turnover = true; ev.player = db; ev.defPlay = true;
@@ -689,20 +757,20 @@ function stepPlay(g, call, bonus = 1) {
         if (!g.done) newPossession(g, 100 - g.yard - Math.round(8 + rand() * 12) + ret);
         return ev;
       }
-      const compP = clamp(0.658 + passE * 0.018 + ((target?.ovr || 75) - 75) * 0.0012 + mm * 0.0035 + (deep ? -0.22 : quick ? 0.08 : 0) + (screen ? 0.18 : 0) + (B ? -0.03 : X ? 0.04 + (o.paSpec ? 0.03 : 0) : V ? (deep ? -0.1 : -0.03) : 0) + (g.wxE?.comp || 0) * (deep ? 1.5 : 1), 0.25, 0.92);
+      const compP = compAt(passE, target?.ovr || 75, mm);
       if (rand() < compP) {
-        const mean = screen ? 5.5 : deep ? 24 : quick ? 6.5 : 9.9;
+        const mean = yMean;
         yards = Math.round((2 + expo(rand, mean - 2 + passE * 0.45 + mm * 0.06 + ((target?.ovr || 75) - 75) * 0.035 + Math.max(0, (target?.ovr || 75) - 90) * 0.08)) * (bonus || 1));
         // Now and then a catch turns into a big play after the catch (missed tackle, busted coverage).
         if (!deep && rand() < clamp(0.02 + Math.max(0, (target?.spd || 85) - 88) * 0.0015 + passE * 0.008 + (B ? 0.045 : X ? 0.02 : V ? -0.012 : 0), 0.004, 0.1)) yards += Math.round(12 + expo(rand, 16));
         if (V && yards > 6) yards = Math.round(yards * 0.85); // tackled in space by a deep safety
         if (screen && rand() < 0.15) yards = -Math.round(rand() * 3);
-        completed = true; carrier = target; type = "pass";
+        completed = true; carrier = target; type = "pass"; gk.comp = true;
         add(qbl, "comp", 1); add(tl, "rec", 1); st.comp++;
         desc = `${qb?.name || "QB"} finds ${target?.name || "his receiver"} for ${yards}${matchupNote(cm, role, mm, yards, pkg)}.`;
       } else {
         type = "inc"; clockStops = true;
-        if (rand() < 0.3) { const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW); if (db) add(line(g, def, db), "pd", 1); desc = `${qb?.name || "QB"}'s pass for ${last(target)} is broken up${db ? ` by ${db.name}` : ""}.`; }
+        if (rand() < 0.3) { const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW); if (db) add(line(g, def, db), "pd", 1); gk.pdBy = db; desc = `${qb?.name || "QB"}'s pass for ${last(target)} is broken up${db ? ` by ${db.name}` : ""}.`; }
         else desc = `${qb?.name || "QB"}'s pass ${deep ? "deep " : ""}for ${last(target)} falls incomplete.`;
       }
     }
@@ -723,6 +791,10 @@ function stepPlay(g, call, bonus = 1) {
     const mike = lbsOn.find((p) => p.role === "MIKE"), sam = lbsOn.find((p) => p.role === "SAM"), nb = dP.on?.cbs?.[2];
     const poa = edgeRun ? (sam ? ((sam.ovr || 75) - 74) * 0.045 : nb ? ((nb.posAttrs?.tackling ?? 65) - 68) * 0.03 - 0.15 : 0) : mike ? ((mike.ovr || 75) - 76) * 0.035 : 0;
     const mean = 3.85 - poa + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.022 + (keeper ? 0.6 : 0) - load * 0.06 + (X ? -0.9 : V ? 0.6 : B ? -0.3 : 0) + (g.wxE?.runYds || 0);
+    { // the grades' baselines: an average back on this run; an average front against it (its chance of a stop)
+      const sd = outside ? 3.3 : 2.5, mD = mean + poa - runE * 0.3 + gx.runE0 * 0.3 - 0.6;
+      gk = { run: true, carrier, keeper, yA: mean + 0.2, yR0: mean - ((carrier?.ovr || 75) - AVG.rb) * 0.022 + 0.2, stopP0: phi((1.5 - mD) / sd) };
+    }
     const breakaway = rand() < clamp(0.047 + ((carrier?.spd || 80) - 82) * 0.0018 - load * 0.003 + runE * 0.005 + (outside ? 0.025 : 0) + (B ? 0.025 : X ? -0.015 : 0), 0.01, 0.14);
     yards = breakaway ? Math.round(mean + 5 + expo(rand, 11)) : Math.round(clamp(mean - 0.6 + gauss(rand) * (outside ? 3.3 : 2.5), -4, 14));
     if (yards > 0) yards = Math.round(yards * (bonus || 1));
@@ -734,7 +806,9 @@ function stepPlay(g, call, bonus = 1) {
     if (yards < 0) { const t = pickW(rand, dP.tackleW); if (t) add(line(g, def, t), "tfl", 1); }
   }
 
+  const olk = ev._ol;
   if (ev._ol) { olBook(g, off, o.ol, ev._ol, type, yards, desc); delete ev._ol; }
+  if (gk && olk) { gk.lost = olk.lost; gk.pres = olk.pres; }
 
   // each snap's grouping and package, and how it went (personnel stats)
   persLog(g, off, def, pers, pkg, yards, !ev.turnover && type !== "fumble" && yards >= (g.down === 1 ? 0.4 : g.down === 2 ? 0.6 : 1) * g.toGo);
@@ -753,6 +827,7 @@ function stepPlay(g, call, bonus = 1) {
     } else if (rand() < ((type === "run" ? 0.0055 : 0.004) - Math.max(-0.002, Math.min(0.002, (type === "run" ? runE : passE) * 0.0006))) * (g.wxE?.fum || 1)) {
       add(cl, "fum", 1); st.fumLost++;
       const t = pickW(rand, dP.tackleW); if (t) add(line(g, def, t), "ff", 1);
+      if (gk) gk.fum = true;
       ev.turnover = true; type = "fumble"; desc += ` FUMBLE — the defense recovers!`;
     } else {
       const t = pickW(rand, dP.tackleW);
@@ -761,6 +836,7 @@ function stepPlay(g, call, bonus = 1) {
     }
   }
 
+  if (gk) gradeBook(g, off, def, dP, gk, yards);
   ev.type = ev.td ? "td" : type; ev.yards = yards; ev.player = carrier; ev.passer = completed ? qb : null; ev.text = desc;
 
   if (ev.td) {

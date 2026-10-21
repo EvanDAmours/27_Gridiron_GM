@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { C, oC, Bdg, Face } from "./ui.jsx";
 import { posTag, dlOvrAt, naturalDL } from "./dline.js";
 import { roleCard, naturalRole, roleKind } from "./roles.js";
+import { gradesOf, GRADE_KEYS } from "./grades.js";
 import { olLine } from "./olStats.js";
 
 const r1 = (x) => Math.round(x * 10) / 10;
@@ -109,14 +110,17 @@ export const COLS = {
   QB: [["CMP", "comp"], ["ATT", "att"], ["YDS", "passYds"], ["TD", "passTD"], ["INT", "passInt"], ["RUSH", "rushYds"]],
   RB: [["ATT", "rushAtt"], ["YDS", "rushYds"], ["TD", "rushTD"], ["REC", "rec"], ["REC YDS", "recYds"]],
   WR: [["REC", "rec"], ["YDS", "recYds"], ["TD", "recTD"]], TE: [["REC", "rec"], ["YDS", "recYds"], ["TD", "recTD"]],
-  DL: [["TKL", "tkl"], ["SACK", "sacks"], ["TFL", "tfl"], ["FF", "ff"]], LB: [["TKL", "tkl"], ["SACK", "sacks"], ["INT", "ints"], ["PD", "pd"]],
-  CB: [["TKL", "tkl"], ["INT", "ints"], ["PD", "pd"]], S: [["TKL", "tkl"], ["INT", "ints"], ["PD", "pd"]],
+  DL: [["TKL", "tkl"], ["SACK", "sacks"], ["PRES", "pres"], ["TFL", "tfl"], ["FF", "ff"]], LB: [["TKL", "tkl"], ["SACK", "sacks"], ["PRES", "pres"], ["INT", "ints"], ["PD", "pd"]],
+  CB: [["TKL", "tkl"], ["INT", "ints"], ["PD", "pd"], ["TGT", "covT"], ["YDS ALW", "covY"]], S: [["TKL", "tkl"], ["INT", "ints"], ["PD", "pd"]],
   K: [["FGM", "fgM"], ["FGA", "fgA"], ["XPM", "xpM"]], P: [["PUNTS", "punts"], ["YDS", "puntYds"]],
 };
 // The line: sacks and pressures allowed, pass-block win rate and the block grades (olStats.js).
 const OL_COLS = [["GS", "gs"], ["SK", "sackA"], ["PRES", "presA"], ["PB%", (r) => olLine(r)?.pbPct], ["PASS", (r) => olLine(r)?.passGrade], ["RUN", (r) => olLine(r)?.runGrade]];
 for (const pos of ["LT", "LG", "C", "RG", "RT"]) COLS[pos] = OL_COLS;
-export const SEASON_KEYS = ["gp", "gs", "comp", "att", "passYds", "passTD", "passInt", "rushAtt", "rushYds", "rushTD", "rec", "recYds", "recTD", "tkl", "sacks", "tfl", "ff", "ints", "pd", "fgM", "fgA", "xpM", "punts", "puntYds", "pbSnp", "sackA", "presA", "rbSnp", "rbWin", "rbStuff"];
+// every position's season grade (grades.js), last
+for (const pos of Object.keys(COLS)) if (pos !== "K" && pos !== "P" && COLS[pos] !== OL_COLS) COLS[pos] = [...COLS[pos], ["GRADE", (r) => gradesOf(r, pos)?.overall]];
+OL_COLS.push(["GRADE", (r) => gradesOf(r, "LT")?.overall]);
+export const SEASON_KEYS = ["gp", "gs", "comp", "att", "passYds", "passTD", "passInt", "rushAtt", "rushYds", "rushTD", "rec", "recYds", "recTD", "tkl", "sacks", "tfl", "ff", "ints", "pd", "fgM", "fgA", "xpM", "punts", "puntYds", "pbSnp", "sackA", "presA", "rbSnp", "rbWin", "rbStuff", "pres", "covT", "covC", "covY", ...GRADE_KEYS];
 // A season's stats, trimmed to what the card shows (stored on the player at each rollover).
 export const seasonLine = (ss, y, tm) => { const o = { y, tm }; for (const k of SEASON_KEYS) if (ss?.[k]) o[k] = ss[k]; return o; };
 

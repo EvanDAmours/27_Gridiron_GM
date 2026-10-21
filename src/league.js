@@ -1,6 +1,7 @@
 // The league's engine room: player generation, schedules, the game sim wrapper, injuries,
 // coaches, the cap and the shared helpers the screens use. Pure JavaScript (no React), so it can
 // be tested directly. Moved out of App.jsx.
+import { GRADE_KEYS } from "./grades.js";
 import M27 from "./data/madden27.json" with { type: "json" };
 import SPECIAL from "./data/special.json" with { type: "json" };
 import REAL_SCHED from "./data/schedule2026.json" with { type: "json" };
@@ -467,7 +468,7 @@ export function applyGame(t,snaps,lines,playoff=false){
   t.roster.forEach(p=>{if(p.injured||p.holdout)return;const _sh=snaps[p.id]||0;if(_sh<=0&&!lines[p.id])return;
     const gs={...(lines[p.id]||{})};delete gs.name;delete gs.pos;if(p.pos==="QB"&&gs.att)gs.rate=qbRate(gs.comp||0,gs.att,gs.passYds||0,gs.passTD||0,gs.passInt||0);
     const S=playoff?(p.pss=p.pss||{}):p.ss;S.gp=(S.gp||0)+1;if(!playoff)p.ss.snp=(p.ss.snp||0)+_sh;if(_sh>=50)S.gs=(S.gs||0)+1;/* the role he started at (role-shaped development) */const _rl=snaps.roles?.[p.id];if(_rl&&_sh>=20&&!playoff)p.ss.rl={...(p.ss.rl||{}),[_rl]:((p.ss.rl||{})[_rl]||0)+1};
-    if(Object.keys(gs).length){addS(S,gs);if(p.pos==="QB"&&S.att>0)S.rate=qbRate(S.comp,S.att,S.passYds||0,S.passTD||0,S.passInt||0);if(!playoff)p.gl.push({...gs,gp:1});box[p.id]={...gs,name:p.name,pos:p.pos};}
+    if(Object.keys(gs).length){addS(S,gs);if(p.pos==="QB"&&S.att>0)S.rate=qbRate(S.comp,S.att,S.passYds||0,S.passTD||0,S.passInt||0);if(!playoff){const _gl={...gs,gp:1};for(const k of GRADE_KEYS)delete _gl[k];p.gl.push(_gl);}/* the grades' sums stay on the season line, not in the game log */box[p.id]={...gs,name:p.name,pos:p.pos};}
     const injMult=(p.fragile?1.5:1)*(p.traits?.includes('Injury Prone')?2.5:p.traits?.includes('Ironman')?0:1);if(INJ_ON&&Math.random()<.025*injMult*Math.max(.15,_sh/100)){p.injured=true;p.injCount=(p.injCount||0)+1;p.fragile=p.injCount>=2;const injCauses=['high-impact collision','awkward landing','non-contact','blocked low','tackled from behind','turf contact','pile-up'];p.injType=`${pick(["Hamstring","Ankle","Knee (MCL)","Shoulder","Concussion","Quad","Calf","Back"])} (${pick(injCauses)})`;const sevRoll=Math.random();if(sevRoll<0.25){/* questionable: he plays through it, at a reduced rating */p.injured=false;p.injCount--;p.fragile=p.injCount>=2;p.hurt={wks:R(1,2),pen:R(3,7),type:p.injType.replace(/ \(.*\)$/,"")};p.hurtNew=true;p.injType="";return;}if(sevRoll<0.45){p.injSev="minor";p.injRecWks=R(1,2);}else if(sevRoll<0.8){p.injSev="moderate";p.injRecWks=R(3,5);}else{p.injSev="major";p.injRecWks=R(6,8);}p.injWk=p.injRecWks;p.injNew=true;}
   });
   return box;
