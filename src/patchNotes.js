@@ -1615,4 +1615,7 @@ export const PATCH_NOTES = [
   { v: "4.6", date: "2026-10-20", title: "Promo without the big numbers", notes: [
     "The home screen matchup promo no longer puts a big faint jersey number behind each star: side by side, the two read as one long number. Each player's number is on his jersey.",
   ] },
+  { v: "4.7", date: "2026-10-20", title: "Promo fix", notes: [
+    "Fixed the home screen matchup promo from 4.6: the visiting team's star stands in his place again, and the card shrinks properly in a narrower window.",
+  ] },
 ];
