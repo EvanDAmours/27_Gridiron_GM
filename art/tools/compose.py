@@ -66,10 +66,17 @@ def clean_alpha(img):
     a = img[:, :, 3].copy(); a[a < 24] = 0; img = img.copy(); img[:, :, 3] = a; return img
 
 def jersey_box(img):
-    """The jersey: pixels matching the colour sampled at the middle of the chest."""
+    """The jersey: pixels matching the colour sampled at the middle of the chest (a little lower if
+    that spot is the facemask, when the head hangs low)."""
+    for f in (0.22, 0.27, 0.32):
+        try: return _jersey_box(img, f)
+        except IndexError: pass
+    raise ValueError("no jersey found")
+
+def _jersey_box(img, f):
     h, w = img.shape[:2]; hsv = cv2.cvtColor(img[:, :, :3], cv2.COLOR_BGR2HSV).astype(int); a = img[:, :, 3]
     ys, xs = np.where(a > 200); cx = int(np.median(xs)); top = ys.min()
-    sy = top + int((ys.max() - top) * 0.22)
+    sy = top + int((ys.max() - top) * f)
     ref = np.median(hsv[sy - 10:sy + 10, cx - 30:cx + 30].reshape(-1, 3), 0)
     dh = np.minimum(np.abs(hsv[:, :, 0] - ref[0]), 180 - np.abs(hsv[:, :, 0] - ref[0]))
     if ref[1] > 60 and ref[2] > 50: m = (dh < 12) & (hsv[:, :, 1] > ref[1] * 0.5) & (a > 200)

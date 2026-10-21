@@ -1502,4 +1502,8 @@ export const PATCH_NOTES = [
   { v: "3.77", date: "2026-10-20", title: "Sharper player renders", notes: [
     "Player renders in the spotlight are now sharp: they were stored at a smaller size and stretched on big and high-resolution screens. They now load at full resolution (jersey numbers too).",
   ] },
+  { v: "3.78", date: "2026-10-20", title: "Player art for 30 teams", notes: [
+    "Player renders now cover 30 of 32 teams: the Dolphins, Vikings, Patriots, Saints, Jets, Eagles, Steelers, Seahawks, 49ers, Buccaneers, Titans and Commanders join. The Falcons and Browns are still to come.",
+    "Dolphins numbers are white with orange trim, so they show on the aqua home jersey.",
+  ] },
 ];

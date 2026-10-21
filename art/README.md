@@ -8,7 +8,7 @@ screens will load processed copies from `public/` once they are built.
 
 | | Done | Teams |
 |---|---|---|
-| Player sprites (6 per team) | 18 / 32 | ARI BAL BUF CAR CHI CIN DAL DEN DET GB HOU IND JAX KC LAC LAR LV NYG |
+| Player sprites (6 per team) | 30 / 32 | all but ATL and CLE |
 | Number sheets | 32 / 32 | all (Giants use `numbers/NYG_original.png`) |
 
 Giants: `players/NYG_numbered/NYG_{00-99}.png` are full renders with the real number already on the
@@ -22,8 +22,8 @@ Custom Giants: `players/NYG_custom/NYG_{Last}_{##}.png`, realistic renders of na
 pose and framing (Dart, Carter, Reese, Nabers, Skattebo, Burns, Hood). These take priority over the numbered set for that player.
 
 Open notes:
-- **MIA** numbers are aqua with orange trim (for a white jersey). If the Dolphins sprites come back
-  in aqua jerseys, the sheet needs white numbers instead.
+- **MIA**: the sheet came back aqua with orange trim (made for a white jersey); the home jersey is aqua,
+  so `clean_number_sheets.py` fills the digits white and keeps the trim.
 - **CLE** numbers are plain white with no outline; real Browns home numbers are orange.
 
 ## Layout

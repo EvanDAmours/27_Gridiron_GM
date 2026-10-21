@@ -5,6 +5,9 @@ from PIL import Image
 ART = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 out_dir = os.path.join(ART, "numbers"); os.makedirs(out_dir, exist_ok=True)
 DOTS = {"DEN", "DET"}
+# the sheet's fill colour matches the home jersey, so the numbers would vanish: fill them white
+# (keeping the trim). Miami's sheet came back aqua-filled for a white jersey; the home jersey is aqua.
+WHITE_FILL = {"MIA": (70, 100)}   # hue range (OpenCV, 0-180) of the fill to whiten
 for f in sorted(glob.glob(os.path.join(ART, "numbers", "source", "*_Home_Numbers_0-9.png"))):
     ab = os.path.basename(f).split("_")[0]
     im = np.array(Image.open(f).convert("RGBA")).astype(np.float32)
@@ -23,6 +26,12 @@ for f in sorted(glob.glob(os.path.join(ART, "numbers", "source", "*_Home_Numbers
         region = cv2.morphologyEx(white.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8)).astype(bool)
         dots = region & ~white
         rgb[dots] = np.median(rgb[white], 0)
+    if ab in WHITE_FILL:
+        lo, hi = WHITE_FILL[ab]
+        hsv = cv2.cvtColor(rgb.astype(np.uint8), cv2.COLOR_RGB2HSV)
+        fill = (hsv[..., 0] >= lo) & (hsv[..., 0] <= hi) & (hsv[..., 1] > 60)
+        shade = (hsv[..., 2][fill].astype(np.float32) / max(1, np.percentile(hsv[..., 2][fill], 90)))
+        rgb[fill] = (np.clip(shade, 0, 1)[:, None] * 248).repeat(3, 1)
     a = im[:, :, 3]; a[a < 30] = 0
     # remove specks: keep components bigger than a small threshold
     n, lab, st, _ = cv2.connectedComponentsWithStats((a > 0).astype(np.uint8), 8)
