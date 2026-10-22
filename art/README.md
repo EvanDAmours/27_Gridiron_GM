@@ -21,8 +21,8 @@ with his number added.
 Custom renders: `players/{TEAM}_custom/{TEAM}_{Last}_{##}.png`, realistic renders of named players in the same
 pose and framing, shown while the player is on that team. Giants: Dart, Carter, Reese, Nabers, Skattebo, Burns,
 Hood, Thomas, Mauigoa, Likely. Texans: Stroud, Collins, Harrison, Anderson, Hunter, Stingley, Dell. Cardinals:
-Baker, Froholdt, Johnson Jr., McBride, Sweat. Ravens: Andrews, Hamilton, Henry, Jackson, Smith. Bills: Allen, Brown,
-Cook III, Dawkins, Rousseau. Panthers: Brown, Horn, Lewis, Lloyd. A suffix in the file name (JohnsonJr, CookIII) is
+Baker, Froholdt, Johnson Jr., McBride, Sweat. Falcons: Bates III, Lindstrom, London, Robinson, Terrell Jr. Ravens: Andrews, Hamilton, Henry, Jackson, Smith. Bills: Allen, Brown,
+Cook III, Dawkins, Rousseau. Panthers: Brown, Horn, Lewis, Lloyd, McMillan. A suffix in the file name (JohnsonJr, CookIII) is
 fine; the number picks between two players with the same last name.
 
 The custom PNGs are not kept in git (each is 1-2MB; the repo was nearing GitHub's 1GB guideline). Keep the zips

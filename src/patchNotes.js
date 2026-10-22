@@ -1652,4 +1652,7 @@ export const PATCH_NOTES = [
   { v: "4.18", date: "2026-10-20", title: "Deadline rentals go cheap", notes: [
     "Deadline rentals: a veteran whose contract is up after the season and whom his club won't (or can't) re-sign now goes cheap in season, at about half his value, usually about a round lower. His club would rather get something now than lose him for nothing in March. Faces of the franchise never count.",
   ] },
+  { v: "4.19", date: "2026-10-20", title: "Falcons renders", notes: [
+    "Custom player renders for the Falcons (Bijan Robinson, Drake London, Chris Lindstrom, Jessie Bates III, A.J. Terrell Jr.) and Panthers rookie Tetairoa McMillan.",
+  ] },
 ];
