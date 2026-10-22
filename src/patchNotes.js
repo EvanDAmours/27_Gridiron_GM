@@ -1712,4 +1712,7 @@ export const PATCH_NOTES = [
     "Calling your own plays: the playbook now opens over the field, so the field never gets pushed down the screen. New look to match the rest of the game: four runs and four passes as cards, then the pre-snap read and the HIKE button, then your receivers, open or covered. Fourth down gets its own punt / field goal / go-for-it card.",
     "Holiday and Super Bowl games wait for their intro to finish before the first snap.",
   ] },
+  { v: "4.31", date: "2026-10-20", title: "Playoff intro waits", notes: [
+    "Playoff games now wait for their intro too: the Wild Card / Divisional / Championship intro fades out, then the first snap. Same for holiday games and the Super Bowl. The game never runs under an intro, and the playbook doesn't open under one either.",
+  ] },
 ];
