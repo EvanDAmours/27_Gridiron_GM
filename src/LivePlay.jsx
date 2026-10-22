@@ -63,8 +63,15 @@ export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, spe
     return { s, sx: X(x), sy: Y(y) - bob - hop, h, facing, fall };
   }).sort((a, b) => a.sy - b.sy);
   const holder = ball.held ? men.find((m) => m.s.key === ball.held) : null;
-  const bx = holder ? holder.sx + (holder.facing === "right" ? 3 : -3) : X(ball.x);
-  const by = holder ? holder.sy + 1 : Y(ball.y) + (1.2 - ball.h) * 12;
+  // a carried ball stays tucked in his arm: when he goes down, it goes down with him (only a fumble
+  // puts it on the turf)
+  let bx = holder ? holder.sx + (holder.facing === "right" ? 3 : -3) : X(ball.x);
+  let by = holder ? holder.sy + 1 : Y(ball.y) + (1.2 - ball.h) * 12;
+  if (holder?.fall) {
+    const a = ((holder.facing === "right" ? 1 : -1) * holder.fall * 78 * Math.PI) / 180, px = holder.sx, py = holder.sy + holder.h * 0.5;
+    const dx = bx - px, dy = by - py;
+    bx = px + dx * Math.cos(a) - dy * Math.sin(a); by = py + dx * Math.sin(a) + dy * Math.cos(a);
+  }
   return (
     <g pointerEvents="none">
       {!holder && <ellipse cx={X(ball.x)} cy={Y(ball.y) + 16} rx="3.2" ry="1.3" fill="#000" opacity={0.3 / (1 + ball.h * 0.4)} />}
@@ -77,10 +84,10 @@ export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, spe
         <ellipse rx="3.6" ry="2.2" fill="#7c3f12" stroke="#2b1405" strokeWidth=".6" />
         <line x1="-1.4" y1="0" x2="1.4" y2="0" stroke="#fff" strokeWidth=".6" />
       </g>
-      {/* the names that matter on this play, over their heads */}
-      {men.filter((m) => sc.stars.includes(m.s.key) && (sc.who[m.s.key] || m.s.p)).map(({ s, sx, sy, h }) => {
+      {/* the names that matter on this play, over their heads (and over him once he's down) */}
+      {men.filter((m) => sc.stars.includes(m.s.key) && (sc.who[m.s.key] || m.s.p)).map(({ s, sx, sy, h, facing, fall }) => {
         const full = (sc.who[s.key] || s.p).name, nm = full.split(" ").slice(1).join(" ") || full;
-        return <text key={`n${s.key}`} x={sx} y={sy - h * 0.5 - 4} textAnchor="middle" fontSize="7.5" fontWeight="800" fill="#fff" stroke="#000b" strokeWidth="2.2" paintOrder="stroke" fontFamily="system-ui">{nm}</text>;
+        return <text key={`n${s.key}`} x={sx + (facing === "right" ? 1 : -1) * fall * h * 0.55} y={sy - h * 0.5 - 4 + fall * h * 0.75} textAnchor="middle" fontSize="7.5" fontWeight="800" fill="#fff" stroke="#000b" strokeWidth="2.2" paintOrder="stroke" fontFamily="system-ui">{nm}</text>;
       })}
     </g>
   );

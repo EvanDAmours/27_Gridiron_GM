@@ -1715,4 +1715,8 @@ export const PATCH_NOTES = [
   { v: "4.31", date: "2026-10-20", title: "Playoff intro waits", notes: [
     "Playoff games now wait for their intro too: the Wild Card / Divisional / Championship intro fades out, then the first snap. Same for holiday games and the Super Bowl. The game never runs under an intro, and the playbook doesn't open under one either.",
   ] },
+  { v: "4.32", date: "2026-10-20", title: "Ball stays tucked", notes: [
+    "Live plays: the ball stays with the ball carrier when he's tackled and goes down with him, so it no longer looks like it pops loose after every play. A ball on the turf now only means a fumble or an incomplete pass, and an interception shows the defender catching it and running it back.",
+    "The name over a tackled player now follows him to the ground.",
+  ] },
 ];
