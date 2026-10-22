@@ -1,18 +1,27 @@
 // The playoff bracket: each conference's Wild Card, Divisional and Championship rounds, and
 // the Super Bowl in the middle. Played games show scores; the next round shows who's up.
-import React from "react";
+import React, { useState } from "react";
 import { C, Btn, TeamLogo } from "./ui.jsx";
 import { ROUND_NAMES, seedLabel } from "./playoffs.js";
 import { MOBILE } from "./mobile.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 import lombardi from "./assets/lombardi.webp";
 
-function Game({ teams, pb, g, ui, onBox }) {
-  if (!g) return <div style={{ border: `1px dashed ${C.bd}`, borderRadius: 8, padding: "10px", color: C.mt, fontSize: 13, textAlign: "center" }}>TBD</div>;
+// compact: the phone's narrow columns (logo, abbreviation, seed and score)
+function Game({ teams, pb, g, ui, onBox, compact }) {
+  if (!g) return <div style={{ border: `1px dashed ${C.bd}`, borderRadius: 8, padding: compact ? "14px 6px" : "10px", color: C.mt, fontSize: compact ? 12 : 13, textAlign: "center" }}>TBD</div>;
   const played = g.hs != null;
   const row = (id, pts, home) => {
     const t = teams[id];
     const won = played && g.w === id, lost = played && g.w !== id;
+    if (compact) return (
+      <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 6px", opacity: lost ? 0.5 : 1 }}>
+        <TeamLogo t={t} sz={20} />
+        <b style={{ fontSize: 13.5, fontWeight: won ? 900 : 800, color: id === ui ? C.gn : "#fff" }}>{t.ab}</b>
+        <span style={{ fontSize: 10.5, color: C.mt }}>{seedLabel(pb, id).split(" ")[1]}</span>
+        {played && <b style={{ marginLeft: "auto", fontSize: 15, color: won ? "#fff" : C.mt }}>{pts}</b>}
+      </div>
+    );
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 8px", opacity: lost ? 0.5 : 1 }}>
         <TeamLogo t={t} sz={24} />
@@ -44,6 +53,19 @@ function SbHead({ yr, sz = 54 }) {
   );
 }
 
+// The phone's AFC / NFC switch over one conference's bracket.
+function ConfBracket({ mineConf, render }) {
+  const [c, setC] = useState(mineConf);
+  return (
+    <div>
+      <div style={{ display: "flex", background: C.bg, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 3, marginBottom: 10 }}>
+        {["AFC", "NFC"].map((x) => <button key={x} onClick={() => setC(x)} style={{ flex: 1, border: 0, borderRadius: 8, padding: "8px 0", fontSize: 15, fontWeight: 900, cursor: "pointer", background: c === x ? C.cd : "transparent", color: c === x ? "#fff" : C.mt }}>{x}</button>)}
+      </div>
+      {render(c)}
+    </div>
+  );
+}
+
 // yr: the season, for the Super Bowl's numeral
 export default function PlayoffBracket({ pb, teams, ui, onBox, onSim, onPlay, title, yr }) {
   const conf = (id) => teams[id] && (pb.seeds.AFC.includes(id) ? "AFC" : "NFC");
@@ -52,13 +74,6 @@ export default function PlayoffBracket({ pb, teams, ui, onBox, onSim, onPlay, ti
     if (done.length || pb.rd !== rd) return done;
     return pb.m.filter(([h]) => !c || conf(h) === c).map(([h, a]) => ({ h, a }));
   };
-  const col = (title, list, n, extra) => (
-    <div style={{ flex: "1 1 200px", minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.mt }}>{title}</div>
-      {extra}
-      {[...Array(n)].map((_, i) => <Game key={i} teams={teams} pb={pb} g={list[i]} ui={ui} onBox={onBox} />)}
-    </div>
-  );
   const bye = (c) => {
     const t = teams[pb.seeds[c][0]];
     return <div style={{ fontSize: 13, color: "#cbd5e1", background: C.bg, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "6px 10px" }}>#1 {t.city} {t.name} <span style={{ color: C.mt }}>· bye</span></div>;
@@ -113,20 +128,35 @@ export default function PlayoffBracket({ pb, teams, ui, onBox, onSim, onPlay, ti
           </div>
         );
       })()}
-      {MOBILE && ["AFC", "NFC"].map((c) => (
-        <div key={c} style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>{c}</div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
-            {col("WILD CARD", games(1, c), 3, bye(c))}
-            {col("DIVISIONAL", games(2, c), 2)}
-            {col("CONFERENCE", games(3, c), 1)}
+      {MOBILE && (() => {
+        // phone: the Super Bowl up top under the Lombardi, then one conference's bracket at a time
+        // (yours first), its three rounds side by side like the desktop's
+        const games3 = (title, list, n, extra) => (
+          <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 1, color: C.mt, marginBottom: 6, textAlign: "center", whiteSpace: "nowrap" }}>{title}</div>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-around", gap: 6 }}>
+              {extra}
+              {[...Array(n)].map((_, i) => <Game key={i} compact teams={teams} pb={pb} g={list[i]} ui={ui} onBox={onBox} />)}
+            </div>
           </div>
-        </div>
-      ))}
-      {MOBILE && <div style={{ maxWidth: 360 }}>
-        <SbHead yr={yr} sz={44} />
-        <Game teams={teams} pb={pb} g={sb} ui={ui} onBox={onBox} />
-      </div>}
+        );
+        const byeC = (c) => { const t = teams[pb.seeds[c][0]]; return <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#cbd5e1", background: C.bg, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "5px 6px" }}><TeamLogo t={t} sz={18} /><b>{t.ab}</b><span style={{ color: C.mt }}>#1 · bye</span></div>; };
+        return (
+          <div>
+            <div style={{ textAlign: "center", background: `radial-gradient(ellipse at 50% 0%, ${C.gd}22, transparent 70%)`, border: `1px solid ${C.gd}55`, borderRadius: 14, padding: "10px 12px 12px", marginBottom: 14 }}>
+              <SbHead yr={yr} sz={58} />
+              <div style={{ border: `2px solid ${C.gd}`, borderRadius: 10, padding: 3, boxShadow: `0 0 18px ${C.gd}33`, textAlign: "left" }}><Game teams={teams} pb={pb} g={sb} ui={ui} onBox={onBox} /></div>
+            </div>
+            <ConfBracket mineConf={conf(ui) || "AFC"} render={(c) => (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 6, minHeight: 330 }}>
+                {games3("WILD CARD", games(1, c), 3, byeC(c))}
+                {games3("DIVISIONAL", games(2, c), 2)}
+                {games3("CONF. FINAL", games(3, c), 1)}
+              </div>
+            )} />
+          </div>
+        );
+      })()}
     </div>
   );
 }

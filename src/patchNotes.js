@@ -1756,4 +1756,7 @@ export const PATCH_NOTES = [
   { v: "4.41", date: "2026-10-20", title: "Lombardi on the bracket", notes: [
     "Playoff bracket: the Super Bowl heading is now the Lombardi Trophy with that year's numeral below it in silver (Super Bowl LXXIII and so on)",
   ] },
+  { v: "4.42", date: "2026-10-20", title: "Phone playoff bracket", notes: [
+    "Phone playoff bracket redone: the Super Bowl up top under the Lombardi, an AFC / NFC switch (your conference first), and each conference laid out as a real bracket, with Wild Card, Divisional and Conference Final side by side and compact score cards",
+  ] },
 ];
