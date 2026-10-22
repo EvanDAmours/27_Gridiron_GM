@@ -1655,4 +1655,7 @@ export const PATCH_NOTES = [
   { v: "4.19", date: "2026-10-20", title: "Falcons renders", notes: [
     "Custom player renders for the Falcons (Bijan Robinson, Drake London, Chris Lindstrom, Jessie Bates III, A.J. Terrell Jr.) and Panthers rookie Tetairoa McMillan.",
   ] },
+  { v: "4.20", date: "2026-10-20", title: "Star renders for all 32 teams", notes: [
+    "Custom player renders for every club: the top five on each roster (127 new, 169 in all), from Mahomes and Allen to Jefferson, Parsons, Garrett and Bosa. They show on the player card, the home screen promo, draft night, signings and the Hall of Fame.",
+  ] },
 ];

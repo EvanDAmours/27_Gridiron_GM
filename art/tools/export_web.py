@@ -96,14 +96,17 @@ def main():
         ab = os.path.basename(os.path.dirname(os.path.dirname(f))); last, n = os.path.basename(f)[:-5].rsplit("_", 1)
         # the player: that last name (a suffix in the file name, JohnsonJr or CookIII, dropped) and,
         # when two share it (Josh and Kyle Allen), that number; on that team's roster (practice squad
-        # too), else anywhere (he may arrive by trade)
-        key = re.sub(r"(Jr|Sr|II|III|IV|V)$", "", last).lower()
+        # too), else anywhere, free agents included (he may arrive by trade or sign there)
+        # (letters only, so St. Brown, Smith-Njigba and O'Neill match StBrown, Smith-Njigba, ONeill)
+        key = re.sub(r"[^a-z]", "", re.sub(r"(Jr|Sr|II|III|IV|V)$", "", last).lower())
         team = [q for t in roster["teams"] if t["ab"] == ab for q in t["roster"] + t.get("ps", [])]
-        anyone = [q for t in roster["teams"] for q in t["roster"] + t.get("ps", [])]
+        anyone = [q for t in roster["teams"] for q in t["roster"] + t.get("ps", [])] + roster.get("fa", [])
         def pick(pool):
-            same = [q for q in pool if norm(q["name"]).split()[-1] == key]
+            ends = lambda nm: {"".join(re.sub(r"[^a-z ]", "", nm).split()[i:]) for i in range(1, len(nm.split()))}
+            same = [q for q in pool if key in ends(norm(q["name"]))]
             return [q for q in same if q.get("num") == int(n)] or same
-        full = pick(team) or pick(anyone)
+        # elsewhere, the one wearing that number first (Cam Heyward, a free agent, over Shaka Heyward)
+        full = pick(team) or [q for q in pick(anyone) if q.get("num") == int(n)] or pick(anyone)
         if not full: sys.exit(f"no player for {ab}/c/{os.path.basename(f)}")
         man["custom"].setdefault(norm(full[0]["name"]), {})[ab] = [f"{last}_{n}", int(n)]
         print(f"  {ab} {last}_{n} -> {full[0]['name']}")
