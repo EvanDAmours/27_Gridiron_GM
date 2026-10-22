@@ -156,22 +156,25 @@ const CATS = [
   ["PASSING", (s) => s.att, [["C/ATT", (s) => `${s.comp || 0}/${s.att || 0}`], ["YDS", (s) => s.passYds || 0], ["TD", (s) => s.passTD || 0], ["INT", (s) => s.passInt || 0]]],
   ["RUSHING", (s) => s.rushAtt || s.rushYds, [["CAR", (s) => s.rushAtt || 0], ["YDS", (s) => s.rushYds || 0], ["TD", (s) => s.rushTD || 0]]],
   ["RECEIVING", (s) => s.rec, [["REC", (s) => s.rec || 0], ["YDS", (s) => s.recYds || 0], ["TD", (s) => s.recTD || 0]]],
-  ["DEFENSE", (s) => s.tkl || s.sacks || s.ints, [["TKL", (s) => s.tkl || 0], ["SK", (s) => s.sacks || 0], ["INT", (s) => s.ints || 0]]],
+  // every defender who did something: pressures and pass breakups count too, so a rusher who lived
+  // in the backfield or a safety who broke up passes shows up even without many tackles
+  ["DEFENSE", (s) => s.tkl || s.sacks || s.ints || s.pres || s.pd, [["TKL", (s) => s.tkl || 0], ["SK", (s) => s.sacks || 0], ["PRES", (s) => s.pres || 0], ["PD", (s) => s.pd || 0], ["INT", (s) => s.ints || 0]]],
   ["KICKING", (s) => s.fgA || s.xpA, [["FG", (s) => `${s.fgM || 0}/${s.fgA || 0}`], ["XP", (s) => `${s.xpM || 0}/${s.xpA || 0}`]]],
 ];
-const sortKey = { PASSING: "passYds", RUSHING: "rushYds", RECEIVING: "recYds", DEFENSE: "tkl", KICKING: "fgM" };
+const sortKey = { PASSING: (s) => s.passYds || 0, RUSHING: (s) => s.rushYds || 0, RECEIVING: (s) => s.recYds || 0, DEFENSE: (s) => (s.tkl || 0) + (s.sacks || 0) * 3 + (s.pres || 0) + (s.pd || 0) * 1.5 + (s.ints || 0) * 4, KICKING: (s) => s.fgM || 0 };
+const SHOW = { PASSING: 3, RUSHING: 4, RECEIVING: 5, DEFENSE: 8, KICKING: 2 };
 export function BoxScore({ boxH, boxA, home, away }) {
   const td = { padding: "3px 4px", fontSize: 12, textAlign: "right", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" };
   const team = (box, t) => (
     <div style={{ background: C.bg, borderRadius: 10, padding: "8px 10px", minWidth: 0, borderTop: `3px solid ${t.clr}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}><TeamLogo t={t} sz={18} /><b style={{ fontSize: 13 }}>{t.city} {t.name}</b></div>
       {CATS.map(([cat, has, cols]) => {
-        const rows = Object.values(box || {}).filter((s) => has(s)).sort((a, b) => (b[sortKey[cat]] || 0) - (a[sortKey[cat]] || 0)).slice(0, cat === "DEFENSE" ? 5 : 4);
+        const rows = Object.values(box || {}).filter((s) => has(s)).sort((a, b) => sortKey[cat](b) - sortKey[cat](a)).slice(0, SHOW[cat]);
         if (!rows.length) return null;
         return (
           <table key={cat} style={{ width: "100%", borderCollapse: "collapse", marginBottom: 6 }}>
             <thead><tr><th style={{ ...td, textAlign: "left", fontSize: 10, color: C.mt, letterSpacing: 1 }}>{cat}</th>{cols.map(([h]) => <th key={h} style={{ ...td, fontSize: 10, color: C.mt }}>{h}</th>)}</tr></thead>
-            <tbody>{rows.map((s, i) => <tr key={i} style={{ borderTop: `1px solid ${C.bd}44` }}><td style={{ ...td, textAlign: "left", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</td>{cols.map(([h, f]) => <td key={h} style={td}>{f(s)}</td>)}</tr>)}</tbody>
+            <tbody>{rows.map((s, i) => <tr key={i} style={{ borderTop: `1px solid ${C.bd}44` }}><td style={{ ...td, textAlign: "left", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}{s.pos && <span style={{ color: C.mt, fontSize: 10, marginLeft: 5 }}>{s.pos}</span>}</td>{cols.map(([h, f]) => <td key={h} style={td}>{f(s)}</td>)}</tr>)}</tbody>
           </table>
         );
       })}

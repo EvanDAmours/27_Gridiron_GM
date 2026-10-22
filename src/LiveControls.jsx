@@ -39,7 +39,6 @@ export function Act({ children, onClick, kind, title, wide, big }) {
 const WHY = {
   call: { false: "Your coaches call every play.", true: "You call each play when you have the ball, and pick the receiver on passes." },
   live: { Key: "Third and fourth downs, goal to go, a close finish and big plays play out on the field.", All: "Every run and pass plays out on the field.", Off: "Results only: the field just resets between plays." },
-  view: { false: "The field with the play-by-play and box score beside it.", true: "A big field with each play captioned under it, like a broadcast." },
 };
 function Setting({ icon, title, why, children }) {
   return (
@@ -52,9 +51,9 @@ function Setting({ icon, title, why, children }) {
     </div>
   );
 }
-export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, speeds, onSpeed, tv, onTv }) {
+export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, speeds, onSpeed }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "10px 16px", padding: "2px 2px 10px", marginBottom: 8, borderBottom: `1px solid ${C.bd}` }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "10px 16px", padding: "2px 2px 8px" }}>
       <Setting icon="🎮" title="Play calling" why={WHY.call[callMode]}>
         <Seg value={callMode} onChange={onCall} tone="#4ade80" options={[[false, "Coaches"], [true, "Me"]]} />
       </Setting>
@@ -63,9 +62,6 @@ export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, 
       </Setting>
       <Setting icon="⏱" title="Speed" why="How long the game waits between plays.">
         <Seg value={speed} onChange={onSpeed} options={speeds.map((k) => [k, k])} />
-      </Setting>
-      <Setting icon="📺" title="View" why={WHY.view[tv]}>
-        <Seg value={tv} onChange={onTv} tone="#c084fc" options={[[false, "Desk"], [true, "TV"]]} />
       </Setting>
     </div>
   );

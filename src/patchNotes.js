@@ -1700,4 +1700,10 @@ export const PATCH_NOTES = [
     "Runs and screens you call play out behind the scenes: no timing bar, your players decide it.",
     "Pausing now also holds a live play where it is.",
   ] },
+  { v: "4.29", date: "2026-10-20", title: "One game view", notes: [
+    "Live game screen: one cleaner view. The big field, the play caption under it as the focal point (the old TV look), and the controls under that. The Desk/TV switch is gone.",
+    "Recent plays: the last five plays show while the game runs. Pause it (or finish) and the whole play-by-play opens up to scroll back through.",
+    "📋 Box score is now a button that pops up both teams' stats, instead of a crowded panel. The defense shows tackles, sacks, pressures, pass breakups and interceptions, with every defender who made a play (safeties included) and their position (EDGE, DT, LB, CB, S).",
+    "⚙ Settings (play calling, live plays, speed) open under the controls when you want them, each with a line explaining what it does.",
+  ] },
 ];
