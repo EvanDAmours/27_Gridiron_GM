@@ -4,6 +4,8 @@ import React from "react";
 import { C, Btn, TeamLogo } from "./ui.jsx";
 import { ROUND_NAMES, seedLabel } from "./playoffs.js";
 import { MOBILE } from "./mobile.js";
+import { sbName, sbNumber } from "./data/superbowls.js";
+import lombardi from "./assets/lombardi.webp";
 
 function Game({ teams, pb, g, ui, onBox }) {
   if (!g) return <div style={{ border: `1px dashed ${C.bd}`, borderRadius: 8, padding: "10px", color: C.mt, fontSize: 13, textAlign: "center" }}>TBD</div>;
@@ -31,7 +33,19 @@ function Game({ teams, pb, g, ui, onBox }) {
   );
 }
 
-export default function PlayoffBracket({ pb, teams, ui, onBox, onSim, onPlay, title }) {
+// The Super Bowl's heading: the Lombardi Trophy over this year's numeral, in silver.
+function SbHead({ yr, sz = 54 }) {
+  const n = yr ? sbName(sbNumber(yr)).replace("Super Bowl ", "") : "";
+  return (
+    <div style={{ textAlign: "center", marginBottom: 8 }}>
+      <img src={lombardi} alt="Super Bowl" style={{ height: sz, objectFit: "contain", filter: "drop-shadow(0 4px 10px #000a)" }} />
+      {n && <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, background: "linear-gradient(180deg,#f8fafc,#94a3b8 55%,#e2e8f0)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>{n}</div>}
+    </div>
+  );
+}
+
+// yr: the season, for the Super Bowl's numeral
+export default function PlayoffBracket({ pb, teams, ui, onBox, onSim, onPlay, title, yr }) {
   const conf = (id) => teams[id] && (pb.seeds.AFC.includes(id) ? "AFC" : "NFC");
   const games = (rd, c) => {
     const done = pb.res.filter((r) => r.rd === rd && (!c || conf(r.h) === c));
@@ -85,8 +99,10 @@ export default function PlayoffBracket({ pb, teams, ui, onBox, onSim, onPlay, ti
               {stack("DIVISIONAL", games(2, "AFC"), 2)}
               {stack("CONFERENCE", games(3, "AFC"), 1)}
               <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
-                <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.5, color: C.gd, marginBottom: 8, textAlign: "center" }}>🏆 SUPER BOWL</div>
+                {/* a blank heading the height of the others, so the game lines up with the conference finals */}
+                <div aria-hidden style={{ fontSize: 13, fontWeight: 900, marginBottom: 8, visibility: "hidden" }}>SUPER BOWL</div>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                  <div style={{ position: "relative" }}><div style={{ position: "absolute", bottom: "100%", left: 0, right: 0 }}><SbHead yr={yr} sz={64} /></div></div>
                   <div style={{ border: `2px solid ${C.gd}`, borderRadius: 10, padding: 3, boxShadow: `0 0 18px ${C.gd}33` }}><Game teams={teams} pb={pb} g={sb} ui={ui} onBox={onBox} /></div>
                 </div>
               </div>
@@ -108,7 +124,7 @@ export default function PlayoffBracket({ pb, teams, ui, onBox, onSim, onPlay, ti
         </div>
       ))}
       {MOBILE && <div style={{ maxWidth: 360 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.gd, marginBottom: 8 }}>SUPER BOWL</div>
+        <SbHead yr={yr} sz={44} />
         <Game teams={teams} pb={pb} g={sb} ui={ui} onBox={onBox} />
       </div>}
     </div>

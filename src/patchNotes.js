@@ -1753,4 +1753,7 @@ export const PATCH_NOTES = [
     "Live plays: after a handoff or a throw the quarterback stays in empty-handed frames, so a ball never reappears in his hands",
     "Field goals: the punter holds, with no quarterback on the field, and the kicker plants beside the hold instead of standing on top of the holder",
   ] },
+  { v: "4.41", date: "2026-10-20", title: "Lombardi on the bracket", notes: [
+    "Playoff bracket: the Super Bowl heading is now the Lombardi Trophy with that year's numeral below it in silver (Super Bowl LXXIII and so on)",
+  ] },
 ];

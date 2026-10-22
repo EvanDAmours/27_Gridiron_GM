@@ -1970,7 +1970,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       </div></details>}/>}
 
     {/* PLAYOFFS */}
-    {tab==="playoffs"&&pb?.seeds&&<PlayoffBracket pb={pb} teams={teams} ui={ui} onBox={setBoxView} onSim={()=>simPR()} onPlay={([h,a])=>startLiveSim({wk:`P${pb.rd}`,h,a,playoff:true})}/>}
+    {tab==="playoffs"&&pb?.seeds&&<PlayoffBracket pb={pb} teams={teams} ui={ui} yr={yr} onBox={setBoxView} onSim={()=>simPR()} onPlay={([h,a])=>startLiveSim({wk:`P${pb.rd}`,h,a,playoff:true})}/>}
     {tab==="playoffs"&&!pb?.seeds&&<div>{pb?<div>
       <div style={{fontSize:15,fontWeight:700,marginBottom:8,color:pb.ch!=null?C.gd:C.tx}}>{pb.ch!=null?`🏆 ${teams[pb.ch]?.city} ${teams[pb.ch]?.name} are Champions!`:`Playoffs — Round ${pb.rd}`}</div>
       {/* Playoff Bracket Visual */}

@@ -18,7 +18,7 @@ export const SUPER_BOWLS = [
 // Super Bowl numbering: Roman numerals, except Super Bowl 50.
 export function sbName(n) {
   if (n === 50) return "Super Bowl 50";
-  const R = [[50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
+  const R = [[100, "C"], [90, "XC"], [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
   let s = "", x = n;
   for (const [v, r] of R) while (x >= v) { s += r; x -= v; }
   return `Super Bowl ${s}`;
