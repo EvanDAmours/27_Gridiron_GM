@@ -1649,4 +1649,7 @@ export const PATCH_NOTES = [
     "Deadline day: the trade block's asking price is now a price the club will actually take. It's worked out the way your offer is judged (their premium for a starter, how a rebuilding or contending club values picks), so \"asking a 3rd\" means a 3rd gets it done.",
     "The pixel players on the live field are a touch smaller.",
   ] },
+  { v: "4.18", date: "2026-10-20", title: "Deadline rentals go cheap", notes: [
+    "Deadline rentals: a veteran whose contract is up after the season and whom his club won't (or can't) re-sign now goes cheap in season, at about half his value, usually about a round lower. His club would rather get something now than lose him for nothing in March. Faces of the franchise never count.",
+  ] },
 ];

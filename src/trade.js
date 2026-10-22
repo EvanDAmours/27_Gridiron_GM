@@ -6,6 +6,7 @@
 
 import { clubMode, fitsTeam } from "./tradeOffers.js";
 import { isFaceOf } from "./faceOfFranchise.js";
+import { keepChance } from "./offseason.js";
 
 export const POS_MULT = { QB: 1.8, DL: 1.15, LT: 1.1, WR: 1.05, CB: 1.0, RT: 0.95, TE: 0.8, LB: 0.8, S: 0.8, C: 0.7, LG: 0.65, RG: 0.65, RB: 0.6, K: 0.2, P: 0.15 };
 const DEV_MULT = { generational: 1.2, superstar: 1.1, star: 1.04 };
@@ -54,6 +55,8 @@ export function fitFor(them, p, { season = false } = {}) {
   return { m, why };
 }
 // Draft picks to the same club: a rebuilder prizes them, a contender in season less so.
+// what an expiring veteran his club won't keep goes for in season, as a share of his value
+export const RENTAL = 0.55;
 const pickMult = (them, season) => { const mode = them ? clubMode(them) : "middle"; return mode === "rebuild" ? 1.15 : mode === "contend" && season ? 0.9 : 1; };
 
 // Would `them` accept? They price what they give up at full value plus the margin they want to
@@ -74,14 +77,20 @@ export function evaluateTrade({ send = [], sendPk = [], get = [], getPk = [], th
   const pm = pickMult(them, season);
   if (sendPk.length && pm !== 1) notes.push(pm > 1 ? "they're rebuilding, so picks count for more" : "they're contending, so picks count for less right now");
   const gv = Math.round(offered.reduce((s, v, i) => s + v * (PACKAGE[i] ?? 0.25), 0) + sendPk.reduce((s, pk) => s + pick(pk) * pm, 0));
-  const rv = Math.round(get.reduce((s, p) => s + (p.tradeVal || 0), 0) + getPk.reduce((s, pk) => s + pick(pk), 0));
+  // A veteran whose deal is up after this season and whom his club won't keep (too old or too dear
+  // to re-sign): it would rather get something now than lose him for nothing in March, so in season
+  // it sells him at about half his value and without the usual premium.
+  const rental = (p) => season && (p.contract || 0) <= 1 && (p.pos === "QB" ? p.age >= 32 : p.age >= 29) && keepChance(p) < 0.5 && !(them && isFaceOf(p, them));
+  const firm = get.filter((p) => !rental(p));
+  const rv = Math.round(get.reduce((s, p) => s + (p.tradeVal || 0) * (rental(p) ? RENTAL : 1), 0) + getPk.reduce((s, pk) => s + pick(pk), 0));
   let mult = 1.1, why = null;
-  if (get.some((p) => p.tradeVal >= 150)) { mult = 1.25; why = "They want a big premium for a star"; }
-  if (starter && starter.ovr >= 75 && get.some((p) => p.id === starter.id)) { mult = 1.35; why = "That's their franchise quarterback — they'd need to be blown away"; }
+  if (firm.length < get.length) { mult = 1.05; why = "His deal is up and they won't be keeping him — they'd rather get something now than lose him for nothing"; }
+  if (firm.some((p) => p.tradeVal >= 150)) { mult = 1.25; why = "They want a big premium for a star"; }
+  if (starter && starter.ovr >= 75 && firm.some((p) => p.id === starter.id)) { mult = 1.35; why = "That's their franchise quarterback — they'd need to be blown away"; }
   // the face of their franchise: only an overwhelming offer
   if (them && get.some((p) => isFaceOf(p, them))) { mult = Math.max(mult, 1.7); why = "He's the face of their franchise — they'd need to be blown away"; }
   // a contender doesn't hand over a starter it needs without a premium
-  if (!why && them && clubMode(them) === "contend" && get.some((p) => p.pos !== "QB" && (p.tradeVal || 0) >= 40 && fitsTeam({ ...them, roster: them.roster.filter((x) => x.id !== p.id) }, p))) { mult = Math.max(mult, 1.2); why = "They're contending and he's one of their starters"; }
+  if ((!why || firm.length < get.length) && them && clubMode(them) === "contend" && firm.some((p) => p.pos !== "QB" && (p.tradeVal || 0) >= 40 && fitsTeam({ ...them, roster: them.roster.filter((x) => x.id !== p.id) }, p))) { mult = Math.max(mult, 1.2); why = "They're contending and he's one of their starters"; }
   const ask = Math.round(rv * mult);
   const both = (send.length || sendPk.length) && (get.length || getPk.length);
   // salary: what they take on has to fit under their cap

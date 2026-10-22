@@ -48,3 +48,13 @@ test("prying the face loose takes an overwhelming offer, and no close calls", ()
   assert.ok(!ev.accept);
   assert.ok(!closeCall({ ...ev, gap: 1 }, [m], { mode: "rebuild", season: true, hour: 6, key: "k" }).ok);
 });
+
+test("an expiring veteran his club won't keep goes cheap in season; not in the offseason, not the face", () => {
+  const vet = { id: "v", name: "Old Vet", pos: "WR", ovr: 86, age: 32, contract: 1, tradeVal: 40 };
+  const them = { ab: "ZZZ", roster: [vet] };
+  const ask = (p, season) => evaluateTrade({ sendPk: [], send: [{ id: "s", pos: "TE", age: 24, ovr: 70, tradeVal: 1 }], get: [p], them, pick: () => 0, season }).ask;
+  assert.ok(ask(vet, true) < ask({ ...vet, contract: 3 }, true) * 0.6);
+  assert.equal(ask(vet, false), ask({ ...vet, contract: 3 }, false));
+  const kc = club("KC"), m = faceOf(kc);
+  assert.match(evaluateTrade({ send: [], get: [{ ...m, contract: 1, age: 34 }], them: kc, pick: () => 0, season: true }).why, /face of their franchise/);
+});
