@@ -10,7 +10,7 @@ import { teamKey } from "../teamUniforms.js";
 const BASE = `${import.meta.env?.BASE_URL ?? "/"}sprites/`;
 const POSE = { QB: "qb", RB: "rb", HB: "rb", FB: "rb", WR: "wr", TE: "te", LT: "ol", LG: "ol", C: "ol", RG: "ol", RT: "ol", OL: "ol", DL: "dl", DE: "dl", DT: "dl", NT: "dl", LE: "dl", RE: "dl", EDGE: "dl", LB: "lb", MLB: "lb", OLB: "lb", ILB: "lb" };
 // a standing quarterback is this tall in the field's units; every pose keeps its size relative to him
-const QB_H = 46;
+const QB_H = 41;
 
 export const hasTeamSprites = (team) => !!SHEETS[teamKey(team)];
 export const poseOf = (pos) => POSE[String(pos || "").toUpperCase()] || "db";

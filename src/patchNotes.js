@@ -1645,4 +1645,8 @@ export const PATCH_NOTES = [
   { v: "4.16", date: "2026-10-20", title: "Faces of the franchise stay home", notes: [
     "Faces of the franchise: a club's career-long star (Mahomes in Kansas City, Allen in Buffalo, Watt in Pittsburgh, Jefferson in Minnesota) is re-signed every time his deal runs out, cutting others to fit him if it has to, is never shopped or cap-cut, and only comes loose for an overwhelming trade offer. In almost every league he retires where he played. Players drafted in your league earn it after five seasons with one club.",
   ] },
+  { v: "4.17", date: "2026-10-20", title: "Honest deadline asking prices", notes: [
+    "Deadline day: the trade block's asking price is now a price the club will actually take. It's worked out the way your offer is judged (their premium for a starter, how a rebuilding or contending club values picks), so \"asking a 3rd\" means a 3rd gets it done.",
+    "The pixel players on the live field are a touch smaller.",
+  ] },
 ];

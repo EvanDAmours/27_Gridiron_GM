@@ -8,6 +8,7 @@ import { C, oC, Bdg, Btn, TeamLogo } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { DEADLINE_HOURS, LAST_HOUR, marketBoard, leagueTradeBlock } from "./deadline.js";
 import { posTag } from "./dline.js";
+import { evaluateTrade } from "./trade.js";
 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const KIND = {
@@ -90,11 +91,14 @@ function Offer({ o, teams, pickValue, onAccept, onDecline, setSel, hour }) {
 
 const POSITIONS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S"];
 
-// Roughly what he'd cost, in draft-pick terms.
-function costIn(p, pickValue) {
-  const v = p.tradeVal || 0;
-  for (let rd = 1; rd <= 7; rd++) if (v >= pickValue({ rd, overall: 16 + (rd - 1) * 32 }) * 0.85) return rd === 1 ? "a 1st or more" : `about a ${["", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th"][rd]}`;
-  return "a late pick";
+// What he'd really cost, in draft-pick terms: the latest round whose pick alone his club would take
+// for him today, judged the way your offer will be (their premium for a starter, how a rebuilding
+// or contending club values picks). The line on the block is a price they'd actually accept.
+const RD = ["", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th"];
+function costIn(p, team, pickValue) {
+  const takes = (rd) => evaluateTrade({ sendPk: [{ rd, overall: 16 + (rd - 1) * 32 }], get: [p], them: team, pick: pickValue, season: true }).accept;
+  for (let rd = 7; rd >= 1; rd--) if (takes(rd)) return rd === 7 ? "a late pick" : `a ${RD[rd]}`;
+  return "more than a 1st";
 }
 
 // The league's trade block: who's available, why, and a button to call about him.
@@ -119,7 +123,7 @@ function TradeBlock({ teams, ui, needs, pickValue, onInquire, setSel, closed }) 
             <TeamLogo t={teams[ti]} sz={24} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 14, fontWeight: 800 }}><Bdg pos={posTag(p)} /><span onClick={() => setSel(p)} style={{ cursor: "pointer", lineHeight: 1.2 }}>{p.name}</span>{needs.includes(p.pos) && <span title="A position you need" style={{ fontSize: 10, color: C.gn, fontWeight: 900 }}>NEED</span>}</div>
-              <div style={{ fontSize: 12, color: C.mt, lineHeight: 1.35 }}>{teams[ti].ab} · age {p.age} · {money(p.salary)}{p.contract ? `, ${p.contract} yr${p.contract > 1 ? "s" : ""}` : ""} · {why} · asking {costIn(p, pickValue)}</div>
+              <div style={{ fontSize: 12, color: C.mt, lineHeight: 1.35 }}>{teams[ti].ab} · age {p.age} · {money(p.salary)}{p.contract ? `, ${p.contract} yr${p.contract > 1 ? "s" : ""}` : ""} · {why} · asking {costIn(p, teams[ti], pickValue)}</div>
             </div>
             <b style={{ fontSize: 16, color: oC(p.ovr), minWidth: 24, textAlign: "right" }}>{p.ovr}</b>
             <Btn onClick={() => onInquire(p, ti)} disabled={closed} bg="#1d4ed8" style={{ fontSize: 12, padding: "4px 9px" }}>Inquire</Btn>
