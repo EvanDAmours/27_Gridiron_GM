@@ -1759,4 +1759,10 @@ export const PATCH_NOTES = [
   { v: "4.42", date: "2026-10-20", title: "Phone playoff bracket", notes: [
     "Phone playoff bracket redone: the Super Bowl up top under the Lombardi, an AFC / NFC switch (your conference first), and each conference laid out as a real bracket, with Wild Card, Divisional and Conference Final side by side and compact score cards",
   ] },
+  { v: "4.43", date: "2026-10-20", title: "Kickoffs act out", notes: [
+    "Kickoffs act out live: after a touchdown or field goal the field plays out the kickoff that follows (the kicker's run-up and the kick off the tee, the cover team sprinting down in its lanes, the return team's wall meeting them, the catch, the return and the tackle)",
+    "Kickoff return touchdowns and muffs play out too, with their own result card (TOUCHDOWN!, FUMBLE!, BIG RETURN!)",
+    "Which ones play: every returned kickoff with live plays on All; on Key, the big returns, muffs and touchdowns plus about a third of the rest. Touchbacks don't play out",
+    "The score goes up as soon as the scoring play ends, then the kickoff plays",
+  ] },
 ];

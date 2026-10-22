@@ -41,6 +41,18 @@ export function liveChoice(ev, mode, lead = 0, roll = Math.random()) {
   return null;
 }
 
+// The kickoff after a score the field just acted out (playsim.js kickoff() puts it on ev.ko): the
+// play to act out next ({ k: "ko", ... }), or null when it isn't worth one. Only the scoring side's
+// kick (the field still has them on offense) and only one that's returned: every return in "All",
+// in "Key" a big one, a muff or a touchdown, and now and then an ordinary one.
+export function kickoffPlay(ev, offSide, mode, roll = Math.random()) {
+  const ko = ev?.ko;
+  if (!ko || ko.tb || mode === "Off" || ko.side !== offSide) return null;
+  const ret = (ko.spot ?? 0) - (ko.catchAt ?? 0);
+  if (mode !== "All" && !(ko.td || ko.muff || ret >= 35 || roll < 0.35)) return null;
+  return { k: "ko", yard: 35, qtr: ev.qtr, clock: ev.clock, kicker: ko.kicker, kr: ko.kr, catchAt: ko.catchAt, spot: ko.spot, muff: !!ko.muff, td: !!ko.td, ret };
+}
+
 const nm = (p, fb) => p?.name || fb;
 const an = (n) => (/^8/.test(String(n)) || n === 11 || n === 18 ? "an" : "a");
 const lastNm = (p, fb) => (p?.name ? p.name.split(" ").slice(1).join(" ") || p.name : fb);
@@ -52,7 +64,12 @@ export function resultCard(ev, side, userSide, box = {}) {
   const qb = nm(ev.qb, "The quarterback"), carrier = nm(ev.player, "The runner");
   let head = "", line = "", tone = "", star = null, starSide = side, count = null;
   const nTimes = (s, id, key) => (id != null ? box[s]?.[id]?.[key] || 0 : 0);
-  if (k === "fg") {
+  if (k === "ko") {
+    // side: the kicking team
+    if (ev.td) { head = "TOUCHDOWN!"; tone = "gold"; line = `${nm(ev.kr, "The returner")} takes the kickoff all the way back`; star = ev.kr; starSide = def; }
+    else if (ev.muff) { head = "FUMBLE!"; tone = "red"; line = `${nm(ev.kr, "The returner")} coughs up the kickoff, and the kicking team recovers`; }
+    else { star = ev.kr; starSide = def; if (ev.ret >= 35) { head = "BIG RETURN!"; tone = "green"; } line = `${nm(ev.kr, "The returner")} brings it back ${ev.ret} yards to the ${ev.spot > 50 ? `${100 - ev.spot}` : ev.spot}`; }
+  } else if (k === "fg") {
     head = ev.made ? "IT'S GOOD!" : "NO GOOD!"; tone = ev.made ? "green" : "red"; star = ev.player;
     line = ev.made ? `${nm(ev.player, "The kicker")} from ${ev.dist} yards` : `${nm(ev.player, "The kicker")}'s ${ev.dist}-yard try is wide`;
   } else if (k === "punt") {

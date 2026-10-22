@@ -53,6 +53,7 @@ export const SPEED = 9; // yards a second a pursuer covers
 export function buildPlay(ev, slots, seed = 1) {
   const R = rng(seed);
   if (ev.k === "fg" || ev.k === "punt") return buildSpecial(ev, slots, R);
+  if (ev.k === "ko") return buildKickoff(ev, slots, R);
   const los = ev.yard, k = ev.k, room = 100 - los;
   const fumble = ev.type === "fumble", td = !!ev.td;
   const Y = td ? room : ev.yards || 0;
@@ -369,4 +370,85 @@ function buildSpecial(ev, slots, R) {
   for (const s of slots) { const g = F[s.key]; f[s.key] = (t) => onField(g(Math.min(t, Math.max(freeze, T - 0.2)))); }
   const ballOut = (t) => { const b = ball(t); return b.held ? b : { ...b, ...((([x, y]) => ({ x, y }))(onField([b.x, b.y]))) }; };
   return { T, f, ball: ballOut, down, who, m, hop, stars: [...new Set(stars)], catchAt: null, tEnd };
+}
+
+// A kickoff acted out (the same shape as buildPlay's result), from the kicking team's side (it
+// drives toward +x): the kicker's run-up and the boot off the tee at his 35, the cover team
+// sprinting down in its lanes, the return team falling back to set its wall, the catch (or a muff),
+// the blocks meeting the coverage, the return and the tackle (or a touchdown). ev: { k: "ko",
+// kicker, kr, catchAt, spot, muff, td } (playsim.js kickoff()): catchAt is the receiving team's
+// yard line where he fields it, spot where the return ends.
+function buildKickoff(ev, slots, R) {
+  const los = 35, off = slots.filter((s) => s.side === "off"), def = slots.filter((s) => s.side === "def");
+  const by = (list, pos, i = 0) => list.filter((s) => s.pos === pos)[i] || null;
+  const near = (list, x, y) => list.reduce((b, s) => (!b || Math.hypot(s.x - x, s.y - y) < Math.hypot(b.x - x, b.y - y) ? s : b), null);
+  const F = {}, down = {}, who = {}, stars = [];
+  const kicker = by(off, "K") || off[0], ret = by(def, "S") || def[def.length - 1];
+  const tKick = 0.95, flight = 2.6, tLand = tKick + flight;
+  const cx = clamp(100 - (ev.catchAt ?? 3), 88, 104), cy = (R() - 0.5) * 10;
+  // the run-up, the kick, and he trails the play down the middle as the safety valve
+  F[kicker.key] = path([0, kicker.x, kicker.y], [0.3, kicker.x, kicker.y], [tKick, los - 0.7, 0.5], [tKick + 0.45, los + 1.5, 0.4], [tKick + 2.4, los + 16, 0]);
+  const flightPos = (t) => { const u = clamp((t - tKick) / flight, 0, 1); return { x: lerp(los, cx, u), y: lerp(0, cy, u), h: 0.3 + Math.sin(Math.PI * u) * 15 }; };
+  const muff = !!ev.muff, td = !!ev.td;
+  // the return: up the field (toward -x) to where the engine says it ended
+  let carrier = null, tEnd = tLand + 0.6, end = [cx - 1.5, cy + 2];
+  if (!muff) {
+    const ex = td ? -4 : 100 - ev.spot, ey = clamp(cy + (R() - 0.5) * 22, -LAT, LAT);
+    const run = Math.max(1, cx - ex), dur = clamp(run / (7.5 + run * 0.08), 0.6, 4.6);
+    const mid = [lerp(cx, ex, 0.45), clamp(lerp(cy, ey, 0.5) + (R() - 0.5) * 12, -LAT, LAT)];
+    F[ret.key] = path([0, ret.x, ret.y], [tLand - 0.5, cx, cy], [tLand, cx, cy], [tLand + dur * 0.45, mid[0], mid[1]], [tLand + dur, ex, ey]);
+    carrier = ret; tEnd = tLand + dur; end = [ex, ey];
+  } else F[ret.key] = path([0, ret.x, ret.y], [tLand - 0.5, cx, cy], [tLand + 0.5, cx + 0.5, cy]);
+  // where the two units collide: about 25 yards in front of the catch
+  const meetX = cx - 22 - R() * 6;
+  const cover = off.filter((s) => s !== kicker);
+  // the up-backs lead the returner; everyone else on the return team takes a man in coverage
+  const upBacks = def.filter((s) => s.pos === "RB");
+  const blockers = def.filter((s) => s !== ret && !upBacks.includes(s));
+  const mate = pairLine(cover, blockers);
+  const pairs = {}, meetAt = {};
+  for (const c of cover) {
+    const cp = [meetX + (R() - 0.5) * 4, clamp(lerp(c.y, cy, 0.35), -LAT, LAT)], tC = tLand - 0.1 + R() * 0.5;
+    F[c.key] = path([0, c.x, c.y], [0.45, c.x, c.y], [tC, cp[0], cp[1]], [tC + 2, cp[0] + 1, cp[1]]);
+    meetAt[c.key] = tC;
+  }
+  for (const b of blockers) {
+    const c = mate[b.key];
+    if (!c) { F[b.key] = path([0, b.x, b.y], [tLand, meetX + 4, b.y * 0.6]); continue; }
+    const cf = F[c.key], tC = meetAt[c.key];
+    // he backs up to set the wall, then squares up to his man as he arrives and rides him
+    F[b.key] = (t) => { const [x, y] = cf(Math.max(t, tC)); const there = [x + 1.8, y]; if (t >= tC) return there; const u = ease(clamp((t - 0.45) / (tC - 0.45), 0, 1)); return [lerp(b.x, there[0], u), lerp(b.y, there[1], u)]; };
+    pairs[b.key] = tC - 0.15; pairs[c.key] = tC - 0.15;
+  }
+  // the up-backs run a few yards ahead of the returner
+  upBacks.forEach((u, i) => { const rf = F[ret.key], side = i ? 2.2 : -2.2; F[u.key] = (t) => { if (t < tLand) { const v = clamp(t / tLand, 0, 1); return [lerp(u.x, cx - 6, v), lerp(u.y, cy + side, v)]; } const [x, y] = rf(t); return [Math.max(x - 4.5, -3), y + side]; }; });
+  // whoever's free in coverage (and the kicker) runs the play down
+  let tackler = null;
+  const free = cover.filter((c) => !Object.values(mate).includes(c));
+  if (carrier && !td) {
+    tackler = near(free.length ? free : cover, end[0], end[1]) || kicker;
+    delete pairs[tackler.key];
+    F[tackler.key] = toward(F[tackler.key], Math.min(tLand, tEnd - 0.4), [end[0] + 0.8, end[1]], tEnd);
+    down[carrier.key] = tEnd; down[tackler.key] = tEnd + 0.08; stars.push(tackler.key);
+  }
+  for (const c of free) if (c !== tackler) { delete pairs[c.key]; F[c.key] = toward(F[c.key], tLand, [end[0] + 2 + R() * 3, end[1] + (R() - 0.5) * 6], tEnd + 0.3 + R() * 0.6); }
+  // a muff: it bounces loose and the coverage falls on it
+  let recov = null;
+  if (muff) { recov = near(cover, cx, cy); delete pairs[recov.key]; F[recov.key] = toward(F[recov.key], tLand - 0.6, end, tLand + 0.6); down[recov.key] = tLand + 0.6; }
+  const ball = (t) => {
+    if (t < tKick) return { x: los, y: 0, h: 0.25 };
+    if (t < tLand) return flightPos(t);
+    if (carrier) return { held: carrier.key };
+    const u = clamp((t - tLand) / 0.6, 0, 1);
+    return { x: lerp(cx, end[0], u), y: lerp(cy, end[1], u), h: Math.abs(Math.sin(u * Math.PI * 2)) * 1.1 * (1 - u) };
+  };
+  who[kicker.key] = ev.kicker; who[ret.key] = ev.kr; stars.push(ret.key);
+  const T = carrier ? tEnd + (td ? 1.5 : 0.9) : tLand + 1.4;
+  const m = { k: "ko", carrier: carrier?.key ?? null, tackler: tackler?.key ?? null, tE: tLand, tEnd, td, recov: recov?.key ?? null, recovT: recov ? tLand + 0.6 : null,
+    special: { k: "ko", kicker: kicker.key, returner: ret.key, tKick, tLand, catches: !muff, release: 0, pairs } };
+  for (const s of slots) if (!F[s.key]) F[s.key] = path([0, s.x, s.y]);
+  const freeze = tEnd + 0.6, f = {};
+  for (const s of slots) { const g = F[s.key]; f[s.key] = (t) => onField(g(Math.min(t, Math.max(freeze, T - 0.2)))); }
+  const ballOut = (t) => { const b = ball(t); return b.held ? b : { ...b, ...((([x, y]) => ({ x, y }))(onField([b.x, b.y]))) }; };
+  return { T, f, ball: ballOut, down, who, m, hop: td ? { key: ret.key, at: tEnd } : null, stars: [...new Set(stars)], catchAt: null, tEnd };
 }

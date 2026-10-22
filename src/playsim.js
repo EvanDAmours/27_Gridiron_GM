@@ -464,6 +464,8 @@ function newPossession(g, yard) {
 function kickoff(g, ev, depth = 0) {
   const rand = g.rand, kick = g.poss, recv = other(kick);
   const R = g.sides[recv], K = g.sides[kick];
+  // the play's kickoff, for the field to act out (LivePlay.jsx): only the first one a play leads to
+  const ko = ev && !ev.ko ? (ev.ko = { side: kick, kicker: K?.k || null, tb: true }) : null;
   newPossession(g, 35);
   if (rand() < 0.3 || !R) return; // touchback
   const r = R.krR ?? 80, catchAt = Math.round(rand() * 8);
@@ -471,8 +473,10 @@ function kickoff(g, ev, depth = 0) {
   if (rand() < 0.026 * Math.exp((r - 85) / 8)) spot += 20 + rand() * 65; // breaks one (a typical club's returner is about an 85)
   spot = Math.round(clamp(spot, catchAt + 5, 100));
   const p = R.kr, l = line(g, recv, p);
+  if (ko) Object.assign(ko, { tb: false, kr: p || null, catchAt, spot, td: spot >= 100 });
   add(l, "kr", 1);
   if (rand() < 0.005) { // muffed or stripped: the kicking team recovers
+    if (ko) ko.muff = true;
     add(l, "krYds", spot - catchAt); add(l, "fum", 1); g.stats[recv].fumLost++;
     newPossession(g, 100 - spot);
     if (ev) ev.text += ` ${p?.name || "The returner"} FUMBLES the kickoff, and the kicking team recovers!`;

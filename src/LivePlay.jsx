@@ -116,6 +116,8 @@ function poseOf(sc, s, t, speed, ball) {
       if (k === sp.holder) return t >= 0.3 && t < sp.tKick ? "c4" : null;
       if (k === sp.kicker) return t < 0.4 ? null : t < 0.85 ? (stride ? "c2" : "c1") : t < sp.tKick ? "c2" : t < sp.tKick + 0.6 ? "c3" : null;
     } else {
+      // the kickoff: his run-up, the plant and the boot off the tee
+      if (sp.k === "ko" && k === sp.kicker && t >= 0.3 && t < sp.tKick + 0.55) return t < sp.tKick - 0.2 ? (stride ? "a6" : "a5") : t < sp.tKick ? "c2" : "c3";
       if (k === sp.punter) return t >= 0.5 && t < sp.tKick ? "c6" : t >= sp.tKick && t < sp.tKick + 0.55 ? "c7" : null;
       if (k === sp.returner && sp.catches && t > sp.tLand - 0.3 && (t < sp.tLand + 0.15 || k !== m.carrier) && !(sc.down[k] != null && t >= sc.down[k])) return "c8";
     }
@@ -128,6 +130,8 @@ function poseOf(sc, s, t, speed, ball) {
     return "b5";
   }
   if (k === m.recov && m.recovT != null && t > m.recovT - 0.5) return "b3"; // diving on a fumble
+  // a kickoff's blocks: once the wall meets the coverage, the two lock up
+  if (sp?.pairs?.[k] != null && t > sp.pairs[k] && k !== m.carrier && k !== m.tackler) return "b6";
   if (k === m.tackler && m.carrier && !m.td && t > m.tEnd - 0.32) return "b3";
   if (k === m.carrier && m.td && t > m.tEnd) return "b7";
   if (k === m.qb && m.k !== "run") {

@@ -15,7 +15,7 @@ import WeekResult from "./WeekResult.jsx";
 import LiveField, { fieldMaxW } from "./LiveField.jsx";
 import { Act, LiveSettings } from "./LiveControls.jsx";
 import PlayCaller from "./PlayCaller.jsx";
-import { liveChoice, resultCard, LIVE_MODES } from "./livePlays.js";
+import { liveChoice, resultCard, kickoffPlay, LIVE_MODES } from "./livePlays.js";
 // Unsolicited AI trade offers (the weekly offer bar and the "urgent" QB offers) are off until they're
 // reworked into a proper offer screen; trades you start, and the trade block, still work.
 const AI_TRADE_OFFERS = false;
@@ -335,7 +335,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   const[livePlay,setLivePlay]=useState(0);const[liveDone,setLiveDone]=useState(false);
   {/* live plays: the play the field is acting out (its results wait until it's over), and how many plays get acted out */}const[liveAnim,setLiveAnim]=useState(null);const[liveBoxOpen,setLiveBoxOpen]=useState(false);const liveBoxRef=useRef(null);const liveAnimRef=useRef(null);const liveAnimSeq=useRef(1);const[livePlayMode,setLivePlayMode]=useState(()=>{try{return localStorage.getItem('gm_live_plays')||'Key';}catch{return 'Key';}});
   const cycleLivePlays=()=>setLivePlayMode(v=>{const n=LIVE_MODES[(LIVE_MODES.indexOf(v)+1)%LIVE_MODES.length];try{localStorage.setItem('gm_live_plays',n);}catch{}return n;});
-  const endLiveAnim=()=>{const a=liveAnimRef.current;liveAnimRef.current=null;setLiveAnim(null);a?.commit();};
+  const endLiveAnim=(all)=>{const a=liveAnimRef.current;liveAnimRef.current=null;setLiveAnim(null);a?.commit();/* the kickoff after the score, acted out next (all: skipping ahead, so not) */if(!all&&a?.ko&&liveSim){const kev={...a.ko,kickAb:teams[liveSim[a.ko.side]]?.ab};const us=liveSim.h===ui?"h":"a";const id=liveAnimSeq.current++;liveAnimRef.current={commit:()=>{}};setLiveAnim({ev:kev,key:null,id,card:resultCard(kev,a.ko.side,us,{}),teamClr:TEAMS[ui]?.clr});}};
   const[livePaused,setLivePaused]=useState(false);const[livePOG,setLivePOG]=useState(null);
   const[liveStats,setLiveStats]=useState({h:{},a:{}});const[lastLivePlay,setLastLivePlay]=useState(null);const[showLiveEnd,setShowLiveEnd]=useState(false);
   const[boxView,setBoxView]=useState(null);
@@ -699,11 +699,11 @@ const _wireLog=useRef(null);
   const saveLiveSnap=L=>{try{if(!L?.g||L.g.done){localStorage.removeItem(LIVE_KEY);return;}const g={};LIVE_FIELDS.forEach(k=>{g[k]=L.g[k];});localStorage.setItem(LIVE_KEY,JSON.stringify({yr,sp,ui,ab:teams[ui]?.ab,game:L.game,g,log:L.log||[]}));}catch{/* storage full: no resume */}};
   const loadLiveSnap=()=>{try{return JSON.parse(localStorage.getItem(LIVE_KEY)||"null");}catch{return null;}};
   const sameGame=(a,b)=>a&&b&&a.h===b.h&&a.a===b.a&&String(a.wk)===String(b.wk);
-  function finishLiveNow(){const L=liveGameRef.current;if(!liveSim||liveDone||!L)return;if(liveAnimRef.current)endLiveAnim();const g=L.g;let n=0;while(!g.done&&n++<600)playStep(g);if(!g.done)return;try{localStorage.removeItem(LIVE_KEY);}catch{}const view=liveView(g.box);setLiveStats(view);setLiveScore({...g.score});setLiveQtr(g.ot?5:g.qtr);setLiveClock(0);setLiveAwaitingCall(false);setFourthChoice(null);let best=null,bestVal=0;for(const side of["h","a"])for(const ps of Object.values(view[side]||{})){const val=(ps.passYds||0)+(ps.rushYds||0)+(ps.recYds||0)+(ps.td||0)*30+(ps.sack||0)*15+(ps.int||0)*25;if(val>bestVal){bestVal=val;best={...ps,side};}}setLivePOG(best);setLiveDone(true);}
+  function finishLiveNow(){const L=liveGameRef.current;if(!liveSim||liveDone||!L)return;if(liveAnimRef.current)endLiveAnim(true);const g=L.g;let n=0;while(!g.done&&n++<600)playStep(g);if(!g.done)return;try{localStorage.removeItem(LIVE_KEY);}catch{}const view=liveView(g.box);setLiveStats(view);setLiveScore({...g.score});setLiveQtr(g.ot?5:g.qtr);setLiveClock(0);setLiveAwaitingCall(false);setFourthChoice(null);let best=null,bestVal=0;for(const side of["h","a"])for(const ps of Object.values(view[side]||{})){const val=(ps.passYds||0)+(ps.rushYds||0)+(ps.recYds||0)+(ps.td||0)*30+(ps.sack||0)*15+(ps.int||0)*25;if(val>bestVal){bestVal=val;best={...ps,side};}}setLivePOG(best);setLiveDone(true);}
   // Play out the rest of this quarter (or this overtime period) instantly, every play still in the
   // play-by-play, so you can skip ahead and watch only the fourth quarter. Your play calls are made
   // for you while it sims.
-  function simToQuarterEnd(){const L=liveGameRef.current;if(!liveSim||liveDone||!L)return;if(liveAnimRef.current)endLiveAnim();const g=L.g,q0=g.qtr,ot0=g.ot,userSide=liveSim.h===ui?"h":"a";let n=0;while(!g.done&&g.qtr===q0&&g.ot===ot0&&g.clock>0&&n++<300){const offSide=g.poss;const ev=playStep(g);if(!ev)break;commitLivePlay(L,g,ev,offSide,userSide);if(ev.note&&/^(End of quarter|Halftime|Another overtime)/.test(ev.note))break;}setLiveAwaitingCall(false);setLivePhase(null);setLivePendingCall(null);setLiveRecTargets([]);setFourthChoice(null);}
+  function simToQuarterEnd(){const L=liveGameRef.current;if(!liveSim||liveDone||!L)return;if(liveAnimRef.current)endLiveAnim(true);const g=L.g,q0=g.qtr,ot0=g.ot,userSide=liveSim.h===ui?"h":"a";let n=0;while(!g.done&&g.qtr===q0&&g.ot===ot0&&g.clock>0&&n++<300){const offSide=g.poss;const ev=playStep(g);if(!ev)break;commitLivePlay(L,g,ev,offSide,userSide);if(ev.note&&/^(End of quarter|Halftime|Another overtime)/.test(ev.note))break;}setLiveAwaitingCall(false);setLivePhase(null);setLivePendingCall(null);setLiveRecTargets([]);setFourthChoice(null);}
   const qtrLabel=liveQtr>=5?"OT":`Q${liveQtr}`;
   // One play of the live game, on the same engine as quick sims.
   function advanceLivePlay(uCall,qteBonus=1,uPick=null){
@@ -718,7 +718,7 @@ const _wireLog=useRef(null);
     if(!ev)return;
     // a play worth acting out: the field plays it first, and the score, the log and the down wait until it's over
     const _act=liveChoice(ev,livePlayMode,_lead);
-    if(_act){ev.live=true;const card=resultCard(ev,offSide,userSide,g.box);const id=liveAnimSeq.current++;liveAnimRef.current={commit:()=>commitLivePlay(L,g,ev,offSide,userSide)};setLiveAnim({ev,key:_act.key,id,card,teamClr:TEAMS[ui]?.clr,box0:_box0});return;}
+    if(_act){ev.live=true;const card=resultCard(ev,offSide,userSide,g.box);const id=liveAnimSeq.current++;liveAnimRef.current={commit:()=>commitLivePlay(L,g,ev,offSide,userSide),ko:(()=>{const k=kickoffPlay(ev,offSide,livePlayMode);return k&&{...k,side:offSide};})()};setLiveAnim({ev,key:_act.key,id,card,teamClr:TEAMS[ui]?.clr,box0:_box0});return;}
     commitLivePlay(L,g,ev,offSide,userSide);
   }
   function commitLivePlay(L,g,ev,offSide,userSide){

@@ -28,6 +28,13 @@ const SPECIAL = {
     off: [["LT", 0, -1.5, -11], ["LG", 0, -1.5, -5.5], ["C", 0, -1.5, 0], ["RG", 0, -1.5, 5.5], ["RT", 0, -1.5, 11], ["TE", 0, -2, 15.5], ["TE", 1, -2, -15.5], ["WR", 0, -3, 19], ["WR", 1, -3, -19], ["P", 0, -8, 0.6], ["K", 0, -11, -3.5]],
     def: FORMATION.def,
   },
+  // the kickoff: the kicker back at the tee with five cover men either side on the line; the return
+  // team's front five ten yards off, three more behind them, the two up-backs and the returner deep.
+  // Skill players and linebackers only, so everyone's upright.
+  ko: {
+    off: [["K", 0, -7, 0], ["LB", 0, -1, -4], ["LB", 1, -1, 4], ["LB", 2, -1, -10], ["WR", 2, -1, 10], ["S", 0, -1, -16], ["S", 1, -1, 16], ["CB", 0, -1, -22], ["CB", 1, -1, 22], ["WR", 3, -1, -19], ["TE", 1, -1, 19]],
+    def: [["LB", 0, 11, -14], ["LB", 1, 11, -5], ["LB", 2, 11, 5], ["CB", 0, 11, 14], ["CB", 1, 22, -10], ["S", 1, 22, 0], ["WR", 0, 22, 10], ["WR", 1, 30, -6], ["RB", 0, 44, -4], ["RB", 1, 44, 4], ["S", 0, "RET", 0]],
+  },
   punt: {
     off: [["LT", 0, -1.5, -11], ["LG", 0, -1.5, -5.5], ["C", 0, -1.5, 0], ["RG", 0, -1.5, 5.5], ["RT", 0, -1.5, 11], ["TE", 0, -2, 15.5], ["TE", 1, -2, -15.5], ["WR", 0, -1.5, 22], ["WR", 1, -1.5, -22], ["RB", 0, -6, 1.5], ["P", 0, -15, 0]],
     def: FORMATION.def.map(([pos, i, dx, lat]) => (pos === "S" && i === 0 ? ["S", 0, "RET", 0] : pos === "CB" ? [pos, i, 2, lat < 0 ? -22 : 22] : [pos, i, dx, lat])),
@@ -214,7 +221,16 @@ export const fieldMaxW = (tall) => `calc(${MOBILE ? "min(42vh, 390px)" : tall ? 
 
 // anim: a play to act out ({ ev, key, id, card }, livePlays.js), with animSpeed (1 normal) and
 // onAnimDone when it's over (a tap on the field skips it); paused holds it where it is.
-export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday, tall, anim, animSpeed = 1, paused = false, onAnimDone }) {
+// A kickoff comes after the score has gone in, when the ball already belongs to the other side:
+// the field puts the kicking team (anim.ev.kickAb) back on offense for it.
+export default function LiveField(props) {
+  const { anim, off, def } = props;
+  if (anim?.ev?.k === "ko" && anim.ev.kickAb && off?.ab !== anim.ev.kickAb && def?.ab === anim.ev.kickAb) {
+    return <LiveFieldView {...props} off={def} def={off} offHome={!props.offHome} offDepth={props.defDepth} defDepth={props.offDepth} offOrder={props.defOrder} defOrder={props.offOrder} />;
+  }
+  return <LiveFieldView {...props} />;
+}
+function LiveFieldView({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday, tall, anim, animSpeed = 1, paused = false, onAnimDone }) {
   const cam = useRef(null);
   const [phase, setPhase] = useState(null);
   useEffect(() => {
@@ -223,7 +239,8 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
     if (!anim && cam.current) { cam.current.style.transition = "transform .6s ease"; cam.current.style.transform = "none"; }
   }, [anim?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const W8 = wxOf(wx);
-  const los = clamp(ballYard, 1, 99);
+  // a kickoff goes from the kicking team's 35, wherever the scoring play ended
+  const los = anim?.ev?.k === "ko" ? 35 : clamp(ballYard, 1, 99);
   const x0 = xOf(los);
   const o = starters(off, offDepth, offOrder), d = starters(def, defDepth, defOrder);
   // the visitors wear white, unless the home team wears white at home (Dallas): then they wear color
@@ -234,12 +251,12 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
   const place = (side, list, team) =>
     FORM[side].map(([pos, i, dx, lat]) => {
       // with sprites, set each line's depth so the two rows of helmets meet evenly over the ball
-      if (SPRITES && ["LT", "LG", "C", "RG", "RT"].includes(pos)) dx = -1.5;
-      if (SPRITES && pos === "DL") dx = 4.8;
-      if (SPRITES && pos === "LB") dx = 9.5;
+      if (SPRITES && st !== "ko" && ["LT", "LG", "C", "RG", "RT"].includes(pos)) dx = -1.5;
+      if (SPRITES && st !== "ko" && pos === "DL") dx = 4.8;
+      if (SPRITES && st !== "ko" && pos === "LB") dx = 9.5;
       if (SPRITES && pos === "RB" && !st) lat = 7;
       // the punt returner waits about where it's coming down
-      if (dx === "RET") dx = clamp(Math.min(anim.ev.gross || 42, 100 - los + 4) - 4, 25, 48);
+      if (dx === "RET") dx = anim.ev.k === "ko" ? clamp(100 - (anim.ev.catchAt ?? 3) - los - 1, 50, 66) : clamp(Math.min(anim.ev.gross || 42, 100 - los + 4) - 4, 25, 48);
       const x = clamp(xOf(los + dx), 20, W - 20), y = clamp(yOf(lat), SPRITES ? 26 : 22, H - (SPRITES ? 26 : 34));
       const p = list[pos]?.[i];
       // the same spot in yards, for a play acted out (playScript.js)
@@ -339,7 +356,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       {/* line of scrimmage and the line to gain, with a soft glow */}
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#3b82f6" strokeWidth="8" strokeOpacity=".25" />
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#60a5fa" strokeWidth="3" />
-      {toGo > 0 && los + toGo < 100 && <><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#facc15" strokeWidth="8" strokeOpacity=".25" /><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#fde047" strokeWidth="3" /></>}
+      {toGo > 0 && !st && los + toGo < 100 && <><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#facc15" strokeWidth="8" strokeOpacity=".25" /><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#fde047" strokeWidth="3" /></>}
       {anim ? <LivePlay key={anim.id} anim={anim} slots={slots} X={xOf} Y={yOf} cam={cam} W={W} H={H} zoom={MOBILE ? 2.2 : 2.1} speed={animSpeed} paused={paused} onPhase={setPhase} onDone={() => onAnimDone?.()} /> : <>{defMen}{offMen}</>}
       {/* a field goal try: the goalposts at the back of the end zone, seen from above */}
       {st === "fg" && <g pointerEvents="none"><line x1={W - 5} y1={yOf(-3.1)} x2={W - 5} y2={yOf(3.1)} stroke="#facc15" strokeWidth="3" strokeLinecap="round" /><circle cx={W - 5} cy={H / 2} r="3.5" fill="#facc15" /></g>}
