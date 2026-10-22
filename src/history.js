@@ -9,6 +9,7 @@
 import { DRAFT_PEDIGREE, pedigreeKey } from "./data/draftPedigree.js";
 import { FRANCHISE_CAREER } from "./data/franchiseCareer.js";
 import { TEAM_CAREER_BASE, TEAM_CAREER_KEYS } from "./data/teamCareerBase.js";
+import { bestLabel } from "./honors.js";
 
 // Canton, about six a year like the real Hall: a league-era player needs a legacy of 100 and a peak of
 // 92 (a 20-season playtest found 88 let in eleven or twelve a year once the real veterans were gone);
@@ -81,7 +82,8 @@ export function legacyOf(p, { awards = [], book = null, yr, startYr = 2026, star
   const awardPts = Object.entries(won).reduce((s, [k, ys]) => s + AWARD_PTS[k] * ys.length, 0);
   const records = book ? Object.values(book.best).filter((r) => r.pid === p.id).length * 10 : 0;
   // All-Pro and Pro Bowl selections in this league (first team 6, second team 3, Pro Bowl 2).
-  const honorPts = (p.honors || []).reduce((s, h) => s + ({ ap1: 6, ap2: 3, pb: 2 }[h.k] || 0), 0);
+  // The best at his position for a season counts 8.
+  const honorPts = (p.honors || []).reduce((s, h) => s + ({ ap1: 6, ap2: 3, pb: 2, best: 8 }[h.k] || 0), 0);
   const legacy = Math.round(pre + seasonsHere * level(peak) + stats + awardPts + records + honorPts);
   return { legacy, career, won, peak, seasonsHere, pre: Math.round(pre) };
 }
@@ -205,26 +207,30 @@ export const ringCandidates = (retired, team, hall) => (retired || []).filter((r
 const ACCOLADES = [
   ["sb", "🏆", "Super Bowl"], ["mvp", "🏅", "MVP"], ["sbmvp", "🏟️", "Super Bowl MVP"], ["opoy", "⭐", "Off. Player of the Year"],
   ["dpoy", "🛡️", "Def. Player of the Year"], ["oroy", "🌱", "Off. Rookie of the Year"], ["droy", "🌱", "Def. Rookie of the Year"], ["cpoy", "💪", "Comeback Player of the Year"],
-  ["ap1", "🥇", "First-team All-Pro"], ["ap2", "🥈", "Second-team All-Pro"], ["pb", "🎖️", "Pro Bowl"], ["potw", "📣", "Player of the Week"],
+  ["best", "👑", "Best at his position"], ["ap1", "🥇", "First-team All-Pro"], ["ap2", "🥈", "Second-team All-Pro"], ["pb", "🎖️", "Pro Bowl"], ["potw", "📣", "Player of the Week"],
 ];
 export function accoladesOf(p, { awards = [], champs = [], teams = [], yr, teamAb } = {}) {
   if (!p) return [];
   const got = {};
   const add = (k, y) => { if (y != null && !(got[k] ||= []).includes(y)) got[k].push(y); };
+  const slots = {};   // the position(s) he was the best at
   for (const a of awards) {
     for (const k of ["mvp", "sbmvp", "opoy", "dpoy", "oroy", "droy", "cpoy"]) if (a?.[k]?.pid === p.id) add(k, a.yr);
     // a list, or split by conference ({ AFC: [...], NFC: [...] } for the Pro Bowl)
     const flat = (v) => (Array.isArray(v) ? v : v && typeof v === "object" ? Object.values(v).flat() : []);
     for (const k of ["ap1", "ap2", "pb"]) if (flat(a?.honors?.[k]).some((h) => h?.pid === p.id)) add(k, a.yr);
+    const b = (a?.honors?.best || []).find((h) => h?.pid === p.id);
+    if (b) { add("best", a.yr); slots[b.slot] = (slots[b.slot] || 0) + 1; }
   }
-  for (const h of Array.isArray(p.honors) ? p.honors : []) if (h?.k && h.yr) add(h.k, h.yr);
+  for (const h of Array.isArray(p.honors) ? p.honors : []) if (h?.k && h.yr) { if (h.k === "best" && h.slot && !got.best?.includes(h.yr)) slots[h.slot] = (slots[h.slot] || 0) + 1; add(h.k, h.yr); }
   // Player of the Week: every week counts, so each one is its own entry ("2027 wk 5")
   for (const w of Array.isArray(p.potw) ? p.potw : []) if (w?.y) (got.potw ||= []).push(`${w.y} wk ${w.w}`);
   // rings: his club in each season (his season lines), and this season's club
   const clubIn = new Map((p.sh || []).map((s) => [s.y, s.tm]));
   if (teamAb && (p.ss?.gp || 0) > 0) clubIn.set(yr, teamAb);
   for (const c of champs) { const ab = teams[c.ti]?.ab; if (ab && clubIn.get(c.yr) === ab) add("sb", c.yr); }
-  return ACCOLADES.filter(([k]) => got[k]?.length).map(([k, icon, label]) => ({ k, icon, label, years: k === "potw" ? got[k] : got[k].sort((a, b) => a - b) }));
+  const slot = Object.entries(slots).sort((a, b) => b[1] - a[1])[0]?.[0];
+  return ACCOLADES.filter(([k]) => got[k]?.length).map(([k, icon, label]) => ({ k, icon, label: k === "best" && slot ? bestLabel(slot) : label, years: k === "potw" ? got[k] : got[k].sort((a, b) => a - b) }));
 }
 
 // After a week: has anyone taken over his club's all-time lead in a stat? book.cc holds the league

@@ -1658,4 +1658,7 @@ export const PATCH_NOTES = [
   { v: "4.20", date: "2026-10-20", title: "Star renders for all 32 teams", notes: [
     "Custom player renders for every club: the top five on each roster (127 new, 169 in all), from Mahomes and Allen to Jefferson, Parsons, Garrett and Bosa. They show on the player card, the home screen promo, draft night, signings and the Hall of Fame.",
   ] },
+  { v: "4.21", date: "2026-10-20", title: "Best at each position", notes: [
+    "The best at each position: every season one player at each spot is named its best (Quarterback of the Year, Linebacker of the Year, Guard of the Year and so on), judged mostly on how well he actually played (his season grade) and how good he is, less on box-score numbers. A great player who never wins MVP or DPOY still ends his career with something to show for it: it's on his card's honors, his farewell card, and counts toward his legacy and the Hall of Fame. The winners are listed on the All-Pro page of the season awards.",
+  ] },
 ];

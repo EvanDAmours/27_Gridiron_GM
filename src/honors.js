@@ -2,6 +2,7 @@
 // (season stats) and how good they are (rating), position by position like the real ballots.
 // Making a team is worth a little OVR in the off-season and counts toward a player's legacy.
 import { naturalDL } from "./dline.js";
+import { gradesOf } from "./grades.js";
 
 // Spots on the All-Pro team (each of the first and second teams) and on each conference's Pro Bowl roster.
 export const SLOTS = [
@@ -49,11 +50,33 @@ function ballot(field) {
   return field.map((x) => ({ ...x, score: OL.has(x.p.pos) ? zo(x.p.ovr) + (x.team.w || 0) * 0.04 : zp(production(x.p)) * 0.65 + zo(x.p.ovr) * 0.35 }));
 }
 
-// teams: the league at the end of the regular season. Returns { ap1, ap2, pb: { AFC, NFC } },
+// The best at each spot: one a season per position (Quarterback of the Year, Linebacker of the
+// Year...), so a player who is the best at what he does for years has something to show for it even
+// without an MVP or a DPOY. Judged mostly on how well he played (his season grade, which rates each
+// snap against what an average player would have done in his place, so his teammates don't decide
+// it) and how good he is, with his numbers counting for less than on the All-Pro ballot.
+export const BEST_NAME = { QB: "Quarterback", RB: "Running Back", WR: "Wide Receiver", TE: "Tight End", T: "Tackle", G: "Guard", C: "Center", EDGE: "Edge Rusher", DT: "Defensive Tackle", LB: "Linebacker", CB: "Cornerback", S: "Safety", K: "Kicker", P: "Punter" };
+export const bestLabel = (slot) => `${BEST_NAME[slot] || slot} of the Year`;
+function bestOf(field) {
+  const z = (xs) => { const m = xs.reduce((a, b) => a + b, 0) / xs.length; const sd = Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / xs.length) || 1; return (x) => (x - m) / sd; };
+  const grade = (p) => gradesOf(p.ss, p.pos)?.overall;
+  const graded = field.filter((x) => grade(x.p) != null);
+  const zg = graded.length >= 3 ? z(graded.map((x) => grade(x.p))) : null;
+  const zo = z(field.map((x) => x.p.ovr || 0)), zp = z(field.map((x) => production(x.p)));
+  const score = ({ p }) => {
+    const g = zg && grade(p) != null ? zg(grade(p)) : null;
+    if (OL.has(p.pos)) return g != null ? g * 0.6 + zo(p.ovr) * 0.4 : zo(p.ovr);
+    if (g == null) return zp(production(p)) * 0.6 + zo(p.ovr) * 0.4;   // kickers, punters, or no grade yet
+    return g * 0.4 + zo(p.ovr) * 0.4 + zp(production(p)) * 0.2;
+  };
+  return field.reduce((b, x) => (!b || score(x) > score(b) ? x : b), null);
+}
+
+// teams: the league at the end of the regular season. Returns { ap1, ap2, pb: { AFC, NFC }, best },
 // each a list of { pid, name, pos, slot, ti, team }.
 export function seasonHonors(teams) {
   const entry = (x, slot) => ({ pid: x.p.id, name: x.p.name, pos: x.p.pos, slot, ti: x.ti, team: x.team.ab });
-  const out = { ap1: [], ap2: [], pb: { AFC: [], NFC: [] } };
+  const out = { ap1: [], ap2: [], pb: { AFC: [], NFC: [] }, best: [] };
   for (const sl of SLOTS) {
     const field = [];
     teams.forEach((t, ti) => (t.roster || []).forEach((p) => { if (sl.of(p) && s(p, "gp") >= 10) field.push({ p, ti, team: t }); }));
@@ -62,6 +85,8 @@ export function seasonHonors(teams) {
     ranked.slice(0, sl.all).forEach((x) => out.ap1.push(entry(x, sl.key)));
     ranked.slice(sl.all, sl.all * 2).forEach((x) => out.ap2.push(entry(x, sl.key)));
     for (const conf of ["AFC", "NFC"]) ranked.filter((x) => x.team.c === conf).slice(0, sl.pb).forEach((x) => out.pb[conf].push(entry(x, sl.key)));
+    const top = bestOf(field);
+    if (top) out.best.push(entry(top, sl.key));
   }
   return out;
 }

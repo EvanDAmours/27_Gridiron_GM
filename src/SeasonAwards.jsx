@@ -2,7 +2,7 @@
 // the regular-season awards (MVP, OPOY, DPOY and both Rookies of the Year). Continue goes to a
 // second page: the All-Pro team, and which of your players were honored and what they gain.
 import React, { useState } from "react";
-import { HONOR_LABEL, honorBoost, honorsById } from "./honors.js";
+import { HONOR_LABEL, honorBoost, honorsById, bestLabel } from "./honors.js";
 import { C, TeamLogo, Btn, Bdg, CloseX, sheetWrap, sheetBox, SheetGrip } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
@@ -124,12 +124,25 @@ function HonorsPage({ yr, h, teams, ui, onBack, onClose, cta }) {
             return (
               <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, padding: "3px 0" }}>
                 <Bdg pos={posTag(p)} />
-                <span style={{ minWidth: 0, flex: 1, lineHeight: 1.3 }}><b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</b><span style={{ color: "#cbd5e1", fontSize: 13 }}>{HONOR_LABEL[k]}</span></span>
+                <span style={{ minWidth: 0, flex: 1, lineHeight: 1.3 }}><b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</b><span style={{ color: "#cbd5e1", fontSize: 13 }}>{HONOR_LABEL[k]}{(h.best || []).some((e) => e.pid === p.id) ? ` · 👑 ${bestLabel(h.best.find((e) => e.pid === p.id).slot)}` : ""}</span></span>
                 <span style={{ marginLeft: "auto", fontWeight: 900, color: g ? C.gn : C.mt, fontSize: 14, whiteSpace: "nowrap" }}>{g ? `+${g} OVR` : "already elite"}</span>
               </div>
             );
           })}
         </div>
+        {h.best?.length > 0 && (
+          <div style={{ padding: "12px 14px", borderRadius: 10, background: "#ffffff08", border: "1px solid #fcd34d55" }}>
+            <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "#fcd34d", marginBottom: 6 }}>👑 THE BEST AT EACH POSITION</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: "2px 16px" }}>
+              {h.best.map((e) => (
+                <div key={e.slot} style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: MOBILE ? 14 : 15, lineHeight: 1.5, minWidth: 0, color: e.ti === ui ? "#86efac" : "#e2e8f0" }}>
+                  <span style={{ fontSize: 12, color: "#fcd34d", fontWeight: 800, minWidth: MOBILE ? 118 : 128 }}>{bestLabel(e.slot)}</span>
+                  <b style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.name}</b><span style={{ color: C.mt, fontSize: 13 }}>{e.team}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <Team title="FIRST-TEAM ALL-PRO" list={h.ap1} />
         {h.ap2?.length > 0 && <Team title="SECOND-TEAM ALL-PRO" list={h.ap2} />}
         <div style={{ ...stickyFoot, display: "flex", gap: 8 }}>
