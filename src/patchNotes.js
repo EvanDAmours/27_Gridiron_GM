@@ -1687,4 +1687,10 @@ export const PATCH_NOTES = [
     "Big plays anywhere else (sacks, interceptions, touchdowns, long runs and catches) play out without a banner, and so does the odd ordinary snap, so the field starting to move doesn't spoil anything. The scoreboard, the play-by-play and the charts wait until the play's over.",
     "🎬 Live plays button next to the speed control: Key plays (the default), Every play, or Off. Tap the field to skip a play in progress.",
   ] },
+  { v: "4.27", date: "2026-10-20", title: "Your play calls count", notes: [
+    "Calling plays: when you pick a receiver, the ball goes to him. The receivers you choose from are the ones actually on the field, each shown against the defender covering him, and a receiver who beats his man is open more often.",
+    "Open or covered now matters: hitting the open man completes about 70% of the time; forcing it into coverage drops to about 40% and gets picked off more than twice as often.",
+    "Runs and screens are up to your players, not your timing: the bar runs on its own and stops where your back and offensive line put it. Better players hit the hole more often. An inside run you call now stays inside.",
+    "Live games: ⏩ Sim to end of the quarter, next to Finish. Skip ahead and watch only the 4th quarter if you like; every play still goes in the play-by-play and the box score.",
+  ] },
 ];

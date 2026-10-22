@@ -629,7 +629,7 @@ const _wireLog=useRef(null);
   },[liveSim,liveDone,livePaused,liveAwaitingCall,livePlay,livePhase,liveCallMode,liveSpeed,liveAnim]);
   useEffect(()=>{if(logEndRef.current){const c=logEndRef.current.parentElement;if(c)c.scrollTop=c.scrollHeight;}},[liveLog]);
   useEffect(()=>{if(livePhase!=="running")return;const id=setInterval(()=>{setLiveQteBar(v=>{const nv=v+liveQteDirRef.current*3;if(nv>=100||nv<=0)liveQteDirRef.current*=-1;return Math.max(0,Math.min(100,nv));});},40);return()=>clearInterval(id);},[livePhase]);
-  useEffect(()=>{if(livePhase!=="passing")return;const id=setInterval(()=>{setLiveRecTargets(ts=>ts.map(t=>Math.random()<0.28?{...t,open:!t.open}:t));},1100);return()=>clearInterval(id);},[livePhase]);
+  useEffect(()=>{if(livePhase!=="passing")return;const id=setInterval(()=>{setLiveRecTargets(ts=>ts.map(t=>Math.random()<0.4?{...t,open:Math.random()<(t.pOpen??0.5)}:t));},1100);return()=>clearInterval(id);},[livePhase]);
   // I49: draft clock countdown
   useEffect(()=>{if(!draftClockActive||draftClock<=0)return;const t=setTimeout(()=>setDraftClock(c=>c-1),1000);return()=>clearTimeout(t);},[draftClockActive,draftClock]);
   useEffect(()=>{if(draftClockActive&&draftClock===0){setDraftClockActive(false);const cls=dc[yr]||[];if(cls.length&&curPick?.owner===ui)makePick(userAutoPick(cls,teams[ui]?.roster));}},[draftClockActive,draftClock]);
@@ -699,8 +699,13 @@ const _wireLog=useRef(null);
   const loadLiveSnap=()=>{try{return JSON.parse(localStorage.getItem(LIVE_KEY)||"null");}catch{return null;}};
   const sameGame=(a,b)=>a&&b&&a.h===b.h&&a.a===b.a&&String(a.wk)===String(b.wk);
   function finishLiveNow(){const L=liveGameRef.current;if(!liveSim||liveDone||!L)return;if(liveAnimRef.current)endLiveAnim();const g=L.g;let n=0;while(!g.done&&n++<600)playStep(g);if(!g.done)return;try{localStorage.removeItem(LIVE_KEY);}catch{}const view=liveView(g.box);setLiveStats(view);setLiveScore({...g.score});setLiveQtr(g.ot?5:g.qtr);setLiveClock(0);setLiveAwaitingCall(false);setFourthChoice(null);let best=null,bestVal=0;for(const side of["h","a"])for(const ps of Object.values(view[side]||{})){const val=(ps.passYds||0)+(ps.rushYds||0)+(ps.recYds||0)+(ps.td||0)*30+(ps.sack||0)*15+(ps.int||0)*25;if(val>bestVal){bestVal=val;best={...ps,side};}}setLivePOG(best);setLiveDone(true);}
+  // Play out the rest of this quarter (or this overtime period) instantly, every play still in the
+  // play-by-play, so you can skip ahead and watch only the fourth quarter. Your play calls are made
+  // for you while it sims.
+  function simToQuarterEnd(){const L=liveGameRef.current;if(!liveSim||liveDone||!L)return;if(liveAnimRef.current)endLiveAnim();const g=L.g,q0=g.qtr,ot0=g.ot,userSide=liveSim.h===ui?"h":"a";let n=0;while(!g.done&&g.qtr===q0&&g.ot===ot0&&g.clock>0&&n++<300){const offSide=g.poss;const ev=playStep(g);if(!ev)break;commitLivePlay(L,g,ev,offSide,userSide);if(ev.note&&/^(End of quarter|Halftime|Another overtime)/.test(ev.note))break;}setLiveAwaitingCall(false);setLivePhase(null);setLivePendingCall(null);setLiveRecTargets([]);setFourthChoice(null);}
+  const qtrLabel=liveQtr>=5?"OT":`Q${liveQtr}`;
   // One play of the live game, on the same engine as quick sims.
-  function advanceLivePlay(uCall,qteBonus=1){
+  function advanceLivePlay(uCall,qteBonus=1,uPick=null){
     if(!liveSim||liveDone)return;
     const L=liveGameRef.current;if(!L||L.g.done)return;
     const g=L.g;const userSide=liveSim.h===ui?"h":"a";
@@ -708,7 +713,7 @@ const _wireLog=useRef(null);
     if(isUserPoss&&uCall===undefined){setLiveAwaitingCall(true);return;}
     if(isUserPoss)setLiveAwaitingCall(false);
     const offSide=g.poss,_lead=g.score[offSide]-g.score[offSide==="h"?"a":"h"],_box0=livePlayMode!=="Off"?JSON.parse(JSON.stringify(g.box)):null;
-    const ev=playStep(g,uCall,qteBonus);
+    const ev=playStep(g,uCall,qteBonus,uPick);
     if(!ev)return;
     // a play worth acting out: the field plays it first, and the score, the log and the down wait until it's over
     const _act=liveChoice(ev,livePlayMode,_lead);
@@ -1193,21 +1198,31 @@ const nt=newLeagueYear(ts.map((t,i)=>({...t,rollover:_ro[i]||0,roster:t.roster.m
   const reSignCoach=(role)=>{if(scPts<1)return sm("Need 1 SP");const nt=[...teams];const c=nt[ui].coach?.[role.toLowerCase()];if(!c)return;c.contract=(c.contract||1)+2;setTeams(nt);setScPts(p=>p-1);sm(`Re-signed ${c.name} +2yr`);};
   const selectCall=id=>{setLivePendingCall(id);setLivePhase("presnap");};
   const hikeSnap=()=>{
-    const offT=livePoss==="h"?teams[liveSim.h]:teams[liveSim.a];
-    const defT=livePoss==="h"?teams[liveSim.a]:teams[liveSim.h];
     const isPass=livePendingCall?.startsWith("pass_");
-    if(isPass){
-      const wrs=offT.roster.filter(p=>p.pos==="WR"&&!p.injured).sort((a,b)=>b.ovr-a.ovr).slice(0,2);
-      const te=offT.roster.find(p=>p.pos==="TE"&&!p.injured);
-      const rb=offT.roster.find(p=>p.pos==="RB"&&!p.injured);
-      const dbs=defT.roster.filter(p=>["CB","S"].includes(p.pos)&&!p.injured).sort((a,b)=>b.ovr-a.ovr);
-      const tgts=[...wrs,te,rb].filter(Boolean).slice(0,4).map((p,i)=>{const cb=dbs[i]||dbs[0]||{name:"CB",ovr:55};const open=(p.spd||70)>(cb.ovr||55)&&Math.random()<0.55+((p.spd||70)-(cb.ovr||55))/200;return{...p,num:i+1,open,cbName:cb.name,cbOvr:cb.ovr};});
+    const G=liveGameRef.current?.g;
+    if(isPass&&G){
+      // the receivers actually out there for this snap, each against the man the defense has on him;
+      // a receiver who beats his man is open more often (pOpen), and the windows shift as you watch
+      const so=G.sides[G.poss],sd=G.sides[G.poss==="h"?"a":"h"],onWR=so.oU?.["11"]?.on?.wr||[];
+      const list=(so.recvBy?.["11"]||so.receivers.map(([p,w])=>[p,w,"RB"])).filter(([p])=>p&&!p.injured).sort((a,b)=>b[1]-a[1]).slice(0,4);
+      const tgts=list.map(([p,,role],i)=>{const cb=sd.cover?.("nickel",role,p,onWR)||null;const pOpen=cl(0.45+((p.ovr||70)-(cb?.ovr||70))*0.02,0.15,0.85);return{...p,num:i+1,role,pOpen,open:Math.random()<pOpen,cbName:cb?.name||"zone",cbOvr:cb?.ovr??"–"};});
       setLiveRecTargets(tgts);setLivePhase("passing");
-    }else{setLiveQteBar(50);liveQteDirRef.current=1;setLivePhase("running");}
+    }else{
+      // a run or a screen is up to the players, not your timing: the bar runs on its own and stops
+      // where the back and his line put it (the better they are, the more often it's in the hole)
+      const so=G?.sides?.[G.poss],rb=so?.rushers?.[0]?.[0],olv=(so?.ol||[]).filter(Boolean).map(p=>p.ovr||72);
+      const q=0.6*(rb?.ovr||72)+0.4*(olv.length?olv.reduce((a,b)=>a+b,0)/olv.length:72);
+      const z=Math.sqrt(-2*Math.log(1-Math.random()))*Math.cos(2*Math.PI*Math.random());
+      const stop=cl(50+z*cl(15-(q-75)*0.5,4,22),2,98),d=Math.abs(stop-50);
+      const bonus=d<=8?1.15:d<=22?1:0.8;
+      setLiveQteBar(50);liveQteDirRef.current=1;setLivePhase("running");
+      setTimeout(()=>{setLivePhase("runstop");setLiveQteBar(stop);setTimeout(()=>resolveQte(bonus),750);},900+Math.random()*700);
+    }
   };
-  const resolveQte=(bonus)=>{setLivePhase(null);setLiveRecTargets([]);advanceLivePlay(livePendingCall,bonus);setLivePendingCall(null);};
-  const throwTo=t=>{resolveQte(t.open?1.2+Math.random()*0.2:0.45+Math.random()*0.15);};
-  const hitQteBar=()=>{const v=liveQteBar;const bonus=v>=42&&v<=58?1.4:v>=28&&v<=72?1.1:0.65;resolveQte(bonus);};
+  const resolveQte=(bonus,pick)=>{setLivePhase(null);setLiveRecTargets([]);advanceLivePlay(livePendingCall,bonus,pick);setLivePendingCall(null);};
+  // the ball goes to the man you picked: open, it's an easy catch with room to run; covered, it's a
+  // tough throw that gets picked off more
+  const throwTo=t=>{resolveQte(t.open?1.1:1,{target:t.id,open:t.open});};
   // ═══ P5: GM ↔ PLAY BRIDGE ═══
   
   const exportToPlay=()=>{const ut=teams[ui];const opp=teams[(ui+1)%teams.length];const fmt=t=>({name:`${t.city} ${t.name}`,ab:t.ab,clr:t.clr,ac:t.ac,ocScheme:t.coach?.oc?.scheme||null,dcScheme:t.coach?.dc?.scheme||null,record:`${t.w}-${t.l}`,players:t.roster.filter(p=>!p.injured).map(p=>({id:p.id,name:p.name,pos:p.pos,ovr:p.ovr,spd:p.spd||70,str:p.str||70,jmp:p.jmp||70,personality:p.personality||null,conf:p.conf||60,contractYear:p.contract===1,endorsed:p.endorsed||false}))});try{localStorage.setItem('gm_roster_export',JSON.stringify({team:fmt(ut),opponent:fmt(opp),stadiumUpgrades:stadium?.upgrades||[],streak:ut.streak||0,difficulty:'normal',chemistry:ut.chemistry||75}));sm("Exported to Play ✓");}catch{sm("Export failed");}};
@@ -1985,7 +2000,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         <button onClick={()=>setLiveSpeed(v=>{const ks=Object.keys(LIVE_SPEEDS);const n=ks[(ks.indexOf(v)+1)%ks.length];try{localStorage.setItem('gm_live_speed',n);}catch{}return n;})} style={{flex:1,minHeight:50,borderRadius:12,border:`1px solid ${C.bd}`,background:C.cd,color:"#e2e8f0",fontSize:15,fontWeight:800}}>⏱ {liveSpeed}</button>
         <button onClick={cycleLivePlays} style={{flex:1,minHeight:50,borderRadius:12,border:`1px solid ${livePlayMode==="Off"?C.bd:"#facc1588"}`,background:C.cd,color:livePlayMode==="Off"?C.mt:"#fde68a",fontSize:15,fontWeight:800}} aria-label="Which plays play out live on the field">🎬 {livePlayMode==="Key"?"Key plays":livePlayMode==="All"?"Every play":"Live off"}</button>
         <button onClick={()=>{setLiveCallMode(m=>!m);setLiveAwaitingCall(false);setLivePhase(null);setFourthChoice(null);}} style={{width:64,minHeight:50,borderRadius:12,border:`1px solid ${liveCallMode?C.gn:C.bd}`,background:liveCallMode?`${C.gn}33`:C.cd,color:liveCallMode?C.gn:C.mt,fontSize:15,fontWeight:800}} aria-label="Call the plays">🎮</button>
-        <button onClick={finishLiveNow} style={{flex:1,minHeight:50,borderRadius:12,border:`1px solid ${C.bd}`,background:C.cd,color:"#e2e8f0",fontSize:15,fontWeight:800}}>⏭ Finish</button></>}
+        <button onClick={finishLiveNow} style={{flex:1,minHeight:50,borderRadius:12,border:`1px solid ${C.bd}`,background:C.cd,color:"#e2e8f0",fontSize:15,fontWeight:800}}>⏭ Finish</button>{liveQtr<4&&<button onClick={simToQuarterEnd} style={{flex:1,minHeight:50,borderRadius:12,border:`1px solid ${C.bd}`,background:C.cd,color:"#e2e8f0",fontSize:15,fontWeight:800}} aria-label="Sim to the end of the quarter">⏩ End {qtrLabel}</button>}</>}
       </div>}
       {/* the Super Bowl: a banner with the trophy, and a title card at kickoff */}
       {liveSB&&<div className="keep-dark" style={{display:"flex",alignItems:"center",gap:MOBILE?8:14,background:"linear-gradient(90deg,#78350f,#1c1917 30%,#1c1917 70%,#78350f)",border:"1px solid #e8c45a",borderRadius:12,padding:MOBILE?"4px 10px":"6px 16px",marginBottom:6,boxShadow:"0 0 24px #e8c45a33"}}>
@@ -2017,12 +2032,12 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
           {!liveDone&&<Btn onClick={()=>setLiveSpeed(v=>{const ks=Object.keys(LIVE_SPEEDS);const n=ks[(ks.indexOf(v)+1)%ks.length];try{localStorage.setItem('gm_live_speed',n);}catch{}return n;})} bg={C.bd} c="#e2e8f0" style={{padding:"3px 10px",fontSize:12}} title="Time between plays">⏱ {liveSpeed}</Btn>}
           {!liveDone&&<Btn onClick={cycleLivePlays} bg={livePlayMode==="Off"?C.bd:"#facc1522"} c={livePlayMode==="Off"?C.mt:"#fde68a"} style={{padding:"3px 10px",fontSize:12,border:`1px solid ${livePlayMode==="Off"?C.bd:"#facc1566"}`}} title="Plays acted out on the field: the key plays (3rd and 4th down, goal to go, a close finish, overtime) and big plays, every play, or none">🎬 Live plays: {livePlayMode==="Key"?"Key":livePlayMode==="All"?"Every play":"Off"}</Btn>}
           {!liveDone&&!liveAwaitingCall&&<Btn onClick={()=>setLivePaused(p=>!p)} bg={livePaused?"#22c55e":"#f97316"} style={{padding:"3px 10px",fontSize:12}}>{livePaused?"▶ Resume":"⏸ Pause"}</Btn>}
-          {liveDone?<Btn onClick={finishLive} bg={C.bd} style={{padding:"3px 8px"}} title="Leave the game">✕</Btn>:<Btn onClick={finishLiveNow} bg={C.bd} c="#e2e8f0" style={{padding:"3px 10px",fontSize:12}} title="Play out the rest of the game instantly">⏭ Finish</Btn>}
+          {liveDone?<Btn onClick={finishLive} bg={C.bd} style={{padding:"3px 8px"}} title="Leave the game">✕</Btn>:<>{liveQtr<4&&<Btn onClick={simToQuarterEnd} bg={C.bd} c="#e2e8f0" style={{padding:"3px 10px",fontSize:12}} title="Play out the rest of this quarter instantly (every play still goes in the play-by-play)">⏩ Sim to end of {qtrLabel}</Btn>}<Btn onClick={finishLiveNow} bg={C.bd} c="#e2e8f0" style={{padding:"3px 10px",fontSize:12}} title="Play out the rest of the game instantly">⏭ Finish</Btn></>}
         </div>
       </div>
       {!liveDone&&(()=>{const _o=TEAMS[livePoss==="h"?liveSim.h:liveSim.a],_d=TEAMS[livePoss==="h"?liveSim.a:liveSim.h];/* the spot as a broadcast says it: own 30, midfield, their 27 */const _spot=liveYard===50?"midfield":liveYard>50?`the ${_d.ab} ${100-liveYard}`:`the ${_o.ab} ${liveYard}`;const _mc=liveMomentum>=65?'#22c55e':liveMomentum<=35?'#ef4444':'#f59e0b';return<div style={{display:"flex",alignItems:"center",gap:"4px 14px",flexWrap:"wrap",fontSize:13.5,color:"#cbd5e1",margin:"2px 0 8px"}}>
         <span style={{display:"inline-flex",alignItems:"center",gap:6,fontWeight:800,color:"#fff"}}><TeamLogo t={_o} sz={20}/>{_o.ab} ball</span><span><b style={{color:"#fff"}}>{liveDown}{liveDown===1?"st":liveDown===2?"nd":liveDown===3?"rd":"th"} & {liveYard+liveToGo>=100?"Goal":liveToGo}</b> on {_spot}</span>
-        <span style={{display:"inline-flex",alignItems:"center",gap:6,marginLeft:"auto",fontSize:12,color:C.mt}} title="How the offense is rolling: recent plays, first downs and scores">{_o.ab} momentum<span style={{width:110,height:6,background:'#1e293b',borderRadius:3,overflow:'hidden',display:"inline-block"}}><span style={{display:"block",height:'100%',width:`${liveMomentum}%`,background:_mc,borderRadius:3,transition:'width .3s ease'}}/></span><b style={{color:_mc,minWidth:44}}>{liveMomentum>=65?'🔥 Hot':liveMomentum<=35?'🧊 Cold':'Even'}</b></span>{liveCallMode&&<span style={{marginLeft:6,color:livePhase==="passing"?C.bl:livePhase==="running"?C.gd:livePhase==="presnap"?C.rd:liveAwaitingCall?C.gn:C.mt}}>{livePhase==="presnap"?"🏈 Pre-snap":livePhase==="passing"?"🎯 Find receiver":livePhase==="running"?"💨 Break tackle":liveAwaitingCall?"🎮 Your call":"⏱ Auto"}</span>}
+        <span style={{display:"inline-flex",alignItems:"center",gap:6,marginLeft:"auto",fontSize:12,color:C.mt}} title="How the offense is rolling: recent plays, first downs and scores">{_o.ab} momentum<span style={{width:110,height:6,background:'#1e293b',borderRadius:3,overflow:'hidden',display:"inline-block"}}><span style={{display:"block",height:'100%',width:`${liveMomentum}%`,background:_mc,borderRadius:3,transition:'width .3s ease'}}/></span><b style={{color:_mc,minWidth:44}}>{liveMomentum>=65?'🔥 Hot':liveMomentum<=35?'🧊 Cold':'Even'}</b></span>{liveCallMode&&<span style={{marginLeft:6,color:livePhase==="passing"?C.bl:livePhase==="running"?C.gd:livePhase==="presnap"?C.rd:liveAwaitingCall?C.gn:C.mt}}>{livePhase==="presnap"?"🏈 Pre-snap":livePhase==="passing"?"🎯 Find receiver":livePhase==="running"||livePhase==="runstop"?"💨 Reading blocks":liveAwaitingCall?"🎮 Your call":"⏱ Auto"}</span>}
       </div>;})()}
       {/* PlayCall Panel */}
       {liveCallMode&&liveAwaitingCall&&!liveDone&&!livePhase&&(()=>{
@@ -2082,7 +2097,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       {/* Passing QTE */}
       {liveCallMode&&livePhase==="passing"&&!liveDone&&<div style={{background:`${C.bl}14`,border:`1px solid ${C.bl}55`,borderRadius:8,padding:8,marginBottom:8}}>
         <div style={{fontSize:11,color:C.bl,fontWeight:800,marginBottom:2,letterSpacing:1}}>🎯 FIND YOUR RECEIVER — tap fast!</div>
-        <div style={{fontSize:10,color:C.mt,marginBottom:6}}>Open windows shift — covered throws risk INT</div>
+        <div style={{fontSize:10,color:C.mt,marginBottom:6}}>The ball goes to who you pick. Open: an easy catch with room to run. Covered: a tough throw that gets picked off more.</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
           {liveRecTargets.map(t=><button key={t.id} onClick={()=>throwTo(t)} style={{background:t.open?`${C.gn}22`:`${C.rd}18`,border:`2px solid ${t.open?C.gn:C.rd}55`,borderRadius:6,padding:"6px 8px",cursor:"pointer",textAlign:"left",color:"#fff",transition:"background 0.3s"}}>
             <div style={{fontSize:12,fontWeight:800}}>{t.name}</div>
@@ -2093,12 +2108,12 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         </div>
       </div>}
       {/* Running QTE */}
-      {liveCallMode&&livePhase==="running"&&!liveDone&&(()=>{
+      {liveCallMode&&(livePhase==="running"||livePhase==="runstop")&&!liveDone&&(()=>{
         const inPerfect=liveQteBar>=42&&liveQteBar<=58;
         const inGood=liveQteBar>=28&&liveQteBar<=72;
         return<div style={{background:`${C.gd}14`,border:`1px solid ${C.gd}44`,borderRadius:8,padding:8,marginBottom:8}}>
-          <div style={{fontSize:11,color:C.gd,fontWeight:800,marginBottom:2,letterSpacing:1}}>💨 BREAK THE TACKLE</div>
-          <div style={{fontSize:10,color:C.mt,marginBottom:8}}>Hit the green zone for max yards</div>
+          <div style={{fontSize:11,color:C.gd,fontWeight:800,marginBottom:2,letterSpacing:1}}>💨 READING THE BLOCKS</div>
+          <div style={{fontSize:10,color:C.mt,marginBottom:8}}>Your back and your line decide this one: the better they are, the more often he hits the hole</div>
           <div style={{position:"relative",height:28,background:C.bd,borderRadius:5,marginBottom:6,overflow:"hidden"}}>
             <div style={{position:"absolute",left:"28%",width:"44%",height:"100%",background:`${C.gd}55`,borderRadius:3}}/>
             <div style={{position:"absolute",left:"42%",width:"16%",height:"100%",background:`${C.gn}99`,borderRadius:3}}/>
@@ -2107,9 +2122,9 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
           <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.mt,marginBottom:8}}>
             <span style={{color:C.rd}}>◀ Miss</span><span style={{color:C.gd}}>Good</span><span style={{color:C.gn,fontWeight:700}}>PERFECT</span><span style={{color:C.gd}}>Good</span><span style={{color:C.rd}}>Miss ▶</span>
           </div>
-          <button onClick={hitQteBar} style={{width:"100%",padding:"10px",fontSize:13,fontWeight:900,borderRadius:6,border:"none",cursor:"pointer",background:inPerfect?C.gn:inGood?C.gd:C.rd,color:"#fff",letterSpacing:1}}>
-            {inPerfect?"⚡ PERFECT! HIT IT!":inGood?"✅ BREAK FREE!":"❌ HIT!"}
-          </button>
+          <div style={{width:"100%",padding:"10px",fontSize:13,fontWeight:900,borderRadius:6,textAlign:"center",background:livePhase!=="runstop"?C.bd:inPerfect?C.gn:inGood?C.gd:C.rd,color:"#fff",letterSpacing:1}}>
+            {livePhase!=="runstop"?"Snap…":inPerfect?"⚡ HITS THE HOLE":inGood?"✅ FINDS A CREASE":"❌ BOTTLED UP"}
+          </div>
         </div>;
       })()}
       {/* Field */}

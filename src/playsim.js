@@ -561,12 +561,14 @@ function chooseCall(g, o, pers = "11") {
 // pass_quick, pass_medium, pass_deep, pass_rpo, punt, fg. bonus: timing-minigame multiplier on
 // yards gained. Returns what happened, for the play-by-play.
 // One play; recorded in g.pl when the game keeps a play log (your games, for the game recap).
-export function step(g, call, bonus = 1) {
-  const ev = stepPlay(g, call, bonus);
+// pick (your called pass): { target: the receiver's id, open: whether he was open when you threw
+// it } — the ball goes to him, and throwing into coverage costs completions and risks a pick.
+export function step(g, call, bonus = 1, pick = null) {
+  const ev = stepPlay(g, call, bonus, pick);
   if (g.pl) recPlay(g, ev);
   return ev;
 }
-function stepPlay(g, call, bonus = 1) {
+function stepPlay(g, call, bonus = 1, pick = null) {
   if (g.done) return null;
   const rand = g.rand;
   const off = g.poss, def = other(off);
@@ -752,10 +754,12 @@ function stepPlay(g, call, bonus = 1) {
       // Once a receiver has had a big day the ball spreads around (no 15-catch games every week).
       const busy = ([p, w]) => { const n = g.box[off][p.id]?.tgt || 0, s0 = 8 + Math.max(0, p.form || 0) * 0.5; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 4)]; };
       const recv = o.recvBy?.[pers] || o.receivers;
-      const target = screen ? (o.rushers[0]?.[0] || pickW(rand, recv.map(busy))) : pickW(rand, recv.map(busy));
+      // the receiver you threw to, if he's out there (any grouping); otherwise the quarterback's read
+      const mine = !screen && pick?.target != null ? [...recv, ...Object.values(o.recvBy || {}).flat(), ...o.receivers].find(([p]) => p?.id === pick.target) : null;
+      const target = mine ? mine[0] : screen ? (o.rushers[0]?.[0] || pickW(rand, recv.map(busy))) : pickW(rand, recv.map(busy));
       const tl = line(g, off, target);
       // the matchup: who has him in this package, and by how much the receiver wins it
-      const role = recv.find(([p]) => p === target)?.[2] || "RB";
+      const role = recv.find(([p]) => p === target)?.[2] || (mine && typeof mine[2] === "string" ? mine[2] : "RB");
       const cm = !screen && d.cover ? d.cover(pkg, role, target, o.oU?.[pers]?.on?.wr || []) : null;
       ev.tgt = target; ev.cm = cm;
       const mm = cm ? clamp((target?.ovr || 75) - (cm.pos === "LB" ? lbCover(cm) : cm.ovr || 75) - MM0, -25, 25) : 0;
@@ -769,7 +773,9 @@ function stepPlay(g, call, bonus = 1) {
         gk.tgt = { target, cm, cA: compAt(passE, tO, mm), yA: ydsAt(passE, tO, mm), cQ: compAt(pEq, tO, mm), yQ: ydsAt(pEq, tO, mm), cR: compAt(passE, AVG.rec, mmOf(AVG.rec, cv)), yR: ydsAt(passE, AVG.rec, mmOf(AVG.rec, cv)), cC: compAt(passE, tO, mmOf(tO, AVG.cov)), yC: ydsAt(passE, tO, mmOf(tO, AVG.cov)) };
       }
       add(qbl, "att", 1); add(tl, "tgt", 1); st.passAtt++;
-      const intP = clamp(0.024 - passE * 0.004 - mm * 0.0004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0) + (g.wxE?.int || 0), 0.006, 0.08);
+      // where you put it: hitting the open man is easy and safe; forcing it into coverage isn't
+      const placed = mine && pick.open != null ? (pick.open ? 1 : -1) : 0;
+      const intP = clamp((placed > 0 ? -0.008 : placed < 0 ? 0.028 : 0) + 0.024 - passE * 0.004 - mm * 0.0004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0) + (g.wxE?.int || 0), 0.006, 0.08);
       if (rand() < intP) {
         const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW);
         add(qbl, "passInt", 1); st.ints++;
@@ -784,7 +790,7 @@ function stepPlay(g, call, bonus = 1) {
         if (!g.done) newPossession(g, 100 - g.yard - Math.round(8 + rand() * 12) + ret);
         return ev;
       }
-      const compP = compAt(passE, target?.ovr || 75, mm);
+      const compP = clamp(compAt(passE, target?.ovr || 75, mm) + (placed > 0 ? 0.12 : placed < 0 ? -0.18 : 0), 0.12, 0.95);
       if (rand() < compP) {
         const mean = yMean;
         yards = Math.round((2 + expo(rand, mean - 2 + passE * 0.45 + mm * 0.06 + ((target?.ovr || 75) - 75) * 0.035 + Math.max(0, (target?.ovr || 75) - 90) * 0.08)) * (bonus || 1));
@@ -815,7 +821,8 @@ function stepPlay(g, call, bonus = 1) {
     const load = carrier && !keeper ? Math.max(0, (g.box[off][carrier.id]?.rushAtt || 0) - 18) : 0;
     // who's at the point of attack: the MIKE fills inside; outside, the SAM sets the edge in base,
     // and in nickel the corner in the box has to make the tackle (a lighter edge)
-    const edgeRun = outside || rand() < 0.33, lbsOn = dP.on?.lbs || [];
+    // an inside run you called stays inside; otherwise a third of runs bounce to the edge
+    const edgeRun = outside || (call !== "run_inside" && rand() < 0.33), lbsOn = dP.on?.lbs || [];
     ev.edge = edgeRun; ev.outside = outside;
     const mike = lbsOn.find((p) => p.role === "MIKE"), sam = lbsOn.find((p) => p.role === "SAM"), nb = dP.on?.cbs?.[2];
     const poa = edgeRun ? (sam ? ((sam.ovr || 75) - 74) * 0.045 : nb ? ((nb.posAttrs?.tackling ?? 65) - 68) * 0.03 - 0.15 : 0) : mike ? ((mike.ovr || 75) - 76) * 0.035 : 0;
