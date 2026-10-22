@@ -1681,4 +1681,10 @@ export const PATCH_NOTES = [
     "Weather: the forecast and the game always agree now (playoff games used to roll different weather in the live game than the one on the Home forecast).",
     "Cold-weather cities get Frigid days: a dry December or January game in New York, Green Bay, Buffalo and the like is usually Frigid (a hard, cold ball that's tougher to throw, hold and kick), and in the playoffs it's bad weather there most of the time.",
   ] },
+  { v: "4.26", date: "2026-10-20", title: "Live plays on the field", notes: [
+    "Live plays: the plays that matter now play out on the field in the live game. The camera pushes in, the ball is snapped, and you watch the routes, the throw or the handoff, the chase and the tackle, then the result pops up over the field (\"SACK! Brian Burns sacks Patrick Mahomes for an 8-yard loss\"). When it's one of your guys, the card says so, along with things like his 2nd sack of the game.",
+    "Key plays get a KEY PLAY banner before the snap: 3rd downs past midfield or in the 4th quarter, 4th downs, goal to go, a close game's last two minutes, and overtime. The banner is decided before the play happens, so it never gives the result away: you'll see stops and incompletions too.",
+    "Big plays anywhere else (sacks, interceptions, touchdowns, long runs and catches) play out without a banner, and so does the odd ordinary snap, so the field starting to move doesn't spoil anything. The scoreboard, the play-by-play and the charts wait until the play's over.",
+    "🎬 Live plays button next to the speed control: Key plays (the default), Every play, or Off. Tap the field to skip a play in progress.",
+  ] },
 ];

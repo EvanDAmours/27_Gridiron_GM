@@ -1,0 +1,89 @@
+// Live plays: which snaps of a live game the field acts out, and the card that names what happened.
+// The snaps that matter always play out live (third and fourth down, the red zone, a close game's
+// last two minutes, overtime) under a KEY PLAY banner that's decided before the result is known, so
+// it never gives the result away. A big play anywhere else plays out too, without a banner, and so
+// does the odd ordinary snap, so the field starting to move doesn't tell you something big is coming.
+export const LIVE_MODES = ["Key", "All", "Off"];
+const ACTED = new Set(["run", "pass", "inc", "sack", "int"]);
+export const acted = (ev) => !!ev && ACTED.has(ev.k) && !ev.kneel;
+const nth = (n) => (n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`);
+
+// The banner for a snap that matters, from the situation before it (ev's down, toGo, yard, qtr,
+// clock). lead: the offense's lead before the snap. null for an ordinary snap.
+// Every snap of a close finish, fourth downs and goal-to-go; third downs once a drive crosses
+// midfield or the game's in the fourth quarter (every third down would be ~26 a game: too many to sit through).
+export function keyLabel(ev, lead = 0) {
+  const goal = ev.yard + ev.toGo >= 100, close = Math.abs(lead) <= 8;
+  const ot = ev.qtr >= 5, finish = ev.qtr === 4 && ev.clock <= 120 && close;
+  const third = ev.down === 3 && (ev.yard >= 50 || ev.qtr >= 4 || goal);
+  if (!(ot || finish || ev.down >= 4 || third || (goal && ev.down >= 2))) return null;
+  const bits = [];
+  if (ev.down >= 2 && (ev.down >= 3 || goal)) bits.push(`${nth(ev.down)} & ${goal ? "goal" : ev.toGo}`);
+  if (ot) bits.push("Overtime");
+  else if (finish) bits.push("Two-minute drill");
+  else if (ev.yard >= 80 && !goal) bits.push("Red zone");
+  return bits.join(" · ") || "Key play";
+}
+
+// Whether to act this play out: null (just the usual slide), or { key } (key: the banner, or null
+// for none). mode: "Key" | "All" | "Off". roll: a 0-1 roll for the odd ordinary snap.
+export function liveChoice(ev, mode, lead = 0, roll = Math.random()) {
+  if (mode === "Off" || !acted(ev)) return null;
+  const key = keyLabel(ev, lead);
+  if (mode === "All" || key) return { key };
+  const big = ev.td || ev.turnover || ev.k === "int" || ev.k === "sack" || ev.type === "safety" || (ev.yards || 0) >= (ev.k === "run" ? 18 : 25);
+  if (big || roll < 0.05) return { key: null };
+  return null;
+}
+
+const nm = (p, fb) => p?.name || fb;
+const an = (n) => (/^8/.test(String(n)) || n === 11 || n === 18 ? "an" : "a");
+const lastNm = (p, fb) => (p?.name ? p.name.split(" ").slice(1).join(" ") || p.name : fb);
+// The result over the field once the play's done. side: the offense ("h"/"a"); userSide: yours;
+// box: the game's box score after the play, for "2nd sack of the game". Returns { head, line, tone,
+// star: the player it's about, mine: he's yours, note } — head is "" for a routine play.
+export function resultCard(ev, side, userSide, box = {}) {
+  const def = side === "h" ? "a" : "h", Y = ev.yards || 0, k = ev.k;
+  const qb = nm(ev.qb, "The quarterback"), carrier = nm(ev.player, "The runner");
+  let head = "", line = "", tone = "", star = null, starSide = side, count = null;
+  const nTimes = (s, id, key) => (id != null ? box[s]?.[id]?.[key] || 0 : 0);
+  if (ev.td) {
+    head = "TOUCHDOWN!"; tone = "gold";
+    if (k === "pass") { line = `${qb} hits ${nm(ev.player, "his receiver")} for ${an(Y)} ${Y}-yard score`; star = ev.player; count = ["recTD", "TD"]; }
+    else { line = `${carrier} runs it in from ${Y === 1 ? "a yard" : `${Y} yards`} out`; star = ev.player; count = ["rushTD", "TD"]; }
+  } else if (k === "int") {
+    head = "INTERCEPTED!"; tone = "red"; star = ev.db; starSide = def; count = ["ints", "interception"];
+    line = `${nm(ev.db, "The defense")} picks off ${qb}`;
+  } else if (k === "sack") {
+    star = ev.rusher; starSide = def;
+    if (ev.type === "fumble") { head = "STRIP SACK!"; tone = "red"; line = `${nm(ev.rusher, "The rush")} strips ${qb}, and the defense recovers`; }
+    else { head = "SACK!"; tone = "red"; line = `${nm(ev.rusher, "The rush")} sacks ${qb} for ${an(-Y)} ${-Y}-yard loss`; count = ["sacks", "sack"]; }
+  } else if (ev.type === "fumble") {
+    head = "FUMBLE!"; tone = "red"; star = ev.tkl; starSide = def;
+    line = ev.tkl ? `${nm(ev.tkl)} knocks it loose from ${lastNm(ev.player, "the runner")}` : `${carrier} coughs it up`;
+  } else if (ev.type === "safety") {
+    head = "SAFETY!"; tone = "red"; star = ev.tkl; starSide = def;
+    line = `${nm(ev.tkl, "The defense")} drops ${lastNm(ev.player, "him")} in the end zone`;
+  } else if (ev.downs) {
+    head = "STOPPED!"; tone = "red"; star = ev.tkl; starSide = def;
+    line = k === "inc" ? `${qb}'s pass falls incomplete: turnover on downs` : `${nm(ev.tkl, "The defense")} holds on fourth down`;
+  } else if (k === "inc") {
+    head = ev.down >= 3 ? "INCOMPLETE" : ""; tone = "grey"; star = ev.db; starSide = def;
+    line = ev.db ? `${nm(ev.db)} breaks up ${lastNm(ev.qb, "the")}'s pass for ${lastNm(ev.tgt, "his receiver")}` : `${qb}'s pass for ${lastNm(ev.tgt, "his receiver")} falls incomplete`;
+  } else {
+    const what = k === "pass" ? `${qb} to ${nm(ev.player, "his receiver")}` : carrier;
+    star = ev.player;
+    if (k === "pass" && Y >= 20) { head = "BIG PLAY!"; tone = "green"; line = `${what} for ${Y} yards`; }
+    else if (k === "run" && Y >= 15) { head = "BREAKAWAY!"; tone = "green"; line = `${carrier} rips off ${Y} yards`; }
+    else if (ev.firstDown && ev.down >= 3) { head = "MOVES THE CHAINS"; tone = "green"; line = `${what} for ${Y} on ${nth(ev.down)} down`; }
+    else if (!ev.firstDown && ev.down >= 3 && Y < ev.toGo) { head = "SHORT!"; tone = "grey"; line = `${what} for ${Y}, ${ev.toGo - Y} short`; star = ev.tkl || star; starSide = ev.tkl ? def : side; }
+    else line = `${what} for ${Y === 0 ? "no gain" : Y < 0 ? `a loss of ${-Y}` : `${Y} yard${Y === 1 ? "" : "s"}`}`;
+  }
+  const mine = !!star && starSide === userSide;
+  let note = "";
+  if (mine && count) {
+    const n = count[0] === "rushTD" || count[0] === "recTD" ? nTimes(starSide, star.id, "rushTD") + nTimes(starSide, star.id, "recTD") : nTimes(starSide, star.id, count[0]);
+    if (n >= 2) note = Number.isInteger(n) ? `${nth(n)} ${count[1]} of the game` : `${n} ${count[1]}s in the game`;
+  }
+  return { head, line, tone, star: star ? { id: star.id, name: star.name } : null, mine, note };
+}

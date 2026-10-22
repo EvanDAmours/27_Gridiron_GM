@@ -23,7 +23,7 @@ const SESSION_ONLY = new Set([
   "inboxShow injToasts isMobile lastLivePlay lastSaved lbTab leaderboardOpen liveAwaitingCall",
   "liveBroadcastMode liveCallMode liveClock liveDone liveDown liveInfo liveLog liveMomentum livePOG",
   "livePaused livePendingCall livePhase livePlay livePoss liveQteBar liveQtr liveRecTargets",
-  "liveScore liveSim liveSpeed liveStats liveToGo liveYard lkrOpen lkrSpeechModal localLeaderboard",
+  "liveAnim livePlayMode liveScore liveSim liveSpeed liveStats liveToGo liveYard lkrOpen lkrSpeechModal localLeaderboard",
   "loginStreak mediaStory mediaWeek menuOpen mobileHint moreOpen msg",
   "newsOpen newspaper nextGameWx offszGrade offszGradeOpen online paradeOpen",
   "phase pickIsIn posDemandMap prBroadcast",

@@ -1,6 +1,7 @@
 // The live-game field: both teams' starters lined up in formation at the line of scrimmage,
 // redrawn (and slid into place) after every play. Offense drives left to right.
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import LivePlay from "./LivePlay.jsx";
 import { calloutOf } from "./callout.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import SpritePlayer from "./pixel/SpritePlayer.jsx";
@@ -190,11 +191,36 @@ function Callout({ play, W, H }) {
   );
 }
 
+// The KEY PLAY banner and the result card over the field (HTML, so they stay readable on a phone),
+// sized to the field (cqw) so they cover the same share of it on any screen.
+const LP_CSS = `.lp-banner { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 22px 9px; border-radius: 12px; background: linear-gradient(180deg, #111a30f0, #060b18f0); border: 2px solid #facc15; box-shadow: 0 10px 30px #000a; pointer-events: none; animation: lpIn .3s ease-out both; white-space: nowrap; }
+.lp-banner b { font: 900 clamp(13px, 2.9cqw, 26px)/1 'Arial Black', Arial, sans-serif; color: #facc15; letter-spacing: 2px; }
+.lp-banner span { font: 800 clamp(10px, 1.7cqw, 15px)/1.2 system-ui; color: #e2e8f0; letter-spacing: .5px; }
+.lp-card { position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); width: max-content; max-width: 92%; text-align: center; padding: clamp(5px, 1.1cqw, 10px) clamp(10px, 2.8cqw, 26px) clamp(6px, 1.3cqw, 12px); border-radius: 14px; background: linear-gradient(180deg, #0b1222f2, #060b18f2); border: 2px solid var(--lp-c); box-shadow: 0 12px 32px #000b, 0 0 24px color-mix(in srgb, var(--lp-c) 35%, transparent); pointer-events: none; animation: lpPop .35s cubic-bezier(.2, 1.4, .4, 1) both; }
+.lp-gold { --lp-c: #facc15; } .lp-red { --lp-c: #ef4444; } .lp-green { --lp-c: #22c55e; } .lp-grey { --lp-c: #94a3b8; }
+.lp-mine { border-color: var(--lp-team); }
+.lp-head { font: 900 clamp(14px, 3.3cqw, 30px)/1.05 'Arial Black', Arial, sans-serif; color: var(--lp-c); letter-spacing: 1px; }
+.lp-line { font: 800 clamp(10px, 1.9cqw, 17px)/1.3 system-ui; color: #fff; margin-top: 3px; }
+.lp-note { font: 700 clamp(9px, 1.45cqw, 13px)/1.3 system-ui; color: #fde68a; margin-top: 2px; }
+.lp-chip { display: inline-block; font: 900 clamp(8px, 1.2cqw, 11px)/1 system-ui; letter-spacing: 1.4px; color: #fff; background: var(--lp-team); padding: 3px 8px; border-radius: 99px; margin-bottom: 4px; }
+.lp-strip { position: absolute; left: 50%; bottom: 5%; transform: translateX(-50%); max-width: 92%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 800 clamp(10px, 1.7cqw, 15px)/1 system-ui; color: #fff; background: #060b18d9; border: 1px solid #ffffff2a; padding: 7px 14px; border-radius: 99px; pointer-events: none; animation: lpIn .25s ease-out both; }
+@keyframes lpIn { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes lpPop { from { opacity: 0; transform: translate(-50%, 10px) scale(.85); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }`;
+
 // How wide the field may get (it keeps its shape, so this caps its height to fit the screen).
 // A frame around it (HolidayFrame) takes the same cap, so it hugs the field.
 export const fieldMaxW = (tall) => `calc(${MOBILE ? "min(42vh, 390px)" : tall ? "min(calc(var(--vh, 100vh) - 470px), 700px)" : "min(calc(var(--vh, 100vh) - 330px), 570px)"} * ${W / H})`;
 
-export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday, tall }) {
+// anim: a play to act out ({ ev, key, id, card }, livePlays.js), with animSpeed (1 normal) and
+// onAnimDone when it's over (a tap on the field skips it).
+export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday, tall, anim, animSpeed = 1, onAnimDone }) {
+  const cam = useRef(null);
+  const [phase, setPhase] = useState(null);
+  useEffect(() => {
+    setPhase(null);
+    // the play's over: ease the camera back out to the whole field
+    if (!anim && cam.current) { cam.current.style.transition = "transform .6s ease"; cam.current.style.transform = "none"; }
+  }, [anim?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const W8 = wxOf(wx);
   const los = clamp(ballYard, 1, 99);
   const x0 = xOf(los);
@@ -202,6 +228,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
   // the visitors wear white, unless the home team wears white at home (Dallas): then they wear color
   const home = offHome ? off : def, homeWhite = !!UNIFORMS[teamKey(home)]?.whiteHome;
   const awayFor = (side) => (homeWhite ? false : side === "off" ? !offHome : offHome);
+  const slots = [];
   const place = (side, list, team) =>
     FORMATION[side].map(([pos, i, dx, lat]) => {
       // with sprites, set each line's depth so the two rows of helmets meet evenly over the ball
@@ -210,10 +237,17 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       if (SPRITES && pos === "LB") dx = 9.5;
       if (SPRITES && pos === "RB") lat = 7;
       const x = clamp(xOf(los + dx), 20, W - 20), y = clamp(yOf(lat), SPRITES ? 26 : 22, H - (SPRITES ? 26 : 34));
-      return <Player key={`${side}${pos}${i}`} p={list[pos]?.[i]} pos={pos} x={x} y={y} team={team} side={side} away={awayFor(side)} td={!!lastPlay?.td} />;
+      const p = list[pos]?.[i];
+      // the same spot in yards, for a play acted out (playScript.js)
+      slots.push({ key: `${side}${pos}${i}`, side, pos, p, id: p?.id, team, away: awayFor(side), x: (x - EZ) / ((W - 2 * EZ) / 100), y: (y - H / 2) / (H / 53.3) });
+      return <Player key={`${side}${pos}${i}`} p={p} pos={pos} x={x} y={y} team={team} side={side} away={awayFor(side)} td={!!lastPlay?.td} />;
     });
+  const defMen = place("def", d, def), offMen = place("off", o, off);
+  const card = anim?.card;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10, maxWidth: fieldMaxW(tall), margin: "0 auto" }}>
+    <div style={{ position: "relative", maxWidth: fieldMaxW(tall), width: "100%", margin: "0 auto", containerType: "inline-size" }} onClick={anim ? () => onAnimDone?.() : undefined}>
+    <style>{LP_CSS}</style>
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", borderRadius: 10 }}>
       <defs>
         {/* turf grain: fine noise over the grass */}
         <filter id="lf-grain" x="0" y="0" width="100%" height="100%">
@@ -241,6 +275,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
           <path id="lf-arc-bot" d={`M ${W / 2 - 57} ${H / 2} A 57 57 0 0 0 ${W / 2 + 57} ${H / 2}`} />
         </>}
       </defs>
+      <g ref={cam}>
       {/* mowed stripes, five yards each, running through the end zones */}
       {[...Array(24)].map((_, i) => <rect key={`e${i}`} x={i < 12 ? i * (EZ / 12) : W - EZ + (i - 12) * (EZ / 12)} y="0" width={EZ / 12 + 0.5} height={H} fill={i % 2 ? "#2f8a3a" : "#287c33"} />)}
       {[...Array(20)].map((_, i) => <rect key={i} x={xOf(i * 5)} y="0" width={xOf(5) - xOf(0) + 0.5} height={H} fill={i % 2 ? "#2f8a3a" : "#287c33"} />)}
@@ -276,7 +311,8 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       </g>}
       {/* each club's logo painted at its own 25 */}
       {sb && [[25, off, -90], [75, def, 90]].map(([y, t, rot]) => t?.ab && <image key={y} href={logoUrl(t.ab)} x={xOf(y) - 30} y={H / 2 - 30} width="60" height="60" opacity=".8" filter="url(#lf-paint)" transform={`rotate(${rot} ${xOf(y)} ${H / 2})`} />)}
-      <rect x="0" y="0" width={W} height={H} filter="url(#lf-grain)" opacity=".55" />
+      {/* (the grain is left out while the camera moves: re-drawing it every frame is slow) */}
+      {!anim && <rect x="0" y="0" width={W} height={H} filter="url(#lf-grain)" opacity=".55" />}
       <Ground wx={W8} kind={wx} />
       {/* yard lines every five, goal lines heavier */}
       {[...Array(21)].map((_, i) => <line key={i} x1={xOf(i * 5)} y1="0" x2={xOf(i * 5)} y2={H} stroke="#fff" strokeOpacity={i % 20 === 0 ? 0.95 : i % 2 ? 0.4 : 0.7} strokeWidth={i % 20 === 0 ? 3 : i % 2 ? 1.2 : 1.8} />)}
@@ -300,13 +336,25 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#3b82f6" strokeWidth="8" strokeOpacity=".25" />
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#60a5fa" strokeWidth="3" />
       {toGo > 0 && los + toGo < 100 && <><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#facc15" strokeWidth="8" strokeOpacity=".25" /><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#fde047" strokeWidth="3" /></>}
-      {place("def", d, def)}
-      {place("off", o, off)}
+      {anim ? <LivePlay key={anim.id} anim={anim} slots={slots} X={xOf} Y={yOf} cam={cam} W={W} H={H} zoom={MOBILE ? 2.2 : 2.1} speed={animSpeed} onPhase={setPhase} onDone={() => onAnimDone?.()} /> : <>{defMen}{offMen}</>}
       <HolidayDecor holiday={holiday} />
+      </g>
       <Falling wx={W8} />
       {(W8.rain || W8.snow || W8.cold || wx === "wind") && <g pointerEvents="none"><rect x="10" y="12" width={W8.label.length * 7.4 + 34} height="22" rx="11" fill="#0b1220" opacity=".72" /><text x="20" y="27" fontSize="12" fontWeight="800" fill="#e2e8f0" fontFamily="system-ui">{W8.icon} {W8.label}</text></g>}
       {!SPRITES && <ellipse cx={x0 - 4} cy={H / 2} rx="7" ry="4.5" fill="#8B4513" stroke="#fff" strokeWidth="1" style={{ transition: "cx .55s ease" }} />}
-      <Callout play={lastPlay} W={W} H={H} />
+      {!anim && !lastPlay?.live && <Callout play={lastPlay} W={W} H={H} />}
     </svg>
+    {/* a key play: the banner goes up before the snap (decided before the result is known) */}
+    {anim?.key && !phase && <div key={`b${anim.id}`} className="lp-banner"><b>KEY PLAY</b><span>{anim.key}</span></div>}
+    {/* the result, over the last picture of the play */}
+    {phase === "card" && card && (card.head ? (
+      <div key={`c${anim.id}`} className={`lp-card lp-${card.tone || "grey"}${card.mine ? " lp-mine" : ""}`} style={card.mine ? { "--lp-team": anim.teamClr || "#38bdf8" } : undefined}>
+        {card.mine && <div className="lp-chip">★ YOUR PLAYER</div>}
+        <div className="lp-head">{card.head}</div>
+        <div className="lp-line">{card.line}</div>
+        {card.note && <div className="lp-note">{card.note}</div>}
+      </div>
+    ) : <div key={`c${anim.id}`} className="lp-strip">{card.line}</div>)}
+    </div>
   );
 }
