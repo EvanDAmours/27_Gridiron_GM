@@ -25,7 +25,7 @@ const FORMATION = {
 // punter fifteen back). On a punt the deep safety is the returner, set back where the ball's headed.
 const SPECIAL = {
   fg: {
-    off: [["LT", 0, -1.5, -11], ["LG", 0, -1.5, -5.5], ["C", 0, -1.5, 0], ["RG", 0, -1.5, 5.5], ["RT", 0, -1.5, 11], ["TE", 0, -2, 15.5], ["TE", 1, -2, -15.5], ["WR", 0, -3, 19], ["WR", 1, -3, -19], ["QB", 0, -8, 0.6], ["K", 0, -11, -3.5]],
+    off: [["LT", 0, -1.5, -11], ["LG", 0, -1.5, -5.5], ["C", 0, -1.5, 0], ["RG", 0, -1.5, 5.5], ["RT", 0, -1.5, 11], ["TE", 0, -2, 15.5], ["TE", 1, -2, -15.5], ["WR", 0, -3, 19], ["WR", 1, -3, -19], ["P", 0, -8, 0.6], ["K", 0, -11, -3.5]],
     def: FORMATION.def,
   },
   punt: {

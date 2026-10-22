@@ -286,9 +286,10 @@ function buildSpecial(ev, slots, R) {
   for (const s of def) if (mate[s.key]) F[s.key] = lockOn(s, F[mate[s.key].key]);
   let T, ball, m, hop = null, tEnd = 0;
   if (ev.k === "fg") {
-    const holder = by(off, "QB"), kicker = by(off, "K") || holder;
+    const holder = by(off, "P") || by(off, "QB"), kicker = by(off, "K") || holder;
     const hx = holder.x, hy = holder.y, tKick = 1.05;
-    F[kicker.key] = path([0, kicker.x, kicker.y], [0.4, kicker.x, kicker.y], [0.95, hx - 1.3, hy - 0.7], [1.3, hx - 0.3, hy - 0.2], [3, hx - 0.3, hy - 0.2]);
+    F[kicker.key] = path([0, kicker.x, kicker.y], [0.4, kicker.x, kicker.y], [0.95, hx - 2, hy - 2.6], [1.3, hx - 1.2, hy - 2.1], [3, hx - 1.1, hy - 2.1]);
+    // (he plants beside the hold and kicks from there, never on top of the holder)
     const ty = ev.made ? (R() - 0.5) * 1.6 : (R() < 0.5 ? -1 : 1) * (3.8 + R() * 2.5);
     const flight = 0.9 + ev.dist * 0.012;
     ball = (t) => (t < 0.3 ? { held: snapper.key } : t < tKick ? { held: holder.key } : (() => { const u = clamp((t - tKick) / flight, 0, 1); return { x: lerp(hx + 0.4, 110, u), y: lerp(hy, ty, u), h: 1 + Math.sin(Math.PI * Math.min(1, u * 0.85)) * 7 }; })());

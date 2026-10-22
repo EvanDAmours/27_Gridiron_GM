@@ -65,8 +65,11 @@ export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, spe
     return { s, sx: X(x), sy: Y(y) - bob - hop, h, facing, fall, pose };
   }).sort((a, b) => a.sy - b.sy);
   const holder = ball.held ? men.find((m) => m.s.key === ball.held) : null;
-  // his frame already has the football in his hands: don't draw a second one
-  const ballInArt = !!holder?.pose && BALL_POSES.has(holder.pose);
+  // his frame already has the football in his hands: don't draw a second one. The quarterback's
+  // stance has it in his hands too, so before the snap (the ball's still the center's) the drawn
+  // one waits until he's out of it
+  const qbStance = men.find((m) => m.s.pos === "QB" && !m.pose);
+  const ballInArt = holder ? (holder.pose ? BALL_POSES.has(holder.pose) : holder.s.pos === "QB") : !sc.m?.special && t <= 0.05 && !!qbStance;
   // a carried ball stays tucked in his arm: when he goes down, it goes down with him (only a fumble
   // puts it on the turf)
   let bx = holder ? holder.sx + (holder.facing === "right" ? 3 : -3) : X(ball.x);
@@ -148,6 +151,9 @@ function poseOf(sc, s, t, speed, ball) {
     if (!(s.side === "def" && m.tE != null && t > m.tE + 0.15 && speed > 1.6)) return "b6";
   }
   if (speed > 1.6) return ball ? (stride ? "a2" : "a1") : stride ? "a6" : "a5";
+  // his stance has a football in his hands: once he's handed it off or thrown it (or before it
+  // reaches him), the quarterback stays in frames with empty hands
+  if (s.pos === "QB" && !ball && !sp) return speed > 0.3 ? (stride ? "a6" : "a5") : m.tThrow != null && t > m.tThrow ? "a8" : "a5";
   return null;
 }
 

@@ -1748,4 +1748,9 @@ export const PATCH_NOTES = [
   { v: "4.39", date: "2026-10-20", title: "Trophy shelf sizing", notes: [
     "Hall of Fame and legend farewells: bigger trophies with smaller ×N counts, and the Super Bowl MVP football sized to match the rest",
   ] },
+  { v: "4.40", date: "2026-10-20", title: "One football", notes: [
+    "Live plays: no more second football at the snap. The quarterback catches the snap empty-handed, and the game's ball only shows when his hands are empty",
+    "Live plays: after a handoff or a throw the quarterback stays in empty-handed frames, so a ball never reappears in his hands",
+    "Field goals: the punter holds, with no quarterback on the field, and the kicker plants beside the hold instead of standing on top of the holder",
+  ] },
 ];
