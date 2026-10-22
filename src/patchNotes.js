@@ -1745,4 +1745,7 @@ export const PATCH_NOTES = [
     "Hall of Fame: where he ranks in franchise history, such as '1st in Giants franchise passing yards', for every club he starred for",
     "A franchise legend's retirement card shows the same trophies, honors and franchise ranks",
   ] },
+  { v: "4.39", date: "2026-10-20", title: "Trophy shelf sizing", notes: [
+    "Hall of Fame and legend farewells: bigger trophies with smaller ×N counts, and the Super Bowl MVP football sized to match the rest",
+  ] },
 ];

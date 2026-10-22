@@ -47,7 +47,8 @@ const Line = ({ k, v, tone }) => (
 // m: { kind: clinch | record | signing | kickoff, team, ... } (a record or a signing goes to the spotlight) (see App for each one's fields)
 // The Hall of Fame: him in his uniform on the gold stage, the gold jacket at his side, Canton welcomes him.
 // What he retires with (history.js careerHaul): his trophies on a shelf, each with how many he won,
-// the honors counted up, and where he ranks in his clubs' history.
+// the honors counted up, and where he ranks in his clubs' history. (The Super Bowl MVP football is
+// wide, so it stands shorter to look the same size as the rest.)
 const TROPHY = { sb: [lombardiArt, "Super Bowl"], mvp: [mvpArt, "MVP"], sbmvp: [sbmvpArt, "SB MVP"], opoy: [opoyArt, "OPOY"], dpoy: [dpoyArt, "DPOY"], oroy: [oroyArt, "OROY"], droy: [droyArt, "DROY"] };
 const ord = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"}`;
 function CareerHaul({ haul, tone = "#fde68a" }) {
@@ -62,7 +63,7 @@ function CareerHaul({ haul, tone = "#fde68a" }) {
           {trophies.map(({ k, n }) => (
             <div key={k} style={{ textAlign: "center", minWidth: h }}>
               <div style={{ position: "relative", height: h, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-                <img src={TROPHY[k][0]} alt={TROPHY[k][1]} style={{ height: h, objectFit: "contain", filter: "drop-shadow(0 6px 10px #000a)" }} />
+                <img src={TROPHY[k][0]} alt={TROPHY[k][1]} style={{ height: k === "sbmvp" ? h * 0.6 : h, objectFit: "contain", filter: "drop-shadow(0 6px 10px #000a)" }} />
                 {n > 1 && <span style={{ position: "absolute", right: -4, bottom: 0, background: "#0b1220", border: `1.5px solid ${tone}`, color: tone, borderRadius: 999, padding: "0 4px", fontSize: MOBILE ? 9.5 : 11, lineHeight: 1.35, fontWeight: 900 }}>×{n}</span>}
               </div>
               <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 1, color: "#cbd5e1", marginTop: 3 }}>{TROPHY[k][1].toUpperCase()}</div>
