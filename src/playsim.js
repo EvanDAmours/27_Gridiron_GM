@@ -286,6 +286,7 @@ const olPick = (g, list, w) => { const ws = list.map(w), t = ws.reduce((a, b) =>
 // a lineman's chance of losing a rep: the weaker the blocker, the more often it's him
 const pbW = (p) => (100 - (p?.posAttrs?.passBlock ?? p?.ovr ?? 70)) / 20 + 0.8;
 const rbW = (p) => (100 - (p?.posAttrs?.runBlock ?? p?.posAttrs?.anchor ?? p?.ovr ?? 70)) / 20 + 0.8;
+const rbS = (p) => Math.exp(((p?.posAttrs?.runBlock ?? p?.posAttrs?.anchor ?? p?.ovr ?? 70) - 75) * 0.06);
 function olBook(g, side, ol, k, type, yards, desc) {
   const five = (ol || []).filter(Boolean);
   if (!five.length) return;
@@ -313,7 +314,10 @@ function olBook(g, side, ol, k, type, yards, desc) {
     const at = gap.filter(Boolean);
     if (!at.length) return;
     at.forEach((p) => add(line(g, side, p), "rbSnp", 1));
-    if (yards >= 4) at.forEach((p) => add(line(g, side, p), "rbWin", 1));
+    // a good run: the block that sprung it, more often the better run blocker in the gap (crediting
+    // everyone in the gap graded the back and the play call, not the lineman); a stuffed run: the
+    // block that lost, more often the weaker one
+    if (yards >= 4) add(line(g, side, olPick(g, at, rbS)), "rbWin", 1);
     else if (yards <= 0) add(line(g, side, olPick(g, at, rbW)), "rbStuff", 1);
   }
 }
@@ -328,6 +332,8 @@ function olBook(g, side, ol, k, type, yards, desc) {
 export const AVG = { qb: 78, rec: 76, cov: 76, rb: 76 };
 // pass-rush credit: a sack, a half sack, a pressure that didn't get home
 const SACK_G = 3, HELP_G = 1, PRES_G = 0.5;
+// how much less an interior rusher averages per snap than an edge rusher (measured; see gradeBook)
+const DT_LIFT = 0.0043;
 const phi = (x) => 0.5 * (1 + Math.tanh(0.7978845608 * (x + 0.044715 * x * x * x)));   // normal CDF
 const cap = (v, a, b) => Math.max(a, Math.min(b, v));
 function gradeBook(g, off, def, dP, k, yards) {
@@ -365,12 +371,16 @@ function gradeBook(g, off, def, dP, k, yards) {
     if (k.sacked) { if (k.rusher) got.set(k.rusher, SACK_G); if (k.helper) got.set(k.helper, HELP_G); }
     else if (k.pres && rush.length) got.set(olPick(g, rush, ([, w]) => w)[0], PRES_G);
     for (const p of got.keys()) add(line(g, def, p), "pres", 1);
-    for (const [p, w, w0] of rush) G(def, p, "pr", (got.get(p) || 0) - ((w0 ?? w) / W0) * e);
+    // an interior rusher is held to the bar of his share, but the inside rush gets home less often
+    // than the edge: lift him by that gap so tackles and ends share one scale
+    for (const [p, w, w0] of rush) G(def, p, "pr", (got.get(p) || 0) - ((w0 ?? w) / W0) * e + (p.pos === "DL" && rushRole(p) < 1 ? DT_LIFT : 0));
     for (const [p, v] of got) if (!rush.some(([q]) => q === p)) G(def, p, "pr", v);   // a DB on a blitz
   }
   // runs: the back against an average back behind this line; the front's stops against an average front
   if (k.run) {
-    if (k.carrier && k.carrier.pos !== "QB") G(off, k.carrier, "ru", (k.fum ? -2 : cap((yards - k.yR0) / 4, -1.2, 2.5)) + (k.yA - k.yR0) * 0.25);
+    // a quarterback's designed runs count toward his grade too (Allen, Jackson), at half a back's weight
+    // since his throws are most of his snaps
+    if (k.carrier) { const v = (k.fum ? -2 : cap((yards - k.yR0) / 4, -1.2, 2.5)) + (k.yA - k.yR0) * 0.25; if (k.carrier.pos === "QB") G(off, k.carrier, "qb", v * 0.5); else G(off, k.carrier, "ru", v); }
     const front = (dP.tackleW || []).filter(([p, w]) => w > 0 && (p.pos === "DL" || p.pos === "LB" || p.pos === "S"));
     const W = front.reduce((a, [, w]) => a + w, 0) || 1;
     const stopper = (yards <= 1 || k.fum) && front.length ? olPick(g, front, ([p, w]) => w * Math.exp(((p.posAttrs?.runStop ?? p.posAttrs?.tackling ?? p.ovr ?? 70) - 75) * 0.06))[0] : null;

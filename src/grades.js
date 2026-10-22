@@ -5,30 +5,28 @@
 // lower than his numbers, and one producing on a bad one grades higher: the grade is him, not
 // his team. Each facet is a sum and a count on the season line (qbG/qbN and so on); this turns
 // them into grades against the league.
-import { olLine, OL_POS } from "./olStats.js";
+import { olLine, OL_POS, scale } from "./olStats.js";
 
 // Each position's facets, measured over four simulated seasons of the real league (per-snap
 // average and its spread among regulars, and a regular's snaps in a season):
 // qb passing, rc receiving, ru rushing, pr pass rush, cv coverage, rd run defense.
 const CAL = {
-  QB: { qb: [0.028, 0.0331, 669] },
+  QB: { qb: [0.026, 0.0331, 702] },
   WR: { rc: [0.171, 0.1168, 128] }, TE: { rc: [0.1838, 0.1125, 110] },
   RB: { ru: [-0.0141, 0.1133, 190], rc: [0.2275, 0.1237, 55] },
-  DL: { pr: [-0.0036, 0.0154, 666], rd: [0.0007, 0.0083, 430] },
-  LB: { rd: [-0.0018, 0.0245, 391], pr: [-0.001, 0.0142, 586], cv: [-0.1565, 0.0591, 70] },
+  DL: { pr: [-0.0012, 0.0161, 666], rd: [0.0005, 0.0079, 430] },
+  LB: { rd: [-0.0013, 0.0252, 391], pr: [-0.0023, 0.0137, 586], cv: [-0.1565, 0.0591, 70] },
   CB: { cv: [-0.001, 0.0949, 109] },
-  S: { rd: [-0.0015, 0.0131, 430], cv: [-0.0258, 0.1098, 32] },
+  S: { rd: [-0.0007, 0.0132, 430], cv: [-0.0258, 0.1098, 32] },
 };
 // how each facet counts toward a position's overall grade (coverage by linebackers and safeties
-// counts little: they're rarely the man thrown at, so a season says little about it)
-const WEIGHT = { RB: { ru: 0.75, rc: 0.25 }, DL: { pr: 0.6, rd: 0.4 }, LB: { rd: 0.6, pr: 0.25, cv: 0.15 }, S: { rd: 0.6, cv: 0.4 } };
+// counts little: they're rarely the man thrown at, so a season of it barely carries over to the next)
+const WEIGHT = { RB: { ru: 0.75, rc: 0.25 }, DL: { pr: 0.6, rd: 0.4 }, LB: { rd: 0.75, pr: 0.2, cv: 0.05 }, S: { rd: 0.8, cv: 0.2 } };
 export const FACETS = { qb: "Passing", rc: "Receiving", ru: "Rushing", pr: "Pass rush", cv: "Coverage", rd: "Run defense", pb: "Pass block", rb: "Run block" };
 // the sums and counts on a season line (kept out of game logs)
 export const GRADE_KEYS = ["qbG", "qbN", "rcG", "rcN", "ruG", "ruN", "prG", "prN", "cvG", "cvN", "rdG", "rdN"];
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-// 65 at average, 12 points a spread; past 83 each step counts for less (a 99 is rare)
-const scale = (z) => Math.round(clamp(z <= 1.5 ? 65 + 12 * z : 83 + 16 * (1 - Math.exp(-(z - 1.5) / 1.3)), 30, 99) * 10) / 10;
 
 // A season line's grades for a position: { overall, facets: { key: grade } }, or null until he's
 // played enough to say anything (a few games as a regular). A small sample is pulled toward
@@ -36,7 +34,7 @@ const scale = (z) => Math.round(clamp(z <= 1.5 ? 65 + 12 * z : 83 + 16 * (1 - Ma
 export function gradesOf(s, pos) {
   if (!s) return null;
   if (OL_POS.has(pos)) {
-    const o = olLine(s);
+    const o = olLine(s, pos);
     if (!o || o.passGrade == null) return null;
     const facets = { pb: o.passGrade, ...(o.runGrade != null ? { rb: o.runGrade } : {}) };
     return { overall: Math.round((o.runGrade != null ? 0.6 * o.passGrade + 0.4 * o.runGrade : o.passGrade) * 10) / 10, facets };

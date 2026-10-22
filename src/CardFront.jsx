@@ -27,7 +27,7 @@ function seasonTiles(p, yr, real) {
   if (!cur) return { y: null, tiles: [] };
   // a lineman: what he allowed and how he graded
   if (OL_POS.has(p.pos)) {
-    const o = olLine(cur);
+    const o = olLine(cur, p.pos);
     if (!o) return { y: cur.y, tiles: cur.gs ? [["GS", cur.gs]] : [] };
     return { y: cur.y, ol: o, cur, tiles: [["GS", cur.gs || 0], ["SK ALW", o.sacks], ["PRES", o.pres], ["PB WIN", o.pbPct != null ? `${o.pbPct}%` : "–"], ["PASS GR", o.passGrade ?? "–"], ["RUN GR", o.runGrade ?? "–"]] };
   }

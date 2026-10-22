@@ -115,11 +115,11 @@ export const COLS = {
   K: [["FGM", "fgM"], ["FGA", "fgA"], ["XPM", "xpM"]], P: [["PUNTS", "punts"], ["YDS", "puntYds"]],
 };
 // The line: sacks and pressures allowed, pass-block win rate and the block grades (olStats.js).
-const OL_COLS = [["GS", "gs"], ["SK", "sackA"], ["PRES", "presA"], ["PB%", (r) => olLine(r)?.pbPct], ["PASS", (r) => olLine(r)?.passGrade], ["RUN", (r) => olLine(r)?.runGrade]];
-for (const pos of ["LT", "LG", "C", "RG", "RT"]) COLS[pos] = OL_COLS;
+// (each spot graded against its own: tackles, guards and the center)
+const OL_SPOTS = ["LT", "LG", "C", "RG", "RT"];
 // every position's season grade (grades.js), last
-for (const pos of Object.keys(COLS)) if (pos !== "K" && pos !== "P" && COLS[pos] !== OL_COLS) COLS[pos] = [...COLS[pos], ["GRADE", (r) => gradesOf(r, pos)?.overall]];
-OL_COLS.push(["GRADE", (r) => gradesOf(r, "LT")?.overall]);
+for (const pos of Object.keys(COLS)) if (pos !== "K" && pos !== "P") COLS[pos] = [...COLS[pos], ["GRADE", (r) => gradesOf(r, pos)?.overall]];
+for (const pos of OL_SPOTS) COLS[pos] = [["GS", "gs"], ["SK", "sackA"], ["PRES", "presA"], ["PB%", (r) => olLine(r, pos)?.pbPct], ["PASS", (r) => olLine(r, pos)?.passGrade], ["RUN", (r) => olLine(r, pos)?.runGrade], ["GRADE", (r) => gradesOf(r, pos)?.overall]];
 export const SEASON_KEYS = ["gp", "gs", "comp", "att", "passYds", "passTD", "passInt", "rushAtt", "rushYds", "rushTD", "rec", "recYds", "recTD", "tkl", "sacks", "tfl", "ff", "ints", "pd", "fgM", "fgA", "xpM", "punts", "puntYds", "pbSnp", "sackA", "presA", "rbSnp", "rbWin", "rbStuff", "pres", "covT", "covC", "covY", ...GRADE_KEYS];
 // A season's stats, trimmed to what the card shows (stored on the player at each rollover).
 export const seasonLine = (ss, y, tm) => { const o = { y, tm }; for (const k of SEASON_KEYS) if (ss?.[k]) o[k] = ss[k]; return o; };

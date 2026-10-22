@@ -1665,4 +1665,11 @@ export const PATCH_NOTES = [
     "Pass-rush grades fixed: a sack now counts six times a pressure, rushers are measured against an average player in their role (not against their own share of the front), and the bar leans on a league-average snap, so a sack leader no longer grades average because his defense blitzes a lot. Grades now track sacks and rating far more closely.",
     "Who gets the sack now depends on each rusher's pass rush: elite edge rushers lead the league in sacks more often. Team sack totals are unchanged.",
   ] },
+  { v: "4.23", date: "2026-10-20", title: "Grading system overhaul", notes: [
+    "Grading overhaul, every position checked against four simulated seasons: grades now track how good a player is and hold from year to year at every position (offensive line, pass rush and quarterback were the outliers).",
+    "Run blocking: a good run is credited to the block that sprang it (more often the better run blocker), not to everyone in the gap, so the run block grade is the lineman, not his running back.",
+    "O-line grades are measured against their own spot (tackles, guards, center), on the same 0-100 scale as everyone else, with short samples pulled toward average.",
+    "Defensive tackles and edge rushers share one pass-rush scale; safety and linebacker grades lean on run defense, since a season of their coverage says little.",
+    "Quarterbacks' designed runs now count toward their grade.",
+  ] },
 ];
