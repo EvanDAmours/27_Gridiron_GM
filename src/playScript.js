@@ -53,7 +53,10 @@ export function buildPlay(ev, slots, seed = 1) {
   const passPlay = k === "pass" || k === "inc" || k === "int" || k === "sack";
 
   // The line: pass protection steps back and holds; on a run it fires off the ball.
-  for (const s of off) if (is(s, "LT", "LG", "C", "RG", "RT")) F[s.key] = passPlay ? path([0, s.x, s.y], [0.35, s.x - 1, s.y], [3, s.x - 1.3, s.y + (R() - 0.5) * 0.8]) : path([0, s.x, s.y], [0.45, s.x + 1.6, s.y + (R() - 0.5) * 0.8], [3, s.x + 2.2, s.y + (R() - 0.5) * 1.2]);
+  // The lines meet: the offensive line sets (pass) or fires out (run) and the defensive line comes
+  // into it, the two close enough to be locked together (about 4 yards between them, hands on chests).
+  // Only a rusher who gets loose (the sack, the tackle behind the line) leaves the pile.
+  for (const s of off) if (is(s, "LT", "LG", "C", "RG", "RT")) F[s.key] = passPlay ? path([0, s.x, s.y], [0.3, s.x - 0.4, s.y], [3, s.x - 0.7, s.y + (R() - 0.5) * 0.6]) : path([0, s.x, s.y], [0.4, s.x + 1.1, s.y + (R() - 0.5) * 0.6], [3, s.x + 1.6, s.y + (R() - 0.5) * 0.9]);
   // Receivers not getting the ball run their routes and settle.
   const route = (s) => { const dx = 8 + R() * 9, dy = (R() - 0.5) * 8; return path([0, s.x, s.y], [1.1, s.x + dx * 0.75, s.y + dy * 0.3], [2.2, s.x + dx + 3, s.y + dy], [3.2, s.x + dx + 4, s.y + dy]); };
   const block = (s) => path([0, s.x, s.y], [1, s.x + 3 + R() * 2, s.y + (R() - 0.5) * 2], [3, s.x + 4 + R() * 2, s.y + (R() - 0.5) * 3]);
@@ -137,7 +140,7 @@ export function buildPlay(ev, slots, seed = 1) {
         const man = s === cover ? tgt : near(recvs, s.x - 6, s.y) || tgt, mf = F[man.key], lag = s === cover ? 0.15 : 0.35, deep = is(s, "S") ? 4 : 1.8;
         F[s.key] = (t) => { const [mx, my] = mf(Math.max(0, t - lag)); const u = clamp(t / 0.5, 0, 1); return [lerp(s.x, mx + deep, u), lerp(s.y, my * 0.9 + s.y * 0.1, u)]; };
       } else if (is(s, "LB")) F[s.key] = path([0, s.x, s.y], [0.9, s.x + 3, s.y * 0.85], [3, s.x + 3.5, s.y * 0.85]);
-      else F[s.key] = path([0, s.x, s.y], [0.45, s.x - 2.2, s.y], [3, s.x - 2.6, s.y + (R() - 0.5)]);
+      else F[s.key] = path([0, s.x, s.y], [0.3, s.x - 2.5, s.y], [3, s.x - 2.8, s.y + (R() - 0.5) * 0.6]);
     }
   } else {
     // A run: the handoff (or the quarterback keeps it), through the hole, then out into the open.
@@ -174,7 +177,7 @@ export function buildPlay(ev, slots, seed = 1) {
     // the front attacks the hole; the back seven come up
     for (const s of def) {
       if (F[s.key]) continue;
-      if (is(s, "DL")) F[s.key] = path([0, s.x, s.y], [0.5, s.x - 1.6, lerp(s.y, holeY, 0.15)], [3, s.x - 1.8, lerp(s.y, holeY, 0.2)]);
+      if (is(s, "DL")) F[s.key] = path([0, s.x, s.y], [0.4, s.x - 0.9, lerp(s.y, holeY, 0.1)], [3, s.x - 0.6, lerp(s.y, holeY, 0.15)]);
       else if (is(s, "LB")) F[s.key] = path([0, s.x, s.y], [tH + 0.35, los + 3.2, lerp(s.y, holeY, 0.55)]);
       else F[s.key] = path([0, s.x, s.y], [1, s.x - (is(s, "S") ? 3 : 1), s.y * 0.92]);
     }

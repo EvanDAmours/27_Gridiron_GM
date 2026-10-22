@@ -1726,4 +1726,7 @@ export const PATCH_NOTES = [
   { v: "4.34", date: "2026-10-20", title: "Giants and Texans in motion", notes: [
     "Live plays: the Giants and Texans now move with real action frames. Backs and receivers run with the ball, the quarterback hands off, winds up and throws, receivers reach for the catch, linemen lock up in blocks, tacklers dive in, ball carriers take the hit and go down, defensive backs swat passes away, and touchdowns get a celebration. The other 30 teams keep gliding in their stance until their action sheets are made.",
   ] },
+  { v: "4.35", date: "2026-10-20", title: "Lines lock up", notes: [
+    "Live plays: the offensive and defensive lines now start in their stance, then come together and lock up in blocks, hands on each other, instead of standing a few yards apart. Only a rusher who gets loose for the sack (or the tackle) breaks out of the pile.",
+  ] },
 ];

@@ -129,8 +129,8 @@ function poseOf(sc, s, t, speed, ball) {
     if (k === m.carrier && m.k === "int") return "b1"; // the pick
   }
   if (k === m.swat && m.tC != null && t > m.tC - 0.22 && t < m.tC + 0.35) return "b8";
-  // the lines lock up: only the man making the play gets loose
-  if (LINE.has(s.pos) && k !== m.tackler && k !== m.carrier && speed < 4.5) return "b6";
+  // the lines come out of their stance and lock up: only the man making the play gets loose
+  if (LINE.has(s.pos) && k !== m.tackler && k !== m.carrier) return t < 0.18 ? null : "b6";
   if (speed > 1.6) return ball ? (stride ? "a2" : "a1") : stride ? "a6" : "a5";
   return null;
 }
