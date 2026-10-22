@@ -3,10 +3,10 @@
 // the game, a photo, the road to the title and the parade plans. The words and the layout come from
 // the paper's bank of writers (gazetteBank.js): a different headline, voice and front page each
 // year. Set in old letterpress type throughout (IM Fell, cut in the 1680s), with a blackletter flag.
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ConfettiRain } from "./SuperBowlWin.jsx";
 import { LombardiStill } from "./Lombardi.jsx";
-import { matchupPortraitPath } from "./matchupPortraitAssets.js";
+import { primeArt } from "./playerArt.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 import { writeGazette } from "./gazetteBank.js";
 
@@ -37,7 +37,15 @@ export default function ChampionGazette({ show, teams, ui, path = [], titles = 1
   const t = teams[champ], o = opp != null ? teams[opp] : null;
   const [us, them] = (score || "0-0").split("-").map(Number);
   // the Super Bowl MVP's portrait (none for kickers and punters: the trophy takes the photo slot)
-  const mvpSrc = sbmvp && sbmvp.ti === champ ? matchupPortraitPath(t.ab, String(sbmvp.pos || "").toUpperCase(), "home") : null;
+  // (his own player render, when he has one)
+  const [mvpSrc, setMvpSrc] = useState(null);
+  useEffect(() => {
+    const p = sbmvp && sbmvp.ti === champ ? teams[champ]?.roster?.find((r) => String(r.id) === String(sbmvp.pid)) : null;
+    if (!p) return;
+    let live = true;
+    primeArt(p, teams[champ].ab).then((u) => { if (live && u) setMvpSrc(u); }).catch(() => {});
+    return () => { live = false; };
+  }, [sbmvp?.pid, champ]); // eslint-disable-line react-hooks/exhaustive-deps
   const sb = sbName(sbNumber(yr));
   const rec = `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
   const games = path.map((g, i) => {

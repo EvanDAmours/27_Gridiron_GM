@@ -4,9 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import LivePlay from "./LivePlay.jsx";
 import { calloutOf } from "./callout.js";
 import { depthOrderFor } from "./DepthChart.jsx";
-import SpritePlayer from "./pixel/SpritePlayer.jsx";
 import TeamSprite, { hasTeamSprites, teamSpriteHeight } from "./pixel/TeamSprite.jsx";
-import { snapPose, celebrationPose, SPRITES as ART } from "./pixel/sprites.js";
 import { UNIFORMS, teamKey, uniformFor } from "./teamUniforms.js";
 import { logoUrl } from "./ui.jsx";
 import lombardiArt from "./assets/lombardi.webp";
@@ -136,13 +134,12 @@ function starters(team, depth, order) {
 // three-point stance, the quarterback with the ball, defenders in a ready stance). After a
 // touchdown the scoring team's backs and receivers celebrate. Offense faces right, defense left.
 // The old numbered circles are still there behind ?sprites=0.
-const SPRITE_SCALE = 0.25; // every pose drawn at the same pixel size
 const SPRITES = !(typeof location !== "undefined" && /[?&]sprites=0\b/.test(location.search));
 const uni = (team, away) => uniformFor(team, { away });
 const SHOW_NAME = { off: new Set(["QB", "RB", "WR", "TE"]), def: new Set(MOBILE ? [] : ["CB", "S"]) };
-function Player({ p, pos, x, y, team, side, away, td }) {
+function Player({ p, pos, x, y, team, side, away }) {
   const last = p ? p.name.split(" ").slice(1).join(" ") || p.name : pos;
-  if (!SPRITES) return (
+  if (!SPRITES || !hasTeamSprites(team)) return (
     <g style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform .55s ease" }}>
       <title>{p ? `${pos} ${p.name} (${p.ovr})` : pos}</title>
       {/* the jersey (home color or road white), ringed in the helmet color, number in the club's number color */}
@@ -156,20 +153,11 @@ function Player({ p, pos, x, y, team, side, away, td }) {
       {SHOW_NAME[side].has(pos) && <text x={side === "off" ? 8 : -8} y="21" textAnchor={side === "off" ? "end" : "start"} fontSize="8.5" fontWeight="700" fill="#fff" stroke="#0009" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>}
     </g>
   );
-  // the club's own sprite sheet (every club has one); the recolored concept art otherwise
-  if (hasTeamSprites(team)) {
-    const h = teamSpriteHeight(team, pos);
-    return (
-      <g style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform .55s ease" }}>
-        <TeamSprite y={Math.round(h * 0.5)} team={team} pos={pos} away={away} facing={side === "off" ? "right" : "left"} title={p ? `${pos} ${p.name} (${p.ovr})` : pos} />
-      </g>
-    );
-  }
-  const pose = (side === "off" && td && celebrationPose(pos)) || snapPose(pos, side);
-  const hgt = (ART[pose] || ART.DB).h * SPRITE_SCALE;
+  // the club's own sprite sheet (every club has one)
+  const h = teamSpriteHeight(team, pos);
   return (
     <g style={{ transform: `translate(${x}px, ${y}px)`, transition: "transform .55s ease" }}>
-      <SpritePlayer x={0} y={Math.round(hgt * 0.5)} height={hgt} pose={pose} team={team} away={away} number={p?.num} skin={p?.face?.sk} facing={side === "off" ? "right" : "left"} title={p ? `${pos} ${p.name} (${p.ovr})` : pos} />
+      <TeamSprite y={Math.round(h * 0.5)} team={team} pos={pos} away={away} facing={side === "off" ? "right" : "left"} title={p ? `${pos} ${p.name} (${p.ovr})` : pos} />
     </g>
   );
 }
@@ -240,7 +228,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       const p = list[pos]?.[i];
       // the same spot in yards, for a play acted out (playScript.js)
       slots.push({ key: `${side}${pos}${i}`, side, pos, p, id: p?.id, team, away: awayFor(side), x: (x - EZ) / ((W - 2 * EZ) / 100), y: (y - H / 2) / (H / 53.3) });
-      return <Player key={`${side}${pos}${i}`} p={p} pos={pos} x={x} y={y} team={team} side={side} away={awayFor(side)} td={!!lastPlay?.td} />;
+      return <Player key={`${side}${pos}${i}`} p={p} pos={pos} x={x} y={y} team={team} side={side} away={awayFor(side)} />;
     });
   const defMen = place("def", d, def), offMen = place("off", o, off);
   const card = anim?.card;

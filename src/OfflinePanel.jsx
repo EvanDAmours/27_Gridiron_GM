@@ -1,12 +1,11 @@
 // Offline play: the game saves itself on this device (see public/sw.js) so it runs with no
 // connection, like on a plane. This panel shows whether it's ready, saves it on demand (plus your
-// team's matchup artwork), and explains how to install it as an app.
+// team's field sprites), and explains how to install it as an app.
 import React, { useEffect, useState } from "react";
 import { C, Btn } from "./ui.jsx";
 
 const BASE = import.meta.env.BASE_URL;
 const CACHE = `gridiron-gm-v3 ${BASE}`;
-const PORTRAIT_GROUPS = ["QB", "RB", "WR", "OL", "DL", "LB", "CB"];
 
 // The browser's "install this app" offer (Chrome, Edge, Android) is caught early in main.jsx.
 const installPrompt = () => window.__installPrompt || null;
@@ -67,10 +66,10 @@ export default function OfflinePanel({ teamAb, mobile }) {
     const sw = (await navigator.serviceWorker.ready.catch(() => reg))?.active;
     if (!sw) { setProg(null); return; }
     sw.postMessage({ type: "save-all" });
-    // your own team's matchup artwork (the rest is saved as it's shown)
-    if (teamAb) sw.postMessage({ type: "save-urls", urls: PORTRAIT_GROUPS.flatMap((g) => ["home", "away"].map((u) => `${BASE}matchup-portraits/${g}_${teamAb}_${u}.webp`)) });
+    // your own team's player art and field sprites (the rest is saved as it's shown)
+    if (teamAb) sw.postMessage({ type: "save-urls", urls: [`${BASE}sprites/${teamAb}.webp`] });
   };
-  // every club's matchup artwork too (about 12 MB), so every matchup shows its art offline
+  // every club's player art too (about 60 MB), so every screen shows its art offline
   const [artDone, setArtDone] = useState(false);
   const saveArt = async () => {
     const d = await fetch(`${BASE}offline.json`, { cache: "no-store" }).then((r) => r.json()).catch(() => null);
@@ -106,11 +105,11 @@ export default function OfflinePanel({ teamAb, mobile }) {
       </div>
       {prog && <div style={{ height: 6, background: "#ffffff14", borderRadius: 3, marginTop: 10 }}><div style={{ width: `${(prog.done / Math.max(1, prog.total)) * 100}%`, height: "100%", background: C.gn, borderRadius: 3, transition: "width .3s" }} /></div>}
       {supported && <div style={{ marginTop: 10, color: "#cbd5e1" }}>
-        <div style={step}>{n(1)}<span>While you're online, open the game once (that's it on most browsers: it saves itself), or press <b>Get ready for offline</b> to be sure. It's about 5 MB, plus your team's matchup artwork.</span></div>
+        <div style={step}>{n(1)}<span>While you're online, open the game once (that's it on most browsers: it saves itself), or press <b>Get ready for offline</b> to be sure. It's about 10 MB, plus your team's players on the field.</span></div>
         <div style={step}>{n(2)}<span>{isInstalled() ? "It's installed as an app on this device. Open it from your home screen or app list." : canInstall ? <>Install it as an app so it opens like one, even in airplane mode: <Btn onClick={install} bg={C.bl} style={{ fontSize: 13, padding: "4px 10px", marginLeft: 4 }}>Install app</Btn></> : isIOS() ? <>On iPhone or iPad: tap Safari's <b>Share</b> button, then <b>Add to Home Screen</b>. Open it from there.</> : <>Install it as an app: in Chrome or Edge, use the install icon in the address bar (or the menu: <b>Install Football GM</b>). On Android: menu ⋮ → <b>Add to Home screen</b>.</>}</span></div>
         <div style={step}>{n(3)}<span>Offline, open the game from that icon (or the same web address in the same browser). Your saves live on this device and keep working; export a save file from the Saves screen to back one up or move it to another device.</span></div>
         <div style={{ fontSize: 12, color: "#fde68a", marginTop: 10 }}>Added it to your home screen before version 2.58 and the icon opens a GitHub 404 page? That older icon points to an address the game no longer uses. Delete it from your home screen and add it again from this page.</div>
-        <div style={{ fontSize: 12, color: C.mt, marginTop: 10 }}>Offline you'll miss only the online extras: the global leaderboard and sharing. Other teams' matchup artwork shows once it has been seen online (a team badge stands in until then){online && ready ? <> — or <button onClick={saveArt} disabled={artDone} style={{ background: "none", border: "none", color: artDone ? C.gn : "#93c5fd", textDecoration: artDone ? "none" : "underline", cursor: artDone ? "default" : "pointer", font: "inherit", padding: 0 }}>{artDone ? "saving every team's artwork ✓" : "save every team's artwork now (about 12 MB)"}</button></> : null}.</div>
+        <div style={{ fontSize: 12, color: C.mt, marginTop: 10 }}>Offline you'll miss only the online extras: the global leaderboard and sharing. Player artwork shows once it has been seen online (a team badge or face stands in until then){online && ready ? <> — or <button onClick={saveArt} disabled={artDone} style={{ background: "none", border: "none", color: artDone ? C.gn : "#93c5fd", textDecoration: artDone ? "none" : "underline", cursor: artDone ? "default" : "pointer", font: "inherit", padding: 0 }}>{artDone ? "saving every team's artwork ✓" : "save every team's artwork now (about 60 MB)"}</button></> : null}.</div>
       </div>}
     </div>
   );

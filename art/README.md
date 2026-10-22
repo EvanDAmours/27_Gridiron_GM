@@ -25,7 +25,7 @@ Baker, Froholdt, Johnson Jr., McBride, Sweat. Falcons: Bates III, Lindstrom, Lon
 Cook III, Dawkins, Rousseau. Panthers: Brown, Horn, Lewis, Lloyd, McMillan. Every other club: its top five (160 in all, listed in the zips' NFL_Player_Render_Index.csv). A suffix in the file name (JohnsonJr, CookIII) is
 fine; the number picks between two players with the same last name.
 
-The custom PNGs are not kept in git (each is 1-2MB; the repo was nearing GitHub's 1GB guideline). Keep the zips
+None of the source PNGs here (players/ and numbers/) are kept in git any more (each is 1-2MB; the repo was nearing GitHub's 1GB guideline); earlier copies are still in the history. Keep the zips
 they came in as the masters. To add renders: unzip into `players/{TEAM}_custom/`, run
 `python3 tools/export_web.py --keep` (from `art/`), and commit only what it writes in `public/players/`. The
 manifest is built from the exported webp files, so later runs without the PNGs keep every custom render, and

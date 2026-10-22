@@ -1719,4 +1719,8 @@ export const PATCH_NOTES = [
     "Live plays: the ball stays with the ball carrier when he's tackled and goes down with him, so it no longer looks like it pops loose after every play. A ball on the turf now only means a fumble or an incomplete pass, and an interception shows the defender catching it and running it back.",
     "The name over a tackled player now follows him to the ground.",
   ] },
+  { v: "4.33", date: "2026-10-20", title: "Lighter repo", notes: [
+    "Cleanup: the old placeholder pixel players and the old matchup portraits are gone (the team sprite sheets and the player renders replaced them). The Super Bowl Gazette's MVP photo now uses the MVP's own player render.",
+    "Offline play: getting ready for offline now saves about 10 MB up front instead of about 65 MB. Every team's player art is still one tap away (about 60 MB) in the Offline Play panel, and anything you've seen online is kept.",
+  ] },
 ];
