@@ -209,11 +209,11 @@ const LP_CSS = `.lp-banner { position: absolute; left: 50%; top: 14%; transform:
 
 // How wide the field may get (it keeps its shape, so this caps its height to fit the screen).
 // A frame around it (HolidayFrame) takes the same cap, so it hugs the field.
-export const fieldMaxW = (tall) => `calc(${MOBILE ? "min(42vh, 390px)" : tall ? "min(calc(var(--vh, 100vh) - 470px), 700px)" : "min(calc(var(--vh, 100vh) - 330px), 570px)"} * ${W / H})`;
+export const fieldMaxW = (tall) => `calc(${MOBILE ? "min(42vh, 390px)" : tall ? "min(calc(var(--vh, 100vh) - 520px), 700px)" : "min(calc(var(--vh, 100vh) - 380px), 570px)"} * ${W / H})`;
 
 // anim: a play to act out ({ ev, key, id, card }, livePlays.js), with animSpeed (1 normal) and
-// onAnimDone when it's over (a tap on the field skips it).
-export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday, tall, anim, animSpeed = 1, onAnimDone }) {
+// onAnimDone when it's over (a tap on the field skips it); paused holds it where it is.
+export default function LiveField({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday, tall, anim, animSpeed = 1, paused = false, onAnimDone }) {
   const cam = useRef(null);
   const [phase, setPhase] = useState(null);
   useEffect(() => {
@@ -336,7 +336,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#3b82f6" strokeWidth="8" strokeOpacity=".25" />
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#60a5fa" strokeWidth="3" />
       {toGo > 0 && los + toGo < 100 && <><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#facc15" strokeWidth="8" strokeOpacity=".25" /><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#fde047" strokeWidth="3" /></>}
-      {anim ? <LivePlay key={anim.id} anim={anim} slots={slots} X={xOf} Y={yOf} cam={cam} W={W} H={H} zoom={MOBILE ? 2.2 : 2.1} speed={animSpeed} onPhase={setPhase} onDone={() => onAnimDone?.()} /> : <>{defMen}{offMen}</>}
+      {anim ? <LivePlay key={anim.id} anim={anim} slots={slots} X={xOf} Y={yOf} cam={cam} W={W} H={H} zoom={MOBILE ? 2.2 : 2.1} speed={animSpeed} paused={paused} onPhase={setPhase} onDone={() => onAnimDone?.()} /> : <>{defMen}{offMen}</>}
       <HolidayDecor holiday={holiday} />
       </g>
       <Falling wx={W8} />

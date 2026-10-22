@@ -1693,4 +1693,11 @@ export const PATCH_NOTES = [
     "Runs and screens are up to your players, not your timing: the bar runs on its own and stops where your back and offensive line put it. Better players hit the hole more often. An inside run you call now stays inside.",
     "Live games: ⏩ Sim to end of the quarter, next to Finish. Skip ahead and watch only the 4th quarter if you like; every play still goes in the play-by-play and the box score.",
   ] },
+  { v: "4.28", date: "2026-10-20", title: "Cleaner game screen", notes: [
+    "Live game screen tidied up: Pause/Resume, Sim to end of the quarter and Finish game are now big buttons right under the field.",
+    "The game settings (play calling, live plays, speed and view) sit above the play-by-play as clear switches, every choice visible, with a line explaining what the current one does.",
+    "No more accidental sims: during a live game, Sim Week, the sim menu and Sim Round are replaced by Finish game, so you can't sim the week (or a playoff round) out from under your game.",
+    "Runs and screens you call play out behind the scenes: no timing bar, your players decide it.",
+    "Pausing now also holds a live play where it is.",
+  ] },
 ];

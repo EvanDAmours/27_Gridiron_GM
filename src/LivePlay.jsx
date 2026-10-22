@@ -15,19 +15,21 @@ const BANNER = 1100, LEAD_IN = 450, CARD = 1700, CARD_SHORT = 800;
 // uniform each wears; X, Y: yards to field units; cam: the camera group (a ref); W, H: the field;
 // zoom: how far the camera pushes in; speed: play speed (1 normal); onPhase("play" | "card");
 // onDone: the play's over.
-export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, speed = 1, onPhase, onDone }) {
+// paused: the game's paused, so the play holds where it is
+export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, speed = 1, paused = false, onPhase, onDone }) {
   const sc = useMemo(() => buildPlay(anim.ev, slots, anim.id * 7919 + 13), [anim.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [t, setT] = useState(0);
-  const done = useRef(onDone), phase = useRef(onPhase);
-  done.current = onDone; phase.current = onPhase;
+  const done = useRef(onDone), phase = useRef(onPhase), hold = useRef(paused);
+  done.current = onDone; phase.current = onPhase; hold.current = paused;
   useEffect(() => {
     const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const lead = anim.key ? BANNER : LEAD_IN, hold = anim.card?.head ? CARD : CARD_SHORT;
+    const lead = anim.key ? BANNER : LEAD_IN, cardMs = anim.card?.head ? CARD : CARD_SHORT;
     const playMs = (sc.T * 1000) / speed;
     let raf = 0, start = performance.now(), last = start, said = "";
     const c = { x: W / 2, y: H / 2, k: 1 };
     const tell = (p) => { if (said !== p) { said = p; phase.current?.(p); } };
     const frame = (now) => {
+      if (hold.current) { start += now - last; last = now; raf = requestAnimationFrame(frame); return; }
       const ms = now - start, dt = Math.min(0.05, (now - last) / 1000); last = now;
       const tt = still ? sc.T : Math.max(0, ((ms - lead) / 1000) * speed);
       setT(Math.min(tt, sc.T));
@@ -40,7 +42,7 @@ export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, spe
       const hw = W / (2 * c.k), hh = H / (2 * c.k);
       const cx = Math.max(hw, Math.min(W - hw, c.x)), cy = Math.max(hh, Math.min(H - hh, c.y));
       if (cam.current) { cam.current.style.transition = "none"; cam.current.style.transform = `translate(${W / 2 - c.k * cx}px, ${H / 2 - c.k * cy}px) scale(${c.k})`; }
-      if (ms >= lead + playMs + hold) { done.current?.(); return; }
+      if (ms >= lead + playMs + cardMs) { done.current?.(); return; }
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
