@@ -105,6 +105,18 @@ function poseOf(sc, s, t, speed, ball) {
   const m = sc.m, k = s.key;
   if (!m || t <= 0.05) return null; // set at the snap
   const stride = Math.floor(t / 0.14) % 2;
+  const sp = m.special;
+  if (sp) {
+    // the snap, the hold and the kick; the punt and the catch
+    if (k === sp.snapper && t < 0.28) return "c5";
+    if (sp.k === "fg") {
+      if (k === sp.holder) return t >= 0.3 && t < sp.tKick ? "c4" : null;
+      if (k === sp.kicker) return t < 0.4 ? null : t < 0.85 ? (stride ? "c2" : "c1") : t < sp.tKick ? "c2" : t < sp.tKick + 0.6 ? "c3" : null;
+    } else {
+      if (k === sp.punter) return t >= 0.5 && t < sp.tKick ? "c6" : t >= sp.tKick && t < sp.tKick + 0.55 ? "c7" : null;
+      if (k === sp.returner && sp.catches && t > sp.tLand - 0.3 && (t < sp.tLand + 0.15 || k !== m.carrier) && !(sc.down[k] != null && t >= sc.down[k])) return "c8";
+    }
+  }
   const down = sc.down[k];
   // the finish: the ball carrier takes the hit and goes down; the tackler dives in and lands
   if (down != null && t >= down) {
@@ -130,7 +142,7 @@ function poseOf(sc, s, t, speed, ball) {
   }
   if (k === m.swat && m.tC != null && t > m.tC - 0.22 && t < m.tC + 0.35) return "b8";
   // the lines come out of their stance and lock up: only the man making the play gets loose
-  if (LINE.has(s.pos) && k !== m.tackler && k !== m.carrier) return t < 0.18 ? null : "b6";
+  if (LINE.has(s.pos) && k !== m.tackler && k !== m.carrier && (!sp || t < sp.release)) return t < 0.18 ? null : "b6";
   if (speed > 1.6) return ball ? (stride ? "a2" : "a1") : stride ? "a6" : "a5";
   return null;
 }

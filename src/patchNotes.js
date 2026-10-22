@@ -1729,4 +1729,9 @@ export const PATCH_NOTES = [
   { v: "4.35", date: "2026-10-20", title: "Lines lock up", notes: [
     "Live plays: the offensive and defensive lines now start in their stance, then come together and lock up in blocks, hands on each other, instead of standing a few yards apart. Only a rusher who gets loose for the sack (or the tackle) breaks out of the pile.",
   ] },
+  { v: "4.36", date: "2026-10-20", title: "Kicks on the field", notes: [
+    "Live plays: the lines now meet chest to chest at the snap, each defensive lineman locked on the blocker in front of him, and the pocket gives ground as the rush pushes into it (like the All-22 view), instead of two rows with a gap between them.",
+    "Field goals play out live: the snap, the hold, the kicker's approach and kick, and the ball sailing toward the goalposts, good or wide. Every field goal try gets the KEY PLAY banner.",
+    "Punts play out when there's a big return, a muff or a return touchdown (and every punt on Every play): the snap, the punter's kick, the gunners racing down, the returner settling under it and the return. Kickoffs are next.",
+  ] },
 ];

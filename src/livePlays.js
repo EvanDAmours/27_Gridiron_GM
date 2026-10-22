@@ -4,7 +4,7 @@
 // it never gives the result away. A big play anywhere else plays out too, without a banner, and so
 // does the odd ordinary snap, so the field starting to move doesn't tell you something big is coming.
 export const LIVE_MODES = ["Key", "All", "Off"];
-const ACTED = new Set(["run", "pass", "inc", "sack", "int"]);
+const ACTED = new Set(["run", "pass", "inc", "sack", "int", "fg", "punt"]);
 export const acted = (ev) => !!ev && ACTED.has(ev.k) && !ev.kneel;
 const nth = (n) => (n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`);
 
@@ -13,6 +13,9 @@ const nth = (n) => (n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}t
 // Every snap of a close finish, fourth downs and goal-to-go; third downs once a drive crosses
 // midfield or the game's in the fourth quarter (every third down would be ~26 a game: too many to sit through).
 export function keyLabel(ev, lead = 0) {
+  // every field goal try is worth watching (there are only a few a game)
+  if (ev.k === "fg") return `${ev.dist}-yard field goal try${ev.qtr >= 4 && ev.clock <= 120 && Math.abs(lead) <= 3 ? " · the game on the line" : ""}`;
+  if (ev.k === "punt") return null;
   const goal = ev.yard + ev.toGo >= 100, close = Math.abs(lead) <= 8;
   const ot = ev.qtr >= 5, finish = ev.qtr === 4 && ev.clock <= 120 && close;
   const third = ev.down === 3 && (ev.yard >= 50 || ev.qtr >= 4 || goal);
@@ -31,6 +34,8 @@ export function liveChoice(ev, mode, lead = 0, roll = Math.random()) {
   if (mode === "Off" || !acted(ev)) return null;
   const key = keyLabel(ev, lead);
   if (mode === "All" || key) return { key };
+  // a punt plays out when it's a long return, a muff or a return touchdown
+  if (ev.k === "punt") return (ev.ret || 0) >= 20 || ev.muff || ev.retTD || roll < 0.05 ? { key: null } : null;
   const big = ev.td || ev.turnover || ev.k === "int" || ev.k === "sack" || ev.type === "safety" || (ev.yards || 0) >= (ev.k === "run" ? 18 : 25);
   if (big || roll < 0.05) return { key: null };
   return null;
@@ -47,7 +52,16 @@ export function resultCard(ev, side, userSide, box = {}) {
   const qb = nm(ev.qb, "The quarterback"), carrier = nm(ev.player, "The runner");
   let head = "", line = "", tone = "", star = null, starSide = side, count = null;
   const nTimes = (s, id, key) => (id != null ? box[s]?.[id]?.[key] || 0 : 0);
-  if (ev.td) {
+  if (k === "fg") {
+    head = ev.made ? "IT'S GOOD!" : "NO GOOD!"; tone = ev.made ? "green" : "red"; star = ev.player;
+    line = ev.made ? `${nm(ev.player, "The kicker")} from ${ev.dist} yards` : `${nm(ev.player, "The kicker")}'s ${ev.dist}-yard try is wide`;
+  } else if (k === "punt") {
+    star = ev.pr; starSide = def;
+    if (ev.retTD) { head = "TOUCHDOWN!"; tone = "gold"; line = `${nm(ev.pr, "The returner")} takes the punt all the way back`; }
+    else if (ev.muff) { head = "MUFFED!"; tone = "red"; line = `${nm(ev.pr, "The returner")} drops it, and the kicking team recovers`; star = ev.punter; starSide = side; }
+    else if ((ev.ret || 0) >= 20) { head = "BIG RETURN!"; tone = "green"; line = `${nm(ev.pr, "The returner")} brings it back ${ev.ret} yards`; }
+    else { star = ev.punter; starSide = side; line = ev.tb ? `Punt into the end zone: touchback` : `Punt, ${ev.gross} yards${ev.returned ? `, returned ${ev.ret}` : ", fair catch"}`; }
+  } else if (ev.td) {
     head = "TOUCHDOWN!"; tone = "gold";
     if (k === "pass") { line = `${qb} hits ${nm(ev.player, "his receiver")} for ${an(Y)} ${Y}-yard score`; star = ev.player; count = ["recTD", "TD"]; }
     else { line = `${carrier} runs it in from ${Y === 1 ? "a yard" : `${Y} yards`} out`; star = ev.player; count = ["rushTD", "TD"]; }

@@ -631,6 +631,8 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const kl = line(g, off, o.k);
     add(kl, "fgA", 1); st.fgA++;
     ev.type = made ? "fg" : "fg_miss"; ev.player = o.k;
+    // for the field to act it out (LivePlay.jsx): the kick, its length, the holder
+    ev.k = "fg"; ev.dist = fgDist; ev.made = made; ev.holder = o.p || o.qb;
     if (made) { add(kl, "fgM", 1); add(kl, "pts", 3); kl.lng = Math.max(kl.lng || 0, fgDist); st.fgM++; ev.score = 3; scored(g, off, 3); ev.text = `${o.k?.name || "Kicker"}'s ${fgDist}-yard field goal is GOOD.`; }
     else ev.text = `${o.k?.name || "Kicker"}'s ${fgDist}-yard try is NO GOOD.`;
     ev.note = tick(g, 6);
@@ -648,15 +650,17 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     st.punts++;
     if (pl) { add(pl, "punts", 1); add(pl, "puntYds", Math.min(gross, 100 - g.yard)); }
     ev.type = "punt"; ev.turnover = false;
+    ev.k = "punt"; ev.punter = pp; ev.gross = gross; ev.ret = 0; ev.pr = d.pr;
     ev.note = tick(g, 8);
     // Near the goal line a good punter pins it inside the 10 instead of sailing it into the end zone.
     const pinned = land >= 90 && rand() < 0.4 + (acc - 82) * 0.015;
     if (land >= 100 && !pinned) {
-      ev.text = `Punt of ${100 - g.yard} yards into the end zone, touchback.`;
+      ev.text = `Punt of ${100 - g.yard} yards into the end zone, touchback.`; ev.tb = true;
       if (!g.done) newPossession(g, 20);
       return ev;
     }
     const spot = pinned && land >= 100 ? 92 + Math.round(rand() * 6) : land; // where it's caught or downed
+    ev.spot = spot;
     let ret = 0;
     const r = d.prR ?? 80, p = d.pr, rl = line(g, def, p);
     // Hang time: a high punt gets the coverage there first (more fair catches, shorter returns).
@@ -665,7 +669,9 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       ret = Math.round(Math.max(0, 8 + (r - 85) * 0.22 - ((o.stCov ?? 70) - 70) * 0.05 - hang * 0.12 + gauss(rand) * 5.5));
       if (rand() < 0.024 * Math.exp((r - 85) / 8)) ret += 15 + Math.round(rand() * 60); // breaks one
       add(rl, "pr", 1);
+      ev.ret = ret; ev.returned = true;
       if (rand() < 0.008) { // muffed: the punting team recovers
+        ev.muff = true; ev.ret = 0;
         add(rl, "fum", 1); g.stats[def].fumLost++;
         ev.text = `Punt, ${gross} yards. ${p?.name || "The returner"} MUFFS it, and the punting team recovers!`;
         if (!g.done) { g.yard = clamp(spot, 1, 99); g.down = 1; g.toGo = Math.min(10, 100 - g.yard); g.stats[off].drives++; }

@@ -20,6 +20,19 @@ const FORMATION = {
   def: [["DL", 0, 2, -9], ["DL", 1, 2, -3], ["DL", 2, 2, 3], ["DL", 3, 2, 9], ["LB", 0, 7.5, -14], ["LB", 1, 7.5, 0], ["LB", 2, 7.5, 14],
     ["CB", 0, 8, -23.5], ["CB", 1, 8, 23.5], ["S", 0, 15, -9], ["S", 1, 15, 9]],
 };
+// Special teams, for a kick acted out: the field goal unit (snapper, holder seven yards back, kicker
+// beside him, wings on the ends) and the punt unit (gunners split wide, a personal protector, the
+// punter fifteen back). On a punt the deep safety is the returner, set back where the ball's headed.
+const SPECIAL = {
+  fg: {
+    off: [["LT", 0, -1.5, -11], ["LG", 0, -1.5, -5.5], ["C", 0, -1.5, 0], ["RG", 0, -1.5, 5.5], ["RT", 0, -1.5, 11], ["TE", 0, -2, 15.5], ["TE", 1, -2, -15.5], ["WR", 0, -3, 19], ["WR", 1, -3, -19], ["QB", 0, -8, 0.6], ["K", 0, -11, -3.5]],
+    def: FORMATION.def,
+  },
+  punt: {
+    off: [["LT", 0, -1.5, -11], ["LG", 0, -1.5, -5.5], ["C", 0, -1.5, 0], ["RG", 0, -1.5, 5.5], ["RT", 0, -1.5, 11], ["TE", 0, -2, 15.5], ["TE", 1, -2, -15.5], ["WR", 0, -1.5, 22], ["WR", 1, -1.5, -22], ["RB", 0, -6, 1.5], ["P", 0, -15, 0]],
+    def: FORMATION.def.map(([pos, i, dx, lat]) => (pos === "S" && i === 0 ? ["S", 0, "RET", 0] : pos === "CB" ? [pos, i, 2, lat < 0 ? -22 : 22] : [pos, i, dx, lat])),
+  },
+};
 const W = 800, H = 360, EZ = 60;
 const xOf = (yard) => EZ + (yard / 100) * (W - 2 * EZ);
 const yOf = (lat) => H / 2 + lat * (H / 53.3);
@@ -126,7 +139,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function starters(team, depth, order) {
   const healthy = (team?.roster || []).filter((p) => !p.injured && !p.holdout && !p.suspended);
   const by = {};
-  for (const pos of ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S"]) by[pos] = order ? order(pos) : depthOrderFor(healthy, depth, pos);
+  for (const pos of ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"]) by[pos] = order ? order(pos) : depthOrderFor(healthy, depth, pos);
   return by;
 }
 
@@ -217,13 +230,16 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
   const home = offHome ? off : def, homeWhite = !!UNIFORMS[teamKey(home)]?.whiteHome;
   const awayFor = (side) => (homeWhite ? false : side === "off" ? !offHome : offHome);
   const slots = [];
+  const st = anim && SPECIAL[anim.ev?.k] ? anim.ev.k : null, FORM = st ? SPECIAL[st] : FORMATION;
   const place = (side, list, team) =>
-    FORMATION[side].map(([pos, i, dx, lat]) => {
+    FORM[side].map(([pos, i, dx, lat]) => {
       // with sprites, set each line's depth so the two rows of helmets meet evenly over the ball
       if (SPRITES && ["LT", "LG", "C", "RG", "RT"].includes(pos)) dx = -1.5;
       if (SPRITES && pos === "DL") dx = 4.8;
       if (SPRITES && pos === "LB") dx = 9.5;
-      if (SPRITES && pos === "RB") lat = 7;
+      if (SPRITES && pos === "RB" && !st) lat = 7;
+      // the punt returner waits about where it's coming down
+      if (dx === "RET") dx = clamp(Math.min(anim.ev.gross || 42, 100 - los + 4) - 4, 25, 48);
       const x = clamp(xOf(los + dx), 20, W - 20), y = clamp(yOf(lat), SPRITES ? 26 : 22, H - (SPRITES ? 26 : 34));
       const p = list[pos]?.[i];
       // the same spot in yards, for a play acted out (playScript.js)
@@ -325,6 +341,8 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#60a5fa" strokeWidth="3" />
       {toGo > 0 && los + toGo < 100 && <><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#facc15" strokeWidth="8" strokeOpacity=".25" /><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#fde047" strokeWidth="3" /></>}
       {anim ? <LivePlay key={anim.id} anim={anim} slots={slots} X={xOf} Y={yOf} cam={cam} W={W} H={H} zoom={MOBILE ? 2.2 : 2.1} speed={animSpeed} paused={paused} onPhase={setPhase} onDone={() => onAnimDone?.()} /> : <>{defMen}{offMen}</>}
+      {/* a field goal try: the goalposts at the back of the end zone, seen from above */}
+      {st === "fg" && <g pointerEvents="none"><line x1={W - 5} y1={yOf(-3.1)} x2={W - 5} y2={yOf(3.1)} stroke="#facc15" strokeWidth="3" strokeLinecap="round" /><circle cx={W - 5} cy={H / 2} r="3.5" fill="#facc15" /></g>}
       <HolidayDecor holiday={holiday} />
       </g>
       <Falling wx={W8} />
