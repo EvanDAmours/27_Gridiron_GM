@@ -91,6 +91,10 @@ function pickW(rand, list) {
 // linebackers most of the rest, DBs a few (a 95-rated edge gets ~1.4x an average one's share).
 // The spot he's playing says which (LE/RE edge, DT1/DT2 inside); else Madden's position (mpos),
 // else body weight (an edge ~250-285 lbs, a tackle ~295+).
+// How much more often a rusher gets home than an average one in his role, by his pass rush (a 95
+// rusher about 1.65 times a 75). The front as a whole decides how often the quarterback goes
+// down; this decides who gets there.
+const rushQ = (p) => Math.exp(((p.posAttrs?.passRush ?? p.ovr ?? 70) - 75) * 0.025);
 function rushRole(p) {
   if (p.pos === "DL") return p.dlKind ? (p.dlKind === "DT" ? 0.6 : 1) : p.mpos ? (p.mpos === "DT" ? 0.6 : 1) : (p.wt || 280) >= 292 ? 0.6 : 1;
   if (p.pos === "LB") return (p.role || p.mpos) === "SAM" ? 0.3 : 0.14;
@@ -193,7 +197,8 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
   const qb = on("QB")[0] || order("QB")[0];
   const defs = [];
   for (const pos of ["DL", "LB", "CB", "S"]) on(pos).forEach((p, i) => defs.push([p, (TK[pos][i] ?? 0.01) * share(p) * q(p, 0.01)]));
-  const rushW = defs.map(([p, w]) => [p, rushRole(p) * w * q(p, 0.002)]);
+  // [p, weight, an average player's weight in his role and snaps (the grades' bar)]
+  const rushW = defs.map(([p, w]) => [p, rushRole(p) * w * rushQ(p), rushRole(p) * w]);
   const covW = defs.map(([p, w]) => [p, (p.pos === "CB" ? 1.4 : p.pos === "S" ? 1.1 : p.pos === "LB" ? 0.35 : 0.05) * w * q(p, 0.035)]);
   const tackleW = defs.map(([p, w]) => [p, w]);
   // Who's out there in each grouping: the receivers by role, plus the backs (by snaps, as before).
@@ -217,7 +222,7 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
     on_.cbs.forEach((p, i) => list.push([p, (ROLE_TK[p.role || (i === 3 ? "CB4" : "")] ?? 0.03) * q(p, 0.01)]));
     sOn.forEach((p, i) => list.push([p, (TK.S[i] ?? 0.02) * q(p, 0.01)]));
     return [k, {
-      tackleW: list, rushW: list.map(([p, w]) => [p, rushRole(p) * w * q(p, 0.002)]),
+      tackleW: list, rushW: list.map(([p, w]) => [p, rushRole(p) * w * rushQ(p), rushRole(p) * w]),
       covW: list.map(([p, w]) => [p, (p.pos === "CB" ? 1.4 : p.pos === "S" ? 1.1 : p.pos === "LB" ? 0.35 : 0.05) * w * q(p, 0.035)]),
       on: on_,
     }];
@@ -321,6 +326,8 @@ function olBook(g, side, ol, k, type, yards, desc) {
 // pr pass rush, cv coverage, rd run defense), plus pressures and coverage stats. Bookkeeping only:
 // the play is already decided (pressure and stop credit use the line's own dice, olRand).
 export const AVG = { qb: 78, rec: 76, cov: 76, rb: 76 };
+// pass-rush credit: a sack, a half sack, a pressure that didn't get home
+const SACK_G = 3, HELP_G = 1, PRES_G = 0.5;
 const phi = (x) => 0.5 * (1 + Math.tanh(0.7978845608 * (x + 0.044715 * x * x * x)));   // normal CDF
 const cap = (v, a, b) => Math.max(a, Math.min(b, v));
 function gradeBook(g, off, def, dP, k, yards) {
@@ -342,16 +349,23 @@ function gradeBook(g, off, def, dP, k, yards) {
     }
   }
   // the pass rush: who got home (a sack, or a pressure on the throw), against what an average front
-  // gets against this line
+  // gets against this line. A sack counts six times a pressure: sacks go to the rushers who win
+  // (the play engine picks the man by his rush), while pressures are spread across the front, so
+  // weighting them equally graded a rusher on his share of the line's pressures, not on getting home.
   if (k.dropback) {
     const rush = (dP.rushW || []).filter(([p, w]) => w > 0 && (p.pos === "DL" || p.pos === "LB"));
-    const W = rush.reduce((a, [, w]) => a + w, 0) || 1;
-    const pres0 = Math.min(0.45, Math.max(0.15, k.sackP0 * 4.2)), e = k.sackP0 * 1.5 + (1 - k.sackP0) * pres0;
+    // the bar: what an average player in each man's role and snaps would get (his share of the
+    // front without his rush rating), so a rusher who wins more than his share grades above it
+    const W0 = rush.reduce((a, [, w, w0]) => a + (w0 ?? w), 0) || 1;
+    // The bar is half this snap's (the line he faced, the call) and half a league-average snap, so
+    // getting home counts: a sack leader isn't graded average because his defense blitzes a lot.
+    const bar = (sp) => sp * (SACK_G + 0.22 * HELP_G) + (1 - sp) * Math.min(0.45, Math.max(0.15, sp * 4.2)) * PRES_G;
+    const e = 0.25 * bar(k.sackP0) + 0.75 * bar(0.064);
     const got = new Map();
-    if (k.sacked) { if (k.rusher) got.set(k.rusher, 1.5); if (k.helper) got.set(k.helper, 0.75); }
-    else if (k.pres && rush.length) got.set(olPick(g, rush, ([p, w]) => w * Math.exp(((p.ovr || 70) - 75) * 0.03))[0], 1);
+    if (k.sacked) { if (k.rusher) got.set(k.rusher, SACK_G); if (k.helper) got.set(k.helper, HELP_G); }
+    else if (k.pres && rush.length) got.set(olPick(g, rush, ([, w]) => w)[0], PRES_G);
     for (const p of got.keys()) add(line(g, def, p), "pres", 1);
-    for (const [p, w] of rush) G(def, p, "pr", (got.get(p) || 0) - (w / W) * e);
+    for (const [p, w, w0] of rush) G(def, p, "pr", (got.get(p) || 0) - ((w0 ?? w) / W0) * e);
     for (const [p, v] of got) if (!rush.some(([q]) => q === p)) G(def, p, "pr", v);   // a DB on a blitz
   }
   // runs: the back against an average back behind this line; the front's stops against an average front

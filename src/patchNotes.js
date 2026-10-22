@@ -1661,4 +1661,8 @@ export const PATCH_NOTES = [
   { v: "4.21", date: "2026-10-20", title: "Best at each position", notes: [
     "The best at each position: every season one player at each spot is named its best (Quarterback of the Year, Linebacker of the Year, Guard of the Year and so on), judged mostly on how well he actually played (his season grade) and how good he is, less on box-score numbers. A great player who never wins MVP or DPOY still ends his career with something to show for it: it's on his card's honors, his farewell card, and counts toward his legacy and the Hall of Fame. The winners are listed on the All-Pro page of the season awards.",
   ] },
+  { v: "4.22", date: "2026-10-20", title: "Pass-rush grades fixed", notes: [
+    "Pass-rush grades fixed: a sack now counts six times a pressure, rushers are measured against an average player in their role (not against their own share of the front), and the bar leans on a league-average snap, so a sack leader no longer grades average because his defense blitzes a lot. Grades now track sacks and rating far more closely.",
+    "Who gets the sack now depends on each rusher's pass rush: elite edge rushers lead the league in sacks more often. Team sack totals are unchanged.",
+  ] },
 ];
