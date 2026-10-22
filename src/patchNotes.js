@@ -1734,4 +1734,9 @@ export const PATCH_NOTES = [
     "Field goals play out live: the snap, the hold, the kicker's approach and kick, and the ball sailing toward the goalposts, good or wide. Every field goal try gets the KEY PLAY banner.",
     "Punts play out when there's a big return, a muff or a return touchdown (and every punt on Every play): the snap, the punter's kick, the gunners racing down, the returner settling under it and the return. Kickoffs are next.",
   ] },
+  { v: "4.37", date: "2026-10-20", title: "Locked-up lines", notes: [
+    "Live plays: the lines lock up like they do on a field goal on every snap. Each defensive lineman takes the blocker straight across from him and squares up chest to chest, so the line is one row of pairs",
+    "Sacks: the rest of the defensive line now stays locked with the blockers instead of standing far apart. Only the man who gets the sack breaks free",
+    "Short gains: the linemen stay in the pile. On a big play they peel off and run after the ball carrier in a full sprint instead of gliding with their arms out",
+  ] },
 ];

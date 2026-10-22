@@ -30,6 +30,20 @@ const toward = (f, t0, [x, y], t1) => (t) => {
 const LAT = 22.8;
 const onField = ([x, y]) => [clamp(x, -2.5, 106), clamp(y, -LAT, LAT)];
 
+// The two lines lock up the way they do on a field goal: each defensive lineman takes the blocker
+// straight across from him (never two on one man) and squares up to him chest to chest, a couple of
+// yards apart, so the line is one row of pairs. mate: lineman's key -> his blocker.
+function pairLine(ol, dl) {
+  const mate = {}, used = new Set(), d = (a, b) => Math.abs(a.y - b.y);
+  const gap = (s) => Math.min(...ol.map((o) => d(o, s)));
+  for (const s of [...dl].sort((a, b) => gap(a) - gap(b))) {
+    const free = ol.filter((o) => !used.has(o)), o = (free.length ? free : ol).reduce((b, o) => (!b || d(o, s) < d(b, s) ? o : b), null);
+    if (o) { used.add(o); mate[s.key] = o; }
+  }
+  return mate;
+}
+const lockOn = (s, of) => (t) => { const [ox, oy] = of(t); const u = ease(clamp(t / 0.32, 0, 1)); return [lerp(s.x, ox + 2.4, u), lerp(s.y, lerp(oy, s.y, 0.12), u)]; };
+
 export const SPEED = 9; // yards a second a pursuer covers
 
 // ev: the engine's play (with k, qb, tgt, cm, rusher, db, tkl, yac, deep, quick, screen, keeper,
@@ -58,14 +72,12 @@ export function buildPlay(ev, slots, seed = 1) {
   // into it, the two close enough to be locked together (about 4 yards between them, hands on chests).
   // Only a rusher who gets loose (the sack, the tackle behind the line) leaves the pile.
   // On a pass the pocket gives ground as the rush pushes into it; on a run the line drives forward.
-  for (const s of off) if (is(s, "LT", "LG", "C", "RG", "RT")) F[s.key] = passPlay ? path([0, s.x, s.y], [0.3, s.x - 0.4, s.y], [3, s.x - 1.9, s.y + (R() - 0.5) * 0.6]) : path([0, s.x, s.y], [0.4, s.x + 1.1, s.y + (R() - 0.5) * 0.6], [3, s.x + 2.1, s.y + (R() - 0.5) * 0.9]);
+  for (const s of off) if (is(s, "LT", "LG", "C", "RG", "RT")) F[s.key] = passPlay ? path([0, s.x, s.y], [0.3, s.x - 0.4, s.y], [3, s.x - 1.2, s.y]) : path([0, s.x, s.y], [0.4, s.x + 1.1, s.y], [3, s.x + 2.1, s.y]);
   // A defensive lineman takes on the blocker in front of him and stays on him, chest to chest (as
   // in the All-22: the two lines meet in one tangle at the line, not two rows with a gap).
   const olSlots = off.filter((o) => is(o, "LT", "LG", "C", "RG", "RT"));
-  const engage = (s) => {
-    const o = near(olSlots, s.x - 6, s.y), of = F[o.key], dy = (R() - 0.5) * 0.8;
-    return (t) => { const [ox, oy] = of(t); const u = ease(clamp(t / 0.32, 0, 1)); return [lerp(s.x, ox + 2.4, u), lerp(s.y, lerp(s.y, oy, 0.55) + dy, u)]; };
-  };
+  const mate = pairLine(olSlots, def.filter((s) => is(s, "DL")));
+  const engage = (s) => (mate[s.key] ? lockOn(s, F[mate[s.key].key]) : path([0, s.x, s.y]));
   // Receivers not getting the ball run their routes and settle.
   const route = (s) => { const dx = 8 + R() * 9, dy = (R() - 0.5) * 8; return path([0, s.x, s.y], [1.1, s.x + dx * 0.75, s.y + dy * 0.3], [2.2, s.x + dx + 3, s.y + dy], [3.2, s.x + dx + 4, s.y + dy]); };
   const block = (s) => path([0, s.x, s.y], [1, s.x + 3 + R() * 2, s.y + (R() - 0.5) * 2], [3, s.x + 4 + R() * 2, s.y + (R() - 0.5) * 3]);
@@ -91,6 +103,14 @@ export function buildPlay(ev, slots, seed = 1) {
     stars.push(rs.key, qbS.key);
     ballF = (t) => (t < 0.25 ? { x: lerp(los, qx, t / 0.25), y: lerp(0, qy, t / 0.25), h: 0.6 } : { held: qbS.key });
     T = tS + 0.95;
+    // everyone else on defense: the line locks up with the blockers (only the sacker gets loose),
+    // the linebackers drop and the secondary runs with the receivers
+    for (const s of def) {
+      if (F[s.key]) continue;
+      if (is(s, "DL")) F[s.key] = engage(s);
+      else if (is(s, "LB")) F[s.key] = path([0, s.x, s.y], [0.9, s.x + 3, s.y * 0.85], [3, s.x + 3.5, s.y * 0.85]);
+      else { const man = near(recvs, s.x - 6, s.y), mf = man && F[man.key]; F[s.key] = mf ? (t) => { const [mx, my] = mf(Math.max(0, t - 0.3)); const u = clamp(t / 0.5, 0, 1); return [lerp(s.x, mx + (is(s, "S") ? 4 : 1.8), u), lerp(s.y, my * 0.9 + s.y * 0.1, u)]; } : path([0, s.x, s.y]); }
+    }
   } else if (passPlay) {
     // where the throw is caught: the air yards, then what he did after the catch
     const tgt = byId(off, ev.tgt) || (ev.screen ? off.find((s) => s.pos === "RB") : null) || near(recvs, los + 8, (R() - 0.5) * 30) || off[0];
@@ -207,8 +227,10 @@ export function buildPlay(ev, slots, seed = 1) {
     const reach = (s) => Math.hypot(F[s.key](tE)[0] - end[0], F[s.key](tE)[1] - end[1]) / SPEED;
     if (!tackler || reach(tackler) > (tEnd - tE) * 1.3 + 0.3) tackler = chasers.filter((s) => s !== carrier).reduce((b, s) => (!b || reach(s) < reach(b) ? s : b), null);
     const dir = carrier.side === "off" ? 1 : -1;
+    // the linemen stay locked in the pile unless the play breaks well past the line
+    const pile = Math.abs(end[0] - los) < 10;
     for (const s of chasers) {
-      if (s === carrier) continue;
+      if (s === carrier || (pile && s !== tackler && is(s, "DL"))) continue;
       const from = F[s.key](tE), lag = s === tackler ? (td ? 0.45 : 0) : 0.2 + R() * 1.1;
       const spot = s === tackler ? [end[0] + dir * (td ? 2.5 : 0.8), end[1] + (R() - 0.5) * 0.8] : [end[0] + dir * (1.5 + R() * 3), end[1] + (R() - 0.5) * 6];
       const t1 = s === tackler ? tEnd + lag : Math.max(tEnd + lag, tE + Math.hypot(spot[0] - from[0], spot[1] - from[1]) / SPEED);
@@ -260,8 +282,8 @@ function buildSpecial(ev, slots, R) {
   const olSlots = off.filter((s) => ["LT", "LG", "C", "RG", "RT"].includes(s.pos));
   // the lines meet for the kick, then (on a punt) everyone leaves to cover or to set up the return
   for (const s of olSlots) F[s.key] = path([0, s.x, s.y], [0.3, s.x - 0.4, s.y], [3, s.x - 0.8, s.y]);
-  const engage = (s) => { const o = near(olSlots, s.x - 6, s.y), of = F[o.key]; return (t) => { const [ox, oy] = of(t); const u = ease(clamp(t / 0.32, 0, 1)); return [lerp(s.x, ox + 2.4, u), lerp(s.y, lerp(s.y, oy, 0.55), u)]; }; };
-  for (const s of def) if (s.pos === "DL") F[s.key] = engage(s);
+  const mate = pairLine(olSlots, def.filter((s) => s.pos === "DL"));
+  for (const s of def) if (mate[s.key]) F[s.key] = lockOn(s, F[mate[s.key].key]);
   let T, ball, m, hop = null, tEnd = 0;
   if (ev.k === "fg") {
     const holder = by(off, "QB"), kicker = by(off, "K") || holder;

@@ -142,7 +142,11 @@ function poseOf(sc, s, t, speed, ball) {
   }
   if (k === m.swat && m.tC != null && t > m.tC - 0.22 && t < m.tC + 0.35) return "b8";
   // the lines come out of their stance and lock up: only the man making the play gets loose
-  if (LINE.has(s.pos) && k !== m.tackler && k !== m.carrier && (!sp || t < sp.release)) return t < 0.18 ? null : "b6";
+  // (once the ball's past them, the defensive linemen who peel off to chase run after it)
+  if (LINE.has(s.pos) && k !== m.tackler && k !== m.carrier && (!sp || t < sp.release)) {
+    if (t < 0.18) return null;
+    if (!(s.side === "def" && m.tE != null && t > m.tE + 0.15 && speed > 1.6)) return "b6";
+  }
   if (speed > 1.6) return ball ? (stride ? "a2" : "a1") : stride ? "a6" : "a5";
   return null;
 }
