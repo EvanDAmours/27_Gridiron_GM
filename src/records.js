@@ -19,6 +19,7 @@ export const GAMES = 17;
 // the game that set a record goes to IR before the week's check, and the record is still his).
 export const everyone = (t) => [...(t?.roster || []), ...(t?.ir || [])];
 import { FRANCHISE_RECORDS } from "./data/franchiseRecords.js";
+import { posTag } from "./dline.js";
 
 // Each club's real franchise records (club abbreviation -> stat -> { val, name, yr, real }).
 const freshFranchise = () => Object.fromEntries(Object.entries(FRANCHISE_RECORDS).map(([ab, recs]) => [ab, Object.fromEntries(Object.entries(recs).map(([k, r]) => [k, { ...r, real: true }]))]));
@@ -116,7 +117,7 @@ export function updateRecords(book, teams, yr) {
     }
     if (!top || top.v <= cur.val) continue;
     const same = cur.pid === top.p.id && cur.yr === yr;
-    best[d.key] = { val: top.v, name: top.p.name, pid: top.p.id, pos: top.p.pos, team: top.t.ab, yr };
+    best[d.key] = { val: top.v, name: top.p.name, pid: top.p.id, pos: posTag(top.p), team: top.t.ab, yr };
     if (!same) {
       const prev = cur.prev && cur.yr === yr && !cur.nfl ? cur.prev : { val: cur.val, name: cur.name, team: cur.team, yr: cur.yr };
       best[d.key].prev = prev;

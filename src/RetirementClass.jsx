@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { C, Face, Bdg, CloseX, sheetWrap, sheetBox, SheetGrip, oC } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
+import { posTag } from "./dline.js";
 
 export default function RetirementClass({ cls, onClose, cardFor }) {
   const [mineOnly, setMineOnly] = useState(false);
@@ -26,7 +27,7 @@ export default function RetirementClass({ cls, onClose, cardFor }) {
               <Face s={x.face} sz={36} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.name}{x.mine && <span style={{ fontSize: 11, color: C.gn, fontWeight: 900, marginLeft: 6 }}>YOURS</span>}</div>
-                <div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={x.pos} /> {x.team === "FA" ? (x.stale ? "free agent, unsigned two seasons" : "free agent") : x.team} · age {x.age} · {x.seasons} season{x.seasons === 1 ? "" : "s"}</div>
+                <div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={posTag(x)} /> {x.team === "FA" ? (x.stale ? "free agent, unsigned two seasons" : "free agent") : x.team} · age {x.age} · {x.seasons} season{x.seasons === 1 ? "" : "s"}</div>
               </div>
               <div style={{ textAlign: "right" }}><div style={{ fontSize: 18, fontWeight: 900, color: oC(x.peak) }}>{x.peak}</div><div style={{ fontSize: 10, color: C.mt, fontWeight: 800 }}>PEAK</div></div>
             </div>;

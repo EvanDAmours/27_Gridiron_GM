@@ -61,7 +61,7 @@ function Row({ label, w, teams, ui, big }) {
         <div style={{ fontSize: MOBILE ? 10.5 : 12, fontWeight: 900, letterSpacing: 1, color: "#fcd34d" }}>{label.toUpperCase()}</div>
         {w ? (
           <>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: MOBILE ? (big ? 17 : 15.5) : big ? 19 : 17, fontWeight: 800, minWidth: 0 }}>{w.pos && <Bdg pos={w.pos} />}<span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w.name}</span>{mine && <span style={{ fontSize: 11, fontWeight: 900, color: C.gn }}>YOUR TEAM</span>}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: MOBILE ? (big ? 17 : 15.5) : big ? 19 : 17, fontWeight: 800, minWidth: 0 }}>{w.pos && <Bdg pos={posTag(w)} />}<span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w.name}</span>{mine && <span style={{ fontSize: 11, fontWeight: 900, color: C.gn }}>YOUR TEAM</span>}</div>
             <div style={{ fontSize: MOBILE ? 12 : 13, color: "#cbd5e1", lineHeight: 1.35 }}>{t ? (MOBILE ? t.ab : `${t.city} ${t.name}`) : ""}{w.stat ? ` · ${w.stat}` : ""}</div>
           </>
         ) : <div style={{ fontSize: 15, color: C.mt }}>Not awarded</div>}

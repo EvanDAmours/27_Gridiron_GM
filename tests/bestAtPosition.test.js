@@ -28,3 +28,13 @@ test("it is a career accolade with its own name and counts toward his legacy", (
   assert.equal(best.label, "Linebacker of the Year");
   assert.deepEqual(best.years, [2027, 2028]);
 });
+
+test("DPOY: the dominant rusher beats a near-equal sack total built on fumbles", async () => {
+  const { seasonAwardWinners } = await import("../src/awards.js");
+  const g = (pr) => ({ prG: pr * 650, prN: 650, rdG: 0.004 * 430, rdN: 430 });
+  const carter = { id: "c", name: "Abdul Carter", pos: "DL", mpos: "LEDG", ovr: 99, ss: { gp: 17, sacks: 20.5, pres: 139, tkl: 72, tfl: 2, ff: 1, ...g(0.04) } };
+  const hill = { id: "h", name: "Eli Hill", pos: "DL", mpos: "REDG", ovr: 83, ss: { gp: 17, sacks: 19, pres: 89, tkl: 64, tfl: 6, ff: 3, ...g(0.002) } };
+  const w = seasonAwardWinners([{ ab: "NYG", w: 12, roster: [carter] }, { ab: "DET", w: 12, roster: [hill] }], 2037);
+  assert.equal(w.dpoy.name, "Abdul Carter");
+  assert.equal(w.dpoy.pos, "EDGE");
+});

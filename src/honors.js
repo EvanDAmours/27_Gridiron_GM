@@ -1,7 +1,7 @@
 // All-Pro and Pro Bowl teams, picked at the end of each regular season from what players did
 // (season stats) and how good they are (rating), position by position like the real ballots.
 // Making a team is worth a little OVR in the off-season and counts toward a player's legacy.
-import { naturalDL } from "./dline.js";
+import { naturalDL, posTag } from "./dline.js";
 import { gradesOf } from "./grades.js";
 
 // Spots on the All-Pro team (each of the first and second teams) and on each conference's Pro Bowl roster.
@@ -35,7 +35,7 @@ export function production(p) {
     case "QB": return s(p, "passYds") / 50 + s(p, "passTD") * 1.6 - s(p, "passInt") * 2 + s(p, "rushYds") / 25;
     case "RB": return s(p, "rushYds") / 15 + s(p, "rushTD") * 3 + s(p, "recYds") / 25;
     case "WR": case "TE": return s(p, "recYds") / 15 + s(p, "recTD") * 3 + s(p, "rec") / 4;
-    case "DL": case "LB": return s(p, "sacks") * 5 + s(p, "tkl") / 3 + s(p, "tfl") * 1.5 + s(p, "ff") * 3 + s(p, "ints") * 4;
+    case "DL": case "LB": return s(p, "sacks") * 5 + s(p, "pres") / 4 + s(p, "tkl") / 3 + s(p, "tfl") * 1.5 + s(p, "ff") * 3 + s(p, "ints") * 4;
     case "CB": case "S": return s(p, "ints") * 9 + s(p, "pd") * 2.5 + s(p, "tkl") / 3;
     case "K": return s(p, "fgM") * 2.5 - (s(p, "fgA") - s(p, "fgM")) * 3;
     case "P": return s(p, "punts") ? (s(p, "puntYds") / s(p, "punts")) * 1.5 + s(p, "in20") : 0;
@@ -75,7 +75,7 @@ function bestOf(field) {
 // teams: the league at the end of the regular season. Returns { ap1, ap2, pb: { AFC, NFC }, best },
 // each a list of { pid, name, pos, slot, ti, team }.
 export function seasonHonors(teams) {
-  const entry = (x, slot) => ({ pid: x.p.id, name: x.p.name, pos: x.p.pos, slot, ti: x.ti, team: x.team.ab });
+  const entry = (x, slot) => ({ pid: x.p.id, name: x.p.name, pos: posTag(x.p), slot, ti: x.ti, team: x.team.ab });
   const out = { ap1: [], ap2: [], pb: { AFC: [], NFC: [] }, best: [] };
   for (const sl of SLOTS) {
     const field = [];

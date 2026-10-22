@@ -17,6 +17,7 @@ import { primeSlot } from "./seasonPreview.js";
 import { HolidayCard } from "./Atmosphere.jsx";
 import { gameWeather, wxOf } from "./weather.js";
 import { rosterPlan } from "./rosterPlan.js";
+import { posTag } from "./dline.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const PHASE = { preseason: "Preseason", combine: "Offseason: NFL Combine", resign: "Offseason: Re-sign Week", freeagency: "Offseason: Free Agency", draft: "Offseason: NFL Draft" };
@@ -90,7 +91,7 @@ function Injuries({ teams, ui, onNav, wk }) {
     <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: "1px solid #ffffff14" }}>
       {t && <TeamLogo t={t} sz={22} />}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name} <span style={{ color: "#94a3b8", fontWeight: 600 }}>{p.pos} {p.ovr}</span></div>
+        <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name} <span style={{ color: "#94a3b8", fontWeight: 600 }}>{posTag(p)} {p.ovr}</span></div>
         <div style={{ fontSize: 12, display: "flex", alignItems: "center" }}><InjTag st={st} showNote style={{ marginLeft: 0 }} /></div>
       </div>
     </div>
@@ -132,7 +133,7 @@ function OffseasonBoard({ me, sp, onNav }) {
         <div style={head}>{list === expiring ? "DEALS ENDING" : "YOUR YOUNG CORE"}</div>
         {list.map((p) => (
           <button key={p.id} onClick={() => onNav(list === expiring ? (sp === "resign" ? "freeagency" : "contracts") : "roster")} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", background: "transparent", border: 0, borderBottom: "1px solid #ffffff10", padding: "5px 0", color: "#fff", cursor: "pointer" }}>
-            <Bdg pos={p.pos} /><span style={{ fontSize: 14, fontWeight: 700, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+            <Bdg pos={posTag(p)} /><span style={{ fontSize: 14, fontWeight: 700, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
             <span style={{ fontSize: 12, color: "#94a3b8" }}>{p.age}</span>
             <b style={{ color: oC(p.ovr), minWidth: 22, textAlign: "right" }}>{p.ovr}</b>
           </button>
@@ -174,7 +175,7 @@ function RosterChecklist({ me, sp, fa, capRoom, onFa, mobile }) {
   );
 }
 
-export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory, rivalId, h2h }) {
+export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory, rivalId, h2h }) {
   const me = teams[ui];
   // a tall window (big desktop) has room for the full-size matchup art
   const roomy = !mobile && typeof window !== "undefined" && window.innerHeight / (parseFloat(document.documentElement.style.zoom) || 1) >= 900;
@@ -298,6 +299,16 @@ export default function HomeScreen({ fa = [], capRoom = 0, onFa, mobile, teams, 
             /></HolidayCard>
           ) : null}
           {game && sp === "regular" && <RaceWatch teams={teams} sched={sched} ui={ui} wk={game.wk} mobile={mobile} />}
+          {/* the No. 1 seed is locked: rest the starters for what's left of the regular season (restStarters.js) */}
+          {rest && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 10, padding: "10px 14px", borderRadius: 12, background: rest.on ? "#0c4a6e55" : "#00000040", border: `1px solid ${rest.on ? "#38bdf8" : "#ffffff1a"}` }}>
+              <div style={{ flex: "1 1 260px", minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#7dd3fc" }}>🛌 NO. 1 SEED CLINCHED</div>
+                <div style={{ fontSize: 14, color: "#e2e8f0", lineHeight: 1.4 }}>{rest.on ? "Your starters are resting: they play about a quarter of each game and the backups take the rest, so they're far less likely to get hurt before the playoffs." : "Nothing left to play for in the regular season. Rest your starters to keep them healthy for the playoffs."}</div>
+              </div>
+              <Btn onClick={rest.toggle} bg={rest.on ? "#334155" : "#0284c7"} style={{ fontSize: 14, fontWeight: 900, padding: "9px 16px", whiteSpace: "nowrap" }}>{rest.on ? "Play starters" : "Rest starters"}</Btn>
+            </div>
+          )}
           {game && (sp === "regular" || sp === "playoffs" || sp === "preseason") && <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={sp === "playoffs"} h2h={sp === "preseason" ? null : h2h} neutral={!!game.neutral || (sp === "playoffs" && pb?.rd === 4)} />}
           {game && (sp === "regular" || sp === "playoffs") && planCard && <div style={{ marginTop: 12 }}>{planCard}</div>}
           {mobile && menu.length > 0 && (

@@ -7,6 +7,7 @@ import { C, TeamLogo, Bdg, Btn } from "./ui.jsx";
 import { DevChip } from "./ScoutingUI.jsx";
 import { recapEntry, gradePicks, classGrades, devCounts, VERDICT } from "./draftRecap.js";
 import { DEV_TRAITS } from "./scouting.js";
+import { posTag } from "./dline.js";
 
 const GRADE_C = { A: "#22c55e", "B+": "#84cc16", B: "#a3e635", "C+": "#f59e0b", C: "#fb923c", D: "#ef4444" };
 
@@ -68,7 +69,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 8 }}>
           {mine.picks.map((r) => { const [vt, vc] = VERDICT[r.verdict]; const n = now(r.id); return (
             <div key={r.id} onClick={() => open(r.id)} style={{ background: C.bg, border: `1px solid ${vc}55`, borderRadius: 8, padding: 10, cursor: "pointer" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}><Bdg pos={r.pos} /><b style={{ flex: 1, fontSize: 15, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</b></div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}><Bdg pos={posTag(r)} /><b style={{ flex: 1, fontSize: 15, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</b></div>
               <div style={{ fontSize: 12, color: C.mt, marginBottom: 6 }}>Round {r.rd}, pick {r.overall} · age {r.age}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 14 }}>OVR <b>{r.ovr}</b> · POT <b>{r.pot}</b>{n ? <span style={{ color: C.gd }}> · now {n.ovr}</span> : null}</span>
@@ -90,7 +91,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
             <div key={r.id} onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: `1px solid ${C.bd}55`, cursor: "pointer", background: r.owner === ui ? "#22c55e12" : "transparent" }}>
               <span style={{ width: 34, fontSize: 12, color: C.mt }}>#{r.overall}</span>
               {teams[r.owner] && <TeamLogo t={teams[r.owner]} sz={20} />}
-              <Bdg pos={r.pos} />
+              <Bdg pos={posTag(r)} />
               <span style={{ flex: 1, minWidth: 0, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
               <DevChip dev={r.dev} />
             </div>
@@ -126,7 +127,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
                   <td style={{ padding: "5px 6px", color: C.mt, whiteSpace: "nowrap" }}>{r.rd}-{r.overall}</td>
                   <td style={{ padding: "5px 6px" }}>{teams[r.owner]?.ab}</td>
                   <td style={{ padding: "5px 6px", fontWeight: 600 }}>{r.name}</td>
-                  <td style={{ padding: "5px 6px" }}><Bdg pos={r.pos} /></td>
+                  <td style={{ padding: "5px 6px" }}><Bdg pos={posTag(r)} /></td>
                   <td style={{ padding: "5px 6px" }}>{r.ovr}</td>
                   <td style={{ padding: "5px 6px" }}>{r.pot}</td>
                   {past && <td style={{ padding: "5px 6px", color: C.gd }}>{n ? n.ovr : <span style={{ color: C.mt }}>gone</span>}</td>}

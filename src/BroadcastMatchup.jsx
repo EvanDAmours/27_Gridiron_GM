@@ -8,6 +8,7 @@ import { TeamLogo } from "./ui.jsx";
 import PlayerArt, { usePlayerArt } from "./PlayerArt.jsx";
 import { BLOCK, FONT_CSS } from "./Spotlight.jsx";
 import "./broadcast-matchup.css";
+import { posTag } from "./dline.js";
 
 // The face of the club for the promo: its best healthy player who isn't an offensive lineman, kicker
 // or punter (a 99 tackle would headline over the quarterback; a pass rusher who wrecks games is the
@@ -51,8 +52,8 @@ export function headline(p, teams = []) {
     if (!best || rank < best.rank) best = { k, label, rank, mine };
   }
   if (best && best.rank <= 15) return best.rank === 1 ? `Leads the NFL in ${best.label} (${fmt(best.k, best.mine)})` : `${ord(best.rank)} in the NFL in ${best.label} (${fmt(best.k, best.mine)})`;
-  const r = 1 + all.filter((q) => q.pos === p.pos && (q.ovr || 0) > (p.ovr || 0)).length;
-  if (r <= 10) return r === 1 ? `The NFL's top-rated ${p.pos}` : `The NFL's ${ord(r)}-rated ${p.pos}`;
+  const r = 1 + all.filter((q) => posTag(q) === posTag(p) && (q.ovr || 0) > (p.ovr || 0)).length;
+  if (r <= 10) return r === 1 ? `The NFL's top-rated ${posTag(p)}` : `The NFL's ${ord(r)}-rated ${posTag(p)}`;
   const [k, label] = (STATS[p.pos] || []).find(([key]) => val(p.ss, key) > 0) || [];
   return k ? `${fmt(k, val(p.ss, k))} ${label} this season` : "";
 }

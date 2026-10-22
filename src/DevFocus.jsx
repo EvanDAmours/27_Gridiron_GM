@@ -55,7 +55,7 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
   const best = (a, b) => focusChance(b) - focusChance(a) || b.ovr - a.ovr;
   const options = [...players].sort(best);
   const groups = [...new Set(players.map((x) => x.pos))].sort((a, b) => posRank(a) - posRank(b)).map((pos) => [pos, options.filter((x) => x.pos === pos)]);
-  const opt = (x) => <option key={x.id} value={x.id}>{x.name} ({x.pos}, {x.ovr} OVR, {(DEV_TRAITS[devOf(x)]?.name || "Normal").toUpperCase()}) · ~{perSeason(x)}/season</option>;
+  const opt = (x) => <option key={x.id} value={x.id}>{x.name} ({posTag(x)}, {x.ovr} OVR, {(DEV_TRAITS[devOf(x)]?.name || "Normal").toUpperCase()}) · ~{perSeason(x)}/season</option>;
   return (
     <div style={{ marginBottom: MOBILE ? 12 : 8 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -66,7 +66,7 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
       {p && !MOBILE ? (
         // desktop: one slim row so Home fits on one screen
         <div onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 8, borderRadius: 8, border: "1px solid #8a6d1d", background: "#f5c5420d", padding: "6px 10px", marginBottom: 6, cursor: "pointer", minWidth: 0 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: pC(p.pos), borderRadius: 4, padding: "2px 6px" }}>{p.pos}</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: pC(p.pos), borderRadius: 4, padding: "2px 6px" }}>{posTag(p)}</span>
           <span style={{ minWidth: 0, flex: 1 }}>
             <span style={{ display: "block", fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
             <span style={{ display: "block", fontSize: 11.5, color: "#fbbf24", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Age {p.age} · {(DEV_TRAITS[devOf(p)]?.name || "Normal")} · {p.labGains ? `+${p.labGains} OVR from the lab` : "in the lab this week"}</span>
@@ -77,7 +77,7 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
         <div style={{ borderRadius: 10, overflow: "hidden", border: "1px solid #8a6d1d", marginBottom: 6, cursor: "pointer" }} onClick={() => setSel(p)}>
           <div style={{ background: "linear-gradient(135deg,#0b1a3a,#13244a)", padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 34, height: 34, borderRadius: 8, border: "2px solid #dc2626", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12, color: "#fff" }}>{initials(p.name)}</span>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: pC(p.pos), borderRadius: 4, padding: "2px 7px" }}>{p.pos}</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: pC(p.pos), borderRadius: 4, padding: "2px 7px" }}>{posTag(p)}</span>
             <span style={{ marginLeft: "auto", fontSize: 30, fontWeight: 900, fontStyle: "italic", color: oC(p.ovr) }}>{p.ovr}</span>
           </div>
           <div style={{ background: "#f5c5420d", padding: "8px 12px" }}>

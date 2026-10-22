@@ -1,6 +1,8 @@
 // End-of-regular-season awards from everyone's season stats: MVP, Offensive and Defensive Player
 // of the Year, the two Rookie of the Year awards, Comeback Player of the Year and Coach of the Year.
 // Winning teams help an MVP case.
+import { posTag } from "./dline.js";
+import { gradesOf } from "./grades.js";
 const s = (p, k) => p.ss?.[k] || 0;
 
 const qbScore = (p) => s(p, "passYds") / 20 + s(p, "passTD") * 5 - s(p, "passInt") * 4 + s(p, "rushYds") / 10 + s(p, "rushTD") * 6;
@@ -9,7 +11,13 @@ const offScore = (p) => (p.pos === "QB" ? qbScore(p) : skillScore(p) * 1.25);
 // Sacks carry Defensive Player of the Year, like the real award (pass rushers win most years); at 0.3 a
 // tackle, a 155-tackle linebacker outscored an 18-sack edge and linebackers won 19 years out of 20. A
 // linebacker still wins with a monster season (double-digit sacks on top of his tackles).
-const defScore = (p) => s(p, "sacks") * 8 + s(p, "ints") * 5 + s(p, "tkl") * 0.1 + s(p, "ff") * 4 + s(p, "pd") * 1 + s(p, "tfl") * 1;
+// Defense: the box score, plus what it misses: pressures (a rusher who's always in the quarterback's
+// face), and how well he played over the season (his grade, which rates every snap he took), so a
+// dominant player isn't out-voted by a teammate-aided stat line or a couple of lucky fumbles.
+const defScore = (p) => {
+  const g = gradesOf(p.ss, p.pos)?.overall;
+  return s(p, "sacks") * 8 + s(p, "ints") * 5 + s(p, "tkl") * 0.1 + s(p, "ff") * 4 + s(p, "pd") * 1 + s(p, "tfl") * 1 + s(p, "pres") * 0.35 + (g != null ? (g - 65) * 2 : 0);
+};
 
 const statLine = (p) => {
   if (p.pos === "QB") return `${s(p, "passYds")} yds · ${s(p, "passTD")} TD · ${s(p, "passInt")} INT`;
@@ -63,7 +71,7 @@ export function seasonAwardWinners(teams, yr) {
   teams.forEach((t, ti) => (t.roster || []).forEach((p) => { if (s(p, "gp") >= 8) all.push({ p, ti, w: t.w || 0 }); }));
   const pick = (list, score) => {
     const b = list.reduce((x, c) => (!x || score(c) > score(x) ? c : x), null);
-    return b && { pid: b.p.id, name: b.p.name, pos: b.p.pos, ti: b.ti, team: teams[b.ti].ab, stat: statLine(b.p) };
+    return b && { pid: b.p.id, name: b.p.name, pos: posTag(b.p), ti: b.ti, team: teams[b.ti].ab, stat: statLine(b.p) };
   };
   const off = all.filter((x) => ["QB", "RB", "WR", "TE"].includes(x.p.pos));
   const def = all.filter((x) => ["DL", "LB", "CB", "S"].includes(x.p.pos));
@@ -97,7 +105,7 @@ export function seasonAwardWinners(teams, yr) {
 export function awardRaces(teams, yr, n = 5) {
   const all = [];
   teams.forEach((t, ti) => (t.roster || []).forEach((p) => { if (s(p, "gp") >= 1) all.push({ p, ti, w: t.w || 0 }); }));
-  const top = (list, score) => [...list].sort((a, b) => score(b) - score(a)).slice(0, n).map((b) => ({ pid: b.p.id, name: b.p.name, pos: b.p.pos, ti: b.ti, team: teams[b.ti].ab, stat: statLine(b.p) }));
+  const top = (list, score) => [...list].sort((a, b) => score(b) - score(a)).slice(0, n).map((b) => ({ pid: b.p.id, name: b.p.name, pos: posTag(b.p), ti: b.ti, team: teams[b.ti].ab, stat: statLine(b.p) }));
   const off = all.filter((x) => ["QB", "RB", "WR", "TE"].includes(x.p.pos));
   const def = all.filter((x) => ["DL", "LB", "CB", "S"].includes(x.p.pos));
   const rookie = (x) => rookieSeason(x.p) === yr;

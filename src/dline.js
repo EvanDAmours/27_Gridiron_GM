@@ -13,7 +13,8 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 // Edge or tackle by trade: Madden's position, else body weight (older saves).
 export const naturalDL = (p) => (p.mpos ? (p.mpos === "DT" ? "DT" : "EDGE") : (p.wt || 280) >= 292 ? "DT" : "EDGE");
 // The position to show: an edge rusher or a defensive tackle instead of a generic DL.
-export const posTag = (p) => (p?.pos === "DL" ? naturalDL(p) : p?.pos);
+// (a bare record with no build to go on, from an older save, stays DL)
+export const posTag = (p) => (p?.pos === "DL" ? (p.mpos || p.wt ? naturalDL(p) : "DL") : p?.pos);
 
 const g = (p, k, d = 70) => p.posAttrs?.[k] ?? d;
 const edgeScore = (p) => 0.3 * g(p, "getOff") + 0.2 * g(p, "passRush") + 0.075 * (g(p, "swim") + g(p, "spin")) + 0.15 * (p.spd ?? 78) + 0.1 * g(p, "motor") + 0.1 * g(p, "handUse");

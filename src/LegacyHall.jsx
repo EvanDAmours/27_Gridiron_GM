@@ -9,6 +9,7 @@ import { RECORD_DEFS, recordValue, everyone } from "./records.js";
 import goldJacket from "./assets/gold-jacket.webp";
 import { RING_OF_HONOR } from "./data/ringOfHonor.js";
 import { HALL_OF_FAME } from "./data/hallOfFame.js";
+import { posTag } from "./dline.js";
 
 const DIV = { AFC: "AFC", NFC: "NFC" };
 const fmt = (n) => Math.round(n).toLocaleString();
@@ -166,7 +167,7 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum, onOpen
       {(cands.length > 0 || ring.some((r) => r.num != null && !taken.has(r.num) && !numPass.has(r.id))) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 8, marginTop: 8 }}>
         {cands.map((r) => (
           <div key={r.id} style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
-            <div onClick={onOpen ? () => onOpen(r) : undefined} title={onOpen ? "Open his player card" : undefined} style={{ flex: 1, minWidth: 0, cursor: onOpen ? "pointer" : "default" }}><div style={{ fontWeight: 800, fontSize: 14, textDecoration: onOpen ? "underline dotted #ffffff55" : "none" }}>{r.name} {r.hof && <span style={{ color: "#fde68a", fontSize: 11 }}>HOF</span>}</div><div style={{ fontSize: 12, color: C.mt }}>{r.pos} · retired {r.retYr} · legacy {r.legacy}</div></div>
+            <div onClick={onOpen ? () => onOpen(r) : undefined} title={onOpen ? "Open his player card" : undefined} style={{ flex: 1, minWidth: 0, cursor: onOpen ? "pointer" : "default" }}><div style={{ fontWeight: 800, fontSize: 14, textDecoration: onOpen ? "underline dotted #ffffff55" : "none" }}>{r.name} {r.hof && <span style={{ color: "#fde68a", fontSize: 11 }}>HOF</span>}</div><div style={{ fontSize: 12, color: C.mt }}>{posTag(r)} · retired {r.retYr} · legacy {r.legacy}</div></div>
             <Btn onClick={() => onInduct(r)} bg="#b45309" style={{ fontSize: 12, padding: "4px 10px" }}>Yes, induct</Btn>
             {onPass && <Btn onClick={() => onPass(r)} bg="transparent" c={C.mt} style={{ fontSize: 12, padding: "4px 10px", border: `1px solid ${C.bd}` }} title="He won't be offered again">No</Btn>}
           </div>

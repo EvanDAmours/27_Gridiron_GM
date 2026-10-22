@@ -10,6 +10,7 @@ import { DRAFT_PEDIGREE, pedigreeKey } from "./data/draftPedigree.js";
 import { FRANCHISE_CAREER } from "./data/franchiseCareer.js";
 import { TEAM_CAREER_BASE, TEAM_CAREER_KEYS } from "./data/teamCareerBase.js";
 import { bestLabel } from "./honors.js";
+import { posTag } from "./dline.js";
 
 // Canton, about six a year like the real Hall: a league-era player needs a legacy of 100 and a peak of
 // 92 (a 20-season playtest found 88 let in eleven or twelve a year once the real veterans were gone);
@@ -155,7 +156,7 @@ export function retireEntry(p, team, yr, opts = {}) {
   if (!hof && L.legacy < 12 && !clubGreat) return null;
   const from = clubOf(p, team, opts.teams);
   return {
-    id: p.id, name: p.name, pos: p.pos, num: p.num, team: from || "FA", age: p.age, retYr: yr,
+    id: p.id, name: p.name, pos: posTag(p), num: p.num, team: from || "FA", age: p.age, retYr: yr,
     peak: L.peak, legacy: L.legacy, career: L.career, won: L.won, seasons: L.seasonsHere, tc,
     // Super Bowls he won (on the champion's roster that season)
     rings: (accoladesOf(p, { awards: opts.awards || [], champs: opts.champs || [], teams: opts.teams || [], yr, teamAb: team?.ab }).find((a) => a.k === "sb")?.years || []).length,
@@ -189,7 +190,7 @@ export const retiredCard = (r) => (r.card ? { ...r.card, hof: r.hof, hofClass: r
 // Career leaders in this league: active players (with this season so far) and retired ones.
 export function careerLeaders(teams, retired = [], key, n = 10) {
   const rows = [];
-  teams.forEach((t) => (t.roster || []).forEach((p) => { const v = careerTotals(p)[key]; if (v) rows.push({ id: p.id, name: p.name, pos: p.pos, team: t.ab, v, active: true }); }));
+  teams.forEach((t) => (t.roster || []).forEach((p) => { const v = careerTotals(p)[key]; if (v) rows.push({ id: p.id, name: p.name, pos: posTag(p), team: t.ab, v, active: true }); }));
   for (const r of retired) { const v = r.career?.[key]; if (v) rows.push({ id: r.id, name: r.name, pos: r.pos, team: r.team, v, active: false, retYr: r.retYr }); }
   const seen = new Set();
   return rows.sort((a, b) => b.v - a.v).filter((r) => (seen.has(r.id) ? false : seen.add(r.id))).slice(0, n);

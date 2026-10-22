@@ -4,6 +4,7 @@
 import React from "react";
 import { C, Btn, Bdg, CloseX } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
+import { posTag } from "./dline.js";
 
 export const REHAB = [
   { id: "aggressive", lbl: "🔥 Aggressive", desc: "back 2 weeks early, 15% re-injury risk", wkBonus: -2, risk: 0.15 },
@@ -38,7 +39,7 @@ export default function InjuryReport({ rep, rehab = {}, onPick, onRehab, onClose
           {out.map((p) => (
             <div key={p.id} style={{ padding: "7px 0", borderTop: `1px solid ${C.bd}66` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Bdg pos={p.pos} />
+                <Bdg pos={posTag(p)} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 800, fontSize: 14 }}>{p.name}</div>
                   <div style={{ fontSize: 12, color: C.mt }}>{p.type || "Injury"} · {p.ir ? "injured reserve" : `${p.wks} week${p.wks === 1 ? "" : "s"}`}{p.starter && p.nextUp ? <> · next up <b style={{ color: "#e2e8f0" }}>{p.nextUp}</b></> : ""}</div>
@@ -56,7 +57,7 @@ export default function InjuryReport({ rep, rehab = {}, onPick, onRehab, onClose
       )}
       {hurt.length > 0 && (
         <Section label="PLAYING THROUGH IT" color={C.gd}>
-          {hurt.map((p, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "3px 0" }}><Bdg pos={p.pos} /><b>{p.name}</b><span style={{ color: C.mt }}>{p.type} · −{p.pen} OVR next game</span></div>)}
+          {hurt.map((p, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "3px 0" }}><Bdg pos={posTag(p)} /><b>{p.name}</b><span style={{ color: C.mt }}>{p.type} · −{p.pen} OVR next game</span></div>)}
         </Section>
       )}
       {back.length > 0 && (

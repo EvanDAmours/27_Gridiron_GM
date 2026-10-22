@@ -7,6 +7,7 @@ import { TEAM_CAREER_BASE, TEAM_CAREER_KEYS } from "./data/teamCareerBase.js";
 import { careerTotals, normName } from "./history.js";
 import { everyone } from "./records.js";
 import { NFL_CAREER_LEADERS } from "./data/nflCareerLeaders.js";
+import { posTag } from "./dline.js";
 
 const QB = ["QB"], RUSH = ["RB", "QB", "WR", "FB"], CATCH = ["WR", "TE", "RB", "FB"];
 const OFF = new Set(["QB", "RB", "FB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "OL", "K", "P"]);
@@ -62,8 +63,8 @@ export function updateNflCareer(book, teams, yr) {
     if (!top || top.v <= cur.val) continue;
     if (cur.pid === top.p.id) { career[d.key] = { ...cur, val: top.v, team: top.t.ab }; continue; }
     const prev = { val: cur.val, name: cur.name, team: cur.team, yr: cur.yrs || cur.yr };
-    career[d.key] = { val: top.v, name: top.p.name, pid: top.p.id, pos: top.p.pos, team: top.t.ab, yr, prev };
-    const e = { career: true, key: d.key, label: d.label, name: top.p.name, pid: top.p.id, pos: top.p.pos, team: top.t.ab, ti: top.ti, val: top.v, yr, prev };
+    career[d.key] = { val: top.v, name: top.p.name, pid: top.p.id, pos: posTag(top.p), team: top.t.ab, yr, prev };
+    const e = { career: true, key: d.key, label: d.label, name: top.p.name, pid: top.p.id, pos: posTag(top.p), team: top.t.ab, ti: top.ti, val: top.v, yr, prev };
     broken.push(e); history.push(e);
   }
   return { book: { ...book, career, history }, broken };

@@ -1672,4 +1672,9 @@ export const PATCH_NOTES = [
     "Defensive tackles and edge rushers share one pass-rush scale; safety and linebacker grades lean on run defense, since a season of their coverage says little.",
     "Quarterbacks' designed runs now count toward their grade.",
   ] },
+  { v: "4.24", date: "2026-10-20", title: "Rest starters, EDGE/DT labels, fairer DPOY", notes: [
+    "Rest your starters: once you've clinched the No. 1 seed, the Home screen offers to rest them for the rest of the regular season. Starters play about a quarter of each game and the backups the rest, so their injury risk falls by about three-quarters. A starter with no healthy backup plays as usual; it switches off for the playoffs.",
+    "Defensive linemen show as EDGE or DT everywhere (lists, logs, awards, records, retirements, the inbox), not DL.",
+    "Defensive Player of the Year weighs pressures and how well a player played over the season (his grade), not only the box score: a dominant pass rusher is no longer out-voted by a near-equal sack total built on a couple of forced fumbles. Pressures count on the All-Pro ballot for pass rushers too.",
+  ] },
 ];

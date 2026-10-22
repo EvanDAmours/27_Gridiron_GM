@@ -5,6 +5,7 @@ import { C, TeamLogo, Bdg, Face, oC } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { CAREER_STATS, careerLeaders, retiredCard } from "./history.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
+import { posTag } from "./dline.js";
 
 const AW = [["mvp", "Most Valuable Player"], ["opoy", "Offensive Player"], ["dpoy", "Defensive Player"], ["oroy", "Offensive Rookie"], ["droy", "Defensive Rookie"], ["cpoy", "Comeback Player"], ["coy", "Coach of the Year"], ["sbmvp", "Super Bowl MVP"]];
 const AW_SHORT = { mvp: "MVP", opoy: "OPOY", dpoy: "DPOY", oroy: "OROY", droy: "DROY", cpoy: "CPOY", coy: "COY", sbmvp: "SB MVP" };
@@ -62,7 +63,7 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: k === "sbmvp" ? "#fcd34d" : "#7dd3fc" }}>{l.toUpperCase()}</div>
                   <div style={{ fontSize: 17, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w ? w.name : "—"}</div>
-                  {w && <div style={{ fontSize: 13, color: C.mt }}>{w.pos}{t ? ` · ${t.city} ${t.name}` : ""}{w.stat ? ` · ${w.stat}` : ""}</div>}
+                  {w && <div style={{ fontSize: 13, color: C.mt }}>{posTag(w)}{t ? ` · ${t.city} ${t.name}` : ""}{w.stat ? ` · ${w.stat}` : ""}</div>}
                 </div>
                 {t && <TeamLogo t={t} sz={30} />}
               </div>); })}
@@ -78,7 +79,7 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
             <div key={r.id} onClick={p ? () => open(r.id) : undefined} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 4px", borderBottom: i < leaders.length - 1 ? `1px solid ${C.bd}66` : "none", cursor: p ? "pointer" : "default" }}>
               <b style={{ width: 24, fontSize: 16, color: i < 3 ? "#fcd34d" : C.mt }}>{i + 1}</b>
               {p ? <Face s={p.face} sz={34} /> : <span style={{ width: 34 }} />}
-              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={r.pos} /> {r.active ? `active · ${r.team}` : `retired ${r.retYr} · ${r.team}`}</div></div>
+              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={posTag(r)} /> {r.active ? `active · ${r.team}` : `retired ${r.retYr} · ${r.team}`}</div></div>
               {t && <TeamLogo t={t} sz={24} />}
               <b style={{ fontSize: 20, minWidth: 70, textAlign: "right" }}>{num(r.v)}</b>
             </div>); })}
@@ -93,7 +94,7 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: in_ ? "#fcd34d" : C.mt }}>{in_ ? `CLASS OF ${r.hofClass}` : `ENSHRINED ${r.hofClass}`}</div>
                 <div style={{ fontSize: 17, fontWeight: 900 }}>{r.name}</div>
-                <div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={r.pos} /> {r.team} · retired {r.retYr} at {r.age}</div>
+                <div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={posTag(r)} /> {r.team} · retired {r.retYr} at {r.age}</div>
               </div>
               <div style={{ textAlign: "right" }}><div style={{ fontSize: 20, fontWeight: 900, color: oC(r.peak) }}>{r.peak}</div><div style={{ fontSize: 10, color: C.mt, fontWeight: 800 }}>PEAK</div></div>
             </div>
@@ -106,7 +107,7 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
           <div key={r.id} onClick={setSel ? () => setSel(c) : undefined} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 4px", borderBottom: i < notable.length - 1 ? `1px solid ${C.bd}66` : "none", cursor: "pointer" }}>
             <b style={{ width: 44, color: C.mt }}>{r.retYr}</b>
             <Face s={c.face} sz={34} />
-            <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={r.pos} /> {r.team} · {r.seasons} season{r.seasons > 1 ? "s" : ""} in the league · legacy {r.legacy}</div></div>
+            <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={posTag(r)} /> {r.team} · {r.seasons} season{r.seasons > 1 ? "s" : ""} in the league · legacy {r.legacy}</div></div>
             <div style={{ textAlign: "right" }}><div style={{ fontSize: 18, fontWeight: 900, color: oC(r.peak) }}>{r.peak}</div><div style={{ fontSize: 10, color: C.mt, fontWeight: 800 }}>PEAK</div></div>
           </div>); })}
       </div> : empty("No notable retirements yet."))}

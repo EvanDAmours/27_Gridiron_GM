@@ -19,6 +19,7 @@ import droyArt from "./assets/droy.webp";
 const TROPHY_ART = { mvp: mvpArt, opoy: opoyArt, dpoy: dpoyArt, sbmvp: sbmvpArt, oroy: oroyArt, droy: droyArt };
 import { TEAM_HISTORY } from "./data/teamHistory.js";
 import { Rafters, GoldJackets, RingOfHonor, RecordsWall } from "./LegacyHall.jsx";
+import { posTag } from "./dline.js";
 
 const AWARDS = [["mvp", "MVP", "Most Valuable Player"], ["opoy", "OPOY", "Offensive Player of the Year"], ["dpoy", "DPOY", "Defensive Player of the Year"], ["oroy", "OROY", "Offensive Rookie of the Year"], ["droy", "DROY", "Defensive Rookie of the Year"], ["sbmvp", "SB MVP", "Super Bowl MVP"]];
 
@@ -248,7 +249,7 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
     if (a.gm != null && a.gm !== ui) continue; // only what your players won with you running the team
     for (const [k, , name] of AWARDS) {
       const w = a[k];
-      if (w && (w.ti != null ? w.ti === ui : w.team === team.ab)) mine.push({ key: `${k}${a.yr}`, kind: k, plaque: `${AWARDS.find((x) => x[0] === k)[1]} ${a.yr}`, title: `${a.yr} ${name}`, lines: [`${w.name}${w.pos ? ` · ${w.pos}` : ""}`, w.stat] });
+      if (w && (w.ti != null ? w.ti === ui : w.team === team.ab)) mine.push({ key: `${k}${a.yr}`, kind: k, plaque: `${AWARDS.find((x) => x[0] === k)[1]} ${a.yr}`, title: `${a.yr} ${name}`, lines: [`${w.name}${w.pos ? ` · ${posTag(w)}` : ""}`, w.stat] });
     }
   }
   const perRow = Math.max(3, Math.floor(Math.min(width, 1300) / 132));

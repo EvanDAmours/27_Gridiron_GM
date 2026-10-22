@@ -104,7 +104,7 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
           </div>
           <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", lineHeight: 1.15, marginTop: 2 }}>{team.city} {team.name}{mine ? " (YOU)" : ""}</div>
           {needs.length > 0 && <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", marginTop: 4 }}><span style={{ fontSize: 11, color: "#fffa", fontWeight: 800, letterSpacing: 1 }}>NEEDS</span>{needs.map((n) => <Bdg key={n} pos={n} />)}</div>}
-          {!mine && fits.length > 0 && <div style={{ fontSize: 12, color: "#fffc", marginTop: 4 }}>Mock pick: {fits.map((p) => `${p.name} (${p.pos})`).join(" · ")}</div>}
+          {!mine && fits.length > 0 && <div style={{ fontSize: 12, color: "#fffc", marginTop: 4 }}>Mock pick: {fits.map((p) => `${p.name} (${posTag(p)})`).join(" · ")}</div>}
           {!mine && nextMine && <div style={{ fontSize: 13, color: "#fffc", marginTop: 2 }}>Your next pick: #{nextMine.overall} ({nextMine.overall - pick.overall} away)</div>}
           {mine && <div style={{ fontSize: 14, color: "#fffc", marginTop: 2 }}>{paused ? "Draft paused" : "Make your pick from the board below"}</div>}
         </div>

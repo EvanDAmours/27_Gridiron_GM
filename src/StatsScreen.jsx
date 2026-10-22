@@ -6,6 +6,7 @@ import { C, Bdg, Face, TeamLogo } from "./ui.jsx";
 import { awardRaces } from "./awards.js";
 import { olLine, OL_POS } from "./olStats.js";
 import { gradesOf, gradeColor } from "./grades.js";
+import { posTag } from "./dline.js";
 
 const pct = (a, b) => (b ? ((a / b) * 100).toFixed(1) : "–");
 const avg = (a, b) => (b ? (a / b).toFixed(1) : "–");
@@ -71,7 +72,7 @@ function AwardRaces({ teams, ui, yr, onPlayer, mobile }) {
               <span style={{ width: 16, fontSize: 13, fontWeight: 900, color: i ? C.mt : "#fcd34d" }}>{i + 1}</span>
               <TeamLogo t={teams[e.ti]} sz={20} />
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 14.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: e.ti === ui ? "#86efac" : "#e2e8f0" }}>{e.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>{e.pos}</span></div>
+                <div style={{ fontSize: 14.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: e.ti === ui ? "#86efac" : "#e2e8f0" }}>{e.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>{posTag(e)}</span></div>
                 <div style={{ fontSize: 12.5, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.stat}</div>
               </div>
             </div>
