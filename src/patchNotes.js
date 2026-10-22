@@ -1739,4 +1739,10 @@ export const PATCH_NOTES = [
     "Sacks: the rest of the defensive line now stays locked with the blockers instead of standing far apart. Only the man who gets the sack breaks free",
     "Short gains: the linemen stay in the pile. On a big play they peel off and run after the ball carrier in a full sprint instead of gliding with their arms out",
   ] },
+  { v: "4.38", date: "2026-10-20", title: "Career recap at Canton", notes: [
+    "Hall of Fame: a legend heads to Canton with his trophies on show. Each award appears once with a count (Super Bowl ×4, MVP ×2), alongside his DPOY, OPOY, Rookie of the Year and Super Bowl MVP trophies",
+    "Hall of Fame: his honors are counted up (5× First-team All-Pro, 9× Pro Bowl, Best at his position)",
+    "Hall of Fame: where he ranks in franchise history, such as '1st in Giants franchise passing yards', for every club he starred for",
+    "A franchise legend's retirement card shows the same trophies, honors and franchise ranks",
+  ] },
 ];

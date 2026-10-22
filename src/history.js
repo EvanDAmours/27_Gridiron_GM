@@ -257,3 +257,28 @@ export function updateCareerRecords(book, teams) {
   });
   return { book: { ...book, cc }, broken };
 }
+
+// A career in one look, for his farewell (Canton, or a legend's goodbye): the trophies he won, each
+// once with how many (trophies: [{ k, n }], art in Moment.jsx), the honors counted (honors: [{ label, n }])
+// and where he stands in each club's history (ranks: [{ ab, label, rank, v }], best first; top 5 only).
+// p: the player (or a retired entry's card), with his season lines. ctx: { awards, champs, teams,
+// retired, yr }; abs: the clubs to rank him with (his own first).
+const TROPHY_KEYS = ["sb", "mvp", "sbmvp", "opoy", "dpoy", "oroy", "droy"];
+export function careerHaul(p, abs, ctx = {}) {
+  const acc = accoladesOf(p, { awards: ctx.awards || [], champs: ctx.champs || [], teams: ctx.teams || [], yr: ctx.yr, teamAb: abs?.[0] });
+  const trophies = TROPHY_KEYS.map((k) => ({ k, n: acc.find((a) => a.k === k)?.years.length || 0 })).filter((t) => t.n);
+  const honors = acc.filter((a) => !TROPHY_KEYS.includes(a.k) && a.k !== "potw").map((a) => ({ label: a.label, n: a.years.length }));
+  const ranks = [];
+  for (const ab of [...new Set((abs || []).filter(Boolean))]) {
+    const mine = teamCareer(p, ab, ab);
+    for (const c of CAREER_STATS) {
+      const v = mine[c.key];
+      if (!(v > 0)) continue;
+      // him against everyone else in the club's books (he may already be off the roster)
+      const ahead = franchiseBoard(ab, c.key, ctx, 10).filter((r) => normName(r.name) !== normName(p.name) && r.v > v).length;
+      if (ahead < 5) ranks.push({ ab, key: c.key, label: c.label, rank: ahead + 1, v });
+    }
+  }
+  ranks.sort((a, b) => a.rank - b.rank || b.v - a.v);
+  return { trophies, honors, ranks };
+}

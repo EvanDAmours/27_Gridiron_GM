@@ -56,3 +56,16 @@ test("every retired player in the books keeps his full card, and a free agent's 
   const never = retireEntry({ ...star, id: 502, formerTeam: undefined }, null, 2027, { teams, startOvr: 95 });
   assert.equal(never.team, "FA");
 });
+
+test("a retiring great takes his trophies (counted), honors and franchise ranks with him", async () => {
+  const { careerHaul } = await import("../src/history.js");
+  const p = { id: 77, name: "Test Gunslinger", pos: "QB", sh: [2027, 2028, 2029, 2030].map((y) => ({ y, tm: "NYG", gp: 17, passYds: 30000 })), honors: [{ k: "ap1", yr: 2028 }, { k: "ap1", yr: 2029 }, { k: "pb", yr: 2029 }] };
+  const teams = [{ ab: "NYG", name: "Giants", roster: [] }];
+  const champs = [2027, 2028, 2029, 2030].map((yr) => ({ yr, ti: 0 }));
+  const awards = [{ yr: 2028, mvp: { pid: 77 } }, { yr: 2029, mvp: { pid: 77 } }];
+  const h = careerHaul(p, ["NYG"], { awards, champs, teams, retired: [], yr: 2030 });
+  assert.deepEqual(h.trophies, [{ k: "sb", n: 4 }, { k: "mvp", n: 2 }]);
+  assert.ok(h.honors.some((x) => /All-Pro/.test(x.label) && x.n === 2));
+  assert.equal(h.ranks[0].key, "passYds");
+  assert.equal(h.ranks[0].rank, 1);
+});

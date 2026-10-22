@@ -6,6 +6,13 @@ import { HolidayResult } from "./Atmosphere.jsx";
 import { C, TeamLogo, Face, Bdg } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import goldJacket from "./assets/gold-jacket.webp";
+import lombardiArt from "./assets/lombardi.webp";
+import mvpArt from "./assets/mvp.webp";
+import sbmvpArt from "./assets/sbmvp.webp";
+import opoyArt from "./assets/opoy.webp";
+import dpoyArt from "./assets/dpoy.webp";
+import oroyArt from "./assets/oroy.webp";
+import droyArt from "./assets/droy.webp";
 import { Jersey } from "./Jersey.jsx";
 import ChampionRing from "./ChampionRing.jsx";
 import Spotlight, { BLOCK } from "./Spotlight.jsx";
@@ -39,6 +46,48 @@ const Line = ({ k, v, tone }) => (
 
 // m: { kind: clinch | record | signing | kickoff, team, ... } (a record or a signing goes to the spotlight) (see App for each one's fields)
 // The Hall of Fame: him in his uniform on the gold stage, the gold jacket at his side, Canton welcomes him.
+// What he retires with (history.js careerHaul): his trophies on a shelf, each with how many he won,
+// the honors counted up, and where he ranks in his clubs' history.
+const TROPHY = { sb: [lombardiArt, "Super Bowl"], mvp: [mvpArt, "MVP"], sbmvp: [sbmvpArt, "SB MVP"], opoy: [opoyArt, "OPOY"], dpoy: [dpoyArt, "DPOY"], oroy: [oroyArt, "OROY"], droy: [droyArt, "DROY"] };
+const ord = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"}`;
+function CareerHaul({ haul, tone = "#fde68a" }) {
+  if (!haul) return null;
+  const { trophies = [], honors = [], ranks = [] } = haul;
+  if (!trophies.length && !honors.length && !ranks.length) return null;
+  const h = MOBILE ? 56 : 84;
+  return (
+    <div style={{ marginTop: 12, maxWidth: 560 }}>
+      {trophies.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: MOBILE ? 6 : 12, alignItems: "flex-end" }}>
+          {trophies.map(({ k, n }) => (
+            <div key={k} style={{ textAlign: "center", minWidth: h }}>
+              <div style={{ position: "relative", height: h, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                <img src={TROPHY[k][0]} alt={TROPHY[k][1]} style={{ height: h, objectFit: "contain", filter: "drop-shadow(0 6px 10px #000a)" }} />
+                {n > 1 && <span style={{ position: "absolute", right: -4, bottom: 0, background: "#0b1220", border: `1.5px solid ${tone}`, color: tone, borderRadius: 999, padding: "0 4px", fontSize: MOBILE ? 9.5 : 11, lineHeight: 1.35, fontWeight: 900 }}>×{n}</span>}
+              </div>
+              <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 1, color: "#cbd5e1", marginTop: 3 }}>{TROPHY[k][1].toUpperCase()}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {honors.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+          {honors.map(({ label, n }) => <span key={label} style={{ fontSize: 12.5, fontWeight: 800, color: "#e2e8f0", background: "#ffffff14", border: "1px solid #ffffff22", borderRadius: 999, padding: "3px 10px" }}><b style={{ color: tone }}>{n}×</b> {label}</span>)}
+        </div>
+      )}
+      {ranks.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          {ranks.slice(0, 4).map((r) => (
+            <div key={r.ab + r.key} style={{ fontSize: MOBILE ? 13.5 : 15, fontWeight: 700, color: "#e2e8f0", padding: "3px 0" }}>
+              <b style={{ color: tone }}>{ord(r.rank)}</b> in {r.team || r.ab} franchise {r.label.replace(/^\w/, (c) => c.toLowerCase())} <span style={{ color: "#94a3b8" }}>({r.v.toLocaleString()})</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function HofCeremony({ m, onClose }) {
   const t = m.team;
   return (
@@ -47,6 +96,7 @@ function HofCeremony({ m, onClose }) {
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Bdg pos={m.p.pos} /><TeamLogo t={t} sz={24} /><span style={{ color: "#e7cf8a" }}>{m.tagline || `${t.city} ${t.name}`}</span></div>
       {m.sub && <div style={{ fontSize: MOBILE ? 14 : 17, color: "#e2e8f0", marginTop: 10, lineHeight: 1.5, fontStyle: "italic" }}>{m.sub}</div>}
       {m.lines?.length > 0 && <div style={{ marginTop: 10, maxWidth: 520 }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone || "#fde68a"} />)}</div>}
+      <CareerHaul haul={m.haul} />
     </Spotlight>
   );
 }
@@ -218,6 +268,7 @@ export default function Moment({ m, onClose }) {
           </div>
         )}
         {m.lines?.length > 0 && <div style={{ marginTop: 14 }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone} />)}</div>}
+        {m.kind === "legend" && <CareerHaul haul={m.haul} />}
         {m.note && <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 12, fontStyle: "italic" }}>{m.note}</div>}
         <button onClick={onClose} style={{ marginTop: 18, width: "100%", background: ac, color: "#0b1220", border: 0, borderRadius: 10, padding: "12px 0", fontSize: 16, fontWeight: 900, letterSpacing: 1, cursor: "pointer" }}>{m.kind === "kickoff" ? "LET'S GO →" : "CONTINUE →"}</button>
       </div>
