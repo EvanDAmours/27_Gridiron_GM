@@ -9,6 +9,7 @@
 // real college prospects in the draft classes).
 //
 // Each story: { id, kind, team, head, text, mine, breaking }.
+import { posTag } from "./dline.js";
 
 const pct = (t) => (t.w + 0.5 * (t.t || 0)) / Math.max(1, t.w + t.l + (t.t || 0));
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
@@ -179,7 +180,7 @@ export function offFieldWeek({ teams, sched, wk, ui, yr, rand = Math.random }) {
       const prior = c.p.incidents.length - 1;
       add({ team: c.ti, breaking: ev.k !== "rules", head: ev.head(c.p.name, wks, c.t), text: ev.text(c.p.name, c.t, c.p.pos, wks),
         // the full newspaper write-up (tap the story)
-        inc: { k: ev.k, wks, yr, wk, pid: c.p.id, name: c.p.name, pos: c.p.pos, age: c.p.age, ovr: c.p.ovr, salary: c.p.salary || 0, contract: c.p.contract || 0, city: c.t.city, club: c.t.name, prior } });
+        inc: { k: ev.k, wks, yr, wk, pid: c.p.id, name: c.p.name, pos: posTag(c.p), age: c.p.age, ovr: c.p.ovr, salary: c.p.salary || 0, contract: c.p.contract || 0, city: c.t.city, club: c.t.name, prior } });
       // yours: you decide whether he stays (the suspension popup shows why)
       if (c.ti === ui) mine.push({ pid: c.p.id, k: ev.k, wks, head: ev.head(c.p.name, wks, c.t), text: ev.text(c.p.name, c.t, c.p.pos, wks) });
       if (c.ti === ui) log.push(`🚨 ${c.p.name} (${c.p.pos}) is out ${wks} game${wks > 1 ? "s" : ""}: ${ev.head(c.p.name, wks, c.t)}.`);
