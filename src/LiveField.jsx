@@ -304,7 +304,7 @@ export default function LiveField({ ballYard, toGo, off, def, offHome = true, of
       {place("off", o, off)}
       <HolidayDecor holiday={holiday} />
       <Falling wx={W8} />
-      {(W8.rain || W8.snow || wx === "wind") && <g pointerEvents="none"><rect x="10" y="12" width={W8.label.length * 7.4 + 34} height="22" rx="11" fill="#0b1220" opacity=".72" /><text x="20" y="27" fontSize="12" fontWeight="800" fill="#e2e8f0" fontFamily="system-ui">{W8.icon} {W8.label}</text></g>}
+      {(W8.rain || W8.snow || W8.cold || wx === "wind") && <g pointerEvents="none"><rect x="10" y="12" width={W8.label.length * 7.4 + 34} height="22" rx="11" fill="#0b1220" opacity=".72" /><text x="20" y="27" fontSize="12" fontWeight="800" fill="#e2e8f0" fontFamily="system-ui">{W8.icon} {W8.label}</text></g>}
       {!SPRITES && <ellipse cx={x0 - 4} cy={H / 2} rx="7" ry="4.5" fill="#8B4513" stroke="#fff" strokeWidth="1" style={{ transition: "cx .55s ease" }} />}
       <Callout play={lastPlay} W={W} H={H} />
     </svg>

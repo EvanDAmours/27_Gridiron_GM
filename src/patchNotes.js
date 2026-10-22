@@ -1677,4 +1677,8 @@ export const PATCH_NOTES = [
     "Defensive linemen show as EDGE or DT everywhere (lists, logs, awards, records, retirements, the inbox), not DL.",
     "Defensive Player of the Year weighs pressures and how well a player played over the season (his grade), not only the box score: a dominant pass rusher is no longer out-voted by a near-equal sack total built on a couple of forced fumbles. Pressures count on the All-Pro ballot for pass rushers too.",
   ] },
+  { v: "4.25", date: "2026-10-20", title: "Forecast matches the game, frigid January", notes: [
+    "Weather: the forecast and the game always agree now (playoff games used to roll different weather in the live game than the one on the Home forecast).",
+    "Cold-weather cities get Frigid days: a dry December or January game in New York, Green Bay, Buffalo and the like is usually Frigid (a hard, cold ball that's tougher to throw, hold and kick), and in the playoffs it's bad weather there most of the time.",
+  ] },
 ];

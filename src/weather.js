@@ -23,6 +23,7 @@ export const WX = {
   lightRain: { label: "Light rain", icon: "🌦️", rain: 1, run: 0.05, comp: -0.03, int: 0.004, fum: 1.5, fg: -0.04, kick: 2, go: 1.1 },
   heavyRain: { label: "Heavy rain", icon: "🌧️", rain: 2, run: 0.12, comp: -0.07, int: 0.009, fum: 2.3, fg: -0.1, runYds: -0.2, kick: 5, go: 1.3 },
   lightSnow: { label: "Light snow", icon: "🌨️", snow: 1, run: 0.07, comp: -0.03, int: 0.004, fum: 1.4, fg: -0.05, runYds: -0.2, kick: 4, go: 1.15 },
+  frigid: { label: "Frigid", icon: "🥶", cold: 1, run: 0.03, comp: -0.015, int: 0.002, fum: 1.25, fg: -0.04, kick: 3, go: 1.05 },
   heavySnow: { label: "Heavy snow", icon: "❄️", snow: 2, run: 0.15, comp: -0.07, int: 0.008, fum: 2.0, fg: -0.12, runYds: -0.5, kick: 8, go: 1.4 },
 };
 export const wxOf = (key) => WX[key] || WX.clear;
@@ -42,13 +43,20 @@ export function snowSeason(wk) {
 
 // The weather for one game (fixed for that game, so the preview and the game agree).
 // g: { wk, h, a, neutral }; homeAb: the home club's abbreviation.
+// A playoff game is week 18 plus its round wherever it's asked from ("P3" in the live game, 21 in
+// the forecast and the sim), so they all roll the same weather.
+const weekOf = (wk) => { const m = /^P(\d)$/.exec(String(wk)); return m ? 18 + +m[1] : wk; };
 export function gameWeather(g, yr, homeAb) {
   if (g.neutral) return "clear";
   if (!homeAb || ROOF.has(homeAb)) return "dome";
-  const r = hash(`${yr}|${g.wk}|${g.h}|${g.a}|wx`), heavy = hash(`${yr}|${g.wk}|${g.h}|${g.a}|hv`) < HEAVY;
-  const snow = (SNOW[homeAb] || 0) * snowSeason(g.wk), rain = RAIN[homeAb] ?? 0.1;
+  const wk = weekOf(g.wk);
+  const r = hash(`${yr}|${wk}|${g.h}|${g.a}|wx`), heavy = hash(`${yr}|${wk}|${g.h}|${g.a}|hv`) < HEAVY;
+  const snow = (SNOW[homeAb] || 0) * snowSeason(wk), rain = RAIN[homeAb] ?? 0.1;
   if (r < snow) return heavy ? "heavySnow" : "lightSnow";
   if (r < snow + rain) return heavy ? "heavyRain" : "lightRain";
   if (r < snow + rain + WIND) return "wind";
+  // a dry day in a cold-weather city from December on is usually a frigid one (January in New York
+  // or Green Bay is rarely just "clear")
+  if ((SNOW[homeAb] || 0) >= 0.12 && typeof wk === "number" && wk >= 14 && hash(`${yr}|${wk}|${g.h}|${g.a}|cold`) < (wk > 18 ? 0.75 : 0.5)) return "frigid";
   return "clear";
 }

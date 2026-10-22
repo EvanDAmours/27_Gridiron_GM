@@ -230,8 +230,8 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
   const forecast = (() => {
     if (!game || !home || (sp === "playoffs" && pb?.rd === 4)) return null;
     const k = gameWeather(sp === "playoffs" ? { ...game, wk: game.wk ?? 18 + (pb?.rd || 1) } : game, yr, home.ab), w = wxOf(k);
-    const kind = w.snow ? "snow" : w.rain ? "rain" : k === "wind" ? "wind" : "clear";
-    const note = w.snow === 2 || w.rain === 2 ? "expect a ground game and a loose ball" : w.snow || w.rain ? "a slick ball: more runs, fewer completions" : k === "wind" ? "tough day to throw deep or kick long" : null;
+    const kind = w.snow ? "snow" : w.rain ? "rain" : k === "wind" ? "wind" : w.cold ? "cold" : "clear";
+    const note = w.snow === 2 || w.rain === 2 ? "expect a ground game and a loose ball" : w.snow || w.rain ? "a slick ball: more runs, fewer completions" : k === "wind" ? "tough day to throw deep or kick long" : w.cold ? "a hard, cold ball: tougher to throw, hold and kick" : null;
     return { kind, icon: w.icon, label: w.label, note };
   })();
   const bg = `radial-gradient(ellipse at 50% 35%, ${me.clr}55, transparent 60%), linear-gradient(160deg, #0b2a33, #050b12 70%)`;
