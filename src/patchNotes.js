@@ -1706,4 +1706,10 @@ export const PATCH_NOTES = [
     "📋 Box score is now a button that pops up both teams' stats, instead of a crowded panel. The defense shows tackles, sacks, pressures, pass breakups and interceptions, with every defender who made a play (safeties included) and their position (EDGE, DT, LB, CB, S).",
     "⚙ Settings (play calling, live plays, speed) open under the controls when you want them, each with a line explaining what it does.",
   ] },
+  { v: "4.30", date: "2026-10-20", title: "Game screen fixes", notes: [
+    "Live game screen, take two: back to the field-with-the-desk layout (the field fits a laptop again), keeping the best of the TV view: the play caption under the field and the big Resume / Sim / Finish / Box score buttons under it.",
+    "The settings (play calling, live plays, speed) are always right there at the top of the side panel, no scrolling, with the recent plays under them.",
+    "Calling your own plays: the playbook now opens over the field, so the field never gets pushed down the screen. New look to match the rest of the game: four runs and four passes as cards, then the pre-snap read and the HIKE button, then your receivers, open or covered. Fourth down gets its own punt / field goal / go-for-it card.",
+    "Holiday and Super Bowl games wait for their intro to finish before the first snap.",
+  ] },
 ];

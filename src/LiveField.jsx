@@ -209,7 +209,7 @@ const LP_CSS = `.lp-banner { position: absolute; left: 50%; top: 14%; transform:
 
 // How wide the field may get (it keeps its shape, so this caps its height to fit the screen).
 // A frame around it (HolidayFrame) takes the same cap, so it hugs the field.
-export const fieldMaxW = (tall) => `calc(${MOBILE ? "min(42vh, 390px)" : tall ? "min(calc(var(--vh, 100vh) - 495px), 700px)" : "min(calc(var(--vh, 100vh) - 380px), 570px)"} * ${W / H})`;
+export const fieldMaxW = (tall) => `calc(${MOBILE ? "min(42vh, 390px)" : tall ? "min(calc(var(--vh, 100vh) - 495px), 700px)" : "min(calc(var(--vh, 100vh) - 450px), 570px)"} * ${W / H})`;
 
 // anim: a play to act out ({ ev, key, id, card }, livePlays.js), with animSpeed (1 normal) and
 // onAnimDone when it's over (a tap on the field skips it); paused holds it where it is.
