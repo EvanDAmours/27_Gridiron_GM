@@ -4,7 +4,7 @@
 // inside the field's camera group; the KEY PLAY banner and the result card sit over the field
 // (LiveField draws them, told which part of the play it's in by onPhase).
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import TeamSprite, { teamSpriteHeight } from "./pixel/TeamSprite.jsx";
+import TeamSprite, { teamSpriteHeight, ActionSprite, hasActionSprites, BALL_POSES } from "./pixel/TeamSprite.jsx";
 import { buildPlay } from "./playScript.js";
 
 // banner: how long the field holds at the snap under the KEY PLAY banner; card: how long the final
@@ -51,22 +51,26 @@ export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, spe
 
   const ball = ballAt(sc, t);
   const men = slots.map((s) => {
-    const [x, y] = sc.f[s.key](t), [px] = sc.f[s.key](Math.max(0, t - 0.06));
-    const vx = x - px, moving = Math.hypot(vx, y - sc.f[s.key](Math.max(0, t - 0.06))[1]) > 0.08;
+    const [x, y] = sc.f[s.key](t), [px, py] = sc.f[s.key](Math.max(0, t - 0.06));
+    const vx = x - px, speed = Math.hypot(vx, y - py) / 0.06, moving = speed > 1.3;
     const h = teamSpriteHeight(s.team, s.pos) || 30;
     // running flat out the other way (a return, a corner turning to run with his man) turns him
     // around; backpedalling (a dropback, pass protection, a linebacker's drop) doesn't
     const facing = Math.abs(vx) > 0.25 ? (vx > 0 ? "right" : "left") : s.side === "off" ? "right" : "left";
-    const fall = sc.down[s.key] != null ? Math.max(0, Math.min(1, (t - sc.down[s.key]) / 0.22)) : 0;
+    // the club's action frames when it has them; its stance (tipping over when he's down) when not
+    const pose = hasActionSprites(s.team) ? poseOf(sc, s, t, speed, ball.held === s.key) : null;
+    const fall = !pose && sc.down[s.key] != null ? Math.max(0, Math.min(1, (t - sc.down[s.key]) / 0.22)) : 0;
     const hop = sc.hop?.key === s.key && t > sc.hop.at ? Math.abs(Math.sin((t - sc.hop.at) * 9)) * 6 : 0;
-    const bob = moving && !fall ? Math.abs(Math.sin(t * 19 + s.y)) * 1.6 : 0;
-    return { s, sx: X(x), sy: Y(y) - bob - hop, h, facing, fall };
+    const bob = moving && !fall && !pose ? Math.abs(Math.sin(t * 19 + s.y)) * 1.6 : 0;
+    return { s, sx: X(x), sy: Y(y) - bob - hop, h, facing, fall, pose };
   }).sort((a, b) => a.sy - b.sy);
   const holder = ball.held ? men.find((m) => m.s.key === ball.held) : null;
+  // his frame already has the football in his hands: don't draw a second one
+  const ballInArt = !!holder?.pose && BALL_POSES.has(holder.pose);
   // a carried ball stays tucked in his arm: when he goes down, it goes down with him (only a fumble
   // puts it on the turf)
   let bx = holder ? holder.sx + (holder.facing === "right" ? 3 : -3) : X(ball.x);
-  let by = holder ? holder.sy + 1 : Y(ball.y) + (1.2 - ball.h) * 12;
+  let by = holder ? holder.sy + (holder.pose === "b1" ? -holder.h * 0.6 : 1) : Y(ball.y) + (1.2 - ball.h) * 12;
   if (holder?.fall) {
     const a = ((holder.facing === "right" ? 1 : -1) * holder.fall * 78 * Math.PI) / 180, px = holder.sx, py = holder.sy + holder.h * 0.5;
     const dx = bx - px, dy = by - py;
@@ -75,15 +79,15 @@ export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, spe
   return (
     <g pointerEvents="none">
       {!holder && <ellipse cx={X(ball.x)} cy={Y(ball.y) + 16} rx="3.2" ry="1.3" fill="#000" opacity={0.3 / (1 + ball.h * 0.4)} />}
-      {men.map(({ s, sx, sy, h, facing, fall }) => (
+      {men.map(({ s, sx, sy, h, facing, fall, pose }) => (
         <g key={s.key} transform={`translate(${sx} ${sy})${fall ? ` rotate(${(facing === "right" ? 1 : -1) * fall * 78} 0 ${h * 0.5})` : ""}`}>
-          <TeamSprite y={Math.round(h * 0.5)} team={s.team} pos={s.pos} away={s.away} facing={facing} />
+          {pose ? <ActionSprite y={Math.round(h * 0.5)} team={s.team} pose={pose} away={s.away} facing={facing} /> : <TeamSprite y={Math.round(h * 0.5)} team={s.team} pos={s.pos} away={s.away} facing={facing} />}
         </g>
       ))}
-      <g transform={`translate(${bx} ${by}) rotate(${holder ? 0 : -18})`}>
+      {!ballInArt && <g transform={`translate(${bx} ${by}) rotate(${holder ? 0 : -18})`}>
         <ellipse rx="3.6" ry="2.2" fill="#7c3f12" stroke="#2b1405" strokeWidth=".6" />
         <line x1="-1.4" y1="0" x2="1.4" y2="0" stroke="#fff" strokeWidth=".6" />
-      </g>
+      </g>}
       {/* the names that matter on this play, over their heads (and over him once he's down) */}
       {men.filter((m) => sc.stars.includes(m.s.key) && (sc.who[m.s.key] || m.s.p)).map(({ s, sx, sy, h, facing, fall }) => {
         const full = (sc.who[s.key] || s.p).name, nm = full.split(" ").slice(1).join(" ") || full;
@@ -91,6 +95,44 @@ export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, spe
       })}
     </g>
   );
+}
+
+// Which action frame a player is in at time t (null: his stance), from what he's doing on this
+// play (sc.m: who threw, caught, carried, made the tackle, and when). speed: yards a second;
+// ball: he's carrying it. The frames are the club's action sheets (a1-c8, TeamSprite.jsx).
+const LINE = new Set(["LT", "LG", "C", "RG", "RT", "DL"]);
+function poseOf(sc, s, t, speed, ball) {
+  const m = sc.m, k = s.key;
+  if (!m || t <= 0.05) return null; // set at the snap
+  const stride = Math.floor(t / 0.14) % 2;
+  const down = sc.down[k];
+  // the finish: the ball carrier takes the hit and goes down; the tackler dives in and lands
+  if (down != null && t >= down) {
+    if (k === m.carrier) return t < down + 0.28 ? "b4" : "b5";
+    if (k === m.tackler) return t < down + 0.3 ? "b3" : "b5";
+    return "b5";
+  }
+  if (k === m.recov && m.recovT != null && t > m.recovT - 0.5) return "b3"; // diving on a fumble
+  if (k === m.tackler && m.carrier && !m.td && t > m.tEnd - 0.32) return "b3";
+  if (k === m.carrier && m.td && t > m.tEnd) return "b7";
+  if (k === m.qb && m.k !== "run") {
+    if (m.tThrow != null) {
+      if (t > m.tThrow - 0.38 && t <= m.tThrow) return "a7";
+      if (t > m.tThrow && t < m.tThrow + 0.4) return "a8";
+    }
+    if (m.tThrow != null ? t < m.tThrow : true) return null; // in the pocket with the ball
+  }
+  // the handoff: he holds it out until the back takes it (then only the back has the ball)
+  if (k === m.qb && m.handoff != null && t > m.handoff - 0.3 && t < m.handoff) return "a3";
+  if (m.tC != null && t > m.tC - 0.25 && t < m.tC + 0.15) {
+    if (k === m.tgt && m.k !== "int") return "b1"; // hands up for the ball
+    if (k === m.carrier && m.k === "int") return "b1"; // the pick
+  }
+  if (k === m.swat && m.tC != null && t > m.tC - 0.22 && t < m.tC + 0.35) return "b8";
+  // the lines lock up: only the man making the play gets loose
+  if (LINE.has(s.pos) && k !== m.tackler && k !== m.carrier && speed < 4.5) return "b6";
+  if (speed > 1.6) return ball ? (stride ? "a2" : "a1") : stride ? "a6" : "a5";
+  return null;
 }
 
 // the ball at time t: in someone's hands (held: his key) or loose / in the air (x, y, h yards)

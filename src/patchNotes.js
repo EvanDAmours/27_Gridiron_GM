@@ -1723,4 +1723,7 @@ export const PATCH_NOTES = [
     "Cleanup: the old placeholder pixel players and the old matchup portraits are gone (the team sprite sheets and the player renders replaced them). The Super Bowl Gazette's MVP photo now uses the MVP's own player render.",
     "Offline play: getting ready for offline now saves about 10 MB up front instead of about 65 MB. Every team's player art is still one tap away (about 60 MB) in the Offline Play panel, and anything you've seen online is kept.",
   ] },
+  { v: "4.34", date: "2026-10-20", title: "Giants and Texans in motion", notes: [
+    "Live plays: the Giants and Texans now move with real action frames. Backs and receivers run with the ball, the quarterback hands off, winds up and throws, receivers reach for the catch, linemen lock up in blocks, tacklers dive in, ball carriers take the hit and go down, defensive backs swat passes away, and touchdowns get a celebration. The other 30 teams keep gliding in their stance until their action sheets are made.",
+  ] },
 ];

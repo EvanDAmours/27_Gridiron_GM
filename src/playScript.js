@@ -60,6 +60,8 @@ export function buildPlay(ev, slots, seed = 1) {
 
   let carrier = null, tE = 0, tEnd = 0, end = null, T = 2, tackler = null, ballF = null, catchAt = null;
   let tH = 0.45, holeY = 0;
+  // when each thing happens, for the poses (LivePlay.jsx picks a frame from these)
+  const m = { k, td, qb: qbS.key, tS: null, tThrow: null, tC: null, tgt: null, handoff: null, swat: null, recov: null, recovT: null };
 
   if (passPlay) {
     for (const s of recvs) F[s.key] = route(s);
@@ -73,7 +75,7 @@ export function buildPlay(ev, slots, seed = 1) {
     const rs = byId(def, ev.rusher) || near(def.filter((s) => is(s, "DL", "LB")), qx, qy);
     const wide = rs.y + sideOf(rs.y) * 3;
     F[rs.key] = path([0, rs.x, rs.y], [0.45, los + 2, wide], [tS - 0.35, sx + 2.2, lerp(wide, sy, 0.6)], [tS, sx + 0.8, sy + 0.3], [tS + 0.4, sx - 0.2, sy + 0.4]);
-    carrier = qbS; tackler = rs; tE = tS; tEnd = tS; end = [sx, sy];
+    carrier = qbS; tackler = rs; tE = tS; tEnd = tS; end = [sx, sy]; m.tS = tS;
     stars.push(rs.key, qbS.key);
     ballF = (t) => (t < 0.25 ? { x: lerp(los, qx, t / 0.25), y: lerp(0, qy, t / 0.25), h: 0.6 } : { held: qbS.key });
     T = tS + 0.95;
@@ -86,6 +88,7 @@ export function buildPlay(ev, slots, seed = 1) {
     const cx = Math.min(los + air, 108), cy = ev.screen ? clamp(tgt.y * 0.6 + sideOf(tgt.y) * 6, -LAT, LAT) : clamp(tgt.y * 0.7 + (R() - 0.5) * 7, -LAT + 1, LAT - 1);
     const tThrow = ev.screen ? 0.55 : ev.quick ? 0.85 : ev.deep ? 1.5 : 1.15 + R() * 0.15;
     const throwX = qx - 1.5, flight = 0.22 + Math.hypot(cx - throwX, cy - qy) * 0.021, tC = tThrow + flight;
+    m.tThrow = tThrow; m.tC = tC; m.tgt = tgt.key;
     F[qbS.key] = path([0, qx, qy], [0.5, throwX, qy], [tThrow + 0.3, throwX + 0.5, qy], [3, throwX + 0.5, qy]);
     // the target's route ends at the ball
     F[tgt.key] = path([0, tgt.x, tgt.y], [Math.max(0.3, tC * 0.6), lerp(tgt.x, cx, 0.7), lerp(tgt.y, cy, 0.25)], [tC, cx, cy]);
@@ -96,7 +99,7 @@ export function buildPlay(ev, slots, seed = 1) {
     // whoever's covering him
     const cover = byId(def, ev.cm) || near(def.filter((s) => is(s, "CB", "S")), tgt.x + 6, tgt.y);
     if (k === "inc") {
-      const db = byId(def, ev.db) || cover;
+      const db = byId(def, ev.db) || cover; m.swat = ev.db ? db.key : null;
       F[db.key] = path([0, db.x, db.y], [Math.max(0.4, tC * 0.6), lerp(db.x, cx + 2, 0.7), lerp(db.y, cy, 0.5)], [tC, cx + 0.8, cy + 0.5], [tC + 0.5, cx + 1.2, cy + 0.8]);
       F[tgt.key] = ((f) => (t) => (t <= tC ? f(t) : [cx + Math.min(t - tC, 0.5) * 2, cy]))(F[tgt.key]);
       // the ball gets there and falls to the turf
@@ -141,6 +144,7 @@ export function buildPlay(ev, slots, seed = 1) {
     const rb = off.find((s) => s.pos === "RB");
     const qbRun = ev.keeper || ev.scramble || !rb;
     carrier = qbRun ? qbS : byId(off, ev.player) || rb;
+    if (!qbRun) m.handoff = 0;
     const sgn = R() < 0.5 ? -1 : 1;
     holeY = ev.edge ? sgn * (10 + R() * 6) : (R() - 0.5) * 7;
     const ex = los + Y + (td ? 2 + R() * 4 : 0);
@@ -207,6 +211,7 @@ export function buildPlay(ev, slots, seed = 1) {
   if (fumble && carrier && end) {
     const held = ballF, loose = [end[0] + (carrier.side === "off" ? 1.8 : -1.8), clamp(end[1] + (R() - 0.5) * 4, -LAT, LAT)];
     const rec = near(def.filter((s) => s !== tackler), loose[0], loose[1]) || tackler;
+    if (rec) { m.recov = rec.key; m.recovT = tEnd + 0.55; }
     if (rec) { const from = F[rec.key]; F[rec.key] = toward(from, tEnd, loose, tEnd + 0.55); down[rec.key] = tEnd + 0.55; }
     ballF = (t) => { if (t < tEnd) return held(t); const u = clamp((t - tEnd) / 0.5, 0, 1); return { x: lerp(end[0], loose[0], u), y: lerp(end[1], loose[1], u), h: Math.abs(Math.sin(u * Math.PI * 2)) * 0.9 * (1 - u) }; };
     T = Math.max(T, tEnd + 1.2);
@@ -226,5 +231,7 @@ export function buildPlay(ev, slots, seed = 1) {
   if (k === "inc" || k === "int") name(byId(off, ev.tgt) || null, ev.tgt);
   if (k === "sack") name(tackler, ev.rusher);
   else if (tackler && ev.tkl && byId(slots, ev.tkl) === tackler) name(tackler, ev.tkl);
-  return { T, f, ball, down, who, hop: td && carrier ? { key: carrier.key, at: tEnd } : null, stars: [...new Set(stars)], catchAt, tEnd };
+  if (m.handoff === 0) m.handoff = tH;
+  Object.assign(m, { carrier: carrier?.key ?? null, tackler: tackler?.key ?? null, tE, tEnd, fumble });
+  return { T, f, ball, down, who, m, hop: td && carrier ? { key: carrier.key, at: tEnd } : null, stars: [...new Set(stars)], catchAt, tEnd };
 }
