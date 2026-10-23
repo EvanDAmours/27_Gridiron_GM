@@ -1769,4 +1769,7 @@ export const PATCH_NOTES = [
     "Live plays: 22 more clubs now have their full action frames (running, throwing, blocking, diving tackles, catches, kicks, punts and returns): ATL, BAL, CAR, CHI, CIN, CLE, DAL, DEN, DET, GB, IND, JAX, KC, LAC, LV, MIN, NE, NYJ, PHI, PIT, TEN and WAS",
     "The last eight (ARI, BUF, LAR, MIA, NO, SEA, SF, TB) are on the way",
   ] },
+  { v: "4.45", date: "2026-10-20", title: "ARI, LAR, NO and TB in action", notes: [
+    "Live plays: action frames for four more clubs: Arizona, the Rams, New Orleans and Tampa Bay (28 of 32 now)",
+  ] },
 ];
