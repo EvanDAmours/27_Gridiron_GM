@@ -221,11 +221,13 @@ export const fieldMaxW = (tall) => `calc(${MOBILE ? "min(42vh, 390px)" : tall ? 
 
 // anim: a play to act out ({ ev, key, id, card }, livePlays.js), with animSpeed (1 normal) and
 // onAnimDone when it's over (a tap on the field skips it); paused holds it where it is.
-// A kickoff comes after the score has gone in, when the ball already belongs to the other side:
-// the field puts the kicking team (anim.ev.kickAb) back on offense for it.
+// The plays that follow a score (the extra point, the kickoff) are acted out after the score has gone
+// in, when the ball already belongs to the other side: the field puts the team that has the ball
+// on that play (anim.ev.offAb, or the kicking team, kickAb) back on offense for it.
 export default function LiveField(props) {
   const { anim, off, def } = props;
-  if (anim?.ev?.k === "ko" && anim.ev.kickAb && off?.ab !== anim.ev.kickAb && def?.ab === anim.ev.kickAb) {
+  const want = anim?.ev?.offAb || anim?.ev?.kickAb;
+  if (want && off?.ab !== want && def?.ab === want) {
     return <LiveFieldView {...props} off={def} def={off} offHome={!props.offHome} offDepth={props.defDepth} defDepth={props.offDepth} offOrder={props.defOrder} defOrder={props.offOrder} />;
   }
   return <LiveFieldView {...props} />;
@@ -240,7 +242,7 @@ function LiveFieldView({ ballYard, toGo, off, def, offHome = true, offDepth, def
   }, [anim?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const W8 = wxOf(wx);
   // a kickoff goes from the kicking team's 35, wherever the scoring play ended
-  const los = anim?.ev?.k === "ko" ? 35 : clamp(ballYard, 1, 99);
+  const los = anim?.ev?.k === "ko" ? 35 : anim?.ev?.offAb ? anim.ev.yard : clamp(ballYard, 1, 99);
   const x0 = xOf(los);
   const o = starters(off, offDepth, offOrder), d = starters(def, defDepth, defOrder);
   // the visitors wear white, unless the home team wears white at home (Dallas): then they wear color
@@ -356,7 +358,7 @@ function LiveFieldView({ ballYard, toGo, off, def, offHome = true, offDepth, def
       {/* line of scrimmage and the line to gain, with a soft glow */}
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#3b82f6" strokeWidth="8" strokeOpacity=".25" />
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#60a5fa" strokeWidth="3" />
-      {toGo > 0 && !st && los + toGo < 100 && <><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#facc15" strokeWidth="8" strokeOpacity=".25" /><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#fde047" strokeWidth="3" /></>}
+      {toGo > 0 && !st && !anim?.ev?.offAb && los + toGo < 100 && <><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#facc15" strokeWidth="8" strokeOpacity=".25" /><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#fde047" strokeWidth="3" /></>}
       {anim ? <LivePlay key={anim.id} anim={anim} slots={slots} X={xOf} Y={yOf} cam={cam} W={W} H={H} zoom={MOBILE ? 2.2 : 2.1} speed={animSpeed} paused={paused} onPhase={setPhase} onDone={() => onAnimDone?.()} /> : <>{defMen}{offMen}</>}
       {/* a field goal try: the goalposts at the back of the end zone, seen from above */}
       {st === "fg" && <g pointerEvents="none"><line x1={W - 5} y1={yOf(-3.1)} x2={W - 5} y2={yOf(3.1)} stroke="#facc15" strokeWidth="3" strokeLinecap="round" /><circle cx={W - 5} cy={H / 2} r="3.5" fill="#facc15" /></g>}

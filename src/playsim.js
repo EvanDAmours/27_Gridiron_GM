@@ -266,12 +266,12 @@ export function createGame(home, away, { playoff = false, neutral = false, rand 
     sides: { h: home, a: away }, playoff, neutral, rand,
     // the weather (weather.js): wx its key, wxE what it does to the game
     wx, wxE: wxOf(wx),
-    poss: first, firstPoss: first, yard: 25, down: 1, toGo: 10, qtr: 1, clock: 900,
+    // the game opens with a kickoff to the team that won the toss (koNext: the next snap is a kickoff)
+    poss: first === "h" ? "a" : "h", firstPoss: first, koNext: true, yard: 35, down: 1, toGo: 10, qtr: 1, clock: 900,
     score: { h: 0, a: 0 }, done: false, ot: false, otScored: false, plays: 0, to: { h: 3, a: 3 },
     box: { h: {}, a: {} }, stats: { h: emptyTeam(), a: emptyTeam() },
     ...(rec ? { pl: [] } : {}),
   };
-  g.stats[first].drives++;
   // Any given Sunday: each side has a good or bad day on offense and on defense.
   const day = () => ({ o: gauss(rand) * GAME_DAY_SD, d: gauss(rand) * GAME_DAY_SD });
   g.day = { h: day(), a: day() };
@@ -509,10 +509,12 @@ function tick(g, secs) {
     g.done = true; return g.score.h === g.score.a ? "Overtime ends in a tie." : "Final.";
   }
   g.qtr++;
-  if (g.qtr === 3) { g.to = { h: 3, a: 3 }; g.clock = 900; g.poss = other(g.firstPoss); g.yard = 25; g.down = 1; g.toGo = 10; g.stats[g.poss].drives++; return "Halftime."; }
+  // the second half opens with a kickoff, by the team that received the first one
+  if (g.qtr === 3) { g.to = { h: 3, a: 3 }; g.clock = 900; g.poss = g.firstPoss; g.yard = 35; g.down = 1; g.toGo = 10; g.koNext = true; return "Halftime."; }
   if (g.qtr === 5) {
     if (g.score.h !== g.score.a) { g.done = true; g.qtr = 4; g.clock = 0; return "Final."; }
-    g.ot = true; g.otPoss = 1; g.to = { h: 2, a: 2 }; g.clock = g.playoff ? 900 : 600; g.poss = g.rand() < 0.5 ? "h" : "a"; g.yard = 25; g.down = 1; g.toGo = 10; g.stats[g.poss].drives++;
+    // the toss winner receives the overtime kickoff (g.poss: the side kicking it)
+    g.ot = true; g.otPoss = 1; g.to = { h: 2, a: 2 }; g.clock = g.playoff ? 900 : 600; g.poss = g.rand() < 0.5 ? "h" : "a"; g.yard = 35; g.down = 1; g.toGo = 10; g.koNext = true;
     return "Overtime!";
   }
   g.clock = 900;
@@ -574,6 +576,17 @@ export function step(g, call, bonus = 1, pick = null) {
 }
 function stepPlay(g, call, bonus = 1, pick = null) {
   if (g.done) return null;
+  // The kickoff that opens the game, each half and overtime: a play of its own
+  if (g.koNext) {
+    g.koNext = false; g.plays++;
+    const kick = g.poss, ev = { yard: 35, down: 1, toGo: 10, qtr: g.qtr, clock: g.clock, poss: kick, yards: 0, type: "kickoff", text: `${sideName(g, kick)} kick off.`, td: false, turnover: false, score: 0 };
+    const op = g.otPoss;
+    kickoff(g, ev);
+    if (g.ot && !g.done) g.otPoss = op; // the overtime kickoff isn't a possession of its own
+    if (ev.ko?.tb) ev.text += " Touchback.";
+    ev.note = tick(g, ev.ko?.tb ? 0 : 6);
+    return ev;
+  }
   const rand = g.rand;
   const off = g.poss, def = other(off);
   // Personnel for this snap (heavier in short yardage, lighter on passing downs) and the defense's answer.
@@ -598,7 +611,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   if (!call && g.qtr === 4 && !g.ot && lead > 0 && g.down < 4 && g.clock <= 40 * Math.max(0, kneels - defTO) + 2 * kneels) {
     const ql = line(g, off, o.qb); add(ql, "rushAtt", 1); add(ql, "rushYds", -1); st.rushAtt++; st.rushYds -= 1;
     g.yard = Math.max(1, g.yard - 1); g.down++; g.toGo += 1;
-    ev.type = "run"; ev.kneel = true; ev.yards = -1; ev.player = o.qb; ev.text = `${o.qb?.name || "The QB"} takes a knee.`;
+    ev.type = "run"; ev.k = "kneel"; ev.kneel = true; ev.yards = -1; ev.player = o.qb; ev.qb = o.qb; ev.text = `${o.qb?.name || "The QB"} takes a knee.`;
     if (defTO > 0 && g.clock > 2) { g.to[def]--; ev.text += ` Timeout, ${sideName(g, def)}.`; ev.note = tick(g, 2); }
     else ev.note = tick(g, 40);
     return ev;
@@ -891,10 +904,15 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const kl = line(g, off, o.k);
     let pts = 6;
     if (rand() < 0.05 * (o.hcAgg ?? 1) ** 2 || (g.qtr === 4 && g.clock < 300 && [-2, -10, 5, 1].includes(g.score[off] + 6 - g.score[def]))) {
-      if (rand() < 0.48) { pts += 2; ev.text += " Two-point try is good."; } else ev.text += " Two-point try fails.";
+      const good = rand() < 0.48;
+      if (good) { pts += 2; ev.text += " Two-point try is good."; } else ev.text += " Two-point try fails.";
+      // the try, for the field to act it out: the same kind of play that scored, to the same man
+      ev.pat = { two: true, good, style: type === "run" ? "run" : "pass", player: carrier, qb };
     } else {
       add(kl, "xpA", 1);
-      if (rand() < 0.955) { add(kl, "xpM", 1); add(kl, "pts", 1); pts += 1; } else ev.text += " Extra point is no good.";
+      const good = rand() < 0.955;
+      if (good) { add(kl, "xpM", 1); add(kl, "pts", 1); pts += 1; } else ev.text += " Extra point is no good.";
+      ev.pat = { two: false, good, kicker: o.k, holder: o.p || o.qb };
     }
     ev.score = pts; scored(g, off, pts);
     ev.note = tick(g, 6);

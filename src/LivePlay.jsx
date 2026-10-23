@@ -118,6 +118,7 @@ function poseOf(sc, s, t, speed, ball) {
     } else {
       // the kickoff: his run-up, the plant and the boot off the tee
       if (sp.k === "ko" && k === sp.kicker && t >= 0.3 && t < sp.tKick + 0.55) return t < sp.tKick - 0.2 ? (stride ? "a6" : "a5") : t < sp.tKick ? "c2" : "c3";
+      if (sp.kneelAt != null && k === sp.returner && t > sp.kneelAt) return "a4"; // touchback: down on a knee in the end zone
       if (k === sp.punter) return t >= 0.5 && t < sp.tKick ? "c6" : t >= sp.tKick && t < sp.tKick + 0.55 ? "c7" : null;
       if (k === sp.returner && sp.catches && t > sp.tLand - 0.3 && (t < sp.tLand + 0.15 || k !== m.carrier) && !(sc.down[k] != null && t >= sc.down[k])) return "c8";
     }
@@ -134,6 +135,7 @@ function poseOf(sc, s, t, speed, ball) {
   if (sp?.pairs?.[k] != null && t > sp.pairs[k] && k !== m.carrier && k !== m.tackler) return "b6";
   if (k === m.tackler && m.carrier && !m.td && t > m.tEnd - 0.32) return "b3";
   if (k === m.carrier && m.td && t > m.tEnd) return "b7";
+  if (m.k === "kneel" && k === m.qb) return t > 0.3 ? "a4" : null; // victory formation: down on a knee
   if (k === m.qb && m.k !== "run") {
     if (m.tThrow != null) {
       if (t > m.tThrow - 0.38 && t <= m.tThrow) return "a7";

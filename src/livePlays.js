@@ -4,8 +4,8 @@
 // it never gives the result away. A big play anywhere else plays out too, without a banner, and so
 // does the odd ordinary snap, so the field starting to move doesn't tell you something big is coming.
 export const LIVE_MODES = ["Key", "All", "Off"];
-const ACTED = new Set(["run", "pass", "inc", "sack", "int", "fg", "punt"]);
-export const acted = (ev) => !!ev && ACTED.has(ev.k) && !ev.kneel;
+const ACTED = new Set(["run", "pass", "inc", "sack", "int", "fg", "punt", "kneel"]);
+export const acted = (ev) => !!ev && ACTED.has(ev.k);
 const nth = (n) => (n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`);
 
 // The banner for a snap that matters, from the situation before it (ev's down, toGo, yard, qtr,
@@ -16,6 +16,8 @@ export function keyLabel(ev, lead = 0) {
   // every field goal try is worth watching (there are only a few a game)
   if (ev.k === "fg") return `${ev.dist}-yard field goal try${ev.qtr >= 4 && ev.clock <= 120 && Math.abs(lead) <= 3 ? " · the game on the line" : ""}`;
   if (ev.k === "punt") return null;
+  // the kneel-downs that end a game always play out
+  if (ev.k === "kneel") return "Victory formation";
   const goal = ev.yard + ev.toGo >= 100, close = Math.abs(lead) <= 8;
   const ot = ev.qtr >= 5, finish = ev.qtr === 4 && ev.clock <= 120 && close;
   const third = ev.down === 3 && (ev.yard >= 50 || ev.qtr >= 4 || goal);
@@ -45,12 +47,26 @@ export function liveChoice(ev, mode, lead = 0, roll = Math.random()) {
 // play to act out next ({ k: "ko", ... }), or null when it isn't worth one. Only the scoring side's
 // kick (the field still has them on offense) and only one that's returned: every return in "All",
 // in "Key" a big one, a muff or a touchdown, and now and then an ordinary one.
-export function kickoffPlay(ev, offSide, mode, roll = Math.random()) {
+export function kickoffPlay(ev, offSide, mode) {
   const ko = ev?.ko;
-  if (!ko || ko.tb || mode === "Off" || ko.side !== offSide) return null;
+  if (!ko || mode === "Off" || ko.side !== offSide) return null;
+  // a touchback: it comes down in the end zone and he takes a knee there
+  if (ko.tb) return { k: "ko", yard: 35, qtr: ev.qtr, clock: ev.clock, kicker: ko.kicker, kr: null, catchAt: -4, spot: 35, tb: true, muff: false, td: false, ret: 0 };
   const ret = (ko.spot ?? 0) - (ko.catchAt ?? 0);
-  if (mode !== "All" && !(ko.td || ko.muff || ret >= 35 || roll < 0.35)) return null;
   return { k: "ko", yard: 35, qtr: ev.qtr, clock: ev.clock, kicker: ko.kicker, kr: ko.kr, catchAt: ko.catchAt, spot: ko.spot, muff: !!ko.muff, td: !!ko.td, ret };
+}
+
+// The try after a touchdown (playsim.js puts it on ev.pat), to act out next: the extra point
+// from the 15 (the field goal unit), or the two-point play from the 2. null in "Off".
+export function patPlay(ev, mode) {
+  const p = ev?.pat;
+  if (!p || mode === "Off") return null;
+  const base = { qtr: ev.qtr, clock: ev.clock, down: 1, toGo: 2 };
+  if (!p.two) return { ...base, k: "fg", xp: true, yard: 85, dist: 33, made: p.good, player: p.kicker, holder: p.holder };
+  const keeper = !!p.player && p.player === p.qb;
+  if (p.style === "run") return { ...base, k: "run", two: true, yard: 98, yards: p.good ? 2 : 0, td: p.good, player: p.player, qb: p.qb, keeper, good: p.good };
+  return p.good ? { ...base, k: "pass", two: true, yard: 98, yards: 2, td: true, player: p.player, tgt: p.player, qb: p.qb, good: true }
+    : { ...base, k: "inc", two: true, yard: 98, yards: 0, tgt: p.player, qb: p.qb, good: false };
 }
 
 const nm = (p, fb) => p?.name || fb;
@@ -64,9 +80,18 @@ export function resultCard(ev, side, userSide, box = {}) {
   const qb = nm(ev.qb, "The quarterback"), carrier = nm(ev.player, "The runner");
   let head = "", line = "", tone = "", star = null, starSide = side, count = null;
   const nTimes = (s, id, key) => (id != null ? box[s]?.[id]?.[key] || 0 : 0);
-  if (k === "ko") {
+  if (ev.xp) {
+    head = ev.made ? "" : "NO GOOD!"; tone = ev.made ? "green" : "red"; line = `${nm(ev.player, "The kicker")}'s extra point is ${ev.made ? "good" : "no good"}`; star = ev.player;
+  } else if (ev.two) {
+    head = ev.good ? "TWO-POINT CONVERSION!" : "NO GOOD!"; tone = ev.good ? "gold" : "red";
+    line = ev.good ? (k === "pass" ? `${qb} finds ${nm(ev.player, "his receiver")} for two` : `${carrier} punches in the two-point try`) : `The two-point try ${k === "inc" ? `for ${lastNm(ev.tgt, "his receiver")} falls incomplete` : "is stuffed at the line"}`;
+    star = ev.good ? ev.player : null;
+  } else if (k === "kneel") {
+    line = `${qb} takes a knee`; tone = "grey";
+  } else if (k === "ko") {
     // side: the kicking team
-    if (ev.td) { head = "TOUCHDOWN!"; tone = "gold"; line = `${nm(ev.kr, "The returner")} takes the kickoff all the way back`; star = ev.kr; starSide = def; }
+    if (ev.tb) { line = `${nm(ev.kicker, "The kicker")} boots it into the end zone: touchback`; tone = "grey"; star = ev.kicker; }
+    else if (ev.td) { head = "TOUCHDOWN!"; tone = "gold"; line = `${nm(ev.kr, "The returner")} takes the kickoff all the way back`; star = ev.kr; starSide = def; }
     else if (ev.muff) { head = "FUMBLE!"; tone = "red"; line = `${nm(ev.kr, "The returner")} coughs up the kickoff, and the kicking team recovers`; }
     else { star = ev.kr; starSide = def; if (ev.ret >= 35) { head = "BIG RETURN!"; tone = "green"; } line = `${nm(ev.kr, "The returner")} brings it back ${ev.ret} yards to the ${ev.spot > 50 ? `${100 - ev.spot}` : ev.spot}`; }
   } else if (k === "fg") {

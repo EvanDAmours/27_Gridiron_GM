@@ -48,6 +48,7 @@ export function summarize(g, final = g.score, box = g.box) {
   const drives = [];
   let cur = null;
   for (const e of pl) {
+    if (e.t === "kickoff") continue; // the kickoff that opens a half isn't a drive
     if (!cur || cur.p !== e.p) {
       if (cur) drives.push(cur);
       cur = { p: e.p, q: e.q, start: e.y, end: e.y, plays: 0, yds: 0, res: "" };

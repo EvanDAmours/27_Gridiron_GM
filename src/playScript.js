@@ -94,7 +94,16 @@ export function buildPlay(ev, slots, seed = 1) {
     if (rb) F[rb.key] = path([0, rb.x, rb.y], [0.5, rb.x + 1, rb.y - sideOf(rb.y) * 2], [3, rb.x + 1.2, rb.y - sideOf(rb.y) * 2]);
   }
 
-  if (k === "sack") {
+  if (k === "kneel") {
+    // Victory formation: the snap, he drops to a knee where he took it, and nobody really plays
+    // (the lines lean on each other; everyone else watches)
+    for (const s of off) if (is(s, "LT", "LG", "C", "RG", "RT")) F[s.key] = path([0, s.x, s.y], [0.3, s.x - 0.3, s.y]);
+    for (const s of off) if (!F[s.key] && s !== qbS) F[s.key] = path([0, s.x, s.y], [0.6, s.x + 0.6, s.y]);
+    for (const s of def) F[s.key] = is(s, "DL") ? engage(s) : path([0, s.x, s.y], [0.8, s.x - 1, s.y]);
+    F[qbS.key] = path([0, qx, qy], [0.3, qx - 0.6, qy]);
+    ballF = (t) => (t < 0.25 ? { x: lerp(los, qx, t / 0.25), y: lerp(0, qy, t / 0.25), h: 0.6 } : { held: qbS.key });
+    tE = 0.9; tEnd = 0.9; T = 2.1;
+  } else if (k === "sack") {
     const tS = 1.35 + R() * 0.45, sx = los + Y, sy = qy + (R() - 0.5) * 3;
     F[qbS.key] = path([0, qx, qy], [0.5, qx - 1.5, qy], [tS - 0.3, lerp(qx - 1.5, sx, 0.5), lerp(qy, sy, 0.6)], [tS, sx, sy]);
     const rs = byId(def, ev.rusher) || near(def.filter((s) => is(s, "DL", "LB")), qx, qy);
@@ -385,20 +394,22 @@ function buildKickoff(ev, slots, R) {
   const F = {}, down = {}, who = {}, stars = [];
   const kicker = by(off, "K") || off[0], ret = by(def, "S") || def[def.length - 1];
   const tKick = 0.95, flight = 2.6, tLand = tKick + flight;
-  const cx = clamp(100 - (ev.catchAt ?? 3), 88, 104), cy = (R() - 0.5) * 10;
+  const cx = clamp(100 - (ev.catchAt ?? 3), 88, 104), cy = (R() - 0.5) * 10, tb = !!ev.tb;
   // the run-up, the kick, and he trails the play down the middle as the safety valve
   F[kicker.key] = path([0, kicker.x, kicker.y], [0.3, kicker.x, kicker.y], [tKick, los - 0.7, 0.5], [tKick + 0.45, los + 1.5, 0.4], [tKick + 2.4, los + 16, 0]);
   const flightPos = (t) => { const u = clamp((t - tKick) / flight, 0, 1); return { x: lerp(los, cx, u), y: lerp(0, cy, u), h: 0.3 + Math.sin(Math.PI * u) * 15 }; };
-  const muff = !!ev.muff, td = !!ev.td;
+  const muff = !!ev.muff && !tb, td = !!ev.td && !tb;
   // the return: up the field (toward -x) to where the engine says it ended
   let carrier = null, tEnd = tLand + 0.6, end = [cx - 1.5, cy + 2];
-  if (!muff) {
+  if (!muff && !tb) {
     const ex = td ? -4 : 100 - ev.spot, ey = clamp(cy + (R() - 0.5) * 22, -LAT, LAT);
     const run = Math.max(1, cx - ex), dur = clamp(run / (7.5 + run * 0.08), 0.6, 4.6);
     const mid = [lerp(cx, ex, 0.45), clamp(lerp(cy, ey, 0.5) + (R() - 0.5) * 12, -LAT, LAT)];
     F[ret.key] = path([0, ret.x, ret.y], [tLand - 0.5, cx, cy], [tLand, cx, cy], [tLand + dur * 0.45, mid[0], mid[1]], [tLand + dur, ex, ey]);
     carrier = ret; tEnd = tLand + dur; end = [ex, ey];
   } else F[ret.key] = path([0, ret.x, ret.y], [tLand - 0.5, cx, cy], [tLand + 0.5, cx + 0.5, cy]);
+  // a touchback: he catches it deep in the end zone and takes a knee
+  if (tb) { carrier = null; tEnd = tLand + 0.9; end = [cx - 8, cy]; F[ret.key] = path([0, ret.x, ret.y], [tLand - 0.5, cx, cy]); }
   // where the two units collide: about 25 yards in front of the catch
   const meetX = cx - 22 - R() * 6;
   const cover = off.filter((s) => s !== kicker);
@@ -438,14 +449,14 @@ function buildKickoff(ev, slots, R) {
   const ball = (t) => {
     if (t < tKick) return { x: los, y: 0, h: 0.25 };
     if (t < tLand) return flightPos(t);
-    if (carrier) return { held: carrier.key };
+    if (carrier || tb) return { held: ret.key };
     const u = clamp((t - tLand) / 0.6, 0, 1);
     return { x: lerp(cx, end[0], u), y: lerp(cy, end[1], u), h: Math.abs(Math.sin(u * Math.PI * 2)) * 1.1 * (1 - u) };
   };
   who[kicker.key] = ev.kicker; who[ret.key] = ev.kr; stars.push(ret.key);
   const T = carrier ? tEnd + (td ? 1.5 : 0.9) : tLand + 1.4;
   const m = { k: "ko", carrier: carrier?.key ?? null, tackler: tackler?.key ?? null, tE: tLand, tEnd, td, recov: recov?.key ?? null, recovT: recov ? tLand + 0.6 : null,
-    special: { k: "ko", kicker: kicker.key, returner: ret.key, tKick, tLand, catches: !muff, release: 0, pairs } };
+    special: { k: "ko", kicker: kicker.key, returner: ret.key, tKick, tLand, catches: !muff, release: 0, pairs, kneelAt: tb ? tLand + 0.3 : null } };
   for (const s of slots) if (!F[s.key]) F[s.key] = path([0, s.x, s.y]);
   const freeze = tEnd + 0.6, f = {};
   for (const s of slots) { const g = F[s.key]; f[s.key] = (t) => onField(g(Math.min(t, Math.max(freeze, T - 0.2)))); }

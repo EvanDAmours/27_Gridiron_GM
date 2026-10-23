@@ -15,7 +15,7 @@ import WeekResult from "./WeekResult.jsx";
 import LiveField, { fieldMaxW } from "./LiveField.jsx";
 import { Act, LiveSettings } from "./LiveControls.jsx";
 import PlayCaller from "./PlayCaller.jsx";
-import { liveChoice, resultCard, kickoffPlay, LIVE_MODES } from "./livePlays.js";
+import { liveChoice, resultCard, kickoffPlay, patPlay, LIVE_MODES } from "./livePlays.js";
 // Unsolicited AI trade offers (the weekly offer bar and the "urgent" QB offers) are off until they're
 // reworked into a proper offer screen; trades you start, and the trade block, still work.
 const AI_TRADE_OFFERS = false;
@@ -335,7 +335,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   const[livePlay,setLivePlay]=useState(0);const[liveDone,setLiveDone]=useState(false);
   {/* live plays: the play the field is acting out (its results wait until it's over), and how many plays get acted out */}const[liveAnim,setLiveAnim]=useState(null);const[liveBoxOpen,setLiveBoxOpen]=useState(false);const liveBoxRef=useRef(null);const liveAnimRef=useRef(null);const liveAnimSeq=useRef(1);const[livePlayMode,setLivePlayMode]=useState(()=>{try{return localStorage.getItem('gm_live_plays')||'Key';}catch{return 'Key';}});
   const cycleLivePlays=()=>setLivePlayMode(v=>{const n=LIVE_MODES[(LIVE_MODES.indexOf(v)+1)%LIVE_MODES.length];try{localStorage.setItem('gm_live_plays',n);}catch{}return n;});
-  const endLiveAnim=(all)=>{const a=liveAnimRef.current;liveAnimRef.current=null;setLiveAnim(null);a?.commit();/* the kickoff after the score, acted out next (all: skipping ahead, so not) */if(!all&&a?.ko&&liveSim){const kev={...a.ko,kickAb:teams[liveSim[a.ko.side]]?.ab};const us=liveSim.h===ui?"h":"a";const id=liveAnimSeq.current++;liveAnimRef.current={commit:()=>{}};setLiveAnim({ev:kev,key:null,id,card:resultCard(kev,a.ko.side,us,{}),teamClr:TEAMS[ui]?.clr});}};
+  const endLiveAnim=(all)=>{const a=liveAnimRef.current;liveAnimRef.current=null;setLiveAnim(null);a?.commit();/* what follows on the field (the try after a touchdown, the kickoff), unless skipping ahead */if(!all&&a?.next?.length){const[n,...rest]=a.next;liveAnimRef.current={commit:()=>{},next:rest};setLiveAnim({...n,key:null,id:liveAnimSeq.current++,teamClr:TEAMS[ui]?.clr});}};
   const[livePaused,setLivePaused]=useState(false);const[livePOG,setLivePOG]=useState(null);
   const[liveStats,setLiveStats]=useState({h:{},a:{}});const[lastLivePlay,setLastLivePlay]=useState(null);const[showLiveEnd,setShowLiveEnd]=useState(false);
   const[boxView,setBoxView]=useState(null);
@@ -695,7 +695,7 @@ const _wireLog=useRef(null);
   // A live game in progress is kept after every play, so a reload (or closing the app) picks it up
   // where it stopped instead of losing it, or letting it be restarted from the opening kickoff.
   const LIVE_KEY="gm_live";
-  const LIVE_FIELDS=["score","clock","qtr","poss","yard","down","toGo","box","stats","to","ot","otPoss","plays","pl","firstPoss","done"];
+  const LIVE_FIELDS=["score","clock","qtr","poss","yard","down","toGo","box","stats","to","ot","otPoss","plays","pl","firstPoss","done","koNext"];
   const saveLiveSnap=L=>{try{if(!L?.g||L.g.done){localStorage.removeItem(LIVE_KEY);return;}const g={};LIVE_FIELDS.forEach(k=>{g[k]=L.g[k];});localStorage.setItem(LIVE_KEY,JSON.stringify({yr,sp,ui,ab:teams[ui]?.ab,game:L.game,g,log:L.log||[]}));}catch{/* storage full: no resume */}};
   const loadLiveSnap=()=>{try{return JSON.parse(localStorage.getItem(LIVE_KEY)||"null");}catch{return null;}};
   const sameGame=(a,b)=>a&&b&&a.h===b.h&&a.a===b.a&&String(a.wk)===String(b.wk);
@@ -710,7 +710,7 @@ const _wireLog=useRef(null);
     if(!liveSim||liveDone)return;
     const L=liveGameRef.current;if(!L||L.g.done)return;
     const g=L.g;const userSide=liveSim.h===ui?"h":"a";
-    const isUserPoss=liveCallMode&&g.poss===userSide;
+    const isUserPoss=liveCallMode&&g.poss===userSide&&!g.koNext;/* a kickoff isn't a play to call */
     if(isUserPoss&&uCall===undefined){setLiveAwaitingCall(true);return;}
     if(isUserPoss)setLiveAwaitingCall(false);
     const offSide=g.poss,_lead=g.score[offSide]-g.score[offSide==="h"?"a":"h"],_box0=livePlayMode!=="Off"?JSON.parse(JSON.stringify(g.box)):null;
@@ -718,8 +718,16 @@ const _wireLog=useRef(null);
     if(!ev)return;
     // a play worth acting out: the field plays it first, and the score, the log and the down wait until it's over
     const _act=liveChoice(ev,livePlayMode,_lead);
-    if(_act){ev.live=true;const card=resultCard(ev,offSide,userSide,g.box);const id=liveAnimSeq.current++;liveAnimRef.current={commit:()=>commitLivePlay(L,g,ev,offSide,userSide),ko:(()=>{const k=kickoffPlay(ev,offSide,livePlayMode);return k&&{...k,side:offSide};})()};setLiveAnim({ev,key:_act.key,id,card,teamClr:TEAMS[ui]?.clr,box0:_box0});return;}
-    commitLivePlay(L,g,ev,offSide,userSide);
+    // and what follows it on the field: the try after a touchdown, then the kickoff (each acted out by the team that has the ball on it)
+    const _ab=(sd)=>teams[liveSim[sd]]?.ab,_next=[];
+    {const p=patPlay(ev,livePlayMode);if(p){const e={...p,offAb:_ab(offSide)};_next.push({ev:e,card:resultCard(e,offSide,userSide,{})});}}
+    {const k=kickoffPlay(ev,offSide,livePlayMode);if(k){const e={...k,kickAb:_ab(offSide)};_next.push({ev:e,card:resultCard(e,offSide,userSide,{})});}}
+    const _commit=()=>commitLivePlay(L,g,ev,offSide,userSide);
+    if(_act){ev.live=true;const card=resultCard(ev,offSide,userSide,g.box);const id=liveAnimSeq.current++;liveAnimRef.current={commit:_commit,next:_next};setLiveAnim({ev,key:_act.key,id,card,teamClr:TEAMS[ui]?.clr,box0:_box0});return;}
+    // the kickoff that opens a half is the play itself: its result waits until it's been kicked
+    if(ev.type==="kickoff"&&_next.length){ev.live=true;const[n,...rest]=_next;liveAnimRef.current={commit:_commit,next:rest};setLiveAnim({...n,key:null,id:liveAnimSeq.current++,teamClr:TEAMS[ui]?.clr,box0:_box0});return;}
+    _commit();
+    if(_next.length){const[n,...rest]=_next;liveAnimRef.current={commit:()=>{},next:rest};setLiveAnim({...n,key:null,id:liveAnimSeq.current++,teamClr:TEAMS[ui]?.clr});}
   }
   function commitLivePlay(L,g,ev,offSide,userSide){
     setLastLivePlay(ev);

@@ -1778,4 +1778,11 @@ export const PATCH_NOTES = [
   { v: "4.47", date: "2026-10-20", title: "All 32 clubs in action", notes: [
     "Live plays: Miami gets its action frames, so all 32 clubs now run, throw, block, tackle, catch, kick and return in their own uniforms, home and away",
   ] },
+  { v: "4.48", date: "2026-10-20", title: "Kneels, extra points and every kickoff", notes: [
+    "Kneel-downs play out live: victory formation, the snap, and the quarterback drops to a knee with the ball",
+    "Extra points play out after every touchdown (the snap, the hold and the kick, good or no good), and so do two-point tries: the same kind of play that scored, to the same man",
+    "Every kickoff plays out, after every score: returns, muffs, return touchdowns, and touchbacks, where the returner catches it in the end zone and takes a knee",
+    "The game, the second half and overtime now open with a real kickoff and return instead of starting at the 25",
+    "Order of play after a touchdown: the touchdown, the try, then the kickoff. The score goes up as each one ends",
+  ] },
 ];
