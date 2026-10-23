@@ -188,6 +188,8 @@ export function areasOf(sc) {
     out[k] = [...new Set((sc?.areas?.[k] || []).filter((r) => REGIONS[r]))].slice(0, areaCap(k));
     out[k].forEach((r) => used.add(r));
   }
+  // once you assign regions by hand, an open slot stays open (0/2, 1/2...)
+  if (sc?.areasManual) return out;
   for (const k of SCOUT_SLOTS) {
     while (out[k].length < areaCap(k)) {
       const r = AREA_KEYS.find((x) => !used.has(x)) || AREA_KEYS.find((x) => !out[k].includes(x));
@@ -1187,5 +1189,22 @@ export function suggestAreas(sc, rep) {
     const r = bySize.find((x) => !used.has(x)) || bySize.find((x) => !out[k].includes(x));
     out[k].push(r); used.add(r);
   }
-  return areasOf({ ...sc, areas: out });
+  return areasOf({ ...sc, areas: out, areasManual: false });
+}
+
+// Assign a region to one scout (slot), or to nobody (slot null). A region has one scout; a scout
+// who is already full gives up his first region to make room.
+export function setRegionScout(sc, sp, region, slot, yr) {
+  if (!staffWindowOpen(sp)) return { ok: false, msg: "Your scouts are already on the road. You can move them in free agency or the preseason.", sc };
+  if (!REGIONS[region] || (slot && !sc?.[slot])) return { ok: false, msg: "That scout isn't on your staff.", sc };
+  const ar = areasOf(sc);
+  const areas = Object.fromEntries(SCOUT_SLOTS.map((k) => [k, ar[k].filter((r) => r !== region)]));
+  let dropped = null;
+  if (slot) {
+    if (areas[slot].length >= areaCap(slot)) dropped = areas[slot].shift();
+    areas[slot].push(region);
+  }
+  const nsc = { ...sc, areas, areasManual: true, areasYr: yr != null ? areaSeason(sp, yr) : sc.areasYr };
+  const msg = slot ? `${sc[slot].name} will cover the ${regionName(region)}.${dropped ? ` He leaves the ${regionName(dropped)}.` : ""}` : `Nobody covers the ${regionName(region)} now.`;
+  return { ok: true, msg, sc: nsc };
 }

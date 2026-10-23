@@ -1846,4 +1846,9 @@ export const PATCH_NOTES = [
   { v: "4.61", date: "2026-10-23", title: "Results card out of the way", notes: [
     "The weekly and playoff results card now pops up in the bottom-right corner (smaller) instead of across the top, so it no longer covers the Sim and Play buttons",
   ] },
+  { v: "4.62", date: "2026-10-23", title: "Regions by dropdown, leaner Combine", notes: [
+    "Regions screen, new layout: the map on the left, a card for each region with a dropdown to pick which scout covers it (it shows each scout's position and how many regions he already has), and My Scouts on the right with Regions assigned 1/2, 2/2 and so on. Click a scout to light up his ground on the map",
+    "Scouts tab is just for your staff and hiring now (regions moved to the Regions tab)",
+    "Combine screen trimmed: one line with your interviews, workouts and points, stock up and stock down, and the results table (now with a search box). Your scouts' visit list moved to Scouting HQ during Combine week",
+  ] },
 ];

@@ -115,3 +115,17 @@ test("every class leans: each conference is deep at one group and thin at anothe
   }
   assert.ok(hits / tot > 0.6, `${hits}/${tot} strengths show on the board`);
 });
+
+import { setRegionScout } from "../src/scouting.js";
+test("region dropdowns: one scout per region, a full scout gives up his first region, nobody leaves it open", () => {
+  const sc = staff(70);
+  const r = setRegionScout(sc, "preseason", "PAC", "major", 2030);
+  assert.ok(r.ok);
+  const ar = areasOf(r.sc);
+  assert.ok(ar.major.includes("PAC") && ar.major.length === 2);
+  assert.equal(Object.values(ar).flat().filter((x) => x === "PAC").length, 1, "only one scout covers a region");
+  const n = setRegionScout(r.sc, "preseason", "PAC", null, 2030).sc;
+  assert.equal(areasOf(n).major.length, 1, "an open slot stays open (1/2)");
+  assert.ok(uncovered(n).includes("PAC"));
+  assert.equal(setRegionScout(sc, "regular", "PAC", "major", 2030).ok, false);
+});

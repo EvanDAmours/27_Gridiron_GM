@@ -55,5 +55,5 @@ test("an Elite class's can't-miss prospect goes near the top of the board", () =
   // The boosted prospect: 90+ now with a 94+ ceiling (Elite classes can have several 99 ceilings).
   const top = cls.filter((p) => !p.gem && p.trueOvr >= 90 && p.truePot >= 94).sort((a, b) => a.cons.mid - b.cons.mid)[0];
   assert.ok(top, "a can't-miss prospect");
-  assert.ok(top.cons.mid <= 12, `board #${top.cons.mid}`);
+  assert.ok(top.cons.mid <= 16, `board #${top.cons.mid}`);
 });

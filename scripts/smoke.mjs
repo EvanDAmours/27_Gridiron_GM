@@ -184,13 +184,13 @@ try {
   log("every main screen opens");
   await dismiss(); await page.locator(`button:text-is("Draft")`).first().click(); await page.waitForTimeout(400); await page.locator('button:text-is("Scouting")').first().click(); await page.waitForTimeout(500);
   // preseason: send a scout to a region and lock the assignments in
-  await must("Scouts", 500);
-  const reg = page.locator('button[aria-label="Minor scout region 1"]');
-  if (!(await reg.count())) fail("no region picker for the minor scout");
+  await must("Regions", 500);
+  const reg = page.locator('button[aria-label="Scout for SEC"]');
+  if (!(await reg.count())) fail("no scout picker for the SEC");
   await reg.first().click(); await page.waitForTimeout(200);
-  await page.locator('[role="option"]', { hasText: /^SEC( ·|$)/ }).first().click(); await page.waitForTimeout(300);
-  await click("Lock in these regions", 400); await healthy("scout regions");
-  if ((await save()).scouting?.areas?.minor?.[0] !== "SEC") fail("region assignment didn't save");
+  await page.locator('[role="option"]').filter({ hasText: /^Nobody$/ }).first().click(); await page.waitForTimeout(300);
+  await healthy("scout regions");
+  { const ar = (await save()).scouting?.areas || {}; if (Object.values(ar).some((x) => (x || []).includes("SEC"))) fail("region assignment didn't save"); }
   await must("Regions", 500); await healthy("regions view");
   log("scout regions");
   await must("Big Board", 400); await must("Your scouts", 600); await healthy("your scouts' board"); log("your scouts' board");

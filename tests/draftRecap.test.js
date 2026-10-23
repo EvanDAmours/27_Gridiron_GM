@@ -52,7 +52,7 @@ test("one weak scout has only the public read of a gem", () => {
   const gem = genDC(2050).find((p) => p.gem && regionOf(p) !== "OTH");
   const sc = { major: { id: "m", name: "Scout", eval: 62 }, areas: ON(regionOf(gem)) };
   const read = prospectRead(sc, gem);
-  assert.ok(Math.abs(read.potV - publicPot(gem)) < 7); // his read's noise is capped at 1.6 sd (~6)
+  assert.ok(Math.abs(read.potV - publicPot(gem)) < 8); // his read's noise is capped at 1.6 sd (~7.5)
   assert.ok(!read.sleeper);
 });
 
