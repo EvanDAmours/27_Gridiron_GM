@@ -1,6 +1,7 @@
 import Select from "./Select.jsx";
 import { lazyScreen } from "./lazyScreen.js";
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import LeagueView from "./LeagueView.jsx";
 import { C, oC, pC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo , CloseX , sheetWrap, sheetBox, SheetGrip, OverflowMenu, kickoff } from "./ui.jsx";
 import M27 from "./data/madden27.json";
 import REAL_SCHED from "./data/schedule2026.json";
@@ -1452,11 +1453,11 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
   // Related screens share one tab with a row of sub-tabs: Schedule & Standings (schedule, standings,
   // playoffs), Depth Chart (depth chart, roster), Draft & Scouting (scouting, draft, draft recap) League (league hub, record book, history) and Game Updates (patch notes, timeline).
   // On phones the league and player stats sit with the standings (one tap from the bottom bar).
-  const TAB_GROUPS=[{key:"roster",label:"Depth Chart",tabs:["depth","roster"]},{key:"schedule",label:"Schedule & Standings",tabs:MOBILE?["standings","schedule","playoffs"]:["schedule","standings","playoffs"]},{key:"scouting",label:"Draft & Scouting",tabs:["scouting","draft","draftrecap"]},{key:"hub",label:"League",tabs:["hub","records","history","wire"]},{key:"gameinfo",label:"Game Updates",tabs:["gameinfo","log"]}];
+  const TAB_GROUPS=[{key:"roster",label:"Depth Chart",tabs:["depth","roster"]},{key:"schedule",label:"Schedule & Standings",tabs:MOBILE?["standings","schedule","playoffs"]:["schedule","standings","playoffs"]},{key:"scouting",label:"Draft & Scouting",tabs:["scouting","draft","draftrecap"]},{key:"hub",label:"League",tabs:["league","hub","records","history","wire"]},{key:"gameinfo",label:"Game Updates",tabs:["gameinfo","log"]}];
   const groupOf=t=>TAB_GROUPS.find(g=>g.tabs.includes(t));
-  const groupEntry=g=>g.key==="scouting"&&sp==="draft"?"draft":g.key==="roster"?"depth":g.key;
+  const groupEntry=g=>g.key==="scouting"&&sp==="draft"?"draft":g.key==="roster"?"depth":g.key==="hub"?"league":g.key;
   const TABS=["dashboard","roster","schedule","scouting","stats","trade","freeagency","coaching","contracts","hub","trophies","saves","gameinfo"];
-  const TAB_LABEL={dashboard:"Home",roster:"Roster",depth:"Depth Chart",schedule:"Schedule",standings:"Standings",stats:"Stats",scouting:"Scouting",draft:"Draft",trade:"Trade",freeagency:"Free Agency",coaching:"Coaching",playoffs:"Playoffs",hub:"League",wire:"Transactions",trophies:"Legacy Hall",records:"Record Book",history:"League History",draftrecap:"Draft Recap",contracts:"Front Office",log:"Timeline",saves:"Saves",gameinfo:"Game Updates",deadline:"⏰ Deadline Day",livesim:"⚡ Live Game",god:"God Mode",dev:"Balance"};
+  const TAB_LABEL={dashboard:"Home",roster:"Roster",depth:"Depth Chart",schedule:"Schedule",standings:"Standings",stats:"Stats",scouting:"Scouting",draft:"Draft",trade:"Trade",freeagency:"Free Agency",coaching:"Coaching",playoffs:"Playoffs",league:"League",hub:"Franchise History",wire:"Transactions",trophies:"Legacy Hall",records:"Record Book",history:"League History",draftrecap:"Draft Recap",contracts:"Front Office",log:"Timeline",saves:"Saves",gameinfo:"Game Updates",deadline:"⏰ Deadline Day",livesim:"⚡ Live Game",god:"God Mode",dev:"Balance"};
   if(liveSim)TABS.push("livesim");if(dlShown)TABS.unshift("deadline");
   if(godMode)TABS.push("god","dev");
 
@@ -1657,7 +1658,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       {(()=>{const go=(t,sub)=>{setTab(t);if(sub)setRosterView(sub);};
         const _ng=sp==="regular"?sched.find(g=>g.wk===wk+1&&!g.played&&(g.h===ui||g.a===ui)):null;
         const first={preseason:{label:"Training Camp",t:"roster",sub:"Camp work and mini games to improve your roster before the season",onClick:()=>go("roster","camp")},regular:{label:"Schedule",t:"schedule",sub:"Your games, this week's game plan and the playoff picture",onClick:()=>go("schedule")},playoffs:{label:"Playoff Bracket",t:"playoffs",sub:"The road to the Super Bowl",onClick:()=>go("playoffs")},combine:{label:"Scouting",t:"scouting",sub:"Combine results, interviews and your big board",onClick:()=>go("scouting")},resign:{label:"Re-sign Players",t:"freeagency",sub:"Only you can talk to your expiring players this week",onClick:()=>go("freeagency")},freeagency:{label:"Free Agency",t:"freeagency",sub:"Negotiate with the players on the market",onClick:()=>go("freeagency")},draft:{label:"NFL Draft",t:"draft",sub:"Make your picks",onClick:()=>go("draft")}}[sp];
-        const rest=[...(dlShown?[["⏰ Trade Deadline Day","deadline"]]:[]),["Depth Chart","roster"],["Schedule & Standings","schedule"],["Draft & Scouting",sp==="draft"?"draft":"scouting"],["Stats","stats"],["Trades","trade"],["Free Agency","freeagency"],["Manage Staff","coaching"],["Front Office","contracts"],["League","hub"],["Legacy Hall","trophies"],["Saves & Cap 101","saves"],["Game Updates","gameinfo"],...(liveSim&&!liveDone?[["⚡ Live Game","livesim"]]:[])].map(([label,t])=>({label,t,onClick:()=>go(t==="roster"?"depth":t,t==="roster"?"players":null)}));
+        const rest=[...(dlShown?[["⏰ Trade Deadline Day","deadline"]]:[]),["Depth Chart","roster"],["Schedule & Standings","schedule"],["Draft & Scouting",sp==="draft"?"draft":"scouting"],["Stats","stats"],["Trades","trade"],["Free Agency","freeagency"],["Manage Staff","coaching"],["Front Office","contracts"],["League","league"],["Legacy Hall","trophies"],["Saves & Cap 101","saves"],["Game Updates","gameinfo"],...(liveSim&&!liveDone?[["⚡ Live Game","livesim"]]:[])].map(([label,t])=>({label,t,onClick:()=>go(t==="roster"?"depth":t,t==="roster"?"players":null)}));
         // Home's left column: this week's main job, then the to-do list (every screen is in the bar above)
         const _todo=[...(dlShown?[{label:"⏰ Trade Deadline Day",onClick:()=>go("deadline"),tone:"urgent"}]:[]),...(liveSim&&!liveDone?[{label:"⚡ Back to the live game",onClick:()=>go("livesim"),tone:"urgent"}]:[]),...[...inboxItems].sort((a,b)=>({urgent:0,action:1,info:2}[a.tone]??3)-({urgent:0,action:1,info:2}[b.tone]??3)).slice(0,7).map(it=>({label:`${it.icon||"•"} ${it.title}`,tone:it.tone,onClick:it.onOpen||(()=>setInboxOpen(true))}))];
         const menu=[...(first?[first]:[]),..._todo,...(inboxItems.length>7?[{label:`+${inboxItems.length-7} more in Needs Attention`,onClick:()=>setInboxOpen(true),tone:"info"}]:[])];
@@ -1854,6 +1855,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     {tab==="stats"&&<StatsScreen teams={teams} ui={ui} yr={yr} onPlayer={setSel} grade={glGrade} mobile={MOBILE}/>}
 
     {/* LEAGUE: your franchise's history */}
+    {tab==="league"&&<LeagueView teams={teams} ui={ui} sched={sched} wk={wk} sp={sp} mobile={MOBILE} onPlayer={setSel} onTeam={ti=>{setTab("roster");setRosterView("players");setRosterTeam(ti===ui?null:ti);}} go={setTab}/>}
     {tab==="hub"&&ut&&<div style={{maxWidth:1100}}><FranchiseHistory team={ut} seasons={seasonHistory} current={{yr,w:ut.w||0,l:ut.l||0}} titles={myChamps} champs={champs} teams={teams} playoffs={dynastyStats.playoffApps||0} docs={docs} career={gmRetired?.career||gmCareerNow()} gmRetired={gmRetired} onLegacy={()=>setGmLook(true)} onWatch={d=>{setDocCard(d);setInboxShow('docCard');}} onShare={()=>{const _c=gmCareerNow();navigator.clipboard?.writeText(`🏈 ${ut.city} ${ut.name}: ${_c.w}-${_c.l} over ${_c.seasons} season${_c.seasons===1?"":"s"}, ${myChamps.length} Super Bowl${myChamps.length===1?'':'s'}, GM legacy ${_c.score}. #FootballGM`).then(()=>sm('Copied!'));}}/></div>}
 
     {/* SCOUTING */}

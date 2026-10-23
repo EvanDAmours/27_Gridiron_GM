@@ -1828,4 +1828,13 @@ export const PATCH_NOTES = [
     "Every draft class leans: each conference is deep at one position group and thin at another, and it changes every year. Scouting HQ has a new Where the Talent Is card, the Regions tab shows each conference's ▲ strength and ▼ weakness with counts from the board's top 160, and the region pickers on the Scouts tab list them too. Send your specialists where their position is deep",
     "The prospect card says when none of the scouts working his region specializes in his position",
   ] },
+  { v: "4.58", date: "2026-10-23", title: "Cleaner scouting, roster and league screens", notes: [
+    "Scouting HQ rebuilt: it opens on your picks if the season ended today (round and overall number, plus the slice of the board worth scouting for each), then a short Scout These Next list of prospects in range of your picks (needs first), where the talent is by conference, and your scouts with star tiers",
+    "Big Board: a gold line marks where each of your picks falls, and prospects ranked well above your first pick fade out (they'll likely be gone), so you don't spend points on players you won't get",
+    "Regions screen: a tab per conference with your scouts there, its strengths and weaknesses this year, its top prospects, and a position-mismatch warning when none of your scouts there specializes in what it's deep at",
+    "Scouts screen: your staff and the scouts for hire as two clean tables with star tiers, specialty, regions and traits",
+    "Prospect page redesigned: board rank, projection, talent grade, % scouted and rank change across the top; Scouting Report, Physicals and Skills tabs; and your team's needs by position down the side",
+    "Roster: much denser list (about twice as many players on screen), grouped by position, with a player card on the right for the selected player. Double-click a row for the full card",
+    "League tab: a new front page with this week's schedule and every team's record, and league leaders (passing, rushing, receiving, sacks, interceptions, tackles) on the right, no scrolling. Franchise History and League History are a click away",
+  ] },
 ];

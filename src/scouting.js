@@ -279,7 +279,9 @@ export function regionReport(cls) {
     const z = HIRE_GROUPS.map((g) => { const have = n[`${r}|${g}`] || 0, exp = ((byR[r] || 0) * (byG[g] || 0)) / N; return { g, have, exp, z: (have - exp) / Math.sqrt(exp + 1) }; }).sort((a, b) => b.z - a.z);
     // too few of the top prospects to call a lean
     const few = (byR[r] || 0) < 8;
-    return [r, { n: byR[r] || 0, strong: few || !z[0].have ? null : z[0], weak: few ? null : z[z.length - 1] }];
+    return [r, { n: byR[r] || 0, strong: few || !z[0].have ? null : z[0], weak: few ? null : z[z.length - 1],
+      // the full lists, best and worst first (what clearly stands out either way)
+      ups: few ? [] : z.filter((x) => x.have && x.z > 0.6).slice(0, 3), downs: few ? [] : z.filter((x) => x.z < -0.6).reverse().slice(0, 3) }];
   }));
 }
 export const regionName = (k) => REGIONS[k]?.name || "Independents & FCS";
