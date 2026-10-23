@@ -1772,4 +1772,7 @@ export const PATCH_NOTES = [
   { v: "4.45", date: "2026-10-20", title: "ARI, LAR, NO and TB in action", notes: [
     "Live plays: action frames for four more clubs: Arizona, the Rams, New Orleans and Tampa Bay (28 of 32 now)",
   ] },
+  { v: "4.46", date: "2026-10-20", title: "BUF, SF and SEA in action", notes: [
+    "Live plays: action frames for Buffalo, San Francisco and Seattle (31 of 32 clubs now; Miami is next)",
+  ] },
 ];
