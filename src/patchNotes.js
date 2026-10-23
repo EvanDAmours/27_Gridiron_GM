@@ -1775,4 +1775,7 @@ export const PATCH_NOTES = [
   { v: "4.46", date: "2026-10-20", title: "BUF, SF and SEA in action", notes: [
     "Live plays: action frames for Buffalo, San Francisco and Seattle (31 of 32 clubs now; Miami is next)",
   ] },
+  { v: "4.47", date: "2026-10-20", title: "All 32 clubs in action", notes: [
+    "Live plays: Miami gets its action frames, so all 32 clubs now run, throw, block, tackle, catch, kick and return in their own uniforms, home and away",
+  ] },
 ];
