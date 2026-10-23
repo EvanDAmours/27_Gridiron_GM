@@ -1765,4 +1765,8 @@ export const PATCH_NOTES = [
     "Which ones play: every returned kickoff with live plays on All; on Key, the big returns, muffs and touchdowns plus about a third of the rest. Touchbacks don't play out",
     "The score goes up as soon as the scoring play ends, then the kickoff plays",
   ] },
+  { v: "4.44", date: "2026-10-20", title: "22 more clubs in action", notes: [
+    "Live plays: 22 more clubs now have their full action frames (running, throwing, blocking, diving tackles, catches, kicks, punts and returns): ATL, BAL, CAR, CHI, CIN, CLE, DAL, DEN, DET, GB, IND, JAX, KC, LAC, LV, MIN, NE, NYJ, PHI, PIT, TEN and WAS",
+    "The last eight (ARI, BUF, LAR, MIA, NO, SEA, SF, TB) are on the way",
+  ] },
 ];

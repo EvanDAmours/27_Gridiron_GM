@@ -73,7 +73,7 @@ for team_dir in sorted(glob.glob(f"{src}/*/")):
     poses = {}
     for kit in ("Home", "Away"):
         for st in ("A", "B", "C"):
-            f = glob.glob(f"{team_dir}{kit}/*_Set_{st}_*.png")
+            f = glob.glob(f"{team_dir}{kit}/*_Set_{st}[._]*png")
             if not f: problems.append(f"{ab} {kit} set {st}: missing"); continue
             cells, err = cut(f[0])
             if err: problems.append(f"{ab} {kit} set {st}: {err}"); continue
