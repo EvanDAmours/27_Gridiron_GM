@@ -37,8 +37,8 @@ export function liveChoice(ev, mode, lead = 0, roll = Math.random()) {
   if (mode === "Off" || !acted(ev)) return null;
   const key = keyLabel(ev, lead);
   if (mode === "All" || key) return { key };
-  // a punt plays out when it's a long return, a muff or a return touchdown
-  if (ev.k === "punt") return (ev.ret || 0) >= 20 || ev.muff || ev.retTD || roll < 0.05 ? { key: null } : null;
+  // every punt plays out (fair catches, touchbacks and the ones downed deep too), like every kickoff
+  if (ev.k === "punt") return { key: null };
   const big = (ev.pen && !ev.pen.pre) || ev.td || ev.turnover || ev.k === "int" || ev.k === "sack" || ev.type === "safety" || (ev.yards || 0) >= (ev.k === "run" ? 18 : 25);
   if (big || roll < 0.05) return { key: null };
   return null;
@@ -107,7 +107,7 @@ export function resultCard(ev, side, userSide, box = {}) {
     if (ev.retTD) { head = "TOUCHDOWN!"; tone = "gold"; line = `${nm(ev.pr, "The returner")} takes the punt all the way back`; }
     else if (ev.muff) { head = "MUFFED!"; tone = "red"; line = `${nm(ev.pr, "The returner")} drops it, and the kicking team recovers`; star = ev.punter; starSide = side; }
     else if ((ev.ret || 0) >= 20) { head = "BIG RETURN!"; tone = "green"; line = `${nm(ev.pr, "The returner")} brings it back ${ev.ret} yards`; }
-    else { star = ev.punter; starSide = side; line = ev.tb ? `Punt into the end zone: touchback` : `Punt, ${ev.gross} yards${ev.returned ? `, returned ${ev.ret}` : ", fair catch"}`; }
+    else { star = ev.punter; starSide = side; line = ev.tb ? `Punt into the end zone: touchback` : `Punt, ${ev.gross} yards${ev.returned ? `, returned ${ev.ret}` : (ev.spot ?? 0) >= 90 ? `, downed at the ${100 - ev.spot}` : ", fair catch"}`; }
   } else if (ev.td) {
     head = "TOUCHDOWN!"; tone = "gold";
     if (k === "pass") { line = `${qb} hits ${nm(ev.player, "his receiver")} for ${an(Y)} ${Y}-yard score`; star = ev.player; count = ["recTD", "TD"]; }

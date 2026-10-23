@@ -1803,4 +1803,8 @@ export const PATCH_NOTES = [
   { v: "4.52", date: "2026-10-20", title: "Bigger Lombardi on the bracket", notes: [
     "Playoff bracket: the Lombardi Trophy is now the centerpiece, about three times bigger, with a soft gold spotlight behind it and the Super Bowl numeral in large silver letters",
   ] },
+  { v: "4.53", date: "2026-10-20", title: "Every punt plays out", notes: [
+    "Every punt now plays out live, not just the big returns: fair catches, touchbacks, punts downed deep and every return, with the punter's kick, the coverage and the catch",
+    "The punt card says where a punt downed deep was downed",
+  ] },
 ];
