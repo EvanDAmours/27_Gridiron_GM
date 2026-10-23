@@ -3,6 +3,7 @@
 import React from "react";
 import { C, Bdg, TeamLogo } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
+import { winProb } from "./gameday.js";
 
 // A team color that shows up on a dark background: very dark primaries fall back to the accent.
 const lum = (hex) => { const h = String(hex || "").replace("#", ""); if (h.length < 6) return 0.5; const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
@@ -11,26 +12,51 @@ export const vivid = (t) => (lum(t?.clr) < 0.16 ? (lum(t?.ac) > 0.16 ? t.ac : "#
 const qLabel = (q) => (q >= 5 ? "OT" : `Q${q}`);
 const clk = (c) => `${Math.floor((c || 0) / 60)}:${String(Math.max(0, Math.round(c || 0) % 60)).padStart(2, "0")}`;
 
-// The score bug. live: { q, clock, poss, down, toGo, yard } while a game is on, else FINAL.
+// The score bug, broadcast style: each team on its own color panel (angled into the clock box in
+// the middle), its logo traced in a thin white line so it reads on its own color, a big score,
+// timeouts left under the name, then a strip with the down, distance and ball spot and a
+// win-probability line along the bottom. live: { q, clock, poss, down, toGo, yard, to } while a
+// game is on (yard: the offense's yard line; to: { h, a } timeouts left), else FINAL.
+const TRACE = "drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 0.6px #fff) drop-shadow(0 3px 5px #000a)";
 export function ScoreBug({ home, away, hs, as, live, final = true, label }) {
-  const side = (t, pts, me) => (
-    <div style={{ display: "flex", alignItems: "center", gap: MOBILE ? 5 : 8, background: `linear-gradient(90deg, ${t.clr} 0%, ${t.clr}cc 70%, #0b1220 100%)`, padding: MOBILE ? "6px 8px" : "6px 10px", minWidth: 0, flex: 1, position: "relative" }}>
-      <TeamLogo t={t} sz={MOBILE ? 22 : 28} />
-      <b style={{ fontSize: MOBILE ? 16 : 18, color: "#fff", letterSpacing: MOBILE ? 0.5 : 1 }}>{t.ab}</b>
-      {live?.poss === me && <span title="Ball" style={{ fontSize: MOBILE ? 11 : 13 }}>🏈</span>}
-      <span style={{ marginLeft: "auto", fontSize: MOBILE ? 22 : 26, fontWeight: 900, color: "#fff", fontVariantNumeric: "tabular-nums", textShadow: "0 2px 4px #0008" }}>{pts}</span>
-    </div>
-  );
-  return (
-    <div style={{ display: "flex", alignItems: "stretch", borderRadius: 10, overflow: "hidden", border: "1px solid #ffffff22", boxShadow: "0 6px 20px #0008", marginBottom: 12 }}>
-      {side(away, as, "a")}
-      <div style={{ background: "#020617", color: "#fff", padding: MOBILE ? "4px 8px" : "4px 12px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: MOBILE ? 68 : 86 }}>
-        {live && !final ? (<>
-          <b style={{ fontSize: 14 }}>{qLabel(live.q)} {clk(live.clock)}</b>
-          {live.down ? <span style={{ fontSize: 11, color: "#fbbf24", fontWeight: 800 }}>{["", "1st", "2nd", "3rd", "4th"][live.down]} & {live.toGo}</span> : null}
-        </>) : <b style={{ fontSize: 13, letterSpacing: 1.5 }}>{label || "FINAL"}</b>}
+  const on = live && !final;
+  const side = (t, pts, me, left) => {
+    const ball = on && live.poss === me, to = live?.to?.[me];
+    return (
+      <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: MOBILE ? 6 : 10, padding: MOBILE ? "6px 10px" : "8px 16px", flexDirection: left ? "row" : "row-reverse", background: `linear-gradient(${left ? 90 : 270}deg, ${t.clr}, ${t.clr}dd 60%, ${t.clr}99)`, clipPath: left ? "polygon(0 0,100% 0,96% 100%,0 100%)" : "polygon(4% 0,100% 0,100% 100%,0 100%)" }}>
+        <span style={{ display: "inline-flex", flexShrink: 0, filter: `${TRACE}${ball ? " drop-shadow(0 0 6px #fbbf24)" : ""}` }}><TeamLogo t={t} sz={MOBILE ? 28 : 38} /></span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: left ? "flex-start" : "flex-end", lineHeight: 1, minWidth: 0 }}>
+          <b style={{ color: "#fff", fontSize: MOBILE ? 15 : 20, letterSpacing: 1.5, whiteSpace: "nowrap" }}>{t.ab}{ball ? " 🏈" : ""}</b>
+          {on && to != null && <span style={{ display: "inline-flex", gap: 3, marginTop: 4 }}>{[0, 1, 2].map((i) => <i key={i} style={{ width: MOBILE ? 8 : 12, height: 3, borderRadius: 2, background: i < to ? "#fbbf24" : "#ffffff30" }} />)}</span>}
+        </div>
+        <span style={{ [left ? "marginLeft" : "marginRight"]: "auto", color: "#fff", fontWeight: 900, fontStyle: "italic", fontSize: MOBILE ? 28 : 40, textShadow: "0 3px 8px #0009", fontVariantNumeric: "tabular-nums" }}>{pts}</span>
       </div>
-      {side(home, hs, "h")}
+    );
+  };
+  // the situation strip and the win-probability line (home's share on the right)
+  const offT = on && (live.poss === "h" ? home : away), defT = on && (live.poss === "h" ? away : home);
+  const spot = on && live.yard != null ? (live.yard === 50 ? "the 50" : live.yard > 50 ? `${defT.ab} ${100 - live.yard}` : `${offT.ab} ${live.yard}`) : null;
+  const secs = on ? (live.q >= 5 ? Math.max(1, live.clock) * 0.25 : (4 - live.q) * 900 + (live.clock || 0)) : 0;
+  const wpH = on ? winProb(hs - as, secs, live.poss, live.yard ?? 25) : hs > as ? 1 : hs < as ? 0 : 0.5;
+  return (
+    <div style={{ borderRadius: 12, overflow: "hidden", boxShadow: "0 10px 30px #000a", border: "1px solid #ffffff1f", marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "stretch", background: "#020617" }}>
+        {side(away, as, "a", true)}
+        <div style={{ width: MOBILE ? 72 : 112, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "linear-gradient(180deg,#0f172a,#020617)" }}>
+          {on ? (<>
+            <b style={{ color: "#fff", fontSize: MOBILE ? 15 : 20, fontVariantNumeric: "tabular-nums" }}>{clk(live.clock)}</b>
+            <span style={{ color: "#94a3b8", fontSize: MOBILE ? 10 : 12, fontWeight: 800, letterSpacing: 2 }}>{qLabel(live.q)}</span>
+          </>) : <b style={{ color: "#fff", fontSize: MOBILE ? 12 : 14, letterSpacing: 2 }}>{label || "FINAL"}</b>}
+        </div>
+        {side(home, hs, "h", false)}
+      </div>
+      {on && live.down ? (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "#0b1220", padding: "4px 10px", fontSize: MOBILE ? 11 : 13, fontWeight: 800 }}>
+          <span style={{ color: "#fbbf24" }}>{["", "1st", "2nd", "3rd", "4th"][live.down]} & {live.yard != null && live.yard + live.toGo >= 100 ? "Goal" : live.toGo}</span>
+          {spot && <><span style={{ color: "#64748b" }}>·</span><span style={{ color: "#cbd5e1" }}>Ball on {spot}</span></>}
+        </div>
+      ) : null}
+      <div style={{ height: 4, display: "flex" }}><i style={{ width: `${(1 - wpH) * 100}%`, background: vivid(away), transition: "width .6s" }} /><i style={{ flex: 1, background: vivid(home) }} /></div>
     </div>
   );
 }

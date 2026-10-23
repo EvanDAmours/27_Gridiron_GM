@@ -2029,7 +2029,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         <div style={{fontSize:13,color:"#e7cf8a",letterSpacing:3,fontWeight:700}}>ONE GAME FOR EVERYTHING</div>
       </div>}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6,marginBottom:6}}>
-        <div style={{flex:"1 1 320px",minWidth:0}}>{(()=>{const _g=liveGameRef.current?.g;return<HolidayScoreTrim holiday={liveSim.holiday}><ScoreBug home={TEAMS[liveSim.h]} away={TEAMS[liveSim.a]} hs={liveScore.h} as={liveScore.a} final={liveDone} live={_g?{q:liveQtr,clock:liveClock,poss:livePoss,down:liveDown,toGo:liveToGo}:null}/></HolidayScoreTrim>;})()}</div>
+        <div style={{flex:"1 1 320px",minWidth:0}}>{(()=>{const _g=liveGameRef.current?.g;return<HolidayScoreTrim holiday={liveSim.holiday}><ScoreBug home={TEAMS[liveSim.h]} away={TEAMS[liveSim.a]} hs={liveScore.h} as={liveScore.a} final={liveDone} live={_g?{q:liveQtr,clock:liveClock,poss:livePoss,down:liveDown,toGo:liveToGo,yard:liveYard,to:_g.to}:null}/></HolidayScoreTrim>;})()}</div>
 
       </div>
       {!liveDone&&(()=>{const _o=TEAMS[livePoss==="h"?liveSim.h:liveSim.a],_d=TEAMS[livePoss==="h"?liveSim.a:liveSim.h];/* the spot as a broadcast says it: own 30, midfield, their 27 */const _spot=liveYard===50?"midfield":liveYard>50?`the ${_d.ab} ${100-liveYard}`:`the ${_o.ab} ${liveYard}`;const _mc=liveMomentum>=65?'#22c55e':liveMomentum<=35?'#ef4444':'#f59e0b';return<div style={{display:"flex",alignItems:"center",gap:"4px 14px",flexWrap:"wrap",fontSize:13.5,color:"#cbd5e1",margin:"2px 0 8px"}}>
