@@ -14,7 +14,7 @@ import Spotlight, { Dim } from "./Spotlight.jsx";
 import { ROLE_FILTERS, roleFilterMatch } from "./roleNeeds.js";
 import {
   prospectRead, scoutProspect, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, scoutsShortlist, coverage, csRank, riskLabel, gradeTone,
-  SCOUT_ROLES, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
+  SCOUT_ROLES, SCOUT_GROUPS, SCOUT_GROUP_SHORT, regionReport, onSpec, scoutGroup as scoutGroupOfPos, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
   staffWindowOpen, SCOUT_SLOTS, slotKind, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, isSmallSchool, devOf,
   myBoard, regionOf, regionName, areasOf, assignArea, AREA_KEYS, uncovered, SCOUT_CHECKPOINTS, areaSeason, lockAreas,
 } from "./scouting.js";
@@ -74,7 +74,7 @@ export function CovTag({ read }) {
   const role = read.cov;
   const c = role === "major" ? "#f5c542" : role === "minor" ? "#60a5fa" : "#64748b";
   const crew = read.scout ? [read.scout, ...(read.others || [])] : [];
-  const title = crew.length > 1 ? `${crew.length} scouts on it: ${crew.map((x) => x.name).join(", ")} all work the ${regionName(read.region)}` : read.scout ? `${SCOUT_ROLES[role].name}: ${read.scout.name} (${regionName(read.region)}, evaluation ${read.scout.eval})` : `None of your scouts works the ${regionName(read.region)}, so your front office's generalists file the reports.`;
+  const title = crew.length > 1 ? `${crew.length} scouts on it: ${crew.map((x) => x.name).join(", ")} all work the ${regionName(read.region)}` : read.scout ? `${SCOUT_ROLES[role].name}: ${read.scout.name} (${regionName(read.region)}, evaluation ${read.scout.eval}${read.scout.group ? `, specialty ${SCOUT_GROUP_SHORT[read.scout.group]}` : ""})` : `None of your scouts works the ${regionName(read.region)}, so your front office's generalists file the reports.`;
   return <span title={title} style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", padding: "2px 6px", borderRadius: 3, border: `1px solid ${c}66`, color: c, whiteSpace: "nowrap" }}>{role === "office" ? "No scout" : crew.length > 1 ? `${crew.length} scouts` : SCOUT_ROLES[role].short}</span>;
 }
 
@@ -338,9 +338,16 @@ export function YourList({ g, classYr, onDraft, canDraft, compact = false }) {
 
 // ---------- Scouting staff ----------
 
+// What each conference has in the class your scouts are working (next year's once the draft's done).
+const useRegionReport = (g) => {
+  const cls = g.dc?.[areaSeason(g.sp, g.yr)] || g.dc?.[g.yr];
+  return useMemo(() => regionReport(cls), [cls]);
+};
+
 // The regions one scouting job works, as dropdowns while the staff window's open.
 function AreaPicker({ g, slot }) {
   const s = g.scouting || {};
+  const rep = useRegionReport(g);
   const mine = areasOf(s)[slot];
   const open = staffWindowOpen(g.sp);
   const set = (i, r) => { const x = assignArea(s, g.sp, slot, i, r, g.yr); g.sm(x.msg); if (x.ok) g.setScouting(x.sc); };
@@ -350,7 +357,7 @@ function AreaPicker({ g, slot }) {
       <span style={{ fontSize: 13 }}>🗺️</span>
       {mine.map((r, i) => (
         <Select key={i} value={r} onChange={(e) => set(i, e.target.value)} aria-label={`${SCOUT_ROLES[slot].name} region ${i + 1}`} style={{ background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "4px 6px", fontSize: 13, flex: "1 1 120px", minWidth: 0 }}>
-          {AREA_KEYS.map((k) => <option key={k} value={k}>{regionName(k)}</option>)}
+          {AREA_KEYS.map((k) => <option key={k} value={k}>{regionName(k)}{rep[k]?.strong ? ` · ▲${SCOUT_GROUP_SHORT[rep[k].strong.g]}` : ""}{rep[k]?.weak ? ` ▼${SCOUT_GROUP_SHORT[rep[k].weak.g]}` : ""}</option>)}
         </Select>
       ))}
     </div>
@@ -363,6 +370,7 @@ function ScoutCard({ scout, role, children }) {
     <div style={{ background: role === "pool" ? "#0d1424" : C.cd, border: `1px ${scout ? "solid" : "dashed"} ${C.bd}`, borderRadius: 6, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", color: rc }}>{SCOUT_ROLES[role]?.name || "Available"}</span>
+        {scout?.group && <span title="His specialty: he reads this position group sharpest, and every other group a lot worse" style={{ marginLeft: "auto", fontSize: 12, fontWeight: 900, padding: "2px 8px", borderRadius: 999, background: "#0e7490", color: "#cffafe", whiteSpace: "nowrap" }}>🎯 {SCOUT_GROUP_SHORT[scout.group]}</span>}
       </div>
       {scout ? (
         <>
@@ -385,7 +393,9 @@ export function ScoutsView({ g }) {
   const s = g.scouting || {};
   const open = staffWindowOpen(g.sp);
   const act = (r) => { g.sm(r.msg); if (r.ok) g.setScouting(r.sc); };
-  const pool = [...(s.pool || [])].sort((a, b) => b.eval - a.eval);
+  const [want, setWant] = useState(null);
+  const pool = [...(s.pool || [])].filter((x) => !want || x.group === want).sort((a, b) => b.eval - a.eval);
+  const staffGroups = SCOUT_SLOTS.map((k) => s[k]?.group).filter(Boolean);
   const gap = uncovered(s);
   const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,250px),1fr))", gap: 8, marginBottom: 8 };
   return (
@@ -418,10 +428,13 @@ export function ScoutsView({ g }) {
             </tbody>
           </table>
         </div>
-        <div style={{ ...muted, marginTop: 6 }}>Assign regions before the season: a major scout works two, a minor scout one. Spread them over all six to see the whole class, or double up on one for a second opinion there. <b>Evaluation is everything</b>: a sharp scout's reads are close, he flags his regions' sleepers and red flags on his own, and he spots the special development traits before you spend a point (a good major scout often reads it on the first report). The Big Board never reorders when you scout: it's always in consensus order, and your own ranking lives in Your list.</div>
+        <div style={{ ...muted, marginTop: 6 }}>Every scout has a <b>specialty</b> (🎯): he reads that position group a little better than his rating and every other group a lot worse ({"−"}14), so a great QB scout won't find you a cornerback. Hire for the positions you need, and send those scouts where that position is deep this year. Assign regions before the season: a major scout works two, a minor scout one. Spread them over all six to see the whole class, or double up on one for a second opinion there. <b>Evaluation is everything</b>: a sharp scout's reads are close, he flags his regions' sleepers and red flags on his own, and he spots the special development traits before you spend a point (a good major scout often reads it on the first report). The Big Board never reorders when you scout: it's always in consensus order, and your own ranking lives in Your list.</div>
       </div>
       <div style={panel}>
         <div style={head}>SCOUTS AVAILABLE</div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+          {[null, "QB", "RB", "REC", "OL", "DL", "LB", "DB"].map((k) => <button key={k || "all"} onClick={() => setWant(k)} title={k ? `Scouts who specialize in ${SCOUT_GROUPS[k].toLowerCase()}${staffGroups.includes(k) ? " (you already have one)" : ""}` : "Everyone"} style={chipBtn(want === k)}>{k ? SCOUT_GROUP_SHORT[k] : "All"}{k && staffGroups.includes(k) ? " ✓" : ""}</button>)}
+        </div>
         {!open && <div style={{ background: "#78350f33", border: "1px solid #b4530966", borderRadius: 4, padding: "4px 8px", fontSize: 11, color: "#fcd34d", marginBottom: 8 }}>Your scouts are on the road for the season. You can change your staff in free agency or the preseason.</div>}
         <div style={grid}>
           {pool.map((sc) => (
@@ -848,6 +861,7 @@ export function RegionsView({ g }) {
   const s = g.scouting || {};
   const cls = g.dc[g.yr] || [];
   const ar = areasOf(s);
+  const rep = useMemo(() => regionReport(g.dc[g.yr]), [g.dc, g.yr]);
   const keys = [...AREA_KEYS, "OTH"];
   const rows = keys.map((k) => {
     const ps = cls.filter((p) => regionOf(p) === k);
@@ -859,13 +873,18 @@ export function RegionsView({ g }) {
     <div>
       <div style={panel}>
         <div style={head}>YOUR SCOUTS' REGIONS</div>
-        <div style={muted}>Each major scout works two regions and each minor scout one; set them on the Scouts tab in free agency or the preseason. Everyone from a region your scouts work gets a general read without spending a point, and how much they see through the board (sleepers, red flags, development traits) comes down to the scout's evaluation.</div>
+        <div style={muted}>Every class is different: each conference is deep at one position group and thin at another this year (▲ and ▼ below, counted from the board's top 160). Send the scouts who specialize in what you need where that position is deep. Each major scout works two regions and each minor scout one; set them on the Scouts tab in free agency or the preseason. Everyone from a region your scouts work gets a general read without spending a point, and how much they see through the board (sleepers, red flags, development traits) comes down to the scout's evaluation.</div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,300px),1fr))", gap: 8 }}>
         {rows.map((r) => (
           <div key={r.k} style={{ ...panel, marginBottom: 0, borderColor: r.on.length || r.k === "OTH" ? C.bd : "#b4530988" }}>
             <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 4 }}>{regionName(r.k)}</div>
-            <div style={{ fontSize: 13, marginBottom: 6 }}>{r.on.length ? r.on.map((sl) => <span key={sl} style={{ marginRight: 10 }}><b style={{ color: slotKind(sl) === "major" ? "#f5c542" : "#60a5fa" }}>{s[sl].name}</b> <span style={{ color: C.mt }}>({s[sl].eval})</span></span>) : <span style={{ color: "#fcd34d" }}>{r.k === "OTH" ? "Too spread out to cover: the front office reads them" : "Nobody's working it"}</span>}</div>
+            {rep[r.k] && !rep[r.k].weak && <div style={{ fontSize: 13, color: C.mt, marginBottom: 6 }}>Only {rep[r.k].n} of the board's top 160 this year: too few to call a strength.</div>}
+            {rep[r.k]?.weak && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 6, fontSize: 13, fontWeight: 800 }}>
+              {rep[r.k].strong && <span title={`${rep[r.k].strong.have} of the board's top 160 ${SCOUT_GROUPS[rep[r.k].strong.g].toLowerCase()} (about ${Math.round(rep[r.k].strong.exp)} in a normal year)`} style={{ padding: "2px 9px", borderRadius: 999, background: "#14532d", color: "#bbf7d0" }}>▲ Strength: {SCOUT_GROUP_SHORT[rep[r.k].strong.g]} ({rep[r.k].strong.have})</span>}
+              <span title={`${rep[r.k].weak.have} of the board's top 160 ${SCOUT_GROUPS[rep[r.k].weak.g].toLowerCase()} (about ${Math.round(rep[r.k].weak.exp)} in a normal year)`} style={{ padding: "2px 9px", borderRadius: 999, background: "#7f1d1d", color: "#fecaca" }}>▼ Weakness: {SCOUT_GROUP_SHORT[rep[r.k].weak.g]} ({rep[r.k].weak.have})</span>
+            </div>}
+            <div style={{ fontSize: 13, marginBottom: 6 }}>{r.on.length ? r.on.map((sl) => <span key={sl} style={{ marginRight: 10 }}><b style={{ color: slotKind(sl) === "major" ? "#f5c542" : "#60a5fa" }}>{s[sl].name}</b> <span style={{ color: C.mt }}>({s[sl].eval}, 🎯 {SCOUT_GROUP_SHORT[s[sl].group] || "—"}{s[sl].group && s[sl].group === rep[r.k]?.strong?.g ? " ✓" : ""})</span></span>) : <span style={{ color: "#fcd34d" }}>{r.k === "OTH" ? "Too spread out to cover: the front office reads them" : "Nobody's working it"}</span>}</div>
             <div style={{ fontSize: 13, color: C.mt, marginBottom: 6 }}>{r.n} prospects · {r.r1} on the board's first round{r.top ? <> · top: <b style={{ color: "#e2e8f0", cursor: "pointer" }} onClick={() => g.setSel(r.top)}>{r.top.name}</b> ({r.top.pos}, #{csRank(r.top)})</> : null}</div>
             {(r.sleepers > 0 || r.flags > 0 || r.devs > 0) && <div style={{ fontSize: 13, display: "flex", gap: 10, flexWrap: "wrap" }}>
               {r.sleepers > 0 && <span style={{ color: "#f9a8d4" }}>💎 {r.sleepers} sleeper{r.sleepers > 1 ? "s" : ""}</span>}
@@ -874,6 +893,26 @@ export function RegionsView({ g }) {
             </div>}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// Where the talent is this year: each conference's strength and weakness, and who you have there.
+function TalentMap({ g, go, card, h }) {
+  const s = g.scouting || {};
+  const rep = useRegionReport(g);
+  const ar = areasOf(s);
+  return (
+    <div style={card}>
+      <div style={{ ...h, display: "flex" }}>WHERE THE TALENT IS{g.sp === "freeagency" ? " (NEXT YEAR'S CLASS)" : ""}<span style={{ marginLeft: "auto" }}><Btn onClick={() => go("regions")} bg={C.bd} c="#e2e8f0" style={{ fontSize: 13 }}>All regions →</Btn></span></div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,230px),1fr))", gap: 8 }}>
+        {AREA_KEYS.map((k) => { const r = rep[k]; const on = SCOUT_SLOTS.filter((sl) => s[sl] && ar[sl].includes(k)); return (
+          <div key={k} style={{ background: C.bg, border: `1px solid ${on.length ? C.bd : "#b4530988"}`, borderRadius: 10, padding: "8px 10px" }}>
+            <div style={{ fontSize: 14, fontWeight: 800 }}>{regionName(k)}</div>
+            <div style={{ fontSize: 13, marginTop: 2 }}>{r?.weak ? <>{r.strong && <><b style={{ color: "#4ade80" }}>▲ {SCOUT_GROUP_SHORT[r.strong.g]}</b> <span style={{ color: C.mt }}>·</span> </>}<b style={{ color: "#f87171" }}>▼ {SCOUT_GROUP_SHORT[r.weak.g]}</b></> : <span style={{ color: C.mt }}>A small pool this year</span>}</div>
+            <div style={{ fontSize: 12, color: on.length ? "#94a3b8" : "#fcd34d", marginTop: 2 }}>{on.length ? on.map((sl) => `${s[sl].name.split(" ").slice(-1)[0]} (🎯${SCOUT_GROUP_SHORT[s[sl].group] || "—"})`).join(", ") : "No scout here"}</div>
+          </div>); })}
       </div>
     </div>
   );
@@ -943,13 +982,14 @@ export function ScoutingHQ({ g, go }) {
           <Btn onClick={() => go("regions")} bg={C.bd} c="#e2e8f0" style={{ fontSize: 14 }}>All regions →</Btn>
         </div>
       </div>
+      <TalentMap g={g} go={go} card={card} h={h} />
       <div style={card}>
         <div style={{ ...h, display: "flex" }}>YOUR SCOUTING STAFF<span style={{ marginLeft: "auto" }}><Btn onClick={() => go("scouts")} bg={C.bd} c="#e2e8f0" style={{ fontSize: 13 }}>{staffWindowOpen(g.sp) ? "Hire or change scouts →" : "Staff details →"}</Btn></span></div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 8 }}>
           {SCOUT_SLOTS.map((r) => { const sc = s[r]; return (
             <div key={r} style={{ background: C.bg, border: `1px ${sc ? "solid" : "dashed"} ${C.bd}`, borderRadius: 10, padding: "8px 10px" }}>
               <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: slotKind(r) === "major" ? "#f5c542" : "#60a5fa" }}>{SCOUT_ROLES[r].name.toUpperCase()}</div>
-              {sc ? <><div style={{ fontSize: 15, fontWeight: 800 }}>{sc.name}</div><div style={{ fontSize: 13, color: "#94a3b8" }}>{areasOf(s)[r].map(regionName).join(" · ")} · evaluation <b style={{ color: oC(sc.eval) }}>{sc.eval}</b></div></> : <div style={{ fontSize: 14, color: C.mt }}>Vacant{staffWindowOpen(g.sp) ? ": hire one" : ""}</div>}
+              {sc ? <><div style={{ fontSize: 15, fontWeight: 800 }}>{sc.name}</div><div style={{ fontSize: 13, color: "#94a3b8" }}>🎯 {SCOUT_GROUP_SHORT[sc.group] || "—"} · {areasOf(s)[r].join(" / ")} · evaluation <b style={{ color: oC(sc.eval) }}>{sc.eval}</b></div></> : <div style={{ fontSize: 14, color: C.mt }}>Vacant{staffWindowOpen(g.sp) ? ": hire one" : ""}</div>}
             </div>); })}
         </div>
       </div>
@@ -987,7 +1027,7 @@ export function ScoutingPage({ g }) {
       {v === "board" && (
         <>
           <div style={{ ...panel, display: "flex", gap: "8px 24px", flexWrap: "wrap", alignItems: "center", fontSize: 14 }}>
-            <span><span style={{ color: C.mt }}>Your scouts: </span>{SCOUT_SLOTS.map((r) => g.scouting?.[r] ? <b key={r} style={{ marginRight: 10 }}>{areasOf(g.scouting)[r].join("/")} <span style={{ color: C.mt, fontWeight: 400 }}>({SCOUT_ROLES[r].short.toLowerCase()})</span></b> : null)}{!SCOUT_SLOTS.some((r) => g.scouting?.[r]) && <span style={{ color: C.mt }}>none</span>}<Btn onClick={() => setView("scouts")} bg={C.bd} c="#cbd5e1" style={{ fontSize: 12, padding: "3px 10px" }}>Manage</Btn></span>
+            <span><span style={{ color: C.mt }}>Your scouts: </span>{SCOUT_SLOTS.map((r) => g.scouting?.[r] ? <b key={r} style={{ marginRight: 10 }}>{SCOUT_GROUP_SHORT[g.scouting[r].group] || "?"} in {areasOf(g.scouting)[r].join("/")} <span style={{ color: C.mt, fontWeight: 400 }}>({SCOUT_ROLES[r].short.toLowerCase()})</span></b> : null)}{!SCOUT_SLOTS.some((r) => g.scouting?.[r]) && <span style={{ color: C.mt }}>none</span>}<Btn onClick={() => setView("scouts")} bg={C.bd} c="#cbd5e1" style={{ fontSize: 12, padding: "3px 10px" }}>Manage</Btn></span>
             <span><span style={{ color: C.mt }}>Your picks: </span><b>{myPicks.length ? myPicks.map((pk) => `R${pk.rd}${g.sp === "draft" ? ` #${pk.overall}` : ""}`).join(", ") : "none"}</b></span>
           </div>
           <Legend />
@@ -1015,6 +1055,8 @@ function explain(read, p) {
     return `Scouting report: estimates are ${pm(read.sd)}. ${next}`;
   }
   if (read.cov !== "office" && read.devEarly) return `${read.who} already have a strong read on him: a ${read.pot} ceiling and a ${read.dev} development trait. A report (1 point) gives close estimates.`;
+  const off = read.scout && ![read.scout, ...(read.others || [])].some((x) => onSpec(x, p)) ? ` None of your scouts here specializes in ${SCOUT_GROUP_SHORT[scoutGroupOfPos(p.pos)]}, so these reads are rougher than they'd be from a specialist.` : "";
+  if (off && read.cov !== "office") return `${read.cov === "major" ? "Your major scout" : "Your minor scout"}'s general idea of him is a ${read.pot} ceiling.${off} A report (1 point) still sharpens it.`;
   if (read.cov === "major") return `Your major scout's general idea of him is a ${read.pot} ceiling. A report (1 point) gives close estimates; a full workup (2 more) gives exact ratings and his development trait.`;
   if (read.cov === "minor") return `Your minor scout's general idea of him is a ${read.pot} ceiling. A report (1 point) gives estimates and a workup (2 more) sharpens them (a good minor scout reads his development trait there too).`;
   return `None of your scouts works the ${reg}. Your front office can still file a rough report (1 point) and a follow-up (2 more), but never exact numbers or a development trait.`;

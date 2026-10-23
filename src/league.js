@@ -202,7 +202,7 @@ export function reshapeDC(dc,yr,sp,draftIdx){const out={};for(const[k,cls]of Obj
 // One generated prospect (potCap/ovrCap keep the filler of a real class below its real names).
 function genProspect(yr,pos,adj,potCap=99,ovrCap=99){const age=prospectAge();const raw=cl(Gc(55,14,32,92),adj.fl,Math.min(adj.cap,potCap));const pt=cl(raw+R(0,20),raw,potCap);
   const room=Math.round(({20:15,21:13,22:11,23:9,24:7}[age]||11)*cl(0.33+(pt-64)*0.027,0.3,1.35)*Rf(0.6,1.4));const now=Math.min(cl(pt-room,55,pt),ovrCap);
-  const p=genPlayer(pos,age,now,true);p.pot=p.truePot=pt;p.scoutedPot=cl(pt+R(-12,12),pt-5,99);p.tradeVal=playerValue({pos,age,ovr:now,pot:pt});p.ovrV=2;p.bio.college=draftCollege();p.draftYear=yr;p.bio.backstory=`From ${pick(BSTORY_CITY)}, ${p.name.split(' ')[0]} ${pick(BSTORY_ARC)}. ${pick(BSTORY_TRAIT)}`;return p;}
+  const p=genPlayer(pos,age,now,true);p.pot=p.truePot=pt;p.scoutedPot=cl(pt+R(-12,12),pt-5,99);p.tradeVal=playerValue({pos,age,ovr:now,pot:pt});p.ovrV=2;p.bio.college=draftCollege(Math.random,{yr,pos});p.draftYear=yr;p.bio.backstory=`From ${pick(BSTORY_CITY)}, ${p.name.split(' ')[0]} ${pick(BSTORY_ARC)}. ${pick(BSTORY_TRAIT)}`;return p;}
 const DC_POS_W={QB:4,RB:6,WR:9,TE:4,LT:2,LG:2,C:1,RG:2,RT:2,DL:8,LB:7,CB:6,S:5,K:1,P:1};
 export function genDC(yr,dcr){
   const dc=[];const posW=[];const w=DC_POS_W;

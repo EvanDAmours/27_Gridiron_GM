@@ -1823,4 +1823,9 @@ export const PATCH_NOTES = [
     "Use them or lose them: scouting points left when the playoffs end expire. The Combine gives a fresh budget for draft week, so you can't hoard a season's worth for draft day",
     "Live games: the field is a touch smaller, and the Record Watch and Milestone Watch rows stay on one line, so Pause, Sim to end of quarter and Finish game stay on screen without scrolling",
   ] },
+  { v: "4.57", date: "2026-10-23", title: "Scout specialties and regional strengths", notes: [
+    "Scouts have a specialty again (🎯 on their card): each one reads his own position group a little better than his rating and every other group a lot worse. A great QB scout won't find you a cornerback, so hire for the positions you need. The scouts-available list has a filter by specialty (✓ marks groups you already cover)",
+    "Every draft class leans: each conference is deep at one position group and thin at another, and it changes every year. Scouting HQ has a new Where the Talent Is card, the Regions tab shows each conference's ▲ strength and ▼ weakness with counts from the board's top 160, and the region pickers on the Scouts tab list them too. Send your specialists where their position is deep",
+    "The prospect card says when none of the scouts working his region specializes in his position",
+  ] },
 ];

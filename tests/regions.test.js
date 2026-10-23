@@ -89,3 +89,29 @@ test("your scouts' board moves the sleepers they've found up, and follows the co
 test("two scouting checkpoints a season: the trade deadline and the end of the regular season", () => {
   assert.deepEqual(SCOUT_CHECKPOINTS, [TRADE_DEADLINE_WEEK, 18]);
 });
+
+import { effEval, regionTilt, regionReport, scoutGroup } from "../src/scouting.js";
+test("a scout reads his specialty sharpest: a great scout on the wrong position group won't find your cornerbacks", () => {
+  const cs = classes(6, 2500);
+  const err = (group) => {
+    const sc = { major: { id: "a", name: "a", eval: 88, group }, major2: { id: "b", name: "b", eval: 88, group }, minor: { id: "c", name: "c", eval: 88, group }, minor2: { id: "d", name: "d", eval: 88, group } };
+    let e = 0, n = 0, gems = 0, found = 0;
+    for (const c of cs) for (const p of c.filter((x) => scoutGroup(x.pos) === "DB")) { const r = prospectRead(sc, p); if (r.potV == null) continue; e += Math.abs(r.potV - p.truePot); n++; if (p.gem) { gems++; if (r.sleeper) found++; } }
+    return { e: e / n, found, gems };
+  };
+  const spec = err("DB"), off = err("QB");
+  assert.ok(off.e > spec.e + 0.8, `off-specialty error ${off.e.toFixed(2)} vs ${spec.e.toFixed(2)}`);
+  assert.ok(spec.found >= off.found);
+  assert.equal(effEval({ eval: 80, group: "DB" }, { pos: "CB" }), 84);
+  assert.equal(effEval({ eval: 80, group: "DB" }, { pos: "QB" }), 66);
+});
+
+test("every class leans: each conference is deep at one group and thin at another, and the board shows it", () => {
+  let hits = 0, tot = 0;
+  for (let y = 2600; y < 2608; y++) {
+    const t = regionTilt(y), rep = regionReport(genDC(y));
+    assert.equal(new Set(Object.values(t).map((x) => x.up)).size, 6, "six different strengths");
+    for (const k of ["SEC", "B1G", "ACC", "B12"]) { tot++; if (rep[k].strong.g === t[k].up) hits++; }
+  }
+  assert.ok(hits / tot > 0.6, `${hits}/${tot} strengths show on the board`);
+});

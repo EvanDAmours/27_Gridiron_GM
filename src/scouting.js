@@ -60,12 +60,14 @@ export const COMBINE_INTERVIEWS = 4;
 // ---------- Scouting staff ----------
 
 export const SCOUT_GROUPS = { QB: "Quarterbacks", RB: "Running backs", REC: "Receivers & tight ends", OL: "Offensive line", DL: "Defensive line", LB: "Linebackers", DB: "Defensive backs", ST: "Specialists" };
+export const SCOUT_GROUP_SHORT = { QB: "QB", RB: "RB", REC: "WR/TE", OL: "OL", DL: "DL", LB: "LB", DB: "DB", ST: "K/P" };
+const HIRE_GROUPS = ["QB", "RB", "REC", "OL", "DL", "LB", "DB"];
 const OL = new Set(["LT", "LG", "C", "RG", "RT"]);
 export const scoutGroup = (pos) =>
   pos === "QB" ? "QB" : pos === "RB" ? "RB" : pos === "WR" || pos === "TE" ? "REC" : OL.has(pos) ? "OL" : pos === "DL" ? "DL" : pos === "LB" ? "LB" : pos === "CB" || pos === "S" ? "DB" : "ST";
 
-const MAJOR_DESC = "Works two regions in depth: sharp reports, exact ratings after a full workup, and development traits.";
-const MINOR_DESC = "Works one region more loosely: a general idea of every prospect there and rougher reports. A good one can read development traits on a full workup.";
+const MAJOR_DESC = "Works two regions in depth: sharp reports, exact ratings after a full workup, and development traits. Sharpest at his specialty position group.";
+const MINOR_DESC = "Works one region more loosely: a general idea of every prospect there and rougher reports. A good one can read development traits on a full workup, at his specialty.";
 export const SCOUT_ROLES = {
   major: { name: "Major scout", short: "Major", desc: MAJOR_DESC },
   major2: { name: "Second major scout", short: "Major 2", desc: MAJOR_DESC },
@@ -103,12 +105,13 @@ const BACKGROUNDS = [
   (r) => `Ex-${r.pick(["Senior Bowl", "East-West Shrine Bowl"])} personnel staffer`,
 ];
 
-function makeScout(key, evalMean, faceFn) {
+function makeScout(key, group, evalMean, faceFn) {
   const r = stream(key);
   return {
     id: `sc${hashStr(key).toString(36)}`,
     name: `${r.pick(SCOUT_FIRST)} ${r.pick(SCOUT_LAST)}`,
     age: r.int(34, 67),
+    group,
     eval: clamp(Math.round(r.gauss(evalMean, 9)), 50, 95),
     trait: r.chance(0.55) ? r.pick(Object.keys(SCOUT_TRAITS)) : null,
     bg: r.pick(BACKGROUNDS)(r),
@@ -116,19 +119,19 @@ function makeScout(key, evalMean, faceFn) {
   };
 }
 
-// Scouts looking for work: a few good ones, more middling ones.
+// Scouts looking for work: two for each position group, one usually sharper than the other.
 export function refreshScoutPool(sc, year, faceFn) {
   const n = (sc.poolN || 0) + 1;
-  const pool = Array.from({ length: 12 }, (_, i) => makeScout(`${year}|${n}|pool|${i}`, i < 4 ? 79 : i < 8 ? 71 : 64, faceFn));
+  const pool = [...HIRE_GROUPS, ...HIRE_GROUPS].map((g, i) => makeScout(`${year}|${n}|pool|${i}`, g, i < HIRE_GROUPS.length ? 77 : 68, faceFn));
   return { ...sc, pool, poolN: n };
 }
 
 export function newScouting(year, faceFn, list = { yr: year, ids: [] }) {
   const sc = {
-    major: makeScout(`${year}|staff|major|${Math.random()}`, 70, faceFn),
-    major2: makeScout(`${year}|staff|major2|${Math.random()}`, 68, faceFn),
-    minor: makeScout(`${year}|staff|minor|${Math.random()}`, 64, faceFn),
-    minor2: makeScout(`${year}|staff|minor2|${Math.random()}`, 62, faceFn),
+    major: makeScout(`${year}|staff|major|${Math.random()}`, "QB", 70, faceFn),
+    major2: makeScout(`${year}|staff|major2|${Math.random()}`, "DL", 68, faceFn),
+    minor: makeScout(`${year}|staff|minor|${Math.random()}`, "DB", 64, faceFn),
+    minor2: makeScout(`${year}|staff|minor2|${Math.random()}`, "REC", 62, faceFn),
     pool: [],
     poolN: Math.floor(Math.random() * 1e6),
     pts: SCOUT_PTS_START,
@@ -151,7 +154,7 @@ export function hireScout(sc, sp, scoutId, role) {
   const old = sc[role];
   const pool = sc.pool.filter((x) => x.id !== s.id);
   if (old) pool.push(old);
-  const msg = `${s.name} is your new ${SCOUT_ROLES[role].name.toLowerCase()}, working ${areaList(areasOf(sc)[role])}.`;
+  const msg = `${s.name} (${SCOUT_GROUPS[s.group]?.toLowerCase() || "no specialty"}) is your new ${SCOUT_ROLES[role].name.toLowerCase()}, working ${areaList(areasOf(sc)[role])}.`;
   return { ok: true, msg, sc: { ...sc, [role]: s, pool } };
 }
 
@@ -249,12 +252,36 @@ const REGION_OF = Object.fromEntries(Object.entries(REGIONS).flatMap(([k, r]) =>
 // Where draft prospects come from, roughly like the real draft (the SEC and Big Ten produce the most).
 export const FCS_SCHOOLS = ["North Dakota State", "South Dakota State", "Montana", "Montana State", "Villanova", "Delaware", "Furman", "Jackson State", "Sacramento State", "Illinois State"];
 const REGION_WEIGHT = [["SEC", 26], ["B1G", 24], ["ACC", 15], ["B12", 14], ["PAC", 6], ["G5", 12], ["OTH", 3]];
-export function draftCollege(rand = Math.random) {
-  let x = rand() * 100;
-  for (const [k, w] of REGION_WEIGHT) { if ((x -= w) <= 0) { const list = k === "OTH" ? FCS_SCHOOLS : REGIONS[k].schools; return list[Math.floor(rand() * list.length)]; } }
+// Each class leans: every conference is deep at one position group and thin at another, so where
+// you send your scouts (and which specialists) depends on the year. Pass the prospect's year and
+// position and his school follows the lean.
+export function regionTilt(yr) {
+  const r = stream(`tilt|${yr}`);
+  const g = [...HIRE_GROUPS];
+  for (let i = g.length - 1; i > 0; i--) { const j = Math.floor(r.next() * (i + 1)); [g[i], g[j]] = [g[j], g[i]]; }
+  return Object.fromEntries(AREA_KEYS.map((k, i) => [k, { up: g[i], down: g[(i + 3) % g.length] }]));
+}
+export function draftCollege(rand = Math.random, lean) {
+  const tilt = lean?.yr != null ? regionTilt(lean.yr) : null, grp = lean?.pos ? scoutGroup(lean.pos) : null;
+  const ws = REGION_WEIGHT.map(([k, w]) => [k, tilt?.[k] ? w * (tilt[k].up === grp ? 2.6 : tilt[k].down === grp ? 0.3 : 1) : w]);
+  let x = rand() * ws.reduce((t, [, w]) => t + w, 0);
+  for (const [k, w] of ws) { if ((x -= w) <= 0) { const list = k === "OTH" ? FCS_SCHOOLS : REGIONS[k].schools; return list[Math.floor(rand() * list.length)]; } }
   return REGIONS.SEC.schools[0];
 }
 export const regionOf = (p) => REGION_OF[p?.bio?.college] || "OTH";
+// What each conference has this year, read off the class itself: among the board's top 160, the
+// position group it has the most of (against its usual share) and the one it has the least of.
+export function regionReport(cls) {
+  const top = (cls || []).filter((p) => scoutGroup(p.pos) !== "ST").sort((a, b) => csRank(a) - csRank(b)).slice(0, 160);
+  const N = top.length || 1, byG = {}, byR = {}, n = {};
+  for (const p of top) { const g = scoutGroup(p.pos), r = regionOf(p); byG[g] = (byG[g] || 0) + 1; byR[r] = (byR[r] || 0) + 1; n[`${r}|${g}`] = (n[`${r}|${g}`] || 0) + 1; }
+  return Object.fromEntries(AREA_KEYS.map((r) => {
+    const z = HIRE_GROUPS.map((g) => { const have = n[`${r}|${g}`] || 0, exp = ((byR[r] || 0) * (byG[g] || 0)) / N; return { g, have, exp, z: (have - exp) / Math.sqrt(exp + 1) }; }).sort((a, b) => b.z - a.z);
+    // too few of the top prospects to call a lean
+    const few = (byR[r] || 0) < 8;
+    return [r, { n: byR[r] || 0, strong: few || !z[0].have ? null : z[0], weak: few ? null : z[z.length - 1] }];
+  }));
+}
 export const regionName = (k) => REGIONS[k]?.name || "Independents & FCS";
 // ---------- What your scouts know ----------
 
@@ -266,7 +293,7 @@ const OFFICE_EVAL = 60;
 export function coverage(sc, p) {
   const reg = regionOf(p), ar = areasOf(sc);
   const on = SCOUT_SLOTS.filter((k) => sc?.[k] && ar[k].includes(reg)).map((k) => ({ kind: slotKind(k), scout: sc[k] }))
-    .sort((a, b) => (a.kind === b.kind ? b.scout.eval - a.scout.eval : a.kind === "major" ? -1 : 1));
+    .sort((a, b) => (a.kind === b.kind ? effEval(b.scout, p) - effEval(a.scout, p) : a.kind === "major" ? -1 : 1));
   if (!on.length) return { role: "office", scout: null };
   const others = on.slice(1).map((x) => x.scout);
   return { role: on[0].kind, scout: on[0].scout, ...(others.length ? { second: others[0], others } : {}) };
@@ -274,10 +301,16 @@ export function coverage(sc, p) {
 
 // second: another scout (or a list of them) in the same region. More eyes read better than the
 // best one alone, and anyone's specialty counts.
+// Every scout has a position group he knows best. There he reads a little sharper than his rating;
+// outside it he's a generalist and reads a lot worse. A great scout on the wrong position won't
+// find you your cornerback.
+export const SPEC_BONUS = 4, OFF_SPEC = 14;
+export const onSpec = (scout, p) => !!scout?.group && scout.group === scoutGroup(p.pos);
+export const effEval = (scout, p) => scout.eval + (!scout.group ? 0 : onSpec(scout, p) ? SPEC_BONUS : -OFF_SPEC);
 export function scoutEval(scout, p, second) {
   if (!scout) return OFFICE_EVAL;
   const more = [].concat(second || []);
-  let e = more.length ? Math.max(scout.eval, ...more.map((x) => x.eval)) + 6 + 2 * (more.length - 1) : scout.eval;
+  let e = more.length ? Math.max(effEval(scout, p), ...more.map((x) => effEval(x, p))) + 6 + 2 * (more.length - 1) : effEval(scout, p);
   const has = (t) => scout.trait === t || more.some((x) => x.trait === t);
   if (has("sharp")) e += 8;
   if (has("smallschool") && isSmallSchool(p)) e += 12;
@@ -1037,7 +1070,7 @@ export function loadScouting(d, faceFn) {
     if (d.myScout) {
       const o = d.myScout;
       const group = OLD_TRAIT_GROUP[o.trait] || "QB";
-      sc.major = { id: o.id || "scold", name: o.name, age: 50, eval: clamp(Math.round(((o.evaluation || 70) + (o.accuracy || 70)) / 2), 50, 95), trait: null, bg: "Holdover from the old front office", face: o.face || null };
+      sc.major = { id: o.id || "scold", name: o.name, age: 50, group, eval: clamp(Math.round(((o.evaluation || 70) + (o.accuracy || 70)) / 2), 50, 95), trait: null, bg: "Holdover from the old front office", face: o.face || null };
     }
     const wk = d.sp === "regular" ? d.wk || 0 : d.sp === "preseason" ? 0 : 18;
     sc = { ...sc, pts: SCOUT_PTS_START, wkPaid: 0 };
@@ -1046,8 +1079,12 @@ export function loadScouting(d, faceFn) {
   // Saves from the two-scout days get a second major and a second minor scout.
   if (!("major2" in sc) && !("minor2" in sc)) {
     const salt = `${d.yr || 2026}|staff2|${sc.poolN || 0}`;
-    sc = { ...sc, major2: makeScout(`${salt}|major2`, 68, faceFn), minor2: makeScout(`${salt}|minor2`, 62, faceFn) };
+    const free = HIRE_GROUPS.filter((g) => !staffOf(sc).some((x) => x.group === g));
+    sc = { ...sc, major2: makeScout(`${salt}|major2`, free[0] || "DL", 68, faceFn), minor2: makeScout(`${salt}|minor2`, free[1] || "REC", 62, faceFn) };
   }
+  // Saves from 4.56: scouts without a specialty get one.
+  const giveGroup = (x) => (x && !x.group ? { ...x, group: HIRE_GROUPS[hashStr(String(x.id)) % HIRE_GROUPS.length] } : x);
+  sc = { ...sc, ...Object.fromEntries(SCOUT_SLOTS.map((k) => [k, giveGroup(sc[k])])), pool: (sc.pool || []).map(giveGroup) };
   // Saves from the area-trip days: the trips and their points are gone (scouts work regions now).
   if ("rpts" in sc || "regions" in sc || "lost" in sc) {
     const { rpts, regions, regionsYr, lost, ...rest } = sc; // eslint-disable-line no-unused-vars

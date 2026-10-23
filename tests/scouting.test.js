@@ -25,7 +25,8 @@ test("a new staff has two major and two minor scouts covering all six regions, a
   assert.ok(sc.major && sc.minor && sc.major2 && sc.minor2);
   assert.deepEqual(uncovered(sc), []);
   assert.equal(sc.pts, SCOUT_PTS_START);
-  assert.equal(sc.pool.length, 12);
+  assert.equal(sc.pool.length, 14);
+  assert.ok(sc.pool.every((x) => x.group), "every scout has a specialty");
 });
 
 test("staff changes only in the preseason and free agency; a new hire takes over the job's regions", () => {
