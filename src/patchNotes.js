@@ -1800,4 +1800,7 @@ export const PATCH_NOTES = [
     "The other side accepts or declines, whichever is better for them. A play that comes back leaves nothing in the stats, and a personal foul on a touchdown carries over to the kickoff",
     "On the field: the play acts out as it happened, a yellow flag lands at the feet of the player who committed it, and the card names the foul and what it cost",
   ] },
+  { v: "4.52", date: "2026-10-20", title: "Bigger Lombardi on the bracket", notes: [
+    "Playoff bracket: the Lombardi Trophy is now the centerpiece, about three times bigger, with a soft gold spotlight behind it and the Super Bowl numeral in large silver letters",
+  ] },
 ];

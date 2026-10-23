@@ -46,9 +46,11 @@ function Game({ teams, pb, g, ui, onBox, compact }) {
 function SbHead({ yr, sz = 54 }) {
   const n = yr ? sbName(sbNumber(yr)).replace("Super Bowl ", "") : "";
   return (
-    <div style={{ textAlign: "center", marginBottom: 8 }}>
-      <img src={lombardi} alt="Super Bowl" style={{ height: sz, objectFit: "contain", filter: "drop-shadow(0 4px 10px #000a)" }} />
-      {n && <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 2, background: "linear-gradient(180deg,#f8fafc,#94a3b8 55%,#e2e8f0)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>{n}</div>}
+    <div style={{ position: "relative", textAlign: "center", marginBottom: 8 }}>
+      {/* a soft spotlight behind the trophy */}
+      <div aria-hidden style={{ position: "absolute", left: "50%", top: "46%", width: sz * 1.3, height: sz * 1.1, transform: "translate(-50%, -50%)", background: `radial-gradient(ellipse at center, ${C.gd}38, ${C.gd}10 45%, transparent 70%)`, pointerEvents: "none" }} />
+      <img src={lombardi} alt="Super Bowl" style={{ position: "relative", height: sz, objectFit: "contain", filter: "drop-shadow(0 10px 18px #000c) drop-shadow(0 0 14px #fde68a33)" }} />
+      {n && <div style={{ position: "relative", fontSize: Math.max(15, Math.round(sz * 0.15)), fontWeight: 900, letterSpacing: Math.max(2, Math.round(sz * 0.03)), lineHeight: 1.1, marginTop: 2, background: "linear-gradient(180deg,#ffffff,#cbd5e1 40%,#94a3b8 60%,#e2e8f0)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", filter: "drop-shadow(0 2px 3px #000a)" }}>{n}</div>}
     </div>
   );
 }
@@ -117,7 +119,7 @@ export default function PlayoffBracket({ pb, teams, ui, onBox, onSim, onPlay, ti
                 {/* a blank heading the height of the others, so the game lines up with the conference finals */}
                 <div aria-hidden style={{ fontSize: 13, fontWeight: 900, marginBottom: 8, visibility: "hidden" }}>SUPER BOWL</div>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <div style={{ position: "relative" }}><div style={{ position: "absolute", bottom: "100%", left: 0, right: 0 }}><SbHead yr={yr} sz={64} /></div></div>
+                  <div style={{ position: "relative" }}><div style={{ position: "absolute", bottom: "100%", left: 0, right: 0 }}><SbHead yr={yr} sz={190} /></div></div>
                   <div style={{ border: `2px solid ${C.gd}`, borderRadius: 10, padding: 3, boxShadow: `0 0 18px ${C.gd}33` }}><Game teams={teams} pb={pb} g={sb} ui={ui} onBox={onBox} /></div>
                 </div>
               </div>
