@@ -1171,3 +1171,21 @@ export function scoutsShortlist(sc, cls, slots, { isNeed = () => false, max = 8 
     return { p, slot, why, interview, workout };
   });
 }
+
+// The best-fit assignment: each scout goes where his specialty is a region's strength, best
+// scouts first; whoever's left covers the regions nobody has yet (biggest first). rep is
+// regionReport(cls). Returns areas in the shape areasOf gives.
+export function suggestAreas(sc, rep) {
+  const slots = SCOUT_SLOTS.filter((k) => sc?.[k]).sort((a, b) => sc[b].eval - sc[a].eval);
+  const out = Object.fromEntries(SCOUT_SLOTS.map((k) => [k, []])), used = new Set();
+  const bySize = [...AREA_KEYS].sort((a, b) => (rep?.[b]?.n || 0) - (rep?.[a]?.n || 0));
+  for (const k of slots) for (let i = 0; i < areaCap(k); i++) {
+    const fit = bySize.find((r) => !used.has(r) && rep?.[r]?.strong?.g === sc[k].group);
+    if (fit) { out[k].push(fit); used.add(fit); }
+  }
+  for (const k of slots) while (out[k].length < areaCap(k)) {
+    const r = bySize.find((x) => !used.has(x)) || bySize.find((x) => !out[k].includes(x));
+    out[k].push(r); used.add(r);
+  }
+  return areasOf({ ...sc, areas: out });
+}

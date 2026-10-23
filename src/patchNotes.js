@@ -1837,4 +1837,7 @@ export const PATCH_NOTES = [
     "Roster: much denser list (about twice as many players on screen), grouped by position, with a player card on the right for the selected player. Double-click a row for the full card",
     "League tab: a new front page with this week's schedule and every team's record, and league leaders (passing, rushing, receiving, sacks, interceptions, tackles) on the right, no scrolling. Franchise History and League History are a click away",
   ] },
+  { v: "4.59", date: "2026-10-23", title: "Simpler regions screen", notes: [
+    "Regions screen simplified: a one-line explanation, one row per scout (what position he knows and which regions he works, with a ✓ when it matches what the region is deep at), and one card per region showing the single position it is deep at this year, who you have there, and its top 3 prospects. A new Auto-assign best fit button sends each scout where his specialty is deep",
+  ] },
 ];
