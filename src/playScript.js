@@ -413,6 +413,7 @@ function buildKickoff(ev, slots, R) {
   // the run-up, the kick, and he trails the play down the middle as the safety valve
   F[kicker.key] = path([0, kicker.x, kicker.y], [0.3, kicker.x, kicker.y], [tKick, los - 0.7, 0.5], [tKick + 0.45, los + 1.5, 0.4], [tKick + 2.4, los + 16, 0]);
   const flightPos = (t) => { const u = clamp((t - tKick) / flight, 0, 1); return { x: lerp(los, cx, u), y: lerp(0, cy, u), h: 0.3 + Math.sin(Math.PI * u) * 15 }; };
+  if (ev.onside) return buildOnside(ev, slots, R, { off, def, kicker, tKick, los, F, who, by, near });
   const muff = !!ev.muff && !tb, td = !!ev.td && !tb;
   // the return: up the field (toward -x) to where the engine says it ended
   let carrier = null, tEnd = tLand + 0.6, end = [cx - 1.5, cy + 2];
@@ -477,4 +478,39 @@ function buildKickoff(ev, slots, R) {
   for (const s of slots) { const g = F[s.key]; f[s.key] = (t) => onField(g(Math.min(t, Math.max(freeze, T - 0.2)))); }
   const ballOut = (t) => { const b = ball(t); return b.held ? b : { ...b, ...((([x, y]) => ({ x, y }))(onField([b.x, b.y]))) }; };
   return { T, f, ball: ballOut, down, who, m, hop: td ? { key: ret.key, at: tEnd } : null, stars: [...new Set(stars)], catchAt: null, tEnd };
+}
+
+// An onside kick: the kicker squibs it off the tee toward one sideline, it hops along the turf for
+// ten-odd yards, both units crash in on it and someone comes up with it at the bottom of the pile
+// (the kicking team, ev.recovered, about one time in eight).
+function buildOnside(ev, slots, R, { off, def, kicker, tKick, los, F, who, by, near }) {
+  const down = {}, stars = [];
+  const side = R() < 0.5 ? -1 : 1, sx = los + 10.5 + R() * 2, sy = side * (8 + R() * 6), roll = 1.25, tLand = tKick + roll;
+  F[kicker.key] = path([0, kicker.x, kicker.y], [0.3, kicker.x, kicker.y], [tKick, los - 0.7, 0.5], [tKick + 0.45, los + 1.5, 0.4], [tLand + 0.6, los + 7, sy * 0.4]);
+  const ball = (t) => {
+    if (t < tKick) return { x: los, y: 0, h: 0.25 };
+    const u = clamp((t - tKick) / roll, 0, 1);
+    return { x: lerp(los, sx, u), y: lerp(0, sy, u), h: Math.abs(Math.sin(u * Math.PI * 3)) * (1.8 * (1 - u) + 0.15) };
+  };
+  // everyone near it crashes in on the ball; the one who comes up with it dives on it
+  const pool = ev.recovered ? off.filter((s) => s !== kicker) : def;
+  const rec = near(pool, sx, sy) || pool[0];
+  const tRec = tLand + 0.25;
+  for (const s of [...off, ...def]) {
+    if (s === kicker) continue;
+    const d = Math.hypot(s.x - sx, s.y - sy), go = s === rec ? [sx, sy] : [sx + (R() - 0.5) * 5, sy + (R() - 0.5) * 6];
+    const arrive = Math.max(tLand - 0.2, 0.5 + d / 9);
+    F[s.key] = d < 26 || s === rec ? path([0, s.x, s.y], [0.5, s.x, s.y], [arrive, go[0], go[1]]) : path([0, s.x, s.y], [arrive, lerp(s.x, go[0], 0.4), lerp(s.y, go[1], 0.4)]);
+    if (s !== rec && d < 12 && R() < 0.45) down[s.key] = arrive + 0.1 + R() * 0.3; // the pile
+  }
+  F[rec.key] = toward(F[rec.key], Math.max(0.6, tLand - 0.4), [sx, sy], tRec);
+  down[rec.key] = tRec;
+  const ballOut = (t) => (t >= tRec ? { held: rec.key } : (([x, y]) => ({ ...ball(t), x, y }))(onField([ball(t).x, ball(t).y])));
+  who[kicker.key] = ev.kicker; stars.push(rec.key);
+  const tEnd = tRec, T = tRec + 1.4;
+  const m = { k: "ko", carrier: null, tackler: null, tE: tLand, tEnd, td: false, recov: rec.key, recovT: tRec, special: { k: "ko", kicker: kicker.key, returner: null, tKick, tLand, catches: false, release: 0, pairs: {} } };
+  for (const s of slots) if (!F[s.key]) F[s.key] = path([0, s.x, s.y]);
+  const f = {};
+  for (const s of slots) { const g = F[s.key]; f[s.key] = (t) => onField(g(Math.min(t, T - 0.2))); }
+  return { T, f, ball: ballOut, down, who, m, hop: null, stars, catchAt: null, tEnd };
 }

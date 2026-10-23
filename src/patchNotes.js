@@ -1789,4 +1789,8 @@ export const PATCH_NOTES = [
     "Spikes: late in a half with the clock running and no timeouts left, the offense hurries up and spikes it to stop the clock (it costs a down and counts as an incomplete pass), then kicks or keeps driving",
     "Spikes play out live: the hurry-up snap and the ball fired into the turf",
   ] },
+  { v: "4.50", date: "2026-10-20", title: "Onside kicks", notes: [
+    "Onside kicks: behind by up to two scores in the last 2:30 of the fourth quarter, the kicking team tries one, and about one in eight is recovered. Recovered, they keep the ball near midfield; if not, the other team starts on their side of it",
+    "Onside kicks play out live: the squib off the tee hopping along the turf, both units crashing in and the pile, with ONSIDE KICK RECOVERED! when it works",
+  ] },
 ];

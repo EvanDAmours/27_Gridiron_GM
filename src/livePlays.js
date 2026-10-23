@@ -51,6 +51,7 @@ export function liveChoice(ev, mode, lead = 0, roll = Math.random()) {
 export function kickoffPlay(ev, offSide, mode) {
   const ko = ev?.ko;
   if (!ko || mode === "Off" || ko.side !== offSide) return null;
+  if (ko.onside) return { k: "ko", yard: 35, qtr: ev.qtr, clock: ev.clock, kicker: ko.kicker, onside: true, recovered: !!ko.recovered, spot: ko.spot, kickAb: null };
   // a touchback: it comes down in the end zone and he takes a knee there
   if (ko.tb) return { k: "ko", yard: 35, qtr: ev.qtr, clock: ev.clock, kicker: ko.kicker, kr: null, catchAt: -4, spot: 35, tb: true, muff: false, td: false, ret: 0 };
   const ret = (ko.spot ?? 0) - (ko.catchAt ?? 0);
@@ -93,7 +94,8 @@ export function resultCard(ev, side, userSide, box = {}) {
     line = `${qb} takes a knee`; tone = "grey";
   } else if (k === "ko") {
     // side: the kicking team
-    if (ev.tb) { line = `${nm(ev.kicker, "The kicker")} boots it into the end zone: touchback`; tone = "grey"; star = ev.kicker; }
+    if (ev.onside) { head = ev.recovered ? "ONSIDE KICK RECOVERED!" : ""; tone = ev.recovered ? "gold" : "grey"; line = ev.recovered ? "The kicking team comes up with the onside kick" : "The onside kick is recovered by the hands team"; starSide = ev.recovered ? side : def; }
+    else if (ev.tb) { line = `${nm(ev.kicker, "The kicker")} boots it into the end zone: touchback`; tone = "grey"; star = ev.kicker; }
     else if (ev.td) { head = "TOUCHDOWN!"; tone = "gold"; line = `${nm(ev.kr, "The returner")} takes the kickoff all the way back`; star = ev.kr; starSide = def; }
     else if (ev.muff) { head = "FUMBLE!"; tone = "red"; line = `${nm(ev.kr, "The returner")} coughs up the kickoff, and the kicking team recovers`; }
     else { star = ev.kr; starSide = def; if (ev.ret >= 35) { head = "BIG RETURN!"; tone = "green"; } line = `${nm(ev.kr, "The returner")} brings it back ${ev.ret} yards to the ${ev.spot > 50 ? `${100 - ev.spot}` : ev.spot}`; }

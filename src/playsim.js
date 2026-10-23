@@ -466,6 +466,17 @@ function kickoff(g, ev, depth = 0) {
   const R = g.sides[recv], K = g.sides[kick];
   // the play's kickoff, for the field to act out (LivePlay.jsx): only the first one a play leads to
   const ko = ev && !ev.ko ? (ev.ko = { side: kick, kicker: K?.k || null, tb: true }) : null;
+  // The onside kick: behind by two scores or less in the last couple of minutes (the only time the
+  // rules allow one), the kicking team tries to get it back. About one in eight works.
+  const down = g.score[recv] - g.score[kick];
+  if (g.qtr === 4 && !g.ot && down > 0 && down <= 16 && g.clock <= 150 && R) {
+    const got = rand() < 0.12, spot = 35 + 10 + Math.round(rand() * 3);
+    if (ko) Object.assign(ko, { tb: false, onside: true, recovered: got, spot });
+    if (ev) ev.text += got ? ` Onside kick... RECOVERED by the ${sideName(g, kick)}!` : ` Onside kick, recovered by the ${sideName(g, recv)}.`;
+    if (got) { g.yard = spot; g.down = 1; g.toGo = 10; g.stats[kick].drives++; }
+    else newPossession(g, 100 - spot);
+    return;
+  }
   newPossession(g, 35);
   if (rand() < 0.3 || !R) return; // touchback
   const r = R.krR ?? 80, catchAt = Math.round(rand() * 8);
