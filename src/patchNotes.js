@@ -1816,4 +1816,11 @@ export const PATCH_NOTES = [
   { v: "4.55", date: "2026-10-20", title: "Field view or action cam", notes: [
     "Live games: pick your camera. Field view keeps the whole field in frame while a play plays out, like the All-22; Action cam pushes in on the ball and follows it (as before). On a computer it's under Camera in the live settings; on a phone, tap the 🎥 button. Your choice is remembered",
   ] },
+  { v: "4.56", date: "2026-10-23", title: "Scouting by region, two check-ins a season", notes: [
+    "Scouting overhaul: your scouts now work regions, not position groups. Before the season (in free agency or the preseason) send each major scout to two regions and each minor scout to one: six assignments for the SEC, Big Ten, ACC, Big 12, Pac-12 & Mountain West and the Group of Five. Spread them over all six or double up for a second opinion. Area trips and area points are gone",
+    "A scout's evaluation rating now matters a lot: a sharp scout's reads are much closer, he flags his regions' sleepers and red flags on his own, and he spots star, superstar and generational development traits before you spend a point. A good major scout often reads the dev trait on the first report, and a good minor scout on a full workup",
+    "Fewer scouting stops: the sim now pauses for scouting only twice, at the trade deadline (week 9) and after week 18, instead of every four weeks. Scouting points no longer cap out during the season",
+    "Use them or lose them: scouting points left when the playoffs end expire. The Combine gives a fresh budget for draft week, so you can't hoard a season's worth for draft day",
+    "Live games: the field is a touch smaller, and the Record Watch and Milestone Watch rows stay on one line, so Pause, Sim to end of quarter and Finish game stay on screen without scrolling",
+  ] },
 ];

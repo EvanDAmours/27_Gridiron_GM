@@ -1,64 +1,91 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { genDC } from "../src/league.js";
-import { scoutRegion, regionOf, prospectRead, regionRead, creditWeeks, startScoutingYear, RTRIP_COST, MAX_TRIPS, RPTS_START, RPTS_WEEKLY, RPTS_COMBINE } from "../src/scouting.js";
+import { regionOf, prospectRead, coverage, areasOf, assignArea, uncovered, areaCap, AREA_KEYS, myBoard, csRank, scoutProspect, SCOUT_CHECKPOINTS } from "../src/scouting.js";
+import { TRADE_DEADLINE_WEEK } from "../src/aiTrades.js";
 
-const cls = genDC(2030);
-const sec = cls.filter((p) => regionOf(p) === "SEC");
+const mk = (id, ev, trait = null) => ({ id, name: id, eval: ev, trait });
+const staff = (ev, areas) => ({ major: mk("a", ev), major2: mk("b", ev), minor: mk("c", ev), minor2: mk("d", ev), ...(areas ? { areas } : {}) });
+const classes = (n, y0) => Array.from({ length: n }, (_, i) => genDC(y0 + i));
 
-test("a trip gives a rough read on every prospect in the region, and only there", () => {
-  let sc = startScoutingYear({}, 2030);
-  assert.ok(sec.every((p) => prospectRead(sc, p).pot === "??"));
-  const r = scoutRegion(sc, "regular", "SEC", 2030, 2030);
-  assert.ok(r.ok); sc = r.sc;
-  assert.equal(sc.rpts, RPTS_START - RTRIP_COST);
-  assert.ok(sec.every((p) => prospectRead(sc, p).pot !== "??" && prospectRead(sc, p).regional));
-  assert.ok(cls.filter((p) => regionOf(p) === "B1G").every((p) => prospectRead(sc, p).pot === "??"));
+test("major scouts work two regions, minor scouts one, and by default the six are all covered", () => {
+  const ar = areasOf(staff(70));
+  assert.equal(ar.major.length, 2); assert.equal(ar.minor.length, 1);
+  assert.deepEqual(new Set(Object.values(ar).flat()), new Set(AREA_KEYS));
+  assert.deepEqual(uncovered(staff(70)), []);
+  assert.equal(areaCap("minor2"), 1);
 });
 
-test("more trips sharpen the reads and find the region's sleepers", () => {
-  const err = (t) => { const sc = { regionsYr: 2030, regions: { SEC: t, B1G: t, ACC: t, B12: t, PAC: t, G5: t } }; const ps = cls.filter((p) => regionRead(sc, p)); return ps.reduce((s, p) => s + Math.abs(regionRead(sc, p).pot - p.truePot), 0) / ps.length; };
-  assert.ok(err(1) > err(MAX_TRIPS) + 1.5, `${err(1)} vs ${err(MAX_TRIPS)}`);
-  let gems = 0, found = 0;
-  for (let y = 0; y < 10; y++) for (const p of genDC(2100 + y)) if (p.gem && regionOf(p) !== "OTH") { gems++; const r = regionRead({ regionsYr: p.draftYear, regions: { [regionOf(p)]: MAX_TRIPS } }, p); if (r.hunch) found++; }
-  assert.ok(found / gems > 0.5, `${found}/${gems}`);
+test("assignments: only before the season, within the job's cap, and they can double up", () => {
+  const sc = staff(70);
+  assert.equal(assignArea(sc, "regular", "major", 0, "G5").ok, false, "scouts are on the road");
+  assert.equal(assignArea(sc, "preseason", "minor", 1, "SEC").ok, false, "a minor scout has one region");
+  const r = assignArea(sc, "preseason", "minor", 0, "SEC");
+  assert.ok(r.ok);
+  assert.deepEqual(areasOf(r.sc).minor, ["SEC"]);
+  assert.ok(uncovered(r.sc).length === 1, "doubling up leaves a region to the front office");
+  assert.match(r.msg, /Nobody covers/);
+  // picking a major scout's other region swaps his two
+  const ar = areasOf(sc).major;
+  const s2 = assignArea(sc, "freeagency", "major", 0, ar[1]).sc;
+  assert.deepEqual(areasOf(s2).major, [ar[1], ar[0]]);
 });
 
-test("area points come in weekly, trips are limited, and nothing after the draft starts", () => {
-  let sc = creditWeeks(startScoutingYear({}, 2030), 6);
-  assert.equal(sc.rpts, RPTS_START + 6 * RPTS_WEEKLY);
-  for (let i = 0; i < MAX_TRIPS; i++) sc = scoutRegion(sc, "regular", "ACC", 2030, 2030).sc;
-  assert.ok(!scoutRegion(sc, "regular", "ACC", 2030, 2030).ok);
-  assert.ok(!scoutRegion(sc, "draft", "SEC", 2030, 2030).ok);
+test("coverage follows the region: an uncovered region and FCS schools go to the office", () => {
+  const cls = genDC(2030);
+  const sec = cls.find((p) => regionOf(p) === "SEC"), fcs = cls.find((p) => regionOf(p) === "OTH");
+  const sc = staff(70, { major: ["SEC", "B1G"], major2: ["ACC", "B12"], minor: ["G5"], minor2: ["G5"] });
+  assert.equal(coverage(sc, sec).role, "major");
+  assert.equal(coverage(sc, cls.find((p) => regionOf(p) === "G5")).others.length, 1);
+  assert.equal(coverage(sc, cls.find((p) => regionOf(p) === "PAC")).role, "office");
+  if (fcs) assert.equal(prospectRead(sc, fcs).pot, "??");
+  assert.match(prospectRead(sc, sec).pot, /^[A-D]/);
 });
 
-import { myBoard, csRank } from "../src/scouting.js";
+test("a better scout reads closer, finds more sleepers and spots more special development traits", () => {
+  const cs = classes(8, 2100);
+  const stat = (ev) => {
+    const sc = staff(ev);
+    let err = 0, n = 0, gems = 0, slept = 0, stars = 0, spotted = 0;
+    for (const c of cs) for (const p of c) {
+      const r = prospectRead(sc, p);
+      if (r.potV == null) continue;
+      err += Math.abs(r.potV - p.truePot); n++;
+      if (p.gem) { gems++; if (r.sleeper || r.hunch) slept++; }
+      if (["generational", "superstar", "star"].includes(p.dev)) { stars++; if (r.dev) spotted++; }
+    }
+    return { err: err / n, sleep: slept / gems, dev: spotted / stars };
+  };
+  const lo = stat(58), hi = stat(92);
+  assert.ok(hi.err < lo.err - 1, `error ${hi.err.toFixed(2)} vs ${lo.err.toFixed(2)}`);
+  assert.ok(hi.sleep > lo.sleep + 0.25, `sleepers ${hi.sleep.toFixed(2)} vs ${lo.sleep.toFixed(2)}`);
+  assert.ok(hi.dev > 0.3 && lo.dev === 0, `dev spotted ${hi.dev.toFixed(2)} vs ${lo.dev.toFixed(2)}`);
+});
+
+test("a good major scout often reads the development trait on the first report", () => {
+  const cs = classes(3, 2400);
+  const seen = (ev) => {
+    const sc = { ...staff(ev), pts: 999 };
+    let s = 0, n = 0;
+    for (const c of cs) for (const p of c.filter((x) => coverage(sc, x).role === "major").slice(0, 60)) { n++; if (scoutProspect(sc, "regular", p, [], p.draftYear, p.draftYear).p.scout.dev) s++; }
+    return s / n;
+  };
+  assert.ok(seen(90) > 0.7 && seen(58) < 0.05, `${seen(90)} vs ${seen(58)}`);
+});
+
 test("your scouts' board moves the sleepers they've found up, and follows the consensus elsewhere", () => {
   let up = 0, gems = 0;
-  for (let y = 0; y < 8; y++) {
-    const c = genDC(2200 + y);
-    const sc = { regionsYr: 2200 + y, regions: { SEC: 4, B1G: 4, ACC: 4, B12: 4, PAC: 4, G5: 4 } };
-    const mine = myBoard(sc, c);
+  for (const c of classes(8, 2200)) {
+    const mine = myBoard(staff(90), c);
     assert.equal(mine.size, c.length);
     for (const p of c.filter((x) => x.gem && regionOf(x) !== "OTH")) { gems++; if (mine.get(p.id) < csRank(p) - 10) up++; }
-    // With no scouting at all, your board is the consensus board.
+    // With no scouts at all, your board is the consensus board.
     const none = myBoard({}, c);
     assert.ok(c.every((p) => Math.abs(none.get(p.id) - csRank(p)) <= 1));
   }
-  assert.ok(up / gems > 0.6, `${up}/${gems} gems moved up`);
+  assert.ok(up / gems > 0.5, `${up}/${gems} gems moved up`);
 });
 
-test("four trips to a region show every prospect's current rating there too", () => {
-  const c = genDC(2300);
-  const p = c.find((x) => regionOf(x) === "SEC" && !x.scout?.lvl);
-  assert.equal(prospectRead({ regionsYr: 2300, regions: { SEC: 3 } }, p).ovr, "??");
-  const r = prospectRead({ regionsYr: 2300, regions: { SEC: 4 } }, p);
-  assert.match(r.ovr, /^~\d+$/);
-  assert.ok(Math.abs(r.ovrV - p.trueOvr) <= 3);
-});
-
-test("a season's area points cover four regions fully, not the whole country", () => {
-  const season = RPTS_START + 18 * RPTS_WEEKLY + RPTS_COMBINE;
-  const trips = Math.floor(season / RTRIP_COST);
-  assert.ok(trips >= 4 * MAX_TRIPS && trips < 5 * MAX_TRIPS, `${trips} trips a season`);
+test("two scouting checkpoints a season: the trade deadline and the end of the regular season", () => {
+  assert.deepEqual(SCOUT_CHECKPOINTS, [TRADE_DEADLINE_WEEK, 18]);
 });

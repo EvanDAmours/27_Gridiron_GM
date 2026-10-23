@@ -183,9 +183,16 @@ try {
   for (const want of ["Depth Chart", "Front Office", "Schedule", "Standings", "Draft", "League"]) if (!seen.includes(want)) fail(`couldn't open ${want}`);
   log("every main screen opens");
   await dismiss(); await page.locator(`button:text-is("Draft")`).first().click(); await page.waitForTimeout(400); await page.locator('button:text-is("Scouting")').first().click(); await page.waitForTimeout(500);
-  await must("Regions", 500); await must("Send area scouts", 600); await healthy("regional scouting");
-  if (!(await page.evaluate(() => /trip 1 of|●/.test(document.body.innerText)))) fail("regional trip didn't register");
-  log("regional scouting");
+  // preseason: send a scout to a region and lock the assignments in
+  await must("Scouts", 500);
+  const reg = page.locator('button[aria-label="Minor scout region 1"]');
+  if (!(await reg.count())) fail("no region picker for the minor scout");
+  await reg.first().click(); await page.waitForTimeout(200);
+  await page.locator('[role="option"]', { hasText: /^SEC$/ }).first().click(); await page.waitForTimeout(300);
+  await click("Lock in these regions", 400); await healthy("scout regions");
+  if ((await save()).scouting?.areas?.minor?.[0] !== "SEC") fail("region assignment didn't save");
+  await must("Regions", 500); await healthy("regions view");
+  log("scout regions");
   await must("Big Board", 400); await must("Your scouts", 600); await healthy("your scouts' board"); log("your scouts' board");
   await startSeason();
   await must("Sim Week", 1500); await healthy("sim week"); log("sim week");

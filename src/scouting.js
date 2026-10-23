@@ -50,23 +50,22 @@ const rint = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
 export const SCOUT_PTS_START = 8; // in the bank when the season starts
 export const SCOUT_PTS_WEEKLY = 1; // earned each week of the regular season
 export const SCOUT_PTS_COMBINE = 4; // extra budget at the Combine
-// Your scouts can only carry so much unfiled work: past the cap, a week's point is lost. Spend them.
-export const SCOUT_PTS_CAP = 14;
-// Every fourth week of the regular season the sim stops for a scouting checkpoint.
-export const SCOUT_CHECKPOINTS = [4, 8, 12, 16];
+// The sim stops for scouting twice a season: at the trade deadline (TRADE_DEADLINE_WEEK in
+// aiTrades.js) and after the last week of the regular season. Points don't carry past the playoffs:
+// whatever's left expires when the Combine opens, so they can't be hoarded for draft week.
+export const SCOUT_CHECKPOINTS = [9, 18];
 export const COMBINE_INVITES = 180;
 export const COMBINE_INTERVIEWS = 4;
 
 // ---------- Scouting staff ----------
 
 export const SCOUT_GROUPS = { QB: "Quarterbacks", RB: "Running backs", REC: "Receivers & tight ends", OL: "Offensive line", DL: "Defensive line", LB: "Linebackers", DB: "Defensive backs", ST: "Specialists" };
-const HIRE_GROUPS = ["QB", "RB", "REC", "OL", "DL", "LB", "DB"];
 const OL = new Set(["LT", "LG", "C", "RG", "RT"]);
 export const scoutGroup = (pos) =>
   pos === "QB" ? "QB" : pos === "RB" ? "RB" : pos === "WR" || pos === "TE" ? "REC" : OL.has(pos) ? "OL" : pos === "DL" ? "DL" : pos === "LB" ? "LB" : pos === "CB" || pos === "S" ? "DB" : "ST";
 
-const MAJOR_DESC = "Covers one position group in depth: sharp reports, exact ratings after a full workup, and development traits.";
-const MINOR_DESC = "Covers a group more loosely: a general idea of every prospect there and rougher reports. No development traits.";
+const MAJOR_DESC = "Works two regions in depth: sharp reports, exact ratings after a full workup, and development traits.";
+const MINOR_DESC = "Works one region more loosely: a general idea of every prospect there and rougher reports. A good one can read development traits on a full workup.";
 export const SCOUT_ROLES = {
   major: { name: "Major scout", short: "Major", desc: MAJOR_DESC },
   major2: { name: "Second major scout", short: "Major 2", desc: MAJOR_DESC },
@@ -82,7 +81,7 @@ const staffHas = (sc, trait) => staffOf(sc).some((x) => x.trait === trait);
 export const SCOUT_TRAITS = {
   workhorse: { name: "Road warrior", desc: "+1 scouting point every 4 weeks of the season." },
   sharp: { name: "Sharp eye", desc: "His reads are more accurate (+8 evaluation)." },
-  projector: { name: "Projector", desc: "Spots development traits a step earlier." },
+  projector: { name: "Projector", desc: "Reads development traits a step earlier." },
   combine: { name: "Combine guru", desc: "+3 scouting points at the Combine." },
   smallschool: { name: "Small-school finder", desc: "Far more accurate on prospects from Group of Five programs and the academies." },
   character: { name: "Character evaluator", desc: "+2 interview slots at the Combine." },
@@ -104,13 +103,12 @@ const BACKGROUNDS = [
   (r) => `Ex-${r.pick(["Senior Bowl", "East-West Shrine Bowl"])} personnel staffer`,
 ];
 
-function makeScout(key, group, evalMean, faceFn) {
+function makeScout(key, evalMean, faceFn) {
   const r = stream(key);
   return {
     id: `sc${hashStr(key).toString(36)}`,
     name: `${r.pick(SCOUT_FIRST)} ${r.pick(SCOUT_LAST)}`,
     age: r.int(34, 67),
-    group,
     eval: clamp(Math.round(r.gauss(evalMean, 9)), 50, 95),
     trait: r.chance(0.55) ? r.pick(Object.keys(SCOUT_TRAITS)) : null,
     bg: r.pick(BACKGROUNDS)(r),
@@ -118,19 +116,19 @@ function makeScout(key, group, evalMean, faceFn) {
   };
 }
 
-// Scouts looking for work: two for each position group.
+// Scouts looking for work: a few good ones, more middling ones.
 export function refreshScoutPool(sc, year, faceFn) {
   const n = (sc.poolN || 0) + 1;
-  const pool = [...HIRE_GROUPS, ...HIRE_GROUPS].map((g, i) => makeScout(`${year}|${n}|pool|${i}`, g, i < HIRE_GROUPS.length ? 75 : 68, faceFn));
+  const pool = Array.from({ length: 12 }, (_, i) => makeScout(`${year}|${n}|pool|${i}`, i < 4 ? 79 : i < 8 ? 71 : 64, faceFn));
   return { ...sc, pool, poolN: n };
 }
 
 export function newScouting(year, faceFn, list = { yr: year, ids: [] }) {
   const sc = {
-    major: makeScout(`${year}|staff|major|${Math.random()}`, "QB", 70, faceFn),
-    major2: makeScout(`${year}|staff|major2|${Math.random()}`, "DL", 68, faceFn),
-    minor: makeScout(`${year}|staff|minor|${Math.random()}`, "DB", 64, faceFn),
-    minor2: makeScout(`${year}|staff|minor2|${Math.random()}`, "REC", 62, faceFn),
+    major: makeScout(`${year}|staff|major|${Math.random()}`, 70, faceFn),
+    major2: makeScout(`${year}|staff|major2|${Math.random()}`, 68, faceFn),
+    minor: makeScout(`${year}|staff|minor|${Math.random()}`, 64, faceFn),
+    minor2: makeScout(`${year}|staff|minor2|${Math.random()}`, 62, faceFn),
     pool: [],
     poolN: Math.floor(Math.random() * 1e6),
     pts: SCOUT_PTS_START,
@@ -149,12 +147,11 @@ export function hireScout(sc, sp, scoutId, role) {
   if (!staffWindowOpen(sp)) return { ok: false, msg: ON_ROAD, sc };
   const s = (sc.pool || []).find((x) => x.id === scoutId);
   if (!s || !SCOUT_ROLES[role]) return { ok: false, msg: "That scout isn't available.", sc };
-  // Scouts can share a group: more eyes read it sharper and leave more of the class to the front office.
-  const same = SCOUT_SLOTS.filter((k) => k !== role && sc[k]?.group === s.group).length;
+  // he takes over the job's regions
   const old = sc[role];
   const pool = sc.pool.filter((x) => x.id !== s.id);
   if (old) pool.push(old);
-  const msg = `${s.name} is your new ${SCOUT_ROLES[role].name.toLowerCase()} (${SCOUT_GROUPS[s.group].toLowerCase()}).${same ? ` ${same + 1} of your scouts now work ${SCOUT_GROUPS[s.group].toLowerCase()}: sharper reads there, and fewer groups covered.` : ""}`;
+  const msg = `${s.name} is your new ${SCOUT_ROLES[role].name.toLowerCase()}, working ${areaList(areasOf(sc)[role])}.`;
   return { ok: true, msg, sc: { ...sc, [role]: s, pool } };
 }
 
@@ -167,7 +164,58 @@ export function releaseScout(sc, sp, role) {
 
 export function swapScoutRoles(sc, sp) {
   if (!staffWindowOpen(sp)) return { ok: false, msg: ON_ROAD, sc };
-  return { ok: true, msg: "Your major and minor scouts have switched roles.", sc: { ...sc, major: sc.minor || null, minor: sc.major || null, major2: sc.minor2 || null, minor2: sc.major2 || null } };
+  const ar = areasOf(sc);
+  // each scout keeps his regions as far as the new job allows (a new major scout picks up a second one)
+  const areas = { major: ar.minor, minor: ar.major.slice(0, 1), major2: ar.minor2, minor2: ar.major2.slice(0, 1) };
+  return { ok: true, msg: "Your major and minor scouts have switched roles.", sc: { ...sc, major: sc.minor || null, minor: sc.major || null, major2: sc.minor2 || null, minor2: sc.major2 || null, areas } };
+}
+
+// ---------- Regions ----------
+// Before the season you send each scout to his regions: a major scout works two, a minor scout
+// one. Six regions, six assignments: spread them to see the whole class, or double up on the
+// SEC for a second opinion there. The assignments stay put until you change them (in free agency
+// or the preseason).
+export const AREA_KEYS = ["SEC", "B1G", "ACC", "B12", "G5", "PAC"];
+export const areaCap = (slot) => (slotKind(slot) === "major" ? 2 : 1);
+const areaList = (rs) => rs.map(regionName).join(" and ");
+// Each job's regions, with any it hasn't been given filled from the ones nobody covers yet.
+export function areasOf(sc) {
+  const out = {}, used = new Set();
+  for (const k of SCOUT_SLOTS) {
+    out[k] = [...new Set((sc?.areas?.[k] || []).filter((r) => REGIONS[r]))].slice(0, areaCap(k));
+    out[k].forEach((r) => used.add(r));
+  }
+  for (const k of SCOUT_SLOTS) {
+    while (out[k].length < areaCap(k)) {
+      const r = AREA_KEYS.find((x) => !used.has(x)) || AREA_KEYS.find((x) => !out[k].includes(x));
+      out[k].push(r);
+      used.add(r);
+    }
+  }
+  return out;
+}
+// Regions none of your scouts work (their prospects get the front office's read).
+export const uncovered = (sc) => {
+  const ar = areasOf(sc);
+  return AREA_KEYS.filter((r) => !SCOUT_SLOTS.some((k) => sc?.[k] && ar[k].includes(r)));
+};
+// The season an assignment is for: in free agency it's already next year's.
+export const areaSeason = (sp, yr) => (sp === "freeagency" ? yr + 1 : yr);
+export const lockAreas = (sc, sp, yr) => ({ ...sc, areas: areasOf(sc), areasYr: areaSeason(sp, yr) });
+export function assignArea(sc, sp, slot, i, region, yr) {
+  if (!staffWindowOpen(sp)) return { ok: false, msg: "Your scouts are already on the road. You can move them in free agency or the preseason.", sc };
+  if (!SCOUT_ROLES[slot] || !REGIONS[region] || i < 0 || i >= areaCap(slot)) return { ok: false, msg: "That isn't a region he can work.", sc };
+  const ar = areasOf(sc);
+  const mine = [...ar[slot]];
+  // picking his other region swaps the two
+  const j = mine.indexOf(region);
+  if (j >= 0 && j !== i) mine[j] = mine[i];
+  mine[i] = region;
+  const areas = { ...ar, [slot]: mine };
+  const nsc = { ...sc, areas, areasYr: yr != null ? areaSeason(sp, yr) : sc.areasYr };
+  const who = sc[slot]?.name || `Your ${SCOUT_ROLES[slot].name.toLowerCase()}`;
+  const gap = uncovered(nsc);
+  return { ok: true, msg: `${who} will work ${areaList(mine)}.${gap.length ? ` Nobody covers ${areaList(gap)} now.` : ""}`, sc: nsc };
 }
 
 // A point for every week of the regular season played up to `wk` (a sim that skips ahead
@@ -176,23 +224,19 @@ export function creditWeeks(sc, wk) {
   const paid = sc.wkPaid || 0;
   if (wk <= paid) return sc;
   const workhorse = staffHas(sc, "workhorse");
-  let pts = sc.pts || 0, lost = 0;
+  let pts = sc.pts || 0;
   for (let w = paid + 1; w <= wk; w++) {
     pts += SCOUT_PTS_WEEKLY;
     if (workhorse && w % 4 === 0) pts++;
-    if (pts > SCOUT_PTS_CAP) { lost += pts - SCOUT_PTS_CAP; pts = SCOUT_PTS_CAP; }
   }
-  return { ...sc, pts, lost: (sc.lost || 0) + lost, rpts: (sc.rpts ?? RPTS_START) + (wk - paid) * RPTS_WEEKLY, wkPaid: wk };
+  return { ...sc, pts, wkPaid: wk };
 }
 
-// A new season: points left over from last year's class expire.
-export const startScoutingYear = (sc, year) => ({ ...sc, lost: 0, pts: SCOUT_PTS_START, rpts: RPTS_START, regions: {}, regionsYr: year, wkPaid: 0, interviewsLeft: 0, list: { yr: year, ids: [] } });
+// A new season, a new class to scout.
+export const startScoutingYear = (sc, year) => ({ ...sc, pts: SCOUT_PTS_START, wkPaid: 0, interviewsLeft: 0, list: { yr: year, ids: [] } });
 
-// ---------- Regional scouting ----------
-// Your area scouts work conferences, not players. Every trip to a region gives you a rough read
-// on every prospect from there; more trips sharpen it, and from the third trip on they start
-// seeing through the board to that region's sleepers. It's volume, not depth: individual reports
-// and full workups are still your position scouts' job (and your regular scouting points).
+// ---------- Regions ----------
+// Where prospects play. Your scouts are assigned by region (see areasOf above).
 export const REGIONS = {
   SEC: { name: "SEC", schools: ["Alabama", "Georgia", "LSU", "Florida", "Auburn", "Tennessee", "Texas A&M", "Ole Miss", "Arkansas", "Kentucky", "Missouri", "South Carolina", "Mississippi State", "Vanderbilt", "Texas", "Oklahoma"] },
   B1G: { name: "Big Ten", schools: ["Ohio State", "Michigan", "Penn State", "Wisconsin", "Iowa", "Minnesota", "Nebraska", "Maryland", "Purdue", "Michigan State", "Illinois", "Indiana", "Rutgers", "Northwestern", "USC", "UCLA", "Oregon", "Washington"] },
@@ -212,53 +256,23 @@ export function draftCollege(rand = Math.random) {
 }
 export const regionOf = (p) => REGION_OF[p?.bio?.college] || "OTH";
 export const regionName = (k) => REGIONS[k]?.name || "Independents & FCS";
-// About 32 area points a season (16 trips): four of the six regions inside out, so where you
-// send them is still a real choice.
-export const RPTS_START = 6, RPTS_WEEKLY = 1, RPTS_COMBINE = 8, RTRIP_COST = 2, MAX_TRIPS = 4;
-const TRIP_SD = [Infinity, 6, 4.5, 3.2, 2.4];
-
-export function scoutRegion(sc, sp, region, classYr, draftYr) {
-  if (classYr !== draftYr || sp === "freeagency" || sp === "draft") return { ok: false, msg: "Area scouts work the upcoming class, before the draft.", sc };
-  const regions = sc.regionsYr === classYr ? sc.regions || {} : {};
-  const trips = regions[region] || 0;
-  if (trips >= MAX_TRIPS) return { ok: false, msg: `Your area scouts already know ${regionName(region)} inside out.`, sc };
-  const rp = sc.rpts ?? RPTS_START;
-  if (rp < RTRIP_COST) return { ok: false, msg: `Not enough area-scout points (a trip takes ${RTRIP_COST}; you earn ${RPTS_WEEKLY} a week).`, sc };
-  return { ok: true, msg: `Area scouts went through ${regionName(region)} (trip ${trips + 1} of ${MAX_TRIPS}).`, sc: { ...sc, rpts: rp - RTRIP_COST, regions: { ...regions, [region]: trips + 1 }, regionsYr: classYr } };
-}
-export const tripsTo = (sc, p) => (sc?.regionsYr === p.draftYear ? sc.regions?.[regionOf(p)] || 0 : 0);
-
-// What your area scouts think of a prospect from a region they've worked (null if they haven't).
-export function regionRead(sc, p) {
-  const t = Math.min(MAX_TRIPS, tripsTo(sc, p));
-  if (!t) return null;
-  const sd = TRIP_SD[t];
-  const see = t >= 4 ? 0.6 : t === 3 ? 0.35 : 0;
-  const pot = seenPot(p, see) + clamp(stream(`${p.id}|reg|${t}`).gauss(0, sd), -1.6 * sd, 1.6 * sd);
-  const hunch = !!p.gem && t >= 2 && stream(`${p.id}|reghunch`).next() < 0.2 * t;
-  const flag = !!p.bust && t >= 3 && stream(`${p.id}|regflag`).next() < (t >= 4 ? 0.7 : 0.4);
-  // After the fourth trip they've seen enough of him to put a number on him today too.
-  const ovr = t >= MAX_TRIPS ? Math.round(clamp(p.trueOvr + clamp(stream(`${p.id}|regovr`).gauss(0, 2), -3, 3), 30, 99)) : null;
-  return { pot, sd, trips: t, ovr, grade: potGrade(pot), tier: projection(p.pos, pot), hunch, flag, sleeper: hunch && t >= 4, region: regionOf(p), who: `Your area scouts (${regionName(regionOf(p))})` };
-}
-
 // ---------- What your scouts know ----------
 
 const OFFICE_EVAL = 60;
 
-// Which of your scouts covers a prospect: "major", "minor", or "office" (nobody, so the front
-// office's generalists handle it). With several scouts on one group the best major scout leads and
-// the rest are second opinions (`second` is the next one, `others` all of them).
+// Which of your scouts covers a prospect: "major", "minor", or "office" (nobody works his region,
+// so the front office's generalists handle it). With several scouts in one region the best major
+// scout leads and the rest are second opinions (`second` is the next one, `others` all of them).
 export function coverage(sc, p) {
-  const g = scoutGroup(p.pos);
-  const on = SCOUT_SLOTS.filter((k) => sc?.[k]?.group === g).map((k) => ({ kind: slotKind(k), scout: sc[k] }))
+  const reg = regionOf(p), ar = areasOf(sc);
+  const on = SCOUT_SLOTS.filter((k) => sc?.[k] && ar[k].includes(reg)).map((k) => ({ kind: slotKind(k), scout: sc[k] }))
     .sort((a, b) => (a.kind === b.kind ? b.scout.eval - a.scout.eval : a.kind === "major" ? -1 : 1));
   if (!on.length) return { role: "office", scout: null };
   const others = on.slice(1).map((x) => x.scout);
   return { role: on[0].kind, scout: on[0].scout, ...(others.length ? { second: others[0], others } : {}) };
 }
 
-// second: another scout (or a list of them) on the same group. More eyes read better than the
+// second: another scout (or a list of them) in the same region. More eyes read better than the
 // best one alone, and anyone's specialty counts.
 export function scoutEval(scout, p, second) {
   if (!scout) return OFFICE_EVAL;
@@ -271,10 +285,11 @@ export function scoutEval(scout, p, second) {
 }
 
 // How far off a read on POT can be (OVR reads are a bit tighter). Level 0 is the passive
-// "general idea" a scout has of everyone in his group; 1 is a scouting report; 2 is a full
-// workup. Nobody but the major scout gets to exact numbers.
+// "general idea" a scout has of everyone in his regions; 1 is a scouting report; 2 is a full
+// workup. Nobody but the major scout gets to exact numbers. Evaluation counts for a lot: a 90
+// scout's general idea is about as close as a 60 scout's report.
 export function readSd(role, lvl, ev) {
-  const a = (100 - ev) / 50;
+  const a = (100 - ev) / 40;
   if (role === "major") return lvl >= 2 ? 0 : lvl === 1 ? 0.9 + 1.6 * a : 2.2 + 2.6 * a;
   if (role === "minor") return lvl >= 2 ? 1 + 1.4 * a : lvl === 1 ? 1.8 + 2.4 * a : 3.2 + 3 * a;
   return lvl >= 2 ? 2.6 : lvl === 1 ? 4.2 : Infinity;
@@ -285,11 +300,15 @@ export function scoutCost(p) {
   return l === 0 ? 1 : l === 1 ? 2 : 0;
 }
 
-// Would this report on the prospect reveal his development trait?
-function seesDev(cov, lvl) {
-  if (cov.role === "major") return lvl >= 2 || [cov.scout, ...(cov.others || [])].some((x) => x.trait === "projector");
-  if (cov.role === "minor") return lvl >= 2 && cov.scout.trait === "projector";
-  return false;
+// Would this report on the prospect reveal his development trait? A full workup from a major scout
+// always does; a good major scout often sees it on the first report, and a good minor scout on a
+// workup.
+function seesDev(cov, lvl, ev, p) {
+  if (cov.role === "office") return false;
+  const proj = [cov.scout, ...(cov.others || [])].some((x) => x.trait === "projector");
+  const r = stream(`${p.id}|${cov.scout.id}|devread`).next();
+  if (cov.role === "major") return lvl >= 2 || proj || (lvl >= 1 && r < clamp((ev - 60) / 30, 0, 1));
+  return (lvl >= 1 && proj) || (lvl >= 2 && r < clamp((ev - 55) / 30, 0, 1));
 }
 
 // File a report on a prospect. Returns a new prospect object; the caller swaps it into the class.
@@ -312,7 +331,7 @@ function fileReport(sc, p, lvl, teams) {
     exact: sd === 0,
     by: cov.role,
     who: cov.others ? [cov.scout, ...cov.others].map((x) => x.name).join(" & ") : cov.scout?.name || "Your front office",
-    dev: seesDev(cov, lvl) ? devOf(p) : prev.dev || null,
+    dev: seesDev(cov, lvl, ev, p) ? devOf(p) : prev.dev || null,
     skills,
     notes: p.bust ? { ...notesFor(p, skills, r), flag: `🚩 Red flag: ${p.bust.why}. ${cov.role === "office" ? "Our people" : "Your scout"} sees a high bust risk.` } : p.gem ? { ...notesFor(p, skills, r), gem: `💎 Sleeper: ${p.gem.why}. ${cov.role === "office" ? "Our people think" : "Your scout thinks"} he's much better than where the board has him.` } : notesFor(p, skills, r),
     comp: comparable(teams, p, ePot),
@@ -330,15 +349,15 @@ export function scoutProspect(sc, sp, p, teams, classYr, draftYr) {
   return { ok: true, msg: `${np.scout.who} filed a ${np.scout.lvl >= 2 ? "full workup" : "scouting report"} on ${p.name}.`, sc: { ...sc, pts: sc.pts - cost }, p: np };
 }
 
-// The general idea your scouts have of every prospect in their group, without a report. One
-// scout has the public read of a sleeper and now and then a hunch. A deep, sharp crew on one
-// group (several good scouts all working it) sees through the board: it flags that group's
-// sleepers and spots the special development traits early, before you spend a point.
+// The general idea your scouts have of every prospect in their regions, without a report. How
+// much a scout sees through the public board is his evaluation: a sharp scout flags his regions'
+// sleepers and red flags and spots the special development traits before you spend a point; a
+// weak one mostly repeats the board. A second scout in the region helps.
 export function crewOf(sc, p) {
   const cov = coverage(sc, p);
   if (cov.role === "office") return null;
   const n = 1 + (cov.others?.length || 0), ev = scoutEval(cov.scout, p, cov.others);
-  return { cov, n, ev, see: clamp((ev - 75) / 24, 0, 1) * Math.min(1, 0.25 + 0.25 * n) };
+  return { cov, n, ev, see: clamp((ev - 62) / 30, 0, 1) * Math.min(1, 0.6 + 0.2 * n) };
 }
 export function generalIdea(sc, p) {
   const crew = crewOf(sc, p);
@@ -349,16 +368,16 @@ export function generalIdea(sc, p) {
   const pot = seenPot(p, see) + clamp(r.gauss(0, sd), -1.6 * sd, 1.6 * sd);
   // A hunch: your scouts think there's more to him than the board says (now and then they're wrong).
   const h = stream(`${p.id}|${cov.scout.id}|hunch`).next();
-  const knack = Math.min(0.97, (cov.role === "major" ? 0.5 : 0.3) + 0.12 * (n - 1) + clamp((ev - 80) / 50, 0, 0.3) + (staffHas(sc, "smallschool") && isSmallSchool(p) ? 0.3 : 0) + (staffHas(sc, "sharp") ? 0.1 : 0));
+  const knack = Math.min(0.97, (cov.role === "major" ? 0.3 : 0.15) + clamp((ev - 60) / 35, 0, 0.55) + 0.1 * (n - 1) + (staffHas(sc, "smallschool") && isSmallSchool(p) ? 0.3 : 0) + (staffHas(sc, "sharp") ? 0.1 : 0));
   const hunch = p.gem ? h < knack : (p.cons?.mid ?? 0) > 90 && h < 0.02 / n;
-  // A red flag before a report: a deep crew sometimes catches what the board missed.
-  const flag = !!p.bust && see >= 0.4 && stream(`${p.id}|${cov.scout.id}|flag`).next() < knack;
-  // A crew that sees through the board says so outright: "he's a sleeper".
-  const sleeper = !!p.gem && hunch && see >= 0.5;
-  // Special development traits, spotted early by a deep crew (two or more scouts on the group).
+  // A red flag before a report: a sharp scout sometimes catches what the board missed.
+  const flag = !!p.bust && see >= 0.3 && stream(`${p.id}|${cov.scout.id}|flag`).next() < knack;
+  // A scout who sees through the board says so outright: "he's a sleeper".
+  const sleeper = !!p.gem && hunch && stream(`${p.id}|${cov.scout.id}|sleep`).next() < clamp((see - 0.1) / 0.6, 0, 1);
+  // Special development traits, spotted early by a good scout (a major scout more often).
   const d = devOf(p);
-  const spot = n >= 2 && ["generational", "superstar", "star"].includes(d) && stream(`${p.id}|crew|dev`).next() < clamp((ev - 80) / 19, 0, 1) * Math.min(0.95, 0.2 + 0.22 * n);
-  return { pot, grade: potGrade(pot), tier: projection(p.pos, pot), by: cov.role, who: n > 1 ? `Your ${n} scouts on ${SCOUT_GROUPS[scoutGroup(p.pos)].toLowerCase()}` : cov.scout.name, hunch, sleeper, flag, dev: spot ? d : null, crew: n };
+  const spot = ["generational", "superstar", "star"].includes(d) && stream(`${p.id}|${cov.scout.id}|dev`).next() < Math.min(0.95, clamp((ev - 68) / 25, 0, 1) * (cov.role === "major" ? 0.75 : 0.45) + 0.12 * (n - 1));
+  return { pot, grade: potGrade(pot), tier: projection(p.pos, pot), by: cov.role, who: n > 1 ? `Your ${n} scouts in the ${regionName(regionOf(p))}` : cov.scout.name, hunch, sleeper, flag, dev: spot ? d : null, crew: n };
 }
 
 // Everything the UI shows about a prospect, from your point of view.
@@ -366,25 +385,18 @@ export function prospectRead(sc, p) {
   const s = p.scout || { lvl: 0 };
   const cov = coverage(sc, p);
   const has = s.lvl > 0 && s.eOvr != null;
-  const gen0 = has ? null : generalIdea(sc, p);
-  const reg = has ? null : regionRead(sc, p);
-  // The sharper of your position scouts' general idea and your area scouts' regional read.
-  const genSd = gen0 ? readSd(cov.role, 0, scoutEval(cov.scout, p, cov.others)) : Infinity;
-  const gen = gen0 && reg ? (reg.sd < genSd ? { ...gen0, pot: reg.pot, grade: reg.grade, tier: reg.tier, who: reg.who, hunch: gen0.hunch || reg.hunch, sleeper: gen0.sleeper || reg.sleeper, flag: gen0.flag || reg.flag } : { ...gen0, hunch: gen0.hunch || reg.hunch, sleeper: gen0.sleeper || reg.sleeper, flag: gen0.flag || reg.flag }) : gen0 || (reg && { ...reg, by: "region", dev: null });
+  const gen = has ? null : generalIdea(sc, p);
   const potV = has ? s.ePot : gen ? gen.pot : null;
-  const regOvr = !has && reg?.ovr != null ? reg.ovr : null;
   return {
     lvl: s.lvl || 0,
     cov: cov.role,
-    trips: reg?.trips || 0,
     region: regionOf(p),
-    regional: !!reg && (gen?.by === "region" || gen?.who === reg.who),
     scout: cov.scout,
     second: cov.second || null,
     others: cov.others || [],
-    ovr: has ? (s.exact ? `${s.eOvr}` : `~${s.eOvr}`) : regOvr != null ? `~${regOvr}` : "??",
+    ovr: has ? (s.exact ? `${s.eOvr}` : `~${s.eOvr}`) : "??",
     pot: has ? (s.exact ? `${s.ePot}` : `~${s.ePot}`) : gen ? gen.grade : "??",
-    ovrV: has ? s.eOvr : regOvr,
+    ovrV: has ? s.eOvr : null,
     potV,
     exact: !!s.exact,
     general: !!gen,
@@ -631,7 +643,7 @@ export function stockWatch(cls, yr, wk) {
   const r = stream(`${yr}|${wk}|stock`);
   const pool = (cls || []).filter((p) => !SPECIALIST(p) && (p.cons?.now ?? p.cons?.mid ?? 999) <= 160 && p.cons?.final == null);
   const news = [];
-  for (let i = 0; i < 6 && pool.length; i++) {
+  for (let i = 0; i < 10 && pool.length; i++) {
     const p = pool.splice(Math.floor(r.next() * pool.length), 1)[0];
     const truth = kpValue(p, p.truePot * 0.78 + p.trueOvr * 0.22) - p.cons.score;
     const real = r.next() < 0.5;
@@ -849,8 +861,9 @@ export function runCombine(sc, cls, { quiet = false } = {}) {
   sortByRank(cls);
   const bonus = quiet ? 0 : SCOUT_PTS_COMBINE + (staffHas(sc, "combine") ? 3 : 0);
   const interviews = COMBINE_INTERVIEWS + (staffHas(sc, "character") ? 2 : 0);
-  // Pro days and all-star games: one more round of area trips before the draft.
-  return { sc: { ...sc, pts: (sc.pts || 0) + bonus, rpts: (sc.rpts ?? RPTS_START) + (quiet ? 0 : RPTS_COMBINE), interviewsLeft: interviews, workoutsLeft: quiet ? 0 : PRIVATE_WORKOUTS }, buzz: combineBuzz(cls, invited, events), events, bonus, interviews };
+  // The season's points expire with the season: the Combine budget is all you take into the draft.
+  const expired = quiet ? 0 : sc.pts || 0;
+  return { sc: { ...sc, pts: quiet ? sc.pts || 0 : bonus, interviewsLeft: interviews, workoutsLeft: quiet ? 0 : PRIVATE_WORKOUTS }, buzz: combineBuzz(cls, invited, events), events, bonus, interviews, expired };
 }
 
 function combineBuzz(cls, invited, events) {
@@ -1024,18 +1037,21 @@ export function loadScouting(d, faceFn) {
     if (d.myScout) {
       const o = d.myScout;
       const group = OLD_TRAIT_GROUP[o.trait] || "QB";
-      sc.major = { id: o.id || "scold", name: o.name, age: 50, group, eval: clamp(Math.round(((o.evaluation || 70) + (o.accuracy || 70)) / 2), 50, 95), trait: null, bg: "Holdover from the old front office", face: o.face || null };
-      if (sc.minor?.group === group) sc.minor = { ...sc.minor, group: group === "DB" ? "DL" : "DB" };
+      sc.major = { id: o.id || "scold", name: o.name, age: 50, eval: clamp(Math.round(((o.evaluation || 70) + (o.accuracy || 70)) / 2), 50, 95), trait: null, bg: "Holdover from the old front office", face: o.face || null };
     }
     const wk = d.sp === "regular" ? d.wk || 0 : d.sp === "preseason" ? 0 : 18;
     sc = { ...sc, pts: SCOUT_PTS_START, wkPaid: 0 };
     sc = creditWeeks(sc, wk);
   }
-  // Saves from the two-scout days get a second major and a second minor scout on groups nobody covers yet.
+  // Saves from the two-scout days get a second major and a second minor scout.
   if (!("major2" in sc) && !("minor2" in sc)) {
-    const free = HIRE_GROUPS.filter((g) => !staffOf(sc).some((x) => x.group === g));
     const salt = `${d.yr || 2026}|staff2|${sc.poolN || 0}`;
-    sc = { ...sc, major2: makeScout(`${salt}|major2`, free[0] || "DL", 68, faceFn), minor2: makeScout(`${salt}|minor2`, free[1] || "REC", 62, faceFn) };
+    sc = { ...sc, major2: makeScout(`${salt}|major2`, 68, faceFn), minor2: makeScout(`${salt}|minor2`, 62, faceFn) };
+  }
+  // Saves from the area-trip days: the trips and their points are gone (scouts work regions now).
+  if ("rpts" in sc || "regions" in sc || "lost" in sc) {
+    const { rpts, regions, regionsYr, lost, ...rest } = sc; // eslint-disable-line no-unused-vars
+    sc = rest;
   }
   sc = { major: null, major2: null, minor: null, minor2: null, pool: [], pts: 0, wkPaid: 0, interviewsLeft: 0, ...sc };
   if (!sc.list || sc.list.yr !== d.yr) sc.list = { yr: d.yr, ids: sc.list?.yr === d.yr ? sc.list.ids : [] };

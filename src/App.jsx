@@ -162,7 +162,7 @@ import { contractYearAsks, playItOut, contractYearWeek, CY_DECIDE_BY } from "./c
 import { prospectRead } from "./scouting.js";
 import { SCOUT_CHECKPOINTS, stockWatch, scoutTargets } from "./scouting.js";
 import { topNeeds as needsTop } from "./needs.js";
-import { RTRIP_COST, newScouting, refreshScoutPool, creditWeeks, startScoutingYear, loadScouting, rankClass, csRank, combineInvites, runCombine, aiDraftScore, pickGrade, pickTake, classGrade, autoPickFrom, listedPick, devOf, devGrowth } from "./scouting.js";
+import { newScouting, refreshScoutPool, creditWeeks, startScoutingYear, loadScouting, rankClass, csRank, combineInvites, runCombine, aiDraftScore, pickGrade, pickTake, classGrade, autoPickFrom, listedPick, devOf, devGrowth } from "./scouting.js";
 import { ScoutingPage, Board, YourList, BuzzFeed, DraftGrades, ProspectModal, DevChip, potText, ScoutPtsBadge, PickTracker, DraftQueue, DraftReveal, MockDraft } from "./ScoutingUI.jsx";
 import {
   R, Rf, pick, cl, uid, G, htS, fm, POS, TEAMS,
@@ -976,7 +976,7 @@ if(nw>=18){setSp("playoffs");const seedConf=(conf)=>nflSeeds(nt.map(t=>({...t,c:
       setPb(npb);setLog(p=>[`🏆 ${yr}: ${nt[w[0]].city} ${nt[w[0]].name} win!`,...p].slice(0,150));setChamps(p=>[...p,{yr,t:`${nt[w[0]].city} ${nt[w[0]].name}`,ti:w[0],gm:ui,score:rr[0]?`${Math.max(rr[0].hs,rr[0].as)}-${Math.min(rr[0].hs,rr[0].as)}`:null,opp:rr[0]?(rr[0].h===w[0]?rr[0].a:rr[0].h):null}]);if(w[0]===ui){setDynastyStats(d=>({...d,championships:d.championships+1}));track('champion');if(speedrun)setSpeedrun(s=>s?{...s,championships:s.championships+1}:s);}/* no toast: the season-awards popup opens on the champion */}else setPb(npb);};
   const goToCombine=()=>{backupSave(`${yr} playoffs`);setOffSnap(offseasonSnapshot(teams,yr));/* where everyone stood: the off-season news is what changes */setWeekResult(null);const ndc={...dc};const cls=[...(ndc[yr]||[])];const _inv=combineInvites(cls);cls.forEach(p=>{p.combine=_inv.has(p.id)?genCombine(p.pos,p.trueOvr):null;p.proDay=genProDay(p.pos,p.trueOvr);Object.assign(p,combToPhys(p.combine||p.proDay));});
 // Combine grades, final consensus rankings, pre-draft news and buzz; interview slots and bonus scouting points
-const _cmb=runCombine(scouting||newScouting(yr,genFace),cls);ndc[yr]=cls;setScouting(_cmb.sc);setDraftBuzz(_cmb.buzz);setLog(l=>[`📋 COMBINE: ${cls.filter(p=>p.combine).length} prospects tested. Final consensus rankings are out; you have ${_cmb.interviews} interview slots and +${_cmb.bonus} scouting pts before the draft.`,..._cmb.events.map(e=>`📋 DRAFT NEWS: ${e.name} — ${e.label}`),...l.slice(0,149)]);
+const _cmb=runCombine(scouting||newScouting(yr,genFace),cls);ndc[yr]=cls;setScouting(_cmb.sc);setDraftBuzz(_cmb.buzz);setLog(l=>[`📋 COMBINE: ${cls.filter(p=>p.combine).length} prospects tested. Final consensus rankings are out; you have ${_cmb.interviews} interview slots and ${_cmb.bonus} fresh scouting pts before the draft${_cmb.expired?` (${_cmb.expired} left over from the season expired)`:""}.`,..._cmb.events.map(e=>`📋 DRAFT NEWS: ${e.name} — ${e.label}`),...l.slice(0,149)]);
 // v27 I50: Pre-draft rumor mill — 3 AI team position buzz cards
 {const _posNeeds=['QB','WR','OL','TE','RB','CB','LB','DL','S','K'];const _aiTeamsRumors=teams.filter(t=>t.id!==ui).sort(()=>Math.random()-.5).slice(0,3).map(t=>{const _np=_posNeeds[R(0,_posNeeds.length-1)];const _phrases=['expected to target','strongly linked to','scouting multiple','trading up for a','building war room around'];return{tid:t.id,city:t.city,ab:t.ab,pos:_np,phrase:_phrases[R(0,_phrases.length-1)]};});setDraftRumors(_aiTeamsRumors);}
 // Veterans decide whether to retire once the Super Bowl is played (not before the playoffs),
@@ -1378,9 +1378,9 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     ut.roster.filter(p=>p.holdout&&!p.holdoutStone).forEach(p=>it.push({key:`holdout${p.id}`,icon:'✋',tone:'urgent',title:`${p.name} (${posTag(p)} ${p.ovr}) is holding out`,sub:'He sits this week\'s game unless he gets a new deal. Talk an extension (same terms as any extension), or let him sit it out.',cta:'Talk extension',onOpen:()=>{setInboxOpen(false);setExtTalk(p);}}));
     // trade requests: one item each, with the two ways to settle it right there
     ut.roster.filter(p=>p.tradeRequest).forEach(p=>it.push({key:`tradeReq${p.id}`,icon:'📨',tone:'action',title:`${p.name} (${posTag(p)} ${p.ovr}) wants a trade`,sub:`His confidence is down to ${Math.round(p.conf??50)}. Talk him down (1 SP, +20 confidence, he stays) or shop him and see what offer comes back.`,cta:'Player card',onOpen:()=>{setInboxOpen(false);setSel(p);},actions:[{label:'💬 Talk him down · 1 pt',onClick:()=>resolveTradeReq(p.id,'negotiate')},{label:'📞 Shop him',onClick:()=>resolveTradeReq(p.id,'trade')}]}));
-    {/* area-scout points: last chance before they stop being usable, or a pile sitting idle */const _rp=scouting?.rpts??0;const _canTrip=!["freeagency","draft"].includes(sp);
-    if(_canTrip&&sp==="resign"&&_rp>=RTRIP_COST)it.push({key:'rptsExpire',icon:'🗺️',tone:'urgent',title:`${_rp} area-scout points about to go unused`,sub:"Area scouts can't travel once free agency opens. Send them on a regional trip this week.",cta:'Regions',onOpen:go('scouting')});
-    else if(_canTrip&&_rp>=10)it.push({key:'rptsPile',icon:'🗺️',tone:'action',title:`${_rp} area-scout points to spend`,sub:`A regional trip costs ${RTRIP_COST} and reads every prospect in that region at once.`,cta:'Regions',onOpen:go('scouting')});}
+    {/* scouts: send them to their regions before the season; spend the season's points before they expire */const _sp=scouting?.pts??0;
+    if(sp==="preseason"&&scouting&&scouting.areasYr!==yr)it.push({key:'scoutAreas',icon:'🗺️',tone:'action',title:'Send your scouts to their regions',sub:'Two regions for each major scout, one for each minor scout. They stay put once the season starts.',cta:'Assign',onOpen:go('scouting')});
+    if(sp==="playoffs"&&_sp>0)it.push({key:'scoutPtsExpire',icon:'🔭',tone:'urgent',title:`${_sp} scouting point${_sp===1?"":"s"} expire when the playoffs end`,sub:"File your reports now: the Combine brings a fresh budget, and the rest is gone.",cta:'Scout',onOpen:go('scouting')});}
     if(false&&Object.keys(rehabChoices).length)it.push({key:'rehab',icon:'🏥',tone:'action',title:'Rehab decisions',sub:'Choose a rehab plan for your injured players.',onOpen:open('rehab')});
     if(coachNag)it.push({key:'coachNag',icon:'📋',tone:'action',title:'Your coaching staff has openings',sub:coachNag.join(', '),onOpen:open('coachNag')});
     /* an empty job (a coach retired or was let go) stays on the list until it's filled */
@@ -1998,7 +1998,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     </div>:<PlayoffPicture teams={teams} ui={ui} wk={sp==="regular"?wk:null} onBox={setBoxView}/>}</div>}
 
     {/* LIVE SIM */}
-    {tab==="livesim"&&liveSim&&(isWet(liveGameRef.current?.g?.wx)||liveSim.holiday)&&<Sky wx={liveGameRef.current?.g?.wx} holiday={liveSim.holiday} z={0} corners/>}{tab==="livesim"&&liveSim&&<div style={{position:"relative",zIndex:1}}>
+    {tab==="livesim"&&liveSim&&(isWet(liveGameRef.current?.g?.wx)||liveSim.holiday)&&<Sky wx={liveGameRef.current?.g?.wx} holiday={liveSim.holiday} z={0} corners/>}{tab==="livesim"&&liveSim&&<div style={{position:"relative",zIndex:1,/* the Record and Milestone Watch rows take room from the field, so the controls stay on screen */"--live-extra":`${((_rc&&(_rc.chase.length>0||_rc.hit.length>0))?32:0)+((_mw&&(_mw.chase.length>0||_mw.hit.length>0))?32:0)}px`}}>
       {MOBILE&&<div style={{position:"fixed",left:0,right:0,bottom:"calc(58px + env(safe-area-inset-bottom))",zIndex:395,display:"flex",gap:8,padding:"8px 10px",background:"linear-gradient(180deg,#0b122000,#0b1220f2 35%)"}}>
         {liveDone?<button onClick={finishLive} style={{flex:1,minHeight:50,borderRadius:12,border:0,background:C.gn,color:"#fff",fontSize:17,fontWeight:900}}>Done: back to the season</button>:<>
         {!liveAwaitingCall&&<button onClick={()=>setLivePaused(p=>!p)} style={{width:84,minHeight:50,borderRadius:12,border:0,background:livePaused?C.gn:"#f97316",color:"#fff",fontSize:16,fontWeight:900}}>{livePaused?"▶ Play":"Pause"}</button>}
@@ -2041,15 +2041,15 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       {/* Running QTE */}
 
       {/* Field */}
-      {_rc&&(_rc.chase.length>0||_rc.hit.length>0)&&<div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",margin:"0 0 6px",fontSize:13}}>
+      {_rc&&(_rc.chase.length>0||_rc.hit.length>0)&&<div style={{display:"flex",alignItems:"center",gap:8,flexWrap:MOBILE?"wrap":"nowrap",overflow:"hidden",whiteSpace:"nowrap",margin:"0 0 6px",fontSize:13}}>
         <span style={{fontSize:11,fontWeight:900,letterSpacing:1.4,color:"#fca5a5"}}>🏆 RECORD WATCH</span>
         {_rc.hit.map(e=><span key={`rh${e.id}${e.label}`} style={{background:"linear-gradient(90deg,#7f1d1d,#b91c1c)",color:"#fff",fontWeight:900,borderRadius:999,padding:"3px 10px",boxShadow:"0 0 14px #ef444466"}}>🏆 {e.name.split(" ").slice(-1)[0]}: {e.scope==="NFL"?"NFL":e.scope} record, {e.label}!</span>)}
-        {_rc.chase.map(e=><span key={`rc${e.id}${e.label}`} style={{background:C.cd,border:"1px solid #ef444455",borderRadius:999,padding:"3px 10px",color:"#e2e8f0"}}><b>{e.name.split(" ").slice(-1)[0]}</b> needs <b style={{color:"#fca5a5"}}>{e.need}</b> {e.label} for the {e.scope==="NFL"?"NFL":e.scope} record ({e.holder})</span>)}
+        {_rc.chase.slice(0,MOBILE?9:Math.max(0,3-_rc.hit.length)).map(e=><span key={`rc${e.id}${e.label}`} style={{background:C.cd,border:"1px solid #ef444455",borderRadius:999,padding:"3px 10px",color:"#e2e8f0"}}><b>{e.name.split(" ").slice(-1)[0]}</b> needs <b style={{color:"#fca5a5"}}>{e.need}</b> {e.label} for the {e.scope==="NFL"?"NFL":e.scope} record ({e.holder})</span>)}
       </div>}
-      {_mw&&(_mw.chase.length>0||_mw.hit.length>0)&&<div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",margin:"0 0 6px",fontSize:13}}>
+      {_mw&&(_mw.chase.length>0||_mw.hit.length>0)&&<div style={{display:"flex",alignItems:"center",gap:8,flexWrap:MOBILE?"wrap":"nowrap",overflow:"hidden",whiteSpace:"nowrap",margin:"0 0 6px",fontSize:13}}>
         <span style={{fontSize:11,fontWeight:900,letterSpacing:1.4,color:C.gd}}>🎯 MILESTONE WATCH</span>
         {_mw.hit.map(e=><span key={`h${e.id}${e.label}`} style={{background:"linear-gradient(90deg,#78350f,#b45309)",color:"#fde68a",fontWeight:900,borderRadius:999,padding:"3px 10px",boxShadow:"0 0 14px #f59e0b66"}}>✨ {e.name.split(" ").slice(-1)[0]}: {e.target.toLocaleString()} {e.label}!</span>)}
-        {_mw.chase.map(e=><span key={`c${e.id}${e.label}`} style={{background:C.cd,border:`1px solid ${C.gd}55`,borderRadius:999,padding:"3px 10px",color:"#e2e8f0"}}><b>{e.name.split(" ").slice(-1)[0]}</b> needs <b style={{color:C.gd}}>{e.need}</b> {e.label} for {e.target.toLocaleString()}</span>)}
+        {_mw.chase.slice(0,MOBILE?9:Math.max(0,3-_mw.hit.length)).map(e=><span key={`c${e.id}${e.label}`} style={{background:C.cd,border:`1px solid ${C.gd}55`,borderRadius:999,padding:"3px 10px",color:"#e2e8f0"}}><b>{e.name.split(" ").slice(-1)[0]}</b> needs <b style={{color:C.gd}}>{e.need}</b> {e.label} for {e.target.toLocaleString()}</span>)}
       </div>}
       {/* Field + play-by-play side by side, so you can read the plays while you watch */}
       {/* desktop: one screen, no scrolling. Field with the charts under it on the left; the play-by-play beside it and the box score under that on the right */}

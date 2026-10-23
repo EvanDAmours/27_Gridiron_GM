@@ -26,7 +26,7 @@ test("dev traits are revealed even for players drafted without a scouted trait",
 });
 
 import { genDC } from "../src/league.js";
-import { aiDraftScore, prospectRead, publicPot } from "../src/scouting.js";
+import { aiDraftScore, prospectRead, publicPot, regionOf } from "../src/scouting.js";
 
 test("every class has a few hidden gems the board undervalues", () => {
   let late = 0, total = 0;
@@ -46,23 +46,23 @@ test("every class has a few hidden gems the board undervalues", () => {
   assert.ok(late / total > 0.4, `${late}/${total} gems lasted past round 3`);
 });
 
-const GROUP = (pos) => ({ QB: "QB", RB: "RB", WR: "REC", TE: "REC", DL: "DL", LB: "LB", CB: "DB", S: "DB", LT: "OL", LG: "OL", C: "OL", RG: "OL", RT: "OL" }[pos]);
+const ON = (r) => ({ major: [r, r], major2: [r, r], minor: [r], minor2: [r] });
 
-test("one average scout has only the public read of a gem", () => {
-  const gem = genDC(2050).find((p) => p.gem);
-  const sc = { major: { id: "m", name: "Scout", group: GROUP(gem.pos), eval: 70 } };
+test("one weak scout has only the public read of a gem", () => {
+  const gem = genDC(2050).find((p) => p.gem && regionOf(p) !== "OTH");
+  const sc = { major: { id: "m", name: "Scout", eval: 62 }, areas: ON(regionOf(gem)) };
   const read = prospectRead(sc, gem);
   assert.ok(Math.abs(read.potV - publicPot(gem)) < 7); // his read's noise is capped at 1.6 sd (~6)
   assert.ok(!read.sleeper);
 });
 
-test("a deep, sharp crew on one group flags its sleepers and special traits early", () => {
-  const crew = (g) => ({ major: { id: "a", name: "A", group: g, eval: 90 }, major2: { id: "b", name: "B", group: g, eval: 88 }, minor: { id: "c", name: "C", group: g, eval: 85 }, minor2: { id: "d", name: "D", group: g, eval: 84 } });
+test("a sharp crew on one region flags its sleepers and special traits early", () => {
+  const crew = (r) => ({ major: { id: "a", name: "A", eval: 90 }, major2: { id: "b", name: "B", eval: 88 }, minor: { id: "c", name: "C", eval: 85 }, minor2: { id: "d", name: "D", eval: 84 }, areas: ON(r) });
   let gems = 0, flagged = 0, close = 0, special = 0, spotted = 0, wrongDev = 0;
   for (let y = 0; y < 12; y++) {
     for (const p of genDC(2070 + y)) {
-      const g = GROUP(p.pos); if (!g) continue;
-      const read = prospectRead(crew(g), p);
+      const r = regionOf(p); if (r === "OTH") continue;
+      const read = prospectRead(crew(r), p);
       if (p.gem) { gems++; if (read.sleeper) flagged++; if (Math.abs(read.potV - p.truePot) <= 5) close++; }
       if (["generational", "superstar"].includes(p.dev)) { special++; if (read.dev === p.dev) spotted++; }
       if (read.dev && read.dev !== p.dev) wrongDev++;
@@ -72,10 +72,10 @@ test("a deep, sharp crew on one group flags its sleepers and special traits earl
   assert.ok(close / gems > 0.7, `${close}/${gems} gems read close to their real ceiling`);
   assert.ok(spotted / special > 0.6, `${spotted}/${special} special traits spotted early`);
   assert.equal(wrongDev, 0);
-  // A single scout on the group never sees traits without a workup.
-  const one = { major: { id: "a", name: "A", group: "DB", eval: 95 } };
-  const db = genDC(2090).filter((p) => GROUP(p.pos) === "DB");
-  assert.ok(db.every((p) => !prospectRead(one, p).devEarly));
+  // A weak scout never sees traits without a report.
+  const one = { major: { id: "a", name: "A", eval: 62 }, areas: ON("SEC") };
+  const sec = genDC(2090).filter((p) => regionOf(p) === "SEC");
+  assert.ok(sec.every((p) => !prospectRead(one, p).devEarly));
 });
 
 import { plantBusts, bustGap, interviewProspect } from "../src/scouting.js";

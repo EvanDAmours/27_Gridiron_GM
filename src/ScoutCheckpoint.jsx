@@ -1,11 +1,12 @@
-// Every fourth week the sim stops here: your scouting points (they cap out, so spend them), how the
-// college season moved the public board, and the prospects your scouts want eyes on near your pick.
+// Twice a season the sim stops here, at the trade deadline and after the last regular-season week:
+// your scouting points (the end-of-season one is the last call: they expire when the playoffs end),
+// how the college season moved the public board, and the prospects your scouts want eyes on near your pick.
 // Mid-sim (simTo set) the sim only pauses: closing this, or scouting everyone it lists, picks it back
 // up, and Stop the sim ends it where it is.
 import React, { useEffect, useRef } from "react";
 import { C, Bdg, CloseX, sheetWrap, sheetBox, SheetGrip } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
-import { prospectRead, SCOUT_PTS_CAP, scoutCost } from "./scouting.js";
+import { prospectRead, scoutCost, SCOUT_CHECKPOINTS, SCOUT_PTS_COMBINE } from "./scouting.js";
 import { posTag } from "./dline.js";
 import { ScoutPtsBadge, ScoutButton, GradeChip } from "./ScoutingUI.jsx";
 
@@ -17,7 +18,7 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick
   const byId = new Map(cls.map((p) => [p.id, p]));
   const targets = targetIds.map((id) => byId.get(id)).filter(Boolean);
   const sc = g.scouting || {};
-  const pts = sc.pts || 0, full = pts >= SCOUT_PTS_CAP - 1;
+  const pts = sc.pts || 0, last = wk >= SCOUT_CHECKPOINTS[SCOUT_CHECKPOINTS.length - 1];
   const cheapest = Math.min(...targets.map((p) => scoutCost(p) || 99), 99);
   // everyone it asked for now has a report: mid-sim, carry on by itself (only once you've scouted here)
   const allDone = targets.length > 0 && targets.every((p) => prospectRead(sc, p).lvl > 0);
@@ -34,24 +35,25 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick
         <CloseX onClick={onClose} />
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 10, paddingRight: 40 }}>
           <div style={{ flex: 1, minWidth: 220 }}>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#38bdf8" }}>🔭 SCOUTING CHECKPOINT · WEEK {wk}</div>
-            <div style={{ fontSize: MOBILE ? 19 : 23, fontWeight: 900 }}>Your scouts are back from the road</div>
+            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#38bdf8" }}>🔭 {last ? "END OF THE SEASON" : "TRADE DEADLINE"} · SCOUTING CHECK-IN</div>
+            <div style={{ fontSize: MOBILE ? 19 : 23, fontWeight: 900 }}>{last ? "Your scouts' last report of the season" : "Your scouts are back from the road"}</div>
             <div style={{ fontSize: 13, color: "#cbd5e1" }}>You pick around <b>#{pick}</b> right now. Every report you file now is a pick you don't make blind in April.</div>
             {simTo && <div style={{ fontSize: 13, color: "#7dd3fc", fontWeight: 700, marginTop: 4 }}>{allDone && !startedDone.current ? "✓ All scouted. Back to the sim…" : `⏸ Sim paused. It carries on to week ${simTo} when you're done here.`}</div>}
           </div>
           <ScoutPtsBadge pts={pts} sc={sc} />
         </div>
-        {(full || sc.lost > 0) && <div style={{ ...box, background: "#7c2d1222", border: "1px solid #f9731666", fontSize: 13, color: "#fdba74" }}>
-          ⚠ Your scouts carry at most <b>{SCOUT_PTS_CAP}</b> points of unfiled work; past that, each week's point is lost.{sc.lost > 0 ? <> You've already lost <b>{sc.lost}</b> this year.</> : " You're at the cap: spend some now."}
+        {last && pts > 0 && <div style={{ ...box, background: "#7c2d1222", border: "1px solid #f9731666", fontSize: 13, color: "#fdba74" }}>
+          ⚠ Use them or lose them: your <b>{pts}</b> point{pts === 1 ? "" : "s"} expire when the playoffs end. The Combine brings {SCOUT_PTS_COMBINE} fresh ones for draft week, nothing more.
         </div>}
         <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "1fr 1.2fr", gap: 10 }}>
           <div style={box}>
             <div style={head("#fbbf24")}>📈 COLLEGE STOCK WATCH</div>
             <div style={{ fontSize: 11, color: C.mt, marginBottom: 4 }}>The public board moved. Some of it is real, some of it is hype; only a report tells you which.</div>
-            {news.length ? news.map((n) => <div key={n.pid} style={{ display: "flex", gap: 6, alignItems: "baseline", fontSize: 13, padding: "4px 0", borderBottom: "1px solid #ffffff0d" }}>
+            {news.length ? news.slice(0, 6).map((n) => <div key={n.pid} style={{ display: "flex", gap: 6, alignItems: "baseline", fontSize: 13, padding: "4px 0", borderBottom: "1px solid #ffffff0d" }}>
               <b style={{ color: n.dir > 0 ? C.gn : C.rd, width: 14 }}>{n.dir > 0 ? "▲" : "▼"}</b>
               <span style={{ flex: 1, minWidth: 0 }}><b>{n.name}</b> <span style={{ color: C.mt }}>{n.pos} · {n.college}</span><div style={{ fontSize: 12, color: "#94a3b8" }}>#{n.from} → #{n.to}: {n.why}</div></span>
-            </div>) : <div style={{ fontSize: 13, color: C.mt }}>A quiet month on the college beat.</div>}
+            </div>) : <div style={{ fontSize: 13, color: C.mt }}>A quiet stretch on the college beat.</div>}
+            {news.length > 6 && <div style={{ fontSize: 12, color: C.mt, marginTop: 4 }}>+{news.length - 6} more moves in your log.</div>}
           </div>
           <div style={box}>
             <div style={head("#38bdf8")}>🎯 YOUR SCOUTS WANT EYES ON</div>

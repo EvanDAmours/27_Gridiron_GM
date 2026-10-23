@@ -14,9 +14,9 @@ import Spotlight, { Dim } from "./Spotlight.jsx";
 import { ROLE_FILTERS, roleFilterMatch } from "./roleNeeds.js";
 import {
   prospectRead, scoutProspect, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, scoutsShortlist, coverage, csRank, riskLabel, gradeTone,
-  SCOUT_GROUPS, SCOUT_ROLES, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
-  staffWindowOpen, SCOUT_SLOTS, slotKind, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, scoutGroup, isSmallSchool, devOf,
-  myBoard, REGIONS, regionOf, regionName, scoutRegion, RTRIP_COST, RPTS_START, RPTS_COMBINE, RPTS_WEEKLY, MAX_TRIPS,
+  SCOUT_ROLES, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
+  staffWindowOpen, SCOUT_SLOTS, slotKind, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, isSmallSchool, devOf,
+  myBoard, regionOf, regionName, areasOf, assignArea, AREA_KEYS, uncovered, SCOUT_CHECKPOINTS, areaSeason, lockAreas,
 } from "./scouting.js";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
@@ -49,7 +49,7 @@ export function GradeChip({ g, small, title }) {
 }
 
 const DEV_STYLE = { generational: ["#f472b6", "#9d174d"], superstar: ["#f5c542", "#8a6d1d"], star: ["#60a5fa", "#1e3a5f"], normal: ["#94a3b8", C.bd], late: ["#c4b5fd", "#6d5bd0"] };
-export function DevChip({ dev, hint = "Development trait unknown. Your major scout reveals it with a full workup." }) {
+export function DevChip({ dev, hint = "Development trait unknown. A full workup from a major scout always reveals it; a sharp scout often sees it sooner." }) {
   if (!dev || !DEV_STYLE[dev] || !DEV_TRAITS[dev]) return <span title={hint} style={{ fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 999, border: `1px dashed ${C.bd}`, color: "#475569", whiteSpace: "nowrap" }}>Dev ?</span>;
   const [c, b] = DEV_STYLE[dev];
   return <span title={DEV_TRAITS[dev].desc} style={{ fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 999, border: `1px solid ${b}`, color: c, background: c + "14", whiteSpace: "nowrap" }}>{DEV_TRAITS[dev].name}</span>;
@@ -58,7 +58,7 @@ export function DevChip({ dev, hint = "Development trait unknown. Your major sco
 // The development trait, big: on the player card, the prospect's read and draft night, where it
 // matters most. The rarer the trait, the louder the badge. size: "md" or "lg".
 const DEV_ICON = { generational: "💎", superstar: "⚡", star: "⭐", late: "🌱", normal: "" };
-export function DevBadge({ dev, size = "md", hint = "Development trait unknown. Your major scout reveals it with a full workup." }) {
+export function DevBadge({ dev, size = "md", hint = "Development trait unknown. A full workup from a major scout always reveals it; a sharp scout often sees it sooner." }) {
   const lg = size === "lg", fs = lg ? 15 : 13, pad = lg ? "6px 14px" : "4px 11px";
   if (!dev || !DEV_STYLE[dev] || !DEV_TRAITS[dev]) return <span title={hint} style={{ display: "inline-flex", alignItems: "center", fontSize: fs, fontWeight: 900, letterSpacing: 1, padding: pad, borderRadius: 8, border: `1px dashed ${C.bd}`, color: "#64748b", whiteSpace: "nowrap" }}>DEV ?</span>;
   const [c, b] = DEV_STYLE[dev], hot = dev === "generational" || dev === "superstar";
@@ -74,7 +74,7 @@ export function CovTag({ read }) {
   const role = read.cov;
   const c = role === "major" ? "#f5c542" : role === "minor" ? "#60a5fa" : "#64748b";
   const crew = read.scout ? [read.scout, ...(read.others || [])] : [];
-  const title = crew.length > 1 ? `${crew.length} scouts on it: ${crew.map((x) => x.name).join(", ")} all work ${SCOUT_GROUPS[read.scout.group].toLowerCase()}` : read.scout ? `${SCOUT_ROLES[role].name}: ${read.scout.name} (${SCOUT_GROUPS[read.scout.group].toLowerCase()})` : "None of your scouts covers this position group, so your front office's generalists file the reports.";
+  const title = crew.length > 1 ? `${crew.length} scouts on it: ${crew.map((x) => x.name).join(", ")} all work the ${regionName(read.region)}` : read.scout ? `${SCOUT_ROLES[role].name}: ${read.scout.name} (${regionName(read.region)}, evaluation ${read.scout.eval})` : `None of your scouts works the ${regionName(read.region)}, so your front office's generalists file the reports.`;
   return <span title={title} style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", padding: "2px 6px", borderRadius: 3, border: `1px solid ${c}66`, color: c, whiteSpace: "nowrap" }}>{role === "office" ? "No scout" : crew.length > 1 ? `${crew.length} scouts` : SCOUT_ROLES[role].short}</span>;
 }
 
@@ -231,9 +231,9 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
     .filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()) || (p.bio?.college || "").toLowerCase().includes(q.toLowerCase()))
     .filter((p) => {
       if (show === "all") return true;
-      if (["flagged", "redflags", "special", "regions"].includes(show)) {
+      if (["flagged", "redflags", "special"].includes(show)) {
         const r = prospectRead(g.scouting, p);
-        return show === "flagged" ? r.sleeper || r.hunch : show === "redflags" ? r.flag : show === "special" ? ["generational", "superstar", "star"].includes(r.dev) : r.trips > 0;
+        return show === "flagged" ? r.sleeper || r.hunch : show === "redflags" ? r.flag : ["generational", "superstar", "star"].includes(r.dev);
       }
       return show === "scouted" ? p.scout?.lvl > 0 : show === "unscouted" ? !p.scout?.lvl : show === "list" ? ids.includes(p.id) : coverage(g.scouting, p).role !== "office";
     })
@@ -263,14 +263,13 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
         </Select>
         <Select value={show} onChange={(e) => { setShow(e.target.value); setN(page); }} aria-label="Show" style={MOBILE ? { ...sel, flex: "1 1 0", minWidth: 0 } : sel}>
           <option value="all">{MOBILE ? "All" : "Everyone"}</option>
-          <option value="covered">Groups my scouts cover</option>
+          <option value="covered">Regions my scouts cover</option>
           <option value="scouted">Scouted</option>
           <option value="unscouted">Not scouted yet</option>
           <option value="list">On my list</option>
           <option value="flagged">💎 Sleepers & hunches</option>
           <option value="redflags">🚩 Red flags (bust risks)</option>
           <option value="special">⭐ Special dev traits spotted</option>
-          <option value="regions">🗺️ From regions I've scouted</option>
         </Select>
         {MOBILE && !searching && <button onClick={() => setSearching(true)} aria-label="Search prospects" style={{ ...sel, width: 44, padding: 0, cursor: "pointer" }}>🔍</button>}
         {(!MOBILE || searching) && <input value={q} autoFocus={MOBILE} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search name or college" aria-label="Search prospects" style={{ ...sel, flex: "1 1 160px" }} />}
@@ -339,13 +338,31 @@ export function YourList({ g, classYr, onDraft, canDraft, compact = false }) {
 
 // ---------- Scouting staff ----------
 
+// The regions one scouting job works, as dropdowns while the staff window's open.
+function AreaPicker({ g, slot }) {
+  const s = g.scouting || {};
+  const mine = areasOf(s)[slot];
+  const open = staffWindowOpen(g.sp);
+  const set = (i, r) => { const x = assignArea(s, g.sp, slot, i, r, g.yr); g.sm(x.msg); if (x.ok) g.setScouting(x.sc); };
+  if (!open) return <div style={{ fontSize: 13, color: "#cbd5e1" }}>🗺️ {mine.map(regionName).join(" · ")}</div>;
+  return (
+    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+      <span style={{ fontSize: 13 }}>🗺️</span>
+      {mine.map((r, i) => (
+        <Select key={i} value={r} onChange={(e) => set(i, e.target.value)} aria-label={`${SCOUT_ROLES[slot].name} region ${i + 1}`} style={{ background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "4px 6px", fontSize: 13, flex: "1 1 120px", minWidth: 0 }}>
+          {AREA_KEYS.map((k) => <option key={k} value={k}>{regionName(k)}</option>)}
+        </Select>
+      ))}
+    </div>
+  );
+}
+
 function ScoutCard({ scout, role, children }) {
   const rc = role === "pool" ? "#94a3b8" : slotKind(role) === "major" ? "#f5c542" : "#60a5fa";
   return (
     <div style={{ background: role === "pool" ? "#0d1424" : C.cd, border: `1px ${scout ? "solid" : "dashed"} ${C.bd}`, borderRadius: 6, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
       <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
         <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", color: rc }}>{SCOUT_ROLES[role]?.name || "Available"}</span>
-        {scout && <b style={{ fontSize: 14 }}>{SCOUT_GROUPS[scout.group]}</b>}
       </div>
       {scout ? (
         <>
@@ -368,22 +385,26 @@ export function ScoutsView({ g }) {
   const s = g.scouting || {};
   const open = staffWindowOpen(g.sp);
   const act = (r) => { g.sm(r.msg); if (r.ok) g.setScouting(r.sc); };
-  const pool = [...(s.pool || [])].sort((a, b) => a.group.localeCompare(b.group) || b.eval - a.eval);
+  const pool = [...(s.pool || [])].sort((a, b) => b.eval - a.eval);
+  const gap = uncovered(s);
   const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,250px),1fr))", gap: 8, marginBottom: 8 };
   return (
     <div>
       <div style={panel}>
         <div style={head}>SCOUTING POINTS<Right><b style={{ fontSize: 22, color: C.gd }}>{s.pts || 0}</b></Right></div>
-        <div style={muted}>Scouting has its own budget, separate from SP. You start each season with {SCOUT_PTS_START}, earn {SCOUT_PTS_WEEKLY} every week of the regular season and get {SCOUT_PTS_COMBINE} more at the Combine. A scouting report costs 1 point and a full workup 2 more. Unused points expire when the next season starts.</div>
+        <div style={muted}>Scouting has its own budget, separate from SP. You start each season with {SCOUT_PTS_START} and earn {SCOUT_PTS_WEEKLY} every week of the regular season. A scouting report costs 1 point and a full workup 2 more. <b style={{ color: "#fcd34d" }}>Whatever's left when the playoffs end expires</b>: the Combine gives you a fresh {SCOUT_PTS_COMBINE} for draft week.</div>
       </div>
       <div style={grid}>
         {SCOUT_SLOTS.map((role) => (
           <ScoutCard key={role} scout={s[role]} role={role}>
+            <AreaPicker g={g} slot={role} />
             <div style={{ ...muted, marginTop: 3 }}>{SCOUT_ROLES[role].desc}</div>
             {open && s[role] && <div><Btn onClick={() => act(releaseScout(s, g.sp, role))} bg="#7f1d1d" c="#fca5a5" style={{ fontSize: 13, padding: "5px 10px", marginTop: 4 }}>Let go</Btn></div>}
           </ScoutCard>
         ))}
       </div>
+      {gap.length > 0 && <div style={{ background: "#78350f33", border: "1px solid #b4530966", borderRadius: 6, padding: "6px 10px", fontSize: 13, color: "#fcd34d", marginBottom: 8 }}>Nobody works the {gap.map(regionName).join(" or the ")}: prospects there only get the front office's rough reads.</div>}
+      {open && s.areasYr !== areaSeason(g.sp, g.yr) && <div style={{ marginBottom: 8 }}><Btn onClick={() => { g.setScouting(lockAreas(s, g.sp, g.yr)); g.sm("Your scouts have their regions for the season."); }} bg={C.gn} style={{ fontSize: 14 }}>✓ Lock in these regions</Btn></div>}
       {open && SCOUT_SLOTS.some((k) => s[k]) && <div style={{ marginBottom: 8 }}><Btn onClick={() => act(swapScoutRoles(s, g.sp))} bg={C.bd} c="#cbd5e1" style={{ fontSize: 11 }}>⇄ Swap major and minor roles</Btn></div>}
       <div style={panel}>
         <div style={head}>WHAT YOUR SCOUTS CAN TELL YOU</div>
@@ -391,13 +412,13 @@ export function ScoutsView({ g }) {
           <table style={{ borderCollapse: "collapse", fontSize: 11, width: "100%", minWidth: 520 }}>
             <thead><tr style={{ color: C.mt, textAlign: "left" }}><th style={{ padding: 4 }}></th><th style={{ padding: 4 }}>Without a report</th><th style={{ padding: 4 }}>Scouting report (1 pt)</th><th style={{ padding: 4 }}>Full workup (+2 pts)</th></tr></thead>
             <tbody style={{ color: "#cbd5e1" }}>
-              <tr style={{ borderTop: `1px solid ${C.bd}` }}><td style={{ padding: 4 }}><b>Major scouts' groups</b>{["major", "major2"].filter((k) => s[k]).map((k) => <div key={k} style={{ color: C.mt }}>{SCOUT_GROUPS[s[k].group]}</div>)}</td><td style={{ padding: 4 }}>A general idea of every prospect's ceiling (letter grade)</td><td style={{ padding: 4 }}>Close estimates, tool grades, strengths, an NFL comparable</td><td style={{ padding: 4 }}><b>Exact ratings and his development trait</b></td></tr>
-              <tr style={{ borderTop: `1px solid ${C.bd}` }}><td style={{ padding: 4 }}><b>Minor scouts' groups</b>{["minor", "minor2"].filter((k) => s[k]).map((k) => <div key={k} style={{ color: C.mt }}>{SCOUT_GROUPS[s[k].group]}</div>)}</td><td style={{ padding: 4 }}>A rougher general idea of every prospect's ceiling</td><td style={{ padding: 4 }}>Looser estimates and the full write-up</td><td style={{ padding: 4 }}>Sharper estimates (no development trait)</td></tr>
-              <tr style={{ borderTop: `1px solid ${C.bd}` }}><td style={{ padding: 4 }}><b>Other groups</b></td><td style={{ padding: 4 }}>Only the consensus ranking</td><td style={{ padding: 4 }}>A rough estimate from the front office</td><td style={{ padding: 4 }}>A slightly better estimate</td></tr>
+              <tr style={{ borderTop: `1px solid ${C.bd}` }}><td style={{ padding: 4 }}><b>Major scouts' regions</b>{["major", "major2"].filter((k) => s[k]).map((k) => <div key={k} style={{ color: C.mt }}>{areasOf(s)[k].map(regionName).join(", ")}</div>)}</td><td style={{ padding: 4 }}>A general idea of every prospect's ceiling (letter grade)</td><td style={{ padding: 4 }}>Close estimates, tool grades, strengths, an NFL comparable</td><td style={{ padding: 4 }}><b>Exact ratings and his development trait</b></td></tr>
+              <tr style={{ borderTop: `1px solid ${C.bd}` }}><td style={{ padding: 4 }}><b>Minor scouts' regions</b>{["minor", "minor2"].filter((k) => s[k]).map((k) => <div key={k} style={{ color: C.mt }}>{areasOf(s)[k].map(regionName).join(", ")}</div>)}</td><td style={{ padding: 4 }}>A rougher general idea of every prospect's ceiling</td><td style={{ padding: 4 }}>Looser estimates and the full write-up</td><td style={{ padding: 4 }}>Sharper estimates (and, from a good scout, his development trait)</td></tr>
+              <tr style={{ borderTop: `1px solid ${C.bd}` }}><td style={{ padding: 4 }}><b>Uncovered regions, FCS schools</b></td><td style={{ padding: 4 }}>Only the consensus ranking</td><td style={{ padding: 4 }}>A rough estimate from the front office</td><td style={{ padding: 4 }}>A slightly better estimate</td></tr>
             </tbody>
           </table>
         </div>
-        <div style={{ ...muted, marginTop: 6 }}>Spread your four scouts across four groups to see more of the class, or stack them on one group for sharper reads there. A scout's Evaluation rating sets how close his reads are. The Big Board never reorders when you scout: it's always in consensus order, and your own ranking lives in Your list.</div>
+        <div style={{ ...muted, marginTop: 6 }}>Assign regions before the season: a major scout works two, a minor scout one. Spread them over all six to see the whole class, or double up on one for a second opinion there. <b>Evaluation is everything</b>: a sharp scout's reads are close, he flags his regions' sleepers and red flags on his own, and he spots the special development traits before you spend a point (a good major scout often reads it on the first report). The Big Board never reorders when you scout: it's always in consensus order, and your own ranking lives in Your list.</div>
       </div>
       <div style={panel}>
         <div style={head}>SCOUTS AVAILABLE</div>
@@ -638,11 +659,10 @@ export function DraftGrades({ g }) {
 // Pass the scouting state as sc to show the area scouts' points beside it.
 export function ScoutPtsBadge({ pts = 0, sc, slim }) {
   const on = pts > 0;
-  const area = sc ? sc.rpts ?? RPTS_START : null;
   // slim: one small pill for draft day, where the clock and the board need the room
   if (slim) return (
-    <span title="Scouting points left (and area-scout points)" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 999, background: on ? `${C.gd}22` : C.cd, border: `1px solid ${on ? C.gd : C.bd}`, fontSize: 13, fontWeight: 800, color: on ? "#fde68a" : C.mt, whiteSpace: "nowrap" }}>
-      🔎 {pts} pts{area != null && <span style={{ color: "#7dd3fc" }}>· {area} area</span>}
+    <span title="Scouting points left" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 999, background: on ? `${C.gd}22` : C.cd, border: `1px solid ${on ? C.gd : C.bd}`, fontSize: 13, fontWeight: 800, color: on ? "#fde68a" : C.mt, whiteSpace: "nowrap" }}>
+      🔎 {pts} pts
     </span>
   );
   return (
@@ -651,10 +671,6 @@ export function ScoutPtsBadge({ pts = 0, sc, slim }) {
         <span style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, color: on ? C.gd : C.mt, fontVariantNumeric: "tabular-nums" }}>{pts}</span>
         <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1, lineHeight: 1.25, color: on ? "#fde68a" : C.mt }}>SCOUTING<br />POINT{pts === 1 ? "" : "S"} LEFT</span>
       </span>
-      {area != null && <span title={`Area-scout points for regional trips (${RTRIP_COST} a trip)`} style={{ display: "inline-flex", alignItems: "center", gap: 8, borderLeft: `1px solid ${C.bd}`, paddingLeft: 12 }}>
-        <span style={{ fontSize: 28, fontWeight: 900, lineHeight: 1, color: "#7dd3fc", fontVariantNumeric: "tabular-nums" }}>{area}</span>
-        <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, lineHeight: 1.25, color: "#7dd3fc" }}>AREA<br />PTS</span>
-      </span>}
     </div>
   );
 }
@@ -827,38 +843,35 @@ export function MockDraft({ g }) {
   );
 }
 
-// Area scouting: send scouts through a conference for a rough read on everyone there.
+// Regions: who works each conference this year, and what they've turned up there.
 export function RegionsView({ g }) {
   const s = g.scouting || {};
   const cls = g.dc[g.yr] || [];
-  const trips = s.regionsYr === g.yr ? s.regions || {} : {};
-  const rp = s.rpts ?? RPTS_START;
-  const open = g.sp !== "freeagency" && g.sp !== "draft";
-  const keys = [...Object.keys(REGIONS), "OTH"];
+  const ar = areasOf(s);
+  const keys = [...AREA_KEYS, "OTH"];
   const rows = keys.map((k) => {
     const ps = cls.filter((p) => regionOf(p) === k);
     const top = [...ps].sort((a, b) => csRank(a) - csRank(b))[0];
-    const flagged = ps.filter((p) => { const r = prospectRead(s, p); return r.sleeper || r.hunch; }).length;
-    return { k, n: ps.length, top, t: trips[k] || 0, flagged, r1: ps.filter((p) => csRank(p) <= 32).length };
+    const reads = ps.map((p) => prospectRead(s, p));
+    return { k, n: ps.length, top, r1: ps.filter((p) => csRank(p) <= 32).length, on: SCOUT_SLOTS.filter((sl) => s[sl] && ar[sl].includes(k)), sleepers: reads.filter((r) => r.sleeper || r.hunch).length, flags: reads.filter((r) => r.flag).length, devs: reads.filter((r) => ["generational", "superstar", "star"].includes(r.dev)).length };
   });
-  const send = (k) => { const r = scoutRegion(s, g.sp, k, g.yr, g.yr); g.sm(r.msg); if (r.ok) g.setScouting(r.sc); };
   return (
     <div>
       <div style={panel}>
-        <div style={head}>AREA SCOUTING<Right><b style={{ fontSize: 22, color: C.gd }}>{rp}</b><span style={{ fontSize: 12, color: C.mt }}> area pts</span></Right></div>
-        <div style={muted}>Your area scouts work conferences, not players. A trip ({RTRIP_COST} area points; you get {RPTS_START} at the start of the season, {RPTS_WEEKLY} every week and {RPTS_COMBINE} more at the Combine: four of the six regions inside out a year) gives you a rough read on <b>every</b> prospect from that region. Each trip back sharpens every read there (up to {MAX_TRIPS} trips), and from the third trip on they start seeing through the board to the region's sleepers. It's volume, not depth: for close estimates, exact ratings and development traits, use your position scouts' reports and workups (regular scouting points).</div>
+        <div style={head}>YOUR SCOUTS' REGIONS</div>
+        <div style={muted}>Each major scout works two regions and each minor scout one; set them on the Scouts tab in free agency or the preseason. Everyone from a region your scouts work gets a general read without spending a point, and how much they see through the board (sleepers, red flags, development traits) comes down to the scout's evaluation.</div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,300px),1fr))", gap: 8 }}>
         {rows.map((r) => (
-          <div key={r.k} style={{ ...panel, marginBottom: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              <b style={{ fontSize: 17, flex: 1 }}>{regionName(r.k)}</b>
-              <span title={`${r.t} of ${MAX_TRIPS} trips`} style={{ letterSpacing: 2, color: C.gd }}>{"●".repeat(r.t)}<span style={{ color: "#334155" }}>{"●".repeat(MAX_TRIPS - r.t)}</span></span>
-            </div>
-            <div style={{ fontSize: 13, color: C.mt, marginBottom: 8 }}>{r.n} prospects · {r.r1} on the board's first round{r.top ? <> · top: <b style={{ color: "#e2e8f0", cursor: "pointer" }} onClick={() => g.setSel(r.top)}>{r.top.name}</b> ({r.top.pos}, #{csRank(r.top)})</> : null}</div>
-            {r.flagged > 0 && <div style={{ fontSize: 13, color: "#f9a8d4", marginBottom: 6 }}>💎 {r.flagged} possible sleeper{r.flagged > 1 ? "s" : ""} flagged here</div>}
-            {r.k === "OTH" ? <div style={{ fontSize: 12, color: C.mt }}>Independents and FCS schools are too spread out for area trips; scout them one at a time.</div>
-              : <Btn onClick={() => send(r.k)} disabled={!open || r.t >= MAX_TRIPS || rp < RTRIP_COST} bg={C.bl} style={{ fontSize: 14, padding: "6px 12px" }}>{r.t >= MAX_TRIPS ? "Fully scouted" : `Send area scouts (${RTRIP_COST} pts)`}</Btn>}
+          <div key={r.k} style={{ ...panel, marginBottom: 0, borderColor: r.on.length || r.k === "OTH" ? C.bd : "#b4530988" }}>
+            <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 4 }}>{regionName(r.k)}</div>
+            <div style={{ fontSize: 13, marginBottom: 6 }}>{r.on.length ? r.on.map((sl) => <span key={sl} style={{ marginRight: 10 }}><b style={{ color: slotKind(sl) === "major" ? "#f5c542" : "#60a5fa" }}>{s[sl].name}</b> <span style={{ color: C.mt }}>({s[sl].eval})</span></span>) : <span style={{ color: "#fcd34d" }}>{r.k === "OTH" ? "Too spread out to cover: the front office reads them" : "Nobody's working it"}</span>}</div>
+            <div style={{ fontSize: 13, color: C.mt, marginBottom: 6 }}>{r.n} prospects · {r.r1} on the board's first round{r.top ? <> · top: <b style={{ color: "#e2e8f0", cursor: "pointer" }} onClick={() => g.setSel(r.top)}>{r.top.name}</b> ({r.top.pos}, #{csRank(r.top)})</> : null}</div>
+            {(r.sleepers > 0 || r.flags > 0 || r.devs > 0) && <div style={{ fontSize: 13, display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {r.sleepers > 0 && <span style={{ color: "#f9a8d4" }}>💎 {r.sleepers} sleeper{r.sleepers > 1 ? "s" : ""}</span>}
+              {r.flags > 0 && <span style={{ color: "#fca5a5" }}>🚩 {r.flags} red flag{r.flags > 1 ? "s" : ""}</span>}
+              {r.devs > 0 && <span style={{ color: C.gd }}>⭐ {r.devs} special dev trait{r.devs > 1 ? "s" : ""}</span>}
+            </div>}
           </div>
         ))}
       </div>
@@ -873,9 +886,7 @@ export function ScoutingHQ({ g, go }) {
   const s = g.scouting || {};
   const cls = g.dc[g.yr] || [];
   const me = g.teams[g.ui];
-  const rp = s.rpts ?? RPTS_START;
-  const trips = s.regionsYr === g.yr ? s.regions || {} : {};
-  const canTravel = g.sp !== "freeagency" && g.sp !== "draft";
+  const gap = uncovered(s);
   // your thinnest spots: the positions where your best player is weakest
   const needs = topNeeds(me?.roster || [], 3);
   const isNeed = (p) => fillsNeed(needs, p);
@@ -884,8 +895,6 @@ export function ScoutingHQ({ g, go }) {
   const first = myPicks.length ? mySlots(g)[0] ?? null : null;
   const inRange = (p) => first == null || (csRank(p) >= first - 10 && csRank(p) <= first + 24);
   const targets = cls.filter((p) => isNeed(p) && inRange(p) && !p.drafted).map((p) => ({ p, read: prospectRead(s, p) })).filter((x) => x.read.cost).sort((a, b) => csRank(a.p) - csRank(b.p)).slice(0, 6);
-  const regionPick = Object.keys(REGIONS).map((k) => ({ k, n: cls.filter((p) => regionOf(p) === k && csRank(p) <= 64).length, t: trips[k] || 0 })).filter((r) => r.t < MAX_TRIPS).sort((a, b) => b.n - a.n || a.t - b.t)[0];
-  const send = (k) => { const r = scoutRegion(s, g.sp, k, g.yr, g.yr); g.sm(r.msg); if (r.ok) g.setScouting(r.sc); };
   const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
   const h = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8 };
   const Budget = ({ icon, v, label, sub, tone }) => (
@@ -898,16 +907,16 @@ export function ScoutingHQ({ g, go }) {
   return (
     <div style={{ display: "grid", gap: 12 }}>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 100%", fontSize: 13, color: "#94a3b8" }}>A report on one prospect costs 1 scouting point, a full workup 2 more (+{SCOUT_PTS_WEEKLY} a week in season, +{SCOUT_PTS_COMBINE} at the Combine). An area trip costs {RTRIP_COST} area points and reads a whole region.</div>
+        <div style={{ flex: "1 1 100%", fontSize: 13, color: "#94a3b8" }}>A report on one prospect costs 1 scouting point, a full workup 2 more (+{SCOUT_PTS_WEEKLY} a week in season). Your scouts check in at the trade deadline (week {SCOUT_CHECKPOINTS[0]}) and after week {SCOUT_CHECKPOINTS[1]}; points left when the playoffs end expire, and the Combine brings {SCOUT_PTS_COMBINE} fresh ones for draft week.</div>
         {g.sp === "combine" && <Budget icon="🎤" v={s.interviewsLeft || 0} label="INTERVIEWS LEFT" tone="#c4b5fd" sub="Combine week only: learn a prospect's character and how he'll handle the pros." />}
       </div>
       <div style={card}>
         <div style={{ ...h, display: "flex" }}>DO THIS NEXT<span style={{ marginLeft: "auto", color: C.mt, letterSpacing: 0 }}>your biggest needs: {needs.join(", ")}{first ? ` · first pick around #${first}` : ""}</span></div>
-        {canTravel && regionPick && rp >= RTRIP_COST && (
+        {staffWindowOpen(g.sp) && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${C.bd}`, flexWrap: "wrap" }}>
             <span style={{ fontSize: 22 }}>🗺️</span>
-            <div style={{ flex: 1, minWidth: 200 }}><div style={{ fontWeight: 800, fontSize: 15 }}>Send your area scouts to the {regionName(regionPick.k)}</div><div style={{ fontSize: 13, color: "#94a3b8" }}>{regionPick.n} of the board's top 64 play there. A trip reads every prospect in the region at once.</div></div>
-            <Btn onClick={() => send(regionPick.k)} bg={C.bl} style={{ fontSize: 14, padding: "8px 14px" }}>Send ({RTRIP_COST} pts)</Btn>
+            <div style={{ flex: 1, minWidth: 200 }}><div style={{ fontWeight: 800, fontSize: 15 }}>{s.areasYr === areaSeason(g.sp, g.yr) ? "Your scouts' regions are set" : "Send your scouts to their regions"}</div><div style={{ fontSize: 13, color: "#94a3b8" }}>{gap.length ? `Nobody works the ${gap.map(regionName).join(" or the ")} right now. ` : ""}Two regions for each major scout, one for each minor scout. Put your best evaluators where the talent is.</div></div>
+            <Btn onClick={() => go("scouts")} bg={C.bl} style={{ fontSize: 14, padding: "8px 14px" }}>Assign regions</Btn>
           </div>
         )}
         {g.sp === "combine" && (
@@ -940,15 +949,15 @@ export function ScoutingHQ({ g, go }) {
           {SCOUT_SLOTS.map((r) => { const sc = s[r]; return (
             <div key={r} style={{ background: C.bg, border: `1px ${sc ? "solid" : "dashed"} ${C.bd}`, borderRadius: 10, padding: "8px 10px" }}>
               <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: slotKind(r) === "major" ? "#f5c542" : "#60a5fa" }}>{SCOUT_ROLES[r].name.toUpperCase()}</div>
-              {sc ? <><div style={{ fontSize: 15, fontWeight: 800 }}>{sc.name}</div><div style={{ fontSize: 13, color: "#94a3b8" }}>{SCOUT_GROUPS[sc.group]} · evaluation <b style={{ color: oC(sc.eval) }}>{sc.eval}</b></div></> : <div style={{ fontSize: 14, color: C.mt }}>Vacant{staffWindowOpen(g.sp) ? ": hire one" : ""}</div>}
+              {sc ? <><div style={{ fontSize: 15, fontWeight: 800 }}>{sc.name}</div><div style={{ fontSize: 13, color: "#94a3b8" }}>{areasOf(s)[r].map(regionName).join(" · ")} · evaluation <b style={{ color: oC(sc.eval) }}>{sc.eval}</b></div></> : <div style={{ fontSize: 14, color: C.mt }}>Vacant{staffWindowOpen(g.sp) ? ": hire one" : ""}</div>}
             </div>); })}
         </div>
       </div>
       <div style={card}>
         <div style={h}>HOW SCOUTING WORKS</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 10, fontSize: 14, lineHeight: 1.45, color: "#cbd5e1" }}>
-          <div><b style={{ color: "#7dd3fc" }}>1. Area trips</b><br />Area points. A rough read on every prospect in a region; more trips sharpen it and turn up sleepers.</div>
-          <div><b style={{ color: C.gd }}>2. Scouting reports</b><br />1 scouting point per prospect: close estimates, tool grades and an NFL comparison. Best in your scouts' position groups.</div>
+          <div><b style={{ color: "#7dd3fc" }}>1. Regions</b><br />Free. Before the season, send each scout to his regions: a general read on everyone there, and the sharper the scout, the more sleepers, red flags and dev traits he turns up.</div>
+          <div><b style={{ color: C.gd }}>2. Scouting reports</b><br />1 scouting point per prospect: close estimates, tool grades and an NFL comparison. Best in your scouts' regions.</div>
           <div><b style={{ color: C.gn }}>3. Full workups</b><br />2 more points: exact ratings, and from a major scout his development trait. Save these for the players you'd actually draft.</div>
         </div>
       </div>
@@ -978,7 +987,7 @@ export function ScoutingPage({ g }) {
       {v === "board" && (
         <>
           <div style={{ ...panel, display: "flex", gap: "8px 24px", flexWrap: "wrap", alignItems: "center", fontSize: 14 }}>
-            <span><span style={{ color: C.mt }}>Your scouts: </span>{SCOUT_SLOTS.map((r) => g.scouting?.[r] ? <b key={r} style={{ marginRight: 10 }}>{SCOUT_GROUPS[g.scouting[r].group]} <span style={{ color: C.mt, fontWeight: 400 }}>({SCOUT_ROLES[r].short.toLowerCase()})</span></b> : null)}{!SCOUT_SLOTS.some((r) => g.scouting?.[r]) && <span style={{ color: C.mt }}>none</span>}<Btn onClick={() => setView("scouts")} bg={C.bd} c="#cbd5e1" style={{ fontSize: 12, padding: "3px 10px" }}>Manage</Btn></span>
+            <span><span style={{ color: C.mt }}>Your scouts: </span>{SCOUT_SLOTS.map((r) => g.scouting?.[r] ? <b key={r} style={{ marginRight: 10 }}>{areasOf(g.scouting)[r].join("/")} <span style={{ color: C.mt, fontWeight: 400 }}>({SCOUT_ROLES[r].short.toLowerCase()})</span></b> : null)}{!SCOUT_SLOTS.some((r) => g.scouting?.[r]) && <span style={{ color: C.mt }}>none</span>}<Btn onClick={() => setView("scouts")} bg={C.bd} c="#cbd5e1" style={{ fontSize: 12, padding: "3px 10px" }}>Manage</Btn></span>
             <span><span style={{ color: C.mt }}>Your picks: </span><b>{myPicks.length ? myPicks.map((pk) => `R${pk.rd}${g.sp === "draft" ? ` #${pk.overall}` : ""}`).join(", ") : "none"}</b></span>
           </div>
           <Legend />
@@ -998,18 +1007,17 @@ export function ScoutingPage({ g }) {
 // ---------- Prospect profile ----------
 
 function explain(read, p) {
-  const grp = SCOUT_GROUPS[scoutGroup(p.pos)].toLowerCase();
+  const reg = regionName(regionOf(p));
   const pm = (sd) => `usually within ±${Math.max(1, Math.round(sd))}`;
   if (read.lvl >= 2) return read.exact ? "Full workup: these are his exact ratings." : `Full workup: estimates are ${pm(read.sd)}. Only a major scout gets to exact numbers.`;
   if (read.lvl === 1) {
     const next = read.cov === "major" ? "A full workup (2 points) gives exact ratings and his development trait." : read.cov === "minor" ? "A full workup (2 points) sharpens the estimates." : "A follow-up (2 points) sharpens the estimates a little.";
     return `Scouting report: estimates are ${pm(read.sd)}. ${next}`;
   }
-  if (read.regional) return `${read.who} have been through his region ${read.trips} time${read.trips > 1 ? "s" : ""}: a rough ${read.pot} ceiling. More trips sharpen every read there; a report (1 point) on him is still the way to close estimates.`;
   if (read.cov !== "office" && read.devEarly) return `${read.who} already have a strong read on him: a ${read.pot} ceiling and a ${read.dev} development trait. A report (1 point) gives close estimates.`;
   if (read.cov === "major") return `Your major scout's general idea of him is a ${read.pot} ceiling. A report (1 point) gives close estimates; a full workup (2 more) gives exact ratings and his development trait.`;
-  if (read.cov === "minor") return `Your minor scout's general idea of him is a ${read.pot} ceiling. A report (1 point) gives estimates and a workup (2 more) sharpens them. Minor scouts don't see development traits.`;
-  return `None of your scouts covers ${grp}. Your front office can still file a rough report (1 point) and a follow-up (2 more), but never exact numbers or a development trait.`;
+  if (read.cov === "minor") return `Your minor scout's general idea of him is a ${read.pot} ceiling. A report (1 point) gives estimates and a workup (2 more) sharpens them (a good minor scout reads his development trait there too).`;
+  return `None of your scouts works the ${reg}. Your front office can still file a rough report (1 point) and a follow-up (2 more), but never exact numbers or a development trait.`;
 }
 
 const COL_KEYS = ["gp", "comp", "att", "passYds", "passTD", "passInt", "rushAtt", "rushYds", "rushTD", "rec", "recYds", "recTD", "tkl", "sacks", "tfl", "ints", "pd", "fgM", "fgA"];
