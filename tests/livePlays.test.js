@@ -56,13 +56,15 @@ test("every play the field acts out ends where the engine says", () => {
       const sc = buildPlay(ev, slots, n++);
       assert.ok(sc.T > 0.5 && sc.T < 9, `play length ${sc.T}`);
       for (let t = 0; t <= sc.T; t += 0.1) for (const s of slots) assert.ok(sc.f[s.key](t).every(Number.isFinite));
-      // the ball carrier's last spot is the yard line the play ended on
-      if ((ev.k === "run" || ev.k === "pass") && !ev.td && ev.type !== "fumble") {
+      // the ball carrier's last spot is the yard line the play ended on (a play a flag brought back
+      // is shown as it happened)
+      const P = ev.pen?.play && !ev.pen.pre ? ev.pen.play : ev;
+      if ((ev.k === "run" || ev.k === "pass") && !P.td && ev.type !== "fumble") {
         const b = sc.ball(sc.T);
         assert.ok(b.held, "someone has the ball at the whistle");
-        assert.ok(Math.abs(sc.f[b.held](sc.T)[0] - (ev.yard + ev.yards)) < 0.01, `${ev.text}`);
+        assert.ok(Math.abs(sc.f[b.held](sc.T)[0] - (ev.yard + P.yards)) < 0.01, `${ev.text}`);
       }
-      if (ev.td) assert.ok(sc.f[sc.ball(sc.T).held](sc.T)[0] >= 100, "a touchdown ends in the end zone");
+      if (P.td) assert.ok(sc.f[sc.ball(sc.T).held](sc.T)[0] >= 100, "a touchdown ends in the end zone");
     }
   }
   assert.ok(n > 300);

@@ -39,7 +39,7 @@ export function liveChoice(ev, mode, lead = 0, roll = Math.random()) {
   if (mode === "All" || key) return { key };
   // a punt plays out when it's a long return, a muff or a return touchdown
   if (ev.k === "punt") return (ev.ret || 0) >= 20 || ev.muff || ev.retTD || roll < 0.05 ? { key: null } : null;
-  const big = ev.td || ev.turnover || ev.k === "int" || ev.k === "sack" || ev.type === "safety" || (ev.yards || 0) >= (ev.k === "run" ? 18 : 25);
+  const big = (ev.pen && !ev.pen.pre) || ev.td || ev.turnover || ev.k === "int" || ev.k === "sack" || ev.type === "safety" || (ev.yards || 0) >= (ev.k === "run" ? 18 : 25);
   if (big || roll < 0.05) return { key: null };
   return null;
 }
@@ -140,11 +140,24 @@ export function resultCard(ev, side, userSide, box = {}) {
     else if (!ev.firstDown && ev.down >= 3 && Y < ev.toGo) { head = "SHORT!"; tone = "grey"; line = `${what} for ${Y}, ${ev.toGo - Y} short`; star = ev.tkl || star; starSide = ev.tkl ? def : side; }
     else line = `${what} for ${Y === 0 ? "no gain" : Y < 0 ? `a loss of ${-Y}` : `${Y} yard${Y === 1 ? "" : "s"}`}`;
   }
+  // a flag on the play: an accepted penalty that undid it is the story; one tacked on or declined is a note
+  let flagNote = "";
+  if (ev.pen && !ev.pen.pre) {
+    const pe = ev.pen, by = pe.player ? `${lastNm(pe.player)}, ${pe.side === "off" ? "offense" : "defense"}` : pe.side === "off" ? "offense" : "defense";
+    if (pe.accepted && !pe.tack && !pe.onKick) {
+      head = `FLAG: ${pe.label.toUpperCase()}`; tone = "gold"; star = pe.player; starSide = pe.side === "off" ? side : def; count = null;
+      line = pe.side === "off" ? `On ${by}. ${pe.play?.td ? "The touchdown comes off the board" : "The play comes back"}: ${Math.abs(ev.yards)}-yard penalty, replay the down` : pe.kind === "dpi" ? `On ${by}. Ball spotted ${Math.abs(ev.yards)} yards downfield, first down` : `On ${by}. ${Math.abs(ev.yards)} yards and an automatic first down`;
+    } else if (pe.tack) {
+      // a personal foul at the end of the play: the play stands, plus 15
+      head = `FLAG: ${pe.label.toUpperCase()}`; tone = "gold"; line = `${line}, plus 15 yards on ${by}`;
+    } else flagNote = `Flag: ${pe.label} (${by}). ${!pe.accepted ? "Declined" : "Enforced on the kickoff"}`;
+  }
   const mine = !!star && starSide === userSide;
   let note = "";
   if (mine && count) {
     const n = count[0] === "rushTD" || count[0] === "recTD" ? nTimes(starSide, star.id, "rushTD") + nTimes(starSide, star.id, "recTD") : nTimes(starSide, star.id, count[0]);
     if (n >= 2) note = Number.isInteger(n) ? `${nth(n)} ${count[1]} of the game` : `${n} ${count[1]}s in the game`;
   }
+  if (flagNote) note = note ? `${note} · ${flagNote}` : flagNote;
   return { head, line, tone, star: star ? { id: star.id, name: star.name } : null, mine, note };
 }

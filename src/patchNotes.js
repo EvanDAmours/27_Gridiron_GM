@@ -1793,4 +1793,11 @@ export const PATCH_NOTES = [
     "Onside kicks: behind by up to two scores in the last 2:30 of the fourth quarter, the kicking team tries one, and about one in eight is recovered. Recovered, they keep the ball near midfield; if not, the other team starts on their side of it",
     "Onside kicks play out live: the squib off the tee hopping along the turf, both units crashing in and the pile, with ONSIDE KICK RECOVERED! when it works",
   ] },
+  { v: "4.51", date: "2026-10-20", title: "Real penalties", notes: [
+    "Penalties rebuilt: about ten a game, each called on a named player and in the box score (team penalties and yards)",
+    "Before the snap: false start, offside, delay of game and illegal formation",
+    "During the play: holding (it can bring back a big gain or wipe out a touchdown), offensive pass interference, illegal block in the back, defensive holding, illegal contact, pass interference spotted where the foul happened, roughing the passer, unnecessary roughness and face mask (15 yards added to the end of the play)",
+    "The other side accepts or declines, whichever is better for them. A play that comes back leaves nothing in the stats, and a personal foul on a touchdown carries over to the kickoff",
+    "On the field: the play acts out as it happened, a yellow flag lands at the feet of the player who committed it, and the card names the foul and what it cost",
+  ] },
 ];

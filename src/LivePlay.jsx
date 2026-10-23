@@ -91,6 +91,12 @@ export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, spe
         <ellipse rx="3.6" ry="2.2" fill="#7c3f12" stroke="#2b1405" strokeWidth=".6" />
         <line x1="-1.4" y1="0" x2="1.4" y2="0" stroke="#fff" strokeWidth=".6" />
       </g>}
+      {/* a flag on the play: the yellow hanky lands at his feet */}
+      {sc.flag && t > sc.flag.at && (() => {
+        const [fx, fy] = sc.f[sc.flag.key](sc.flag.at), u = Math.min(1, (t - sc.flag.at) / 0.35);
+        const x = X(fx) + 9, y = Y(fy) + 14 - (1 - u) * 34;
+        return <g transform={`translate(${x} ${y}) rotate(${(1 - u) * 200 - 12})`}><rect x="-6" y="-4" width="12" height="8" rx="1.4" fill="#facc15" stroke="#fff" strokeWidth="1.4" paintOrder="stroke" /><rect x="-6" y="-4" width="12" height="8" rx="1.4" fill="none" stroke="#713f12" strokeWidth=".5" /><circle cx="-2.5" cy="0" r="1.6" fill="#fef9c3" /></g>;
+      })()}
       {/* the names that matter on this play, over their heads (and over him once he's down) */}
       {men.filter((m) => sc.stars.includes(m.s.key) && (sc.who[m.s.key] || m.s.p)).map(({ s, sx, sy, h, facing, fall }) => {
         const full = (sc.who[s.key] || s.p).name, nm = full.split(" ").slice(1).join(" ") || full;

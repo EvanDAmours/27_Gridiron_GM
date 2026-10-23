@@ -735,19 +735,29 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     return ev;
   }
 
-  // Penalties (~4% of snaps).
-  if (rand() < 0.04) {
-    st.penalties++;
-    const offense = rand() < 0.55;
-    const yds = offense ? (rand() < 0.6 ? -10 : -5) : rand() < 0.35 ? 15 : 5;
-    ev.type = "penalty"; ev.yards = yds;
-    ev.text = offense ? (yds === -10 ? "🚩 Holding, offense. 10-yard penalty." : "🚩 False start. 5-yard penalty.") : yds === 15 ? "🚩 Pass interference, defense. Automatic first down." : "🚩 Offside, defense. 5-yard penalty.";
+  // Pre-snap fouls (about 3% of snaps): the play never happens. Each is on someone: a lineman who
+  // moved early, a rusher in the neutral zone, a receiver not set; delay of game is on the offense.
+  if (rand() < 0.03) {
+    const r = rand(), offF = r < 0.7;
+    const kind = r < 0.4 ? "false_start" : r < 0.58 ? "formation" : r < 0.7 ? "delay" : "offside";
+    const who = kind === "false_start" ? pickOne(rand, (o.ol || []).filter(Boolean)) : kind === "formation" ? pickW(rand, o.receivers) : kind === "offside" ? pickW(rand, (d.defBy?.[pkg] || d).rushW) : null;
+    const side = offF ? off : def;
+    g.stats[side].penalties++; g.stats[side].penYds = (g.stats[side].penYds || 0) + 5;
+    if (who) add(line(g, side, who), "pen", 1);
+    const yds = offF ? -halfDist(g.yard, 5) : Math.min(5, 99 - g.yard);
     g.yard = clamp(g.yard + yds, 1, 99);
-    if (yds === 15 || (!offense && yds >= g.toGo)) { g.down = 1; g.toGo = Math.min(10, 100 - g.yard); }
-    else g.toGo = Math.max(1, g.toGo - yds);
-    ev.note = tick(g, 5);
+    if (!offF && yds >= g.toGo) { g.down = 1; g.toGo = Math.min(10, 100 - g.yard); } else g.toGo = Math.max(1, g.toGo - yds);
+    ev.type = "penalty"; ev.yards = yds;
+    ev.pen = { side: offF ? "off" : "def", kind, label: PEN_LABEL[kind], yds: 5, player: who, accepted: true, pre: true };
+    ev.text = `🚩 ${PEN_LABEL[kind]}${who ? `, ${who.name}` : ""}, ${offF ? "offense" : "defense"}. 5-yard penalty${!offF && g.down === 1 && ev.down !== 1 ? ", automatic first down" : ""}.`;
+    ev.note = tick(g, 3);
     return ev;
   }
+  // A flag during the play (about 5% of snaps): what it was depends on the play (holding, pass
+  // interference, a late hit), decided once the play is over, and the other side takes the
+  // penalty or the play, whichever is better for it. Everything the play put in the books is set
+  // aside first, so a play that comes back leaves no trace.
+  const flag = rand() < 0.05 ? { r1: rand(), r2: rand(), snap: { box: structuredClone(g.box), stats: structuredClone(g.stats) } } : null;
 
   // Run or pass?
   let style = call && call.startsWith("pass_") ? "pass" : call && (call.startsWith("run_") || call === "scramble") ? "run" : null;
@@ -926,6 +936,57 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   if (gk) gradeBook(g, off, def, dP, gk, yards);
   ev.type = ev.td ? "td" : type; ev.yards = yards; ev.player = carrier; ev.passer = completed ? qb : null; ev.text = desc;
 
+  let tackOn = 0;
+  if (flag && type !== "fumble") {
+    const pass = style === "pass" || style === "screen", sack = type === "sack", inc = type === "inc";
+    // what was called, weighted by the kind of play (NFL rates: offensive holding the most, then
+    // pass interference, defensive holding and the personal fouls)
+    const table = pass
+      ? [["holding", 26], ["opi", completed ? 8 : 0], ["def_holding", 14], ["dpi", sack ? 0 : 18], ["illegal_contact", 5], ["roughing", sack ? 3 : 6], ["unr", 8], ["facemask", 5]]
+      : [["holding", 50], ["block_back", 14], ["unr", 18], ["facemask", 12], ["def_holding", 6]];
+    const tot = table.reduce((a, [, w]) => a + w, 0);
+    let x = flag.r1 * tot, kind = table[0][0];
+    for (const [k, w] of table) { if ((x -= w) < 0) { kind = k; break; } }
+    const offF = ["holding", "opi", "block_back"].includes(kind), side = offF ? off : def;
+    const who = kind === "holding" || kind === "block_back" ? (pass ? pickOne(rand, (o.ol || []).filter(Boolean)) : flag.r2 < 0.6 ? pickOne(rand, (o.ol || []).filter(Boolean)) : pickW(rand, o.receivers))
+      : kind === "opi" ? carrier
+      : kind === "roughing" ? pickW(rand, dP.rushW)
+      : kind === "dpi" || kind === "illegal_contact" || kind === "def_holding" ? (ev.cm || pickW(rand, dP.covW))
+      : pickW(rand, dP.tackleW);
+    const Y = kind === "dpi" ? 0 : ["unr", "facemask", "roughing"].includes(kind) ? 15 : ["def_holding", "illegal_contact"].includes(kind) ? 5 : 10;
+    const room = 100 - g.yard, got = ev.td ? room : yards, first = ev.td || got >= g.toGo;
+    // the spot of a pass interference: where the throw was going
+    const air = kind === "dpi" ? clamp(Math.round(ev.deep ? 22 + flag.r2 * 18 : ev.quick ? 4 + flag.r2 * 5 : 8 + flag.r2 * 12), 1, room - 1) : 0;
+    let accepted, tack = false;
+    if (offF) accepted = !inc ? got > -Y * 0.6 : g.down < 3; // the defense takes it unless the play already cost them less
+    else if (Y === 15) { accepted = true; tack = !ev.td; } // a personal foul: on top of the play
+    else if (kind === "dpi") accepted = inc || got < air;
+    else accepted = inc || sack || !first || got < Y;
+    const label = PEN_LABEL[kind];
+    g.stats[side].penalties = (g.stats[side].penalties || 0) + (accepted ? 1 : 0);
+    ev.pen = { side: offF ? "off" : "def", kind, label, yds: kind === "dpi" ? air : Y, player: who, accepted, tack, play: { yards, td: ev.td, type } };
+    const tag = `🚩 ${label}${who ? `, ${who.name}` : ""}, ${offF ? "offense" : "defense"}.`;
+    if (!accepted) ev.text += ` ${tag} Declined.`;
+    else if (Y === 15 && ev.td) { ev.pen.onKick = true; ev.text += ` ${tag} Enforced on the kickoff.`; g.stats[side].penYds = (g.stats[side].penYds || 0) + 15; if (who) add(line(g, side, who), "pen", 1); }
+    else if (tack) { tackOn = Math.min(15, Math.max(0, 99 - (g.yard + yards))); ev.text += ` ${tag} 15 yards tacked on, automatic first down.`; g.stats[side].penYds = (g.stats[side].penYds || 0) + tackOn; if (who) add(line(g, side, who), "pen", 1); }
+    else {
+      // the play comes back: undo it, then walk it off from the line of scrimmage
+      g.box = flag.snap.box; g.stats = flag.snap.stats;
+      const st2 = g.stats[side]; st2.penalties = (st2.penalties || 0) + 1;
+      if (who) add(line(g, side, who), "pen", 1);
+      let mv;
+      if (offF) { mv = -halfDist(g.yard, Y); g.toGo = Math.min(g.toGo - mv, 99); }
+      else { mv = kind === "dpi" ? Math.min(air, 99 - g.yard) : Math.min(Y, 99 - g.yard); }
+      st2.penYds = (st2.penYds || 0) + Math.abs(mv);
+      g.yard = clamp(g.yard + mv, 1, 99);
+      if (!offF) { g.down = 1; g.toGo = Math.min(10, 100 - g.yard); }
+      ev.type = "penalty"; ev.td = false; ev.yards = mv; ev.firstDown = !offF;
+      ev.text = `${desc.replace(/ — TOUCHDOWN!/, ",").replace(/ TOUCHDOWN!/, " touchdown,")} ${tag} ${offF ? `${ev.pen.play.td ? "The touchdown is wiped out. " : yards > 0 ? "The play comes back. " : ""}${Math.abs(mv)}-yard penalty, replay the down.` : kind === "dpi" ? `Ball spotted ${Math.abs(mv)} yards downfield, first down.` : `${Math.abs(mv)} yards and an automatic first down.`}`;
+      ev.note = tick(g, hurry ? 5 : 8);
+      return ev;
+    }
+  }
+
   if (ev.td) {
     // Extra point (or the occasional two-point try).
     const kl = line(g, off, o.k);
@@ -952,8 +1013,9 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     return ev;
   }
 
-  // Spot the ball, update downs.
+  // Spot the ball, update downs (a personal foul at the end of the play adds its 15 and a first down).
   g.yard += yards;
+  if (tackOn && g.yard > 0) { g.yard += tackOn; yards += tackOn; ev.firstDown = true; }
   if (g.yard <= 0) { // safety
     ev.type = "safety"; ev.text += " SAFETY!"; ev.score = 0; scored(g, def, 2);
     ev.note = tick(g, 6);
@@ -984,6 +1046,11 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   return ev;
 }
 const late = (g) => g.qtr === 4 && g.clock < 300;
+// Penalty names for the play-by-play, and half the distance to the goal when a full walk-off
+// would go past it (yard: the offense's yard line; returns the yards moved back).
+const PEN_LABEL = { false_start: "False start", formation: "Illegal formation", delay: "Delay of game", offside: "Offside", holding: "Holding", opi: "Offensive pass interference", block_back: "Illegal block in the back", def_holding: "Defensive holding", dpi: "Pass interference", illegal_contact: "Illegal contact", roughing: "Roughing the passer", unr: "Unnecessary roughness", facemask: "Face mask" };
+const halfDist = (yard, n) => Math.min(n, Math.floor(yard / 2));
+const pickOne = (rand, list) => (list.length ? list[Math.floor(rand() * list.length)] : null);
 const sideName = (g, side) => g.sides[side]?.team?.name || (side === "h" ? "home" : "away");
 
 // Play a whole game instantly.

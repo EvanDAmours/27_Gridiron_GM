@@ -55,8 +55,10 @@ export function buildPlay(ev, slots, seed = 1) {
   if (ev.k === "fg" || ev.k === "punt") return buildSpecial(ev, slots, R);
   if (ev.k === "ko") return buildKickoff(ev, slots, R);
   const los = ev.yard, k = ev.k, room = 100 - los;
-  const fumble = ev.type === "fumble", td = !!ev.td;
-  const Y = td ? room : ev.yards || 0;
+  // a flag during the play: the field shows the play as it happened, before the penalty undid it
+  const P = ev.pen?.play && !ev.pen.pre ? ev.pen.play : null;
+  const fumble = ev.type === "fumble", td = P ? !!P.td : !!ev.td;
+  const Y = td ? room : P ? P.yards || 0 : ev.yards || 0;
   const off = slots.filter((s) => s.side === "off"), def = slots.filter((s) => s.side === "def");
   const byId = (list, p) => (p ? list.find((s) => s.id != null && s.id === p.id) : null);
   const near = (list, x, y, not = []) => list.filter((s) => !not.includes(s)).reduce((b, s) => (!b || Math.hypot(s.x - x, s.y - y) < Math.hypot(b.x - x, b.y - y) ? s : b), null);
@@ -292,7 +294,15 @@ export function buildPlay(ev, slots, seed = 1) {
   else if (tackler && ev.tkl && byId(slots, ev.tkl) === tackler) name(tackler, ev.tkl);
   if (m.handoff === 0) m.handoff = tH;
   Object.assign(m, { carrier: carrier?.key ?? null, tackler: tackler?.key ?? null, tE, tEnd, fumble });
-  return { T, f, ball, down, who, m, hop: td && carrier ? { key: carrier.key, at: tEnd } : null, stars: [...new Set(stars)], catchAt, tEnd };
+  // the yellow flag: thrown at the man who committed the foul, when he committed it
+  let flag = null;
+  if (ev.pen && !ev.pen.pre) {
+    const pk = ev.pen.kind, side = ev.pen.side === "off" ? off : def;
+    const sl = byId(side, ev.pen.player) || near(side, los + (ev.pen.side === "off" ? -2 : 3), 0);
+    const at = ["unr", "facemask"].includes(pk) ? tEnd + 0.1 : pk === "roughing" ? (m.tThrow ?? 1) + 0.25 : ["dpi", "opi"].includes(pk) ? (m.tC ?? 1.2) : 0.75;
+    if (sl) flag = { key: sl.key, at: Math.min(at, T - 0.3) };
+  }
+  return { T, f, ball, down, who, m, hop: td && carrier ? { key: carrier.key, at: tEnd } : null, stars: [...new Set(stars)], catchAt, tEnd, flag };
 }
 
 // A field goal or a punt acted out (the same shape as buildPlay's result). The field puts the
