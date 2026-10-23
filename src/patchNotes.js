@@ -1843,4 +1843,7 @@ export const PATCH_NOTES = [
   { v: "4.60", date: "2026-10-23", title: "Scouting map", notes: [
     "Regions now have a map: every school is a dot on a US map in its conference color. Click one of your scouts and the schools he covers light up, with his regions labeled, so you can see the ground he actually covers",
   ] },
+  { v: "4.61", date: "2026-10-23", title: "Results card out of the way", notes: [
+    "The weekly and playoff results card now pops up in the bottom-right corner (smaller) instead of across the top, so it no longer covers the Sim and Play buttons",
+  ] },
 ];

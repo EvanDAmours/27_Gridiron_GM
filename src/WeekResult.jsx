@@ -77,7 +77,7 @@ export default function WeekResult(props) {
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onClickCapture={() => setKept(true)}
       onTouchStart={MOBILE ? (e) => { startY.current = e.touches[0].clientY; } : undefined}
       onTouchEnd={MOBILE ? (e) => { if (startY.current != null && e.changedTouches[0].clientY - startY.current > 60) onClose(); startY.current = null; } : undefined}
-      style={MOBILE ? { position: "fixed", left: 8, right: 8, bottom: "calc(126px + env(safe-area-inset-bottom))", zIndex: 392, animation: "sheetUp .25s ease-out", boxShadow: "0 -8px 30px #000b", borderRadius: 12 } : { position: "fixed", top: 92, right: 16, width: "min(780px, calc(100% - 32px))", zIndex: 380, animation: "toastDown .25s ease-out", boxShadow: "0 14px 44px #000d", borderRadius: 12 }}>
+      style={MOBILE ? { position: "fixed", left: 8, right: 8, bottom: "calc(126px + env(safe-area-inset-bottom))", zIndex: 392, animation: "sheetUp .25s ease-out", boxShadow: "0 -8px 30px #000b", borderRadius: 12 } : { position: "fixed", bottom: 16, right: 16, width: "min(560px, calc(100% - 32px))", maxHeight: "45vh", overflowY: "auto", zIndex: 380, animation: "sheetUp .25s ease-out", boxShadow: "0 14px 44px #000d", borderRadius: 12 }}>
       <style>{"@keyframes wrBar{from{width:100%}to{width:0%}}"}</style>
       <Card {...props} />
       {!kept && <div style={{ position: "absolute", left: 12, right: 12, bottom: 1, height: 3, borderRadius: 2, background: "#ffffff14", overflow: "hidden", pointerEvents: "none" }}>
