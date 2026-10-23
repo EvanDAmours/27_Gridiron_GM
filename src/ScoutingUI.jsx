@@ -1,6 +1,7 @@
 // Scouting and draft screens: the Big Board (always in consensus order), your own list, the
 // Combine, your scouting staff, and the prospect profile. Game state comes in as `g`.
 import Select from "./Select.jsx";
+import { US_NATION, US_BORDERS, SCHOOL_XY } from "./usMap.js";
 import { posTag } from "./dline.js";
 import { slotsFor } from "./draftProjection.js";
 import { topNeeds, fillsNeed, teamNeeds, needGroup, NEED_STARTERS } from "./needs.js";
@@ -16,7 +17,7 @@ import {
   prospectRead, scoutProspect, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, scoutsShortlist, coverage, csRank, riskLabel, gradeTone,
   SCOUT_ROLES, SCOUT_GROUPS, SCOUT_GROUP_SHORT, regionReport, onSpec, potGrade, scoutGroup as scoutGroupOfPos, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
   staffWindowOpen, SCOUT_SLOTS, slotKind, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, isSmallSchool, devOf,
-  myBoard, regionOf, regionName, areasOf, assignArea, AREA_KEYS, suggestAreas, uncovered, SCOUT_CHECKPOINTS, areaSeason, lockAreas,
+  myBoard, regionOf, regionName, areasOf, assignArea, AREA_KEYS, suggestAreas, REGIONS, uncovered, SCOUT_CHECKPOINTS, areaSeason, lockAreas,
 } from "./scouting.js";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
@@ -863,6 +864,8 @@ export function RegionsView({ g }) {
   const fits = (sl, r) => !!s[sl]?.group && s[sl].group === deep(r);
   const auto = () => { g.setScouting({ ...s, areas: best, areasYr: areaSeason(g.sp, g.yr) }); g.sm("Scouts sent to their best-fit regions."); };
   const set = (sl, i, r) => { const x = assignArea(s, g.sp, sl, i, r, g.yr); g.sm(x.msg); if (x.ok) g.setScouting(x.sc); };
+  const [pick, setPick] = useState(null);
+  const cur = pick && s[pick] ? pick : staff[0];
   const pill = (t, bg, c) => <span style={{ fontSize: 12, fontWeight: 900, padding: "2px 8px", borderRadius: 999, background: bg, color: c, whiteSpace: "nowrap" }}>{t}</span>;
   return (
     <div>
@@ -874,19 +877,20 @@ export function RegionsView({ g }) {
           : <span style={{ fontSize: 13, color: C.mt }}>Scouts are on the road. Change regions in free agency or the preseason.</span>}
       </div>
 
-      <div style={panel}>
-        <div style={head}>YOUR SCOUTS</div>
+      <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "minmax(0,1.15fr) minmax(0,1fr)", gap: 12, alignItems: "start", marginBottom: 10 }}>
+      <div style={{ ...panel, marginBottom: 0 }}>
+        <div style={head}>YOUR SCOUTS<Right>click one to see his territory</Right></div>
         {staff.map((sl) => { const x = s[sl]; return (
-          <div key={sl} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderTop: `1px solid ${C.bd}66`, flexWrap: "wrap" }}>
+          <div key={sl} onClick={() => setPick(sl)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 8px", margin: "0 -8px", borderTop: `1px solid ${C.bd}66`, flexWrap: "wrap", cursor: "pointer", borderRadius: 8, background: sl === cur ? "#38bdf81a" : "transparent", boxShadow: sl === cur ? "inset 3px 0 0 #38bdf8" : "none" }}>
             <Face s={x.face} sz={32} />
-            <div style={{ width: 190, minWidth: 0 }}>
+            <div style={{ width: 170, minWidth: 0 }}>
               <div style={{ fontWeight: 900, fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.name}</div>
               <div style={{ fontSize: 12 }}><Stars ev={x.eval} /> <span style={{ color: C.mt }}>{slotKind(sl) === "major" ? "2 regions" : "1 region"}</span></div>
             </div>
-            <div style={{ width: 150 }}>{pill(`Knows ${SCOUT_GROUP_SHORT[x.group] || "—"}`, "#0e7490", "#cffafe")}</div>
-            <div style={{ display: "flex", gap: 6, flex: 1, minWidth: 260, flexWrap: "wrap" }}>
+            <div style={{ width: 104 }}>{pill(`Knows ${SCOUT_GROUP_SHORT[x.group] || "—"}`, "#0e7490", "#cffafe")}</div>
+            <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 6, flex: 1, minWidth: 240, flexDirection: "column" }}>
               {ar[sl].map((r, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, flex: "1 1 200px", minWidth: 0 }}>
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
                   {open ? <Select value={r} onChange={(e) => set(sl, i, e.target.value)} aria-label={`${SCOUT_ROLES[sl].name} region ${i + 1}`} style={{ background: C.bg, color: C.tx, border: `1px solid ${fits(sl, r) ? "#16a34a" : C.bd}`, borderRadius: 6, padding: "5px 8px", fontSize: 14, flex: 1, minWidth: 0 }}>
                     {AREA_KEYS.map((k) => <option key={k} value={k}>{REGIONS_SHORT[k]}{deep(k) ? ` (deep at ${SCOUT_GROUP_SHORT[deep(k)]})` : ""}</option>)}
                   </Select> : <b style={{ flex: 1 }}>{REGIONS_SHORT[r]}</b>}
@@ -897,6 +901,12 @@ export function RegionsView({ g }) {
           </div>); })}
         {!staff.length && <div style={muted}>You have no scouts. Hire some on the Scouts tab.</div>}
       </div>
+      <div style={{ ...panel, marginBottom: 0, padding: "10px 10px 6px" }}>
+        {cur && <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", padding: "0 4px" }}><b style={{ fontSize: 17 }}>{s[cur].name}</b><span style={{ fontSize: 13, color: C.mt }}>covers {ar[cur].map(regionName).join(" and ")}</span></div>}
+        <RegionMap lit={cur ? ar[cur] : []} />
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", fontSize: 12, color: C.mt }}>{AREA_KEYS.map((r) => <span key={r} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: 9, height: 9, borderRadius: 5, background: REGION_CLR[r] }} />{REGIONS_SHORT[r]}</span>)}</div>
+      </div>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,300px),1fr))", gap: 10 }}>
         {AREA_KEYS.map((r) => {
@@ -906,7 +916,7 @@ export function RegionsView({ g }) {
           const status = !on.length ? ["No scout here", "#fcd34d"] : match ? ["✓ Your specialist is here", "#4ade80"] : deep(r) ? [`No ${SCOUT_GROUP_SHORT[deep(r)]} specialist here (hire one on Scouts)`, "#fdba74"] : ["Covered", "#94a3b8"];
           return (
             <div key={r} style={{ ...panel, marginBottom: 0, borderColor: match ? "#16a34a88" : !on.length ? "#b4530988" : C.bd }}>
-              <div style={{ fontSize: 18, fontWeight: 900 }}>{regionName(r)}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 12, height: 12, borderRadius: 6, background: REGION_CLR[r] }} />{regionName(r)}</div>
               <div style={{ fontSize: 15, margin: "4px 0" }}>Deep at <b style={{ color: "#4ade80", fontSize: 17 }}>{deep(r) ? SCOUT_GROUPS[deep(r)] : "nothing special"}</b></div>
               <div style={{ fontSize: 13, color: C.mt }}>Scout: <b style={{ color: "#e2e8f0" }}>{on.map((sl) => s[sl].name.split(" ").slice(-1)[0]).join(", ") || "none"}</b></div>
               <div style={{ fontSize: 13, fontWeight: 800, color: status[1], margin: "2px 0 6px" }}>{status[0]}</div>
@@ -916,6 +926,25 @@ export function RegionsView({ g }) {
         })}
       </div>
     </div>
+  );
+}
+const REGION_CLR = { SEC: "#ef4444", B1G: "#3b82f6", ACC: "#f97316", B12: "#a855f7", G5: "#14b8a6", PAC: "#22c55e" };
+// The country with every school as a dot in its conference's color; the regions the picked scout
+// covers light up, the rest fade.
+function RegionMap({ lit, onRegion }) {
+  const on = new Set(lit || []);
+  const any = on.size > 0;
+  const dots = AREA_KEYS.flatMap((r) => REGIONS[r].schools.map((sch) => ({ r, sch, xy: SCHOOL_XY[sch] }))).filter((d) => d.xy);
+  // a label at the middle of each lit region's schools
+  const mid = (r) => { const ps = dots.filter((d) => d.r === r); return [ps.reduce((t, d) => t + d.xy[0], 0) / ps.length, ps.reduce((t, d) => t + d.xy[1], 0) / ps.length]; };
+  return (
+    <svg viewBox="0 0 960 600" width="100%" style={{ display: "block" }}>
+      <path d={US_NATION} fill="#1e293b" stroke="#475569" strokeWidth={1.5} />
+      <path d={US_BORDERS} fill="none" stroke="#334155" strokeWidth={0.8} />
+      {dots.filter((d) => !on.has(d.r)).map((d) => <circle key={d.sch} cx={d.xy[0]} cy={d.xy[1]} r={any ? 4 : 6} fill={REGION_CLR[d.r]} opacity={any ? 0.22 : 0.85} onClick={() => onRegion?.(d.r)} style={{ cursor: "pointer" }}><title>{d.sch} ({regionName(d.r)})</title></circle>)}
+      {dots.filter((d) => on.has(d.r)).map((d) => <g key={d.sch} onClick={() => onRegion?.(d.r)} style={{ cursor: "pointer" }}><circle cx={d.xy[0]} cy={d.xy[1]} r={16} fill={REGION_CLR[d.r]} opacity={0.18} /><circle cx={d.xy[0]} cy={d.xy[1]} r={7.5} fill={REGION_CLR[d.r]} stroke="#fff" strokeWidth={1.5}><title>{d.sch} ({regionName(d.r)})</title></circle></g>)}
+      {[...on].map((r) => { const [x, y] = mid(r); return <text key={r} x={x} y={y - 22} textAnchor="middle" fontSize={26} fontWeight={900} fill="#fff" stroke="#0b1220" strokeWidth={5} paintOrder="stroke">{REGIONS_SHORT[r]}</text>; })}
+    </svg>
   );
 }
 const REGIONS_SHORT = { SEC: "SEC", B1G: "Big Ten", ACC: "ACC", B12: "Big 12", G5: "Group of Five", PAC: "Pac-12 & MW" };

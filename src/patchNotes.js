@@ -1840,4 +1840,7 @@ export const PATCH_NOTES = [
   { v: "4.59", date: "2026-10-23", title: "Simpler regions screen", notes: [
     "Regions screen simplified: a one-line explanation, one row per scout (what position he knows and which regions he works, with a ✓ when it matches what the region is deep at), and one card per region showing the single position it is deep at this year, who you have there, and its top 3 prospects. A new Auto-assign best fit button sends each scout where his specialty is deep",
   ] },
+  { v: "4.60", date: "2026-10-23", title: "Scouting map", notes: [
+    "Regions now have a map: every school is a dot on a US map in its conference color. Click one of your scouts and the schools he covers light up, with his regions labeled, so you can see the ground he actually covers",
+  ] },
 ];
