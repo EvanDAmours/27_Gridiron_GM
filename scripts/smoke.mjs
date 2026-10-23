@@ -203,7 +203,10 @@ try {
   if (!d.awards?.some((a) => a.yr === 2026 && a.mvp)) fail("no 2026 season awards after the Super Bowl");
   log("playoffs and season awards");
   await must("→ Combine"); await advance("Finish Combine →"); await advance("Finish Re-signing →", 2500); await healthy("free agency"); log("combine, re-sign week, free agency");
-  await advance("Finish Free Agency →", 1500);
+  // finishing free agency plays out the rest of the market first (a few seconds): wait until the
+  // save says the draft is open before reloading
+  await advance("Finish Free Agency →", 500);
+  for (let i = 0; i < 40 && (await save()).sp !== "draft"; i++) await page.waitForTimeout(500);
   await reloadCheck("draft day");
   if (!(await page.locator("button", { hasText: "Sim Draft" }).count())) fail("the draft can't go on after reload + Continue");
   await click("Sim Draft", 3000);

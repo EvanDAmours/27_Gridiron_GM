@@ -232,7 +232,7 @@ export default function LiveField(props) {
   }
   return <LiveFieldView {...props} />;
 }
-function LiveFieldView({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday, tall, anim, animSpeed = 1, paused = false, onAnimDone }) {
+function LiveFieldView({ ballYard, toGo, off, def, offHome = true, offDepth, defDepth, offOrder, defOrder, lastPlay, sb, sbCity, night, wx, holiday, tall, anim, animSpeed = 1, paused = false, onAnimDone, camMode = "Action" }) {
   const cam = useRef(null);
   const [phase, setPhase] = useState(null);
   useEffect(() => {
@@ -359,7 +359,7 @@ function LiveFieldView({ ballYard, toGo, off, def, offHome = true, offDepth, def
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#3b82f6" strokeWidth="8" strokeOpacity=".25" />
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#60a5fa" strokeWidth="3" />
       {toGo > 0 && !st && !anim?.ev?.offAb && los + toGo < 100 && <><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#facc15" strokeWidth="8" strokeOpacity=".25" /><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#fde047" strokeWidth="3" /></>}
-      {anim ? <LivePlay key={anim.id} anim={anim} slots={slots} X={xOf} Y={yOf} cam={cam} W={W} H={H} zoom={MOBILE ? 2.2 : 2.1} speed={animSpeed} paused={paused} onPhase={setPhase} onDone={() => onAnimDone?.()} /> : <>{defMen}{offMen}</>}
+      {anim ? <LivePlay key={anim.id} anim={anim} slots={slots} X={xOf} Y={yOf} cam={cam} W={W} H={H} zoom={camMode === "Field" ? 1 : MOBILE ? 2.2 : 2.1} speed={animSpeed} paused={paused} onPhase={setPhase} onDone={() => onAnimDone?.()} /> : <>{defMen}{offMen}</>}
       {/* a field goal try: the goalposts at the back of the end zone, seen from above */}
       {st === "fg" && <g pointerEvents="none"><line x1={W - 5} y1={yOf(-3.1)} x2={W - 5} y2={yOf(3.1)} stroke="#facc15" strokeWidth="3" strokeLinecap="round" /><circle cx={W - 5} cy={H / 2} r="3.5" fill="#facc15" /></g>}
       <HolidayDecor holiday={holiday} />

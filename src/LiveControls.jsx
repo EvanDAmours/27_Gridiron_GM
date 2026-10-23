@@ -38,6 +38,7 @@ export function Act({ children, onClick, kind, title, wide, big }) {
 // The game settings, each with a line saying what the current choice does.
 const WHY = {
   call: { false: "Your coaches call every play.", true: "You call each play when you have the ball, and pick the receiver on passes." },
+  cam: { Field: "The whole field stays in view while a play plays out, like the All-22.", Action: "The camera pushes in on the ball and follows the play." },
   live: { Key: "Third and fourth downs, goal to go, a close finish and big plays play out on the field.", All: "Every run and pass plays out on the field.", Off: "Results only: the field just resets between plays." },
 };
 function Setting({ icon, title, why, children }) {
@@ -51,7 +52,7 @@ function Setting({ icon, title, why, children }) {
     </div>
   );
 }
-export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, speeds, onSpeed }) {
+export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, speeds, onSpeed, cam, onCam }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "10px 16px", padding: "2px 2px 8px" }}>
       <Setting icon="🎮" title="Play calling" why={WHY.call[callMode]}>
@@ -63,6 +64,9 @@ export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, 
       <Setting icon="⏱" title="Speed" why="How long the game waits between plays.">
         <Seg value={speed} onChange={onSpeed} options={speeds.map((k) => [k, k])} />
       </Setting>
+      {onCam && <Setting icon="🎥" title="Camera" why={WHY.cam[cam]}>
+        <Seg value={cam} onChange={onCam} tone="#38bdf8" options={[["Field", "Field view"], ["Action", "Action cam"]]} />
+      </Setting>}
     </div>
   );
 }

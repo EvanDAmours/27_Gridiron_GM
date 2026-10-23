@@ -1813,4 +1813,7 @@ export const PATCH_NOTES = [
     "How: the most pass-happy teams throw a little less (no more 730-attempt seasons), a receiver who's had a big day sees the ball spread around sooner, slightly fewer sacks league-wide, and a pass rusher piling up sacks gets chipped and doubled as the season goes on",
     "League scoring and team totals are unchanged (about 22-23 points a team per game)",
   ] },
+  { v: "4.55", date: "2026-10-20", title: "Field view or action cam", notes: [
+    "Live games: pick your camera. Field view keeps the whole field in frame while a play plays out, like the All-22; Action cam pushes in on the ball and follows it (as before). On a computer it's under Camera in the live settings; on a phone, tap the 🎥 button. Your choice is remembered",
+  ] },
 ];
