@@ -4,7 +4,7 @@
 // it never gives the result away. A big play anywhere else plays out too, without a banner, and so
 // does the odd ordinary snap, so the field starting to move doesn't tell you something big is coming.
 export const LIVE_MODES = ["Key", "All", "Off"];
-const ACTED = new Set(["run", "pass", "inc", "sack", "int", "fg", "punt", "kneel"]);
+const ACTED = new Set(["run", "pass", "inc", "sack", "int", "fg", "punt", "kneel", "spike"]);
 export const acted = (ev) => !!ev && ACTED.has(ev.k);
 const nth = (n) => (n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`);
 
@@ -18,6 +18,7 @@ export function keyLabel(ev, lead = 0) {
   if (ev.k === "punt") return null;
   // the kneel-downs that end a game always play out
   if (ev.k === "kneel") return "Victory formation";
+  if (ev.k === "spike") return "Clock running · no timeouts";
   const goal = ev.yard + ev.toGo >= 100, close = Math.abs(lead) <= 8;
   const ot = ev.qtr >= 5, finish = ev.qtr === 4 && ev.clock <= 120 && close;
   const third = ev.down === 3 && (ev.yard >= 50 || ev.qtr >= 4 || goal);
@@ -86,6 +87,8 @@ export function resultCard(ev, side, userSide, box = {}) {
     head = ev.good ? "TWO-POINT CONVERSION!" : "NO GOOD!"; tone = ev.good ? "gold" : "red";
     line = ev.good ? (k === "pass" ? `${qb} finds ${nm(ev.player, "his receiver")} for two` : `${carrier} punches in the two-point try`) : `The two-point try ${k === "inc" ? `for ${lastNm(ev.tgt, "his receiver")} falls incomplete` : "is stuffed at the line"}`;
     star = ev.good ? ev.player : null;
+  } else if (k === "spike") {
+    line = `${qb} spikes it to stop the clock`; tone = "grey";
   } else if (k === "kneel") {
     line = `${qb} takes a knee`; tone = "grey";
   } else if (k === "ko") {

@@ -94,7 +94,22 @@ export function buildPlay(ev, slots, seed = 1) {
     if (rb) F[rb.key] = path([0, rb.x, rb.y], [0.5, rb.x + 1, rb.y - sideOf(rb.y) * 2], [3, rb.x + 1.2, rb.y - sideOf(rb.y) * 2]);
   }
 
-  if (k === "kneel") {
+  if (k === "spike") {
+    // the hurry-up snap and straight into the ground: the line barely gets out of its stance
+    for (const s of off) if (is(s, "LT", "LG", "C", "RG", "RT")) F[s.key] = path([0, s.x, s.y], [0.3, s.x - 0.3, s.y]);
+    for (const s of off) if (!F[s.key] && s !== qbS) F[s.key] = path([0, s.x, s.y], [0.5, s.x + 1.2, s.y]);
+    for (const s of def) F[s.key] = is(s, "DL") ? engage(s) : path([0, s.x, s.y], [0.8, s.x - 0.8, s.y]);
+    F[qbS.key] = path([0, qx, qy], [0.3, qx - 0.4, qy]);
+    const tS = 0.5, gx = qx + 1.2;
+    m.tThrow = tS;
+    ballF = (t) => {
+      if (t < 0.25) return { x: lerp(los, qx, t / 0.25), y: lerp(0, qy, t / 0.25), h: 0.6 };
+      if (t < tS) return { held: qbS.key };
+      const u = clamp((t - tS) / 0.9, 0, 1);
+      return { x: lerp(qx - 0.2, gx + 2.5, u), y: qy, h: u < 0.15 ? 1.4 * (1 - u / 0.15) : Math.abs(Math.sin((u - 0.15) * Math.PI * 2.2)) * 1.1 * (1 - u) };
+    };
+    tE = 1; tEnd = 1; T = 2;
+  } else if (k === "kneel") {
     // Victory formation: the snap, he drops to a knee where he took it, and nobody really plays
     // (the lines lean on each other; everyone else watches)
     for (const s of off) if (is(s, "LT", "LG", "C", "RG", "RT")) F[s.key] = path([0, s.x, s.y], [0.3, s.x - 0.3, s.y]);

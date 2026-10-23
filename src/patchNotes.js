@@ -1785,4 +1785,8 @@ export const PATCH_NOTES = [
     "The game, the second half and overtime now open with a real kickoff and return instead of starting at the 25",
     "Order of play after a touchdown: the touchdown, the try, then the kickoff. The score goes up as each one ends",
   ] },
+  { v: "4.49", date: "2026-10-20", title: "Spikes", notes: [
+    "Spikes: late in a half with the clock running and no timeouts left, the offense hurries up and spikes it to stop the clock (it costs a down and counts as an incomplete pass), then kicks or keeps driving",
+    "Spikes play out live: the hurry-up snap and the ball fired into the turf",
+  ] },
 ];

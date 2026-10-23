@@ -31,7 +31,7 @@ test("a pass you call goes to the receiver you picked", () => {
 });
 
 test("hitting the open man beats forcing it into coverage", () => {
-  const open = throwTo(true, 60), covered = throwTo(false, 60);
+  const open = throwTo(true, 150), covered = throwTo(false, 150);
   assert.ok(open.comp - covered.comp > 0.2, `completion ${open.comp.toFixed(2)} vs ${covered.comp.toFixed(2)}`);
   assert.ok(covered.int > open.int * 2, `interceptions ${open.int.toFixed(3)} vs ${covered.int.toFixed(3)}`);
 });

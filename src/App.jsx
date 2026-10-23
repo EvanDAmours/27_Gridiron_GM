@@ -695,7 +695,7 @@ const _wireLog=useRef(null);
   // A live game in progress is kept after every play, so a reload (or closing the app) picks it up
   // where it stopped instead of losing it, or letting it be restarted from the opening kickoff.
   const LIVE_KEY="gm_live";
-  const LIVE_FIELDS=["score","clock","qtr","poss","yard","down","toGo","box","stats","to","ot","otPoss","plays","pl","firstPoss","done","koNext"];
+  const LIVE_FIELDS=["score","clock","qtr","poss","yard","down","toGo","box","stats","to","ot","otPoss","plays","pl","firstPoss","done","koNext","running"];
   const saveLiveSnap=L=>{try{if(!L?.g||L.g.done){localStorage.removeItem(LIVE_KEY);return;}const g={};LIVE_FIELDS.forEach(k=>{g[k]=L.g[k];});localStorage.setItem(LIVE_KEY,JSON.stringify({yr,sp,ui,ab:teams[ui]?.ab,game:L.game,g,log:L.log||[]}));}catch{/* storage full: no resume */}};
   const loadLiveSnap=()=>{try{return JSON.parse(localStorage.getItem(LIVE_KEY)||"null");}catch{return null;}};
   const sameGame=(a,b)=>a&&b&&a.h===b.h&&a.a===b.a&&String(a.wk)===String(b.wk);

@@ -604,6 +604,10 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   const before = { yard: g.yard, down: g.down, toGo: g.toGo, qtr: g.qtr, clock: g.clock, poss: off };
   const ev = { ...before, yards: 0, type: "", text: "", td: false, turnover: false, score: 0, pers, pkg };
   g.plays++;
+  // whether the clock was still running after the last snap (only an ordinary play in bounds with
+  // no timeout leaves it running; set again at the bottom)
+  const running = !!g.running;
+  g.running = false;
 
   // Victory formation: ahead in the 4th with few enough seconds left that kneeling runs it out.
   // A defense that's out of reach (down more than two scores) doesn't bother with its timeouts.
@@ -614,6 +618,18 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     ev.type = "run"; ev.k = "kneel"; ev.kneel = true; ev.yards = -1; ev.player = o.qb; ev.qb = o.qb; ev.text = `${o.qb?.name || "The QB"} takes a knee.`;
     if (defTO > 0 && g.clock > 2) { g.to[def]--; ev.text += ` Timeout, ${sideName(g, def)}.`; ev.note = tick(g, 2); }
     else ev.note = tick(g, 40);
+    return ev;
+  }
+
+  // Spike it: the clock running late in a half, no timeouts left and a reason to stop it (in range
+  // for the field goal, or a drive still to finish): the quarterback throws it into the ground. It
+  // costs a down and a second; on fourth down there's no down to spare.
+  const needStop = g.qtr === 2 ? g.yard >= 45 : (g.qtr === 4 || g.ot) && lead <= 0;
+  if (!call && running && needStop && (g.to?.[off] ?? 0) === 0 && g.down <= 3 && g.clock >= 3 && g.clock <= 40) {
+    const ql = line(g, off, o.qb); add(ql, "att", 1); st.passAtt++;
+    g.down++;
+    ev.type = "inc"; ev.k = "spike"; ev.spike = true; ev.qb = o.qb; ev.player = o.qb; ev.text = `${o.qb?.name || "The QB"} spikes it to stop the clock.`;
+    ev.note = tick(g, 1);
     return ev;
   }
 
@@ -953,6 +969,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     if (who) { g.to[who]--; secs = 4; ev.text += ` Timeout, ${sideName(g, who)}.`; ev.timeout = who; }
   }
   ev.note = tick(g, secs);
+  g.running = !clockStops && !ev.timeout && !ev.note;
   return ev;
 }
 const late = (g) => g.qtr === 4 && g.clock < 300;
