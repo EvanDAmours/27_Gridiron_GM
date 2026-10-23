@@ -94,6 +94,9 @@ function pickW(rand, list) {
 // How much more often a rusher gets home than an average one in his role, by his pass rush (a 95
 // rusher about 1.65 times a 75). The front as a whole decides how often the quarterback goes
 // down; this decides who gets there.
+// A rusher piling up sacks gets schemed against (chipped, doubled, slid to) as the season goes on:
+// past a dozen, each one comes harder. A great one still leads the league; a record is rare.
+const hotRusher = (p) => Math.exp(-Math.max(0, (p.ss?.sacks || 0) - 12) / 7);
 const rushQ = (p) => Math.exp(((p.posAttrs?.passRush ?? p.ovr ?? 70) - 75) * 0.025);
 function rushRole(p) {
   if (p.pos === "DL") return p.dlKind ? (p.dlKind === "DT" ? 0.6 : 1) : p.mpos ? (p.mpos === "DT" ? 0.6 : 1) : (p.wt || 280) >= 292 ? 0.6 : 1;
@@ -251,7 +254,7 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
   const hcR = team?.coach?.hc?.rating ?? 70; // the head coach makes the 4th-down calls
   const hcAgg = coachAggression(team?.coach?.hc); // ...in his own style
   // Measured against the league's balance, so league-wide rating drift doesn't tilt everyone's play-calling.
-  const passLean = clamp(0.6 + ((u.pass - LEAGUE.pass[0]) - (u.run - LEAGUE.run[0])) * 0.006 + lean + (OC_LEAN[team?.coach?.oc?.spec] || 0), 0.45, 0.75);
+  const passLean = clamp(0.6 + ((u.pass - LEAGUE.pass[0]) - (u.run - LEAGUE.run[0])) * 0.006 + lean + (OC_LEAN[team?.coach?.oc?.spec] || 0), 0.5, 0.64);
   const dStyle = defStyle(team, plan), paSpec = team?.coach?.oc?.spec === "Play-Action";
   // the five up front, left to right (the line's own stats: who allowed what)
   const ol = ["LT", "LG", "C", "RG", "RT"].map((pos) => on(pos)[0] || order(pos)[0] || null);
@@ -785,7 +788,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const deep = call === "pass_deep", quick = call === "pass_quick" || call === "pass_rpo", screen = style === "screen";
     // who did what, for the field to act the play out (LivePlay.jsx)
     ev.qb = qb; ev.deep = deep; ev.quick = quick; ev.screen = screen;
-    const sackAt = (rE) => clamp(0.064 + rE * 0.008 - passE * 0.004 + (deep ? 0.025 : quick || screen ? -0.035 : 0) + (B ? (quick || screen ? 0.02 : 0.06) : V ? -0.015 : 0), 0.02, 0.2);
+    const sackAt = (rE) => clamp(0.055 + rE * 0.008 - passE * 0.004 + (deep ? 0.025 : quick || screen ? -0.035 : 0) + (B ? (quick || screen ? 0.02 : 0.06) : V ? -0.015 : 0), 0.02, 0.2);
     const sackP = sackAt(rushE);
     const qbl = line(g, off, qb);
     if (!screen) ev._ol = { pass: true, sackP };
@@ -794,7 +797,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       const loss = Math.round(5 + rand() * 5);
       // Multi-sack games happen, but each sack a rusher already has makes the next one harder (he gets
       // chipped and doubled).
-      const rusher = pickW(rand, dP.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, w * 0.6 ** n]; }));
+      const rusher = pickW(rand, dP.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, w * 0.45 ** n * hotRusher(p)]; }));
       ev._ol.sacked = true; ev._ol.rusher = rusher; gk.sacked = true; gk.rusher = rusher; ev.rusher = rusher;
       add(qbl, "sk", 1); add(qbl, "skYds", loss); st.sacks++;
       // About one sack in five is shared by two rushers: half a sack each.
@@ -812,7 +815,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       carrier = qb; type = "run"; desc = `${qb?.name || "QB"} scrambles for ${yards}.`; gk.scr = yards; ev.scramble = true;
     } else {
       // Once a receiver has had a big day the ball spreads around (no 15-catch games every week).
-      const busy = ([p, w]) => { const n = g.box[off][p.id]?.tgt || 0, s0 = 8 + Math.max(0, p.form || 0) * 0.5; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 4)]; };
+      const busy = ([p, w]) => { const n = g.box[off][p.id]?.tgt || 0, s0 = 6 + Math.max(0, p.form || 0) * 0.5; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 3)]; };
       const recv = o.recvBy?.[pers] || o.receivers;
       // the receiver you threw to, if he's out there (any grouping); otherwise the quarterback's read
       const mine = !screen && pick?.target != null ? [...recv, ...Object.values(o.recvBy || {}).flat(), ...o.receivers].find(([p]) => p?.id === pick.target) : null;

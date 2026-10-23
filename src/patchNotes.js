@@ -1807,4 +1807,10 @@ export const PATCH_NOTES = [
     "Every punt now plays out live, not just the big returns: fair catches, touchbacks, punts downed deep and every return, with the punter's kick, the coverage and the catch",
     "The punt card says where a punt downed deep was downed",
   ] },
+  { v: "4.54", date: "2026-10-20", title: "Broadcast scorebug + realistic stat leaders", notes: [
+    "New broadcast scorebug: each team on its own color panel angled into a clock box, logos traced in white so every club reads on its own color (the Giants, Jets and Rams logos used to vanish), timeouts under each team, a gold glow on the team with the ball, a down-and-distance and ball-spot strip, and a win-probability line along the bottom",
+    "Stat leaders brought back to NFL levels. Records were falling almost every season (2,000-yard receivers, 160-catch seasons, 25-sack rushers). Now a typical season's leaders throw about 4,700-5,200 yards, catch about 120-140 balls for about 1,500-1,800 yards, and have about 16-21 sacks, so a record falls only in a truly special year",
+    "How: the most pass-happy teams throw a little less (no more 730-attempt seasons), a receiver who's had a big day sees the ball spread around sooner, slightly fewer sacks league-wide, and a pass rusher piling up sacks gets chipped and doubled as the season goes on",
+    "League scoring and team totals are unchanged (about 22-23 points a team per game)",
+  ] },
 ];
