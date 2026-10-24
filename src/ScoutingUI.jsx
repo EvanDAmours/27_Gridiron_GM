@@ -857,6 +857,11 @@ export function MockDraft({ g }) {
 
 // Regions: the map (click a scout to see his ground), a card per region with a dropdown for who
 // covers it, and your scouts with how many regions each has been given.
+// Regions: who covers which part of the country. The map colors every school by the scout who
+// works it (gray: nobody), so one look shows your whole staff's ground; each region is one row
+// with what it's deep at, who covers it and whether he's a specialist match there. Phones pick a
+// scout in a sheet; computers use a dropdown on the row. Tap a region on the map to jump to it.
+const SCOUT_CLR = ["#38bdf8", "#f59e0b", "#a78bfa", "#f472b6"];
 export function RegionsView({ g }) {
   const s = g.scouting || {};
   const cls = g.dc[areaSeason(g.sp, g.yr)] || g.dc[g.yr] || [];
@@ -868,115 +873,105 @@ export function RegionsView({ g }) {
   const same = staff.every((sl) => best[sl].length === ar[sl].length && best[sl].every((r) => ar[sl].includes(r)));
   const deep = (r) => rep[r]?.strong?.g;
   const fits = (sl, r) => !!s[sl]?.group && s[sl].group === deep(r);
-  const [pick, setPick] = useState(null);
-  const cur = pick && s[pick] ? pick : staff[0];
+  const [pick, setPick] = useState(null); // the region being assigned (phones) / picked on the map
   const auto = () => { g.setScouting({ ...s, areas: best, areasManual: true, areasYr: areaSeason(g.sp, g.yr) }); g.sm("Scouts sent to their best-fit regions."); };
-  const assign = (r, sl) => { const x = setRegionScout(s, g.sp, r, sl || null, g.yr); g.sm(x.msg); if (x.ok) g.setScouting(x.sc); if (sl) setPick(sl); };
-  const last = (sl) => s[sl].name.split(" ").slice(-1)[0];
-  const th = { padding: "5px 6px", fontSize: 11, fontWeight: 900, letterSpacing: 1, color: C.mt, textAlign: "left", borderBottom: `1px solid ${C.bd}` };
+  const assign = (r, sl) => { const x = setRegionScout(s, g.sp, r, sl || null, g.yr); g.sm(x.msg); if (x.ok) g.setScouting(x.sc); };
   // "O. Casserly": two scouts can share a last name
   const nm = (sl) => { const w = s[sl].name.split(" "); return w.length > 1 ? `${w[0][0]}. ${w.slice(-1)[0]}` : w[0]; };
-  if (MOBILE) return (
-    <div style={{ display: "grid", gap: 12 }}>
-      <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "10px 8px 8px" }}>
-        {staff.length > 0 && <Segments items={staff.map((sl) => [sl, nm(sl)])} value={cur} onChange={setPick} />}
-        <RegionMap lit={cur ? ar[cur] : []} />
-        {cur && <div style={{ fontSize: 14, color: "#cbd5e1", textAlign: "center", marginTop: 4 }}>{s[cur].name} <span style={{ color: "#67e8f9", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[s[cur].group] || ""}</span> · {ar[cur].length}/{areaCap(cur)} regions</div>}
-      </div>
-      {open ? <Btn onClick={auto} disabled={same} bg={same ? C.bd : C.gn} style={{ fontSize: 16, minHeight: 48, borderRadius: 12 }}>{same ? "Best fit set" : "Auto-assign best fit"}</Btn>
-        : <div style={{ fontSize: 14, color: C.mt, textAlign: "center" }}>Scouts are on the road until free agency.</div>}
-      <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px" }}>
-        {AREA_KEYS.map((r, i) => {
-          const on = staff.find((sl) => ar[sl].includes(r));
-          return (
-            <div key={r} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 64, borderTop: i ? "1px solid #ffffff10" : 0 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 5, background: REGION_CLR[r], flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 16, fontWeight: 800 }}>{REGIONS_SHORT[r]}</div>
-                <div style={{ fontSize: 13, color: !on ? "#fcd34d" : fits(on, r) ? "#4ade80" : "#94a3b8" }}>Deep at {deep(r) ? SCOUT_GROUP_SHORT[deep(r)] : "nothing"}{on && fits(on, r) ? " · match" : !on ? " · no scout" : ""}</div>
-              </div>
-              {open ? <Select value={on || ""} onChange={(e) => assign(r, e.target.value)} aria-label={`Scout for ${regionName(r)}`} style={{ width: 132, background: C.bg, color: C.tx, border: `1px solid ${on && fits(on, r) ? "#16a34a" : C.bd}`, borderRadius: 10, padding: "8px 8px", fontSize: 14 }}>
-                <option value="">Nobody</option>
-                {staff.map((sl) => <option key={sl} value={sl}>{nm(sl)}{s[sl].group === deep(r) ? " ✓" : ""}</option>)}
-              </Select> : <b style={{ fontSize: 14 }}>{on ? nm(on) : "—"}</b>}
-            </div>
-          );
-        })}
+  const clr = (sl) => SCOUT_CLR[staff.indexOf(sl)] || "#94a3b8";
+  const who = (r) => staff.find((sl) => ar[sl].includes(r));
+  const covered = AREA_KEYS.filter(who).length, matches = AREA_KEYS.filter((r) => who(r) && fits(who(r), r)).length;
+  const soft = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
+  const tap = (r) => { setPick(r); if (!MOBILE) document.getElementById(`rg-${r}`)?.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
+  const map = (
+    <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "10px 10px 12px" }}>
+      <StaffMap colorOf={(r) => (who(r) ? clr(who(r)) : null)} labelOf={(r) => (who(r) ? nm(who(r)) : "No scout")} onRegion={open ? tap : undefined} hot={!MOBILE ? pick : null} />
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", justifyContent: "center", marginTop: 6 }}>
+        {staff.map((sl) => { const n = ar[sl].length, cap = areaCap(sl); return <span key={sl} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 700 }}><span style={{ width: 10, height: 10, borderRadius: 5, background: clr(sl) }} />{nm(sl)} <span style={{ color: "#67e8f9", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[s[sl].group] || ""}</span><span style={{ color: n >= cap ? C.mt : C.gd, fontWeight: 800 }}>{n}/{cap}</span></span>; })}
+        {!staff.length && <span style={{ fontSize: 14, color: C.mt }}>No scouts on staff. Hire some on the Scouts screen.</span>}
       </div>
     </div>
   );
+  const status = (
+    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 17, fontWeight: 900 }}>{covered}/{AREA_KEYS.length} regions covered</div>
+        <div style={{ fontSize: 13, color: matches ? "#4ade80" : C.mt }}>{matches} specialist match{matches === 1 ? "" : "es"}{open ? "" : " · locked until free agency"}</div>
+      </div>
+      {open && <button onClick={auto} disabled={same} style={{ minHeight: 46, padding: "0 18px", borderRadius: 12, border: 0, background: same ? "#ffffff12" : C.gn, color: same ? "#94a3b8" : "#fff", fontSize: 15, fontWeight: 900, cursor: same ? "default" : "pointer", whiteSpace: "nowrap" }}>{same ? "Best fit set" : "Auto-assign"}</button>}
+    </div>
+  );
+  const rows = (
+    <div style={soft}>
+      {AREA_KEYS.map((r, i) => {
+        const on = who(r), match = on && fits(on, r);
+        const top = cls.filter((p) => regionOf(p) === r && !p.drafted).sort((x, y) => csRank(x) - csRank(y)).slice(0, 2);
+        return (
+          <div key={r} id={`rg-${r}`} style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 66, padding: "8px 0", borderTop: i ? "1px solid #ffffff10" : 0, background: !MOBILE && pick === r ? "#ffffff0a" : "transparent" }}>
+            <span style={{ width: 12, height: 12, borderRadius: 6, flexShrink: 0, background: on ? clr(on) : "transparent", border: on ? 0 : "2px dashed #64748b" }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 800 }}>{REGIONS_SHORT[r]} <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>· deep at {deep(r) ? SCOUT_GROUP_SHORT[deep(r)] : "nothing"}</span></div>
+              <div style={{ fontSize: 13, marginTop: 2, color: !on ? "#fcd34d" : match ? "#4ade80" : "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{!on ? "Nobody's scouting here" : match ? "Specialist match" : "Covered"}{!MOBILE && top.length ? <span style={{ color: C.mt }}> · top: {top.map((p) => `#${csRank(p)} ${p.name.split(" ").slice(-1)[0]}`).join(", ")}</span> : null}</div>
+            </div>
+            {!open ? <b style={{ fontSize: 15 }}>{on ? nm(on) : "—"}</b>
+              : MOBILE ? <button onClick={() => setPick(r)} aria-label={`Scout for ${regionName(r)}`} style={{ minWidth: 118, minHeight: 44, padding: "0 12px", borderRadius: 12, border: `1px solid ${match ? "#16a34a" : "#ffffff1f"}`, background: "#ffffff0a", color: on ? "#fff" : "#fcd34d", fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}><span style={{ whiteSpace: "nowrap" }}>{on ? nm(on) : "Assign"}</span><span style={{ color: "#64748b" }}>›</span></button>
+              : <Select value={on || ""} onChange={(e) => assign(r, e.target.value)} aria-label={`Scout for ${regionName(r)}`} style={{ width: 190, background: C.bg, color: C.tx, border: `1px solid ${match ? "#16a34a" : C.bd}`, borderRadius: 10, padding: "8px 10px", fontSize: 14 }}>
+                <option value="">Nobody</option>
+                {staff.map((sl) => <option key={sl} value={sl}>{nm(sl)} ({SCOUT_GROUP_SHORT[s[sl].group] || "—"}){s[sl].group === deep(r) ? " ✓" : ""} · {ar[sl].length}/{areaCap(sl)}</option>)}
+              </Select>}
+          </div>
+        );
+      })}
+    </div>
+  );
+  const sheet = MOBILE && pick && (
+    <Sheet title={`${REGIONS_SHORT[pick]} · deep at ${deep(pick) ? SCOUT_GROUP_SHORT[deep(pick)] : "nothing"}`} onClose={() => setPick(null)}>
+      {[...staff, ""].map((sl, i) => { const on = who(pick) === sl || (!sl && !who(pick)); const full = sl && ar[sl].length >= areaCap(sl) && !ar[sl].includes(pick); return (
+        <button key={sl || "none"} onClick={() => { assign(pick, sl); setPick(null); }} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 58, background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff14" : 0, padding: 0, color: "#fff", cursor: "pointer", textAlign: "left" }}>
+          <span style={{ width: 12, height: 12, borderRadius: 6, background: sl ? clr(sl) : "transparent", border: sl ? 0 : "2px dashed #64748b", flexShrink: 0 }} />
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: 16, fontWeight: 800 }}>{sl ? s[sl].name : "Nobody"}</span>
+            {sl && <span style={{ display: "block", fontSize: 13, color: "#94a3b8" }}>Knows {SCOUT_GROUP_SHORT[s[sl].group] || "—"} · {ar[sl].length}/{areaCap(sl)} regions{full ? " (moves one over)" : ""}</span>}
+          </span>
+          {sl && fits(sl, pick) && <span style={{ fontSize: 13, fontWeight: 900, color: "#4ade80" }}>Match</span>}
+          {on && <span style={{ fontSize: 18, color: C.gn }}>✓</span>}
+        </button>
+      ); })}
+      <div style={{ height: 8 }} />
+    </Sheet>
+  );
+  if (MOBILE) return <div style={{ display: "grid", gap: 12 }}>{map}{status}{rows}{sheet}</div>;
   return (
-    <div>
-      <div style={{ ...panel, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 260, fontSize: 14, lineHeight: 1.5 }}>
-          <b>How it works:</b> each region is <b style={{ color: "#4ade80" }}>deep at one position</b> this year. Pick who covers each region; send scouts where the position they know is deep (<span style={{ color: "#4ade80", fontWeight: 800 }}>✓ match</span>) to find sleepers and dev traits there.
-        </div>
-        {open ? <Btn onClick={auto} disabled={same} bg={same ? C.bd : C.gn} style={{ fontSize: 14, padding: "9px 14px" }}>{same ? "✓ Best fit set" : "⚡ Auto-assign best fit"}</Btn>
-          : <span style={{ fontSize: 13, color: C.mt }}>Scouts are on the road: assignments change in free agency or the preseason.</span>}
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "minmax(0,1.15fr) minmax(0,1.3fr) minmax(0,0.95fr)", gap: 10, alignItems: "start" }}>
-        <div style={{ ...panel, marginBottom: 0, padding: "10px 8px 6px" }}>
-          {cur && <div style={{ padding: "0 6px", fontSize: 14 }}><b>{s[cur].name}</b> <span style={{ color: C.mt }}>{ar[cur].length ? `covers ${ar[cur].map((r) => REGIONS_SHORT[r]).join(" and ")}` : "has no regions yet"}</span></div>}
-          <RegionMap lit={cur ? ar[cur] : []} />
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", fontSize: 11, color: C.mt }}>{AREA_KEYS.map((r) => <span key={r} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 4, background: REGION_CLR[r] }} />{REGIONS_SHORT[r]}</span>)}</div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,220px),1fr))", gap: 8 }}>
-          {AREA_KEYS.map((r) => {
-            const on = staff.find((sl) => ar[sl].includes(r));
-            const top = cls.filter((p) => regionOf(p) === r && !p.drafted).sort((x, y) => csRank(x) - csRank(y)).slice(0, 3);
-            const lit = cur && ar[cur].includes(r);
-            return (
-              <div key={r} style={{ ...panel, marginBottom: 0, padding: "9px 10px", borderColor: lit ? REGION_CLR[r] : on ? C.bd : "#b4530988" }}>
-                <div style={{ fontSize: 15, fontWeight: 900, display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 5, background: REGION_CLR[r] }} />{REGIONS_SHORT[r]}</div>
-                <div style={{ fontSize: 13, margin: "2px 0 6px" }}>Deep at <b style={{ color: "#4ade80" }}>{deep(r) ? SCOUT_GROUPS[deep(r)] : "nothing special"}</b></div>
-                {open ? <Select value={on || ""} onChange={(e) => assign(r, e.target.value)} aria-label={`Scout for ${regionName(r)}`} style={{ width: "100%", background: C.bg, color: C.tx, border: `1px solid ${on && fits(on, r) ? "#16a34a" : C.bd}`, borderRadius: 6, padding: "5px 8px", fontSize: 13 }}>
-                  <option value="">Nobody</option>
-                  {staff.map((sl) => <option key={sl} value={sl}>{last(sl)} ({SCOUT_GROUP_SHORT[s[sl].group] || "—"}){s[sl].group === deep(r) ? " ✓" : ""} · {ar[sl].length}/{areaCap(sl)}</option>)}
-                </Select> : <div style={{ fontSize: 13 }}>Scout: <b>{on ? last(on) : "nobody"}</b></div>}
-                <div style={{ fontSize: 12, fontWeight: 800, margin: "4px 0", color: !on ? "#fcd34d" : fits(on, r) ? "#4ade80" : "#fdba74" }}>{!on ? "No scout here" : fits(on, r) ? "✓ Specialist match" : deep(r) ? `No ${SCOUT_GROUP_SHORT[deep(r)]} specialist here` : "Covered"}</div>
-                {top.map((p) => <div key={p.id} onClick={() => g.setSel(p)} style={{ display: "flex", gap: 6, fontSize: 12, cursor: "pointer", color: "#cbd5e1" }}><span style={{ width: 30, color: C.mt }}>#{csRank(p)}</span><span style={{ width: 32, fontWeight: 800 }}>{posTag(p)}</span><span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span></div>)}
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ ...panel, marginBottom: 0 }}>
-          <div style={head}>MY SCOUTS</div>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead><tr><th style={th}>NAME</th><th style={th}>KNOWS</th><th style={{ ...th, textAlign: "right" }}>REGIONS</th></tr></thead>
-            <tbody>{staff.map((sl) => { const x = s[sl], n = ar[sl].length, cap = areaCap(sl); return (
-              <tr key={sl} onClick={() => setPick(sl)} style={{ cursor: "pointer", background: sl === cur ? "#38bdf81a" : "transparent", boxShadow: sl === cur ? "inset 3px 0 0 #38bdf8" : "none" }}>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.bd}66` }}><div style={{ fontWeight: 800, whiteSpace: "nowrap" }}>{x.name}</div><div style={{ fontSize: 11 }}><span style={{ color: slotKind(sl) === "major" ? "#f5c542" : "#60a5fa", fontWeight: 900 }}>{SCOUT_ROLES[sl].short.toUpperCase()}</span> <Stars ev={x.eval} /></div></td>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.bd}66`, color: "#67e8f9", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[x.group] || "—"}</td>
-                <td style={{ padding: "7px 6px", borderBottom: `1px solid ${C.bd}66`, textAlign: "right", fontWeight: 900, fontSize: 15, color: n >= cap ? C.gn : n ? C.gd : C.rd }}>{n}/{cap}</td>
-              </tr>); })}</tbody>
-          </table>
-          {!staff.length && <div style={muted}>No scouts. Hire some on the Scouts tab.</div>}
-          <div style={{ ...muted, fontSize: 12, marginTop: 6 }}>Majors cover 2 regions, minors 1. Click a scout to see his ground on the map.</div>
-        </div>
-      </div>
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.1fr) minmax(0,1fr)", gap: 16, alignItems: "start" }}>
+      <div style={{ display: "grid", gap: 12 }}>{map}<div style={{ fontSize: 13, color: C.mt, padding: "0 4px" }}>Each region is deep at one position this year. A scout who knows that position (a specialist match) finds more sleepers and development traits there. Majors cover two regions, minors one.</div></div>
+      <div style={{ display: "grid", gap: 12 }}>{status}{rows}</div>
     </div>
   );
 }
 
-const REGION_CLR = { SEC: "#ef4444", B1G: "#3b82f6", ACC: "#f97316", B12: "#a855f7", G5: "#14b8a6", PAC: "#22c55e" };
-// The country with every school as a dot in its conference's color; the regions the picked scout
-// covers light up, the rest fade.
-function RegionMap({ lit, onRegion }) {
-  const on = new Set(lit || []);
-  const any = on.size > 0;
+// The country with every school as a dot, colored by the scout who covers its region (gray and
+// faint: nobody). Each region carries its name and its scout's. hot: a region to ring.
+const LABEL_XY = { PAC: [150, 300], G5: [330, 190], B12: [420, 420], B1G: [585, 165], ACC: [805, 300], SEC: [640, 505] };
+function StaffMap({ colorOf, labelOf, onRegion, hot }) {
   const dots = AREA_KEYS.flatMap((r) => REGIONS[r].schools.map((sch) => ({ r, sch, xy: SCHOOL_XY[sch] }))).filter((d) => d.xy);
-  // a label at the middle of each lit region's schools
-  const mid = (r) => { const ps = dots.filter((d) => d.r === r); return [ps.reduce((t, d) => t + d.xy[0], 0) / ps.length, ps.reduce((t, d) => t + d.xy[1], 0) / ps.length]; };
+  // each label sits in open ground near its region (Group of Five schools are everywhere, so a middle
+  // point would land on top of the ACC)
+  const mid = (r) => LABEL_XY[r] || [480, 300];
   return (
     <svg viewBox="0 0 960 600" width="100%" style={{ display: "block" }}>
       <path d={US_NATION} fill="#1e293b" stroke="#475569" strokeWidth={1.5} />
       <path d={US_BORDERS} fill="none" stroke="#334155" strokeWidth={0.8} />
-      {dots.filter((d) => !on.has(d.r)).map((d) => <circle key={d.sch} cx={d.xy[0]} cy={d.xy[1]} r={any ? 4 : 6} fill={REGION_CLR[d.r]} opacity={any ? 0.22 : 0.85} onClick={() => onRegion?.(d.r)} style={{ cursor: "pointer" }}><title>{d.sch} ({regionName(d.r)})</title></circle>)}
-      {dots.filter((d) => on.has(d.r)).map((d) => <g key={d.sch} onClick={() => onRegion?.(d.r)} style={{ cursor: "pointer" }}><circle cx={d.xy[0]} cy={d.xy[1]} r={16} fill={REGION_CLR[d.r]} opacity={0.18} /><circle cx={d.xy[0]} cy={d.xy[1]} r={7.5} fill={REGION_CLR[d.r]} stroke="#fff" strokeWidth={1.5}><title>{d.sch} ({regionName(d.r)})</title></circle></g>)}
-      {[...on].map((r) => { const [x, y] = mid(r); return <text key={r} x={x} y={y - 22} textAnchor="middle" fontSize={26} fontWeight={900} fill="#fff" stroke="#0b1220" strokeWidth={5} paintOrder="stroke">{REGIONS_SHORT[r]}</text>; })}
+      {dots.map((d) => { const c = colorOf(d.r); return <circle key={d.sch} cx={d.xy[0]} cy={d.xy[1]} r={hot === d.r ? 9 : 7} fill={c || "#64748b"} opacity={c ? 0.95 : 0.35} stroke={hot === d.r ? "#fff" : "none"} strokeWidth={2} onClick={() => onRegion?.(d.r)} style={{ cursor: onRegion ? "pointer" : "default" }}><title>{d.sch} ({regionName(d.r)})</title></circle>; })}
+      {AREA_KEYS.map((r) => { const [x, y] = mid(r), c = colorOf(r); return (
+        <g key={r} onClick={() => onRegion?.(r)} style={{ cursor: onRegion ? "pointer" : "default" }}>
+          <text x={x} y={y - 18} textAnchor="middle" fontSize={24} fontWeight={900} fill="#fff" stroke="#0b1220" strokeWidth={6} paintOrder="stroke">{REGIONS_SHORT[r]}</text>
+          <text x={x} y={y + 8} textAnchor="middle" fontSize={19} fontWeight={800} fill={c || "#fcd34d"} stroke="#0b1220" strokeWidth={5} paintOrder="stroke">{labelOf(r)}</text>
+        </g>
+      ); })}
     </svg>
   );
 }
+
 const REGIONS_SHORT = { SEC: "SEC", B1G: "Big Ten", ACC: "ACC", B12: "Big 12", G5: "Group of Five", PAC: "Pac-12 & MW" };
 
 // Where the talent is this year: each conference's strength and weakness, and who you have there.
