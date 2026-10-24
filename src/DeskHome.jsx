@@ -1,0 +1,92 @@
+// Desktop Home, broadcast style: the week's game as one big TV promo (both clubs' colors, their
+// stars standing toward the middle, Play right on it), then three quiet cards under it: what needs
+// you, the game plan, and the top story. The rest of the game is one click away in the bar above.
+import React, { useState } from "react";
+import { C, TeamLogo, kickoff, Sheet } from "./ui.jsx";
+import PlayerArt from "./PlayerArt.jsx";
+import { featuredPlayer } from "./BroadcastMatchup.jsx";
+import { BLOCK, FONT_CSS } from "./Spotlight.jsx";
+import { HOLIDAYS } from "./holidays.js";
+
+const card = { background: "#ffffff0d", borderRadius: 18, padding: "16px 18px", minWidth: 0 };
+const h2 = { fontSize: 20, fontWeight: 900, margin: "0 0 6px", display: "flex", alignItems: "baseline", gap: 8 };
+const tag = { fontSize: 13, fontWeight: 800, color: "#fff", background: "#00000066", borderRadius: 999, padding: "6px 12px", whiteSpace: "nowrap" };
+const rec = (t) => `${t.w ?? 0}-${t.l ?? 0}${t.t ? `-${t.t}` : ""}`;
+const TONE = { urgent: C.rd, action: C.gd, info: "#60a5fa" };
+
+function Side({ t, rating, right }) {
+  return (
+    <div style={{ position: "absolute", top: "26%", [right ? "right" : "left"]: 56, textAlign: right ? "right" : "left", zIndex: 2, maxWidth: "30%" }}>
+      <div style={{ display: "flex", justifyContent: right ? "flex-end" : "flex-start" }}><TeamLogo t={t} sz={104} glow /></div>
+      <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: "#ffffffb3", marginTop: 14, textTransform: "uppercase" }}>{t.city}</div>
+      <div style={{ fontFamily: BLOCK, fontSize: 52, fontWeight: 700, lineHeight: 1, textTransform: "uppercase", textShadow: "0 4px 24px #0009" }}>{t.name}</div>
+      <div style={{ fontSize: 19, color: "#ffffffcc", marginTop: 6 }}>{rec(t)}{Number.isFinite(rating?.ovr) ? ` · ${Math.round(rating.ovr)} OVR` : ""}</div>
+    </div>
+  );
+}
+
+// away and home are drawn left and right, like the score bug. primary: [{ label, onClick }] for
+// this week (Play, Sim). spread: "NYG −3" or "Pick'em". eyebrow: what kind of game it is.
+export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, spread, primary = [], menu = [], planCard, stories = [], news = [], teams, onStory, side, rest, extra }) {
+  const [devOpen, setDevOpen] = useState(false);
+  const pa = featuredPlayer(away), ph = featuredPlayer(home);
+  const hol = HOLIDAYS[game?.holiday];
+  // the to-do list: the week's main job is the Play button now, so the list starts after it
+  const todo = menu.slice(1).filter((m) => !/more to do$/.test(m.label));
+  const moreTodo = menu.find((m) => /more to do$/.test(m.label));
+  const lead = stories[0], leadT = lead && teams[lead.team];
+  const plan = planCard && React.cloneElement(planCard, { bare: true });
+  return (
+    <div className="keep-dark" style={{ color: "#fff" }}>
+      <style>{FONT_CSS}</style>
+      {/* the promo */}
+      <div style={{ position: "relative", height: "clamp(380px, calc(var(--vh, 100vh) - 420px), 560px)", borderRadius: 22, overflow: "hidden", background: `linear-gradient(100deg, ${away.clr} 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr} 100%)` }}>
+        {pa && <div style={{ position: "absolute", left: "23%", bottom: -20 }}><PlayerArt p={pa} ab={away.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
+        {ph && <div style={{ position: "absolute", right: "23%", bottom: -20, transform: "scaleX(-1)" }}><PlayerArt p={ph} ab={home.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
+        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, transparent 52%, ${C.bg} 100%)` }} />
+        <div style={{ position: "absolute", top: 24, left: 0, right: 0, textAlign: "center", fontSize: 13, fontWeight: 900, letterSpacing: 1.8, color: "#ffffffcc", textTransform: "uppercase", zIndex: 2 }}>{[eyebrow, game?.date ? kickoff(game).replace(" ET", "") : null].filter(Boolean).join(" · ")}</div>
+        <Side t={away} rating={ra} />
+        <Side t={home} rating={rh} right />
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: 28, display: "flex", justifyContent: "center", alignItems: "center", gap: 10, zIndex: 2 }}>
+          {hol && <span style={{ ...tag, background: `linear-gradient(90deg, ${hol.c2}, ${hol.c1})` }}>{hol.icon} {hol.name}</span>}
+          {spread && <span style={tag}>{spread}</span>}
+          {forecast && <span style={tag} title={forecast.note || undefined}>{forecast.icon} {forecast.label}</span>}
+          {primary.map((b, i) => <button key={b.label} onClick={b.onClick} style={{ marginLeft: i === 0 ? 12 : 0, minHeight: 52, padding: "0 26px", borderRadius: 14, border: 0, background: i === 0 ? C.gn : "#ffffff24", color: "#fff", fontSize: 17, fontWeight: 900, cursor: "pointer", boxShadow: i === 0 ? "0 8px 24px #0008" : "none" }}>{b.label}</button>)}
+        </div>
+      </div>
+      {extra}
+      {/* three quiet cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14, marginTop: 16 }}>
+        <div style={card}>
+          <div style={h2}>To do{todo.length > 0 && <span style={{ fontSize: 15, color: C.mt }}>{todo.length + (moreTodo ? Number(moreTodo.label.match(/\d+/)?.[0] || 0) : 0)}</span>}</div>
+          {todo.slice(0, 3).map((m, i) => (
+            <button key={m.label} onClick={m.onClick} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 50, background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff14" : 0, color: "#fff", textAlign: "left", cursor: "pointer", padding: 0 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 4, flexShrink: 0, background: TONE[m.tone] || "#64748b" }} />
+              <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.label.replace(/^[\p{Extended_Pictographic}️‍\s]+/u, "")}</span>
+              <span style={{ fontSize: 20, color: "#64748b" }}>›</span>
+            </button>
+          ))}
+          {!todo.length && <div style={{ fontSize: 15, color: "#94a3b8", padding: "10px 0" }}>Nothing needs you this week.</div>}
+          <div style={{ display: "flex", gap: 16, marginTop: 6 }}>
+            {(todo.length > 3 || moreTodo) && <button onClick={moreTodo?.onClick || todo[3]?.onClick} style={{ background: "transparent", border: 0, padding: "6px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>See all</button>}
+            {side && <button onClick={() => setDevOpen(true)} style={{ background: "transparent", border: 0, padding: "6px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Development focus</button>}
+          </div>
+        </div>
+        <div style={card}>
+          <div style={h2}>Game plan</div>
+          {plan || <div style={{ fontSize: 15, color: "#94a3b8" }}>Your coaches set it before every game.</div>}
+        </div>
+        <div style={{ ...card, cursor: lead && (lead.inc || lead.retire) && onStory ? "pointer" : "default" }} onClick={lead && (lead.inc || lead.retire) && onStory ? () => onStory(lead) : undefined}>
+          <div style={h2}>Top story</div>
+          {lead ? <>
+            {leadT && <TeamLogo t={leadT} sz={34} glow />}
+            <div style={{ fontSize: 18, fontWeight: 900, lineHeight: 1.25, marginTop: 8 }}>{lead.head}</div>
+            <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.45, marginTop: 6, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{lead.text}</div>
+          </> : news[0] ? <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.4 }}>{news[0].text}</div> : <div style={{ fontSize: 15, color: "#94a3b8" }}>Quiet around the league so far. Stories arrive after every week.</div>}
+        </div>
+      </div>
+      {rest}
+      {devOpen && <Sheet title="Development focus" onClose={() => setDevOpen(false)}>{side}<div style={{ height: 10 }} /></Sheet>}
+    </div>
+  );
+}

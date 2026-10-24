@@ -19,6 +19,7 @@ import { HOLIDAYS } from "./holidays.js";
 import { gameWeather, wxOf } from "./weather.js";
 import { rosterPlan } from "./rosterPlan.js";
 import { posTag } from "./dline.js";
+import DeskHome from "./DeskHome.jsx";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const PHASE = { preseason: "Preseason", combine: "Offseason: NFL Combine", resign: "Offseason: Re-sign Week", freeagency: "Offseason: Free Agency", draft: "Offseason: NFL Draft" };
@@ -423,6 +424,21 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
   })();
   const bg = `radial-gradient(ellipse at 50% 35%, ${me.clr}55, transparent 60%), linear-gradient(160deg, #0b2a33, #050b12 70%)`;
   if (mobile) return <PhoneHome {...{ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, forecast, menu, side, planCard, rest, stories, news, onStory, onNav, fa, capRoom, onFa, sched, rivalId, devFocus }} />;
+  // desktop game weeks: the broadcast Home (DeskHome); byes and the off-season keep the board below
+  if (game && away && home) {
+    const playoff = sp === "playoffs", neutral = !!game.neutral || (playoff && pb?.rd === 4);
+    const opp = teams[game.h === ui ? game.a : game.h];
+    const eyebrow = [sp === "preseason" ? "Season opener" : playoff ? ROUND_NAMES[pb?.rd] || "Playoffs" : `Week ${game.wk ?? nextWk}`, !playoff && primeSlot(game), opp && opp.c === me.c && opp.d === me.d && "Division", rivalId != null && opp?.id === rivalId && "Rivalry"].filter(Boolean).join(" · ");
+    const sp2 = ra && rh ? pointSpread(ra, rh, neutral) : null;
+    const spread = sp2 ? (sp2.pts ? `${(sp2.home ? home : away).ab} −${sp2.pts}` : "Pick'em") : null;
+    const restEl = rest && (
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, padding: "12px 16px", borderRadius: 16, background: rest.on ? "#0c4a6e55" : "#ffffff0d" }}>
+        <div style={{ flex: 1, fontSize: 15, color: "#e2e8f0" }}><b style={{ color: "#7dd3fc" }}>No. 1 seed clinched.</b> {rest.on ? "Your starters are resting until the playoffs." : "Rest your starters to keep them healthy for the playoffs."}</div>
+        <Btn onClick={rest.toggle} bg={rest.on ? "#334155" : "#0284c7"} style={{ fontSize: 14, fontWeight: 900, padding: "9px 16px", borderRadius: 10 }}>{rest.on ? "Play starters" : "Rest starters"}</Btn>
+      </div>
+    );
+    return <DeskHome {...{ away, home, ra, rh, game, eyebrow, forecast, spread, primary: primary.slice(0, 2), menu, planCard, stories, news, teams, onStory, side, rest: restEl }} />;
+  }
   return (
     <div className="keep-dark" style={{ borderRadius: 14, overflow: "hidden", background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, position: "relative" }}>
       <style>{"@media (max-width: 760px) { .hm-main { order: -1; padding: 12px !important } .hm-menu, .hm-side { max-width: none !important; border: 0 !important } .hm-logo > * { width: clamp(48px, 15vw, 96px) !important; height: clamp(48px, 15vw, 96px) !important } }"}</style>

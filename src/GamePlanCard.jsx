@@ -33,7 +33,7 @@ function Scout({ r, opp, onPersonnel }) {
   );
 }
 
-export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto, onTwoPoint, mobile, last, report, onPersonnel, defaultOpen = false, onHub }) {
+export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto, onTwoPoint, mobile, last, report, onPersonnel, defaultOpen = false, onHub, bare = false }) {
   const [open, setOpen] = React.useState(defaultOpen);
   if (!units || !opp) return null;
   const opts = planOptions(units.mine, units.theirs);
@@ -86,8 +86,24 @@ export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto
       </div>
     );
   }
+  // bare: Home's game plan card, a summary (offense, defense, the scouting note) and a way in
+  if (bare && !open) {
+    const lbl = (list, k) => list.find((x) => x.key === k), o = lbl(OFF_PLANS, cur.off), d = lbl(DEF_PLANS, cur.def);
+    const row = (k, v, g) => <div style={{ display: "flex", alignItems: "center", minHeight: 46, borderTop: k === "Offense" ? 0 : "1px solid #ffffff14", fontSize: 15 }}><b>{k}</b><span style={{ marginLeft: "auto", color: "#e2e8f0" }}>{v} <b style={{ color: GRADE_C[g] }}>{g}</b></span></div>;
+    return (
+      <div>
+        {row("Offense", `${o?.icon || ""} ${o?.label || ""}`, planGrade(opts.off[cur.off].v))}
+        {row("Defense", `${d?.icon || ""} ${d?.label || ""}`, planGrade(opts.def[cur.def].v))}
+        {report?.notes?.[0] && <div style={{ fontSize: 14, lineHeight: 1.45, color: report.notes[0].tone === "watch" ? "#fcd34d" : "#86efac", borderTop: "1px solid #ffffff14", paddingTop: 10 }}>{report.notes[0].text}</div>}
+        <div style={{ display: "flex", gap: 16, marginTop: 6 }}>
+          <button onClick={() => setOpen(true)} style={{ background: "transparent", border: 0, padding: "6px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Change</button>
+          {onHub && <button onClick={onHub} style={{ background: "transparent", border: 0, padding: "6px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Week prep</button>}
+        </div>
+      </div>
+    );
+  }
   return (
-    <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
+    <div style={bare ? {} : { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
         <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd }}>🎯 GAME PLAN vs {opp.ab || opp.name}</span>
         <span style={{ fontSize: 12, color: set ? "#fde68a" : C.mt }}>{set ? "your call for this game" : "your coaches' pick (best fit)"}</span>
