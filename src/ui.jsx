@@ -1,5 +1,6 @@
 // Shared look: colors, badges, buttons and faces used across the app.
 import React from "react";
+import { createPortal } from "react-dom";
 
 export { Face } from "./Face.jsx";
 // The one close button every popup uses: round, top-right, same size everywhere. The popup's box
@@ -13,15 +14,17 @@ export const CloseX=({onClick,label="Close",style:st})=><button onClick={onClick
 // grip down to close. Row: one line, label left, a short value right, tap for more. Segments: a
 // pill switch between a few views.
 export function Sheet({ title, onClose, children }) {
-  return (
-    <div className="keep-dark" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 450, background: "#000a", display: "flex", ...sheetWrap(true) }}>
+  // drawn at the top of the page, so a sheet opened inside a sticky or stacked block still sits over everything
+  return createPortal(
+    <div className="keep-dark" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 450, background: "#000a", display: "flex", fontFamily: C.f, ...sheetWrap(true) }}>
       <div role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: "#0d1424", border: `1px solid ${C.bd}`, color: C.tx, padding: "14px 14px 0", overflowY: "auto", ...sheetBox(true) }}>
         <SheetGrip onClose={onClose} />
         <CloseX onClick={onClose} />
         {title && <div style={{ fontSize: 20, fontWeight: 900, margin: "0 44px 12px 2px" }}>{title}</div>}
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 export function Row({ label, value, tone, onClick, first, tour }) {
