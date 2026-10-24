@@ -1,7 +1,8 @@
 // The big result card shown after you sim: did you win, the score, your record and
-// standing, who starred, and the rest of the week's scores. It closes itself after 10 seconds (a bar
+// standing, who starred, and the rest of the week's scores. It closes itself after 6 seconds (a bar
 // along the bottom counts down); hovering pauses it, and clicking anything in it keeps it up. On
-// phones it slides up from the bottom, above the action bar, and a swipe down dismisses it.
+// phones it's a final-score card above the action bar: tap it for the box score, swipe it down to
+// dismiss.
 import React, { useEffect, useRef, useState } from "react";
 import { WinProbChart } from "./GameRecap.jsx";
 import { C, Btn, TeamLogo } from "./ui.jsx";
@@ -77,10 +78,10 @@ export default function WeekResult(props) {
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onClickCapture={() => setKept(true)}
       onTouchStart={MOBILE ? (e) => { startY.current = e.touches[0].clientY; } : undefined}
       onTouchEnd={MOBILE ? (e) => { if (startY.current != null && e.changedTouches[0].clientY - startY.current > 60) onClose(); startY.current = null; } : undefined}
-      style={MOBILE ? { position: "fixed", left: 8, right: 8, bottom: "calc(126px + env(safe-area-inset-bottom))", zIndex: 392, animation: "sheetUp .25s ease-out", boxShadow: "0 -8px 30px #000b", borderRadius: 12 } : { position: "fixed", bottom: 16, right: 16, width: "min(560px, calc(100% - 32px))", maxHeight: "45vh", overflowY: "auto", zIndex: 380, animation: "sheetUp .25s ease-out", boxShadow: "0 14px 44px #000d", borderRadius: 12 }}>
+      style={MOBILE ? { position: "fixed", left: 10, right: 10, bottom: "calc(126px + env(safe-area-inset-bottom))", zIndex: 392, animation: "sheetUp .25s ease-out", boxShadow: "0 -10px 36px #000c", borderRadius: 18 } : { position: "fixed", bottom: 16, right: 16, width: "min(560px, calc(100% - 32px))", maxHeight: "45vh", overflowY: "auto", zIndex: 380, animation: "sheetUp .25s ease-out", boxShadow: "0 14px 44px #000d", borderRadius: 12 }}>
       <style>{"@keyframes wrBar{from{width:100%}to{width:0%}}"}</style>
       <Card {...props} />
-      {!kept && <div style={{ position: "absolute", left: 12, right: 12, bottom: 1, height: 3, borderRadius: 2, background: "#ffffff14", overflow: "hidden", pointerEvents: "none" }}>
+      {!kept && <div style={{ position: "absolute", left: MOBILE ? 18 : 12, right: MOBILE ? 18 : 12, bottom: 1, height: 3, borderRadius: 2, background: "#ffffff14", overflow: "hidden", pointerEvents: "none" }}>
         <div key={String(result?.wk ?? "") + String(result?.round ?? "")} style={{ height: "100%", background: hover ? "#64748b" : "#94a3b8", animation: `wrBar ${SHOW_MS}ms linear forwards`, animationPlayState: hover ? "paused" : "running" }} />
       </div>}
     </div>
@@ -95,7 +96,87 @@ const Scorigami = ({ us, them, compact }) => (
   </div>
 );
 
-function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam, onPaper, onRecap }) {
+// Phones: every result is one card in the Home screen's style: a top line saying what happened,
+// a scoreboard (or one big line), your star, and one action: tap the card (it closes as it opens
+// the box score). Swipe down to dismiss.
+function PhoneCard({ result, teams, ui, sgLog, yr, onClose, onBox, onPaper, onRecap }) {
+  const me = teams[ui];
+  let col = "#94a3b8", top, hint = null, tap = null, body, foot = null;
+  const big = (t, sub) => <><div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.15, marginTop: 6 }}>{t}</div>{sub && <div style={{ fontSize: 14, color: "#94a3b8", marginTop: 2 }}>{sub}</div>}</>;
+  const Line = ({ t, pts, win, sub }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8, opacity: win ? 1 : 0.55 }}>
+      <TeamLogo t={t} sz={30} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 17, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+        {sub && <div style={{ fontSize: 12, color: "#94a3b8" }}>{sub}</div>}
+      </div>
+      <span style={{ fontSize: 28, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>{pts}</span>
+    </div>
+  );
+  const g = result.game;
+  if (result.season) {
+    col = C.gd; top = "Regular season complete";
+    body = big(`${me.name} ${fmtRec(me)}`, `${divPlace(teams, me)} · ${result.playoffs ? "Playoff bound" : "Missed the playoffs"}`);
+    if (onRecap) { tap = onRecap; hint = "Recap ›"; }
+  } else if (!g && result.playoff) {
+    const champ = result.champ != null ? teams[result.champ] : null;
+    const sb = champ && (result.others || []).find((x) => x.h === result.champ || x.a === result.champ);
+    top = result.round;
+    if (sb) {
+      col = C.gd; top = "Super Bowl · Final"; tap = () => onBox(sb); hint = "Box score ›";
+      const loser = teams[sb.h === result.champ ? sb.a : sb.h];
+      body = <><Line t={champ} pts={sb.h === result.champ ? sb.hs : sb.as} win /><Line t={loser} pts={sb.h === result.champ ? sb.as : sb.hs} /></>;
+    } else if (result.bye || champ || !(result.others || []).length) body = big(result.bye ? "First-round bye" : champ ? `The ${champ.name} win it all` : "Playoff results", result.bye ? "Rested and waiting on the next round" : null);
+    else body = (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 14px", marginTop: 8 }}>
+        {result.others.map((x, i) => (
+          <button key={i} onClick={(e) => { e.stopPropagation(); onBox(x); onClose(); }} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", alignItems: "center", gap: 6, background: "transparent", border: 0, padding: "2px 0", color: "#fff", cursor: "pointer", fontSize: 15, textAlign: "left" }}>
+            {[[x.a, x.as, x.as > x.hs], [x.h, x.hs, x.hs > x.as]].map(([id, pts, win]) => <React.Fragment key={id}><TeamLogo t={teams[id]} sz={20} /><span style={{ fontWeight: win ? 800 : 500, color: win ? "#fff" : "#64748b" }}>{teams[id]?.ab}</span><b style={{ color: win ? "#fff" : "#64748b", fontVariantNumeric: "tabular-nums" }}>{pts}</b></React.Fragment>)}
+          </button>
+        ))}
+      </div>
+    );
+    if (result.bye) col = "#a78bfa";
+  } else if (!g) {
+    col = "#a78bfa"; top = `Week ${result.wk}`;
+    body = big("Bye week", `${fmtRec(me)} · ${divPlace(teams, me)}`);
+  } else {
+    const home = g.h === ui, us = home ? g.hs : g.as, them = home ? g.as : g.hs;
+    const outcome = us > them ? "Win" : us < them ? "Loss" : "Tie";
+    const champs = result.playoff && result.champ === ui;
+    col = champs ? C.gd : outcome === "Win" ? C.gn : outcome === "Loss" ? C.rd : C.gd;
+    top = champs ? "Super Bowl champions" : result.playoff && outcome === "Loss" ? `Eliminated · ${result.round}` : `${outcome} · ${result.playoff ? result.round : `Week ${result.wk}`}`;
+    tap = () => onBox(g); hint = "Box score ›";
+    const away = teams[g.a], homeT = teams[g.h], mine = `${fmtRec(me)} · ${divPlace(teams, me)}`;
+    body = <><Line t={away} pts={g.as} win={g.as >= g.hs} sub={!home ? mine : null} /><Line t={homeT} pts={g.hs} win={g.hs >= g.as} sub={home ? mine : null} /></>;
+    const star = topLines(home ? g.boxH : g.boxA)[0];
+    if (star || (result.paper && onPaper)) foot = (
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, paddingTop: 10, borderTop: "1px solid #ffffff14", fontSize: 13 }}>
+        <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#cbd5e1" }}>{star && <><b style={{ color: "#fff" }}>{star.name}</b> {star.line}</>}</span>
+        {result.paper && onPaper && <button onClick={(e) => { e.stopPropagation(); onPaper(result.paper); onClose(); }} style={{ background: "transparent", border: 0, padding: 0, color: "#fcd34d", fontSize: 14, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>Paper ›</button>}
+      </div>
+    );
+    if (isScorigami(g, sgLog, yr)) foot = <>{foot}<Scorigami us={us} them={them} compact /></>;
+  }
+  return (
+    <div onClick={tap ? () => { tap(); onClose(); } : undefined} role={tap ? "button" : undefined} style={{ background: `linear-gradient(135deg, ${col}30, #0f172a00 62%), #0f172a`, border: `1px solid ${col}55`, borderRadius: 18, padding: "8px 16px 14px", color: "#fff", cursor: tap ? "pointer" : "default" }}>
+      <div style={{ display: "flex", justifyContent: "center", paddingBottom: 6 }}><span style={{ width: 36, height: 4, borderRadius: 2, background: "#ffffff33" }} /></div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, textTransform: "uppercase", color: col }}>{top}</span>
+        {hint && <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>{hint}</span>}
+      </div>
+      {body}
+      {foot}
+    </div>
+  );
+}
+
+function Card(props) {
+  if (MOBILE && props.result && props.teams[props.ui]) return <PhoneCard {...props} />;
+  return <DeskCard {...props} />;
+}
+
+function DeskCard({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam, onPaper, onRecap }) {
   const [showOthers, setShowOthers] = useState(false);
   if (!result) return null;
   const me = teams[ui];
@@ -169,31 +250,6 @@ function Card({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam, onP
   const others = result.others || (sched || []).filter((x) => x.wk === result.wk && x.played && x !== g && x.h !== ui && x.a !== ui);
   const champs = result.playoff && result.champ === ui;
   const sg = isScorigami(g, sgLog, yr);
-  // Phones: a compact two-line strip.
-  if (MOBILE) {
-    const top = stars[0];
-    return (
-      <div style={{ ...card, borderColor: col }}>
-        <button onClick={onClose} aria-label="Dismiss result" style={{ position: "absolute", top: 4, right: 6, background: "transparent", border: 0, color: C.mt, fontSize: 18, cursor: "pointer" }}>✕</button>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, paddingRight: 22 }}>
-          <span style={{ fontSize: 20, fontWeight: 900, fontStyle: "italic", color: champs ? C.gd : col, minWidth: 0 }}>{champs ? "CHAMPS" : result.playoff && outcome === "LOSS" ? "OUT" : outcome[0]}</span>
-          <TeamLogo t={me} sz={24} /><b style={{ fontSize: 18, color: us >= them ? "#fff" : "#64748b" }}>{us}</b>
-          <span style={{ color: C.mt }}>–</span>
-          <b style={{ fontSize: 18, color: them >= us ? "#fff" : "#64748b" }}>{them}</b><TeamLogo t={opp} sz={24} />
-          <span style={{ fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{result.playoff ? result.round : `Wk ${result.wk}`} · {fmtRec(me)}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, fontSize: 12 }}>
-          {top && <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#cbd5e1" }}><b style={{ color: "#fff" }}>{top.name}</b> {top.line}</span>}
-          {!top && <span style={{ flex: 1 }} />}
-          <button onClick={() => onBox(g)} style={{ background: C.bl, color: "#fff", border: 0, borderRadius: 5, padding: "3px 8px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Box</button>
-          {result.paper && onPaper && <button onClick={() => onPaper(result.paper)} style={{ background: "#d4a017", color: "#111", border: 0, borderRadius: 5, padding: "3px 8px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>📰 Paper</button>}
-          {others.length > 0 && <button onClick={() => setShowOthers((v) => !v)} style={{ background: "transparent", color: C.mt, border: `1px solid ${C.bd}`, borderRadius: 5, padding: "3px 8px", fontSize: 12, cursor: "pointer" }}>Scores {showOthers ? "▴" : "▾"}</button>}
-        </div>
-        {sg && <Scorigami us={us} them={them} compact />}
-        {showOthers && <Others list={others} teams={teams} onBox={onBox} />}
-      </div>
-    );
-  }
   const Side = ({ t, pts, win }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
       <TeamLogo t={t} sz={32} />

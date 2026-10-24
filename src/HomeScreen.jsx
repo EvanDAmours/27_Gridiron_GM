@@ -94,7 +94,8 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
     need && { k: "needs", icon: "needs", c: C.gd, label: "Biggest need", value: needName(need.pos).replace(/^./, (x) => x.toUpperCase()) },
     plan && { k: "build", icon: "roster", c: plan.open ? C.gd : C.gn, label: "Build your 53", value: `${plan.count} of ${plan.target}` },
     { k: "hurt", icon: "hurt", c: hurt ? C.rd : C.gn, label: "Injuries", value: hurt ? `${hurt} out` : "All healthy" },
-    side && { k: "dev", icon: "dev", c: "#38bdf8", label: "Development", value: focused === 2 ? "Both set" : focused ? "1 of 2 set" : "Not set", tour: "devfocus" },
+    // a focused player only grows in regular-season weeks
+    side && (sp === "preseason" || sp === "regular") && { k: "dev", icon: "dev", c: "#38bdf8", label: "Development", value: focused === 2 ? "Both set" : focused ? "1 of 2 set" : "Not set", tour: "devfocus" },
     // in season and at the combine Standings is already a tab in the bottom bar
     sp !== "regular" && sp !== "combine" && { k: "table", icon: "table", c: "#94a3b8", label: "Standings", value: `${ORD[rank] || rank} in ${me.c} ${me.d}`, tour: "strip" },
   ].filter(Boolean);
