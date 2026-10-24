@@ -3,7 +3,8 @@
 // each pick has become since.
 import Select from "./Select.jsx";
 import React, { useMemo, useState } from "react";
-import { C, TeamLogo, Bdg, Btn } from "./ui.jsx";
+import { C, TeamLogo, Bdg, Btn, Hero, Row, Sheet, Segments } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 import { DevChip } from "./ScoutingUI.jsx";
 import { recapEntry, gradePicks, classGrades, devCounts, VERDICT } from "./draftRecap.js";
 import { DEV_TRAITS } from "./scouting.js";
@@ -49,6 +50,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
   const jackpots = rows.filter((r) => ["gem", "jackpot", "hit"].includes(r.verdict)).sort((a, b) => b.score - a.score || a.overall - b.overall);
   const topClasses = [...grades].filter((g) => g.picks.length).sort((a, b) => a.rank - b.rank);
 
+  if (MOBILE) return <PhoneRecap {...{ teams, ui, view, years, setPickYr, onNext, mine, topClasses, jackpots, counts, rows, shown, show, setShow, open, now, past }} />;
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -139,6 +141,55 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
           </table>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Phones: your class first (one clean row a pick, the verdict on the right), the best traits in the
+// class after it, and the league's grades and the full pick list a tap away.
+function PhoneRecap({ teams, ui, view, years, setPickYr, onNext, mine, topClasses, jackpots, counts, shown, show, setShow, open, now, past }) {
+  const [sheet, setSheet] = useState(null);
+  const soft = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
+  const label = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", margin: "24px 2px 8px" };
+  const me = teams[ui];
+  const line = (r, i, sub) => { const [vt, vc] = VERDICT[r.verdict]; const n = now(r.id); return (
+    <div key={r.id} onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 62, padding: "6px 0", borderTop: i ? "1px solid #ffffff10" : 0, cursor: "pointer" }}>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 16, fontWeight: 800, minWidth: 0 }}><Bdg pos={posTag(r)} /><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span></span>
+        <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#94a3b8", marginTop: 4, flexWrap: "wrap" }}>{sub}<DevChip dev={r.dev} /></span>
+      </span>
+      <span style={{ textAlign: "right", lineHeight: 1.15 }}>
+        <b style={{ fontSize: 16 }}>{r.ovr}<span style={{ color: "#94a3b8", fontWeight: 700 }}> / {r.pot}</span></b>
+        <span style={{ display: "block", fontSize: 12, fontWeight: 800, color: vc, marginTop: 2 }}>{n ? <span style={{ color: C.gd }}>now {n.ovr} · </span> : null}{vt.replace(/^\S*\p{Extended_Pictographic}\S*\s*/u, "")}</span>
+      </span>
+    </div>
+  ); };
+  return (
+    <div>
+      <Hero compact clr={me?.clr} logo={me} eyebrow={`${view + 1} draft recap`} title={mine?.picks.length ? `Class grade ${mine.grade}` : "Draft recap"}
+        sub={mine?.picks.length ? `${mine.picks.length} picks · ${mine.hits} hit${mine.hits === 1 ? "" : "s"} · #${mine.rank} of ${topClasses.length}` : "Every pick with his true ratings revealed"}
+        right={onNext ? <button onClick={onNext} style={{ minHeight: 44, padding: "0 16px", borderRadius: 14, border: 0, background: C.gn, color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" }}>Next season ›</button> : null} />
+      {years.length > 1 && <div style={{ marginTop: 12 }}><Segments items={years.slice(0, 4).map((y) => [y, `${y + 1}`])} value={view} onChange={(y) => setPickYr(+y)} /></div>}
+      <div style={{ fontSize: 14, color: "#94a3b8", margin: "12px 2px 0" }}>{past ? "What each pick has become since." : "Development traits decide how fast a player grows: this is where you find out if you hit."}</div>
+      {mine?.picks.length > 0 && <><div style={label}>YOUR CLASS</div><div style={soft}>{mine.picks.map((r, i) => line(r, i, `Rd ${r.rd} · #${r.overall} · age ${r.age} ·`))}</div></>}
+      <div style={label}>BEST TRAITS IN THE CLASS</div>
+      <div style={soft}>
+        {jackpots.slice(0, 5).map((r, i) => line(r, i, <>#{r.overall} {teams[r.owner] && <TeamLogo t={teams[r.owner]} sz={16} />} {teams[r.owner]?.ab} ·</>))}
+        {!jackpots.length && <div style={{ padding: "16px 0", color: "#94a3b8", fontSize: 15 }}>No Star-or-better traits in this class.</div>}
+      </div>
+      <div style={{ ...soft, marginTop: 12 }}>
+        <Row first label="League class grades" value={topClasses[0] ? `Best: ${teams[topClasses[0].ti]?.ab} ${topClasses[0].grade}` : ""} onClick={() => setSheet("grades")} />
+        <Row label="Every pick" value={`${Object.keys(DEV_TRAITS).filter((k) => k !== "normal").map((k) => `${counts[k] || 0} ${DEV_TRAITS[k].name.toLowerCase()}`).slice(0, 2).join(", ")}`} onClick={() => setSheet("all")} />
+      </div>
+      {sheet === "grades" && <Sheet title="Class grades" onClose={() => setSheet(null)}>
+        <div style={soft}>{topClasses.map((g, i) => <div key={g.ti} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 50, borderTop: i ? "1px solid #ffffff10" : 0, color: g.ti === ui ? C.gn : "#e2e8f0" }}><span style={{ width: 22, color: "#94a3b8" }}>{g.rank}</span>{teams[g.ti] && <TeamLogo t={teams[g.ti]} sz={26} />}<span style={{ flex: 1, minWidth: 0 }}><b style={{ display: "block", fontSize: 15 }}>{teams[g.ti]?.city} {teams[g.ti]?.name}</b><span style={{ fontSize: 12, color: "#94a3b8" }}>{g.picks.length} picks · {g.hits} hits</span></span><b style={{ fontSize: 18, color: GRADE_C[g.grade] }}>{g.grade}</b></div>)}</div>
+        <div style={{ height: 10 }} />
+      </Sheet>}
+      {sheet === "all" && <Sheet title="Every pick" onClose={() => setSheet(null)}>
+        <Segments items={[["all", "All"], ["mine", "Mine"], ["hits", "Hits"]]} value={show} onChange={setShow} />
+        <div style={soft}>{shown.map((r, i) => line(r, i, <>{r.rd}-{r.overall} {teams[r.owner]?.ab} ·</>))}</div>
+        <div style={{ height: 10 }} />
+      </Sheet>}
     </div>
   );
 }
