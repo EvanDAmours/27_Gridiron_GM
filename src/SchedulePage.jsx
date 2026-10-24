@@ -4,6 +4,8 @@ import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { C, Btn, TeamLogo, kickoff, Hero } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
+import { HOLIDAYS } from "./holidays.js";
+import { gameWeather, wxOf } from "./weather.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const tabBtn = (on) => ({ background: on ? `${C.bl}33` : "transparent", color: on ? "#fff" : C.mt, border: `1px solid ${on ? C.bl : C.bd}`, padding: "8px 16px", borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: "pointer" });
@@ -148,7 +150,9 @@ function PhoneSchedule({ g, view, setView }) {
             const us = home ? game.hs : game.as, them = home ? game.as : game.hs;
             const res = game.played ? (us > them ? ["W", C.gn] : us < them ? ["L", C.rd] : ["T", C.gd]) : null;
             const isNext = next && game === next;
-            const tags = [opp.c === me.c && opp.d === me.d && "Division", rivalId === opp.id && "Rival", game.intl && game.city].filter(Boolean).join(" · ");
+            // a holiday game says so all season; the forecast only for the game coming up
+            const hol = HOLIDAYS[game.holiday], wx = isNext ? wxOf(gameWeather(game, yr, teams[game.h]?.ab)) : null;
+            const tags = [hol && `${hol.icon} ${hol.short}`, wx && (wx.rain || wx.snow || wx.cold || wx.label === "Windy") && `${wx.icon} ${wx.label}`, opp.c === me.c && opp.d === me.d && "Division", rivalId === opp.id && "Rival", game.intl && game.city].filter(Boolean).join(" · ");
             return (
               <button key={w} onClick={() => game.played && (game.boxH || game.boxA) && onBox(game)} style={{ ...row, borderTop: top, cursor: game.played ? "pointer" : "default", background: isNext ? `${C.gn}14` : "transparent", margin: isNext ? "0 -14px" : 0, padding: isNext ? "8px 14px" : "8px 0", width: isNext ? "calc(100% + 28px)" : "100%" }}>
                 <span style={{ width: 34, fontSize: 13, fontWeight: 900, color: isNext ? C.gn : C.mt }}>{w}</span>

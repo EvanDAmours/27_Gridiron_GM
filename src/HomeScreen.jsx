@@ -15,6 +15,7 @@ import RaceWatch from "./RaceWatch.jsx";
 import { teamNeeds, needName } from "./needs.js";
 import { primeSlot } from "./seasonPreview.js";
 import { HolidayCard, HolidayBadge } from "./Atmosphere.jsx";
+import { HOLIDAYS } from "./holidays.js";
 import { gameWeather, wxOf } from "./weather.js";
 import { rosterPlan } from "./rosterPlan.js";
 import { posTag } from "./dline.js";
@@ -115,18 +116,23 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
       {game ? (
         <div style={{ background: heroBg, padding: "22px 14px 20px", textAlign: "center" }}>
           <div style={{ ...eyebrow, display: "flex", justifyContent: "center", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            {hero.tags.join("  ·  ")}{game.holiday && <HolidayBadge holiday={game.holiday} />}
+            {hero.tags.join("  ·  ")}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6, marginTop: 18 }}>
             <Team t={away} />
             <div style={{ padding: "0 4px", minWidth: 92 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: "#ffffffb3" }}>{hero.day || "Kickoff"}</div>
               <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.1, whiteSpace: "nowrap" }}>{hero.time}</div>
-              {forecast?.note && <div style={{ fontSize: 13, color: "#ffffffcc", marginTop: 4, whiteSpace: "nowrap" }}>{forecast.icon} {forecast.label}</div>}
               {hero.line && <div style={{ display: "inline-block", fontSize: 12, fontWeight: 800, color: "#fff", background: "#00000055", borderRadius: 999, padding: "3px 9px", marginTop: 8, whiteSpace: "nowrap" }}>{hero.line}</div>}
             </div>
             <Team t={home} />
           </div>
+          {/* the day it's played on and the weather it's played in, big enough to plan around */}
+          {(HOLIDAYS[game.holiday] || (forecast && forecast.kind !== "clear")) && <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
+            {HOLIDAYS[game.holiday] && (() => { const h = HOLIDAYS[game.holiday]; return <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 900, color: "#fff", background: `linear-gradient(90deg, ${h.c2}, ${h.c1})`, borderRadius: 999, padding: "6px 14px" }}>{h.icon} {h.name}</span>; })()}
+            {forecast && forecast.kind !== "clear" && <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 800, color: "#fff", background: "#00000059", borderRadius: 999, padding: "6px 14px" }}>{forecast.icon} {forecast.label}</span>}
+          </div>}
+          {forecast?.note && <div style={{ fontSize: 13, color: "#ffffffb3", marginTop: 8 }}>{forecast.note.replace(/^./, (x) => x.toUpperCase())}</div>}
         </div>
       ) : (
         <div style={{ background: heroBg, padding: "30px 16px 22px", textAlign: "center" }}>
