@@ -32,16 +32,24 @@ function useVh() {
 // smoke: stage smoke (cannons either side of him, then floor fog).
 export default function Spotlight({ p, team, num, kicker, title, children, bg, side, confetti, gold, smoke, cta = "CONTINUE →", onNext, label, more }) {
   const vh = useVh();
+  // phones: the page behind stays put while this is up (a swipe used to scroll it, not this)
+  useEffect(() => {
+    if (!MOBILE) return;
+    const b = document.body, h = document.documentElement, was = [b.style.overflow, h.style.overflow, b.style.overscrollBehavior];
+    b.style.overflow = "hidden"; h.style.overflow = "hidden"; b.style.overscrollBehavior = "none";
+    return () => { [b.style.overflow, h.style.overflow, b.style.overscrollBehavior] = was; };
+  }, []);
   const clr = gold ? "#a16207" : team?.clr || "#1e3a8a";
-  const artH = MOBILE ? Math.round(vh * 0.5) : Math.min(Math.round(vh * 0.92), 900);
+  const artH = MOBILE ? Math.round(vh * 0.42) : Math.min(Math.round(vh * 0.92), 900);
   const who = num != null ? { ...p, num } : p;
+  const buttons = <SpotButtons gold={gold} cta={cta} onNext={onNext} more={more} />;
   const fallback = (
     <div style={{ height: artH, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ borderRadius: "50%", padding: 5, background: gold ? "conic-gradient(#fde68a,#b45309,#fde68a,#b45309,#fde68a)" : `linear-gradient(135deg, ${team?.ac || "#fff"}, ${clr})` }}><Face s={p?.face} sz={MOBILE ? 130 : 200} /></div>
     </div>
   );
   return (
-    <div role="dialog" aria-label={label || String(title).replace(/\n/g, " ")} onClick={onNext} style={{ position: "fixed", inset: 0, zIndex: 4400, overflow: "hidden", color: "#fff", cursor: "pointer",
+    <div role="dialog" aria-label={label || String(title).replace(/\n/g, " ")} onClick={onNext} style={{ position: "fixed", inset: 0, zIndex: 4400, overflow: "hidden", color: "#fff", cursor: "pointer", ...(MOBILE ? { height: "100dvh", touchAction: "none" } : {}),
       background: `radial-gradient(ellipse at ${MOBILE ? "50% 28%" : "70% 45%"}, ${clr}${gold ? "88" : "aa"}, transparent 60%), linear-gradient(180deg, #050a18, #02040b)` }}>
       <style>{CSS}</style>
       {confetti && <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
@@ -60,20 +68,28 @@ export default function Spotlight({ p, team, num, kicker, title, children, bg, s
       </div>
       {smoke && <div aria-hidden style={{ position: "absolute", left: 0, right: 0, top: 0, height: MOBILE ? artH + 12 : "100%", pointerEvents: "none" }}><SpotlightSmoke color={clr} front cannons={false} /></div>}
       {/* the words */}
-      <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", cursor: "default", ...(MOBILE ? { left: 18, right: 18, top: artH - 10, bottom: 18, display: "flex", flexDirection: "column" } : { left: "6%", top: 0, bottom: 0, width: "40%", display: "flex", flexDirection: "column", justifyContent: "center" }) }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", cursor: "default", ...(MOBILE ? { left: 0, right: 0, top: artH - 10, bottom: "calc(84px + env(safe-area-inset-bottom))", padding: "0 18px 16px", overflowY: "auto", overscrollBehavior: "contain", touchAction: "pan-y", WebkitOverflowScrolling: "touch", maskImage: "linear-gradient(transparent, #000 14px, #000 calc(100% - 18px), transparent)", WebkitMaskImage: "linear-gradient(transparent, #000 14px, #000 calc(100% - 18px), transparent)" } : { left: "6%", top: 0, bottom: 0, width: "40%", display: "flex", flexDirection: "column", justifyContent: "center" }) }}>
         <div style={{ animation: "spIn .6s .25s ease-out both" }}>
           {kicker && <div style={{ fontSize: MOBILE ? 12 : 15, fontWeight: 900, letterSpacing: MOBILE ? 2.5 : 4, color: "#fcd34d", textTransform: "uppercase" }}>{kicker}</div>}
           <div style={{ fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? Math.min(54, vh * 0.065) : Math.min(108, vh * 0.12), lineHeight: 0.98, letterSpacing: 0.5, marginTop: MOBILE ? 4 : 8, textTransform: "uppercase", whiteSpace: "pre-line", textShadow: "0 4px 24px #0008" }}>{title}</div>
           <div style={{ marginTop: MOBILE ? 8 : 14, fontSize: MOBILE ? 15 : 20, lineHeight: 1.45, color: "#e2e8f0" }}>{children}</div>
         </div>
-        <div style={{ flex: MOBILE ? 1 : "0 0 auto" }} />
-        <div style={{ display: "flex", gap: 10, marginTop: MOBILE ? 12 : 34, animation: "spIn .5s .9s ease-out both", ...(MOBILE ? {} : { alignSelf: "flex-start" }) }}>
+        {!MOBILE && <div style={{ flex: "0 0 auto" }} />}
+        {!MOBILE && buttons}
+      </div>
+      {/* phones: the buttons stay pinned at the bottom, clear of the browser's bar */}
+      {MOBILE && <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "12px 18px calc(14px + env(safe-area-inset-bottom))", background: "linear-gradient(transparent, #02040bf2 30%)", cursor: "default" }}>{buttons}</div>}
+    </div>
+  );
+}
+
+function SpotButtons({ gold, cta, onNext, more }) {
+  return (
+        <div style={{ display: "flex", gap: 10, marginTop: MOBILE ? 0 : 34, animation: "spIn .5s .9s ease-out both", ...(MOBILE ? {} : { alignSelf: "flex-start" }) }}>
           <button onClick={onNext} style={{ flex: MOBILE ? 1 : "0 0 auto", background: gold ? "linear-gradient(90deg,#b45309,#fbbf24,#b45309)" : "#fff", color: gold ? "#1c1206" : "#0b1220", border: 0, borderRadius: 10, padding: MOBILE ? "13px 0" : "13px 34px", fontSize: 16, fontWeight: 900, letterSpacing: 2, cursor: "pointer", boxShadow: "0 8px 24px #0008" }}>{cta}</button>
           {/* more: a second, quieter button { label, onClick } */}
           {more && <button onClick={more.onClick} style={{ background: "#ffffff14", color: "#fff", border: "1px solid #ffffff40", borderRadius: 10, padding: MOBILE ? "13px 14px" : "13px 22px", fontSize: 15, fontWeight: 800, letterSpacing: 1, cursor: "pointer" }}>{more.label}</button>}
         </div>
-      </div>
-    </div>
   );
 }
 
