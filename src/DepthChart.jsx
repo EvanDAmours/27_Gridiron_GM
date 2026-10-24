@@ -59,7 +59,7 @@ function Field({ los, children }) {
   for (let i = 0; i <= 10; i++) lines.push(<div key={i} style={{ position: "absolute", left: 0, right: 0, top: `${i * 10}%`, borderTop: `1px solid rgba(255,255,255,${i % 2 ? 0.08 : 0.16})` }} />);
   return (
     <div style={{ overflowX: "auto" }}>
-      <div style={{ position: "relative", width: "100%", maxWidth: 540, margin: "0 auto", minWidth: narrow() ? 340 : 0, aspectRatio: narrow() ? "1 / 1.08" : "16 / 11", borderRadius: 10, overflow: "hidden", border: "2px solid #14532d", background: "repeating-linear-gradient(180deg,#166534 0 10%,#15803d 10% 20%)" }}>
+      <div style={{ position: "relative", width: "100%", maxWidth: 540, margin: "0 auto", minWidth: narrow() ? 340 : 0, aspectRatio: MOBILE ? "1 / 0.84" : narrow() ? "1 / 1.08" : "16 / 11", borderRadius: 10, overflow: "hidden", border: "2px solid #14532d", background: "repeating-linear-gradient(180deg,#166534 0 10%,#15803d 10% 20%)" }}>
         {lines}
         {[25, 75].map((x) => <div key={x} style={{ position: "absolute", top: 0, bottom: 0, left: `${x}%`, borderLeft: "2px dashed rgba(255,255,255,0.12)" }} />)}
         <div title="Line of scrimmage" style={{ position: "absolute", left: 0, right: 0, top: `${los + 4.5}%`, borderTop: "2px solid #60a5fa" }} />
@@ -95,7 +95,7 @@ export const PARTNER = { LT: "RT", RT: "LT", LG: "RG", RG: "LG" };
 // and tackles, guards and centers along the line (left/right swaps go through PARTNER instead).
 const CROSS = { CB: ["S"], S: ["CB"], LT: ["LG", "RG", "C"], RT: ["LG", "RG", "C"], LG: ["LT", "RT", "C"], RG: ["LT", "RT", "C"], C: ["LG", "RG", "LT", "RT"] };
 
-export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps, onMovePos, previewPos, gamePlan, shape, personnel, team }) {
+export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps, onMovePos, previewPos, gamePlan, shape, personnel, team, onList }) {
   const leanKey = `${team?.personnel || "auto"}|${team?.defPkg || "auto"}|${team?.coach?.oc?.scheme}|${team?.coach?.dc?.scheme}`;
   if (VIEW.key !== leanKey) VIEW = { key: leanKey, ...viewFor(team) };
   const [side, setSide] = useState("offense");
@@ -257,7 +257,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
           {/* the schemes and personnel sit right under the field, with the players they're built for */}
           {gamePlan && !MOBILE && <div style={{ marginTop: 12 }}>{gamePlan}</div>}
         </div>
-        <div style={{ flex: "1 1 300px", minWidth: 0, background: C.cd, border: MOBILE ? 0 : `1px solid ${C.bd}`, borderRadius: MOBILE ? 14 : 8, padding: MOBILE ? 12 : 10 }}>
+        <div style={{ flex: "1 1 300px", minWidth: 0, background: MOBILE ? "#ffffff0f" : C.cd, border: MOBILE ? 0 : `1px solid ${C.bd}`, borderRadius: MOBILE ? 18 : 8, padding: MOBILE ? "12px 14px" : 10 }}>
           {!pick || MOBILE ? (
             <>
               <div style={{ fontSize: 15, fontWeight: 900, marginBottom: MOBILE ? 6 : 2 }}>{set.label} at a glance</div>
@@ -283,6 +283,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
       {MOBILE && opts && (
         <Sheet title="Depth chart options" onClose={() => setOpts(false)}>
           <Row first label="Auto-fill by overall" onClick={() => { onAutoFill(); setOpts(false); }} />
+          {onList && <Row label="Show as a list" onClick={() => { setOpts(false); onList(); }} />}
           {side === "offense" && <><div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: C.mt, margin: "14px 2px 6px" }}>FORMATION ON THE FIELD{personnel ? ` · YOUR IDENTITY: ${personnel.toUpperCase()}` : ""}</div><Segments items={Object.keys(FORMS).map((k) => [k, k])} value={form} onChange={(k) => { setForm(k); setPick(null); }} /></>}
           {side === "defense" && <><div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: C.mt, margin: "14px 2px 6px" }}>PACKAGE ON THE FIELD</div><Segments items={Object.keys(DEF_FORMS).map((k) => [k, k[0].toUpperCase() + k.slice(1)])} value={pkg} onChange={(k) => { setPkg(k); setPick(null); }} /></>}
           {gamePlan && <div style={{ marginTop: 10 }}>{gamePlan}</div>}
