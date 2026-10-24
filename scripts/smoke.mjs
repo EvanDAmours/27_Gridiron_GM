@@ -181,8 +181,9 @@ try {
   await healthy("new game"); log("new game"); await census("start");
   { const d0 = await save(); const real = (d0.dc?.[2026] || []).filter((p) => p.real); if (real.length < 100 || !real.some((p) => p.name === "Jeremiah Smith")) fail("new game didn't load the real 2027 draft class"); log(`real draft class (${real.length} real prospects)`); }
   const seen = [];
-  // (the smoke runs 1280 wide, where the top bar uses its short tab names: Schedule, Draft, FA, Legacy)
-  for (const tab of ["Depth Chart", "Roster", "Front Office", "Schedule", "Standings", "Playoffs", "Draft", "Draft Recap", "League", "Stats", "Legacy Hall", "Record Book", "League History", "Trade", "Free Agency", "Saves", "Game Updates", "Timeline", "Home"]) {
+  // the top bar has six sections (Home, Team, Season, Draft, Trades & FA, Front Office); each section's
+  // screens are tabs under it, so open the section first and then its screen
+  for (const tab of ["Team", "Depth Chart", "Roster", "Coaching", "Front Office", "Season", "Schedule", "Standings", "Playoffs", "Stats", "League", "Record Book", "League History", "Legacy", "Draft", "Scouting", "Draft Recap", "Trades & FA", "Trade", "Free Agency", "Home"]) {
     await dismiss();
     let t = page.locator(`button:text-is("${tab}")`);
     if (!(await t.count())) t = page.getByText(tab, { exact: true });
