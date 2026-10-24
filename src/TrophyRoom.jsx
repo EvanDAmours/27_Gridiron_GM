@@ -5,7 +5,8 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { LombardiStill } from "./Lombardi.jsx";
-import { C, TeamLogo } from "./ui.jsx";
+import { C, TeamLogo, Hero, Chips } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 import { SUPER_BOWLS, sbName, sbNumber } from "./data/superbowls.js";
 import opoyArt from "./assets/opoy.webp";
 import dpoyArt from "./assets/dpoy.webp";
@@ -260,7 +261,15 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
     <div className="tr-room">
       <Defs />
       <style>{CSS}</style>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
+      {/* phones: a hero with the trophy count, the awards on one line, and the sections as chips */}
+      {MOBILE && <>
+        <Hero clr={team.clr} eyebrow="Legacy Hall" title={team.name} sub={[["MVP", count("mvp")], ["OPOY", count("opoy")], ["DPOY", count("dpoy")], ["OROY", count("oroy")], ["DROY", count("droy")]].filter(([, v]) => v).map(([l, v]) => `${v} ${l}`).join(" · ") || "Banners, trophies and the Ring of Honor"}
+          right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, color: lombardis.length ? "#fde68a" : "#fff" }}>{lombardis.length}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>SUPER BOWLS</div></div>} />
+        <div style={{ position: "sticky", top: 0, zIndex: 5, background: C.bg, padding: "12px 0 10px", marginBottom: 6 }}>
+          <Chips items={[["banners", "Banners"], ["trophies", "Trophies"], ["jackets", "Gold Jackets"], ["ring", "Ring of Honor"], ["records", "Records"], ...(onPaper ? [["gazette", "Gazette"]] : [])]} value={sec} onChange={setSec} />
+        </div>
+      </>}
+      <div style={{ display: MOBILE ? "none" : "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
         <TeamLogo t={team} sz={60} glow />
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontSize: 26, fontWeight: 900 }}>Legacy Hall</div>
@@ -275,7 +284,7 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
           ))}
         </div>
       </div>
-      <div role="tablist" style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14, position: "sticky", top: 0, zIndex: 5, background: C.bg, padding: "6px 0" }}>
+      <div role="tablist" style={{ display: MOBILE ? "none" : "flex", gap: 6, flexWrap: "wrap", marginBottom: 14, position: "sticky", top: 0, zIndex: 5, background: C.bg, padding: "6px 0" }}>
         {[["banners", "🚩 Banners"], ["trophies", "🏆 Trophies"], ["jackets", "🧥 Gold Jackets"], ["ring", "💍 Ring of Honor"], ["records", "📊 Records"], ...(onPaper ? [["gazette", "📰 Gazette"]] : [])].map(([k, l]) => (
           <button key={k} role="tab" aria-selected={sec === k} onClick={() => setSec(k)} style={{ background: sec === k ? "#d4a01722" : C.cd, color: sec === k ? "#fde68a" : "#cbd5e1", border: `1px solid ${sec === k ? "#d4a017" : C.bd}`, borderRadius: 999, padding: "7px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>
         ))}

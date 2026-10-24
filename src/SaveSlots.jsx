@@ -1,7 +1,7 @@
 // Save slots: each shows the team's logo, the season and phase, the record and titles. Plus the
 // "how the cap works" glossary for new players.
 import React, { useState } from "react";
-import { C, Btn, TeamLogo } from "./ui.jsx";
+import { C, Btn, TeamLogo, Hero, Section, Sheet } from "./ui.jsx";
 
 export const SLOT_COUNT = 4;
 const PHASE = { preseason: "Preseason", regular: "Regular season", playoffs: "Playoffs", combine: "Combine", resign: "Re-sign week", freeagency: "Free agency", draft: "Draft" };
@@ -54,10 +54,20 @@ export function SaveSlots({ teams, onSave, onLoad, title = "Save slots", version
 }
 
 // One save across phone and computer: export the franchise as a file, import it on the other device.
-export function DeviceTransfer({ onExport, onImport, mobile }) {
+export function DeviceTransfer({ onExport, onImport, mobile, bare }) {
   const [busy, setBusy] = useState(false);
   const go = async () => { setBusy(true); try { await onExport(); } finally { setBusy(false); } };
   const btn = { borderRadius: 8, padding: mobile ? "12px 14px" : "9px 16px", fontSize: 14, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, flex: mobile ? 1 : "0 0 auto" };
+  // bare: just the two buttons and one line (phones' Saves screen has its own heading)
+  if (bare) return (
+    <div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={go} disabled={busy} style={{ ...btn, minHeight: 52, borderRadius: 14, background: C.bl, color: "#fff", border: 0, fontSize: 16, opacity: busy ? 0.6 : 1 }}>{busy ? "Packing…" : "Share save"}</button>
+        <label style={{ ...btn, minHeight: 52, borderRadius: 14, background: "#ffffff12", color: "#e2e8f0", border: 0, fontSize: 16 }}>Import save<input type="file" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) onImport(f); }} /></label>
+      </div>
+      <div style={{ fontSize: 13, color: C.mt, margin: "8px 2px 0" }}>Send the file to your other device and import it there.</div>
+    </div>
+  );
   return (
     <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderLeft: "4px solid #3b82f6", borderRadius: 12, padding: "12px 14px", marginBottom: 14, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
       <div style={{ fontSize: 30, lineHeight: 1 }}>📲</div>
@@ -97,6 +107,25 @@ export function CapGlossary({ compact = false }) {
       {open && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 10, marginTop: 10 }}>
         {CAP_TERMS.map(([k, v]) => <div key={k} style={{ background: C.bg, borderRadius: 8, padding: "8px 10px" }}><div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>{k}</div><div style={{ fontSize: 13, color: C.mt, lineHeight: 1.45 }}>{v}</div></div>)}
       </div>}
+    </div>
+  );
+}
+
+// Phones: Saves in the Home screen's look. A hero, your save slots first, moving the franchise to
+// another device next, and offline play as one line that opens its how-to in a sheet.
+export function PhoneSaves({ clr, slots, transfer, offline }) {
+  const [off, setOff] = React.useState(false);
+  return (
+    <div>
+      <Hero clr={clr} eyebrow="Your franchise" title="Saves" sub="It also saves itself after every week" />
+      <Section title="Save slots" style={{ marginTop: 18 }}>{slots}</Section>
+      <Section title="Another device">{transfer}</Section>
+      <Section title="Offline play">
+        <button onClick={() => setOff(true)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 58, background: "#ffffff0f", border: 0, borderRadius: 18, padding: "0 16px", color: "#fff", cursor: "pointer", textAlign: "left" }}>
+          <span style={{ flex: 1, fontSize: 16, fontWeight: 800 }}>Play with no connection</span><span style={{ fontSize: 20, color: "#64748b" }}>›</span>
+        </button>
+      </Section>
+      {off && <Sheet title="Offline play" onClose={() => setOff(false)}>{offline}<div style={{ height: 8 }} /></Sheet>}
     </div>
   );
 }
