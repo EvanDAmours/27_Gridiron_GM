@@ -10,7 +10,7 @@ import { InjTag } from "./InjuryTag.jsx";
 import { injuryReport } from "./injuries.js";
 import BroadcastMatchup, { featuredPlayer } from "./BroadcastMatchup.jsx";
 import { primeArt } from "./playerArt.js";
-import MatchupStakes, { stakesLines, pointSpread } from "./MatchupStakes.jsx";
+import MatchupStakes, { pointSpread } from "./MatchupStakes.jsx";
 import RaceWatch from "./RaceWatch.jsx";
 import { teamNeeds, needName } from "./needs.js";
 import { primeSlot } from "./seasonPreview.js";
@@ -70,15 +70,14 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
   const need = !game && sp !== "regular" ? teamNeeds(me.roster, me.personnel).list[0] : null;
   const focused = [devFocus?.off, devFocus?.def].filter(Boolean).length;
 
-  // the hero's lines: when, what kind of game, what it means, and the betting line
+  // the hero's lines: when, what kind of game, and the betting line
   let hero = null;
   if (game) {
     const sameDiv = opp.c === me.c && opp.d === me.d;
     const tags = [sp === "preseason" ? "Season opener" : playoff ? ROUND_NAMES[pb?.rd] || "Playoffs" : `Week ${game.wk ?? wk + 1}`, !playoff && primeSlot(game), sameDiv && "Division", rivalId != null && oppId === rivalId && "Rivalry"].filter(Boolean);
     const [day, time] = (game.date ? kickoff(game) : "").split(" · ");
-    const stake = (stakesLines({ teams, ui, opp: oppId, wk, playoff })[0] || "").replace(/^Division game: (\w)/, (_, c) => c.toUpperCase());
     const sp2 = ra && rh ? pointSpread(ra, rh, neutral) : null;
-    hero = { tags, day, time: time ? time.replace(" ET", "") : "TBD", stake, line: sp2 ? (sp2.pts ? `${(sp2.home ? home : away).ab} −${sp2.pts}` : "Pick'em") : null };
+    hero = { tags, day, time: time ? time.replace(" ET", "") : "TBD", line: sp2 ? (sp2.pts ? `${(sp2.home ? home : away).ab} −${sp2.pts}` : "Pick'em") : null };
   }
   const nextGame = !game && sp === "regular" ? sched.find((g) => g.wk > wk + 1 && (g.h === ui || g.a === ui)) : null;
 
@@ -127,7 +126,6 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
             </div>
             <Team t={home} />
           </div>
-          {hero.stake && <div style={{ fontSize: 15, fontWeight: 600, color: "#e2e8f0", margin: "18px auto 0", maxWidth: 340, lineHeight: 1.35 }}>{hero.stake}</div>}
         </div>
       ) : (
         <div style={{ background: heroBg, padding: "30px 16px 22px", textAlign: "center" }}>
