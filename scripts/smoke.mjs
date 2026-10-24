@@ -90,8 +90,14 @@ async function simUntil(text, done, where) {
 }
 async function must(text, wait) { if (!(await click(text, wait))) fail(`no "${text}" button`); }
 async function save() {
-  await page.waitForTimeout(2000);
-  const raw = await page.evaluate(() => localStorage.getItem("gm_autosave"));
+  // wait until the autosave settles (a slow machine is still writing the week after a fixed wait)
+  let raw = null;
+  for (let i = 0; i < 20; i++) {
+    await page.waitForTimeout(i ? 700 : 2000);
+    const now = await page.evaluate(() => localStorage.getItem("gm_autosave"));
+    if (now && now === raw) break;
+    raw = now;
+  }
   if (!raw) fail("no autosave");
   return JSON.parse(raw.startsWith("lz1:") ? LZ.decompressFromUTF16(raw.slice(4)) : raw);
 }
@@ -204,6 +210,7 @@ try {
   await must("Advance to", 800); await must("Sim to 4:00 PM", 800); await must("Back to the season", 800); log("trade deadline day");
   await simUntil("Sim All", () => ((t) => !/Sim All/.test(t) && /Sim Round/.test(t))([...document.querySelectorAll("button")].map((b) => b.innerText).join(" ")), "sim all"); await page.waitForTimeout(2500); await healthy("sim all");
   let d = await save();
+  for (let i = 0; i < 60 && d.sp !== "playoffs"; i++) { await page.waitForTimeout(1000); d = await save(); } // a slow machine is still playing out the last weeks
   if (d.sp !== "playoffs" || d.wk !== 18) fail(`expected playoffs after Sim All, got ${d.sp} wk ${d.wk}`);
   log("regular season"); await census("regular season");
   for (let i = 0; i < 5; i++) { await click("Sim Round", 1000); const c = page.locator("button", { hasText: /^Continue$/ }); if (await c.count()) await c.first().click(); }
@@ -242,6 +249,8 @@ try {
     await phone.addInitScript(() => { localStorage.setItem("gm_intro_shown", "1"); sessionStorage.setItem("gm_preview", "1"); });
     await phone.goto(`${url}?mobile=1`); await phone.waitForTimeout(1200);
     await phone.locator("button", { hasText: "NEW GAME" }).first().click(); await phone.waitForTimeout(600);
+    // phones list one conference at a time: switch if the team is in the other one
+    if (!(await phone.locator("button", { hasText: TEAM }).count())) await phone.locator("button", { hasText: /^NFC$/ }).first().click();
     await phone.locator("button", { hasText: TEAM }).first().click();
     await phone.locator("button", { hasText: "START YOUR" }).first().click(); await phone.waitForTimeout(1500);
     const txt = await phone.evaluate(() => document.body.innerText);
