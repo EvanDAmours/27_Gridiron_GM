@@ -2,7 +2,7 @@
 // the middle, and the league leaders on the right (all on one screen, no scrolling). Phones: the
 // leaders as cards you swipe, then the week's games one line each.
 import React, { useMemo, useState } from "react";
-import { C, Face, TeamLogo } from "./ui.jsx";
+import { C, Face, TeamLogo, Hero, Section } from "./ui.jsx";
 import { posTag } from "./dline.js";
 
 const LEADERS = [
@@ -41,7 +41,7 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
       {s != null && <b style={{ marginLeft: "auto", fontSize: 18, fontVariantNumeric: "tabular-nums", color: won ? "#fff" : "#94a3b8" }}>{s}</b>}
     </span>
   );
-  if (mobile) return <PhoneLeague {...{ teams, ui, games, byes, week, weeks, setW, leaders, onPlayer, onTeam }} />;
+  if (mobile) return <PhoneLeague {...{ teams, ui, games, byes, week, weeks, setW, leaders, onPlayer, onTeam, sp }} />;
   const menu = [["standings", "Standings"], ["schedule", "Schedule"], ["stats", "Stats & Awards"], ["wire", "Transactions"], ["records", "Record Book"], ["history", "League History"], ["hub", "Franchise History"]];
   return (
     <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "170px minmax(0,1.25fr) minmax(360px,1fr)", gap: 12, alignItems: "start" }}>
@@ -102,7 +102,7 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
 }
 
 const MAIN = { PASSING: "YDS", RUSHING: "YDS", RECEIVING: "YDS", SACKS: "SCK", INTERCEPTIONS: "INT", TACKLES: "TKL" };
-function PhoneLeague({ teams, ui, games, byes, week, weeks, setW, leaders, onPlayer, onTeam }) {
+function PhoneLeague({ teams, ui, games, byes, week, weeks, setW, leaders, onPlayer, onTeam, sp }) {
   const shown = leaders.filter((b) => b.top.length);
   const arrow = (on, dir) => ({ width: 44, height: 44, borderRadius: 22, border: 0, background: on ? "#ffffff14" : "transparent", color: on ? "#fff" : "#334155", fontSize: 22, cursor: on ? "pointer" : "default" });
   const first = weeks[0] || 1, lastW = weeks[weeks.length - 1] || 18;
@@ -117,13 +117,14 @@ function PhoneLeague({ teams, ui, games, byes, week, weeks, setW, leaders, onPla
     );
   };
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr)", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr)" }}>
+      <Hero clr="#013369" eyebrow={sp === "regular" ? "This week" : "The league"} title={`Week ${week}`} sub={`${games.length} games${byes.length ? ` · ${byes.length} teams on a bye` : ""}`}
+        right={<div style={{ display: "flex", gap: 8 }}><button aria-label="Previous week" disabled={week <= first} onClick={() => setW(Math.max(first, week - 1))} style={arrow(week > first)}>‹</button><button aria-label="Next week" disabled={week >= lastW} onClick={() => setW(Math.min(lastW, week + 1))} style={arrow(week < lastW)}>›</button></div>} />
       {shown.length > 0 && (
-        <div style={{ margin: "0 -8px" }}>
-          <div style={{ fontSize: 20, fontWeight: 900, padding: "0 10px 8px" }}>Leaders</div>
-          <div className="pill-row" style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", scrollPaddingLeft: 10, padding: "0 10px 4px" }}>
+        <Section title="Leaders" style={{ marginTop: 18 }}>
+          <div className="pill-row" style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", scrollPaddingLeft: 8, margin: "0 -8px", padding: "0 8px 4px" }}>
             {shown.map((b) => { const col = b.cols.find(([l]) => l === MAIN[b.title]); return (
-              <div key={b.title} style={{ flex: "0 0 80%", scrollSnapAlign: "start", background: C.cd, borderRadius: 18, padding: "12px 14px 6px" }}>
+              <div key={b.title} style={{ flex: "0 0 80%", scrollSnapAlign: "start", background: "#ffffff0f", borderRadius: 18, padding: "12px 14px 6px" }}>
                 <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", marginBottom: 4 }}>{b.title}</div>
                 {b.top.map(({ p, t, ti }, k) => (
                   <button key={p.id} onClick={() => onPlayer?.(p)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 50, background: "transparent", border: 0, borderTop: k ? "1px solid #ffffff10" : 0, padding: 0, color: "#fff", cursor: "pointer", textAlign: "left" }}>
@@ -141,19 +142,14 @@ function PhoneLeague({ teams, ui, games, byes, week, weeks, setW, leaders, onPla
               </div>
             ); })}
           </div>
-        </div>
+        </Section>
       )}
-      <div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <button aria-label="Previous week" disabled={week <= first} onClick={() => setW(Math.max(first, week - 1))} style={arrow(week > first)}>‹</button>
-          <span style={{ fontSize: 20, fontWeight: 900 }}>Week {week}</span>
-          <button aria-label="Next week" disabled={week >= lastW} onClick={() => setW(Math.min(lastW, week + 1))} style={arrow(week < lastW)}>›</button>
-        </div>
-        <div style={{ background: C.cd, borderRadius: 14, padding: "0 12px" }}>
+      <Section title="Games">
+        <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px" }}>
           {games.map((g, k) => {
             const mine = g.h === ui || g.a === ui;
             return (
-              <div key={k} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6, minHeight: 52, borderTop: k ? "1px solid #ffffff10" : 0, background: mine ? "#16a34a1a" : "transparent", margin: mine ? "0 -12px" : 0, padding: mine ? "0 12px" : 0 }}>
+              <div key={k} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6, minHeight: 52, borderTop: k ? "1px solid #ffffff10" : 0, background: mine ? "#16a34a1a" : "transparent", margin: mine ? "0 -14px" : 0, padding: mine ? "0 14px" : 0 }}>
                 <Team i={g.a} s={g.played ? g.as : null} won={g.played ? g.as > g.hs : undefined} />
                 <span style={{ fontSize: 11, color: C.mt, fontWeight: 800 }}>{g.played ? "FINAL" : "AT"}</span>
                 <span style={{ display: "flex", justifyContent: "flex-end", minWidth: 0 }}><Team i={g.h} right s={g.played ? g.hs : null} won={g.played ? g.hs > g.as : undefined} /></span>
@@ -163,7 +159,7 @@ function PhoneLeague({ teams, ui, games, byes, week, weeks, setW, leaders, onPla
           {!games.length && <div style={{ color: C.mt, fontSize: 15, padding: "14px 0" }}>No games this week.</div>}
         </div>
         {games.length > 0 && byes.length > 0 && <div style={{ fontSize: 13, color: C.mt, marginTop: 8, padding: "0 2px" }}>Bye: {byes.join(", ")}</div>}
-      </div>
+      </Section>
     </div>
   );
 }
