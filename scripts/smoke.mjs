@@ -16,8 +16,10 @@ const findChromium = () => {
   for (const root of [process.env.PLAYWRIGHT_BROWSERS_PATH, "/opt/pw-browsers"].filter(Boolean)) {
     if (!fs.existsSync(root)) continue;
     for (const d of fs.readdirSync(root).filter((x) => /^chromium-\d+$/.test(x)).sort().reverse()) {
-      const exe = path.join(root, d, "chrome-linux", "chrome");
-      if (fs.existsSync(exe)) return exe;
+      for (const dir of ["chrome-linux", "chrome-linux64"]) {
+        const exe = path.join(root, d, dir, "chrome");
+        if (fs.existsSync(exe)) return exe;
+      }
     }
   }
   return undefined;
@@ -231,6 +233,26 @@ try {
   if (short.length) fail(`AI rosters short after the off-season: ${short.join(", ")}`);
   log("next season (2027)"); await census("next season"); log("nobody under contract vanished in a full season and off-season");
   await startSeason(); await must("Sim Week", 1500); await healthy("season two"); log("season two week 1");
+  // the phone build: a new game at 390 wide opens Home with the game hero and its shortcut tiles,
+  // and a tile's bottom sheet opens
+  {
+    const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const perr = [];
+    phone.on("pageerror", (e) => perr.push(e.message));
+    await phone.addInitScript(() => { localStorage.setItem("gm_intro_shown", "1"); sessionStorage.setItem("gm_preview", "1"); });
+    await phone.goto(`${url}?mobile=1`); await phone.waitForTimeout(1200);
+    await phone.locator("button", { hasText: "NEW GAME" }).first().click(); await phone.waitForTimeout(600);
+    await phone.locator("button", { hasText: TEAM }).first().click();
+    await phone.locator("button", { hasText: "START YOUR" }).first().click(); await phone.waitForTimeout(1500);
+    const txt = await phone.evaluate(() => document.body.innerText);
+    if (/Something went wrong|This screen ran into a problem/i.test(txt)) fail("crash panel on the phone Home");
+    for (const want of ["Before kickoff", "Injuries", "Start Season"]) if (!txt.includes(want)) fail(`phone Home has no "${want}"`);
+    await phone.evaluate(() => [...document.querySelectorAll("button")].find((b) => b.innerText.startsWith("Injuries"))?.click()); await phone.waitForTimeout(500);
+    if (!(await phone.locator('[role="dialog"]', { hasText: "Injury Report" }).count())) fail("phone Home's injuries sheet didn't open");
+    if (perr.length) fail(`page error on the phone Home: ${perr[0]}`);
+    await phone.close();
+    log("phone Home (390 wide)");
+  }
   console.log(`\nSMOKE PASSED (${steps.length} steps)`);
 } catch (e) {
   code = 1;
