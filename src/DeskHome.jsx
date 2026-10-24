@@ -1,7 +1,7 @@
 // Desktop Home, broadcast style: the week's game as one big TV promo (both clubs' colors, their
 // stars standing toward the middle, Play right on it), then three quiet cards under it: what needs
 // you, the game plan, and the top story. The rest of the game is one click away in the bar above.
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { C, TeamLogo, kickoff, Sheet } from "./ui.jsx";
 import PlayerArt from "./PlayerArt.jsx";
 import { featuredPlayer, headline } from "./BroadcastMatchup.jsx";
@@ -35,8 +35,15 @@ function Side({ t, rating, right, star, teams }) {
 
 // away and home are drawn left and right, like the score bug. primary: [{ label, onClick }] for
 // this week (Play, Sim). spread: "NYG −3" or "Pick'em". eyebrow: what kind of game it is.
-export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, spread, primary = [], menu = [], planCard, stories = [], news = [], teams, onStory, side, rest, extra }) {
+export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, spread, primary = [], menu = [], planCard, stories = [], news = [], teams, onStory, side, rest, extra, injuries }) {
   const [devOpen, setDevOpen] = useState(false);
+  const [injOpen, setInjOpen] = useState(false);
+  // the to-do list (and the inbox) open these sheets from anywhere in the app
+  useEffect(() => {
+    const f = (e) => { if (e.detail === "dev") setDevOpen(true); if (e.detail === "injuries") setInjOpen(true); };
+    window.addEventListener("gm:home", f);
+    return () => window.removeEventListener("gm:home", f);
+  }, []);
   const pa = featuredPlayer(away), ph = featuredPlayer(home);
   const hol = HOLIDAYS[game?.holiday];
   // the to-do list: the week's main job is the Play button now, so the list starts after it
@@ -95,6 +102,7 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
       </div>
       {rest}
       {devOpen && <Sheet title="Development focus" onClose={() => setDevOpen(false)}>{side}<div style={{ height: 10 }} /></Sheet>}
+      {injOpen && injuries && <Sheet title="Injury report" onClose={() => setInjOpen(false)}>{injuries}<div style={{ height: 10 }} /></Sheet>}
     </div>
   );
 }

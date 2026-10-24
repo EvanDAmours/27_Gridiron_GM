@@ -437,7 +437,7 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
         <Btn onClick={rest.toggle} bg={rest.on ? "#334155" : "#0284c7"} style={{ fontSize: 14, fontWeight: 900, padding: "9px 16px", borderRadius: 10 }}>{rest.on ? "Play starters" : "Rest starters"}</Btn>
       </div>
     );
-    return <DeskHome {...{ away, home, ra, rh, game, eyebrow, forecast, spread, primary: primary.slice(0, 2), menu, planCard, stories, news, teams, onStory, side, rest: restEl }} />;
+    return <DeskHome {...{ away, home, ra, rh, game, eyebrow, forecast, spread, primary: primary.slice(0, 2), menu, planCard, stories, news, teams, onStory, side, rest: restEl, injuries: <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} /> }} />;
   }
   return (
     <div className="keep-dark" style={{ borderRadius: 14, overflow: "hidden", background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, position: "relative" }}>
