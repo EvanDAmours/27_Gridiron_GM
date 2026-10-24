@@ -2,7 +2,7 @@ import Select from "./Select.jsx";
 import { lazyScreen } from "./lazyScreen.js";
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import LeagueView from "./LeagueView.jsx";
-import { C, oC, pC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo , CloseX , sheetWrap, sheetBox, SheetGrip, OverflowMenu, kickoff, Segments } from "./ui.jsx";
+import { C, oC, pC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo , CloseX , sheetWrap, sheetBox, SheetGrip, OverflowMenu, kickoff, Segments, Chips } from "./ui.jsx";
 import M27 from "./data/madden27.json";
 import REAL_SCHED from "./data/schedule2026.json";
 import { saveJSON, loadJSON } from "./storage.js";
@@ -26,12 +26,12 @@ const PlayoffPaper = lazyScreen(() => import("./PlayoffPaper.jsx")); // loaded w
 const ScoutCheckpoint = lazyScreen(() => import("./ScoutCheckpoint.jsx")); // loaded when first opened
 const RetirementClass = lazyScreen(() => import("./RetirementClass.jsx")); // loaded when first opened
 import FreeAgency from "./FreeAgency.jsx";
-import RosterTable from "./RosterView.jsx";
+import RosterTable, { PhoneRosterPage } from "./RosterView.jsx";
 import SchedulePage from "./SchedulePage.jsx";
 import Negotiate from "./Negotiate.jsx";
 import Resign from "./Resign.jsx";
 const TrainingCamp = lazyScreen(() => import("./TrainingCamp.jsx")); // loaded when first opened
-import HomeScreen from "./HomeScreen.jsx";
+import HomeScreen, { teamRatings } from "./HomeScreen.jsx";
 import FranchiseStrip from "./FranchiseStrip.jsx";
 import StatsScreen from "./StatsScreen.jsx";
 import GamePlan from "./GamePlan.jsx";
@@ -1650,7 +1650,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     <ScreenBoundary key={tab+rosterView} onHome={()=>{setRosterView("players");setRosterTeam(null);setTab("dashboard");}} onGo={t=>{setRosterView("players");setRosterTeam(null);setTab(t);}}>
     <React.Suspense fallback={<div style={{padding:24,color:C.mt,fontSize:14}}>Loading…</div>}>
 
-    {groupOf(tab)&&<div className="grp-tabs" style={{display:"flex",gap:6,marginBottom:10,flexWrap:MOBILE?"nowrap":"wrap",overflowX:MOBILE?"auto":undefined,scrollbarWidth:"none",alignItems:"center"}}>{MOBILE&&<style>{".grp-tabs > *{flex-shrink:0;white-space:nowrap}"}</style>}<b style={{fontSize:13,color:C.mt,letterSpacing:1,marginRight:4,display:MOBILE?"none":undefined}}>{groupOf(tab).label.toUpperCase()}</b>{groupOf(tab).tabs.map(t=><button key={t} onClick={()=>{if(t==="roster")setRosterView("players");setRosterTeam(null);setTab(t);}} style={{background:tab===t?C.bl+"33":"transparent",color:tab===t?"#fff":C.mt,border:`1px solid ${tab===t?C.bl:C.bd}`,borderRadius:6,padding:"6px 14px",fontSize:14,fontWeight:700,cursor:"pointer"}}>{TAB_LABEL[t]||t}</button>)}</div>}
+    {/* phones: the same switch (or chips, for more than three) as everywhere else */}{MOBILE&&groupOf(tab)&&(()=>{const g=groupOf(tab);const go=t=>{if(t==="roster")setRosterView("players");setRosterTeam(null);setTab(t);};const items=g.tabs.map(t=>[t,TAB_LABEL[t]||t]);return<div style={{marginBottom:g.tabs.length>3?14:2}}>{g.tabs.length>3?<Chips items={items} value={tab} onChange={go}/>:<Segments items={items} value={tab} onChange={go}/>}</div>;})()}
+    {!MOBILE&&groupOf(tab)&&<div className="grp-tabs" style={{display:"flex",gap:6,marginBottom:10,flexWrap:MOBILE?"nowrap":"wrap",overflowX:MOBILE?"auto":undefined,scrollbarWidth:"none",alignItems:"center"}}>{MOBILE&&<style>{".grp-tabs > *{flex-shrink:0;white-space:nowrap}"}</style>}<b style={{fontSize:13,color:C.mt,letterSpacing:1,marginRight:4,display:MOBILE?"none":undefined}}>{groupOf(tab).label.toUpperCase()}</b>{groupOf(tab).tabs.map(t=><button key={t} onClick={()=>{if(t==="roster")setRosterView("players");setRosterTeam(null);setTab(t);}} style={{background:tab===t?C.bl+"33":"transparent",color:tab===t?"#fff":C.mt,border:`1px solid ${tab===t?C.bl:C.bd}`,borderRadius:6,padding:"6px 14px",fontSize:14,fontWeight:700,cursor:"pointer"}}>{TAB_LABEL[t]||t}</button>)}</div>}
     {/* The result of your last sim, front and centre on every screen */}
     {weekResult&&tab!=="livesim"&&(weekResult._tab??tab)===tab&&<WeekResult result={weekResult} teams={teams} ui={ui} sched={sched} sgLog={sgLog} yr={yr} onClose={()=>setWeekResult(null)} onBox={setBoxView} onPaper={setPaperOpen} onRecap={()=>{setWeekResult(null);setShowRecapCard(true);}}/>}
     {/* DASHBOARD */}
@@ -1683,7 +1684,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
 
     {/* ROSTER */}
     {/* Any club's roster: pick a team (other clubs are read-only) */}
-    {tab==="roster"&&ut&&rosterView!=="camp"&&<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+    {tab==="roster"&&ut&&rosterView!=="camp"&&!MOBILE&&<div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
       {!MOBILE&&<span style={{fontSize:14,color:C.mt,fontWeight:700}}>View roster</span>}
       <Select value={rosterTeam==null?ui:rosterTeam} onChange={e=>{const v=+e.target.value;setRosterTeam(v===ui?null:v);}} aria-label="Team roster to view" style={{background:C.cd,color:C.tx,border:`1px solid ${C.bd}`,borderRadius:6,padding:"7px 10px",fontSize:15,fontWeight:700}}>
         <option value={ui}>Your team: {ut.city} {ut.name}</option>
@@ -1691,7 +1692,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       </Select>
       {rosterTeam!=null&&rosterTeam!==ui&&<Btn onClick={()=>setRosterTeam(null)} bg={C.bd} c={C.tx} style={{fontSize:13,padding:"6px 12px"}}>← Back to my team</Btn>}
     </div>}
-    {tab==="roster"&&ut&&rosterTeam!=null&&rosterTeam!==ui&&teams[rosterTeam]&&(()=>{const ot=teams[rosterTeam];return<div>
+    {MOBILE&&tab==="roster"&&ut&&rosterTeam!=null&&rosterTeam!==ui&&teams[rosterTeam]&&<PhoneRosterPage team={{...teams[rosterTeam],ps:[],roster:[...teams[rosterTeam].roster,...(teams[rosterTeam].ir||[])],ir:[]}} depth={depthSlots(teams[rosterTeam].roster,{})} setSel={setSel} devOf={()=>null} wk={wk} onBack={()=>setRosterTeam(null)}/>}
+    {!MOBILE&&tab==="roster"&&ut&&rosterTeam!=null&&rosterTeam!==ui&&teams[rosterTeam]&&(()=>{const ot=teams[rosterTeam];return<div>
       <div style={{display:"flex",alignItems:"center",gap:"8px 18px",flexWrap:"wrap",marginBottom:12}}>
         <span style={{display:"inline-flex",alignItems:"center",gap:10}}><TeamLogo t={ot} sz={44}/><span style={{fontSize:24,fontWeight:900}}>{ot.city} {ot.name}</span></span>
         <span style={{fontSize:15,color:C.mt}}>Roster <b style={{fontSize:20,color:C.tx}}>{ot.roster.length}</b>/53</span>
@@ -1702,7 +1704,10 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       {!MOBILE&&<div style={{fontSize:13,color:C.mt,marginBottom:8}}>Their depth chart and contracts. Development traits stay hidden for other clubs' players. Tap a player for his card or to start a trade.</div>}
       <RosterTable players={[...ot.roster,...(ot.ir||[])]} depth={depthSlots(ot.roster,{})} setSel={setSel} devOf={()=>null}/>
     </div>;})()}
-    {tab==="roster"&&ut&&(rosterTeam==null||rosterTeam===ui)&&<div>
+    {MOBILE&&tab==="roster"&&ut&&(rosterTeam==null||rosterTeam===ui)&&rosterView!=="camp"&&<PhoneRosterPage team={ut} mine yr={yr} ovr={teamRatings(ut,depthOrder,playingTime).ovr} depth={depthSlots(ut.roster,depthOrder,playingTime)} setSel={setSel} devOf={devOf} wk={wk} focus={devFocus}
+      psActions={p=>{const cu=p.psCallUp;const left=cu?Math.max(0,3-(wk-(p.callUpWk||0))):0;return[...(cu?[{note:`Called up: active ${left} more week${left===1?"":"s"}`,tone:"#f59e0b"}]:[]),{label:"Promote to the roster",primary:true,onClick:()=>promoteFromPS(p.id)},...(sp==="regular"&&!cu?[{label:`Call up for 3 weeks (1 SP)`,disabled:scPts<1,onClick:()=>callUpPS(p.id)},{label:psFocus===p.id?"Stop his dev focus":"Dev focus (1 SP)",disabled:psFocus!==p.id&&scPts<1,onClick:()=>{if(psFocus===p.id){setPsFocus(null);return;}if(scPts<1){sm('Need 1 SP!');return;}setPsFocus(p.id);setScPts(s=>s-1);sm(`${p.name} set as Dev Focus`);}}]:[]),{label:"Release",danger:true,onClick:()=>releasePSPlayer(p.id)}];}}
+      irActions={p=>{const rem=Math.max(0,(p.irMin||8)-(wk-(p.irWk||0)));return[{note:`${p.injType||"Injured"}${p.irType?` · ${p.irType}`:""}${p.irReturnWk?` · back ${p.irReturnWk>18?backText(p.irReturnWk).replace(/^for /,""):`week ${p.irReturnWk}`}`:""}`,tone:"#fca5a5"},rem>0?{note:`Can come off IR in ${rem} week${rem===1?"":"s"}`}:{label:"Activate",primary:true,onClick:()=>activateFromIR(p.id)}];}}/>}
+    {tab==="roster"&&ut&&(rosterTeam==null||rosterTeam===ui)&&!(MOBILE&&rosterView!=="camp")&&<div>
       <div style={{display:MOBILE?"none":"flex",alignItems:"center",gap:"8px 18px",flexWrap:"wrap",marginBottom:12}}>
         <span style={{display:"inline-flex",alignItems:"center",gap:10}}><TeamLogo t={ut} sz={44}/><span style={{fontSize:24,fontWeight:900}}>{ut.city} {ut.name}</span></span>
         <span style={{fontSize:15,color:C.mt}}>Roster <b style={{fontSize:20,color:ut.roster.length>53?C.rd:"#fff"}}>{ut.roster.length}</b>/53</span>
@@ -1787,7 +1792,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         </div>);})}
       </div>);
       const viewBtns=<div role="tablist" style={{display:'inline-flex',background:'#0b1220',border:`1px solid ${C.bd}`,borderRadius:999,padding:3}}>{[['field','🏈 Field'],['list','☰ List']].map(([k,l])=><button key={k} role="tab" aria-selected={depthView===k} onClick={()=>setDepthView(k)} style={{background:depthView===k?'#1e3a5f':'transparent',color:depthView===k?'#e0f2fe':'#94a3b8',border:0,borderRadius:999,padding:'5px 14px',fontSize:13,fontWeight:800,cursor:'pointer'}}>{l}</button>)}</div>;
-      if(depthView==='field')return(<div><div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',margin:'-38px 0 6px'}}>{viewBtns}</div><DepthChart roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} setSel={setSel} onAutoFill={autoFillAll} onMovePos={movePlayerTo} previewPos={movePreview} gamePlan={gamePlanEl} shape={userShape} personnel={{auto:"Auto",balanced:"Balanced",spread:"Spread",twoTE:"Two TE",fullback:"Fullback",heavy:"Heavy"}[ut?.personnel||"auto"]} team={ut} setPositions={moves=>setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(p=>moves[p.id]?{...p,pos:moves[p.id]}:p)}))}/></div>);
+      if(depthView==='field')return(<div><div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',margin:MOBILE?'0 0 10px':'-38px 0 6px'}}>{viewBtns}</div><DepthChart roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} setSel={setSel} onAutoFill={autoFillAll} onMovePos={movePlayerTo} previewPos={movePreview} gamePlan={gamePlanEl} shape={userShape} personnel={{auto:"Auto",balanced:"Balanced",spread:"Spread",twoTE:"Two TE",fullback:"Fullback",heavy:"Heavy"}[ut?.personnel||"auto"]} team={ut} setPositions={moves=>setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(p=>moves[p.id]?{...p,pos:moves[p.id]}:p)}))}/></div>);
       return(<div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8,gap:8,flexWrap:'wrap'}}>
           <div style={{fontSize:20,fontWeight:900,color:'#e2e8f0'}}>Depth Chart</div>{viewBtns}
@@ -2001,21 +2006,22 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
 
     {/* LIVE SIM */}
     {tab==="livesim"&&liveSim&&(isWet(liveGameRef.current?.g?.wx)||liveSim.holiday)&&<Sky wx={liveGameRef.current?.g?.wx} holiday={liveSim.holiday} z={0} corners/>}{tab==="livesim"&&liveSim&&<div style={{position:"relative",zIndex:1,/* phones: room for the taller control panel */...(MOBILE?{paddingBottom:96}:{}),/* the Record and Milestone Watch rows take room from the field, so the controls stay on screen */"--live-extra":`${((_rc&&(_rc.chase.length>0||_rc.hit.length>0))?32:0)+((_mw&&(_mw.chase.length>0||_mw.hit.length>0))?32:0)}px`}}>
-      {/* phones: every game control on the screen (no menu to dig through), in the room under the plays.
-          Top to bottom: the extras, how the plays show, then Pause / Speed / Finish by your thumb. */}
-      {MOBILE&&(()=>{const pill=(on)=>({flex:1,minHeight:42,borderRadius:999,border:`1px solid ${on?C.gn:C.bd}`,background:on?`${C.gn}22`:C.cd,color:on?"#bbf7d0":"#e2e8f0",fontSize:14,fontWeight:800,whiteSpace:"nowrap",padding:"0 10px"});const big={flex:1,minHeight:52,borderRadius:14,border:`1px solid ${C.bd}`,background:C.cd,color:"#e2e8f0",fontSize:16,fontWeight:800};return<div style={{position:"fixed",left:0,right:0,bottom:"calc(58px + env(safe-area-inset-bottom))",zIndex:395,display:"flex",flexDirection:"column",gap:8,padding:"14px 10px 8px",background:"linear-gradient(180deg,#0b122000,#0b1220f5 16%)"}}>
-        {liveDone?<button onClick={finishLive} style={{minHeight:52,borderRadius:14,border:0,background:C.gn,color:"#fff",fontSize:17,fontWeight:900}}>Done: back to the season</button>:<>
-        <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>setLiveBoxOpen(true)} style={pill(false)}>Box score</button>
-          {liveQtr<4&&<button onClick={simToQuarterEnd} style={pill(false)}>Sim to end of {qtrLabel}</button>}
-          <button onClick={()=>{setLiveCallMode(m=>!m);setLiveAwaitingCall(false);setLivePhase(null);setFourthChoice(null);}} aria-pressed={liveCallMode} style={pill(liveCallMode)}>{liveCallMode?"Calling plays":"Call plays"}</button>
+      {/* phones: every game control built into the bottom of the screen (no menu to dig through): a
+          toolbar for the extras, how the plays show, then Pause / Speed / Finish by your thumb. */}
+      {MOBILE&&(()=>{const tool=(on)=>({flex:1,minHeight:54,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,background:"transparent",border:0,color:on?C.gn:"#cbd5e1",fontSize:12,fontWeight:800,cursor:"pointer",padding:0});const ic={fontSize:19,lineHeight:1};const big={flex:1,minHeight:52,borderRadius:12,border:0,background:"#ffffff12",color:"#e2e8f0",fontSize:16,fontWeight:800};const sep=<span style={{width:1,alignSelf:"stretch",margin:"10px 0",background:"#ffffff14"}}/>;return<div className="keep-dark" style={{position:"fixed",left:0,right:0,bottom:"calc(58px + env(safe-area-inset-bottom))",zIndex:395,background:"#0d1424",borderTop:"1px solid #ffffff14",padding:"0 10px 10px"}}>
+        {liveDone?<button onClick={finishLive} style={{width:"100%",minHeight:52,marginTop:10,borderRadius:12,border:0,background:C.gn,color:"#fff",fontSize:17,fontWeight:900}}>Done: back to the season</button>:<>
+        <div style={{display:"flex",alignItems:"stretch",borderBottom:"1px solid #ffffff10"}}>
+          <button onClick={()=>setLiveBoxOpen(true)} style={tool(false)}><span style={ic}>📋</span>Box score</button>{sep}
+          {liveQtr<4&&<><button onClick={simToQuarterEnd} style={tool(false)}><span style={ic}>⏩</span>End of {qtrLabel}</button>{sep}</>}
+          <button onClick={()=>{setLiveCallMode(m=>!m);setLiveAwaitingCall(false);setLivePhase(null);setFourthChoice(null);}} aria-pressed={liveCallMode} style={tool(liveCallMode)}><span style={ic}>🎮</span>{liveCallMode?"Calling plays":"Call plays"}</button>{sep}
+          <button onClick={()=>pickLiveCam(liveCam==="Field"?"Action":"Field")} aria-label="Camera on live plays" style={tool(false)}><span style={ic}>🎥</span>{liveCam==="Field"?"Field view":"Action cam"}</button>
         </div>
-        <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
-          <div style={{flex:1,minWidth:0,marginBottom:-12}}><Segments items={[["Key","Key plays"],["All","Every play"],["Off","Off"]]} value={livePlayMode} onChange={v=>{setLivePlayMode(v);try{localStorage.setItem('gm_live_plays',v);}catch{}}}/></div>
-          <button onClick={()=>pickLiveCam(liveCam==="Field"?"Action":"Field")} aria-label="Camera on live plays" style={{minHeight:44,borderRadius:10,border:0,background:"#ffffff0f",color:"#e2e8f0",fontSize:14,fontWeight:800,padding:"0 12px",whiteSpace:"nowrap"}}>{liveCam==="Field"?"Field view":"Action cam"}</button>
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 2px"}}>
+          <span style={{fontSize:11,fontWeight:900,letterSpacing:1.2,color:C.mt,whiteSpace:"nowrap"}}>ON THE FIELD</span>
+          <div style={{flex:1,display:"flex",gap:4}}>{[["Key","Key plays"],["All","Every play"],["Off","Off"]].map(([k,l])=><button key={k} onClick={()=>{setLivePlayMode(k);try{localStorage.setItem('gm_live_plays',k);}catch{}}} style={{flex:1,minHeight:34,borderRadius:8,border:0,background:livePlayMode===k?"#ffffff22":"transparent",color:livePlayMode===k?"#fff":"#94a3b8",fontSize:14,fontWeight:800}}>{l}</button>)}</div>
         </div>
         <div style={{display:"flex",gap:8}}>
-          {!liveAwaitingCall&&<button onClick={()=>setLivePaused(p=>!p)} style={{...big,flex:1.2,border:0,background:livePaused?C.gn:"#f97316",color:"#fff",fontSize:17,fontWeight:900}}>{livePaused?"▶ Play":"Pause"}</button>}
+          {!liveAwaitingCall&&<button onClick={()=>setLivePaused(p=>!p)} style={{...big,flex:1.2,background:livePaused?C.gn:"#f97316",color:"#fff",fontSize:17,fontWeight:900}}>{livePaused?"▶ Play":"Pause"}</button>}
           <button onClick={()=>setLiveSpeed(v=>{const ks=Object.keys(LIVE_SPEEDS);const n=ks[(ks.indexOf(v)+1)%ks.length];try{localStorage.setItem('gm_live_speed',n);}catch{}return n;})} aria-label="Game speed" style={{...big,lineHeight:1.1}}><span style={{display:"block",fontSize:10,letterSpacing:1.2,color:C.mt}}>SPEED</span>{liveSpeed}</button>
           <button onClick={finishLiveNow} style={big}>Finish</button>
         </div></>}
@@ -2089,7 +2095,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
 
       {/* Win probability and drive chart: right under the field, fixed in size, so the box score
           growing below can't push or squeeze them */}
-      {(()=>{const _g=liveGameRef.current?.g;const _done=!_g&&sched.find(x=>x.played&&x.h===liveSim.h&&x.a===liveSim.a&&x.wk===liveSim.wk);/* a play still being acted out on the field isn't in the charts yet */const _gv=_g&&liveAnim?{..._g,done:false,pl:_g.pl.slice(0,-1)}:_g;const _gd=_gv?.pl?.length>2?summarize(_gv,liveScore,liveAnim?.box0||_g.box):_done?.gd;if(!_gd)return null;return<div style={{gridArea:"charts",minWidth:0,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:10,alignItems:"start"}}><div><WinProbChart wp={_gd.wp} live={!_done} home={TEAMS[liveSim.h]} away={TEAMS[liveSim.a]}/>{_done&&<TopPerformers top={_gd.top} home={TEAMS[liveSim.h]} away={TEAMS[liveSim.a]}/>}</div><div><DriveChart drives={_done?_gd.drives:_gd.drives.slice(-8)} rows={_done?null:8} home={TEAMS[liveSim.h]} away={TEAMS[liveSim.a]}/>{_done&&<KeyPlays keys={_gd.keys} home={TEAMS[liveSim.h]} away={TEAMS[liveSim.a]}/>}</div></div>;})()}
+      {(()=>{const _g=liveGameRef.current?.g;const _done=!_g&&sched.find(x=>x.played&&x.h===liveSim.h&&x.a===liveSim.a&&x.wk===liveSim.wk);/* a play still being acted out on the field isn't in the charts yet */const _gv=_g&&liveAnim?{..._g,done:false,pl:_g.pl.slice(0,-1)}:_g;const _gd=_gv?.pl?.length>2?summarize(_gv,liveScore,liveAnim?.box0||_g.box):_done?.gd;if(!_gd)return null;return<div style={{gridArea:"charts",minWidth:0,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:10,alignItems:"start"}}><div>{/* phones: no win probability chart */}{!MOBILE&&<WinProbChart wp={_gd.wp} live={!_done} home={TEAMS[liveSim.h]} away={TEAMS[liveSim.a]}/>}{_done&&<TopPerformers top={_gd.top} home={TEAMS[liveSim.h]} away={TEAMS[liveSim.a]}/>}</div><div><DriveChart drives={_done?_gd.drives:_gd.drives.slice(-8)} rows={_done?null:8} home={TEAMS[liveSim.h]} away={TEAMS[liveSim.a]}/>{_done&&<KeyPlays keys={_gd.keys} home={TEAMS[liveSim.h]} away={TEAMS[liveSim.a]}/>}</div></div>;})()}
       {/* POG */}
       {liveDone&&livePOG&&<div style={{gridArea:"pog",background:`linear-gradient(135deg,${C.gd}22,${C.gd}08)`,border:`1px solid ${C.gd}44`,borderRadius:8,padding:10,marginBottom:8,textAlign:"center"}}>
         <div style={{fontSize:12,color:C.gd,fontWeight:700,textTransform:"uppercase",letterSpacing:2}}>🏆 Player of the Game</div>
