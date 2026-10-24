@@ -16,7 +16,7 @@ export default function PhoneStandings({ teams, ui, yr, confOf, divOf, extra }) 
   const place = mine.indexOf(me);
   return (
     <div>
-      <Hero clr={me.clr} eyebrow={`${yr} standings`} title={`${ORD[place] || `${place + 1}th`} in the ${confOf(me)} ${divOf(me)}`}
+      <Hero clr={me.clr} logo={me} eyebrow={`${yr} standings`} title={`${ORD[place] || `${place + 1}th`} in the ${confOf(me)} ${divOf(me)}`}
         right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1 }}>{rec(me)}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>RECORD</div></div>} />
       <div style={{ marginTop: 16 }}><Segments items={[["AFC", "AFC"], ["NFC", "NFC"]]} value={conf} onChange={setConf} /></div>
       {["East", "North", "South", "West"].map((d) => { const list = divs[`${conf} ${d}`]; if (!list) return null; return (

@@ -263,7 +263,7 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
       <style>{CSS}</style>
       {/* phones: a hero with the trophy count, the awards on one line, and the sections as chips */}
       {MOBILE && <>
-        <Hero clr={team.clr} eyebrow="Legacy Hall" title={team.name} sub={[["MVP", count("mvp")], ["OPOY", count("opoy")], ["DPOY", count("dpoy")], ["OROY", count("oroy")], ["DROY", count("droy")]].filter(([, v]) => v).map(([l, v]) => `${v} ${l}`).join(" · ") || "Banners, trophies and the Ring of Honor"}
+        <Hero clr={team.clr} logo={team} eyebrow="Legacy Hall" title={team.name} sub={[["MVP", count("mvp")], ["OPOY", count("opoy")], ["DPOY", count("dpoy")], ["OROY", count("oroy")], ["DROY", count("droy")]].filter(([, v]) => v).map(([l, v]) => `${v} ${l}`).join(" · ") || "Banners, trophies and the Ring of Honor"}
           right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, color: lombardis.length ? "#fde68a" : "#fff" }}>{lombardis.length}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>SUPER BOWLS</div></div>} />
         <div style={{ position: "sticky", top: 0, zIndex: 5, background: C.bg, padding: "12px 0 10px", marginBottom: 6 }}>
           <Chips items={[["banners", "Banners"], ["trophies", "Trophies"], ["jackets", "Gold Jackets"], ["ring", "Ring of Honor"], ["records", "Records"], ...(onPaper ? [["gazette", "Gazette"]] : [])]} value={sec} onChange={setSec} />

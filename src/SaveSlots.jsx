@@ -113,11 +113,11 @@ export function CapGlossary({ compact = false }) {
 
 // Phones: Saves in the Home screen's look. A hero, your save slots first, moving the franchise to
 // another device next, and offline play as one line that opens its how-to in a sheet.
-export function PhoneSaves({ clr, slots, transfer, offline }) {
+export function PhoneSaves({ clr, logo, slots, transfer, offline }) {
   const [off, setOff] = React.useState(false);
   return (
     <div>
-      <Hero clr={clr} eyebrow="Your franchise" title="Saves" sub="It also saves itself after every week" />
+      <Hero clr={clr} logo={logo} eyebrow="Your franchise" title="Saves" sub="It also saves itself after every week" />
       <Section title="Save slots" style={{ marginTop: 18 }}>{slots}</Section>
       <Section title="Another device">{transfer}</Section>
       <Section title="Offline play">

@@ -194,7 +194,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
       const targets = teams.filter((t) => t.id !== ui).flatMap((t) => t.roster.filter((p) => !p.injured && (tpos === "NEEDS" ? needs.includes(needGroup(p)) : posTag(p) === tpos)).map((p) => ({ p, t }))).sort((a, b) => b.p.ovr - a.p.ovr || a.p.age - b.p.age).slice(0, 8);
       return (
         <div>
-          <Hero clr={me.clr} eyebrow="Trades" title="Make a deal" sub={`${money(capSpace(me))} in cap space`} />
+          <Hero clr={me.clr} logo={me} eyebrow="Trades" title="Make a deal" sub={`${money(capSpace(me))} in cap space`} />
           <Section title="Targets">
             <Chips items={[["NEEDS", "Your needs"], ...POS.map((x) => [x, x])]} value={tpos} onChange={setTpos} />
             <div className="pill-row" style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", margin: "12px -8px 0", padding: "0 8px 4px", scrollPaddingLeft: 8 }}>

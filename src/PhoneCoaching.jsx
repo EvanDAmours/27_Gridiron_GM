@@ -8,7 +8,7 @@ import { posTag } from "./dline.js";
 const ROLE_NAME = { HC: "Head coach", OC: "Offensive coordinator", DC: "Defensive coordinator", ST: "Special teams" };
 const tag = (t, c) => <span style={{ fontSize: 11, fontWeight: 800, color: c, background: `${c}22`, borderRadius: 4, padding: "1px 6px", whiteSpace: "nowrap" }}>{t}</span>;
 
-export default function PhoneCoaching({ staff, yr, scPts, coachAge, hcTrait, hcStyle, hotSeat = [], roster = [], faCoaches = [], cap, gamePlan, clr, onUpgrade, onExtend, onFire, onHire, onMeeting }) {
+export default function PhoneCoaching({ staff, yr, scPts, coachAge, hcTrait, hcStyle, hotSeat = [], roster = [], faCoaches = [], cap, gamePlan, clr, logo, onUpgrade, onExtend, onFire, onHire, onMeeting }) {
   const [pick, setPick] = useState(null); // ["HC" | "OC" | ...] or { hire: coach }
   const [room, setRoom] = useState(false);
   const roles = ["HC", "OC", "DC", "ST"];
@@ -23,7 +23,7 @@ export default function PhoneCoaching({ staff, yr, scPts, coachAge, hcTrait, hcS
   const pool = [...faCoaches].sort((a, b) => roles.indexOf(a.role) - roles.indexOf(b.role) || (b.rating || 0) - (a.rating || 0));
   return (
     <div>
-      <Hero clr={clr} eyebrow="Coaching" title="Your staff" sub={staff.hc ? `${staff.hc.name} · ${hcStyle(staff.hc)} on game day` : "No head coach"}
+      <Hero clr={clr} logo={logo} eyebrow="Coaching" title="Your staff" sub={staff.hc ? `${staff.hc.name} · ${hcStyle(staff.hc)} on game day` : "No head coach"}
         right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, color: "#93c5fd" }}>{scPts}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>STAFF POINTS</div></div>} />
       <Section title="Staff" style={{ marginTop: 18 }}>
         <div style={soft}>

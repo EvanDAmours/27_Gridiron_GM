@@ -187,7 +187,7 @@ function PhoneFA({ fa, rows, n, setN, pos, setPos, needs, q, setQ, find, setFind
   const tags = (p) => <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><DevTag p={p} /></span>;
   return (
     <div>
-      <Hero clr={team?.clr} eyebrow={market ? `Day ${market.day} of ${FA_DAYS}` : open ? "The market" : "Before the Combine"} title="Free Agency"
+      <Hero clr={team?.clr} logo={team} eyebrow={market ? `Day ${market.day} of ${FA_DAYS}` : open ? "The market" : "Before the Combine"} title="Free Agency"
         sub={out > 0 ? `${money(out)} held in ${nOut} open offer${nOut > 1 ? "s" : ""}` : `${fa.length} players available`}
         right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, color: cap >= 0 ? "#fff" : C.rd }}>{money(cap)}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>TO SPEND</div></div>}>
         {!open && <div style={{ fontSize: 14, color: "#fde68a", marginTop: 12 }}>The main market opens after the Combine.</div>}

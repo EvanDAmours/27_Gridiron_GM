@@ -169,7 +169,7 @@ export function PhoneRosterPage({ team, depth, setSel, devOf, wk = 0, focus = nu
   const chips = [["ALL", "All"], ["OFF", "Offense"], ["DEF", "Defense"], ["ST", "Special"], ...(mine ? [["PS", `Practice ${ps.length}`], ["IR", `IR ${ir.length}`]] : [])];
   return (
     <div>
-      <Hero clr={team.clr} eyebrow={mine ? `${yr || ""} Roster` : "Their roster"} title={team.name}
+      <Hero clr={team.clr} logo={team} eyebrow={mine ? `${yr || ""} Roster` : "Their roster"} title={team.name}
         sub={`${team.roster.length} players${ps.length ? ` · ${ps.length} practice squad` : ""}${ir.length ? ` · ${ir.length} on IR` : ""}`}
         right={ovr ? <div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1 }}>{ovr}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>TEAM OVR</div></div> : null}>
         {onBack && <button onClick={onBack} style={{ marginTop: 14, minHeight: 40, borderRadius: 999, border: 0, padding: "0 16px", background: "#ffffff1f", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>‹ Back to your team</button>}

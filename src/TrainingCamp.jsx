@@ -180,7 +180,7 @@ function PhoneCamp({ team, yr, scPts, games, risk, onRisk, onSimGame, onReport, 
   const runN = Math.min(openB.length, scPts), autoN = Math.min(5, trainable.length, Math.floor(scPts / 2));
   return (
     <div>
-      <Hero clr={team.clr} eyebrow={pre ? "Preseason" : "Camp is closed"} title="Training Camp" sub={pre ? "Get the roster ready for week 1" : "It opens again next preseason"}
+      <Hero clr={team.clr} logo={team} eyebrow={pre ? "Preseason" : "Camp is closed"} title="Training Camp" sub={pre ? "Get the roster ready for week 1" : "It opens again next preseason"}
         right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, color: "#93c5fd" }}>{scPts}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>POINTS</div></div>} />
 
       <Section title={`Preseason games · ${games.length}/4`} action={games.length ? "Report" : null} onAction={onReport} style={{ marginTop: 18 }}>

@@ -16,7 +16,7 @@ export const CloseX=({onClick,label="Close",style:st})=><button onClick={onClick
 export function Sheet({ title, onClose, children }) {
   // drawn at the top of the page, so a sheet opened inside a sticky or stacked block still sits over everything
   return createPortal(
-    <div className="keep-dark" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 450, background: "#000a", display: "flex", fontFamily: C.f, ...sheetWrap(true) }}>
+    <div className="keep-dark" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 450, background: "#000000a6", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", display: "flex", fontFamily: C.f, ...sheetWrap(true) }}>
       <div role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: "#0d1424", border: `1px solid ${C.bd}`, color: C.tx, padding: "14px 14px 0", overflowY: "auto", ...sheetBox(true) }}>
         <SheetGrip onClose={onClose} />
         <CloseX onClick={onClose} />
@@ -46,13 +46,15 @@ export function Segments({ items, value, onChange }) {
 // The phone look (Home's): a full-width hero in the club's colors with one big headline, then big
 // section titles over soft cards. Hero: eyebrow, title, a line under it, an optional right side and
 // anything below (a button). Section: a title with an optional link on the right.
-export function Hero({ clr = "#1e3a8a", eyebrow, title, sub, right, children, compact }) {
+export function Hero({ clr = "#1e3a8a", eyebrow, title, sub, right, children, compact, logo }) {
   return (
-    <div className="keep-dark" style={{ margin: "-6px -8px 0", padding: compact ? "14px 16px 12px" : "22px 16px 20px", color: "#fff", background: `linear-gradient(180deg, transparent 45%, ${C.bg} 100%), radial-gradient(120% 100% at 0% 0%, ${clr}cc, ${clr}22 70%)` }}>
+    <div className="keep-dark" style={{ position: "relative", overflow: "hidden", margin: "-6px -8px 0", padding: compact ? "14px 16px 12px" : "22px 16px 20px", color: "#fff", background: `linear-gradient(180deg, transparent 45%, ${C.bg} 100%), radial-gradient(120% 100% at 0% 0%, ${clr}cc, ${clr}22 70%)` }}>
+      {/* the club's mark, big and faint behind the headline */}
+      {logo && <span aria-hidden="true" style={{ position: "absolute", right: -28, top: -18, opacity: 0.07, pointerEvents: "none", transform: "rotate(-8deg)", filter: "grayscale(1) brightness(4)" }}><TeamLogo t={logo} sz={compact ? 150 : 190} /></span>}
       {eyebrow && <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.6, textTransform: "uppercase", color: "#ffffffb3" }}>{eyebrow}</div>}
       <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginTop: 4 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: compact ? 24 : 30, fontWeight: 900, lineHeight: 1.05 }}>{title}</div>
+          <div style={{ fontSize: compact ? 24 : 30, fontWeight: 900, lineHeight: 1.05, letterSpacing: -0.5, position: "relative" }}>{title}</div>
           {sub && <div style={{ fontSize: 15, color: "#ffffffb3", marginTop: 6 }}>{sub}</div>}
         </div>
         {right}
@@ -80,6 +82,22 @@ export function Chips({ items, value, onChange }) {
     </div>
   );
 }
+// Line icons for the phone chrome (tab bar, header): one stroke weight, so nothing looks like an emoji.
+const ICONS = {
+  home: "M3 10.5 12 3l9 7.5M5.5 9v11h13V9M10 20v-6h4v6",
+  roster: "M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20a6.5 6.5 0 0 1 13 0M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14a6.5 6.5 0 0 1 3.5 6",
+  scout: "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5 21 21",
+  camp: "M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11",
+  standings: "M4 20V11M10 20V4M16 20v-7M22 20H2",
+  trophy: "M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H4.5a3.5 3.5 0 0 0 3.5 4M16 6h3.5A3.5 3.5 0 0 1 16 10M12 13v4M8 20h8M9.5 17h5",
+  pen: "M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4",
+  target: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 12h.01",
+  more: "M4 7h16M4 12h16M4 17h16",
+  search: "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5 20 20",
+};
+export const Icon = ({ k, size = 24, color = "currentColor", w = 2 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONS[k] || ICONS.more} /></svg>
+);
 export const C={bg:"#080c14",cd:"#111827",bd:"#1e293b",tx:"#e0e6f0",mt:"#64748b",gn:"#22c55e",bl:"#3b82f6",gd:"#eab308",rd:"#ef4444",f:"'Segoe UI',system-ui,sans-serif"};
 export const oC=o=>o>=80?"#22c55e":o>=68?"#84cc16":o>=55?"#eab308":o>=42?"#f97316":"#ef4444";
 export const pC=p=>({QB:"#e74c3c",RB:"#3498db",WR:"#f39c12",TE:"#9b59b6",LT:"#1abc9c",LG:"#17a589",C:"#0e8c73",RG:"#17a589",RT:"#1abc9c",DL:"#e67e22",EDGE:"#d35400",DT:"#e67e22",LB:"#2ecc71",CB:"#e91e63",S:"#00bcd4",K:"#795548",P:"#8d6e63"}[p]||"#999");

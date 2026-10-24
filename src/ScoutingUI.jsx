@@ -1136,7 +1136,7 @@ export function ScoutingPage({ g }) {
   const rest = views.filter(([k]) => !main.includes(k));
   if (MOBILE) return (
     <div>
-      <Hero compact clr={g.teams[g.ui]?.clr} eyebrow={g.sp === "combine" ? "The Combine" : "Scouting"} title={`${g.yr + 1} Draft`}
+      <Hero compact clr={g.teams[g.ui]?.clr} logo={g.teams[g.ui]} eyebrow={g.sp === "combine" ? "The Combine" : "Scouting"} title={`${g.yr + 1} Draft`}
         sub={[myPicks.length ? `Picks ${myPicks.slice(0, 4).map((pk) => `#${pk.overall}`).join(" · ")}${myPicks.length > 4 ? ` +${myPicks.length - 4}` : ""}` : "No picks", g.sp === "combine" ? `${g.scouting?.interviewsLeft || 0} interviews` : null].filter(Boolean).join(" · ")}
         right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1, color: (g.scouting?.pts || 0) > 0 ? C.gd : "#fff" }}>{g.scouting?.pts || 0}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>POINTS</div></div>} />
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 14 }}>

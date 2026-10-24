@@ -1,36 +1,35 @@
 // Phone navigation: a bottom tab bar (Home, Roster, Scouting, whatever the season phase is
 // about, More) and a full-screen "More" sheet with every other screen and the settings.
 import React from "react";
-import { C, CloseX } from "./ui.jsx";
+import { C, CloseX, Icon } from "./ui.jsx";
 
 const PHASE_ITEM = {
-  preseason: { icon: "🏋️", label: "Camp", tab: "roster", sub: "camp" },
-  regular: { icon: "📊", label: "Standings", tab: "standings" },
-  playoffs: { icon: "🏆", label: "Playoffs", tab: "playoffs" },
-  combine: { icon: "📊", label: "Standings", tab: "standings" },
-  resign: { icon: "✍️", label: "Re-sign", tab: "freeagency" },
-  freeagency: { icon: "✍️", label: "Free Agency", tab: "freeagency" },
-  draft: { icon: "🎯", label: "Draft", tab: "draft" },
+  preseason: { icon: "camp", label: "Camp", tab: "roster", sub: "camp" },
+  regular: { icon: "standings", label: "Standings", tab: "standings" },
+  playoffs: { icon: "trophy", label: "Playoffs", tab: "playoffs" },
+  combine: { icon: "standings", label: "Standings", tab: "standings" },
+  resign: { icon: "pen", label: "Re-sign", tab: "freeagency" },
+  freeagency: { icon: "pen", label: "Free Agency", tab: "freeagency" },
+  draft: { icon: "target", label: "Draft", tab: "draft" },
 };
 
 export function MobileNav({ tab, sp, rosterView, go, onMore, moreOpen }) {
   const ph = PHASE_ITEM[sp] || PHASE_ITEM.regular;
   const items = [
-    { icon: "🏠", label: "Home", tab: "dashboard" },
-    { icon: "👥", label: "Roster", tab: "depth" }, // opens the depth chart; the roster list is its neighbor tab
-    { icon: "🔎", label: "Scouting", tab: "scouting" },
+    { icon: "home", label: "Home", tab: "dashboard" },
+    { icon: "roster", label: "Roster", tab: "depth" }, // opens the depth chart; the roster list is its neighbor tab
+    { icon: "scout", label: "Scouting", tab: "scouting" },
     ph,
   ];
   return (
-    <nav aria-label="Main" data-tour="nav" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 400, display: "flex", background: "#0b1220f7", borderTop: `1px solid ${C.bd}`, paddingBottom: "env(safe-area-inset-bottom)", backdropFilter: "blur(8px)" }}>
-      {[...items, { icon: "☰", label: "More", more: true }].map((it) => {
+    <nav aria-label="Main" data-tour="nav" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 400, display: "flex", background: "#0b1220e6", borderTop: "1px solid #ffffff12", paddingBottom: "env(safe-area-inset-bottom)", backdropFilter: "blur(8px)" }}>
+      {[...items, { icon: "more", label: "More", more: true }].map((it) => {
         // Roster and Camp share a screen: Camp is lit only on its own view.
         const on = it.more ? moreOpen : !moreOpen && (it.tab === "depth" ? tab === "depth" || (tab === "roster" && rosterView !== "camp") : tab === it.tab && (it.tab !== "roster" || (it.sub === "camp") === (rosterView === "camp")));
         return (
           <button key={it.label} onClick={() => (it.more ? onMore() : go(it.tab, it.sub))} aria-current={on ? "page" : undefined} style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, padding: "8px 2px 7px", color: on ? "#fff" : "#94a3b8", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-            <span style={{ fontSize: 20, lineHeight: 1, filter: on ? "none" : "grayscale(0.4)", opacity: on ? 1 : 0.85 }}>{it.icon}</span>
-            <span style={{ fontSize: 11, fontWeight: on ? 800 : 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{it.label}</span>
-            <span style={{ width: 18, height: 3, borderRadius: 2, background: on ? C.gn : "transparent" }} />
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 52, height: 30, borderRadius: 15, background: on ? "#ffffff1a" : "transparent", transition: "background .2s" }}><Icon k={it.icon} size={22} w={on ? 2.3 : 1.9} /></span>
+            <span style={{ fontSize: 11, fontWeight: on ? 800 : 600, letterSpacing: 0.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{it.label}</span>
           </button>
         );
       })}

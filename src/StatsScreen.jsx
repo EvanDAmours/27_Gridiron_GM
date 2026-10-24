@@ -263,7 +263,7 @@ function PhoneStats({ teams, ui, yr, me, scope, setScope, cat, setCat, sort, set
   const scopes = [["league", "League"], ["AFC", "AFC"], ["NFC", "NFC"], ["div", `${me.c} ${me.d}`], [`team:${ui}`, me.name], ["races", "Award races"]];
   return (
     <div>
-      <Hero clr={teamId != null ? teams[teamId].clr : "#013369"} eyebrow={`${yr} season`} title="Stats" sub={(scopes.find(([k]) => k === scope) || [null, team ? team.name : ""])[1]} />
+      <Hero clr={teamId != null ? teams[teamId].clr : "#013369"} logo={teamId != null ? teams[teamId] : null} eyebrow={`${yr} season`} title="Stats" sub={(scopes.find(([k]) => k === scope) || [null, team ? team.name : ""])[1]} />
       <div style={{ marginTop: 16 }}><Chips items={scopes} value={scope} onChange={(k) => { setScope(k); setSort(null); }} /></div>
       {scope === "races" ? (
         <Section title="Award races" style={{ marginTop: 18 }}>

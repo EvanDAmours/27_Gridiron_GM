@@ -133,7 +133,7 @@ function PhoneSchedule({ g, view, setView }) {
   const arrow = (on) => ({ width: 44, height: 44, borderRadius: 22, border: 0, background: on ? "#ffffff14" : "transparent", color: on ? "#fff" : "#334155", fontSize: 22, cursor: on ? "pointer" : "default" });
   return (
     <div>
-      <Hero clr={me.clr} eyebrow={`${yr} season`} title="Schedule" sub={next ? `Next: week ${next.wk} ${next.h === ui ? "vs" : "at"} ${teams[next.h === ui ? next.a : next.h].name}` : null}
+      <Hero clr={me.clr} logo={me} eyebrow={`${yr} season`} title="Schedule" sub={next ? `Next: week ${next.wk} ${next.h === ui ? "vs" : "at"} ${teams[next.h === ui ? next.a : next.h].name}` : null}
         right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1 }}>{rec(me)}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>RECORD</div></div>} />
       <div style={{ display: "flex", gap: 18, margin: "16px 2px 12px" }}>
         {[["mine", "Your games"], ["league", "Around the league"]].map(([k, l]) => <button key={k} onClick={() => setView(k)} style={{ background: "transparent", border: 0, padding: "4px 0", color: view === k ? "#fff" : "#64748b", fontSize: 16, fontWeight: 900, cursor: "pointer", borderBottom: `2px solid ${view === k ? C.gn : "transparent"}` }}>{l}</button>)}

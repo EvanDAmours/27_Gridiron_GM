@@ -13,6 +13,12 @@ if (MOBILE && typeof document !== "undefined") {
     html.gm-mobile, html.gm-mobile body { -webkit-text-size-adjust: 100%; overscroll-behavior-y: none; }
     html.gm-mobile button, html.gm-mobile select { touch-action: manipulation; }
     html.gm-mobile input, html.gm-mobile select { font-size: 18px !important; } /* 16px+ once scaled: no zoom on focus (iOS) */
+    /* a soft press on every button, so a tap always feels it landed */
+    html.gm-mobile button { -webkit-tap-highlight-color: transparent; transition: transform .12s ease, filter .12s ease; }
+    html.gm-mobile button:active:not(:disabled) { transform: scale(.97); filter: brightness(1.15); }
+    /* screens fade in (opacity only: a transform would unpin the fixed bars inside) */
+    @keyframes gmIn { from { opacity: 0 } to { opacity: 1 } }
+    html.gm-mobile .gm-in { animation: gmIn .22s ease-out; }
   `;
   document.head.appendChild(s);
   // Draw the whole game at 90% on phones, so screens hold a bit more and feel less crowded.
