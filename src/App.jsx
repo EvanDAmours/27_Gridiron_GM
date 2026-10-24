@@ -2,7 +2,7 @@ import Select from "./Select.jsx";
 import { lazyScreen } from "./lazyScreen.js";
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import LeagueView from "./LeagueView.jsx";
-import { C, oC, pC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo , CloseX , sheetWrap, sheetBox, SheetGrip, OverflowMenu, kickoff, Sheet, Row } from "./ui.jsx";
+import { C, oC, pC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo , CloseX , sheetWrap, sheetBox, SheetGrip, OverflowMenu, kickoff, Segments } from "./ui.jsx";
 import M27 from "./data/madden27.json";
 import REAL_SCHED from "./data/schedule2026.json";
 import { saveJSON, loadJSON } from "./storage.js";
@@ -239,7 +239,7 @@ export default function GridironGM(){
   const[log,setLogRaw]=useState([]);
   // The league log only ever holds lines of text (a record would crash the screens that list it).
   const setLog=u=>setLogRaw(prev=>{const n=typeof u==='function'?u(prev||[]):u;return(n||[]).map(x=>typeof x==='string'?x:x&&typeof x.msg==='string'?x.msg:null).filter(Boolean);});const[champs,setChamps]=useState([]);const[sf,setSf]=useState("passing");
-  const[scouting,setScouting]=useState(null);const[devFocus,setDevFocus]=useState({off:null,def:null});const[weekResult,setWeekResult]=useState(null);const[liveMore,setLiveMore]=useState(false);const[scPts,setScPts]=useState(10);
+  const[scouting,setScouting]=useState(null);const[devFocus,setDevFocus]=useState({off:null,def:null});const[weekResult,setWeekResult]=useState(null);const[scPts,setScPts]=useState(10);
   const[faCoaches,setFaCoaches]=useState([]);
   const[trTm,setTrTm]=useState(null);const[trOff,setTrOff]=useState({g:[],r:[],gPk:[],rPk:[]});
   const[draftPicks,setDraftPicks]=useState([]);const[draftIdx,setDraftIdx]=useState(0);const[draftLog,setDraftLog]=useState([]);
@@ -2000,14 +2000,26 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     </div>:<PlayoffPicture teams={teams} ui={ui} wk={sp==="regular"?wk:null} onBox={setBoxView}/>}</div>}
 
     {/* LIVE SIM */}
-    {tab==="livesim"&&liveSim&&(isWet(liveGameRef.current?.g?.wx)||liveSim.holiday)&&<Sky wx={liveGameRef.current?.g?.wx} holiday={liveSim.holiday} z={0} corners/>}{tab==="livesim"&&liveSim&&<div style={{position:"relative",zIndex:1,/* the Record and Milestone Watch rows take room from the field, so the controls stay on screen */"--live-extra":`${((_rc&&(_rc.chase.length>0||_rc.hit.length>0))?32:0)+((_mw&&(_mw.chase.length>0||_mw.hit.length>0))?32:0)}px`}}>
-      {MOBILE&&<div style={{position:"fixed",left:0,right:0,bottom:"calc(58px + env(safe-area-inset-bottom))",zIndex:395,display:"flex",gap:8,padding:"8px 10px",background:"linear-gradient(180deg,#0b122000,#0b1220f2 35%)"}}>
-        {liveDone?<button onClick={finishLive} style={{flex:1,minHeight:50,borderRadius:12,border:0,background:C.gn,color:"#fff",fontSize:17,fontWeight:900}}>Done: back to the season</button>:<>
-        {!liveAwaitingCall&&<button onClick={()=>setLivePaused(p=>!p)} style={{flex:1.2,minHeight:52,borderRadius:14,border:0,background:livePaused?C.gn:"#f97316",color:"#fff",fontSize:17,fontWeight:900}}>{livePaused?"▶ Play":"Pause"}</button>}
-        <button onClick={()=>setLiveSpeed(v=>{const ks=Object.keys(LIVE_SPEEDS);const n=ks[(ks.indexOf(v)+1)%ks.length];try{localStorage.setItem('gm_live_speed',n);}catch{}return n;})} aria-label="Game speed" style={{flex:1,minHeight:52,borderRadius:14,border:`1px solid ${C.bd}`,background:C.cd,color:"#e2e8f0",fontSize:16,fontWeight:800,lineHeight:1.1}}><span style={{display:"block",fontSize:10,letterSpacing:1.2,color:C.mt}}>SPEED</span>{liveSpeed}</button>
-        <button onClick={finishLiveNow} style={{flex:1,minHeight:52,borderRadius:14,border:`1px solid ${C.bd}`,background:C.cd,color:"#e2e8f0",fontSize:16,fontWeight:800}}>Finish</button>
-        <button onClick={()=>setLiveMore(true)} aria-label="More game options" style={{width:56,minHeight:52,borderRadius:14,border:`1px solid ${liveCallMode?C.gn:C.bd}`,background:C.cd,color:"#e2e8f0",fontSize:22,fontWeight:900,lineHeight:1}}>⋯</button></>}
-      </div>}
+    {tab==="livesim"&&liveSim&&(isWet(liveGameRef.current?.g?.wx)||liveSim.holiday)&&<Sky wx={liveGameRef.current?.g?.wx} holiday={liveSim.holiday} z={0} corners/>}{tab==="livesim"&&liveSim&&<div style={{position:"relative",zIndex:1,/* phones: room for the taller control panel */...(MOBILE?{paddingBottom:96}:{}),/* the Record and Milestone Watch rows take room from the field, so the controls stay on screen */"--live-extra":`${((_rc&&(_rc.chase.length>0||_rc.hit.length>0))?32:0)+((_mw&&(_mw.chase.length>0||_mw.hit.length>0))?32:0)}px`}}>
+      {/* phones: every game control on the screen (no menu to dig through), in the room under the plays.
+          Top to bottom: the extras, how the plays show, then Pause / Speed / Finish by your thumb. */}
+      {MOBILE&&(()=>{const pill=(on)=>({flex:1,minHeight:42,borderRadius:999,border:`1px solid ${on?C.gn:C.bd}`,background:on?`${C.gn}22`:C.cd,color:on?"#bbf7d0":"#e2e8f0",fontSize:14,fontWeight:800,whiteSpace:"nowrap",padding:"0 10px"});const big={flex:1,minHeight:52,borderRadius:14,border:`1px solid ${C.bd}`,background:C.cd,color:"#e2e8f0",fontSize:16,fontWeight:800};return<div style={{position:"fixed",left:0,right:0,bottom:"calc(58px + env(safe-area-inset-bottom))",zIndex:395,display:"flex",flexDirection:"column",gap:8,padding:"14px 10px 8px",background:"linear-gradient(180deg,#0b122000,#0b1220f5 16%)"}}>
+        {liveDone?<button onClick={finishLive} style={{minHeight:52,borderRadius:14,border:0,background:C.gn,color:"#fff",fontSize:17,fontWeight:900}}>Done: back to the season</button>:<>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>setLiveBoxOpen(true)} style={pill(false)}>Box score</button>
+          {liveQtr<4&&<button onClick={simToQuarterEnd} style={pill(false)}>Sim to end of {qtrLabel}</button>}
+          <button onClick={()=>{setLiveCallMode(m=>!m);setLiveAwaitingCall(false);setLivePhase(null);setFourthChoice(null);}} aria-pressed={liveCallMode} style={pill(liveCallMode)}>{liveCallMode?"Calling plays":"Call plays"}</button>
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+          <div style={{flex:1,minWidth:0,marginBottom:-12}}><Segments items={[["Key","Key plays"],["All","Every play"],["Off","Off"]]} value={livePlayMode} onChange={v=>{setLivePlayMode(v);try{localStorage.setItem('gm_live_plays',v);}catch{}}}/></div>
+          <button onClick={()=>pickLiveCam(liveCam==="Field"?"Action":"Field")} aria-label="Camera on live plays" style={{minHeight:44,borderRadius:10,border:0,background:"#ffffff0f",color:"#e2e8f0",fontSize:14,fontWeight:800,padding:"0 12px",whiteSpace:"nowrap"}}>{liveCam==="Field"?"Field view":"Action cam"}</button>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          {!liveAwaitingCall&&<button onClick={()=>setLivePaused(p=>!p)} style={{...big,flex:1.2,border:0,background:livePaused?C.gn:"#f97316",color:"#fff",fontSize:17,fontWeight:900}}>{livePaused?"▶ Play":"Pause"}</button>}
+          <button onClick={()=>setLiveSpeed(v=>{const ks=Object.keys(LIVE_SPEEDS);const n=ks[(ks.indexOf(v)+1)%ks.length];try{localStorage.setItem('gm_live_speed',n);}catch{}return n;})} aria-label="Game speed" style={{...big,lineHeight:1.1}}><span style={{display:"block",fontSize:10,letterSpacing:1.2,color:C.mt}}>SPEED</span>{liveSpeed}</button>
+          <button onClick={finishLiveNow} style={big}>Finish</button>
+        </div></>}
+      </div>;})()}
       {/* the Super Bowl: a banner with the trophy, and a title card at kickoff */}
       {liveSB&&<div className="keep-dark" style={{display:"flex",alignItems:"center",gap:MOBILE?8:14,background:"linear-gradient(90deg,#78350f,#1c1917 30%,#1c1917 70%,#78350f)",border:"1px solid #e8c45a",borderRadius:12,padding:MOBILE?"4px 10px":"6px 16px",marginBottom:6,boxShadow:"0 0 24px #e8c45a33"}}>
         <Lombardi size={MOBILE?16:22}/>
@@ -2062,18 +2074,11 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
           <Act big onClick={finishLiveNow} title="Play out the rest of the game instantly">⏭ Finish game</Act>
           <Act big onClick={()=>setLiveBoxOpen(true)} title="Both teams' stats so far">📋 Box score</Act>
         </div>}{!MOBILE&&liveDone&&<div style={{display:"flex",justifyContent:"center",gap:10,marginTop:10}}><Act big onClick={()=>setLiveBoxOpen(true)}>📋 Box score</Act><Act big wide kind="go" onClick={finishLive}>Continue →</Act></div>}
-        {MOBILE&&liveMore&&<Sheet title="Game options" onClose={()=>setLiveMore(false)}>{[
-          {l:"Box score",v:"",on:()=>{setLiveMore(false);setLiveBoxOpen(true);}},
-          ...(liveQtr<4&&!liveDone?[{l:`Sim to end of ${qtrLabel}`,v:"",on:()=>{setLiveMore(false);simToQuarterEnd();}}]:[]),
-          {l:"Plays on the field",v:livePlayMode==="Key"?"Key plays":livePlayMode==="All"?"Every play":"Off",on:cycleLivePlays},
-          {l:"Camera",v:liveCam==="Field"?"Field view":"Action cam",on:()=>pickLiveCam(liveCam==="Field"?"Action":"Field")},
-          {l:"Call the plays",v:liveCallMode?"On":"Off",tone:liveCallMode?C.gn:null,on:()=>{setLiveCallMode(m=>!m);setLiveAwaitingCall(false);setLivePhase(null);setFourthChoice(null);}},
-        ].map((r,i)=><Row key={r.l} first={i===0} label={r.l} value={r.v} tone={r.tone} onClick={r.on}/>)}<div style={{height:8}}/></Sheet>}
         {/* the box score, both teams, popped up over the game (a play still being acted out isn't in it yet) */}{liveBoxOpen&&(()=>{const _g=liveGameRef.current?.g;const _b=liveAnim?.box0||_g?.box||liveBoxRef.current;if(!_b)return null;return<div onClick={()=>setLiveBoxOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:MOBILE?6:16}}><div onClick={e=>e.stopPropagation()} style={{background:C.cd,border:`1px solid ${C.bd}`,borderRadius:14,padding:MOBILE?10:16,width:"min(900px,100%)",maxHeight:"92vh",overflowY:"auto",boxShadow:"0 20px 60px #000c"}}>
           <div style={{display:"flex",alignItems:"center",marginBottom:10}}><b style={{fontSize:18}}>📋 Box score</b><span style={{marginLeft:10,fontSize:13,color:C.mt}}>{liveDone?"Final":`${qtrLabel} · ${gameClock(liveClock)}`} · {TEAMS[liveSim.a].ab} {liveScore.a}, {TEAMS[liveSim.h].ab} {liveScore.h}</span><button onClick={()=>setLiveBoxOpen(false)} style={{marginLeft:"auto",background:C.bd,border:0,color:"#fff",borderRadius:8,padding:"6px 12px",fontWeight:800,cursor:"pointer"}}>Close</button></div>
           {(()=>{/* EDGE or DT rather than DL, from each player's record */const _tag=(b,t)=>Object.fromEntries(Object.entries(b||{}).map(([id,l])=>{const p=teams[t]?.roster.find(x=>String(x.id)===String(id));return[id,{...l,pos:p?posTag(p):l.pos}];}));return<BoxScore boxH={_tag(_b.h,liveSim.h)} boxA={_tag(_b.a,liveSim.a)} home={TEAMS[liveSim.h]} away={TEAMS[liveSim.a]}/>;})()}
         </div></div>;})()}</div>
-        <div className="live-pbp" style={MOBILE?{display:"contents"}:{gridArea:"pbp",position:"relative",alignSelf:"stretch",minHeight:260}}><div style={{flex:"2 1 280px",minWidth:0,display:"flex",flexDirection:"column",background:C.cd,borderRadius:10,padding:10,boxSizing:"border-box",...(MOBILE?{maxHeight:"min(46vh,420px)"}:{position:"absolute",inset:0})}}>{!MOBILE&&!liveDone&&<div style={{paddingBottom:6,marginBottom:8,borderBottom:`1px solid ${C.bd}`}}><LiveSettings callMode={liveCallMode} onCall={v=>{setLiveCallMode(v);setLiveAwaitingCall(false);setLivePhase(null);setFourthChoice(null);}} livePlays={livePlayMode} onLivePlays={v=>{setLivePlayMode(v);try{localStorage.setItem('gm_live_plays',v);}catch{}}} speed={liveSpeed} speeds={Object.keys(LIVE_SPEEDS)} onSpeed={v=>{setLiveSpeed(v);try{localStorage.setItem('gm_live_speed',v);}catch{}}} cam={liveCam} onCam={pickLiveCam}/></div>}
+        <div className="live-pbp" style={MOBILE?{display:"contents"}:{gridArea:"pbp",position:"relative",alignSelf:"stretch",minHeight:260}}><div style={{flex:"2 1 280px",minWidth:0,display:"flex",flexDirection:"column",background:C.cd,borderRadius:10,padding:10,boxSizing:"border-box",...(MOBILE?{maxHeight:"calc(var(--vh, 100vh) - 560px)",minHeight:120}:{position:"absolute",inset:0})}}>{!MOBILE&&!liveDone&&<div style={{paddingBottom:6,marginBottom:8,borderBottom:`1px solid ${C.bd}`}}><LiveSettings callMode={liveCallMode} onCall={v=>{setLiveCallMode(v);setLiveAwaitingCall(false);setLivePhase(null);setFourthChoice(null);}} livePlays={livePlayMode} onLivePlays={v=>{setLivePlayMode(v);try{localStorage.setItem('gm_live_plays',v);}catch{}}} speed={liveSpeed} speeds={Object.keys(LIVE_SPEEDS)} onSpeed={v=>{setLiveSpeed(v);try{localStorage.setItem('gm_live_speed',v);}catch{}}} cam={liveCam} onCam={pickLiveCam}/></div>}
           {/* on a computer the caption under the field shows the last play */}{MOBILE&&liveLog.length>0&&(()=>{const e=liveLog[liveLog.length-1];return<div style={{fontSize:17,fontWeight:800,lineHeight:1.35,color:e.type==="td"?C.gn:e.type==="int"||e.type==="fumble"?C.rd:"#fff",paddingBottom:8,marginBottom:6,borderBottom:`1px solid ${C.bd}`}}><div style={{fontSize:11,color:C.mt,letterSpacing:1.5,fontWeight:800}}>LAST PLAY · Q{e.qtr}{e.pers&&<span title="Offensive personnel against the defense's package" style={{marginLeft:8,color:"#a5b4fc"}}>{e.pers} PERSONNEL vs {String(e.pkg||"").toUpperCase()}</span>}</div>{e.text}</div>;})()}
           {(()=>{const _all=MOBILE||livePaused||liveDone;return<div style={{display:"flex",alignItems:"baseline",gap:8,marginBottom:3}}><span style={{fontSize:11,fontWeight:800,color:C.mt,letterSpacing:1.5}}>{_all?"PLAY-BY-PLAY":"RECENT PLAYS"}</span>{!MOBILE&&<span style={{fontSize:11,color:"#64748b"}}>{_all?(liveDone?"the whole game":"paused: scroll up for the whole game"):"pause to scroll back through the game"}</span>}</div>;})()}
           <div style={{flex:1,overflowY:MOBILE||livePaused||liveDone?"auto":"hidden",fontSize:14}}>
