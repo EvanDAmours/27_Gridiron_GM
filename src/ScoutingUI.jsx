@@ -376,6 +376,28 @@ export function YourList({ g, classYr, onDraft, canDraft, compact = false }) {
   const taken = new Map((g.draftLog || []).filter((d) => d.player?.draftYear === classYr).map((d) => [d.player.id, d]));
   const rows = ids.map((id) => ({ id, p: avail.get(id), d: taken.get(id) })).filter((x) => x.p || x.d);
   const shown = compact ? rows.filter((x) => x.p).slice(0, 6) : rows;
+  if (MOBILE) return (
+    <div>
+      <div style={{ fontSize: 14, color: "#94a3b8", margin: "0 2px 10px" }}>{rows.length ? `${rows.filter((x) => x.p).length} still available. Your own ranking: if the draft clock runs out, you take the top name.` : null}</div>
+      <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px" }}>
+        {!rows.length && <div style={{ padding: "18px 0", fontSize: 15, color: "#cbd5e1", lineHeight: 1.45 }}>Nobody on it yet. Open a prospect on the Board and tap <b>My list</b> to build your own ranking. If the draft clock runs out, you take the top name.</div>}
+        {shown.map(({ id, p, d }, i) => { const pl = p || d.player, read = p ? prospectRead(g.scouting, p) : null, k = ids.indexOf(id); return (
+          <div key={id} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 64, padding: "6px 0", borderTop: i ? "1px solid #ffffff10" : 0, opacity: p ? 1 : 0.5 }}>
+            <b style={{ width: 24, textAlign: "center", fontSize: 17, color: "#fcd34d" }}>{k + 1}</b>
+            <span onClick={() => p && g.setSel(p)} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10, cursor: p ? "pointer" : "default" }}>
+              <Face s={pl.face} sz={36} />
+              <span style={{ minWidth: 0 }}><span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{pl.name}</span><span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#94a3b8", marginTop: 3 }}><Bdg pos={posTag(pl)} />{d ? `Gone #${d.overall} ${g.teams[d.owner]?.ab}` : `#${csRank(pl)} on the board`}</span></span>
+            </span>
+            {read && <span style={{ textAlign: "center", lineHeight: 1.1 }}><Val txt={read.pot} /><span style={{ display: "block", fontSize: 10, fontWeight: 800, color: C.mt, marginTop: 2 }}>POT</span></span>}
+            {onDraft && p ? <button onClick={() => onDraft(p)} disabled={!canDraft} style={{ minHeight: 44, padding: "0 14px", borderRadius: 12, border: 0, background: "#22c55e26", color: "#4ade80", fontSize: 15, fontWeight: 900, opacity: canDraft ? 1 : 0.5 }}>Draft</button> : !compact && p && <span style={{ display: "flex", flexDirection: "column" }}>
+              <button aria-label="Move up" disabled={k === 0} onClick={() => a.move(pl, -1)} style={{ width: 40, height: 26, border: 0, background: "transparent", color: k === 0 ? "#334155" : "#cbd5e1", fontSize: 16, cursor: "pointer" }}>▲</button>
+              <button aria-label="Move down" disabled={k === ids.length - 1} onClick={() => a.move(pl, 1)} style={{ width: 40, height: 26, border: 0, background: "transparent", color: k === ids.length - 1 ? "#334155" : "#cbd5e1", fontSize: 16, cursor: "pointer" }}>▼</button>
+            </span>}
+          </div>
+        ); })}
+      </div>
+    </div>
+  );
   return (
     <div style={{ ...panel, background: "#0d1a0d", border: "1px solid #166534" }}>
       <div style={{ ...head, color: C.gn }}>⭐ YOUR LIST<Right>{rows.filter((x) => x.p).length} available</Right></div>
@@ -571,6 +593,7 @@ export function CombineView({ g, buzz }) {
   const [sort, setSort] = useState("rank");
   const [n, setN] = useState(25);
   const [q, setQ] = useState("");
+  const [sortOpen, setSortOpen] = useState(false);
   const g0 = POS_GROUPS.find(([k]) => k === grp)?.[1];
   const val = (p) => sort === "rank" ? -csRank(p) : sort === "grade" ? GRADE_ORDER[p.combGrade] || 0 : (() => { const t = COMBINE_TESTS.find((x) => x.k === sort); return t ? (t.lowGood ? -p.combine[t.k] : +p.combine[t.k]) : 0; })();
   const qq = q.trim().toLowerCase();
@@ -588,6 +611,39 @@ export function CombineView({ g, buzz }) {
       <span style={{ fontSize: 12, color: C.mt, whiteSpace: "nowrap" }}>{p.cons?.mid && p.cons.mid !== csRank(p) ? `#${p.cons.mid} → #${csRank(p)}` : `#${csRank(p)}`}</span><GradeChip g={p.combGrade} small />
     </div>
   );
+  // phones: what's left to spend, who rose and fell, then the results as clean rows sorted by one
+  // test at a time (tap a player for every number, his ranks, the interview and the workout)
+  if (MOBILE) {
+    const t = COMBINE_TESTS.find((x) => x.k === sort);
+    const soft = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
+    const label = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", margin: "22px 2px 8px" };
+    const row = (p, i, right) => (
+      <div key={p.id} onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 62, padding: "6px 0", borderTop: i ? "1px solid #ffffff10" : 0, cursor: "pointer" }}>
+        <Face s={p.face} sz={38} />
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#94a3b8", marginTop: 3 }}><Bdg pos={posTag(p)} />{isNeed(p) && <b style={{ color: C.gd }}>Need</b>}<span>#{csRank(p)} on the board</span></span>
+        </span>
+        {right}
+      </div>
+    );
+    return (
+      <div>
+        {live && <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 4 }}>{[["INTERVIEWS", sc.interviewsLeft || 0, "#c4b5fd"], ["WORKOUTS", sc.workoutsLeft || 0, "#7dd3fc"], ["POINTS", sc.pts || 0, C.gd]].map(([k, v, c]) => <div key={k} style={{ background: "#ffffff0f", borderRadius: 16, padding: "12px 0", textAlign: "center" }}><div style={{ fontSize: 26, fontWeight: 900, color: v ? c : "#64748b", lineHeight: 1 }}>{v}</div><div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.2, color: "#94a3b8", marginTop: 4 }}>{k} LEFT</div></div>)}</div>}
+        {up.length > 0 && <><div style={{ ...label, color: "#4ade80" }}>STOCK UP</div><div style={soft}>{up.map((p, i) => row(p, i, <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 13, color: "#94a3b8" }}>{p.cons?.mid && p.cons.mid !== csRank(p) ? `#${p.cons.mid} → #${csRank(p)}` : ""}</span><GradeChip g={p.combGrade} /></span>))}</div></>}
+        {down.length > 0 && <><div style={{ ...label, color: "#f87171" }}>STOCK DOWN</div><div style={soft}>{down.map((p, i) => row(p, i, <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 13, color: "#94a3b8" }}>{p.cons?.mid && p.cons.mid !== csRank(p) ? `#${p.cons.mid} → #${csRank(p)}` : ""}</span><GradeChip g={p.combGrade} /></span>))}</div></>}
+        <div style={{ display: "flex", alignItems: "baseline", margin: "26px 2px 10px" }}><span style={{ fontSize: 20, fontWeight: 900 }}>Results</span><button onClick={() => setSortOpen(true)} style={{ marginLeft: "auto", background: "transparent", border: 0, color: "#7dd3fc", fontSize: 15, fontWeight: 700, cursor: "pointer", padding: "6px 0" }}>{sort === "rank" ? "Board order" : sort === "grade" ? "Combine grade" : t?.name} ▾</button></div>
+        <Chips items={[...POS_GROUPS.map(([k]) => [k, k]), ["__mine", "My needs"]]} value={mine ? "__mine" : grp} onChange={(k) => { if (k === "__mine") setMine((v) => !v); else { setMine(false); setGrp(k); } setN(25); }} />
+        <div style={{ ...soft, marginTop: 12 }}>
+          {rows.slice(0, n).map((p, i) => row(p, i, t ? <span style={{ textAlign: "right", lineHeight: 1.1 }}><b style={{ fontSize: 18, color: p.combPcts?.[t.k] >= 0.9 ? C.gn : "#fff" }}>{(+p.combine[t.k]).toFixed(t.dp)}{t.unit === "s" ? "s" : t.unit === "in" ? '"' : ""}</b><span style={{ display: "block", fontSize: 10, fontWeight: 800, color: C.mt, marginTop: 2 }}>{t.short.toUpperCase()}</span></span> : <GradeChip g={p.combGrade} />))}
+          {!rows.length && <div style={{ padding: "16px 0", color: "#94a3b8", fontSize: 15 }}>Nobody tested at that position.</div>}
+        </div>
+        {rows.length > n && <button onClick={() => setN(n + 25)} style={{ width: "100%", minHeight: 48, marginTop: 10, borderRadius: 14, border: 0, background: "#ffffff0f", color: "#cbd5e1", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Show more</button>}
+        <div style={{ fontSize: 13, color: C.mt, margin: "10px 2px 0" }}>Grades compare his testing with the other invitees at his position. Tap a player for every number and where it ranks.</div>
+        {sortOpen && <Sheet title="Sort results by" onClose={() => setSortOpen(false)}>{[["rank", "Board order"], ["grade", "Combine grade"], ...COMBINE_TESTS.map((x) => [x.k, x.name])].map(([k, l], i) => <Row key={k} first={i === 0} label={l} value={sort === k ? "✓" : ""} tone={C.gn} onClick={() => { setSort(k); setN(25); setSortOpen(false); }} />)}<div style={{ height: 8 }} /></Sheet>}
+      </div>
+    );
+  }
   return (
     <div>
       {live && (
@@ -862,6 +918,29 @@ export function MockDraft({ g }) {
   const myNext = order.find((pk) => pk.owner === g.ui);
   const before = myNext ? mock.filter((m) => listed.has(m.player.id) && m.pick.overall < myNext.overall) : [];
   const td = { padding: "9px 6px", borderBottom: `1px solid ${C.bd}66`, verticalAlign: "middle" };
+  // phones: one row a pick (the club, then who the experts have them taking), your picks lit up
+  if (MOBILE) return (
+    <div>
+      <Segments items={[[1, "Round 1"], [2, "Rounds 1-2"]]} value={rounds} onChange={setRounds} />
+      {myNext && <div style={{ background: before.length ? `${C.gd}1a` : "#ffffff0f", borderRadius: 18, padding: "12px 14px", fontSize: 15, lineHeight: 1.45, marginBottom: 12 }}>
+        Your next pick is <b>#{myNext.overall}</b>. {before.length ? <>Likely gone by then: {before.map((m, i) => <span key={m.player.id}>{i ? ", " : ""}<b style={{ color: C.gd }}>{m.player.name}</b> (#{m.pick.overall})</span>)}.</> : listed.size ? <span style={{ color: C.gn }}>Everyone on your list should still be there.</span> : <span style={{ color: "#94a3b8" }}>Star prospects to see where they're projected.</span>}
+      </div>}
+      <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px" }}>
+        {mock.filter((m) => m.pick.rd <= rounds).map(({ pick, player }, i) => { const t = g.teams[pick.owner], mine = pick.owner === g.ui, star = listed.has(player.id); return (
+          <div key={pick.id || pick.overall} onClick={() => g.setSel(player)} style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 66, padding: "8px 0", borderTop: i ? "1px solid #ffffff10" : 0, cursor: "pointer", background: mine ? `${C.gn}14` : "transparent", margin: mine ? "0 -14px" : 0, paddingLeft: mine ? 14 : 0, paddingRight: mine ? 14 : 0 }}>
+            <span style={{ width: 34, textAlign: "center", flexShrink: 0 }}><b style={{ display: "block", fontSize: 15, color: mine ? C.gn : "#e2e8f0", fontVariantNumeric: "tabular-nums" }}>{pick.overall}</b><span style={{ fontSize: 10, fontWeight: 800, color: C.mt }}>RD {pick.rd}</span></span>
+            <TeamLogo t={t} sz={30} />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{star && <span style={{ color: C.gd }}>★ </span>}{player.name}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#94a3b8", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden" }}><Bdg pos={posTag(player)} /><span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{mine ? "You" : t.name} · {player.bio?.college}</span></span>
+            </span>
+            <span style={{ textAlign: "right", lineHeight: 1.1, flexShrink: 0 }}><b style={{ fontSize: 15, color: "#cbd5e1" }}>#{csRank(player)}</b><span style={{ display: "block", fontSize: 10, fontWeight: 800, color: C.mt, marginTop: 2 }}>BOARD</span></span>
+          </div>
+        ); })}
+        {!mock.length && <div style={{ color: C.mt, padding: "16px 0" }}>No draft class yet.</div>}
+      </div>
+    </div>
+  );
   return (
     <div>
       <div style={{ ...panel, display: "flex", gap: "6px 16px", flexWrap: "wrap", alignItems: "center", fontSize: 15 }}>
@@ -1589,6 +1668,7 @@ function PhoneProspectPage({ g, p, onClose }) {
         {tab === "testing" && (tested(p) && (p.combine || p.proDay)
           ? <>{[["NFL COMBINE", p.combine], ["PRO DAY", p.proDay]].filter(([, r]) => r).map(([h, r]) => <div key={h} style={{ marginBottom: 12 }}><div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", margin: "0 2px 8px" }}>{h}</div><div style={soft}>{COMBINE_TESTS.map((t) => { const v = r[t.k]; if (v == null) return null; const rk = combineRank(g.dc?.[p.draftYear], p, t, r); return kv(t.short, <>{(+v).toFixed(t.dp)}{t.unit === "s" ? "s" : t.unit === "in" ? '"' : ""}{rk && <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 800, color: rankColor(rk) }}>({rk.rank} of {rk.n})</span>}</>); })}</div></div>)}{s.intv?.verdict && <div style={soft}>{kv("Interview", s.intv.verdict, { Impressive: C.gn, Solid: "#7dd3fc", Mixed: C.gd, Concerning: C.rd }[s.intv.verdict])}</div>}<div style={{ fontSize: 13, color: C.mt, padding: "10px 2px" }}>Ranked against every {p.pos} in the class who tested.</div></>
           : <div style={{ ...soft, padding: "18px 14px", fontSize: 15, color: "#94a3b8" }}>Testing numbers come in at the Combine and his pro day.</div>)}
+        {tab === "testing" && g.sp === "combine" && p.combine && p.draftYear === g.yr && read.lvl < 2 && <button onClick={() => a.workout(p)} disabled={!(g.scouting?.workoutsLeft > 0)} style={{ width: "100%", minHeight: 50, marginTop: 12, borderRadius: 14, border: 0, background: "#0c4a6e", color: "#bae6fd", fontSize: 16, fontWeight: 900 }}>Free workout · {g.scouting?.workoutsLeft || 0} left</button>}
         {tab === "testing" && g.sp === "combine" && p.combine && p.draftYear === g.yr && !s.intv && <button onClick={() => a.interview(p)} disabled={!(g.scouting?.interviewsLeft > 0)} style={{ width: "100%", minHeight: 50, marginTop: 12, borderRadius: 14, border: 0, background: "#7c3aed33", color: "#ddd6fe", fontSize: 16, fontWeight: 900 }}>Interview him · {g.scouting?.interviewsLeft || 0} left</button>}
       </div>
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 1001, background: "#0d1424", borderTop: "1px solid #ffffff14", padding: "10px 14px calc(12px + env(safe-area-inset-bottom))", display: "flex", gap: 10 }}>

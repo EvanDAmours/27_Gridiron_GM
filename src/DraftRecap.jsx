@@ -39,6 +39,9 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
   const open = (id) => { const p = id != null && findPlayer(id); if (p) setSel(p); };
   const now = (id) => (past ? findPlayer(id) : null);
 
+  if (!years.length && MOBILE) return (
+    <Hero compact clr={teams[ui]?.clr} logo={teams[ui]} eyebrow="Draft recap" title={current ? "After the draft" : "No drafts yet"} sub={current ? "Every pick shows up here with his true ratings and development trait once the draft is done." : "After your first draft, every pick shows up here with his true ratings and development trait."} />
+  );
   if (!years.length) return (
     <div style={{ maxWidth: 1000, margin: "0 auto" }}>
       <div style={{ fontSize: 26, fontWeight: 900 }}>Draft Recap</div>

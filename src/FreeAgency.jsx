@@ -83,7 +83,7 @@ const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 
-export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk, cy, market, onNextDay }) {
+export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk, cy, market, onNextDay, sp }) {
   const [pos, setPos] = useState(startPos || "ALL");
   const [q, setQ] = useState("");
   const [find, setFind] = useState(false);
@@ -107,7 +107,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
   );
   const td = { padding: "9px 6px", borderBottom: `1px solid ${C.bd}55`, textAlign: "center", fontSize: 15 };
   const negotiate = () => (<Negotiate note={market && offer.ovr >= MARKET_MIN ? (() => { const o = bidsFor(market, offer.id).filter((b) => b.team !== ui).length, dd = Math.max(market.day, decideDay(offer, market.yr)); const st = standing(offer, market, teams, ui); return `📋 ${o ? `${o} club${o > 1 ? "s have" : " has"} made him an offer.` : "No offers yet."}${st === "lead" ? " Your offer is the best one for him right now." : st === "behind" ? " Another club's offer is better for him right now." : ""} He decides ${dd <= market.day ? "at the end of today" : `on day ${dd}`}. He takes the best offer for him: more money, or a club with what he wants. Only a big overpay (20%+ over his ask) signs him on the spot.`; })() : null} team={team} cy={cy} p={offer} mode="fa" cap={cap + (bidsFor(market, offer.id).find((b) => b.team === ui)?.sal || 0)} t={termsFor(offer, "fa")} talk={talkFor(offer)} onResult={(r, o) => onTalk(offer, "fa", r, o)} onClose={() => setOffer(null)} rivalName={(id) => teams[id] && `${teams[id].city} ${teams[id].name}`} />);
-  if (MOBILE) return <PhoneFA {...{ fa, rows, n, setN, pos, setPos, needs, q, setQ, find, setFind, sort, setSort, cap, out, nOut, open, market, onNextDay, sheets, extras, teams, ui, talkFor, setSel, offer, setOffer, team }} negotiate={offer && negotiate()} />;
+  if (MOBILE) return <PhoneFA {...{ sp, fa, rows, n, setN, pos, setPos, needs, q, setQ, find, setFind, sort, setSort, cap, out, nOut, open, market, onNextDay, sheets, extras, teams, ui, talkFor, setSel, offer, setOffer, team }} negotiate={offer && negotiate()} />;
   return (
     <div>
       <style>{"@media (max-width: 640px) { .fa-hide { display: none } }"}</style>
@@ -219,7 +219,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
 // best fits for your needs as cards you swipe, positions as chips, then everyone as clean rows. A tap
 // on anyone opens him in a sheet with one big button: make an offer.
 const FA_SORTS = [["ovr", "Best"], ["ask", "Cheapest"], ["age", "Youngest"], ["name", "Name"]];
-function PhoneFA({ fa, rows, n, setN, pos, setPos, needs, q, setQ, find, setFind, sort, setSort, cap, out, nOut, open, market, onNextDay, sheets, extras, teams, ui, talkFor, setSel, offer, setOffer, negotiate, team }) {
+function PhoneFA({ sp, fa, rows, n, setN, pos, setPos, needs, q, setQ, find, setFind, sort, setSort, cap, out, nOut, open, market, onNextDay, sheets, extras, teams, ui, talkFor, setSel, offer, setOffer, negotiate, team }) {
   const [pick, setPick] = useState(null), [sortOpen, setSortOpen] = useState(false);
   const pk = pick && fa.find((p) => p.id === pick);
   const mineOf = (p) => market && p.ovr >= MARKET_MIN && bidsFor(market, p.id).find((b) => b.team === ui);
@@ -230,10 +230,10 @@ function PhoneFA({ fa, rows, n, setN, pos, setPos, needs, q, setQ, find, setFind
   const tags = (p) => <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><DevTag p={p} /></span>;
   return (
     <div>
-      <Hero clr={team?.clr} logo={team} eyebrow={market ? `Day ${market.day} of ${FA_DAYS}` : open ? "The market" : "Before the Combine"} title="Free Agency"
+      <Hero clr={team?.clr} logo={team} eyebrow={market ? `Day ${market.day} of ${FA_DAYS}` : open ? "The market" : ["preseason", "regular"].includes(sp) ? "In season" : sp === "draft" ? "After the market" : "Before the Combine"} title="Free Agency"
         sub={out > 0 ? `${money(out)} held in ${nOut} open offer${nOut > 1 ? "s" : ""}` : `${fa.length} players available`}
         right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, color: cap >= 0 ? "#fff" : C.rd }}>{money(cap)}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>TO SPEND</div></div>}>
-        {!open && <div style={{ fontSize: 14, color: "#fde68a", marginTop: 12 }}>The main market opens after the Combine.</div>}
+        {!open && <div style={{ fontSize: 14, color: "#fde68a", marginTop: 12 }}>{["preseason", "regular"].includes(sp) ? "Whoever's still unsigned. Sign him any time." : sp === "draft" ? "What's left after free agency." : "The main market opens after the Combine."}</div>}
         {market && market.day < FA_DAYS && <button onClick={onNextDay} style={{ marginTop: 16, width: "100%", minHeight: 48, borderRadius: 14, border: 0, background: "#ffffff1f", color: "#fff", fontSize: 16, fontWeight: 900, cursor: "pointer" }}>Next day ›</button>}
       </Hero>
       {sheets}

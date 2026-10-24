@@ -60,6 +60,32 @@ export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto
       </div>
     );
   };
+  // phones (it opens in a sheet): everything laid out, no card in a card and no Change toggle
+  if (mobile) {
+    const label = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", margin: "18px 2px 8px" };
+    const side = (sd, list) => { const o = opts[sd]; return (<>
+      <div style={label}>{sd === "off" ? "OFFENSE" : "DEFENSE"}</div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(list.length, 2)}, 1fr)`, gap: 8 }}>
+        {list.map(({ key, label: l, icon }) => { const g = planGrade(o[key].v), on = cur[sd] === key, rec = best[sd] === key; return (
+          <button key={key} onClick={() => onPick(sd, key)} aria-pressed={on} style={{ minHeight: 64, borderRadius: 16, border: 0, background: on ? `${C.gn}26` : "#ffffff0f", boxShadow: on ? `inset 0 0 0 2px ${C.gn}` : "none", color: "#fff", cursor: "pointer", textAlign: "left", padding: "10px 12px" }}>
+            <div style={{ fontSize: 15, fontWeight: 800 }}>{icon} {l}</div>
+            <div style={{ fontSize: 13, marginTop: 4 }}><b style={{ color: GRADE_C[g] }}>{g}</b>{rec && <span style={{ color: C.gd, fontWeight: 800 }}> · best fit</span>}</div>
+          </button>
+        ); })}
+      </div>
+      <div style={{ fontSize: 14, color: "#94a3b8", marginTop: 8, lineHeight: 1.45, padding: "0 2px" }}>{o[cur[sd]].why}</div>
+    </>); };
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, padding: "0 2px" }}><span style={{ fontSize: 15, color: set ? "#fde68a" : "#94a3b8" }}>vs the {opp.name} · {set ? "your call" : "your coaches' pick"}</span>{set && <button onClick={onAuto} style={{ marginLeft: "auto", background: "none", border: 0, color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer", padding: 0 }}>Use theirs</button>}</div>
+        {side("off", OFF_PLANS)}
+        {side("def", DEF_PLANS)}
+        {onTwoPoint && <label style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 52, marginTop: 14, padding: "0 14px", borderRadius: 16, background: "#ffffff0f", fontSize: 15, fontWeight: 700, cursor: "pointer" }}><input type="checkbox" checked={!!plan?.twoPoint} onChange={onTwoPoint} style={{ width: 20, height: 20 }} /> Go for two after touchdowns</label>}
+        {report && <><div style={label}>THEIR TENDENCIES</div><Scout r={report} opp={opp} onPersonnel={onPersonnel} /></>}
+        {onHub && <button onClick={onHub} style={{ width: "100%", minHeight: 50, marginTop: 16, borderRadius: 14, border: 0, background: "#ffffff14", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>Week prep: everything for this game ›</button>}
+      </div>
+    );
+  }
   return (
     <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
