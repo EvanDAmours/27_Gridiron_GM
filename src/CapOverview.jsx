@@ -2,7 +2,7 @@
 // goes by position, and the cap advisor's suggestions (restructures, cuts that free real money,
 // extensions to get done early, and what to do with room to spare).
 import React from "react";
-import { C, Bdg } from "./ui.jsx";
+import { C, Bdg, Section } from "./ui.jsx";
 import { capProjection } from "./capProjection.js";
 import { posTag } from "./dline.js";
 
@@ -72,6 +72,65 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
   const tips = capAdvice({ rows, space, nextRoom, canExtend, starters });
   const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
   const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8 };
+  const CLR = ["#f59e0b", "#38bdf8", "#22c55e", "#ef4444", "#a78bfa", "#ec4899", "#94a3b8"];
+  // phones: the advisor first (what to do), then four seasons you swipe, the biggest hits and where
+  // the money goes, in soft cards (the headline numbers are in the hero above)
+  if (mobile) {
+    const soft = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
+    const yrs = cy != null ? capProjection(team, cy, { room0: space, rookies }) : [];
+    return (
+      <div style={{ marginBottom: 14 }}>
+        <Section title="Cap advisor" style={{ marginTop: 18 }}>
+          <div style={soft}>
+            {!tips.length && <div style={{ fontSize: 15, color: "#94a3b8", padding: "16px 0" }}>Your books are in good shape.</div>}
+            {tips.map((t, i) => (
+              <button key={i} onClick={() => t.p && onPlayer(t.p)} style={{ display: "flex", gap: 12, width: "100%", textAlign: "left", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "12px 0", color: "#fff", cursor: t.p ? "pointer" : "default", whiteSpace: "normal" }}>
+                <span style={{ width: 10, height: 10, borderRadius: 5, background: t.tone, marginTop: 6, flexShrink: 0 }} />
+                <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 16, fontWeight: 800 }}>{t.title}</span><span style={{ display: "block", fontSize: 13, color: "#94a3b8", lineHeight: 1.4, marginTop: 2 }}>{t.text}</span></span>
+              </button>
+            ))}
+          </div>
+        </Section>
+        {yrs.length > 0 && (
+          <Section title="The next four years">
+            <div className="pill-row" style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", margin: "0 -8px", padding: "0 8px 4px", scrollPaddingLeft: 8 }}>
+              {yrs.map((y, i) => { const pct = Math.min(100, (y.committed / y.cap) * 100); const tone = y.room < 0 ? C.rd : y.room < y.cap * 0.08 ? C.gd : C.gn; return (
+                <div key={y.yr} style={{ flex: "0 0 62%", scrollSnapAlign: "start", background: "#ffffff0f", borderRadius: 18, padding: 16 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: "#94a3b8" }}>{y.yr}{i === 0 ? " · THIS YEAR" : ""}</div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: tone, marginTop: 4 }}>{y.room < 0 ? `-${$(-y.room)}` : $(y.room)}</div>
+                  <div style={{ height: 6, borderRadius: 3, background: "#ffffff14", overflow: "hidden", margin: "8px 0" }}><div style={{ width: `${pct}%`, height: "100%", background: y.room < 0 ? C.rd : "#38bdf8" }} /></div>
+                  <div style={{ fontSize: 13, color: "#94a3b8" }}>{y.players} signed · {y.expiring.length} deal{y.expiring.length === 1 ? "" : "s"} ending</div>
+                </div>
+              ); })}
+            </div>
+          </Section>
+        )}
+        <Section title="Biggest cap hits" action={onContracts ? "All contracts" : null} onAction={() => onContracts?.("all")}>
+          <div style={soft}>
+            {top.slice(0, 5).map((p, i) => (
+              <button key={p.id} onClick={() => onPlayer(p)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 52, background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: 0, color: "#fff", cursor: "pointer", textAlign: "left" }}>
+                <span style={{ width: 42, flexShrink: 0 }}><Bdg pos={posTag(p)} /></span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+                <b style={{ fontSize: 16, color: C.gd }}>{$(p.salary)}</b>
+              </button>
+            ))}
+          </div>
+        </Section>
+        <Section title="Where the money goes">
+          <div style={{ ...soft, padding: "14px" }}>
+            <div style={{ height: 12, borderRadius: 6, background: "#ffffff14", overflow: "hidden", display: "flex", marginBottom: 12 }}>{byGroup.map(([g, v], i) => <div key={g} style={{ width: `${(v / cap) * 100}%`, background: CLR[i] }} />)}</div>
+            {byGroup.map(([g, v, avg], i) => { const d = avg ? (v - avg) / avg : 0; return (
+              <div key={g} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 15, minHeight: 32 }}>
+                <span style={{ width: 10, height: 10, borderRadius: 3, background: CLR[i] }} /><span style={{ flex: 1 }}>{g}</span><b>{$(v)}</b>
+                {avg != null && <span style={{ width: 54, textAlign: "right", fontSize: 13, fontWeight: 800, color: d > 0.25 ? C.rd : d < -0.25 ? C.gn : C.mt }}>{d > 0 ? "+" : ""}{Math.round(d * 100)}%</span>}
+              </div>
+            ); })}
+            {byGroup[0][2] != null && <div style={{ fontSize: 12, color: C.mt, marginTop: 6 }}>Against the league's average spend</div>}
+          </div>
+        </Section>
+      </div>
+    );
+  }
   return (
     <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
       <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${mobile ? 150 : 180}px,1fr))`, gap: 8 }}>
