@@ -38,23 +38,35 @@ export function MobileNav({ tab, sp, rosterView, go, onMore, moreOpen }) {
   );
 }
 
+// The More sheet as a short grouped list (the screens in the tab bar aren't repeated): the club's
+// business, the league, Save, and everything else folded under Settings & help.
+const MORE_GROUPS = [["YOUR TEAM", ["trade", "freeagency", "contracts", "coaching"]], ["THE LEAGUE", ["schedule", "stats", "hub", "trophies"]]];
+const MORE_EXTRA = ["saves", "gameinfo"];
 export function MoreSheet({ tabs, labels, tab, go, onClose, actions }) {
+  const [extra, setExtra] = React.useState(false);
+  const row = (key, label, onClick, on, first) => (
+    <button key={key} onClick={onClick} style={{ display: "flex", alignItems: "center", width: "100%", minHeight: 52, textAlign: "left", background: "transparent", border: 0, borderTop: first ? 0 : "1px solid #ffffff10", padding: "0 4px", fontSize: 17, fontWeight: 700, color: on ? "#fff" : C.tx, cursor: "pointer" }}>
+      <span style={{ flex: 1 }}>{label}</span>{on && <span style={{ width: 8, height: 8, borderRadius: 4, background: C.gn, marginRight: 8 }} />}<span style={{ fontSize: 20, color: "#64748b" }}>›</span>
+    </button>
+  );
+  const group = { background: C.cd, borderRadius: 14, padding: "0 12px", marginBottom: 18 };
+  const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.mt, margin: "0 4px 6px" };
+  const save = actions.find((a) => /save game/i.test(a.label));
+  const rest = actions.filter((a) => a !== save);
+  const plain = (l) => l.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, "");
   return (
-    <div role="dialog" aria-label="More" style={{ position: "fixed", inset: 0, zIndex: 390, background: C.bg, overflowY: "auto", padding: "14px 14px 96px" }}>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <span style={{ fontSize: 22, fontWeight: 900 }}>More</span>
+    <div role="dialog" aria-label="More" style={{ position: "fixed", inset: 0, zIndex: 390, background: C.bg, overflowY: "auto", padding: "calc(14px + env(safe-area-inset-top)) 14px 96px" }}>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 14 }}>
+        <span style={{ fontSize: 26, fontWeight: 900 }}>More</span>
         <CloseX onClick={onClose} style={{ position: "static", marginLeft: "auto" }} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
-        {tabs.map((t) => (
-          <button key={t} onClick={() => go(t)} style={{ textAlign: "left", padding: "14px 12px", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer", background: tab === t ? `${C.bl}33` : C.cd, color: tab === t ? "#fff" : C.tx, border: `1px solid ${tab === t ? C.bl : C.bd}` }}>{labels[t] || t}</button>
-        ))}
-      </div>
-      <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: C.mt, margin: "4px 0 8px" }}>SETTINGS</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {actions.map((a) => (
-          <button key={a.label} onClick={a.onClick} style={{ textAlign: "left", padding: "14px 12px", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer", background: C.cd, color: C.tx, border: `1px solid ${C.bd}` }}>{a.label}</button>
-        ))}
+      {MORE_GROUPS.map(([h, keys]) => { const ks = keys.filter((k) => tabs.includes(k)); return ks.length ? (
+        <React.Fragment key={h}><div style={head}>{h}</div><div style={group}>{ks.map((k, i) => row(k, labels[k] || k, () => go(k), tab === k, i === 0))}</div></React.Fragment>
+      ) : null; })}
+      {save && <div style={group}>{row("save", plain(save.label), save.onClick, false, true)}</div>}
+      <div style={group}>
+        {row("extra", "Settings & help", () => setExtra((v) => !v), false, true)}
+        {extra && <>{MORE_EXTRA.filter((k) => tabs.includes(k)).map((k) => row(k, labels[k] || k, () => go(k), tab === k, false))}{rest.map((a) => row(a.label, plain(a.label), a.onClick, false, false))}</>}
       </div>
     </div>
   );
