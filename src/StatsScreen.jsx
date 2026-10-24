@@ -2,7 +2,7 @@
 // single team. Pick a team and you get its leader at every position; click a column to sort.
 import Select from "./Select.jsx";
 import React, { useMemo, useState } from "react";
-import { C, Bdg, Face, TeamLogo } from "./ui.jsx";
+import { C, Bdg, Face, TeamLogo, Hero, Section, Chips, Sheet, Row } from "./ui.jsx";
 import { awardRaces } from "./awards.js";
 import { olLine, OL_POS } from "./olStats.js";
 import { gradesOf, gradeColor } from "./grades.js";
@@ -145,6 +145,7 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
   const team = teamId != null ? teams[teamId] : null;
   const pill = (on) => ({ background: on ? "#3b82f633" : C.cd, color: on ? "#fff" : "#cbd5e1", border: `1px solid ${on ? C.bl : C.bd}`, borderRadius: 999, padding: "6px 13px", fontSize: 14, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" });
   const th = { padding: "8px 8px", fontSize: 12, fontWeight: 900, letterSpacing: 0.8, color: C.mt, textAlign: "right", borderBottom: `1px solid ${C.bd}`, whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" };
+  if (mobile) return <PhoneStats {...{ teams, ui, yr, me, scope, setScope, cat, setCat, sort, setSort, gpos, setGpos, players, rows, cols, col, team, teamId, onPlayer }} />;
   const td = { padding: "8px 8px", fontSize: 14, textAlign: "right", borderBottom: `1px solid ${C.bd}55`, whiteSpace: "nowrap" };
 
   return (
@@ -239,6 +240,78 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
         </table>
       </div>
       </>}
+    </div>
+  );
+}
+
+// Phones: its own screen in the Home screen's look. Who you're looking at as chips, the leaders as
+// cards you swipe (your team: its leader at every position), then the stat tables as clean rows: the
+// stat you sort by big on the right, the rest on one line under the name.
+function PhoneStats({ teams, ui, yr, me, scope, setScope, cat, setCat, sort, setSort, gpos, setGpos, players, rows, cols, col, team, teamId, onPlayer }) {
+  const [sortOpen, setSortOpen] = useState(false);
+  const soft = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
+  const races = useMemo(() => (scope === "races" ? awardRaces(teams, yr) : null), [scope, teams, yr]);
+  const card = { flex: "0 0 78%", scrollSnapAlign: "start", background: "#ffffff0f", borderRadius: 18, padding: "12px 14px 6px", minWidth: 0 };
+  const strip = (kids) => <div className="pill-row" style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", margin: "0 -8px", padding: "0 8px 4px", scrollPaddingLeft: 8 }}>{kids}</div>;
+  const line = (i, onClick, face, name, sub, big, unit, you) => (
+    <button key={i} onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 52, background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: 0, color: "#fff", cursor: "pointer", textAlign: "left" }}>
+      {face}
+      <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: you ? C.gn : "#f1f5f9" }}>{name}</span><span style={{ display: "block", fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</span></span>
+      <span style={{ textAlign: "right" }}><b style={{ display: "block", fontSize: 19, fontVariantNumeric: "tabular-nums" }}>{big}</b>{unit && <span style={{ fontSize: 10, fontWeight: 800, color: C.mt }}>{unit}</span>}</span>
+    </button>
+  );
+  const scopes = [["league", "League"], ["AFC", "AFC"], ["NFC", "NFC"], ["div", `${me.c} ${me.d}`], [`team:${ui}`, me.name], ["races", "Award races"]];
+  return (
+    <div>
+      <Hero clr={teamId != null ? teams[teamId].clr : "#013369"} eyebrow={`${yr} season`} title="Stats" sub={(scopes.find(([k]) => k === scope) || [null, team ? team.name : ""])[1]} />
+      <div style={{ marginTop: 16 }}><Chips items={scopes} value={scope} onChange={(k) => { setScope(k); setSort(null); }} /></div>
+      {scope === "races" ? (
+        <Section title="Award races" style={{ marginTop: 18 }}>
+          {strip(RACES.map(([k, l]) => (
+            <div key={k} style={card}>
+              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#fcd34d", marginBottom: 2 }}>{l.toUpperCase()}</div>
+              {races[k].length ? races[k].slice(0, 5).map((e, i) => line(i, () => { const p = teams[e.ti]?.roster.find((x) => x.id === e.pid); if (p) onPlayer(p); }, <TeamLogo t={teams[e.ti]} sz={26} />, `${i + 1}. ${e.name}`, e.stat, "", null, e.ti === ui)) : <div style={{ fontSize: 14, color: C.mt, padding: "10px 0" }}>No games yet.</div>}
+            </div>
+          )))}
+        </Section>
+      ) : (<>
+        {team ? (
+          <Section title="Leader at every spot" style={{ marginTop: 18 }}>
+            <div style={soft}>
+              {POS_LEAD.map(([pos, val, ln], i) => { const best = players.filter((x) => x.p.pos === pos && val(x.p.ss) > 0).sort((a, b) => val(b.p.ss) - val(a.p.ss))[0]; return (
+                <div key={pos} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 56, borderTop: i ? "1px solid #ffffff10" : 0, cursor: best ? "pointer" : "default" }} onClick={() => best && onPlayer(best.p)}>
+                  <span style={{ width: 34, flexShrink: 0 }}><Bdg pos={pos} /></span>
+                  {best ? <><Face s={best.p.face} sz={34} /><span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{best.p.name}</span><span style={{ display: "block", fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ln(best.p.ss)}</span></span></> : <span style={{ color: C.mt, fontSize: 14 }}>No stats yet</span>}
+                </div>
+              ); })}
+            </div>
+          </Section>
+        ) : (() => { const boards = BOARDS.map(([title, val, unit, ok]) => ({ title, val, unit, top: players.filter((x) => ok(x.p) && val(x.p.ss) > 0).sort((a, b) => val(b.p.ss) - val(a.p.ss)).slice(0, 3) })).filter((b) => b.top.length); return boards.length ? (
+          <Section title="Leaders" style={{ marginTop: 18 }}>
+            {strip(boards.map((b) => (
+              <div key={b.title} style={card}>
+                <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", marginBottom: 2 }}>{b.title.toUpperCase()}</div>
+                {b.top.map((x, i) => line(i, () => onPlayer(x.p), <Face s={x.p.face} sz={32} />, x.p.name, `${x.t.ab} · ${x.p.pos}`, n(b.val(x.p.ss)), b.unit.toUpperCase(), x.ti === ui))}
+              </div>
+            )))}
+          </Section>
+        ) : null; })()}
+        <Section title="Stat tables" action={`Sorted: ${col[0]} ▾`} onAction={() => setSortOpen(true)}>
+          <Chips items={Object.keys(TABLES).map((k) => [k, k])} value={cat} onChange={(k) => { setCat(k); setSort(null); }} />
+          {cat === "Grades" && <div style={{ marginTop: 8 }}><Chips items={["All", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((k) => [k, k])} value={gpos} onChange={setGpos} /></div>}
+          <div style={{ ...soft, marginTop: 10 }}>
+            {rows.map((x, i) => { const rest = cols.filter((c) => c[0] !== col[0]).slice(0, 4).map(([l, f]) => `${l} ${n(f(x.p.ss, x.p))}`).join(" · "); const v = col[1](x.p.ss, x.p); return (
+              <button key={x.p.id} onClick={() => onPlayer(x.p)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 58, background: x.ti === ui ? "#22c55e10" : "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "6px 0", color: "#fff", cursor: "pointer", textAlign: "left" }}>
+                <span style={{ width: 22, fontSize: 13, fontWeight: 800, color: C.mt }}>{i + 1}</span>
+                <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: x.ti === ui ? C.gn : "#f1f5f9" }}>{x.p.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>{x.t.ab} · {x.p.pos}</span></span><span style={{ display: "block", fontSize: 12, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 2 }}>{rest}</span></span>
+                <span style={{ textAlign: "right" }}><b style={{ display: "block", fontSize: 19, fontVariantNumeric: "tabular-nums", color: typeof v === "number" && (col[0] === "GRADE" || cat === "Grades") ? gradeColor(v) : "#fff" }}>{n(v)}</b><span style={{ fontSize: 10, fontWeight: 800, color: C.mt }}>{col[0]}</span></span>
+              </button>
+            ); })}
+            {!rows.length && <div style={{ padding: "18px 0", color: C.mt, fontSize: 15 }}>No {cat.toLowerCase()} stats yet.</div>}
+          </div>
+        </Section>
+      </>)}
+      {sortOpen && <Sheet title="Sort by" onClose={() => setSortOpen(false)}>{cols.map(([l], i) => <Row key={l} first={i === 0} label={l} value={l === col[0] ? "✓" : ""} tone={C.gn} onClick={() => { setSort(l); setSortOpen(false); }} />)}<div style={{ height: 8 }} /></Sheet>}
     </div>
   );
 }
