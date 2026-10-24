@@ -815,6 +815,19 @@ export const COMBINE_TESTS = [
 ];
 // Testing is graded against the same position (all offensive linemen together).
 const combineGroup = (pos) => (OL.has(pos) ? "OL" : pos);
+// Where a prospect's number ranks among the rest of his position group in the class (1 = best),
+// counting everyone who tested, at the Combine or his pro day: { rank, n } or null.
+export function combineRank(cls, p, t) {
+  const v = (x) => { const r = x.combine || x.proDay; return r && r[t.k] != null ? +r[t.k] : null; };
+  const mine = v(p);
+  if (mine == null) return null;
+  const g = combineGroup(p.pos);
+  const vals = (cls || []).filter((x) => x.id !== p.id && combineGroup(x.pos) === g).map(v).filter((x) => x != null);
+  const better = vals.filter((x) => (t.lowGood ? x < mine : x > mine)).length;
+  return { rank: better + 1, n: vals.length + 1 };
+}
+// Green for the top of the group down to red for the bottom.
+export const rankColor = ({ rank, n }) => { const f = n > 1 ? (rank - 1) / (n - 1) : 0; return f <= 0.2 ? "#22c55e" : f <= 0.4 ? "#84cc16" : f <= 0.6 ? "#eab308" : f <= 0.8 ? "#f97316" : "#ef4444"; };
 const COMBINE_LETTERS = [[0.9, "A+"], [0.8, "A"], [0.7, "A-"], [0.6, "B+"], [0.5, "B"], [0.42, "B-"], [0.34, "C+"], [0.26, "C"], [0.18, "C-"], [-1, "D"]];
 
 // The top of the preseason board gets a Combine invite; everyone else only has a pro day.

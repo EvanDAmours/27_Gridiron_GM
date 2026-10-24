@@ -17,7 +17,7 @@ import { ROLE_FILTERS, roleFilterMatch } from "./roleNeeds.js";
 import {
   prospectRead, scoutProspect, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, scoutsShortlist, coverage, csRank, riskLabel, gradeTone,
   SCOUT_ROLES, SCOUT_GROUPS, SCOUT_GROUP_SHORT, regionReport, onSpec, potGrade, scoutGroup as scoutGroupOfPos, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
-  staffWindowOpen, SCOUT_SLOTS, slotKind, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, isSmallSchool, devOf,
+  staffWindowOpen, SCOUT_SLOTS, slotKind, hireScout, releaseScout, swapScoutRoles, listIds, toggleList, moveOnList, pickTake, classGrade, gradeRank, isSmallSchool, devOf, combineRank, rankColor,
   myBoard, regionOf, regionName, areasOf, assignArea, AREA_KEYS, suggestAreas, REGIONS, setRegionScout, areaCap, uncovered, SCOUT_CHECKPOINTS, areaSeason, lockAreas,
 } from "./scouting.js";
 
@@ -1370,6 +1370,7 @@ export function ProspectProfile({ g, p }) {
                 <div key={t.k} style={{ background: C.cd, borderRadius: 3, padding: "3px 4px", textAlign: "center" }}>
                   <div style={{ fontSize: 11, color: C.mt }}>{t.short.toUpperCase()}</div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: pct >= 0.9 ? C.gn : "#cbd5e1" }}>{(+v).toFixed(t.dp)}{t.unit === "s" ? "s" : t.unit === "in" ? '"' : ""}</div>
+                  {(() => { const rk = v != null && combineRank(g.dc?.[p.draftYear], p, t); return rk ? <div title={`Where he ranks among the ${rk.n} ${p.pos}s in the class who tested`} style={{ fontSize: 11, fontWeight: 800, color: rankColor(rk) }}>({rk.rank} of {rk.n})</div> : null; })()}
                   {pct != null && <div style={{ height: 3, background: C.bg, borderRadius: 2, marginTop: 2 }}><div style={{ width: `${Math.round(pct * 100)}%`, height: "100%", background: oC(40 + pct * 50), borderRadius: 2 }} /></div>}
                 </div>
               );
@@ -1499,7 +1500,7 @@ function PhoneProspectPage({ g, p, onClose }) {
         </>}
         {tab === "tools" && <div style={soft}>{graded.map(tool)}{!keys.length && <div style={{ padding: "14px 0", color: C.mt }}>No tools graded.</div>}<div style={{ fontSize: 13, color: C.mt, padding: "10px 0" }}>{read.lvl > 0 ? "Graded at his projected NFL level." : "A scouting report grades every tool."}</div></div>}
         {tab === "testing" && (tested(p) && (p.combine || p.proDay)
-          ? <div style={soft}>{COMBINE_TESTS.map((t) => { const v = (p.combine || p.proDay)[t.k], pct = p.combPcts?.[t.k]; return kv(t.short, `${(+v).toFixed(t.dp)}${t.unit === "s" ? "s" : t.unit === "in" ? '"' : ""}`, pct >= 0.9 ? C.gn : "#fff"); })}{s.intv?.verdict && kv("Interview", s.intv.verdict, { Impressive: C.gn, Solid: "#7dd3fc", Mixed: C.gd, Concerning: C.rd }[s.intv.verdict])}</div>
+          ? <div style={soft}>{COMBINE_TESTS.map((t) => { const v = (p.combine || p.proDay)[t.k]; if (v == null) return null; const rk = combineRank(g.dc?.[p.draftYear], p, t); return kv(t.short, <>{(+v).toFixed(t.dp)}{t.unit === "s" ? "s" : t.unit === "in" ? '"' : ""}{rk && <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 800, color: rankColor(rk) }}>({rk.rank} of {rk.n})</span>}</>); })}<div style={{ fontSize: 13, color: C.mt, padding: "10px 0" }}>Ranked against every {p.pos} in the class who tested.</div>{s.intv?.verdict && kv("Interview", s.intv.verdict, { Impressive: C.gn, Solid: "#7dd3fc", Mixed: C.gd, Concerning: C.rd }[s.intv.verdict])}</div>
           : <div style={{ ...soft, padding: "18px 14px", fontSize: 15, color: "#94a3b8" }}>Testing numbers come in at the Combine and his pro day.</div>)}
         {tab === "testing" && g.sp === "combine" && p.combine && p.draftYear === g.yr && !s.intv && <button onClick={() => a.interview(p)} disabled={!(g.scouting?.interviewsLeft > 0)} style={{ width: "100%", minHeight: 50, marginTop: 12, borderRadius: 14, border: 0, background: "#7c3aed33", color: "#ddd6fe", fontSize: 16, fontWeight: 900 }}>Interview him · {g.scouting?.interviewsLeft || 0} left</button>}
       </div>
