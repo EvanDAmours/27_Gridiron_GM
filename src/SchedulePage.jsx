@@ -2,7 +2,8 @@
 // games in a second tab. The playoff tree has its own tab.
 import Select from "./Select.jsx";
 import React, { useState } from "react";
-import { C, Btn, TeamLogo, kickoff } from "./ui.jsx";
+import { C, Btn, TeamLogo, kickoff, Hero } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const tabBtn = (on) => ({ background: on ? `${C.bl}33` : "transparent", color: on ? "#fff" : C.mt, border: `1px solid ${on ? C.bl : C.bd}`, padding: "8px 16px", borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: "pointer" });
@@ -120,10 +121,81 @@ function LeagueSchedule({ g }) {
   );
 }
 
+// Phones: a hero with the record, then the season as clean rows in one soft card (the week, who,
+// when or the result; the next game has Play). Around the league is a tap away.
+function PhoneSchedule({ g, view, setView }) {
+  const { sched, teams, ui, yr, sp, wk, onBox, onPlay, onWatch, rivalId, extras } = g;
+  const me = teams[ui];
+  const [week, setWeek] = useState(Math.min(18, Math.max(1, wk + (sp === "regular" ? 1 : 0))));
+  const next = sp === "regular" ? sched.find((x) => !x.played && (x.h === ui || x.a === ui)) : null;
+  const card = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
+  const row = { display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 62, textAlign: "left", background: "transparent", border: 0, padding: "8px 0", color: C.tx };
+  const arrow = (on) => ({ width: 44, height: 44, borderRadius: 22, border: 0, background: on ? "#ffffff14" : "transparent", color: on ? "#fff" : "#334155", fontSize: 22, cursor: on ? "pointer" : "default" });
+  return (
+    <div>
+      <Hero clr={me.clr} eyebrow={`${yr} season`} title="Schedule" sub={next ? `Next: week ${next.wk} ${next.h === ui ? "vs" : "at"} ${teams[next.h === ui ? next.a : next.h].name}` : null}
+        right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1 }}>{rec(me)}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>RECORD</div></div>} />
+      <div style={{ display: "flex", gap: 18, margin: "16px 2px 12px" }}>
+        {[["mine", "Your games"], ["league", "Around the league"]].map(([k, l]) => <button key={k} onClick={() => setView(k)} style={{ background: "transparent", border: 0, padding: "4px 0", color: view === k ? "#fff" : "#64748b", fontSize: 16, fontWeight: 900, cursor: "pointer", borderBottom: `2px solid ${view === k ? C.gn : "transparent"}` }}>{l}</button>)}
+      </div>
+      {view === "mine" ? (<>
+        <div style={card}>
+          {Array.from({ length: 18 }, (_, i) => i + 1).map((w, i) => {
+            const game = sched.find((x) => x.wk === w && (x.h === ui || x.a === ui));
+            const top = i ? "1px solid #ffffff10" : 0;
+            if (!game) return <div key={w} style={{ ...row, minHeight: 44, borderTop: top }}><span style={{ width: 34, fontSize: 13, fontWeight: 900, color: C.mt }}>{w}</span><span style={{ fontSize: 15, fontWeight: 800, color: "#a78bfa" }}>Bye week</span></div>;
+            const home = game.h === ui, opp = teams[home ? game.a : game.h];
+            const us = home ? game.hs : game.as, them = home ? game.as : game.hs;
+            const res = game.played ? (us > them ? ["W", C.gn] : us < them ? ["L", C.rd] : ["T", C.gd]) : null;
+            const isNext = next && game === next;
+            const tags = [opp.c === me.c && opp.d === me.d && "Division", rivalId === opp.id && "Rival", game.intl && game.city].filter(Boolean).join(" · ");
+            return (
+              <button key={w} onClick={() => game.played && (game.boxH || game.boxA) && onBox(game)} style={{ ...row, borderTop: top, cursor: game.played ? "pointer" : "default", background: isNext ? `${C.gn}14` : "transparent", margin: isNext ? "0 -14px" : 0, padding: isNext ? "8px 14px" : "8px 0", width: isNext ? "calc(100% + 28px)" : "100%" }}>
+                <span style={{ width: 34, fontSize: 13, fontWeight: 900, color: isNext ? C.gn : C.mt }}>{w}</span>
+                <TeamLogo t={opp} sz={32} />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><span style={{ color: C.mt, fontWeight: 700 }}>{home || game.neutral ? "vs" : "@"}</span> {opp.name}</span>
+                  <span style={{ display: "block", fontSize: 12, color: C.mt, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[!game.played && game.date ? kickoff(game).replace(" ET", "") : rec(opp), tags].filter(Boolean).join(" · ")}</span>
+                </span>
+                {res ? <span style={{ whiteSpace: "nowrap", fontSize: 16 }}><b style={{ color: res[1] }}>{res[0]}</b> <b>{us}-{them}</b></span>
+                  : isNext && onPlay ? <span onClick={(e) => { e.stopPropagation(); onPlay(game); }} style={{ background: C.gn, color: "#fff", borderRadius: 12, padding: "10px 14px", fontSize: 15, fontWeight: 900 }}>Play</span> : null}
+              </button>
+            );
+          })}
+        </div>
+        {extras}
+      </>) : (() => {
+        const games = sched.filter((x) => x.wk === week);
+        const playing = new Set(games.flatMap((x) => [x.h, x.a]));
+        const byes = teams.filter((t) => !playing.has(t.id));
+        const side = (id, pts, won, right) => { const t = teams[id]; return <span style={{ display: "flex", alignItems: "center", gap: 8, flexDirection: right ? "row-reverse" : "row", opacity: won === false ? 0.5 : 1, minWidth: 0 }}><TeamLogo t={t} sz={28} /><b style={{ fontSize: 16, color: id === ui ? C.gn : "#fff" }}>{t.ab}</b>{pts != null ? <b style={{ fontSize: 18, margin: right ? "0 6px 0 0" : "0 0 0 6px" }}>{pts}</b> : <span style={{ fontSize: 13, color: C.mt }}>{rec(t)}</span>}</span>; };
+        return (<>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <button aria-label="Previous week" disabled={week <= 1} onClick={() => setWeek((x) => Math.max(1, x - 1))} style={arrow(week > 1)}>‹</button>
+            <span style={{ fontSize: 20, fontWeight: 900 }}>Week {week}</span>
+            <button aria-label="Next week" disabled={week >= 18} onClick={() => setWeek((x) => Math.min(18, x + 1))} style={arrow(week < 18)}>›</button>
+          </div>
+          <div style={card}>
+            {games.map((x, i) => { const mine = x.h === ui || x.a === ui; const canWatch = !x.played && !mine && sp === "regular" && week === wk + 1 && onWatch; return (
+              <button key={i} onClick={() => (x.played && (x.boxH || x.boxA) ? onBox(x) : canWatch ? onWatch(x) : null)} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6, width: "100%", minHeight: 54, background: mine ? "#16a34a1a" : "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: 0, color: "#fff", cursor: "pointer" }}>
+                {side(x.a, x.played ? x.as : null, x.played ? x.as > x.hs : undefined)}
+                <span style={{ fontSize: 11, fontWeight: 800, color: canWatch ? "#7dd3fc" : C.mt }}>{x.played ? "FINAL" : canWatch ? "WATCH" : "AT"}</span>
+                <span style={{ display: "flex", justifyContent: "flex-end" }}>{side(x.h, x.played ? x.hs : null, x.played ? x.hs > x.as : undefined, true)}</span>
+              </button>
+            ); })}
+          </div>
+          {byes.length > 0 && <div style={{ fontSize: 13, color: C.mt, marginTop: 8 }}>Bye: {byes.map((t) => t.ab).join(", ")}</div>}
+        </>);
+      })()}
+    </div>
+  );
+}
+
 export default function SchedulePage(g) {
   const [view, setView] = useState("mine");
   const { teams, ui, yr, extras } = g;
   const me = teams[ui];
+  if (MOBILE) return <PhoneSchedule g={g} view={view} setView={setView} />;
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: "8px 18px", flexWrap: "wrap", marginBottom: 12 }}>

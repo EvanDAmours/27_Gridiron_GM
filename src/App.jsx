@@ -33,6 +33,7 @@ import Resign from "./Resign.jsx";
 const TrainingCamp = lazyScreen(() => import("./TrainingCamp.jsx")); // loaded when first opened
 import HomeScreen, { teamRatings } from "./HomeScreen.jsx";
 import FranchiseStrip from "./FranchiseStrip.jsx";
+import PhoneStandings from "./PhoneStandings.jsx";
 import StatsScreen from "./StatsScreen.jsx";
 import GamePlan from "./GamePlan.jsx";
 import TradeFinder from "./TradeFinder.jsx";
@@ -1807,7 +1808,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     })()}
 
     {/* STANDINGS */}
-    {tab==="standings"&&<div>
+    {MOBILE&&tab==="standings"&&<PhoneStandings teams={teams} ui={ui} yr={yr} confOf={t=>TEAMS[t.id]?.c||"AFC"} divOf={t=>TEAMS[t.id]?.d||"East"} extra={<PlayoffRace teams={teams} sched={sched} ui={ui}/>}/>}
+    {!MOBILE&&tab==="standings"&&<div>
       <style>{".st-x{display:table-cell}.st-xi{display:inline}@media (max-width:640px){.st-x,.st-xi{display:none}}"}</style>
       {(()=>{const divs={};teams.forEach(t=>{const dk=`${TEAMS[t.id]?.c||'AFC'} ${TEAMS[t.id]?.d||'East'}`;(divs[dk]||(divs[dk]=[])).push(t);});Object.values(divs).forEach(d=>d.sort((a,b)=>b.w-a.w||(b.pf-b.pa)-(a.pf-a.pa)));
         const th={padding:"6px 6px",fontSize:11,fontWeight:800,letterSpacing:1,color:C.mt,textAlign:"right",whiteSpace:"nowrap"},td={padding:"6px 6px",fontSize:14,textAlign:"right",whiteSpace:"nowrap",fontVariantNumeric:"tabular-nums",borderTop:`1px solid ${C.bd}55`};
