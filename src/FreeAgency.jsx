@@ -36,6 +36,48 @@ function MarketTag({ p, market, ui, teams }) {
   );
 }
 
+// Your offers on the market, each beside the competition: where you stand (leading or outbid), your
+// money against the best rival offer, how many clubs are in, and when he decides. A tap re-opens the
+// talks so you can raise it. Leading is about the whole offer (money, years, role, fit), so the money
+// alone can trail and still lead.
+export function YourOffers({ fa, market, teams, ui, onRaise, phone }) {
+  if (!market) return null;
+  const mine = fa.map((p) => ({ p, list: bidsFor(market, p.id) })).filter((x) => x.list.some((b) => b.team === ui))
+    .map(({ p, list }) => { const me = list.find((b) => b.team === ui), rivals = list.filter((b) => b.team !== ui).sort((a, b) => b.sal - a.sal); return { p, me, rivals, top: rivals[0], st: standing(p, market, teams, ui) }; })
+    .sort((a, b) => (a.st === "lead") - (b.st === "lead") || b.p.ovr - a.p.ovr);
+  if (!mine.length) return null;
+  const lead = mine.filter((x) => x.st === "lead").length;
+  return (
+    <div style={phone ? { marginTop: 26 } : { background: C.cd, border: `1px solid ${C.bl}55`, borderRadius: 10, padding: "10px 14px", marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: phone ? 10 : 6, padding: phone ? "0 2px" : 0 }}>
+        <span style={phone ? { fontSize: 20, fontWeight: 900 } : { fontSize: 14, fontWeight: 900, letterSpacing: 1, color: "#93c5fd" }}>{phone ? "Your offers" : "YOUR OFFERS"}</span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: lead === mine.length ? C.gn : "#fbbf24" }}>leading {lead} of {mine.length}</span>
+      </div>
+      <div style={phone ? { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" } : { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))", gap: "0 18px" }}>
+        {mine.map(({ p, me, rivals, top, st }, i) => {
+          const ahead = st === "lead", dd = Math.max(market.day, decideDay(p, market.yr));
+          return (
+            <button key={p.id} onClick={() => onRaise(p)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 70, textAlign: "left", background: "transparent", border: 0, borderTop: i && (phone || i > 1) ? "1px solid #ffffff10" : 0, padding: "8px 0", color: C.tx, cursor: "pointer", whiteSpace: "normal" }}>
+              <span style={{ width: 6, alignSelf: "stretch", borderRadius: 3, background: ahead ? C.gn : "#f59e0b", flexShrink: 0 }} />
+              <Face s={p.face} sz={phone ? 40 : 32} />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 800, fontSize: 16 }}><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><Bdg pos={posTag(p)} /><b style={{ color: oC(p.ovr), fontSize: 14 }}>{p.ovr}</b></span>
+                <span style={{ display: "block", fontSize: 13, color: "#cbd5e1", marginTop: 3 }}>You <b style={{ color: "#fff" }}>{money(me.sal)}</b> × {me.yrs}y · {top ? <>top rival <b style={{ color: top.sal > me.sal ? "#fca5a5" : "#fff" }}>{money(top.sal)}</b> × {top.yrs}y ({teams[top.team]?.ab}){rivals.length > 1 ? ` +${rivals.length - 1}` : ""}</> : "no other offers"}</span>
+                <span style={{ display: "block", fontSize: 12, color: C.mt, marginTop: 2 }}>{dd <= market.day ? "Decides today" : `Decides day ${dd}`} · asks {money(askingPrice(p))}</span>
+              </span>
+              <span style={{ textAlign: "right", flexShrink: 0 }}>
+                <b style={{ display: "block", fontSize: 14, color: ahead ? C.gn : "#fbbf24" }}>{ahead ? "Leading" : "Outbid"}</b>
+                {!ahead && <span style={{ fontSize: 12, fontWeight: 800, color: "#7dd3fc" }}>Raise ›</span>}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {!phone && <div style={{ fontSize: 12, color: C.mt, marginTop: 6 }}>Leading counts the whole offer (money, years, his role and fit), so less money can still lead. Click one to raise it.</div>}
+    </div>
+  );
+}
+
 // the defensive line is two positions here: edge rushers and interior tackles
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P"];
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
@@ -84,6 +126,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
         </div>
       )}
       {sheets}
+      <YourOffers fa={fa} market={market} teams={teams} ui={ui} onRaise={setOffer} />
       <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12 }}>
         {MOBILE ? (
           <>
@@ -194,6 +237,7 @@ function PhoneFA({ fa, rows, n, setN, pos, setPos, needs, q, setQ, find, setFind
         {market && market.day < FA_DAYS && <button onClick={onNextDay} style={{ marginTop: 16, width: "100%", minHeight: 48, borderRadius: 14, border: 0, background: "#ffffff1f", color: "#fff", fontSize: 16, fontWeight: 900, cursor: "pointer" }}>Next day ›</button>}
       </Hero>
       {sheets}
+      <YourOffers phone fa={fa} market={market} teams={teams} ui={ui} onRaise={setOffer} />
 
       {fits.length > 0 && (
         <Section title="Best fits for you">
