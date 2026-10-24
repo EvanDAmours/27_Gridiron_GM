@@ -3,7 +3,7 @@
 import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { naturalDL, posTag } from "./dline.js";
-import { C, oC, Bdg, Face } from "./ui.jsx";
+import { C, oC, Bdg, Face, Segments, Sheet, Row } from "./ui.jsx";
 import { InjTag } from "./InjuryTag.jsx";
 import { DevChip } from "./ScoutingUI.jsx";
 import { MOBILE } from "./mobile.js";
@@ -60,6 +60,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
   const [q, setQ] = useState("");
   const [sort, setSort] = useState(["pos", 1]);
   const [pick, setPick] = useState(null);
+  const [find, setFind] = useState(false), [sortOpen, setSortOpen] = useState(false);
   const slot = (p) => depth?.[p.id];
   const depthNum = (p) => { const l = slot(p)?.label || ""; const m = l.match(/(\d+)$/); return m ? +m[1] : 99; };
   const key = {
@@ -79,6 +80,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
   const td = { padding: "2px 6px", borderBottom: `1px solid ${C.bd}44`, textAlign: "center", fontSize: 13.5, height: 26 };
   const picked = rows.find((p) => p.id === pick) || rows[0] || null;
   let lastPos = null;
+  if (MOBILE) return <PhoneRoster {...{ rows, slot, sort, setSort, filter, setFilter, q, setQ, find, setFind, sortOpen, setSortOpen, setSel, focus, mine, wk }} />;
   return (
     <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12 }}>
       <style>{"@media (max-width: 640px) { .ro-hide { display: none } }"}</style>
@@ -89,39 +91,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
         </Select>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search roster" style={{ ...sel, flex: "1 1 160px" }} />
       </div>
-      {mine && <div style={{ fontSize: 12, color: C.mt, margin: "-4px 0 8px" }}>🔬 development focus · ✍️ contract year · 📝 extended · ~ unproven rookie · 🔁 trade request · 🚫 suspended</div>}
-      {MOBILE && (
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-          <span style={{ fontSize: 13, color: C.mt }}>Sort</span>
-          <Select value={sort[0]} onChange={(e) => setSort([e.target.value, ["pos", "name"].includes(e.target.value) ? 1 : -1])} aria-label="Sort roster" style={{ ...sel, flex: 1, minHeight: 44 }}>
-            {[["pos", "Position & depth"], ["ovr", "Overall"], ["pot", "Potential"], ["age", "Age"], ["sal", "Salary"], ["name", "Name"]].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-          </Select>
-        </div>
-      )}
-      {MOBILE ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {rows.map((p) => {
-            const s = slot(p);
-            return (
-              <button key={p.id} onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 10, textAlign: "left", background: C.bg, border: `1px solid ${C.bd}`, borderLeft: `3px solid ${s?.starter ? C.gn : C.bd}`, borderRadius: 8, padding: "5px 9px", minHeight: 46, color: C.tx, cursor: "pointer" }}>
-                <Face s={p.face} sz={28} />
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontWeight: 800, fontSize: 15, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}<Badges p={p} focus={focus} mine={mine} /></span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}>
-                    <Bdg pos={posTag(p)} /><span style={{ color: s?.starter ? C.gn : "#94a3b8", fontWeight: 700 }}>{s?.label || "—"}</span><span>Age {p.age}</span><span>${(p.salary || 0).toFixed(1)}M · {p.contract}y</span>
-                    <InjTag p={p} wk={wk} />{p.holdout && <span style={{ color: C.gd, fontWeight: 800 }}>Holdout</span>}
-                  </span>
-                </span>
-                <span style={{ textAlign: "right" }}>
-                  <span style={{ display: "block", fontSize: 22, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</span>
-                  <span style={{ fontSize: 11, color: C.mt }}>POT {p.potRev && p.potRev.stage < 3 ? "~" : ""}{p.pot || p.ovr}</span>
-                </span>
-              </button>
-            );
-          })}
-          {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 15 }}>Nobody matches.</div>}
-        </div>
-      ) : (
+      {mine && !MOBILE && <div style={{ fontSize: 12, color: C.mt, margin: "-4px 0 8px" }}>🔬 development focus · ✍️ contract year · 📝 extended · ~ unproven rookie · 🔁 trade request · 🚫 suspended</div>}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 12, alignItems: "start" }}>
       <div style={{ maxHeight: "calc(var(--vh, 100vh) - 260px)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -165,7 +135,45 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
       </div>
       <SideCard p={picked} slot={picked && slot(picked)} dev={picked && devOf(picked)} onOpen={() => picked && setSel(picked)} />
       </div>
-      )}
+    </div>
+  );
+}
+
+// Phones: one line a player (position, name, his depth slot, overall), grouped by position. A tap
+// opens his card, where the age, contract and potential live. One switch for the side of the ball;
+// search and sort tuck behind two small buttons.
+const SORTS = [["pos", "Depth chart"], ["ovr", "Overall"], ["pot", "Potential"], ["age", "Age"], ["sal", "Salary"], ["name", "Name"]];
+function PhoneRoster({ rows, slot, sort, setSort, filter, setFilter, q, setQ, find, setFind, sortOpen, setSortOpen, setSel, focus, mine, wk }) {
+  const icon = { width: 44, height: 44, borderRadius: 10, border: 0, background: "#ffffff0f", color: "#cbd5e1", fontSize: 18, cursor: "pointer", flexShrink: 0 };
+  let last = null;
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+        <div style={{ flex: 1, minWidth: 0 }}><Segments items={[["ALL", "All"], ["OFF", "Offense"], ["DEF", "Defense"], ["ST", "Special"]]} value={GROUPS[filter] !== undefined ? filter : "ALL"} onChange={setFilter} /></div>
+        <button onClick={() => setFind((v) => !v)} aria-label="Search the roster" style={{ ...icon, background: find || q ? `${C.bl}33` : icon.background }}>⌕</button>
+        <button onClick={() => setSortOpen(true)} aria-label="Sort the roster" style={{ ...icon, background: sort[0] !== "pos" ? `${C.bl}33` : icon.background }}>⇅</button>
+      </div>
+      {(find || q) && <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search roster" style={{ ...sel, width: "100%", boxSizing: "border-box", marginBottom: 10 }} />}
+      <div style={{ background: C.cd, borderRadius: 14, padding: "0 12px" }}>
+        {rows.map((p) => {
+          const s = slot(p);
+          const head = sort[0] === "pos" && p.pos !== last;
+          last = p.pos;
+          return (
+            <React.Fragment key={p.id}>
+              {head && <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: "#94a3b8", padding: "14px 2px 4px" }}>{(POS_NAME[p.pos] || p.pos).toUpperCase()}</div>}
+              <button onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 50, textAlign: "left", background: "transparent", border: 0, borderTop: head ? 0 : "1px solid #ffffff10", padding: "0 2px", color: C.tx, cursor: "pointer" }}>
+                <span style={{ width: 38, flexShrink: 0 }}><Bdg pos={posTag(p)} /></span>
+                <span style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: 16, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}<Badges p={p} focus={focus} mine={mine} /><InjTag p={p} wk={wk} />{p.holdout && <span style={{ marginLeft: 6, fontSize: 12, color: C.gd, fontWeight: 800 }}>Holdout</span>}</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: s?.starter ? C.gn : "#64748b", whiteSpace: "nowrap" }}>{sort[0] === "age" ? `Age ${p.age}` : sort[0] === "sal" ? `$${(p.salary || 0).toFixed(1)}M` : sort[0] === "pot" ? `POT ${p.pot || p.ovr}` : s?.label || ""}</span>
+                <b style={{ fontSize: 20, width: 32, textAlign: "right", color: oC(p.ovr), fontVariantNumeric: "tabular-nums" }}>{p.ovr}</b>
+              </button>
+            </React.Fragment>
+          );
+        })}
+        {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 15 }}>Nobody matches.</div>}
+      </div>
+      {sortOpen && <Sheet title="Sort by" onClose={() => setSortOpen(false)}>{SORTS.map(([k, l], i) => <Row key={k} first={i === 0} label={l} value={sort[0] === k ? "✓" : ""} tone={C.gn} onClick={() => { setSort([k, ["pos", "name"].includes(k) ? 1 : -1]); setSortOpen(false); }} />)}<div style={{ height: 8 }} /></Sheet>}
     </div>
   );
 }
