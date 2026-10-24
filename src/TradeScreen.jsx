@@ -2,7 +2,8 @@
 // picks on two big roster tables, and the summary tells you plainly whether they'd take it.
 import Select from "./Select.jsx";
 import React, { useState } from "react";
-import { C, oC, Bdg, Btn, Face, TeamLogo } from "./ui.jsx";
+import { C, oC, Bdg, Btn, Face, TeamLogo, Hero, Section, Chips, Segments } from "./ui.jsx";
+import RoleTag from "./RoleTag.jsx";
 import { deadMoney, proration, yearsLeft } from "./bonus.js";
 import { getCapPhase } from "./cap.js";
 
@@ -137,6 +138,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
   const draftPicks = [...thisDraft, ...futurePicks];
   const [view, setView] = useState("teams");
   const [bpos, setBpos] = useState("QB");
+  const [side, setSide] = useState("them"), [tpos, setTpos] = useState("NEEDS"); // phones
   const them = trTm != null ? teams[trTm] : null;
   const withAb = (pk) => ({ ...pk, origAb: teams[pk.orig]?.ab });
   const flip = (key, x) => setTrOff((o) => ({ ...o, [key]: o[key].some((y) => y.id === x.id) ? o[key].filter((y) => y.id !== x.id) : [...o[key], x] }));
@@ -185,6 +187,83 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
   // Left of centre: short of what they ask. Right: comfortably over it.
   const meter = Math.max(-1, Math.min(1, (ev.gv - ev.ask) / Math.max(40, ev.ask)));
 
+  if (MOBILE) {
+    const open = (t, p) => { setTrTm(t.id); setTrOff({ g: [], r: p ? [p] : [], gPk: [], rPk: [] }); setSide("them"); };
+    if (!them) {
+      const needs = topNeeds(me.roster, 3);
+      const targets = teams.filter((t) => t.id !== ui).flatMap((t) => t.roster.filter((p) => !p.injured && (tpos === "NEEDS" ? needs.includes(needGroup(p)) : posTag(p) === tpos)).map((p) => ({ p, t }))).sort((a, b) => b.p.ovr - a.p.ovr || a.p.age - b.p.age).slice(0, 8);
+      return (
+        <div>
+          <Hero clr={me.clr} eyebrow="Trades" title="Make a deal" sub={`${money(capSpace(me))} in cap space`} />
+          <Section title="Targets">
+            <Chips items={[["NEEDS", "Your needs"], ...POS.map((x) => [x, x])]} value={tpos} onChange={setTpos} />
+            <div className="pill-row" style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", margin: "12px -8px 0", padding: "0 8px 4px", scrollPaddingLeft: 8 }}>
+              {targets.map(({ p, t }) => (
+                <button key={p.id} onClick={() => open(t, p)} style={{ flex: "0 0 70%", minWidth: 0, scrollSnapAlign: "start", background: "#ffffff0f", border: 0, borderRadius: 18, padding: 16, textAlign: "left", color: "#fff", cursor: "pointer", whiteSpace: "normal" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <Face s={p.face} sz={50} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 17, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#94a3b8", marginTop: 2 }}><TeamLogo t={t} sz={18} />{t.ab} · Age {p.age}</div>
+                    </div>
+                    <b style={{ fontSize: 30, color: oC(p.ovr) }}>{p.ovr}</b>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span style={{ marginLeft: "auto", fontSize: 14, fontWeight: 800, color: "#cbd5e1" }}>{money(p.salary)} · {yrsLeft(p)}y</span></div>
+                </button>
+              ))}
+              {!targets.length && <div style={{ color: C.mt, fontSize: 15, padding: "8px 2px" }}>Nobody to show.</div>}
+            </div>
+          </Section>
+          <Section title="Pick a team">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+              {teams.filter((t) => t.id !== ui).sort((a, b) => a.city.localeCompare(b.city)).map((t) => { const m = modes?.[t.id]; return (
+                <button key={t.id} onClick={() => open(t)} aria-label={`Trade with the ${t.city} ${t.name}`} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "12px 0 10px", background: "#ffffff0f", border: 0, borderRadius: 16, color: "#e2e8f0", cursor: "pointer" }}>
+                  <TeamLogo t={t} sz={40} /><b style={{ fontSize: 13 }}>{t.ab}</b>
+                  {m && <span title={m === "buyer" ? "Buying" : "Selling"} style={{ position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: 4, background: m === "buyer" ? C.gn : C.gd }} />}
+                </button>
+              ); })}
+            </div>
+            <div style={{ display: "flex", gap: 16, justifyContent: "center", fontSize: 13, color: C.mt, marginTop: 10 }}><span><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 4, background: C.gn, marginRight: 6 }} />Buying</span><span><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 4, background: C.gd, marginRight: 6 }} />Selling</span></div>
+          </Section>
+        </div>
+      );
+    }
+    const pill = (x, key, label, clr) => <button key={x.id} onClick={() => flip(key, x)} style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", minHeight: 36, background: "transparent", border: 0, padding: 0, color: "#fff", fontSize: 14, cursor: "pointer", textAlign: "left" }}><span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span><span style={{ color: clr, fontSize: 14 }}>✕</span></button>;
+    const list = (ps, pks, key, pkKey, clr, empty) => <>{ps.map((p) => pill(p, key, <><b>{p.name.split(" ").slice(-1)[0]}</b> <span style={{ color: oC(p.ovr) }}>{p.ovr}</span></>, clr))}{pks.map((pk) => pill(pk, pkKey, <b>{pkLabel(pk)}</b>, clr))}{!ps.length && !pks.length && <div style={{ fontSize: 14, color: C.mt, padding: "6px 0" }}>{empty}</div>}</>;
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0 14px" }}>
+          <button onClick={() => pick(null)} aria-label="All teams" style={{ width: 40, height: 40, borderRadius: 20, border: 0, background: "#ffffff0f", color: "#fff", fontSize: 22, cursor: "pointer" }}>‹</button>
+          <TeamLogo t={them} sz={36} />
+          <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 20, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{them.name}</div><div style={{ fontSize: 13, color: C.mt }}>{them.w}-{them.l}{modes?.[them.id] ? ` · ${modes[them.id] === "buyer" ? "buying" : "selling"}` : ""}</div></div>
+        </div>
+        <Segments items={[["them", `${them.ab} players`], ["me", "Your players"]]} value={side} onChange={setSide} />
+        {side === "them"
+          ? <PhoneSide key="them" team={them} players={them.roster} picks={draftPicks.filter((pk) => pk.owner === trTm).map(withAb)} chosen={trOff.r} chosenPk={trOff.rPk} toggle={(p) => flip("r", p)} togglePk={(pk) => flip("rPk", pk)} pickVal={pickVal} color={C.gn} />
+          : <PhoneSide key="me" team={me} players={me.roster} picks={draftPicks.filter((pk) => pk.owner === ui).map(withAb)} chosen={trOff.g} chosenPk={trOff.gPk} toggle={(p) => flip("g", p)} togglePk={(pk) => flip("gPk", pk)} pickVal={pickVal} color={C.rd} />}
+        <div style={{ height: 150 }} />
+        {/* the deal, pinned by your thumb while you browse the rosters */}
+        <div className="keep-dark" style={{ position: "fixed", left: 0, right: 0, bottom: "calc(58px + env(safe-area-inset-bottom))", zIndex: 396, background: "#0d1424", borderTop: "1px solid #ffffff14", padding: "12px 14px 10px", boxShadow: "0 -10px 30px #0008" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ minWidth: 0 }}><div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: "#fca5a5" }}>YOU SEND</div>{list(trOff.g, trOff.gPk, "g", "gPk", "#fca5a5", "Tap your players")}</div>
+            <div style={{ minWidth: 0 }}><div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: "#86efac" }}>YOU GET</div>{list(trOff.r, trOff.rPk, "r", "rPk", "#86efac", "Tap their players")}</div>
+          </div>
+          {any && <div style={{ position: "relative", height: 6, background: "#ffffff14", borderRadius: 3, margin: "8px 0 0" }}>
+            <div style={{ position: "absolute", left: "50%", top: -3, bottom: -3, width: 2, background: "#94a3b8" }} />
+            <div style={{ position: "absolute", top: 0, bottom: 0, borderRadius: 3, background: meter >= 0 ? C.gn : C.rd, left: meter >= 0 ? "50%" : `${50 + meter * 50}%`, width: `${Math.abs(meter) * 50}%` }} />
+          </div>}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 900, color: verdict ? verdict[1] : C.mt, lineHeight: 1.25 }}>{verdict ? verdict[0] : "Build a deal"}</div>
+              {any && !accept && <button onClick={balance} style={{ background: "transparent", border: 0, padding: 0, marginTop: 2, color: "#7dd3fc", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>What would make this work?</button>}
+              {any && accept && <div style={{ fontSize: 12, color: C.mt, marginTop: 2 }}>Cap after: {money(capAfter)}</div>}
+            </div>
+            <button onClick={execTr} disabled={!accept || closed} style={{ minHeight: 48, padding: "0 20px", borderRadius: 14, border: 0, background: accept && !closed ? C.gn : "#ffffff14", color: accept && !closed ? "#fff" : "#64748b", fontSize: 16, fontWeight: 900, cursor: accept && !closed ? "pointer" : "default", whiteSpace: "nowrap" }}>{closed ? "Closed" : "Propose"}</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div>
       <style>{"@media (max-width: 640px) { .tr-hide { display: none } }"}</style>
@@ -286,6 +365,44 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
           );
         })()}
       </>)}
+    </div>
+  );
+}
+
+// Phones: one roster at a time as clean rows; a tap adds him to the deal (or takes him off). Picks
+// come last.
+function PhoneSide({ team, players, picks, chosen, chosenPk, toggle, togglePk, pickVal, color }) {
+  const [pos, setPos] = useState("ALL");
+  const rows = [...(players || [])].filter((p) => pos === "ALL" || posTag(p) === pos).sort((a, b) => b.ovr - a.ovr);
+  const tick = (on) => <span style={{ width: 24, height: 24, borderRadius: 12, flexShrink: 0, border: on ? 0 : "2px solid #475569", background: on ? color : "transparent", color: "#fff", fontSize: 14, fontWeight: 900, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{on ? "✓" : ""}</span>;
+  return (
+    <div>
+      <Chips items={[["ALL", "All"], ...POS.map((x) => [x, x])]} value={pos} onChange={setPos} />
+      <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px", marginTop: 10 }}>
+        {rows.map((p, i) => { const on = chosen.some((x) => x.id === p.id); return (
+          <button key={p.id} onClick={() => toggle(p)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 62, textAlign: "left", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "8px 0", color: C.tx, cursor: "pointer", whiteSpace: "normal" }}>
+            {tick(on)}
+            <Face s={p.face} sz={36} />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontWeight: 800, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#f1f5f9" }}>{p.name}{p.injured && <span style={{ color: C.rd, marginLeft: 6 }}>+</span>}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, fontSize: 12, color: "#94a3b8" }}><Bdg pos={posTag(p)} /><RoleTag p={p} />{money(p.salary)} · {yrsLeft(p)}y</span>
+            </span>
+            <b style={{ fontSize: 22, color: oC(p.ovr) }}>{p.ovr}</b>
+          </button>
+        ); })}
+        {!rows.length && <div style={{ padding: "16px 0", color: C.mt, fontSize: 15 }}>Nobody here.</div>}
+      </div>
+      {pos === "ALL" && picks.length > 0 && <>
+        <div style={{ fontSize: 20, fontWeight: 900, margin: "22px 2px 10px" }}>Draft picks</div>
+        <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px" }}>
+          {picks.map((pk, i) => { const on = chosenPk.some((x) => x.id === pk.id); return (
+            <button key={pk.id} onClick={() => togglePk(pk)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 54, textAlign: "left", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, color: C.tx, cursor: "pointer" }}>
+              {tick(on)}
+              <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 800 }}>{pk.yr || ""} Round {pk.rd}{pk.overall ? ` · #${pk.overall}` : ""}{pk.orig !== team.id && <span style={{ color: C.mt, fontWeight: 600, fontSize: 13 }}> via {pk.origAb}</span>}</span>
+            </button>
+          ); })}
+        </div>
+      </>}
     </div>
   );
 }
