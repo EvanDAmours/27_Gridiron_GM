@@ -43,6 +43,43 @@ export function Segments({ items, value, onChange }) {
     </div>
   );
 }
+// The phone look (Home's): a full-width hero in the club's colors with one big headline, then big
+// section titles over soft cards. Hero: eyebrow, title, a line under it, an optional right side and
+// anything below (a button). Section: a title with an optional link on the right.
+export function Hero({ clr = "#1e3a8a", eyebrow, title, sub, right, children }) {
+  return (
+    <div className="keep-dark" style={{ margin: "-6px -8px 0", padding: "22px 16px 20px", color: "#fff", background: `linear-gradient(180deg, transparent 45%, ${C.bg} 100%), radial-gradient(120% 100% at 0% 0%, ${clr}cc, ${clr}22 70%)` }}>
+      {eyebrow && <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.6, textTransform: "uppercase", color: "#ffffffb3" }}>{eyebrow}</div>}
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginTop: 4 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.05 }}>{title}</div>
+          {sub && <div style={{ fontSize: 15, color: "#ffffffb3", marginTop: 6 }}>{sub}</div>}
+        </div>
+        {right}
+      </div>
+      {children}
+    </div>
+  );
+}
+export function Section({ title, action, onAction, children, style }) {
+  return (
+    <div style={{ marginTop: 26, ...(style || {}) }}>
+      <div style={{ display: "flex", alignItems: "baseline", marginBottom: 10, padding: "0 2px" }}>
+        <span style={{ fontSize: 20, fontWeight: 900 }}>{title}</span>
+        {action && <button onClick={onAction} style={{ marginLeft: "auto", background: "transparent", border: 0, color: "#7dd3fc", fontSize: 15, fontWeight: 700, cursor: "pointer", padding: "6px 0" }}>{action}</button>}
+      </div>
+      {children}
+    </div>
+  );
+}
+// a strip of choices you swipe sideways (positions, filters): one is on
+export function Chips({ items, value, onChange }) {
+  return (
+    <div className="pill-row" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 -8px", padding: "0 8px 2px", scrollbarWidth: "none" }}>
+      {items.map(([k, l]) => <button key={k} onClick={() => onChange(k)} style={{ flexShrink: 0, minHeight: 38, borderRadius: 999, border: 0, padding: "0 16px", background: value === k ? "#fff" : "#ffffff12", color: value === k ? "#0b1220" : "#cbd5e1", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
+    </div>
+  );
+}
 export const C={bg:"#080c14",cd:"#111827",bd:"#1e293b",tx:"#e0e6f0",mt:"#64748b",gn:"#22c55e",bl:"#3b82f6",gd:"#eab308",rd:"#ef4444",f:"'Segoe UI',system-ui,sans-serif"};
 export const oC=o=>o>=80?"#22c55e":o>=68?"#84cc16":o>=55?"#eab308":o>=42?"#f97316":"#ef4444";
 export const pC=p=>({QB:"#e74c3c",RB:"#3498db",WR:"#f39c12",TE:"#9b59b6",LT:"#1abc9c",LG:"#17a589",C:"#0e8c73",RG:"#17a589",RT:"#1abc9c",DL:"#e67e22",EDGE:"#d35400",DT:"#e67e22",LB:"#2ecc71",CB:"#e91e63",S:"#00bcd4",K:"#795548",P:"#8d6e63"}[p]||"#999");
