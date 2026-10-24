@@ -4,7 +4,7 @@ import { fillsNeed } from "./needs.js";
 import Select from "./Select.jsx";
 import { MOBILE } from "./mobile.js";
 import React, { useState } from "react";
-import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
+import { C, oC, Bdg, Btn, Face, Sheet } from "./ui.jsx";
 import { yearlyAsk, maxYears } from "./negotiation.js";
 // what the negotiation table opens at: his ask for the default length (two years, or one for a 33+ veteran)
 const askingPrice = (p) => yearlyAsk(p, Math.min(2, maxYears(p)), "fa");
@@ -64,6 +64,8 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
     </th>
   );
   const td = { padding: "9px 6px", borderBottom: `1px solid ${C.bd}55`, textAlign: "center", fontSize: 15 };
+  const negotiate = () => (<Negotiate note={market && offer.ovr >= MARKET_MIN ? (() => { const o = bidsFor(market, offer.id).filter((b) => b.team !== ui).length, dd = Math.max(market.day, decideDay(offer, market.yr)); const st = standing(offer, market, teams, ui); return `📋 ${o ? `${o} club${o > 1 ? "s have" : " has"} made him an offer.` : "No offers yet."}${st === "lead" ? " Your offer is the best one for him right now." : st === "behind" ? " Another club's offer is better for him right now." : ""} He decides ${dd <= market.day ? "at the end of today" : `on day ${dd}`}. He takes the best offer for him: more money, or a club with what he wants. Only a big overpay (20%+ over his ask) signs him on the spot.`; })() : null} team={team} cy={cy} p={offer} mode="fa" cap={cap + (bidsFor(market, offer.id).find((b) => b.team === ui)?.sal || 0)} t={termsFor(offer, "fa")} talk={talkFor(offer)} onResult={(r, o) => onTalk(offer, "fa", r, o)} onClose={() => setOffer(null)} rivalName={(id) => teams[id] && `${teams[id].city} ${teams[id].name}`} />);
+  if (MOBILE) return <PhoneFA {...{ fa, rows, n, setN, pos, setPos, needOnly, setNeedOnly, needs, q, setQ, find, setFind, sort, setSort, cap, out, nOut, open, market, onNextDay, sheets, extras, teams, ui, talkFor, setSel, offer, setOffer }} negotiate={offer && negotiate()} />;
   return (
     <div>
       <style>{"@media (max-width: 640px) { .fa-hide { display: none } }"}</style>
@@ -165,7 +167,79 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
         {rows.length > n && <div style={{ textAlign: "center", marginTop: 10 }}><Btn onClick={() => setN(n + 50)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 14, padding: "6px 14px" }}>Show more ({rows.length - n} left)</Btn></div>}
       </div>
       {extras}
-      {offer && <Negotiate note={market && offer.ovr >= MARKET_MIN ? (() => { const o = bidsFor(market, offer.id).filter((b) => b.team !== ui).length, dd = Math.max(market.day, decideDay(offer, market.yr)); const st = standing(offer, market, teams, ui); return `📋 ${o ? `${o} club${o > 1 ? "s have" : " has"} made him an offer.` : "No offers yet."}${st === "lead" ? " Your offer is the best one for him right now." : st === "behind" ? " Another club's offer is better for him right now." : ""} He decides ${dd <= market.day ? "at the end of today" : `on day ${dd}`}. He takes the best offer for him: more money, or a club with what he wants. Only a big overpay (20%+ over his ask) signs him on the spot.`; })() : null} team={team} cy={cy} p={offer} mode="fa" cap={cap + (bidsFor(market, offer.id).find((b) => b.team === ui)?.sal || 0)} t={termsFor(offer, "fa")} talk={talkFor(offer)} onResult={(r, o) => onTalk(offer, "fa", r, o)} onClose={() => setOffer(null)} rivalName={(id) => teams[id] && `${teams[id].city} ${teams[id].name}`} />}
+      {offer && negotiate()}
+    </div>
+  );
+}
+
+// Phones: one line a free agent (position, name, his ask or where your offer stands, overall). A tap
+// opens him in a sheet with one big button: make an offer.
+const FA_SORTS = [["ovr", "Overall"], ["ask", "Price"], ["age", "Age"], ["pos", "Position"], ["name", "Name"]];
+function PhoneFA({ fa, rows, n, setN, pos, setPos, needOnly, setNeedOnly, needs, q, setQ, find, setFind, sort, setSort, cap, out, nOut, open, market, onNextDay, sheets, extras, teams, ui, talkFor, setSel, offer, setOffer, negotiate }) {
+  const [pick, setPick] = useState(null), [sortOpen, setSortOpen] = useState(false);
+  const icon = { height: 44, borderRadius: 10, border: 0, background: "#ffffff0f", color: "#cbd5e1", fontSize: 16, fontWeight: 700, cursor: "pointer", flexShrink: 0, padding: "0 12px" };
+  const pk = pick && fa.find((p) => p.id === pick);
+  const mineOf = (p) => market && p.ovr >= MARKET_MIN && bidsFor(market, p.id).find((b) => b.team === ui);
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 4 }}>
+        <span style={{ fontSize: 24, fontWeight: 900 }}>Free Agency</span>
+        <span style={{ marginLeft: "auto", fontSize: 14, color: C.mt }}>{fa.length} available</span>
+      </div>
+      {out > 0 && <div style={{ fontSize: 14, color: "#93c5fd", marginBottom: 4 }}>{money(out)} held in {nOut} open offer{nOut > 1 ? "s" : ""} · {money(cap)} left</div>}
+      {!open && <div style={{ fontSize: 14, color: "#fde68a", marginBottom: 8 }}>The main market opens after the Combine.</div>}
+      {market && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, background: `${C.bl}1f`, borderRadius: 14, padding: "10px 12px", margin: "8px 0" }}>
+          <span style={{ flex: 1, fontSize: 17, fontWeight: 900 }}>Day {market.day} of {FA_DAYS}</span>
+          {market.day < FA_DAYS ? <Btn onClick={onNextDay} bg={C.bl} style={{ fontSize: 15, minHeight: 44, padding: "0 18px", fontWeight: 900, borderRadius: 10 }}>Next day</Btn> : <span style={{ fontSize: 13, color: "#fde68a", fontWeight: 700 }}>Last day</span>}
+        </div>
+      )}
+      {sheets}
+      <div style={{ display: "flex", gap: 8, margin: "8px 0" }}>
+        <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(50); }} aria-label="Position" style={{ ...sel, flex: "1 1 0", minWidth: 0, minHeight: 44, borderRadius: 10 }}>
+          {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? "All positions" : x}</option>)}
+        </Select>
+        <button onClick={() => setNeedOnly((v) => !v)} aria-pressed={needOnly} style={{ ...icon, background: needOnly ? `${C.bl}33` : icon.background, color: needOnly ? "#fff" : icon.color }}>Needs</button>
+        <button onClick={() => { setFind((v) => !v); if (find) setQ(""); }} aria-label="Search by name" style={{ ...icon, fontSize: 18, background: find || q ? `${C.bl}33` : icon.background }}>⌕</button>
+        <button onClick={() => setSortOpen(true)} aria-label="Sort free agents" style={{ ...icon, fontSize: 18, background: sort[0] !== "ovr" ? `${C.bl}33` : icon.background }}>⇅</button>
+      </div>
+      {find && <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search free agents" style={{ ...sel, width: "100%", boxSizing: "border-box", marginBottom: 8, borderRadius: 10 }} />}
+      <div style={{ background: C.cd, borderRadius: 14, padding: "0 12px" }}>
+        {rows.slice(0, n).map((p, i) => {
+          const ask = askingPrice(p), mine = mineOf(p), walked = talkFor(p).walked;
+          const st = mine ? standing(p, market, teams, ui) : null;
+          return (
+            <button key={p.id} onClick={() => setPick(p.id)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 52, textAlign: "left", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "0 2px", color: C.tx, cursor: "pointer", opacity: walked ? 0.5 : 1 }}>
+              <span style={{ width: 42, flexShrink: 0 }}><Bdg pos={posTag(p)} /></span>
+              <span style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: p.formerTeam === ui ? C.gn : "#f1f5f9" }}>{p.name}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", color: mine ? (st === "lead" ? C.gn : "#fbbf24") : walked ? C.rd : ask <= cap ? "#94a3b8" : C.rd }}>{mine ? (st === "lead" ? "Leading" : "Outbid") : walked ? "Not interested" : `${money(ask)}`}</span>
+              <b style={{ fontSize: 20, width: 32, textAlign: "right", color: oC(p.ovr) }}>{p.ovr}</b>
+            </button>
+          );
+        })}
+        {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 15 }}>Nobody matches.</div>}
+      </div>
+      {rows.length > n && <div style={{ textAlign: "center", marginTop: 10 }}><Btn onClick={() => setN(n + 50)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 15, minHeight: 44, padding: "0 18px", borderRadius: 10 }}>Show more</Btn></div>}
+      {extras}
+      {pk && !offer && (
+        <Sheet title={pk.name} onClose={() => setPick(null)}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <Face s={pk.face} sz={56} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}><Bdg pos={posTag(pk)} /><RoleTag p={pk} /><DevTag p={pk} /></div>
+              <div style={{ fontSize: 14, color: "#94a3b8", marginTop: 4 }}>Age {pk.age}{pk.formerTeam != null && teams[pk.formerTeam] ? ` · last with ${pk.formerTeam === ui ? "you" : teams[pk.formerTeam].ab}` : ""}</div>
+            </div>
+            <b style={{ fontSize: 34, color: oC(pk.ovr) }}>{pk.ovr}</b>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", minHeight: 48, padding: "0 4px", fontSize: 16 }}><b>Asking</b><span style={{ marginLeft: "auto", color: askingPrice(pk) <= cap ? "#e2e8f0" : C.rd }}>{money(askingPrice(pk))} a year</span></div>
+          {market && pk.ovr >= MARKET_MIN && <div style={{ padding: "10px 4px", borderTop: "1px solid #ffffff14" }}><MarketTag p={pk} market={market} ui={ui} teams={teams} /></div>}
+          {talkFor(pk).walked ? <div style={{ fontSize: 15, color: C.rd, fontWeight: 700, textAlign: "center", padding: "12px 0" }}>He isn't interested in your club.</div>
+            : <button onClick={() => { setOffer(pk); setPick(null); }} style={{ width: "100%", minHeight: 52, marginTop: 12, borderRadius: 14, border: 0, background: C.gn, color: "#fff", fontSize: 17, fontWeight: 900, cursor: "pointer" }}>Make an offer</button>}
+          <button onClick={() => { setSel(pk); setPick(null); }} style={{ width: "100%", minHeight: 48, marginTop: 8, borderRadius: 14, border: 0, background: "#ffffff0f", color: "#e2e8f0", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>Player card</button>
+          <div style={{ height: 8 }} />
+        </Sheet>
+      )}
+      {negotiate}
     </div>
   );
 }
