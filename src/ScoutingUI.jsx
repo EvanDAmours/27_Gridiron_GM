@@ -142,6 +142,9 @@ const tested = (p) => p.combPct !== undefined;
 
 export function ScoutButton({ g, p, read, small }) {
   const a = useActions(g);
+  // phones: points are scarce, so the first tap arms the button and the second spends
+  const [arm, setArm] = useState(false);
+  useEffect(() => { if (!arm) return; const t = setTimeout(() => setArm(false), 3000); return () => clearTimeout(t); }, [arm]);
   if (!canScoutClass(g, p.draftYear)) return null;
   const pts = g.scouting?.pts || 0;
   const cost = read.cost;
@@ -149,7 +152,7 @@ export function ScoutButton({ g, p, read, small }) {
   const label = !cost ? "✓" : small ? `${read.lvl === 0 ? "Scout" : "Workup"} ${cost}` : `${read.lvl === 0 ? "Scout" : "Workup"} (${cost})`;
   return (
     <span title={tip}>
-      <Btn onClick={(e) => { e?.stopPropagation?.(); a.scout(p); }} disabled={!cost || pts < cost} bg={cost ? `${C.bl}22` : "transparent"} c={cost ? C.bl : C.mt} style={small ? { padding: "4px 9px", fontSize: 13, minHeight: 36, whiteSpace: "nowrap" } : { padding: "6px 12px", fontSize: 14, whiteSpace: "nowrap" }}>{label}</Btn>
+      <Btn onClick={(e) => { e?.stopPropagation?.(); if (MOBILE && !arm) { setArm(true); return; } setArm(false); a.scout(p); }} disabled={!cost || pts < cost} bg={arm ? "#78350f55" : cost ? `${C.bl}22` : "transparent"} c={arm ? "#fde68a" : cost ? C.bl : C.mt} style={small ? { padding: "4px 9px", fontSize: 13, minHeight: MOBILE ? 40 : 36, minWidth: MOBILE ? 72 : undefined, whiteSpace: "nowrap", borderRadius: MOBILE ? 10 : undefined } : { padding: "6px 12px", fontSize: 14, whiteSpace: "nowrap" }}>{arm ? "Confirm" : label}</Btn>
     </span>
   );
 }
