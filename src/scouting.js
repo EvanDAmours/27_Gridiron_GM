@@ -817,9 +817,10 @@ export const COMBINE_TESTS = [
 const combineGroup = (pos) => (OL.has(pos) ? "OL" : pos);
 // Where a prospect's number ranks among the rest of his position group in the class (1 = best),
 // counting everyone who tested, at the Combine or his pro day: { rank, n } or null.
-export function combineRank(cls, p, t) {
+// res: which of his results to rank (his pro day, say); everyone else counts their best-known number.
+export function combineRank(cls, p, t, res) {
   const v = (x) => { const r = x.combine || x.proDay; return r && r[t.k] != null ? +r[t.k] : null; };
-  const mine = v(p);
+  const mine = res ? (res[t.k] != null ? +res[t.k] : null) : v(p);
   if (mine == null) return null;
   const g = combineGroup(p.pos);
   const vals = (cls || []).filter((x) => x.id !== p.id && combineGroup(x.pos) === g).map(v).filter((x) => x != null);

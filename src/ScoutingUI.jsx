@@ -1361,21 +1361,23 @@ export function ProspectProfile({ g, p }) {
           </>}
           {tab === "phys" && <>
             {tested(p) && (p.combine || p.proDay) ? <><div style={box}>
-          <div style={{ ...lab, color: C.gd, display: "flex", alignItems: "center", gap: 6 }}>{p.combine ? "NFL COMBINE" : "PRO DAY (not invited to the Combine)"}{p.combGrade && <GradeChip g={p.combGrade} small />}</div>
+          {[["NFL COMBINE", p.combine], [p.combine ? "PRO DAY" : "PRO DAY (not invited to the Combine)", p.proDay]].filter(([, r]) => r).map(([h, r], si) => <React.Fragment key={h}>
+          <div style={{ ...lab, color: C.gd, display: "flex", alignItems: "center", gap: 6, marginTop: si ? 10 : 0 }}>{h}{si === 0 && p.combGrade && <GradeChip g={p.combGrade} small />}</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 4 }}>
             {COMBINE_TESTS.map((t) => {
-              const v = (p.combine || p.proDay)[t.k];
-              const pct = p.combPcts?.[t.k];
+              const v = r[t.k];
+              const pct = r === (p.combine || p.proDay) ? p.combPcts?.[t.k] : null;
+              if (v == null) return null;
               return (
                 <div key={t.k} style={{ background: C.cd, borderRadius: 3, padding: "3px 4px", textAlign: "center" }}>
                   <div style={{ fontSize: 11, color: C.mt }}>{t.short.toUpperCase()}</div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: pct >= 0.9 ? C.gn : "#cbd5e1" }}>{(+v).toFixed(t.dp)}{t.unit === "s" ? "s" : t.unit === "in" ? '"' : ""}</div>
-                  {(() => { const rk = v != null && combineRank(g.dc?.[p.draftYear], p, t); return rk ? <div title={`Where he ranks among the ${rk.n} ${p.pos}s in the class who tested`} style={{ fontSize: 11, fontWeight: 800, color: rankColor(rk) }}>({rk.rank} of {rk.n})</div> : null; })()}
+                  {(() => { const rk = combineRank(g.dc?.[p.draftYear], p, t, r); return rk ? <div title={`Where he ranks among the ${rk.n} ${p.pos}s in the class who tested`} style={{ fontSize: 11, fontWeight: 800, color: rankColor(rk) }}>({rk.rank} of {rk.n})</div> : null; })()}
                   {pct != null && <div style={{ height: 3, background: C.bg, borderRadius: 2, marginTop: 2 }}><div style={{ width: `${Math.round(pct * 100)}%`, height: "100%", background: oC(40 + pct * 50), borderRadius: 2 }} /></div>}
                 </div>
               );
             })}
-          </div>
+          </div></React.Fragment>)}
           {p.combine && p.proDay && <div style={{ ...muted, fontSize: 10, marginTop: 3 }}>Bars show where he ranked among Combine invitees at his position.</div>}
           {s.intv ? (
             <div style={{ marginTop: 8, background: "#7c3aed14", border: "1px solid #7c3aed44", borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
@@ -1500,7 +1502,7 @@ function PhoneProspectPage({ g, p, onClose }) {
         </>}
         {tab === "tools" && <div style={soft}>{graded.map(tool)}{!keys.length && <div style={{ padding: "14px 0", color: C.mt }}>No tools graded.</div>}<div style={{ fontSize: 13, color: C.mt, padding: "10px 0" }}>{read.lvl > 0 ? "Graded at his projected NFL level." : "A scouting report grades every tool."}</div></div>}
         {tab === "testing" && (tested(p) && (p.combine || p.proDay)
-          ? <div style={soft}>{COMBINE_TESTS.map((t) => { const v = (p.combine || p.proDay)[t.k]; if (v == null) return null; const rk = combineRank(g.dc?.[p.draftYear], p, t); return kv(t.short, <>{(+v).toFixed(t.dp)}{t.unit === "s" ? "s" : t.unit === "in" ? '"' : ""}{rk && <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 800, color: rankColor(rk) }}>({rk.rank} of {rk.n})</span>}</>); })}<div style={{ fontSize: 13, color: C.mt, padding: "10px 0" }}>Ranked against every {p.pos} in the class who tested.</div>{s.intv?.verdict && kv("Interview", s.intv.verdict, { Impressive: C.gn, Solid: "#7dd3fc", Mixed: C.gd, Concerning: C.rd }[s.intv.verdict])}</div>
+          ? <>{[["NFL COMBINE", p.combine], ["PRO DAY", p.proDay]].filter(([, r]) => r).map(([h, r]) => <div key={h} style={{ marginBottom: 12 }}><div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", margin: "0 2px 8px" }}>{h}</div><div style={soft}>{COMBINE_TESTS.map((t) => { const v = r[t.k]; if (v == null) return null; const rk = combineRank(g.dc?.[p.draftYear], p, t, r); return kv(t.short, <>{(+v).toFixed(t.dp)}{t.unit === "s" ? "s" : t.unit === "in" ? '"' : ""}{rk && <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 800, color: rankColor(rk) }}>({rk.rank} of {rk.n})</span>}</>); })}</div></div>)}{s.intv?.verdict && <div style={soft}>{kv("Interview", s.intv.verdict, { Impressive: C.gn, Solid: "#7dd3fc", Mixed: C.gd, Concerning: C.rd }[s.intv.verdict])}</div>}<div style={{ fontSize: 13, color: C.mt, padding: "10px 2px" }}>Ranked against every {p.pos} in the class who tested.</div></>
           : <div style={{ ...soft, padding: "18px 14px", fontSize: 15, color: "#94a3b8" }}>Testing numbers come in at the Combine and his pro day.</div>)}
         {tab === "testing" && g.sp === "combine" && p.combine && p.draftYear === g.yr && !s.intv && <button onClick={() => a.interview(p)} disabled={!(g.scouting?.interviewsLeft > 0)} style={{ width: "100%", minHeight: 50, marginTop: 12, borderRadius: 14, border: 0, background: "#7c3aed33", color: "#ddd6fe", fontSize: 16, fontWeight: 900 }}>Interview him · {g.scouting?.interviewsLeft || 0} left</button>}
       </div>
