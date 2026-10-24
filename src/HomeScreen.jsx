@@ -31,7 +31,7 @@ export function teamRatings(t, depthOrder, snaps) {
 }
 
 // Phones: built as an app screen, not a shrunk desktop page. A full-bleed hero for the next game
-// in both clubs' colors (tap for the matchup), the week's to-dos as cards you swipe, shortcut
+// in both clubs' colors, the week's to-dos as cards you swipe, shortcut
 // tiles for everything else (each opens a bottom sheet), and the top story. The record and cap
 // room already sit in the app header; the week's big button is the action bar above the tab bar.
 const ORD = ["", "1st", "2nd", "3rd", "4th"];
@@ -54,7 +54,7 @@ const Icon = ({ k, c }) => (
 const clamp = (n) => ({ display: "-webkit-box", WebkitLineClamp: n, WebkitBoxOrient: "vertical", overflow: "hidden" });
 const eyebrow = { fontSize: 12, fontWeight: 900, letterSpacing: 1.6, textTransform: "uppercase", color: "#ffffffb3" };
 
-function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, forecast, menu, side, planCard, rest, stories, news, onStory, onNav, fa, capRoom, onFa, sched, h2h, rivalId, devFocus }) {
+function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, forecast, menu, side, planCard, rest, stories, news, onStory, onNav, fa, capRoom, onFa, sched, rivalId, devFocus }) {
   const [sheet, setSheet] = useState(null);
   const [panel, setPanel] = useState("stories");
   const close = () => setSheet(null);
@@ -82,11 +82,11 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
   }
   const nextGame = !game && sp === "regular" ? sched.find((g) => g.wk > wk + 1 && (g.h === ui || g.a === ui)) : null;
 
-  const Team = ({ t, r }) => (
+  const Team = ({ t }) => (
     <div style={{ minWidth: 0, textAlign: "center" }}>
       <div style={{ display: "inline-flex" }}><TeamLogo t={t} sz={84} glow /></div>
       <div style={{ fontSize: 19, fontWeight: 900, marginTop: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
-      <div style={{ fontSize: 14, color: "#ffffffb3", fontVariantNumeric: "tabular-nums" }}>{rec(t)}{r ? ` · ${r.ovr} OVR` : ""}</div>
+      <div style={{ fontSize: 14, color: "#ffffffb3" }}>{rec(t)}</div>
     </div>
   );
   const todos = menu.slice(0, 3);
@@ -96,7 +96,8 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
     plan && { k: "build", icon: "roster", c: plan.open ? C.gd : C.gn, label: "Build your 53", value: `${plan.count} of ${plan.target}` },
     { k: "hurt", icon: "hurt", c: hurt ? C.rd : C.gn, label: "Injuries", value: hurt ? `${hurt} out` : "All healthy" },
     side && { k: "dev", icon: "dev", c: "#38bdf8", label: "Development", value: focused === 2 ? "Both set" : focused ? "1 of 2 set" : "Not set", tour: "devfocus" },
-    { k: "table", icon: "table", c: "#94a3b8", label: "Standings", value: `${ORD[rank] || rank} in ${me.c} ${me.d}`, tour: "strip" },
+    // in season and at the combine Standings is already a tab in the bottom bar
+    sp !== "regular" && sp !== "combine" && { k: "table", icon: "table", c: "#94a3b8", label: "Standings", value: `${ORD[rank] || rank} in ${me.c} ${me.d}`, tour: "strip" },
   ].filter(Boolean);
   const tap = (k) => (k === "hurt" ? news2("injuries") : k === "table" ? onNav("standings") : setSheet(k));
   const lead = stories[0], leadT = lead && teams[lead.team];
@@ -112,23 +113,22 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
     <div className="keep-dark" style={{ margin: "-6px -8px calc(-150px - env(safe-area-inset-bottom))", paddingBottom: "calc(170px + env(safe-area-inset-bottom))", background: C.bg, color: "#fff", minHeight: "calc(var(--vh, 100vh) - 60px)" }}>
       {/* hero */}
       {game ? (
-        <button onClick={() => setSheet("matchup")} aria-label="Matchup details" style={{ display: "block", width: "100%", background: heroBg, border: 0, color: "#fff", padding: "22px 14px 18px", cursor: "pointer", textAlign: "center" }}>
+        <div style={{ background: heroBg, padding: "22px 14px 20px", textAlign: "center" }}>
           <div style={{ ...eyebrow, display: "flex", justifyContent: "center", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             {hero.tags.join("  ·  ")}{game.holiday && <HolidayBadge holiday={game.holiday} />}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6, marginTop: 18 }}>
-            <Team t={away} r={ra} />
+            <Team t={away} />
             <div style={{ padding: "0 4px", minWidth: 92 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: "#ffffffb3" }}>{hero.day || "Kickoff"}</div>
               <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.1, whiteSpace: "nowrap" }}>{hero.time}</div>
-              {forecast && <div style={{ fontSize: 13, color: "#ffffffcc", marginTop: 4, whiteSpace: "nowrap" }}>{forecast.icon} {forecast.label}</div>}
+              {forecast?.note && <div style={{ fontSize: 13, color: "#ffffffcc", marginTop: 4, whiteSpace: "nowrap" }}>{forecast.icon} {forecast.label}</div>}
               {hero.line && <div style={{ display: "inline-block", fontSize: 12, fontWeight: 800, color: "#fff", background: "#00000055", borderRadius: 999, padding: "3px 9px", marginTop: 8, whiteSpace: "nowrap" }}>{hero.line}</div>}
             </div>
-            <Team t={home} r={rh} />
+            <Team t={home} />
           </div>
           {hero.stake && <div style={{ fontSize: 15, fontWeight: 600, color: "#e2e8f0", margin: "18px auto 0", maxWidth: 340, lineHeight: 1.35 }}>{hero.stake}</div>}
-          <div style={{ fontSize: 14, fontWeight: 800, color: "#ffffffcc", marginTop: 12 }}>Matchup ›</div>
-        </button>
+        </div>
       ) : (
         <div style={{ background: heroBg, padding: "30px 16px 22px", textAlign: "center" }}>
           <div style={{ display: "inline-flex" }}><TeamLogo t={me} sz={96} glow /></div>
@@ -219,13 +219,6 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
               </button>
             );
           })}
-        </Sheet>
-      )}
-      {sheet === "matchup" && game && (
-        <Sheet title={`${away.name} at ${home.name}`} onClose={close}>
-          <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={playoff} h2h={sp === "preseason" ? null : h2h} neutral={neutral} />
-          {sp === "regular" && <RaceWatch teams={teams} sched={sched} ui={ui} wk={game.wk} mobile />}
-          <div style={{ height: 8 }} />
         </Sheet>
       )}
       {sheet === "plan" && <Sheet title="Game plan" onClose={close}>{planCard}<div style={{ height: 8 }} /></Sheet>}
@@ -427,7 +420,7 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
     return { kind, icon: w.icon, label: w.label, note };
   })();
   const bg = `radial-gradient(ellipse at 50% 35%, ${me.clr}55, transparent 60%), linear-gradient(160deg, #0b2a33, #050b12 70%)`;
-  if (mobile) return <PhoneHome {...{ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, forecast, menu, side, planCard, rest, stories, news, onStory, onNav, fa, capRoom, onFa, sched, h2h, rivalId, devFocus }} />;
+  if (mobile) return <PhoneHome {...{ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, forecast, menu, side, planCard, rest, stories, news, onStory, onNav, fa, capRoom, onFa, sched, rivalId, devFocus }} />;
   return (
     <div className="keep-dark" style={{ borderRadius: 14, overflow: "hidden", background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, position: "relative" }}>
       <style>{"@media (max-width: 760px) { .hm-main { order: -1; padding: 12px !important } .hm-menu, .hm-side { max-width: none !important; border: 0 !important } .hm-logo > * { width: clamp(48px, 15vw, 96px) !important; height: clamp(48px, 15vw, 96px) !important } }"}</style>
