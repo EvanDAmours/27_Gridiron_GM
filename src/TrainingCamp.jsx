@@ -2,7 +2,8 @@
 // training focus and extensions showing their top 5 (the rest behind Show all).
 import Select from "./Select.jsx";
 import React, { useState } from "react";
-import { C, oC, Bdg, Btn, Face } from "./ui.jsx";
+import { C, oC, Bdg, Btn, Face, Hero, Section, Chips, Sheet } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 import { yearlyAsk } from "./negotiation.js";
 import { posTag } from "./dline.js";
 
@@ -46,6 +47,7 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
       {extra}
     </div>
   );
+  if (MOBILE) return <PhoneCamp {...{ team, yr, scPts, games, risk, onRisk, onSimGame, onReport, onDevCamp, onTrain, onAutoTrain, battlesDone, onBattle, onBattleAll, otcFocus, onOtc, onExtend, setSel, roster, rookies, campUsed, trainable, trained, expiring, extDone, battles, openB, pre, trainTop, attr, setAttr, attrName }} />;
   const more = (open, set, n) => n > 5 && <button onClick={() => set((v) => !v)} style={{ marginTop: 6, background: "transparent", border: `1px solid ${C.bd}`, color: "#7dd3fc", borderRadius: 999, padding: "4px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>{open ? "▲ Top 5 only" : `▼ Show all ${n}`}</button>;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -157,6 +159,111 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
           {more(allExt, setAllExt, expiring.length)}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Phones: camp in the Home screen's look. A hero with your points, then each part of camp as a section
+// of clean rows. Anything that spends points has its own button (never the whole row, so a scroll
+// can't spend them), and the once-a-camp rookie boost asks first.
+function PhoneCamp({ team, yr, scPts, games, risk, onRisk, onSimGame, onReport, onDevCamp, onTrain, onAutoTrain, battlesDone, onBattle, onBattleAll, otcFocus, onOtc, onExtend, setSel, roster, rookies, campUsed, trainable, trained, expiring, extDone, battles, openB, pre, trainTop, attr, setAttr, attrName }) {
+  const [allTrain, setAllTrain] = useState(false), [allExt, setAllExt] = useState(false), [boost, setBoost] = useState(null);
+  const soft = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
+  const line = { display: "flex", alignItems: "center", gap: 10, minHeight: 58, padding: "6px 0" };
+  const act = (on, primary) => ({ minHeight: 40, minWidth: 64, padding: "0 12px", borderRadius: 12, border: 0, background: on ? (primary ? C.gn : `${C.bl}33`) : "#ffffff0d", color: on ? (primary ? "#fff" : "#bfdbfe") : "#64748b", fontSize: 14, fontWeight: 900, cursor: on ? "pointer" : "default", whiteSpace: "nowrap", flexShrink: 0 });
+  const who = (p, sub) => (
+    <span onClick={() => setSel(p)} style={{ flex: 1, minWidth: 0, cursor: "pointer" }}>
+      <span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, fontSize: 12, color: C.mt }}><Bdg pos={posTag(p)} /><b style={{ color: oC(p.ovr), fontSize: 13 }}>{p.ovr}</b>{sub}</span>
+    </span>
+  );
+  const runN = Math.min(openB.length, scPts), autoN = Math.min(5, trainable.length, Math.floor(scPts / 2));
+  return (
+    <div>
+      <Hero clr={team.clr} eyebrow={pre ? "Preseason" : "Camp is closed"} title="Training Camp" sub={pre ? "Get the roster ready for week 1" : "It opens again next preseason"}
+        right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, color: "#93c5fd" }}>{scPts}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>POINTS</div></div>} />
+
+      <Section title={`Preseason games · ${games.length}/4`} action={games.length ? "Report" : null} onAction={onReport} style={{ marginTop: 18 }}>
+        {games.length > 0 && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>{games.map((g, i) => <span key={i} style={{ fontSize: 14, fontWeight: 800, padding: "6px 10px", borderRadius: 10, background: g.us > g.them ? "#14532d55" : "#7f1d1d55", color: g.us > g.them ? C.gn : "#fca5a5" }}>{g.us > g.them ? "W" : "L"} {g.us}–{g.them} {g.opp}</span>)}</div>}
+        <button onClick={onSimGame} disabled={!pre || games.length >= 4} style={{ width: "100%", minHeight: 52, borderRadius: 14, border: 0, background: pre && games.length < 4 ? C.gn : "#ffffff12", color: pre && games.length < 4 ? "#fff" : "#64748b", fontSize: 17, fontWeight: 900, cursor: "pointer" }}>{games.length >= 4 ? "All four played" : "Play a preseason game"}</button>
+        <div style={{ ...soft, marginTop: 10 }}>
+          <div style={{ ...line, minHeight: 54 }}>
+            <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 16, fontWeight: 800 }}>Starters play</span><span style={{ display: "block", fontSize: 12, color: C.mt }}>Sharper, but they can get hurt</span></span>
+            <button onClick={onRisk} aria-pressed={risk} style={{ width: 56, height: 32, borderRadius: 16, border: 0, background: risk ? "#dc2626" : "#475569", position: "relative", cursor: "pointer", flexShrink: 0 }}><span style={{ position: "absolute", top: 3, left: risk ? 27 : 3, width: 26, height: 26, borderRadius: 13, background: "#fff", transition: "left .15s" }} /></button>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Camp focus">
+        <div style={{ display: "flex", gap: 4, padding: 3, borderRadius: 12, background: "#ffffff0f" }}>
+          {[["passing", "Passing"], ["rushing", "Run game"], ["defense", "Defense"]].map(([k, l]) => <button key={k} disabled={!pre} onClick={() => onOtc(otcFocus === k ? null : k)} style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 0, background: otcFocus === k ? "#ffffff26" : "transparent", color: otcFocus === k ? "#fff" : "#94a3b8", fontSize: 15, fontWeight: 800, cursor: pre ? "pointer" : "default" }}>{l}</button>)}
+        </div>
+        <div style={{ fontSize: 13, color: C.mt, margin: "6px 2px 0" }}>The top five in that group gain +1 at season's end.</div>
+      </Section>
+
+      <Section title={`Position battles · ${battles.length - openB.length}/${battles.length}`} action={onBattleAll && openB.length > 0 && pre && runN > 0 ? `Run ${runN} · ${runN} SP` : null} onAction={() => onBattleAll(openB)}>
+        <div style={soft}>
+          {battles.map(([pos, top2], i) => { const done = battlesDone.includes(pos); return (
+            <div key={pos} style={{ ...line, borderTop: i ? "1px solid #ffffff10" : 0 }}>
+              <span style={{ width: 42, flexShrink: 0 }}><Bdg pos={pos} /></span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{top2[0].name.split(" ").slice(-1)[0]} <span style={{ color: C.mt, fontWeight: 600 }}>vs</span> {top2[1].name.split(" ").slice(-1)[0]}</span>
+              {done ? <span style={{ color: C.gn, fontWeight: 900, fontSize: 15, minWidth: 64, textAlign: "center" }}>Done</span> : <button disabled={!pre || scPts < 1} onClick={() => onBattle(pos)} style={act(pre && scPts >= 1)}>Run · 1</button>}
+            </div>
+          ); })}
+        </div>
+      </Section>
+
+      <Section title="Rookie camp · 3 SP">
+        <div style={soft}>
+          {campUsed && <div style={{ ...line, color: C.gn, fontWeight: 800 }}>Used{team.devCampPid ? ` on ${roster.find((p) => p.id === team.devCampPid)?.name || "a rookie"}` : ""}</div>}
+          {!rookies.length && <div style={{ ...line, color: C.mt }}>No rookies or second-year players.</div>}
+          {rookies.map((p, i) => { const max = p.ovr >= (p.pot || p.ovr), ok = pre && !campUsed && scPts >= 3 && !max; return (
+            <div key={p.id} style={{ ...line, borderTop: i || campUsed ? "1px solid #ffffff10" : 0 }}>
+              <Face s={p.face} sz={36} />
+              {who(p, <>to {p.pot || p.ovr}</>)}
+              <button disabled={!ok} onClick={() => setBoost(p)} style={act(ok)}>{max ? "Max" : "Boost"}</button>
+            </div>
+          ); })}
+        </div>
+      </Section>
+
+      <Section title="Training · 2 SP" action={onAutoTrain && pre && autoN > 0 ? `Auto-pick ${autoN}` : null} onAction={() => onAutoTrain(5)}>
+        <Chips items={ATTRS.map(([k, l]) => [k, l === "Acceleration" ? "Accel" : l])} value={attr} onChange={setAttr} />
+        <div style={{ ...soft, marginTop: 10 }}>
+          {(allTrain ? trainTop : trainTop.slice(0, 5)).map((p, i) => (
+            <div key={p.id} style={{ ...line, borderTop: i ? "1px solid #ffffff10" : 0 }}>
+              <Face s={p.face} sz={36} />
+              {who(p, <>age {p.age} · to {p.pot || p.ovr}</>)}
+              <button disabled={!pre || scPts < 2} onClick={() => onTrain(p, attr)} style={act(pre && scPts >= 2, true)}>+1</button>
+            </div>
+          ))}
+        </div>
+        {trainTop.length > 5 && <button onClick={() => setAllTrain((v) => !v)} style={{ width: "100%", minHeight: 44, marginTop: 8, borderRadius: 12, border: 0, background: "transparent", color: "#7dd3fc", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{allTrain ? "Top five only" : `Everyone (${trainTop.length})`}</button>}
+        {trained.length > 0 && <div style={{ fontSize: 13, color: C.mt, margin: "4px 2px 0" }}>+1 {attrName} done for {trained.length} player{trained.length > 1 ? "s" : ""} this camp</div>}
+      </Section>
+
+      <Section title={`Extensions · ${extDone}/${expiring.length}`}>
+        <div style={soft}>
+          {!expiring.length && <div style={{ ...line, color: C.mt }}>Nobody is in a contract year.</div>}
+          {(allExt ? expiring : expiring.slice(0, 5)).map((p, i) => (
+            <div key={p.id} style={{ ...line, borderTop: i ? "1px solid #ffffff10" : 0 }}>
+              <Face s={p.face} sz={36} />
+              {who(p, p.ext ? <span style={{ color: C.gn }}>signed {p.ext.yrs}y · {money(p.ext.apy ?? p.ext.sal)}</span> : p.resigned?.yr === yr ? <span style={{ color: C.gn }}>signed {p.resigned.yrs}y · {money(p.resigned.sal)}</span> : <>asks {money(yearlyAsk(p, 2, "extend"))}</>)}
+              {!p.ext && p.resigned?.yr !== yr && <button onClick={() => onExtend(p)} style={act(true)}>Talk</button>}
+            </div>
+          ))}
+        </div>
+        {expiring.length > 5 && <button onClick={() => setAllExt((v) => !v)} style={{ width: "100%", minHeight: 44, marginTop: 8, borderRadius: 12, border: 0, background: "transparent", color: "#7dd3fc", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{allExt ? "Top five only" : `Everyone (${expiring.length})`}</button>}
+      </Section>
+
+      {boost && (
+        <Sheet title="Rookie camp" onClose={() => setBoost(null)}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Face s={boost.face} sz={52} /><div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 20, fontWeight: 900 }}>{boost.name}</div><div style={{ fontSize: 14, color: "#94a3b8" }}>{posTag(boost)} · {boost.ovr} now, ceiling {boost.pot || boost.ovr}</div></div></div>
+          <div style={{ fontSize: 15, color: "#cbd5e1", lineHeight: 1.45, marginBottom: 12 }}>He gains up to +3. It's once a camp, so it can't go to anyone else this year.</div>
+          <button onClick={() => { onDevCamp(boost); setBoost(null); }} style={{ width: "100%", minHeight: 54, borderRadius: 14, border: 0, background: C.gn, color: "#fff", fontSize: 17, fontWeight: 900, cursor: "pointer" }}>Boost him · 3 SP</button>
+          <div style={{ height: 8 }} />
+        </Sheet>
+      )}
     </div>
   );
 }
