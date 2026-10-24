@@ -9,6 +9,37 @@ export const sheetWrap=(m)=>m?{alignItems:"flex-end",justifyContent:"stretch",pa
 export const sheetBox=(m)=>m?{width:"100%",maxWidth:"none",borderRadius:"18px 18px 0 0",maxHeight:"92vh",paddingBottom:"calc(16px + env(safe-area-inset-bottom))",animation:"sheetUp .22s ease-out",borderBottom:0}:{};
 export function SheetGrip({onClose}){const st=React.useRef(null);return<div onTouchStart={e=>{st.current=e.touches[0].clientY;}} onTouchEnd={e=>{const y=e.changedTouches[0].clientY;if(st.current!=null&&y-st.current>70)onClose();st.current=null;}} style={{display:"flex",justifyContent:"center",padding:"2px 0 10px",margin:"-6px 0 0",touchAction:"none"}} aria-hidden="true"><span style={{width:44,height:5,borderRadius:3,background:"#ffffff40"}}/></div>;}
 export const CloseX=({onClick,label="Close",style:st})=><button onClick={onClick} aria-label={label} title={label} style={{position:"absolute",top:10,right:10,zIndex:5,width:36,height:36,borderRadius:18,background:"#000a",color:"#fff",border:"1px solid #ffffff33",fontSize:18,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",...(st||{})}}>✕</button>;
+// Phone primitives (mobile redo). Sheet: a bottom sheet over everything, tap outside or drag the
+// grip down to close. Row: one line, label left, a short value right, tap for more. Segments: a
+// pill switch between a few views.
+export function Sheet({ title, onClose, children }) {
+  return (
+    <div className="keep-dark" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 450, background: "#000a", display: "flex", ...sheetWrap(true) }}>
+      <div role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: "#0d1424", border: `1px solid ${C.bd}`, color: C.tx, padding: "14px 14px 0", overflowY: "auto", ...sheetBox(true) }}>
+        <SheetGrip onClose={onClose} />
+        <CloseX onClick={onClose} />
+        {title && <div style={{ fontSize: 20, fontWeight: 900, margin: "0 44px 12px 2px" }}>{title}</div>}
+        {children}
+      </div>
+    </div>
+  );
+}
+export function Row({ label, value, tone, onClick, first, tour }) {
+  return (
+    <button onClick={onClick} data-tour={tour} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 52, textAlign: "left", background: "transparent", border: 0, borderTop: first ? 0 : "1px solid #ffffff14", padding: "0 4px", color: "#fff", cursor: "pointer" }}>
+      <span style={{ fontSize: 16, fontWeight: 700, flexShrink: 0 }}>{label}</span>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: tone || "#94a3b8", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{value}</span>
+      <span style={{ fontSize: 20, color: "#64748b", lineHeight: 1 }}>›</span>
+    </button>
+  );
+}
+export function Segments({ items, value, onChange }) {
+  return (
+    <div role="tablist" style={{ display: "flex", gap: 4, padding: 3, borderRadius: 10, background: "#ffffff0f", marginBottom: 12 }}>
+      {items.map(([k, l]) => <button key={k} role="tab" aria-selected={value === k} onClick={() => onChange(k)} style={{ flex: 1, minHeight: 38, borderRadius: 8, border: 0, background: value === k ? "#ffffff22" : "transparent", color: value === k ? "#fff" : "#94a3b8", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
+    </div>
+  );
+}
 export const C={bg:"#080c14",cd:"#111827",bd:"#1e293b",tx:"#e0e6f0",mt:"#64748b",gn:"#22c55e",bl:"#3b82f6",gd:"#eab308",rd:"#ef4444",f:"'Segoe UI',system-ui,sans-serif"};
 export const oC=o=>o>=80?"#22c55e":o>=68?"#84cc16":o>=55?"#eab308":o>=42?"#f97316":"#ef4444";
 export const pC=p=>({QB:"#e74c3c",RB:"#3498db",WR:"#f39c12",TE:"#9b59b6",LT:"#1abc9c",LG:"#17a589",C:"#0e8c73",RG:"#17a589",RT:"#1abc9c",DL:"#e67e22",EDGE:"#d35400",DT:"#e67e22",LB:"#2ecc71",CB:"#e91e63",S:"#00bcd4",K:"#795548",P:"#8d6e63"}[p]||"#999");

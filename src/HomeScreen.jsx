@@ -1,7 +1,7 @@
 // The franchise hub, laid out like Madden's: a menu on the left, this week's matchup in the
 // middle (week strip, both logos, team ratings), and top stories on the right.
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { C, TeamLogo, Btn, kickoff, Bdg, oC } from "./ui.jsx";
+import { C, TeamLogo, Btn, kickoff, Bdg, oC, Sheet, Row, Segments } from "./ui.jsx";
 import { unitRatings } from "./gamesim.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import { ROUND_NAMES } from "./playoffs.js";
@@ -30,22 +30,104 @@ export function teamRatings(t, depthOrder, snaps) {
   return { ovr: Math.round(off * 0.5 + def * 0.5), off, def };
 }
 
-// Phones: the matchup as a compact card (logos, records, team ratings, kickoff) instead of the
-// big illustrated one, so the week's to-dos fit on the first screen.
-function CompactMatchup({ away, home, ra, rh, label, kickoff }) {
+// Phones: "this week" only. A one-line record, the next game as a card (tap for the matchup),
+// the top three to-dos, and one row each for everything else, which opens in a bottom sheet.
+// The week's big button is the action bar App pins above the tab bar.
+function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, label, forecast, menu, side, planCard, rest, stories, news, onStory, onNav, fa, capRoom, onFa, sched, h2h, bg }) {
+  const [sheet, setSheet] = useState(null);
+  const [panel, setPanel] = useState("stories");
+  const close = () => setSheet(null);
+  const then = (fn) => (...a) => { close(); fn?.(...a); };
+  const pct = (t) => (t.w + (t.t || 0) / 2) / Math.max(1, t.w + t.l + (t.t || 0));
+  const rank = teams.filter((t) => t.c === me.c && t.d === me.d).sort((a, b) => pct(b) - pct(a) || b.w - a.w).indexOf(me) + 1;
+  const hurt = injuryReport(me, wk).length;
+  const top = stories[0]?.head || news[0]?.text;
+  const opp = game && teams[game.h === ui ? game.a : game.h];
+  const plan = ["combine", "resign", "freeagency", "draft"].includes(sp) && onFa ? rosterPlan(me.roster, fa, { nextYear: sp === "combine" || sp === "resign" }) : null;
+  const tone = (m) => (m.tone === "urgent" ? C.rd : m.tone === "action" ? C.gd : "#38bdf8");
+  const todo = (m, i, all) => (
+    <button key={m.label} onClick={all ? then(m.onClick) : m.onClick} style={{ display: "block", width: "100%", minHeight: 48, textAlign: "left", background: i === 0 ? "#00000055" : "transparent", border: i === 0 ? "1px solid #f97316" : "1px solid transparent", borderLeft: i > 0 && m.tone ? `3px solid ${tone(m)}` : undefined, borderRadius: 10, padding: "10px 12px", marginBottom: 4, color: "#fff", cursor: "pointer" }}>
+      <div style={{ fontSize: i === 0 ? 17 : 15, fontWeight: i === 0 ? 800 : 600, lineHeight: 1.3, whiteSpace: all ? undefined : "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.label}</div>
+      {i === 0 && m.sub && <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.sub}</div>}
+    </button>
+  );
+  const card = { background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 14, padding: "6px 12px", marginTop: 12 };
+  const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", padding: "8px 2px 6px" };
   const Side = ({ t, r }) => (
     <div style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
-      <div style={{ display: "inline-flex" }}><TeamLogo t={t} sz={48} glow /></div>
-      <div style={{ fontSize: 15, fontWeight: 900, marginTop: 2 }}>{t.name}</div>
-      <div style={{ fontSize: 12, color: "#cbd5e1" }}>{rec(t)}</div>
-      {r && <div style={{ display: "flex", gap: 4, justifyContent: "center", marginTop: 4 }}>{[["OVR", r.ovr], ["OFF", r.off], ["DEF", r.def]].map(([k, v]) => <span key={k} style={{ fontSize: 11, fontWeight: 800, color: "#e2e8f0", background: "#ffffff14", borderRadius: 6, padding: "2px 5px" }}>{k} <b style={{ color: v >= 85 ? C.gn : v >= 75 ? "#a3e635" : "#cbd5e1" }}>{v}</b></span>)}</div>}
+      <div style={{ display: "inline-flex" }}><TeamLogo t={t} sz={60} glow /></div>
+      <div style={{ fontSize: 17, fontWeight: 900, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+      <div style={{ fontSize: 14, color: "#cbd5e1" }}>{rec(t)}{r ? <> · OVR <b style={{ color: "#fff" }}>{r.ovr}</b></> : null}</div>
     </div>
   );
   return (
-    <div style={{ background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 12, padding: "10px 8px" }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", textAlign: "center", marginBottom: 6 }}>{label}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}><Side t={away} r={ra} /><b style={{ fontSize: 14, color: "#94a3b8" }}>AT</b><Side t={home} r={rh} /></div>
-      <div style={{ fontSize: 12, color: "#94a3b8", textAlign: "center", marginTop: 6 }}>{kickoff}</div>
+    <div className="keep-dark" style={{ borderRadius: 14, background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, padding: "16px 12px 14px" }}>
+      <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1.15, padding: "0 2px" }}>{label}</div>
+      <button data-tour="strip" onClick={() => onNav("standings")} style={{ display: "block", background: "transparent", border: 0, padding: "4px 2px 0", color: "#cbd5e1", fontSize: 15, cursor: "pointer", textAlign: "left" }}>
+        <b style={{ color: "#fff" }}>{rec(me)}</b> · {["", "1st", "2nd", "3rd", "4th"][rank] || rank} in the {me.c} {me.d} · <span style={{ color: capRoom >= 0 ? "#cbd5e1" : C.rd }}>{money(capRoom)} cap</span>
+      </button>
+
+      {game ? (
+        <HolidayCard holiday={game.holiday}>
+          <button onClick={() => setSheet("matchup")} style={{ display: "block", width: "100%", marginTop: 14, background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 14, padding: "14px 8px 10px", color: "#fff", cursor: "pointer" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}><Side t={away} r={ra} /><b style={{ fontSize: 15, color: "#94a3b8" }}>AT</b><Side t={home} r={rh} /></div>
+            <div style={{ fontSize: 14, color: "#cbd5e1", marginTop: 10 }}>{game.date ? kickoff(game) : "Kickoff TBD"}{forecast ? ` · ${forecast.icon} ${forecast.label}` : ""}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#7dd3fc", marginTop: 6 }}>Matchup details ›</div>
+          </button>
+        </HolidayCard>
+      ) : (<>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
+          <TeamLogo t={me} sz={56} glow />
+          <div style={{ fontSize: 22, fontWeight: 900, textTransform: "uppercase", lineHeight: 1.05 }}>{sp === "regular" ? "Bye week" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>
+        </div>
+        <OffseasonBoard me={me} sp={sp} onNav={onNav} />
+      </>)}
+
+      {rest && (
+        <div style={{ ...card, display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderColor: rest.on ? "#38bdf8" : "#ffffff1a" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 800 }}>No. 1 seed clinched</div>
+            <div style={{ fontSize: 13, color: "#cbd5e1" }}>{rest.on ? "Starters resting until the playoffs" : "Rest starters to keep them healthy"}</div>
+          </div>
+          <Btn onClick={rest.toggle} bg={rest.on ? "#334155" : "#0284c7"} style={{ fontSize: 15, fontWeight: 900, minHeight: 44, padding: "0 14px", borderRadius: 10, whiteSpace: "nowrap" }}>{rest.on ? "Play them" : "Rest"}</Btn>
+        </div>
+      )}
+
+      {menu.length > 0 && (
+        <div style={{ ...card, padding: "4px 8px 6px" }}>
+          <div style={head}>THIS WEEK</div>
+          {menu.slice(0, 3).map((m, i) => todo(m, i))}
+          {menu.length > 3 && <Row first label={<span style={{ color: "#7dd3fc", fontSize: 15 }}>See all {menu.length}</span>} onClick={() => setSheet("todo")} />}
+        </div>
+      )}
+
+      <div style={card}>
+        {[
+          game && (sp === "regular" || sp === "playoffs") && planCard && { k: "plan", label: "Game plan", value: opp ? `vs ${opp.ab}` : "" },
+          plan && { k: "build", label: "Build your 53", value: `${plan.count}/${plan.target}`, tone: plan.open ? C.gd : C.gn },
+          { k: "news", label: "Top stories", value: top || "Quiet so far" },
+          { k: "injuries", label: "Injury report", value: hurt ? `${hurt} out` : "Fully healthy", tone: hurt ? undefined : C.gn },
+          side && { k: "dev", label: "Development focus", tour: "devfocus" },
+        ].filter(Boolean).map((r, i) => <Row key={r.k} first={i === 0} label={r.label} value={r.value} tone={r.tone} tour={r.tour} onClick={() => { if (r.k === "news" || r.k === "injuries") setPanel(r.k === "news" ? "stories" : "injuries"); setSheet(r.k === "injuries" ? "news" : r.k); }} />)}
+      </div>
+
+      {sheet === "todo" && <Sheet title="This week" onClose={close}>{menu.map((m, i) => todo(m, i, true))}</Sheet>}
+      {sheet === "matchup" && game && (
+        <Sheet title={`${away.ab} at ${home.ab}`} onClose={close}>
+          <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={sp === "playoffs"} h2h={sp === "preseason" ? null : h2h} neutral={!!game.neutral || (sp === "playoffs" && pb?.rd === 4)} />
+          {sp === "regular" && <RaceWatch teams={teams} sched={sched} ui={ui} wk={game.wk} mobile />}
+          <div style={{ height: 8 }} />
+        </Sheet>
+      )}
+      {sheet === "plan" && <Sheet title="Game plan" onClose={close}>{planCard}<div style={{ height: 8 }} /></Sheet>}
+      {sheet === "build" && <Sheet title="Build your 53" onClose={close}><RosterChecklist me={me} sp={sp} fa={fa} capRoom={capRoom} onFa={then(onFa)} mobile /></Sheet>}
+      {sheet === "news" && (
+        <Sheet title="Around the league" onClose={close}>
+          <Segments items={[["stories", "Top Stories"], ["injuries", "Injury Report"]]} value={panel} onChange={setPanel} />
+          {panel === "stories" ? <Stories stories={stories} news={news} teams={teams} onStory={then(onStory)} /> : <Injuries teams={teams} ui={ui} onNav={then(onNav)} wk={wk} />}
+        </Sheet>
+      )}
+      {sheet === "dev" && <Sheet title="Development focus" onClose={close}>{side}<div style={{ height: 8 }} /></Sheet>}
     </div>
   );
 }
@@ -235,6 +317,7 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
     return { kind, icon: w.icon, label: w.label, note };
   })();
   const bg = `radial-gradient(ellipse at 50% 35%, ${me.clr}55, transparent 60%), linear-gradient(160deg, #0b2a33, #050b12 70%)`;
+  if (mobile) return <PhoneHome {...{ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, label, forecast, menu, side, planCard, rest, stories, news, onStory, onNav, fa, capRoom, onFa, sched, h2h, bg }} />;
   return (
     <div className="keep-dark" style={{ borderRadius: 14, overflow: "hidden", background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, position: "relative" }}>
       <style>{"@media (max-width: 760px) { .hm-main { order: -1; padding: 12px !important } .hm-menu, .hm-side { max-width: none !important; border: 0 !important } .hm-logo > * { width: clamp(48px, 15vw, 96px) !important; height: clamp(48px, 15vw, 96px) !important } }"}</style>
@@ -284,9 +367,7 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
             </div>
           )}
           </div>
-          {game && mobile ? (
-            <HolidayCard holiday={game.holiday}><CompactMatchup away={away} home={home} ra={ra} rh={rh} label={sp === "playoffs" ? `${yr} Playoffs: ${ROUND_NAMES[pb?.rd] || "Gameday"}` : `${sp === "preseason" ? "Preseason" : "Regular season"} · Week ${game.wk ?? nextWk}`} kickoff={`${game.date ? kickoff(game) : "Kickoff TBD"}${forecast ? ` · ${forecast.icon} ${forecast.label}` : ""}`} /></HolidayCard>
-          ) : game ? (<HolidayCard holiday={game.holiday}>
+          {game ? (<HolidayCard holiday={game.holiday}>
             <BroadcastMatchup
               key={`${sp}-${game.wk ?? pb?.rd ?? 0}-${game.a}-${game.h}`}
               away={away} home={home} teams={teams}
@@ -311,18 +392,6 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
           )}
           {game && (sp === "regular" || sp === "playoffs" || sp === "preseason") && <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={sp === "playoffs"} h2h={sp === "preseason" ? null : h2h} neutral={!!game.neutral || (sp === "playoffs" && pb?.rd === 4)} />}
           {game && (sp === "regular" || sp === "playoffs") && planCard && <div style={{ marginTop: 12 }}>{planCard}</div>}
-          {mobile && menu.length > 0 && (
-            <div style={{ marginTop: 12, background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 12, padding: "10px 10px 6px" }}>
-              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", marginBottom: 6 }}>THIS WEEK</div>
-              {menu.map((m, i) => (
-                <button key={m.label} onClick={m.onClick} style={{ display: "block", width: "100%", textAlign: "left", background: i === 0 ? "#00000055" : "transparent", border: i === 0 ? "1px solid #f97316" : "1px solid transparent", borderLeft: i > 0 && m.tone ? `3px solid ${m.tone === "urgent" ? C.rd : m.tone === "action" ? C.gd : "#38bdf8"}` : undefined, borderRadius: 8, padding: "8px 10px", marginBottom: 4, color: "#fff", cursor: "pointer" }}>
-                  <div style={{ fontSize: i === 0 ? 16 : 14, fontWeight: i === 0 ? 800 : 600, lineHeight: 1.35 }}>{m.label}</div>
-                  {i === 0 && m.sub && <div style={{ fontSize: 12.5, color: "#cbd5e1", marginTop: 2 }}>{m.sub}</div>}
-                </button>
-              ))}
-            </div>
-          )}
-          {mobile && side && <div style={{ marginTop: 12 }}>{side}</div>}
           {game ? null : (<>
             <div style={{ display: "flex", alignItems: "center", gap: 16, padding: mobile ? "12px 4px" : "8px 4px 14px", justifyContent: mobile ? "center" : "flex-start" }}>
               <div style={{ display: "inline-flex" }}><TeamLogo t={me} sz={mobile ? 72 : 88} glow /></div>
