@@ -2424,6 +2424,9 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     {MOBILE&&phase==='main'&&tab!=="livesim"&&!(tab==="trade"&&trTm!=null)&&!moreOpen&&!inboxOpen&&!searchOpen&&!sel&&!boxView&&!extTalk&&!resignTalk&&(()=>{const A=[];
       // deadline day: the clock's controls, not Play Week
       if(tab==="deadline"&&deadline){if(!deadline.done){A.push({label:"Advance the clock ▸",onClick:dlAdvance,bg:"#dc2626"});A.push({label:"📞 Make a call",onClick:()=>setTab("trade"),bg:"#1d4ed8"});A.push({label:"Sim to 4:00 PM",onClick:dlFinish,bg:C.bd});}else A.push({label:"Back to the season ▸",onClick:()=>setTab("dashboard")});return<MobileActionBar actions={A}/>;}
+      // moving the season on is Home's job: other screens don't carry the button (a tap meant for the
+      // screen can't sim, and the screen gets its room back); the draft keeps its own controls
+      if(tab!=="dashboard"&&tab!=="draft")return null;
       const _ng=sp==="regular"?sched.find(g=>g.wk===wk+1&&!g.played&&(g.h===ui||g.a===ui)):null;
       if(sp==="preseason")A.push({label:"Start Season",onClick:startSeasonAsk});
       else if((sp==="regular"||sp==="playoffs")&&liveSim&&!liveDone){A.push({label:"● Back to the live game",onClick:()=>setTab("livesim"),bg:C.rd});A.push({label:"⏭ Finish game",onClick:()=>{setTab("livesim");finishLiveNow();},bg:C.bl});}
@@ -2433,8 +2436,6 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       else if(sp==="resign")A.push({label:"Finish Re-signing →",onClick:askAdvance,bg:C.gd,c:"#000",small:true});
       else if(sp==="freeagency")A.push({label:"Finish Free Agency →",onClick:askAdvance,bg:C.gd,c:"#000",small:true});
       else if(sp==="draft"){if(draftActive){if(curPick&&curPick.owner!==ui&&draftPicks.slice(draftIdx).some(pk=>pk.owner===ui))A.push({label:"⏩ Sim to my pick",onClick:()=>simEntireDraft(true)});A.push({label:draftPaused?"▶ Resume draft":"⏸ Pause draft",onClick:()=>setDraftPaused(p=>!p),bg:draftPaused?C.gn:"#f97316"});A.push({label:"⏭ Sim the whole draft",onClick:()=>simEntireDraft(),bg:"#6366f1"});A.push({label:`Speed: ${draftSpeed}`,onClick:()=>setDraftSpeed(s=>{const n=DRAFT_SPEEDS[(DRAFT_SPEEDS.indexOf(s)+1)%DRAFT_SPEEDS.length];try{localStorage.setItem("gm_draft_speed",n);}catch{}return n;}),bg:C.bd});}else if(draftPicks.length>0&&draftIdx>=draftPicks.length)A.push({label:"→ Next Season",onClick:newSeason});}
-      // off Home and the draft, the week's action shrinks to a pill so a tap meant for the screen can't sim
-      if(A[0]&&tab!=="dashboard"&&tab!=="draft")A[0]={...A[0],small:true};
       return<MobileActionBar actions={A}/>;})()}
     {MOBILE&&<TapTips/>}
     {MOBILE&&<MobileNav tab={tab} sp={sp} rosterView={rosterView} moreOpen={moreOpen} onMore={()=>setMoreOpen(o=>!o)} go={(t,sub)=>{setMoreOpen(false);setRosterTeam(null);setRosterView(sub||"players");setTab(t);}}/>}
