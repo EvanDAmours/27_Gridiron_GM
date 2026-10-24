@@ -656,6 +656,7 @@ export function DraftGrades({ g }) {
   for (const d of g.draftLog || []) if (d.grade) (by[d.owner] ||= []).push(d.grade);
   const rows = Object.entries(by).map(([tid, gs]) => ({ t: g.teams[tid], gr: classGrade(gs) })).filter((x) => x.t && x.gr).sort((a, b) => gradeRank(b.gr) - gradeRank(a.gr));
   if (!rows.length) return null;
+  if (MOBILE) return <PhoneRecap g={g} rows={rows} />;
   return (
     <div style={panel}>
       <div style={head}>DRAFT GRADES</div>
@@ -667,6 +668,43 @@ export function DraftGrades({ g }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// Phones, once the draft's done: your class up top (each pick, what he is and the analysts' grade),
+// the whole league's grades a tap away.
+function PhoneRecap({ g, rows }) {
+  const [open, setOpen] = useState(false);
+  const mine = (g.draftLog || []).filter((d) => d.owner === g.ui && d.player);
+  const me = rows.find((x) => x.t.id === g.ui);
+  const rank = me ? rows.indexOf(me) + 1 : null;
+  const t = g.teams[g.ui];
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <Hero compact clr={t?.clr} logo={t} eyebrow={`Your ${mine[0]?.player?.draftYr ?? g.yr} draft class`} title={me ? `Grade ${me.gr}` : `${mine.length} picks`} sub={rank ? `${mine.length} pick${mine.length === 1 ? "" : "s"} · #${rank} of ${rows.length} in the league` : null} />
+      <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px", marginTop: 4 }}>
+        {mine.map((d, i) => (
+          <div key={d.player.id} onClick={() => g.setSel(d.player)} style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 64, borderTop: i ? "1px solid #ffffff10" : 0, cursor: "pointer" }}>
+            <Face s={d.player.face} sz={40} />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.player.name}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#94a3b8", marginTop: 3 }}><Bdg pos={posTag(d.player)} />Rd {d.rd} · #{d.overall}</span>
+            </span>
+            <span style={{ textAlign: "center", lineHeight: 1.1 }}><b style={{ fontSize: 18, color: oC(d.player.ovr) }}>{d.player.ovr}</b><span style={{ display: "block", fontSize: 10, fontWeight: 800, color: C.mt, marginTop: 2 }}>OVR</span></span>
+            {d.grade && <GradeChip g={d.grade} />}
+          </div>
+        ))}
+        {!mine.length && <div style={{ padding: "16px 0", color: "#94a3b8", fontSize: 15 }}>You didn't make a pick this year.</div>}
+      </div>
+      <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px", marginTop: 10 }}><Row first label="League draft grades" value={rows[0] ? `Best: ${rows[0].t.ab} ${rows[0].gr}` : ""} onClick={() => setOpen(true)} /></div>
+      {open && <Sheet title="Draft grades" onClose={() => setOpen(false)}>
+        <div style={{ fontSize: 14, color: "#94a3b8", margin: "0 2px 10px" }}>Where each player went against where the consensus board had him. Analysts don't know what your scouts know.</div>
+        <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px" }}>
+          {rows.map(({ t: tm, gr }, i) => <div key={tm.id} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 48, borderTop: i ? "1px solid #ffffff10" : 0, color: tm.id === g.ui ? C.gn : "#e2e8f0" }}><span style={{ width: 24, color: "#94a3b8", fontVariantNumeric: "tabular-nums" }}>{i + 1}</span><TeamLogo t={tm} sz={26} /><b style={{ flex: 1, fontSize: 15 }}>{tm.city} {tm.name}</b><GradeChip g={gr} /></div>)}
+        </div>
+        <div style={{ height: 10 }} />
+      </Sheet>}
     </div>
   );
 }

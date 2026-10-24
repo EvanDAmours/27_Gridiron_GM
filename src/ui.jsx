@@ -105,6 +105,11 @@ const ICONS = {
   forward: "M4 6l7 6-7 6zM12 6l7 6-7 6z",
   play: "M7 6v12M11 6v12M15 8.5l5 3.5-5 3.5z",
   camera: "M4 8h3l2-2h6l2 2h3v11H4zM12 17a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z",
+  pause: "M8.5 5v14M15.5 5v14",
+  resume: "M8 5.5v13l10.5-6.5z",
+  phone: "M5 3.5h3.5l2 5-2.5 1.6a11 11 0 0 0 5.4 5.4L15 13l5 2v3.5a2 2 0 0 1-2 2A16.5 16.5 0 0 1 3 5.5a2 2 0 0 1 2-2z",
+  swap: "M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7",
+  list: "M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01",
 };
 export const Icon = ({ k, size = 24, color = "currentColor", w = 2 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONS[k] || ICONS.more} /></svg>

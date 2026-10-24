@@ -3,7 +3,7 @@
 import { MOBILE } from "./mobile.js";
 import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { C, Bdg, Btn, TeamLogo, SheetGrip, CloseX } from "./ui.jsx";
+import { C, Bdg, Btn, TeamLogo, SheetGrip, CloseX, Sheet, Segments, Icon } from "./ui.jsx";
 import { pickValueTag, pickLabel } from "./draftTrade.js";
 import { posTag } from "./dline.js";
 
@@ -49,11 +49,11 @@ export function PickIsIn({ entry, team, yr, onDone, ms = 2300 }) {
       <div style={{ width: "100%", maxWidth: 560, borderRadius: 14, overflow: "hidden", boxShadow: "0 18px 50px #000c", animation: "dd-in .35s ease-out", border: "1px solid #ffffff22" }}>
         <div style={{ height: 6, background: "linear-gradient(90deg,#1d4ed8 0 33%,#fff 33% 66%,#b91c1c 66%)" }} />
         <div style={{ background: `linear-gradient(120deg,${team.clr} 0%,#0b1120 75%)`, padding: "14px 18px", display: "flex", gap: 14, alignItems: "center" }}>
-          <TeamLogo t={team} sz={64} />
+          <TeamLogo t={team} sz={MOBILE ? 46 : 64} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, letterSpacing: 3, fontWeight: 900, color: "#fbbf24" }}>THE PICK IS IN</div>
-            <div style={{ fontSize: 13, color: "#fffd", fontStyle: "italic", lineHeight: 1.35, margin: "2px 0 4px" }}>"With the {ord(entry.overall)} pick in the {yr} NFL Draft, the {team.city} {team.name} select…"</div>
-            <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+            <div style={{ fontSize: 11, letterSpacing: 3, fontWeight: 900, color: "#fbbf24" }}>THE PICK IS IN{MOBILE ? ` · #${entry.overall} ${team.ab}` : ""}</div>
+            {!MOBILE && <div style={{ fontSize: 13, color: "#fffd", fontStyle: "italic", lineHeight: 1.35, margin: "2px 0 4px" }}>"With the {ord(entry.overall)} pick in the {yr} NFL Draft, the {team.city} {team.name} select…"</div>}
+            <div style={{ fontSize: MOBILE ? 22 : 26, fontWeight: 900, color: "#fff", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 4, fontSize: 13, color: "#fffc" }}>
               <Bdg pos={posTag(p)} /><span>{p.college || ""}</span>{entry.grade && <span style={{ background: "#0008", borderRadius: 4, padding: "1px 6px", fontWeight: 800 }}>Grade {entry.grade}</span>}<ValueTag overall={entry.overall} csr={entry.csr} />
             </div>
@@ -226,3 +226,141 @@ export function IncomingCall({ offer, team, curPick, yr, onAccept, onMore, onDec
   );
 }
 
+
+// ---------- Phones: the draft room ----------
+// One calm card for who's on the clock (sticky while you work the board), one line for what just
+// happened, and everything else (trades, the draft log) a tap away in a sheet.
+const soft = { background: "#ffffff0f", borderRadius: 18 };
+const pillBtn = (on) => ({ flex: 1, minHeight: 46, borderRadius: 14, border: 0, background: on ? "#ffffff2b" : "#ffffff12", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 });
+
+export function PhoneClock({ pick, team, mine, paused, onPause, timer, nextMine, wage, needs = [] }) {
+  const clock = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
+  const sub = mine ? `Rookie wage $${wage}M/yr${needs.length ? ` · Need ${needs.slice(0, 3).join(", ")}` : ""}` : nextMine ? `Your pick #${nextMine.overall} · ${nextMine.overall - pick.overall} away` : "Your picks are done";
+  return (
+    <div className="keep-dark" style={{ position: "sticky", top: "calc(56px + env(safe-area-inset-top))", zIndex: 20, borderRadius: 20, overflow: "hidden", margin: "0 0 10px", background: `radial-gradient(120% 140% at 0% 0%, ${team.clr}, #0b1120 72%)`, boxShadow: mine ? `0 0 0 2px ${C.gn}, 0 10px 24px #000a` : "0 10px 24px #000a" }}>
+      <span aria-hidden="true" style={{ position: "absolute", right: -18, top: -22, opacity: 0.08, pointerEvents: "none", transform: "rotate(-8deg)", filter: "grayscale(1) brightness(4)" }}><TeamLogo t={team} sz={120} /></span>
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, padding: "12px 12px 12px 14px" }}>
+        <TeamLogo t={team} sz={42} glow />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.4, color: mine ? "#86efac" : "#ffffffb3" }}>{paused ? "PAUSED" : mine ? "YOU'RE ON THE CLOCK" : "ON THE CLOCK"} · RD {pick.rd} · #{pick.overall}</div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.2 }}>{mine ? "Your pick" : `${team.city} ${team.name}`}</div>
+          <div style={{ fontSize: 13, color: "#ffffffcc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>
+        </div>
+        <div style={{ fontSize: 24, fontWeight: 900, color: paused ? "#94a3b8" : timer <= 10 ? C.rd : "#fff", fontVariantNumeric: "tabular-nums" }}>{clock}</div>
+        {onPause && <button onClick={onPause} aria-label={paused ? "Resume the draft" : "Pause the draft"} style={{ width: 44, height: 44, borderRadius: 22, border: 0, flexShrink: 0, background: paused ? C.gn : "#ffffff22", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Icon k={paused ? "resume" : "pause"} size={20} w={2.6} /></button>}
+      </div>
+    </div>
+  );
+}
+
+// The last pick in, one line; tap for the whole log and who's up next.
+export function PhoneLastPick({ last, ui, onOpen }) {
+  const p = last?.player;
+  return (
+    <button onClick={onOpen} style={{ ...soft, width: "100%", display: "flex", alignItems: "center", gap: 10, minHeight: 52, padding: "0 14px", border: 0, color: "#fff", cursor: "pointer", textAlign: "left", marginBottom: 10 }}>
+      <Icon k="list" size={20} color="#94a3b8" />
+      {p ? <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 7, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden" }}>
+        <span style={{ color: "#94a3b8", fontVariantNumeric: "tabular-nums" }}>#{last.overall}</span><b style={{ color: last.owner === ui ? C.gn : "#93c5fd" }}>{last.ab}</b><span style={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><Bdg pos={posTag(p)} /><ValueTag overall={last.overall} csr={last.csr} small />
+      </span> : <span style={{ flex: 1, fontSize: 15, fontWeight: 700, color: "#cbd5e1" }}>Draft order</span>}
+      <span style={{ fontSize: 20, color: "#64748b" }}>›</span>
+    </button>
+  );
+}
+
+// The log: who's up next and every pick so far.
+export function PhoneDraftLog({ log, queue, ui, onPlayer, onClose }) {
+  const [v, setV] = React.useState("next");
+  const line = (key, l, r, me, onClick) => <div key={key} onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 48, borderTop: "1px solid #ffffff10", cursor: onClick ? "pointer" : "default", color: me ? C.gn : "#e2e8f0" }}>{l}<span style={{ flex: 1 }} />{r}</div>;
+  return (
+    <Sheet title="Draft room" onClose={onClose}>
+      <Segments items={[["next", "Up next"], ["log", `Picks made${log.length ? ` ${log.length}` : ""}`]]} value={v} onChange={setV} />
+      <div style={{ ...soft, padding: "0 14px" }}>
+        {v === "next" && queue.map((q, i) => line(q.overall, <><span style={{ width: 40, color: "#94a3b8", fontVariantNumeric: "tabular-nums" }}>#{q.overall}</span>{q.team && <TeamLogo t={q.team} sz={26} />}<b style={{ fontSize: 15 }}>{q.mine ? "You" : `${q.team?.city || ""} ${q.team?.name || q.ab}`}</b></>, i === 0 ? <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: C.gd }}>ON THE CLOCK</span> : <span style={{ fontSize: 13, color: "#94a3b8" }}>Rd {q.rd}</span>, q.mine))}
+        {v === "log" && log.slice().reverse().map((d) => line(d.overall, <><span style={{ width: 40, color: "#94a3b8", fontVariantNumeric: "tabular-nums" }}>#{d.overall}</span><b style={{ width: 40 }}>{d.ab}</b><span style={{ fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 150 }}>{d.player?.name}</span></>, <span style={{ display: "flex", gap: 6, alignItems: "center" }}><ValueTag overall={d.overall} csr={d.csr} small />{d.player && <Bdg pos={posTag(d.player)} />}</span>, d.owner === ui, d.player ? () => onPlayer(d.player) : null))}
+        {v === "log" && !log.length && <div style={{ padding: "16px 0", color: "#94a3b8", fontSize: 15 }}>No picks yet.</div>}
+      </div>
+      <div style={{ height: 10 }} />
+    </Sheet>
+  );
+}
+
+const PickChips = ({ picks, yr, tone }) => <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>{picks.map((a, i) => <span key={i} style={{ fontSize: 13, fontWeight: 800, padding: "4px 10px", borderRadius: 999, background: i ? "#ffffff14" : tone === "get" ? "#14532d" : "#7f1d1d", color: i ? "#e2e8f0" : tone === "get" ? "#86efac" : "#fca5a5" }}>{pickLabel(a, yr)}</span>)}</div>;
+const Label = ({ children }) => <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: "#94a3b8", margin: "14px 2px 8px" }}>{children}</div>;
+const greenBtn = { flex: 1, minHeight: 46, borderRadius: 14, border: 0, background: C.gn, color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer" };
+const quietBtn = { minHeight: 46, borderRadius: 14, border: 0, background: "#ffffff14", color: "#e2e8f0", fontSize: 15, fontWeight: 800, cursor: "pointer", padding: "0 16px" };
+
+// Moving up, in one sheet: the club on the clock's price for this pick, then everyone ahead of you
+// willing to move down. The draft pauses while it's open.
+export function PhoneTradeUp({ quote, team, offers, yr, onAccept, onPass, onClose }) {
+  const o = quote?.offer;
+  return (
+    <Sheet title="Trade up" onClose={onClose}>
+      <div style={{ fontSize: 14, color: "#94a3b8", margin: "0 2px 4px" }}>The draft is paused while you work the phones.</div>
+      <Label>THIS PICK · {team.city.toUpperCase()} {team.name.toUpperCase()}</Label>
+      <div style={{ ...soft, padding: 14 }}>
+        {!o ? <div style={{ fontSize: 15, color: "#cbd5e1" }}>{FORPICK_NO[quote?.no || "none"](team.name)}</div> : <>
+          <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>#{o.theirPick.overall} now, up {o.up} spots, for</div>
+          <PickChips picks={[o.myPick, ...o.extras]} yr={yr} />
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}><button onClick={() => onAccept(o)} style={greenBtn}>Make the trade</button></div>
+        </>}
+      </div>
+      {offers.length > 0 && <Label>CLUBS AHEAD OF YOU WILLING TO MOVE DOWN</Label>}
+      {offers.map((x) => (
+        <div key={x.id} style={{ ...soft, padding: 14, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}><b style={{ fontSize: 16 }}>{x.from}</b><span style={{ marginLeft: "auto", fontSize: 14, color: "#86efac", fontWeight: 800 }}>#{x.theirPick.overall}</span></div>
+          <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 6 }}>Up {x.up} spots. You give</div>
+          <PickChips picks={[x.myPick, ...x.extras]} yr={yr} />
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}><button onClick={() => onAccept(x)} style={greenBtn}>Make the trade</button><button onClick={() => onPass(x)} style={quietBtn}>Pass</button></div>
+        </div>
+      ))}
+      {!offers.length && <div style={{ fontSize: 14, color: "#94a3b8", margin: "14px 2px" }}>Nobody else ahead of you will move down right now.</div>}
+      <div style={{ height: 10 }} />
+    </Sheet>
+  );
+}
+
+// On the clock: clubs behind you who want your pick. One row on the page, the offers in a sheet.
+export function PhoneTradeDown({ offers, teams, curPick, yr, onAccept, onMore, onDrop, onClose }) {
+  return (
+    <Sheet title={`Offers for #${curPick.overall}`} onClose={onClose}>
+      {offers.map((o) => { const t = teams[o.team]; return (
+        <div key={o.id} style={{ ...soft, padding: 14, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}><TeamLogo t={t} sz={34} /><div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 16, fontWeight: 800 }}>{t.city} {t.name}</div><div style={{ fontSize: 13, color: o.faller ? "#fca5a5" : "#94a3b8" }}>{o.target ? `After ${o.target.name} (${o.target.pos})` : `Moving up ${o.theirPick.overall - curPick.overall} spots`}{o.faller ? " · he's sliding" : ""}</div></div><span style={{ fontSize: 13, fontWeight: 800, color: o.pct >= 0 ? C.gn : C.gd }}>{o.pct >= 0 ? "+" : ""}{o.pct}%</span></div>
+          <div style={{ fontSize: 13, color: "#94a3b8", margin: "10px 0 6px" }}>You get</div>
+          <PickChips picks={[o.theirPick, ...o.extras]} yr={yr} tone="get" />
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}><button onClick={() => onAccept(o)} style={greenBtn}>Accept</button><button onClick={() => onMore(o)} style={{ ...quietBtn, flex: 1 }}>Ask for more</button><button onClick={() => onDrop(o)} aria-label="Turn it down" style={quietBtn}>✕</button></div>
+        </div>
+      ); })}
+      {!offers.length && <div style={{ fontSize: 15, color: "#94a3b8", padding: "8px 2px" }}>No offers right now.</div>}
+      <div style={{ height: 10 }} />
+    </Sheet>
+  );
+}
+
+// The phone ringing, on a phone: a card docked above the bottom bar, out of the board's way.
+export function PhoneCall({ offer, team, curPick, yr, onAccept, onMore, onDecline, secs = 20 }) {
+  const drop = useRef(onDecline);
+  drop.current = onDecline;
+  useEffect(() => { const t = setTimeout(() => drop.current(), secs * 1000); return () => clearTimeout(t); }, [offer.id, secs]);
+  return createPortal(
+    <div className="keep-dark" style={{ position: "fixed", left: 10, right: 10, bottom: "calc(150px + env(safe-area-inset-bottom))", zIndex: 430, fontFamily: C.f, color: "#fff", borderRadius: 20, overflow: "hidden", background: "linear-gradient(160deg,#1e1b4b,#0b1120 75%)", boxShadow: "0 18px 48px #000d, 0 0 0 1px #a78bfa55", animation: "dd-in .3s ease-out" }}>
+      <style>{"@keyframes dd-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}} @keyframes callBar{from{width:100%}to{width:0%}}"}</style>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 14px 0" }}>
+        <TeamLogo t={team} sz={40} glow />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.6, color: offer.faller ? "#fca5a5" : "#c4b5fd" }}>{offer.faller ? "URGENT CALL · HE'S SLIDING" : "INCOMING CALL"}</div>
+          <div style={{ fontSize: 16, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{team.city} {team.name}</div>
+          <div style={{ fontSize: 13, color: "#cbd5e1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Want #{curPick.overall}{offer.target ? ` for ${offer.target.name}` : ""}</div>
+        </div>
+      </div>
+      <div style={{ padding: "10px 14px 14px" }}>
+        <PickChips picks={[offer.theirPick, ...offer.extras]} yr={yr} tone="get" />
+        <div style={{ display: "flex", gap: 8, marginTop: 12 }}><button onClick={onAccept} style={greenBtn}>Accept</button><button onClick={onMore} style={{ ...quietBtn, flex: 1 }}>Ask for more</button><button onClick={onDecline} style={quietBtn}>Hang up</button></div>
+      </div>
+      <div style={{ height: 3, background: "#ffffff14" }}><div key={offer.id} style={{ height: "100%", background: "#a78bfa", animation: `callBar ${secs}s linear forwards` }} /></div>
+    </div>,
+    document.body
+  );
+}
+
+export const PhoneDraftButtons = ({ items }) => <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>{items.filter(Boolean).map(([l, ic, on, fn]) => <button key={l} onClick={fn} style={pillBtn(on)}><Icon k={ic} size={18} />{l}</button>)}</div>;
