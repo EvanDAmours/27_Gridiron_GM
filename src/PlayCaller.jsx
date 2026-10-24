@@ -37,7 +37,11 @@ const grid = (cols) => ({ display: "grid", gridTemplateColumns: `repeat(${cols},
 
 // g: { off, def (team records), down, toGo, yard, scheme, runPct }; phase: null (pick a play),
 // "presnap" or "passing"; fourth: the fourth-down choice still to make; mobile: narrow screen.
-export default function PlayCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth, onCall, onHike, onAudible, onThrow }) {
+export default function PlayCaller(props) {
+  if (props.mobile) return <PhoneCaller {...props} />;
+  return <DeskCaller {...props} />;
+}
+function DeskCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth, onCall, onHike, onAudible, onThrow }) {
   const { off, def, down, toGo, yard } = g;
   const situation = `${nth(down)} & ${yard + toGo >= 100 ? "goal" : toGo} · ${yard === 50 ? "midfield" : yard > 50 ? `their ${100 - yard}` : `own ${yard}`}`;
   const cols = mobile ? 2 : 4;
@@ -94,4 +98,56 @@ export default function PlayCaller({ g, phase, fourth, pending, targets = [], mo
       <div style={grid(cols)}>{PASSES.map(([id, icon, l, n]) => <Tile key={id} icon={icon} label={l} note={n} tone="#60a5fa" onClick={() => onCall(id)} />)}</div>
     </Card>
   );
+}
+
+// Phones: a compact playbook docked at the bottom (the field stays in view above it). One header line
+// (the situation, and handing the calls back to your coach), then big plain tiles: four runs and four
+// passes, the fourth-down choice, the pre-snap read with HIKE, or your receivers.
+function PhoneCaller({ g, phase, fourth, pending, targets = [], onFourth, onCall, onHike, onAudible, onThrow, onCoach }) {
+  const { off, down, toGo, yard } = g;
+  const situation = `${nth(down)} & ${yard + toGo >= 100 ? "Goal" : toGo} · ${yard === 50 ? "midfield" : yard > 50 ? `their ${100 - yard}` : `own ${yard}`}`;
+  const best = (pos) => off.roster.filter((p) => p.pos === pos && !p.injured).sort((a, b) => b.ovr - a.ovr)[0];
+  const qb = best("QB"), rb = best("RB");
+  const tile = (key, label, sub, tone, onClick, big) => (
+    <button key={key} type="button" onClick={onClick} style={{ minWidth: 0, minHeight: big ? 60 : 54, borderRadius: 12, border: 0, background: `${tone}1f`, color: "#fff", cursor: "pointer", padding: "6px 4px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, boxShadow: `inset 0 0 0 1px ${tone}44` }}>
+      <span style={{ fontSize: 15, fontWeight: 900, lineHeight: 1.1, textAlign: "center" }}>{label}</span>
+      {sub && <span style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{sub}</span>}
+    </button>
+  );
+  const row = (items, n = 4) => <div style={{ display: "grid", gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`, gap: 6 }}>{items}</div>;
+  const head = (title, tone) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 2px 8px" }}>
+      <TeamLogo t={off} sz={22} />
+      <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.2, color: tone }}>{title}</span>
+      <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 700 }}>{situation}</span>
+      {onCoach && <button type="button" onClick={onCoach} style={{ marginLeft: "auto", background: "transparent", border: 0, padding: "4px 0", color: "#7dd3fc", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Coach calls it</button>}
+    </div>
+  );
+  if (fourth) {
+    const k = off.roster.filter((p) => p.pos === "K" && !p.injured).sort((a, b) => b.ovr - a.ovr)[0];
+    const fgDist = 100 - yard + 17, inRange = yard >= 52;
+    return <>{head("4TH DOWN", "#f87171")}{row([tile("p", "Punt", "Flip the field", "#94a3b8", () => onFourth("punt"), true), ...(inRange && k ? [tile("f", `${fgDist}-yd FG`, `${k.name.split(" ").slice(-1)[0]} · ${k.ovr}`, "#facc15", () => onFourth("fg"), true)] : []), tile("g", "Go for it", `4th & ${toGo}`, "#4ade80", () => onFourth("go"), true)], inRange && k ? 3 : 2)}</>;
+  }
+  if (phase === "presnap") {
+    const isZone = g.dcScheme === "Cover 2" || g.dcScheme === "Zone Blitz", isBlitz = g.dcScheme === "Zone Blitz" || g.dcScheme === "3-4";
+    return (<>
+      {head("PRE-SNAP", "#60a5fa")}
+      <div style={{ fontSize: 15, fontWeight: 800, margin: "0 2px 10px" }}>{CALL_NAMES[pending] || pending} <span style={{ color: "#94a3b8", fontWeight: 700 }}>vs {g.dcScheme} · {isZone ? "zone" : "man"}</span>{isBlitz && <span style={{ color: "#f87171", fontWeight: 900 }}> · blitz likely</span>}</div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" onClick={onAudible} style={{ flex: 1, minHeight: 56, borderRadius: 14, border: 0, background: "#ffffff12", color: "#e2e8f0", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Change play</button>
+        <button type="button" onClick={onHike} style={{ flex: 2, minHeight: 56, borderRadius: 14, border: 0, background: C.gn, color: "#fff", fontSize: 19, fontWeight: 900, letterSpacing: 1.5, cursor: "pointer" }}>HIKE</button>
+      </div>
+    </>);
+  }
+  if (phase === "passing") {
+    return <>{head("THROW TO", "#60a5fa")}{row(targets.map((t) => tile(t.id, t.name.split(" ").slice(-1)[0], `${t.pos} · ${t.open ? "OPEN" : "covered"}`, t.open ? "#4ade80" : "#f87171", () => onThrow(t), true)), Math.min(4, Math.max(2, targets.length)))}</>;
+  }
+  const last = (p) => (p ? p.name.split(" ").slice(-1)[0] : "");
+  return (<>
+    {head("YOUR CALL", "#4ade80")}
+    <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.4, color: "#facc15", margin: "0 2px 5px" }}>RUN{g.scheme ? <span style={{ color: "#64748b" }}> · {g.scheme}, {g.runPct}% runs</span> : null}</div>
+    {row([tile("ri", "Inside", last(rb), "#facc15", () => onCall("run_inside")), tile("ro", "Outside", rb ? `${rb.spd} spd` : "", "#facc15", () => onCall("run_outside")), tile("rs", "Screen", "to the back", "#facc15", () => onCall("run_screen")), tile("qr", "QB Run", last(qb), "#facc15", () => onCall("scramble"))])}
+    <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.4, color: "#60a5fa", margin: "10px 2px 5px" }}>PASS</div>
+    {row([tile("pq", "Quick", "safe", "#60a5fa", () => onCall("pass_quick")), tile("pm", "Medium", "balanced", "#60a5fa", () => onCall("pass_medium")), tile("pd", "Deep", "big or bust", "#60a5fa", () => onCall("pass_deep")), tile("pr", "RPO", "he reads it", "#60a5fa", () => onCall("pass_rpo"))])}
+  </>);
 }
