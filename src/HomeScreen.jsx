@@ -1,5 +1,5 @@
 // The franchise hub, laid out like Madden's: a menu on the left, this week's matchup in the
-// middle (week strip, both logos, team ratings), and top stories on the right.
+// middle (both logos, team ratings), and top stories on the right.
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { C, TeamLogo, Btn, kickoff, Bdg, oC, Sheet, Segments } from "./ui.jsx";
 import { unitRatings } from "./gamesim.js";
@@ -10,7 +10,7 @@ import { InjTag } from "./InjuryTag.jsx";
 import { injuryReport } from "./injuries.js";
 import BroadcastMatchup, { featuredPlayer } from "./BroadcastMatchup.jsx";
 import { primeArt } from "./playerArt.js";
-import MatchupStakes, { pointSpread } from "./MatchupStakes.jsx";
+import { pointSpread } from "./MatchupStakes.jsx";
 import RaceWatch from "./RaceWatch.jsx";
 import { teamNeeds, needName } from "./needs.js";
 import { primeSlot } from "./seasonPreview.js";
@@ -370,7 +370,6 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
   // a tall window (big desktop) has room for the full-size matchup art
   const roomy = !mobile && typeof window !== "undefined" && window.innerHeight / (parseFloat(document.documentElement.style.zoom) || 1) >= 900;
   const [panel, setPanel] = useState("stories");
-  const inSeason = sp === "regular" || sp === "preseason";
   const nextWk = sp === "preseason" ? 1 : wk + 1;
   // This week's game (or the next playoff game).
   let game = null, label = PHASE[sp] || `${yr} Week ${nextWk}: Gameday`;
@@ -411,8 +410,6 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
     window.addEventListener("resize", again);
     return () => window.removeEventListener("resize", again);
   }, []);
-  // Week strip: last week, this week, and the next few.
-  const strip = inSeason ? Array.from({ length: 5 }, (_, i) => Math.max(1, Math.min(14, nextWk - 1)) + i).filter((w) => w <= 18) : [];
   const away = game && teams[game.a], home = game && teams[game.h];
   const mine = (t) => (t === me ? [depthOrder, playingTime] : []);
   const ra = away && teamRatings(away, ...mine(away)), rh = home && teamRatings(home, ...mine(home));
@@ -456,24 +453,6 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
               {primary.map((b, i) => <Btn key={b.label} onClick={b.onClick} bg={i === 0 ? C.gn : "#ffffff22"} c="#fff" style={{ fontSize: 16, padding: "10px 20px", fontWeight: 900 }}>{b.label}</Btn>)}
             </div>
           )}
-          {strip.length > 0 && (
-            <div style={{ display: "flex", gap: 6, overflowX: "auto", flex: 1, minWidth: 0, justifyContent: "flex-end" }}>
-              {strip.map((w) => {
-                const g = sched.find((x) => x.wk === w && (x.h === ui || x.a === ui));
-                const opp = g && teams[g.h === ui ? g.a : g.h];
-                const us = g?.played ? (g.h === ui ? g.hs : g.as) : null, them = g?.played ? (g.h === ui ? g.as : g.hs) : null;
-                const cur = w === nextWk;
-                return (
-                  <div key={w} style={{ flex: "0 1 64px", minWidth: 48, textAlign: "center" }}>
-                    <div style={{ height: 28, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", background: cur ? me.clr : "#ffffff10", border: `2px solid ${cur ? "#fff" : "#ffffff40"}`, opacity: g?.played || cur ? 1 : 0.75 }}>
-                      {opp ? <TeamLogo t={opp} sz={22} /> : <span style={{ fontWeight: 900, fontSize: 13 }}>BYE</span>}
-                    </div>
-                    <div style={{ fontSize: 10, fontWeight: 800, marginTop: 1, whiteSpace: "nowrap", color: us == null ? "#cbd5e1" : us > them ? C.gn : us < them ? C.rd : "#cbd5e1" }}>{us == null ? `WK ${w}` : `${us > them ? "W" : us < them ? "L" : "T"} ${us}-${them}`}</div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
           </div>
           {game ? (<HolidayCard holiday={game.holiday}>
             <BroadcastMatchup
@@ -498,7 +477,6 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
               <Btn onClick={rest.toggle} bg={rest.on ? "#334155" : "#0284c7"} style={{ fontSize: 14, fontWeight: 900, padding: "9px 16px", whiteSpace: "nowrap" }}>{rest.on ? "Play starters" : "Rest starters"}</Btn>
             </div>
           )}
-          {game && (sp === "regular" || sp === "playoffs" || sp === "preseason") && <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={sp === "playoffs"} h2h={sp === "preseason" ? null : h2h} neutral={!!game.neutral || (sp === "playoffs" && pb?.rd === 4)} />}
           {game && (sp === "regular" || sp === "playoffs") && planCard && <div style={{ marginTop: 12 }}>{planCard}</div>}
           {game ? null : (<>
             <div style={{ display: "flex", alignItems: "center", gap: 16, padding: mobile ? "12px 4px" : "8px 4px 14px", justifyContent: mobile ? "center" : "flex-start" }}>

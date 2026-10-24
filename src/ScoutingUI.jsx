@@ -192,7 +192,8 @@ function ProspectRow({ g, p, onDraft, canDraft, myRank, gone }) {
       <td className="sc-hide" style={{ ...td, textAlign: "center", fontSize: 13, color: stc, whiteSpace: "nowrap" }}>{st}</td>
       <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }} onClick={(e) => e.stopPropagation()}>
         <ScoutButton g={g} p={p} read={read} />
-        {onDraft && <Btn onClick={() => onDraft(p)} disabled={!canDraft} bg={C.gn} style={{ padding: "6px 12px", fontSize: 14, marginLeft: 6 }}>Draft</Btn>}
+        {/* Draft only shows when it's your pick: a column of grayed buttons the rest of the time is just noise */}
+        {onDraft && canDraft && <Btn onClick={() => onDraft(p)} bg={C.gn} style={{ padding: "6px 14px", fontSize: 14, marginLeft: 6, borderRadius: 8 }}>Draft</Btn>}
       </td>
     </tr>
   );
