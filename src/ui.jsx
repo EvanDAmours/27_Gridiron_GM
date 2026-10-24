@@ -39,7 +39,7 @@ export function Row({ label, value, tone, onClick, first, tour }) {
 export function Segments({ items, value, onChange }) {
   return (
     <div role="tablist" style={{ display: "flex", gap: 4, padding: 3, borderRadius: 10, background: "#ffffff0f", marginBottom: 12 }}>
-      {items.map(([k, l]) => <button key={k} role="tab" aria-selected={value === k} onClick={() => onChange(k)} style={{ flex: 1, minHeight: 38, borderRadius: 8, border: 0, background: value === k ? "#ffffff22" : "transparent", color: value === k ? "#fff" : "#94a3b8", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
+      {items.map(([k, l]) => <button key={k} role="tab" aria-selected={value === k} onClick={() => onChange(k)} style={{ flex: 1, minHeight: 38, borderRadius: 8, border: 0, background: value === k ? "linear-gradient(180deg, #ffffff2b, #ffffff1a)" : "transparent", boxShadow: value === k ? "0 1px 3px #0007, inset 0 1px 0 #ffffff1f" : "none", color: value === k ? "#fff" : "#94a3b8", fontSize: 15, fontWeight: 800, cursor: "pointer", transition: "background .18s, color .18s" }}>{l}</button>)}
     </div>
   );
 }
@@ -94,6 +94,10 @@ const ICONS = {
   target: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 12h.01",
   more: "M4 7h16M4 12h16M4 17h16",
   search: "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5 20 20",
+  box: "M9 4h6v3H9zM7 5.5H5V21h14V5.5h-2M8.5 12h7M8.5 16h5",
+  forward: "M4 6l7 6-7 6zM12 6l7 6-7 6z",
+  play: "M7 6v12M11 6v12M15 8.5l5 3.5-5 3.5z",
+  camera: "M4 8h3l2-2h6l2 2h3v11H4zM12 17a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z",
 };
 export const Icon = ({ k, size = 24, color = "currentColor", w = 2 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONS[k] || ICONS.more} /></svg>
