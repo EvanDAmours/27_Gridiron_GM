@@ -245,9 +245,12 @@ function PhoneProspect({ g, p, onDraft, canDraft, myRank, gone, first }) {
         <span style={{ display: "block", fontWeight: 800, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#f1f5f9" }}>{listed && <span style={{ color: C.gd, marginRight: 4 }}>★</span>}{p.name}</span>
         <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap", fontSize: 12, color: "#94a3b8" }}><Bdg pos={posTag(p)} /><RoleTag p={p} />{special && <span style={{ fontSize: 11, fontWeight: 900, color: DEV_STYLE[read.dev][0] }}>{DEV_TRAITS[read.dev].name}</span>}{read.sleeper && <span style={{ fontSize: 11, fontWeight: 900, color: "#f9a8d4" }}>Sleeper</span>}{read.flag && <span style={{ fontSize: 11, fontWeight: 900, color: "#fca5a5" }}>Red flag</span>}<span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.bio?.college}</span></span>
       </span>
-      {drafting
-        ? <span onClick={(e) => e.stopPropagation()}><button onClick={() => (arm ? onDraft(p) : setArm(true))} style={{ minHeight: 44, padding: "0 14px", borderRadius: 12, border: 0, background: arm ? C.gd : C.gn, color: arm ? "#111" : "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer" }}>{arm ? "Confirm" : "Draft"}</button></span>
-        : <span style={{ textAlign: "right", flexShrink: 0, lineHeight: 1.1 }}><Val txt={read.pot} /><span style={{ display: "block", fontSize: 10, fontWeight: 800, color: C.mt, marginTop: 2 }}>POT{read.ovr === "??" ? "" : ` · ${read.ovr} OVR`}</span></span>}
+      {/* what your scouts have on him (overall and ceiling) stays on the row, on the clock too */}
+      <span style={{ display: "flex", gap: 10, flexShrink: 0, textAlign: "center", lineHeight: 1.1 }}>
+        <span><Val txt={read.ovr} /><span style={{ display: "block", fontSize: 10, fontWeight: 800, color: C.mt, marginTop: 2 }}>OVR</span></span>
+        <span><Val txt={read.pot} /><span style={{ display: "block", fontSize: 10, fontWeight: 800, color: C.mt, marginTop: 2 }}>POT</span></span>
+      </span>
+      {drafting && <span onClick={(e) => e.stopPropagation()}><button onClick={() => (arm ? onDraft(p) : setArm(true))} style={{ minHeight: 44, padding: "0 14px", borderRadius: 12, border: 0, background: arm ? C.gd : C.gn, color: arm ? "#111" : "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer" }}>{arm ? "Confirm" : "Draft"}</button></span>}
     </div>
   );
 }
@@ -1426,9 +1429,9 @@ function PhoneProspectPage({ g, p, onClose }) {
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span style={{ fontSize: 14, color: "#cbd5e1" }}>{p.bio?.college}</span></div>
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 18 }}>
-          {[["BOARD", `#${csRank(p)}`, "#fff"], ["CEILING", read.pot === "??" ? "?" : read.pot, read.pot === "??" ? "#64748b" : TONE[gradeTone(read.pot)] || "#fff"], ["SCOUTED", `${scoutedPct(read)}%`, scoutedPct(read) >= 100 ? C.gn : "#fff"]].map(([k, v, c]) => (
-            <div key={k} style={{ background: "#ffffff14", borderRadius: 14, padding: "10px 0", textAlign: "center" }}><div style={{ fontSize: 26, fontWeight: 900, color: c, lineHeight: 1.05 }}>{v}</div><div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>{k}</div></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginTop: 18 }}>
+          {[["BOARD", `#${csRank(p)}`, "#fff"], ["OVERALL", read.ovr === "??" ? "?" : read.ovr, read.ovr === "??" ? "#64748b" : /^[A-D]/.test(read.ovr) ? TONE[gradeTone(read.ovr)] || "#fff" : read.ovr.startsWith("~") ? "#e2e8f0" : oC(+read.ovr)], ["CEILING", read.pot === "??" ? "?" : read.pot, read.pot === "??" ? "#64748b" : TONE[gradeTone(read.pot)] || "#fff"], ["SCOUTED", `${scoutedPct(read)}%`, scoutedPct(read) >= 100 ? C.gn : "#fff"]].map(([k, v, c]) => (
+            <div key={k} style={{ background: "#ffffff14", borderRadius: 14, padding: "10px 0", textAlign: "center", minWidth: 0 }}><div style={{ fontSize: 22, fontWeight: 900, color: c, lineHeight: 1.05 }}>{v}</div><div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: "#ffffffb3", marginTop: 4 }}>{k}</div></div>
           ))}
         </div>
         {(read.tier || need || read.flag || read.sleeper) && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12, fontSize: 14, fontWeight: 800 }}>
