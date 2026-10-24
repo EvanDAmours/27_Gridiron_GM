@@ -62,6 +62,12 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
   const close = () => setSheet(null);
   const then = (fn) => (...a) => { close(); fn?.(...a); };
   const news2 = (k) => { setPanel(k); setSheet("news"); };
+  // the to-do list and the inbox open Home's sheets from anywhere (development focus, injuries)
+  useEffect(() => {
+    const f = (e) => { if (e.detail === "dev") setSheet("dev"); if (e.detail === "injuries") { setPanel("injuries"); setSheet("news"); } };
+    window.addEventListener("gm:home", f); window.__gmPhoneHome = true;
+    return () => { window.removeEventListener("gm:home", f); window.__gmPhoneHome = false; };
+  }, []);
   const pct = (t) => (t.w + (t.t || 0) / 2) / Math.max(1, t.w + t.l + (t.t || 0));
   const rank = teams.filter((t) => t.c === me.c && t.d === me.d).sort((a, b) => pct(b) - pct(a) || b.w - a.w).indexOf(me) + 1;
   const hurt = injuryReport(me, wk).length;
