@@ -1,7 +1,8 @@
 // Game Updates: the patch notes, newest first, with a search box. Only the latest 15 show at
 // first; older ones render when you open the dropdown (a search looks through all of them).
 import React, { useState } from "react";
-import { C } from "./ui.jsx";
+import { C, Hero } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 import { PATCH_NOTES } from "./patchNotes.js";
 
 const RECENT = 15;
@@ -17,7 +18,9 @@ export default function GameInfo() {
   const hidden = found.length - shown.length;
   return (
     <div style={{ maxWidth: 900 }}>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+      {MOBILE && <><Hero eyebrow={`Version ${all[0].v}`} title="Game Updates" sub="Every change, newest first" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search patch notes" aria-label="Search patch notes" style={{ background: "#ffffff0f", color: C.tx, border: 0, borderRadius: 12, padding: "12px 14px", fontSize: 16, width: "100%", boxSizing: "border-box", margin: "16px 0 12px" }} /></>}
+      <div style={{ display: MOBILE ? "none" : "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>Game Updates</div>
           <div style={{ fontSize: 14, color: C.mt }}>Patch notes: every change to Football GM, newest first. Current version {all[0].v}.</div>
@@ -26,7 +29,7 @@ export default function GameInfo() {
           style={{ background: C.cd, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 14, minWidth: 0, width: 240, maxWidth: "100%" }} />
       </div>
       {shown.map((p, i) => (
-        <div key={p.v} style={{ background: C.cd, border: `1px solid ${!needle && i === 0 ? C.gn : C.bd}`, borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+        <div key={p.v} style={MOBILE ? { background: "#ffffff0f", borderRadius: 18, padding: "14px 16px", marginBottom: 10, boxShadow: !needle && i === 0 ? `inset 0 0 0 1px ${C.gn}88` : "none" } : { background: C.cd, border: `1px solid ${!needle && i === 0 ? C.gn : C.bd}`, borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 12, fontWeight: 900, color: C.gd, border: `1px solid ${C.gd}66`, borderRadius: 4, padding: "1px 6px" }}>v{p.v}</span>
             <span style={{ fontSize: 18, fontWeight: 800 }}>{p.title}</span>
