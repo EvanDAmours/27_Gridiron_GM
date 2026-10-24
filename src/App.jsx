@@ -1869,7 +1869,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
     {tab==="stats"&&<StatsScreen teams={teams} ui={ui} yr={yr} onPlayer={setSel} grade={glGrade} mobile={MOBILE}/>}
 
     {/* LEAGUE: your franchise's history */}
-    {tab==="league"&&<LeagueView teams={teams} ui={ui} sched={sched} wk={wk} sp={sp} mobile={MOBILE} onPlayer={setSel} onTeam={ti=>{setTab("roster");setRosterView("players");setRosterTeam(ti===ui?null:ti);}} go={setTab}/>}
+    {tab==="league"&&<LeagueView teams={teams} ui={ui} sched={sched} wk={wk} sp={sp} mobile={MOBILE} onPlayer={setSel} onTeam={ti=>{setTab("roster");setRosterView("players");setRosterTeam(ti===ui?null:ti);}}/>}
     {tab==="hub"&&ut&&<div style={{maxWidth:1100}}><FranchiseHistory team={ut} seasons={seasonHistory} current={{yr,w:ut.w||0,l:ut.l||0}} titles={myChamps} champs={champs} teams={teams} playoffs={dynastyStats.playoffApps||0} docs={docs} career={gmRetired?.career||gmCareerNow()} gmRetired={gmRetired} onLegacy={()=>setGmLook(true)} onWatch={d=>{setDocCard(d);setInboxShow('docCard');}} onShare={()=>{const _c=gmCareerNow();navigator.clipboard?.writeText(`🏈 ${ut.city} ${ut.name}: ${_c.w}-${_c.l} over ${_c.seasons} season${_c.seasons===1?"":"s"}, ${myChamps.length} Super Bowl${myChamps.length===1?'':'s'}, GM legacy ${_c.score}. #FootballGM`).then(()=>sm('Copied!'));}}/></div>}
 
     {/* SCOUTING */}

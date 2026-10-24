@@ -780,10 +780,10 @@ export function ScoutPtsBadge({ pts = 0, sc, slim }) {
     </span>
   );
   return (
-    <div style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "8px 16px", borderRadius: 12, background: on ? `linear-gradient(135deg, ${C.gd}33, #0b1220)` : C.cd, border: `2px solid ${on ? C.gd : C.bd}` }}>
-      <span title="Spend them on scouting reports and workups" style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
-        <span style={{ fontSize: 44, fontWeight: 900, lineHeight: 1, color: on ? C.gd : C.mt, fontVariantNumeric: "tabular-nums" }}>{pts}</span>
-        <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1, lineHeight: 1.25, color: on ? "#fde68a" : C.mt }}>SCOUTING<br />POINT{pts === 1 ? "" : "S"} LEFT</span>
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "6px 14px", borderRadius: 12, background: "#ffffff0a" }}>
+      <span title="Spend them on scouting reports and workups" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, color: on ? C.gd : C.mt, fontVariantNumeric: "tabular-nums" }}>{pts}</span>
+        <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.8, lineHeight: 1.25, color: "#94a3b8" }}>SCOUTING<br />POINT{pts === 1 ? "" : "S"} LEFT</span>
       </span>
     </div>
   );

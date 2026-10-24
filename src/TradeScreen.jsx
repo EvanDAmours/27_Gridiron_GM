@@ -328,12 +328,12 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
           {teams.filter((t) => t.id !== ui).sort((a, b) => a.city.localeCompare(b.city)).map((t) => {
             const m = modes?.[t.id];
             return (
-              <button key={t.id} onClick={() => pick(t.id)} title={`${t.city} ${t.name}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 2px 6px", background: C.cd, border: `1px solid ${m === "buyer" ? C.gn + "88" : m === "seller" ? C.gd + "88" : C.bd}`, borderRadius: 10, color: "#e2e8f0", cursor: "pointer" }}>
+              <button key={t.id} onClick={() => pick(t.id)} title={`${t.city} ${t.name}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "10px 2px 8px", background: m === "buyer" ? "#22c55e14" : m === "seller" ? "#eab30814" : "#ffffff0a", border: 0, borderRadius: 12, color: "#e2e8f0", cursor: "pointer" }}>
                 <TeamLogo t={t} sz={34} />
                 <b style={{ fontSize: 13 }}>{t.ab}</b>
                 <span style={{ fontSize: 11, color: C.mt }}>{t.w}-{t.l}</span>
-                {(() => { const cs = capSpace(t); return <span title={`${t.name} cap space`} style={{ fontSize: 11, fontWeight: 800, color: cs < 0 ? C.rd : cs < 10 ? C.gd : C.gn }}>{cs < 0 ? `-${money(-cs)}` : money(cs)}</span>; })()}
-                {m && <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.8, color: m === "buyer" ? C.gn : C.gd }}>{m === "buyer" ? "BUYING" : "SELLING"}</span>}
+                {(() => { const cs = capSpace(t); return <span title={`${t.name} cap space`} style={{ fontSize: 11, fontWeight: 700, color: cs < 0 ? C.rd : "#94a3b8" }}>{cs < 0 ? `-${money(-cs)}` : money(cs)}</span>; })()}
+                {(m === "buyer" || m === "seller") && <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.8, color: m === "buyer" ? C.gn : C.gd }}>{m === "buyer" ? "BUYING" : "SELLING"}</span>}
               </button>
             );
           })}

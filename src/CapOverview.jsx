@@ -66,6 +66,7 @@ export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = 
 }
 
 export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext, rows, canExtend, starters, onPlayer, mobile, leagueAvg, onContracts, cy, rookies = 0 }) {
+  const [allTips, setAllTips] = React.useState(false);
   const used = cap - space;
   const byGroup = GROUPS.map(([g, ps]) => [g, team.roster.filter((p) => ps.includes(p.pos)).reduce((s, p) => s + (p.salary || 0), 0), leagueAvg ? leagueAvg(ps) : null]);
   const top = [...team.roster].sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, 8);
@@ -133,8 +134,8 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
   }
   return (
     <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${mobile ? 150 : 180}px,1fr))`, gap: 8 }}>
-        {[["CAP SPACE", $(space), space < 0 ? C.rd : space < 15 ? C.gd : C.gn, `of ${$(cap)}${team?.rollover > 0 ? `, incl. ${$(team.rollover)} rolled over` : ""}`], ["NEXT SEASON'S ROOM", $(nextRoom), nextRoom < 0 ? C.rd : C.gn, rookies > 0 ? `after coaches and ~${$(rookies)} of rookies, before re-signings` : "after coaches, before re-signings"], ["DEAD MONEY", $(dead), dead > 0 ? C.rd : C.mt, deadNext ? `+${$(deadNext)} next year` : "none next year"], ["EXPIRING DEALS", rows.filter((r) => r.yl <= 1).length, C.tx, onContracts ? "after this season · see them →" : "after this season", "expiring"]].map(([l, v, c, sub, f]) => (
+      <div style={{ display: "grid", gridTemplateColumns: cy != null ? "repeat(auto-fill,minmax(220px,260px))" : `repeat(auto-fit,minmax(${mobile ? 150 : 180}px,1fr))`, gap: 8 }}>
+        {[["CAP SPACE", $(space), space < 0 ? C.rd : space < 15 ? C.gd : C.gn, `of ${$(cap)}${team?.rollover > 0 ? `, incl. ${$(team.rollover)} rolled over` : ""}`], ["NEXT SEASON'S ROOM", $(nextRoom), nextRoom < 0 ? C.rd : C.gn, rookies > 0 ? `after coaches and ~${$(rookies)} of rookies, before re-signings` : "after coaches, before re-signings"], ["DEAD MONEY", $(dead), dead > 0 ? C.rd : C.mt, deadNext ? `+${$(deadNext)} next year` : "none next year"], ["EXPIRING DEALS", rows.filter((r) => r.yl <= 1).length, C.tx, onContracts ? "after this season · see them →" : "after this season", "expiring"]].filter(([l]) => cy == null || !["CAP SPACE", "NEXT SEASON'S ROOM"].includes(l)).map(([l, v, c, sub, f]) => (
           <div key={l} onClick={f && onContracts ? () => onContracts(f) : undefined} style={{ ...card, cursor: f && onContracts ? "pointer" : "default" }}>
             <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt }}>{l}</div>
             <div style={{ fontSize: 24, fontWeight: 900, color: c }}>{v}</div>
@@ -171,13 +172,14 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
         <div style={card}>
           <div style={head}>CAP ADVISOR</div>
           {!tips.length && <div style={{ fontSize: 14, color: "#94a3b8" }}>Your books are in good shape. Nothing needs doing right now.</div>}
-          {tips.map((t, i) => (
+          {/* the top three; the rest a click away */}
+          {(allTips ? tips : tips.slice(0, 3)).map((t, i) => (
             <div key={i} onClick={() => t.p && onPlayer(t.p)} style={{ borderLeft: `3px solid ${t.tone}`, background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 6, cursor: t.p ? "pointer" : "default" }}>
               <div style={{ fontSize: 14, fontWeight: 800 }}>{t.title}</div>
               <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.4 }}>{t.text}</div>
             </div>
           ))}
-          <div style={{ fontSize: 12, color: C.mt, marginTop: 4 }}>Tap a suggestion to open the player. Restructures and extensions are also on the Contracts tab.</div>
+          {tips.length > 3 && <button onClick={() => setAllTips((v) => !v)} style={{ background: "transparent", border: 0, padding: "4px 0", color: "#7dd3fc", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{allTips ? "Show fewer" : `${tips.length - 3} more suggestions`}</button>}
         </div>
       </div>
     </div>

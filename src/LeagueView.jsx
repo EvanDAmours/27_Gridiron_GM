@@ -16,7 +16,7 @@ const LEADERS = [
 const rec = (t) => `${t.w || 0}-${t.l || 0}${t.t ? `-${t.t}` : ""}`;
 const short = (n) => { const a = String(n || "").split(" "); return a.length > 1 ? `${a[0][0]}. ${a.slice(1).join(" ")}` : n; };
 
-export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer, onTeam, go }) {
+export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer, onTeam }) {
   const weeks = useMemo(() => [...new Set((sched || []).filter((g) => typeof g.wk === "number" && g.wk <= 18).map((g) => g.wk))].sort((a, b) => a - b), [sched]);
   // in season, the week coming up; otherwise the last week played (or week 1 before the season)
   const def = sp === "regular" ? Math.min(Math.max(wk + 1, 1), weeks[weeks.length - 1] || 18) : (sched || []).some((g) => g.played && g.wk <= 18) ? Math.max(...(sched || []).filter((g) => g.played && g.wk <= 18).map((g) => g.wk)) : weeks[0] || 1;
@@ -42,12 +42,9 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
     </span>
   );
   if (mobile) return <PhoneLeague {...{ teams, ui, games, byes, week, weeks, setW, leaders, onPlayer, onTeam, sp }} />;
-  const menu = [["standings", "Standings"], ["schedule", "Schedule"], ["stats", "Stats & Awards"], ["wire", "Transactions"], ["records", "Record Book"], ["history", "League History"], ["hub", "Franchise History"]];
+  // no sidebar: every one of its links is already a tab above or in the main bar
   return (
-    <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "170px minmax(0,1.25fr) minmax(360px,1fr)", gap: 12, alignItems: "start" }}>
-      <div style={{ display: "flex", flexDirection: mobile ? "row" : "column", gap: 6, overflowX: mobile ? "auto" : undefined, scrollbarWidth: "none" }}>
-        {(mobile ? menu.slice(0, 4) : menu).map(([k, l]) => <button key={k} onClick={() => go(k)} style={{ textAlign: "left", background: "transparent", border: `1px solid ${C.bd}`, borderRadius: 8, color: "#cbd5e1", padding: "8px 12px", fontSize: 14, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>{l}</button>)}
-      </div>
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.25fr) minmax(360px,1fr)", gap: 12, alignItems: "start" }}>
       <div style={panel}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
           <span style={head}>WEEKLY SCHEDULE</span>
