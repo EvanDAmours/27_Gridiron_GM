@@ -1,7 +1,7 @@
 // The franchise hub, laid out like Madden's: a menu on the left, this week's matchup in the
 // middle (week strip, both logos, team ratings), and top stories on the right.
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { C, TeamLogo, Btn, kickoff, Bdg, oC, Sheet, Row, Segments } from "./ui.jsx";
+import { C, TeamLogo, Btn, kickoff, Bdg, oC, Sheet, Segments } from "./ui.jsx";
 import { unitRatings } from "./gamesim.js";
 import { depthOrderFor } from "./DepthChart.jsx";
 import { ROUND_NAMES } from "./playoffs.js";
@@ -10,11 +10,11 @@ import { InjTag } from "./InjuryTag.jsx";
 import { injuryReport } from "./injuries.js";
 import BroadcastMatchup, { featuredPlayer } from "./BroadcastMatchup.jsx";
 import { primeArt } from "./playerArt.js";
-import MatchupStakes from "./MatchupStakes.jsx";
+import MatchupStakes, { stakesLines, pointSpread } from "./MatchupStakes.jsx";
 import RaceWatch from "./RaceWatch.jsx";
 import { teamNeeds, needName } from "./needs.js";
 import { primeSlot } from "./seasonPreview.js";
-import { HolidayCard } from "./Atmosphere.jsx";
+import { HolidayCard, HolidayBadge } from "./Atmosphere.jsx";
 import { gameWeather, wxOf } from "./weather.js";
 import { rosterPlan } from "./rosterPlan.js";
 import { posTag } from "./dline.js";
@@ -30,96 +30,206 @@ export function teamRatings(t, depthOrder, snaps) {
   return { ovr: Math.round(off * 0.5 + def * 0.5), off, def };
 }
 
-// Phones: "this week" only. A one-line record, the next game as a card (tap for the matchup),
-// the top three to-dos, and one row each for everything else, which opens in a bottom sheet.
-// The week's big button is the action bar App pins above the tab bar.
-function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, label, forecast, menu, side, planCard, rest, stories, news, onStory, onNav, fa, capRoom, onFa, sched, h2h, bg }) {
+// Phones: built as an app screen, not a shrunk desktop page. A full-bleed hero for the next game
+// in both clubs' colors (tap for the matchup), the week's to-dos as cards you swipe, shortcut
+// tiles for everything else (each opens a bottom sheet), and the top story. The record and cap
+// room already sit in the app header; the week's big button is the action bar above the tab bar.
+const ORD = ["", "1st", "2nd", "3rd", "4th"];
+// to-do labels carry a leading emoji for the desktop list; the phone cards don't need it
+const plain = (s) => (typeof s === "string" ? s.replace(/^[\p{Extended_Pictographic}️‍\s]+/u, "") : s);
+const TONE = { urgent: [C.rd, "Needs you"], action: [C.gd, "To do"], info: ["#38bdf8", "Heads up"] };
+const ICON = {
+  plan: "M9 3h6v3H9zM9 4.5H6V21h12V4.5h-3M9 11h6M9 15h4",
+  hurt: "M12 3a9 9 0 100 18 9 9 0 000-18zM12 8v8M8 12h8",
+  dev: "M4 17l5-5 4 4 7-7M15 9h5v5",
+  table: "M5 20v-8M12 20V5M19 20v-5",
+  roster: "M9 11a3 3 0 100-6 3 3 0 000 6zM3.5 20a5.5 5.5 0 0111 0M16 5.2a3 3 0 010 5.6M17.5 14.6A5.5 5.5 0 0120.5 20",
+  needs: "M12 3a9 9 0 100 18 9 9 0 000-18zM12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9zM12 11.2a.8.8 0 100 1.6.8.8 0 000-1.6z",
+};
+const Icon = ({ k, c }) => (
+  <span style={{ width: 36, height: 36, borderRadius: 18, background: `${c}22`, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICON[k]} /></svg>
+  </span>
+);
+const clamp = (n) => ({ display: "-webkit-box", WebkitLineClamp: n, WebkitBoxOrient: "vertical", overflow: "hidden" });
+const eyebrow = { fontSize: 12, fontWeight: 900, letterSpacing: 1.6, textTransform: "uppercase", color: "#ffffffb3" };
+
+function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, forecast, menu, side, planCard, rest, stories, news, onStory, onNav, fa, capRoom, onFa, sched, h2h, rivalId, devFocus }) {
   const [sheet, setSheet] = useState(null);
   const [panel, setPanel] = useState("stories");
   const close = () => setSheet(null);
   const then = (fn) => (...a) => { close(); fn?.(...a); };
+  const news2 = (k) => { setPanel(k); setSheet("news"); };
   const pct = (t) => (t.w + (t.t || 0) / 2) / Math.max(1, t.w + t.l + (t.t || 0));
   const rank = teams.filter((t) => t.c === me.c && t.d === me.d).sort((a, b) => pct(b) - pct(a) || b.w - a.w).indexOf(me) + 1;
   const hurt = injuryReport(me, wk).length;
-  const top = stories[0]?.head || news[0]?.text;
-  const opp = game && teams[game.h === ui ? game.a : game.h];
+  const oppId = game && (game.h === ui ? game.a : game.h), opp = game && teams[oppId];
+  const playoff = sp === "playoffs";
+  const neutral = !!game?.neutral || (playoff && pb?.rd === 4);
   const plan = ["combine", "resign", "freeagency", "draft"].includes(sp) && onFa ? rosterPlan(me.roster, fa, { nextYear: sp === "combine" || sp === "resign" }) : null;
-  const tone = (m) => (m.tone === "urgent" ? C.rd : m.tone === "action" ? C.gd : "#38bdf8");
-  const todo = (m, i, all) => (
-    <button key={m.label} onClick={all ? then(m.onClick) : m.onClick} style={{ display: "block", width: "100%", minHeight: 48, textAlign: "left", background: i === 0 ? "#00000055" : "transparent", border: i === 0 ? "1px solid #f97316" : "1px solid transparent", borderLeft: i > 0 && m.tone ? `3px solid ${tone(m)}` : undefined, borderRadius: 10, padding: "10px 12px", marginBottom: 4, color: "#fff", cursor: "pointer" }}>
-      <div style={{ fontSize: i === 0 ? 17 : 15, fontWeight: i === 0 ? 800 : 600, lineHeight: 1.3, whiteSpace: all ? undefined : "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.label}</div>
-      {i === 0 && m.sub && <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.sub}</div>}
-    </button>
-  );
-  const card = { background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 14, padding: "6px 12px", marginTop: 12 };
-  const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", padding: "8px 2px 6px" };
-  const Side = ({ t, r }) => (
-    <div style={{ flex: 1, minWidth: 0, textAlign: "center" }}>
-      <div style={{ display: "inline-flex" }}><TeamLogo t={t} sz={60} glow /></div>
-      <div style={{ fontSize: 17, fontWeight: 900, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
-      <div style={{ fontSize: 14, color: "#cbd5e1" }}>{rec(t)}{r ? <> · OVR <b style={{ color: "#fff" }}>{r.ovr}</b></> : null}</div>
+  const need = !game && sp !== "regular" ? teamNeeds(me.roster, me.personnel).list[0] : null;
+  const focused = [devFocus?.off, devFocus?.def].filter(Boolean).length;
+
+  // the hero's lines: when, what kind of game, what it means, and the betting line
+  let hero = null;
+  if (game) {
+    const sameDiv = opp.c === me.c && opp.d === me.d;
+    const tags = [sp === "preseason" ? "Season opener" : playoff ? ROUND_NAMES[pb?.rd] || "Playoffs" : `Week ${game.wk ?? wk + 1}`, !playoff && primeSlot(game), sameDiv && "Division", rivalId != null && oppId === rivalId && "Rivalry"].filter(Boolean);
+    const [day, time] = (game.date ? kickoff(game) : "").split(" · ");
+    const stake = (stakesLines({ teams, ui, opp: oppId, wk, playoff })[0] || "").replace(/^Division game: (\w)/, (_, c) => c.toUpperCase());
+    const sp2 = ra && rh ? pointSpread(ra, rh, neutral) : null;
+    hero = { tags, day, time: time ? time.replace(" ET", "") : "TBD", stake, line: sp2 ? (sp2.pts ? `${(sp2.home ? home : away).ab} −${sp2.pts}` : "Pick'em") : null };
+  }
+  const nextGame = !game && sp === "regular" ? sched.find((g) => g.wk > wk + 1 && (g.h === ui || g.a === ui)) : null;
+
+  const Team = ({ t, r }) => (
+    <div style={{ minWidth: 0, textAlign: "center" }}>
+      <div style={{ display: "inline-flex" }}><TeamLogo t={t} sz={84} glow /></div>
+      <div style={{ fontSize: 19, fontWeight: 900, marginTop: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+      <div style={{ fontSize: 14, color: "#ffffffb3", fontVariantNumeric: "tabular-nums" }}>{rec(t)}{r ? ` · ${r.ovr} OVR` : ""}</div>
     </div>
   );
-  return (
-    <div className="keep-dark" style={{ borderRadius: 14, background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, padding: "16px 12px 14px" }}>
-      <div style={{ fontSize: 24, fontWeight: 900, lineHeight: 1.15, padding: "0 2px" }}>{label}</div>
-      <button data-tour="strip" onClick={() => onNav("standings")} style={{ display: "block", background: "transparent", border: 0, padding: "4px 2px 0", color: "#cbd5e1", fontSize: 15, cursor: "pointer", textAlign: "left" }}>
-        <b style={{ color: "#fff" }}>{rec(me)}</b> · {["", "1st", "2nd", "3rd", "4th"][rank] || rank} in the {me.c} {me.d} · <span style={{ color: capRoom >= 0 ? "#cbd5e1" : C.rd }}>{money(capRoom)} cap</span>
-      </button>
+  const todos = menu.slice(0, 3);
+  const tiles = [
+    game && (sp === "regular" || playoff) && planCard && { k: "plan", icon: "plan", c: "#a78bfa", label: "Game plan", value: `vs ${opp.name}` },
+    need && { k: "needs", icon: "needs", c: C.gd, label: "Biggest need", value: needName(need.pos).replace(/^./, (x) => x.toUpperCase()) },
+    plan && { k: "build", icon: "roster", c: plan.open ? C.gd : C.gn, label: "Build your 53", value: `${plan.count} of ${plan.target}` },
+    { k: "hurt", icon: "hurt", c: hurt ? C.rd : C.gn, label: "Injuries", value: hurt ? `${hurt} out` : "All healthy" },
+    side && { k: "dev", icon: "dev", c: "#38bdf8", label: "Development", value: focused === 2 ? "Both set" : focused ? "1 of 2 set" : "Not set", tour: "devfocus" },
+    { k: "table", icon: "table", c: "#94a3b8", label: "Standings", value: `${ORD[rank] || rank} in ${me.c} ${me.d}`, tour: "strip" },
+  ].filter(Boolean);
+  const tap = (k) => (k === "hurt" ? news2("injuries") : k === "table" ? onNav("standings") : setSheet(k));
+  const lead = stories[0], leadT = lead && teams[lead.team];
+  const leadText = lead ? lead.head : news[0]?.text;
+  const sec = { padding: "0 16px", marginTop: 26 };
+  const h2 = { fontSize: 20, fontWeight: 900 };
+  const link = { background: "transparent", border: 0, color: "#7dd3fc", fontSize: 15, fontWeight: 700, cursor: "pointer", padding: "6px 0" };
+  const heroBg = game
+    ? `linear-gradient(180deg, transparent 45%, ${C.bg} 100%), linear-gradient(100deg, ${away.clr}d9 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr}d9 100%)`
+    : `linear-gradient(180deg, transparent 40%, ${C.bg} 100%), radial-gradient(120% 90% at 50% 0%, ${me.clr}cc, ${me.clr}22 70%)`;
 
+  return (
+    <div className="keep-dark" style={{ margin: "-6px -8px calc(-150px - env(safe-area-inset-bottom))", paddingBottom: "calc(170px + env(safe-area-inset-bottom))", background: C.bg, color: "#fff", minHeight: "calc(var(--vh, 100vh) - 60px)" }}>
+      {/* hero */}
       {game ? (
-        <HolidayCard holiday={game.holiday}>
-          <button onClick={() => setSheet("matchup")} style={{ display: "block", width: "100%", marginTop: 14, background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 14, padding: "14px 8px 10px", color: "#fff", cursor: "pointer" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}><Side t={away} r={ra} /><b style={{ fontSize: 15, color: "#94a3b8" }}>AT</b><Side t={home} r={rh} /></div>
-            <div style={{ fontSize: 14, color: "#cbd5e1", marginTop: 10 }}>{game.date ? kickoff(game) : "Kickoff TBD"}{forecast ? ` · ${forecast.icon} ${forecast.label}` : ""}</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#7dd3fc", marginTop: 6 }}>Matchup details ›</div>
-          </button>
-        </HolidayCard>
-      ) : (<>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
-          <TeamLogo t={me} sz={56} glow />
-          <div style={{ fontSize: 22, fontWeight: 900, textTransform: "uppercase", lineHeight: 1.05 }}>{sp === "regular" ? "Bye week" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>
+        <button onClick={() => setSheet("matchup")} aria-label="Matchup details" style={{ display: "block", width: "100%", background: heroBg, border: 0, color: "#fff", padding: "22px 14px 18px", cursor: "pointer", textAlign: "center" }}>
+          <div style={{ ...eyebrow, display: "flex", justifyContent: "center", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            {hero.tags.join("  ·  ")}{game.holiday && <HolidayBadge holiday={game.holiday} />}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6, marginTop: 18 }}>
+            <Team t={away} r={ra} />
+            <div style={{ padding: "0 4px", minWidth: 92 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#ffffffb3" }}>{hero.day || "Kickoff"}</div>
+              <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.1, whiteSpace: "nowrap" }}>{hero.time}</div>
+              {forecast && <div style={{ fontSize: 13, color: "#ffffffcc", marginTop: 4, whiteSpace: "nowrap" }}>{forecast.icon} {forecast.label}</div>}
+              {hero.line && <div style={{ display: "inline-block", fontSize: 12, fontWeight: 800, color: "#fff", background: "#00000055", borderRadius: 999, padding: "3px 9px", marginTop: 8, whiteSpace: "nowrap" }}>{hero.line}</div>}
+            </div>
+            <Team t={home} r={rh} />
+          </div>
+          {hero.stake && <div style={{ fontSize: 15, fontWeight: 600, color: "#e2e8f0", margin: "18px auto 0", maxWidth: 340, lineHeight: 1.35 }}>{hero.stake}</div>}
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#ffffffcc", marginTop: 12 }}>Matchup ›</div>
+        </button>
+      ) : (
+        <div style={{ background: heroBg, padding: "30px 16px 22px", textAlign: "center" }}>
+          <div style={{ display: "inline-flex" }}><TeamLogo t={me} sz={96} glow /></div>
+          <div style={{ ...eyebrow, marginTop: 14 }}>{sp === "regular" ? `${yr} · Week ${wk + 1}` : `${yr} · ${playoff ? "Playoffs" : "Offseason"}`}</div>
+          <div style={{ fontSize: 32, fontWeight: 900, textTransform: "uppercase", lineHeight: 1.05, marginTop: 4 }}>{sp === "regular" ? "Bye week" : playoff ? "Season over" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>
+          <div style={{ fontSize: 15, color: "#ffffffb3", marginTop: 6 }}>{nextGame ? `Next: Week ${nextGame.wk} ${nextGame.h === ui ? "vs" : "at"} ${teams[nextGame.h === ui ? nextGame.a : nextGame.h].name}` : `${me.city} ${me.name} · ${rec(me)}`}</div>
         </div>
-        <OffseasonBoard me={me} sp={sp} onNav={onNav} />
-      </>)}
+      )}
 
       {rest && (
-        <div style={{ ...card, display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderColor: rest.on ? "#38bdf8" : "#ffffff1a" }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 800 }}>No. 1 seed clinched</div>
-            <div style={{ fontSize: 13, color: "#cbd5e1" }}>{rest.on ? "Starters resting until the playoffs" : "Rest starters to keep them healthy"}</div>
+        <div style={{ ...sec, marginTop: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, borderRadius: 16, background: rest.on ? "#0c4a6e66" : "#ffffff0d", padding: "12px 14px" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 800 }}>No. 1 seed clinched</div>
+              <div style={{ fontSize: 13, color: "#94a3b8" }}>{rest.on ? "Starters are resting until the playoffs" : "Rest starters to keep them healthy"}</div>
+            </div>
+            <button onClick={rest.toggle} style={{ minHeight: 40, borderRadius: 999, border: 0, padding: "0 16px", background: rest.on ? "#334155" : "#0284c7", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{rest.on ? "Play them" : "Rest"}</button>
           </div>
-          <Btn onClick={rest.toggle} bg={rest.on ? "#334155" : "#0284c7"} style={{ fontSize: 15, fontWeight: 900, minHeight: 44, padding: "0 14px", borderRadius: 10, whiteSpace: "nowrap" }}>{rest.on ? "Play them" : "Rest"}</Btn>
         </div>
       )}
 
-      {menu.length > 0 && (
-        <div style={{ ...card, padding: "4px 8px 6px" }}>
-          <div style={head}>THIS WEEK</div>
-          {menu.slice(0, 3).map((m, i) => todo(m, i))}
-          {menu.length > 3 && <Row first label={<span style={{ color: "#7dd3fc", fontSize: 15 }}>See all {menu.length}</span>} onClick={() => setSheet("todo")} />}
+      {/* to-dos: swipe through */}
+      {todos.length > 0 && (
+        <div style={{ marginTop: 26 }}>
+          <div style={{ display: "flex", alignItems: "baseline", padding: "0 16px", marginBottom: 10 }}>
+            <span style={h2}>{game && sp !== "playoffs" ? "Before kickoff" : "This week"}</span>
+            {menu.length > 3 && <button onClick={() => setSheet("todo")} style={{ ...link, marginLeft: "auto" }}>See all {menu.length}</button>}
+          </div>
+          <div className="pill-row" style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", scrollPaddingLeft: 16, padding: "0 16px 4px", WebkitOverflowScrolling: "touch" }}>
+            {todos.map((m, i) => {
+              const [c, word] = i === 0 ? ["#fff", "This week"] : TONE[m.tone] || TONE.info;
+              return (
+                <button key={m.label} onClick={m.onClick} style={{ flex: `0 0 ${todos.length === 1 ? "100%" : "78%"}`, minWidth: 0, scrollSnapAlign: "start", minHeight: 118, display: "flex", flexDirection: "column", textAlign: "left", whiteSpace: "normal", borderRadius: 18, border: 0, padding: 16, color: "#fff", cursor: "pointer", background: i === 0 ? `linear-gradient(140deg, ${me.clr}, ${me.clr}55)` : "#ffffff0f" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 900, letterSpacing: 1.2, textTransform: "uppercase", color: i === 0 ? "#ffffffcc" : c }}>{i > 0 && <span style={{ width: 8, height: 8, borderRadius: 4, background: c }} />}{word}</span>
+                  <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.25, marginTop: 8, ...clamp(2) }}>{plain(m.label)}</span>
+                  {m.sub && <span style={{ fontSize: 14, color: "#ffffffb3", marginTop: 4, lineHeight: 1.35, ...clamp(2) }}>{m.sub}</span>}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      <div style={card}>
-        {[
-          game && (sp === "regular" || sp === "playoffs") && planCard && { k: "plan", label: "Game plan", value: opp ? `vs ${opp.ab}` : "" },
-          plan && { k: "build", label: "Build your 53", value: `${plan.count}/${plan.target}`, tone: plan.open ? C.gd : C.gn },
-          { k: "news", label: "Top stories", value: top || "Quiet so far" },
-          { k: "injuries", label: "Injury report", value: hurt ? `${hurt} out` : "Fully healthy", tone: hurt ? undefined : C.gn },
-          side && { k: "dev", label: "Development focus", tour: "devfocus" },
-        ].filter(Boolean).map((r, i) => <Row key={r.k} first={i === 0} label={r.label} value={r.value} tone={r.tone} tour={r.tour} onClick={() => { if (r.k === "news" || r.k === "injuries") setPanel(r.k === "news" ? "stories" : "injuries"); setSheet(r.k === "injuries" ? "news" : r.k); }} />)}
+      {/* shortcuts */}
+      <div style={{ ...sec, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {/* an odd one out runs the full width, laid on its side */}
+        {tiles.map((t, i) => { const wide = i === tiles.length - 1 && tiles.length % 2 === 1; return (
+          <button key={t.k} data-tour={t.tour} onClick={() => tap(t.k)} style={{ gridColumn: wide ? "span 2" : undefined, minHeight: wide ? 68 : 104, display: "flex", flexDirection: wide ? "row" : "column", alignItems: wide ? "center" : "flex-start", gap: wide ? 12 : 0, textAlign: "left", borderRadius: 18, border: 0, background: "#ffffff0f", padding: 14, color: "#fff", cursor: "pointer" }}>
+            <Icon k={t.icon} c={t.c} />
+            <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: wide ? 1 : undefined, maxWidth: "100%", marginTop: wide ? 0 : 10 }}>
+              <span style={{ fontSize: 16, fontWeight: 800 }}>{t.label}</span>
+              <span style={{ fontSize: 14, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.value}</span>
+            </span>
+            {wide && <span style={{ fontSize: 20, color: "#64748b" }}>›</span>}
+          </button>
+        ); })}
       </div>
 
-      {sheet === "todo" && <Sheet title="This week" onClose={close}>{menu.map((m, i) => todo(m, i, true))}</Sheet>}
+      {/* the top story */}
+      {leadText && (
+        <div style={sec}>
+          <div style={{ display: "flex", alignItems: "baseline", marginBottom: 10 }}>
+            <span style={h2}>Top story</span>
+            <button onClick={() => news2("stories")} style={{ ...link, marginLeft: "auto" }}>All news</button>
+          </div>
+          <button onClick={() => (lead && (lead.inc || lead.retire) ? onStory?.(lead) : news2("stories"))} style={{ display: "flex", gap: 12, alignItems: "flex-start", width: "100%", textAlign: "left", whiteSpace: "normal", borderRadius: 18, border: 0, padding: 16, color: "#fff", cursor: "pointer", background: leadT ? `linear-gradient(135deg, ${leadT.clr}cc, #ffffff0f 75%)` : "#ffffff0f" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {lead?.breaking && <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: "#fca5a5", marginBottom: 4 }}>BREAKING</div>}
+              <div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.3, ...clamp(3) }}>{leadText}</div>
+            </div>
+            {(leadT || news[0]?.team) && <TeamLogo t={leadT || news[0].team} sz={40} glow />}
+          </button>
+        </div>
+      )}
+
+      {sheet === "todo" && (
+        <Sheet title="This week" onClose={close}>
+          {menu.map((m, i) => {
+            const [c] = i === 0 ? [me.clr] : TONE[m.tone] || TONE.info;
+            return (
+              <button key={m.label} onClick={then(m.onClick)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 56, textAlign: "left", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff14" : 0, padding: "8px 2px", color: "#fff", cursor: "pointer" }}>
+                <span style={{ width: 10, height: 10, borderRadius: 5, background: c, flexShrink: 0 }} />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 16, fontWeight: 700, lineHeight: 1.3 }}>{plain(m.label)}</span>
+                  {i === 0 && m.sub && <span style={{ display: "block", fontSize: 13, color: "#94a3b8" }}>{m.sub}</span>}
+                </span>
+                <span style={{ fontSize: 20, color: "#64748b" }}>›</span>
+              </button>
+            );
+          })}
+        </Sheet>
+      )}
       {sheet === "matchup" && game && (
-        <Sheet title={`${away.ab} at ${home.ab}`} onClose={close}>
-          <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={sp === "playoffs"} h2h={sp === "preseason" ? null : h2h} neutral={!!game.neutral || (sp === "playoffs" && pb?.rd === 4)} />
+        <Sheet title={`${away.name} at ${home.name}`} onClose={close}>
+          <MatchupStakes teams={teams} ui={ui} game={game} sched={sched} wk={wk} ra={ra} rh={rh} playoff={playoff} h2h={sp === "preseason" ? null : h2h} neutral={neutral} />
           {sp === "regular" && <RaceWatch teams={teams} sched={sched} ui={ui} wk={game.wk} mobile />}
           <div style={{ height: 8 }} />
         </Sheet>
       )}
       {sheet === "plan" && <Sheet title="Game plan" onClose={close}>{planCard}<div style={{ height: 8 }} /></Sheet>}
+      {sheet === "needs" && <Sheet title="Your offseason" onClose={close}><OffseasonBoard me={me} sp={sp} onNav={then(onNav)} /><div style={{ height: 8 }} /></Sheet>}
       {sheet === "build" && <Sheet title="Build your 53" onClose={close}><RosterChecklist me={me} sp={sp} fa={fa} capRoom={capRoom} onFa={then(onFa)} mobile /></Sheet>}
       {sheet === "news" && (
         <Sheet title="Around the league" onClose={close}>
@@ -257,7 +367,7 @@ function RosterChecklist({ me, sp, fa, capRoom, onFa, mobile }) {
   );
 }
 
-export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory, rivalId, h2h }) {
+export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory, rivalId, h2h, devFocus }) {
   const me = teams[ui];
   // a tall window (big desktop) has room for the full-size matchup art
   const roomy = !mobile && typeof window !== "undefined" && window.innerHeight / (parseFloat(document.documentElement.style.zoom) || 1) >= 900;
@@ -317,7 +427,7 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
     return { kind, icon: w.icon, label: w.label, note };
   })();
   const bg = `radial-gradient(ellipse at 50% 35%, ${me.clr}55, transparent 60%), linear-gradient(160deg, #0b2a33, #050b12 70%)`;
-  if (mobile) return <PhoneHome {...{ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, label, forecast, menu, side, planCard, rest, stories, news, onStory, onNav, fa, capRoom, onFa, sched, h2h, bg }} />;
+  if (mobile) return <PhoneHome {...{ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, forecast, menu, side, planCard, rest, stories, news, onStory, onNav, fa, capRoom, onFa, sched, h2h, rivalId, devFocus }} />;
   return (
     <div className="keep-dark" style={{ borderRadius: 14, overflow: "hidden", background: bg, border: `1px solid ${C.bd}`, marginBottom: 14, position: "relative" }}>
       <style>{"@media (max-width: 760px) { .hm-main { order: -1; padding: 12px !important } .hm-menu, .hm-side { max-width: none !important; border: 0 !important } .hm-logo > * { width: clamp(48px, 15vw, 96px) !important; height: clamp(48px, 15vw, 96px) !important } }"}</style>
