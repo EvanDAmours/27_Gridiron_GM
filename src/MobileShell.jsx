@@ -77,8 +77,11 @@ export function MoreSheet({ tabs, labels, tab, go, onClose, actions }) {
 // actions: [{ label, onClick, bg, c, small }], first = the main one; small = a compact pill
 // on the left, over names rather than the Offer / Draft buttons down the right edge (for steps
 // like Finish Re-signing that shouldn't shout, and for the week's action off the Home screen).
+// An action with `confirm` (Sim All, Sim to Deadline: a big jump you can't undo) asks for a second tap.
 export function MobileActionBar({ actions }) {
   const [open, setOpen] = React.useState(false);
+  const [armed, setArmed] = React.useState(null);
+  React.useEffect(() => { if (!open) setArmed(null); }, [open]);
   if (!actions?.length) return null;
   const [main, ...rest] = actions;
   const bar = { position: "fixed", left: 0, right: 0, bottom: "calc(58px + env(safe-area-inset-bottom))", zIndex: 395, padding: "8px 10px 12px", background: "linear-gradient(180deg, #0b122000, #0b1220f2 35%)", display: "flex", gap: 8 };
@@ -86,10 +89,12 @@ export function MobileActionBar({ actions }) {
     <>
       {open && rest.length > 0 && (
         <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 396, background: "#0007" }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", left: 10, right: 10, bottom: "calc(120px + env(safe-area-inset-bottom))", background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 14, padding: 8, display: "flex", flexDirection: "column", gap: 6, boxShadow: "0 -10px 40px #000a" }}>
-            {rest.map((a) => (
-              <button key={a.label} onClick={() => { setOpen(false); a.onClick(); }} style={{ minHeight: 48, borderRadius: 10, border: 0, background: a.bg || C.bd, color: a.c || "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>{a.label}</button>
-            ))}
+          <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", left: 10, right: 10, bottom: "calc(124px + env(safe-area-inset-bottom))", background: "#0d1424", border: "1px solid #ffffff14", borderRadius: 18, padding: "4px 14px", boxShadow: "0 -10px 40px #000a" }}>
+            {rest.map((a, i) => { const arm = armed === a.label; return (
+              <button key={a.label} onClick={() => { if (a.confirm && !arm) { setArmed(a.label); return; } setOpen(false); a.onClick(); }} style={{ display: "flex", alignItems: "center", width: "100%", minHeight: 56, border: 0, borderTop: i ? "1px solid #ffffff10" : 0, background: "transparent", color: arm ? "#fde68a" : "#fff", fontSize: 17, fontWeight: 800, cursor: "pointer", textAlign: "left", padding: 0 }}>
+                <span style={{ flex: 1 }}>{arm ? a.confirm : a.label}</span><span style={{ fontSize: 20, color: arm ? "#fde68a" : "#64748b" }}>{arm ? "✓" : "›"}</span>
+              </button>
+            ); })}
           </div>
         </div>
       )}
