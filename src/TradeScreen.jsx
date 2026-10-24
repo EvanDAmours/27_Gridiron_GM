@@ -217,13 +217,14 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
           <Section title="Pick a team">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
               {teams.filter((t) => t.id !== ui).sort((a, b) => a.city.localeCompare(b.city)).map((t) => { const m = modes?.[t.id]; return (
-                <button key={t.id} onClick={() => open(t)} aria-label={`Trade with the ${t.city} ${t.name}`} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "12px 0 10px", background: "#ffffff0f", border: 0, borderRadius: 16, color: "#e2e8f0", cursor: "pointer" }}>
+                <button key={t.id} onClick={() => open(t)} aria-label={`Trade with the ${t.city} ${t.name}`} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "12px 0 10px", background: m === "buyer" ? "#22c55e14" : m === "seller" ? "#eab30814" : "#ffffff0f", border: 0, borderRadius: 16, color: "#e2e8f0", cursor: "pointer" }}>
                   <TeamLogo t={t} sz={40} /><b style={{ fontSize: 13 }}>{t.ab}</b>
-                  {m && <span title={m === "buyer" ? "Buying" : "Selling"} style={{ position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: 4, background: m === "buyer" ? C.gn : C.gd }} />}
+                  {/* buying or selling in words under the club, so you can tell at a glance */}
+                  <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 0.8, color: m === "buyer" ? C.gn : m === "seller" ? C.gd : "#64748b" }}>{m === "buyer" ? "BUYING" : m === "seller" ? "SELLING" : `${t.w}-${t.l}`}</span>
                 </button>
               ); })}
             </div>
-            <div style={{ display: "flex", gap: 16, justifyContent: "center", fontSize: 13, color: C.mt, marginTop: 10 }}><span><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 4, background: C.gn, marginRight: 6 }} />Buying</span><span><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 4, background: C.gd, marginRight: 6 }} />Selling</span></div>
+            {modes && Object.values(modes).some((v) => v !== "neutral") && <div style={{ fontSize: 13, color: C.mt, marginTop: 10, textAlign: "center" }}>Buyers want win-now help; sellers will move veterans for picks.</div>}
           </Section>
         </div>
       );

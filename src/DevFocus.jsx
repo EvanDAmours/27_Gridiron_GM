@@ -1,7 +1,8 @@
 // The Development Focus card on the dashboard.
 import Select from "./Select.jsx";
 import React, { useState } from "react";
-import { C, oC, pC, Bdg, CloseX } from "./ui.jsx";
+import { createPortal } from "react-dom";
+import { C, oC, pC, Bdg, CloseX, Segments } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { devOf, DEV_TRAITS } from "./scouting.js";
 import { OFFENSE, DEFENSE, focusChance, perSeason } from "./development.js";
@@ -15,15 +16,18 @@ const initials = (n) => String(n || "").split(" ").filter(Boolean).slice(0, 2).m
 
 // Phones: a full-screen picker (search, players grouped by position, big rows) instead of a
 // tiny dropdown.
-function Picker({ label, groups, current, onPick, onClose }) {
+function Picker({ label, groups, current, onPick, onClose, by, setBy }) {
   const [q, setQ] = useState("");
   const n = q.trim().toLowerCase();
-  return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 3200, background: C.bg, display: "flex", flexDirection: "column" }}>
+  // drawn on the page itself: opened from inside a sheet, the sheet's slide-in would otherwise pin
+  // this "full screen" picker inside the sheet, half off the screen
+  return createPortal(
+    <div className="keep-dark" style={{ position: "fixed", inset: 0, zIndex: 3200, background: C.bg, color: C.tx, fontFamily: C.f, display: "flex", flexDirection: "column", height: "100dvh" }}>
       <div style={{ position: "relative", padding: "calc(12px + env(safe-area-inset-top)) 14px 10px", borderBottom: `1px solid ${C.bd}` }}>
         <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>{label} development focus</div>
         <CloseX onClick={onClose} style={{ top: "calc(8px + env(safe-area-inset-top))" }} />
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search your roster" aria-label="Search" style={{ width: "100%", boxSizing: "border-box", minHeight: 44, background: C.cd, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "8px 12px", fontSize: 16 }} />
+        {setBy && <div style={{ marginTop: 10 }}><Segments items={[["pos", "By position"], ["growth", "Fastest growth"]]} value={by} onChange={setBy} /></div>}
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "6px 10px calc(20px + env(safe-area-inset-bottom))" }}>
         {current && <button onClick={() => onPick(null)} style={{ width: "100%", minHeight: 48, margin: "4px 0 8px", background: "transparent", border: `1px dashed ${C.bd}`, borderRadius: 10, color: C.mt, fontSize: 15, cursor: "pointer" }}>Nobody in the lab</button>}
@@ -44,7 +48,8 @@ function Picker({ label, groups, current, onPick, onClose }) {
           );
         })}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -56,6 +61,21 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
   const options = [...players].sort(best);
   const groups = [...new Set(players.map((x) => x.pos))].sort((a, b) => posRank(a) - posRank(b)).map((pos) => [pos, options.filter((x) => x.pos === pos)]);
   const opt = (x) => <option key={x.id} value={x.id}>{x.name} ({posTag(x)}, {x.ovr} OVR, {(DEV_TRAITS[devOf(x)]?.name || "Normal").toUpperCase()}) · ~{perSeason(x)}/season</option>;
+  // phones: one clean row per side (who's in the lab, or a prompt); the sort lives in the picker
+  if (MOBILE) return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", margin: "0 2px 8px" }}>{label.toUpperCase()}</div>
+      <button onClick={() => setPicking(true)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, minHeight: 64, padding: "0 14px", borderRadius: 18, border: 0, background: p ? "#f5c54214" : "#ffffff0f", color: "#fff", textAlign: "left", cursor: "pointer" }}>
+        {p ? <>
+          <Bdg pos={posTag(p)} />
+          <span style={{ flex: 1, minWidth: 0 }}><b style={{ display: "block", fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</b><span style={{ display: "block", fontSize: 13, color: "#fbbf24", marginTop: 2 }}>{(DEV_TRAITS[devOf(p)]?.name || "Normal")} · {p.labGains ? `+${p.labGains} OVR from the lab` : `~${perSeason(p)}/season`}</span></span>
+          <b style={{ fontSize: 24, color: oC(p.ovr) }}>{p.ovr}</b>
+        </> : <span style={{ flex: 1, fontSize: 16, fontWeight: 700, color: "#cbd5e1" }}>Choose a player</span>}
+        <span style={{ fontSize: 20, color: "#64748b" }}>›</span>
+      </button>
+      {picking && <Picker label={label} by={by} setBy={setBy} groups={by === "pos" ? groups : [["Fastest growers first", options]]} current={p?.id} onClose={() => setPicking(false)} onPick={(id) => { setFocus((f) => ({ ...f, [side]: id })); setPicking(false); }} />}
+    </div>
+  );
   return (
     <div style={{ marginBottom: MOBILE ? 12 : 8 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -102,6 +122,13 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
 }
 
 export default function DevFocusCard({ roster, focus, setFocus, setSel }) {
+  if (MOBILE) return (
+    <div>
+      <FocusSlot label="Offense" side="off" players={roster.filter((p) => OFFENSE.includes(p.pos))} focus={focus} setFocus={setFocus} setSel={setSel} />
+      <FocusSlot label="Defense" side="def" players={roster.filter((p) => DEFENSE.includes(p.pos))} focus={focus} setFocus={setFocus} setSel={setSel} />
+      <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.45, margin: "4px 2px 8px" }}>Each regular-season week a focused player can gain a point. Young players with a high development trait grow fastest.</div>
+    </div>
+  );
   return (
     <div style={{ background: C.cd, borderRadius: 8, padding: "12px 14px", border: `1px solid ${C.bd}` }}>
       <div title="Each regular-season week a focused player can gain a point. Young + high development trait = faster gains." style={{ fontSize: 11, color: C.mt, letterSpacing: 1, marginBottom: 8, fontWeight: 700 }}>DEVELOPMENT FOCUS{!MOBILE && <span style={{ letterSpacing: 0, fontWeight: 600, marginLeft: 6, cursor: "help" }}>ⓘ</span>}</div>

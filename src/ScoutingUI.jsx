@@ -7,6 +7,7 @@ import { slotsFor } from "./draftProjection.js";
 import { topNeeds, fillsNeed, teamNeeds, needGroup, NEED_STARTERS } from "./needs.js";
 import { MOBILE } from "./mobile.js";
 import React, { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { mockDraft } from "./mockDraft.js";
 import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo, CloseX, Segments, Sheet, Row, Hero, Section, Chips } from "./ui.jsx";
 import { Jersey, rookieNum } from "./Jersey.jsx";
@@ -1456,7 +1457,7 @@ function PhoneProspectPage({ g, p, onClose }) {
   const kv = (k, v, c) => <div key={k} style={{ display: "flex", alignItems: "center", minHeight: 44, borderTop: "1px solid #ffffff10", fontSize: 16 }}><span style={{ color: "#94a3b8" }}>{k}</span><b style={{ marginLeft: "auto", color: c || "#fff", textAlign: "right" }}>{v}</b></div>;
   const tool = (k) => { const sk = skills[k]; return <div key={k} style={{ display: "flex", alignItems: "center", minHeight: 44, borderTop: "1px solid #ffffff10", fontSize: 16 }}><span style={{ color: "#cbd5e1" }}>{PA_LABELS[k] || k}</span><b style={{ marginLeft: "auto", fontSize: 18, color: sk ? TONE[gradeTone(sk.g)] : "#475569" }}>{sk ? sk.g : "?"}</b></div>; };
   const cost = read.cost, pts = g.scouting?.pts || 0;
-  return (
+  return createPortal(
     <div className="keep-dark" style={{ position: "fixed", inset: 0, zIndex: 1000, background: C.bg, overflowY: "auto", color: "#fff" }}>
       <div style={{ padding: "calc(10px + env(safe-area-inset-top)) 16px 18px", background: `linear-gradient(180deg, transparent 40%, ${C.bg} 100%), radial-gradient(120% 100% at 0% 0%, #1e3a8acc, #1e3a8a22 70%)` }}>
         <div style={{ display: "flex", justifyContent: "flex-end" }}><CloseX onClick={onClose} style={{ position: "static" }} /></div>
@@ -1508,7 +1509,8 @@ function PhoneProspectPage({ g, p, onClose }) {
           ? <button onClick={() => { g.makePick(p); g.setSel(null); }} disabled={!onClock} style={{ flex: 1, minHeight: 52, borderRadius: 14, border: 0, background: onClock ? C.gn : "#ffffff12", color: onClock ? "#fff" : "#64748b", fontSize: 17, fontWeight: 900 }}>{onClock ? "Draft him" : "Not on the clock"}</button>
           : canScoutClass(g, p.draftYear) && <button onClick={() => a.scout(p)} disabled={!cost || pts < cost} style={{ flex: 1, minHeight: 52, borderRadius: 14, border: 0, background: cost && pts >= cost ? C.bl : "#ffffff12", color: cost && pts >= cost ? "#fff" : "#64748b", fontSize: 17, fontWeight: 900 }}>{!cost ? "Fully scouted" : pts < cost ? `Needs ${cost} point${cost > 1 ? "s" : ""}` : `${read.lvl === 0 ? "Scout him" : "Full workup"} · ${cost} point${cost > 1 ? "s" : ""}`}</button>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
