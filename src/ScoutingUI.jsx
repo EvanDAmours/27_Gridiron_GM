@@ -906,7 +906,8 @@ export function MockDraft({ g }) {
 // works it (gray: nobody), so one look shows your whole staff's ground; each region is one row
 // with what it's deep at, who covers it and whether he's a specialist match there. Phones pick a
 // scout in a sheet; computers use a dropdown on the row. Tap a region on the map to jump to it.
-const SCOUT_CLR = ["#38bdf8", "#f59e0b", "#a78bfa", "#f472b6"];
+// one color per region, so neighbors never blur together (a scout's two regions used to share his)
+const REGION_CLR = { SEC: "#38bdf8", B1G: "#fbbf24", ACC: "#a78bfa", B12: "#ef4444", G5: "#4ade80", PAC: "#f472b6" };
 // Phones: your scouting staff and where they're working, on one screen. Each scout is a row (his
 // color on the map, what he knows, where he is); tap for his card, where you can let him go. The
 // map and the regions follow, and hiring is a sheet of clean rows.
@@ -915,7 +916,6 @@ function PhoneScouts({ g }) {
   const open = staffWindowOpen(g.sp);
   const ar = areasOf(s);
   const staff = SCOUT_SLOTS.filter((sl) => s[sl]);
-  const clr = (sl) => SCOUT_CLR[staff.indexOf(sl)] || "#94a3b8";
   const act = (r) => { g.sm(r.msg); if (r.ok) g.setScouting(r.sc); return r.ok; };
   const [card, setCard] = useState(null); // a slot on your staff
   const [hiring, setHiring] = useState(false);
@@ -938,10 +938,10 @@ function PhoneScouts({ g }) {
       <div style={soft}>
         {SCOUT_SLOTS.map((sl, i) => { const sc = s[sl]; return (
           <button key={sl} onClick={() => (sc ? setCard(sl) : open && (setSlot(sl), setHiring(true)))} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 70, padding: "8px 0", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, color: "#fff", textAlign: "left", cursor: sc || open ? "pointer" : "default" }}>
-            {sc ? <span style={{ position: "relative", flexShrink: 0 }}><Face s={sc.face} sz={42} /><span style={{ position: "absolute", right: -2, bottom: -2, width: 14, height: 14, borderRadius: 7, background: clr(sl), border: `2px solid ${C.bg}` }} /></span> : <span style={{ width: 42, height: 42, borderRadius: 21, border: "2px dashed #475569", flexShrink: 0 }} />}
+            {sc ? <Face s={sc.face} sz={42} /> : <span style={{ width: 42, height: 42, borderRadius: 21, border: "2px dashed #475569", flexShrink: 0 }} />}
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sc ? sc.name : open ? "Hire a scout" : "Vacant"}</span>
-              <span style={{ display: "block", fontSize: 13, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><b style={{ color: slotKind(sl) === "major" ? "#f5c542" : "#60a5fa" }}>{slotKind(sl) === "major" ? "Major" : "Minor"}</b>{sc ? <> · knows <b style={{ color: "#67e8f9" }}>{SCOUT_GROUP_SHORT[sc.group] || "—"}</b> · {ar[sl].length ? ar[sl].map((r) => REGIONS_SHORT[r]).join(", ") : "no region"}</> : ` · covers ${areaCap(sl)} region${areaCap(sl) > 1 ? "s" : ""}`}</span>
+              <span style={{ display: "block", fontSize: 13, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><b style={{ color: slotKind(sl) === "major" ? "#f5c542" : "#60a5fa" }}>{slotKind(sl) === "major" ? "Major" : "Minor"}</b>{sc ? <> · knows <b style={{ color: "#67e8f9" }}>{SCOUT_GROUP_SHORT[sc.group] || "—"}</b> · {ar[sl].length ? ar[sl].map((r, i) => <React.Fragment key={r}>{i ? ", " : ""}<span style={{ color: REGION_CLR[r], fontWeight: 700 }}>{REGIONS_SHORT[r]}</span></React.Fragment>) : "no region"}</> : ` · covers ${areaCap(sl)} region${areaCap(sl) > 1 ? "s" : ""}`}</span>
             </span>
             {sc && <Stars ev={sc.eval} />}
             <span style={{ fontSize: 20, color: "#64748b" }}>›</span>
@@ -1005,16 +1005,15 @@ export function RegionsView({ g }) {
   const assign = (r, sl) => { const x = setRegionScout(s, g.sp, r, sl || null, g.yr); g.sm(x.msg); if (x.ok) g.setScouting(x.sc); };
   // "O. Casserly": two scouts can share a last name
   const nm = (sl) => { const w = s[sl].name.split(" "); return w.length > 1 ? `${w[0][0]}. ${w.slice(-1)[0]}` : w[0]; };
-  const clr = (sl) => SCOUT_CLR[staff.indexOf(sl)] || "#94a3b8";
   const who = (r) => staff.find((sl) => ar[sl].includes(r));
   const covered = AREA_KEYS.filter(who).length, matches = AREA_KEYS.filter((r) => who(r) && fits(who(r), r)).length;
   const soft = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
   const tap = (r) => { setPick(r); if (!MOBILE) document.getElementById(`rg-${r}`)?.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
   const map = (
     <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "10px 10px 12px" }}>
-      <StaffMap colorOf={(r) => (who(r) ? clr(who(r)) : null)} labelOf={(r) => (who(r) ? nm(who(r)) : "No scout")} onRegion={open ? tap : undefined} hot={!MOBILE ? pick : null} />
+      <StaffMap colorOf={(r) => (who(r) ? REGION_CLR[r] : null)} labelOf={(r) => (who(r) ? nm(who(r)) : "No scout")} onRegion={open ? tap : undefined} hot={!MOBILE ? pick : null} />
       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", justifyContent: "center", marginTop: 6 }}>
-        {staff.map((sl) => { const n = ar[sl].length, cap = areaCap(sl); return <span key={sl} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 700 }}><span style={{ width: 10, height: 10, borderRadius: 5, background: clr(sl) }} />{nm(sl)} <span style={{ color: "#67e8f9", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[s[sl].group] || ""}</span><span style={{ color: n >= cap ? C.mt : C.gd, fontWeight: 800 }}>{n}/{cap}</span></span>; })}
+        {staff.map((sl) => { const n = ar[sl].length, cap = areaCap(sl); return <span key={sl} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 700 }}>{ar[sl].map((r) => <span key={r} title={regionName(r)} style={{ width: 10, height: 10, borderRadius: 5, background: REGION_CLR[r] }} />)}{nm(sl)} <span style={{ color: "#67e8f9", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[s[sl].group] || ""}</span><span style={{ color: n >= cap ? C.mt : C.gd, fontWeight: 800 }}>{n}/{cap}</span></span>; })}
         {!staff.length && <span style={{ fontSize: 14, color: C.mt }}>No scouts on staff. Hire some on the Scouts screen.</span>}
       </div>
     </div>
@@ -1035,7 +1034,7 @@ export function RegionsView({ g }) {
         const top = cls.filter((p) => regionOf(p) === r && !p.drafted).sort((x, y) => csRank(x) - csRank(y)).slice(0, 2);
         return (
           <div key={r} id={`rg-${r}`} style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 66, padding: "8px 0", borderTop: i ? "1px solid #ffffff10" : 0, background: !MOBILE && pick === r ? "#ffffff0a" : "transparent" }}>
-            <span style={{ width: 12, height: 12, borderRadius: 6, flexShrink: 0, background: on ? clr(on) : "transparent", border: on ? 0 : "2px dashed #64748b" }} />
+            <span style={{ width: 12, height: 12, borderRadius: 6, flexShrink: 0, background: on ? REGION_CLR[r] : "transparent", border: on ? 0 : "2px dashed #64748b" }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 800 }}>{REGIONS_SHORT[r]} <span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>· deep at {deep(r) ? SCOUT_GROUP_SHORT[deep(r)] : "nothing"}</span></div>
               <div style={{ fontSize: 13, marginTop: 2, color: !on ? "#fcd34d" : match ? "#4ade80" : "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{!on ? "Nobody's scouting here" : match ? "Specialist match" : "Covered"}{!MOBILE && top.length ? <span style={{ color: C.mt }}> · top: {top.map((p) => `#${csRank(p)} ${p.name.split(" ").slice(-1)[0]}`).join(", ")}</span> : null}</div>
@@ -1055,7 +1054,7 @@ export function RegionsView({ g }) {
     <Sheet title={`${REGIONS_SHORT[pick]} · deep at ${deep(pick) ? SCOUT_GROUP_SHORT[deep(pick)] : "nothing"}`} onClose={() => setPick(null)}>
       {[...staff, ""].map((sl, i) => { const on = who(pick) === sl || (!sl && !who(pick)); const full = sl && ar[sl].length >= areaCap(sl) && !ar[sl].includes(pick); return (
         <button key={sl || "none"} onClick={() => { assign(pick, sl); setPick(null); }} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 58, background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff14" : 0, padding: 0, color: "#fff", cursor: "pointer", textAlign: "left" }}>
-          <span style={{ width: 12, height: 12, borderRadius: 6, background: sl ? clr(sl) : "transparent", border: sl ? 0 : "2px dashed #64748b", flexShrink: 0 }} />
+          {sl ? <Face s={s[sl].face} sz={30} /> : <span style={{ width: 30, height: 30, borderRadius: 15, border: "2px dashed #64748b", flexShrink: 0 }} />}
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: "block", fontSize: 16, fontWeight: 800 }}>{sl ? s[sl].name : "Nobody"}</span>
             {sl && <span style={{ display: "block", fontSize: 13, color: "#94a3b8" }}>Knows {SCOUT_GROUP_SHORT[s[sl].group] || "—"} · {ar[sl].length}/{areaCap(sl)} regions{full ? " (moves one over)" : ""}</span>}
@@ -1088,11 +1087,11 @@ function StaffMap({ colorOf, labelOf, onRegion, hot }) {
     <svg viewBox="0 0 960 600" width="100%" style={{ display: "block" }}>
       <path d={US_NATION} fill="#1e293b" stroke="#475569" strokeWidth={1.5} />
       <path d={US_BORDERS} fill="none" stroke="#334155" strokeWidth={0.8} />
-      {dots.map((d) => { const c = colorOf(d.r); return <circle key={d.sch} cx={d.xy[0]} cy={d.xy[1]} r={hot === d.r ? 9 : 7} fill={c || "#64748b"} opacity={c ? 0.95 : 0.35} stroke={hot === d.r ? "#fff" : "none"} strokeWidth={2} onClick={() => onRegion?.(d.r)} style={{ cursor: onRegion ? "pointer" : "default" }}><title>{d.sch} ({regionName(d.r)})</title></circle>; })}
+      {dots.map((d) => { const c = colorOf(d.r); return <circle key={d.sch} cx={d.xy[0]} cy={d.xy[1]} r={hot === d.r ? 9 : 7} fill={REGION_CLR[d.r]} opacity={c ? 0.95 : 0.3} stroke={hot === d.r ? "#fff" : "none"} strokeWidth={2} onClick={() => onRegion?.(d.r)} style={{ cursor: onRegion ? "pointer" : "default" }}><title>{d.sch} ({regionName(d.r)})</title></circle>; })}
       {AREA_KEYS.map((r) => { const [x, y] = mid(r), c = colorOf(r); return (
         <g key={r} onClick={() => onRegion?.(r)} style={{ cursor: onRegion ? "pointer" : "default" }}>
-          <text x={x} y={y - 18} textAnchor="middle" fontSize={24} fontWeight={900} fill="#fff" stroke="#0b1220" strokeWidth={6} paintOrder="stroke">{REGIONS_SHORT[r]}</text>
-          <text x={x} y={y + 8} textAnchor="middle" fontSize={19} fontWeight={800} fill={c || "#fcd34d"} stroke="#0b1220" strokeWidth={5} paintOrder="stroke">{labelOf(r)}</text>
+          <text x={x} y={y - 18} textAnchor="middle" fontSize={24} fontWeight={900} fill={REGION_CLR[r]} stroke="#0b1220" strokeWidth={6} paintOrder="stroke">{REGIONS_SHORT[r]}</text>
+          <text x={x} y={y + 8} textAnchor="middle" fontSize={19} fontWeight={800} fill={c ? "#e2e8f0" : "#fcd34d"} stroke="#0b1220" strokeWidth={5} paintOrder="stroke">{labelOf(r)}</text>
         </g>
       ); })}
     </svg>
