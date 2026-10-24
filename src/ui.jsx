@@ -46,13 +46,13 @@ export function Segments({ items, value, onChange }) {
 // The phone look (Home's): a full-width hero in the club's colors with one big headline, then big
 // section titles over soft cards. Hero: eyebrow, title, a line under it, an optional right side and
 // anything below (a button). Section: a title with an optional link on the right.
-export function Hero({ clr = "#1e3a8a", eyebrow, title, sub, right, children }) {
+export function Hero({ clr = "#1e3a8a", eyebrow, title, sub, right, children, compact }) {
   return (
-    <div className="keep-dark" style={{ margin: "-6px -8px 0", padding: "22px 16px 20px", color: "#fff", background: `linear-gradient(180deg, transparent 45%, ${C.bg} 100%), radial-gradient(120% 100% at 0% 0%, ${clr}cc, ${clr}22 70%)` }}>
+    <div className="keep-dark" style={{ margin: "-6px -8px 0", padding: compact ? "14px 16px 12px" : "22px 16px 20px", color: "#fff", background: `linear-gradient(180deg, transparent 45%, ${C.bg} 100%), radial-gradient(120% 100% at 0% 0%, ${clr}cc, ${clr}22 70%)` }}>
       {eyebrow && <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.6, textTransform: "uppercase", color: "#ffffffb3" }}>{eyebrow}</div>}
       <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginTop: 4 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1.05 }}>{title}</div>
+          <div style={{ fontSize: compact ? 24 : 30, fontWeight: 900, lineHeight: 1.05 }}>{title}</div>
           {sub && <div style={{ fontSize: 15, color: "#ffffffb3", marginTop: 6 }}>{sub}</div>}
         </div>
         {right}
