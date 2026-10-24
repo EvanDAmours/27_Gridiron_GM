@@ -14,14 +14,21 @@ export const CloseX=({onClick,label="Close",style:st})=><button onClick={onClick
 // grip down to close. Row: one line, label left, a short value right, tap for more. Segments: a
 // pill switch between a few views.
 export function Sheet({ title, onClose, children }) {
-  // drawn at the top of the page, so a sheet opened inside a sticky or stacked block still sits over everything
+  // drawn at the top of the page, so a sheet opened inside a sticky or stacked block still sits over everything.
+  // The grip, title and close button stay put and only the body scrolls, and the sheet is sized to
+  // the screen you can actually see (dvh: not the space under a phone browser's address bar), so
+  // the ✕ is always in reach.
   return createPortal(
     <div className="keep-dark" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 450, background: "#000000a6", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", display: "flex", fontFamily: C.f, ...sheetWrap(true) }}>
-      <div role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: "#0d1424", border: `1px solid ${C.bd}`, color: C.tx, padding: "14px 14px 0", overflowY: "auto", ...sheetBox(true) }}>
-        <SheetGrip onClose={onClose} />
-        <CloseX onClick={onClose} />
-        {title && <div style={{ fontSize: 20, fontWeight: 900, margin: "0 44px 12px 2px" }}>{title}</div>}
-        {children}
+      <div role="dialog" aria-label={title} className="gm-sheet" onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: "#0d1424", border: `1px solid ${C.bd}`, color: C.tx, padding: "14px 0 0", display: "flex", flexDirection: "column", overflow: "hidden", ...sheetBox(true), maxHeight: undefined }}>
+        <div style={{ flexShrink: 0, padding: "0 14px" }}>
+          <SheetGrip onClose={onClose} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, marginBottom: 8 }}>
+            <div style={{ flex: 1, minWidth: 0, fontSize: 20, fontWeight: 900, padding: "0 2px" }}>{title}</div>
+            <CloseX onClick={onClose} style={{ position: "static", width: 40, height: 40, borderRadius: 20, flexShrink: 0 }} />
+          </div>
+        </div>
+        <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", padding: "0 14px" }}>{children}</div>
       </div>
     </div>,
     document.body

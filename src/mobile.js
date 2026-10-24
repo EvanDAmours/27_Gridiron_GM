@@ -18,6 +18,7 @@ if (MOBILE && typeof document !== "undefined") {
     html.gm-mobile button:active:not(:disabled) { transform: scale(.97); filter: brightness(1.15); }
     /* screens fade in (opacity only: a transform would unpin the fixed bars inside) */
     @keyframes gmIn { from { opacity: 0 } to { opacity: 1 } }
+    html.gm-mobile .gm-sheet { max-height: 86vh; max-height: 86dvh; }
     html.gm-mobile .gm-in { animation: gmIn .22s ease-out; }
   `;
   document.head.appendChild(s);
