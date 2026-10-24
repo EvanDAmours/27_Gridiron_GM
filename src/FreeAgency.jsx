@@ -211,7 +211,11 @@ function PhoneFA({ fa, rows, n, setN, pos, setPos, needOnly, setNeedOnly, needs,
           return (
             <button key={p.id} onClick={() => setPick(p.id)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 52, textAlign: "left", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "0 2px", color: C.tx, cursor: "pointer", opacity: walked ? 0.5 : 1 }}>
               <span style={{ width: 42, flexShrink: 0 }}><Bdg pos={posTag(p)} /></span>
-              <span style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: p.formerTeam === ui ? C.gn : "#f1f5f9" }}>{p.name}</span>
+              {/* the fit (his role, green when your lineup needs it) and his development trait stay on the row */}
+              <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 2, overflow: "hidden" }}>
+                <span style={{ minWidth: 0, fontWeight: 700, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: p.formerTeam === ui ? C.gn : "#f1f5f9" }}>{p.name}</span>
+                <span style={{ flexShrink: 0, display: "inline-flex", alignItems: "center" }}><RoleTag p={p} /><DevTag p={p} /></span>
+              </span>
               <span style={{ fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", color: mine ? (st === "lead" ? C.gn : "#fbbf24") : walked ? C.rd : ask <= cap ? "#94a3b8" : C.rd }}>{mine ? (st === "lead" ? "Leading" : "Outbid") : walked ? "Not interested" : `${money(ask)}`}</span>
               <b style={{ fontSize: 20, width: 32, textAlign: "right", color: oC(p.ovr) }}>{p.ovr}</b>
             </button>

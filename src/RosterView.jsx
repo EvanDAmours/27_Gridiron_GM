@@ -7,6 +7,7 @@ import { C, oC, Bdg, Face, Segments, Sheet, Row } from "./ui.jsx";
 import { InjTag } from "./InjuryTag.jsx";
 import { DevChip } from "./ScoutingUI.jsx";
 import { MOBILE } from "./mobile.js";
+import RoleTag from "./RoleTag.jsx";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
 const GROUPS = { ALL: null, OFF: ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT"], DEF: ["DL", "LB", "CB", "S"], ST: ["K", "P"] };
@@ -80,7 +81,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
   const td = { padding: "2px 6px", borderBottom: `1px solid ${C.bd}44`, textAlign: "center", fontSize: 13.5, height: 26 };
   const picked = rows.find((p) => p.id === pick) || rows[0] || null;
   let lastPos = null;
-  if (MOBILE) return <PhoneRoster {...{ rows, slot, sort, setSort, filter, setFilter, q, setQ, find, setFind, sortOpen, setSortOpen, setSel, focus, mine, wk }} />;
+  if (MOBILE) return <PhoneRoster {...{ rows, slot, sort, setSort, filter, setFilter, q, setQ, find, setFind, sortOpen, setSortOpen, setSel, focus, mine, wk, devOf }} />;
   return (
     <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12 }}>
       <style>{"@media (max-width: 640px) { .ro-hide { display: none } }"}</style>
@@ -143,7 +144,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
 // opens his card, where the age, contract and potential live. One switch for the side of the ball;
 // search and sort tuck behind two small buttons.
 const SORTS = [["pos", "Depth chart"], ["ovr", "Overall"], ["pot", "Potential"], ["age", "Age"], ["sal", "Salary"], ["name", "Name"]];
-function PhoneRoster({ rows, slot, sort, setSort, filter, setFilter, q, setQ, find, setFind, sortOpen, setSortOpen, setSel, focus, mine, wk }) {
+function PhoneRoster({ rows, slot, sort, setSort, filter, setFilter, q, setQ, find, setFind, sortOpen, setSortOpen, setSel, focus, mine, wk, devOf }) {
   const icon = { width: 44, height: 44, borderRadius: 10, border: 0, background: "#ffffff0f", color: "#cbd5e1", fontSize: 18, cursor: "pointer", flexShrink: 0 };
   let last = null;
   return (
@@ -164,7 +165,10 @@ function PhoneRoster({ rows, slot, sort, setSort, filter, setFilter, q, setQ, fi
               {head && <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: "#94a3b8", padding: "14px 2px 4px" }}>{(POS_NAME[p.pos] || p.pos).toUpperCase()}</div>}
               <button onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 50, textAlign: "left", background: "transparent", border: 0, borderTop: head ? 0 : "1px solid #ffffff10", padding: "0 2px", color: C.tx, cursor: "pointer" }}>
                 <span style={{ width: 38, flexShrink: 0 }}><Bdg pos={posTag(p)} /></span>
-                <span style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: 16, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}<Badges p={p} focus={focus} mine={mine} /><InjTag p={p} wk={wk} />{p.holdout && <span style={{ marginLeft: 6, fontSize: 12, color: C.gd, fontWeight: 800 }}>Holdout</span>}</span>
+                <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 2, overflow: "hidden" }}>
+                  <span style={{ minWidth: 0, fontWeight: 700, fontSize: 16, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+                  <span style={{ flexShrink: 0, display: "inline-flex", alignItems: "center" }}><RoleTag p={p} />{["generational", "superstar", "star"].includes(devOf(p)) && <span style={{ marginLeft: 4 }}><DevChip dev={devOf(p)} /></span>}<Badges p={p} focus={focus} mine={mine} /><InjTag p={p} wk={wk} />{p.holdout && <span style={{ marginLeft: 6, fontSize: 12, color: C.gd, fontWeight: 800 }}>Holdout</span>}</span>
+                </span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: s?.starter ? C.gn : "#64748b", whiteSpace: "nowrap" }}>{sort[0] === "age" ? `Age ${p.age}` : sort[0] === "sal" ? `$${(p.salary || 0).toFixed(1)}M` : sort[0] === "pot" ? `POT ${p.pot || p.ovr}` : s?.label || ""}</span>
                 <b style={{ fontSize: 20, width: 32, textAlign: "right", color: oC(p.ovr), fontVariantNumeric: "tabular-nums" }}>{p.ovr}</b>
               </button>
