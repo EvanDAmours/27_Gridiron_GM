@@ -186,7 +186,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                         <Face s={p.face} sz={28} />
                         <span>
-                          <span onClick={() => setSel(p)} style={{ fontWeight: 700, color: "#f1f5f9", cursor: "pointer", textDecoration: "underline", textDecorationColor: "#334155", textUnderlineOffset: 3 }}>{p.name}</span>
+                          <span onClick={() => setSel(p)} style={{ fontWeight: 700, color: "#f1f5f9", cursor: "pointer", textUnderlineOffset: 3 }}>{p.name}</span>
                           {p.xf && <span title={`X-Factor: ${p.xf}`} style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, color: "#f472b6" }}>XF</span>}<DevTag p={p} />
                           {from && <span style={{ display: "block", fontSize: 12, color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `Last with ${from.ab}`}</span>}
                           {market && p.ovr >= MARKET_MIN && <span style={{ display: "block" }}><MarketTag p={p} market={market} ui={ui} teams={teams} /></span>}
@@ -198,7 +198,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
                     <td style={{ ...td, fontWeight: 900, fontSize: 18, color: oC(p.ovr) }}>{p.ovr}</td>
                     <td className="fa-hide" style={{ ...td, color: oC(p.pot || p.ovr) }}>{p.pot || p.ovr}</td>
                     <td style={{ ...td, whiteSpace: "nowrap", color: ask <= cap ? "#e2e8f0" : C.rd }}>{money(ask)}<span className="fa-hide" style={{ color: C.mt, fontSize: 12 }}>/yr</span></td>
-                    <td style={{ ...td, textAlign: "right" }}>{talkFor(p).walked ? <span style={{ fontSize: 13, color: C.rd, fontWeight: 700 }}>Not interested</span> : <Btn onClick={() => setOffer(p)} bg={C.gn} style={{ fontSize: 14, padding: "6px 14px" }}>Negotiate</Btn>}</td>
+                    <td style={{ ...td, textAlign: "right" }}>{talkFor(p).walked ? <span style={{ fontSize: 13, color: C.rd, fontWeight: 700 }}>Not interested</span> : <Btn onClick={() => setOffer(p)} bg="#22c55e1f" c="#4ade80" style={{ fontSize: 14, padding: "6px 14px", border: "1px solid #22c55e55", borderRadius: 8 }}>Negotiate</Btn>}</td>
                   </tr>
                 );
               })}
