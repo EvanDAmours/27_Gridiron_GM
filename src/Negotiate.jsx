@@ -72,7 +72,7 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   const tone = { accept: C.gn, pending: "#93c5fd", counter: C.gd, reject: "#f97316", walk: C.rd, lost: C.rd };
   // drawn on the page itself, so opening it from a sheet never traps it inside the sheet
   return createPortal(
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 12, ...sheetWrap(MOBILE) }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", zIndex: 1000, fontFamily: C.f, color: C.tx, display: "flex", alignItems: "center", justifyContent: "center", padding: 12, ...sheetWrap(MOBILE) }}>
       <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 14, padding: 20, width: "100%", maxWidth: 480, maxHeight: "92vh", overflowY: "auto", ...sheetBox(MOBILE) }}>
         {MOBILE && <SheetGrip onClose={onClose} />}
         <CloseX onClick={onClose} />

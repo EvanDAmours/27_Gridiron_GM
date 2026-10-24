@@ -907,6 +907,88 @@ export function MockDraft({ g }) {
 // with what it's deep at, who covers it and whether he's a specialist match there. Phones pick a
 // scout in a sheet; computers use a dropdown on the row. Tap a region on the map to jump to it.
 const SCOUT_CLR = ["#38bdf8", "#f59e0b", "#a78bfa", "#f472b6"];
+// Phones: your scouting staff and where they're working, on one screen. Each scout is a row (his
+// color on the map, what he knows, where he is); tap for his card, where you can let him go. The
+// map and the regions follow, and hiring is a sheet of clean rows.
+function PhoneScouts({ g }) {
+  const s = g.scouting || {};
+  const open = staffWindowOpen(g.sp);
+  const ar = areasOf(s);
+  const staff = SCOUT_SLOTS.filter((sl) => s[sl]);
+  const clr = (sl) => SCOUT_CLR[staff.indexOf(sl)] || "#94a3b8";
+  const act = (r) => { g.sm(r.msg); if (r.ok) g.setScouting(r.sc); return r.ok; };
+  const [card, setCard] = useState(null); // a slot on your staff
+  const [hiring, setHiring] = useState(false);
+  const [cand, setCand] = useState(null); // a scout you might hire
+  const [slot, setSlot] = useState("major");
+  const [want, setWant] = useState(null);
+  const [arm, setArm] = useState(null);
+  useEffect(() => { if (!arm) return; const t = setTimeout(() => setArm(null), 3000); return () => clearTimeout(t); }, [arm]);
+  const soft = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
+  const label = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", margin: "0 2px 8px" };
+  const tier = (x) => <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Stars ev={x.eval} /><span style={{ fontSize: 12, color: C.mt }}>{x.eval}</span></span>;
+  const pool = [...(s.pool || [])].filter((x) => !want || x.group === want).sort((a, b) => b.eval - a.eval);
+  const big = (on, txt, fn, tone = C.gn) => <button onClick={fn} style={{ flex: 1, minHeight: 50, borderRadius: 14, border: 0, background: on ? C.gd : tone, color: on ? "#111" : "#fff", fontSize: 16, fontWeight: 900, cursor: "pointer" }}>{txt}</button>;
+  const facts = (x) => <div style={soft}>{[["Tier", tier(x)], ["Knows", SCOUT_GROUPS[x.group] || "—"], x.trait && ["Trait", SCOUT_TRAITS[x.trait].name], ["Age", x.age], x.bg && ["Background", x.bg]].filter(Boolean).map(([k, v], i) => <div key={k} style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 48, borderTop: i ? "1px solid #ffffff10" : 0, fontSize: 15 }}><span style={{ color: "#94a3b8" }}>{k}</span><b style={{ marginLeft: "auto", textAlign: "right" }}>{v}</b></div>)}</div>;
+  const x = card && s[card];
+  const c = cand && (s.pool || []).find((p) => p.id === cand);
+  return (
+    <div>
+      <div style={label}>YOUR SCOUTS</div>
+      <div style={soft}>
+        {SCOUT_SLOTS.map((sl, i) => { const sc = s[sl]; return (
+          <button key={sl} onClick={() => (sc ? setCard(sl) : open && (setSlot(sl), setHiring(true)))} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 70, padding: "8px 0", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, color: "#fff", textAlign: "left", cursor: sc || open ? "pointer" : "default" }}>
+            {sc ? <span style={{ position: "relative", flexShrink: 0 }}><Face s={sc.face} sz={42} /><span style={{ position: "absolute", right: -2, bottom: -2, width: 14, height: 14, borderRadius: 7, background: clr(sl), border: `2px solid ${C.bg}` }} /></span> : <span style={{ width: 42, height: 42, borderRadius: 21, border: "2px dashed #475569", flexShrink: 0 }} />}
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sc ? sc.name : open ? "Hire a scout" : "Vacant"}</span>
+              <span style={{ display: "block", fontSize: 13, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><b style={{ color: slotKind(sl) === "major" ? "#f5c542" : "#60a5fa" }}>{slotKind(sl) === "major" ? "Major" : "Minor"}</b>{sc ? <> · knows <b style={{ color: "#67e8f9" }}>{SCOUT_GROUP_SHORT[sc.group] || "—"}</b> · {ar[sl].length ? ar[sl].map((r) => REGIONS_SHORT[r]).join(", ") : "no region"}</> : ` · covers ${areaCap(sl)} region${areaCap(sl) > 1 ? "s" : ""}`}</span>
+            </span>
+            {sc && <Stars ev={sc.eval} />}
+            <span style={{ fontSize: 20, color: "#64748b" }}>›</span>
+          </button>
+        ); })}
+      </div>
+      {open && <div style={{ ...soft, marginTop: 10 }}><Row first label="Scouts for hire" value={`${(s.pool || []).length} available`} onClick={() => setHiring(true)} /></div>}
+      <div style={{ fontSize: 13, color: C.mt, margin: "8px 2px 0" }}>{open ? "Staff and regions can change now." : "Your scouts are on the road: changes open in free agency and the preseason."}</div>
+      <div style={{ ...label, marginTop: 24 }}>WHERE THEY'RE WORKING</div>
+      <RegionsView g={g} />
+      {x && <Sheet title={x.name} onClose={() => setCard(null)}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "0 2px 14px" }}><Face s={x.face} sz={64} /><div><div style={{ fontSize: 14, fontWeight: 900, color: slotKind(card) === "major" ? "#f5c542" : "#60a5fa" }}>{SCOUT_ROLES[card].name}</div><div style={{ fontSize: 14, color: "#94a3b8", marginTop: 2 }}>{ar[card].length ? `Working ${ar[card].map((r) => REGIONS_SHORT[r]).join(" and ")}` : "No region yet"}</div></div></div>
+        {facts(x)}
+        {x.trait && <div style={{ fontSize: 14, color: "#94a3b8", margin: "10px 2px 0" }}>{SCOUT_TRAITS[x.trait].desc}</div>}
+        <div style={{ fontSize: 14, color: "#94a3b8", margin: "10px 2px 0" }}>He reads {SCOUT_GROUPS[x.group]?.toLowerCase() || "his position"} sharpest and other positions a lot worse.</div>
+        {open && <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+          {staff.length > 1 && <button onClick={() => { act(swapScoutRoles(s, g.sp)); setCard(null); }} style={{ flex: 1, minHeight: 50, borderRadius: 14, border: 0, background: "#ffffff14", color: "#e2e8f0", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Swap major and minor</button>}
+          {big(arm === "rel", arm === "rel" ? "Tap again to let go" : "Let him go", () => { if (arm !== "rel") return setArm("rel"); act(releaseScout(s, g.sp, card)); setArm(null); setCard(null); }, "#7f1d1d")}
+        </div>}
+        <div style={{ height: 10 }} />
+      </Sheet>}
+      {hiring && !c && <Sheet title="Scouts for hire" onClose={() => setHiring(false)}>
+        <div style={label}>HIRE INTO</div>
+        <Segments items={SCOUT_SLOTS.map((sl) => [sl, `${slotKind(sl) === "major" ? "Major" : "Minor"}${SCOUT_SLOTS.filter((k) => slotKind(k) === slotKind(sl)).indexOf(sl) ? " 2" : ""}`])} value={slot} onChange={setSlot} />
+        <div style={{ fontSize: 13, color: "#94a3b8", margin: "-4px 2px 12px" }}>{s[slot] ? `Replaces ${s[slot].name}.` : "An open job."} {slotKind(slot) === "major" ? "Majors cover two regions." : "Minors cover one."}</div>
+        <Chips items={[[null, "All"], ...["QB", "RB", "REC", "OL", "DL", "LB", "DB"].map((k) => [k, SCOUT_GROUP_SHORT[k]])]} value={want} onChange={setWant} />
+        <div style={{ ...soft, marginTop: 12 }}>
+          {pool.map((p, i) => <button key={p.id} onClick={() => setCand(p.id)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 62, background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, color: "#fff", textAlign: "left", cursor: "pointer", padding: 0 }}>
+            <Face s={p.face} sz={38} />
+            <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><span style={{ display: "block", fontSize: 13, color: "#94a3b8", marginTop: 2 }}>Knows <b style={{ color: "#67e8f9" }}>{SCOUT_GROUP_SHORT[p.group] || "—"}</b> · age {p.age}{p.trait ? ` · ${SCOUT_TRAITS[p.trait].name}` : ""}</span></span>
+            <Stars ev={p.eval} />
+          </button>)}
+          {!pool.length && <div style={{ padding: "16px 0", color: "#94a3b8", fontSize: 15 }}>Nobody's looking for work{want ? " at that position" : ""} right now.</div>}
+        </div>
+        <div style={{ height: 10 }} />
+      </Sheet>}
+      {c && <Sheet title={c.name} onClose={() => setCand(null)}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "0 2px 14px" }}><Face s={c.face} sz={64} /><div style={{ fontSize: 14, color: "#94a3b8" }}>Would join as your {SCOUT_ROLES[slot].name.toLowerCase()}{s[slot] ? `, replacing ${s[slot].name}` : ""}.</div></div>
+        {facts(c)}
+        {c.trait && <div style={{ fontSize: 14, color: "#94a3b8", margin: "10px 2px 0" }}>{SCOUT_TRAITS[c.trait].desc}</div>}
+        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>{big(arm === "hire", arm === "hire" ? "Tap again to hire" : `Hire as ${slotKind(slot) === "major" ? "major" : "minor"}`, () => { if (arm !== "hire") return setArm("hire"); if (act(hireScout(s, g.sp, c.id, slot))) { setCand(null); setHiring(false); } setArm(null); })}</div>
+        <div style={{ height: 10 }} />
+      </Sheet>}
+    </div>
+  );
+}
+
 export function RegionsView({ g }) {
   const s = g.scouting || {};
   const cls = g.dc[areaSeason(g.sp, g.yr)] || g.dc[g.yr] || [];
@@ -1173,29 +1255,33 @@ export function ScoutingPage({ g }) {
   const myPicks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !(g.draftLog || []).some((d) => d.id === pk.id)).sort((a, b) => a.overall - b.overall);
   const [more, setMore] = useState(false);
   // phones: three views up front (the combine leads in combine week), the rest in a sheet
-  const main = g.sp === "combine" && hasCombine ? ["combine", "hq", "board"] : ["hq", "board", "regions"];
-  const short = { hq: "HQ", board: "Board", regions: "Regions", combine: "Combine" };
-  const rest = views.filter(([k]) => !main.includes(k));
-  if (MOBILE) return (
+  // scouts and regions are one screen on a phone, and always up front
+  const main = g.sp === "combine" && hasCombine ? ["combine", "board", "staff"] : ["hq", "board", "staff"];
+  const short = { hq: "HQ", board: "Board", staff: "Scouts", combine: "Combine" };
+  const rest = views.filter(([k]) => !main.includes(k) && k !== "regions" && k !== "scouts");
+  if (MOBILE) {
+  const pv = ["regions", "scouts"].includes(view) ? "staff" : view === "staff" || views.some(([k]) => k === view) ? view : "hq";
+  const go = (k) => setView(["regions", "scouts"].includes(k) ? "staff" : k);
+  return (
     <div>
       <Hero compact clr={g.teams[g.ui]?.clr} logo={g.teams[g.ui]} eyebrow={g.sp === "combine" ? "The Combine" : "Scouting"} title={`${g.yr + 1} Draft`}
         sub={[myPicks.length ? `Picks ${myPicks.slice(0, 4).map((pk) => `#${pk.overall}`).join(" · ")}${myPicks.length > 4 ? ` +${myPicks.length - 4}` : ""}` : "No picks", g.sp === "combine" ? `${g.scouting?.interviewsLeft || 0} interviews` : null].filter(Boolean).join(" · ")}
         right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1, color: (g.scouting?.pts || 0) > 0 ? C.gd : "#fff" }}>{g.scouting?.pts || 0}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>POINTS</div></div>} />
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 14 }}>
-        <div style={{ flex: 1, minWidth: 0 }}><Segments items={main.map((k) => [k, short[k]])} value={v} onChange={setView} /></div>
-        <button onClick={() => setMore(true)} aria-label="More scouting views" style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 10, border: 0, background: main.includes(v) ? "#ffffff0f" : `${C.bl}33`, color: "#e2e8f0", fontSize: 20, fontWeight: 900, cursor: "pointer" }}>⋯</button>
+        <div style={{ flex: 1, minWidth: 0 }}><Segments items={main.map((k) => [k, short[k]])} value={pv} onChange={go} /></div>
+        <button onClick={() => setMore(true)} aria-label="More scouting views" style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 10, border: 0, background: main.includes(pv) ? "#ffffff0f" : `${C.bl}33`, color: "#e2e8f0", fontSize: 20, fontWeight: 900, cursor: "pointer" }}>⋯</button>
       </div>
-      {!main.includes(v) && <div style={{ fontSize: 18, fontWeight: 900, margin: "2px 2px 10px" }}>{(views.find(([k]) => k === v) || [])[1]}</div>}
-      {v === "board" && <Board g={g} classYr={g.yr} />}
-      {v === "hq" && <ScoutingHQ g={g} go={setView} />}
-      {v === "list" && <YourList g={g} classYr={g.yr} />}
-      {v === "combine" && <CombineView g={g} buzz={g.buzz} />}
-      {v === "mock" && <MockDraft g={g} />}
-      {v === "regions" && <RegionsView g={g} />}
-      {v === "scouts" && <ScoutsView g={g} />}
-      {more && <Sheet title="Scouting" onClose={() => setMore(false)}>{rest.map(([k, l], i) => <Row key={k} first={i === 0} label={l.replace(/^\S*\p{Extended_Pictographic}\S*\s*/u, "")} value={v === k ? "✓" : ""} tone={C.gn} onClick={() => { setView(k); setMore(false); }} />)}<div style={{ height: 8 }} /></Sheet>}
+      {!main.includes(pv) && <div style={{ fontSize: 18, fontWeight: 900, margin: "2px 2px 10px" }}>{(views.find(([k]) => k === pv) || [])[1]?.replace(/^\S*\p{Extended_Pictographic}\S*\s*/u, "")}</div>}
+      {pv === "board" && <Board g={g} classYr={g.yr} />}
+      {pv === "hq" && <ScoutingHQ g={g} go={go} />}
+      {pv === "list" && <YourList g={g} classYr={g.yr} />}
+      {pv === "combine" && <CombineView g={g} buzz={g.buzz} />}
+      {pv === "mock" && <MockDraft g={g} />}
+      {pv === "staff" && <PhoneScouts g={g} />}
+      {more && <Sheet title="Scouting" onClose={() => setMore(false)}>{rest.map(([k, l], i) => <Row key={k} first={i === 0} label={l.replace(/^\S*\p{Extended_Pictographic}\S*\s*/u, "")} value={pv === k ? "✓" : ""} tone={C.gn} onClick={() => { setView(k); setMore(false); }} />)}<div style={{ height: 8 }} /></Sheet>}
     </div>
   );
+  }
   return (
     <div>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
@@ -1461,7 +1547,7 @@ function PhoneProspectPage({ g, p, onClose }) {
   const tool = (k) => { const sk = skills[k]; return <div key={k} style={{ display: "flex", alignItems: "center", minHeight: 44, borderTop: "1px solid #ffffff10", fontSize: 16 }}><span style={{ color: "#cbd5e1" }}>{PA_LABELS[k] || k}</span><b style={{ marginLeft: "auto", fontSize: 18, color: sk ? TONE[gradeTone(sk.g)] : "#475569" }}>{sk ? sk.g : "?"}</b></div>; };
   const cost = read.cost, pts = g.scouting?.pts || 0;
   return createPortal(
-    <div className="keep-dark" style={{ position: "fixed", inset: 0, zIndex: 1000, background: C.bg, overflowY: "auto", color: "#fff" }}>
+    <div className="keep-dark" style={{ position: "fixed", inset: 0, zIndex: 1000, background: C.bg, overflowY: "auto", color: "#fff", fontFamily: C.f }}>
       <div style={{ padding: "calc(10px + env(safe-area-inset-top)) 16px 18px", background: `linear-gradient(180deg, transparent 40%, ${C.bg} 100%), radial-gradient(120% 100% at 0% 0%, #1e3a8acc, #1e3a8a22 70%)` }}>
         <div style={{ display: "flex", justifyContent: "flex-end" }}><CloseX onClick={onClose} style={{ position: "static" }} /></div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
