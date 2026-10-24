@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import { C, TeamLogo, kickoff, Sheet } from "./ui.jsx";
 import PlayerArt from "./PlayerArt.jsx";
-import { featuredPlayer } from "./BroadcastMatchup.jsx";
+import { featuredPlayer, headline } from "./BroadcastMatchup.jsx";
 import { BLOCK, FONT_CSS } from "./Spotlight.jsx";
 import { HOLIDAYS } from "./holidays.js";
 
@@ -14,13 +14,21 @@ const tag = { fontSize: 13, fontWeight: 800, color: "#fff", background: "#000000
 const rec = (t) => `${t.w ?? 0}-${t.l ?? 0}${t.t ? `-${t.t}` : ""}`;
 const TONE = { urgent: C.rd, action: C.gd, info: "#60a5fa" };
 
-function Side({ t, rating, right }) {
+// one club's side: logo, name, record, and its star (the best healthy player, his position, and
+// where he ranks this season), like the old promo
+function Side({ t, rating, right, star, teams }) {
+  const line = headline(star, teams);
   return (
-    <div style={{ position: "absolute", top: "26%", [right ? "right" : "left"]: 56, textAlign: right ? "right" : "left", zIndex: 2, maxWidth: "30%" }}>
+    <div style={{ position: "absolute", top: "18%", [right ? "right" : "left"]: 56, textAlign: right ? "right" : "left", zIndex: 2, maxWidth: "30%" }}>
       <div style={{ display: "flex", justifyContent: right ? "flex-end" : "flex-start" }}><TeamLogo t={t} sz={104} glow /></div>
       <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: "#ffffffb3", marginTop: 14, textTransform: "uppercase" }}>{t.city}</div>
       <div style={{ fontFamily: BLOCK, fontSize: 52, fontWeight: 700, lineHeight: 1, textTransform: "uppercase", textShadow: "0 4px 24px #0009" }}>{t.name}</div>
       <div style={{ fontSize: 19, color: "#ffffffcc", marginTop: 6 }}>{rec(t)}{Number.isFinite(rating?.ovr) ? ` · ${Math.round(rating.ovr)} OVR` : ""}</div>
+      {star && <div style={{ marginTop: 22 }}>
+        <div style={{ fontFamily: BLOCK, fontSize: 28, fontWeight: 700, lineHeight: 1.05, textTransform: "uppercase" }}>{star.name}</div>
+        <div style={{ fontSize: 16, color: "#ffffffcc", marginTop: 2 }}>{star.pos} · {star.ovr} OVR</div>
+        {line && <div style={{ fontSize: 15, fontWeight: 800, color: "#fde68a", marginTop: 6 }}>{line}</div>}
+      </div>}
     </div>
   );
 }
@@ -42,11 +50,11 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
       {/* the promo */}
       <div style={{ position: "relative", height: "clamp(380px, calc(var(--vh, 100vh) - 420px), 560px)", borderRadius: 22, overflow: "hidden", background: `linear-gradient(100deg, ${away.clr} 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr} 100%)` }}>
         {pa && <div style={{ position: "absolute", left: "23%", bottom: -20 }}><PlayerArt p={pa} ab={away.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
-        {ph && <div style={{ position: "absolute", right: "23%", bottom: -20, transform: "scaleX(-1)" }}><PlayerArt p={ph} ab={home.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
+        {ph && <div style={{ position: "absolute", right: "23%", bottom: -20 }}><PlayerArt p={ph} ab={home.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, transparent 52%, ${C.bg} 100%)` }} />
         <div style={{ position: "absolute", top: 24, left: 0, right: 0, textAlign: "center", fontSize: 13, fontWeight: 900, letterSpacing: 1.8, color: "#ffffffcc", textTransform: "uppercase", zIndex: 2 }}>{[eyebrow, game?.date ? kickoff(game).replace(" ET", "") : null].filter(Boolean).join(" · ")}</div>
-        <Side t={away} rating={ra} />
-        <Side t={home} rating={rh} right />
+        <Side t={away} rating={ra} star={pa} teams={teams} />
+        <Side t={home} rating={rh} star={ph} teams={teams} right />
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 28, display: "flex", justifyContent: "center", alignItems: "center", gap: 10, zIndex: 2 }}>
           {hol && <span style={{ ...tag, background: `linear-gradient(90deg, ${hol.c2}, ${hol.c1})` }}>{hol.icon} {hol.name}</span>}
           {spread && <span style={tag}>{spread}</span>}
