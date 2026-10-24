@@ -1329,6 +1329,8 @@ export function ScoutingPage({ g }) {
   const [view, setView] = useState(g.sp === "combine" ? "combine" : "hq");
   // combine week opens on the combine results (interviews, workouts) whenever you arrive
   useEffect(() => { if (g.sp === "combine") setView("combine"); }, [g.sp]);
+  // the to-do list can open a view directly ("Send your scouts to their regions")
+  useEffect(() => { const f = (e) => setView(e.detail); window.addEventListener("gm:scouting", f); return () => window.removeEventListener("gm:scouting", f); }, []);
   const views = [["hq", "🏠 Scouting HQ"], ["board", "Big Board"], ["list", `Your list (${listIds(g.scouting, g.yr).length})`], ["mock", "Mock Draft"], hasCombine && ["combine", "Combine"], ["regions", "Regions"], ["scouts", "Scouts"]].filter(Boolean);
   const v = views.some(([k]) => k === view) ? view : "hq";
   const myPicks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !(g.draftLog || []).some((d) => d.id === pk.id)).sort((a, b) => a.overall - b.overall);

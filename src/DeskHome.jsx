@@ -35,14 +35,14 @@ function Side({ t, rating, right, star, teams }) {
 
 // away and home are drawn left and right, like the score bug. primary: [{ label, onClick }] for
 // this week (Play, Sim). spread: "NYG −3" or "Pick'em". eyebrow: what kind of game it is.
-export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, spread, primary = [], menu = [], planCard, stories = [], news = [], teams, onStory, side, rest, extra, injuries }) {
+export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, spread, primary = [], menu = [], planCard, stories = [], news = [], teams, onStory, side, rest, extra, injuries, onInbox }) {
   const [devOpen, setDevOpen] = useState(false);
   const [injOpen, setInjOpen] = useState(false);
   // the to-do list (and the inbox) open these sheets from anywhere in the app
   useEffect(() => {
     const f = (e) => { if (e.detail === "dev") setDevOpen(true); if (e.detail === "injuries") setInjOpen(true); };
-    window.addEventListener("gm:home", f);
-    return () => window.removeEventListener("gm:home", f);
+    window.addEventListener("gm:home", f); window.__gmDeskHome = true;
+    return () => { window.removeEventListener("gm:home", f); window.__gmDeskHome = false; };
   }, []);
   const pa = featuredPlayer(away), ph = featuredPlayer(home);
   const hol = HOLIDAYS[game?.holiday];
@@ -55,7 +55,7 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
     <div className="keep-dark" style={{ color: "#fff" }}>
       <style>{FONT_CSS}</style>
       {/* the promo */}
-      <div style={{ position: "relative", height: "clamp(380px, calc(var(--vh, 100vh) - 420px), 560px)", borderRadius: 22, overflow: "hidden", background: `linear-gradient(100deg, ${away.clr} 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr} 100%)` }}>
+      <div data-tour="promo" style={{ position: "relative", height: "clamp(380px, calc(var(--vh, 100vh) - 420px), 560px)", borderRadius: 22, overflow: "hidden", background: `linear-gradient(100deg, ${away.clr} 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr} 100%)` }}>
         {pa && <div style={{ position: "absolute", left: "23%", bottom: -20 }}><PlayerArt p={pa} ab={away.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         {ph && <div style={{ position: "absolute", right: "23%", bottom: -20 }}><PlayerArt p={ph} ab={home.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, transparent 52%, ${C.bg} 100%)` }} />
@@ -72,7 +72,7 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
       {extra}
       {/* three quiet cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14, marginTop: 16 }}>
-        <div style={card}>
+        <div data-tour="todo" style={card}>
           <div style={h2}>To do{todo.length > 0 && <span style={{ fontSize: 15, color: C.mt }}>{todo.length + (moreTodo ? Number(moreTodo.label.match(/\d+/)?.[0] || 0) : 0)}</span>}</div>
           {todo.slice(0, 3).map((m, i) => (
             <button key={m.label} onClick={m.onClick} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 50, background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff14" : 0, color: "#fff", textAlign: "left", cursor: "pointer", padding: 0 }}>
@@ -83,7 +83,7 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
           ))}
           {!todo.length && <div style={{ fontSize: 15, color: "#94a3b8", padding: "10px 0" }}>Nothing needs you this week.</div>}
           <div style={{ display: "flex", gap: 16, marginTop: 6 }}>
-            {(todo.length > 3 || moreTodo) && <button onClick={moreTodo?.onClick || todo[3]?.onClick} style={{ background: "transparent", border: 0, padding: "6px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>See all</button>}
+            {(todo.length > 3 || moreTodo) && <button onClick={onInbox || moreTodo?.onClick} style={{ background: "transparent", border: 0, padding: "6px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>See all</button>}
             {side && <button onClick={() => setDevOpen(true)} style={{ background: "transparent", border: 0, padding: "6px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Development focus</button>}
           </div>
         </div>

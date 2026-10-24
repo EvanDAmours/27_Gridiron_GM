@@ -6,6 +6,23 @@ import { C } from "./ui.jsx";
 
 // tab: the screen to show; target: the data-tour mark to spotlight (optional)
 export function tourSteps(mobile) {
+  // desktop: the broadcast Home and the six-section bar
+  if (!mobile) return [
+    { tab: "dashboard", target: "promo", title: "This week's game", body: "Home leads with your next game: both clubs, their stars, the line and the weather. Play it live or sim it right from here." },
+    { tab: "dashboard", target: "todo", title: "What needs you", body: "Your to-do list: holdouts, injuries, contract years and more. Click one to deal with it; See all has the rest. Development focus is here too: pick one offensive and one defensive player to grow each week." },
+    { tab: "dashboard", target: "actions", title: "Moving time forward", body: "Play Week watches your game live; Sim Week skips ahead, and the arrow sims to the trade deadline or the whole season. In the offseason the same spot moves you from the Combine to re-signing, free agency and the draft." },
+    { tab: "dashboard", target: "phases", title: "Your season", body: "Your record and where you are in the year. Click it for every week (W or L, your bye, the next game ringed) and the offseason stages ahead." },
+    { tab: "depth", target: "nav", title: "Getting around", body: "Six sections: Home, Team (depth chart, roster, coaching), Season (schedule, standings, playoffs, stats, league, Legacy), Draft, Trades & FA, and Front Office. Each section's screens are tabs just under the bar. Search, Save and settings are in the ⋯ menu." },
+    { tab: "depth", title: "Depth chart", body: "Click a spot to choose the starter and set snap shares. Your game plan is here too: your coordinators' schemes, how well they fit your roster, and your personnel." },
+    { tab: "contracts", title: "Front Office", body: "Your cap and every contract. The Cap Advisor suggests restructures, cuts and extensions, and Where the Money Goes compares your spending with the league. Extend young stars early: deals only get pricier as they near the market." },
+    { tab: "coaching", title: "Coaching", body: "Your head coach and coordinators. A better staff is worth points on game day. Extend the good ones, replace the bad ones, and switch schemes to fit the roster you have." },
+    { tab: "trade", title: "Trades", body: "Tick players and picks on both sides (picks up to three drafts out) and the summary tells you if they'd take it. The Trade finder suggests deals they'd accept; the Trade block puts your players up for offers. The deadline is after Week 9." },
+    { tab: "freeagency", title: "Free agency", body: "Negotiate years, money, a signing bonus and incentives. Players want more than money: a starting job, the right scheme or a winner, and a rival club's offer is leverage. The big market opens after the Combine." },
+    { tab: "scouting", title: "Scouting and the draft", body: "Scouting points buy reports on prospects, and area scouts read a whole region at once. Build your own board before the Combine. On draft day every pick has a two-minute clock, so there's time to trade up or down." },
+    { tab: "schedule", title: "Schedule, standings and playoffs", body: "Your games (play any of them live), the standings, and during the season the playoff picture: who'd be in if the season ended today." },
+    { tab: "trophies", title: "Your Legacy Hall", body: "Banners, trophies, gold jackets and your club's Ring of Honor. Stats has every league leader, and League has the record book and league history." },
+    { tab: "dashboard", title: "You're all set", body: "Save, search, light mode and Game Updates are all in the ⋯ menu at the top right, and you can replay this tour from there any time. Good luck, GM." },
+  ];
   return [
     { tab: "dashboard", target: "strip", title: "Your franchise at a glance", body: "Record, cap space, roster health, and how the owner and the locker room feel. When something needs a decision from you, Needs Attention shows up first: tap it to see the list. Tap any box to jump to that screen." },
     { tab: "dashboard", target: "devfocus", title: "Development focus", body: "Pick one offensive and one defensive player to work with: each regular-season week a focused player can gain a point, and young players with a strong development trait grow fastest. Above it: the league's top stories and the injury report." },
