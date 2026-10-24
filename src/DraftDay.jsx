@@ -85,9 +85,10 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
       {!mine && (onSimPick || nextMine) && (
         // (Sim to my pick is the big button at the bottom, so it isn't repeated here)
         <div style={{ background: "#0b1120", padding: "6px 8px", display: "flex", gap: 8 }}>
-          {onSimPick && <Btn onClick={onSimPick} bg="#0e7490" style={{ flex: 1, fontSize: 13, minHeight: 42, padding: "6px 4px", fontWeight: 900 }}>⏭ Sim pick</Btn>}
-          {nextMine && <Btn onClick={onForPick} bg={forPickOpen ? "#854d0e" : "#422006"} c="#fde68a" style={{ flex: 1, fontSize: 13, minHeight: 42, padding: "6px 4px", fontWeight: 800 }}>🔁 Get this pick</Btn>}
-          {nextMine && <Btn onClick={onCalls} bg={callsOpen ? "#4c1d95" : "#1e1b4b"} c="#c4b5fd" style={{ flex: 1, fontSize: 13, minHeight: 42, padding: "6px 4px", fontWeight: 800 }}>📞 Trade up</Btn>}
+          {/* one calm style for all three (the open one lights up), so the colors don't fight the board */}
+          {onSimPick && <Btn onClick={onSimPick} bg="#ffffff12" c="#e2e8f0" style={{ flex: 1, fontSize: 14, minHeight: 44, padding: "6px 4px", fontWeight: 800, borderRadius: 10 }}>Sim pick</Btn>}
+          {nextMine && <Btn onClick={onForPick} bg={forPickOpen ? "#ffffff2e" : "#ffffff12"} c={forPickOpen ? "#fff" : "#e2e8f0"} style={{ flex: 1, fontSize: 14, minHeight: 44, padding: "6px 4px", fontWeight: 800, borderRadius: 10 }}>Get this pick</Btn>}
+          {nextMine && <Btn onClick={onCalls} bg={callsOpen ? "#ffffff2e" : "#ffffff12"} c={callsOpen ? "#fff" : "#e2e8f0"} style={{ flex: 1, fontSize: 14, minHeight: 44, padding: "6px 4px", fontWeight: 800, borderRadius: 10 }}>Trade up</Btn>}
         </div>
       )}
     </div>
