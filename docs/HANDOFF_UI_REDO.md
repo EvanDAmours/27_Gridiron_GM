@@ -179,6 +179,10 @@ Office title, "2026 Schedule", "2027 Draft Class" + points box).
   How the cap works), Schedule (team / league). Scouting HQ, Cap overview, Trade ("Targets for your
   needs", "Draft picks") and Draft Recap ("Your class", "Every pick", ...) headings are plain white.
   `scripts/smoke.mjs` accepts either case for the Draft Recap heading.
+- Draft room (checked with the draft-day save): Big Board / Mock Draft are white-selected chips,
+  your-pick chips are borderless, "Up next" and the board heading are plain white, and
+  `chipBtn` in ScoutingUI.jsx (Consensus / Your scouts and the other small toggles) is a quiet pill.
+  Free agency's "Day N of 4" banner is a soft card.
 
 ### 4.5 Walkthrough
 `tourSteps(mobile)` in Walkthrough.jsx has a desktop branch rewritten for the new layout (targets
@@ -267,8 +271,7 @@ text). gh-pages / `scripts/publish-pages.sh` is **not** the live source.
 - Desktop is through every section in the calm style. Still in the older look, by choice or not
   yet reached: the player card itself (a trading-card design, deliberately kept), ceremony screens
   (Season Awards, Moments, Rafters night, documentary), small caps eyebrows inside cards (League
-  History plaques, transaction kinds), the re-sign and draft-day panels during those phases (not
-  re-screenshotted this round), the Walkthrough eyebrow and the Offline panel.
+  History plaques, transaction kinds), the re-sign phase screens, the Walkthrough eyebrow and the Offline panel.
 - Scouting HQ's "Scout 1" buttons and the talent map rows are still the older blue buttons.
 - AI-to-AI trades ignore `contractMult` (see §7).
 - The 15 lint warnings are old `react-hooks/exhaustive-deps` warnings in App.jsx.

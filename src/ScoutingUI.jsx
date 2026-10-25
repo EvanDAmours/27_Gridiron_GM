@@ -26,9 +26,9 @@ const TONE = { a: "#22c55e", b: "#60a5fa", c: "#f59e0b", d: "#ef4444", "": "#94a
 const htS = (i) => `${Math.floor(i / 12)}'${i % 12}"`;
 // Home's soft card: no border, rounder corners
 const panel = { background: "#ffffff0d", borderRadius: 18, padding: "16px 18px", marginBottom: 12 };
-const head = { fontSize: 14, fontWeight: 900, color: "#e2e8f0", letterSpacing: 1.2, marginBottom: 10, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" };
+const head = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 10, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" };
 const muted = { fontSize: 13, color: C.mt, lineHeight: 1.5 };
-const chipBtn = (on) => ({ background: on ? C.bl + "33" : "transparent", color: on ? "#fff" : C.mt, border: `1px solid ${on ? C.bl : C.bd}`, padding: "5px 10px", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" });
+const chipBtn = (on) => ({ background: on ? "#ffffff24" : "transparent", color: on ? "#fff" : "#94a3b8", border: 0, padding: "5px 12px", borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: "pointer" });
 const Right = ({ children }) => <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 400, letterSpacing: 0, color: C.mt, fontSize: 13 }}>{children}</span>;
 
 // ---------- Small pieces ----------
@@ -810,7 +810,7 @@ export function PickTracker({ g, slim }) {
         <span style={{ fontSize: slim ? 13 : 15, fontWeight: 900, marginRight: 2 }}>Your picks</span>
         <span style={{ fontSize: 13, color: left ? C.gn : C.mt, fontWeight: 800, marginRight: 6 }}>{left} of {picks.length} left</span>
         {chips.map(({ rd, pk, d }, k) => (
-          <span key={pk?.id ?? `r${rd}`} title={!pk ? `No round ${rd} pick` : d ? `Round ${rd}: ${d.player?.name || d.name || "used"}` : g.sp === "draft" ? `Round ${rd}, pick ${pk.overall}` : `Round ${rd}, projected from the standings`} style={{ display: "inline-flex", alignItems: "baseline", gap: 5, borderRadius: 999, padding: "3px 10px", fontSize: 13, whiteSpace: "nowrap", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", background: pk && !d ? `${C.bl}1f` : "#0b1220", border: `1px solid ${pk && !d ? C.bl + "99" : C.bd}`, opacity: pk ? 1 : 0.5, color: pk && !d ? "#e2e8f0" : C.mt }}>
+          <span key={pk?.id ?? `r${rd}`} title={!pk ? `No round ${rd} pick` : d ? `Round ${rd}: ${d.player?.name || d.name || "used"}` : g.sp === "draft" ? `Round ${rd}, pick ${pk.overall}` : `Round ${rd}, projected from the standings`} style={{ display: "inline-flex", alignItems: "baseline", gap: 5, borderRadius: 999, padding: "3px 10px", fontSize: 13, whiteSpace: "nowrap", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", background: pk && !d ? "#ffffff14" : "transparent", border: 0, opacity: pk ? 1 : 0.5, color: pk && !d ? "#e2e8f0" : C.mt }}>
             <b style={{ fontSize: 11, letterSpacing: 0.5, color: pk && !d ? "#bfdbfe" : C.mt }}>R{rd}</b>
             {!pk ? "—" : <span style={{ fontWeight: d ? 500 : 800, textDecoration: d ? "line-through" : "none" }}>{label(pk)}</span>}
             {d && <span style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis" }}>✓ {d.player?.name || d.name || "Used"}{d.player?.pos ? ` ${d.player.pos}` : ""}</span>}
@@ -881,7 +881,7 @@ export function DraftQueue({ picks, idx, teams, ui, n = 12 }) {
   return (
     <div style={{ ...panel, padding: "12px 12px 8px" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 14, fontWeight: 900, letterSpacing: 1, color: "#e2e8f0" }}>UP NEXT</span>
+        <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>Up next</span>
         {mine && <span style={{ marginLeft: "auto", fontSize: 13, color: mine === next[0] ? C.gn : C.mt, fontWeight: 700 }}>{mine === next[0] ? "You're on the clock" : `Your pick in ${picks.indexOf(mine) - idx}`}</span>}
       </div>
       {next.map((pk, i) => {

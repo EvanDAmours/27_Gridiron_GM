@@ -118,8 +118,8 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
       </div>
       {!open && <div style={{ background: "#ffffff0d", borderRadius: 14, padding: "12px 16px", marginBottom: 12, fontSize: 15, color: "#cbd5e1" }}>The big free agency period opens after the Combine. Right now it's whoever is left on the market.</div>}
       {market && (
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: `${C.bl}14`, border: `1px solid ${C.bl}55`, borderRadius: 10, padding: "10px 14px", marginBottom: 12 }}>
-          <span style={{ fontSize: 18, fontWeight: 900 }}>📅 Day {market.day} of {FA_DAYS}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#ffffff0d", borderRadius: 18, padding: "12px 16px", marginBottom: 12 }}>
+          <span style={{ fontSize: 18, fontWeight: 800 }}>Day {market.day} of {FA_DAYS}</span>
           <span style={{ flex: "1 1 260px", fontSize: 13, color: "#cbd5e1", lineHeight: 1.4 }}>Clubs make offers every day. Each player takes the best one on his day: the money, plus the role, scheme and winning he wants. Only a big overpay signs him on the spot.</span>
           {market.day < FA_DAYS ? <Btn onClick={onNextDay} bg={C.bl} style={{ fontSize: 15, padding: "9px 18px", fontWeight: 900 }}>Next day →</Btn> : <span style={{ fontSize: 13, color: "#fde68a", fontWeight: 700 }}>Last day: everyone still deciding chooses when you finish free agency.</span>}
         </div>
