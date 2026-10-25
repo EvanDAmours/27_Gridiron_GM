@@ -183,6 +183,16 @@ Office title, "2026 Schedule", "2027 Draft Class" + points box).
   your-pick chips are borderless, "Up next" and the board heading are plain white, and
   `chipBtn` in ScoutingUI.jsx (Consensus / Your scouts and the other small toggles) is a quiet pill.
   Free agency's "Day N of 4" banner is a soft card.
+- Scouting HQ pick tiles (`PickCabinet` in ScoutingUI.jsx) shrank from big boxes to one row of
+  small pills ("R1 #16 #12–26"; the first pick tinted gold, the scouting range on hover too).
+  `ScoutButton` is a quiet pill everywhere ("Scout · 1" / "Workup · 2"); the HQ's Regions, Manage,
+  Big Board and Your list links are quiet pills.
+- Re-sign week (`Resign.jsx`, checked with a re-sign save): one line for cap space and progress
+  (on desktop the section header says "Re-sign week"; phones keep the title), one short
+  explanation with the tag/option rules folded into a "Tag and fifth-year option" toggle, the
+  table / phone cards soft, Tag and Option as tinted pills, Negotiate as the same quiet green
+  outline as free agency. The free agency "More" drawer is a soft card. The `mkdraft` audit
+  scenario now also dumps `save-resign.txt` (set `STOP=1` to stop there); `rsshot` screenshots it.
 
 ### 4.5 Walkthrough
 `tourSteps(mobile)` in Walkthrough.jsx has a desktop branch rewritten for the new layout (targets
@@ -271,7 +281,6 @@ text). gh-pages / `scripts/publish-pages.sh` is **not** the live source.
 - Desktop is through every section in the calm style. Still in the older look, by choice or not
   yet reached: the player card itself (a trading-card design, deliberately kept), ceremony screens
   (Season Awards, Moments, Rafters night, documentary), small caps eyebrows inside cards (League
-  History plaques, transaction kinds), the re-sign phase screens, the Walkthrough eyebrow and the Offline panel.
-- Scouting HQ's "Scout 1" buttons and the talent map rows are still the older blue buttons.
+  History plaques, transaction kinds), the Walkthrough eyebrow and the Offline panel.
 - AI-to-AI trades ignore `contractMult` (see §7).
 - The 15 lint warnings are old `react-hooks/exhaustive-deps` warnings in App.jsx.
