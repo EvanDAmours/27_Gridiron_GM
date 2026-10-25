@@ -229,7 +229,7 @@ export function shapeSafety(p, kind) {
   const dir = kind === "FS" ? 1 : -1, other = kind === "FS" ? "SS" : "FS";
   const fits = (q) => roleScore(q, kind) - CENTER[kind] >= roleScore(q, other) - CENTER[other] + 1;
   let q = p;
-  for (let k = 0; k <= 12 && !fits(q); k += 2) {
+  for (let k = 0; k <= 30 && !fits(q); k += 2) {
     const a = { ...p.posAttrs };
     for (const [key, w] of Object.entries(S_LEAN)) if (typeof a[key] === "number") a[key] = Math.round(clamp(a[key] + dir * w * k, 30, 99));
     q = { ...p, posAttrs: a };

@@ -19,8 +19,10 @@ const findChromium = () => {
   for (const root of [process.env.PLAYWRIGHT_BROWSERS_PATH, "/opt/pw-browsers"].filter(Boolean)) {
     if (!fs.existsSync(root)) continue;
     for (const d of fs.readdirSync(root).filter((x) => /^chromium-\d+$/.test(x)).sort().reverse()) {
-      const exe = path.join(root, d, "chrome-linux", "chrome");
-      if (fs.existsSync(exe)) return exe;
+      for (const dir of ["chrome-linux", "chrome-linux64"]) {
+        const exe = path.join(root, d, dir, "chrome");
+        if (fs.existsSync(exe)) return exe;
+      }
     }
   }
   return undefined;

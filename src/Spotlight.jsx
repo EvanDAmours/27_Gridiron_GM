@@ -30,7 +30,9 @@ function useVh() {
 // children: what goes under the title. bg: the faint word or number behind him. side: something
 // at his side (a trophy). confetti: colors, or nothing. gold: the gold stage instead of team colors.
 // smoke: stage smoke (cannons either side of him, then floor fog).
-export default function Spotlight({ p, team, num, kicker, title, children, bg, side, confetti, gold, smoke, cta = "CONTINUE →", onNext, label, more }) {
+// backdrop: a layer behind everything (a holiday sky). art: drawn instead of the player (a holiday
+// piece when there is no player to stand there).
+export default function Spotlight({ p, team, num, kicker, title, children, bg, side, confetti, gold, smoke, cta = "CONTINUE →", onNext, label, more, backdrop, art }) {
   const vh = useVh();
   // phones: the page behind stays put while this is up (a swipe used to scroll it, not this)
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function Spotlight({ p, team, num, kicker, title, children, bg, s
     <div role="dialog" aria-label={label || String(title).replace(/\n/g, " ")} onClick={onNext} style={{ position: "fixed", inset: 0, zIndex: 4400, overflow: "hidden", color: "#fff", cursor: "pointer", ...(MOBILE ? { height: "100dvh", touchAction: "none" } : {}),
       background: `radial-gradient(ellipse at ${MOBILE ? "50% 28%" : "70% 45%"}, ${clr}${gold ? "88" : "aa"}, transparent 60%), linear-gradient(180deg, #050a18, #02040b)` }}>
       <style>{CSS}</style>
+      {backdrop}
       {confetti && <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         {BITS.map((b, i) => <span key={i} style={{ position: "absolute", top: -20, left: `${b.left}%`, width: b.w, height: b.w * 1.6, background: confetti[i % confetti.length], borderRadius: 1, transform: `rotate(${b.rot}deg)`, animation: `spFall ${b.dur}s ${b.delay}s linear infinite` }} />)}
       </div>}
@@ -61,7 +64,7 @@ export default function Spotlight({ p, team, num, kicker, title, children, bg, s
       {/* the player */}
       <div style={{ position: "absolute", bottom: MOBILE ? "auto" : 0, top: MOBILE ? 12 : "auto", ...(MOBILE ? { left: 0, right: 0 } : { right: side ? "14%" : "9%" }), display: "flex", justifyContent: "center", alignItems: "flex-end", animation: "spRise .7s .1s ease-out both" }}>
         <div style={{ position: "relative" }}>
-        <PlayerArt p={who} ab={team?.ab} width={Math.round(artH * 0.75)} style={{ filter: `drop-shadow(0 0 40px ${clr}66) drop-shadow(0 20px 30px #000c)`, ...(MOBILE ? { maskImage: "linear-gradient(#000 82%, transparent)", WebkitMaskImage: "linear-gradient(#000 82%, transparent)" } : {}) }} fallback={fallback} />
+        {art || <PlayerArt p={who} ab={team?.ab} width={Math.round(artH * 0.75)} style={{ filter: `drop-shadow(0 0 40px ${clr}66) drop-shadow(0 20px 30px #000c)`, ...(MOBILE ? { maskImage: "linear-gradient(#000 82%, transparent)", WebkitMaskImage: "linear-gradient(#000 82%, transparent)" } : {}) }} fallback={fallback} />}
         {/* hung off his side, so it never pushes him toward the words */}
         {side && <div style={{ position: "absolute", left: MOBILE ? "72%" : "78%", bottom: MOBILE ? 24 : "5vh", width: MOBILE ? 120 : "19vw", zIndex: 1 }}>{side}</div>}
         </div>

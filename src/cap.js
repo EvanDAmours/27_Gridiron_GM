@@ -41,10 +41,11 @@ export const setCapPhase = (yr, sp) => { phase = { yr, sp }; };
 export const getCapPhase = () => phase;
 export const expiringNow = (p) => phase.sp === "resign" && (p?.contract || 0) <= 1 && p?.cy !== phase.yr + 1;
 
-// Rookie wage scale by overall pick, as a share of the cap: about $12M a year at #1, $3.6M at
-// #32, ~$2M in round 2 and near the minimum after that.
+// Rookie wage scale by overall pick, as a share of the cap, from the 2025 class: about $13M a year
+// at #1 (Cam Ward, 4.4% of the cap), $3.7M at #32, $2.6M to $1.9M in round 2, $1.6M at the top of
+// round 3 and the minimum from late in round 4.
 export function rookieSalary(overall, cap = leagueCap()) {
-  const share = overall <= 32 ? 0.04 - (0.028 * (overall - 1)) / 31 : overall <= 64 ? 0.0075 - (0.0025 * (overall - 33)) / 31 : Math.max(0.0034, 0.0046 - (overall - 65) * 0.000008);
+  const share = overall <= 32 ? 0.0437 - (0.0315 * (overall - 1)) / 31 : overall <= 64 ? 0.0093 - (0.0025 * (overall - 33)) / 31 : Math.max(0.0034, 0.0057 - (overall - 65) * 0.00004);
   return r1(cap * share);
 }
 

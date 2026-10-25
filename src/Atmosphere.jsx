@@ -6,6 +6,7 @@ import { TeamLogo } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { HOLIDAYS, themeOf } from "./holidays.js";
 import { wxOf } from "./weather.js";
+import Spotlight, { BLOCK, FONT_CSS } from "./Spotlight.jsx";
 
 // The holiday art (public/holiday/): a frame around the field, trim for the scoreboard, and four
 // stickers per holiday (halloween: pumpkin, bat, ghost, candy corn; thanksgiving: turkey, pie,
@@ -29,6 +30,8 @@ const CSS = `
 @keyframes atTwinkle { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
 @keyframes atGlow { 0%,100% { opacity: .55 } 50% { opacity: .85 } }
 @keyframes atIn { from { opacity: 0; transform: translateY(14px) } to { opacity: 1; transform: none } }
+@keyframes atInL { from { opacity: 0; transform: translateX(-28px) } to { opacity: 1; transform: none } }
+@keyframes atInR { from { opacity: 0; transform: translateX(28px) } to { opacity: 1; transform: none } }
 @keyframes atFade { 0% { opacity: 0 } 8% { opacity: 1 } 88% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes atBurst { 0% { transform: scale(.05); opacity: 0 } 10% { opacity: 1 } 60% { opacity: .9 } 100% { transform: scale(1); opacity: 0 } }
 @keyframes atConf { 0% { transform: translate(0, -8vh) rotate(0) } 100% { transform: translate(4vw, 110vh) rotate(900deg) } }
@@ -102,63 +105,79 @@ export function Sky({ wx, holiday, z = 0, density = 1, corners = false, containe
   );
 }
 
-// Before kickoff of a holiday game you play: the day's title over its sky, then the matchup.
+// Before kickoff of a holiday game you play: a title card. The day's name in block letters over its
+// sky, one of its pieces floating above, and the two clubs, each in a wash of its own color.
+// Tap anywhere to go straight to kickoff.
 export function HolidayIntro({ holiday, home, away, wx, onDone }) {
   const h = HOLIDAYS[holiday];
   if (!h) return null;
   const ny = themeOf(holiday) === "newyear", late = ny ? 1.5 : 0;
-  const tradition = holiday === "thanksgiving" && home?.ab === "DET" ? "A Thanksgiving tradition in Detroit since 1934" : holiday === "thanksgiving" && home?.ab === "DAL" ? "A Thanksgiving tradition in Dallas since 1966" : h.line;
+  const tradition = holiday === "thanksgiving" && home?.ab === "DET" ? "A Detroit tradition since 1934" : holiday === "thanksgiving" && home?.ab === "DAL" ? "A Dallas tradition since 1966" : null;
+  const club = (t, side) => (
+    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 10, animation: `${side ? "atInR" : "atInL"} .8s ${late + 0.55}s cubic-bezier(.2,.8,.2,1) both` }}>
+      <TeamLogo t={t} sz={MOBILE ? 64 : 96} glow />
+      <div>
+        <div style={{ fontSize: MOBILE ? 11 : 13, fontWeight: 800, letterSpacing: 3, color: "#ffffffa0", textTransform: "uppercase" }}>{t?.city}</div>
+        <div style={{ fontFamily: BLOCK, fontSize: MOBILE ? 24 : 36, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", lineHeight: 1.05 }}>{t?.name}</div>
+      </div>
+    </div>
+  );
   return (
-    <div onClick={onDone} style={{ position: "fixed", inset: 0, zIndex: 2500, background: `radial-gradient(ellipse at 50% 40%, ${h.bg}ee, #000 78%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, color: "#fff", textAlign: "center", padding: 20, animation: `atFade ${ny ? 5.6 : 4.6}s ease forwards`, cursor: "pointer" }}>
-      <Sky wx={wx} holiday={holiday} z={0} density={1.4} />
-      {ny && <div style={{ position: "absolute", top: "38%", left: 0, right: 0, height: 0 }}>{[3, 2, 1].map((n, i) => <div key={n} style={{ position: "absolute", left: 0, right: 0, textAlign: "center", fontSize: MOBILE ? 110 : 160, fontWeight: 900, color: "#fde68a", textShadow: "0 0 40px #fbbf24aa", opacity: 0, animation: `atCount .5s ${i * 0.5}s ease-out both`, transform: "translateY(-50%)" }}>{n}</div>)}</div>}
-      <div style={{ position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "center", gap: MOBILE ? 4 : 18 }}>
-        <img alt="" src={sticker(holiday, artOf(holiday).side[0])} style={{ width: MOBILE ? 56 : 88, filter: "drop-shadow(0 8px 18px #000c)", animation: `atSlideL .8s ${late + 0.35}s cubic-bezier(.2,.9,.3,1.2) both` }} />
-        <img alt="" src={sticker(holiday, artOf(holiday).hero)} style={{ width: MOBILE ? 110 : 160, filter: `drop-shadow(0 0 30px ${h.c1}66) drop-shadow(0 10px 20px #000c)`, animation: `atHero .8s ${late}s cubic-bezier(.2,.9,.3,1.2) both` }} />
-        <img alt="" src={sticker(holiday, artOf(holiday).side[1])} style={{ width: MOBILE ? 56 : 88, filter: "drop-shadow(0 8px 18px #000c)", animation: `atSlideR .8s ${late + 0.35}s cubic-bezier(.2,.9,.3,1.2) both` }} />
+    <div role="dialog" aria-label={h.name} onClick={onDone} style={{ position: "fixed", inset: 0, zIndex: 2500, overflow: "hidden", color: "#fff", textAlign: "center", cursor: "pointer", fontFamily: "'Segoe UI', system-ui, sans-serif", animation: `atFade ${ny ? 5.6 : 4.6}s ease forwards`,
+      background: `radial-gradient(ellipse at 18% 75%, ${away?.clr || "#334155"}55, transparent 45%), radial-gradient(ellipse at 82% 75%, ${home?.clr || "#334155"}55, transparent 45%), radial-gradient(ellipse at 50% 30%, ${h.bg}, #020308 80%)` }}>
+      <style>{CSS + FONT_CSS}</style>
+      <Sky wx={wx} holiday={holiday} z={0} density={0.7} />
+      {ny && <div aria-hidden style={{ position: "absolute", top: "42%", left: 0, right: 0, height: 0 }}>{[3, 2, 1].map((n, i) => <div key={n} style={{ position: "absolute", left: 0, right: 0, textAlign: "center", fontFamily: BLOCK, fontSize: MOBILE ? 120 : 180, fontWeight: 300, color: "#fde68a", textShadow: "0 0 50px #fbbf2499", opacity: 0, animation: `atCount .5s ${i * 0.5}s ease-out both`, transform: "translateY(-50%)" }}>{n}</div>)}</div>}
+      <div style={{ position: "relative", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 20px", gap: MOBILE ? 14 : 18 }}>
+        <img alt="" src={sticker(holiday, artOf(holiday).hero)} style={{ width: MOBILE ? 84 : 120, filter: `drop-shadow(0 0 28px ${h.c1}55) drop-shadow(0 12px 20px #000b)`, animation: `atHero .9s ${late}s cubic-bezier(.2,.9,.3,1.1) both, atBob 5s ${late + 1}s ease-in-out infinite` }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14, animation: `atIn .7s ${late + 0.15}s ease-out both` }}>
+          <span style={{ width: MOBILE ? 28 : 56, height: 1, background: `linear-gradient(90deg, transparent, ${h.c1})` }} />
+          <span style={{ fontSize: MOBILE ? 11 : 13, fontWeight: 800, letterSpacing: 4, color: h.c1, textTransform: "uppercase" }}>{tradition || "Holiday game"}</span>
+          <span style={{ width: MOBILE ? 28 : 56, height: 1, background: `linear-gradient(90deg, ${h.c1}, transparent)` }} />
+        </div>
+        <div style={{ fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 52 : 104, lineHeight: 0.95, letterSpacing: 1, textTransform: "uppercase", textShadow: `0 0 40px ${h.c1}44, 0 6px 30px #000a`, animation: `atIn .8s ${late + 0.25}s ease-out both` }}>{h.name}</div>
+        <div style={{ display: "flex", alignItems: "center", width: "min(720px, 100%)", marginTop: MOBILE ? 10 : 18, gap: MOBILE ? 8 : 20 }}>
+          {club(away, 0)}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, animation: `atIn .7s ${late + 0.7}s ease-out both` }}>
+            <span style={{ width: 1, height: MOBILE ? 30 : 46, background: `linear-gradient(transparent, ${h.c1}99)` }} />
+            <span style={{ fontFamily: BLOCK, fontSize: MOBILE ? 16 : 20, letterSpacing: 3, color: h.c1 }}>AT</span>
+            <span style={{ width: 1, height: MOBILE ? 30 : 46, background: `linear-gradient(${h.c1}99, transparent)` }} />
+          </div>
+          {club(home, 1)}
+        </div>
+        <div style={{ fontSize: MOBILE ? 14 : 17, color: "#e2e8f0cc", maxWidth: 520, lineHeight: 1.5, marginTop: MOBILE ? 6 : 10, animation: `atIn .7s ${late + 1}s ease-out both` }}>{h.line}</div>
       </div>
-      <div style={{ position: "relative", fontSize: MOBILE ? 34 : 58, fontWeight: 900, letterSpacing: 2, lineHeight: 1, background: `linear-gradient(90deg, ${h.c1}, #fff 50%, ${h.c1})`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", animation: `atIn .7s ${late + 0.2}s ease-out both` }}>{h.name.toUpperCase()}</div>
-      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: MOBILE ? 14 : 28, marginTop: 8, animation: `atIn .7s ${late + 0.5}s ease-out both` }}>
-        <TeamLogo t={away} sz={MOBILE ? 52 : 76} glow />
-        <span style={{ fontSize: MOBILE ? 18 : 24, fontWeight: 900, color: h.c1 }}>at</span>
-        <TeamLogo t={home} sz={MOBILE ? 52 : 76} glow />
-      </div>
-      <div style={{ position: "relative", fontSize: MOBILE ? 16 : 20, fontWeight: 800, animation: `atIn .7s ${late + 0.7}s ease-out both` }}>{away?.city} {away?.name} at {home?.city} {home?.name}</div>
-      <div style={{ position: "relative", fontSize: 14, color: "#e2e8f0", fontStyle: "italic", maxWidth: 520, animation: `atIn .7s ${late + 0.9}s ease-out both` }}>{tradition}</div>
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: "calc(22px + env(safe-area-inset-bottom))", fontSize: 12, fontWeight: 700, letterSpacing: 2, color: "#ffffff66", textTransform: "uppercase", animation: `atIn .6s ${late + 1.4}s ease-out both` }}>Tap for kickoff</div>
     </div>
   );
 }
 
-// The holiday result card (Moment kind "holiday"): m = { team (yours), holiday, won, us, them,
-// opp, pog: { name, line }, home }.
-const WIN = { thanksgiving: "A Thanksgiving to remember", christmas: "Christmas came early", xmaseve: "The best gift came a day early", halloween: "All treat, no trick", nye: "Ringing in the new year with a win", nyd: "Starting the year right" };
-const LOSS = { thanksgiving: "A tough day to give thanks", christmas: "Coal in the stocking", xmaseve: "A lump of coal on Christmas Eve", halloween: "Tricked on Halloween night", nye: "Not how we wanted to end the year", nyd: "Not the resolution we wanted" };
-const AWARD = { thanksgiving: "The turkey leg goes to", christmas: "Player of the game", xmaseve: "Player of the game", halloween: "Player of the game", nye: "Player of the game", nyd: "Player of the game" };
+// The holiday result card (Moment kind "holiday"), on the spotlight stage: the player of the game in
+// his uniform under the holiday's sky, the score behind him. m = { team (yours), holiday, won, us,
+// them, opp, pog: { name, line, p }, home, wx }.
+const WIN = { thanksgiving: "Thanksgiving\nto remember", christmas: "Christmas\ncame early", xmaseve: "The best gift\ncame early", halloween: "All treat,\nno trick", nye: "Ringing in\nthe new year", nyd: "Starting the\nyear right" };
+const LOSS = { thanksgiving: "A tough day\nto give thanks", christmas: "Coal in\nthe stocking", xmaseve: "Coal on\nChristmas Eve", halloween: "Tricked on\nHalloween", nye: "Not how we wanted\nto end the year", nyd: "Not the resolution\nwe wanted" };
+const AWARD = { thanksgiving: "The turkey leg goes to" };
 export function HolidayResult({ m, onClose }) {
   const h = HOLIDAYS[m.holiday];
   if (!h) return null;
+  const pp = m.pog?.p;
+  const hero = <img alt="" src={sticker(m.holiday, artOf(m.holiday).hero)} style={{ width: MOBILE ? 170 : "min(34vw, 380px)", margin: MOBILE ? "40px auto 0" : "0 0 18vh", display: "block", filter: `drop-shadow(0 0 40px ${h.c1}66) drop-shadow(0 20px 30px #000c)`, animation: "atBob 5s ease-in-out infinite" }} />;
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 3000, background: `radial-gradient(ellipse at 50% 35%, ${h.bg}, #050505 78%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, color: "#fff" }}>
-      <Sky wx={m.wx} holiday={m.holiday} z={0} density={1.2} />
-      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(560px, 100%)", textAlign: "center", background: "#0b0b12cc", border: `1px solid ${h.c1}88`, borderRadius: 18, padding: MOBILE ? "22px 16px" : "28px 28px", boxShadow: `0 0 60px ${h.c1}33` }}>
-        <img alt="" src={sticker(m.holiday, artOf(m.holiday).hero)} style={{ position: "absolute", left: MOBILE ? -14 : -38, top: MOBILE ? -40 : -56, width: MOBILE ? 84 : 120, transform: "rotate(-12deg)", filter: "drop-shadow(0 10px 18px #000c)", animation: "atHero .7s .15s cubic-bezier(.2,.9,.3,1.2) both" }} />
-        <img alt="" src={sticker(m.holiday, artOf(m.holiday).side[1])} style={{ position: "absolute", right: MOBILE ? -10 : -30, bottom: MOBILE ? -26 : -36, width: MOBILE ? 60 : 84, transform: "rotate(12deg)", filter: "drop-shadow(0 10px 18px #000c)", animation: "atHero .7s .35s cubic-bezier(.2,.9,.3,1.2) both" }} />
-        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 4, color: h.c1 }}>{h.name.toUpperCase()} · FINAL</div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18, margin: "14px 0 6px" }}>
-          <TeamLogo t={m.team} sz={MOBILE ? 52 : 64} glow />
-          <span style={{ fontSize: MOBILE ? 34 : 44, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>{m.us}-{m.them}</span>
-          <TeamLogo t={m.opp} sz={MOBILE ? 46 : 56} />
-        </div>
-        <div style={{ fontSize: MOBILE ? 22 : 28, fontWeight: 900, color: m.won ? "#fff" : "#cbd5e1", marginTop: 6 }}>{(m.won ? WIN : LOSS)[m.holiday]}</div>
-        <div style={{ fontSize: 14, color: "#cbd5e1", marginTop: 4 }}>{m.won ? "Beat" : "Lost to"} the {m.opp?.city} {m.opp?.name} {m.home ? "at home" : "on the road"}.</div>
-        {m.pog && <div style={{ marginTop: 16, display: "inline-block", background: `${h.c1}22`, border: `1px solid ${h.c1}66`, borderRadius: 12, padding: "10px 16px" }}>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: h.c1 }}>{AWARD[m.holiday].toUpperCase()}</div>
-          <div style={{ fontSize: 19, fontWeight: 900, marginTop: 2 }}>{m.pog.name}</div>
-          <div style={{ fontSize: 13, color: "#e2e8f0" }}>{m.pog.line}</div>
-        </div>}
-        <div><button onClick={onClose} style={{ marginTop: 18, background: `linear-gradient(90deg, ${h.c2}, ${h.c1})`, color: "#fff", border: 0, borderRadius: 10, padding: "11px 28px", fontSize: 15, fontWeight: 900, cursor: "pointer" }}>Continue</button></div>
+    <Spotlight p={pp} team={m.team} kicker={`${h.name} · Final`} title={(m.won ? WIN : LOSS)[m.holiday]} bg={`${m.us}-${m.them}`} confetti={m.won ? [h.c1, h.c2, "#fff", "#fde68a"] : null} onNext={onClose} label={`${h.name} final`}
+      art={pp ? null : hero} backdrop={<><style>{CSS}</style><Sky wx={m.wx} holiday={m.holiday} contained density={0.6} z={0} /></>}>
+      <div style={{ display: "flex", alignItems: "center", gap: MOBILE ? 12 : 16, margin: "4px 0 10px" }}>
+        <TeamLogo t={m.team} sz={MOBILE ? 40 : 54} glow />
+        <span style={{ fontFamily: BLOCK, fontSize: MOBILE ? 38 : 56, fontWeight: 600, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{m.us}<span style={{ color: "#ffffff55", margin: "0 8px" }}>–</span>{m.them}</span>
+        <TeamLogo t={m.opp} sz={MOBILE ? 34 : 46} />
       </div>
-    </div>
+      <div>{m.won ? "Beat" : "Lost to"} the {m.opp?.city} {m.opp?.name} {m.home ? "at home" : "on the road"}.</div>
+      {m.pog && <div style={{ marginTop: MOBILE ? 12 : 18, paddingTop: MOBILE ? 10 : 14, borderTop: `1px solid ${h.c1}55`, maxWidth: 460 }}>
+        <div style={{ fontSize: MOBILE ? 11 : 12, fontWeight: 800, letterSpacing: 3, color: h.c1, textTransform: "uppercase" }}>{AWARD[m.holiday] || "Player of the game"}</div>
+        <div style={{ fontFamily: BLOCK, fontSize: MOBILE ? 24 : 32, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>{m.pog.name}</div>
+        <div style={{ fontSize: MOBILE ? 14 : 16, color: "#cbd5e1" }}>{m.pog.line}</div>
+      </div>}
+    </Spotlight>
   );
 }
 

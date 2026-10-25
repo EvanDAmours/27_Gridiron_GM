@@ -8,6 +8,7 @@ import { freshDeal, deadMoney, chargeDead, restructure } from "./bonus.js";
 import { retireAge } from "./retirement.js";
 import { faceOf, isFaceOf } from "./faceOfFranchise.js";
 import { rolePay } from "./roles.js";
+import { naturalDL } from "./dline.js";
 
 // A club releases a player into the pool. His remaining signing-bonus proration stays on its cap
 // as dead money, the same rule as your releases (AI cuts used to cost nothing, so by the late 2020s
@@ -97,7 +98,7 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
       if (i !== ui && (star || (rand() < keep && payroll + salary <= limit))) {
         // A franchise player who still doesn't fit a long-term deal gets the franchise tag.
         const tag = star && payroll + salary > limit && !tagged;
-        const deal = tag ? { ...freshDeal(p), sb: 0, contract: 1, salary: tagPrice(teams, p, cap), ftag: true, tagYr: yr, cy } : { ...freshDeal(p), contract: p.age >= 30 ? roll(rand, 1, 2) : roll(rand, 2, 4), salary, cy }; // veterans get short deals
+        const deal = tag ? { ...freshDeal(p), sb: 0, contract: 1, salary: tagPrice(teams, p, cap), ftag: true, tagYr: yr, cy } : { ...freshDeal(p), contract: faYears(p, rand), salary, cy }; // a star in his prime gets a long deal, a veteran a short one
         if (tag) tagged = true;
         roster.push(deal);
         payroll += deal.salary;
@@ -143,16 +144,50 @@ export function keepChance(p) {
   return 0;
 }
 
-// What a player asks for on a new deal: a share of the salary cap set by his position and
-// rating, from real contracts. A 99 earns the top of his position's market (QB ~20% of the
-// cap, elite WR or pass rusher ~15%, down to kickers ~2%); a 90 gets ~70% of that, an 85 under
-// half, an 80 about a quarter, a 75 a tenth, and anyone below starter level the minimum, the way
-// real money piles up at the very top (quarterbacks excepted: see curve). Less once he's past his prime (QBs age four years later).
-// cap: the cap for the league year the deal starts.
-export const TOP_SHARE = { QB: 0.2, WR: 0.15, DL: 0.15, LT: 0.115, CB: 0.11, RT: 0.09, LB: 0.09, S: 0.085, TE: 0.08, LG: 0.08, RG: 0.08, RB: 0.07, C: 0.07, K: 0.02, P: 0.015 };
-const logit = (ovr, mid, k) => 1 / (1 + Math.exp(-(ovr - mid) / k));
-// quarterbacks are the exception: any real starter is paid like one, so their curve is flatter
-const curve = (ovr, pos) => { const [mid, k] = pos === "QB" ? [80, 4.5] : [87, 5.5]; return Math.min(1, logit(ovr, mid, k) / logit(99, mid, k)); };
+// What a player asks for on a new deal: what the real market pays a player of his standing at his
+// position. Each position's 2026 ratings by league rank (the best, the 3rd, 5th, 10th... 128th)
+// are matched to the 2025 average salaries at those ranks (OverTheCap), as shares of the 2025 cap,
+// so the 10th-best receiver asks what the 10th-best receiver gets ($28M, 10% of the cap) and a
+// 32nd-best one a WR2's money. Pass rushers and interior linemen have their own markets. Less once
+// he's past his prime (QBs age four years later, kickers six). cap: the cap for the league year the deal starts.
+const RANKS = [1, 3, 5, 10, 20, 32, 50, 64, 96, 128];
+const PAY_CAP = 279.2;
+const OL_G = [23, 20.5, 19, 16, 10, 5, 2, 1.4];
+const MARKET = {
+  QB: [[99, 97, 94, 89, 80, 73, 68, 65], [60, 55, 55, 52, 38, 22, 6, 2.5]],
+  RB: [[98, 97, 95, 89, 84, 81, 77, 75, 71, 66], [20.6, 16, 14, 10.5, 7, 4, 2.5, 1.8, 1.2, 1]],
+  WR: [[99, 98, 96, 91, 86, 83, 80, 78, 75, 72], [40.25, 34, 32.5, 28.5, 23, 18, 12, 8.5, 4, 2]],
+  TE: [[99, 95, 90, 85, 80, 76, 71, 69, 65], [19, 17, 15, 12, 7, 4, 2, 1.4, 1.1]],
+  LT: [[98, 96, 94, 90, 81, 74, 67], [28.5, 26.5, 25, 22, 16, 10, 3]],
+  LG: [[96, 89, 84, 80, 75, 72, 66], OL_G],
+  RG: [[96, 93, 87, 83, 77, 73, 69, 66], OL_G],
+  C: [[96, 88, 86, 81, 75, 71, 66], [18, 14, 13, 10, 5.5, 3, 1.5]],
+  RT: [[90, 87, 85, 83, 76, 72, 66], [28, 25, 20, 16, 10, 5, 2]],
+  EDGE: [[99, 97, 95, 90, 85, 81, 78, 77, 74, 71], [46.5, 41, 36, 30, 24, 18, 10, 6, 2.5, 1.5]],
+  DT: [[96, 95, 94, 90, 84, 80, 77, 76, 73, 70], [31.75, 27.5, 24, 20, 15, 10, 5, 3, 1.5, 1.1]],
+  LB: [[98, 93, 89, 86, 83, 80, 76, 75, 70, 66], [21, 18, 16, 13.5, 10, 7, 4, 2.8, 1.5, 1.1]],
+  CB: [[98, 96, 92, 88, 85, 82, 79, 77, 75, 72], [30.5, 26, 24, 20, 16, 12, 7, 5, 2.5, 1.3]],
+  S: [[94, 93, 92, 89, 83, 80, 78, 76, 72, 67], [25, 19.5, 18, 15.5, 11, 8, 5, 3.5, 1.6, 1.1]],
+  K: [[87, 84, 82, 81, 77, 72], [7, 5.5, 5.2, 4.3, 3, 1.5]],
+  P: [[85, 81, 80, 79, 75, 72], [4.6, 3.8, 3.6, 3.2, 2.5, 1.4]],
+};
+export const MIN_SHARE = 0.0033;
+// His market as a share of the cap, from his rating against the league (see marketRating).
+export function marketShare(r, key) {
+  const [ovr, pay] = MARKET[key] || MARKET.LB;
+  const sh = (k) => pay[k] / PAY_CAP, n = Math.min(ovr.length, pay.length);
+  if (r >= ovr[0]) return sh(0) * Math.min(1.06, 1 + 0.015 * (r - ovr[0])); // better than anyone today
+  for (let k = 0; k < n - 1; k++) {
+    if (r > ovr[k + 1] || (r === ovr[k + 1] && ovr[k + 1] < ovr[k])) {
+      const lo = ovr[k + 1], hi = ovr[k];
+      return hi === lo ? sh(k) : sh(k + 1) + (sh(k) - sh(k + 1)) * (r - lo) / (hi - lo);
+    }
+  }
+  // below the last ranked starter: down to the minimum over six points
+  const last = sh(n - 1), lo = ovr[n - 1];
+  return Math.max(MIN_SHARE, last - (last - MIN_SHARE) * (lo - r) / 6);
+}
+const marketKey = (p) => (p.pos === "DL" ? naturalDL(p) : p.pos);
 // Players are priced against today's league, not a fixed rating. Ratings drift up over the seasons
 // (development outpaces aging at the top), so an 80 in 2032 is a more ordinary starter than an 80
 // in 2026. The market knows: each position is priced by how its rating compares with the league's
@@ -162,9 +197,18 @@ const MARKET_N = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1,
 let marketShift = {};
 // Call with every club when the league changes (the app does it each time the rosters change).
 // Returns the shift per position (how many points better the league's starters are than in 2026).
+let marketTeams = [];
 export function setMarket(teams) {
   marketShift = leagueShift(teams);
+  marketTeams = teams || [];
   return marketShift;
+}
+// The league's contracts at his market (EDGE and DT apart), biggest first, without him:
+// [{ id, name, ab, ovr, age, sal, face }] for the negotiation table's market ladder.
+export function marketLadder(p, teams = marketTeams) {
+  const key = marketKey(p), out = [];
+  teams.forEach((t) => (t.roster || []).forEach((q) => { if (q.id !== p.id && marketKey(q) === key && (q.salary || 0) > 0) out.push({ id: q.id, name: q.name, ab: t.ab, ovr: q.ovr, age: q.age, sal: q.salary, face: q.face }); }));
+  return out.sort((a, b) => b.sal - a.sal);
 }
 // How many points better the league's starters are than in 2026, per position (-4..8).
 export function leagueShift(teams) {
@@ -180,9 +224,9 @@ export function leagueShift(teams) {
 export const marketRating = (p) => (p.ovr || 0) - (marketShift[p.pos] || 0);
 
 export const askingPrice = (p, cap = leagueCap()) => {
-  const a = p.pos === "QB" ? p.age - 4 : p.age;
+  const a = p.age - (p.pos === "QB" ? 4 : p.pos === "K" || p.pos === "P" ? 6 : 0); // kickers last longest
   const age = a >= 34 ? 0.5 : a >= 32 ? 0.7 : a >= 30 ? 0.85 : 1;
-  return +Math.max(cap * 0.0033, cap * (TOP_SHARE[p.pos] ?? 0.08) * curve(marketRating(p), p.pos) * age * rolePay(p)).toFixed(1); // a SAM or slot corner costs less than a MIKE or outside corner
+  return +Math.max(cap * MIN_SHARE, cap * marketShare(marketRating(p), marketKey(p)) * age * rolePay(p)).toFixed(1); // a SAM or slot corner costs less than a MIKE or outside corner
 };
 
 // The position a club most needs: furthest below its minimum, then the weakest starter.
@@ -197,9 +241,10 @@ function needs(t) {
 
 // How long a free agent signs for: a starter in his prime gets a real multi-year deal, a veteran
 // near the end a short one, a depth player a year or two.
+export const careerAge = (p) => (p.age || 27) - (p.pos === "QB" ? 3 : p.pos === "K" || p.pos === "P" ? 5 : 0);
 export const faYears = (p, rand = Math.random) => {
-  const age = p.age || 27, ovr = p.ovr || 0;
-  const [lo, hi] = ovr < 72 ? [1, 2] : age <= 27 ? (ovr >= 80 ? [3, 5] : [2, 4]) : age <= 29 ? [2, 4] : age <= 32 ? [1, 3] : [1, 2];
+  const age = careerAge(p), ovr = p.ovr || 0; // a 33-year-old quarterback signs like a 30-year-old
+  const [lo, hi] = ovr < 72 ? [1, 2] : age <= 27 ? (ovr >= 85 ? [4, 5] : ovr >= 80 ? [3, 5] : [2, 4]) : age <= 29 ? [2, 4] : age <= 32 ? [1, 3] : [1, 2];
   return roll(rand, lo, hi);
 };
 

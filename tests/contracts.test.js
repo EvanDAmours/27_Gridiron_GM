@@ -31,3 +31,33 @@ test("AI clubs pick up options on first-rounders who became starters", () => {
   assert.ok(kept?.opt5 && kept.contract === 1);
   assert.ok(!r.teams[1].roster.some((p) => p.id === "b1" && p.opt5));
 });
+
+test("asking prices follow the real market by league rank", async () => {
+  const { askingPrice, marketShare, faYears } = await import("../src/offseason.js");
+  const { maxYears } = await import("../src/negotiation.js");
+  const cap = 279.2; // the 2025 cap the market table is in
+  const ask = (pos, ovr, x = {}) => askingPrice({ pos, ovr, age: 26, ...x }, cap);
+  // the best at each position asks about what the best is paid
+  assert.ok(Math.abs(ask("QB", 99) - 60) < 4, `QB ${ask("QB", 99)}`);
+  assert.ok(ask("WR", 99) > 36 && ask("WR", 99) < 44, `WR ${ask("WR", 99)}`); // a slot receiver is paid a little less
+  assert.ok(Math.abs(ask("DL", 99, { mpos: "EDGE" }) - 46.5) < 3, "an elite pass rusher");
+  assert.ok(ask("DL", 96, { mpos: "DT" }) < ask("DL", 96, { mpos: "EDGE" }), "an interior lineman is paid less than a pass rusher");
+  assert.ok(ask("RB", 98) < 22 && ask("K", 87) < 8, "running backs and kickers stay cheap");
+  // a 10th-best receiver earns real WR1 money, a backup the minimum
+  assert.ok(ask("WR", 91) > 26, `WR #10 ${ask("WR", 91)}`);
+  assert.ok(ask("WR", 62) <= 1, "depth plays for the minimum");
+  // never down as the rating goes up
+  for (const pos of ["QB", "WR", "LT", "LG", "CB", "S", "TE"]) for (let o = 55; o < 99; o++) assert.ok(marketShare(o + 1, pos) >= marketShare(o, pos), `${pos} ${o}`);
+  // kickers and quarterbacks age later
+  assert.ok(ask("K", 85, { age: 34 }) === ask("K", 85, { age: 26 }), "a 34-year-old kicker is in his prime");
+  assert.equal(maxYears({ pos: "QB", age: 33 }), 3);
+  assert.equal(maxYears({ pos: "WR", age: 33 }), 1);
+  // a star in his prime signs long
+  assert.ok(faYears({ ovr: 90, age: 26 }, () => 0) >= 4);
+});
+
+test("the franchise tag groups offensive linemen together, as the real one does", () => {
+  const ol = { roster: [["LT", 30], ["LT", 28], ["RT", 27], ["LT", 26], ["RT", 25], ["LG", 15], ["RG", 14], ["C", 12]].map(([pos, s], i) => ({ id: `o${i}`, pos, ovr: 85, age: 27, salary: s })) };
+  const g = { pos: "LG", ovr: 84, age: 27, salary: 4 };
+  assert.ok(tagPrice([ol], g, 301.2) >= 19, `a guard's tag is the OL tag (${tagPrice([ol], g, 301.2)})`);
+});

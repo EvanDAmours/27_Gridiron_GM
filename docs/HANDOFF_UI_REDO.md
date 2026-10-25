@@ -360,6 +360,35 @@ Gotchas: the mobile action bar's Sim All / Sim to Deadline need a second tap ("T
 new phone game taps NFC before picking the Giants; `sleep` in the shell is blocked — use
 background commands with `until` loops.
 
+### Contracts, the negotiation table, holiday cards (latest round)
+- **Asking prices** (`askingPrice`, offseason.js) follow the real market by league rank: `MARKET`
+  matches each position's 2026 ratings at ranks 1/3/5/10/20/32/50/64/96/128 to 2025 average salaries
+  at those ranks (OverTheCap, as shares of the $279.2M 2025 cap), interpolated (`marketShare`),
+  times the cap of the deal's league year. EDGE and DT have their own tables (`naturalDL`). Before,
+  a single logistic curve paid the top right but the middle far too little (a top-10 WR asked $22M,
+  real ~$28M) and LT/guards/LB/TE too much at the top. Age discount starts 4 years later for QBs and
+  6 for K/P; `careerAge` does the same for deal length (`faYears`, `maxYears`). AI re-signs use
+  `faYears` (stars in their prime get 4-5 years). `marketLadder(p)` lists the league's salaries at
+  his market for the negotiation table.
+- **Franchise tag** groups positions like the real one (`tagGroup`: every OL together, K+P, EDGE vs
+  DT); the floor is an 82-rated player's ask (an 86 put the QB tag at $51M vs the real ~$43M).
+- **Rookie scale** (`rookieSalary`) matches the 2025 class: 4.37% of the cap at #1, 1.22% at #32,
+  0.93-0.68% in round 2, from 0.57% at #65 to the minimum.
+- Health run (6 seasons, `SEASONS=6 node scripts/health.mjs`): AI payrolls 93-97% of the cap from
+  year 4 (the old curve: 86-97%), nobody over, top-5 shares QB 17%, EDGE/DL 14%, CB 9%, LT 8.5%.
+  The "USER vs MATCHED" warning is the same on the old code. health.mjs now finds chromium-linux64.
+- **Negotiate.jsx** rebuilt: desktop two columns (left: his agent's thread, what he wants with your
+  fit on each, the position's market ladder with your offer in it; right: length chips that show
+  each length's ask, the offer with % of cap and total, bonus/void/incentive, cap room by year).
+  Phone: one column, offer first. Patience shows as three bars (offers left). The thread comes from
+  `talks[k].log` (App `talkLog`, last 8 offers and answers). Offer logic unchanged.
+- **Holiday popups** (Atmosphere.jsx): `HolidayIntro` is a title card (one floating piece, the
+  name in Oswald, both clubs in their own color washes, "Tap for kickoff"); `HolidayResult` is a
+  `Spotlight` stage: the player of the game in uniform (`pog.p`, found on your roster by name),
+  the holiday sky as `backdrop`, the score as the faint background number, a holiday piece as `art`
+  when there is no player. Spotlight gained `backdrop` and `art` props.
+- Draft safeties: `shapeSafety` leans up to 30 points (12 missed about 3 in 1000 prospects).
+
 ## 9. Deploying
 `.github/workflows/deploy-pages.yml` builds with `npm run build:pages:all` and deploys **only from
 `main` or `claude/scouting-overhaul`**. After verifying: push the work branch, then

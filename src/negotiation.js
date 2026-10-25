@@ -3,7 +3,7 @@
 // get close and he counters; lowball him and he loses patience. Three strikes, or one insulting
 // offer, and he walks. In free agency, good players often have another club bidding too: if
 // their offer beats yours, he signs there.
-import { askingPrice } from "./offseason.js";
+import { askingPrice, careerAge } from "./offseason.js";
 
 const hash = (s) => { let h = 2166136261; for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
 const r1 = (x) => Math.round(x * 10) / 10;
@@ -21,7 +21,7 @@ export const perfFactor = (p, yrs, mode) => {
 // A loyal player (three seasons with your club) gives you a hometown discount to stay: 10% off.
 export const loyalDiscount = (p, mode) => (p.loyal && (mode === "resign" || mode === "extend") ? 0.9 : 1);
 export const yearlyAsk = (p, yrs, mode) => r1(askingPrice(p) * (1 + (yrs - 2) * (p.age >= 30 ? 0.06 : -0.03)) * perfFactor(p, yrs, mode) * loyalDiscount(p, mode));
-export const maxYears = (p) => (p.age >= 33 ? 1 : p.age >= 30 ? 3 : 5);
+export const maxYears = (p) => { const a = careerAge(p); return a >= 33 ? 1 : a >= 30 ? 3 : 5; }; // quarterbacks and kickers play longer
 
 // What a player wants besides money. Every player weighs four things: the money, playing time,
 // a scheme that suits him, and a winner. Young and fringe players chase snaps, veterans chase
