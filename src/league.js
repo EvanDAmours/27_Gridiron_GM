@@ -8,7 +8,7 @@ import REAL_SCHED from "./data/schedule2026.json" with { type: "json" };
 import REAL_DC from "./data/realProspects.json" with { type: "json" };
 import REAL_CONTRACTS from "./data/contracts2026.json" with { type: "json" };
 import { depthOrderFor } from "./depth.js";
-import { roleGrowth, ROLE_SLOTS } from "./roles.js";
+import { roleGrowth, ROLE_SLOTS, shapeSafety } from "./roles.js";
 import { playerValue, pickValue as chartPickValue } from "./trade.js";
 import { arrangeDL, dlAsPlayed, naturalDL } from "./dline.js";
 import { teamNeeds, topNeeds } from "./needs.js";
@@ -199,6 +199,8 @@ export function genPlayer(pos,age,ovrO,isDraft){
 // the class being drafted right now. Returns a new dc object.
 export function reshapeDC(dc,yr,sp,draftIdx){const out={};for(const[k,cls]of Object.entries(dc||{})){if(!Array.isArray(cls)||cls.some(p=>p.ovrV)||(+k===yr&&sp==="draft"&&draftIdx>0)){out[k]=cls;continue;}
   out[k]=cls.map(p=>{if(p.scout?.lvl>0)return{...p,ovrV:2};const pt=p.truePot-gemGap(p);const room=Math.round(({20:15,21:13,22:11,23:9,24:7}[p.age]||11)*cl(0.33+(pt-64)*0.027,0.3,1.35)*Rf(0.6,1.4));const now=Math.max(p.trueOvr||p.ovr||55,cl(pt-room,55,pt));return{...p,ovr:now,trueOvr:now,ovrV:2};});}return out;}
+// A save from before free and strong safeties: a labelled safety prospect's skills lean to his label.
+export const shapeDCSafeties=dc=>Object.fromEntries(Object.entries(dc||{}).map(([k,cls])=>[k,Array.isArray(cls)?cls.map(p=>p.pos==="S"&&p.mpos?shapeSafety(p,p.mpos):p):cls]));
 // One generated prospect (potCap/ovrCap keep the filler of a real class below its real names).
 function genProspect(yr,pos,adj,potCap=99,ovrCap=99){const age=prospectAge();const raw=cl(Gc(55,14,32,92),adj.fl,Math.min(adj.cap,potCap));const pt=cl(raw+R(0,20),raw,potCap);
   const room=Math.round(({20:15,21:13,22:11,23:9,24:7}[age]||11)*cl(0.33+(pt-64)*0.027,0.3,1.35)*Rf(0.6,1.4));const now=Math.min(cl(pt-room,55,pt),ovrCap);
@@ -238,7 +240,7 @@ export function genRealDC(yr){
     if(d.dev)p.dev=d.dev;
     if(d.boom&&d.truePot>d.pot){p.gem={gap:d.truePot-d.pot,why:d.boom};p.pot=p.truePot=d.truePot;p.dev||=d.truePot>=90?"superstar":"star";}
     else if(d.bust&&d.truePot<d.pot){p.bust={gap:d.pot-d.truePot,why:d.bust,kind:d.kind||BUST_KIND(d.bust)};p.pot=p.truePot=d.truePot;if(p.trueOvr>=d.truePot)p.ovr=p.trueOvr=Math.max(50,d.truePot-2);p.dev||="normal";}
-    p.posAttrs=genPAttrs(p.pos,p.trueOvr);p.tradeVal=playerValue({pos:p.pos,age:p.age,ovr:p.trueOvr,pot:p.truePot});
+    p.posAttrs=genPAttrs(p.pos,p.trueOvr);/* a free or a strong safety on the real boards: his skills lean that way */if(d.pos==="S"&&d.mpos)p.posAttrs=shapeSafety(p,d.mpos).posAttrs;p.tradeVal=playerValue({pos:p.pos,age:p.age,ovr:p.trueOvr,pot:p.truePot});
     if(!kp){minScore=Math.min(minScore,sc);minPot=Math.min(minPot,d.pot);minOvr=Math.min(minOvr,d.ovr);}dc.push(p);
   }
   const posW=[];for(const[p,n]of Object.entries(DC_POS_W))for(let i=0;i<n;i++)posW.push(p);

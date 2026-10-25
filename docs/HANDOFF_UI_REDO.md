@@ -299,6 +299,9 @@ via `gm:scouting`). DeskHome's "See all" calls `onNav("inbox")`.
     ratings at the slot, injury replacements, off-season role growth (`ROLE_SKILLS`), role
     needs, the FS / SS role tag, "S · Free" and "S · Strong" filters, market pay (equal).
   - A corner moved to safety becomes an FS or an SS by his translated skills (positions.js).
+  - Draft: a real FS/SS prospect's generated skills lean to his label (`shapeSafety` in roles.js,
+    run in `genRealDC` after `genPAttrs`); older saves' draft classes are shaped once on load
+    (`shapeDCSafeties`, gated by the save's `sfv:1`). Generated prospects get their role from skills.
   - Field spots: on the depth chart the FS is deep in the middle and the SS rolled down on the
     strong side; on the live field the SAM now lines up on the tight end's side (it was on the
     other) with the SS beside him and the FS deep. Tests in tests/roles.test.js.

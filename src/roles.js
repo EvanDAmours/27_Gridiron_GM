@@ -219,6 +219,24 @@ export function roleBase(players) {
   return out;
 }
 
+// A real draft prospect's label (FS or SS) with skills that were generated: lean them toward the
+// role he plays until his skills say the same (his OVR, from the real board, doesn't change). An
+// FS gains range, coverage, ball-hawking and the calls and gives up run support and blitzing; an
+// SS the other way round. Most move a few points; one already built for his role doesn't move.
+const S_LEAN = { range: 1, coverage: 1, ballHawk: 1, comms: 0.5, runSupport: -1, tackling: -0.5, blitzing: -1 };
+export function shapeSafety(p, kind) {
+  if (p?.pos !== "S" || !p.posAttrs || (kind !== "FS" && kind !== "SS")) return p;
+  const dir = kind === "FS" ? 1 : -1, other = kind === "FS" ? "SS" : "FS";
+  const fits = (q) => roleScore(q, kind) - CENTER[kind] >= roleScore(q, other) - CENTER[other] + 1;
+  let q = p;
+  for (let k = 0; k <= 12 && !fits(q); k += 2) {
+    const a = { ...p.posAttrs };
+    for (const [key, w] of Object.entries(S_LEAN)) if (typeof a[key] === "number") a[key] = Math.round(clamp(a[key] + dir * w * k, 30, 99));
+    q = { ...p, posAttrs: a };
+  }
+  return q;
+}
+
 // Role-shaped development: the skills each role leans on (from the role scores above). A player
 // who starts a season at a role grows toward it in the off-season: those skills come along a
 // little faster and the ones the role never asks of him a little slower. A light linebacker

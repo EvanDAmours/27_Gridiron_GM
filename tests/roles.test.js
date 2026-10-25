@@ -201,3 +201,11 @@ test("the depth chart puts each safety where he fits: FS first, then SS", () => 
   assert.equal(order[0].id, "deep");
   assert.deepEqual(roleCard(box).map(([k]) => k), ["SS", "FS"]);
 });
+
+test("draft: a real free or strong safety prospect's skills match his label", async () => {
+  const { genRealDC, REAL_DC_YEARS } = await import("../src/league.js");
+  for (const yr of REAL_DC_YEARS) for (const p of genRealDC(yr)) {
+    if (p.pos !== "S" || !p.real || !p.mpos) continue;
+    assert.equal(naturalRole({ ...p, mpos: undefined }), p.mpos, `${yr} ${p.name}`);
+  }
+});
