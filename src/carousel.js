@@ -26,7 +26,10 @@ export const coachRetireChance = (age) => (age >= 71 ? 0.5 : age >= 68 ? 0.3 : a
 // he retires instead of signing again. You hear it as soon as his current deal will take him there,
 // and he won't sign an extension that runs past it.
 // yr: the season being played (or just finished, before the new league year).
-export const hcRetireAge = (c) => 64 + (hash(`${c?.name || c?.id}:exit`) % 9);
+// The league's veteran head coaches step away about when you'd expect (the last season in brackets):
+// John Harbaugh just took the Giants job (2035), Andy Reid (2029), Sean Payton and Mike McCarthy (2031).
+const HC_EXIT = { "John Harbaugh": 73, "Andy Reid": 71, "Sean Payton": 68, "Mike McCarthy": 68 };
+export const hcRetireAge = (c) => HC_EXIT[c?.name] ?? 64 + (hash(`${c?.name || c?.id}:exit`) % 9);
 // the last season of his contract
 export const hcEndYear = (c, yr) => yr + Math.max(1, c?.contract || 1) - 1;
 const ageIn = (c, yr, s) => coachAge(c, yr) + (s - yr);

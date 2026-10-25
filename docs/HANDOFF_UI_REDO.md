@@ -390,7 +390,7 @@ background commands with `until` loops.
 - Draft safeties: `shapeSafety` leans up to 30 points (12 missed about 3 in 1000 prospects).
 
 ### Head coaches retire at the end of their contract
-- carousel.js: every head coach has an exit age (`hcRetireAge`, 64-72 from his name). His contract
+- carousel.js: every head coach has an exit age (`hcRetireAge`, 64-72 from his name; `HC_EXIT` sets the veterans: John Harbaugh 73, so through 2035, Reid 71, Payton and McCarthy 68). His contract
   now counts down each off-season (it never did); when it ends he retires if he's reached that age
   (`hcRetiring`), otherwise he re-signs for 2-4 years, never past it (AI clubs and yours). He no
   longer retires at random mid-deal (coordinators still do). The off-season he first knows, a
