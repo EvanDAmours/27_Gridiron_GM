@@ -4,6 +4,8 @@
 // for a safety moving to corner, a penalty if he isn't fast enough to play on the outside. The
 // move remembers where he came from, so moving him back restores his old rating exactly.
 
+import { naturalDL, dlOvrAt } from "./dline.js";
+
 const avg = (...xs) => Math.round(xs.reduce((s, x) => s + x, 0) / xs.length);
 const mean = (o) => { const v = Object.values(o || {}); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : 60; };
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -136,16 +138,40 @@ export function moveFront(p) {
   return { ...p, pos: to, mpos: to === "LB" ? "SAM" : "LEDG", posAttrs: attrs, ovr, trueOvr: ovr, pot, truePot: pot, posFrom: { pos: p.pos, mpos: p.mpos, attrs: p.posAttrs, shift } };
 }
 
+// ---------- Defensive line: edge rusher and defensive tackle ----------
+// Both are "DL"; which one he is comes from his Madden spot (mpos). Moving an edge inside (or a
+// tackle out) makes the new spot his natural one and re-rates him at it with the same fit the
+// depth chart uses for a lineman out of position (dlOvrAt: an edge's speed and get-off count for
+// less inside, a tackle's weight and run stop for less outside, less a learning cost). Moving back
+// restores his rating exactly, and an edge who started at linebacker keeps that way home.
+export const DL_KIND = { EDGE: "DT", DT: "EDGE" };
+export function moveDL(p, to) {
+  if (p?.pos !== "DL" || !DL_KIND[to]) return p;
+  const kind = naturalDL(p);
+  if (kind === to) return p;
+  if (p.posFrom?.dl === to) {
+    const { posFrom, ...rest } = p;
+    const ovr = clamp((p.ovr || 0) - posFrom.shift, 40, 99);
+    const pot = clamp((p.pot || p.ovr || 0) - posFrom.shift, ovr, 99);
+    return { ...rest, mpos: posFrom.mpos, ovr, trueOvr: ovr, pot, truePot: pot, ...(posFrom.prev ? { posFrom: posFrom.prev } : {}) };
+  }
+  const shift = dlOvrAt(p, to) - (p.ovr || 0);
+  const ovr = clamp((p.ovr || 0) + shift, 40, 99);
+  const pot = clamp((p.pot || p.ovr || 0) + shift, ovr, 99);
+  return { ...p, mpos: to === "DT" ? "DT" : "LEDG", ovr, trueOvr: ovr, pot, truePot: pot, posFrom: { pos: "DL", dl: kind, mpos: p.mpos, shift, ...(p.posFrom ? { prev: p.posFrom } : {}) } };
+}
+
 // Where a player can line up instead: [position, label] pairs for the profile's position menu.
 export function moveOptions(p) {
   if (!p) return [];
   if (OL_KIND[p.pos]) return OL_POS.filter((x) => x !== p.pos).map((x) => [x, x]);
   if (DB_SWAP[p.pos]) return [[DB_SWAP[p.pos], DB_SWAP[p.pos] === "S" ? "Safety" : "Cornerback"]];
   if (p.pos === "LB") return [["DL", "Edge rusher (DL)"]];
-  if (isEdge(p)) return [["LB", "Rush linebacker (LB)"]];
+  if (p.pos === "DL" && naturalDL(p) === "EDGE") return [["DT", "Defensive tackle"], ...(isEdge(p) ? [["LB", "Rush linebacker (LB)"]] : [])];
+  if (p.pos === "DL") return [["EDGE", "Edge rusher"]];
   return [];
 }
 
-// Any position change the game supports (CB/S, along the line, edge/linebacker). Returns the player unchanged otherwise.
-export const movePlayer = (p, to) => (OL_KIND[p.pos] && OL_KIND[to] ? moveOL(p, to) : DB_SWAP[p.pos] === to ? moveDB(p) : canMoveFront(p) && (to === "LB" || to === "DL") && p.pos !== to ? moveFront(p) : p);
+// Any position change the game supports (CB/S, along the line, edge/DT, edge/linebacker). Returns the player unchanged otherwise.
+export const movePlayer = (p, to) => (p.pos === "DL" && DL_KIND[to] ? moveDL(p, to) : OL_KIND[p.pos] && OL_KIND[to] ? moveOL(p, to) : DB_SWAP[p.pos] === to ? moveDB(p) : canMoveFront(p) && (to === "LB" || to === "DL") && p.pos !== to ? moveFront(p) : p);
 export const movePreview = (p, to) => movePlayer(p, to).ovr;

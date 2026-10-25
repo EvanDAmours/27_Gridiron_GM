@@ -51,7 +51,7 @@ test("edge rushers and linebackers can swap, and moving back restores the rating
   const dt = { id: 2, pos: "DL", mpos: "DT", ovr: 88, wt: 310, posAttrs: { passRush: 85, runStop: 90 } };
   const lb = { id: 3, pos: "LB", mpos: "MIKE", ovr: 88, pot: 88, spd: 86, wt: 238, posAttrs: { tackling: 90, coverage: 80, blitzing: 70, runFit: 88, instincts: 90, pursuit: 90, shedBlock: 78, zoneAwr: 82 } };
   assert.ok(canMoveFront(edge) && canMoveFront(lb) && !canMoveFront(dt), "interior tackles stay inside");
-  assert.deepEqual(moveOptions(dt), []);
+  assert.deepEqual(moveOptions(dt).map(([k]) => k), ["EDGE"], "a tackle can only move out to the edge");
   const olb = movePlayer(edge, "LB");
   assert.equal(olb.pos, "LB"); assert.equal(olb.mpos, "SAM");
   assert.ok(olb.ovr < edge.ovr && olb.ovr >= edge.ovr - 15, `${olb.ovr}`);
@@ -60,4 +60,37 @@ test("edge rushers and linebackers can swap, and moving back restores the rating
   const rusher = movePlayer(lb, "DL");
   assert.equal(rusher.pos, "DL"); assert.ok(rusher.ovr < lb.ovr);
   assert.equal(movePlayer(rusher, "LB").ovr, lb.ovr);
+});
+
+// ---------- edge rusher <-> defensive tackle ----------
+import { moveDL, movePlayer as moveAny, moveOptions as optionsOf } from "../src/positions.js";
+import { naturalDL } from "../src/dline.js";
+const edgeP = { name: "E", pos: "DL", mpos: "REDG", ovr: 85, pot: 88, wt: 265, spd: 84, str: 75, posAttrs: { getOff: 88, passRush: 86, swim: 80, spin: 78, motor: 82, handUse: 80, runStop: 72, bullRush: 74 } };
+const dtP = { name: "D", pos: "DL", mpos: "DT", ovr: 84, pot: 86, wt: 315, spd: 70, str: 92, posAttrs: { getOff: 74, passRush: 76, swim: 70, spin: 64, motor: 80, handUse: 82, runStop: 88, bullRush: 87 } };
+
+test("an edge rusher can move inside to tackle, re-rated lower, and back exactly", () => {
+  assert.deepEqual(optionsOf(edgeP).map(([k]) => k), ["DT", "LB"]);
+  const inside = moveAny(edgeP, "DT");
+  assert.equal(naturalDL(inside), "DT");
+  assert.ok(inside.ovr < edgeP.ovr && inside.ovr >= 40);
+  const back = moveAny(inside, "EDGE");
+  assert.equal(back.ovr, edgeP.ovr); assert.equal(back.pot, edgeP.pot); assert.equal(back.mpos, "REDG"); assert.equal(back.posFrom, undefined);
+});
+
+test("a tackle can move out to the edge, and the move does nothing for a non-lineman", () => {
+  assert.deepEqual(optionsOf(dtP).map(([k]) => k), ["EDGE"]);
+  const out = moveAny(dtP, "EDGE");
+  assert.equal(naturalDL(out), "EDGE");
+  assert.ok(out.ovr < dtP.ovr);
+  assert.equal(moveAny(out, "DT").ovr, dtP.ovr);
+  const lb = { pos: "LB", ovr: 80 };
+  assert.equal(moveDL(lb, "DT"), lb);
+});
+
+test("an edge who came from linebacker keeps his way back after a trip inside", () => {
+  const lbP = { name: "L", pos: "LB", ovr: 80, pot: 82, wt: 250, spd: 82, posAttrs: { tackling: 78, coverage: 70, blitzing: 84, runFit: 76, instincts: 75, pursuit: 80, shedBlock: 74, zoneAwr: 70 } };
+  const e = moveAny(lbP, "DL");
+  const round = moveAny(moveAny(e, "DT"), "EDGE");
+  assert.equal(round.ovr, e.ovr);
+  assert.equal(moveAny(round, "LB").ovr, lbP.ovr);
 });

@@ -206,6 +206,18 @@ Office title, "2026 Schedule", "2027 Draft Class" + points box).
   seventh "League" section, then moved). They're tabs on the Front Office header; the old hub chip
   row is gone on desktop (only Game Updates keeps a second row). Season is Schedule, Standings,
   Playoffs, Stats.
+- Top bar (desktop): Search is a field in the bar (icon only under 1400px wide; still / or Ctrl+K)
+  and no longer in the ⋯ menu. Deadline week (`wk === TRADE_DEADLINE_WEEK`) adds a red "Trade
+  Deadline" pill (opens Deadline Day, or Trade if the day hasn't been set up); free agency adds a
+  blue "Free Agency" pill. The Expansion button is gone (it was the only way into that feature).
+- Home: Top story puts the club logo beside the headline and strips a leading emoji; every
+  "Biggest needs" row has a reason (needs.js falls back to "<starter> rated N").
+- The picks strip (`PickCabinet`) also leads the Big Board and the Combine; the Big Board's info
+  line dropped its plain "Your picks" list. Combine headings are plain ("Stock up", ...).
+- Position moves: edge rusher <-> defensive tackle (`moveDL` in positions.js) via the player
+  card's "Move to". It changes his Madden spot (mpos) and re-rates him with `dlOvrAt`, the same
+  out-of-position fit the depth chart uses; moving back restores the exact rating, and an edge who
+  came from linebacker keeps that way back (`posFrom.prev`). Tests in tests/positions.test.js.
 - The desktop kickoff preview popup at Start Season ("The 2026 season ... LET'S GO") was removed
   at the owner's request (it was already off on phones).
 
