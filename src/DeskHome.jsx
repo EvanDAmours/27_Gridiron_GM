@@ -121,8 +121,11 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
         <div style={{ ...card, cursor: lead && (lead.inc || lead.retire) && onStory ? "pointer" : "default" }} onClick={lead && (lead.inc || lead.retire) && onStory ? () => onStory(lead) : undefined}>
           <div style={h2}>Top story</div>
           {lead ? <>
-            {leadT && <TeamLogo t={leadT} sz={34} glow />}
-            <div style={{ fontSize: 18, fontWeight: 900, lineHeight: 1.25, marginTop: 8 }}>{lead.head}</div>
+            {/* the club's logo beside the headline, and no emoji leading it */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              {leadT && <span style={{ flexShrink: 0, marginTop: 2 }}><TeamLogo t={leadT} sz={34} glow /></span>}
+              <div style={{ fontSize: 18, fontWeight: 900, lineHeight: 1.25 }}>{String(lead.head || "").replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, "")}</div>
+            </div>
             <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.45, marginTop: 6, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{lead.text}</div>
           </> : news[0] ? <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.4 }}>{news[0].text}</div> : <div style={{ fontSize: 15, color: "#94a3b8" }}>Quiet around the league so far. Stories arrive after every week.</div>}
         </div>

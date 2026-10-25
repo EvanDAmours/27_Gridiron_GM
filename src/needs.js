@@ -48,6 +48,8 @@ export function teamNeeds(roster, personnel) {
     if (old.length) why.push(`${old[0].name} is ${old[0].age}`);
     if (exp.length) why.push(`${exp[0].name}'s deal is up`);
     if (BENCH[g] && backup < 60 && starters.length >= n) why.push("no real backup");
+    // nothing stood out on its own: still say who's there, so every need reads with a reason
+    if (!why.length) why.push(starters.length ? (n > 1 ? `starters rated ${Math.round(now)}` : `${starters[0].name} rated ${starters[0].ovr}`) : `no ${needName(g)}`);
     // a real starting quarterback (not near the end, not leaving) means no quarterback need
     if (g === "QB") {
       const q = all[0], next = all[1];

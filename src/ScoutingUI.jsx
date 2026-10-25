@@ -659,12 +659,12 @@ export function CombineView({ g, buzz }) {
       )}
       {(up.length > 0 || down.length > 0) && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 10, marginBottom: 10 }}>
-          <div style={{ ...panel, marginBottom: 0 }}><div style={{ ...head, color: C.gn }}>📈 STOCK UP</div>{up.map((p) => <Mover key={p.id} p={p} />)}{!up.length && <div style={muted}>Nobody from the back of the board blew up the Combine.</div>}</div>
-          <div style={{ ...panel, marginBottom: 0 }}><div style={{ ...head, color: C.rd }}>📉 STOCK DOWN</div>{down.map((p) => <Mover key={p.id} p={p} />)}{!down.length && <div style={muted}>No early names tested poorly.</div>}</div>
+          <div style={{ ...panel, marginBottom: 0 }}><div style={{ ...head, color: "#4ade80" }}>Stock up</div>{up.map((p) => <Mover key={p.id} p={p} />)}{!up.length && <div style={muted}>Nobody from the back of the board blew up the Combine.</div>}</div>
+          <div style={{ ...panel, marginBottom: 0 }}><div style={{ ...head, color: "#f87171" }}>Stock down</div>{down.map((p) => <Mover key={p.id} p={p} />)}{!down.length && <div style={muted}>No early names tested poorly.</div>}</div>
         </div>
       )}
       <div style={panel}>
-        <div style={head}>COMBINE RESULTS<Right><input value={q} onChange={(e) => { setQ(e.target.value); setN(25); }} placeholder="Search name or college" aria-label="Search prospects" style={{ background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "4px 8px", fontSize: 13, width: 200 }} />{rows.length} of {COMBINE_INVITES}</Right></div>
+        <div style={head}>Combine results<Right><input value={q} onChange={(e) => { setQ(e.target.value); setN(25); }} placeholder="Search name or college" aria-label="Search prospects" style={{ background: "#ffffff0a", color: C.tx, border: 0, borderRadius: 999, padding: "4px 8px", fontSize: 13, width: 200 }} />{rows.length} of {COMBINE_INVITES}</Right></div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
           {POS_GROUPS.map(([k]) => <button key={k} onClick={() => { setGrp(k); setN(25); }} style={pill(grp === k)}>{k}</button>)}
           <button onClick={() => { setMine((v) => !v); setN(25); }} style={{ ...pill(mine), marginLeft: 6 }}>⭐ My needs ({needs.join(", ")})</button>
@@ -1421,11 +1421,12 @@ export function ScoutingPage({ g }) {
       <div className="pill-row" style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
         {views.map(([k, label]) => <button key={k} onClick={() => setView(k)} style={{ background: v === k ? "#fff" : "#ffffff12", color: v === k ? "#0b1220" : "#cbd5e1", border: 0, borderRadius: 999, fontSize: 15, fontWeight: 800, padding: "9px 16px", cursor: "pointer" }}>{label}</button>)}
       </div>
+      {/* the picks strip leads the screens you pick prospects on: HQ, the Big Board and the Combine */}
+      {(v === "board" || v === "combine") && <div style={{ marginBottom: 12 }}><PickCabinet g={g} /></div>}
       {v === "board" && (
         <>
           <div style={{ ...panel, display: "flex", gap: "8px 24px", flexWrap: "wrap", alignItems: "center", fontSize: 14 }}>
             <span><span style={{ color: C.mt }}>Your scouts: </span>{SCOUT_SLOTS.map((r) => g.scouting?.[r] ? <b key={r} style={{ marginRight: 10 }}>{SCOUT_GROUP_SHORT[g.scouting[r].group] || "?"} in {areasOf(g.scouting)[r].join("/")} <span style={{ color: C.mt, fontWeight: 400 }}>({SCOUT_ROLES[r].short.toLowerCase()})</span></b> : null)}{!SCOUT_SLOTS.some((r) => g.scouting?.[r]) && <span style={{ color: C.mt }}>none</span>}<Btn onClick={() => setView("scouts")} bg={C.bd} c="#cbd5e1" style={{ fontSize: 12, padding: "3px 10px" }}>Manage</Btn></span>
-            <span><span style={{ color: C.mt }}>Your picks: </span><b>{myPicks.length ? myPicks.map((pk) => `R${pk.rd}${g.sp === "draft" ? ` #${pk.overall}` : ""}`).join(", ") : "none"}</b></span>
           </div>
           <Legend />
           <Board g={g} classYr={g.yr} />
