@@ -36,7 +36,9 @@ test("a pile of depth doesn't add up to a star", () => {
 test("a fair deal for an ordinary starter goes through", () => {
   const wr = P({ name: "WR2", pos: "WR", ovr: 82, age: 27 });
   assert.equal(evaluateTrade({ sendPk: [{ rd: 1, overall: 20 }], get: [wr], them: { roster: [wr] }, pick }).accept, true, "a 1st for a good WR2");
-  assert.equal(evaluateTrade({ sendPk: [{ rd: 2, overall: 50 }], get: [wr], them: { roster: [wr] }, pick }).accept, false, "a late 2nd isn't enough");
+  // the real league moves a good WR2 for a 2nd (or less); a 4th still isn't enough
+  assert.equal(evaluateTrade({ sendPk: [{ rd: 2, overall: 50 }], get: [wr], them: { roster: [wr] }, pick }).accept, true, "a late 2nd gets him");
+  assert.equal(evaluateTrade({ sendPk: [{ rd: 4, overall: 110 }], get: [wr], them: { roster: [wr] }, pick }).accept, false, "a 4th isn't enough");
 });
 
 test("close calls: a deal a little short can go through when the moment is right, and retrying never rerolls", async () => {

@@ -6,14 +6,31 @@
 
 import { clubMode, fitsTeam } from "./tradeOffers.js";
 import { isFaceOf } from "./faceOfFranchise.js";
-import { keepChance } from "./offseason.js";
+import { keepChance, askingPrice } from "./offseason.js";
 
-export const POS_MULT = { QB: 1.8, DL: 1.15, LT: 1.1, WR: 1.05, CB: 1.0, RT: 0.95, TE: 0.8, LB: 0.8, S: 0.8, C: 0.7, LG: 0.65, RG: 0.65, RB: 0.6, K: 0.2, P: 0.15 };
+export const POS_MULT = { QB: 1.8, DL: 1.15, LT: 1.1, WR: 1.05, CB: 1.0, RT: 0.95, TE: 0.8, LB: 0.8, S: 0.8, C: 0.7, LG: 0.65, RG: 0.65, RB: 0.52, K: 0.2, P: 0.15 };
 const DEV_MULT = { generational: 1.2, superstar: 1.1, star: 1.04 };
 
+// Calibrated against real deadline deals (see tests/tradeMarket.test.js): a 31-year-old star
+// receiver went for a 3rd (Davante Adams, 2024), a 32-year-old pass rusher for a 5th (Za'Darius
+// Smith, 2024), so value falls off fast after 29.
 function ageMult(age, pos) {
   const a = pos === "QB" ? age - 4 : age;
-  return a <= 23 ? 1.3 : a <= 25 ? 1.2 : a <= 27 ? 1.05 : a === 28 ? 0.95 : a === 29 ? 0.85 : a === 30 ? 0.7 : a === 31 ? 0.55 : a === 32 ? 0.45 : a === 33 ? 0.35 : 0.25;
+  return a <= 23 ? 1.25 : a <= 25 ? 1.15 : a <= 27 ? 1.05 : a === 28 ? 0.95 : a === 29 ? 0.8 : a === 30 ? 0.62 : a === 31 ? 0.42 : a === 32 ? 0.28 : a === 33 ? 0.2 : 0.16;
+}
+
+// His contract against what his rating earns on the open market: a star on a deal far above it
+// is a burden to take on (Adams at $36M), one on a rookie deal is gold. Only deals with years
+// left count (an expiring deal is a rental: see RENTAL). Players without a salary (prospects) are
+// left alone. Applied when a trade is weighed (it reads this year's cap), never baked into the
+// saved tradeVal, so a reload can't change anyone's value.
+export function contractMult(p) {
+  if (p.salary == null || (p.contract ?? 0) <= 1) return 1;
+  const fair = askingPrice(p);
+  if (!(fair > 0)) return 1;
+  const over = (p.salary - fair) / fair;
+  const yrs = Math.min(4, p.contract) / 4;
+  return Math.max(0.6, Math.min(1.15, 1 - over * 0.35 * (0.5 + yrs)));
 }
 
 export function playerValue(p, dev) {
@@ -29,7 +46,10 @@ export function playerValue(p, dev) {
 // valued at the middle of their round.
 // Future picks (pk.ahead years after this draft) are worth less the further out they are.
 export const FUTURE_DISCOUNT = [1, 0.8, 0.65, 0.55];
-export const pickValue = (chart, pk) => ((chart[(!pk.ahead && pk.overall) || 16 + (pk.rd - 1) * 32] || 60) / 30) * (FUTURE_DISCOUNT[pk.ahead || 0] ?? 0.5);
+// PICK_SCALE sets picks against players: real deadline deals (tests/tradeMarket.test.js) show
+// clubs pay for players with picks at about 1.35x what the chart alone would say.
+export const PICK_SCALE = 1.35;
+export const pickValue = (chart, pk) => ((chart[(!pk.ahead && pk.overall) || 16 + (pk.rd - 1) * 32] || 60) / 30) * PICK_SCALE * (FUTURE_DISCOUNT[pk.ahead || 0] ?? 0.5);
 
 // How the other club adds up the players you offer: the best counts in full, each extra one
 // less (five backups don't make a star). Draft picks always count in full.
@@ -51,12 +71,16 @@ export function fitFor(them, p, { season = false } = {}) {
     if (p.age <= 25) { m *= 1.15; why.push("they're rebuilding and want young players"); }
     else if (p.age >= 29) { m *= 0.75; why.push("they're rebuilding and don't want veterans"); }
   } else if (mode === "contend" && p.age >= 26 && fitsTeam(them, p)) { m *= 1.1; why.push("they're contending and he helps now"); }
-  if (season && (p.contract || 0) <= 1 && mode !== "contend") { m *= 0.85; why.push("his contract runs out after this season"); }
+  // an expiring deal in season is half a season and a head start on re-signing him: a contender
+  // pays a little more for that than everyone else
+  if (season && (p.contract || 0) <= 1) { m *= mode === "contend" ? 0.75 : RENTAL; why.push("his contract runs out after this season"); }
   return { m, why };
 }
 // Draft picks to the same club: a rebuilder prizes them, a contender in season less so.
 // what an expiring veteran his club won't keep goes for in season, as a share of his value
-export const RENTAL = 0.55;
+// (any expiring deal, not just veterans: Montez Sweat at 27 went for a 2nd in 2023, Roquan Smith at
+// 25 for a 2nd and a 5th in 2022); a player his club won't keep goes for less again
+export const RENTAL = 0.48, RENTAL_GONE = 0.4;
 const pickMult = (them, season) => { const mode = them ? clubMode(them) : "middle"; return mode === "rebuild" ? 1.15 : mode === "contend" && season ? 0.9 : 1; };
 
 // Would `them` accept? They price what they give up at full value plus the margin they want to
@@ -67,7 +91,7 @@ export function evaluateTrade({ send = [], sendPk = [], get = [], getPk = [], th
   const qbs = (them?.roster || []).filter((p) => p.pos === "QB").sort((a, b) => b.ovr - a.ovr);
   const starter = qbs[0];
   const worth = (p) => {
-    const v = p.tradeVal || 0;
+    const v = (p.tradeVal || 0) * contractMult(p);
     const stillStarter = starter && !get.some((x) => x.id === starter.id) && starter.ovr >= 80 && starter.age <= 34;
     if (p.pos === "QB" && stillStarter && p.ovr <= starter.ovr + 3) return v * 0.5;
     return v * fitFor(them, p, { season }).m;
@@ -80,17 +104,20 @@ export function evaluateTrade({ send = [], sendPk = [], get = [], getPk = [], th
   // A veteran whose deal is up after this season and whom his club won't keep (too old or too dear
   // to re-sign): it would rather get something now than lose him for nothing in March, so in season
   // it sells him at about half his value and without the usual premium.
-  const rental = (p) => season && (p.contract || 0) <= 1 && (p.pos === "QB" ? p.age >= 32 : p.age >= 29) && keepChance(p) < 0.5 && !(them && isFaceOf(p, them));
+  const rental = (p) => season && (p.contract || 0) <= 1 && !(them && isFaceOf(p, them));
+  const rentRate = (p) => (keepChance(p) < 0.5 ? RENTAL_GONE : RENTAL);
   const firm = get.filter((p) => !rental(p));
-  const rv = Math.round(get.reduce((s, p) => s + (p.tradeVal || 0) * (rental(p) ? RENTAL : 1), 0) + getPk.reduce((s, pk) => s + pick(pk), 0));
-  let mult = 1.1, why = null;
+  const rv = Math.round(get.reduce((s, p) => s + (p.tradeVal || 0) * (rental(p) ? rentRate(p) : contractMult(p)), 0) + getPk.reduce((s, pk) => s + pick(pk), 0));
+  // the margin they want to come out ahead by: small for an ordinary deal (a 2nd for a solid
+  // starter gets done in the real league), bigger for stars and starting quarterbacks
+  let mult = 1.05, why = null;
   if (firm.length < get.length) { mult = 1.05; why = "His deal is up and they won't be keeping him — they'd rather get something now than lose him for nothing"; }
-  if (firm.some((p) => p.tradeVal >= 150)) { mult = 1.25; why = "They want a big premium for a star"; }
+  if (firm.some((p) => p.tradeVal >= 150)) { mult = 1.15; why = "They want a big premium for a star"; }
   if (starter && starter.ovr >= 75 && firm.some((p) => p.id === starter.id)) { mult = 1.35; why = "That's their franchise quarterback — they'd need to be blown away"; }
   // the face of their franchise: only an overwhelming offer
   if (them && get.some((p) => isFaceOf(p, them))) { mult = Math.max(mult, 1.7); why = "He's the face of their franchise — they'd need to be blown away"; }
   // a contender doesn't hand over a starter it needs without a premium
-  if ((!why || firm.length < get.length) && them && clubMode(them) === "contend" && firm.some((p) => p.pos !== "QB" && (p.tradeVal || 0) >= 40 && fitsTeam({ ...them, roster: them.roster.filter((x) => x.id !== p.id) }, p))) { mult = Math.max(mult, 1.2); why = "They're contending and he's one of their starters"; }
+  if ((!why || firm.length < get.length) && them && clubMode(them) === "contend" && firm.some((p) => p.pos !== "QB" && (p.tradeVal || 0) >= 40 && fitsTeam({ ...them, roster: them.roster.filter((x) => x.id !== p.id) }, p))) { mult = Math.max(mult, 1.15); why = "They're contending and he's one of their starters"; }
   const ask = Math.round(rv * mult);
   const both = (send.length || sendPk.length) && (get.length || getPk.length);
   // salary: what they take on has to fit under their cap
