@@ -42,7 +42,7 @@ await page.addInitScript(() => { localStorage.setItem("gm_intro_shown", "1"); se
 // Close full-screen overlays (result cards, popups) by clicking the backdrop corner.
 async function dismiss() {
   for (let i = 0; i < 6; i++) {
-    for (const t of ["READ ALL ABOUT IT", "NEXT AWARD", "THE LEAGUE'S AWARDS", "WELCOME TO CANTON", "INTO THE RECORD BOOK", "Close the paper", "Continue to the awards", "CONTINUE →", "To the Legacy Hall", "Close (offers expire", "Standard", "Meet Demands", "STAY CALM", "Let Go (coach departs)", "Decide later", "Later", "Got it", "Keep simming"]) {
+    for (const t of ["READ ALL ABOUT IT", "NEXT AWARD", "THE LEAGUE'S AWARDS", "WELCOME TO CANTON", "INTO THE RECORD BOOK", "Close the paper", "Continue to the awards", "CONTINUE →", "To the Legacy Hall", "Close (offers expire", "Standard", "Meet Demands", "STAY CALM", "Let Go (coach departs)", "Let him go", "Decide later", "Later", "Got it", "Keep simming"]) {
       const b = page.locator("button", { hasText: t });
       if (await b.count()) { await b.first().click({ timeout: 3000 }).catch(() => {}); await page.waitForTimeout(150); }
     }

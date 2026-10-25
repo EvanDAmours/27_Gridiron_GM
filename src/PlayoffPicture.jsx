@@ -1,6 +1,7 @@
 // The playoff picture during the season: who'd be in if the season ended today (seven seeds per
 // conference, the #1 seed's bye, division leaders and wild cards), who's chasing the last spot and
 // how far back, and the bracket those seeds would make.
+import { MOBILE } from "./mobile.js";
 import React from "react";
 import { C, TeamLogo } from "./ui.jsx";
 import { nflSeeds, makeBracket } from "./playoffs.js";
@@ -40,6 +41,8 @@ export default function PlayoffPicture({ teams, ui, wk, onBox }) {
   const me = teams[ui];
   return (
     <div>
+      {/* phones keep the title (on a computer the Season header names the screen) */}
+      {MOBILE && <div style={{ fontSize: 24, fontWeight: 900, margin: "4px 2px 4px" }}>Playoff picture</div>}
       <div style={{ fontSize: 15, color: C.mt, marginBottom: 12 }}>If the season ended today{wk ? ` (after Week ${wk})` : ""}. Seeds 1-4 are division leaders, 5-7 wild cards; the #1 seed gets the only bye.
         {me && <b style={{ color: mine >= 0 ? C.gn : C.rd }}> The {me.name} are {mine >= 0 ? `the ${me.c} #${(mine % 7) + 1} seed` : "out right now"}.</b>}
       </div>

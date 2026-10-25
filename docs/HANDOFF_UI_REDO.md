@@ -242,6 +242,31 @@ Every `it.push({key:...})` item in App.jsx was audited: all targets exist. The o
 `devfocus` and `injuries` (open Home sheets via `gm:home`, with fallbacks), `scoutAreas` (Regions
 via `gm:scouting`). DeskHome's "See all" calls `onNav("inbox")`.
 
+- **Whole-game sweep (popups and the remaining screens).**
+  - `Sheet` (ui.jsx) is a centered dialog on a computer (560px, `wide` for 820px) and stays a
+    bottom sheet on phones; `onClose` is optional (no ✕ or tap-out when a choice is required) and
+    `z` sets its layer. New `Dialog({ title, sub, onClose, actions, wide, z })`, `DBtn({ kind:
+    primary|danger|gold|quiet })` and `softBox` give every decision the same look.
+  - App.jsx popups moved onto Dialog with their logic unchanged: training-camp skip, move-on
+    confirm, coach extension, cut (dead money) and restructure, suspension, retirement talks,
+    rehab plan, bidding war, coordinator offer, pick trade, fired / job offers, coaching openings,
+    report card, leaderboard, documentary, dynasty report, ownership offer, pro day, spectator box
+    score, practice and injury reports, season champions, the intro. Themed ones kept on purpose:
+    the Gazette, the share card, the live-game final (softened frame) and the season recap card
+    (team-color header, no colored border). Media day, the parade, the locker-room speech and the
+    second compare popup are unreachable (nothing opens them) and were left alone.
+  - Desktop no longer pops the weekly injury card (Home's injury sheet and the rehab to-do carry
+    it; the rehab to-do is switched back on for both builds) and uses the calm result card after
+    a sim (`PhoneCard` in WeekResult.jsx, 400px, a ✕ instead of the grip).
+  - Restyled: Training Camp (soft panels, pill buttons, the SP box dropped: the Team header shows
+    it), Saves (slots first, then device transfer, offline play, the cap glossary folded), GM
+    career (earned achievements only, "Show locked" toggle), Inbox (a tone dot instead of colored
+    edges, quiet buttons), Week prep, Deadline Day panels (the live clock header kept), trade
+    finder / block / 3-way, the contracts table (quiet Extend and "Restructure +$X"), Negotiate,
+    Game Updates, the player card back's section titles, the ⋯ menu group labels, the title
+    screen (Continue is the green button when a save exists).
+  - The smoke test and the audit dismiss list also click "Let him go" (the coordinator dialog).
+
 ## 7. The trade market (`src/trade.js`)
 Recalibrated against real deadline deals; `tests/tradeMarket.test.js` pins ten of them (each must
 go through at about its real price, and a clearly smaller offer must be refused):
