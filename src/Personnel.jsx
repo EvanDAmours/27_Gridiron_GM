@@ -10,8 +10,8 @@ import { roleOvr } from "./roles.js";
 import { depthOrderFor } from "./depth.js";
 import { teamPersonnel } from "./playsim.js";
 
-const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
-const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 6 };
+const card = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px" };
+const head = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 8, alignItems: "baseline" };
 const PCLR = { 10: "#38bdf8", 11: "#60a5fa", 12: "#a78bfa", 13: "#f472b6", 21: "#f59e0b" };
 const last = (n) => String(n || "").split(" ").slice(-1)[0];
 const r0 = (v) => (Math.round(v * 10) / 10).toFixed(1); // identities differ by fractions of a point
@@ -46,7 +46,7 @@ export default function Personnel({ team, depthOrder, snaps, onSet, compact }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${compact ? 280 : 340}px,1fr))`, gap: 10 }}>
       <div style={card}>
-        <div style={{ ...head, display: "flex" }}>OFFENSIVE PERSONNEL <span style={{ marginLeft: "auto", color: C.mt, letterSpacing: 0, fontWeight: 700 }}>Best fit: {best?.label}</span></div>
+        <div style={{ ...head, display: "flex" }}>Offensive personnel <span style={{ marginLeft: "auto", color: C.mt, fontSize: 13, fontWeight: 600 }}>Best fit: {best?.label}</span></div>
         {oc?.scheme && cf.ocWants && <div style={{ fontSize: 12, marginBottom: 6, color: cf.off > 0 ? C.gn : C.rd }}>OC {oc.name ? `${oc.name} ` : ""}({oc.scheme}) wants <b>{label(OFF_SETS, cf.ocWants)}</b>. Now: {cf.off > 0.5 ? "his favorite, about +0.6 pts a game" : cf.off > 0 ? "a set he likes, +0.25 pts" : "outside his system, -0.5 pts a game"}.</div>}
         <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 8, lineHeight: 1.45 }}>How often you play each grouping. Heavier sets run better and pull defenses into base (a linebacker on your slot man); lighter sets spread them out. Pass / Run: what your roster rates in that identity.</div>
         <div style={{ display: "grid", gap: 6 }}>
@@ -54,7 +54,7 @@ export default function Personnel({ team, depthOrder, snaps, onSet, compact }) {
             const mix = s.mix || OFF_SETS.find((x) => x.key === info.auto)?.mix;
             const u = rateOff(mix), on = offKey === s.key;
             return (
-              <button key={s.key} onClick={() => onSet("personnel", s.key)} title={s.desc} style={{ textAlign: "left", background: on ? `${C.bl}22` : C.bg, border: `1px solid ${on ? C.bl : C.bd}`, borderRadius: 8, padding: "7px 10px", color: C.tx, cursor: "pointer" }}>
+              <button key={s.key} onClick={() => onSet("personnel", s.key)} title={s.desc} style={{ textAlign: "left", background: on ? `${C.bl}2a` : "#ffffff08", border: `1px solid ${on ? C.bl : "transparent"}`, borderRadius: 12, padding: "8px 11px", color: C.tx, cursor: "pointer" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 800 }}>{on ? "✓ " : ""}{s.icon} {s.label}</span>
                   {s.key === info.auto && s.key !== "auto" && <span style={{ fontSize: 10, fontWeight: 900, color: C.gn, border: `1px solid ${C.gn}66`, borderRadius: 4, padding: "0 4px" }}>BEST FIT</span>}
@@ -69,7 +69,7 @@ export default function Personnel({ team, depthOrder, snaps, onSet, compact }) {
             );
           })}
         </div>
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt, margin: "10px 0 4px" }}>WHO EACH GROUPING PUTS ON THE FIELD</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.mt, margin: "12px 0 4px" }}>Who each grouping puts on the field</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px 10px", fontSize: 12 }}>
           {extra.map(([l, p, v, blk]) => <div key={l} style={{ display: "flex", gap: 6, minWidth: 0 }}><span style={{ color: C.mt, whiteSpace: "nowrap" }}>{l}</span><span style={{ marginLeft: "auto", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p ? <>{last(p.name)} <b style={{ color: oC(v) }}>{v}</b>{blk != null && <span style={{ color: C.mt }}> · block {blk}</span>}</> : <span style={{ color: C.rd }}>nobody</span>}</span></div>)}
         </div>
@@ -78,7 +78,7 @@ export default function Personnel({ team, depthOrder, snaps, onSet, compact }) {
         </div>
       </div>
       <div style={card}>
-        <div style={head}>DEFENSIVE PACKAGES</div>
+        <div style={head}>Defensive packages</div>
         {dc?.scheme && cf.dcWants && <div style={{ fontSize: 12, marginBottom: 6, color: cf.def > 0 ? C.gn : C.rd }}>DC {dc.name ? `${dc.name} ` : ""}({dc.scheme}) wants <b>{label(DEF_SETS, cf.dcWants)}</b>{defKey === "auto" ? " (Auto plays it)" : ""}. Now: {cf.def > 0.5 ? "his favorite, about +0.6 pts a game" : cf.def > 0 ? "a lean he likes, +0.25 pts" : "outside his system, -0.5 pts a game"}.</div>}
         <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 8, lineHeight: 1.45 }}>Base keeps your SAM on the field (strong against the run, but a linebacker covers the slot); nickel trades him for a third corner (better in coverage, lighter up front). Dime adds a fourth corner on passing downs.</div>
         <div style={{ display: "flex", gap: 12, fontSize: 13, marginBottom: 8, flexWrap: "wrap" }}>
@@ -90,7 +90,7 @@ export default function Personnel({ team, depthOrder, snaps, onSet, compact }) {
             const tilt = defTilt({ ...team, defPkg: s.key }, samR ?? 60, nbR ?? 60), sh = pkgShare(tilt), on = defKey === s.key;
             const pd = Object.entries(sh).reduce((t, [k, w]) => t + w * defUnits(order, k).passD, 0), rd = Object.entries(sh).reduce((t, [k, w]) => t + w * defUnits(order, k).runD, 0);
             return (
-              <button key={s.key} onClick={() => onSet("defPkg", s.key)} title={s.desc} style={{ textAlign: "left", background: on ? `${C.bl}22` : C.bg, border: `1px solid ${on ? C.bl : C.bd}`, borderRadius: 8, padding: "7px 10px", color: C.tx, cursor: "pointer" }}>
+              <button key={s.key} onClick={() => onSet("defPkg", s.key)} title={s.desc} style={{ textAlign: "left", background: on ? `${C.bl}2a` : "#ffffff08", border: `1px solid ${on ? C.bl : "transparent"}`, borderRadius: 12, padding: "8px 11px", color: C.tx, cursor: "pointer" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 800 }}>{on ? "✓ " : ""}{s.icon} {s.label}</span>
                   {coachChip(cf.dcOk, cf.dcWants, s.key, "DC")}
@@ -103,7 +103,7 @@ export default function Personnel({ team, depthOrder, snaps, onSet, compact }) {
         </div>
       </div>
       <div style={{ ...card, gridColumn: "1 / -1" }}>
-        <div style={{ ...head, display: "flex" }}>SITUATIONS <span style={{ marginLeft: "auto", color: C.mt, letterSpacing: 0, fontWeight: 700 }}>Overrides your identity on these snaps</span></div>
+        <div style={{ ...head, display: "flex" }}>Situations <span style={{ marginLeft: "auto", color: C.mt, fontSize: 13, fontWeight: 600 }}>Overrides your identity on these snaps</span></div>
         <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${compact ? 260 : 300}px,1fr))`, gap: "6px 14px" }}>
           {SITUATIONS.map((x) => {
             const cur = team.sit?.[x.key] || "auto";

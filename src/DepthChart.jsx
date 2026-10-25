@@ -2,7 +2,7 @@
 // grouping you pick to look at (11, 12, 21...), the defense with its SAM, MIKE and WILL and the
 // nickel back, and the kicker. Tap a spot to choose who starts there.
 import React, { useState } from "react";
-import { C, oC, pC, Btn, Face, Segments, Sheet, Row } from "./ui.jsx";
+import { C, oC, pC, Btn, Face, Segments, Sheet, Row, Chips } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { DL_SLOTS, slotKind, dlOvrAt, naturalDL, posTag } from "./dline.js";
 
@@ -95,7 +95,7 @@ export const PARTNER = { LT: "RT", RT: "LT", LG: "RG", RG: "LG" };
 // and tackles, guards and centers along the line (left/right swaps go through PARTNER instead).
 const CROSS = { CB: ["S"], S: ["CB"], LT: ["LG", "RG", "C"], RT: ["LG", "RG", "C"], LG: ["LT", "RT", "C"], RG: ["LT", "RT", "C"], C: ["LG", "RG", "LT", "RT"] };
 
-export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps, onMovePos, previewPos, gamePlan, shape, personnel, team, onList }) {
+export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps, onMovePos, previewPos, gamePlan, shape, personnel, team, onList, viewToggle }) {
   const leanKey = `${team?.personnel || "auto"}|${team?.defPkg || "auto"}|${team?.coach?.oc?.scheme}|${team?.coach?.dc?.scheme}`;
   if (VIEW.key !== leanKey) VIEW = { key: leanKey, ...viewFor(team) };
   const [side, setSide] = useState("offense");
@@ -230,22 +230,20 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
         <div style={{ flex: 1, minWidth: 0 }}><Segments items={Object.entries(SETS).map(([k, st]) => [k, st.label])} value={side} onChange={(k) => { setSide(k); setPick(null); }} /></div>
         <button onClick={() => setOpts(true)} aria-label="Depth chart options" style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 10, border: 0, background: "#ffffff0f", color: "#e2e8f0", fontSize: 20, fontWeight: 900, cursor: "pointer" }}>⋯</button>
       </div>}
-      <div style={{ display: MOBILE ? "none" : "flex", alignItems: "center", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-        {Object.entries(SETS).map(([k, s]) => [k, s.label]).map(([k, l]) => (
-          <button key={k} onClick={() => { setSide(k); setPick(null); }} style={{ background: side === k ? C.bl : "transparent", color: side === k ? "#fff" : "#94a3b8", border: `1px solid ${side === k ? C.bl : C.bd}`, borderRadius: 6, padding: "6px 14px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>{l}</button>
-        ))}
-        <span style={{ marginLeft: "auto" }}><Btn onClick={onAutoFill} bg={`${C.gn}22`} c={C.gn} style={{ fontSize: 13 }}>Auto-fill by OVR</Btn></span>
-      </div>
+      {!MOBILE && <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+        <Chips items={Object.entries(SETS).map(([k, st]) => [k, st.label])} value={side} onChange={(k) => { setSide(k); setPick(null); }} />
+        <span style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>{viewToggle}<button onClick={onAutoFill} style={{ minHeight: 38, borderRadius: 999, border: 0, padding: "0 16px", background: "#ffffff12", color: "#e2e8f0", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Auto-fill by overall</button></span>
+      </div>}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
         <div style={{ flex: "3 1 480px", minWidth: 0, maxWidth: 640 }}>
           {side === "offense" && !MOBILE && <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt }}>PERSONNEL</span>
-            {Object.keys(FORMS).map((k) => <button key={k} onClick={() => { setForm(k); setPick(null); }} title={{ 11: "1 back, 1 tight end, 3 receivers", 12: "1 back, 2 tight ends, 2 receivers", 21: "2 backs (a fullback), 1 tight end, 2 receivers", 10: "1 back, 4 receivers", 13: "1 back, 3 tight ends, 1 receiver" }[k]} style={{ background: form === k ? `${C.bl}33` : "transparent", color: form === k ? "#bfdbfe" : "#94a3b8", border: `1px solid ${form === k ? C.bl : C.bd}`, borderRadius: 6, padding: "2px 9px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>{k}</button>)}
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.mt, marginRight: 2 }}>Personnel</span>
+            {Object.keys(FORMS).map((k) => <button key={k} onClick={() => { setForm(k); setPick(null); }} title={{ 11: "1 back, 1 tight end, 3 receivers", 12: "1 back, 2 tight ends, 2 receivers", 21: "2 backs (a fullback), 1 tight end, 2 receivers", 10: "1 back, 4 receivers", 13: "1 back, 3 tight ends, 1 receiver" }[k]} style={{ background: form === k ? "#ffffff24" : "transparent", color: form === k ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: "4px 11px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{k}</button>)}
             {personnel && <span style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}>Your identity: <b style={{ color: "#e2e8f0" }}>{personnel}</b></span>}
           </div>}
           {side === "defense" && !MOBILE && <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt }}>PACKAGE</span>
-            {Object.keys(DEF_FORMS).map((k) => <button key={k} onClick={() => { setPkg(k); setPick(null); }} title={{ base: "3 linebackers: against heavy sets", nickel: "2 linebackers and a nickel back: against 3 receivers", dime: "1 linebacker and 2 extra defensive backs: passing downs" }[k]} style={{ background: pkg === k ? `${C.bl}33` : "transparent", color: pkg === k ? "#bfdbfe" : "#94a3b8", border: `1px solid ${pkg === k ? C.bl : C.bd}`, borderRadius: 6, padding: "3px 10px", fontSize: 13, fontWeight: 800, cursor: "pointer", textTransform: "capitalize" }}>{k}</button>)}
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.mt, marginRight: 2 }}>Package</span>
+            {Object.keys(DEF_FORMS).map((k) => <button key={k} onClick={() => { setPkg(k); setPick(null); }} title={{ base: "3 linebackers: against heavy sets", nickel: "2 linebackers and a nickel back: against 3 receivers", dime: "1 linebacker and 2 extra defensive backs: passing downs" }[k]} style={{ background: pkg === k ? "#ffffff24" : "transparent", color: pkg === k ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: "4px 11px", fontSize: 13, fontWeight: 800, cursor: "pointer", textTransform: "capitalize" }}>{k}</button>)}
             {team && <span style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}>Your lean: <b style={{ color: "#e2e8f0" }}>{(DEF_SETS.find((d) => d.key === (team.defPkg || "auto")) || DEF_SETS[0]).label}</b></span>}
           </div>}
           <Field los={set.los}>
@@ -257,16 +255,15 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
           {/* the schemes and personnel sit right under the field, with the players they're built for */}
           {gamePlan && !MOBILE && <div style={{ marginTop: 12 }}>{gamePlan}</div>}
         </div>
-        <div style={{ flex: "1 1 300px", minWidth: 0, background: MOBILE ? "#ffffff0f" : C.cd, border: MOBILE ? 0 : `1px solid ${C.bd}`, borderRadius: MOBILE ? 18 : 8, padding: MOBILE ? "12px 14px" : 10 }}>
+        <div style={{ flex: "1 1 300px", minWidth: 0, background: MOBILE ? "#ffffff0f" : "#ffffff0d", borderRadius: 18, padding: MOBILE ? "12px 14px" : "14px 16px" }}>
           {!pick || MOBILE ? (
             <>
-              <div style={{ fontSize: 15, fontWeight: 900, marginBottom: MOBILE ? 6 : 2 }}>{set.label} at a glance</div>
-              {!MOBILE && <div style={{ fontSize: 12, color: C.mt, marginBottom: 8 }}>Who plays and how much. Tap a position (or a spot on the field) to change it.</div>}
+              <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>Who plays</div>
               {sidePositions.map((pos) => {
                 const o = order(pos), sh = RET[pos] ? {} : shares(pos), n = STARTERS[pos] || 1;
                 const rot = o.filter((p, i) => i >= n && (sh[p.id] || 0) > 0);
                 return (
-                  <button key={pos} onClick={() => setPick([pos, 0])} style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "flex-start", gap: 8, padding: "7px 4px", background: "transparent", border: 0, borderBottom: `1px solid ${C.bd}`, color: C.tx, cursor: "pointer" }}>
+                  <button key={pos} onClick={() => setPick([pos, 0])} style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "flex-start", gap: 8, padding: "8px 4px", background: "transparent", border: 0, borderBottom: "1px solid #ffffff0f", color: C.tx, cursor: "pointer" }}>
                     <span style={{ minWidth: 30, fontSize: 11, fontWeight: 900, color: "#fff", background: pC(pos === "KR" || pos === "PR" ? "WR" : pos), borderRadius: 4, textAlign: "center", padding: "1px 0" }}>{pos}</span>
                     <span style={{ flex: 1, minWidth: 0, fontSize: 13, lineHeight: 1.45 }}>
                       {o.slice(0, n).map((p, i) => <span key={p.id} style={{ display: "inline-block", marginRight: 8, color: p.injured ? C.rd : "#e2e8f0", fontWeight: 700 }}>{(ROLE_SLOTS[pos] || pos === "DL") && <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, marginRight: 3 }}>{spotName(pos, i)}</span>}{lastName(p.name)} <span style={{ color: oC(spotOvr(p, pos, i)) }}>{spotOvr(p, pos, i)}</span>{!RET[pos] && <span style={{ color: C.mt, fontWeight: 600 }}> {sh[p.id] ?? 0}%</span>}</span>)}

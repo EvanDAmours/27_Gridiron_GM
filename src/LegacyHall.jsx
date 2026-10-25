@@ -15,7 +15,7 @@ const DIV = { AFC: "AFC", NFC: "NFC" };
 const fmt = (n) => Math.round(n).toLocaleString();
 const H = ({ children, sub }) => (
   <div style={{ display: "flex", alignItems: "baseline", gap: 10, margin: "4px 0 10px" }}>
-    <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#e2e8f0" }}>{children}</span>
+    <span style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{children}</span>
     {sub && <span style={{ fontSize: 13, color: C.mt }}>{sub}</span>}
   </div>
 );
@@ -65,9 +65,9 @@ export function Rafters({ team, sbs = [], titles = [], confs = [], divs = [] }) 
     return out;
   });
   const wall = (label, children) => (
-    <div className="keep-dark" style={{ background: "linear-gradient(180deg,#0b0f19,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: "0 12px 14px", position: "relative", marginBottom: 10 }}>
+    <div className="keep-dark" style={{ background: "linear-gradient(180deg,#0b0f19,#111827)", borderRadius: 18, overflow: "hidden", padding: "0 12px 14px", position: "relative", marginBottom: 10 }}>
       <div style={{ height: 8, margin: "0 -12px 0", background: "repeating-linear-gradient(90deg,#374151 0 14px,#1f2937 14px 28px)" }} />
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#94a3b8", padding: "6px 2px 0" }}>{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#94a3b8", padding: "8px 2px 0" }}>{label}</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, paddingTop: 2, minHeight: 190, alignItems: "flex-start" }}>{children}</div>
     </div>
   );
@@ -75,9 +75,9 @@ export function Rafters({ team, sbs = [], titles = [], confs = [], divs = [] }) 
   return (
     <div style={{ marginBottom: 22 }}>
       <H sub={`${nTitles} championship${nTitles === 1 ? "" : "s"} · ${confs.length} conference title${confs.length === 1 ? "" : "s"} · ${nDiv} division title${nDiv === 1 ? "" : "s"}`}>The Rafters</H>
-      {wall("🏆 WORLD CHAMPIONS", champs.length ? champs.map((x) => x.el) : <div style={{ color: C.mt, fontSize: 14, padding: "40px 6px" }}>No championship banners yet. Win the Super Bowl and one goes up here.</div>)}
-      {confBanners.length > 0 && wall("CONFERENCE CHAMPIONS", confBanners)}
-      {divBanners.length > 0 && wall("DIVISION CHAMPIONS", divBanners)}
+      {wall("World champions", champs.length ? champs.map((x) => x.el) : <div style={{ color: C.mt, fontSize: 14, padding: "40px 6px" }}>No championship banners yet. Win the Super Bowl and one goes up here.</div>)}
+      {confBanners.length > 0 && wall("Conference champions", confBanners)}
+      {divBanners.length > 0 && wall("Division champions", divBanners)}
     </div>
   );
 }
@@ -132,10 +132,10 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum, onOpen
   const plaques = [...real.members.map((m) => ({ key: m.n, name: m.n, num: m.num, pos: m.pos, yrs: m.yrs, ind: m.ind, ret: m.ret })), ...ring.map((r) => ({ key: r.id, name: r.name, num: r.num, pos: r.pos, ind: r.retYr, mine: true, r }))];
   return (
     <div style={{ marginBottom: 22 }}>
-      <H sub={real.name ? `${team.city} ${team.name} ${real.name}${real.members.length ? `, ${plaques.length} members` : ""}` : "Honor the greats who played here"}>{real.name || "Ring of Honor"} & Retired Numbers</H>
+      <H sub={real.name ? `${team.city} ${team.name} ${real.name}${real.members.length ? `, ${plaques.length} members` : ""}` : "Honor the greats who played here"}>{real.name || "Ring of Honor"} & retired numbers</H>
       {nums.length > 0 && (
-        <div className="keep-dark" style={{ background: "linear-gradient(180deg,#0b0f19,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: "14px 12px", marginBottom: 10 }}>
-          <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.5, color: "#fde68a", marginBottom: 10 }}>RETIRED NUMBERS</div>
+        <div className="keep-dark" style={{ background: "#ffffff0d", borderRadius: 18, padding: "14px 14px", marginBottom: 10 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 10 }}>Retired numbers</div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {nums.map((n) => (
               <div key={`${n.num}${n.name}`} title={n.name} style={{ width: 92, textAlign: "center" }}>
@@ -166,14 +166,14 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum, onOpen
       </div>
       {(cands.length > 0 || ring.some((r) => r.num != null && !taken.has(r.num) && !numPass.has(r.id))) && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 8, marginTop: 8 }}>
         {cands.map((r) => (
-          <div key={r.id} style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+          <div key={r.id} style={{ background: "#ffffff0d", borderRadius: 14, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <div onClick={onOpen ? () => onOpen(r) : undefined} title={onOpen ? "Open his player card" : undefined} style={{ flex: 1, minWidth: 0, cursor: onOpen ? "pointer" : "default" }}><div style={{ fontWeight: 800, fontSize: 14, textDecoration: onOpen ? "underline dotted #ffffff55" : "none" }}>{r.name} {r.hof && <span style={{ color: "#fde68a", fontSize: 11 }}>HOF</span>}</div><div style={{ fontSize: 12, color: C.mt }}>{posTag(r)} · retired {r.retYr} · legacy {r.legacy}</div></div>
             <Btn onClick={() => onInduct(r)} bg="#b45309" style={{ fontSize: 12, padding: "4px 10px" }}>Yes, induct</Btn>
             {onPass && <Btn onClick={() => onPass(r)} bg="transparent" c={C.mt} style={{ fontSize: 12, padding: "4px 10px", border: `1px solid ${C.bd}` }} title="He won't be offered again">No</Btn>}
           </div>
         ))}
         {ring.filter((r) => r.num != null && !taken.has(r.num) && !numPass.has(r.id)).map((r) => (
-          <div key={`n${r.id}`} style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}>
+          <div key={`n${r.id}`} style={{ background: "#ffffff0d", borderRadius: 14, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 800, fontSize: 14 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt }}>Ring of Honor · wore #{r.num}</div></div>
             <Btn onClick={() => onRetireNum(r)} bg="#1e3a5f" c="#7dd3fc" style={{ fontSize: 12, padding: "4px 10px" }}>Retire #{r.num}</Btn>
             {onPass && <Btn onClick={() => onPass(r, "num")} bg="transparent" c={C.mt} style={{ fontSize: 12, padding: "4px 10px", border: `1px solid ${C.bd}` }} title="Keep the number in circulation">No</Btn>}
@@ -187,8 +187,8 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum, onOpen
 // Record cards: the app's dark cards, a colored edge for what kind of mark it is (gold: set in your
 // league; slate: the club's real history; green: held by an active player), the number big and
 // plain, everything else in quieter type underneath.
-const recCard = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "10px 12px 11px", minWidth: 0 };
-const recLabel = { fontSize: 11.5, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: "#94a3b8" };
+const recCard = { background: "#ffffff0d", borderRadius: 14, padding: "10px 12px 11px", minWidth: 0 };
+const recLabel = { fontSize: 13, fontWeight: 700, color: "#94a3b8" };
 const recValue = { fontSize: 28, fontWeight: 900, lineHeight: 1.1, color: C.tx, marginTop: 3, fontVariantNumeric: "tabular-nums" };
 const recWho = { fontSize: 14, fontWeight: 800, color: C.tx, marginTop: 1 };
 const recNote = { fontSize: 12, color: C.mt, marginTop: 2, lineHeight: 1.35 };
@@ -217,15 +217,15 @@ export function RecordsWall({ team, retired, book, teams = [], allRetired = reti
   return (
     <div style={{ marginBottom: 22 }}>
       {season.length > 0 && <>
-        <H sub="The club's best single seasons, through 2025 and in your league. Beat one and it's yours.">Single-Season Records</H>
+        <H sub="The club's best single seasons, through 2025 and in your league. Beat one and it's yours.">Single-season records</H>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 10, marginBottom: 18 }}>
           {season.map((r) => {
             const mine = !r.rec.real, pct = r.lead ? Math.min(100, (r.lead.v / r.rec.val) * 100) : 0;
             return (
-              <div key={r.key} style={{ ...recCard, borderLeft: `4px solid ${mine ? "#f59e0b" : "#475569"}` }}>
+              <div key={r.key} style={recCard}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={recLabel}>{r.label}</span>
-                  {mine && <span title="Set in your league" style={{ marginLeft: "auto", whiteSpace: "nowrap", fontSize: 10.5, fontWeight: 900, letterSpacing: 0.6, color: "#fbbf24", border: "1px solid #f59e0b88", background: "#f59e0b1a", borderRadius: 999, padding: "1px 8px" }}>★ YOURS</span>}
+                  {mine && <span title="Set in your league" style={{ marginLeft: "auto", whiteSpace: "nowrap", fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>★ Yours</span>}
                 </div>
                 <div style={recValue}>{recordValue(r.key, r.rec.val)}</div>
                 <div style={recWho}>{r.rec.name}<span style={{ color: C.mt, fontWeight: 600 }}>{r.rec.yr ? ` · ${r.rec.yr}` : " · tied"}</span></div>
@@ -240,16 +240,16 @@ export function RecordsWall({ team, retired, book, teams = [], allRetired = reti
           })}
         </div>
       </>}
-      <H sub="Each stat's all-time leaders with the club: its real history through 2025, plus everything done in your league.">Franchise Career Leaders</H>
+      <H sub="Each stat's all-time leaders with the club: its real history through 2025, plus everything done in your league.">Franchise career leaders</H>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 10 }}>
         {rows.length ? rows.map((r) => {
           const top = r.board[0], tenth = r.board[r.board.length - 1];
           return (
-            <div key={r.key} style={{ ...recCard, borderLeft: `4px solid ${top.active ? "#22c55e" : "#a16207"}` }}>
+            <div key={r.key} style={recCard}>
               <div style={recLabel}>{r.label}</div>
               <div style={recValue}>{recordValue(r.key, top.v)}</div>
               <div style={recWho}>{top.name}{top.active ? <span style={{ color: "#4ade80", fontWeight: 800 }}> · active</span> : null}</div>
-              <div style={{ marginTop: 7, borderTop: `1px solid ${C.bd}`, paddingTop: 5 }}>
+              <div style={{ marginTop: 7, borderTop: "1px solid #ffffff12", paddingTop: 5 }}>
                 {r.board.slice(1, 5).map((b, i) => (
                   <div key={b.name} style={{ display: "flex", gap: 8, fontSize: 13, lineHeight: 1.6, color: b.active ? "#86efac" : "#cbd5e1", fontWeight: b.active ? 800 : 500 }}>
                     <span style={{ width: 16, color: C.mt, fontWeight: 700 }}>{i + 2}</span><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.name}{b.active ? " ●" : ""}</span><span style={{ fontVariantNumeric: "tabular-nums" }}>{recordValue(r.key, b.v)}</span>
@@ -257,7 +257,7 @@ export function RecordsWall({ team, retired, book, teams = [], allRetired = reti
                 ))}
               </div>
               {r.mine && r.rank !== 1 && (
-                <div style={{ marginTop: 7, fontSize: 12, background: "#3b82f61a", border: "1px solid #3b82f644", color: "#bfdbfe", borderRadius: 6, padding: "4px 8px", fontWeight: 700, lineHeight: 1.35 }}>
+                <div style={{ marginTop: 7, fontSize: 13, background: "#3b82f61a", color: "#bfdbfe", borderRadius: 8, padding: "5px 9px", fontWeight: 700, lineHeight: 1.35 }}>
                   {r.rank > 0
                     ? <>{r.mine.name}: #{r.rank}, {recordValue(r.key, top.v - r.mine.v)} behind {top.name}</>
                     : <>{r.mine.name}: {recordValue(r.key, r.mine.v)} · {recordValue(r.key, tenth.v - r.mine.v + 1)} from the top 10</>}

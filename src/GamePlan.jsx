@@ -17,8 +17,8 @@ export const SCHEME_INFO = {
 };
 const SPECS = [{ role: "oc", lbl: "Offensive coordinator", specs: ["Run Game", "Play-Action", "Spread"], clr: "#22c55e" }, { role: "dc", lbl: "Defensive coordinator", specs: ["Blitz Pkg", "Zone Cov", "Press", "Run Stop"], clr: "#ef4444" }, { role: "st", lbl: "Special teams", specs: ["Kick Return", "Coverage", "Block FG"], clr: "#f59e0b" }];
 
-const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
-const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8 };
+const card = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px" };
+const head = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 8 };
 
 // team: your team; fit(team, role): the fit bonus (0-2) for its current schemes; schemes: { oc: [...], dc: [...] }
 export default function GamePlan({ team, sp, fit, schemes, onScheme, coachSpec = {}, onSpecialize, compact, strip, personnel }) {
@@ -42,7 +42,7 @@ export default function GamePlan({ team, sp, fit, schemes, onScheme, coachSpec =
             <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 800, color: fit(team, role) > 0 ? C.gn : C.mt }}>{fit(team, role) > 0 ? `Fits your roster · +${fit(team, role)}` : "No roster fit bonus"}</span>
           </div>
           <div style={{ fontSize: 13, color: "#94a3b8", margin: "4px 0 10px", lineHeight: 1.45 }}>{SCHEME_INFO[c.scheme]}</div>
-          <div style={{ fontSize: 12, fontWeight: 800, color: C.mt, marginBottom: 6 }}>SWITCH SCHEMES · 2 SP · plays about 2 pts/game worse for 2 games while it's installed</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.mt, marginBottom: 6 }}>Switch schemes for 2 SP. The team plays about 2 points a game worse for 2 games while it's installed.</div>
           <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill,minmax(${compact ? 140 : 170}px,1fr))`, gap: 6 }}>
             {schemes[role].filter((s) => s !== c.scheme).map((s) => {
               const f = with_(s), ok = sp >= 2;
@@ -58,9 +58,8 @@ export default function GamePlan({ team, sp, fit, schemes, onScheme, coachSpec =
       </div>
     );
   };
-  const show = (k) => !strip || open === k;
-  const tab = (k, label) => <button key={k} onClick={() => setOpen(open === k ? null : k)} style={{ background: open === k ? `${C.bl}33` : "transparent", color: open === k ? "#bfdbfe" : "#93c5fd", border: `1px solid ${open === k ? C.bl : C.bd}`, borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>{label} {open === k ? "▴" : "▾"}</button>;
-  if (MOBILE && strip) {
+    // the strip (phone and desktop): a few quiet rows, each opening its part in a sheet
+  if (strip) {
     const rowS = { display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 54, background: "transparent", border: 0, padding: 0, color: "#fff", cursor: "pointer", textAlign: "left", fontSize: 16 };
     const rows = [
       ["schemes", "Offense", <>{coach.oc?.scheme || "—"}{coach.oc && fit(team, "oc") > 0 && <span style={{ color: C.gn }}> +{fit(team, "oc")}</span>}</>],
@@ -70,12 +69,13 @@ export default function GamePlan({ team, sp, fit, schemes, onScheme, coachSpec =
     ].filter(Boolean);
     const title = { schemes: "Schemes", pers: "Personnel", spec: "Coaching specialties" };
     return (
-      <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px" }}>
+      <div style={{ background: MOBILE ? "#ffffff0f" : "#ffffff0d", borderRadius: 18, padding: "0 14px" }}>
+        {!MOBILE && <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", padding: "12px 0 2px" }}>Game plan</div>}
         {trans > 0 && <div style={{ fontSize: 13, fontWeight: 800, color: "#fca5a5", padding: "10px 0 2px" }}>New scheme installing: {trans} game{trans > 1 ? "s" : ""} to go</div>}
         {rows.map(([k, l, v], i) => <button key={l} onClick={() => setOpen(k)} style={{ ...rowS, borderTop: i ? "1px solid #ffffff10" : 0 }}><span style={{ color: "#94a3b8" }}>{l}</span><b style={{ marginLeft: "auto" }}>{v}</b><span style={{ fontSize: 20, color: "#64748b" }}>›</span></button>)}
         {open && <Sheet title={title[open]} onClose={() => setOpen(null)}>
           {open === "pers" && personnel}
-          {open === "schemes" && <div style={{ display: "grid", gap: 10 }}><SchemeCard role="oc" title="OFFENSIVE SCHEME" /><SchemeCard role="dc" title="DEFENSIVE SCHEME" /></div>}
+          {open === "schemes" && <div style={{ display: "grid", gap: 10 }}><SchemeCard role="oc" title="Offensive scheme" /><SchemeCard role="dc" title="Defensive scheme" /></div>}
           {open === "spec" && <div style={{ display: "grid", gap: 8 }}>{SPECS.map(({ role, lbl, specs, clr }) => { const c = coach[role]; if (!c) return null; const cur = coachSpec[role]; return (
             <div key={role} style={{ background: C.bg, borderRadius: 12, padding: "10px 12px" }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: clr }}>{lbl}: {c.name}</div>
@@ -90,28 +90,21 @@ export default function GamePlan({ team, sp, fit, schemes, onScheme, coachSpec =
   }
   return (
     <div style={{ display: "grid", gap: 10 }}>
-      {strip && <div style={{ ...card, padding: "8px 12px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: C.gd }}>📋 GAME PLAN</span>
-        <span style={{ fontSize: 13 }}>Offense <b>{coach.oc?.scheme || "—"}</b>{coach.oc && fit(team, "oc") > 0 && <span style={{ color: C.gn, fontWeight: 800 }}> +{fit(team, "oc")}</span>}</span>
-        <span style={{ fontSize: 13 }}>Defense <b>{coach.dc?.scheme || "—"}</b>{coach.dc && fit(team, "dc") > 0 && <span style={{ color: C.gn, fontWeight: 800 }}> +{fit(team, "dc")}</span>}</span>
-        {personnel && <span style={{ fontSize: 13 }}>Personnel <b>{({ auto: "Auto", balanced: "Balanced", spread: "Spread", twoTE: "Two TE", fullback: "Fullback", heavy: "Heavy" })[team.personnel || "auto"]}</b> / <b>{({ auto: "Auto", match: "Match", base: "Base", nickel: "Nickel" })[team.defPkg || "auto"]}</b></span>}
-        <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>{personnel && tab("pers", "Personnel")}{tab("schemes", "Schemes")}{onSpecialize && tab("spec", "Coaching")}</span>
+      {personnel && personnel}
+      {trans > 0 && <div style={{ ...card, color: "#fca5a5", fontSize: 14, fontWeight: 700 }}>A new scheme is still being installed: {trans} game{trans > 1 ? "s" : ""} to go.</div>}
+      {<div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${compact ? 280 : 300}px,1fr))`, gap: 10 }}>
+        <SchemeCard role="oc" title="Offensive scheme" />
+        <SchemeCard role="dc" title="Defensive scheme" />
       </div>}
-      {personnel && show("pers") && personnel}
-      {show("schemes") && trans > 0 && <div style={{ ...card, borderColor: "#f8717166", color: "#fca5a5", fontSize: 14, fontWeight: 700 }}>⚠️ A new scheme is still being installed: {trans} game{trans > 1 ? "s" : ""} to go.</div>}
-      {show("schemes") && <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${compact ? 280 : 300}px,1fr))`, gap: 10 }}>
-        <SchemeCard role="oc" title="OFFENSIVE SCHEME" />
-        <SchemeCard role="dc" title="DEFENSIVE SCHEME" />
-      </div>}
-      {onSpecialize && show("spec") && (
+      {onSpecialize && (
         <div style={card}>
-          <div style={head}>COACHING SPECIALIZATION · 5 SP each · +3 to that coach's rating</div>
+          <div style={head}>Coaching specialization <span style={{ fontSize: 13, color: C.mt, fontWeight: 600 }}>5 SP each · +3 to that coach's rating</span></div>
           <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${compact ? 240 : 260}px,1fr))`, gap: 8 }}>
             {SPECS.map(({ role, lbl, specs, clr }) => {
               const c = coach[role]; if (!c) return null;
               const cur = coachSpec[role];
               return (
-                <div key={role} style={{ background: C.bg, border: `1px solid ${clr}44`, borderRadius: 8, padding: "8px 10px" }}>
+                <div key={role} style={{ background: "#ffffff0a", borderRadius: 12, padding: "10px 12px" }}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: clr }}>{lbl}: {c.name}</div>
                   {cur && <div style={{ fontSize: 12, color: C.mt, marginTop: 2 }}>Specialized in {cur}</div>}
                   <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 6 }}>

@@ -207,7 +207,7 @@ function Shelf({ title, items, empty, perRow, on, setOn, start = 0, small, spot 
   return (
     <div style={{ marginBottom: 22 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
-        <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: "#e2e8f0" }}>{title}</span>
+        <span style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{title}</span>
         <span style={{ fontSize: 15, color: "#fde68a", fontWeight: 800 }}>{items.length || ""}</span>
       </div>
       <div className="tr-wall keep-dark">
@@ -269,26 +269,11 @@ export default function TrophyRoom({ team, ui, champs = [], awards = [], teams =
           <Chips items={[["banners", "Banners"], ["trophies", "Trophies"], ["jackets", "Gold Jackets"], ["ring", "Ring of Honor"], ["records", "Records"], ...(onPaper ? [["gazette", "Gazette"]] : [])]} value={sec} onChange={setSec} />
         </div>
       </>}
-      <div style={{ display: MOBILE ? "none" : "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
-        <TeamLogo t={team} sz={60} glow />
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>Legacy Hall</div>
-          <div style={{ fontSize: 15, color: C.mt }}>{full} · banners, trophies, gold jackets and the Ring of Honor</div>
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {[["Super Bowls", lombardis.length], ["MVP", count("mvp")], ["OPOY", count("opoy")], ["DPOY", count("dpoy")], ["OROY", count("oroy")], ["DROY", count("droy")]].map(([l, v]) => (
-            <div key={l} style={{ textAlign: "center", minWidth: 70, padding: "6px 10px", borderRadius: 8, background: C.cd, border: `1px solid ${v ? "#d4a01766" : C.bd}` }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: v ? "#fde68a" : C.mt }}>{v}</div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: C.mt, letterSpacing: 0.5 }}>{l.toUpperCase()}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div role="tablist" style={{ display: MOBILE ? "none" : "flex", gap: 6, flexWrap: "wrap", marginBottom: 14, position: "sticky", top: 0, zIndex: 5, background: C.bg, padding: "6px 0" }}>
-        {[["banners", "🚩 Banners"], ["trophies", "🏆 Trophies"], ["jackets", "🧥 Gold Jackets"], ["ring", "💍 Ring of Honor"], ["records", "📊 Records"], ...(onPaper ? [["gazette", "📰 Gazette"]] : [])].map(([k, l]) => (
-          <button key={k} role="tab" aria-selected={sec === k} onClick={() => setSec(k)} style={{ background: sec === k ? "#d4a01722" : C.cd, color: sec === k ? "#fde68a" : "#cbd5e1", border: `1px solid ${sec === k ? "#d4a017" : C.bd}`, borderRadius: 999, padding: "7px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>
-        ))}
-      </div>
+      {/* desktop: the Season header already names the screen, so just the sections and a one-line tally */}
+      {!MOBILE && <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: 16, position: "sticky", top: 0, zIndex: 5, background: C.bg, padding: "6px 0" }}>
+        <div style={{ flex: 1, minWidth: 0 }}><Chips items={[["banners", "Banners"], ["trophies", "Trophies"], ["jackets", "Gold Jackets"], ["ring", "Ring of Honor"], ["records", "Records"], ...(onPaper ? [["gazette", "Gazette"]] : [])]} value={sec} onChange={setSec} /></div>
+        <div style={{ fontSize: 15, color: C.mt, fontWeight: 700 }}>{[["Super Bowl", lombardis.length], ["MVP", count("mvp")], ["OPOY", count("opoy")], ["DPOY", count("dpoy")], ["OROY", count("oroy")], ["DROY", count("droy")]].filter(([, v]) => v).map(([l, v]) => <span key={l} style={{ marginLeft: 14 }}><b style={{ color: "#fde68a" }}>{v}</b> {l}{l === "Super Bowl" && v > 1 ? "s" : ""}</span>)}</div>
+      </div>}
       {sec === "banners" && (() => {
         // real history before 2026, then everything won in this league
         const h = TEAM_HISTORY[team.ab] || { d: [], c: [], l: [] };
@@ -323,7 +308,7 @@ function GazetteArchive({ papers, onOpen }) {
     <div style={{ display: "grid", gap: 16 }}>
       {years.map((y) => (
         <div key={y}>
-          <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.6, color: C.mt, marginBottom: 6 }}>{y} SEASON</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 8 }}>{y} season</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 10 }}>
             {papers.filter((p) => p.yr === y).sort((a, b) => order(b) - order(a)).map((p, i) => {
               const [tag, clr] = KIND_TAG[p.kind] || [String(p.round || "PLAYOFFS").toUpperCase(), p.youWon ? "#15803d" : "#57534e"];

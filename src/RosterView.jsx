@@ -11,7 +11,7 @@ import RoleTag from "./RoleTag.jsx";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
 const GROUPS = { ALL: null, OFF: ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT"], DEF: ["DL", "LB", "CB", "S"], ST: ["K", "P"] };
-const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15, minHeight: MOBILE ? 44 : undefined };
+const sel = { background: "#ffffff0a", color: C.tx, border: 0, borderRadius: 12, padding: "9px 12px", fontSize: 15, minHeight: MOBILE ? 44 : undefined };
 const POS_NAME = { QB: "Quarterbacks", RB: "Running backs", WR: "Wide receivers", TE: "Tight ends", LT: "Left tackles", LG: "Left guards", C: "Centers", RG: "Right guards", RT: "Right tackles", DL: "Defensive line", LB: "Linebackers", CB: "Cornerbacks", S: "Safeties", K: "Kickers", P: "Punters" };
 const htS = (i) => (i ? `${Math.floor(i / 12)}'${i % 12}"` : "—");
 // the player picked in the table: who he is, his deal and his best ratings
@@ -21,7 +21,7 @@ function SideCard({ p, slot, dev, onOpen }) {
   const lbl = (k) => k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
   const stat = (l, v) => <div style={{ textAlign: "center" }}><div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: C.mt }}>{l}</div><div style={{ fontSize: 16, fontWeight: 900 }}>{v}</div></div>;
   return (
-    <div style={{ position: "sticky", top: 0, background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 14, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+    <div style={{ position: "sticky", top: 0, background: "#ffffff0a", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ textAlign: "center", border: `2px solid ${oC(p.ovr)}`, borderRadius: 10, padding: "4px 8px" }}><div style={{ fontSize: 26, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</div><div style={{ fontSize: 10, fontWeight: 900, color: C.mt }}>OVR</div></div>
         <Face s={p.face} sz={64} />
@@ -31,12 +31,12 @@ function SideCard({ p, slot, dev, onOpen }) {
         <div style={{ fontSize: 13, color: "#94a3b8", marginTop: 2 }}>{p.num != null ? `#${p.num} ` : ""}{posTag(p)}{slot?.label ? ` · ${slot.label}` : ""}</div>
       </div>
       <div><DevChip dev={dev} /></div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, borderTop: `1px solid ${C.bd}`, paddingTop: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, borderTop: "1px solid #ffffff12", paddingTop: 8 }}>
         {stat("AGE", p.age)}{stat("HT", htS(p.ht_))}{stat("WT", p.wt || "—")}{stat("POT", p.pot || p.ovr)}
       </div>
       <div style={{ fontSize: 13, color: "#cbd5e1" }}>Contract: <b>${(p.salary || 0).toFixed(1)}M</b> a year, {p.contract} year{p.contract === 1 ? "" : "s"} left</div>
       {top.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px" }}>{top.map(([k, v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><span style={{ color: C.mt }}>{lbl(k)}</span><b style={{ color: oC(v) }}>{v}</b></div>)}</div>}
-      <button onClick={onOpen} style={{ background: C.bl, color: "#fff", border: 0, borderRadius: 8, padding: "8px 10px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Open player card</button>
+      <button onClick={onOpen} style={{ background: "#fff", color: "#0b1220", border: 0, borderRadius: 999, padding: "10px 12px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Open player card</button>
     </div>
   );
 }
@@ -73,15 +73,15 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
     .filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => { const x = key[sort[0]](a), y = key[sort[0]](b); return (typeof x === "string" ? x.localeCompare(y) : x - y) * sort[1] || b.ovr - a.ovr; });
   const th = (k, label, opts = {}) => (
-    <th className={opts.hide ? "ro-hide" : undefined} onClick={() => setSort(([s, d]) => [k, s === k ? -d : ["pos", "name"].includes(k) ? 1 : -1])} style={{ padding: "6px 6px", fontSize: 11, fontWeight: 800, letterSpacing: 1, color: sort[0] === k ? "#fff" : C.mt, borderBottom: `1px solid ${C.bd}`, textAlign: opts.left ? "left" : "center", cursor: "pointer", whiteSpace: "nowrap", position: "sticky", top: 0, background: C.cd }}>
+    <th className={opts.hide ? "ro-hide" : undefined} onClick={() => setSort(([s, d]) => [k, s === k ? -d : ["pos", "name"].includes(k) ? 1 : -1])} style={{ padding: "6px 6px", fontSize: 11, fontWeight: 800, letterSpacing: 1, color: sort[0] === k ? "#fff" : C.mt, borderBottom: "1px solid #ffffff14", textAlign: opts.left ? "left" : "center", cursor: "pointer", whiteSpace: "nowrap", position: "sticky", top: 0, background: "#141820" }}>
       {label}{sort[0] === k ? (sort[1] < 0 ? " ▼" : " ▲") : ""}
     </th>
   );
-  const td = { padding: "2px 6px", borderBottom: `1px solid ${C.bd}44`, textAlign: "center", fontSize: 13.5, height: 26 };
+  const td = { padding: "2px 6px", borderBottom: "1px solid #ffffff08", textAlign: "center", fontSize: 13.5, height: 26 };
   const picked = rows.find((p) => p.id === pick) || rows[0] || null;
   let lastPos = null;
   return (
-    <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12 }}>
+    <div style={{ background: "#ffffff0d", borderRadius: 18, padding: 14 }}>
       <style>{"@media (max-width: 640px) { .ro-hide { display: none } }"}</style>
       <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
         <Select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Position" style={sel}>
@@ -103,7 +103,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
               const on = picked?.id === p.id;
               return (
                 <React.Fragment key={p.id}>
-                {groupStart && <tr><td colSpan={8} style={{ padding: "6px 6px 2px", fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: "#7dd3fc", borderBottom: `1px solid ${C.bd}` }}>{(POS_NAME[p.pos] || p.pos).toUpperCase()}</td></tr>}
+                {groupStart && <tr><td colSpan={8} style={{ padding: "14px 6px 4px", fontSize: 14, fontWeight: 800, color: "#fff", borderBottom: "1px solid #ffffff14" }}>{POS_NAME[p.pos] || p.pos}</td></tr>}
                 <tr onClick={() => setPick(p.id)} onDoubleClick={() => setSel(p)} style={{ cursor: "pointer", background: on ? "#3b82f62a" : undefined, outline: on ? `1px solid ${C.bl}` : undefined }} onMouseOver={(e) => { if (!on) e.currentTarget.style.background = "#1e293b66"; }} onMouseOut={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}>
                   <td style={{ ...td, textAlign: "left" }}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
