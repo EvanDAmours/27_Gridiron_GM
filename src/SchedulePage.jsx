@@ -9,7 +9,7 @@ import { gameWeather, wxOf } from "./weather.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
 const tabBtn = (on) => ({ background: on ? `${C.bl}33` : "transparent", color: on ? "#fff" : C.mt, border: `1px solid ${on ? C.bl : C.bd}`, padding: "8px 16px", borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: "pointer" });
-const panel = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12, marginBottom: 12 };
+const panel = { background: "#ffffff0d", borderRadius: 18, padding: 14, marginBottom: 12 };
 
 function MySchedule({ g }) {
   const { sched, teams, ui, wk, sp, byeMap, onBox, onPlay, rivalId } = g;
@@ -202,10 +202,7 @@ export default function SchedulePage(g) {
   if (MOBILE) return <PhoneSchedule g={g} view={view} setView={setView} />;
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: "8px 18px", flexWrap: "wrap", marginBottom: 12 }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}><TeamLogo t={me} sz={44} /><span style={{ fontSize: 24, fontWeight: 900 }}>{yr} Schedule</span></span>
-        <span style={{ fontSize: 15, color: C.mt }}>Record <b style={{ fontSize: 20, color: "#fff" }}>{rec(me)}</b></span>
-      </div>
+      {/* the section header above has the season and record */}
       <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
         <button onClick={() => setView("mine")} style={tabBtn(view === "mine")}>{me.name} schedule</button>
         <button onClick={() => setView("league")} style={tabBtn(view === "league")}>League schedule</button>

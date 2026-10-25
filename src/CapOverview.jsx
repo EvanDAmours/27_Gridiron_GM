@@ -32,11 +32,11 @@ export function capAdvice({ rows, space, nextRoom, canExtend, starters }) {
 // are signed, and the good players whose deals end that year (next year's re-sign calls).
 export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = null, rookies = 0, title = "THE LONG VIEW" }) {
   const yrs = capProjection(team, cy, { extra, room0, rookies });
-  const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
+  const card = { background: "#ffffff0d", borderRadius: 18, padding: "16px 18px" };
   return (
     <div style={card}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd }}>{title}</span>
+        <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#e2e8f0" }}>{title}</span>
         <span style={{ fontSize: 12, color: C.mt }}>Money already committed against each season's cap. Re-signings, rookies and free agents come out of the room.</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${mobile ? 2 : 4},minmax(0,1fr))`, gap: 10 }}>
@@ -44,7 +44,7 @@ export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = 
           const pct = Math.min(100, (y.committed / y.cap) * 100), deadPct = Math.min(pct, (y.dead / y.cap) * 100);
           const tone = y.room < 0 ? C.rd : y.room < y.cap * 0.08 ? C.gd : C.gn;
           return (
-            <div key={y.yr} style={{ background: C.bg, border: `1px solid ${i === 0 ? "#ffffff2a" : C.bd}`, borderRadius: 10, padding: "10px 10px 8px", minWidth: 0 }}>
+            <div key={y.yr} style={{ background: i === 0 ? "#ffffff12" : "#ffffff08", border: 0, borderRadius: 10, padding: "10px 10px 8px", minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}><b style={{ fontSize: 16 }}>{y.yr}</b><span style={{ fontSize: 11, color: C.mt }}>{i === 0 ? "this cap year" : `cap ${$(y.cap)}`}</span></div>
               <div style={{ height: 10, borderRadius: 5, background: C.bd, overflow: "hidden", margin: "6px 0", position: "relative" }} title={`${$(y.committed)} committed of ${$(y.cap)}`}>
                 <div style={{ width: `${pct}%`, height: "100%", background: y.room < 0 ? C.rd : "#38bdf8" }} />
@@ -71,8 +71,8 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
   const byGroup = GROUPS.map(([g, ps]) => [g, team.roster.filter((p) => ps.includes(p.pos)).reduce((s, p) => s + (p.salary || 0), 0), leagueAvg ? leagueAvg(ps) : null]);
   const top = [...team.roster].sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, 8);
   const tips = capAdvice({ rows, space, nextRoom, canExtend, starters });
-  const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
-  const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8 };
+  const card = { background: "#ffffff0d", borderRadius: 18, padding: "16px 18px" };
+  const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#e2e8f0", marginBottom: 10 };
   const CLR = ["#f59e0b", "#38bdf8", "#22c55e", "#ef4444", "#a78bfa", "#ec4899", "#94a3b8"];
   // phones: the advisor first (what to do), then four seasons you swipe, the biggest hits and where
   // the money goes, in soft cards (the headline numbers are in the hero above)

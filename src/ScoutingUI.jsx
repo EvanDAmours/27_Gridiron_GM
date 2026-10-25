@@ -24,8 +24,9 @@ import {
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
 const TONE = { a: "#22c55e", b: "#60a5fa", c: "#f59e0b", d: "#ef4444", "": "#94a3b8" };
 const htS = (i) => `${Math.floor(i / 12)}'${i % 12}"`;
-const panel = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "12px 14px", marginBottom: 10 };
-const head = { fontSize: 14, fontWeight: 800, color: "#7dd3fc", letterSpacing: 1, marginBottom: 8, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" };
+// Home's soft card: no border, rounder corners
+const panel = { background: "#ffffff0d", borderRadius: 18, padding: "16px 18px", marginBottom: 12 };
+const head = { fontSize: 14, fontWeight: 900, color: "#e2e8f0", letterSpacing: 1.2, marginBottom: 10, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" };
 const muted = { fontSize: 13, color: C.mt, lineHeight: 1.5 };
 const chipBtn = (on) => ({ background: on ? C.bl + "33" : "transparent", color: on ? "#fff" : C.mt, border: `1px solid ${on ? C.bl : C.bd}`, padding: "5px 10px", borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: "pointer" });
 const Right = ({ children }) => <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 400, letterSpacing: 0, color: C.mt, fontSize: 13 }}>{children}</span>;
@@ -1243,8 +1244,8 @@ export function ScoutingHQ({ g, go }) {
   const inRange = (p) => !wins.length || wins.some(([lo, hi]) => csRank(p) >= lo && csRank(p) <= hi);
   const pool = cls.filter((p) => inRange(p) && !p.drafted).map((p) => ({ p, read: prospectRead(s, p) })).filter((x) => x.read.cost);
   const targets = [...pool.filter((x) => isNeed(x.p)), ...pool.filter((x) => !isNeed(x.p))].sort((a, b) => (isNeed(b.p) - isNeed(a.p)) || csRank(a.p) - csRank(b.p)).slice(0, 8);
-  const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
-  const h = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8, display: "flex", alignItems: "center", gap: 8 };
+  const card = { background: "#ffffff0d", borderRadius: 18, padding: "16px 18px" };
+  const h = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#e2e8f0", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 };
   if (MOBILE) {
     const picks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !(g.draftLog || []).some((d) => d.id === pk.id)).sort((a, b) => a.overall - b.overall);
     return (
@@ -1366,8 +1367,7 @@ export function ScoutingPage({ g }) {
   return (
     <div>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-        <span style={{ fontSize: 22, fontWeight: 900 }}>{g.sp === "combine" ? `${g.yr + 1} NFL Combine` : `${g.yr + 1} Draft Class`}</span>
-        <span style={{ marginLeft: "auto" }}><ScoutPtsBadge pts={g.scouting?.pts || 0} sc={g.scouting || {}} /></span>
+        {/* the section header above has the class and your scouting points */}
         
         {g.sp === "combine" && <span style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: "#7c3aed33", color: "#c4b5fd", fontWeight: 700 }}>Interviews: {g.scouting?.interviewsLeft || 0}</span>}
       </div>
