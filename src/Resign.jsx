@@ -13,6 +13,8 @@ export default function Resign({ team, yr, nextSpace, talkFor, onNegotiate, setS
   const list = team.roster.filter((p) => p.contract === 1 || p.resigned?.yr === yr).sort((a, b) => b.ovr - a.ovr);
   const td = { padding: "10px 6px", borderBottom: "1px solid #ffffff0a", fontSize: 15, textAlign: "center" };
   const done = list.filter((p) => p.resigned?.yr === yr).length;
+  // the tag is for a cornerstone, so it's only offered on your best few expiring players
+  const tagIds = new Set(list.filter((p) => p.resigned?.yr !== yr).slice(0, 3).map((p) => p.id));
   const status = (p, talk, signed) => <>
     {signed && <span style={{ display: "block", fontSize: 13, color: C.gn, fontWeight: 700 }}>{p.resigned.how === "tag" ? "Franchise tagged" : p.resigned.how === "option" ? "Fifth-year option picked up" : "Re-signed"} · {p.resigned.yrs} yr{p.resigned.yrs > 1 ? "s" : ""}, {money(p.resigned.sal)}/yr</span>}
     {!signed && talk.walked && <span style={{ display: "block", fontSize: 13, color: C.rd, fontWeight: 700 }}>Walked away — he'll test free agency</span>}
@@ -20,7 +22,7 @@ export default function Resign({ team, yr, nextSpace, talkFor, onNegotiate, setS
   </>;
   const actions = (p, talk, signed, sm) => { const b = sm ? { fontSize: 13, padding: "4px 10px", minHeight: 34 } : null; return <>
     {!signed && optionFor(p) != null && <Btn onClick={() => onOption(p)} bg="#7c3aed26" c="#c4b5fd" style={{ ...(b || { fontSize: 13, padding: "6px 12px" }), borderRadius: 999 }} title="Fifth-year option: one more year at a set price">5th-yr option {money(optionFor(p))}</Btn>}
-    {!signed && !tagUsed && tagFor(p) != null && <Btn onClick={() => onTag(p)} bg="#f59e0b1f" c="#fcd34d" style={{ ...(b || { fontSize: 13, padding: "6px 12px" }), borderRadius: 999 }} title="Franchise tag: one more year, no negotiation">Tag {money(tagFor(p))}</Btn>}
+    {!signed && !tagUsed && tagIds.has(p.id) && tagFor(p) != null && <Btn onClick={() => onTag(p)} bg="#f59e0b1f" c="#fcd34d" style={{ ...(b || { fontSize: 13, padding: "6px 12px" }), borderRadius: 999 }} title="Franchise tag: one more year, no negotiation">Tag {money(tagFor(p))}</Btn>}
     {!signed && !talk.walked && <Btn onClick={() => onNegotiate(p)} bg="#22c55e1f" c="#4ade80" style={{ ...(b ? { ...b, padding: "4px 14px" } : { fontSize: 14, padding: "6px 14px" }), border: "1px solid #22c55e55", borderRadius: 999 }}>Negotiate</Btn>}
   </>; };
   return (
@@ -33,7 +35,7 @@ export default function Resign({ team, yr, nextSpace, talkFor, onNegotiate, setS
       </div>
       <div style={{ fontSize: 14, color: "#94a3b8", marginBottom: 12, lineHeight: 1.5 }}>Only you can talk to these players this week. Anyone you don't re-sign becomes a free agent. Lowball one and he may stop talking.{" "}
         <details style={{ display: "inline" }}><summary style={{ display: "inline", cursor: "pointer", color: "#cbd5e1", fontWeight: 700 }}>Tag and fifth-year option</summary>
-          <div style={{ marginTop: 6, background: "#ffffff0d", borderRadius: 14, padding: "10px 14px", color: "#cbd5e1" }}><b style={{ color: "#fcd34d" }}>Franchise tag</b>: any expiring player for one more year at the average of the top five salaries at his position, no talks. One a year{tagUsed ? " (used)" : ""}. <b style={{ color: "#c4b5fd" }}>Fifth-year option</b>: a first-round pick finishing year four of his rookie deal, one more year at a set price.</div>
+          <div style={{ marginTop: 6, background: "#ffffff0d", borderRadius: 14, padding: "10px 14px", color: "#cbd5e1" }}><b style={{ color: "#fcd34d" }}>Franchise tag</b>: one of your top three expiring players for one more year at the average of the top five salaries at his position, no talks. One a year{tagUsed ? " (used)" : ""}. <b style={{ color: "#c4b5fd" }}>Fifth-year option</b>: a first-round pick finishing year four of his rookie deal, one more year at a set price.</div>
         </details>
       </div>
       {MOBILE ? (

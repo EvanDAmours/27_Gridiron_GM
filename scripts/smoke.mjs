@@ -181,9 +181,10 @@ try {
   await healthy("new game"); log("new game"); await census("start");
   { const d0 = await save(); const real = (d0.dc?.[2026] || []).filter((p) => p.real); if (real.length < 100 || !real.some((p) => p.name === "Jeremiah Smith")) fail("new game didn't load the real 2027 draft class"); log(`real draft class (${real.length} real prospects)`); }
   const seen = [];
-  // the top bar has six sections (Home, Team, Season, Draft, Trades & FA, Front Office); each section's
+  // the top bar has six sections (Home, Team, Season, Draft, Trades & FA, Front Office; the League
+  // screens and the Legacy Hall sit under Front Office); each section's
   // screens are tabs under it, so open the section first and then its screen
-  for (const tab of ["Team", "Depth Chart", "Roster", "Coaching", "Front Office", "Season", "Schedule", "Standings", "Playoffs", "Stats", "League", "Record Book", "League History", "Legacy", "Draft", "Scouting", "Draft Recap", "Trades & FA", "Trade", "Free Agency", "Home"]) {
+  for (const tab of ["Team", "Depth Chart", "Roster", "Coaching", "Season", "Schedule", "Standings", "Playoffs", "Stats", "Front Office", "League", "Franchise History", "Record Book", "League History", "Transactions", "Legacy Hall", "Draft", "Scouting", "Draft Recap", "Trades & FA", "Trade", "Free Agency", "Home"]) {
     await dismiss();
     let t = page.locator(`button:text-is("${tab}")`);
     if (!(await t.count())) t = page.getByText(tab, { exact: true });
@@ -194,10 +195,11 @@ try {
   await dismiss(); await page.locator(`button:text-is("Draft")`).first().click(); await page.waitForTimeout(400); await page.locator('button:text-is("Scouting")').first().click(); await page.waitForTimeout(500);
   // preseason: send a scout to a region and lock the assignments in
   await must("Regions", 500);
-  const reg = page.locator('button[aria-label="Scout for SEC"]');
-  if (!(await reg.count())) fail("no scout picker for the SEC");
+  // each scout has a picker per region slot; free the slot that holds the SEC
+  const reg = page.locator('button[aria-label*=": region "]').filter({ hasText: /^SEC/ });
+  if (!(await reg.count())) fail("no scout slot holds the SEC");
   await reg.first().click(); await page.waitForTimeout(200);
-  await page.locator('[role="option"]').filter({ hasText: /^Nobody$/ }).first().click(); await page.waitForTimeout(300);
+  await page.locator('[role="option"]').filter({ hasText: /^Nobody/ }).first().click(); await page.waitForTimeout(300);
   await healthy("scout regions");
   { const ar = (await save()).scouting?.areas || {}; if (Object.values(ar).some((x) => (x || []).includes("SEC"))) fail("region assignment didn't save"); }
   await must("Regions", 500); await healthy("regions view");

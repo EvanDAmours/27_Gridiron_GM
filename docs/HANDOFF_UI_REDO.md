@@ -193,6 +193,21 @@ Office title, "2026 Schedule", "2027 Draft Class" + points box).
   table / phone cards soft, Tag and Option as tinted pills, Negotiate as the same quiet green
   outline as free agency. The free agency "More" drawer is a soft card. The `mkdraft` audit
   scenario now also dumps `save-resign.txt` (set `STOP=1` to stop there); `rsshot` screenshots it.
+- Franchise tag is only offered on your top three unsigned expiring players (by OVR) in Re-sign week.
+- Regions (desktop, `RegionsView`): organized by scout now. One card per scout (face, major/minor,
+  what he knows, stars, "n of cap regions") with a picker per region slot; each option says what
+  the region is deep at, "✓ match" and who has it now. Picking swaps that slot (frees the old
+  region, then assigns the new one). Uncovered regions show as one yellow line. The map column is
+  narrower, desktop dots are smaller (r 4.5) and the map's scout legend is phone-only; the whole
+  screen fits a 900px-tall window. Phones keep the region rows and sheet. The smoke test frees the
+  slot holding the SEC (`button[aria-label*=": region "]`).
+- Navigation: the League screens (League, Franchise History, Record Book, League History,
+  Transactions) and the Legacy Hall moved from Season to **Front Office** (owner's call; briefly a
+  seventh "League" section, then moved). They're tabs on the Front Office header; the old hub chip
+  row is gone on desktop (only Game Updates keeps a second row). Season is Schedule, Standings,
+  Playoffs, Stats.
+- The desktop kickoff preview popup at Start Season ("The 2026 season ... LET'S GO") was removed
+  at the owner's request (it was already off on phones).
 
 ### 4.5 Walkthrough
 `tourSteps(mobile)` in Walkthrough.jsx has a desktop branch rewritten for the new layout (targets
