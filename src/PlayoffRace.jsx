@@ -39,13 +39,13 @@ export default function PlayoffRace({ teams, sched, ui }) {
     );
   };
   return (
-    <div style={{ background: C.cd, border: `1px solid ${C.gd}55`, borderRadius: 10, padding: "8px 10px" }}>
+    <div style={{ background: "#ffffff0d", borderRadius: 18, padding: "12px 14px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-        <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: C.gd, flex: 1 }}>PLAYOFF RACE{played ? "" : " · PRESEASON"}</span>
-        {["AFC", "NFC"].map((c) => <button key={c} onClick={() => setConf(c)} style={{ background: conf === c ? `${C.bl}33` : "transparent", border: `1px solid ${conf === c ? C.bl : C.bd}`, color: conf === c ? "#fff" : C.mt, borderRadius: 999, padding: "1px 10px", fontSize: 11.5, fontWeight: 800, cursor: "pointer" }}>{c}</button>)}
+        <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", flex: 1 }}>Playoff race{played ? "" : " · preseason"}</span>
+        {["AFC", "NFC"].map((c) => <button key={c} onClick={() => setConf(c)} style={{ background: conf === c ? "#ffffff24" : "transparent", border: 0, color: conf === c ? "#fff" : C.mt, borderRadius: 999, padding: "3px 11px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{c}</button>)}
       </div>
       {seeds.map((id, i) => row(id, i + 1))}
-      <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 1, color: C.mt, margin: "4px 6px 1px" }}>IN THE HUNT</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.mt, margin: "6px 6px 1px" }}>In the hunt</div>
       {hunt.map((t) => row(t.id, null))}
     </div>
   );

@@ -30,14 +30,14 @@ export function capAdvice({ rows, space, nextRoom, canExtend, starters }) {
 
 // Four seasons of cap: committed money against each year's cap, the room left, how many players
 // are signed, and the good players whose deals end that year (next year's re-sign calls).
-export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = null, rookies = 0, title = "THE LONG VIEW" }) {
+export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = null, rookies = 0, title = "The long view" }) {
   const yrs = capProjection(team, cy, { extra, room0, rookies });
   const card = { background: "#ffffff0d", borderRadius: 18, padding: "16px 18px" };
   return (
     <div style={card}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#e2e8f0" }}>{title}</span>
-        <span style={{ fontSize: 12, color: C.mt }}>Money already committed against each season's cap. Re-signings, rookies and free agents come out of the room.</span>
+        <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{title}</span>
+        <span style={{ fontSize: 13, color: C.mt }}>Money already committed against each season's cap. Re-signings, rookies and free agents come out of the room.</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${mobile ? 2 : 4},minmax(0,1fr))`, gap: 10 }}>
         {yrs.map((y, i) => {
@@ -72,7 +72,7 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
   const top = [...team.roster].sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, 8);
   const tips = capAdvice({ rows, space, nextRoom, canExtend, starters });
   const card = { background: "#ffffff0d", borderRadius: 18, padding: "16px 18px" };
-  const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#e2e8f0", marginBottom: 10 };
+  const head = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 10 };
   const CLR = ["#f59e0b", "#38bdf8", "#22c55e", "#ef4444", "#a78bfa", "#ec4899", "#94a3b8"];
   // phones: the advisor first (what to do), then four seasons you swipe, the biggest hits and where
   // the money goes, in soft cards (the headline numbers are in the hero above)
@@ -146,7 +146,7 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
       {cy != null && <CapLongView team={team} cy={cy} room0={space} rookies={rookies} onPlayer={onPlayer} mobile={mobile} />}
       <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${mobile ? 280 : 320}px,1fr))`, gap: 10 }}>
         <div style={card}>
-          <div style={head}>WHERE THE MONEY GOES</div>
+          <div style={head}>Where the money goes</div>
           <div style={{ height: 12, borderRadius: 6, background: C.bd, overflow: "hidden", display: "flex", marginBottom: 10 }} title={`${$(used)} used of ${$(cap)}`}>
             {byGroup.map(([g, v], i) => <div key={g} style={{ width: `${(v / cap) * 100}%`, background: ["#f59e0b", "#38bdf8", "#22c55e", "#ef4444", "#a78bfa", "#ec4899", "#94a3b8"][i] }} />)}
           </div>
@@ -166,11 +166,11 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
           })}
         </div>
         <div style={card}>
-          <div style={{ ...head, display: "flex" }}><span style={{ flex: 1 }}>BIGGEST CAP HITS</span>{onContracts && <button onClick={() => onContracts("all")} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", letterSpacing: 0, fontWeight: 700 }}>All {rows.length} contracts →</button>}</div>
+          <div style={{ ...head, display: "flex" }}><span style={{ flex: 1 }}>Biggest cap hits</span>{onContracts && <button onClick={() => onContracts("all")} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", letterSpacing: 0, fontWeight: 700 }}>All {rows.length} contracts →</button>}</div>
           {top.map((p) => <div key={p.id} onClick={() => onPlayer(p)} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, padding: "3px 0", cursor: "pointer" }}><Bdg pos={posTag(p)} /><span style={{ flex: 1 }}>{p.name}</span><b style={{ color: C.gd }}>{$(p.salary)}</b><span style={{ color: C.mt, minWidth: 44, textAlign: "right" }}>{Math.round(((p.salary || 0) / cap) * 100)}%</span></div>)}
         </div>
         <div style={card}>
-          <div style={head}>CAP ADVISOR</div>
+          <div style={head}>Cap advisor</div>
           {!tips.length && <div style={{ fontSize: 14, color: "#94a3b8" }}>Your books are in good shape. Nothing needs doing right now.</div>}
           {/* the top three; the rest a click away */}
           {(allTips ? tips : tips.slice(0, 3)).map((t, i) => (

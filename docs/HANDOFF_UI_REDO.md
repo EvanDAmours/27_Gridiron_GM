@@ -146,6 +146,39 @@ Office title, "2026 Schedule", "2027 Draft Class" + points box).
 - Free agency rows: quiet outline Negotiate. Scouting points badge smaller and calm.
 - Soft cards: `panel`/`head` in ScoutingUI.jsx, `card`/`head` in CapOverview.jsx (and its long-view
   year cards), `panel` in SchedulePage.jsx now use the soft card and white titles.
+- Roster / Coaching / Free Agency: titles the section header already shows are gone; Coaching is
+  soft cards (coach cards, locker room, league staffs, available coaches as rows in one card).
+  Roster sub-tabs (Roster / Practice squad / IR) are white-selected chips; the table is one soft
+  card with plain group headings ("Quarterbacks") and a soft side card (`RosterView.jsx`).
+- Legacy Hall (`TrophyRoom.jsx`, `LegacyHall.jsx`): on desktop the duplicate title row and the six
+  stat boxes are replaced by the section chips plus a one-line tally ("4 Super Bowls · 1 MVP").
+  Headings plain white (`H`, `Shelf`), rafters walls without borders, record cards soft with a
+  quiet "★ Yours", Ring of Honor candidates in soft rows, Gazette years plain.
+- Depth Chart (`DepthChart.jsx`): **bug fixed**: the Field/List toggle was pulled up with a
+  negative margin and slid under the section header; it's now passed in as `viewToggle` and sits
+  on the side-chip row beside "Auto-fill by overall". Side switch is `Chips`, personnel/package
+  buttons are quiet pills, the right panel is a soft "Who plays" card. List view: soft position
+  cards, plain group titles, soft depth warnings.
+- Game plan (`GamePlan.jsx`): the desktop strip is now the same quiet rows as the phone (Offense /
+  Defense / Personnel / Coaching specialties) that open their part in a `Sheet`; the old inline
+  strip and its `tab()` toggles were removed. Cards/heads are soft and sentence case, also in
+  `Personnel.jsx`.
+- `GamePlanCard.jsx`: the scouting report block and the full card are soft; headings plain;
+  Week prep / Change are quiet pills.
+- Stats (`StatsScreen.jsx`): scope and table chips white-selected; leader boards show the top 3
+  (was 5) in soft cards with plain titles; the table is a soft card (sticky column `#141820`
+  matches the card over `C.bg`); award races and personnel tables soft.
+- Standings / Playoffs / Playoff race: soft division cards with plain "AFC East" titles; the
+  playoff picture's duplicate title removed; "In the hunt" in sentence case.
+- League hub: second tab row (League / Franchise History / Record Book / League History /
+  Transactions) is white-selected chips; each of those screens drops its own big title on desktop
+  (phones keep it), and their cards/headings are soft and sentence case (`FranchiseHistory.jsx`,
+  `RecordBook.jsx`, `LeagueHistory.jsx`, `TransactionsWire.jsx`, `LeagueView.jsx`).
+- Inner tab rows without emoji, as white-selected chips: Scouting (HQ / Big Board / ...), Trade
+  (Make a trade / Trade finder / Trade block / 3-way trade), Front Office (Overview / Contracts /
+  How the cap works), Schedule (team / league). Scouting HQ, Cap overview, Trade ("Targets for your
+  needs", "Draft picks") and Draft Recap ("Your class", "Every pick", ...) headings are plain white.
+  `scripts/smoke.mjs` accepts either case for the Draft Recap heading.
 
 ### 4.5 Walkthrough
 `tourSteps(mobile)` in Walkthrough.jsx has a desktop branch rewritten for the new layout (targets
@@ -231,9 +264,11 @@ https://evandamours.github.io/27_Gridiron_GM/ and `/mobile/`. Confirm by fetchin
 text). gh-pages / `scripts/publish-pages.sh` is **not** the live source.
 
 ## 10. Known gaps / next steps
-- Desktop screens below each section header still use some older styling inside (gold caps
-  headings in a few places, bordered boxes in Depth Chart, Stats tables, Legacy Hall, player card,
-  re-sign and draft-day panels). Continue in the same vein: soft cards, white titles, fewer boxes.
-- The phone `GamePlanCard` scout block (`Scout`) still has the older bordered look.
+- Desktop is through every section in the calm style. Still in the older look, by choice or not
+  yet reached: the player card itself (a trading-card design, deliberately kept), ceremony screens
+  (Season Awards, Moments, Rafters night, documentary), small caps eyebrows inside cards (League
+  History plaques, transaction kinds), the re-sign and draft-day panels during those phases (not
+  re-screenshotted this round), the Walkthrough eyebrow and the Offline panel.
+- Scouting HQ's "Scout 1" buttons and the talent map rows are still the older blue buttons.
 - AI-to-AI trades ignore `contractMult` (see §7).
 - The 15 lint warnings are old `react-hooks/exhaustive-deps` warnings in App.jsx.

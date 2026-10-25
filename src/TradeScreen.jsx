@@ -113,7 +113,7 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
               );
             })}
             {!rows.length && <tr><td colSpan={7} style={{ ...td, color: C.mt, fontSize: 14 }}>{needle ? `No one named "${q.trim()}"` : "No players"}</td></tr>}
-            {!needle && picks.length > 0 && <tr><td colSpan={7} style={{ padding: "12px 6px 4px", fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.gd }}>DRAFT PICKS</td></tr>}
+            {!needle && picks.length > 0 && <tr><td colSpan={7} style={{ padding: "12px 6px 4px", fontSize: 14, fontWeight: 800, color: "#fff" }}>Draft picks</td></tr>}
             {!needle && picks.map((pk) => {
               const on = chosenPk.some((x) => x.id === pk.id);
               return (
@@ -269,8 +269,8 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
     <div>
       <style>{"@media (max-width: 640px) { .tr-hide { display: none } }"}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-        <span style={{ fontSize: 24, fontWeight: 900 }}>Trade with</span>
-        {them && <button onClick={() => pick(null)} title="Pick a different team" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "4px 12px 4px 6px", color: "#e2e8f0", cursor: "pointer", fontSize: 16, fontWeight: 800 }}><TeamLogo t={them} sz={28} />{MOBILE ? them.ab : `${them.city} ${them.name}`}<span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>change ▾</span></button>}
+        <span style={{ fontSize: MOBILE ? 24 : 18, fontWeight: 800 }}>Trade with</span>
+        {them && <button onClick={() => pick(null)} title="Pick a different team" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#ffffff12", border: 0, borderRadius: 999, padding: "4px 14px 4px 6px", color: "#e2e8f0", cursor: "pointer", fontSize: 16, fontWeight: 800 }}><TeamLogo t={them} sz={28} />{MOBILE ? them.ab : `${them.city} ${them.name}`}<span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>change ▾</span></button>}
         <span style={{ fontSize: 14, color: C.mt }}>Your cap space: <b style={{ color: capSpace(me) >= 0 ? C.gn : C.rd }}>{money(capSpace(me))}</b></span>
       </div>
 
@@ -320,7 +320,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
         </div>
       ) : (<>
         <div role="tablist" style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-          {[["teams", "By team"], ["best", "League's best by position"]].map(([k, l]) => <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)} style={{ background: view === k ? `${C.bl}33` : C.cd, color: view === k ? "#fff" : "#cbd5e1", border: `1px solid ${view === k ? C.bl : C.bd}`, borderRadius: 999, padding: "6px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
+          {[["teams", "By team"], ["best", "League's best by position"]].map(([k, l]) => <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)} style={{ background: view === k ? "#ffffff24" : "transparent", color: view === k ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: "6px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
         </div>
         {view === "best" ? <BestAt teams={teams} ui={ui} pos={bpos} setPos={setBpos} onPick={(t, p) => { setTrTm(t.id); setTrOff({ g: [], r: [p], gPk: [], rPk: [] }); }} setSel={setSel} /> :
         // a grid of logos beats a 31-line dropdown
@@ -344,7 +344,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
           if (!needs.length) return null;
           return (
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8 }}>TARGETS FOR YOUR NEEDS</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Targets for your needs</div>
               <div style={{ display: "grid", gridTemplateColumns: `repeat(${needs.length}, minmax(0, 1fr))`, gap: 10 }}>
                 {needs.map((pos) => {
                   const list = teams.filter((t) => t.id !== ui).flatMap((t) => t.roster.filter((p) => needGroup(p) === pos && !p.injured).map((p) => ({ p, t }))).sort((a, b) => b.p.ovr - a.p.ovr).slice(0, 5);

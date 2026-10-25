@@ -29,8 +29,8 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
     teams.forEach((t, ti) => [...t.roster, ...(t.ir || [])].forEach((p) => { if (p.ss && (p.ss.gp || 0) > 0) all.push({ p, t, ti }); }));
     return LEADERS.map(([title, v, ok, cols]) => ({ title, cols, top: all.filter((x) => ok(x.p) && v(x.p.ss) > 0).sort((a, b) => v(b.p.ss) - v(a.p.ss)).slice(0, 3) }));
   }, [teams]);
-  const panel = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "10px 12px" };
-  const head = { fontSize: 13, fontWeight: 900, letterSpacing: 1.4, color: "#e2e8f0" };
+  const panel = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px" };
+  const head = { fontSize: 16, fontWeight: 800, color: "#fff" };
   const Side = ({ t, i, s, won }) => (
     <span onClick={() => onTeam?.(i)} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", minWidth: 0, opacity: won === false ? 0.55 : 1 }}>
       <TeamLogo t={t} sz={mobile ? 26 : 30} />
@@ -47,7 +47,7 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.25fr) minmax(360px,1fr)", gap: 12, alignItems: "start" }}>
       <div style={panel}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <span style={head}>WEEKLY SCHEDULE</span>
+          <span style={head}>Weekly schedule</span>
           <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6 }}>
             <button aria-label="Previous week" disabled={week <= (weeks[0] || 1)} onClick={() => setW(Math.max(weeks[0] || 1, week - 1))} style={{ background: C.bg, color: "#fff", border: `1px solid ${C.bd}`, borderRadius: 6, padding: "2px 9px", cursor: "pointer" }}>‹</button>
             <b style={{ fontSize: 14, minWidth: 64, textAlign: "center" }}>Week {week}</b>
@@ -59,7 +59,7 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
             const A = teams[g.a], H = teams[g.h];
             const mine = g.h === ui || g.a === ui;
             return (
-              <div key={k} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8, background: mine ? "#16a34a1a" : C.bg, border: `1px solid ${mine ? "#16a34a66" : C.bd + "88"}`, borderRadius: 8, padding: "6px 10px" }}>
+              <div key={k} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8, background: mine ? "#16a34a1a" : "#ffffff08", borderRadius: 12, padding: "7px 12px" }}>
                 <Side t={A} i={g.a} s={g.played ? g.as : null} won={g.played ? g.as > g.hs : undefined} />
                 <span style={{ fontSize: 11, color: C.mt, fontWeight: 800 }}>{g.played ? "FINAL" : "AT"}</span>
                 <Side t={H} i={g.h} s={g.played ? g.hs : null} won={g.played ? g.hs > g.as : undefined} />
@@ -71,7 +71,7 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
         {games.length > 0 && byes.length > 0 && <div style={{ fontSize: 12, color: C.mt, marginTop: 8 }}>Bye: {byes.join(", ")}</div>}
       </div>
       <div style={panel}>
-        <div style={{ ...head, marginBottom: 6 }}>LEAGUE LEADERS</div>
+        <div style={{ ...head, marginBottom: 6 }}>League leaders</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 14px" }}>
           {leaders.map((b) => (
             <div key={b.title} style={{ minWidth: 0 }}>

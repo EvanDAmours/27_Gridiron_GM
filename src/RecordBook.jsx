@@ -12,19 +12,19 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
   const career = { ...newCareerBook(), ...(book.career || {}) };
   const chase = useMemo(() => (view === "career" ? careerChasers(book, teams) : {}), [view, book, teams]);
   const byAb = (ab) => teams.find((t) => t.ab === ab);
-  const panel = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: 14, marginBottom: 12 };
-  const head = { fontSize: 13, fontWeight: 900, letterSpacing: 1.5, color: "#fcd34d", marginBottom: 10 };
+  const panel = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px", marginBottom: 12 };
+  const head = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 10 };
   const open = (pid) => { const p = pid && findPlayer(pid); if (p) setSel(p); };
   return (
     <div style={{ maxWidth: 1100 }}>
-      <div style={{ fontSize: 26, fontWeight: 900 }}>Record Book</div>
-      <div style={{ fontSize: 14, color: C.mt, marginBottom: 10 }}>Regular season only. The NFL's marks stand until someone in your league beats them.</div>
-      <div style={{ display: "inline-flex", gap: 4, background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 3, marginBottom: 12 }}>
-        {[["season", "Single season"], ["career", "Career"]].map(([k, l]) => <button key={k} onClick={() => setView(k)} style={{ background: view === k ? "#1d4ed8" : "transparent", color: view === k ? "#fff" : C.mt, border: 0, borderRadius: 8, padding: "7px 16px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
+      {MOBILE && <div style={{ fontSize: 26, fontWeight: 900 }}>Record Book</div>}
+      <div style={{ fontSize: 15, color: C.mt, marginBottom: 12 }}>Regular season only. The NFL's marks stand until someone in your league beats them.</div>
+      <div style={{ display: "inline-flex", gap: 4, background: "#ffffff0d", borderRadius: 999, padding: 3, marginBottom: 12 }}>
+        {[["season", "Single season"], ["career", "Career"]].map(([k, l]) => <button key={k} onClick={() => setView(k)} style={{ background: view === k ? "#ffffff24" : "transparent", color: view === k ? "#fff" : C.mt, border: 0, borderRadius: 999, padding: "7px 16px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
       </div>
       {view === "career" && (
         <div style={panel}>
-          <div style={head}>NFL CAREER RECORDS</div>
+          <div style={head}>NFL career records</div>
           {/* a phone: one stacked block per record */}
           {MOBILE && CAREER_DEFS.map((d) => {
             const r = career[d.key], mine = !r.nfl, c = chase[d.key];
@@ -65,7 +65,7 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
       )}
       {view === "season" && watch.length > 0 && (
         <div style={{ ...panel, borderColor: "#f59e0b88" }}>
-          <div style={head}>📈 RECORD WATCH · {yr}</div>
+          <div style={head}>Record watch · {yr}</div>
           {watch.slice(0, 6).map((w) => (
             <div key={`${w.key}${w.pid}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: `1px solid ${C.bd}66` }}>
               {byAb(w.team) && <TeamLogo t={byAb(w.team)} sz={26} />}
@@ -76,7 +76,7 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
         </div>
       )}
       {view === "season" && <div style={panel}>
-        <div style={head}>SINGLE-SEASON RECORDS</div>
+        <div style={head}>Single-season records</div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>{["RECORD", "MARK", "HELD BY"].map((h) => <th key={h} style={{ textAlign: "left", fontSize: 12, color: C.mt, letterSpacing: 1, padding: "6px 4px", borderBottom: `1px solid ${C.bd}` }}>{h}</th>)}</tr></thead>
@@ -102,7 +102,7 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
         </div>
       </div>}
       <div style={panel}>
-        <div style={head}>RECORDS BROKEN OR TIED IN YOUR LEAGUE</div>
+        <div style={head}>Records broken or tied in your league</div>
         {[...book.history].reverse().map((h, i) => (
           <div key={i} style={{ fontSize: 14, padding: "6px 0", borderBottom: `1px solid ${C.bd}66` }}>
             <b>{h.yr}</b> · <span onClick={() => open(h.pid)} style={{ fontWeight: 800, cursor: "pointer" }}>{h.name}</span> ({h.team}) {h.tie ? <>tied {h.prev.name}'s {h.label.toLowerCase()} record ({recordValue(h.key, h.val)}) 🤝</> : <>took the {h.career ? "career " : ""}{h.label.toLowerCase()} record from {h.prev.name} ({recordValue(h.key, h.prev.val)})</>}

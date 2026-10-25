@@ -1188,7 +1188,7 @@ function TalentMap({ g, go, card, h }) {
   const ar = areasOf(s);
   return (
     <div style={card}>
-      <div style={h}>WHERE THE TALENT IS{g.sp === "freeagency" ? " · NEXT CLASS" : ""}<span style={{ marginLeft: "auto" }}><Btn onClick={() => go("regions")} bg={C.bd} c="#e2e8f0" style={{ fontSize: 12, padding: "3px 10px" }}>Regions →</Btn></span></div>
+      <div style={h}>Where the talent is{g.sp === "freeagency" ? " · next class" : ""}<span style={{ marginLeft: "auto" }}><Btn onClick={() => go("regions")} bg={C.bd} c="#e2e8f0" style={{ fontSize: 12, padding: "3px 10px" }}>Regions →</Btn></span></div>
       {AREA_KEYS.map((k) => { const r = rep[k]; const on = SCOUT_SLOTS.filter((sl) => s[sl] && ar[sl].includes(k)); return (
         <div key={k} onClick={() => go("regions")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderTop: `1px solid ${C.bd}66`, fontSize: 13, cursor: "pointer" }}>
           <b style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{regionName(k)}</b>
@@ -1215,7 +1215,7 @@ export function PickCabinet({ g, compact }) {
   return (
     <div style={{ background: `linear-gradient(135deg, ${me?.clr || "#1e3a8a"}55, ${C.cd} 55%)`, border: `1px solid ${C.bd}`, borderRadius: 12, padding: compact ? "10px 12px" : "14px 16px" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.6, color: "#e2e8f0" }}>{live ? "YOUR PICKS" : g.sp === "regular" || g.sp === "playoffs" ? "IF THE SEASON ENDED TODAY" : "YOUR PICKS IN THIS DRAFT"}</span>
+        <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{live ? "Your picks" : g.sp === "regular" || g.sp === "playoffs" ? "If the season ended today" : "Your picks in this draft"}</span>
         {rec && !live && <span style={{ fontSize: 13, color: C.mt }}>{me.name} {rec}{g.sp === "preseason" ? " (last season's order)" : ""}</span>}
       </div>
       {picks.length ? <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1245,7 +1245,7 @@ export function ScoutingHQ({ g, go }) {
   const pool = cls.filter((p) => inRange(p) && !p.drafted).map((p) => ({ p, read: prospectRead(s, p) })).filter((x) => x.read.cost);
   const targets = [...pool.filter((x) => isNeed(x.p)), ...pool.filter((x) => !isNeed(x.p))].sort((a, b) => (isNeed(b.p) - isNeed(a.p)) || csRank(a.p) - csRank(b.p)).slice(0, 8);
   const card = { background: "#ffffff0d", borderRadius: 18, padding: "16px 18px" };
-  const h = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#e2e8f0", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 };
+  const h = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 };
   if (MOBILE) {
     const picks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !(g.draftLog || []).some((d) => d.id === pk.id)).sort((a, b) => a.overall - b.overall);
     return (
@@ -1286,7 +1286,7 @@ export function ScoutingHQ({ g, go }) {
       )}
       <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "minmax(0,1.35fr) minmax(0,1fr)", gap: 12, alignItems: "start" }}>
         <div style={card}>
-          <div style={h}>SCOUT THESE NEXT<span style={{ marginLeft: "auto", color: C.mt, letterSpacing: 0, fontWeight: 700 }}>in range of your picks · needs: {needs.join(", ")}</span></div>
+          <div style={h}>Scout these next<span style={{ marginLeft: "auto", color: C.mt, fontSize: 13, fontWeight: 600 }}>in range of your picks · needs: {needs.join(", ")}</span></div>
           {g.sp === "combine" && <div style={{ paddingBottom: 8, borderBottom: `1px solid ${C.bd}` }}><div style={{ fontSize: 13, fontWeight: 800, color: "#c4b5fd", marginBottom: 4 }}>COMBINE VISITS: interview or work out these before the draft</div><ScoutShortlist g={g} isNeed={isNeed} compact /></div>}
           {targets.map(({ p, read }) => (
             <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: `1px solid ${C.bd}66` }}>
@@ -1305,7 +1305,7 @@ export function ScoutingHQ({ g, go }) {
         <div style={{ display: "grid", gap: 12 }}>
           <TalentMap g={g} go={go} card={card} h={h} compact />
           <div style={card}>
-            <div style={h}>YOUR SCOUTS<span style={{ marginLeft: "auto" }}><Btn onClick={() => go("scouts")} bg={C.bd} c="#e2e8f0" style={{ fontSize: 12, padding: "3px 10px" }}>Manage →</Btn></span></div>
+            <div style={h}>Your scouts<span style={{ marginLeft: "auto" }}><Btn onClick={() => go("scouts")} bg={C.bd} c="#e2e8f0" style={{ fontSize: 12, padding: "3px 10px" }}>Manage →</Btn></span></div>
             {SCOUT_SLOTS.map((r) => { const sc = s[r]; return (
               <div key={r} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderTop: `1px solid ${C.bd}66`, fontSize: 13 }}>
                 <span style={{ width: 60, whiteSpace: "nowrap", fontSize: 11, fontWeight: 900, color: slotKind(r) === "major" ? "#f5c542" : "#60a5fa" }}>{SCOUT_ROLES[r].short.toUpperCase()}</span>
@@ -1332,7 +1332,7 @@ export function ScoutingPage({ g }) {
   useEffect(() => { if (g.sp === "combine") setView("combine"); }, [g.sp]);
   // the to-do list can open a view directly ("Send your scouts to their regions")
   useEffect(() => { const f = (e) => setView(e.detail); window.addEventListener("gm:scouting", f); return () => window.removeEventListener("gm:scouting", f); }, []);
-  const views = [["hq", "🏠 Scouting HQ"], ["board", "Big Board"], ["list", `Your list (${listIds(g.scouting, g.yr).length})`], ["mock", "Mock Draft"], hasCombine && ["combine", "Combine"], ["regions", "Regions"], ["scouts", "Scouts"]].filter(Boolean);
+  const views = [["hq", "Scouting HQ"], ["board", "Big Board"], ["list", `Your list (${listIds(g.scouting, g.yr).length})`], ["mock", "Mock Draft"], hasCombine && ["combine", "Combine"], ["regions", "Regions"], ["scouts", "Scouts"]].filter(Boolean);
   const v = views.some(([k]) => k === view) ? view : "hq";
   const myPicks = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !(g.draftLog || []).some((d) => d.id === pk.id)).sort((a, b) => a.overall - b.overall);
   const [more, setMore] = useState(false);
@@ -1372,7 +1372,7 @@ export function ScoutingPage({ g }) {
         {g.sp === "combine" && <span style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: "#7c3aed33", color: "#c4b5fd", fontWeight: 700 }}>Interviews: {g.scouting?.interviewsLeft || 0}</span>}
       </div>
       <div className="pill-row" style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
-        {views.map(([k, label]) => <button key={k} onClick={() => setView(k)} style={{ ...chipBtn(v === k), fontSize: 15, padding: "8px 16px" }}>{label}</button>)}
+        {views.map(([k, label]) => <button key={k} onClick={() => setView(k)} style={{ background: v === k ? "#fff" : "#ffffff12", color: v === k ? "#0b1220" : "#cbd5e1", border: 0, borderRadius: 999, fontSize: 15, fontWeight: 800, padding: "9px 16px", cursor: "pointer" }}>{label}</button>)}
       </div>
       {v === "board" && (
         <>

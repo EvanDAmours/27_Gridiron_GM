@@ -25,8 +25,8 @@ export default function TransactionsWire({ wire = [], teams = [], ui }) {
     if (groups[groups.length - 1]?.key !== key) groups.push({ key, items: [] });
     groups[groups.length - 1].items.push(e);
   }
-  const chip = (on) => ({ background: on ? `${C.bl}33` : "transparent", color: on ? "#fff" : C.mt, border: `1px solid ${on ? C.bl : C.bd}`, borderRadius: 999, padding: MOBILE ? "8px 12px" : "5px 12px", fontSize: 13, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" });
-  const selStyle = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "6px 10px", fontSize: 14, flex: MOBILE ? 1 : "0 0 auto", minWidth: 0 };
+  const chip = (on) => ({ background: on ? "#ffffff24" : "transparent", color: on ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: MOBILE ? "8px 12px" : "5px 12px", fontSize: 13, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" });
+  const selStyle = { background: "#ffffff12", color: C.tx, border: 0, borderRadius: 999, padding: "8px 14px", fontSize: 14, flex: MOBILE ? 1 : "0 0 auto", minWidth: 0 };
   const filters = (<>
     <Select value={team} onChange={(e) => setTeam(e.target.value)} aria-label="Club" style={selStyle}>
       <option value="all">All clubs</option>
@@ -40,8 +40,8 @@ export default function TransactionsWire({ wire = [], teams = [], ui }) {
   return (
     <div style={{ maxWidth: 1100 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-        <div style={{ fontSize: 22, fontWeight: 900 }}>Transactions</div>
-        {!MOBILE && <div style={{ fontSize: 13, color: C.mt }}>Every trade, signing, release, coaching move and retirement around the league.</div>}
+        {MOBILE && <div style={{ fontSize: 22, fontWeight: 900 }}>Transactions</div>}
+        {!MOBILE && <div style={{ fontSize: 15, color: C.mt }}>Every trade, signing, release, coaching move and retirement around the league.</div>}
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: MOBILE ? "nowrap" : "wrap", overflowX: MOBILE ? "auto" : "visible", alignItems: "center", marginBottom: MOBILE ? 6 : 10, paddingBottom: MOBILE ? 2 : 0 }}>
         <button onClick={() => setKind("all")} style={chip(kind === "all")}>All</button>
@@ -49,10 +49,10 @@ export default function TransactionsWire({ wire = [], teams = [], ui }) {
         {!MOBILE && <><span style={{ flex: 1 }} />{filters}</>}
       </div>
       {MOBILE && <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>{filters}</div>}
-      {!groups.length && <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 16, color: C.mt, fontSize: 14 }}>Nothing on the wire yet. Trades, signings and coaching moves show up here as they happen.</div>}
+      {!groups.length && <div style={{ background: "#ffffff0d", borderRadius: 18, padding: 16, color: C.mt, fontSize: 14 }}>Nothing on the wire yet. Trades, signings and coaching moves show up here as they happen.</div>}
       {groups.map((g) => (
-        <div key={g.key} style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "8px 12px", marginBottom: 8 }}>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: C.mt, marginBottom: 4 }}>{g.key.toUpperCase()}</div>
+        <div key={g.key} style={{ background: "#ffffff0d", borderRadius: 18, padding: "12px 16px", marginBottom: 10 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 6 }}>{g.key}</div>
           {g.items.map((e, i) => {
             const mine = (e.tm || []).includes(ui);
             return (

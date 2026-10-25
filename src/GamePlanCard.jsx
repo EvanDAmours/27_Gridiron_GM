@@ -20,8 +20,8 @@ function Scout({ r, opp, onPersonnel }) {
   const mixTxt = Object.entries(r.opp.mix).filter(([, w]) => w >= 0.05).sort((a, b) => b[1] - a[1]).map(([k, w]) => `${k}: ${P(w)}%`).join(" · ");
   const pickBtn = (field, key, label) => <button onClick={() => onPersonnel(field, key)} style={{ marginLeft: 6, background: `${C.gn}22`, border: `1px solid ${C.gn}88`, color: "#86efac", borderRadius: 6, padding: "1px 8px", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>Use {label}</button>;
   return (
-    <div style={{ marginTop: 10, background: C.bg, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "9px 11px" }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.gd, marginBottom: 4 }}>🔎 SCOUTING REPORT · {opp.ab || opp.name}</div>
+    <div style={{ marginTop: 10, background: "#ffffff08", borderRadius: 14, padding: "12px 14px" }}>
+      <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Scouting report: {opp.ab || opp.name}</div>
       <div style={{ fontSize: 12.5, color: "#cbd5e1", lineHeight: 1.45 }}>Offense: <b>{r.opp.set}</b> ({mixTxt}). Defense: base {P(pk.base)}% · nickel {P(pk.nickel)}% · dime {P(pk.dime)}%.</div>
       {r.notes.map((n, i) => <div key={i} style={{ fontSize: 12.5, lineHeight: 1.45, marginTop: 3, color: n.tone === "watch" ? "#fcd34d" : "#86efac" }}>{n.tone === "watch" ? "⚠️" : "🎯"} {n.text}</div>)}
       <div style={{ fontSize: 12.5, marginTop: 6, color: "#e2e8f0", lineHeight: 1.6 }}>
@@ -103,13 +103,13 @@ export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto
     );
   }
   return (
-    <div style={bare ? {} : { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px", marginBottom: 12 }}>
+    <div style={bare ? {} : { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px", marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd }}>🎯 GAME PLAN vs {opp.ab || opp.name}</span>
+        <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>Game plan vs {opp.ab || opp.name}</span>
         <span style={{ fontSize: 12, color: set ? "#fde68a" : C.mt }}>{set ? "your call for this game" : "your coaches' pick (best fit)"}</span>
         {(() => { const lbl = (list, k) => list.find((x) => x.key === k); const o = lbl(OFF_PLANS, cur.off), d = lbl(DEF_PLANS, cur.def); return !open && <span style={{ fontSize: 13, fontWeight: 800 }}>{o?.icon} {o?.label} <b style={{ color: GRADE_C[planGrade(opts.off[cur.off].v)] }}>{planGrade(opts.off[cur.off].v)}</b> · {d?.icon} {d?.label} <b style={{ color: GRADE_C[planGrade(opts.def[cur.def].v)] }}>{planGrade(opts.def[cur.def].v)}</b></span>; })()}
-        {onHub && <button onClick={onHub} title="Everything for this game on one screen" style={{ marginLeft: "auto", background: `${C.gd}22`, border: `1px solid ${C.gd}88`, color: "#fde68a", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 800, padding: "3px 9px" }}>📋 Week prep</button>}
-        <button onClick={() => setOpen(!open)} style={{ marginLeft: onHub ? 0 : "auto", background: "transparent", border: `1px solid ${C.bd}`, color: "#93c5fd", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 800, padding: "3px 10px" }}>{open ? "Done ▴" : "Change ▾"}</button>
+        {onHub && <button onClick={onHub} title="Everything for this game on one screen" style={{ marginLeft: "auto", background: "#ffffff12", border: 0, color: "#e2e8f0", borderRadius: 999, cursor: "pointer", fontSize: 13, fontWeight: 800, padding: "5px 12px" }}>Week prep</button>}
+        <button onClick={() => setOpen(!open)} style={{ marginLeft: onHub ? 0 : "auto", background: "#ffffff12", border: 0, color: "#e2e8f0", borderRadius: 999, cursor: "pointer", fontSize: 13, fontWeight: 800, padding: "5px 12px" }}>{open ? "Done ▴" : "Change ▾"}</button>
         {set && open && <button onClick={onAuto} style={{ marginLeft: "auto", background: "none", border: "none", color: "#93c5fd", textDecoration: "underline", cursor: "pointer", fontSize: 12, padding: 0 }}>Use the coaches' pick</button>}
       </div>
       {!open && report?.notes?.[0] && <div style={{ fontSize: 12.5, marginTop: 6, color: report.notes[0].tone === "watch" ? "#fcd34d" : "#86efac", lineHeight: 1.4 }}>🔎 {report.notes[0].text}</div>}

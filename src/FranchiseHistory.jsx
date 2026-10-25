@@ -6,8 +6,9 @@ import { MOBILE } from "./mobile.js";
 import { legacyRank, legacyTier } from "./gmLegacy.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 
-const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: 12, marginBottom: 12 };
-const head = (c = "#38bdf8") => ({ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: c, marginBottom: 8 });
+const card = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px", marginBottom: 12 };
+// section titles are plain white now; the color argument is kept so callers don't change
+const head = () => ({ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 8 });
 
 export default function FranchiseHistory({ team, seasons = [], current, titles = [], champs = [], teams = [], playoffs = 0, docs = [], career, gmRetired, onLegacy, onWatch, onShare }) {
   const rows = [...seasons.filter((s) => s.yr !== current?.yr), ...(current && (current.w || current.l) ? [current] : [])].sort((a, b) => b.yr - a.yr);
@@ -18,22 +19,22 @@ export default function FranchiseHistory({ team, seasons = [], current, titles =
   const best = Math.max(1, ...rows.map((s) => (s.w || 0) + (s.l || 0)));
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-        <TeamLogo t={team} sz={MOBILE ? 44 : 56} />
+      <div style={{ display: MOBILE || onShare ? "flex" : "none", alignItems: "center", gap: 12, marginBottom: 12 }}>
+        {MOBILE && <TeamLogo t={team} sz={44} />}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: MOBILE ? 21 : 26, fontWeight: 900 }}>Franchise History</div>
-          <div style={{ fontSize: 14, color: C.mt }}>{team.city} {team.name} · since you took over</div>
+          {MOBILE ? <><div style={{ fontSize: 21, fontWeight: 900 }}>Franchise History</div>
+          <div style={{ fontSize: 14, color: C.mt }}>{team.city} {team.name} · since you took over</div></> : <div style={{ fontSize: 15, color: C.mt }}>{team.city} {team.name} since you took over</div>}
         </div>
-        {onShare && <button onClick={onShare} style={{ background: "transparent", color: "#7dd3fc", border: `1px solid ${C.bd}`, borderRadius: 8, padding: "6px 12px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>📋 Share</button>}
+        {onShare && <button onClick={onShare} style={{ background: "#ffffff12", color: "#e2e8f0", border: 0, borderRadius: 999, padding: "8px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Share</button>}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "repeat(3,1fr)" : "repeat(6,1fr)", gap: 8, marginBottom: 12 }}>
-        {[["RECORD", `${w}-${l}`], ["WIN %", `${pct}%`], ["SUPER BOWLS", titles.length, titles.length ? "#fbbf24" : null], ["PLAYOFF TRIPS", playoffs], ["SEASONS", rows.length || 1], ["GM LEGACY", career?.score ?? 0, "#fde68a"]].map(([k, v, c]) => (
-          <div key={k} style={{ ...card, marginBottom: 0, textAlign: "center", padding: "10px 6px" }}><div style={{ fontSize: 22, fontWeight: 900, color: c || C.tx }}>{v}</div><div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, color: C.mt }}>{k}</div></div>
+        {[["Record", `${w}-${l}`], ["Win %", `${pct}%`], ["Super Bowls", titles.length, titles.length ? "#fbbf24" : null], ["Playoff trips", playoffs], ["Seasons", rows.length || 1], ["GM legacy", career?.score ?? 0, "#fde68a"]].map(([k, v, c]) => (
+          <div key={k} style={{ ...card, marginBottom: 0, textAlign: "center", padding: "10px 6px" }}><div style={{ fontSize: 22, fontWeight: 900, color: c || C.tx }}>{v}</div><div style={{ fontSize: 13, fontWeight: 700, color: C.mt }}>{k}</div></div>
         ))}
       </div>
-      <div style={{ ...card, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "linear-gradient(135deg,#78350f44,#111827)", border: "1px solid #f59e0b66" }}>
+      <div style={{ ...card, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "linear-gradient(135deg,#78350f44,#ffffff0d)" }}>
         <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={head("#fcd34d")}>🎓 YOUR GM LEGACY</div>
+          <div style={head("#fcd34d")}>Your GM legacy</div>
           <div style={{ fontSize: 17, fontWeight: 900 }}>{gmRetired ? `Retired after ${gmRetired.yr}` : career ? legacyTier(career.score, career.seasons) : "Just getting started"}{rank && rank <= 10 ? ` · #${rank} all time` : ""}</div>
           <div style={{ fontSize: 13, color: "#cbd5e1" }}>{gmRetired ? "Your career is in the books. Look back on it, or come out of retirement." : "Your whole career, a legacy score, and where you rank among the greatest GMs ever."}</div>
         </div>
@@ -41,7 +42,7 @@ export default function FranchiseHistory({ team, seasons = [], current, titles =
       </div>
       <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "1fr 1fr", gap: 12 }}>
         <div style={{ ...card, marginBottom: 0 }}>
-          <div style={head("#fbbf24")}>🏆 SUPER BOWL TITLES</div>
+          <div style={head("#fbbf24")}>Super Bowl titles</div>
           {titles.length ? titles.slice().sort((a, b) => b.yr - a.yr).map((c) => { const o = c.opp != null ? teams[c.opp] : null; return (
             <div key={c.yr} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: `1px solid ${C.bd}66` }}>
               <b style={{ width: 44, color: "#fde68a" }}>{c.yr}</b>
@@ -50,7 +51,7 @@ export default function FranchiseHistory({ team, seasons = [], current, titles =
             </div>); }) : <div style={{ fontSize: 14, color: C.mt }}>No titles yet. The ring is still out there.</div>}
         </div>
         <div style={{ ...card, marginBottom: 0 }}>
-          <div style={head("#f59e0b")}>🎬 FRANCHISE DOCUMENTARIES</div>
+          <div style={head("#f59e0b")}>Franchise documentaries</div>
           {docs.length ? docs.map((d) => (
             <div key={d.yrs} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: `1px solid ${C.bd}66` }}>
               <span style={{ flex: 1, fontSize: 14 }}><b>The {d.yrs} Era</b> <span style={{ color: C.mt }}>· {d.w}-{d.l} · {d.tier}</span></span>
@@ -60,7 +61,7 @@ export default function FranchiseHistory({ team, seasons = [], current, titles =
         </div>
       </div>
       <div style={{ ...card, marginTop: 12 }}>
-        <div style={head()}>📅 SEASON BY SEASON</div>
+        <div style={head()}>Season by season</div>
         {rows.map((s) => { const g = (s.w || 0) + (s.l || 0), wp = g ? s.w / g : 0, champ = won.has(s.yr); return (
           <div key={s.yr} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0", borderBottom: `1px solid ${C.bd}55` }}>
             <b style={{ width: 44, color: C.mt }}>{s.yr}</b>

@@ -8,7 +8,7 @@ import { HOLIDAYS } from "./holidays.js";
 import { gameWeather, wxOf } from "./weather.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
-const tabBtn = (on) => ({ background: on ? `${C.bl}33` : "transparent", color: on ? "#fff" : C.mt, border: `1px solid ${on ? C.bl : C.bd}`, padding: "8px 16px", borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: "pointer" });
+const tabBtn = (on) => ({ background: on ? "#fff" : "#ffffff12", color: on ? "#0b1220" : "#cbd5e1", border: 0, padding: "9px 16px", borderRadius: 999, fontSize: 15, fontWeight: 800, cursor: "pointer" });
 const panel = { background: "#ffffff0d", borderRadius: 18, padding: 14, marginBottom: 12 };
 
 function MySchedule({ g }) {

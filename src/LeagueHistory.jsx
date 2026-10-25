@@ -10,14 +10,14 @@ import { posTag } from "./dline.js";
 const AW = [["mvp", "Most Valuable Player"], ["opoy", "Offensive Player"], ["dpoy", "Defensive Player"], ["oroy", "Offensive Rookie"], ["droy", "Defensive Rookie"], ["cpoy", "Comeback Player"], ["coy", "Coach of the Year"], ["sbmvp", "Super Bowl MVP"]];
 const AW_SHORT = { mvp: "MVP", opoy: "OPOY", dpoy: "DPOY", oroy: "OROY", droy: "DROY", cpoy: "CPOY", coy: "COY", sbmvp: "SB MVP" };
 const num = (v) => (Number.isInteger(v) ? v.toLocaleString("en-US") : (+v).toFixed(1));
-const SECTIONS = [["champs", "🏆 Champions"], ["awards", "🏅 Awards"], ["leaders", "📊 Career leaders"], ["hof", "🏛️ Hall of Fame"], ["retired", "👋 Retirements"]];
+const SECTIONS = [["champs", "Champions"], ["awards", "Awards"], ["leaders", "Career leaders"], ["hof", "Hall of Fame"], ["retired", "Retirements"]];
 
 export default function LeagueHistory({ teams, champs = [], awards = [], retired = [], yr, ui, setSel, findPlayer }) {
   const [sec, setSec] = useState("champs");
   const [stat, setStat] = useState("passYds");
   const years = [...new Set(awards.map((a) => a.yr))].sort((a, b) => b - a);
   const [awYr, setAwYr] = useState(years[0]);
-  const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: 12 };
+  const card = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px" };
   const team = (ab) => teams.find((t) => t.ab === ab);
   const retiredById = new Map(retired.map((r) => [r.id, r]));
   // a player wherever he is now: on a roster, or retired (his saved card)
@@ -32,11 +32,11 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
   return (
     <div style={{ maxWidth: 1100 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ fontSize: 26, fontWeight: 900 }}>League History</div>
-        <div style={{ fontSize: 14, color: C.mt }}>Since your league began in 2026 · {titles.length} Super Bowl{titles.length === 1 ? "" : "s"} played{myTitles ? ` · ${myTitles} yours` : ""} · {hof.length} Hall of Famer{hof.length === 1 ? "" : "s"}</div>
+        {MOBILE && <div style={{ fontSize: 26, fontWeight: 900 }}>League History</div>}
+        <div style={{ fontSize: 15, color: C.mt }}>Since your league began in 2026 · {titles.length} Super Bowl{titles.length === 1 ? "" : "s"} played{myTitles ? ` · ${myTitles} yours` : ""} · {hof.length} Hall of Famer{hof.length === 1 ? "" : "s"}</div>
       </div>
       <div role="tablist" style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "10px 0 12px" }}>
-        {SECTIONS.map(([k, l]) => <button key={k} role="tab" aria-selected={sec === k} onClick={() => setSec(k)} style={{ background: sec === k ? "#1e3a5f" : "transparent", color: sec === k ? "#e0f2fe" : C.mt, border: `1px solid ${sec === k ? "#38bdf8" : C.bd}`, borderRadius: 999, padding: "7px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
+        {SECTIONS.map(([k, l]) => <button key={k} role="tab" aria-selected={sec === k} onClick={() => setSec(k)} style={{ background: sec === k ? "#ffffff24" : "transparent", color: sec === k ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: "7px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
       </div>
 
       {sec === "champs" && (titles.length ? <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "repeat(auto-fill,minmax(250px,1fr))", gap: 10 }}>

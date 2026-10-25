@@ -231,7 +231,7 @@ try {
   if (await cont.count()) await cont.click();
   await click("Sim Draft", 3000);
   await healthy("draft");
-  if (!(await page.evaluate(() => /Draft Recap/.test(document.body.innerText) && /YOUR CLASS|EVERY PICK/.test(document.body.innerText)))) fail("draft recap didn't open after the draft");
+  if (!(await page.evaluate(() => /Draft Recap/.test(document.body.innerText) && /YOUR CLASS|Your class|EVERY PICK|Every pick/.test(document.body.innerText)))) fail("draft recap didn't open after the draft");
   if (process.env.SMOKE_SHOTS) await page.screenshot({ path: `${process.env.SMOKE_SHOTS}/recap.png`, fullPage: true });
   log("draft and draft recap"); await census("draft");
   await must("→ Next Season", 3000); await healthy("next season");

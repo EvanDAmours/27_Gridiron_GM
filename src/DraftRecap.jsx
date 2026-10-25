@@ -35,7 +35,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
   const mine = grades[ui];
   const past = view < yr || !current;
   const panel = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: 14, marginBottom: 12 };
-  const head = { fontSize: 13, fontWeight: 900, letterSpacing: 1.5, color: "#fcd34d", marginBottom: 10 };
+  const head = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 10 };
   const open = (id) => { const p = id != null && findPlayer(id); if (p) setSel(p); };
   const now = (id) => (past ? findPlayer(id) : null);
 
@@ -67,7 +67,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
           <div style={{ fontSize: 40, fontWeight: 900, color: GRADE_C[mine.grade], lineHeight: 1 }}>{mine.grade}</div>
           <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.5, color: "#fcd34d" }}>YOUR CLASS</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>Your class</div>
             <div style={{ fontSize: 14, color: C.mt }}>{mine.picks.length} picks · {mine.hits} hit{mine.hits === 1 ? "" : "s"} (Star or better) · ranked {mine.rank} of {topClasses.length}</div>
           </div>
         </div>
@@ -88,7 +88,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 12 }}>
         <div style={panel}>
-          <div style={head}>💎 HIDDEN GEMS AND BEST TRAITS</div>
+          <div style={head}>Hidden gems and best traits</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
             {Object.keys(DEV_TRAITS).map((k) => <span key={k} style={{ fontSize: 13, color: C.mt }}><DevChip dev={k} /> {counts[k] || 0}</span>)}
           </div>
@@ -104,7 +104,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
           {!jackpots.length && <div style={{ fontSize: 14, color: C.mt }}>No Star-or-better traits in this class.</div>}
         </div>
         <div style={panel}>
-          <div style={head}>📊 CLASS GRADES</div>
+          <div style={head}>Class grades</div>
           {topClasses.map((g) => (
             <div key={g.ti} onClick={() => setTeamF(teamF === g.ti ? -1 : g.ti)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: `1px solid ${C.bd}44`, cursor: "pointer", background: g.ti === ui ? "#22c55e12" : teamF === g.ti ? "#3b82f61a" : "transparent" }}>
               <span style={{ width: 22, fontSize: 12, color: C.mt }}>{g.rank}</span>
@@ -119,7 +119,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
 
       <div style={panel}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-          <div style={{ ...head, marginBottom: 0, flex: 1 }}>📋 EVERY PICK</div>
+          <div style={{ ...head, marginBottom: 0, flex: 1 }}>Every pick</div>
           {[["all", "All"], ["mine", "Mine"], ["hits", "Hits"]].map(([k, l]) => <Btn key={k} onClick={() => setShow(k)} bg={show === k ? "#1e3a5f" : "transparent"} c={show === k ? "#7dd3fc" : C.mt} style={{ fontSize: 13, padding: "4px 10px", border: `1px solid ${C.bd}` }}>{l}</Btn>)}
           {teamF >= 0 && <Btn onClick={() => setTeamF(-1)} bg="transparent" c={C.mt} style={{ fontSize: 13, padding: "4px 10px", border: `1px solid ${C.bd}` }}>{teams[teamF]?.ab} ✕</Btn>}
         </div>

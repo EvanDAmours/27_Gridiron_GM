@@ -24,10 +24,10 @@ function Conference({ conf, teams, ui }) {
     </div>
   );
   return (
-    <div style={{ flex: "1 1 360px", minWidth: 0, background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 12px 8px" }}>
-      <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: 1, marginBottom: 6 }}>{conf}</div>
+    <div style={{ flex: "1 1 360px", minWidth: 0, background: "#ffffff0d", borderRadius: 18, padding: "14px 14px 8px" }}>
+      <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>{conf}</div>
       {seeds.map((t, i) => <Row key={t.id} t={t} seed={i + 1} tag={i === 0 ? "BYE" : i < 4 ? "DIV" : "WC"} />)}
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt, margin: "8px 0 2px 8px" }}>IN THE HUNT</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: C.mt, margin: "10px 0 2px 8px" }}>In the hunt</div>
       {hunt.map((t) => <Row key={t.id} t={t} gb={back(last, t)} />)}
     </div>
   );
@@ -40,8 +40,7 @@ export default function PlayoffPicture({ teams, ui, wk, onBox }) {
   const me = teams[ui];
   return (
     <div>
-      <div style={{ fontSize: 24, fontWeight: 900 }}>Playoff picture</div>
-      <div style={{ fontSize: 14, color: C.mt, marginBottom: 10 }}>If the season ended today{wk ? ` (after Week ${wk})` : ""}. Seeds 1-4 are division leaders, 5-7 wild cards; the #1 seed gets the only bye.
+      <div style={{ fontSize: 15, color: C.mt, marginBottom: 12 }}>If the season ended today{wk ? ` (after Week ${wk})` : ""}. Seeds 1-4 are division leaders, 5-7 wild cards; the #1 seed gets the only bye.
         {me && <b style={{ color: mine >= 0 ? C.gn : C.rd }}> The {me.name} are {mine >= 0 ? `the ${me.c} #${(mine % 7) + 1} seed` : "out right now"}.</b>}
       </div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
