@@ -33,9 +33,35 @@ function Side({ t, rating, right, star, teams }) {
   );
 }
 
+// The phase's hero when there's no game: your club's colors and mark, what time of year it is, a
+// few numbers that matter now, and the buttons that move the year on.
+function PhaseHero({ me, eyebrow, title, sub, stats = [], primary = [] }) {
+  return (
+    <div data-tour="promo" style={{ position: "relative", minHeight: 300, borderRadius: 22, overflow: "hidden", padding: "34px 44px", background: `radial-gradient(120% 140% at 0% 0%, ${me.clr}, ${me.clr}33 55%, #0b1120 100%)` }}>
+      <span aria-hidden="true" style={{ position: "absolute", right: -40, top: -50, opacity: 0.09, pointerEvents: "none", transform: "rotate(-8deg)", filter: "grayscale(1) brightness(4)" }}><TeamLogo t={me} sz={420} /></span>
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 26 }}>
+        <TeamLogo t={me} sz={112} glow />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.8, color: "#ffffffcc", textTransform: "uppercase" }}>{eyebrow}</div>
+          <div style={{ fontFamily: BLOCK, fontSize: 64, fontWeight: 700, lineHeight: 1, textTransform: "uppercase", marginTop: 6, textShadow: "0 4px 24px #0009" }}>{title}</div>
+          {sub && <div style={{ fontSize: 18, color: "#ffffffcc", marginTop: 8 }}>{sub}</div>}
+        </div>
+      </div>
+      <div style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 34, marginTop: 30, flexWrap: "wrap" }}>
+        {stats.map(([l, v, c]) => <div key={l}><div style={{ fontSize: 30, fontWeight: 900, color: c || "#fff", lineHeight: 1 }}>{v}</div><div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: "#ffffffb3", marginTop: 6, textTransform: "uppercase" }}>{l}</div></div>)}
+        <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
+          {primary.map((b, i) => <button key={b.label} onClick={b.onClick} style={{ minHeight: 52, padding: "0 26px", borderRadius: 14, border: 0, background: i === 0 ? C.gn : "#ffffff24", color: "#fff", fontSize: 17, fontWeight: 900, cursor: "pointer", boxShadow: i === 0 ? "0 8px 24px #0008" : "none" }}>{b.label.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, "")}</button>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // away and home are drawn left and right, like the score bug. primary: [{ label, onClick }] for
 // this week (Play, Sim). spread: "NYG −3" or "Pick'em". eyebrow: what kind of game it is.
-export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, spread, primary = [], menu = [], planCard, stories = [], news = [], teams, onStory, side, rest, extra, injuries, onInbox }) {
+// No game this week (a bye, or the off-season): phase = { me, eyebrow, title, sub, stats: [[label, value, color]] }
+// takes the promo's place, and middle = { title, body } the game plan's.
+export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, spread, primary = [], menu = [], planCard, stories = [], news = [], teams, onStory, side, rest, extra, injuries, onInbox, phase, middle }) {
   const [devOpen, setDevOpen] = useState(false);
   const [injOpen, setInjOpen] = useState(false);
   // the to-do list (and the inbox) open these sheets from anywhere in the app
@@ -44,7 +70,7 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
     window.addEventListener("gm:home", f); window.__gmDeskHome = true;
     return () => { window.removeEventListener("gm:home", f); window.__gmDeskHome = false; };
   }, []);
-  const pa = featuredPlayer(away), ph = featuredPlayer(home);
+  const pa = away && featuredPlayer(away), ph = home && featuredPlayer(home);
   const hol = HOLIDAYS[game?.holiday];
   // the to-do list: the week's main job is the Play button now, so the list starts after it
   const todo = menu.slice(1).filter((m) => !/more to do$/.test(m.label));
@@ -54,8 +80,9 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
   return (
     <div className="keep-dark" style={{ color: "#fff" }}>
       <style>{FONT_CSS}</style>
+      {phase && <PhaseHero {...phase} primary={primary} />}
       {/* the promo */}
-      <div data-tour="promo" style={{ position: "relative", height: "clamp(380px, calc(var(--vh, 100vh) - 420px), 560px)", borderRadius: 22, overflow: "hidden", background: `linear-gradient(100deg, ${away.clr} 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr} 100%)` }}>
+      {!phase && <div data-tour="promo" style={{ position: "relative", height: "clamp(380px, calc(var(--vh, 100vh) - 420px), 560px)", borderRadius: 22, overflow: "hidden", background: `linear-gradient(100deg, ${away.clr} 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr} 100%)` }}>
         {pa && <div style={{ position: "absolute", left: "23%", bottom: -20 }}><PlayerArt p={pa} ab={away.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         {ph && <div style={{ position: "absolute", right: "23%", bottom: -20 }}><PlayerArt p={ph} ab={home.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, transparent 52%, ${C.bg} 100%)` }} />
@@ -68,7 +95,7 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
           {forecast && <span style={tag} title={forecast.note || undefined}>{forecast.icon} {forecast.label}</span>}
           {primary.map((b, i) => <button key={b.label} onClick={b.onClick} style={{ marginLeft: i === 0 ? 12 : 0, minHeight: 52, padding: "0 26px", borderRadius: 14, border: 0, background: i === 0 ? C.gn : "#ffffff24", color: "#fff", fontSize: 17, fontWeight: 900, cursor: "pointer", boxShadow: i === 0 ? "0 8px 24px #0008" : "none" }}>{b.label}</button>)}
         </div>
-      </div>
+      </div>}
       {extra}
       {/* three quiet cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14, marginTop: 16 }}>
@@ -88,8 +115,8 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
           </div>
         </div>
         <div style={card}>
-          <div style={h2}>Game plan</div>
-          {plan || <div style={{ fontSize: 15, color: "#94a3b8" }}>Your coaches set it before every game.</div>}
+          <div style={h2}>{middle ? middle.title : "Game plan"}</div>
+          {middle ? middle.body : plan || <div style={{ fontSize: 15, color: "#94a3b8" }}>Your coaches set it before every game.</div>}
         </div>
         <div style={{ ...card, cursor: lead && (lead.inc || lead.retire) && onStory ? "pointer" : "default" }} onClick={lead && (lead.inc || lead.retire) && onStory ? () => onStory(lead) : undefined}>
           <div style={h2}>Top story</div>
