@@ -111,13 +111,12 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
   return (
     <div>
       <style>{"@media (max-width: 640px) { .fa-hide { display: none } }"}</style>
-      <div style={{ display: "flex", alignItems: "baseline", gap: "6px 20px", flexWrap: "wrap", marginBottom: 12 }}>
-        <span style={{ fontSize: 24, fontWeight: 900 }}>Free Agency</span>
-        <span style={{ fontSize: 15, color: C.mt }}>Cap space <b style={{ fontSize: 20, color: cap >= 0 ? C.gn : C.rd }}>{money(cap)}</b>{out > 0 && <span style={{ fontSize: 13 }}> after {nOut} open offer{nOut > 1 ? "s" : ""} ({money(out)})</span>}</span>
-        <span style={{ fontSize: 15, color: C.mt }}>Roster <b style={{ fontSize: 20, color: "#fff" }}>{team.roster.length}</b>/53</span>
-        <span style={{ fontSize: 15, color: C.mt }}>{fa.length} free agents</span>
+      {/* the Trades & FA header above has the cap and roster; what's left: open offers and the pool size */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: "6px 20px", flexWrap: "wrap", marginBottom: 12, fontSize: 15, color: C.mt }}>
+        <span><b style={{ color: "#fff" }}>{fa.length}</b> free agents</span>
+        {out > 0 && <span><b style={{ color: "#fde68a" }}>{money(out)}</b> held in {nOut} open offer{nOut > 1 ? "s" : ""}</span>}
       </div>
-      {!open && <div style={{ background: `${C.gd}18`, border: `1px solid ${C.gd}55`, borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 15, color: "#fde68a" }}>The big free agency period opens after the Combine. Right now it's whoever is left on the market.</div>}
+      {!open && <div style={{ background: "#ffffff0d", borderRadius: 14, padding: "12px 16px", marginBottom: 12, fontSize: 15, color: "#cbd5e1" }}>The big free agency period opens after the Combine. Right now it's whoever is left on the market.</div>}
       {market && (
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: `${C.bl}14`, border: `1px solid ${C.bl}55`, borderRadius: 10, padding: "10px 14px", marginBottom: 12 }}>
           <span style={{ fontSize: 18, fontWeight: 900 }}>📅 Day {market.day} of {FA_DAYS}</span>
