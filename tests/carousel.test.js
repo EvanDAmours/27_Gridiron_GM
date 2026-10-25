@@ -40,18 +40,35 @@ test("with firing turned off the owner grumbles but never fires you", async () =
   assert.equal(ownerReview(8, { w: 2, l: 15 }).verdict, "fired");
 });
 
-test("coaches age and retire: a 70-year-old head coach is usually done within a few years", async () => {
-  const { coachingCarousel, coachAge } = await import("../src/carousel.js");
+test("head coaches retire when their contract ends, at their own age, and say so first", async () => {
+  const { coachingCarousel, coachAge, hcRetireAge, hcRetiring, hcExtMax } = await import("../src/carousel.js");
   assert.equal(coachAge({ name: "Andy Reid", role: "HC" }, 2026), 68);
-  let retired = 0;
-  for (let k = 0; k < 200; k++) {
-    const teams = [{ ab: "KC", coach: { hc: { id: "r", name: "Old Coach", role: "HC", rating: 90, age: 70 } } }, { ab: "X", coach: {} }];
-    const r = coachingCarousel(teams, [{ w: 12, l: 5 }, { w: 8, l: 9 }], 1, { yr: 2030 });
-    if (r.moves.some((m) => m.kind === "retired")) retired++;
-  }
-  assert.ok(retired > 60 && retired < 140, `retired ${retired}/200`);
-  const young = [{ ab: "KC", coach: { hc: { id: "y", name: "Young Coach", role: "HC", rating: 80, age: 45 } } }, { ab: "X", coach: {} }];
-  const r = coachingCarousel(young, [{ w: 12, l: 5 }, { w: 8, l: 9 }], 1, { yr: 2030 });
-  assert.equal(young[0].coach.hc.age, 46, "a year older");
+  const old = { id: "r", name: "Old Coach", role: "HC", rating: 90 };
+  const R = hcRetireAge(old);
+  assert.ok(R >= 64 && R <= 72);
+  // past his age with two years left: he's said this deal is his last, and won't extend
+  const c2 = { ...old, age: R, contract: 2 };
+  assert.equal(hcRetiring(c2, 2030), 2031);
+  assert.equal(hcExtMax(c2, 2030), 0);
+  const play = (c) => { const teams = [{ ab: "KC", coach: { hc: c } }, { ab: "X", coach: {} }]; return { r: coachingCarousel(teams, [{ w: 12, l: 5 }, { w: 8, l: 9 }], 1, { yr: 2030 }), t: teams[0] }; };
+  // a year in: no retirement yet (he never walks away mid-deal), one announcement
+  let { r, t } = play(c2);
   assert.ok(!r.moves.some((m) => m.kind === "retired"));
+  assert.equal(t.coach.hc.contract, 1);
+  assert.equal(r.moves.filter((m) => m.kind === "lastDeal").length, 1);
+  // the deal runs out: he retires
+  ({ r, t } = play({ ...t.coach.hc }));
+  assert.ok(r.moves.some((m) => m.kind === "retired"));
+  assert.ok(!r.moves.some((m) => m.kind === "lastDeal"), "said once");
+  // a young coach whose deal ends signs on again, never past his exit age
+  const young = { id: "y", name: "Young Coach", role: "HC", rating: 80, age: 45, contract: 1 };
+  ({ r, t } = play(young));
+  assert.equal(t.coach.hc.age, 46, "a year older");
+  assert.ok(t.coach.hc.contract >= 2 && r.moves.some((m) => m.kind === "renewed"));
+  assert.ok(!r.moves.some((m) => m.kind === "retired"));
+  // close to his age, an extension stops short of it
+  const near = { ...old, age: R - 3, contract: 1 };
+  assert.equal(hcExtMax(near, 2030), 2);
+  assert.equal(hcRetiring({ ...near, contract: 3 }, 2030), null);
+  assert.equal(hcRetiring({ ...near, contract: 4 }, 2030), 2033);
 });

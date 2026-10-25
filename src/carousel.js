@@ -21,6 +21,20 @@ export function coachAge(c, yr) {
 }
 export const coachRetireChance = (age) => (age >= 71 ? 0.5 : age >= 68 ? 0.3 : age >= 65 ? 0.15 : age >= 62 ? 0.06 : 0);
 
+// A head coach doesn't walk away mid-deal: he plans his exit. Each has the age he'll step away at
+// (64-72, the same every time for the same coach), and when his contract runs out at or past it,
+// he retires instead of signing again. You hear it as soon as his current deal will take him there,
+// and he won't sign an extension that runs past it.
+// yr: the season being played (or just finished, before the new league year).
+export const hcRetireAge = (c) => 64 + (hash(`${c?.name || c?.id}:exit`) % 9);
+// the last season of his contract
+export const hcEndYear = (c, yr) => yr + Math.max(1, c?.contract || 1) - 1;
+const ageIn = (c, yr, s) => coachAge(c, yr) + (s - yr);
+// He retires when this contract ends (null if not).
+export const hcRetiring = (c, yr) => (c && ageIn(c, yr, hcEndYear(c, yr)) >= hcRetireAge(c) ? hcEndYear(c, yr) : null);
+// The most years an extension can add before he'd rather retire.
+export const hcExtMax = (c, yr) => (c ? Math.max(0, hcRetireAge(c) - 1 - ageIn(c, yr, hcEndYear(c, yr))) : 0);
+
 const ROLE = { hc: "HC", oc: "OC", dc: "DC", st: "ST" };
 const TITLE = { hc: "head coach", oc: "offensive coordinator", dc: "defensive coordinator", st: "special teams coordinator" };
 const pct = (t) => ((t.w || 0) + 0.5 * (t.t || 0)) / Math.max(1, (t.w || 0) + (t.l || 0) + (t.t || 0));
@@ -42,9 +56,24 @@ export function coachingCarousel(coachTeams, perf, ui, { pool = [], rand = Math.
       const c = coach[role];
       if (!c) continue;
       const age = coachAge(c, yr) + 1;
+      if (role === "hc") {
+        // a head coach's deal counts down too; when it ends he retires if he's reached his age,
+        // otherwise he signs on again (2-4 years, never past his exit)
+        const left = (c.contract || 3) - 1;
+        if (left <= 0 && hcRetiring(c, yr)) { moves.push({ ti: i, role, kind: "retired", name: c.name, age }); coach.hc = null; continue; }
+        if (left > 0) { coach.hc = { ...c, age, contract: left }; continue; }
+        const room = Math.max(0, hcRetireAge(c) - 1 - age);
+        const yrs = Math.max(1, Math.min(room + 1, 2 + Math.floor(rand() * 3)));
+        coach.hc = { ...c, age, contract: yrs };
+        moves.push({ ti: i, role, kind: "renewed", name: c.name, yrs });
+        continue;
+      }
       if (rand() < coachRetireChance(age)) { moves.push({ ti: i, role, kind: "retired", name: c.name, age }); coach[role] = null; }
       else coach[role] = { ...c, age };
     }
+    // the head coach who now knows his deal is his last says so
+    // (once: the season he's said is stamped on him)
+    if (coach.hc) { const end = hcRetiring(coach.hc, yr + 1); if (end != null && coach.hc.lastSeason !== end) { coach.hc = { ...coach.hc, lastSeason: end }; moves.push({ ti: i, role: "hc", kind: "lastDeal", name: coach.hc.name, end, age: coachAge(coach.hc, yr + 1) }); } }
     if (i === ui) { t.coach = coach; return; }
     const p = pct(perf[i]);
     const fire = (role, why) => { const c = coach[role]; if (!c) return; moves.push({ ti: i, role, kind: "fired", name: c.name, why }); market.push({ ...c, contract: 2, fired: true, from: t.ab }); coach[role] = null; };
@@ -76,6 +105,8 @@ export function coachingCarousel(coachTeams, perf, ui, { pool = [], rand = Math.
 export const describeMove = (m, teams) => {
   const t = teams[m.ti];
   if (m.kind === "retired") return `👋 ${t.city} ${t.name} ${TITLE[m.role]} ${m.name} retires at ${m.age}.`;
+  if (m.kind === "renewed") return `✍️ The ${t.city} ${t.name} sign head coach ${m.name} to a ${m.yrs}-year extension.`;
+  if (m.kind === "lastDeal") return `📣 ${t.city} ${t.name} head coach ${m.name} (${m.age}) says ${m.end} will be his last season.`;
   return m.kind === "fired"
     ? `🔥 The ${t.city} ${t.name} fire ${TITLE[m.role]} ${m.name} after ${m.why}.`
     : `🤝 The ${t.city} ${t.name} hire ${m.name} as ${TITLE[m.role]}${m.scheme && m.role !== "st" ? ` (${m.scheme})` : ""}, rated ${m.rating}.`;

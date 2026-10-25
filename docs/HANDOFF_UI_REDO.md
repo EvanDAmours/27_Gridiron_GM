@@ -389,6 +389,16 @@ background commands with `until` loops.
   when there is no player. Spotlight gained `backdrop` and `art` props.
 - Draft safeties: `shapeSafety` leans up to 30 points (12 missed about 3 in 1000 prospects).
 
+### Head coaches retire at the end of their contract
+- carousel.js: every head coach has an exit age (`hcRetireAge`, 64-72 from his name). His contract
+  now counts down each off-season (it never did); when it ends he retires if he's reached that age
+  (`hcRetiring`), otherwise he re-signs for 2-4 years, never past it (AI clubs and yours). He no
+  longer retires at random mid-deal (coordinators still do). The off-season he first knows, a
+  `lastDeal` move goes on the wire and you get a toast; `coach.hc.lastSeason` keeps it to once.
+- App: `hcLeaving(c)` is the notice on the Coaching page (desktop and phone), in the extend dialog
+  and as a Home inbox item in his last two seasons (dismissible). `hcExtMax` caps extensions short
+  of his exit age; 0 shows "Retiring" instead of Extend, and `extendCoach` refuses it too.
+
 ## 9. Deploying
 `.github/workflows/deploy-pages.yml` builds with `npm run build:pages:all` and deploys **only from
 `main` or `claude/scouting-overhaul`**. After verifying: push the work branch, then

@@ -17,7 +17,7 @@ export const KINDS = [
 export function classify(text) {
   const s = String(text || "");
   if (/^📡|^🔁 DRAFT-DAY TRADE|^⚡ URGENT TRADE|^🤝 Trade with/.test(s)) return "trade";
-  if (/^🤝 The .* hire |^🔥 The .* fire |^👋 .* (head coach|coordinator|special teams coach) .* retires at/.test(s)) return "coach";
+  if (/^🤝 The .* hire |^🔥 The .* fire |^👋 .* (head coach|coordinator|special teams coach) .* retires at|^✍️ The .* sign head coach |^📣 .* head coach .* says .* last season/.test(s)) return "coach";
   if (/^✍️ (Signed|Re-signed|VET MIN)|^📰 .* signs with |^🏷️|^5️⃣/.test(s)) return "sign";
   if (/^Released |→ WAIVERS/.test(s)) return "release";
   if ((/^👋 .* retires/.test(s) && !/free agent\) retires/.test(s)) || /^🎖️ .* retires at/.test(s)) return "retire";

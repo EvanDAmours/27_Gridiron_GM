@@ -8,7 +8,7 @@ import { posTag } from "./dline.js";
 const ROLE_NAME = { HC: "Head coach", OC: "Offensive coordinator", DC: "Defensive coordinator", ST: "Special teams" };
 const tag = (t, c) => <span style={{ fontSize: 11, fontWeight: 800, color: c, background: `${c}22`, borderRadius: 4, padding: "1px 6px", whiteSpace: "nowrap" }}>{t}</span>;
 
-export default function PhoneCoaching({ staff, yr, scPts, coachAge, hcTrait, hcStyle, hotSeat = [], roster = [], faCoaches = [], cap, gamePlan, clr, logo, onUpgrade, onExtend, onFire, onHire, onMeeting }) {
+export default function PhoneCoaching({ hcNote, hcExtOk = true, staff, yr, scPts, coachAge, hcTrait, hcStyle, hotSeat = [], roster = [], faCoaches = [], cap, gamePlan, clr, logo, onUpgrade, onExtend, onFire, onHire, onMeeting }) {
   const [pick, setPick] = useState(null); // ["HC" | "OC" | ...] or { hire: coach }
   const [room, setRoom] = useState(false);
   const roles = ["HC", "OC", "DC", "ST"];
@@ -76,7 +76,8 @@ export default function PhoneCoaching({ staff, yr, scPts, coachAge, hcTrait, hcS
           ))}
           {pick !== "HC" && <div style={{ borderTop: "1px solid #ffffff14", padding: "10px 0 4px" }}><div style={{ display: "flex", fontSize: 13, color: "#94a3b8", marginBottom: 6 }}><span>Experience</span><span style={{ marginLeft: "auto" }}>{(sel.xp || 0) % 20}/20 to +1</span></div><div style={{ height: 6, background: "#ffffff14", borderRadius: 3, overflow: "hidden" }}><div style={{ width: `${Math.round((((sel.xp || 0) % 20) / 20) * 100)}%`, height: "100%", background: "#3b82f6" }} /></div></div>}
           {pick !== "HC" && <button disabled={scPts < 2 || sel.rating >= 95} onClick={() => { onUpgrade(pick); setPick(null); }} style={{ ...big("#1e3a5f", "#bfdbfe"), opacity: scPts < 2 || sel.rating >= 95 ? 0.5 : 1 }}>Upgrade +5 · 2 SP</button>}
-          <button disabled={scPts < 1} onClick={() => { onExtend(pick); setPick(null); }} style={{ ...big("#14532d", "#bbf7d0"), opacity: scPts < 1 ? 0.5 : 1 }}>Extend his contract</button>
+          {pick === "HC" && hcNote && <div style={{ background: "#78350f33", borderRadius: 14, padding: "10px 14px", margin: "10px 0 2px", fontSize: 15, color: "#fde68a", lineHeight: 1.5 }}>👋 {hcNote}</div>}
+          {(pick !== "HC" || hcExtOk) && <button disabled={scPts < 1} onClick={() => { onExtend(pick); setPick(null); }} style={{ ...big("#14532d", "#bbf7d0"), opacity: scPts < 1 ? 0.5 : 1 }}>Extend his contract</button>}
           <button onClick={() => { if (window.confirm(`Fire ${sel.name}? He goes into the coaching pool, where any club can hire him.`)) { onFire(pick); setPick(null); } }} style={big("transparent", "#fca5a5")}>Fire {sel.name.split(" ").slice(-1)[0]}</button>
           <div style={{ height: 8 }} />
         </Sheet>
