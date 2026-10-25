@@ -347,8 +347,9 @@ function LiveFieldView({ ballYard, toGo, off, def, offHome = true, offDepth, def
       {/* numbers, upright at the bottom and upside down at the top, like a real field */}
       {[10, 20, 30, 40, 50, 60, 70, 80, 90].map((y) => (
         <g key={y} fill="#fff" fillOpacity=".8" fontSize="20" fontWeight="900" textAnchor="middle" fontFamily="'Arial Black', Arial, sans-serif">
-          <text x={xOf(y)} y={H - 16}>{y <= 50 ? y : 100 - y}</text>
-          <text x={xOf(y)} y={30} transform={`rotate(180 ${xOf(y)} 23)`}>{y <= 50 ? y : 100 - y}</text>
+          {/* set in from the sidelines (as on a real field), clear of a holiday frame's art over the edges */}
+          <text x={xOf(y)} y={H - 40}>{y <= 50 ? y : 100 - y}</text>
+          <text x={xOf(y)} y={54} transform={`rotate(180 ${xOf(y)} 47)`}>{y <= 50 ? y : 100 - y}</text>
         </g>
       ))}
       <rect x="0" y="0" width={W} height={H} fill="url(#lf-shade)" />
