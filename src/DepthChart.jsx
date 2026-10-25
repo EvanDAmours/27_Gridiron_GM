@@ -38,7 +38,7 @@ const FORMS = {
 // The defense in each package: base (3 linebackers), nickel (the SAM off, a nickel back on), dime
 // (one linebacker, two extra defensive backs). The front four, the outside corners and the safeties
 // are the same in all three.
-const DEF_CORE = [["CB", 0, 6, 62], ["DL", 0, 35, 62], ["DL", 1, 45, 62], ["DL", 2, 55, 62], ["DL", 3, 65, 62], ["CB", 1, 94, 62], ["S", 0, 30, 17], ["S", 1, 70, 17]];
+const DEF_CORE = [["CB", 0, 6, 62], ["DL", 0, 35, 62], ["DL", 1, 45, 62], ["DL", 2, 55, 62], ["DL", 3, 65, 62], ["CB", 1, 94, 62], ["S", 0, 46, 13], ["S", 1, 74, 27]]; // FS deep in the middle, SS rolled down on the strong (SAM) side
 const DEF_FORMS = {
   base: [["LB", 0, 70, 39], ["LB", 1, 50, 37], ["LB", 2, 30, 39]],
   nickel: [["LB", 1, 58, 38], ["LB", 2, 38, 38], ["CB", 2, 82, 44]],

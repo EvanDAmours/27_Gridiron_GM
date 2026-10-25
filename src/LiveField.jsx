@@ -17,8 +17,10 @@ const FORMATION = {
   // Spacing is stretched a little past real life so every player stays readable.
   off: [["LT", 0, -2, -11], ["LG", 0, -2, -5.5], ["C", 0, -2, 0], ["RG", 0, -2, 5.5], ["RT", 0, -2, 11], ["TE", 0, -2.5, 16.5],
     ["WR", 0, -2, -24], ["WR", 1, -2, 24], ["WR", 2, -3.5, -17.5], ["QB", 0, -8, 0], ["RB", 0, -8.5, 5]],
-  def: [["DL", 0, 2, -9], ["DL", 1, 2, -3], ["DL", 2, 2, 3], ["DL", 3, 2, 9], ["LB", 0, 7.5, -14], ["LB", 1, 7.5, 0], ["LB", 2, 7.5, 14],
-    ["CB", 0, 8, -23.5], ["CB", 1, 8, 23.5], ["S", 0, 15, -9], ["S", 1, 15, 9]],
+  def: [["DL", 0, 2, -9], ["DL", 1, 2, -3], ["DL", 2, 2, 3], ["DL", 3, 2, 9], ["LB", 0, 7.5, 14], ["LB", 1, 7.5, 0], ["LB", 2, 7.5, -14],
+    // SAM (LB 0) on the tight end's side; the free safety (S 0) deep in the middle, the strong
+    // safety (S 1) rolled down on the strong side
+    ["CB", 0, 8, -23.5], ["CB", 1, 8, 23.5], ["S", 0, 15, -3], ["S", 1, 11, 10]],
 };
 // Special teams, for a kick acted out: the field goal unit (snapper, holder seven yards back, kicker
 // beside him, wings on the ends) and the punt unit (gunners split wide, a personal protector, the

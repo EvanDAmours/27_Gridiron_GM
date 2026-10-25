@@ -14,6 +14,13 @@
 //        ball deep. CB1 follows the other team's best outside receiver.
 //   NB (nickel / slot): quick feet and short-area quickness in a phone booth, zone eyes, and a
 //        tackler, since the slot is half run defender.
+// Safeties
+//   FS (free): the centerfielder, alone deep in single-high looks. Range and speed to cover
+//        sideline to sideline, eyes and ball skills to make plays on throws, and he makes the
+//        coverage calls. Wants range, coverage, ball-hawking, speed, communication.
+//   SS (strong): plays down near the box on the tight end's side: a run defender first, then man
+//        coverage on tight ends and the odd blitz. Wants run support, tackling, size and strength,
+//        coverage, blitzing.
 // Wide receivers
 //   X (split end): on the line against press, so release, size, contested catches.
 //   Z (flanker): off the line, the speed and separation receiver, the deep shot.
@@ -29,13 +36,14 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const g = (p, k, d = 65) => p?.posAttrs?.[k] ?? d;
 const ht = (p) => p?.ht_ ?? p?.ht ?? 73;
 
-export const ROLE_SLOTS = { LB: ["SAM", "MIKE", "WILL"], CB: ["CB1", "CB2", "NB"], WR: ["X", "Z", "SLOT"] };
+export const ROLE_SLOTS = { LB: ["SAM", "MIKE", "WILL"], CB: ["CB1", "CB2", "NB"], S: ["FS", "SS"], WR: ["X", "Z", "SLOT"] };
 // the role kind each slot plays (CB1 and CB2 are both outside corners)
-const KIND = { SAM: "SAM", MIKE: "MIKE", WILL: "WILL", CB1: "OUT", CB2: "OUT", NB: "NB", X: "X", Z: "Z", SLOT: "SLOT" };
+const KIND = { SAM: "SAM", MIKE: "MIKE", WILL: "WILL", CB1: "OUT", CB2: "OUT", NB: "NB", FS: "FS", SS: "SS", X: "X", Z: "Z", SLOT: "SLOT" };
 export const roleKind = (slot) => KIND[slot] || slot;
 export const ROLE_NAME = {
   SAM: "strong-side linebacker", MIKE: "middle linebacker", WILL: "weak-side linebacker",
   CB1: "No. 1 corner", CB2: "No. 2 corner", NB: "nickel (slot) corner", OUT: "outside corner",
+  FS: "free safety", SS: "strong safety",
   X: "X receiver (split end)", Z: "Z receiver (flanker)", SLOT: "slot receiver",
 };
 // What each role wants, in a line, for the menus.
@@ -45,6 +53,8 @@ export const ROLE_WANTS = {
   WILL: "Speed, pursuit and coverage: he chases plays down and covers backs and tight ends.",
   OUT: "Man coverage, press, long speed, recovery and length to play the ball deep.",
   NB: "Quick feet, short-area burst, zone eyes and tackling: the slot is half run defense.",
+  FS: "Range, speed and ball skills deep, and the coverage calls: he's the last line.",
+  SS: "Run support and sure tackling near the box, size, and coverage on tight ends.",
   X: "Release off press, size, contested catches and body control.",
   Z: "Deep speed, separation and route running: the vertical threat.",
   SLOT: "Route running, separation, quickness, hands and yards after the catch.",
@@ -52,6 +62,8 @@ export const ROLE_WANTS = {
 
 const lbSize = (p) => clamp(50 + ((p.wt || 235) - 232) * 1.4, 25, 99);
 const cbLength = (p) => clamp(50 + (ht(p) - 71) * 8, 25, 99);
+// a safety's build for the box: 200 lb is light for it, 215+ is built to fill against the run
+const sSize = (p) => clamp(50 + ((p.wt || 205) - 205) * 2.2, 25, 99);
 const wrSize = (p) => clamp(50 + (ht(p) - 72) * 6 + ((p.wt || 200) - 200) * 0.5, 25, 99);
 
 const SCORE = {
@@ -60,31 +72,36 @@ const SCORE = {
   WILL: (p) => 0.2 * (p.spd ?? 82) + 0.15 * g(p, "pursuit") + 0.2 * g(p, "coverage") + 0.1 * g(p, "zoneAwr") + 0.1 * (p.agi ?? 78) + 0.15 * g(p, "tackling") + 0.1 * g(p, "instincts"),
   OUT: (p) => 0.2 * g(p, "manCov") + 0.15 * g(p, "press") + 0.15 * (p.spd ?? 90) + 0.1 * g(p, "recovery") + 0.1 * g(p, "ballSkills") + 0.1 * cbLength(p) + 0.1 * g(p, "zoneCov") + 0.1 * (p.jmp ?? 85),
   NB: (p) => 0.2 * g(p, "zoneCov") + 0.15 * (p.agi ?? 85) + 0.15 * (p.acc ?? 90) + 0.15 * g(p, "footwork") + 0.1 * g(p, "playRec") + 0.15 * g(p, "tackling") + 0.1 * g(p, "manCov"),
+  FS: (p) => 0.25 * g(p, "range") + 0.2 * g(p, "coverage") + 0.15 * g(p, "ballHawk") + 0.15 * (p.spd ?? 88) + 0.1 * g(p, "comms") + 0.05 * (p.jmp ?? 85) + 0.05 * g(p, "versatility") + 0.05 * g(p, "tackling"),
+  SS: (p) => 0.25 * g(p, "runSupport") + 0.2 * g(p, "tackling") + 0.15 * g(p, "coverage") + 0.1 * sSize(p) + 0.1 * (p.str ?? 65) + 0.1 * g(p, "blitzing") + 0.05 * g(p, "versatility") + 0.05 * g(p, "comms"),
   X: (p) => 0.2 * g(p, "release") + 0.2 * g(p, "catchTraffic") + 0.15 * wrSize(p) + 0.15 * g(p, "routeRun") + 0.15 * g(p, "bodyCtrl") + 0.1 * (p.jmp ?? 85) + 0.05 * g(p, "deepSpd"),
   Z: (p) => 0.25 * g(p, "deepSpd") + 0.2 * g(p, "separation") + 0.15 * g(p, "routeRun") + 0.15 * (p.spd ?? 90) + 0.15 * g(p, "catching") + 0.1 * g(p, "release"),
   SLOT: (p) => 0.25 * g(p, "routeRun") + 0.2 * g(p, "separation") + 0.15 * (p.agi ?? 85) + 0.15 * g(p, "catching") + 0.1 * g(p, "yac") + 0.15 * (p.acc ?? 90),
 };
 export const roleScore = (p, kind) => SCORE[kind]?.(p) ?? p?.ovr ?? 60;
 
-const KINDS = { LB: ["SAM", "MIKE", "WILL"], CB: ["OUT", "NB"], WR: ["X", "Z", "SLOT"] };
+const KINDS = { LB: ["SAM", "MIKE", "WILL"], CB: ["OUT", "NB"], S: ["FS", "SS"], WR: ["X", "Z", "SLOT"] };
 // BASE[from][to]: median of score(to) - score(from) over real players natural at "from".
 // From the Madden 27 rosters; roleBase() recomputes it (CENTER and NB_CUT likewise, from the same players).
 export const BASE = {
   SAM: { MIKE: 3.07, WILL: 7.57 }, MIKE: { SAM: -6.44, WILL: 2.35 }, WILL: { SAM: -9.97, MIKE: -3.3 },
   OUT: { NB: -0.05 }, NB: { OUT: -4.25 },
+  FS: { SS: -13.03 }, SS: { FS: 11.25 },
   X: { Z: 3.3, SLOT: 3.15 }, Z: { X: -7.85, SLOT: -2 }, SLOT: { X: -8.8, Z: 0.4 },
 };
 // What a move costs a typical player: linebackers and receivers move around a lot, corners
-// between the slot and outside a bit less freely.
+// between the slot and outside a bit less freely, safeties trade spots most easily of all (many
+// defenses play them as interchangeable halves).
 const COST = {
   SAM: { MIKE: 3, WILL: 3 }, MIKE: { SAM: 3, WILL: 2 }, WILL: { SAM: 3, MIKE: 2 },
   OUT: { NB: 3 }, NB: { OUT: 3 },
+  FS: { SS: 2 }, SS: { FS: 2 },
   X: { Z: 1, SLOT: 3 }, Z: { X: 1, SLOT: 2 }, SLOT: { X: 3, Z: 2 },
 };
 
 // The league's median score at each role (over every real player at the position), so roles are
 // compared on how far a player stands out at each, not on raw numbers.
-export const CENTER = { SAM: 67.23, MIKE: 73.6, WILL: 76.2, OUT: 77.4, NB: 78.5, X: 76.22, Z: 83.8, SLOT: 82.2 };
+export const CENTER = { SAM: 67.23, MIKE: 73.6, WILL: 76.2, OUT: 77.4, NB: 78.5, FS: 79.85, SS: 67.62, X: 76.22, Z: 83.8, SLOT: 82.2 };
 // Corners have no Madden slot label: the quarter of them built most for the inside play there.
 export const NB_CUT = 1.45;
 
@@ -94,6 +111,7 @@ export function naturalRole(p) {
   const kinds = KINDS[p?.pos];
   if (!kinds) return null;
   if (p.pos === "LB" && KIND[p.mpos]) return p.mpos;
+  if (p.pos === "S" && (p.mpos === "FS" || p.mpos === "SS")) return p.mpos;
   if (p.pos === "WR" && p.arch === "Slot") return "SLOT";
   if (p.pos === "WR" && p.arch === "Deep Threat") return "Z";
   const rel = (k) => roleScore(p, k) - CENTER[k];
@@ -210,6 +228,8 @@ export const ROLE_SKILLS = {
   MIKE: { instincts: 0.25, zoneAwr: 0.15, runFit: 0.2, tackling: 0.15, shedBlock: 0.1, pursuit: 0.1 },
   WILL: { pursuit: 0.15, coverage: 0.2, zoneAwr: 0.1, tackling: 0.15, instincts: 0.1 },
   OUT: { manCov: 0.2, press: 0.15, recovery: 0.1, ballSkills: 0.1, zoneCov: 0.1 },
+  FS: { range: 0.25, coverage: 0.2, ballHawk: 0.15, comms: 0.1 },
+  SS: { runSupport: 0.25, tackling: 0.2, coverage: 0.15, blitzing: 0.1 },
   NB: { zoneCov: 0.2, footwork: 0.15, playRec: 0.1, tackling: 0.15, manCov: 0.1 },
   X: { release: 0.2, catchTraffic: 0.2, routeRun: 0.15, bodyCtrl: 0.15, deepSpd: 0.05 },
   Z: { deepSpd: 0.25, separation: 0.2, routeRun: 0.15, catching: 0.15, release: 0.1 },
@@ -236,5 +256,6 @@ export function roleGrowth(posAttrs, rl, age) {
 // The market pays roles differently, as the NFL does: a SAM (a two-down linebacker) and a slot
 // corner earn well under an outside corner or a MIKE of the same rating; slot receivers a little
 // under outside ones. Applied to asking prices (offseason.js askingPrice).
-export const ROLE_PAY = { SAM: 0.8, MIKE: 1, WILL: 0.95, OUT: 1, NB: 0.84, X: 1, Z: 1, SLOT: 0.92 };
-export const rolePay = (p) => (["LB", "CB", "WR"].includes(p?.pos) ? ROLE_PAY[naturalRole(p)] ?? 1 : 1);
+export const ROLE_PAY = { SAM: 0.8, MIKE: 1, WILL: 0.95, OUT: 1, NB: 0.84, FS: 1, SS: 1, X: 1, Z: 1, SLOT: 0.92 };
+// (free and strong safeties are paid alike: the top of both markets sits at the same number)
+export const rolePay = (p) => (["LB", "CB", "S", "WR"].includes(p?.pos) ? ROLE_PAY[naturalRole(p)] ?? 1 : 1);

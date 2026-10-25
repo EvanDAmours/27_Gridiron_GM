@@ -175,3 +175,29 @@ test("injury replacements by role: options are rated at the hurt starter's role,
   const r = replacementOptions({ roster: [wr("w1", 85), wr("w2", 80), { ...wr("w3", 82), injured: true }, wr("w4", 62), te] }, { pid: "w3", pos: "WR", slot: 2, role: "SLOT" }, {}, null);
   assert.ok(r.roster.some((p) => p.id === "te") && r.bestId === "te", JSON.stringify(r.roster.map((p) => [p.id, p.roleR])));
 });
+
+// ---------- safeties: FS and SS ----------
+// Derwin James's build (a 215-lb box safety who hits) and Jessie Bates's (a rangy centerfielder)
+const SAF = (id, mpos, o) => ({ id, name: id, pos: "S", mpos, ovr: o.ovr, wt: o.wt, str: o.str, spd: o.spd, jmp: 88, posAttrs: { range: o.spd, runSupport: o.run, coverage: o.cov, tackling: o.tkl, ballHawk: o.hawk, blitzing: o.blitz, comms: 80, versatility: 80 } });
+const box = SAF("box", "SS", { ovr: 92, wt: 216, str: 72, spd: 88, run: 92, cov: 74, tkl: 86, hawk: 62, blitz: 78 });
+const deep = SAF("deep", "FS", { ovr: 92, wt: 198, str: 60, spd: 93, run: 72, cov: 90, tkl: 72, hawk: 90, blitz: 45 });
+
+test("safeties have free and strong roles, rated on what each asks for", () => {
+  assert.equal(naturalRole(box), "SS"); assert.equal(naturalRole(deep), "FS");
+  // each is his own OVR at home, and a lot worse at the job he isn't built for
+  assert.equal(roleOvr(box, "SS"), 92); assert.equal(roleOvr(deep, "FS"), 92);
+  assert.ok(roleOvr(box, "FS") <= 88, `box safety deep: ${roleOvr(box, "FS")}`);
+  assert.ok(roleOvr(deep, "SS") <= 86, `centerfielder in the box: ${roleOvr(deep, "SS")}`);
+  // a safety with no Madden label is placed by his skills
+  assert.equal(naturalRole({ ...box, mpos: undefined }), "SS");
+  assert.equal(naturalRole({ ...deep, mpos: undefined }), "FS");
+});
+
+test("the depth chart puts each safety where he fits: FS first, then SS", () => {
+  // given in the wrong order, they're arranged by fit
+  const [fs, ss] = arrangeRoles("S", [box, deep]);
+  assert.equal(fs.id, "deep"); assert.equal(ss.id, "box");
+  const order = depthOrderFor([box, deep], {}, "S");
+  assert.equal(order[0].id, "deep");
+  assert.deepEqual(roleCard(box).map(([k]) => k), ["SS", "FS"]);
+});

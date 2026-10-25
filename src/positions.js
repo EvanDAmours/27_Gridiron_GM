@@ -5,6 +5,10 @@
 // move remembers where he came from, so moving him back restores his old rating exactly.
 
 import { naturalDL, dlOvrAt } from "./dline.js";
+import { roleScore, CENTER } from "./roles.js";
+
+// FS or SS for a player with safety skills: the role he stands out at more, as roles.js judges it
+const safetyKind = (p) => (roleScore(p, "FS") - CENTER.FS >= roleScore(p, "SS") - CENTER.SS ? "FS" : "SS");
 
 const avg = (...xs) => Math.round(xs.reduce((s, x) => s + x, 0) / xs.length);
 const mean = (o) => { const v = Object.values(o || {}); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : 60; };
@@ -48,7 +52,8 @@ export function moveDB(p) {
   const ovr = clamp((p.ovr || 0) + shift, 40, 99);
   const pot = clamp((p.pot || p.ovr || 0) + shift, ovr, 99);
   return {
-    ...p, pos: to, mpos: to === "S" ? "FS" : "CB", posAttrs: attrs, ovr, trueOvr: ovr, pot, truePot: pot,
+    // a corner moved back: a free or a strong safety, whichever his new skills fit better
+    ...p, pos: to, mpos: to === "S" ? safetyKind({ ...p, posAttrs: attrs }) : "CB", posAttrs: attrs, ovr, trueOvr: ovr, pot, truePot: pot,
     posFrom: { pos: p.pos, mpos: p.mpos, attrs: p.posAttrs, shift },
   };
 }

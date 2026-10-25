@@ -26,7 +26,7 @@ export function roleNeeds(roster, shape = snapShape(LEAGUE_MIX, 0)) {
 // How much a player would fill one of those needs (his natural role).
 export const roleFit = (p, needs) => { const k = naturalRole(p); return k && needs ? needs[k] || 0 : 0; };
 
-export const ROLE_TAG = { SAM: "SAM", MIKE: "MIKE", WILL: "WILL", OUT: "OUTSIDE", NB: "NICKEL", X: "X", Z: "Z", SLOT: "SLOT" };
+export const ROLE_TAG = { SAM: "SAM", MIKE: "MIKE", WILL: "WILL", OUT: "OUTSIDE", NB: "NICKEL", FS: "FS", SS: "SS", X: "X", Z: "Z", SLOT: "SLOT" };
 // The role filter options for player lists: [value, label].
-export const ROLE_FILTERS = [["R:SAM", "LB · SAM"], ["R:MIKE", "LB · MIKE"], ["R:WILL", "LB · WILL"], ["R:OUT", "CB · Outside"], ["R:NB", "CB · Nickel"], ["R:X", "WR · X"], ["R:Z", "WR · Z"], ["R:SLOT", "WR · Slot"]];
+export const ROLE_FILTERS = [["R:SAM", "LB · SAM"], ["R:MIKE", "LB · MIKE"], ["R:WILL", "LB · WILL"], ["R:OUT", "CB · Outside"], ["R:NB", "CB · Nickel"], ["R:FS", "S · Free"], ["R:SS", "S · Strong"], ["R:X", "WR · X"], ["R:Z", "WR · Z"], ["R:SLOT", "WR · Slot"]];
 export const roleFilterMatch = (p, v) => !String(v).startsWith("R:") || (!!ROLE_SLOTS[p.pos] && naturalRole(p) === v.slice(2));

@@ -285,6 +285,24 @@ via `gm:scouting`). DeskHome's "See all" calls `onNav("inbox")`.
   - Removed four popups nothing could open (media day, the parade, the locker-room speech, a
     second player comparison) and a switched-off Hall of Fame card; their state stays.
 
+- **Safeties: free (FS) and strong (SS) roles** (`roles.js`, like SAM/MIKE/WILL and CB1/CB2/NB).
+  - FS score: range .25, coverage .2, ball-hawking .15, speed .15, communication .1, jumping,
+    versatility, tackling .05 each. SS score: run support .25, tackling .2, coverage .15, size
+    (`sSize`, weight around 205 lb) .1, strength .1, blitzing .1, versatility and communication .05.
+  - Natural role: Madden's `mpos` (77 FS, 78 SS in the 2027 data); generated safeties (no mpos)
+    by whichever role they stand out at. BASE / CENTER are medians over the real safeties; a move
+    costs 2 (safeties swap more freely than corners). At his natural role a player is his OVR; at
+    the other he's re-rated on that role's skills and never above his OVR. Real checks: Kyle
+    Hamilton 94 SS / 84 FS, Derwin James 93 / 84, Jessie Bates 94 FS / 92 SS, Julian Love 86 FS /
+    78 SS; the Ravens line up Starks FS + Hamilton SS, the Lions Joseph FS + Branch SS.
+  - Everything that uses roles picks it up: depth slots read FS / SS (was S1 / S2), game sim
+    ratings at the slot, injury replacements, off-season role growth (`ROLE_SKILLS`), role
+    needs, the FS / SS role tag, "S · Free" and "S · Strong" filters, market pay (equal).
+  - A corner moved to safety becomes an FS or an SS by his translated skills (positions.js).
+  - Field spots: on the depth chart the FS is deep in the middle and the SS rolled down on the
+    strong side; on the live field the SAM now lines up on the tight end's side (it was on the
+    other) with the SS beside him and the FS deep. Tests in tests/roles.test.js.
+
 ## 7. The trade market (`src/trade.js`)
 Recalibrated against real deadline deals; `tests/tradeMarket.test.js` pins ten of them (each must
 go through at about its real price, and a clearly smaller offer must be refused):
