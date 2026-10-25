@@ -44,7 +44,7 @@ export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto
     const o = opts[side], pickd = o[cur[side]];
     return (
       <div style={{ marginTop: 8 }}>
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt, marginBottom: 4 }}>{side === "off" ? "OFFENSE" : "DEFENSE"}</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: "#cbd5e1", margin: "6px 0 6px" }}>{side === "off" ? "Offense" : "Defense"}</div>
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${list.length}, 1fr)`, gap: 6 }}>
           {list.map(({ key, label, icon }) => {
             const g = planGrade(o[key].v), on = cur[side] === key, rec = best[side] === key;

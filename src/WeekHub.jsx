@@ -7,8 +7,8 @@ import { C } from "./ui.jsx";
 import { SITUATIONS, OFF_SETS, DEF_SETS, coordFit } from "./personnel.js";
 import { edgeWord } from "./scoutReport.js";
 
-const H = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd, marginBottom: 8 };
-const card = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px" };
+const H = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 8 };
+const card = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px" };
 const lbl = (sets, k) => sets.find((s) => s.key === k)?.label || k;
 
 // team: your club; opp; report: scoutReport; planEl: the GamePlanCard (opened); injuries: the
@@ -36,20 +36,20 @@ export default function WeekHub({ team, opp, wk, report, planEl, injuries = [], 
   const sit = team.sit || {};
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 3200, background: "rgba(0,0,0,.86)", display: "flex", alignItems: mobile ? "flex-end" : "center", justifyContent: "center", padding: mobile ? 0 : 14 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: C.bg, border: `1px solid ${C.bd}`, borderRadius: mobile ? "16px 16px 0 0" : 16, width: "100%", maxWidth: 1180, maxHeight: mobile ? "92vh" : "94vh", overflowY: "auto", padding: mobile ? 12 : 16 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#0d1424", border: 0, boxShadow: "0 30px 80px #000c", borderRadius: mobile ? "16px 16px 0 0" : 22, width: "100%", maxWidth: 1180, maxHeight: mobile ? "92vh" : "94vh", overflowY: "auto", padding: mobile ? 12 : 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.6, color: C.mt }}>WEEK {wk} PREP</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.mt }}>Week {wk} prep</div>
             <div style={{ fontSize: 22, fontWeight: 900 }}>vs {opp.city} {opp.name} <span style={{ fontSize: 15, color: C.mt, fontWeight: 700 }}>({opp.w || 0}-{opp.l || 0}{opp.t ? `-${opp.t}` : ""})</span></div>
           </div>
           <span style={{ fontSize: 13, fontWeight: 800, color: open ? "#fbbf24" : C.gn }}>{open ? `${open} to look at` : "✓ Ready"}</span>
-          <button onClick={onClose} aria-label="Close" style={{ background: "transparent", border: `1px solid ${C.bd}`, color: C.mt, borderRadius: 8, fontSize: 18, width: 34, height: 34, cursor: "pointer" }}>×</button>
+          <button onClick={onClose} aria-label="Close" style={{ background: "#ffffff12", border: 0, color: "#e2e8f0", borderRadius: 20, fontSize: 18, width: 38, height: 38, cursor: "pointer" }}>×</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,1.45fr) minmax(0,1fr)", gap: 12, alignItems: "start" }}>
           <div>{planEl}</div>
           <div style={{ display: "grid", gap: 12 }}>
             <div style={card}>
-              <div style={H}>READY CHECK</div>
+              <div style={H}>Ready check</div>
               {checks.map((c, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: i ? `1px solid ${C.bd}55` : "none" }}>
                   <span style={{ fontSize: 14, width: 18, textAlign: "center", color: c.ok ? C.gn : "#fbbf24" }}>{c.ok ? "✓" : "!"}</span>
@@ -59,7 +59,7 @@ export default function WeekHub({ team, opp, wk, report, planEl, injuries = [], 
               ))}
             </div>
             <div style={card}>
-              <div style={H}>SITUATIONS</div>
+              <div style={H}>Situations</div>
               {SITUATIONS.map((x) => (
                 <div key={x.key} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 0", flexWrap: "wrap" }}>
                   <span style={{ fontSize: 12, color: x.side === "off" ? C.tx : "#fca5a5", flex: "1 1 150px", minWidth: 0 }}>{x.label}</span>

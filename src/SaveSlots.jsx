@@ -17,10 +17,10 @@ export function slotMetaFor(d, team) {
 function SlotCard({ i, meta, teams, onSave, onLoad, onDelete }) {
   const t = meta && (teams?.find((x) => x.ab === meta.ab) || meta);
   return (
-    <div style={{ background: meta ? `linear-gradient(120deg,${meta.clr || C.cd}44,${C.cd} 60%)` : C.cd, border: `1px solid ${meta ? "#3b82f6aa" : C.bd}`, borderRadius: 12, padding: 12, display: "flex", gap: 12, alignItems: "center", minHeight: 76 }}>
-      {meta ? <TeamLogo t={t} sz={48} /> : <div style={{ width: 48, height: 48, borderRadius: 24, border: `2px dashed ${C.bd}`, display: "flex", alignItems: "center", justifyContent: "center", color: C.mt, fontWeight: 900 }}>{i + 1}</div>}
+    <div style={{ background: meta ? `linear-gradient(120deg,${meta.clr || "#1e293b"}44,#ffffff0d 60%)` : "#ffffff0d", borderRadius: 18, padding: "12px 14px", display: "flex", gap: 12, alignItems: "center", minHeight: 76 }}>
+      {meta ? <TeamLogo t={t} sz={48} /> : <div style={{ width: 48, height: 48, borderRadius: 24, border: "2px dashed #ffffff26", display: "flex", alignItems: "center", justifyContent: "center", color: C.mt, fontWeight: 900 }}>{i + 1}</div>}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, color: C.mt, fontWeight: 800, letterSpacing: 1 }}>SLOT {i + 1}</div>
+        <div style={{ fontSize: 13, color: C.mt, fontWeight: 700 }}>Slot {i + 1}</div>
         {meta ? (<>
           <div style={{ fontSize: 16, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.city} {meta.name}</div>
           <div style={{ fontSize: 13, color: C.tx }}>{meta.yr} · {PHASE[meta.sp] || meta.sp}{meta.sp === "regular" ? ` wk ${meta.wk}` : ""} · <b>{meta.w}-{meta.l}{meta.t ? `-${meta.t}` : ""}</b>{meta.champs ? ` · 🏆×${meta.champs}` : ""}</div>
@@ -28,8 +28,8 @@ function SlotCard({ i, meta, teams, onSave, onLoad, onDelete }) {
         </>) : <div style={{ fontSize: 14, color: C.mt }}>Empty</div>}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-        {onSave && <Btn onClick={() => onSave(i)} bg="#1e3a5f" c="#7dd3fc" style={{ fontSize: 13, padding: "5px 12px" }}>{meta ? "Overwrite" : "Save here"}</Btn>}
-        {meta && onLoad && <Btn onClick={() => onLoad(i)} bg="#14532d" c="#86efac" style={{ fontSize: 13, padding: "5px 12px" }}>Load</Btn>}
+        {onSave && <Btn onClick={() => onSave(i)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 13, padding: "6px 14px", borderRadius: 999 }}>{meta ? "Overwrite" : "Save here"}</Btn>}
+        {meta && onLoad && <Btn onClick={() => onLoad(i)} bg="#16a34a" c="#fff" style={{ fontSize: 13, padding: "6px 14px", borderRadius: 999 }}>Load</Btn>}
         {meta && onDelete && <button onClick={() => onDelete(i)} style={{ background: "transparent", border: 0, color: C.mt, fontSize: 11, cursor: "pointer" }}>Delete</button>}
       </div>
     </div>
@@ -44,7 +44,7 @@ export function SaveSlots({ teams, onSave, onLoad, title = "Save slots", version
   const save = onSave && ((i) => { if (metas[i] && !window.confirm(`Overwrite slot ${i + 1} (${metas[i].city} ${metas[i].name}, ${metas[i].yr})?`)) return; onSave(i); setTimeout(() => bump((n) => n + 1), 400); });
   return (
     <div key={version} style={{ marginBottom: 14 }}>
-      {title && <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 1, color: "#7dd3fc", marginBottom: 8 }}>💾 {title.toUpperCase()}</div>}
+      {title && <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 10 }}>{title}</div>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(290px,1fr))", gap: 8 }}>
         {metas.map((m, i) => (onSave || m) && <SlotCard key={i} i={i} meta={m} teams={teams} onSave={save} onLoad={onLoad} onDelete={onSave ? del : null} />)}
       </div>
@@ -69,15 +69,14 @@ export function DeviceTransfer({ onExport, onImport, mobile, bare }) {
     </div>
   );
   return (
-    <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderLeft: "4px solid #3b82f6", borderRadius: 12, padding: "12px 14px", marginBottom: 14, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
-      <div style={{ fontSize: 30, lineHeight: 1 }}>📲</div>
+    <div style={{ background: "#ffffff0d", borderRadius: 18, padding: "14px 16px", marginBottom: 14, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
       <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-        <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: 1, color: "#7dd3fc" }}>PLAY ON ANOTHER DEVICE</div>
+        <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>Play on another device</div>
         <div style={{ fontSize: 13, color: C.mt, lineHeight: 1.45 }}>Export this franchise as a save file, send it over (AirDrop, Messages, email, a cloud drive), then import it on your phone or computer. Import also works from the title screen.</div>
       </div>
       <div style={{ display: "flex", gap: 8, width: mobile ? "100%" : "auto" }}>
-        <button onClick={go} disabled={busy} style={{ ...btn, background: "#1d4ed8", color: "#fff", border: "1px solid #3b82f6", opacity: busy ? 0.6 : 1 }}>{busy ? "Packing…" : mobile ? "📤 Share save" : "⬇ Export save"}</button>
-        <label style={{ ...btn, background: "transparent", color: "#e0f2fe", border: "1px solid #3b82f6" }}>📂 Import save<input type="file" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) onImport(f); }} /></label>
+        <button onClick={go} disabled={busy} style={{ ...btn, borderRadius: 999, background: "#ffffff14", color: "#fff", border: 0, opacity: busy ? 0.6 : 1 }}>{busy ? "Packing…" : mobile ? "Share save" : "Export save"}</button>
+        <label style={{ ...btn, borderRadius: 999, background: "#ffffff14", color: "#fff", border: 0 }}>Import save<input type="file" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) onImport(f); }} /></label>
       </div>
     </div>
   );
@@ -102,10 +101,10 @@ export const CAP_TERMS = [
 export function CapGlossary({ compact = false }) {
   const [open, setOpen] = useState(!compact);
   return (
-    <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: "12px 14px", marginBottom: 14 }}>
-      <div onClick={() => setOpen((o) => !o)} style={{ cursor: "pointer", fontSize: 15, fontWeight: 900, letterSpacing: 1, color: C.gd, display: "flex", alignItems: "center" }}>📘 HOW THE CAP WORKS <span style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}>{open ? "▲" : "▼"}</span></div>
+    <div style={{ background: "#ffffff0d", borderRadius: 18, padding: "14px 16px", marginBottom: 14 }}>
+      <div onClick={() => setOpen((o) => !o)} style={{ cursor: "pointer", fontSize: 16, fontWeight: 800, color: "#fff", display: "flex", alignItems: "center" }}>How the cap works <span style={{ marginLeft: "auto", fontSize: 13, color: C.mt }}>{open ? "Hide" : "Show"}</span></div>
       {open && <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 10, marginTop: 10 }}>
-        {CAP_TERMS.map(([k, v]) => <div key={k} style={{ background: C.bg, borderRadius: 8, padding: "8px 10px" }}><div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>{k}</div><div style={{ fontSize: 13, color: C.mt, lineHeight: 1.45 }}>{v}</div></div>)}
+        {CAP_TERMS.map(([k, v]) => <div key={k} style={{ background: "#ffffff08", borderRadius: 12, padding: "10px 12px" }}><div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>{k}</div><div style={{ fontSize: 13, color: C.mt, lineHeight: 1.45 }}>{v}</div></div>)}
       </div>}
     </div>
   );

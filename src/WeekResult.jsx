@@ -78,7 +78,7 @@ export default function WeekResult(props) {
     <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onClickCapture={() => setKept(true)}
       onTouchStart={MOBILE ? (e) => { startY.current = e.touches[0].clientY; } : undefined}
       onTouchEnd={MOBILE ? (e) => { if (startY.current != null && e.changedTouches[0].clientY - startY.current > 60) onClose(); startY.current = null; } : undefined}
-      style={MOBILE ? { position: "fixed", left: 10, right: 10, bottom: "calc(126px + env(safe-area-inset-bottom))", zIndex: 392, animation: "sheetUp .25s ease-out", boxShadow: "0 -10px 36px #000c", borderRadius: 18 } : { position: "fixed", bottom: 16, right: 16, width: "min(560px, calc(100% - 32px))", maxHeight: "45vh", overflowY: "auto", zIndex: 380, animation: "sheetUp .25s ease-out", boxShadow: "0 14px 44px #000d", borderRadius: 12 }}>
+      style={MOBILE ? { position: "fixed", left: 10, right: 10, bottom: "calc(126px + env(safe-area-inset-bottom))", zIndex: 392, animation: "sheetUp .25s ease-out", boxShadow: "0 -10px 36px #000c", borderRadius: 18 } : { position: "fixed", bottom: 16, right: 16, width: "min(400px, calc(100% - 32px))", maxHeight: "50vh", overflowY: "auto", zIndex: 380, animation: "sheetUp .25s ease-out", boxShadow: "0 14px 44px #000d", borderRadius: 18 }}>
       <style>{"@keyframes wrBar{from{width:100%}to{width:0%}}"}</style>
       <Card {...props} />
       {!kept && <div style={{ position: "absolute", left: MOBILE ? 18 : 12, right: MOBILE ? 18 : 12, bottom: 1, height: 3, borderRadius: 2, background: "#ffffff14", overflow: "hidden", pointerEvents: "none" }}>
@@ -160,10 +160,11 @@ function PhoneCard({ result, teams, ui, sgLog, yr, onClose, onBox, onPaper, onRe
   }
   return (
     <div onClick={tap ? () => { tap(); onClose(); } : undefined} role={tap ? "button" : undefined} style={{ background: `linear-gradient(135deg, ${col}30, #0f172a00 62%), #0f172a`, border: `1px solid ${col}55`, borderRadius: 18, padding: "8px 16px 14px", color: "#fff", cursor: tap ? "pointer" : "default" }}>
-      <div style={{ display: "flex", justifyContent: "center", paddingBottom: 6 }}><span style={{ width: 36, height: 4, borderRadius: 2, background: "#ffffff33" }} /></div>
+      {MOBILE ? <div style={{ display: "flex", justifyContent: "center", paddingBottom: 6 }}><span style={{ width: 36, height: 4, borderRadius: 2, background: "#ffffff33" }} /></div> : <div style={{ height: 6 }} />}
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, textTransform: "uppercase", color: col }}>{top}</span>
+        <span style={{ fontSize: 14, fontWeight: 800, color: col }}>{top}</span>
         {hint && <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>{hint}</span>}
+        {!MOBILE && <button onClick={(e) => { e.stopPropagation(); onClose(); }} aria-label="Dismiss result" style={{ marginLeft: hint ? 4 : "auto", background: "transparent", border: 0, color: "#64748b", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>✕</button>}
       </div>
       {body}
       {foot}
@@ -172,7 +173,8 @@ function PhoneCard({ result, teams, ui, sgLog, yr, onClose, onBox, onPaper, onRe
 }
 
 function Card(props) {
-  if (MOBILE && props.result && props.teams[props.ui]) return <PhoneCard {...props} />;
+  // computers use the same calm card (the old desk card is kept for a result with no team to show)
+  if (props.result && props.teams[props.ui]) return <PhoneCard {...props} />;
   return <DeskCard {...props} />;
 }
 

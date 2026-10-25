@@ -36,8 +36,8 @@ export default function ThreeWayTrade({ teams, ui, closed, ctx, mobile, sm, onDo
   };
 
   return (
-    <div style={{ background: "#0d1020", border: "1px solid #7c3aed", borderRadius: 8, padding: 10, marginBottom: 8 }}>
-      <div style={{ fontSize: 13, fontWeight: 800, color: "#a78bfa", marginBottom: 8 }}>⚖️ 3-WAY TRADE DESK</div>
+    <div style={{ background: "#ffffff0d", borderRadius: 18, padding: "14px 16px", marginBottom: 8 }}>
+      <div style={{ fontSize: 15, color: C.mt, marginBottom: 10 }}>Three clubs, one deal: you send to team B, team B sends to team C, and team C sends to you. Each club has to get back about as much value as it gives.</div>
       <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
         {cols.map(({ k, lbl, id, clr, set }) => (
           <div key={k} style={{ flex: mobile ? "1 1 100%" : "1 1 200px", minWidth: 0 }}>
@@ -49,7 +49,7 @@ export default function ThreeWayTrade({ teams, ui, closed, ctx, mobile, sm, onDo
               </Select>
             )}
             {id >= 0 && (
-              <div style={{ maxHeight: mobile ? 230 : 200, overflowY: "auto", border: `1px solid ${C.bd}`, borderRadius: 8, background: "#0a0f1a" }}>
+              <div style={{ maxHeight: mobile ? 230 : 200, overflowY: "auto", border: 0, borderRadius: 12, background: "#ffffff08" }}>
                 {(teams[id]?.roster || []).filter((p) => p.ovr >= 65).sort((a, z) => z.ovr - a.ovr).slice(0, 20).map((p) => {
                   const on = sel[k].some((x) => x.id === p.id);
                   return (

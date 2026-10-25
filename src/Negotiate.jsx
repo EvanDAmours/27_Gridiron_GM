@@ -23,8 +23,8 @@ function FutureRoom({ team, cy, p, mode, sal, yrs, room0 }) {
   const ext = mode === "extend";
   const yrsNow = capProjection(team, cy, { extra: ext ? { sal, yrs, start: p.contract || 0 } : { sal, yrs, skip: mode === "resign" ? p.id : null }, room0 });
   return (
-    <div style={{ background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 14 }}>
-      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: C.mt, marginBottom: 4 }}>CAP ROOM WITH THIS DEAL</div>
+    <div style={{ background: "#ffffff0a", borderRadius: 12, padding: "8px 10px", marginBottom: 14 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#cbd5e1", marginBottom: 6 }}>Cap room with this deal</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
         {yrsNow.map((y) => (
           <div key={y.yr} style={{ textAlign: "center" }}>
@@ -73,21 +73,21 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   // drawn on the page itself, so opening it from a sheet never traps it inside the sheet
   return createPortal(
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.85)", zIndex: 1000, fontFamily: C.f, color: C.tx, display: "flex", alignItems: "center", justifyContent: "center", padding: 12, ...sheetWrap(MOBILE) }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 14, padding: 20, width: "100%", maxWidth: 480, maxHeight: "92vh", overflowY: "auto", ...sheetBox(MOBILE) }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: "#0d1424", border: 0, boxShadow: "0 30px 80px #000c", borderRadius: 22, padding: 20, width: "100%", maxWidth: 480, maxHeight: "92vh", overflowY: "auto", ...sheetBox(MOBILE) }}>
         {MOBILE && <SheetGrip onClose={onClose} />}
         <CloseX onClick={onClose} />
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 12 }}>
           <Face s={p.face} sz={52} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt }}>{mode === "resign" ? "RE-SIGN" : mode === "extend" ? "CONTRACT EXTENSION" : "FREE AGENT"}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.mt }}>{mode === "resign" ? "Re-sign" : mode === "extend" ? "Contract extension" : "Free agent"}</div>
             <div style={{ fontSize: 22, fontWeight: 900 }}>{p.name}</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, color: "#cbd5e1" }}><Bdg pos={posTag(p)} /> Age {p.age}{(mode === "resign" || mode === "extend") && p.salary ? ` · now ${money(p.salary)}${mode === "extend" ? ` · ${p.contract} yr${p.contract === 1 ? "" : "s"} left` : ""}` : ""}</div>
           </div>
           <div style={{ textAlign: "right", marginRight: 40 }}><div style={{ fontSize: 32, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</div><div style={{ fontSize: 12, color: C.mt }}>OVR</div></div>
         </div>
 
-        {perfNote && <div style={{ fontSize: 13, color: f > 1 ? "#fcd34d" : "#93c5fd", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 10 }}>{f > 1 ? "📈 " : "📉 "}{perfNote}</div>}
-        {note && <div style={{ fontSize: 13, color: "#cbd5e1", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 10 }}>{note}</div>}
+        {perfNote && <div style={{ fontSize: 13, color: f > 1 ? "#fcd34d" : "#93c5fd", background: "#ffffff0a", borderRadius: 12, padding: "8px 10px", marginBottom: 10 }}>{f > 1 ? "📈 " : "📉 "}{perfNote}</div>}
+        {note && <div style={{ fontSize: 13, color: "#cbd5e1", background: "#ffffff0a", borderRadius: 12, padding: "8px 10px", marginBottom: 10 }}>{note}</div>}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
           <span style={{ fontSize: 13, color: C.mt, fontWeight: 700 }}>Interest</span>
           <div style={{ flex: 1, height: 8, background: C.bg, borderRadius: 4 }}><div style={{ width: `${mood}%`, height: "100%", borderRadius: 4, background: mood > 60 ? C.gn : mood > 30 ? C.gd : C.rd }} /></div>
@@ -98,14 +98,14 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
           const fm = t.fitMe;
           const bits = fm ? [fm.roleLabel === "starter" ? "he'd start" : `he'd be your ${fm.roleLabel}`, fm.schemeName ? (fm.scheme === 1 ? `your ${fm.schemeName} features his position` : `your ${fm.schemeName} doesn't feature him`) : null, fm.win >= 0.6 ? "you win" : fm.win <= 0.4 ? "you lost a lot last year" : null].filter(Boolean) : [];
           return (
-            <div style={{ fontSize: 13, color: "#cbd5e1", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 10, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, color: "#cbd5e1", background: "#ffffff0a", borderRadius: 12, padding: "8px 10px", marginBottom: 10, lineHeight: 1.5 }}>
               🧠 <b style={{ color: "#fff" }}>What he wants most: {t.prio.label}.</b>{bits.length ? <> With you, {bits.join(" · ")}.</> : null}
               {t.prio.key !== "money" && <span style={{ color: C.mt }}> A club that gives him that can sign him for less.</span>}
             </div>
           );
         })()}
         {last && (
-          <div style={{ background: C.bg, border: `1px solid ${tone[last.result] || C.bd}`, borderRadius: 8, padding: "10px 12px", marginBottom: 12, fontSize: 16, fontWeight: 700, color: tone[last.result] || "#fff" }}>
+          <div style={{ background: "#ffffff0a", border: `1px solid ${tone[last.result] || "transparent"}`, borderRadius: 14, padding: "10px 12px", marginBottom: 12, fontSize: 16, fontWeight: 700, color: tone[last.result] || "#fff" }}>
             {last.result === "lost" ? `Signed with ${rivalName?.(last.team) || "another team"}: $${last.sal}M a year${last.why ? ` (${last.why})` : ""}.`
               : last.rivalBid ? <>📞 His agent: "We have <b>${last.sal}M a year for {last.yrs} years</b> from the {rivalName?.(last.team) || "another club"}{last.why ? ` (${last.why})` : ""}. Give him a reason to choose you." <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#cbd5e1", marginTop: 4 }}>About {money(last.counter)} would make it close. Even then it's his decision.</span></>
               : last.msg}
@@ -114,17 +114,17 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
 
         {!done && (
           <>
-            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>YEARS</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Years</div>
             <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
               {[1, 2, 3, 4, 5].map((y) => (
-                <button key={y} disabled={y > maxYears(p)} onClick={() => { setYrs(y); setSal(r1(yearlyAsk(p, y, mode) * 0.9)); }} style={{ flex: 1, padding: "9px 0", fontSize: 16, fontWeight: 800, borderRadius: 8, cursor: y > maxYears(p) ? "not-allowed" : "pointer", opacity: y > maxYears(p) ? 0.3 : 1, background: yrs === y ? C.bl : C.bg, color: "#fff", border: `1px solid ${yrs === y ? C.bl : C.bd}` }}>{y}</button>
+                <button key={y} disabled={y > maxYears(p)} onClick={() => { setYrs(y); setSal(r1(yearlyAsk(p, y, mode) * 0.9)); }} style={{ flex: 1, padding: "9px 0", fontSize: 16, fontWeight: 800, borderRadius: 12, cursor: y > maxYears(p) ? "not-allowed" : "pointer", opacity: y > maxYears(p) ? 0.3 : 1, background: yrs === y ? C.bl : "#ffffff0d", color: "#fff", border: 0 }}>{y}</button>
               ))}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>YOUR OFFER PER YEAR <span style={{ fontWeight: 600, letterSpacing: 0, color: "#cbd5e1" }}>· he's asking {money(ask)}</span></div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Your offer per year <span style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8" }}>· he's asking {money(ask)}</span></div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              <Btn onClick={() => step(-0.5)} bg={C.bd} c="#e2e8f0" style={{ fontSize: 20, padding: "6px 16px" }}>−</Btn>
+              <Btn onClick={() => step(-0.5)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 20, padding: "6px 16px", borderRadius: 12 }}>−</Btn>
               <div style={{ flex: 1, textAlign: "center", fontSize: 30, fontWeight: 900 }}>{money(sal)}</div>
-              <Btn onClick={() => step(0.5)} bg={C.bd} c="#e2e8f0" style={{ fontSize: 20, padding: "6px 16px" }}>+</Btn>
+              <Btn onClick={() => step(0.5)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 20, padding: "6px 16px", borderRadius: 12 }}>+</Btn>
             </div>
             <input type="range" min={Math.max(0.8, r1(ask * 0.5))} max={r1(ask * 1.4 + 1)} step={0.1} value={sal} onChange={(e) => setSal(+e.target.value)} aria-label="Offer per year" style={{ width: "100%", accentColor: C.bl, marginBottom: 8 }} />
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: C.mt, marginBottom: 14 }}>
@@ -133,42 +133,42 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
             </div>
             <FutureRoom team={team} cy={cy} p={p} mode={mode} sal={sal} yrs={yrs} room0={ext ? nowRoom - (cur.nowAdd || 0) : after} />
             {!ext && yrs >= 2 && <>
-              <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>SIGNING BONUS <span style={{ fontWeight: 600, letterSpacing: 0, color: "#cbd5e1" }}>· part of year one paid up front, spread over {Math.min(5, yrs)} years</span></div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Signing bonus <span style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8" }}>· part of year one paid up front, spread over {Math.min(5, yrs)} years</span></div>
               <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                {SIGN_BONUS.map((b) => <button key={b} onClick={() => setShare(b)} style={{ flex: 1, padding: "8px 0", fontSize: 15, fontWeight: 800, borderRadius: 8, cursor: "pointer", background: share === b ? C.bl : C.bg, color: "#fff", border: `1px solid ${share === b ? C.bl : C.bd}` }}>{b ? `${Math.round(b * 100)}%` : "None"}</button>)}
+                {SIGN_BONUS.map((b) => <button key={b} onClick={() => setShare(b)} style={{ flex: 1, padding: "8px 0", fontSize: 15, fontWeight: 800, borderRadius: 12, cursor: "pointer", background: share === b ? C.bl : "#ffffff0d", color: "#fff", border: 0 }}>{b ? `${Math.round(b * 100)}%` : "None"}</button>)}
               </div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 14, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13, color: "#cbd5e1", background: "#ffffff0a", borderRadius: 12, padding: "8px 10px", marginBottom: 14, lineHeight: 1.5 }}>
                 {share ? <>Bonus <b style={{ color: "#fff" }}>{money(cur.bonus)}</b> · cap hit this year <b style={{ color: C.gn }}>{money(cur.hit)}</b> (vs {money(sal)}), then <b style={{ color: C.gd }}>{money(cur.later)}</b> a year after that. Players like guaranteed money, so he values the offer a little more. Cut him early and the unpaid bonus is dead money.</> : <>A signing bonus lowers this year's cap hit (handy when you're tight) at the cost of a slightly higher hit in later years and dead money if he's cut.</>}
               </div>
               {share > 0 && yrs < 5 && <>
-                <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>VOID YEARS <span style={{ fontWeight: 600, letterSpacing: 0, color: "#cbd5e1" }}>· fake years that spread the bonus thinner</span></div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Void years <span style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8" }}>· fake years that spread the bonus thinner</span></div>
                 <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                  {VOID_YEARS.filter((v) => yrs + v <= 5).map((v) => <button key={v} onClick={() => setVoidYrs(v)} style={{ flex: 1, padding: "8px 0", fontSize: 15, fontWeight: 800, borderRadius: 8, cursor: "pointer", background: voidYrs === v ? "#7c3aed" : C.bg, color: "#fff", border: `1px solid ${voidYrs === v ? "#7c3aed" : C.bd}` }}>{v ? `+${v}` : "None"}</button>)}
+                  {VOID_YEARS.filter((v) => yrs + v <= 5).map((v) => <button key={v} onClick={() => setVoidYrs(v)} style={{ flex: 1, padding: "8px 0", fontSize: 15, fontWeight: 800, borderRadius: 12, cursor: "pointer", background: voidYrs === v ? "#7c3aed" : "#ffffff0d", color: "#fff", border: 0 }}>{v ? `+${v}` : "None"}</button>)}
                 </div>
-                {cur.voidYrs > 0 && <div style={{ fontSize: 13, color: "#cbd5e1", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 14, lineHeight: 1.5 }}>The bonus is spread over {yrs + cur.voidYrs} years, so the hit is <b style={{ color: C.gn }}>{money(cur.hit)}</b> this year. When his {yrs}-year deal ends, the <b style={{ color: C.rd }}>{money(cur.voidDead)}</b> left on the void years hits your cap as dead money.</div>}
+                {cur.voidYrs > 0 && <div style={{ fontSize: 13, color: "#cbd5e1", background: "#ffffff0a", borderRadius: 12, padding: "8px 10px", marginBottom: 14, lineHeight: 1.5 }}>The bonus is spread over {yrs + cur.voidYrs} years, so the hit is <b style={{ color: C.gn }}>{money(cur.hit)}</b> this year. When his {yrs}-year deal ends, the <b style={{ color: C.rd }}>{money(cur.voidDead)}</b> left on the void years hits your cap as dead money.</div>}
               </>}
             </>}
             {!ext && <>
-              <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>INCENTIVE <span style={{ fontWeight: 600, letterSpacing: 0, color: "#cbd5e1" }}>· paid only if he earns it, charged to next year's cap</span></div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Incentive <span style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8" }}>· paid only if he earns it, charged to next year's cap</span></div>
               <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-                {INCENTIVE_SIZES.map((v) => <button key={v} onClick={() => setIncSize(v)} style={{ flex: 1, padding: "8px 0", fontSize: 15, fontWeight: 800, borderRadius: 8, cursor: "pointer", background: incSize === v ? "#0e7490" : C.bg, color: "#fff", border: `1px solid ${incSize === v ? "#0e7490" : C.bd}` }}>{v ? money(sal * v) : "None"}</button>)}
+                {INCENTIVE_SIZES.map((v) => <button key={v} onClick={() => setIncSize(v)} style={{ flex: 1, padding: "8px 0", fontSize: 15, fontWeight: 800, borderRadius: 12, cursor: "pointer", background: incSize === v ? "#0e7490" : "#ffffff0d", color: "#fff", border: 0 }}>{v ? money(sal * v) : "None"}</button>)}
               </div>
-              {incSize > 0 && <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>{incOpts.map((o) => <button key={o} onClick={() => setIncLabel(o)} style={{ padding: "6px 10px", fontSize: 13, fontWeight: 700, borderRadius: 16, cursor: "pointer", background: incLabel === o ? "#0e749044" : "transparent", color: incLabel === o ? "#67e8f9" : C.mt, border: `1px solid ${incLabel === o ? "#0e7490" : C.bd}` }}>{o}</button>)}</div>}
+              {incSize > 0 && <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>{incOpts.map((o) => <button key={o} onClick={() => setIncLabel(o)} style={{ padding: "6px 10px", fontSize: 13, fontWeight: 700, borderRadius: 16, cursor: "pointer", background: incLabel === o ? "#0e749044" : "transparent", color: incLabel === o ? "#67e8f9" : C.mt, border: 0 }}>{o}</button>)}</div>}
             </>}
             {ext && <>
-              <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>SIGNING BONUS <span style={{ fontWeight: 600, letterSpacing: 0, color: "#cbd5e1" }}>· spread over {Math.min(5, yrs + 1)} years from this season</span></div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Signing bonus <span style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8" }}>· spread over {Math.min(5, yrs + 1)} years from this season</span></div>
               <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                {EXT_BONUS.map((b) => <button key={b} onClick={() => setShare(b)} style={{ flex: 1, padding: "8px 0", fontSize: 15, fontWeight: 800, borderRadius: 8, cursor: "pointer", background: share === b ? C.bl : C.bg, color: "#fff", border: `1px solid ${share === b ? C.bl : C.bd}` }}>{b ? `${Math.round(b * 100)}%` : "None"}</button>)}
+                {EXT_BONUS.map((b) => <button key={b} onClick={() => setShare(b)} style={{ flex: 1, padding: "8px 0", fontSize: 15, fontWeight: 800, borderRadius: 12, cursor: "pointer", background: share === b ? C.bl : "#ffffff0d", color: "#fff", border: 0 }}>{b ? `${Math.round(b * 100)}%` : "None"}</button>)}
               </div>
-              <div style={{ fontSize: 13, color: "#cbd5e1", background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 14, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 13, color: "#cbd5e1", background: "#ffffff0a", borderRadius: 12, padding: "8px 10px", marginBottom: 14, lineHeight: 1.5 }}>
                 Cap hit each new year: <b style={{ color: "#fff" }}>{money(cur.hit)}</b>{share ? <> (vs {money(sal)} with no bonus) · this season's hit goes up <b style={{ color: nowRoom - cur.nowAdd >= 0 ? C.gd : C.rd }}>{money(cur.nowAdd)}</b>{nowRoom !== Infinity ? ` (room now ${money(nowRoom)})` : ""} · bonus {money(cur.bonus)}, dead money if he's cut</> : <>. A signing bonus lowers it, so the deal fits next year's cap.</>}
               </div>
             </>}
           </>
         )}
 
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", ...(MOBILE ? { position: "sticky", bottom: -16, background: C.cd, padding: "10px 0 6px", marginBottom: -6, borderTop: `1px solid ${C.bd}` } : {}) }}>
-          <Btn onClick={onClose} bg={C.bd} c="#cbd5e1" style={{ flex: "1 1 100px", fontSize: 16, padding: "11px 0" }}>{done ? "Close" : "Not now"}</Btn>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", ...(MOBILE ? { position: "sticky", bottom: -16, background: "#0d1424", padding: "10px 0 6px", marginBottom: -6, borderTop: "1px solid #ffffff14" } : {}) }}>
+          <Btn onClick={onClose} bg="#ffffff14" c="#e2e8f0" style={{ flex: "1 1 100px", fontSize: 16, padding: "11px 0", borderRadius: 14 }}>{done ? "Close" : "Not now"}</Btn>
           {!done && last?.result === "counter" && <Btn onClick={() => offer(last.counter)} disabled={!fits(last.counter)} bg={C.gd} c="#000" style={{ flex: "2 1 160px", fontSize: 16, padding: "11px 0", fontWeight: 900 }}>{last.rivalBid ? "Offer" : "Accept"} {money(last.counter)}</Btn>}
           {!done && <Btn onClick={() => offer(sal)} disabled={!fits(sal)} bg={C.gn} style={{ flex: "2 1 160px", fontSize: 16, padding: "11px 0", fontWeight: 900 }}>{fits(sal) ? "Make offer" : after < 0 ? (ext && share < EXT_BONUS[EXT_BONUS.length - 1] ? "Not enough cap: add a bonus" : "Not enough cap") : "Not enough room this season"}</Btn>}
         </div>

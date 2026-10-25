@@ -87,16 +87,15 @@ export default function OfflinePanel({ teamAb, mobile }) {
   };
 
   const current = ready && (!latest || ready.version === latest);
-  const box = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: mobile ? 12 : 16, marginBottom: 14 };
+  const box = { background: "#ffffff0d", borderRadius: 18, padding: mobile ? 12 : 16, marginBottom: 14 };
   const step = { display: "flex", gap: 10, alignItems: "flex-start", fontSize: 14, lineHeight: 1.45, marginTop: 8 };
   const n = (x) => <span style={{ flex: "0 0 22px", height: 22, borderRadius: 11, background: "#1e3a5f", color: "#93c5fd", fontWeight: 900, fontSize: 12, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{x}</span>;
 
   return (
     <div style={box}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 22 }}>✈️</span>
         <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: C.gd }}>OFFLINE PLAY</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.mt }}>Offline play</div>
           <div style={{ fontSize: 15, fontWeight: 800 }}>
             {!supported ? "This browser can't keep the game for offline play" : prog ? `Saving the game to this device… ${Math.round((prog.done / Math.max(1, prog.total)) * 100)}%` : current ? "✓ Ready to play with no connection" : ready ? "Saved, but there's a newer version: save it again" : "Not saved for offline yet"}
           </div>

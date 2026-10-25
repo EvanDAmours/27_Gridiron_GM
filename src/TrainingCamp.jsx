@@ -7,8 +7,8 @@ import { MOBILE } from "./mobile.js";
 import { yearlyAsk } from "./negotiation.js";
 import { posTag } from "./dline.js";
 
-const panel = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "10px 12px", minWidth: 0 };
-const row = { display: "flex", alignItems: "center", gap: 8, padding: "3px 8px", background: C.bg, border: `1px solid ${C.bd}`, borderRadius: 8, fontSize: 14, minWidth: 0 };
+const panel = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px", minWidth: 0 };
+const row = { display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#ffffff08", borderRadius: 12, fontSize: 14, minWidth: 0 };
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const ATTRS = [["ovr", "Overall"], ["spd", "Speed"], ["str", "Strength"], ["agi", "Agility"], ["acc", "Acceleration"]];
 // The player picker: grouped by position (offense, then defense, then specialists), best first.
@@ -21,7 +21,7 @@ const groupByPos = (ps) => {
   return [...m.entries()].sort((a, b) => rank(a[0]) - rank(b[0])).map(([pos, list]) => [pos, list.sort((a, b) => (b.ovr || 0) - (a.ovr || 0))]);
 };
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
-const chip = (on) => ({ padding: "6px 12px", borderRadius: 8, fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? `${C.bl}33` : C.bg, color: on ? "#fff" : "#cbd5e1", border: `1px solid ${on ? C.bl : C.bd}`, whiteSpace: "nowrap" });
+const chip = (on) => ({ padding: "7px 14px", borderRadius: 999, fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#fff" : "#ffffff12", color: on ? "#0b1220" : "#cbd5e1", border: 0, whiteSpace: "nowrap" });
 
 export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk, onSimGame, onReport, onDevCamp, onTrain, onAutoTrain, battlesDone, onBattle, onBattleAll, otcFocus, onOtc, onExtend, setSel }) {
   const roster = team.roster;
@@ -42,37 +42,33 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
   const attrName = ATTRS.find(([k]) => k === attr)[1];
   const head = (t, s, extra) => (
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
-      <span style={{ fontSize: 15, fontWeight: 900 }}>{t}</span>
-      {s && <span style={{ fontSize: 12.5, color: C.mt, flex: 1, minWidth: 160 }}>{s}</span>}
+      <span style={{ fontSize: 16, fontWeight: 800 }}>{t}</span>
+      {s && <span style={{ fontSize: 13, color: C.mt, flex: 1, minWidth: 160 }}>{s}</span>}
       {extra}
     </div>
   );
   if (MOBILE) return <PhoneCamp {...{ team, yr, scPts, games, risk, onRisk, onSimGame, onReport, onDevCamp, onTrain, onAutoTrain, battlesDone, onBattle, onBattleAll, otcFocus, onOtc, onExtend, setSel, roster, rookies, campUsed, trainable, trained, expiring, extDone, battles, openB, pre, trainTop, attr, setAttr, attrName }} />;
-  const more = (open, set, n) => n > 5 && <button onClick={() => set((v) => !v)} style={{ marginTop: 6, background: "transparent", border: `1px solid ${C.bd}`, color: "#7dd3fc", borderRadius: 999, padding: "4px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>{open ? "▲ Top 5 only" : `▼ Show all ${n}`}</button>;
+  const more = (open, set, n) => n > 5 && <button onClick={() => set((v) => !v)} style={{ marginTop: 8, background: "#ffffff12", border: 0, color: "#e2e8f0", borderRadius: 999, padding: "6px 14px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{open ? "Top 5 only" : `Show all ${n}`}</button>;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <div style={{ ...panel, flex: "0 0 auto", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "8px 16px" }}>
-          <span style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 1.2, color: C.mt }}>SEASON POINTS</span>
-          <b style={{ fontSize: 24, color: C.bl, lineHeight: 1.1 }}>{scPts} SP</b>
-          {!pre && <span style={{ fontSize: 11.5, color: C.gd }}>Camp closed</span>}
-        </div>
+        {!pre && <div style={{ ...panel, flex: "1 1 100%", color: "#fcd34d", fontWeight: 700 }}>Camp is closed for this year.</div>}
         <div style={{ ...panel, flex: "1.3 1 440px" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
-            <span style={{ fontSize: 15, fontWeight: 900 }}>Preseason games {games.length}/4</span>
-            <span style={{ fontSize: 12.5, color: C.mt }}>Starters playing risks injuries.</span>
+            <span style={{ fontSize: 16, fontWeight: 800 }}>Preseason games {games.length}/4</span>
+            <span style={{ fontSize: 13, color: C.mt }}>Starters playing risks injuries.</span>
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            {games.map((g, i) => <span key={i} style={{ fontSize: 13, fontWeight: 800, padding: "4px 8px", borderRadius: 6, background: g.us > g.them ? "#14532d55" : "#7f1d1d55", color: g.us > g.them ? C.gn : "#fca5a5" }}>{g.us > g.them ? "W" : "L"} {g.us}–{g.them} {g.opp}</span>)}
-            <Btn onClick={onSimGame} disabled={!pre || games.length >= 4} bg={C.gn} style={{ fontSize: 13.5, padding: "6px 12px" }}>▶ Play game</Btn>
-            <Btn onClick={onRisk} bg={risk ? "#7f1d1d" : C.bd} c={risk ? "#fca5a5" : "#cbd5e1"} style={{ fontSize: 13.5, padding: "6px 12px" }}>Starters: {risk ? "Yes" : "No"}</Btn>
-            {games.length > 0 && <Btn onClick={onReport} bg={C.bd} c="#7dd3fc" style={{ fontSize: 13.5, padding: "6px 12px" }}>Practice report</Btn>}
+            {games.map((g, i) => <span key={i} style={{ fontSize: 13, fontWeight: 800, padding: "5px 10px", borderRadius: 999, background: g.us > g.them ? "#14532d55" : "#7f1d1d55", color: g.us > g.them ? C.gn : "#fca5a5" }}>{g.us > g.them ? "W" : "L"} {g.us}–{g.them} {g.opp}</span>)}
+            <Btn onClick={onSimGame} disabled={!pre || games.length >= 4} bg={C.gn} style={{ fontSize: 13.5, padding: "7px 14px", borderRadius: 999 }}>▶ Play game</Btn>
+            <Btn onClick={onRisk} bg={risk ? "#7f1d1d" : "#ffffff12"} c={risk ? "#fca5a5" : "#cbd5e1"} style={{ fontSize: 13.5, padding: "7px 14px", borderRadius: 999 }}>Starters play: {risk ? "yes" : "no"}</Btn>
+            {games.length > 0 && <Btn onClick={onReport} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 13.5, padding: "7px 14px", borderRadius: 999 }}>Practice report</Btn>}
           </div>
         </div>
         <div style={{ ...panel, flex: "1 1 360px" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
-            <span style={{ fontSize: 15, fontWeight: 900 }}>Camp focus</span>
-            <span style={{ fontSize: 12.5, color: C.mt }}>Top 5 in the group gain +1 OVR at season's end.</span>
+            <span style={{ fontSize: 16, fontWeight: 800 }}>Camp focus</span>
+            <span style={{ fontSize: 13, color: C.mt }}>Top 5 in the group gain +1 OVR at season's end.</span>
           </div>
           <div style={{ display: "flex", gap: 6 }}>
             {[["passing", "Passing"], ["rushing", "Run game & line"], ["defense", "Defense"]].map(([k, l]) => (
@@ -85,12 +81,12 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "stretch" }}>
         <div style={{ ...panel, flex: "1.2 1 480px" }}>
           {head(`Position battles · ${battles.length - openB.length}/${battles.length}`, "1 SP each. The top two compete; the winner gains +1 OVR.",
-            onBattleAll && openB.length > 0 && (() => { const n = Math.min(openB.length, scPts); return <Btn onClick={() => onBattleAll(openB)} disabled={!pre || n < 1} bg={C.bd} c="#7dd3fc" style={{ fontSize: 13, padding: "5px 12px" }}>⚔️ Run {n < openB.length ? `${n} of ${openB.length}` : `all ${openB.length}`} · {n} SP</Btn>; })())}
+            onBattleAll && openB.length > 0 && (() => { const n = Math.min(openB.length, scPts); return <Btn onClick={() => onBattleAll(openB)} disabled={!pre || n < 1} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 13, padding: "6px 14px", borderRadius: 999 }}>Run {n < openB.length ? `${n} of ${openB.length}` : `all ${openB.length}`} · {n} SP</Btn>; })())}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 6 }}>
             {battles.map(([pos, top2]) => {
               const done = battlesDone.includes(pos);
               return (
-                <button key={pos} disabled={!pre || done || scPts < 1} onClick={() => onBattle(pos)} style={{ display: "flex", alignItems: "center", gap: 8, textAlign: "left", padding: "5px 8px", borderRadius: 8, cursor: !pre || done ? "default" : "pointer", background: C.bg, border: `1px solid ${done ? C.gn + "66" : C.bd}`, color: "#e2e8f0", opacity: done ? 0.7 : 1, minWidth: 0 }}>
+                <button key={pos} disabled={!pre || done || scPts < 1} onClick={() => onBattle(pos)} style={{ display: "flex", alignItems: "center", gap: 8, textAlign: "left", padding: "7px 10px", borderRadius: 12, cursor: !pre || done ? "default" : "pointer", background: done ? "#22c55e14" : "#ffffff08", border: 0, color: "#e2e8f0", opacity: done ? 0.7 : 1, minWidth: 0 }}>
                   <Bdg pos={pos} />
                   <span style={{ fontSize: 13, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{top2[0].name.split(" ").slice(-1)[0]} <span style={{ color: C.mt }}>vs</span> {top2[1].name.split(" ").slice(-1)[0]}</span>
                   {done && <span style={{ color: C.gn, fontWeight: 800, fontSize: 13 }}>✓</span>}
@@ -108,7 +104,7 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
                 <Face s={p.face} sz={22} /><span onClick={() => setSel(p)} style={{ flex: 1, minWidth: 0, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><Bdg pos={posTag(p)} />
                 <span style={{ fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
                 <span style={{ fontSize: 11.5, color: C.mt, whiteSpace: "nowrap" }}>/{p.pot || p.ovr}</span>
-                <Btn onClick={() => onDevCamp(p)} disabled={!pre || campUsed || scPts < 3 || p.ovr >= (p.pot || p.ovr)} bg={C.bl} style={{ fontSize: 12.5, padding: "3px 9px" }}>{p.ovr >= (p.pot || p.ovr) ? "Max" : "Boost"}</Btn>
+                <Btn onClick={() => onDevCamp(p)} disabled={!pre || campUsed || scPts < 3 || p.ovr >= (p.pot || p.ovr)} bg={C.bl} style={{ fontSize: 12.5, padding: "4px 12px" , borderRadius: 999 }}>{p.ovr >= (p.pot || p.ovr) ? "Max" : "Boost"}</Btn>
               </div>
             ))}
           </div>
@@ -118,19 +114,19 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-start" }}>
         <div style={{ ...panel, flex: "1 1 520px" }}>
           {head(`Training focus · 2 SP`, <span style={{ display: "inline-flex", gap: 4, flexWrap: "wrap" }}>{ATTRS.map(([k, l]) => <button key={k} onClick={() => setAttr(k)} title={`+1 ${l}, once per player each camp`} style={{ ...chip(attr === k), padding: "3px 9px", fontSize: 12 }}>{l === "Acceleration" ? "Accel" : l}</button>)}</span>,
-            onAutoTrain && (() => { const n = Math.min(5, trainable.length, Math.floor(scPts / 2)); return <Btn onClick={() => onAutoTrain(5)} disabled={!pre || n < 1} bg={C.bd} c="#7dd3fc" style={{ fontSize: 13, padding: "5px 12px" }} title="Picks players at random: young players under their ceiling work on overall, the rest on a physical tool">🎲 Auto-pick {n > 0 ? `${n} · ${n * 2} SP` : ""}</Btn>; })())}
+            onAutoTrain && (() => { const n = Math.min(5, trainable.length, Math.floor(scPts / 2)); return <Btn onClick={() => onAutoTrain(5)} disabled={!pre || n < 1} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 13, padding: "6px 14px", borderRadius: 999 }} title="Picks players at random: young players under their ceiling work on overall, the rest on a physical tool">Auto-pick {n > 0 ? `${n} · ${n * 2} SP` : ""}</Btn>; })())}
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             {trainTop.slice(0, 5).map((p) => (
               <div key={p.id} style={row}>
                 <span onClick={() => setSel(p)} style={{ flex: 1, minWidth: 0, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 400 }}>{p.age}</span></span><Bdg pos={posTag(p)} />
                 <span style={{ fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
                 <span style={{ fontSize: 11.5, color: C.mt, minWidth: 30 }}>/{p.pot || p.ovr}</span>
-                <Btn onClick={() => onTrain(p, attr)} disabled={!pre || scPts < 2} bg={C.gn} style={{ fontSize: 12.5, padding: "3px 9px", whiteSpace: "nowrap" }}>+1 {attrName}</Btn>
+                <Btn onClick={() => onTrain(p, attr)} disabled={!pre || scPts < 2} bg={C.gn} style={{ fontSize: 12.5, padding: "4px 12px", whiteSpace: "nowrap" , borderRadius: 999 }}>+1 {attrName}</Btn>
               </div>
             ))}
           </div>
           {trainTop.length > 5 && <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-            <Select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Player to train" style={{ flex: 1, minWidth: 0, background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "5px 8px", fontSize: 13 }}>
+            <Select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Player to train" style={{ flex: 1, minWidth: 0, background: "#ffffff0a", color: C.tx, border: 0, borderRadius: 12, padding: "7px 12px", fontSize: 13 }}>
               <option value="">Someone else…</option>
               {groupByPos(trainTop.slice(5)).map(([pos, ps]) => (
                 <optgroup key={pos} label={POS_NAME[pos] || pos}>
@@ -138,7 +134,7 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
                 </optgroup>
               ))}
             </Select>
-            <Btn onClick={() => { const p = roster.find((x) => x.id === pick); if (p) { onTrain(p, attr); setPick(""); } }} disabled={!pre || !pick || scPts < 2} bg={C.gn} style={{ fontSize: 12.5, padding: "3px 10px", whiteSpace: "nowrap" }}>+1 {attrName}</Btn>
+            <Btn onClick={() => { const p = roster.find((x) => x.id === pick); if (p) { onTrain(p, attr); setPick(""); } }} disabled={!pre || !pick || scPts < 2} bg={C.gn} style={{ fontSize: 12.5, padding: "4px 12px", whiteSpace: "nowrap" , borderRadius: 999 }}>+1 {attrName}</Btn>
           </div>}
           {trained.length > 0 && <div style={{ fontSize: 12.5, color: C.mt, marginTop: 6 }}>Trained: {trained.map((p) => p.name).join(", ")}</div>}
         </div>
@@ -152,7 +148,7 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
                 <span style={{ fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
                 {p.ext ? <span style={{ fontSize: 12.5, color: C.gn, fontWeight: 700, whiteSpace: "nowrap" }}>✓ {p.ext.yrs}y · {money(p.ext.apy ?? p.ext.sal)}</span>
                   : p.resigned?.yr === yr ? <span style={{ fontSize: 12.5, color: C.gn, fontWeight: 700, whiteSpace: "nowrap" }}>✓ {p.resigned.yrs}y · {money(p.resigned.sal)}</span>
-                  : <><span style={{ fontSize: 12, color: C.mt, whiteSpace: "nowrap" }}>asks {money(yearlyAsk(p, 2, "extend"))}</span><Btn onClick={() => onExtend(p)} bg={C.gn} style={{ fontSize: 12.5, padding: "3px 9px" }}>Negotiate</Btn></>}
+                  : <><span style={{ fontSize: 12, color: C.mt, whiteSpace: "nowrap" }}>asks {money(yearlyAsk(p, 2, "extend"))}</span><Btn onClick={() => onExtend(p)} bg={C.gn} style={{ fontSize: 12.5, padding: "4px 12px" , borderRadius: 999 }}>Negotiate</Btn></>}
               </div>
             ))}
           </div>

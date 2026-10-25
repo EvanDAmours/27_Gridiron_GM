@@ -65,17 +65,17 @@ function Offer({ o, teams, pickValue, onAccept, onDecline, setSel, hour }) {
   const v = verdict(o, pickValue);
   const exp = 2 - (hour - o.hour);
   return (
-    <div style={{ background: "#0b1220", border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12, marginBottom: 10 }}>
+    <div style={{ background: "#ffffff0a", borderRadius: 14, padding: "12px 14px", marginBottom: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
         {t && <TeamLogo t={t} sz={30} />}
         <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 900 }}>{t ? `${t.city} ${t.name}` : "A club"}</div><div style={{ fontSize: 12, color: C.mt }}>{t ? `${t.w || 0}-${t.l || 0}` : ""} · offer good for {exp} more hour{exp === 1 ? "" : "s"}</div></div>
         <span style={{ fontSize: 12, fontWeight: 800, color: v.c }}>{v.t}</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 14 }}>
-        <div><div style={{ fontSize: 11, fontWeight: 900, color: "#fca5a5", letterSpacing: 1 }}>THEY WANT</div>
+        <div><div style={{ fontSize: 13, fontWeight: 800, color: "#fca5a5" }}>They want</div>
           <div onClick={() => setSel(o.want)} style={{ cursor: "pointer", fontWeight: 800, display: "flex", alignItems: "center", gap: 5 }}><Bdg pos={o.want.pos} />{o.want.name} <span style={{ color: oC(o.want.ovr) }}>{o.want.ovr}</span></div>
           <div style={{ fontSize: 12, color: C.mt }}>Age {o.want.age} · {money(o.want.salary)}</div></div>
-        <div><div style={{ fontSize: 11, fontWeight: 900, color: "#86efac", letterSpacing: 1 }}>YOU GET</div>
+        <div><div style={{ fontSize: 13, fontWeight: 800, color: "#86efac" }}>You get</div>
           {o.give && <div onClick={() => setSel(o.give)} style={{ cursor: "pointer", fontWeight: 800, display: "flex", alignItems: "center", gap: 5 }}><Bdg pos={o.give.pos} />{o.give.name} <span style={{ color: oC(o.give.ovr) }}>{o.give.ovr}</span></div>}
           {o.give && <div style={{ fontSize: 12, color: C.mt }}>Age {o.give.age} · {money(o.give.salary)}</div>}
           {(o.givePicks || []).map((pk) => <div key={pk.id} style={{ fontWeight: 800 }}>{pk.yr ? `${pk.yr} ` : ""}Round {pk.rd} pick{pk.overall ? ` (#${pk.overall})` : ""}</div>)}
@@ -149,8 +149,8 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
     const t = setTimeout(() => advanceRef.current(), 4500);
     return () => clearTimeout(t);
   }, [auto, dl.hour, dl.done, dl.offers.length]);
-  const panel = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: 12, minWidth: 0 };
-  const head = { fontSize: 13, fontWeight: 900, letterSpacing: 1.5, color: "#fca5a5", marginBottom: 8 };
+  const panel = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px", minWidth: 0 };
+  const head = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 10 };
   const left = LAST_HOUR - dl.hour;
   // phones: a slim sticky clock bar, your phone first, the rest in tabs; the clock's controls
   // sit in the action bar at the bottom of the screen
@@ -168,7 +168,7 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
       <Ticker deals={dl.deals} teams={teams} yr={yr} />
       <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
         <div style={panel}>
-          <div style={head}>YOUR PHONE {dl.offers.length > 0 && <span style={{ background: "#dc2626", color: "#fff", borderRadius: 10, padding: "0 7px", marginLeft: 6 }}>{dl.offers.length}</span>}</div>
+          <div style={head}>Your phone {dl.offers.length > 0 && <span style={{ background: "#dc2626", color: "#fff", borderRadius: 10, padding: "0 7px", marginLeft: 6 }}>{dl.offers.length}</span>}</div>
           {dl.offers.map((o) => <Offer key={o.id} o={o} teams={teams} pickValue={pickValue} onAccept={onAccept} onDecline={onDecline} setSel={setSel} hour={dl.hour} />)}
           {!dl.offers.length && <div style={{ fontSize: 14, color: C.mt, lineHeight: 1.5 }}>{dl.done ? "The phones have gone quiet." : "No offers on the table right now. Calls come in through the day, and put players on the trade block to draw interest. Or pick up the phone yourself with Make a call."}{auto && !dl.done ? " The clock pauses whenever an offer comes in." : ""}</div>}
           {dl.done && (
@@ -184,7 +184,7 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
         </div>
         {view === "feed" && <>
         <div style={{ ...panel, gridColumn: "span 1" }}>
-          <div style={head}>DEADLINE FEED</div>
+          <div style={head}>Deadline feed</div>
           <div>
             {dl.feed.map((f) => {
               const k = KIND[f.kind] || KIND.news;
@@ -205,16 +205,16 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
         </>}
         {view === "block" && <>
         <div style={panel}>
-          <div style={head}>TRADE BLOCK</div>
+          <div style={head}>Trade block</div>
           <TradeBlock teams={teams} ui={ui} needs={needs} pickValue={pickValue} onInquire={onInquire} setSel={setSel} closed={dl.done} />
         </div>
         </>}
         {view === "market" && <>
         <div style={panel}>
-          <div style={head}>BUYERS</div>
+          <div style={head}>Buyers</div>
           {buyers.slice(0, 8).map((b) => <div key={b.ti} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}><TeamLogo t={teams[b.ti]} sz={22} /><span style={{ flex: 1, fontSize: 14 }}>{b.name}</span><b style={{ fontSize: 14, color: C.gn }}>{b.rec}</b></div>)}
           {!buyers.length && <div style={{ fontSize: 13, color: C.mt }}>Nobody's clearly in win-now mode.</div>}
-          <div style={{ ...head, marginTop: 14 }}>SELLERS</div>
+          <div style={{ ...head, marginTop: 14 }}>Sellers</div>
           {sellers.slice(0, 8).map((s) => <div key={s.ti} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}><TeamLogo t={teams[s.ti]} sz={22} /><span style={{ flex: 1, fontSize: 14 }}>{s.name}</span><b style={{ fontSize: 14, color: C.rd }}>{s.rec}</b></div>)}
           {!sellers.length && <div style={{ fontSize: 13, color: C.mt }}>Nobody's clearly selling.</div>}
         </div>
@@ -250,7 +250,7 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
       <Ticker deals={dl.deals} teams={teams} yr={yr} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: 10, marginTop: 10 }}>
         <div style={panel}>
-          <div style={head}>YOUR PHONE {dl.offers.length > 0 && <span style={{ background: "#dc2626", color: "#fff", borderRadius: 10, padding: "0 7px", marginLeft: 6 }}>{dl.offers.length}</span>}</div>
+          <div style={head}>Your phone {dl.offers.length > 0 && <span style={{ background: "#dc2626", color: "#fff", borderRadius: 10, padding: "0 7px", marginLeft: 6 }}>{dl.offers.length}</span>}</div>
           {dl.offers.map((o) => <Offer key={o.id} o={o} teams={teams} pickValue={pickValue} onAccept={onAccept} onDecline={onDecline} setSel={setSel} hour={dl.hour} />)}
           {!dl.offers.length && <div style={{ fontSize: 14, color: C.mt, lineHeight: 1.5 }}>{dl.done ? "The phones have gone quiet." : "No offers on the table right now. Calls come in through the day, and put players on the trade block to draw interest. Or pick up the phone yourself with Make a call."}{auto && !dl.done ? " The clock pauses whenever an offer comes in." : ""}</div>}
           {dl.done && (
@@ -262,7 +262,7 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
           )}
         </div>
         <div style={{ ...panel, gridColumn: "span 1" }}>
-          <div style={head}>DEADLINE FEED</div>
+          <div style={head}>Deadline feed</div>
           <div style={{ maxHeight: 560, overflowY: "auto" }}>
             {dl.feed.map((f) => {
               const k = KIND[f.kind] || KIND.news;
@@ -281,14 +281,14 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
           </div>
         </div>
         <div style={panel}>
-          <div style={head}>TRADE BLOCK</div>
+          <div style={head}>Trade block</div>
           <TradeBlock teams={teams} ui={ui} needs={needs} pickValue={pickValue} onInquire={onInquire} setSel={setSel} closed={dl.done} />
         </div>
         <div style={panel}>
-          <div style={head}>BUYERS</div>
+          <div style={head}>Buyers</div>
           {buyers.slice(0, 8).map((b) => <div key={b.ti} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}><TeamLogo t={teams[b.ti]} sz={22} /><span style={{ flex: 1, fontSize: 14 }}>{b.name}</span><b style={{ fontSize: 14, color: C.gn }}>{b.rec}</b></div>)}
           {!buyers.length && <div style={{ fontSize: 13, color: C.mt }}>Nobody's clearly in win-now mode.</div>}
-          <div style={{ ...head, marginTop: 14 }}>SELLERS</div>
+          <div style={{ ...head, marginTop: 14 }}>Sellers</div>
           {sellers.slice(0, 8).map((s) => <div key={s.ti} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}><TeamLogo t={teams[s.ti]} sz={22} /><span style={{ flex: 1, fontSize: 14 }}>{s.name}</span><b style={{ fontSize: 14, color: C.rd }}>{s.rec}</b></div>)}
           {!sellers.length && <div style={{ fontSize: 13, color: C.mt }}>Nobody's clearly selling.</div>}
         </div>

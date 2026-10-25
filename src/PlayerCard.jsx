@@ -71,7 +71,7 @@ export function RatingBars({ p, labels = {}, showPos = true, posLimit = 99, bare
   const groups = [...GROUPS.map(([g, list]) => [g, list.map(([l, k]) => [l, p[k]]).filter(([, v]) => v != null)]), ...(pos.length ? [["POSITION SKILLS", pos.map(([k, v]) => [labels[k] || k, v])]] : []), ...(showPos && posLimit >= 99 && roleRows(p) ? [["ROLE FIT", roleRows(p)]] : []), ["MENTAL", [["CONFIDENCE", p.conf || 60]]]];
   const cards = groups.map(([g, rows]) => (
         <div key={g} style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px", ...(bare ? { breakInside: "avoid", marginBottom: 12 } : {}) }}>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: C.mt, marginBottom: 6 }}>{g}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 8 }}>{g[0] + g.slice(1).toLowerCase()}</div>
           {rows.map(([l, v]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
               <span style={{ fontSize: 11, color: "#cbd5e1", width: 78, flex: "0 0 auto", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l}</span>
@@ -95,7 +95,7 @@ export function CareerOvrGraph({ p, yr }) {
   const path = pts.map((x, i) => `${i ? "L" : "M"}${X(i).toFixed(1)} ${Y(x.o).toFixed(1)}`).join(" ");
   return (
     <div style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: "#60a5fa" }}>CAREER OVR</div>
+      <div style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>Career OVR</div>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block", maxHeight: 150 }}>
         <path d={`${path} L${X(pts.length - 1)} ${H - 12} L${X(0)} ${H - 12} Z`} fill="#3b82f622" />
         <path d={path} fill="none" stroke="#60a5fa" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
@@ -153,7 +153,7 @@ export function SeasonTable({ p, yr, teamAb }) {
   return (
     <div style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px", marginBottom: 12, overflowX: "auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: "#38bdf8", flex: 1 }}>SEASON BY SEASON</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", flex: 1 }}>Season by season</div>
         {rows.length > 3 && <button onClick={() => setAll(!all)} style={{ background: "transparent", border: `1px solid ${C.bd}`, color: C.mt, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{all ? "Last 3 only ▴" : `All ${rows.length} seasons ▾`}</button>}
       </div>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -181,7 +181,7 @@ export function ContractTimeline({ p, yr, yearsLeft, proration, deadNow }) {
   const max = Math.max(...years.map((x) => x.hit), 1);
   return (
     <div style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: C.gd, marginBottom: 8 }}>CONTRACT TIMELINE <span style={{ fontWeight: 600, letterSpacing: 0 }}>· <span style={{ color: "#60a5fa" }}>■</span> base <span style={{ color: C.gd }}>■</span> bonus <span style={{ color: C.rd }}>■</span> dead money if cut</span></div>
+      <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Contract timeline <span style={{ fontWeight: 600, letterSpacing: 0 }}>· <span style={{ color: "#60a5fa" }}>■</span> base <span style={{ color: C.gd }}>■</span> bonus <span style={{ color: C.rd }}>■</span> dead money if cut</span></div>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
         {years.map((x) => (
           <div key={x.y} style={{ flex: "1 1 0", maxWidth: 110, minWidth: 0, textAlign: "center" }}>

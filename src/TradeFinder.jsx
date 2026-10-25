@@ -34,15 +34,15 @@ export default function TradeFinder({ results, needs = [], onRun, onLoad, onPlay
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
         <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ fontSize: 20, fontWeight: 900 }}>Trade finder</div>
+          {MOBILE && <div style={{ fontSize: 20, fontWeight: 900 }}>Trade finder</div>}
           <div style={{ fontSize: 14, color: C.mt }}>Deals for your biggest needs{needs.length ? `: ${needs.join(", ")}` : ""}. {MOBILE ? "They'd accept every one." : "Every deal here is one they would accept; the tag says how much you overpay to get it. Cap shows their room now → after the deal (and yours on the right)."}</div>
         </div>
-        <Btn onClick={onRun} bg="#1e3a5f" c="#bfdbfe" style={{ fontSize: 15, padding: "9px 16px" }}>↺ Find new deals</Btn>
+        <Btn onClick={onRun} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 15, padding: "9px 18px", borderRadius: 999 }}>Find new deals</Btn>
       </div>
-      {!results.length && <div style={{ background: C.cd, border: `1px dashed ${C.bd}`, borderRadius: 12, padding: 24, textAlign: "center", color: C.mt, fontSize: 15 }}>No fair deals right now. Your roster may be balanced, or nobody has what you need at a price that works.</div>}
-      <div style={{ display: "grid", gap: 6 }}>
+      {!results.length && <div style={{ background: "#ffffff0d", borderRadius: 18, padding: 24, textAlign: "center", color: C.mt, fontSize: 15 }}>No fair deals right now. Your roster may be balanced, or nobody has what you need at a price that works.</div>}
+      <div style={{ display: "grid", gap: 8 }}>
         {results.map((r, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: C.cd, border: `1px solid ${C.bd}`, borderLeft: `4px solid ${r.ratingColor}`, borderRadius: 10, padding: "6px 10px" }}>
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: "#ffffff0d", borderRadius: 16, padding: "10px 14px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7, width: MOBILE ? "auto" : 170, flex: MOBILE ? 1 : "none", minWidth: 0, order: 0 }} title={`${r.team.city} ${r.team.name}`}>
               <TeamLogo t={r.team} sz={26} glow />
               <div style={{ minWidth: 0 }}>
@@ -58,8 +58,8 @@ export default function TradeFinder({ results, needs = [], onRun, onLoad, onPlay
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto", order: MOBILE ? 1 : 2 }}>
               {myCap != null && !MOBILE && <CapNote space={myCap} inSal={r.get.salary || 0} outSal={r.send.salary || 0} who="You" />}
-              <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: r.ratingColor, background: `${r.ratingColor}22`, borderRadius: 999, padding: "3px 9px", whiteSpace: "nowrap" }}>{r.rating}</span>
-              <Btn onClick={() => onLoad(r)} bg={C.bl} style={{ fontSize: 13, padding: "6px 12px", whiteSpace: "nowrap" }}>Load →</Btn>
+              <span style={{ fontSize: 12, fontWeight: 800, color: r.ratingColor, background: `${r.ratingColor}1f`, borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap", textTransform: "capitalize" }}>{String(r.rating).toLowerCase()}</span>
+              <Btn onClick={() => onLoad(r)} bg="#ffffff14" c="#fff" style={{ fontSize: 13, padding: "7px 14px", whiteSpace: "nowrap", borderRadius: 999 }}>Open deal</Btn>
             </div>
           </div>
         ))}
