@@ -1,0 +1,239 @@
+# Handoff: the mobile redo, the desktop redo and the trade market
+
+This is the complete record of the redo session that followed `docs/HANDOFF_MOBILE.md` and
+`docs/MOBILE_REDO_PLAN.md`. It covers every change, where in the code it lives, how it was
+checked, what's left and how the owner likes to work. Read it top to bottom before touching the UI
+or the trade code.
+
+Branches: work on `claude/kind-hypatia-n43n55`; **`claude/scouting-overhaul` is the live branch**
+(see Deploying). The session's commits run from `41f46d4` (Mobile redo: Home) to the latest
+"Trade market recalibrated..." commit; `git log --oneline b42d13f..HEAD` lists them all.
+
+---
+
+## 1. How the owner works (read this first)
+
+- **The test for every screen:** "Would you want to spend time on that screen? Would you leave
+  because it's too busy?" Clean, calm, premium, few taps, no clutter, no desktop-crammed-into-a-phone.
+- **Home is the standard.** The phone Home and the desktop "broadcast" Home are the look every
+  other screen should follow: big team-colored hero, soft rounded cards (`#ffffff0d`, radius 18,
+  no border), plain white section titles, one clear action.
+- Picks between options from **mockups**: when a layout decision is big, render 3–5 static
+  mockups (HTML → Playwright screenshots, using the real logos in `public/logos` and the player
+  art in `public/players`) and let the owner choose. They chose Home layout "1 · Broadcast" and
+  navigation "B · one clean bar".
+- Wants agents to **play-test and find bugs themselves** (screens that point to moved/removed
+  places, popups that can't be closed, things that scroll the page behind instead of the popup).
+- Pushes go live after every verified round (see Deploying). Report plainly what was checked.
+- Mobile and desktop are separate designs: phone changes go behind `MOBILE`; desktop changes
+  must be checked on desktop. Both share game logic.
+
+## 2. Where things are (orientation)
+
+- `src/App.jsx` — the whole shell (state, top bar, nav, tabs, every screen's mount). Huge, minified
+  style JSX; edit with exact-string replacements. Key landmarks (search for these):
+  - `const DESK=[` — the six desktop sections and the screens under each (§4.1).
+  - `data-tour="phases"` — the team/record button that opens the season dropdown.
+  - `SectionHero` — the desktop section header mount (§4.3).
+  - `it.push({key:` — every to-do / inbox item and where it sends you (§6).
+  - `{/* DRAFT */}` — the draft tab (phone draft room branch inside it).
+  - `tab==="livesim"` — the live game screen.
+- `src/ui.jsx` — shared primitives. **Phone primitives:** `Sheet` (portal bottom sheet, fixed
+  header with grip/title/close, scrolling body sized in `dvh`), `Row`, `Segments`, `Hero`,
+  `Section`, `Chips`, `Icon` (line icons; `ICONS` map incl. pause/resume/phone/swap/list).
+- `src/mobile.js` — the `MOBILE` flag (`?mobile=1` or the mobile build) and phone CSS (press
+  feedback, `.gm-in` fade, `.gm-sheet` height).
+- `src/DeskHome.jsx` — **new**: desktop Home (broadcast promo + three cards), `PhaseHero` (no-game
+  weeks), `SectionHero` (header for every desktop section).
+- `src/HomeScreen.jsx` — Home for both: `PhoneHome` (phone) and the desktop branch that builds
+  props for `DeskHome`. The old desktop board layout was **deleted**.
+- `src/trade.js` — trade values and AI acceptance (§7).
+
+## 3. Mobile (everything behind `MOBILE`)
+
+All phone screens were rebuilt in the Home style. Component → file:
+
+| Screen | Component(s) | File |
+|---|---|---|
+| Home | `PhoneHome` (game hero, to-do cards, tiles, top story; sheets for dev focus/injuries/needs) | HomeScreen.jsx |
+| Week result | `PhoneCard` (final-score card; tap = box score) | WeekResult.jsx |
+| Live game | deck toolbar, "On the field" switch, docked `PhoneCaller` play caller, no win probability, no end popup | App.jsx (`livesim`), PlayCaller.jsx, LiveField.jsx |
+| Roster / depth | `PhoneRosterPage`; depth chart Segments + option/picker sheets | RosterView.jsx, DepthChart.jsx |
+| Scouting | compact Hero; Segments **HQ · Board · Scouts** (Combine leads in combine week); ⋯ sheet for Your list / Mock / Combine | ScoutingUI.jsx `ScoutingPage` |
+| Scouts + Regions | **merged** into `PhoneScouts` (scout rows → card sheet, Swap/Let go two-tap; "Scouts for hire" sheet; then `RegionsView`) | ScoutingUI.jsx |
+| Prospect page | `PhoneProspectPage` (full screen; tabs Report/Tools/Testing; Testing shows Combine **and** Pro Day with per-position ranks; Free workout + Interview buttons in combine week) | ScoutingUI.jsx |
+| Board rows | `PhoneProspect` (OVR + POT always shown; Draft → Confirm two-tap) | ScoutingUI.jsx |
+| Combine | phone branch of `CombineView` (points tiles, stock up/down, rows sorted by one test, sort sheet) | ScoutingUI.jsx |
+| Mock draft / Your list | phone branches of `MockDraft`, `YourList` | ScoutingUI.jsx |
+| Draft room | `PhoneClock` (sticky), `PhoneDraftButtons`, `PhoneLastPick` → `PhoneDraftLog` sheet, `PhoneTradeUp` sheet, `PhoneTradeDown` sheet, `PhoneCall` (inline card) | DraftDay.jsx; mounted in App.jsx draft section |
+| Draft recap | `PhoneRecap` (class grade hero, your picks, league grades sheet) in ScoutingUI `DraftGrades`; full recap `PhoneRecap` in DraftRecap.jsx |
+| Free agency | `PhoneFA` (+ `YourOffers` list: lead/behind vs top rival bid); phase-aware hero label | FreeAgency.jsx |
+| Trade | phone pick screen + `PhoneSide` + pinned deal tray; tiles say BUYING/SELLING | TradeScreen.jsx |
+| Front Office | hero + `PhoneContracts` | CapOverview.jsx, PhoneContracts.jsx |
+| Coaching | `PhoneCoaching` | PhoneCoaching.jsx |
+| Schedule / standings | `PhoneSchedule` (holiday + forecast tags), `PhoneStandings` | SchedulePage.jsx, PhoneStandings.jsx |
+| Stats / League / Legacy / Saves / Game Updates | `PhoneStats`, `PhoneLeague`, TrophyRoom phone hero, `PhoneSaves`, GameInfo hero | respective files |
+| Training camp | `PhoneCamp` | TrainingCamp.jsx |
+| Game plan | phone strip rows + sheets; `GamePlanCard mobile` flat sheet layout | GamePlan.jsx, GamePlanCard.jsx |
+| Dev focus | phone `FocusSlot` rows; `Picker` is portaled full screen with a sort Segments | DevFocus.jsx |
+| Nav / More | `MobileNav` (icons), grouped `MoreSheet`, `MobileActionBar` (two-tap confirm on Sim to Deadline / Sim All) | MobileShell.jsx |
+| New game | AFC/NFC Segments on team select (`pickConf`, session-only) | App.jsx |
+
+Phone-only behaviours worth knowing:
+- No "What's at stake" panel/line, no LET'S GO popup, no injury report popup (the Injuries tile
+  and Home to-dos carry it), no live-game win probability.
+- Start Season only lives on Home's action bar. The action bar shows on Home and the draft only.
+- `Spotlight.jsx` (draft pick reveal, awards, records, Canton): on phones the page behind is
+  locked, the details scroll inside, the buttons are pinned above the browser bar.
+- Popups that used to be trapped inside a sheet's transform are portaled to `document.body`:
+  dev focus `Picker`, `Negotiate`, `PhoneProspectPage`, `IncomingCall`. **Any new full-screen
+  overlay must portal**, or a sheet's animation will pin it inside the sheet.
+- Holiday games and rain/snow/wind/frigid forecasts show on the Home hero and the schedule.
+
+## 4. Desktop
+
+### 4.1 Top bar (navigation "B")
+- Left: logo + a button (`data-tour="phases"`) with team name and "2-2 · Week 5 ▾". It opens a
+  dropdown with the whole season (18 week boxes W/L/BYE, next ringed, the off-season stages,
+  links to Schedule/Standings). The old two-row phase strip under the bar is gone.
+- Middle: six sections from `DESK` in App.jsx: **Home · Team (Depth Chart, Roster, Coaching) ·
+  Season (Schedule, Standings, Playoffs, Stats, League, Legacy) · Draft (Scouting, Draft, Draft
+  Recap) · Trades & FA (Trade, Free Agency) · Front Office**. `deskOf(tab)` finds a tab's section;
+  `deskEntry(d)` picks where a section opens (Draft opens the draft room during the draft;
+  Trades & FA opens Free Agency during re-sign/FA).
+- Right: phase buttons (Play / quiet Sim Week / ⏩ menu, or Finish… in the off-season) and one ⋯
+  menu. Search (/) and Save were moved into the top of that menu; the 🔍 💾 🎓 buttons are gone.
+- League keeps its own second row (Franchise History, Record Book, ...); Game Updates keeps its
+  row (patch notes / Timeline). Screens outside the six sections: Saves and Game Updates (⋯ menu),
+  Trade Deadline Day (Home banner), live game (Play).
+
+### 4.2 Home (layout "1 · Broadcast") — `src/DeskHome.jsx`
+- Game weeks: the promo (both clubs' colors, each club's star = `featuredPlayer` = best healthy
+  non-OL/K/P, with name, position, OVR and `headline()` season line; **home star is not
+  mirrored**), eyebrow (week, prime slot, division, rivalry, kickoff), tags (holiday, spread,
+  weather), Play/Sim right on it. Under it three cards: **To do** (top 3, See all → Inbox,
+  Development focus → sheet), **Game plan** (`GamePlanCard bare`: offense/defense grades, scout
+  note, Change/Week prep), **Top story**.
+- No game (bye week, off-season, season over): `PhaseHero` (team colors + watermark, phase title,
+  record / cap / roster / injured, the phase's buttons), middle card = **Biggest needs**, and in
+  combine/re-sign/FA/draft the **Build your 53** checklist underneath.
+- The FranchiseStrip (four stat tiles) no longer renders on desktop; the old desktop Home board,
+  MatchupStakes box, week strip and fit-to-window logic were deleted from HomeScreen.jsx.
+- Sheets opened from anywhere: App dispatches `window` event `gm:home` with detail `"dev"` or
+  `"injuries"`; DeskHome (`window.__gmDeskHome`) and PhoneHome (`window.__gmPhoneHome`) listen. If
+  neither is mounted, the to-do falls back (scroll to dev focus / Schedule injury report).
+
+### 4.3 Section headers — `SectionHero` in DeskHome.jsx
+Every desktop section except Home opens on a header in Home's style: club colors and faint mark,
+the section name in block letters, a few numbers (Team: record/roster/injured/staff points;
+Season: record/points for/against; Draft: your picks/scouting points; Trades & FA: cap/roster and
+the deadline/FA status; Front Office: cap/expiring), and the section's screens as tabs. The stats
+are built in App.jsx next to the `SectionHero` mount. Titles that repeated it were removed (Front
+Office title, "2026 Schedule", "2027 Draft Class" + points box).
+
+### 4.4 Declutter passes (per screen)
+- Draft room: header no longer repeats Resume / Sim to my pick on the draft tab; the stage's four
+  buttons share one calm style (only Sim to my pick is green); Big Board rows show Draft only when
+  it's your pick.
+- Coaching: Upgrade/Extend are quiet buttons; coordinator XP is a thin bar on each coach's card
+  (the separate XP panel is gone); section titles are plain.
+- League: the duplicate left sidebar was removed (the tabs above cover it).
+- Front Office: Cap space / Next season's room tiles removed (the long view shows them), the
+  remaining tiles compact, Cap Advisor shows 3 tips + "N more suggestions".
+- Trade: tiles without borders, tinted for buyers/sellers, muted cap number; **bug fixed**: neutral
+  clubs no longer read SELLING (only `buyer`/`seller` modes get a label). Buy/sell modes are by
+  record from week 4 to the deadline (`_aiTradeMode` in App.jsx).
+- Free agency rows: quiet outline Negotiate. Scouting points badge smaller and calm.
+- Soft cards: `panel`/`head` in ScoutingUI.jsx, `card`/`head` in CapOverview.jsx (and its long-view
+  year cards), `panel` in SchedulePage.jsx now use the soft card and white titles.
+
+### 4.5 Walkthrough
+`tourSteps(mobile)` in Walkthrough.jsx has a desktop branch rewritten for the new layout (targets
+`promo`, `todo`, `actions`, `phases`, `nav`). Mobile steps unchanged.
+
+## 5. Features added along the way
+- Free agency **Your offers** list (`YourOffers` in FreeAgency.jsx): each of your bids vs the top
+  rival's, lead/behind, decide day.
+- **Combine ranks**: `combineRank(cls, p, t, res)` and `rankColor` in `src/scouting.js`; each
+  testing number shows "(4 of 16)" against his position group in the class (Combine or pro day),
+  green→red. Both the Combine and the Pro Day are shown when he has both. Test:
+  `tests/combineRank.test.js`.
+- **Region colors**: `REGION_CLR` in ScoutingUI.jsx (one color per region: SEC, Big Ten, ACC,
+  Big 12, Group of Five, Pac-12 & MW); the map, legend and rows use them (desktop and phone).
+- To-do "Send your scouts to their regions" opens Regions directly (window event `gm:scouting`
+  with the view name; `ScoutingPage` listens).
+
+## 6. Links and to-dos
+Every `it.push({key:...})` item in App.jsx was audited: all targets exist. The ones changed:
+`devfocus` and `injuries` (open Home sheets via `gm:home`, with fallbacks), `scoutAreas` (Regions
+via `gm:scouting`). DeskHome's "See all" calls `onNav("inbox")`.
+
+## 7. The trade market (`src/trade.js`)
+Recalibrated against real deadline deals; `tests/tradeMarket.test.js` pins ten of them (each must
+go through at about its real price, and a clearly smaller offer must be refused):
+Montez Sweat (2023, 2nd), Roquan Smith (2022, 2nd+5th), Jaelan Phillips (2025, 3rd), Jakobi Meyers
+(2025, 4th+6th), Amari Cooper (2024, 3rd), Davante Adams (2024, 3rd→2nd), Za'Darius Smith (2024,
+5th), DeAndre Hopkins (2024, 5th→4th), Christian McCaffrey (2022, 2nd+3rd+4th+5th), T.J. Hockenson
+(2022, 2nd+3rd).
+
+What changed and why:
+- `ageMult`: falls off fast after 29 (29 .8, 30 .62, 31 .42, 32 .28, 33 .2, 34+ .16; young bonus
+  23 1.25, ≤25 1.15). QBs still age 4 years slower.
+- `POS_MULT.RB` 0.6 → 0.52.
+- **Rentals:** in season, *any* expiring deal sells for `RENTAL` 0.48 of value (0.40 =
+  `RENTAL_GONE` if his club won't keep him, `keepChance` < .5). Before, only 29+ vets his club
+  wouldn't keep were discounted, which priced Sweat/Roquan/Phillips at a 1st. `fitFor` applies the
+  same when *you* send an expiring player (contenders 0.75).
+- **`contractMult(p)`**: salary vs `askingPrice(p)` with years left (0.6–1.15); applied **when a
+  trade is weighed** (in `evaluateTrade`), never in `playerValue`/`tradeVal`, because it reads
+  this year's cap and a saved value must not change on reload (that broke the smoke test once).
+- **`PICK_SCALE` 1.35** in `pickValue`: picks count 1.35x against players (pick-for-pick draft-day
+  math in `draftTrade.js` uses its own chart and is unaffected).
+- Asking premiums: base 1.1 → 1.05; star (tradeVal ≥ 150) 1.25 → 1.15; contender's starter
+  1.2 → 1.15. Franchise QB (1.35) and face of the franchise (1.7) unchanged.
+- `tests/trade.test.js`: "a late 2nd isn't enough" for an 82 WR was the behaviour the owner asked
+  to change; it now asserts a late 2nd gets him and a 4th doesn't.
+
+Value reference after the change: 1st #16 ≈ 126, 2nd #48 ≈ 48, 3rd #80 ≈ 24, 4th #112 ≈ 14;
+QB 90/28 ≈ 207, WR 90/26 ≈ 110, WR 82/27 ≈ 43, DL 85/29 ≈ 53, CB 78/25 ≈ 25, LB 75/30 ≈ 6.
+
+Not yet done on trades: AI-to-AI trades (`aiTrades.js`) and AI offers (`tradeOffers.js`) use
+`tradeVal` directly, so they don't see `contractMult`; worth a look if AI deals feel off.
+
+## 8. Checks and tools
+
+Before every push: `npm run lint` (0 errors; 15 warnings are pre-existing), `npm test`,
+`npm run build`, `npm run smoke` (17 steps; now clicks the six desktop sections — see the tab list
+in `scripts/smoke.mjs`). `tests/saveCoverage.test.js` requires new App state to be saved or listed
+in `SESSION_ONLY` (`pickConf`, `dlOpen`, `seasonOpen` were added).
+
+Screenshots / play-testing (local only, git-ignored, not in the repo): `_audit.mjs`, `_audit2.mjs`,
+`_audit3.mjs` in the repo root drive the built app with Playwright
+(`executablePath: /opt/pw-browsers/chromium`; 390x844@2x phone, or `DESK=1` 1440x900, `VH=` height).
+Run as `ONLY=<scenario> node _audit3.mjs <outdir> <tag>`; `SAVE=<file>` loads a dumped autosave and
+presses Continue; `SIMWK=n` sims n weeks first. Useful scenarios: `mkdraft` (sims to FA and the
+draft and dumps `save-fa.txt` / `save-draft.txt`), `dr` (plays a draft), `tour` (every phone screen
+and tab), `dtour` (every desktop section and tab), `navb` (desktop sections, season dropdown, ⋯
+menu), `todoall` (clicks every Home to-do), `sweep` (taps up to 30 buttons per screen and checks
+for crashes, sideways scroll, stuck close buttons). If these scripts are gone, recreate the idea:
+build, `vite preview`, Playwright, screenshot, look.
+
+Gotchas: the mobile action bar's Sim All / Sim to Deadline need a second tap ("Tap again..."); a
+new phone game taps NFC before picking the Giants; `sleep` in the shell is blocked — use
+background commands with `until` loops.
+
+## 9. Deploying
+`.github/workflows/deploy-pages.yml` builds with `npm run build:pages:all` and deploys **only from
+`main` or `claude/scouting-overhaul`**. After verifying: push the work branch, then
+`git push origin HEAD:claude/scouting-overhaul` (fast-forward). Live:
+https://evandamours.github.io/27_Gridiron_GM/ and `/mobile/`. Confirm by fetching the live
+`assets/index-*.js` and grepping for a string from the change (code comments are stripped, use UI
+text). gh-pages / `scripts/publish-pages.sh` is **not** the live source.
+
+## 10. Known gaps / next steps
+- Desktop screens below each section header still use some older styling inside (gold caps
+  headings in a few places, bordered boxes in Depth Chart, Stats tables, Legacy Hall, player card,
+  re-sign and draft-day panels). Continue in the same vein: soft cards, white titles, fewer boxes.
+- The phone `GamePlanCard` scout block (`Scout`) still has the older bordered look.
+- AI-to-AI trades ignore `contractMult` (see §7).
+- The 15 lint warnings are old `react-hooks/exhaustive-deps` warnings in App.jsx.
