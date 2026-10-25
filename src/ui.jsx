@@ -13,27 +13,49 @@ export const CloseX=({onClick,label="Close",style:st})=><button onClick={onClick
 // Phone primitives (mobile redo). Sheet: a bottom sheet over everything, tap outside or drag the
 // grip down to close. Row: one line, label left, a short value right, tap for more. Segments: a
 // pill switch between a few views.
-export function Sheet({ title, onClose, children }) {
+// On a computer the same sheet is a centered dialog (wide: for tables and two-column content).
+export function Sheet({ title, onClose, children, wide, z = 450 }) {
+  const phone = typeof document === "undefined" || document.documentElement.classList.contains("gm-mobile");
   // drawn at the top of the page, so a sheet opened inside a sticky or stacked block still sits over everything.
   // The grip, title and close button stay put and only the body scrolls, and the sheet is sized to
   // the screen you can actually see (dvh: not the space under a phone browser's address bar), so
   // the ✕ is always in reach.
   return createPortal(
-    <div className="keep-dark" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 450, background: "#000000a6", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", display: "flex", fontFamily: C.f, ...sheetWrap(true) }}>
-      <div role="dialog" aria-label={title} className="gm-sheet" onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: "#0d1424", border: `1px solid ${C.bd}`, color: C.tx, padding: "14px 0 0", display: "flex", flexDirection: "column", overflow: "hidden", ...sheetBox(true), maxHeight: undefined }}>
+    <div className="keep-dark" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: z, background: "#000000a6", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", display: "flex", fontFamily: C.f, ...(phone ? sheetWrap(true) : { alignItems: "center", justifyContent: "center", padding: 24 }) }}>
+      <div role="dialog" aria-label={title} className="gm-sheet" onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: "#0d1424", border: phone ? `1px solid ${C.bd}` : 0, color: C.tx, padding: phone ? "14px 0 0" : "18px 6px 0", display: "flex", flexDirection: "column", overflow: "hidden", ...(phone ? { ...sheetBox(true), maxHeight: undefined } : { width: wide ? 820 : 560, maxWidth: "100%", maxHeight: "86vh", borderRadius: 22, boxShadow: "0 30px 80px #000c" }) }}>
         <div style={{ flexShrink: 0, padding: "0 14px" }}>
-          <SheetGrip onClose={onClose} />
+          {phone && onClose && <SheetGrip onClose={onClose} />}
           <div style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, marginBottom: 8 }}>
             <div style={{ flex: 1, minWidth: 0, fontSize: 20, fontWeight: 900, padding: "0 2px" }}>{title}</div>
-            <CloseX onClick={onClose} style={{ position: "static", width: 40, height: 40, borderRadius: 20, flexShrink: 0 }} />
+            {onClose && <CloseX onClick={onClose} style={{ position: "static", width: 40, height: 40, borderRadius: 20, flexShrink: 0 }} />}
           </div>
         </div>
-        <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", padding: "0 14px" }}>{children}</div>
+        <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", padding: phone ? "0 14px" : "0 14px 16px" }}>{children}</div>
       </div>
     </div>,
     document.body
   );
 }
+// A decision or a moment, in the sheet's look: a plain title, an optional line under it, the body,
+// and its buttons in one row at the bottom. No onClose: it has to be answered (no ✕, no tap-out).
+export function Dialog({ title, sub, onClose, children, actions, wide, z = 2000 }) {
+  return (
+    <Sheet title={title} onClose={onClose} wide={wide} z={z}>
+      {sub && <div style={{ fontSize: 15, color: "#94a3b8", lineHeight: 1.5, margin: "-4px 2px 12px" }}>{sub}</div>}
+      {children}
+      {actions && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16, paddingBottom: 4 }}>{actions}</div>}
+    </Sheet>
+  );
+}
+// The dialog's buttons: primary (green), danger (red), gold, or quiet (the default).
+const DB_TONE = { primary: ["#16a34a", "#fff"], danger: ["#7f1d1d", "#fecaca"], gold: ["#eab308", "#111"], quiet: ["#ffffff14", "#e2e8f0"] };
+export function DBtn({ kind = "quiet", onClick, disabled, children, title, grow = true, style }) {
+  const [bg, c] = DB_TONE[kind] || DB_TONE.quiet;
+  return <button onClick={onClick} disabled={disabled} title={title} style={{ flex: grow ? "1 1 160px" : "0 0 auto", minHeight: 48, padding: "0 18px", borderRadius: 14, border: 0, background: bg, color: c, fontSize: 15, fontWeight: 800, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1, ...(style || {}) }}>{children}</button>;
+}
+// A soft panel and a quiet label inside a dialog.
+export const softBox = { background: "#ffffff0d", borderRadius: 14, padding: "12px 14px" };
+
 export function Row({ label, value, tone, onClick, first, tour }) {
   return (
     <button onClick={onClick} data-tour={tour} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 52, textAlign: "left", background: "transparent", border: 0, borderTop: first ? 0 : "1px solid #ffffff14", padding: "0 4px", color: "#fff", cursor: "pointer" }}>
