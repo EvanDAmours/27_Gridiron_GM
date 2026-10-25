@@ -15,7 +15,7 @@ export default function OfferSheets({ teams, ui, yr, picks, futures, cap, termsF
   if (!list.length) return null;
   return (
     <div style={{ background: C.cd, border: "1px solid #b4530966", borderRadius: 10, padding: "12px 14px", marginBottom: 12 }}>
-      <div style={{ fontSize: 15, fontWeight: 900, color: "#fbbf24", letterSpacing: 1 }}>🏷️ OFFER SHEETS</div>
+      <div style={{fontSize: 15, fontWeight: 800, color: "#fbbf24" }}>Offer sheets</div>
       <div style={{ fontSize: 13, color: C.mt, margin: "2px 0 8px" }}>Franchise-tagged players can sign an offer sheet. If his club doesn't match, he's yours and they get your first-round picks in the {yr} and {yr + 1} drafts.{!comp.ok && <b style={{ color: C.rd }}> {comp.why}</b>}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 8 }}>
         {list.map(({ p, ti }) => (

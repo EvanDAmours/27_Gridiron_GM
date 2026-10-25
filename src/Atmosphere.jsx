@@ -182,7 +182,7 @@ export function HolidayFrame({ holiday, children, tdKey, maxW }) {
       <div style={{ position: "relative" }}>
         {children}
         {/* New Year's art is just corner flourishes: a fine gold double rule joins them */}
-        {themeOf(holiday) === "newyear" && <div className="at-deco" style={{ position: "absolute", inset: "-2.2% -1.1%", border: "2px solid #d4af37", borderRadius: 12, boxShadow: "0 0 0 4px #0b122000, 0 0 0 5px #d4af3766, 0 0 18px #fbbf2455, inset 0 0 18px #fbbf2422", pointerEvents: "none", zIndex: 2, animation: "atShimmer 3s ease-in-out infinite" }} />}
+        {themeOf(holiday) === "newyear" && <div className="at-deco" style={{ position: "absolute", inset: "-2.2% -1.1%", border: "1px solid #d4af372e", borderRadius: 12, boxShadow: "0 0 0 4px #0b122000, 0 0 0 5px #d4af3766, 0 0 18px #fbbf2455, inset 0 0 18px #fbbf2422", pointerEvents: "none", zIndex: 2, animation: "atShimmer 3s ease-in-out infinite" }} />}
         <img alt="" src={holArt(holiday, "frame")} className="at-deco" style={{ position: "absolute", left: "-4.1667%", top: "-9.259%", width: "108.333%", height: "118.52%", pointerEvents: "none", zIndex: 3, animation: FRAME_ANIM[themeOf(holiday)] }} />
         {/* a touchdown: the holiday's sticker pops over the field */}
         {tdKey != null && <img key={tdKey} alt="" src={sticker(holiday, artOf(holiday).td)} className="at-deco" style={{ position: "absolute", left: "50%", top: "38%", width: "18%", pointerEvents: "none", zIndex: 4, filter: "drop-shadow(0 12px 24px #000c)", animation: "atPop 1.8s ease-out both" }} />}

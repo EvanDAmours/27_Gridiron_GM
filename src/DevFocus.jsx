@@ -26,7 +26,7 @@ function Picker({ label, groups, current, onPick, onClose, by, setBy }) {
       <div style={{ position: "relative", padding: "calc(12px + env(safe-area-inset-top)) 14px 10px", borderBottom: `1px solid ${C.bd}` }}>
         <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>{label} development focus</div>
         <CloseX onClick={onClose} style={{ top: "calc(8px + env(safe-area-inset-top))" }} />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search your roster" aria-label="Search" style={{ width: "100%", boxSizing: "border-box", minHeight: 44, background: C.cd, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "8px 12px", fontSize: 16 }} />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search your roster" aria-label="Search" style={{ width: "100%", boxSizing: "border-box", minHeight: 44, background: C.cd, color: C.tx, border: "1px solid #ffffff10", borderRadius: 10, padding: "8px 12px", fontSize: 16 }} />
         {setBy && <div style={{ marginTop: 10 }}><Segments items={[["pos", "By position"], ["growth", "Fastest growth"]]} value={by} onChange={setBy} /></div>}
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "6px 10px calc(20px + env(safe-area-inset-bottom))" }}>
@@ -85,7 +85,7 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
       </div>
       {p && !MOBILE ? (
         // desktop: one slim row so Home fits on one screen
-        <div onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 8, borderRadius: 8, border: "1px solid #8a6d1d", background: "#f5c5420d", padding: "6px 10px", marginBottom: 6, cursor: "pointer", minWidth: 0 }}>
+        <div onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 8, borderRadius: 8, border: "1px solid #8a6d1d2e", background: "#f5c5420d", padding: "6px 10px", marginBottom: 6, cursor: "pointer", minWidth: 0 }}>
           <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: pC(p.pos), borderRadius: 4, padding: "2px 6px" }}>{posTag(p)}</span>
           <span style={{ minWidth: 0, flex: 1 }}>
             <span style={{ display: "block", fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
@@ -94,9 +94,9 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
           <span style={{ fontSize: 22, fontWeight: 900, fontStyle: "italic", color: oC(p.ovr) }}>{p.ovr}</span>
         </div>
       ) : p ? (
-        <div style={{ borderRadius: 10, overflow: "hidden", border: "1px solid #8a6d1d", marginBottom: 6, cursor: "pointer" }} onClick={() => setSel(p)}>
+        <div style={{ borderRadius: 10, overflow: "hidden", border: "1px solid #8a6d1d2e", marginBottom: 6, cursor: "pointer" }} onClick={() => setSel(p)}>
           <div style={{ background: "linear-gradient(135deg,#0b1a3a,#13244a)", padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ width: 34, height: 34, borderRadius: 8, border: "2px solid #dc2626", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12, color: "#fff" }}>{initials(p.name)}</span>
+            <span style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid #dc26262e", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12, color: "#fff" }}>{initials(p.name)}</span>
             <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: pC(p.pos), borderRadius: 4, padding: "2px 7px" }}>{posTag(p)}</span>
             <span style={{ marginLeft: "auto", fontSize: 30, fontWeight: 900, fontStyle: "italic", color: oC(p.ovr) }}>{p.ovr}</span>
           </div>
@@ -111,9 +111,9 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
       ) : !MOBILE ? null : (
         <div style={{ border: `1px dashed ${C.bd}`, borderRadius: 10, padding: "14px 12px", color: C.mt, fontSize: 13, marginBottom: 6 }}>Nobody in the lab. Pick a player below.</div>
       )}
-      {MOBILE && <button onClick={() => setPicking(true)} style={{ width: "100%", minHeight: 46, background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "8px 12px", fontSize: 15, fontWeight: 700, textAlign: "left", cursor: "pointer" }}>{p ? `Change ${label.toLowerCase()} player ›` : `Choose ${label.toLowerCase()} player ›`}</button>}
+      {MOBILE && <button onClick={() => setPicking(true)} style={{ width: "100%", minHeight: 46, background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 10, padding: "8px 12px", fontSize: 15, fontWeight: 700, textAlign: "left", cursor: "pointer" }}>{p ? `Change ${label.toLowerCase()} player ›` : `Choose ${label.toLowerCase()} player ›`}</button>}
       {MOBILE && picking && <Picker label={label} groups={by === "pos" ? groups : [["Fastest growers first", options]]} current={p?.id} onClose={() => setPicking(false)} onPick={(id) => { setFocus((f) => ({ ...f, [side]: id })); setPicking(false); }} />}
-      {!MOBILE && <Select value={p?.id || ""} onChange={(e) => setFocus((f) => ({ ...f, [side]: e.target.value || null }))} aria-label={`${label} development focus`} style={{ width: "100%", background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
+      {!MOBILE && <Select value={p?.id || ""} onChange={(e) => setFocus((f) => ({ ...f, [side]: e.target.value || null }))} aria-label={`${label} development focus`} style={{ width: "100%", background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 8, padding: "8px 10px", fontSize: 13 }}>
         <option value="">— choose {label.toLowerCase()} —</option>
         {by === "pos" ? groups.map(([pos, list]) => <optgroup key={pos} label={pos}>{list.map(opt)}</optgroup>) : options.map(opt)}
       </Select>}
@@ -130,7 +130,7 @@ export default function DevFocusCard({ roster, focus, setFocus, setSel }) {
     </div>
   );
   return (
-    <div style={{ background: C.cd, borderRadius: 8, padding: "12px 14px", border: `1px solid ${C.bd}` }}>
+    <div style={{ background: C.cd, borderRadius: 8, padding: "12px 14px", border: "1px solid #ffffff10" }}>
       <div title="Each regular-season week a focused player can gain a point. Young + high development trait = faster gains." style={{ fontSize: 11, color: C.mt, letterSpacing: 1, marginBottom: 8, fontWeight: 700 }}>DEVELOPMENT FOCUS{!MOBILE && <span style={{ letterSpacing: 0, fontWeight: 600, marginLeft: 6, cursor: "help" }}>ⓘ</span>}</div>
       <FocusSlot label="Offense" side="off" players={roster.filter((p) => OFFENSE.includes(p.pos))} focus={focus} setFocus={setFocus} setSel={setSel} />
       <FocusSlot label="Defense" side="def" players={roster.filter((p) => DEFENSE.includes(p.pos))} focus={focus} setFocus={setFocus} setSel={setSel} />

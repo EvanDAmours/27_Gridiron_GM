@@ -24,14 +24,14 @@ const SORTS = {
   age: { label: "Age", key: (p) => p.age, dir: 1 },
 };
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
-const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
+const sel = { background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 
 // The league's best at one position (other clubs' players): pick one and he's loaded into a trade
 // with his team.
 function BestAt({ teams, ui, pos, setPos, onPick, setSel }) {
   const rows = teams.flatMap((t) => (t.id === ui ? [] : (t.roster || []).filter((p) => posTag(p) === pos).map((p) => ({ t, p })))).sort((a, b) => b.p.ovr - a.p.ovr || a.p.age - b.p.age).slice(0, 15);
   return (
-    <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 10 }}>
+    <div style={{ background: C.cd, border: "1px solid #ffffff10", borderRadius: 10, padding: 10 }}>
       <div style={{ display: "flex", gap: 5, flexWrap: MOBILE ? "nowrap" : "wrap", overflowX: MOBILE ? "auto" : undefined, marginBottom: 8, paddingBottom: 2 }}>
         {POS.map((x) => <button key={x} onClick={() => setPos(x)} style={{ flex: "0 0 auto", background: pos === x ? `${C.bl}33` : C.bg, color: pos === x ? "#fff" : "#cbd5e1", border: `1px solid ${pos === x ? C.bl : C.bd}`, borderRadius: 999, padding: "5px 11px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{x}</button>)}
       </div>
@@ -70,7 +70,7 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
   const th = { padding: "6px 6px", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: C.mt, borderBottom: `1px solid ${C.bd}`, textAlign: "center", position: "sticky", top: 0, background: C.cd };
   const td = { padding: "8px 6px", borderBottom: `1px solid ${C.bd}55`, textAlign: "center", fontSize: 15 };
   return (
-    <div style={{ flex: "1 1 420px", minWidth: 0, background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12 }}>
+    <div style={{ flex: "1 1 420px", minWidth: 0, background: C.cd, border: "1px solid #ffffff10", borderRadius: 10, padding: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
         <TeamLogo t={team} sz={40} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -246,8 +246,8 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
         {/* the deal, pinned by your thumb while you browse the rosters */}
         <div className="keep-dark" style={{ position: "fixed", left: 0, right: 0, bottom: "calc(58px + env(safe-area-inset-bottom))", zIndex: 396, background: "#0d1424", borderTop: "1px solid #ffffff14", padding: "12px 14px 10px", boxShadow: "0 -10px 30px #0008" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div style={{ minWidth: 0 }}><div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: "#fca5a5" }}>YOU SEND</div>{list(trOff.g, trOff.gPk, "g", "gPk", "#fca5a5", "Tap your players")}</div>
-            <div style={{ minWidth: 0 }}><div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: "#86efac" }}>YOU GET</div>{list(trOff.r, trOff.rPk, "r", "rPk", "#86efac", "Tap their players")}</div>
+            <div style={{ minWidth: 0 }}><div style={{fontSize: 13, fontWeight: 800, color: "#fca5a5" }}>You send</div>{list(trOff.g, trOff.gPk, "g", "gPk", "#fca5a5", "Tap your players")}</div>
+            <div style={{ minWidth: 0 }}><div style={{fontSize: 13, fontWeight: 800, color: "#86efac" }}>You get</div>{list(trOff.r, trOff.rPk, "r", "rPk", "#86efac", "Tap their players")}</div>
           </div>
           {any && <div style={{ position: "relative", height: 6, background: "#ffffff14", borderRadius: 3, margin: "8px 0 0" }}>
             <div style={{ position: "absolute", left: "50%", top: -3, bottom: -3, width: 2, background: "#94a3b8" }} />
@@ -307,7 +307,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
             {verdict && <span style={{ fontSize: 20, fontWeight: 900, color: verdict[1], flex: "1 1 240px" }}>{verdict[0]}{ev.why && !accept && <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#fca5a5" }}>{ev.why}</span>}{ev.notes?.length > 0 && <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#cbd5e1", marginTop: 3 }}>How they see it: {ev.notes.slice(0, 3).join("; ")}.</span>}</span>}
             {any && <span style={{ fontSize: 14, color: C.mt }}>Cap space after: <b style={{ color: capAfter >= 0 ? C.gn : C.rd }}>{money(capAfter)}</b>{dead.now + dead.next > 0.05 && <span style={{ display: "block", fontSize: 12 }}>incl. {money(dead.now)} dead money{dead.next > 0.05 ? ` (+${money(dead.next)} next year)` : ""}</span>}</span>}
             {any && <Btn onClick={balance} bg={C.bd} c="#e2e8f0" style={{ fontSize: 15, padding: "9px 14px" }}>What would make this work?</Btn>}
-            {any && <Btn onClick={() => setTrOff({ g: [], r: [], gPk: [], rPk: [] })} bg="transparent" c={C.mt} style={{ fontSize: 15, padding: "9px 12px", border: `1px solid ${C.bd}` }}>Clear</Btn>}
+            {any && <Btn onClick={() => setTrOff({ g: [], r: [], gPk: [], rPk: [] })} bg="transparent" c={C.mt} style={{ fontSize: 15, padding: "9px 12px", border: "1px solid #ffffff10" }}>Clear</Btn>}
             <Btn onClick={execTr} disabled={!accept || closed} bg={C.gn} style={{ fontSize: 16, padding: "10px 20px", fontWeight: 900 }}>{closed ? "Trade deadline passed" : "Propose trade"}</Btn>
           </div>
         </div>
@@ -349,7 +349,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
                 {needs.map((pos) => {
                   const list = teams.filter((t) => t.id !== ui).flatMap((t) => t.roster.filter((p) => needGroup(p) === pos && !p.injured).map((p) => ({ p, t }))).sort((a, b) => b.p.ovr - a.p.ovr).slice(0, 5);
                   return (
-                    <div key={pos} style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "10px 12px" }}>
+                    <div key={pos} style={{ background: C.cd, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px" }}>
                       <div style={{ fontSize: 14, fontWeight: 900, marginBottom: 6, textTransform: "capitalize" }}>{needName(pos)}</div>
                       {list.map(({ p, t }) => (
                         <button key={p.id} onClick={() => { setTrTm(t.id); setTrOff({ g: [], r: [p], gPk: [], rPk: [] }); }} title={`Open a trade with the ${t.name} for ${p.name}`} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", background: "transparent", border: 0, borderBottom: `1px solid ${C.bd}55`, padding: "5px 0", color: "#e2e8f0", cursor: "pointer", textAlign: "left" }}>

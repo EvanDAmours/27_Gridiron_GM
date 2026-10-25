@@ -34,7 +34,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
   const counts = devCounts(rows);
   const mine = grades[ui];
   const past = view < yr || !current;
-  const panel = { background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 12, padding: 14, marginBottom: 12 };
+  const panel = { background: C.cd, border: "1px solid #ffffff10", borderRadius: 12, padding: 14, marginBottom: 12 };
   const head = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 10 };
   const open = (id) => { const p = id != null && findPlayer(id); if (p) setSel(p); };
   const now = (id) => (past ? findPlayer(id) : null);
@@ -44,7 +44,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
   );
   if (!years.length) return (
     <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ fontSize: 26, fontWeight: 900 }}>Draft Recap</div>
+      {MOBILE && <div style={{ fontSize: 26, fontWeight: 900 }}>Draft Recap</div>}
       <div style={{ fontSize: 15, color: C.mt, marginTop: 8 }}>No draft has been held in your league yet. After the draft, every pick shows up here with his real ratings and development trait.</div>
     </div>
   );
@@ -58,7 +58,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
     <div style={{ maxWidth: 1000, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <div style={{ fontSize: 26, fontWeight: 900, flex: 1 }}>{view + 1} Draft Recap</div>
-        {years.length > 1 && <Select value={view} onChange={(e) => setPickYr(+e.target.value)} style={{ background: C.cd, color: "#e2e8f0", border: `1px solid ${C.bd}`, borderRadius: 6, padding: "6px 8px", fontSize: 14 }}>{years.map((y) => <option key={y} value={y}>{y + 1} draft</option>)}</Select>}
+        {years.length > 1 && <Select value={view} onChange={(e) => setPickYr(+e.target.value)} style={{ background: C.cd, color: "#e2e8f0", border: "1px solid #ffffff10", borderRadius: 6, padding: "6px 8px", fontSize: 14 }}>{years.map((y) => <option key={y} value={y}>{y + 1} draft</option>)}</Select>}
         {onNext && <Btn onClick={onNext} bg={C.gn} style={{ fontSize: 15, padding: "8px 14px" }}>→ Next Season</Btn>}
       </div>
       <div style={{ fontSize: 14, color: C.mt, marginBottom: 12 }}>Every pick with his true ratings and development trait revealed. {past ? "\"Now\" shows what each player has become since." : "Development traits decide how fast a player grows, so this is where you find out if you hit."}</div>
@@ -120,8 +120,8 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
       <div style={panel}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
           <div style={{ ...head, marginBottom: 0, flex: 1 }}>Every pick</div>
-          {[["all", "All"], ["mine", "Mine"], ["hits", "Hits"]].map(([k, l]) => <Btn key={k} onClick={() => setShow(k)} bg={show === k ? "#1e3a5f" : "transparent"} c={show === k ? "#7dd3fc" : C.mt} style={{ fontSize: 13, padding: "4px 10px", border: `1px solid ${C.bd}` }}>{l}</Btn>)}
-          {teamF >= 0 && <Btn onClick={() => setTeamF(-1)} bg="transparent" c={C.mt} style={{ fontSize: 13, padding: "4px 10px", border: `1px solid ${C.bd}` }}>{teams[teamF]?.ab} ✕</Btn>}
+          {[["all", "All"], ["mine", "Mine"], ["hits", "Hits"]].map(([k, l]) => <Btn key={k} onClick={() => setShow(k)} bg={show === k ? "#1e3a5f" : "transparent"} c={show === k ? "#7dd3fc" : C.mt} style={{ fontSize: 13, padding: "4px 10px", border: "1px solid #ffffff10" }}>{l}</Btn>)}
+          {teamF >= 0 && <Btn onClick={() => setTeamF(-1)} bg="transparent" c={C.mt} style={{ fontSize: 13, padding: "4px 10px", border: "1px solid #ffffff10" }}>{teams[teamF]?.ab} ✕</Btn>}
         </div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
@@ -153,7 +153,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
 function PhoneRecap({ teams, ui, view, years, setPickYr, onNext, mine, topClasses, jackpots, counts, shown, show, setShow, open, now, past }) {
   const [sheet, setSheet] = useState(null);
   const soft = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
-  const label = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", margin: "24px 2px 8px" };
+  const label = { fontSize: 14, fontWeight: 800, color: "#94a3b8", margin: "24px 2px 8px" };
   const me = teams[ui];
   const line = (r, i, sub) => { const [vt, vc] = VERDICT[r.verdict]; const n = now(r.id); return (
     <div key={r.id} onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 12, minHeight: 62, padding: "6px 0", borderTop: i ? "1px solid #ffffff10" : 0, cursor: "pointer" }}>
@@ -174,8 +174,8 @@ function PhoneRecap({ teams, ui, view, years, setPickYr, onNext, mine, topClasse
         right={onNext ? <button onClick={onNext} style={{ minHeight: 44, padding: "0 16px", borderRadius: 14, border: 0, background: C.gn, color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" }}>Next season ›</button> : null} />
       {years.length > 1 && <div style={{ marginTop: 12 }}><Segments items={years.slice(0, 4).map((y) => [y, `${y + 1}`])} value={view} onChange={(y) => setPickYr(+y)} /></div>}
       <div style={{ fontSize: 14, color: "#94a3b8", margin: "12px 2px 0" }}>{past ? "What each pick has become since." : "Development traits decide how fast a player grows: this is where you find out if you hit."}</div>
-      {mine?.picks.length > 0 && <><div style={label}>YOUR CLASS</div><div style={soft}>{mine.picks.map((r, i) => line(r, i, `Rd ${r.rd} · #${r.overall} · age ${r.age} ·`))}</div></>}
-      <div style={label}>BEST TRAITS IN THE CLASS</div>
+      {mine?.picks.length > 0 && <><div style={label}>Your class</div><div style={soft}>{mine.picks.map((r, i) => line(r, i, `Rd ${r.rd} · #${r.overall} · age ${r.age} ·`))}</div></>}
+      <div style={label}>Best traits in the class</div>
       <div style={soft}>
         {jackpots.slice(0, 5).map((r, i) => line(r, i, <>#{r.overall} {teams[r.owner] && <TeamLogo t={teams[r.owner]} sz={16} />} {teams[r.owner]?.ab} ·</>))}
         {!jackpots.length && <div style={{ padding: "16px 0", color: "#94a3b8", fontSize: 15 }}>No Star-or-better traits in this class.</div>}

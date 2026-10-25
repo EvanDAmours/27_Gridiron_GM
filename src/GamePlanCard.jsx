@@ -62,7 +62,7 @@ export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto
   };
   // phones (it opens in a sheet): everything laid out, no card in a card and no Change toggle
   if (mobile) {
-    const label = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#94a3b8", margin: "18px 2px 8px" };
+    const label = { fontSize: 14, fontWeight: 800, color: "#94a3b8", margin: "18px 2px 8px" };
     const side = (sd, list) => { const o = opts[sd]; return (<>
       <div style={label}>{sd === "off" ? "OFFENSE" : "DEFENSE"}</div>
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(list.length, 2)}, 1fr)`, gap: 8 }}>
@@ -81,7 +81,7 @@ export default function GamePlanCard({ opp, units, plan, planKey, onPick, onAuto
         {side("off", OFF_PLANS)}
         {side("def", DEF_PLANS)}
         {onTwoPoint && <label style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 52, marginTop: 14, padding: "0 14px", borderRadius: 16, background: "#ffffff0f", fontSize: 15, fontWeight: 700, cursor: "pointer" }}><input type="checkbox" checked={!!plan?.twoPoint} onChange={onTwoPoint} style={{ width: 20, height: 20 }} /> Go for two after touchdowns</label>}
-        {report && <><div style={label}>THEIR TENDENCIES</div><Scout r={report} opp={opp} onPersonnel={onPersonnel} /></>}
+        {report && <><div style={label}>Their tendencies</div><Scout r={report} opp={opp} onPersonnel={onPersonnel} /></>}
         {onHub && <button onClick={onHub} style={{ width: "100%", minHeight: 50, marginTop: 16, borderRadius: 14, border: 0, background: "#ffffff14", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>Week prep: everything for this game ›</button>}
       </div>
     );

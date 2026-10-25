@@ -99,7 +99,7 @@ export function MobileActionBar({ actions }) {
       )}
       <div data-tour="actions" style={main.small ? { ...bar, background: "transparent", pointerEvents: "none" } : bar}>
         <button onClick={main.onClick} style={{ flex: main.small ? "0 0 auto" : 1, marginLeft: 0, padding: main.small ? "0 18px" : 0, minHeight: main.small ? 40 : 48, borderRadius: main.small ? 999 : 12, border: 0, background: main.bg || C.gn, color: main.c || "#fff", fontSize: main.small ? 15 : 17, fontWeight: 900, cursor: "pointer", boxShadow: "0 6px 20px #0008", pointerEvents: "auto" }}>{main.label}</button>
-        {rest.length > 0 && <button onClick={() => setOpen((o) => !o)} aria-label="More actions" style={{ pointerEvents: "auto", width: 56, minHeight: 48, borderRadius: 12, border: `1px solid ${C.bd}`, background: open ? C.bl : C.cd, color: "#fff", fontSize: 18, fontWeight: 900, cursor: "pointer" }}>{open ? "✕" : "▾"}</button>}
+        {rest.length > 0 && <button onClick={() => setOpen((o) => !o)} aria-label="More actions" style={{ pointerEvents: "auto", width: 56, minHeight: 48, borderRadius: 12, border: "1px solid #ffffff10", background: open ? C.bl : C.cd, color: "#fff", fontSize: 18, fontWeight: 900, cursor: "pointer" }}>{open ? "✕" : "▾"}</button>}
       </div>
     </>
   );

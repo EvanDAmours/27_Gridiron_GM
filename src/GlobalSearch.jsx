@@ -34,7 +34,7 @@ export default function GlobalSearch({ open, onClose, teams, ui, fa = [], prospe
   };
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 3500, background: "rgba(0,0,0,.6)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "70px 12px 12px" }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(560px, 100%)", background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 14, boxShadow: "0 20px 60px #000c", overflow: "hidden" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(560px, 100%)", background: C.cd, border: "1px solid #ffffff10", borderRadius: 14, boxShadow: "0 20px 60px #000c", overflow: "hidden" }}>
         <CloseX onClick={onClose} style={{ top: 8, right: 8 }} />
         <input ref={inp} value={q} onChange={(e) => { setQ(e.target.value); setHi(0); }} onKeyDown={key} placeholder="Search players, teams and screens…" aria-label="Search"
           style={{ width: "100%", boxSizing: "border-box", background: C.bg, color: C.tx, border: 0, borderBottom: `1px solid ${C.bd}`, padding: "16px 54px 16px 16px", fontSize: 18, outline: "none" }} />

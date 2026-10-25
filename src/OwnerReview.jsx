@@ -15,7 +15,7 @@ function Patience({ before, after }) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.mt, fontWeight: 800, letterSpacing: 1 }}>
-        <span>OWNER PATIENCE</span><span><span style={{ color: col(before) }}>{before}</span> → <b style={{ color: col(after) }}>{after}</b> / 100</span>
+        <span>Owner patience</span><span><span style={{ color: col(before) }}>{before}</span> → <b style={{ color: col(after) }}>{after}</b> / 100</span>
       </div>
       <div style={{ position: "relative", height: 10, background: "#0b1220", borderRadius: 5, marginTop: 5, overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, width: `${Math.max(before, after)}%`, background: after < before ? `${C.rd}55` : `${C.gn}55` }} />
@@ -41,7 +41,7 @@ export default function OwnerReview({ r, team, onClose }) {
         {MOBILE && <SheetGrip onClose={onClose} />}
         <CloseX onClick={onClose} />
         <div style={{ padding: "16px 56px 12px 18px", background: `linear-gradient(135deg, ${tone}33, #0b1220)` }}>
-          <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 2, color: tone }}>OWNER'S REVIEW · {r.yr} · {head(r)}</div>
+          <div style={{fontSize: 13, fontWeight: 800, color: tone }}>Owner's review · {r.yr} · {head(r)}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
             {team && <TeamLogo t={team} sz={40} />}
             <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.3 }}>{r.msg}</div>
@@ -55,7 +55,7 @@ export default function OwnerReview({ r, team, onClose }) {
             {r.goal && <Row label={`Owner's target: ${r.goal.wins}+ wins`} value={r.goal.met ? "Met" : `Missed by ${r.goal.wins - r.wins}`} ok={r.goal.met} />}
             {r.arc && <Row label={`Mandate: ${r.arc.demand}`} value={r.arc.met ? "Done" : r.arc.failed ? "Failed" : "In progress"} ok={r.arc.met ? true : r.arc.failed ? false : null} />}
           </div>
-          <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10, background: "#ffffff08", border: `1px solid ${C.bd}`, fontSize: 14, color: "#e2e8f0" }}>
+          <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10, background: "#ffffff08", border: "1px solid #ffffff10", fontSize: 14, color: "#e2e8f0" }}>
             <b style={{ color: C.gd }}>Next season:</b> he wants at least <b>{r.nextWins} wins</b>.{r.verdict === "ultimatum" ? " Miss it and you're likely gone." : ""}
           </div>
           <Btn onClick={onClose} bg={C.gn} style={{ width: "100%", marginTop: 14, fontSize: 16, padding: "11px 0", fontWeight: 900 }}>Got it</Btn>

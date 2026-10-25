@@ -205,7 +205,7 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
           </div>
           <button onClick={() => (lead && (lead.inc || lead.retire) ? onStory?.(lead) : news2("stories"))} style={{ display: "flex", gap: 12, alignItems: "flex-start", width: "100%", textAlign: "left", whiteSpace: "normal", borderRadius: 18, border: 0, padding: 16, color: "#fff", cursor: "pointer", background: leadT ? `linear-gradient(135deg, ${leadT.clr}cc, #ffffff0f 75%)` : "#ffffff0f" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              {lead?.breaking && <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: "#fca5a5", marginBottom: 4 }}>BREAKING</div>}
+              {lead?.breaking && <div style={{fontSize: 13, fontWeight: 800, color: "#fca5a5", marginBottom: 4 }}>Breaking</div>}
               <div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.3, ...clamp(3) }}>{leadText}</div>
             </div>
             {(leadT || news[0]?.team) && <TeamLogo t={leadT || news[0].team} sz={40} glow />}
@@ -267,7 +267,7 @@ function Stories({ stories, news, teams, onStory }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
           {t && <TeamLogo t={t} sz={i === 0 ? 40 : 26} />}
           {st.breaking && <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: "#fff", background: "#dc2626", borderRadius: 4, padding: "2px 6px" }}>BREAKING</span>}
-          {st.mine && <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: "#fdba74" }}>YOUR TEAM</span>}
+          {st.mine && <span style={{fontSize: 13, fontWeight: 800, color: "#fdba74" }}>Your team</span>}
         </div>
         <div style={{ fontSize: i === 0 ? 17 : 15, fontWeight: 800, lineHeight: 1.3 }}>{st.head}</div>
         <div style={{ fontSize: 13, color: "#cbd5e1", lineHeight: 1.45, marginTop: 4 }}>{st.text}</div>
@@ -292,9 +292,9 @@ function Injuries({ teams, ui, onNav, wk }) {
   );
   return (
     <>
-      <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: "#94a3b8", margin: "2px 0 4px" }}>YOUR TEAM · {mine.length}</div>
+      <div style={{fontSize: 13, fontWeight: 800, color: "#94a3b8", margin: "2px 0 4px" }}>Your team · {mine.length}</div>
       {mine.length ? mine.map(({ p, st }) => row(p, null, st)) : <div style={{ fontSize: 14, color: C.gn, padding: "6px 0 10px" }}>Fully healthy.</div>}
-      <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: "#94a3b8", margin: "14px 0 4px" }}>AROUND THE LEAGUE</div>
+      <div style={{fontSize: 13, fontWeight: 800, color: "#94a3b8", margin: "14px 0 4px" }}>Around the league</div>
       {league.length ? league.map(({ p, t, st }) => row(p, t, st)) : <div style={{ fontSize: 14, color: "#cbd5e1", padding: "6px 0" }}>No big names out.</div>}
       {mine.length > 0 && <button onClick={() => onNav("roster")} style={{ marginTop: 10, background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", padding: 0 }}>Manage roster →</button>}
     </>
@@ -310,12 +310,12 @@ function OffseasonBoard({ me, sp, onNav }) {
   const keep = sp === "combine" || sp === "resign" || sp === "regular";
   const list = keep && expiring.length ? expiring : young;
   const box = { background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 10, padding: "10px 12px", minWidth: 0, flex: "1 1 260px" };
-  const head = { fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#94a3b8", marginBottom: 6 };
+  const head = { fontSize: 14, fontWeight: 800, color: "#94a3b8", marginBottom: 6 };
   const go = sp === "freeagency" ? "freeagency" : sp === "draft" ? "draft" : sp === "combine" ? "scouting" : "contracts";
   return (
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 4 }}>
       <div style={box}>
-        <div style={head}>BIGGEST NEEDS</div>
+        <div style={head}>Biggest needs</div>
         {needs.length ? needs.map((n) => (
           <button key={n.pos} onClick={() => onNav(go)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", background: "transparent", border: 0, borderBottom: "1px solid #ffffff10", padding: "5px 0", color: "#fff", cursor: "pointer" }}>
             <Bdg pos={n.pos} /><b style={{ fontSize: 14, textTransform: "capitalize" }}>{needName(n.pos)}</b>
@@ -348,7 +348,7 @@ function RosterChecklist({ me, sp, fa, capRoom, onFa, mobile }) {
   return (
     <div style={{ background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 10, padding: "10px 12px", marginTop: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#94a3b8" }}>BUILD YOUR 53</span>
+        <span style={{fontSize: 13, fontWeight: 800, color: "#94a3b8" }}>Build your 53</span>
         <b style={{ fontSize: 15, color: plan.open ? C.gd : C.gn }}>{plan.count}/{plan.target}</b>
         <div style={{ flex: "1 1 80px", height: 6, borderRadius: 3, background: "#ffffff14", overflow: "hidden", minWidth: 60 }}><div style={{ width: `${pct}%`, height: "100%", background: plan.open ? C.gd : C.gn }} /></div>
         <span style={{ fontSize: 12.5, color: "#cbd5e1" }}>{plan.open ? `${plan.open} spot${plan.open > 1 ? "s" : ""} to fill` : "Full roster"}{sp === "combine" || sp === "resign" ? " next season" : ""} · <b style={{ color: capRoom >= 0 ? C.gn : C.rd }}>{money(capRoom)}</b> cap space</span>

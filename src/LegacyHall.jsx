@@ -144,7 +144,7 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum, onOpen
                     <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 38, fontWeight: 900, lineHeight: 1, color: "#fff", textShadow: "0 2px 3px #0009" }}>{n.num}</div>
                   </div>
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", marginTop: 4, lineHeight: 1.2 }}>{n.name}{n.mine && <span style={{ display: "block", fontSize: 10, color: "#fde68a" }}>RETIRED IN YOUR LEAGUE</span>}</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", marginTop: 4, lineHeight: 1.2 }}>{n.name}{n.mine && <span style={{display: "block", fontSize: 10, color: "#fde68a" }}>Retired in your league</span>}</div>
               </div>
             ))}
           </div>
@@ -158,7 +158,7 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum, onOpen
               <div style={{ minWidth: 38, height: 38, borderRadius: 19, display: "flex", alignItems: "center", justifyContent: "center", background: m.ret ? "#fde68a" : "#fff", color: m.ret ? "#3b2a0a" : bg, fontFamily: "Georgia, serif", fontWeight: 900, fontSize: 17 }}>{m.num ?? "★"}</div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontFamily: "Georgia, serif", fontWeight: 900, fontSize: 14, letterSpacing: 0.5, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name.toUpperCase()}</div>
-                <div style={{ fontSize: 11, color: "#fffb" }}>{[m.pos, m.yrs, m.ind && `inducted ${m.ind}`].filter(Boolean).join(" · ")}{m.mine && <b style={{ color: "#fde68a" }}> · YOUR LEAGUE</b>}</div>
+                <div style={{ fontSize: 11, color: "#fffb" }}>{[m.pos, m.yrs, m.ind && `inducted ${m.ind}`].filter(Boolean).join(" · ")}{m.mine && <b style={{ color: "#fde68a" }}> · your league</b>}</div>
               </div>
             </div>
           ))}
@@ -169,14 +169,14 @@ export function RingOfHonor({ team, retired, hall, onInduct, onRetireNum, onOpen
           <div key={r.id} style={{ background: "#ffffff0d", borderRadius: 14, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <div onClick={onOpen ? () => onOpen(r) : undefined} title={onOpen ? "Open his player card" : undefined} style={{ flex: 1, minWidth: 0, cursor: onOpen ? "pointer" : "default" }}><div style={{ fontWeight: 800, fontSize: 14, textDecoration: onOpen ? "underline dotted #ffffff55" : "none" }}>{r.name} {r.hof && <span style={{ color: "#fde68a", fontSize: 11 }}>HOF</span>}</div><div style={{ fontSize: 12, color: C.mt }}>{posTag(r)} · retired {r.retYr} · legacy {r.legacy}</div></div>
             <Btn onClick={() => onInduct(r)} bg="#b45309" style={{ fontSize: 12, padding: "4px 10px" }}>Yes, induct</Btn>
-            {onPass && <Btn onClick={() => onPass(r)} bg="transparent" c={C.mt} style={{ fontSize: 12, padding: "4px 10px", border: `1px solid ${C.bd}` }} title="He won't be offered again">No</Btn>}
+            {onPass && <Btn onClick={() => onPass(r)} bg="transparent" c={C.mt} style={{ fontSize: 12, padding: "4px 10px", border: "1px solid #ffffff10" }} title="He won't be offered again">No</Btn>}
           </div>
         ))}
         {ring.filter((r) => r.num != null && !taken.has(r.num) && !numPass.has(r.id)).map((r) => (
           <div key={`n${r.id}`} style={{ background: "#ffffff0d", borderRadius: 14, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 800, fontSize: 14 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt }}>Ring of Honor · wore #{r.num}</div></div>
             <Btn onClick={() => onRetireNum(r)} bg="#1e3a5f" c="#7dd3fc" style={{ fontSize: 12, padding: "4px 10px" }}>Retire #{r.num}</Btn>
-            {onPass && <Btn onClick={() => onPass(r, "num")} bg="transparent" c={C.mt} style={{ fontSize: 12, padding: "4px 10px", border: `1px solid ${C.bd}` }} title="Keep the number in circulation">No</Btn>}
+            {onPass && <Btn onClick={() => onPass(r, "num")} bg="transparent" c={C.mt} style={{ fontSize: 12, padding: "4px 10px", border: "1px solid #ffffff10" }} title="Keep the number in circulation">No</Btn>}
           </div>
         ))}
       </div>}

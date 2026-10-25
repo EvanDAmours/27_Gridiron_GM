@@ -9,7 +9,7 @@ const CALL_NAMES = { run_inside: "Inside Run", run_outside: "Outside Run", run_s
 
 function Card({ team, title, sub, tone = "#4ade80", children }) {
   return (
-    <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderLeft: `4px solid ${team?.clr || tone}`, borderRadius: 12, padding: "10px 12px 12px", boxShadow: "0 8px 24px #0006" }}>
+    <div style={{ background: C.cd, border: "1px solid #ffffff10", borderLeft: `4px solid ${team?.clr || tone}`, borderRadius: 12, padding: "10px 12px 12px", boxShadow: "0 8px 24px #0006" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
         {team && <TeamLogo t={team} sz={26} />}
         <div style={{ minWidth: 0 }}>
@@ -49,7 +49,7 @@ function DeskCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth,
     const k = off.roster.filter((p) => p.pos === "K" && !p.injured).sort((a, b) => b.ovr - a.ovr)[0];
     const fgDist = 100 - yard + 17, inRange = yard >= 52;
     return (
-      <Card team={off} title="FOURTH DOWN: YOUR DECISION" sub={situation} tone="#f87171">
+      <Card team={off} title="Fourth down: your call" sub={situation} tone="#f87171">
         <div style={grid(mobile ? 1 : 3)}>
           <Tile icon="⬆️" label="Punt" note="Flip the field and give them the ball deep" tone="#94a3b8" onClick={() => onFourth("punt")} />
           {inRange && k && <Tile icon="🎯" label={`Field goal, ${fgDist} yards`} note={`${k.name} (${k.ovr} OVR)`} tone="#facc15" onClick={() => onFourth("fg")} />}
@@ -67,7 +67,7 @@ function DeskCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth,
           {pill(`${def.ab} defense: ${g.dcScheme}`)}{pill(isZone ? "🛡 Zone coverage" : "👤 Man coverage")}{isBlitz && pill("⚡ Blitz likely", "#f87171")}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" onClick={onAudible} style={{ flex: 1, height: 46, borderRadius: 10, border: `1px solid ${C.bd}`, background: "#0b1220", color: "#e2e8f0", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>← Change the play</button>
+          <button type="button" onClick={onAudible} style={{ flex: 1, height: 46, borderRadius: 10, border: "1px solid #ffffff10", background: "#0b1220", color: "#e2e8f0", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>← Change the play</button>
           <button type="button" onClick={onHike} style={{ flex: 2, height: 46, borderRadius: 10, border: 0, background: "#16a34a", color: "#fff", fontSize: 17, fontWeight: 900, letterSpacing: 1, cursor: "pointer", boxShadow: "0 6px 18px #0007" }}>HIKE ▶</button>
         </div>
       </Card>
@@ -75,7 +75,7 @@ function DeskCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth,
   }
   if (phase === "passing") {
     return (
-      <Card team={off} title="FIND YOUR RECEIVER" sub="The ball goes to who you pick. Open: an easy catch with room to run. Covered: a tough throw, picked off more often." tone="#60a5fa">
+      <Card team={off} title="Find your receiver" sub="The ball goes to who you pick. Open: an easy catch with room to run. Covered: a tough throw, picked off more often." tone="#60a5fa">
         <div style={grid(mobile ? 2 : Math.max(2, targets.length))}>
           {targets.map((t) => (
             <Tile key={t.id} onClick={() => onThrow(t)} label={t.name} tone={t.open ? "#4ade80" : "#f87171"} strong note={`${t.pos} · vs ${t.cbName}${t.cbOvr !== "–" ? ` (${t.cbOvr})` : ""}`}>
@@ -91,10 +91,10 @@ function DeskCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth,
   const RUNS = [["run_inside", "🏃", "Inside Run", `${rb?.name || "Your back"} between the tackles`], ["run_outside", "↪️", "Outside Run", `Get him to the edge: ${rb?.spd ?? "?"} speed`], ["run_screen", "🪤", "Screen", "Let the rush come, dump it to the back"], ["scramble", "🏃‍♂️", "QB Run", `${qb?.name || "The QB"} keeps it: ${qb?.spd ?? "?"} speed`]];
   const PASSES = [["pass_quick", "⚡", "Quick Pass", "Gets it out fast: rarely picked off"], ["pass_medium", "🎯", "Medium Route", "The balanced throw"], ["pass_deep", "🚀", "Deep Shot", "Big gain or bust: picked off more"], ["pass_rpo", "🔀", "RPO", "He reads it: hand off or throw"]];
   return (
-    <Card team={off} title="YOUR CALL" sub={`${situation}${g.scheme ? ` · ${g.scheme}, ${g.runPct}% runs` : ""}`}>
-      <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 1.4, color: "#facc15", margin: "0 0 5px" }}>RUN</div>
+    <Card team={off} title="Your call" sub={`${situation}${g.scheme ? ` · ${g.scheme}, ${g.runPct}% runs` : ""}`}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: "#facc15", margin: "0 0 5px" }}>Run</div>
       <div style={{ ...grid(cols), marginBottom: 10 }}>{RUNS.map(([id, icon, l, n]) => <Tile key={id} icon={icon} label={l} note={n} tone="#facc15" onClick={() => onCall(id)} />)}</div>
-      <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 1.4, color: "#60a5fa", margin: "0 0 5px" }}>PASS</div>
+      <div style={{ fontSize: 13, fontWeight: 800, color: "#60a5fa", margin: "0 0 5px" }}>Pass</div>
       <div style={grid(cols)}>{PASSES.map(([id, icon, l, n]) => <Tile key={id} icon={icon} label={l} note={n} tone="#60a5fa" onClick={() => onCall(id)} />)}</div>
     </Card>
   );
@@ -118,7 +118,7 @@ function PhoneCaller({ g, phase, fourth, pending, targets = [], onFourth, onCall
   const head = (title, tone) => (
     <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 2px 8px" }}>
       <TeamLogo t={off} sz={22} />
-      <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.2, color: tone }}>{title}</span>
+      <span style={{ fontSize: 14, fontWeight: 800, color: tone }}>{title}</span>
       <span style={{ fontSize: 13, color: "#94a3b8", fontWeight: 700 }}>{situation}</span>
       {onCoach && <button type="button" onClick={onCoach} style={{ marginLeft: "auto", background: "transparent", border: 0, padding: "4px 0", color: "#7dd3fc", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Coach calls it</button>}
     </div>
@@ -145,9 +145,9 @@ function PhoneCaller({ g, phase, fourth, pending, targets = [], onFourth, onCall
   const last = (p) => (p ? p.name.split(" ").slice(-1)[0] : "");
   return (<>
     {head("YOUR CALL", "#4ade80")}
-    <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.4, color: "#facc15", margin: "0 2px 5px" }}>RUN{g.scheme ? <span style={{ color: "#64748b" }}> · {g.scheme}, {g.runPct}% runs</span> : null}</div>
+    <div style={{ fontSize: 13, fontWeight: 800, color: "#facc15", margin: "0 2px 5px" }}>Run{g.scheme ? <span style={{ color: "#64748b" }}> · {g.scheme}, {g.runPct}% runs</span> : null}</div>
     {row([tile("ri", "Inside", last(rb), "#facc15", () => onCall("run_inside")), tile("ro", "Outside", rb ? `${rb.spd} spd` : "", "#facc15", () => onCall("run_outside")), tile("rs", "Screen", "to the back", "#facc15", () => onCall("run_screen")), tile("qr", "QB Run", last(qb), "#facc15", () => onCall("scramble"))])}
-    <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.4, color: "#60a5fa", margin: "10px 2px 5px" }}>PASS</div>
+    <div style={{ fontSize: 13, fontWeight: 800, color: "#60a5fa", margin: "10px 2px 5px" }}>Pass</div>
     {row([tile("pq", "Quick", "safe", "#60a5fa", () => onCall("pass_quick")), tile("pm", "Medium", "balanced", "#60a5fa", () => onCall("pass_medium")), tile("pd", "Deep", "big or bust", "#60a5fa", () => onCall("pass_deep")), tile("pr", "RPO", "he reads it", "#60a5fa", () => onCall("pass_rpo"))])}
   </>);
 }

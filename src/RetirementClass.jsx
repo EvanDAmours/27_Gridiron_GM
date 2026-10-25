@@ -11,10 +11,10 @@ export default function RetirementClass({ cls, onClose, cardFor }) {
   const yours = (cls?.list || []).filter((x) => x.mine).length;
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(2,6,15,.86)", zIndex: 2200, display: "flex", alignItems: "center", justifyContent: "center", padding: 14, ...sheetWrap(MOBILE) }}>
-      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Retirement class" style={{ position: "relative", width: "100%", maxWidth: 640, maxHeight: "88vh", display: "flex", flexDirection: "column", borderRadius: 16, background: "#0b1220", border: `1px solid ${C.bd}`, padding: 14, color: C.tx, fontFamily: C.f, ...sheetBox(MOBILE) }}>
+      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Retirement class" style={{ position: "relative", width: "100%", maxWidth: 640, maxHeight: "88vh", display: "flex", flexDirection: "column", borderRadius: 16, background: "#0b1220", border: "1px solid #ffffff10", padding: 14, color: C.tx, fontFamily: C.f, ...sheetBox(MOBILE) }}>
         {MOBILE && <SheetGrip onClose={onClose} />}
         <CloseX onClick={onClose} />
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: C.gd }}>👋 RETIREMENT CLASS OF {cls?.yr}</div>
+        <div style={{fontSize: 13, fontWeight: 800, color: C.gd }}>Retirement class of {cls?.yr}</div>
         <div style={{ fontSize: MOBILE ? 19 : 23, fontWeight: 900, marginBottom: 2 }}>{cls?.n} player{cls?.n === 1 ? "" : "s"} hang it up</div>
         <div style={{ fontSize: 13, color: C.mt, marginBottom: 8 }}>Best careers first. Free agents unsigned for two straight seasons retire too.</div>
         {yours > 0 && <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>

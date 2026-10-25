@@ -8,8 +8,8 @@ import { C } from "./ui.jsx";
 export function Seg({ label, options, value, onChange, tone = "#60a5fa", title }) {
   return (
     <div title={title} style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-      {label && <span style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: 1.2, color: C.mt, textTransform: "uppercase", whiteSpace: "nowrap" }}>{label}</span>}
-      <span style={{ display: "inline-flex", background: "#0b1220", border: `1px solid ${C.bd}`, borderRadius: 8, padding: 2, gap: 2 }}>
+      {label && <span style={{ fontSize: 12, fontWeight: 700, color: C.mt, whiteSpace: "nowrap" }}>{label}</span>}
+      <span style={{ display: "inline-flex", background: "#0b1220", border: "1px solid #ffffff10", borderRadius: 8, padding: 2, gap: 2 }}>
         {options.map(([v, text, tip]) => {
           const on = v === value;
           return (

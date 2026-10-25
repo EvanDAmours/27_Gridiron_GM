@@ -10,8 +10,8 @@ import { prospectRead, scoutCost, SCOUT_CHECKPOINTS, SCOUT_PTS_COMBINE } from ".
 import { posTag } from "./dline.js";
 import { ScoutPtsBadge, ScoutButton, GradeChip } from "./ScoutingUI.jsx";
 
-const box = { background: "#ffffff08", border: "1px solid #ffffff14", borderRadius: 10, padding: "10px 12px", marginBottom: 10 };
-const head = (c) => ({ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: c, marginBottom: 6 });
+const box = { background: "#ffffff0d", borderRadius: 16, padding: "12px 14px", marginBottom: 10 };
+const head = (c) => ({ fontSize: 15, fontWeight: 800, color: c, marginBottom: 8 });
 
 export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick, onOpen, onClose, simTo, onStop }) {
   const cls = g.dc?.[g.yr] || [];
@@ -30,7 +30,7 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick
   }, [allDone, simTo]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(2,6,15,.86)", zIndex: 2200, display: "flex", alignItems: "center", justifyContent: "center", padding: 14, ...sheetWrap(MOBILE) }}>
-      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Scouting checkpoint" style={{ position: "relative", width: "100%", maxWidth: 760, maxHeight: "90vh", overflowY: "auto", borderRadius: 16, background: "#0b1220", border: "1px solid #38bdf866", padding: 14, color: C.tx, fontFamily: C.f, ...sheetBox(MOBILE) }}>
+      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Scouting checkpoint" style={{ position: "relative", width: "100%", maxWidth: 760, maxHeight: "90vh", overflowY: "auto", borderRadius: 22, background: "#0d1424", border: 0, boxShadow: "0 30px 80px #000c", padding: 14, color: C.tx, fontFamily: C.f, ...sheetBox(MOBILE) }}>
         {MOBILE && <SheetGrip onClose={onClose} />}
         <CloseX onClick={onClose} />
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 10, paddingRight: 40 }}>
@@ -42,12 +42,12 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick
           </div>
           <ScoutPtsBadge pts={pts} sc={sc} />
         </div>
-        {last && pts > 0 && <div style={{ ...box, background: "#7c2d1222", border: "1px solid #f9731666", fontSize: 13, color: "#fdba74" }}>
+        {last && pts > 0 && <div style={{ ...box, background: "#7c2d1222", fontSize: 13, color: "#fdba74" }}>
           ⚠ Use them or lose them: your <b>{pts}</b> point{pts === 1 ? "" : "s"} expire when the playoffs end. The Combine brings {SCOUT_PTS_COMBINE} fresh ones for draft week, nothing more.
         </div>}
         <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "1fr 1.2fr", gap: 10 }}>
           <div style={box}>
-            <div style={head("#fbbf24")}>📈 COLLEGE STOCK WATCH</div>
+            <div style={head("#fbbf24")}>College stock watch</div>
             <div style={{ fontSize: 11, color: C.mt, marginBottom: 4 }}>The public board moved. Some of it is real, some of it is hype; only a report tells you which.</div>
             {news.length ? news.slice(0, 6).map((n) => <div key={n.pid} style={{ display: "flex", gap: 6, alignItems: "baseline", fontSize: 13, padding: "4px 0", borderBottom: "1px solid #ffffff0d" }}>
               <b style={{ color: n.dir > 0 ? C.gn : C.rd, width: 14 }}>{n.dir > 0 ? "▲" : "▼"}</b>
@@ -56,7 +56,7 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick
             {news.length > 6 && <div style={{ fontSize: 12, color: C.mt, marginTop: 4 }}>+{news.length - 6} more moves in your log.</div>}
           </div>
           <div style={box}>
-            <div style={head("#38bdf8")}>🎯 YOUR SCOUTS WANT EYES ON</div>
+            <div style={head("#38bdf8")}>Your scouts want eyes on</div>
             {targets.length ? targets.map((p) => {
               const r = prospectRead(sc, p);
               return <div key={p.id} style={{ display: "flex", gap: 8, alignItems: "center", padding: "5px 0", borderBottom: "1px solid #ffffff0d" }}>
@@ -73,9 +73,9 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-          {simTo && onStop && <button onClick={onStop} style={{ background: "transparent", color: "#fca5a5", border: "1px solid #ef444466", borderRadius: 8, padding: "9px 14px", fontWeight: 800, fontSize: 14, cursor: "pointer", marginRight: "auto" }}>■ Stop the sim</button>}
-          <button onClick={onClose} style={{ background: simTo ? C.gn : "#1e293b", color: simTo ? "#fff" : C.tx, border: 0, borderRadius: 8, padding: "9px 14px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>{simTo ? "▶ Keep simming" : "Back to the season"}</button>
-          <button onClick={onOpen} style={{ background: "#0369a1", color: "#fff", border: 0, borderRadius: 8, padding: "9px 14px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>🔭 Open the scouting board</button>
+          {simTo && onStop && <button onClick={onStop} style={{ background: "transparent", color: "#fca5a5", border: "1px solid #ef444466", borderRadius: 14, padding: "10px 16px", fontWeight: 800, fontSize: 14, cursor: "pointer", marginRight: "auto" }}>■ Stop the sim</button>}
+          <button onClick={onClose} style={{ background: simTo ? C.gn : "#1e293b", color: simTo ? "#fff" : C.tx, border: 0, borderRadius: 14, padding: "10px 16px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>{simTo ? "▶ Keep simming" : "Back to the season"}</button>
+          <button onClick={onOpen} style={{ background: "#0369a1", color: "#fff", border: 0, borderRadius: 14, padding: "10px 16px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Open the scouting board</button>
         </div>
       </div>
     </div>

@@ -81,7 +81,7 @@ export function YourOffers({ fa, market, teams, ui, onRaise, phone }) {
 // the defensive line is two positions here: edge rushers and interior tackles
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P"];
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
-const sel = { background: C.bg, color: C.tx, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "8px 10px", fontSize: 15 };
+const sel = { background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 6, padding: "8px 10px", fontSize: 15 };
 
 export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk, cy, market, onNextDay, sp }) {
   const [pos, setPos] = useState(startPos || "ALL");
@@ -126,7 +126,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
       )}
       {sheets}
       <YourOffers fa={fa} market={market} teams={teams} ui={ui} onRaise={setOffer} />
-      <div style={{ background: C.cd, border: `1px solid ${C.bd}`, borderRadius: 10, padding: 12 }}>
+      <div style={{ background: C.cd, border: "1px solid #ffffff10", borderRadius: 10, padding: 12 }}>
         {MOBILE ? (
           <>
             {/* phones: one row (position, sort, needs, search behind 🔍) instead of three */}
@@ -156,7 +156,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
               const ask = askingPrice(p);
               const from = p.formerTeam != null ? teams[p.formerTeam] : null;
               return (
-                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, background: p.formerTeam === ui ? "#14532d22" : C.bg, border: `1px solid ${C.bd}`, borderRadius: 10, padding: "8px 10px" }}>
+                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, background: p.formerTeam === ui ? "#14532d22" : C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "8px 10px" }}>
                   <span onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0, cursor: "pointer" }}>
                     <Face s={p.face} sz={34} />
                     <span style={{ minWidth: 0 }}>

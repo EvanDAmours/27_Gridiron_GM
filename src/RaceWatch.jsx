@@ -11,10 +11,10 @@ export default function RaceWatch({ teams, sched, ui, wk, mobile }) {
   const tone = r.out ? C.mt : good ? C.gn : C.gd;
   return (
     <div style={{ marginTop: 8, background: "#00000040", border: `1px solid ${tone}55`, borderLeft: `4px solid ${tone}`, borderRadius: 10, padding: "9px 12px" }}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: tone, marginBottom: 3 }}>🏁 PLAYOFF RACE · WEEK {wk}</div>
+      <div style={{fontSize: 13, fontWeight: 800, color: tone, marginBottom: 3 }}>Playoff race · week {wk}</div>
       {r.lines.map((l, i) => <div key={i} style={{ fontSize: i ? 13.5 : 15, fontWeight: i ? 600 : 800, color: i ? "#cbd5e1" : "#fff", lineHeight: 1.35 }}>{l}</div>)}
       {r.games.length > 0 && <>
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: C.mt, margin: "8px 0 3px" }}>GAMES TO WATCH</div>
+        <div style={{fontSize: 13, fontWeight: 800, color: C.mt, margin: "8px 0 3px" }}>Games to watch</div>
         {r.games.map(({ g, root, why }) => {
           const a = teams[g.a], h = teams[g.h], rt = teams[root];
           return (

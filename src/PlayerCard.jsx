@@ -154,7 +154,7 @@ export function SeasonTable({ p, yr, teamAb }) {
     <div style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "10px 12px", marginBottom: 12, overflowX: "auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", flex: 1 }}>Season by season</div>
-        {rows.length > 3 && <button onClick={() => setAll(!all)} style={{ background: "transparent", border: `1px solid ${C.bd}`, color: C.mt, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{all ? "Last 3 only ▴" : `All ${rows.length} seasons ▾`}</button>}
+        {rows.length > 3 && <button onClick={() => setAll(!all)} style={{ background: "transparent", border: "1px solid #ffffff10", color: C.mt, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{all ? "Last 3 only ▴" : `All ${rows.length} seasons ▾`}</button>}
       </div>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead><tr>{["YEAR", "TM", "GP", ...cols.map(([l]) => l)].map((h, i) => <th key={h} style={{ ...td, textAlign: i < 2 ? "left" : "right", fontSize: 11, color: C.mt, fontWeight: 800 }}>{h}</th>)}</tr></thead>

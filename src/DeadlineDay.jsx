@@ -45,7 +45,7 @@ function Ticker({ deals, teams, yr }) {
   if (!deals.length) return null;
   const text = deals.map((d) => `${teams[d.buyer]?.ab} get ${d.player.name} (${d.player.pos} ${d.player.ovr}) from ${teams[d.seller]?.ab}`).join("   •   ");
   return (
-    <div style={{ overflow: "hidden", whiteSpace: "nowrap", background: "#7f1d1d", borderTop: "1px solid #ef4444", borderBottom: "1px solid #ef4444", padding: "6px 0", fontSize: 14, fontWeight: 800, color: "#fee2e2" }}>
+    <div style={{ overflow: "hidden", whiteSpace: "nowrap", background: "#7f1d1d", borderTop: "1px solid #ef4444", borderBottom: "1px solid #ef44442e", padding: "6px 0", fontSize: 14, fontWeight: 800, color: "#fee2e2" }}>
       <style>{"@keyframes dl-tick { from { transform: translateX(0) } to { transform: translateX(-50%) } }"}</style>
       <span style={{ display: "inline-block", paddingLeft: "100%", animation: `dl-tick ${Math.max(18, text.length / 6)}s linear infinite` }}>{`DEADLINE DEALS ${yr}:   ${text}   •   ${text}`}</span>
     </div>

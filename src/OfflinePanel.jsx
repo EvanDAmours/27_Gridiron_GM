@@ -26,7 +26,7 @@ export function useOnline() {
 export function OfflineChip() {
   const on = useOnline();
   if (on) return null;
-  return <span title="No connection. Everything works; your game saves on this device." style={{ fontSize: 12, fontWeight: 800, color: "#fde68a", background: "#78350f66", border: "1px solid #b45309", borderRadius: 999, padding: "2px 9px", whiteSpace: "nowrap" }}>✈️ Offline</span>;
+  return <span title="No connection. Everything works; your game saves on this device." style={{ fontSize: 12, fontWeight: 800, color: "#fde68a", background: "#78350f66", border: "1px solid #b453092e", borderRadius: 999, padding: "2px 9px", whiteSpace: "nowrap" }}>✈️ Offline</span>;
 }
 
 async function readyInfo() {

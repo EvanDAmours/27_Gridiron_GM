@@ -29,7 +29,7 @@ export default function InjuryReport({ rep, rehab = {}, onPick, onRehab, onClose
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ fontSize: 20 }}>🏥</span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.4, color: "#fca5a5" }}>INJURY REPORT</div>
+          <div style={{fontSize: 13, fontWeight: 800, color: "#fca5a5" }}>Injury report</div>
           <div style={{ fontSize: 15, fontWeight: 800 }}>Week {rep.wk}{out.length ? ` · ${out.length} out` : ""}{hurt.length ? ` · ${hurt.length} banged up` : ""}{back.length ? ` · ${back.length} back` : ""}</div>
         </div>
         <CloseX onClick={onClose} />
@@ -48,7 +48,7 @@ export default function InjuryReport({ rep, rehab = {}, onPick, onRehab, onClose
               </div>
               {p.ir && rehab[p.id] && (
                 <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
-                  {REHAB.map((o) => <button key={o.id} onClick={() => onRehab(p.id, o)} title={o.desc} style={{ flex: 1, background: "#1e293b", color: "#e2e8f0", border: "1px solid #334155", borderRadius: 6, padding: "5px 4px", fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>{o.lbl}</button>)}
+                  {REHAB.map((o) => <button key={o.id} onClick={() => onRehab(p.id, o)} title={o.desc} style={{ flex: 1, background: "#1e293b", color: "#e2e8f0", border: "1px solid #3341552e", borderRadius: 6, padding: "5px 4px", fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>{o.lbl}</button>)}
                 </div>
               )}
             </div>

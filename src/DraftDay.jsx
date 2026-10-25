@@ -23,7 +23,7 @@ export function DraftTickerBar({ log, ui }) {
   if (!log.length) return null;
   const items = log.slice(-32).reverse();
   return (
-    <div style={{ display: "flex", alignItems: "stretch", background: "#020617", border: `1px solid ${C.bd}`, borderRadius: 8, marginBottom: 10, height: 34, overflow: "hidden" }}>
+    <div style={{ display: "flex", alignItems: "stretch", background: "#020617", border: "1px solid #ffffff10", borderRadius: 8, marginBottom: 10, height: 34, overflow: "hidden" }}>
       <div style={{ flexShrink: 0, background: "#b91c1c", color: "#fff", fontWeight: 900, fontSize: 12, letterSpacing: 1.5, padding: "0 10px", display: "flex", alignItems: "center" }}>LATEST</div>
       <div style={{ display: "flex", whiteSpace: "nowrap", overflowX: "auto", scrollbarWidth: "none" }}>
         {items.map((d, i) => (
@@ -51,7 +51,7 @@ export function PickIsIn({ entry, team, yr, onDone, ms = 2300 }) {
         <div style={{ background: `linear-gradient(120deg,${team.clr} 0%,#0b1120 75%)`, padding: "14px 18px", display: "flex", gap: 14, alignItems: "center" }}>
           <TeamLogo t={team} sz={MOBILE ? 46 : 64} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, letterSpacing: 3, fontWeight: 900, color: "#fbbf24" }}>THE PICK IS IN{MOBILE ? ` · #${entry.overall} ${team.ab}` : ""}</div>
+            <div style={{fontSize: 13, fontWeight: 800, color: "#fbbf24" }}>The pick is in{MOBILE ? ` · #${entry.overall} ${team.ab}` : ""}</div>
             {!MOBILE && <div style={{ fontSize: 13, color: "#fffd", fontStyle: "italic", lineHeight: 1.35, margin: "2px 0 4px" }}>"With the {ord(entry.overall)} pick in the {yr} NFL Draft, the {team.city} {team.name} select…"</div>}
             <div style={{ fontSize: MOBILE ? 22 : 26, fontWeight: 900, color: "#fff", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 4, fontSize: 13, color: "#fffc" }}>
@@ -206,13 +206,13 @@ export function IncomingCall({ offer, team, curPick, yr, onAccept, onMore, onDec
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px 10px" }}>
         <div style={{ borderRadius: "50%", padding: 6, background: "#0b1120", animation: "callRing 1.4s infinite" }}><TeamLogo t={team} sz={46} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#c4b5fd" }}><span style={{ display: "inline-block", animation: "callShake 1.2s infinite" }}>📞</span> {offer.faller ? <span style={{ color: "#fca5a5" }}>URGENT CALL · HE'S SLIDING</span> : "INCOMING CALL"}</div>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#c4b5fd" }}><span style={{ display: "inline-block", animation: "callShake 1.2s infinite" }}>📞</span> {offer.faller ? <span style={{color: "#fca5a5" }}>Urgent call · he's sliding</span> : "INCOMING CALL"}</div>
           <div style={{ fontSize: 17, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{team.city} {team.name}</div>
           <div style={{ fontSize: 12.5, color: "#cbd5e1" }}>{offer.faller ? `"${offer.target.name} (${offer.target.pos}) was a top-${Math.max(5, Math.ceil(curPick.overall - offer.fell))} player on every board and he's still there. We'll overpay to jump you at #${curPick.overall}."` : `"We'd like to move up to #${curPick.overall}${offer.target ? ` for ${offer.target.name}` : ""}."`}</div>
         </div>
       </div>
       <div style={{ padding: "0 16px 12px" }}>
-        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.3, color: C.mt, marginBottom: 4 }}>THEY OFFER</div>
+        <div style={{fontSize: 13, fontWeight: 800, color: C.mt, marginBottom: 4 }}>They offer</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>{[offer.theirPick, ...offer.extras].map((a, i) => <span key={i} style={{ fontSize: 13, fontWeight: 800, padding: "3px 9px", borderRadius: 6, background: i ? "#1e293b" : "#14532d", color: i ? "#e2e8f0" : "#86efac" }}>{pickLabel(a, yr)}</span>)}</div>
         <div style={{ fontSize: 12, color: offer.pct >= 0 ? C.gn : C.gd, marginTop: 6 }}>Trade chart: {offer.pct >= 0 ? `+${offer.pct}% in your favor` : `${offer.pct}% (they're asking a discount)`}</div>
         <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
@@ -276,7 +276,7 @@ export function PhoneDraftLog({ log, queue, ui, onPlayer, onClose }) {
     <Sheet title="Draft room" onClose={onClose}>
       <Segments items={[["next", "Up next"], ["log", `Picks made${log.length ? ` ${log.length}` : ""}`]]} value={v} onChange={setV} />
       <div style={{ ...soft, padding: "0 14px" }}>
-        {v === "next" && queue.map((q, i) => line(q.overall, <><span style={{ width: 40, color: "#94a3b8", fontVariantNumeric: "tabular-nums" }}>#{q.overall}</span>{q.team && <TeamLogo t={q.team} sz={26} />}<b style={{ fontSize: 15 }}>{q.mine ? "You" : `${q.team?.city || ""} ${q.team?.name || q.ab}`}</b></>, i === 0 ? <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: C.gd }}>ON THE CLOCK</span> : <span style={{ fontSize: 13, color: "#94a3b8" }}>Rd {q.rd}</span>, q.mine))}
+        {v === "next" && queue.map((q, i) => line(q.overall, <><span style={{ width: 40, color: "#94a3b8", fontVariantNumeric: "tabular-nums" }}>#{q.overall}</span>{q.team && <TeamLogo t={q.team} sz={26} />}<b style={{ fontSize: 15 }}>{q.mine ? "You" : `${q.team?.city || ""} ${q.team?.name || q.ab}`}</b></>, i === 0 ? <span style={{fontSize: 13, fontWeight: 800, color: C.gd }}>On the clock</span> : <span style={{ fontSize: 13, color: "#94a3b8" }}>Rd {q.rd}</span>, q.mine))}
         {v === "log" && log.slice().reverse().map((d) => line(d.overall, <><span style={{ width: 40, color: "#94a3b8", fontVariantNumeric: "tabular-nums" }}>#{d.overall}</span><b style={{ width: 40 }}>{d.ab}</b><span style={{ fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 150 }}>{d.player?.name}</span></>, <span style={{ display: "flex", gap: 6, alignItems: "center" }}><ValueTag overall={d.overall} csr={d.csr} small />{d.player && <Bdg pos={posTag(d.player)} />}</span>, d.owner === ui, d.player ? () => onPlayer(d.player) : null))}
         {v === "log" && !log.length && <div style={{ padding: "16px 0", color: "#94a3b8", fontSize: 15 }}>No picks yet.</div>}
       </div>
@@ -305,7 +305,7 @@ export function PhoneTradeUp({ quote, team, offers, yr, onAccept, onPass, onClos
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}><button onClick={() => onAccept(o)} style={greenBtn}>Make the trade</button></div>
         </>}
       </div>
-      {offers.length > 0 && <Label>CLUBS AHEAD OF YOU WILLING TO MOVE DOWN</Label>}
+      {offers.length > 0 && <Label>Clubs ahead of you willing to move down</Label>}
       {offers.map((x) => (
         <div key={x.id} style={{ ...soft, padding: 14, marginBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}><b style={{ fontSize: 16 }}>{x.from}</b><span style={{ marginLeft: "auto", fontSize: 14, color: "#86efac", fontWeight: 800 }}>#{x.theirPick.overall}</span></div>

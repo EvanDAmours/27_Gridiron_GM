@@ -59,7 +59,7 @@ function Field({ los, children }) {
   for (let i = 0; i <= 10; i++) lines.push(<div key={i} style={{ position: "absolute", left: 0, right: 0, top: `${i * 10}%`, borderTop: `1px solid rgba(255,255,255,${i % 2 ? 0.08 : 0.16})` }} />);
   return (
     <div style={{ overflowX: "auto" }}>
-      <div style={{ position: "relative", width: "100%", maxWidth: 540, margin: "0 auto", minWidth: narrow() ? 340 : 0, aspectRatio: MOBILE ? "1 / 0.84" : narrow() ? "1 / 1.08" : "16 / 11", borderRadius: 10, overflow: "hidden", border: "2px solid #14532d", background: "repeating-linear-gradient(180deg,#166534 0 10%,#15803d 10% 20%)" }}>
+      <div style={{ position: "relative", width: "100%", maxWidth: 540, margin: "0 auto", minWidth: narrow() ? 340 : 0, aspectRatio: MOBILE ? "1 / 0.84" : narrow() ? "1 / 1.08" : "16 / 11", borderRadius: 10, overflow: "hidden", border: "1px solid #14532d2e", background: "repeating-linear-gradient(180deg,#166534 0 10%,#15803d 10% 20%)" }}>
         {lines}
         {[25, 75].map((x) => <div key={x} style={{ position: "absolute", top: 0, bottom: 0, left: `${x}%`, borderLeft: "2px dashed rgba(255,255,255,0.12)" }} />)}
         <div title="Line of scrimmage" style={{ position: "absolute", left: 0, right: 0, top: `${los + 4.5}%`, borderTop: "2px solid #60a5fa" }} />
@@ -186,7 +186,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
               {!chosen.length && <div style={{ color: C.mt, fontSize: 13 }}>Nobody on the roster plays {pick[0]}.</div>}
               <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 6px", flexWrap: "wrap" }}>
                 <button onClick={() => setPick(null)} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", padding: 0 }}>← All positions</button>
-                {!RET[pick[0]] && setSnaps && order(pick[0]).some((p) => snaps?.[p.id] != null) && <button onClick={() => resetShares(pick[0])} style={{ background: "transparent", border: `1px solid ${C.bd}`, color: "#cbd5e1", borderRadius: 6, padding: "2px 8px", fontSize: 12, cursor: "pointer" }}>Reset snaps to auto</button>}
+                {!RET[pick[0]] && setSnaps && order(pick[0]).some((p) => snaps?.[p.id] != null) && <button onClick={() => resetShares(pick[0])} style={{ background: "transparent", border: "1px solid #ffffff10", color: "#cbd5e1", borderRadius: 6, padding: "2px 8px", fontSize: 12, cursor: "pointer" }}>Reset snaps to auto</button>}
                 <details style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}><summary style={{ cursor: "pointer", color: "#94a3b8" }}>How this works</summary><div style={{ marginTop: 4, maxWidth: 420 }}>
               {PARTNER[pick[0]] && setPositions && <div style={{ marginBottom: 4 }}>Tackles and guards play either side. Starting a {PARTNER[pick[0]]} here swaps the two.</div>}
               {RET[pick[0]] && <div style={{ marginBottom: 4 }}>Any receiver, back or defensive back can return. The number is his return rating (speed, acceleration, agility and a knack for it). A great returner flips field position and breaks a long one now and then, and it doesn't have to be a starter: a fast backup is a weapon here.</div>}
@@ -281,8 +281,8 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
         <Sheet title="Depth chart options" onClose={() => setOpts(false)}>
           <Row first label="Auto-fill by overall" onClick={() => { onAutoFill(); setOpts(false); }} />
           {onList && <Row label="Show as a list" onClick={() => { setOpts(false); onList(); }} />}
-          {side === "offense" && <><div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: C.mt, margin: "14px 2px 6px" }}>FORMATION ON THE FIELD{personnel ? ` · YOUR IDENTITY: ${personnel.toUpperCase()}` : ""}</div><Segments items={Object.keys(FORMS).map((k) => [k, k])} value={form} onChange={(k) => { setForm(k); setPick(null); }} /></>}
-          {side === "defense" && <><div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: C.mt, margin: "14px 2px 6px" }}>PACKAGE ON THE FIELD</div><Segments items={Object.keys(DEF_FORMS).map((k) => [k, k[0].toUpperCase() + k.slice(1)])} value={pkg} onChange={(k) => { setPkg(k); setPick(null); }} /></>}
+          {side === "offense" && <><div style={{fontSize: 13, fontWeight: 800, color: C.mt, margin: "14px 2px 6px" }}>Formation on the field{personnel ? ` · YOUR IDENTITY: ${personnel.toUpperCase()}` : ""}</div><Segments items={Object.keys(FORMS).map((k) => [k, k])} value={form} onChange={(k) => { setForm(k); setPick(null); }} /></>}
+          {side === "defense" && <><div style={{fontSize: 13, fontWeight: 800, color: C.mt, margin: "14px 2px 6px" }}>Package on the field</div><Segments items={Object.keys(DEF_FORMS).map((k) => [k, k[0].toUpperCase() + k.slice(1)])} value={pkg} onChange={(k) => { setPkg(k); setPick(null); }} /></>}
           {gamePlan && <div style={{ marginTop: 10 }}>{gamePlan}</div>}
           <div style={{ height: 8 }} />
         </Sheet>

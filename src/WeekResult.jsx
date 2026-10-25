@@ -38,12 +38,12 @@ function topLines(box) {
 function Others({ list, teams, onBox }) {
   return (
     <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.bd}` }}>
-      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 6 }}>AROUND THE LEAGUE</div>
+      <div style={{fontSize: 13, fontWeight: 800, color: C.mt, marginBottom: 6 }}>Around the league</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
         {list.map((x, i) => {
           const hw = x.hs > x.as, aw = x.as > x.hs;
           return (
-            <button key={i} onClick={() => onBox(x)} style={{ background: C.bg, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "4px 8px", fontSize: 13, color: C.tx, cursor: "pointer" }}>
+            <button key={i} onClick={() => onBox(x)} style={{ background: C.bg, border: "1px solid #ffffff10", borderRadius: 6, padding: "4px 8px", fontSize: 13, color: C.tx, cursor: "pointer" }}>
               <span style={{ fontWeight: aw ? 800 : 400, color: aw ? "#fff" : C.mt }}>{teams[x.a]?.ab} {x.as}</span>
               <span style={{ color: C.mt }}> @ </span>
               <span style={{ fontWeight: hw ? 800 : 400, color: hw ? "#fff" : C.mt }}>{teams[x.h]?.ab} {x.hs}</span>
@@ -90,8 +90,8 @@ export default function WeekResult(props) {
 
 // A final never seen in NFL history (or in this league before).
 const Scorigami = ({ us, them, compact }) => (
-  <div style={{ marginTop: compact ? 4 : 8, background: "linear-gradient(90deg,#7c3aed33,#db277733)", border: "1px solid #a855f7", borderRadius: 8, padding: compact ? "3px 8px" : "6px 10px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-    <b style={{ fontSize: compact ? 13 : 15, letterSpacing: 1.5, color: "#e9d5ff" }}>🎲 SCORIGAMI</b>
+  <div style={{ marginTop: compact ? 4 : 8, background: "linear-gradient(90deg,#7c3aed33,#db277733)", border: "1px solid #a855f72e", borderRadius: 8, padding: compact ? "3px 8px" : "6px 10px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+    <b style={{fontSize: compact ? 13 : 15, color: "#e9d5ff" }}>Scorigami</b>
     <span style={{ fontSize: compact ? 12 : 13, color: "#ddd6fe" }}>{Math.max(us, them)}-{Math.min(us, them)} has never been a final score in NFL history</span>
   </div>
 );
@@ -183,14 +183,14 @@ function DeskCard({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam,
   if (!result) return null;
   const me = teams[ui];
   if (!me) return null;
-  const card = { background: "linear-gradient(135deg,#0f172a,#111827)", border: `1px solid ${C.bd}`, borderRadius: 12, padding: MOBILE ? "8px 10px" : "12px 14px", position: "relative" };
+  const card = { background: "linear-gradient(135deg,#0f172a,#111827)", border: "1px solid #ffffff10", borderRadius: 12, padding: MOBILE ? "8px 10px" : "12px 14px", position: "relative" };
   const close = <button onClick={onClose} aria-label="Dismiss result" style={{ position: "absolute", top: 10, right: 12, background: "transparent", border: 0, color: C.mt, fontSize: 20, cursor: "pointer" }}>✕</button>;
 
   if (result.season) {
     return (
       <div style={{ ...card, borderColor: C.gd }}>
         {close}
-        <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.gd }}>REGULAR SEASON COMPLETE</div>
+        <div style={{fontSize: 13, fontWeight: 800, color: C.gd }}>Regular season complete</div>
         <div style={{ fontSize: MOBILE ? 22 : 34, fontWeight: 900, lineHeight: 1.1, marginTop: 4 }}>{me.city} {me.name} {fmtRec(me)}</div>
         <div style={{ fontSize: MOBILE ? 13 : 16, color: "#cbd5e1", marginTop: 4 }}>{divPlace(teams, me)} · {result.playoffs ? "Playoff bound!" : "Missed the playoffs"}</div>
         {onRecap && <Btn onClick={onRecap} bg={C.bd} c="#7dd3fc" style={{ fontSize: 13, padding: "6px 12px", marginTop: 8 }}>📊 Season recap card</Btn>}
@@ -216,7 +216,7 @@ function DeskCard({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam,
       return (
         <div style={{ ...card, borderColor: C.gd }}>
           {close}
-          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: C.gd, marginBottom: 6 }}>🏆 SUPER BOWL · FINAL</div>
+          <div style={{fontSize: 13, fontWeight: 800, color: C.gd, marginBottom: 6 }}>Super Bowl · final</div>
           <div style={{ display: "flex", alignItems: "center", gap: MOBILE ? 10 : 22, flexWrap: "wrap" }}>
             {side(champ, ws, true)}<span style={{ color: C.mt, fontWeight: 800 }}>–</span>{side(loser, ls, false)}
             <Btn onClick={() => onBox(sb)} bg={C.bd} c="#7dd3fc" style={{ fontSize: 13, padding: "6px 12px", marginLeft: "auto" }}>Box score</Btn>
@@ -284,7 +284,7 @@ function DeskCard({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam,
       </div>
       {sg && <Scorigami us={us} them={them} />}
       {/* league scores a tap away (the win probability lives in the game recap) */}
-      {others.length > 0 && <button onClick={() => setShowOthers((v) => !v)} style={{ marginTop: 8, background: "transparent", color: C.mt, border: `1px solid ${C.bd}`, borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Scores around the league {showOthers ? "▴" : "▾"}</button>}
+      {others.length > 0 && <button onClick={() => setShowOthers((v) => !v)} style={{ marginTop: 8, background: "transparent", color: C.mt, border: "1px solid #ffffff10", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Scores around the league {showOthers ? "▴" : "▾"}</button>}
       {showOthers && <Others list={others} teams={teams} onBox={onBox} />}
     </div>
   );

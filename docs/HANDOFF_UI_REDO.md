@@ -267,6 +267,24 @@ via `gm:scouting`). DeskHome's "See all" calls `onNav("inbox")`.
     screen (Continue is the green button when a save exists).
   - The smoke test and the audit dismiss list also click "Let him go" (the coordinator dialog).
 
+- **Last old-style pass (scripted, then checked on screen).**
+  - Caps headings with wide letter spacing became sentence case across 26 files (about 60), plus
+    an explicit list of caps headings with emoji in front (War room, Market rates, Owner goal,
+    Drive log, Player comparison, College stock watch...). Kept on purpose: the header stat
+    captions (RECORD, POINTS, TEAM OVR under the big numbers), badges with their own fill
+    (BREAKING, BYE), short tags and column heads, the title screen, the draft clock, and the
+    themed screens (awards, moments, Super Bowl, newspapers, the card front).
+  - Slate `${C.bd}` borders became a faint `#ffffff10` hairline; about 60 static bright frames
+    became a faint tint of their color (selection borders and accent edges untouched).
+  - Playoff bracket: soft game boxes (your game outlined green), plain round titles. Live game:
+    plain Run / Pass labels, sentence-case card titles and control labels. Scouting checkpoint
+    popup in the dialog style.
+  - **Bugs fixed:** two trade-deadline banners assumed week 10; the deadline is after week 9
+    (`TRADE_DEADLINE_WEEK`). The countdown and "deadline passed" banners now use the constant,
+    and the purple "trade deadline surge" banner is folded into the one countdown.
+  - Removed four popups nothing could open (media day, the parade, the locker-room speech, a
+    second player comparison) and a switched-off Hall of Fame card; their state stays.
+
 ## 7. The trade market (`src/trade.js`)
 Recalibrated against real deadline deals; `tests/tradeMarket.test.js` pins ten of them (each must
 go through at about its real price, and a clearly smaller offer must be refused):

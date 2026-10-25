@@ -53,7 +53,7 @@ export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = 
               <div style={{ fontSize: 22, fontWeight: 900, color: tone, lineHeight: 1.1 }}>{y.room < 0 ? `-${$(-y.room)}` : $(y.room)}</div>
               <div style={{ fontSize: 12, color: "#94a3b8" }}>room · {$(y.committed)} committed{y.dead > 0 ? ` (${$(y.dead)} dead)` : ""}</div>
               <div style={{ fontSize: 12, color: "#94a3b8" }}>{y.players} player{y.players === 1 ? "" : "s"} signed</div>
-              {y.expiring.length > 0 && <div style={{ marginTop: 6, fontSize: 11, fontWeight: 800, letterSpacing: 0.8, color: C.mt }}>DEALS ENDING</div>}
+              {y.expiring.length > 0 && <div style={{marginTop: 6, fontSize: 13, fontWeight: 800, color: C.mt }}>Deals ending</div>}
               {y.expiring.slice(0, 4).map((p) => <div key={p.id} onClick={() => onPlayer?.(p)} style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, padding: "1px 0", cursor: onPlayer ? "pointer" : "default", minWidth: 0 }}><Bdg pos={posTag(p)} /><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span><b style={{ color: "#cbd5e1" }}>{p.ovr}</b></div>)}
               {y.expiring.length > 4 && <div style={{ fontSize: 12, color: C.mt }}>+{y.expiring.length - 4} more</div>}
             </div>
@@ -150,7 +150,7 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
           <div style={{ height: 12, borderRadius: 6, background: C.bd, overflow: "hidden", display: "flex", marginBottom: 10 }} title={`${$(used)} used of ${$(cap)}`}>
             {byGroup.map(([g, v], i) => <div key={g} style={{ width: `${(v / cap) * 100}%`, background: ["#f59e0b", "#38bdf8", "#22c55e", "#ef4444", "#a78bfa", "#ec4899", "#94a3b8"][i] }} />)}
           </div>
-          {byGroup[0][2] != null && <div style={{ display: "flex", fontSize: 11, fontWeight: 800, color: C.mt, letterSpacing: 0.8, padding: "0 0 2px 18px" }}><span style={{ flex: 1 }}>GROUP</span><span style={{ width: 64, textAlign: "right" }}>YOU</span><span style={{ width: 92, textAlign: "right" }}>LEAGUE AVG</span><span style={{ width: 64, textAlign: "right" }}>VS AVG</span></div>}
+          {byGroup[0][2] != null && <div style={{ display: "flex", fontSize: 11, fontWeight: 800, color: C.mt, letterSpacing: 0.8, padding: "0 0 2px 18px" }}><span style={{ flex: 1 }}>GROUP</span><span style={{ width: 64, textAlign: "right" }}>YOU</span><span style={{width: 92, textAlign: "right" }}>League avg</span><span style={{ width: 64, textAlign: "right" }}>VS AVG</span></div>}
           {byGroup.map(([g, v, avg], i) => {
             const d = avg ? (v - avg) / avg : 0;
             return (

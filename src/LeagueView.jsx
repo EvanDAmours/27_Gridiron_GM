@@ -49,9 +49,9 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
           <span style={head}>Weekly schedule</span>
           <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <button aria-label="Previous week" disabled={week <= (weeks[0] || 1)} onClick={() => setW(Math.max(weeks[0] || 1, week - 1))} style={{ background: C.bg, color: "#fff", border: `1px solid ${C.bd}`, borderRadius: 6, padding: "2px 9px", cursor: "pointer" }}>‹</button>
+            <button aria-label="Previous week" disabled={week <= (weeks[0] || 1)} onClick={() => setW(Math.max(weeks[0] || 1, week - 1))} style={{ background: C.bg, color: "#fff", border: "1px solid #ffffff10", borderRadius: 6, padding: "2px 9px", cursor: "pointer" }}>‹</button>
             <b style={{ fontSize: 14, minWidth: 64, textAlign: "center" }}>Week {week}</b>
-            <button aria-label="Next week" disabled={week >= (weeks[weeks.length - 1] || 18)} onClick={() => setW(Math.min(weeks[weeks.length - 1] || 18, week + 1))} style={{ background: C.bg, color: "#fff", border: `1px solid ${C.bd}`, borderRadius: 6, padding: "2px 9px", cursor: "pointer" }}>›</button>
+            <button aria-label="Next week" disabled={week >= (weeks[weeks.length - 1] || 18)} onClick={() => setW(Math.min(weeks[weeks.length - 1] || 18, week + 1))} style={{ background: C.bg, color: "#fff", border: "1px solid #ffffff10", borderRadius: 6, padding: "2px 9px", cursor: "pointer" }}>›</button>
           </span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", gap: 6 }}>
