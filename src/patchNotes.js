@@ -1985,4 +1985,11 @@ export const PATCH_NOTES = [
     "Roster update: Deonte Banks (CB, Giants) is now 82 OVR with a Star trait, rebuilt as a press-man corner (Press 92, Man 86, Zone 73). He's been a top-30 corner by PFF's grades this year, near the league lead in passes defensed, and held Nico Collins to two catches. It applies once to franchises still in the 2026 season.",
     "Punts left to bounce no longer hold on the field after the ball has stopped.",
   ] },
+  { v: "4.87", date: "2026-10-23", title: "QB IQ drives decisions", notes: [
+    "Quarterback Read Def fixed: it came from Madden's Play Recognition, a defender's rating that sits at 10-30 for every QB (Josh Allen 15, Jaxson Dart 28). It's now built from what Madden does rate for processing (mostly Awareness, plus poise under pressure and accuracy), for every QB in new games and in your save, including free agents and draft prospects.",
+    "QB IQ drives decisions on the field. Decisions, Read Def and Pocket together make a quarterback's IQ, and on every dropback a sharp one finds the open man more often, forces it into coverage less, throws fewer interceptions and gets rid of the ball before the sack. A raw one does the reverse. An average starter plays exactly as before, so league totals don't move.",
+    "In league simulations, a QB's awareness now tracks his interception rate (correlation -0.85, up from -0.39), his sack rate (-0.82, from -0.51) and his completion rate (+0.66, from +0.39). Burrow, Mahomes and Allen throw a pick on 1-1.6% of throws; Jameis Winston on about 4.5%.",
+    "Play-by-play says when a quarterback forced it into coverage and got picked.",
+    "Sit and learn now measures the veteran by the same QB IQ: a sharp veteran teaches more than a turnover-prone one.",
+  ] },
 ];

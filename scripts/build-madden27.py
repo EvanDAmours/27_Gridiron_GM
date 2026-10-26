@@ -66,7 +66,10 @@ OL = lambda s: {"passBlock": s["passBlock"], "footwork": s["passBlockFinesse"], 
   "leadership": s["awareness"], "athleticism": avg(s["speed"], s["agility"]), "power": s["runBlockPower"]}
 ATTRS = {  # the game's position skills, from Madden's ratings
   "QB": lambda s: {"armStr": s["throwPower"], "accuracy": avg(s["throwAccuracyShort"], s["throwAccuracyMid"]), "pocketAwr": s["throwUnderPressure"],
-    "decisions": s["awareness"], "mobility": avg(s["speed"], s["throwOnTheRun"]), "touch": s["throwAccuracyDeep"], "readDef": s["playRecognition"]},
+    "decisions": s["awareness"], "mobility": avg(s["speed"], s["throwOnTheRun"]), "touch": s["throwAccuracyDeep"],
+    # reading a defense: Madden's Play Recognition is a defender's rating (QBs all sit at 10-30), so it's
+    # built from awareness, poise under pressure and short/mid accuracy, the same as qbiq.readDefOf
+    "readDef": round(0.65 * s["awareness"] + 0.2 * s["throwUnderPressure"] + 0.15 * avg(s["throwAccuracyShort"], s["throwAccuracyMid"]))},
   "RB": lambda s: {"vision": s["bCVision"], "elusiveness": s["jukeMove"], "breakTkl": s["breakTackle"], "passBlock": s["passBlock"], "receiving": s["catching"],
     "burst": s["acceleration"], "balance": avg(s["breakTackle"], s["carrying"]), "stiffArm": s["stiffArm"]},
   "WR": lambda s: {"routeRun": avg(s["shortRouteRunning"], s["mediumRouteRunning"], s["deepRouteRunning"]), "catching": s["catching"],

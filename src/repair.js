@@ -4,6 +4,7 @@
 import { DEV_TRAITS } from "./scouting.js";
 import { REAL_STAFF, HC_RATING, HC_TRAIT } from "./data/realCoaches.js";
 import { applyRosterUpdates } from "./rosterUpdates.js";
+import { brokenReadDef, readDefOf } from "./qbiq.js";
 
 const okPlayer = (p) => p && typeof p === "object" && p.id != null && typeof p.pos === "string";
 
@@ -50,6 +51,16 @@ export function repairSave(d) {
   }
   if (Array.isArray(d.sched)) d.sched = d.sched.filter((g) => g && typeof g === "object");
   if (Array.isArray(d.draftPicks)) d.draftPicks = d.draftPicks.filter((pk) => pk && typeof pk === "object");
+  // QB Read Def used to come from Madden's Play Recognition (a defender's rating: QBs sat at 10-30).
+  // Rebuild it everywhere a QB lives: rosters, free agents, waivers and the draft classes.
+  {
+    let n = 0;
+    const fix = (p) => { if (p?.pos === "QB" && brokenReadDef(p.posAttrs)) { p.posAttrs = { ...p.posAttrs, readDef: readDefOf(p.posAttrs) }; n++; } };
+    for (const t of d.teams) for (const p of [...(t?.roster || []), ...(t?.ps || []), ...(t?.ir || [])]) fix(p);
+    for (const p of [...(Array.isArray(d.fa) ? d.fa : []), ...(Array.isArray(d.waivers) ? d.waivers : [])]) fix(p);
+    for (const cls of Object.values(d.dc || {})) if (Array.isArray(cls)) cls.forEach(fix);
+    if (n) fixes.push(`rebuilt Read Def for ${n} quarterback${n === 1 ? "" : "s"}`);
+  }
   // in-season roster updates (rosterUpdates.js), once each
   fixes.push(...applyRosterUpdates(d));
   return { d, fixes };

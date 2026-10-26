@@ -29,7 +29,7 @@ import { roleOvr } from "./roles.js";
 import { getLeagueYear } from "./cap.js";
 import { hurtPen } from "./injuries.js";
 import { recPlay } from "./gameday.js";
-import { qbMind } from "./mentor.js";
+import { iqEdge, readOdds, readComp, readInt, intShift, sackShift } from "./qbiq.js";
 import { coachAggression } from "./coachStyle.js";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -810,7 +810,9 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     // who did what, for the field to act the play out (LivePlay.jsx)
     ev.qb = qb; ev.deep = deep; ev.quick = quick; ev.screen = screen;
     const sackAt = (rE) => clamp(0.055 + rE * 0.008 - passE * 0.004 + (deep ? 0.025 : quick || screen ? -0.035 : 0) + (B ? (quick || screen ? 0.02 : 0.06) : V ? -0.015 : 0), 0.02, 0.2);
-    const sackP = sackAt(rushE);
+    // his IQ: seeing the blitz and getting rid of it in time (qbiq.js)
+    const iq = iqEdge(qb);
+    const sackP = clamp(sackAt(rushE) + sackShift(iq), 0.015, 0.22);
     const qbl = line(g, off, qb);
     if (!screen) ev._ol = { pass: true, sackP };
     gk = { qb, dropback: !screen, sackP0: sackAt(gx.rushE0) };
@@ -858,16 +860,21 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       }
       add(qbl, "att", 1); add(tl, "tgt", 1); st.passAtt++;
       // where you put it: hitting the open man is easy and safe; forcing it into coverage isn't
-      const placed = mine && pick.open != null ? (pick.open ? 1 : -1) : 0;
-      // his processing against his overall: a QB who reads it better than his arm suggests throws fewer picks
-      const mindE = qb ? clamp(qbMind(qb), -12, 12) : 0;
-      const intP = clamp((placed > 0 ? -0.008 : placed < 0 ? 0.028 : 0) + 0.024 - mindE * 0.0006 - passE * 0.004 - mm * 0.0004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0) + (g.wxE?.int || 0), 0.006, 0.08);
+      // On his own read (no throw you aimed), his IQ decides it: a sharp QB finds the open man more
+      // often and forces it into coverage less.
+      const own = !mine || pick.open == null;
+      let placed = own ? 0 : pick.open ? 1 : -1;
+      if (own && !screen) { const ro = readOdds(iq), u = rand(); placed = u < ro.open ? 1 : u > 1 - ro.forced ? -1 : 0; }
+      const plI = own ? (screen ? 0 : readInt(placed)) : placed > 0 ? -0.008 : placed < 0 ? 0.028 : 0;
+      const plC = own ? (screen ? 0 : readComp(placed)) : placed > 0 ? 0.12 : placed < 0 ? -0.18 : 0;
+      ev.read = placed > 0 ? "open" : placed < 0 ? "forced" : null;
+      const intP = clamp(plI + intShift(iq) + 0.024 - passE * 0.004 - mm * 0.0004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0) + (g.wxE?.int || 0), 0.006, 0.08);
       if (rand() < intP) {
         const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW);
         add(qbl, "passInt", 1); st.ints++;
         if (db) { add(line(g, def, db), "ints", 1); add(line(g, def, db), "pd", 1); }
         gk.int = true; gk.db = db; gradeBook(g, off, def, dP, gk, 0);
-        type = "int"; desc = `${qb?.name || "QB"}'s pass is INTERCEPTED${db ? ` by ${db.name}` : ""}!`; ev.k = "int"; ev.db = db;
+        type = "int"; desc = `${qb?.name || "QB"}${placed < 0 ? " forces it into coverage and it" : "'s pass"} is INTERCEPTED${db ? ` by ${db.name}` : ""}!`; ev.k = "int"; ev.db = db;
         const ret = Math.round(clamp(expo(rand, 9), 0, 60));
         ev.turnover = true; ev.player = db; ev.defPlay = true;
         persLog(g, off, def, pers, pkg, 0, false);
@@ -876,7 +883,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
         if (!g.done) newPossession(g, 100 - g.yard - Math.round(8 + rand() * 12) + ret);
         return ev;
       }
-      const compP = clamp(compAt(passE, target?.ovr || 75, mm) + (placed > 0 ? 0.12 : placed < 0 ? -0.18 : 0), 0.12, 0.95);
+      const compP = clamp(compAt(passE, target?.ovr || 75, mm) + plC, 0.12, 0.95);
       if (rand() < compP) {
         const mean = yMean;
         yards = Math.round((2 + expo(rand, mean - 2 + passE * 0.45 + mm * 0.06 + ((target?.ovr || 75) - 75) * 0.035 + Math.max(0, (target?.ovr || 75) - 90) * 0.08)) * (bonus || 1));

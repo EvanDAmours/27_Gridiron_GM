@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mentorOf, mentorGrowth, canApprentice, qbMind, bumpAttrs, learningFrom } from "../src/mentor.js";
+import { mentorOf, mentorGrowth, canApprentice, bumpAttrs, learningFrom } from "../src/mentor.js";
 
-const vet = (o = {}) => ({ id: "v", name: "Vet", pos: "QB", age: 33, ovr: 82, posAttrs: { decisions: 80, pocketAwr: 89 }, ss: { snp: 1700 }, ...o });
+const vet = (o = {}) => ({ id: "v", name: "Vet", pos: "QB", age: 33, ovr: 82, posAttrs: { decisions: 80, pocketAwr: 89, readDef: 82 }, ss: { snp: 1700 }, ...o });
 const rook = (o = {}) => ({ id: "r", name: "Rook", pos: "QB", age: 22, ovr: 68, draftYr: 2026, posAttrs: { decisions: 62, pocketAwr: 72, readDef: 20 }, ss: { snp: 40 }, ...o });
 
 test("a young QB sitting behind a 30+ starter learns: processing and ceiling go up", () => {
@@ -25,9 +25,23 @@ test("a raw rookie thrown in as the starter can pick up bad habits", () => {
   assert.equal(m.pot, -1);
 });
 
-test("an ordinary QB reads neutral; a sharp one reads up", () => {
-  assert.equal(qbMind({ ovr: 80, posAttrs: { decisions: 76, pocketAwr: 86 } }), 0);
-  assert.ok(qbMind({ ovr: 80, posAttrs: { decisions: 84, pocketAwr: 90 } }) > 0);
+test("attribute bumps cap at 99; the badge names the veteran", () => {
   assert.deepEqual(bumpAttrs({ decisions: 98, x: 1 }, { decisions: 3 }), { decisions: 99, x: 1 });
   assert.equal(learningFrom(rook(), [vet(), rook()], 2026)?.name, "Vet");
+});
+
+test("QB Read Def: rebuilt from awareness, pocket and accuracy, and repaired in old saves", async () => {
+  const { readDefOf, brokenReadDef, iqEdge } = await import("../src/qbiq.js");
+  const { repairSave } = await import("../src/repair.js");
+  assert.equal(readDefOf({ decisions: 99, pocketAwr: 97, accuracy: 98 }), 98);
+  const old = { id: "q", pos: "QB", name: "Q", ovr: 78, posAttrs: { decisions: 79, pocketAwr: 81, accuracy: 88, readDef: 28 } };
+  assert.ok(brokenReadDef(old.posAttrs));
+  const d = { yr: 2026, teams: [{ roster: [old], ps: [], ir: [] }], dc: { 2027: [{ ...old, id: "x" }] } };
+  repairSave(d);
+  assert.equal(d.teams[0].roster[0].posAttrs.readDef, 81);
+  assert.equal(d.dc[2027][0].posAttrs.readDef, 81);
+  // an average starter's IQ reads about zero; a sharp one well above, a raw one well below
+  assert.ok(Math.abs(iqEdge({ ovr: 85, posAttrs: { decisions: 82, readDef: 82, pocketAwr: 84 } })) < 1.5);
+  assert.ok(iqEdge({ ovr: 95, posAttrs: { decisions: 98, readDef: 97, pocketAwr: 95 } }) > 10);
+  assert.ok(iqEdge({ ovr: 70, posAttrs: { decisions: 60, readDef: 64, pocketAwr: 72 } }) < -12);
 });

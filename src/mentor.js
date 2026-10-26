@@ -4,6 +4,8 @@
 // Patrick Mahomes behind Alex Smith. A raw rookie thrown in as the starter grows faster now, but
 // can pick up bad habits that cost him a little of his ceiling.
 
+import { iqEdge } from "./qbiq.js";
+
 export const MENTOR_AGE = 30; // the veteran he learns from
 export const APPRENTICE_AGE = 25; // the oldest a quarterback still learns this way
 export const MAX_YEARS = 3; // after three seasons on the bench there's nothing left to learn
@@ -26,13 +28,8 @@ export function mentorOf(roster) {
 // Can he learn from a veteran right now? (He's young, early in his career, and not the starter.)
 export const canApprentice = (p, yr) => !!p && p.pos === "QB" && p.age <= APPRENTICE_AGE && (p.draftYr == null || yr == null || yr - p.draftYr <= 3) && (p.mentored?.yrs || 0) < MAX_YEARS;
 
-// How a quarterback processes the game against his overall: his Decisions and Pocket ratings,
-// each against the league norm for a QB of his level (Decisions runs about 4 under the overall,
-// Pocket about 6 over), so an ordinary QB reads 0 and a sharp one reads a few points up.
-export const qbMind = (p) => (((p.posAttrs?.decisions ?? p.ovr - 4) - p.ovr + 4) + ((p.posAttrs?.pocketAwr ?? p.ovr + 6) - p.ovr - 6)) / 2;
-
 // How much the veteran has to teach: his own level and how well he processes the game.
-export const mentorQuality = (m) => clamp((m.ovr + qbMind(m) * 2 - 70) / 18, 0.25, 1.3);
+export const mentorQuality = (m) => clamp((m.ovr + iqEdge(m) - 66) / 18, 0.25, 1.3);
 
 // One off-season's worth: what sitting behind `mentor` (or starting too soon) did for him.
 // Returns null when neither applies, else { ovr, pot, attrs, rec, note }.
@@ -54,7 +51,7 @@ export function mentorGrowth(p, roster, yr, rand = Math.random) {
   }
   // thrown in as a raw rookie starter: he plays through it, but he can learn the wrong lessons
   const rookie = p.draftYr != null ? yr - p.draftYr <= 1 : (p.sh || []).length === 0;
-  if (rookie && s >= 0.6 && p.ovr < 74 && qbMind(p) < 2 && !p.mentored?.yrs && rand() < 0.3) {
+  if (rookie && s >= 0.6 && p.ovr < 74 && iqEdge(p) < -8 && !p.mentored?.yrs && rand() < 0.3) {
     return { ovr: 0, pot: -1, attrs: { decisions: -1 }, rec: { yrs: 0, by: [], gain: -1, rushed: yr }, note: "started before he was ready and picked up some bad habits: ceiling -1" };
   }
   return null;
