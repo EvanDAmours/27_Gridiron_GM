@@ -1963,4 +1963,10 @@ export const PATCH_NOTES = [
     "Your list: calm rows with the reorder controls hidden until you hover.",
     "Scouts: the report card shows one grade and one line per scout (hover for the detail), and the staff tables drop the bright colors.",
   ] },
+  { v: "4.84", date: "2026-10-23", title: "Draft Recap leads with your class", notes: [
+    "Draft Recap, redone: your class leads, with its grade, where it ranks and your best find in one line, then one calm row per pick.",
+    "One tag per pick (the trait he really has, or Value, Miss, Bust, Hidden gem) instead of a trait and a verdict saying the same thing.",
+    "Best of the class and the league's class grades sit beside your class; click a team's grade to see its picks.",
+    "Every pick is its own view, split by round with your picks lit in gold, and the whole screen fits without scrolling.",
+  ] },
 ];

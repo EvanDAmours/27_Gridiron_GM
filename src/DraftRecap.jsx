@@ -3,14 +3,14 @@
 // each pick has become since.
 import Select from "./Select.jsx";
 import React, { useMemo, useState } from "react";
-import { C, TeamLogo, Bdg, Btn, Hero, Row, Sheet, Segments } from "./ui.jsx";
+import { C, TeamLogo, Bdg, Face, Hero, Row, Sheet, Segments } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
-import { DevChip } from "./ScoutingUI.jsx";
+import { DevChip, DEV_STYLE } from "./ScoutingUI.jsx";
 import { recapEntry, gradePicks, classGrades, devCounts, VERDICT } from "./draftRecap.js";
 import { DEV_TRAITS } from "./scouting.js";
 import { posTag } from "./dline.js";
 
-const GRADE_C = { A: "#22c55e", "B+": "#84cc16", B: "#a3e635", "C+": "#f59e0b", C: "#fb923c", D: "#ef4444" };
+const GRADE_C = { A: "#4ade80", "B+": "#60a5fa", B: "#60a5fa", "C+": "#fbbf24", C: "#fbbf24", D: "#f87171" };
 
 export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {}, current, onNext, setSel, findPlayer }) {
   // The draft just held (this off-season) plus every archived one.
@@ -22,6 +22,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
   const [pickYr, setPickYr] = useState(null);
   const [show, setShow] = useState("all");
   const [teamF, setTeamF] = useState(-1);
+  const [mode, setMode] = useState("class");
   const view = pickYr ?? years[0];
   const entries = useMemo(() => (view === yr && current && draftLog.length ? draftLog.map(recapEntry) : history[view] || []), [view, yr, current, draftLog, history]);
   // Players still being figured out (see scoutMiss.js) show the club's current read of their
@@ -54,96 +55,118 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
   const topClasses = [...grades].filter((g) => g.picks.length).sort((a, b) => a.rank - b.rank);
 
   if (MOBILE) return <PhoneRecap {...{ teams, ui, view, years, setPickYr, onNext, mine, topClasses, jackpots, counts, rows, shown, show, setShow, open, now, past }} />;
+  const face = (id) => findPlayer(id)?.face;
+  const best = mine?.picks.filter((r) => r.rd >= 2 && r.score >= 2).sort((x, y) => y.score - x.score || x.overall - y.overall)[0];
+  const ord = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"}`;
+  const seg = (on) => ({ border: 0, borderRadius: 99, padding: "6px 13px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#fff" : "transparent", color: on ? "#0b1220" : "#cbd5e1" });
+  const card = { background: C.cd, borderRadius: 20, padding: "16px 18px", minHeight: 0, display: "flex", flexDirection: "column" };
+  const h = { fontSize: 17, fontWeight: 800, color: "#fff" };
+  const fit = { height: "calc(100vh - 290px)", minHeight: 400 };
+  const dev = (r) => (r.dev && r.dev !== "normal" ? <span style={{ fontSize: 13, fontWeight: 800, color: DEV_STYLE[r.dev]?.[0] }}>{DEV_TRAITS[r.dev]?.name}</span> : null);
+  const verdict = (r) => { if (!["gem", "bust"].includes(r.verdict) && r.dev && r.dev !== "normal") return <span style={{ width: 110, textAlign: "right", flexShrink: 0 }}>{dev(r)}</span>;
+    const [vt, vc] = VERDICT[r.verdict]; return <span style={{ width: 110, textAlign: "right", fontSize: 13, fontWeight: 800, color: r.verdict === "solid" ? "#64748b" : vc, flexShrink: 0 }}>{vt}</span>; };
+  const nums = (r) => { const n = now(r.id); return (
+    <span style={{ width: 92, textAlign: "right", flexShrink: 0, fontVariantNumeric: "tabular-nums", lineHeight: 1.15 }}>
+      <b style={{ fontSize: 16, color: "#f8fafc" }}>{r.ovr}</b><span style={{ fontSize: 14, color: "#64748b", fontWeight: 700 }}> / {r.pot}</span>
+      {past && <span style={{ display: "block", fontSize: 12, color: n ? C.gd : "#64748b" }}>{n ? `now ${n.ovr}` : "gone"}</span>}
+    </span>
+  ); };
+
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <div style={{ fontSize: 26, fontWeight: 900, flex: 1 }}>{view + 1} Draft Recap</div>
-        {years.length > 1 && <Select value={view} onChange={(e) => setPickYr(+e.target.value)} style={{ background: C.cd, color: "#e2e8f0", border: "1px solid #ffffff10", borderRadius: 6, padding: "6px 8px", fontSize: 14 }}>{years.map((y) => <option key={y} value={y}>{y + 1} draft</option>)}</Select>}
-        {onNext && <Btn onClick={onNext} bg={C.gn} style={{ fontSize: 15, padding: "8px 14px" }}>→ Next Season</Btn>}
-      </div>
-      <div style={{ fontSize: 14, color: C.mt, marginBottom: 12 }}>Every pick with his true ratings and development trait revealed. {past ? "\"Now\" shows what each player has become since." : "Development traits decide how fast a player grows, so this is where you find out if you hit."}</div>
-
-      {mine && mine.picks.length > 0 && <div style={{ ...panel, border: `1px solid ${GRADE_C[mine.grade]}66` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
-          <div style={{ fontSize: 40, fontWeight: 900, color: GRADE_C[mine.grade], lineHeight: 1 }}>{mine.grade}</div>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>Your class</div>
-            <div style={{ fontSize: 14, color: C.mt }}>{mine.picks.length} picks · {mine.hits} hit{mine.hits === 1 ? "" : "s"} (Star or better) · ranked {mine.rank} of {topClasses.length}</div>
-          </div>
+    <div>
+      <style>{".rc-row:hover{background:#ffffff0a}"}</style>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+        <div style={{ display: "inline-flex", gap: 2, padding: 3, borderRadius: 99, background: "#ffffff0d" }}>
+          {[["class", mine?.picks.length ? "Your class" : "The class"], ["all", "Every pick"]].map(([k, l]) => <button key={k} onClick={() => setMode(k)} style={seg(mode === k)}>{l}</button>)}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 8 }}>
-          {mine.picks.map((r) => { const [vt, vc] = VERDICT[r.verdict]; const n = now(r.id); return (
-            <div key={r.id} onClick={() => open(r.id)} style={{ background: C.bg, border: `1px solid ${vc}55`, borderRadius: 8, padding: 10, cursor: "pointer" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}><Bdg pos={posTag(r)} /><b style={{ flex: 1, fontSize: 15, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</b></div>
-              <div style={{ fontSize: 12, color: C.mt, marginBottom: 6 }}>Round {r.rd}, pick {r.overall} · age {r.age}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 14 }}>OVR <b>{r.ovr}</b> · POT <b>{r.pot}</b>{n ? <span style={{ color: C.gd }}> · now {n.ovr}</span> : null}</span>
-                <DevChip dev={r.dev} />
+        <span style={{ fontSize: 14, color: "#64748b", flex: 1 }}>{past ? "True ratings revealed, and what each pick has become since." : "True ratings and development traits, revealed."}</span>
+        {years.length > 1 && <Select value={view} onChange={(e) => setPickYr(+e.target.value)} aria-label="Draft year" style={{ background: C.cd, color: "#e2e8f0", border: "1px solid #ffffff10", borderRadius: 99, padding: "6px 12px", fontSize: 14 }}>{years.map((y) => <option key={y} value={y}>{y + 1} draft</option>)}</Select>}
+      </div>
+
+      {mode === "class" ? (
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 14, ...fit }}>
+          <div style={card}>
+            {mine?.picks.length ? <>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "2px 4px 12px" }}>
+                <div style={{ fontSize: 46, fontWeight: 900, lineHeight: 1, color: GRADE_C[mine.grade], width: 70 }}>{mine.grade}</div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={h}>Your class · {ord(mine.rank)} of {topClasses.length}</div>
+                  <div style={{ fontSize: 14, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {mine.picks.length} picks · {mine.hits} hit{mine.hits === 1 ? "" : "s"}{best ? <> · best find <b style={{ color: "#e2e8f0" }}>{best.name}</b>, round {best.rd}</> : null}
+                  </div>
+                </div>
               </div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: vc, marginTop: 6 }}>{vt}</div>
-            </div>
-          ); })}
-        </div>
-      </div>}
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 12 }}>
-        <div style={panel}>
-          <div style={head}>Hidden gems and best traits</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-            {Object.keys(DEV_TRAITS).map((k) => <span key={k} style={{ fontSize: 13, color: C.mt }}><DevChip dev={k} /> {counts[k] || 0}</span>)}
+              <div style={{ overflowY: "auto", minHeight: 0, flex: 1, margin: "0 -6px" }}>
+                {mine.picks.map((r) => (
+                  <div key={r.id} className="rc-row" onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "8px 10px", borderRadius: 14, cursor: "pointer" }}>
+                    <span style={{ width: 34, textAlign: "right", fontSize: 16, fontWeight: 900, color: "#64748b", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{r.overall}</span>
+                    <Face s={face(r.id)} sz={40} />
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 16, fontWeight: 800, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
+                      <span style={{ display: "block", fontSize: 13, color: "#94a3b8", marginTop: 1 }}>{posTag(r)} · round {r.rd} · age {r.age}</span>
+                    </span>
+                    {nums(r)}
+                    {verdict(r)}
+                  </div>
+                ))}
+              </div>
+            </> : <div style={{ fontSize: 15, color: "#94a3b8", padding: 4 }}>You made no picks in this draft.</div>}
           </div>
-          {jackpots.slice(0, 10).map((r) => (
-            <div key={r.id} onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: `1px solid ${C.bd}55`, cursor: "pointer", background: r.owner === ui ? "#22c55e12" : "transparent" }}>
-              <span style={{ width: 34, fontSize: 12, color: C.mt }}>#{r.overall}</span>
-              {teams[r.owner] && <TeamLogo t={teams[r.owner]} sz={20} />}
-              <Bdg pos={posTag(r)} />
-              <span style={{ flex: 1, minWidth: 0, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
-              <DevChip dev={r.dev} />
+          <div style={{ display: "grid", gridTemplateRows: "auto minmax(0,1fr)", gap: 14, minHeight: 0 }}>
+            <div style={card}>
+              <div style={{ ...h, marginBottom: 6 }}>Best of the class</div>
+              {jackpots.slice(0, 5).map((r) => (
+                <div key={r.id} className="rc-row" onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 8px", margin: "0 -8px", borderRadius: 12, cursor: "pointer" }}>
+                  <span style={{ width: 34, textAlign: "right", fontSize: 13, fontWeight: 800, color: "#64748b", fontVariantNumeric: "tabular-nums" }}>{r.overall}</span>
+                  {teams[r.owner] && <TeamLogo t={teams[r.owner]} sz={22} />}
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, color: r.owner === ui ? C.gd : "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name} <span style={{ color: "#64748b", fontWeight: 600, fontSize: 13 }}>{posTag(r)}</span></span>
+                  {dev(r)}
+                </div>
+              ))}
+              {!jackpots.length && <div style={{ fontSize: 14, color: "#94a3b8" }}>No Star-or-better traits in this class.</div>}
             </div>
-          ))}
-          {!jackpots.length && <div style={{ fontSize: 14, color: C.mt }}>No Star-or-better traits in this class.</div>}
-        </div>
-        <div style={panel}>
-          <div style={head}>Class grades</div>
-          {topClasses.map((g) => (
-            <div key={g.ti} onClick={() => setTeamF(teamF === g.ti ? -1 : g.ti)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: `1px solid ${C.bd}44`, cursor: "pointer", background: g.ti === ui ? "#22c55e12" : teamF === g.ti ? "#3b82f61a" : "transparent" }}>
-              <span style={{ width: 22, fontSize: 12, color: C.mt }}>{g.rank}</span>
-              {teams[g.ti] && <TeamLogo t={teams[g.ti]} sz={20} />}
-              <span style={{ flex: 1, fontSize: 14 }}>{teams[g.ti]?.city} {teams[g.ti]?.name}</span>
-              <span style={{ fontSize: 12, color: C.mt }}>{g.picks.length} picks · {g.hits} hits</span>
-              <b style={{ width: 28, textAlign: "right", color: GRADE_C[g.grade] }}>{g.grade}</b>
+            <div style={{ ...card, paddingBottom: 8 }}>
+              <div style={{ ...h, marginBottom: 6 }}>Class grades</div>
+              <div style={{ overflowY: "auto", minHeight: 0, flex: 1, margin: "0 -8px" }}>
+                {topClasses.map((c) => (
+                  <div key={c.ti} className="rc-row" onClick={() => { setTeamF(c.ti); setShow("all"); setMode("all"); }} title={`${c.picks.length} picks · ${c.hits} hits`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 8px", borderRadius: 12, cursor: "pointer", background: c.ti === ui ? "#f5c54214" : "transparent" }}>
+                    <span style={{ width: 22, textAlign: "right", fontSize: 13, color: "#64748b", fontVariantNumeric: "tabular-nums" }}>{c.rank}</span>
+                    {teams[c.ti] && <TeamLogo t={teams[c.ti]} sz={22} />}
+                    <span style={{ flex: 1, fontSize: 15, color: c.ti === ui ? C.gd : "#e2e8f0", fontWeight: c.ti === ui ? 800 : 600 }}>{teams[c.ti]?.city} {teams[c.ti]?.name}</span>
+                    <b style={{ width: 30, textAlign: "right", color: GRADE_C[c.grade] }}>{c.grade}</b>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          </div>
         </div>
-      </div>
-
-      <div style={panel}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-          <div style={{ ...head, marginBottom: 0, flex: 1 }}>Every pick</div>
-          {[["all", "All"], ["mine", "Mine"], ["hits", "Hits"]].map(([k, l]) => <Btn key={k} onClick={() => setShow(k)} bg={show === k ? "#fff" : "transparent"} c={show === k ? "#0b1220" : C.mt} style={{ fontSize: 13, padding: "4px 10px", border: "1px solid #ffffff10" }}>{l}</Btn>)}
-          {teamF >= 0 && <Btn onClick={() => setTeamF(-1)} bg="transparent" c={C.mt} style={{ fontSize: 13, padding: "4px 10px", border: "1px solid #ffffff10" }}>{teams[teamF]?.ab} ✕</Btn>}
+      ) : (
+        <div style={{ ...card, ...fit }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <div style={{ ...h, flex: 1 }}>{teamF >= 0 ? `${teams[teamF]?.city} ${teams[teamF]?.name}` : "Every pick"}</div>
+            {teamF >= 0 && <button onClick={() => setTeamF(-1)} style={{ ...seg(false), color: "#94a3b8" }}>All teams</button>}
+            <div style={{ display: "inline-flex", gap: 2, padding: 3, borderRadius: 99, background: "#ffffff0d" }}>
+              {[["all", "All"], ["mine", "Mine"], ["hits", "Hits"]].map(([k, l]) => <button key={k} onClick={() => setShow(k)} style={seg(show === k)}>{l}</button>)}
+            </div>
+          </div>
+          <div style={{ overflowY: "auto", minHeight: 0, flex: 1, margin: "0 -8px" }}>
+            {shown.map((r, i) => (
+              <React.Fragment key={r.id}>
+                {(i === 0 || shown[i - 1].rd !== r.rd) && <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, color: "#64748b", padding: "12px 10px 4px" }}>ROUND {r.rd}</div>}
+                <div className="rc-row" onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 10px", borderRadius: 12, cursor: "pointer", background: r.owner === ui ? "#f5c54210" : "transparent", boxShadow: r.owner === ui ? `inset 3px 0 0 ${C.gd}` : "none" }}>
+                  <span style={{ width: 34, textAlign: "right", fontSize: 14, fontWeight: 800, color: "#64748b", fontVariantNumeric: "tabular-nums" }}>{r.overall}</span>
+                  {teams[r.owner] && <TeamLogo t={teams[r.owner]} sz={22} />}
+                  <span style={{ width: 40, fontSize: 13, fontWeight: 700, color: r.owner === ui ? C.gd : "#94a3b8" }}>{r.owner === ui ? "You" : teams[r.owner]?.ab}</span>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name} <span style={{ color: "#64748b", fontWeight: 600, fontSize: 13 }}>{posTag(r)} · {r.age}</span></span>
+                  {nums(r)}
+                  {verdict(r)}
+                </div>
+              </React.Fragment>
+            ))}
+            {!shown.length && <div style={{ fontSize: 14, color: "#94a3b8", padding: 10 }}>No picks match.</div>}
+          </div>
         </div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-            <thead><tr style={{ color: C.mt, fontSize: 12, textAlign: "left" }}>{["Pick", "Team", "Player", "Pos", "OVR", "POT", ...(past ? ["Now"] : []), "Dev", "Verdict"].map((h) => <th key={h} style={{ padding: "6px 6px", borderBottom: `1px solid ${C.bd}` }}>{h}</th>)}</tr></thead>
-            <tbody>
-              {shown.map((r) => { const [vt, vc] = VERDICT[r.verdict]; const n = now(r.id); return (
-                <tr key={r.id} onClick={() => open(r.id)} style={{ cursor: "pointer", background: r.owner === ui ? "#22c55e12" : "transparent", borderTop: r.overall > 1 && rows.find((x) => x.overall === r.overall - 1)?.rd !== r.rd ? `2px solid ${C.bd}` : undefined }}>
-                  <td style={{ padding: "5px 6px", color: C.mt, whiteSpace: "nowrap" }}>{r.rd}-{r.overall}</td>
-                  <td style={{ padding: "5px 6px" }}>{teams[r.owner]?.ab}</td>
-                  <td style={{ padding: "5px 6px", fontWeight: 600 }}>{r.name}</td>
-                  <td style={{ padding: "5px 6px" }}><Bdg pos={posTag(r)} /></td>
-                  <td style={{ padding: "5px 6px" }}>{r.ovr}</td>
-                  <td style={{ padding: "5px 6px" }}>{r.pot}</td>
-                  {past && <td style={{ padding: "5px 6px", color: C.gd }}>{n ? n.ovr : <span style={{ color: C.mt }}>gone</span>}</td>}
-                  <td style={{ padding: "5px 6px" }}><DevChip dev={r.dev} /></td>
-                  <td style={{ padding: "5px 6px", color: vc, fontWeight: 700, whiteSpace: "nowrap" }}>{vt}</td>
-                </tr>
-              ); })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
