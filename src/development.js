@@ -234,3 +234,40 @@ export function eliteTaper(before, after, rand = Math.random, rising = false) {
   for (let x = v + 1; x <= after; x++) { if (rand() < (rising && x >= 93 ? 0.8 : x >= 94 ? 0.66 : 0.6)) v = x; else break; }
   return Math.max(before, v);
 }
+
+// ---------- The development plan (the Development screen) ----------
+
+// Camp priority for the summer: who the coaching staff spends its extra time on. Youth gives a
+// young player (25 or under) half a point more growth on average; Veterans slows a 29-and-over
+// player's decline by about the same. Balanced does neither.
+export const CAMP = { youth: "Youth", balanced: "Balanced", vets: "Veterans" };
+export function campBonus(pri, p, change, rand = Math.random) {
+  if (pri === "youth" && p.age <= 25 && rand() < 0.5) return 1;
+  if (pri === "vets" && p.age >= 29 && change < 0 && rand() < 0.5) return 1;
+  return 0;
+}
+
+// How many of each position play every snap; the next man up rotates in.
+const STARTERS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 2, S: 2, K: 1, P: 1 };
+// His share of the snaps: this season's so far, or before the season his place on the depth chart.
+export function projShare(p, roster, gamesPlayed = 0) {
+  if (gamesPlayed > 0 && p.ss?.snp != null) return Math.min(1, p.ss.snp / (gamesPlayed * 100));
+  const mates = roster.filter((x) => x.pos === p.pos && !x.injured).sort((a, b) => b.ovr - a.ovr);
+  const i = mates.findIndex((x) => x.id === p.id), n = STARTERS[p.pos] ?? 1;
+  return i < 0 ? 0 : i < n ? 0.9 : i < n + 1 ? 0.35 : 0.05;
+}
+export const roleOf = (share) => (share >= 0.6 ? "starter" : share >= 0.25 ? "rotation" : "backup");
+
+// The expected OVR change next summer, averaged over many seeded rolls (so it doesn't jump about
+// between visits): age, playing time and his ceiling, plus the camp priority and the weekly lab
+// work for a focus player.
+export function projGrowth(p, share, { camp = "balanced", focused = false, weeksLeft = 17 } = {}) {
+  let s = 0x9e3779b9 ^ (Number(String(p.id).replace(/\D/g, "")) || 7);
+  const rand = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  const N = 120;
+  let tot = 0;
+  for (let i = 0; i < N; i++) { const g = seasonGrowth(p, share, rand); tot += g + campBonus(camp, p, g, rand); }
+  return Math.round((tot / N + (focused ? focusChance(p) * weeksLeft : 0)) * 10) / 10;
+}
+// Growing, at his peak, or on the way down.
+export const trendOf = (g) => (g >= 0.8 ? "growing" : g <= -0.8 ? "declining" : "peak");

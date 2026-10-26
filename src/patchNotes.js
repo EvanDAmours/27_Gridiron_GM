@@ -1881,4 +1881,10 @@ export const PATCH_NOTES = [
     "Injuries are real injuries with real recovery times (ankle sprain 1-3 weeks, high ankle 3-6, concussion 1-2...). Only rare tears (ACL, Achilles, pec) end a season, and no more 'tackled from behind' as an injury",
     "The player card's front shows an injury: what it is and how long he's out",
   ] },
+  { v: "4.68", date: "2026-10-23", title: "Development tab", notes: [
+    "New Development tab, modeled on how the hockey game handles growth. Overview: what's worth knowing (your focus players, young players stuck on the bench, veterans about to drop) and who's growing, at his peak or declining next summer, with the expected change",
+    "Season plan: three choices. Focus players (one on offense, one on defense), Camp priority (Youth: about half a point more growth for players 25 and under; Veterans: about half as much decline for 29 and over; or Balanced) and a check on your young players. Then Lock in the plan",
+    "Young players: every player 24 and under, his role (starter, rotation, backup) and whether it's helping him grow, with a shortcut to the depth chart",
+    "Home: a Development strip along the bottom, one tap to the plan",
+  ] },
 ];
