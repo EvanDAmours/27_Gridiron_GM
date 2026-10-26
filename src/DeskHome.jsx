@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { C, TeamLogo, kickoff, Sheet } from "./ui.jsx";
 import PlayerArt from "./PlayerArt.jsx";
+import { LombardiStill } from "./Lombardi.jsx";
 import { featuredPlayer, headline } from "./BroadcastMatchup.jsx";
 import { BLOCK, FONT_CSS } from "./Spotlight.jsx";
 import { HOLIDAYS } from "./holidays.js";
@@ -61,7 +62,8 @@ function PhaseHero({ me, eyebrow, title, sub, stats = [], primary = [] }) {
 // this week (Play, Sim). spread: "NYG −3" or "Pick'em". eyebrow: what kind of game it is.
 // No game this week (a bye, or the off-season): phase = { me, eyebrow, title, sub, stats: [[label, value, color]] }
 // takes the promo's place, and middle = { title, body } the game plan's.
-export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, spread, primary = [], menu = [], planCard, stories = [], news = [], teams, onStory, side, rest, extra, injuries, onInbox, phase, middle, devStrip }) {
+const roman = (n) => [[50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]].reduce((out, [v, r]) => { while (n >= v) { out += r; n -= v; } return out; }, "");
+export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, spread, primary = [], menu = [], planCard, stories = [], news = [], teams, onStory, side, rest, extra, injuries, onInbox, phase, middle, devStrip, yr }) {
   const [devOpen, setDevOpen] = useState(false);
   const [injOpen, setInjOpen] = useState(false);
   // the to-do list (and the inbox) open these sheets from anywhere in the app
@@ -77,16 +79,21 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
   const moreTodo = menu.find((m) => /more to do$/.test(m.label));
   const lead = stories[0], leadT = lead && teams[lead.team];
   const plan = planCard && React.cloneElement(planCard, { bare: true });
+  // the Super Bowl gets its own look: the Lombardi between the two stars, a gold glow and a gold edge
+  const sb = /^Super Bowl/.test(eyebrow || "");
+  const sbNum = sb && yr ? roman(yr - 1965) : null;
   return (
     <div className="keep-dark" style={{ color: "#fff" }}>
       <style>{FONT_CSS}</style>
       {phase && <PhaseHero {...phase} primary={primary} />}
       {/* the promo */}
-      {!phase && <div data-tour="promo" style={{ position: "relative", height: "clamp(380px, calc(var(--vh, 100vh) - 470px), 560px)", borderRadius: 22, overflow: "hidden", background: `linear-gradient(100deg, ${away.clr} 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr} 100%)` }}>
+      {!phase && <div data-tour="promo" style={{ position: "relative", height: "clamp(380px, calc(var(--vh, 100vh) - 470px), 560px)", borderRadius: 22, overflow: "hidden", boxShadow: sb ? "inset 0 0 0 1px #f5c54266, 0 0 40px #f5c54214" : "none", background: `linear-gradient(100deg, ${away.clr} 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr} 100%)` }}>
+        {sb && <div style={{ position: "absolute", left: "50%", top: "46%", width: 520, height: 520, transform: "translate(-50%, -50%)", background: "radial-gradient(circle, #f5c54240 0%, #f5c54214 35%, transparent 65%)", pointerEvents: "none" }} />}
+        {sb && <div style={{ position: "absolute", left: "50%", top: 62, transform: "translateX(-50%)", zIndex: 1, filter: "drop-shadow(0 0 24px #f5c54255)" }}><LombardiStill size={92} /></div>}
         {pa && <div style={{ position: "absolute", left: "23%", bottom: -20 }}><PlayerArt p={pa} ab={away.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         {ph && <div style={{ position: "absolute", right: "23%", bottom: -20 }}><PlayerArt p={ph} ab={home.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, transparent 52%, ${C.bg} 100%)` }} />
-        <div style={{ position: "absolute", top: 24, left: 0, right: 0, textAlign: "center", fontSize: 14, fontWeight: 900, letterSpacing: 1.8, color: "#ffffffcc", textTransform: "uppercase", zIndex: 2 }}>{[eyebrow, game?.date ? kickoff(game).replace(" ET", "") : null].filter(Boolean).join(" · ")}</div>
+        <div style={{ position: "absolute", top: 24, left: 0, right: 0, textAlign: "center", fontSize: sb ? 15 : 14, fontWeight: 900, letterSpacing: sb ? 3 : 1.8, color: sb ? "#f5c542" : "#ffffffcc", textTransform: "uppercase", zIndex: 2 }}>{[sb && sbNum ? `Super Bowl ${sbNum}` : eyebrow, game?.date ? kickoff(game).replace(" ET", "") : null].filter(Boolean).join(" · ")}</div>
         <Side t={away} rating={ra} star={pa} teams={teams} />
         <Side t={home} rating={rh} star={ph} teams={teams} right />
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 28, display: "flex", justifyContent: "center", alignItems: "center", gap: 10, zIndex: 2 }}>

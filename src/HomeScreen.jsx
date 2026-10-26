@@ -414,7 +414,7 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
         <Btn onClick={rest.toggle} bg={rest.on ? "#334155" : "#0284c7"} style={{ fontSize: 14, fontWeight: 900, padding: "9px 16px", borderRadius: 10 }}>{rest.on ? "Play starters" : "Rest starters"}</Btn>
       </div>
     );
-    return <DeskHome {...{ devStrip, away, home, ra, rh, game, eyebrow, forecast, spread, primary: primary.slice(0, 2), menu, planCard, stories, news, teams, onStory, side, rest: restEl, injuries: <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />, onInbox: () => onNav("inbox") }} />;
+    return <DeskHome {...{ devStrip, yr, away, home, ra, rh, game, eyebrow, forecast, spread, primary: primary.slice(0, 2), menu, planCard, stories, news, teams, onStory, side, rest: restEl, injuries: <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />, onInbox: () => onNav("inbox") }} />;
   }
   // desktop with no game this week (a bye, the off-season, a season that's over): the same Home,
   // a hero for the time of year in place of the promo, your biggest needs in the middle card

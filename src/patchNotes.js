@@ -1900,4 +1900,10 @@ export const PATCH_NOTES = [
   { v: "4.71", date: "2026-10-23", title: "Calm menu", notes: [
     "The menu behind the top-right button is redone in the calm style: no emoji, clean rows, quiet section labels with soft dividers, a white pill switch for Display and a proper toggle for Injuries",
   ] },
+  { v: "4.72", date: "2026-10-23", title: "Cleaner development rows, Super Bowl home", notes: [
+    "Development rows trimmed to the essentials: name with age and position on one line, a short note under it, and the overall big on the right with the expected change beside it. Same on the overview, the Season plan's focus players and Young players",
+    "Picking a focus player: a new clean list for each side, sorted by expected growth, with age, position, development trait, overall and the expected gain",
+    "Young players: three columns, so the whole group fits on one screen",
+    "Super Bowl week on Home: the Lombardi Trophy stands between the two stars with a gold glow, the header reads Super Bowl LXI in gold, and the banner gets a gold edge",
+  ] },
 ];
