@@ -381,7 +381,9 @@ function buildSpecial(ev, slots, R) {
     const px = punter.x, py = punter.y, tKick = 0.95;
     F[punter.key] = path([0, px, py], [0.5, px, py], [0.95, px + 1.2, py], [3, px + 1.4, py]);
     const ly = (R() - 0.5) * 14, sx = ev.tb ? 104 : Math.min(ev.spot ?? los + ev.gross, 108);
-    const flight = 3.3 + (ev.gross || 45) * 0.022, tLand = tKick + flight; // NFL hang time: about 4 to 4.5 seconds
+    // the engine plays a real 4-4.5 second hang time; on screen it flies faster (a real one reads as
+    // floating), still longer for a booming punt than a short one
+    const flight = 1.7 + (ev.gross || 45) * 0.016, tLand = tKick + flight;
     const catches = ev.returned || (!ev.tb && !ev.downed && (ev.spot ?? 0) < 88);
     // where it comes down: a punt left to bounce lands short and rolls to the exact spot it's downed
     const lx = catches || ev.muff ? sx : Math.min(ev.land ?? sx - 3, sx);

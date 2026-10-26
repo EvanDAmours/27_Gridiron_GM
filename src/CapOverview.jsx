@@ -28,34 +28,33 @@ export function capAdvice({ rows, space, nextRoom, canExtend, starters }) {
   return out;
 }
 
-// Four seasons of cap: committed money against each year's cap, the room left, how many players
-// are signed, and the good players whose deals end that year (next year's re-sign calls).
-export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = null, rookies = 0, title = "The long view" }) {
+// Four seasons of cap: the room left each year (money already committed against its cap), how
+// many players are signed, and whose deals end that year (next year's re-sign calls).
+export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = null, rookies = 0, title = "The next four years", note = null }) {
   const yrs = capProjection(team, cy, { extra, room0, rookies });
-  const card = { background: "#ffffff0d", borderRadius: 18, padding: "16px 18px" };
   return (
-    <div style={card}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{title}</span>
-        <span style={{ fontSize: 14, color: C.mt }}>Money already committed against each season's cap. Re-signings, rookies and free agents come out of the room.</span>
+    <div style={{ background: "#ffffff0d", borderRadius: 20, padding: "16px 18px" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+        <span title="Money already committed against each season's cap. Re-signings, rookies and free agents come out of the room." style={{ fontSize: 17, fontWeight: 800, color: "#fff", flex: 1 }}>{title}</span>
+        {note && <span style={{ fontSize: 14, color: "#94a3b8" }}>{note}</span>}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${mobile ? 2 : 4},minmax(0,1fr))`, gap: 10 }}>
         {yrs.map((y, i) => {
           const pct = Math.min(100, (y.committed / y.cap) * 100), deadPct = Math.min(pct, (y.dead / y.cap) * 100);
-          const tone = y.room < 0 ? C.rd : y.room < y.cap * 0.08 ? C.gd : C.gn;
+          const tone = y.room < 0 ? C.rd : y.room < y.cap * 0.08 ? C.gd : "#f8fafc";
+          const ends = y.expiring.slice(0, 2);
           return (
-            <div key={y.yr} style={{ background: i === 0 ? "#ffffff12" : "#ffffff08", border: 0, borderRadius: 10, padding: "10px 10px 8px", minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}><b style={{ fontSize: 16 }}>{y.yr}</b><span style={{ fontSize: 11, color: C.mt }}>{i === 0 ? "this cap year" : `cap ${$(y.cap)}`}</span></div>
-              <div style={{ height: 10, borderRadius: 5, background: C.bd, overflow: "hidden", margin: "6px 0", position: "relative" }} title={`${$(y.committed)} committed of ${$(y.cap)}`}>
+            <div key={y.yr} style={{ background: i === 0 ? "#ffffff10" : "#ffffff07", borderRadius: 14, padding: "12px 14px", minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.2, color: "#94a3b8" }}>{y.yr}{i === 0 ? " · THIS YEAR" : ""}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 4 }}>
+                <span style={{ fontSize: 24, fontWeight: 900, color: tone, lineHeight: 1 }}>{y.room < 0 ? `-${$(-y.room)}` : $(y.room)}</span>
+                <span style={{ fontSize: 13, color: "#64748b" }}>room</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 3, background: "#ffffff14", overflow: "hidden", margin: "8px 0", position: "relative" }} title={`${$(y.committed)} committed of ${$(y.cap)}${y.dead > 0 ? `, ${$(y.dead)} of it dead money` : ""}`}>
                 <div style={{ width: `${pct}%`, height: "100%", background: y.room < 0 ? C.rd : "#38bdf8" }} />
                 {deadPct > 0 && <div style={{ position: "absolute", left: 0, top: 0, width: `${deadPct}%`, height: "100%", background: "#ef4444" }} />}
               </div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: tone, lineHeight: 1.1 }}>{y.room < 0 ? `-${$(-y.room)}` : $(y.room)}</div>
-              <div style={{ fontSize: 12, color: "#94a3b8" }}>room · {$(y.committed)} committed{y.dead > 0 ? ` (${$(y.dead)} dead)` : ""}</div>
-              <div style={{ fontSize: 12, color: "#94a3b8" }}>{y.players} player{y.players === 1 ? "" : "s"} signed</div>
-              {y.expiring.length > 0 && <div style={{marginTop: 6, fontSize: 14, fontWeight: 800, color: C.mt }}>Deals ending</div>}
-              {y.expiring.slice(0, 4).map((p) => <div key={p.id} onClick={() => onPlayer?.(p)} style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 14, padding: "1px 0", cursor: onPlayer ? "pointer" : "default", minWidth: 0 }}><Bdg pos={posTag(p)} /><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span><b style={{ color: "#cbd5e1" }}>{p.ovr}</b></div>)}
-              {y.expiring.length > 4 && <div style={{ fontSize: 12, color: C.mt }}>+{y.expiring.length - 4} more</div>}
+              <div style={{ fontSize: 13, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{y.players} signed{ends.length ? " · ends: " : ""}{ends.map((p, k) => <span key={p.id}>{k ? ", " : ""}<span onClick={() => onPlayer?.(p)} style={{ color: "#e2e8f0", cursor: onPlayer ? "pointer" : "default" }}>{p.name.split(" ").slice(-1)[0]}</span></span>)}{y.expiring.length > 2 ? ` +${y.expiring.length - 2}` : ""}</div>
             </div>
           );
         })}
@@ -132,54 +131,40 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
       </div>
     );
   }
+  // computers: the four years, then where the money goes beside what to do about it. The cap space
+  // and expiring deals are in the header above; the full list is the Contracts tab.
+  const dot = (c) => <span style={{ width: 9, height: 9, borderRadius: 5, background: c, flexShrink: 0, marginTop: 7 }} />;
   return (
-    <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
-      <div style={{ display: "grid", gridTemplateColumns: cy != null ? "repeat(auto-fill,minmax(220px,260px))" : `repeat(auto-fit,minmax(${mobile ? 150 : 180}px,1fr))`, gap: 8 }}>
-        {[["CAP SPACE", $(space), space < 0 ? C.rd : space < 15 ? C.gd : C.gn, `of ${$(cap)}${team?.rollover > 0 ? `, incl. ${$(team.rollover)} rolled over` : ""}`], ["NEXT SEASON'S ROOM", $(nextRoom), nextRoom < 0 ? C.rd : C.gn, rookies > 0 ? `after coaches and ~${$(rookies)} of rookies, before re-signings` : "after coaches, before re-signings"], ["DEAD MONEY", $(dead), dead > 0 ? C.rd : C.mt, deadNext ? `+${$(deadNext)} next year` : "none next year"], ["EXPIRING DEALS", rows.filter((r) => r.yl <= 1).length, C.tx, onContracts ? "after this season · see them →" : "after this season", "expiring"]].filter(([l]) => cy == null || !["CAP SPACE", "NEXT SEASON'S ROOM"].includes(l)).map(([l, v, c, sub, f]) => (
-          <div key={l} onClick={f && onContracts ? () => onContracts(f) : undefined} style={{ ...card, cursor: f && onContracts ? "pointer" : "default" }}>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt }}>{l}</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: c }}>{v}</div>
-            <div style={{ fontSize: 12, color: "#94a3b8" }}>{sub}</div>
-          </div>
-        ))}
-      </div>
-      {cy != null && <CapLongView team={team} cy={cy} room0={space} rookies={rookies} onPlayer={onPlayer} mobile={mobile} />}
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${mobile ? 280 : 320}px,1fr))`, gap: 10 }}>
+    <div style={{ display: "grid", gap: 14, marginBottom: 14 }}>
+      {cy != null && <CapLongView team={team} cy={cy} room0={space} rookies={rookies} onPlayer={onPlayer} note={`next season ${$(nextRoom)} of room${dead > 0.05 ? ` · ${$(dead)} dead money` : ""}${deadNext > 0.05 ? ` · ${$(deadNext)} dead next year` : ""}`} />}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 14 }}>
         <div style={card}>
-          <div style={head}>Where the money goes</div>
-          <div style={{ height: 12, borderRadius: 6, background: C.bd, overflow: "hidden", display: "flex", marginBottom: 10 }} title={`${$(used)} used of ${$(cap)}`}>
-            {byGroup.map(([g, v], i) => <div key={g} style={{ width: `${(v / cap) * 100}%`, background: ["#f59e0b", "#38bdf8", "#22c55e", "#ef4444", "#a78bfa", "#ec4899", "#94a3b8"][i] }} />)}
+          <div style={{ display: "flex", alignItems: "baseline", marginBottom: 10 }}><span style={{ ...head, marginBottom: 0, flex: 1 }}>Where the money goes</span>{byGroup[0][2] != null && <span style={{ fontSize: 13, color: "#64748b" }}>vs the league average</span>}</div>
+          <div style={{ height: 8, borderRadius: 4, background: "#ffffff14", overflow: "hidden", display: "flex", marginBottom: 10 }} title={`${$(used)} used of ${$(cap)}`}>
+            {byGroup.map(([g, v], i) => <div key={g} style={{ width: `${(v / cap) * 100}%`, background: CLR[i] }} />)}
           </div>
-          {byGroup[0][2] != null && <div style={{ display: "flex", fontSize: 11, fontWeight: 800, color: C.mt, letterSpacing: 0.8, padding: "0 0 2px 18px" }}><span style={{ flex: 1 }}>GROUP</span><span style={{ width: 64, textAlign: "right" }}>YOU</span><span style={{width: 92, textAlign: "right" }}>League avg</span><span style={{ width: 64, textAlign: "right" }}>VS AVG</span></div>}
           {byGroup.map(([g, v, avg], i) => {
             const d = avg ? (v - avg) / avg : 0;
             return (
-              <div key={g} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, padding: "3px 0" }}>
-                <span style={{ width: 10, height: 10, borderRadius: 3, background: ["#f59e0b", "#38bdf8", "#22c55e", "#ef4444", "#a78bfa", "#ec4899", "#94a3b8"][i] }} />
-                <span style={{ flex: 1 }}>{g}</span><b style={{ width: 64, textAlign: "right" }}>{$(v)}</b>
-                {avg != null ? <>
-                  <span style={{ color: C.mt, width: 92, textAlign: "right" }}>{$(avg)}</span>
-                  <span title={d > 0.25 ? "Well above what the average club spends here" : d < -0.25 ? "Well below the league average" : "About average"} style={{ width: 64, textAlign: "right", fontWeight: 800, color: d > 0.25 ? C.rd : d < -0.25 ? C.gn : C.mt }}>{d > 0 ? "+" : ""}{Math.round(d * 100)}%</span>
-                </> : <span style={{ color: C.mt, minWidth: 44, textAlign: "right" }}>{Math.round((v / cap) * 100)}%</span>}
+              <div key={g} title={avg != null ? `League average: ${$(avg)}` : undefined} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 15, padding: "5px 0" }}>
+                <span style={{ width: 9, height: 9, borderRadius: 3, background: CLR[i] }} />
+                <span style={{ flex: 1, color: "#e2e8f0" }}>{g}</span><b style={{ width: 72, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{$(v)}</b>
+                <span style={{ width: 56, textAlign: "right", fontSize: 14, fontWeight: 800, color: avg == null ? "#64748b" : d > 0.25 ? "#fca5a5" : d < -0.25 ? "#86efac" : "#64748b" }}>{avg != null ? `${d > 0 ? "+" : ""}${Math.round(d * 100)}%` : `${Math.round((v / cap) * 100)}%`}</span>
               </div>
             );
           })}
         </div>
         <div style={card}>
-          <div style={{ ...head, display: "flex" }}><span style={{ flex: 1 }}>Biggest cap hits</span>{onContracts && <button onClick={() => onContracts("all")} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 14, cursor: "pointer", letterSpacing: 0, fontWeight: 700 }}>All {rows.length} contracts →</button>}</div>
-          {top.map((p) => <div key={p.id} onClick={() => onPlayer(p)} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, padding: "3px 0", cursor: "pointer" }}><Bdg pos={posTag(p)} /><span style={{ flex: 1 }}>{p.name}</span><b style={{ color: C.gd }}>{$(p.salary)}</b><span style={{ color: C.mt, minWidth: 44, textAlign: "right" }}>{Math.round(((p.salary || 0) / cap) * 100)}%</span></div>)}
-        </div>
-        <div style={card}>
           <div style={head}>Cap advisor</div>
-          {!tips.length && <div style={{ fontSize: 14, color: "#94a3b8" }}>Your books are in good shape. Nothing needs doing right now.</div>}
-          {/* the top three; the rest a click away */}
+          {!tips.length && <div style={{ fontSize: 15, color: "#94a3b8" }}>Your books are in good shape. Nothing needs doing right now.</div>}
           {(allTips ? tips : tips.slice(0, 3)).map((t, i) => (
-            <div key={i} onClick={() => t.p && onPlayer(t.p)} style={{ borderLeft: `3px solid ${t.tone}`, background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 6, cursor: t.p ? "pointer" : "default" }}>
-              <div style={{ fontSize: 14, fontWeight: 800 }}>{t.title}</div>
-              <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.4 }}>{t.text}</div>
+            <div key={i} onClick={() => t.p && onPlayer(t.p)} className={t.p ? "ca-row" : undefined} style={{ display: "flex", gap: 12, padding: "9px 8px", margin: "0 -8px", borderRadius: 12, cursor: t.p ? "pointer" : "default" }}>
+              {dot(t.tone)}
+              <span style={{ minWidth: 0 }}><span style={{ display: "block", fontSize: 15, fontWeight: 800, color: "#f8fafc" }}>{t.title}</span><span style={{ display: "block", fontSize: 14, color: "#94a3b8", lineHeight: 1.4 }}>{t.text}</span></span>
             </div>
           ))}
-          {tips.length > 3 && <button onClick={() => setAllTips((v) => !v)} style={{ background: "transparent", border: 0, padding: "4px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>{allTips ? "Show fewer" : `${tips.length - 3} more suggestions`}</button>}
+          {tips.length > 3 && <button onClick={() => setAllTips((v) => !v)} style={{ background: "transparent", border: 0, padding: "6px 0 0", color: "#94a3b8", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>{allTips ? "Show fewer" : `${tips.length - 3} more`}</button>}
+          <style>{".ca-row:hover{background:#ffffff0a}"}</style>
         </div>
       </div>
     </div>

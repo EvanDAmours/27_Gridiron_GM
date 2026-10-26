@@ -1992,4 +1992,11 @@ export const PATCH_NOTES = [
     "Play-by-play says when a quarterback forced it into coverage and got picked.",
     "Sit and learn now measures the veteran by the same QB IQ: a sharp veteran teaches more than a turnover-prone one.",
   ] },
+  { v: "4.88", date: "2026-10-23", title: "Calm contracts and coaching", notes: [
+    "Contracts, reworked: one calm row per deal (face, name, position and age, overall, cap hit, years signed, dead money if cut) with the one open move, Extend or Restructure, quiet until you hover. The list fits the screen and scrolls inside its card; click a column to sort.",
+    "Restructuring: the dialog leads with the cap space you'd gain, then three plain lines: this year's cap hit before and after, the cap hit in later years, and dead money if cut before and after.",
+    "Front Office overview: the next four years in compact cards (room, a bar, who's signed and whose deals end), then where the money goes beside the cap advisor. The duplicate cap-hit list and the extra tiles are gone, and it all fits on one screen.",
+    "Coaching, reworked into three views. Your staff: one card per coach (rating, role, scheme and trait, then money, years and age in one quiet line) with Upgrade and Extend quiet until you hover; schemes and the game plan below; the locker room tucked into one row. Hire: every available coach in calm rows, filtered by job, with one Hire button each. League staffs: who coaches where, with team logos.",
+    "Punts on the live field fly faster: the engine still plays a real 4-4.5 second hang time, but on screen the ball no longer floats for ages.",
+  ] },
 ];
