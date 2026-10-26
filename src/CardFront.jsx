@@ -11,6 +11,7 @@ import { OvrRing, COLS, loadRealSeasons, realPast } from "./PlayerCard.jsx";
 import { olLine, OL_POS } from "./olStats.js";
 import { gradesOf, gradeWord, gradeColor, FACETS } from "./grades.js";
 import { DevBadge, topRatings } from "./ScoutingUI.jsx";
+import { learningFrom } from "./mentor.js";
 import { careerStanding } from "./careerRecords.js";
 import { recordValue } from "./records.js";
 import { posTag } from "./dline.js";
@@ -78,6 +79,8 @@ export default function CardFront({ p, team, lastTeam, ovr, pot, dev, label, yr,
               {/* his development trait, big: what matters most about a young player */}
               {!p.retiredYr && <div style={{ marginBottom: 6 }}><DevBadge dev={dev} size={MOBILE ? "md" : "lg"} hint="Development trait unknown: only known for your own players, free agents and prospects your scouts fully worked up." /></div>}
               {pot != null && <div>POT <b style={{ color: oC(pot) }}>{pot}</b></div>}
+              {/* a young QB learning the position behind a veteran (mentor.js) */}
+              {!p.retiredYr && (() => { const m = learningFrom(p, team?.roster, yr); const done = p.mentored?.yrs > 0; return m || done ? <div title="A young quarterback who sits behind a veteran starter learns his reads, decisions and pocket feel, and his ceiling rises." style={{ color: "#fcd34d" }}>{m ? `Learning behind ${m.name}` : `Learned behind ${p.mentored.by.join(" and ")}`}{done ? ` · ${p.mentored.yrs} season${p.mentored.yrs === 1 ? "" : "s"}` : ""}</div> : null; })()}
               {y && ol && <div>{y}: {ol.sacks} sack{ol.sacks === 1 ? "" : "s"} allowed · {ol.pres} pressures{ol.passGrade != null ? ` · ${ol.passGrade} pass grade` : ""}</div>}
               {y && !ol && tiles.length > 0 && <div>{y}: {tiles.slice(-3).map(([l, v]) => `${num(v)} ${l.toLowerCase()}`).join(" · ")}</div>}
               {/* his grade: how well he played, not how good the team around him is */}

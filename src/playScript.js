@@ -461,7 +461,7 @@ function buildSpecial(ev, slots, R) {
       const e = 1 - (1 - u) * (1 - u); // it slows as it rolls and stops dead on the spot
       return { x: lerp(lx, sx, e), y: ly + 0.6 * e, h: Math.abs(Math.sin(u * Math.PI * 2.2)) * 1.4 * (1 - u) };
     };
-    T = carrier ? tEnd + (ev.retTD ? 1.4 : 0.9) : tLand + 1.3 + (catches ? 0 : clamp((sx - lx) * 0.18, 0.5, 1.3));
+    T = carrier ? tEnd + (ev.retTD ? 1.4 : 0.9) : tLand + (catches ? 1.3 : 0.9 + clamp((sx - lx) * 0.18, 0.5, 1.3));
     if (!carrier) tEnd = tLand;
     m = { k: "punt", carrier: carrier?.key ?? null, tackler: tackler?.key ?? null, tEnd, td: !!ev.retTD, recov: muffRec?.key ?? null, recovT: muffRec ? tLand + 0.6 : null,
       special: { k: "punt", punter: punter.key, snapper: snapper?.key, returner: ret.key, tKick, tLand, catches: catches && !ev.muff, release: tKick } };

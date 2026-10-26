@@ -1976,4 +1976,13 @@ export const PATCH_NOTES = [
     "The transactions wire reads each move by its words, so it keeps working with the new messages and old saves alike.",
     "The quick-sim menu next to Sim Week is labelled \"More sims\" instead of an icon.",
   ] },
+  { v: "4.86", date: "2026-10-23", title: "Sit and learn, and a Deonte Banks update", notes: [
+    "Sit and learn: a young quarterback (25 or under, in his first few seasons) who spends a season behind a veteran starter of 30 or older learns the position from him. His Decisions, Read Def and Pocket ratings grow, his ceiling rises (most in the first season of it) and the bench costs him little growth. Up to three seasons count.",
+    "The better the veteran (his overall and how well he processes the game), the more there is to learn. Over a career, two years behind a good veteran ends up a couple of points better at his peak, and a sharper decision-maker, than starting from day one.",
+    "Thrown in too soon: a raw rookie starter with shaky decision-making can pick up bad habits that cost him a point of ceiling.",
+    "Decision-making now matters on the field: a quarterback whose Decisions and Pocket ratings run ahead of his overall throws fewer interceptions (an ordinary one is unchanged).",
+    "Your roster marks a QB who is learning with an LRN tag, and his player card says who he's learning (or learned) behind.",
+    "Roster update: Deonte Banks (CB, Giants) is now 82 OVR with a Star trait, rebuilt as a press-man corner (Press 92, Man 86, Zone 73). He's been a top-30 corner by PFF's grades this year, near the league lead in passes defensed, and held Nico Collins to two catches. It applies once to franchises still in the 2026 season.",
+    "Punts left to bounce no longer hold on the field after the ball has stopped.",
+  ] },
 ];

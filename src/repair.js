@@ -3,6 +3,7 @@
 // in fields every screen expects. Mutates and returns the save; reports what it fixed.
 import { DEV_TRAITS } from "./scouting.js";
 import { REAL_STAFF, HC_RATING, HC_TRAIT } from "./data/realCoaches.js";
+import { applyRosterUpdates } from "./rosterUpdates.js";
 
 const okPlayer = (p) => p && typeof p === "object" && p.id != null && typeof p.pos === "string";
 
@@ -49,5 +50,7 @@ export function repairSave(d) {
   }
   if (Array.isArray(d.sched)) d.sched = d.sched.filter((g) => g && typeof g === "object");
   if (Array.isArray(d.draftPicks)) d.draftPicks = d.draftPicks.filter((pk) => pk && typeof pk === "object");
+  // in-season roster updates (rosterUpdates.js), once each
+  fixes.push(...applyRosterUpdates(d));
   return { d, fixes };
 }

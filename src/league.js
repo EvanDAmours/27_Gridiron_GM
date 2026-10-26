@@ -2,6 +2,7 @@
 // coaches, the cap and the shared helpers the screens use. Pure JavaScript (no React), so it can
 // be tested directly. Moved out of App.jsx.
 import { GRADE_KEYS } from "./grades.js";
+import { ROSTER_UPDATES } from "./rosterUpdates.js";
 import M27 from "./data/madden27.json" with { type: "json" };
 import SPECIAL from "./data/special.json" with { type: "json" };
 import REAL_SCHED from "./data/schedule2026.json" with { type: "json" };
@@ -292,7 +293,7 @@ export function calcSOS(teamId,sched,teams){const played=sched.filter(g=>g.playe
 // A Madden 27 player as a full game player: real name, size, ratings and position skills.
 export function realPlayer(d){const p=genPlayer(d.pos,d.age,d.ovr);const devLift=d.age<=26?({generational:8,superstar:5,star:2}[d.dev]||0):0;const pot=cl((d.age<=22?d.ovr+R(5,12):d.age<=25?d.ovr+R(1,6):d.ovr)+devLift,d.ovr,99);
   Object.assign(p,{name:d.name,mpos:d.mpos,ht_:d.ht,wt:d.wt,spd:d.spd,str:d.str,agi:d.agi,acc:d.acc,jmp:d.jmp,end:d.end,posAttrs:d.attrs,salary:+((d.sal||0)*DATA_TO_DOLLARS).toFixed(1),contract:d.yrs,pot,truePot:pot,scoutedOvr:d.ovr,scoutedPot:pot,num:d.num,arch:d.arch,src:'m27',
-    bio:{...p.bio,college:d.college||p.bio.college}});if(d.dev)p.dev=d.dev;if(d.xf)p.xf=d.xf;if(d.dk!=null)p.dk=d.dk;if(d.yp!=null){p.draftYr=(M27.season||2026)-d.yp;p.rkYr=p.draftYr;}if(d.pk)p.pk=d.pk;p.tradeVal=tradeValue(p);return withHeadshot(p);}
+    bio:{...p.bio,college:d.college||p.bio.college}});if(d.dev)p.dev=d.dev;if(d.xf)p.xf=d.xf;/* the data already carries any in-season roster update: a new franchise needs none on load */{const _u=ROSTER_UPDATES.filter(u=>u.name===d.name&&u.pos===d.pos).map(u=>u.id);if(_u.length)p.upd=_u;}if(d.dk!=null)p.dk=d.dk;if(d.yp!=null){p.draftYr=(M27.season||2026)-d.yp;p.rkYr=p.draftYr;}if(d.pk)p.pk=d.pk;p.tradeVal=tradeValue(p);return withHeadshot(p);}
 // Real players without a club (cut from the 53 and the practice squad) are the free agents.
 // A retired player kept only as a line in the books (a save from before every card was kept): his
 // card rebuilt from the real ratings he came into the league with, his entry on top. null: not a real player.

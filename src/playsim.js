@@ -29,6 +29,7 @@ import { roleOvr } from "./roles.js";
 import { getLeagueYear } from "./cap.js";
 import { hurtPen } from "./injuries.js";
 import { recPlay } from "./gameday.js";
+import { qbMind } from "./mentor.js";
 import { coachAggression } from "./coachStyle.js";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -858,7 +859,9 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       add(qbl, "att", 1); add(tl, "tgt", 1); st.passAtt++;
       // where you put it: hitting the open man is easy and safe; forcing it into coverage isn't
       const placed = mine && pick.open != null ? (pick.open ? 1 : -1) : 0;
-      const intP = clamp((placed > 0 ? -0.008 : placed < 0 ? 0.028 : 0) + 0.024 - passE * 0.004 - mm * 0.0004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0) + (g.wxE?.int || 0), 0.006, 0.08);
+      // his processing against his overall: a QB who reads it better than his arm suggests throws fewer picks
+      const mindE = qb ? clamp(qbMind(qb), -12, 12) : 0;
+      const intP = clamp((placed > 0 ? -0.008 : placed < 0 ? 0.028 : 0) + 0.024 - mindE * 0.0006 - passE * 0.004 - mm * 0.0004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0) + (g.wxE?.int || 0), 0.006, 0.08);
       if (rand() < intP) {
         const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW);
         add(qbl, "passInt", 1); st.ints++;

@@ -1,6 +1,7 @@
 // The roster table: one tight row per player, grouped by position in depth-chart order, with every
 // column sortable. On a computer the player you pick shows in a card beside it.
 import Select from "./Select.jsx";
+import { learningFrom } from "./mentor.js";
 import React, { useState } from "react";
 import { naturalDL, posTag } from "./dline.js";
 import { C, oC, Bdg, Face, Sheet, Row, Hero, Section, Chips } from "./ui.jsx";
@@ -43,8 +44,10 @@ function SideCard({ p, slot, dev, onOpen }) {
 const DEV_RANK = { generational: 4, superstar: 3, star: 2, normal: 1, late: 0 };
 
 // Little status badges next to a name, so the whole roster reads at a glance.
-function Badges({ p, focus, mine }) {
+function Badges({ p, focus, mine, players }) {
   const b = [];
+  const mentor = mine && learningFrom(p, players);
+  if (mentor) b.push(["LRN", `Learning behind ${mentor.name}: his reads, decisions and ceiling grow while he sits`]);
   const isFocus = focus && ["off", "def"].some((k) => focus[k] != null && String(focus[k]) === String(p.id));
   if (isFocus) b.push(["DEV", "Development focus: can gain a point each regular-season week"]);
   if (mine && (p.contract || 0) === 1 && !p.ext) b.push(["CY", p.cyr?.choice === "bet" ? "Contract year: playing out his deal" : "Contract year: last year of his deal"]);
@@ -90,7 +93,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
         </Select>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search roster" style={{ ...sel, flex: "1 1 160px" }} />
       </div>
-      {mine && !MOBILE && <div style={{ fontSize: 12, color: C.mt, margin: "-4px 0 8px" }}><b>DEV</b> development focus · <b>CY</b> contract year · <b>EXT</b> extended · <b>~</b> unproven rookie · <b>TR</b> trade request · <b>SUSP</b> suspended</div>}
+      {mine && !MOBILE && <div style={{ fontSize: 12, color: C.mt, margin: "-4px 0 8px" }}><b>DEV</b> development focus · <b>LRN</b> learning behind a veteran QB · <b>CY</b> contract year · <b>EXT</b> extended · <b>~</b> unproven rookie · <b>TR</b> trade request · <b>SUSP</b> suspended</div>}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 12, alignItems: "start" }}>
       <div style={{ maxHeight: "calc(var(--vh, 100vh) - 260px)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -110,7 +113,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
                       <Face s={p.face} sz={22} />
                       <span>
                         <span style={{ fontWeight: 700, color: "#f1f5f9" }}>{p.name}</span>
-                        <Badges p={p} focus={focus} mine={mine} />
+                        <Badges p={p} focus={focus} mine={mine} players={players} />
                         {p.xf && <span title={`X-Factor: ${p.xf}`} style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, color: "#f472b6" }}>XF</span>}
                         <InjTag p={p} wk={wk} showNote />
                         {p.holdout && <span style={{ marginLeft: 6, fontSize: 12, fontWeight: 800, color: C.gd }}>Holdout</span>}
@@ -188,7 +191,7 @@ export function PhoneRosterPage({ team, depth, setSel, devOf, wk = 0, focus = nu
                   <Face s={p.face} sz={40} />
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: "block", fontWeight: 800, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#f1f5f9" }}>{p.name}</span>
-                    <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} />{special(p) && <DevChip dev={devOf(p)} />}<Badges p={p} focus={focus} mine={mine} /><InjTag p={p} wk={wk} />{p.holdout && <span style={{ fontSize: 12, color: C.gd, fontWeight: 800 }}>Holdout</span>}</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} />{special(p) && <DevChip dev={devOf(p)} />}<Badges p={p} focus={focus} mine={mine} players={team.roster} /><InjTag p={p} wk={wk} />{p.holdout && <span style={{ fontSize: 12, color: C.gd, fontWeight: 800 }}>Holdout</span>}</span>
                   </span>
                   <span style={{ textAlign: "right", flexShrink: 0 }}>
                     <b style={{ display: "block", fontSize: 20, lineHeight: 1, color: oC(p.ovr) }}>{p.ovr}</b>

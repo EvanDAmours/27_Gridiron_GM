@@ -54,7 +54,8 @@ test("every play the field acts out ends where the engine says", () => {
       if (!ev || !liveChoice(ev, "All")) continue;
       const slots = [...FORM.off.map(([pos, dx, y], j) => ({ key: `o${j}`, side: "off", pos, x: ev.yard + dx, y })), ...FORM.def.map(([pos, dx, y], j) => ({ key: `d${j}`, side: "def", pos, x: ev.yard + dx, y }))];
       const sc = buildPlay(ev, slots, n++);
-      assert.ok(sc.T > 0.5 && sc.T < 9, `play length ${sc.T}`);
+      // a punt or kickoff with a return runs longer (hang time, then the return)
+      assert.ok(sc.T > 0.5 && sc.T < (["punt", "kickoff"].includes(ev.k) ? 10 : 9), `play length ${sc.T}`);
       for (let t = 0; t <= sc.T; t += 0.1) for (const s of slots) assert.ok(sc.f[s.key](t).every(Number.isFinite));
       // the ball carrier's last spot is the yard line the play ended on (a play a flag brought back
       // is shown as it happened)
