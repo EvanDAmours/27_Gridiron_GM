@@ -1867,4 +1867,7 @@ export const PATCH_NOTES = [
   { v: "4.65", date: "2026-10-23", title: "Steady live game screen", notes: [
     "Live games no longer jump around: the field stays put all game like a TV broadcast (away end zone on the left, home end zone on the right) and the home team drives right to left, instead of the whole field flipping every change of possession. The play caption under the field keeps one fixed size, and its flash is off at Fast and Condensed, so the buttons below never move",
   ] },
+  { v: "4.66", date: "2026-10-23", title: "Calm live settings", notes: [
+    "Live game settings redone in the calm style: one setting per row with a plain title, a full-width pill switch (the choice in white) and a short line on what it does. No more emoji or colored boxes, and Speed no longer spills into the Camera column",
+  ] },
 ];
