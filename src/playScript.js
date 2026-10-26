@@ -21,6 +21,19 @@ const path = (...k) => (t) => {
   return [l[1], l[2]];
 };
 // from t0 on, leave f and head for a spot, getting there at t1
+// The tackle: the tackler closes, latches on to the ball carrier and rides him down; the carrier
+// is ridden down where he's stopped (the spot) and they hit the turf together (dir: the way the carrier is running).
+const wrap = (F, down, tk, cr, tEnd, dir) => {
+  const cf = F[cr], tf = F[tk], tc = tEnd - 0.2, tA = tc - 0.2;
+  F[tk] = (t) => {
+    if (t < tA) return tf(t);
+    const [cx, cy] = F[cr](t), g = [cx + dir * 0.7, cy + 0.3];
+    if (t >= tc) return g;
+    const [ox, oy] = tf(t), u = (t - tA) / (tc - tA);
+    return [lerp(ox, g[0], u), lerp(oy, g[1], u)];
+  };
+  down[cr] = tEnd; down[tk] = tEnd + 0.03;
+};
 const toward = (f, t0, [x, y], t1) => (t) => {
   if (t <= t0) return f(t);
   const [ax, ay] = f(t0), u = ease(clamp((t - t0) / Math.max(0.05, t1 - t0), 0, 1));
@@ -266,7 +279,7 @@ export function buildPlay(ev, slots, seed = 1) {
     if (tackler) stars.push(tackler.key);
   }
   if (!td && carrier && k !== "inc") down[carrier.key] = tEnd;
-  if (!td && tackler && k !== "inc") down[tackler.key] = tEnd + 0.08;
+  if (!td && tackler && k !== "inc") { if (carrier && tEnd > 0.5) wrap(F, down, tackler.key, carrier.key, tEnd, carrier.side === "off" ? 1 : -1); else down[tackler.key] = tEnd + 0.08; }
 
   // A fumble: the ball squirts loose at the hit and the defense falls on it.
   if (fumble && carrier && end) {
@@ -325,9 +338,18 @@ function buildSpecial(ev, slots, R) {
     const hx = holder.x, hy = holder.y, tKick = 1.05;
     F[kicker.key] = path([0, kicker.x, kicker.y], [0.4, kicker.x, kicker.y], [0.95, hx - 2, hy - 2.6], [1.3, hx - 1.2, hy - 2.1], [3, hx - 1.1, hy - 2.1]);
     // (he plants beside the hold and kicks from there, never on top of the holder)
-    const ty = ev.made ? (R() - 0.5) * 1.6 : (R() < 0.5 ? -1 : 1) * (3.8 + R() * 2.5);
-    const flight = 0.9 + ev.dist * 0.012;
-    ball = (t) => (t < 0.3 ? { held: snapper.key } : t < tKick ? { held: holder.key } : (() => { const u = clamp((t - tKick) / flight, 0, 1); return { x: lerp(hx + 0.4, 110, u), y: lerp(hy, ty, u), h: 1 + Math.sin(Math.PI * Math.min(1, u * 0.85)) * 7 }; })());
+    // The flight tells you before it gets there: a good kick stays true down the middle and is
+    // still climbing over the crossbar; a miss starts hooking away halfway out (wide left or right),
+    // or from long range dies and drops short of the bar.
+    const short = !ev.made && ev.dist >= 47 && R() < 0.4;
+    const side = R() < 0.5 ? -1 : 1, wide = ev.made ? 0 : side * (5 + R() * 3);
+    const ty0 = ev.made ? (R() - 0.5) * 1.4 : side * 0.6;
+    const flight = 0.9 + ev.dist * 0.012, endX = short ? 106 : 116;
+    ball = (t) => (t < 0.3 ? { held: snapper.key } : t < tKick ? { held: holder.key } : (() => {
+      const u = clamp((t - tKick) / flight, 0, 1), hook = short ? 0 : u * u * u;
+      const h = short ? 1 + Math.sin(Math.PI * u) * 5 * (1 - u * 0.15) : 1 + Math.sin(Math.PI * Math.min(1, u * 0.7)) * 8;
+      return { x: lerp(hx + 0.4, endX, u), y: lerp(hy, ty0, u) + wide * hook, h };
+    })());
     T = tKick + flight + 0.7; tEnd = tKick + flight;
     who[kicker.key] = ev.player; who[holder.key] = ev.holder; stars.push(kicker.key);
     m = { k: "fg", special: { k: "fg", holder: holder.key, kicker: kicker.key, snapper: snapper?.key, tKick, release: 99 } };
@@ -337,12 +359,14 @@ function buildSpecial(ev, slots, R) {
     F[punter.key] = path([0, px, py], [0.5, px, py], [0.95, px + 1.2, py], [3, px + 1.4, py]);
     const ly = (R() - 0.5) * 14, sx = ev.tb ? 104 : Math.min(ev.spot ?? los + ev.gross, 108);
     const flight = 1.4 + (ev.gross || 45) * 0.02, tLand = tKick + flight;
-    const catches = ev.returned || (!ev.tb && (ev.spot ?? 0) < 88);
+    const catches = ev.returned || (!ev.tb && !ev.downed && (ev.spot ?? 0) < 88);
+    // where it comes down: a punt left to bounce lands short and rolls to the exact spot it's downed
+    const lx = catches || ev.muff ? sx : Math.min(ev.land ?? sx - 3, sx);
     who[punter.key] = ev.punter; who[ret.key] = ev.pr; stars.push(ret.key);
     // the returner gets under it (or lets it go: into the end zone, or rolling dead deep)
     const rx = catches ? sx : Math.min(sx - 6, 98), ry = catches ? ly : ly + 4;
     let carrierF = path([0, ret.x, ret.y], [Math.max(0.6, tLand - 0.15), rx, ry]);
-    const flightPos = (t) => { const u = clamp((t - tKick) / flight, 0, 1); return { x: lerp(px + 1, sx, u), y: lerp(py, ly, u), h: 1 + Math.sin(Math.PI * u) * 9 }; };
+    const flightPos = (t) => { const u = clamp((t - tKick) / flight, 0, 1); return { x: lerp(px + 1, lx, u), y: lerp(py, ly, u), h: 1 + Math.sin(Math.PI * u) * 9 }; };
     let carrier = null, tackler = null, endP = null;
     const cover = off.filter((s) => s !== punter && s !== snapper);
     const gunners = off.filter((s) => s.pos === "WR");
@@ -378,7 +402,7 @@ function buildSpecial(ev, slots, R) {
         const lag = s === tackler ? 0 : 0.3 + R() * 1.1, spot = s === tackler ? [endP[0] - 0.8, endP[1]] : [endP[0] - 1.5 - R() * 3, endP[1] + (R() - 0.5) * 6];
         F[s.key] = toward(F[s.key], tLand, spot, Math.max(tEnd + lag, tLand + Math.hypot(spot[0] - F[s.key](tLand)[0], spot[1] - F[s.key](tLand)[1]) / SPEED));
       }
-      if (tackler) { down[carrier.key] = tEnd; down[tackler.key] = tEnd + 0.08; stars.push(tackler.key); }
+      if (tackler) { wrap(F, down, tackler.key, carrier.key, tEnd, -1); stars.push(tackler.key); }
     }
     let muffRec = null;
     if (ev.muff) muffRec = near(gunners.length ? gunners : cover, sx, ly);
@@ -390,10 +414,12 @@ function buildSpecial(ev, slots, R) {
       if (carrier) return { held: carrier.key };
       if (catches && !ev.muff) return { held: ret.key };
       // a muff, or a punt left to bounce: it skips along and settles
-      const u = clamp((t - tLand) / 0.8, 0, 1), dx = ev.muff ? -1.5 : ev.tb ? 3 : 2.5;
-      return { x: sx + dx * u, y: ly + (ev.muff ? 2 : 0.6) * u, h: Math.abs(Math.sin(u * Math.PI * 2.2)) * 1.2 * (1 - u) };
+      const roll = ev.muff ? 0.8 : clamp((sx - lx) * 0.18, 0.5, 1.3), u = clamp((t - tLand) / roll, 0, 1);
+      if (ev.muff) return { x: sx - 1.5 * u, y: ly + 2 * u, h: Math.abs(Math.sin(u * Math.PI * 2.2)) * 1.2 * (1 - u) };
+      const e = 1 - (1 - u) * (1 - u); // it slows as it rolls and stops dead on the spot
+      return { x: lerp(lx, sx, e), y: ly + 0.6 * e, h: Math.abs(Math.sin(u * Math.PI * 2.2)) * 1.4 * (1 - u) };
     };
-    T = carrier ? tEnd + (ev.retTD ? 1.4 : 0.9) : tLand + 1.3;
+    T = carrier ? tEnd + (ev.retTD ? 1.4 : 0.9) : tLand + 1.3 + (catches ? 0 : clamp((sx - lx) * 0.18, 0.5, 1.3));
     if (!carrier) tEnd = tLand;
     m = { k: "punt", carrier: carrier?.key ?? null, tackler: tackler?.key ?? null, tEnd, td: !!ev.retTD, recov: muffRec?.key ?? null, recovT: muffRec ? tLand + 0.6 : null,
       special: { k: "punt", punter: punter.key, snapper: snapper?.key, returner: ret.key, tKick, tLand, catches: catches && !ev.muff, release: tKick } };
@@ -466,7 +492,7 @@ function buildKickoff(ev, slots, R) {
     tackler = near(free.length ? free : cover, end[0], end[1]) || kicker;
     delete pairs[tackler.key];
     F[tackler.key] = toward(F[tackler.key], Math.min(tLand, tEnd - 0.4), [end[0] + 0.8, end[1]], tEnd);
-    down[carrier.key] = tEnd; down[tackler.key] = tEnd + 0.08; stars.push(tackler.key);
+    wrap(F, down, tackler.key, carrier.key, tEnd, 1); stars.push(tackler.key);
   }
   for (const c of free) if (c !== tackler) { delete pairs[c.key]; F[c.key] = toward(F[c.key], tLand, [end[0] + 2 + R() * 3, end[1] + (R() - 0.5) * 6], tEnd + 0.3 + R() * 0.6); }
   // a muff: it bounces loose and the coverage falls on it

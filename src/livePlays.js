@@ -107,7 +107,7 @@ export function resultCard(ev, side, userSide, box = {}) {
     if (ev.retTD) { head = "TOUCHDOWN!"; tone = "gold"; line = `${nm(ev.pr, "The returner")} takes the punt all the way back`; }
     else if (ev.muff) { head = "MUFFED!"; tone = "red"; line = `${nm(ev.pr, "The returner")} drops it, and the kicking team recovers`; star = ev.punter; starSide = side; }
     else if ((ev.ret || 0) >= 20) { head = "BIG RETURN!"; tone = "green"; line = `${nm(ev.pr, "The returner")} brings it back ${ev.ret} yards`; }
-    else { star = ev.punter; starSide = side; line = ev.tb ? `Punt into the end zone: touchback` : `Punt, ${ev.gross} yards${ev.returned ? `, returned ${ev.ret}` : (ev.spot ?? 0) >= 90 ? `, downed at the ${100 - ev.spot}` : ", fair catch"}`; }
+    else { star = ev.punter; starSide = side; line = ev.tb ? `Punt into the end zone: touchback` : `Punt, ${ev.gross} yards${ev.returned ? `, returned ${ev.ret}` : ev.downed || (ev.spot ?? 0) >= 90 ? `, downed at the ${100 - ev.spot}` : ", fair catch"}`; }
   } else if (ev.td) {
     head = "TOUCHDOWN!"; tone = "gold";
     if (k === "pass") { line = `${qb} hits ${nm(ev.player, "his receiver")} for ${an(Y)} ${Y}-yard score`; star = ev.player; count = ["recTD", "TD"]; }

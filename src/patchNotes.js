@@ -1870,4 +1870,15 @@ export const PATCH_NOTES = [
   { v: "4.66", date: "2026-10-23", title: "Calm live settings", notes: [
     "Live game settings redone in the calm style: one setting per row with a plain title, a full-width pill switch (the choice in white) and a short line on what it does. No more emoji or colored boxes, and Speed no longer spills into the Camera column",
   ] },
+  { v: "4.67", date: "2026-10-23", title: "Kicks, punts, tackles and injuries", notes: [
+    "Field goals tell you in the air: a good kick stays true and is still climbing over the bar; a miss hooks away wide halfway out, or a long one dies short of the crossbar",
+    "Punts stop where they're spotted: a punt downed at the 5 lands short and rolls to the 5, never into the end zone first",
+    "Punter smarts: with a short field (inside about 58 yards) the punter aims for the coffin corner instead of booming a touchback; better punters pin it closer to the goal line",
+    "Kicker smarts: with seconds left in a half, the kick goes short and in bounds and the coverage swallows the return, so there's no time left for a Hail Mary",
+    "Tackles look like tackles: the tackler latches on to the ball carrier and rides him down at the spot, instead of diving at the turf",
+    "Calling your plays: Kneel (victory formation) late in a half or protecting a fourth-quarter lead, and your choice after a touchdown: Coach, Kick for 1 or Go for 2",
+    "No more emoji on the play-calling cards",
+    "Injuries are real injuries with real recovery times (ankle sprain 1-3 weeks, high ankle 3-6, concussion 1-2...). Only rare tears (ACL, Achilles, pec) end a season, and no more 'tackled from behind' as an injury",
+    "The player card's front shows an injury: what it is and how long he's out",
+  ] },
 ];

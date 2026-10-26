@@ -27,7 +27,7 @@ function Tile({ onClick, icon, label, note, tone = "#60a5fa", strong, children }
     <button type="button" onClick={onClick}
       style={{ textAlign: "left", cursor: "pointer", color: "#fff", background: strong ? `${tone}22` : "#0b1220", border: `1px solid ${strong ? `${tone}88` : C.bd}`, borderRadius: 10, padding: "9px 11px", minHeight: 58, display: "flex", flexDirection: "column", justifyContent: "center", gap: 2, transition: "border-color .15s, background .15s" }}
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = tone; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = strong ? `${tone}88` : C.bd; }}>
-      <div style={{ fontSize: 14, fontWeight: 800 }}>{icon && <span style={{ marginRight: 6 }}>{icon}</span>}{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 800 }}>{label}</div>
       {note && <div style={{ fontSize: 11.5, color: "#94a3b8", lineHeight: 1.3 }}>{note}</div>}
       {children}
     </button>
@@ -41,7 +41,7 @@ export default function PlayCaller(props) {
   if (props.mobile) return <PhoneCaller {...props} />;
   return <DeskCaller {...props} />;
 }
-function DeskCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth, onCall, onHike, onAudible, onThrow }) {
+function DeskCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth, onCall, onHike, onAudible, onThrow, pat, onPat, clock, qtr, lead }) {
   const { off, def, down, toGo, yard } = g;
   const situation = `${nth(down)} & ${yard + toGo >= 100 ? "goal" : toGo} · ${yard === 50 ? "midfield" : yard > 50 ? `their ${100 - yard}` : `own ${yard}`}`;
   const cols = mobile ? 2 : 4;
@@ -64,7 +64,7 @@ function DeskCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth,
     return (
       <Card team={off} title={`PRE-SNAP READ: ${CALL_NAMES[pending] || pending}`} sub={situation} tone="#60a5fa">
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-          {pill(`${def.ab} defense: ${g.dcScheme}`)}{pill(isZone ? "🛡 Zone coverage" : "👤 Man coverage")}{isBlitz && pill("⚡ Blitz likely", "#f87171")}
+          {pill(`${def.ab} defense: ${g.dcScheme}`)}{pill(isZone ? "Zone coverage" : "Man coverage")}{isBlitz && pill("Blitz likely", "#f87171")}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button type="button" onClick={onAudible} style={{ flex: 1, height: 46, borderRadius: 10, border: "1px solid #ffffff10", background: "#0b1220", color: "#e2e8f0", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>← Change the play</button>
@@ -96,14 +96,30 @@ function DeskCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth,
       <div style={{ ...grid(cols), marginBottom: 10 }}>{RUNS.map(([id, icon, l, n]) => <Tile key={id} icon={icon} label={l} note={n} tone="#facc15" onClick={() => onCall(id)} />)}</div>
       <div style={{ fontSize: 13, fontWeight: 800, color: "#60a5fa", margin: "0 0 5px" }}>Pass</div>
       <div style={grid(cols)}>{PASSES.map(([id, icon, l, n]) => <Tile key={id} icon={icon} label={l} note={n} tone="#60a5fa" onClick={() => onCall(id)} />)}</div>
+      <Extras pat={pat} onPat={onPat} kneel={kneelOk(qtr, clock, lead)} onKneel={() => onCall("kneel")} />
     </Card>
+  );
+}
+
+// Taking a knee: late in a half, or protecting a lead in the fourth, instead of risking a turnover.
+const kneelOk = (qtr, clock, lead) => clock != null && (((qtr === 2 || qtr === 4) && clock <= 120) || (qtr === 4 && lead > 0 && clock <= 300));
+// Under the playbook: the victory formation when it's there, and your call on the try after a touchdown.
+function Extras({ pat, onPat, kneel, onKneel, compact }) {
+  if (!onPat) return null;
+  const seg = (v, l) => <button key={l} type="button" onClick={() => onPat(v)} style={{ border: 0, borderRadius: 99, padding: compact ? "6px 10px" : "6px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer", background: pat === v ? "#fff" : "transparent", color: pat === v ? "#0b1220" : "#cbd5e1" }}>{l}</button>;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+      {kneel && <button type="button" onClick={onKneel} style={{ height: 34, padding: "0 14px", borderRadius: 99, border: "1px solid #94a3b855", background: "#0b1220", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Kneel (victory formation)</button>}
+      <span style={{ marginLeft: "auto", fontSize: 12, color: "#94a3b8", fontWeight: 700 }}>After a TD</span>
+      <div style={{ display: "flex", background: "#0b1220", borderRadius: 99, padding: 3, boxShadow: "inset 0 0 0 1px #ffffff14" }}>{seg(null, "Coach")}{seg("one", "Kick for 1")}{seg("two", "Go for 2")}</div>
+    </div>
   );
 }
 
 // Phones: a compact playbook docked at the bottom (the field stays in view above it). One header line
 // (the situation, and handing the calls back to your coach), then big plain tiles: four runs and four
 // passes, the fourth-down choice, the pre-snap read with HIKE, or your receivers.
-function PhoneCaller({ g, phase, fourth, pending, targets = [], onFourth, onCall, onHike, onAudible, onThrow, onCoach }) {
+function PhoneCaller({ g, phase, fourth, pending, targets = [], onFourth, onCall, onHike, onAudible, onThrow, onCoach, pat, onPat, clock, qtr, lead }) {
   const { off, down, toGo, yard } = g;
   const situation = `${nth(down)} & ${yard + toGo >= 100 ? "Goal" : toGo} · ${yard === 50 ? "midfield" : yard > 50 ? `their ${100 - yard}` : `own ${yard}`}`;
   const best = (pos) => off.roster.filter((p) => p.pos === pos && !p.injured).sort((a, b) => b.ovr - a.ovr)[0];
@@ -149,5 +165,6 @@ function PhoneCaller({ g, phase, fourth, pending, targets = [], onFourth, onCall
     {row([tile("ri", "Inside", last(rb), "#facc15", () => onCall("run_inside")), tile("ro", "Outside", rb ? `${rb.spd} spd` : "", "#facc15", () => onCall("run_outside")), tile("rs", "Screen", "to the back", "#facc15", () => onCall("run_screen")), tile("qr", "QB Run", last(qb), "#facc15", () => onCall("scramble"))])}
     <div style={{ fontSize: 13, fontWeight: 800, color: "#60a5fa", margin: "10px 2px 5px" }}>Pass</div>
     {row([tile("pq", "Quick", "safe", "#60a5fa", () => onCall("pass_quick")), tile("pm", "Medium", "balanced", "#60a5fa", () => onCall("pass_medium")), tile("pd", "Deep", "big or bust", "#60a5fa", () => onCall("pass_deep")), tile("pr", "RPO", "he reads it", "#60a5fa", () => onCall("pass_rpo"))])}
+    <Extras compact pat={pat} onPat={onPat} kneel={kneelOk(qtr, clock, lead)} onKneel={() => onCall("kneel")} />
   </>);
 }
