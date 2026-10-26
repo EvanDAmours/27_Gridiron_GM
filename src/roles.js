@@ -114,6 +114,7 @@ export function naturalRole(p) {
   if (p.pos === "S" && (p.mpos === "FS" || p.mpos === "SS")) return p.mpos;
   if (p.pos === "WR" && p.arch === "Slot") return "SLOT";
   if (p.pos === "WR" && p.arch === "Deep Threat") return "Z";
+  if (p.prole && kinds.includes(p.prole)) return p.prole; // a draft class's balanced role (balanceRoles)
   const rel = (k) => roleScore(p, k) - CENTER[k];
   if (p.pos === "CB") return rel("NB") - rel("OUT") > NB_CUT ? "NB" : "OUT";
   return kinds.reduce((b, k) => (rel(k) > rel(b) ? k : b), kinds[0]);
@@ -277,3 +278,37 @@ export function roleGrowth(posAttrs, rl, age) {
 export const ROLE_PAY = { SAM: 0.8, MIKE: 1, WILL: 0.95, OUT: 1, NB: 0.84, FS: 1, SS: 1, X: 1, Z: 1, SLOT: 0.92 };
 // (free and strong safeties are paid alike: the top of both markets sits at the same number)
 export const rolePay = (p) => (["LB", "CB", "S", "WR"].includes(p?.pos) ? ROLE_PAY[naturalRole(p)] ?? 1 : 1);
+
+// A draft class's roles in realistic proportions. Read one prospect at a time, the thresholds tuned
+// on NFL veterans put almost every college linebacker at SAM or every corner outside; a real class
+// has nickels, slots and free safeties too. So within each position the prospects most built for a
+// role get it, up to its share of the class: corners a third nickel, receivers 40% X and 30% each
+// Z and slot, safeties half and half, linebackers about a third each. Stamped as p.prole, which
+// naturalRole() reads first. Leaves a class that already has roles alone.
+export const ROLE_SHARE = { CB: { OUT: 0.65, NB: 0.35 }, WR: { X: 0.4, Z: 0.3, SLOT: 0.3 }, S: { FS: 0.5, SS: 0.5 }, LB: { SAM: 0.35, MIKE: 0.3, WILL: 0.35 } };
+export function balanceRoles(cls) {
+  if (!Array.isArray(cls) || cls.some((p) => p.prole && !p.mpos && !p.arch)) return cls;
+  for (const [pos, share] of Object.entries(ROLE_SHARE)) {
+    const ps = cls.filter((p) => p.pos === pos);
+    if (!ps.length) continue;
+    const kinds = Object.keys(share), left = Object.fromEntries(kinds.map((k) => [k, Math.max(1, Math.round(share[k] * ps.length))]));
+    // how much more a player is built for each role than for his others
+    // a label the data already gives him (a real safety's FS/SS, a linebacker's spot, a slot or
+    // deep-threat receiver) stands, and counts against that role's share
+    for (const p of ps) {
+      const lab = (pos === "LB" || pos === "S") && kinds.includes(p.mpos) ? p.mpos : pos === "WR" && p.arch === "Slot" ? "SLOT" : pos === "WR" && p.arch === "Deep Threat" ? "Z" : null;
+      if (lab) { p.prole = lab; left[lab] = Math.max(0, left[lab] - 1); }
+    }
+    const pairs = [];
+    for (const p of ps) {
+      if (p.prole) continue;
+      const rel = Object.fromEntries(kinds.map((k) => [k, roleScore(p, k) - CENTER[k]]));
+      for (const k of kinds) pairs.push({ p, k, edge: rel[k] - Math.max(...kinds.filter((x) => x !== k).map((x) => rel[x])) });
+    }
+    pairs.sort((a, b) => b.edge - a.edge);
+    for (const { p, k } of pairs) if (!p.prole && left[k] > 0) { p.prole = k; left[k]--; }
+    for (const p of ps) if (!p.prole) p.prole = kinds[0];
+  }
+  return cls;
+}
+export const balanceClasses = (dc) => Object.fromEntries(Object.entries(dc || {}).map(([y, c]) => [y, balanceRoles(c)]));

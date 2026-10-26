@@ -8,7 +8,7 @@ import REAL_SCHED from "./data/schedule2026.json" with { type: "json" };
 import REAL_DC from "./data/realProspects.json" with { type: "json" };
 import REAL_CONTRACTS from "./data/contracts2026.json" with { type: "json" };
 import { depthOrderFor } from "./depth.js";
-import { roleGrowth, ROLE_SLOTS, shapeSafety } from "./roles.js";
+import { roleGrowth, ROLE_SLOTS, shapeSafety, balanceRoles } from "./roles.js";
 import { playerValue, pickValue as chartPickValue } from "./trade.js";
 import { arrangeDL, dlAsPlayed, naturalDL } from "./dline.js";
 import { teamNeeds, topNeeds } from "./needs.js";
@@ -221,7 +221,7 @@ export function genDC(yr,dcr){
   for(let i=0;i<240;i++)dc.push(genProspect(yr,pick(posW),dcrAdj));
   // An Elite class has a can't-miss prospect: its highest ceiling, ready from day one.
   if(dcr==='Elite'){const top=[...dc].filter(p=>p.pos!=='K'&&p.pos!=='P').sort((a,b)=>b.truePot-a.truePot)[0];if(top)top.sure=1;/* never a planted bust */if(top&&top.trueOvr<90){top.ovr=top.trueOvr=90;top.pot=top.truePot=Math.max(top.truePot,94);top.posAttrs=genPAttrs(top.pos,90);top.tradeVal=playerValue({pos:top.pos,age:top.age,ovr:90,pot:top.truePot});}}
-  return plantBusts(plantGems(rankClass(dc),yr),yr);
+  return balanceRoles(plantBusts(plantGems(rankClass(dc),yr),yr));
 }
 // Real draft classes (src/data/realProspects.json, keyed by the season whose off-season holds the
 // draft: 2026 is the April 2027 NFL Draft). Each real prospect has the board's view of him (his
@@ -251,7 +251,7 @@ export function genRealDC(yr){
   const taken=new Set(dc.map(p=>p.name));
   while(dc.length<240){const p=genProspect(yr,pick(posW),adj,minPot,minOvr);while(taken.has(p.name))p.name=`${pick(FN)} ${pick(LN)}`;taken.add(p.name);const sc=kpValue(p,p.truePot*0.78+p.trueOvr*0.22)+Gc(0,2,-6,6);p.cons={score:Math.min(sc,minScore-0.1-Math.random()),kp:1};dc.push(p);}
   for(const p of dc){p.gemChk=1;p.bustChk=1;}
-  return rankClass(dc);
+  return balanceRoles(rankClass(dc));
 }
 
 

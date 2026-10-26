@@ -1942,4 +1942,10 @@ export const PATCH_NOTES = [
   { v: "4.79", date: "2026-10-23", title: "Quiet draft-day offers", notes: [
     "Draft-day trade calls redone: no more pop-up card with a countdown bar, ringing logo and purple panels. When your pick is on the clock, the clubs that want to move up sit in one quiet Offers list beside the board: who, what you would get (R1 #21 · 2027 R1 · 2027 R2) and how it grades on the trade chart, with Accept, Counter and Pass. A star sliding down the board puts that club first, with a short line on who they are after. The board never moves",
   ] },
+  { v: "4.80", date: "2026-10-23", title: "Roles on the board", notes: [
+    "Big Board: every receiver, corner, safety and linebacker shows his role right under his name (WR · X, WR · Z, WR · Slot, CB · Outside, CB · Nickel, S · FS, S · SS, LB · SAM / MIKE / WILL)",
+    "Role filters: pick WR, CB, S or LB and a second switch appears (All WR · X · Z · Slot, All CB · Outside · Nickel, All S · FS · SS, All LB · SAM · MIKE · WILL)",
+    "Draft classes have realistic roles: about a third of the corners are nickels, receivers split about 40% X and 30% each Z and slot, safeties half free and half strong, linebackers about a third each. Before, a class could have 2 nickels in 23 corners or 30 SAMs in 36 linebackers. Real prospects keep the role the scouting data gives them; saves in progress get the fix when loaded",
+    "Your pick lines only show on the full board, so they don't bunch up when you filter",
+  ] },
 ];

@@ -13,7 +13,10 @@ import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo, CloseX, Segments, Sheet
 import { Jersey, rookieNum } from "./Jersey.jsx";
 import RoleTag from "./RoleTag.jsx";
 import Spotlight, { Dim } from "./Spotlight.jsx";
-import { ROLE_FILTERS, roleFilterMatch } from "./roleNeeds.js";
+import { ROLE_FILTERS, roleFilterMatch, ROLE_TAG } from "./roleNeeds.js";
+import { naturalRole } from "./roles.js";
+// a role as plain words on a row: X, Z, Slot, Outside, Nickel, FS, SS, SAM, MIKE, WILL
+const roleWord = (p) => { const k = ["LB", "CB", "S", "WR"].includes(p?.pos) ? naturalRole(p) : null; return k ? (["OUT", "NB", "SLOT"].includes(k) ? ROLE_TAG[k][0] + ROLE_TAG[k].slice(1).toLowerCase() : ROLE_TAG[k]) : null; };
 import {
   prospectRead, scoutProspect, interviewProspect, privateWorkout, PRIVATE_WORKOUTS, scoutsShortlist, coverage, csRank, riskLabel, gradeTone,
   SCOUT_ROLES, SCOUT_GROUPS, SCOUT_GROUP_SHORT, regionReport, onSpec, potGrade, scoutGroup as scoutGroupOfPos, SCOUT_TRAITS, DEV_TRAITS, COMBINE_TESTS, COMBINE_INVITES, SCOUT_PTS_START, SCOUT_PTS_WEEKLY, SCOUT_PTS_COMBINE,
@@ -200,7 +203,7 @@ function BoardRow({ g, p, onDraft, canDraft, myRank, gone, needs = [] }) {
         <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 17, fontWeight: 800, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden" }}>{p.name}
           <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} title={listed ? "On your list" : "Add to your list"} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ background: "transparent", border: 0, padding: 0, cursor: "pointer", fontSize: 15, color: listed ? C.gd : "#33415500", lineHeight: 1 }} className="bd-star">{listed ? "★" : "☆"}</button>
         </span>
-        <span style={{ display: "block", fontSize: 13.5, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{posTag(p)} · {p.bio?.college || p.college}{myRank && myRank !== cons ? ` · consensus #${cons}` : ""}</span>
+        <span style={{ display: "block", fontSize: 13.5, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{posTag(p)}{roleWord(p) && <b style={{ color: "#e2e8f0", fontWeight: 800 }}> · {roleWord(p)}</b>} · {p.bio?.college || p.college}{myRank && myRank !== cons ? ` · consensus #${cons}` : ""}</span>
       </span>
       <span style={{ width: 96, textAlign: "right", fontSize: 13, fontWeight: 800, color: tag ? tag[1] : "transparent", flexShrink: 0 }}>{tag ? tag[0] : ""}</span>
       <span style={{ width: 48, textAlign: "center", flexShrink: 0 }}><Val txt={read.pot} title={read.tier ? `Your scouts' read of his ceiling: ${read.tier}` : "His ceiling, as your scouts read it"} /></span>
@@ -242,7 +245,8 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
     .sort((a, b) => (ranks ? ranks.get(a.id) - ranks.get(b.id) : csRank(a) - csRank(b)));
   const final = all.some((p) => p.cons?.final);
   // your picks as lines across the board: everyone above your first pick's reach is likely gone
-  const slots = cy === g.yr && !onDraft ? mySlots(g) : [];
+  // your picks as lines across the full board (filtered down, they would bunch up meaninglessly)
+  const slots = cy === g.yr && !onDraft && pos === "ALL" && !q && show === "all" ? mySlots(g) : [];
   const rankOf = (p) => (ranks ? ranks.get(p.id) : csRank(p));
   const reach = slots.length ? pickWindow(slots[0])[0] : 0;
   const marked = [];
@@ -279,8 +283,9 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
           {[[false, "Consensus"], [true, "Your scouts"], ...(withList ? [["list", `Your list (${ids.length})`]] : [])].map(([k, l]) => <button key={l} onClick={() => setMine(k)} style={{ border: 0, borderRadius: 99, padding: "6px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer", background: mine === k ? "#fff" : "transparent", color: mine === k ? "#0b1220" : "#cbd5e1" }}>{l}</button>)}
         </div>
         <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-          {["ALL", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((x) => { const on = x === "OL" ? pos === "R:OL" || ["LT", "LG", "C", "RG", "RT"].includes(pos) : pos === x; return <button key={x} onClick={() => { setPos(x === "OL" ? (on ? "ALL" : "LT") : x); setN(page); }} style={{ border: 0, borderRadius: 99, padding: "6px 11px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#ffffff1f" : "transparent", color: on ? "#fff" : "#94a3b8" }}>{x === "ALL" ? "All" : x}</button>; })}
+          {["ALL", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((x) => { const on = x === "OL" ? ["LT", "LG", "C", "RG", "RT"].includes(pos) : pos === x || (pos.startsWith("R:") && { WR: ["R:X", "R:Z", "R:SLOT"], CB: ["R:OUT", "R:NB"], S: ["R:FS", "R:SS"], LB: ["R:SAM", "R:MIKE", "R:WILL"] }[x]?.includes(pos)); return <button key={x} onClick={() => { setPos(x === "OL" ? (on ? "ALL" : "LT") : x); setN(page); }} style={{ border: 0, borderRadius: 99, padding: "6px 11px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#ffffff1f" : "transparent", color: on ? "#fff" : "#94a3b8" }}>{x === "ALL" ? "All" : x}</button>; })}
         </div>
+        {(() => { const base = pos.startsWith("R:") ? { SAM: "LB", MIKE: "LB", WILL: "LB", OUT: "CB", NB: "CB", FS: "S", SS: "S", X: "WR", Z: "WR", SLOT: "WR" }[pos.slice(2)] : pos; const roles = ROLE_FILTERS.filter(([v]) => ({ LB: ["SAM", "MIKE", "WILL"], CB: ["OUT", "NB"], S: ["FS", "SS"], WR: ["X", "Z", "SLOT"] })[base]?.includes(v.slice(2))); if (!roles.length) return null; return <div style={{ display: "flex", gap: 2, background: "#ffffff0a", borderRadius: 99, padding: 2 }}>{[[base, `All ${base}`], ...roles.map(([v, l]) => [v, l.split(" · ")[1]])].map(([v, l]) => <button key={v} onClick={() => { setPos(v); setN(page); }} style={{ border: 0, borderRadius: 99, padding: "5px 11px", fontSize: 13, fontWeight: 800, cursor: "pointer", background: pos === v ? "#fff" : "transparent", color: pos === v ? "#0b1220" : "#cbd5e1" }}>{l}</button>)}</div>; })()}
         <input value={q} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search" aria-label="Search prospects" style={{ ...sel, marginLeft: "auto", width: onDraft ? 120 : 170, borderRadius: 99 }} />
         {!onDraft && <Select value={show} onChange={(e) => { setShow(e.target.value); setN(page); }} aria-label="Show" style={{ ...sel, borderRadius: 99 }}>
           {SHOWS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
