@@ -1906,4 +1906,7 @@ export const PATCH_NOTES = [
     "Young players: three columns, so the whole group fits on one screen",
     "Super Bowl week on Home: the Lombardi Trophy stands between the two stars with a gold glow, the header reads Super Bowl LXI in gold, and the banner gets a gold edge",
   ] },
+  { v: "4.73", date: "2026-10-23", title: "Super Bowl home, refined", notes: [
+    "Super Bowl week on Home, redone: the Lombardi Trophy is now a tall, soft silhouette behind the two stars, fading into the banner, with Super Bowl LXI as a gold title between thin gold rules and a fine gold edge on the banner",
+  ] },
 ];

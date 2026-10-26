@@ -87,13 +87,18 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
       <style>{FONT_CSS}</style>
       {phase && <PhaseHero {...phase} primary={primary} />}
       {/* the promo */}
-      {!phase && <div data-tour="promo" style={{ position: "relative", height: "clamp(380px, calc(var(--vh, 100vh) - 470px), 560px)", borderRadius: 22, overflow: "hidden", boxShadow: sb ? "inset 0 0 0 1px #f5c54266, 0 0 40px #f5c54214" : "none", background: `linear-gradient(100deg, ${away.clr} 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr} 100%)` }}>
-        {sb && <div style={{ position: "absolute", left: "50%", top: "46%", width: 520, height: 520, transform: "translate(-50%, -50%)", background: "radial-gradient(circle, #f5c54240 0%, #f5c54214 35%, transparent 65%)", pointerEvents: "none" }} />}
-        {sb && <div style={{ position: "absolute", left: "50%", top: 62, transform: "translateX(-50%)", zIndex: 1, filter: "drop-shadow(0 0 24px #f5c54255)" }}><LombardiStill size={92} /></div>}
+      {!phase && <div data-tour="promo" style={{ position: "relative", height: "clamp(380px, calc(var(--vh, 100vh) - 470px), 560px)", borderRadius: 22, overflow: "hidden", boxShadow: sb ? "inset 0 0 0 1px #e8c56a40" : "none", background: `linear-gradient(100deg, ${away.clr} 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr} 100%)` }}>
+        {/* the Super Bowl: the trophy as a tall, soft silhouette behind the two stars, fading into the night */}
+        {sb && <div style={{ position: "absolute", left: "50%", top: 40, transform: "translateX(-50%)", opacity: 0.32, filter: "grayscale(0.3) brightness(1.15) blur(0.4px)", WebkitMaskImage: "linear-gradient(180deg, #000 0%, #000 45%, transparent 92%)", maskImage: "linear-gradient(180deg, #000 0%, #000 45%, transparent 92%)", pointerEvents: "none" }}><LombardiStill size={190} /></div>}
+        {sb && <div style={{ position: "absolute", inset: 0, background: "radial-gradient(60% 55% at 50% 30%, #f5c5420f, transparent 70%)", pointerEvents: "none" }} />}
         {pa && <div style={{ position: "absolute", left: "23%", bottom: -20 }}><PlayerArt p={pa} ab={away.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         {ph && <div style={{ position: "absolute", right: "23%", bottom: -20 }}><PlayerArt p={ph} ab={home.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, transparent 52%, ${C.bg} 100%)` }} />
-        <div style={{ position: "absolute", top: 24, left: 0, right: 0, textAlign: "center", fontSize: sb ? 15 : 14, fontWeight: 900, letterSpacing: sb ? 3 : 1.8, color: sb ? "#f5c542" : "#ffffffcc", textTransform: "uppercase", zIndex: 2 }}>{[sb && sbNum ? `Super Bowl ${sbNum}` : eyebrow, game?.date ? kickoff(game).replace(" ET", "") : null].filter(Boolean).join(" · ")}</div>
+        {sb ? <div style={{ position: "absolute", top: 22, left: 0, right: 0, display: "flex", justifyContent: "center", alignItems: "center", gap: 14, zIndex: 2 }}>
+          <span style={{ width: 70, height: 1, background: "linear-gradient(90deg, transparent, #e8c56a)" }} />
+          <span style={{ fontFamily: BLOCK, fontSize: 26, fontWeight: 700, letterSpacing: 4, color: "#f1d48a", textTransform: "uppercase", lineHeight: 1 }}>Super Bowl {sbNum}</span>
+          <span style={{ width: 70, height: 1, background: "linear-gradient(90deg, #e8c56a, transparent)" }} />
+        </div> : <div style={{ position: "absolute", top: 24, left: 0, right: 0, textAlign: "center", fontSize: sb ? 15 : 14, fontWeight: 900, letterSpacing: sb ? 3 : 1.8, color: sb ? "#f5c542" : "#ffffffcc", textTransform: "uppercase", zIndex: 2 }}>{[sb && sbNum ? `Super Bowl ${sbNum}` : eyebrow, game?.date ? kickoff(game).replace(" ET", "") : null].filter(Boolean).join(" · ")}</div>}
         <Side t={away} rating={ra} star={pa} teams={teams} />
         <Side t={home} rating={rh} star={ph} teams={teams} right />
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 28, display: "flex", justifyContent: "center", alignItems: "center", gap: 10, zIndex: 2 }}>

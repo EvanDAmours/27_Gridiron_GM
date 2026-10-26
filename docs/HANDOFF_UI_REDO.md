@@ -23,6 +23,10 @@ updated 2026-10-26.
 - **No emoji in the interface.** Menus, buttons, labels and cards use words (and real logos or
   art), never emoji: they cheapen the look. Anything still carrying them from the old game gets
   converted when it's touched.
+- **Nothing new may look cheap or tacky.** Every UI change has to match or raise the premium look
+  already built: never paste a cut-out graphic on top of a screen. Integrate it (behind the art,
+  faded, in the type and color system), explore more than one route, and judge it in a screenshot
+  next to the screens around it before it ships.
 - **Home is the standard.** The phone Home and the desktop "broadcast" Home are the look every
   other screen should follow: big team-colored hero, soft rounded cards (`#ffffff0d`, radius 18,
   no border), plain white section titles, one clear action.
