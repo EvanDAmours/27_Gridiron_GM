@@ -153,22 +153,25 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
 // Home's style: the club's colors and faint mark, the section's name, a few numbers that matter
 // there, and its screens as tabs along the bottom. tabs: [[label, key, on]]; onTab(key).
 export function SectionHero({ me, title, sub, stats = [], tabs = [], onTab, right }) {
+  // one row: the title, the section's tabs beside it (underlined on the hero's bottom edge), and
+  // its numbers on the right. Compact, so the screen below gets the room.
+  const tabbed = tabs.length > 1;
   return (
-    <div className="keep-dark" style={{ position: "relative", borderRadius: 20, overflow: "hidden", marginBottom: 14, padding: "22px 28px 0", color: "#fff", background: `radial-gradient(120% 160% at 0% 0%, ${me.clr}d9, ${me.clr}26 55%, #0b1120 100%)` }}>
+    <div className="keep-dark" style={{ position: "relative", borderRadius: 20, overflow: "hidden", marginBottom: 14, padding: `16px 26px ${tabbed ? 0 : 16}px`, color: "#fff", background: `radial-gradient(120% 160% at 0% 0%, ${me.clr}d9, ${me.clr}26 55%, #0b1120 100%)` }}>
       <style>{FONT_CSS}</style>
-      <span aria-hidden="true" style={{ position: "absolute", right: -30, top: -60, opacity: 0.07, pointerEvents: "none", transform: "rotate(-8deg)", filter: "grayscale(1) brightness(4)" }}><TeamLogo t={me} sz={300} /></span>
-      <div style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 30, flexWrap: "wrap" }}>
-        <div style={{ minWidth: 0 }}>
+      <span aria-hidden="true" style={{ position: "absolute", right: -30, top: -70, opacity: 0.07, pointerEvents: "none", transform: "rotate(-8deg)", filter: "grayscale(1) brightness(4)" }}><TeamLogo t={me} sz={260} /></span>
+      <div style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 28, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0, paddingBottom: tabbed ? 14 : 0 }}>
           {sub && <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.8, color: "#ffffffb3", textTransform: "uppercase" }}>{sub}</div>}
-          <div style={{ fontFamily: BLOCK, fontSize: 44, fontWeight: 700, lineHeight: 1, textTransform: "uppercase", marginTop: 4 }}>{title}</div>
+          <div style={{ fontFamily: BLOCK, fontSize: 38, fontWeight: 700, lineHeight: 1, textTransform: "uppercase", marginTop: 4 }}>{title}</div>
         </div>
-        <div style={{ display: "flex", gap: 30, marginLeft: "auto", alignItems: "flex-end" }}>
-          {stats.map(([l, v, c]) => <div key={l} style={{ textAlign: "right" }}><div style={{ fontSize: 28, fontWeight: 900, color: c || "#fff", lineHeight: 1 }}>{v}</div><div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 5, textTransform: "uppercase" }}>{l}</div></div>)}
+        {tabbed && <div style={{ display: "flex", gap: 2, alignSelf: "flex-end" }}>
+          {tabs.map(([l, k, on]) => <button key={k} onClick={() => onTab(k)} style={{ background: "transparent", border: 0, borderBottom: `3px solid ${on ? "#fff" : "transparent"}`, color: on ? "#fff" : "#ffffffa6", padding: "8px 14px 12px", fontSize: 14.5, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>{l}</button>)}
+        </div>}
+        <div style={{ display: "flex", gap: 28, marginLeft: "auto", alignItems: "flex-end", paddingBottom: tabbed ? 14 : 0 }}>
+          {stats.map(([l, v, c]) => <div key={l} style={{ textAlign: "right" }}><div style={{ fontSize: 26, fontWeight: 900, color: c || "#fff", lineHeight: 1 }}>{v}</div><div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 5, textTransform: "uppercase" }}>{l}</div></div>)}
           {right}
         </div>
-      </div>
-      <div style={{ position: "relative", display: "flex", gap: 4, marginTop: 18, paddingBottom: tabs.length > 1 ? 0 : 18 }}>
-        {tabs.length > 1 && tabs.map(([l, k, on]) => <button key={k} onClick={() => onTab(k)} style={{ background: "transparent", border: 0, borderBottom: `3px solid ${on ? "#fff" : "transparent"}`, color: on ? "#fff" : "#ffffffa6", padding: "8px 14px 12px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
       </div>
     </div>
   );

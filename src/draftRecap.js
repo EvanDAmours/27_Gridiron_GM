@@ -31,8 +31,8 @@ export function gradePicks(entries) {
 }
 
 export const VERDICT = {
-  bust: ["🚩 Bust", "#ef4444"], gem: ["💎 Hidden gem", "#f472b6"], jackpot: ["⭐ Jackpot", "#f5c542"], hit: ["✅ Hit", "#22c55e"], value: ["💰 Value", "#22c55e"],
-  wait: ["⏳ Late bloomer", "#c4b5fd"], solid: ["Solid", "#94a3b8"], miss: ["❌ Miss", "#ef4444"],
+  bust: ["Bust", "#ef4444"], gem: ["Hidden gem", "#f472b6"], jackpot: ["Jackpot", "#f5c542"], hit: ["Hit", "#22c55e"], value: ["Value", "#22c55e"],
+  wait: ["Late bloomer", "#c4b5fd"], solid: ["Solid", "#94a3b8"], miss: ["Miss", "#ef4444"],
 };
 
 // Each team's class: picks, hits (star or better), score and a letter grade on a curve.

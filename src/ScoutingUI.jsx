@@ -60,7 +60,7 @@ export function DevChip({ dev, hint = "Development trait unknown. A full workup 
 
 // The development trait, big: on the player card, the prospect's read and draft night, where it
 // matters most. The rarer the trait, the louder the badge. size: "md" or "lg".
-const DEV_ICON = { generational: "💎", superstar: "⚡", star: "⭐", late: "🌱", normal: "" };
+const DEV_ICON = { generational: "", superstar: "", star: "", late: "", normal: "" }; // words, never emoji
 export function DevBadge({ dev, size = "md", hint = "Development trait unknown. A full workup from a major scout always reveals it; a sharp scout often sees it sooner." }) {
   const lg = size === "lg", fs = lg ? 15 : 13, pad = lg ? "6px 14px" : "4px 11px";
   if (!dev || !DEV_STYLE[dev] || !DEV_TRAITS[dev]) return <span title={hint} style={{ display: "inline-flex", alignItems: "center", fontSize: fs, fontWeight: 900, letterSpacing: 1, padding: pad, borderRadius: 8, border: `1px dashed ${C.bd}`, color: "#64748b", whiteSpace: "nowrap" }}>DEV ?</span>;
@@ -178,13 +178,13 @@ function ProspectRow({ g, p, onDraft, canDraft, myRank, gone }) {
   const [st, stc] = STATUS(read);
   const td = { padding: "10px 6px", borderBottom: `1px solid ${C.bd}66`, verticalAlign: "middle" };
   return (
-    <tr onClick={() => g.setSel(p)} style={{ cursor: "pointer", opacity: gone ? 0.5 : 1 }} title={gone ? "Likely gone before your first pick: the board has him well above it" : undefined} onMouseOver={(e) => (e.currentTarget.style.background = "#1e293b55")} onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}>
+    <tr onClick={() => g.setSel(p)} style={{ cursor: "pointer", opacity: gone ? 0.75 : 1 }} title={gone ? "Likely gone before your first pick: the board has him well above it" : undefined} onMouseOver={(e) => (e.currentTarget.style.background = "#1e293b55")} onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}>
       <td style={{ ...td, textAlign: "center", fontWeight: 800, fontSize: 16, color: myRank ? "#fcd34d" : "#94a3b8", width: 36 }}>{myRank || csRank(p)}{myRank ? <MyDelta mine={myRank} cons={csRank(p)} /> : <Arrow p={p} />}</td>
       <td style={{ ...td, width: 26 }}>
         <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} title={listed ? "Remove from your list" : "Add to your list"} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ background: "transparent", border: 0, cursor: "pointer", color: listed ? "#f5c542" : "#475569", fontSize: 20, padding: 0, lineHeight: 1 }}>{listed ? "★" : "☆"}</button>
       </td>
       <td style={{ ...td, minWidth: 0 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.name} <span className="sc-show"><Bdg pos={posTag(p)} /><RoleTag p={p} /></span>{["generational", "superstar", "star"].includes(read.dev) && <span title={DEV_TRAITS[read.dev].desc} style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, letterSpacing: 0.6, padding: "1px 7px", borderRadius: 999, color: DEV_STYLE[read.dev][0], border: `1px solid ${DEV_STYLE[read.dev][1]}`, background: DEV_STYLE[read.dev][0] + "1a", whiteSpace: "nowrap" }}>{DEV_ICON[read.dev]} {DEV_TRAITS[read.dev].name.toUpperCase()}</span>}{read.flag && <span title={read.flagWhy || "Your scouts red-flagged him: high bust risk."} style={{ fontSize: 11, fontWeight: 800, color: "#fee2e2", background: "#991b1b", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>🚩 red flag</span>}{read.sleeper ? <span title={`${read.who} have seen through the board: he's a sleeper, much better than where he's ranked.`} style={{ fontSize: 11, fontWeight: 800, color: "#fdf2f8", background: "#be185d", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>💎 sleeper</span> : read.hunch && <span title={`${read.who} has a hunch there's more to him than the board says. A report will tell.`} style={{ fontSize: 11, fontWeight: 800, color: "#f9a8d4", background: "#831843", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>👀 hunch</span>}{read.devEarly && ["generational", "superstar"].includes(read.dev) && <span title={`${read.who} already see a ${read.dev} development trait.`} style={{ fontSize: 11, fontWeight: 800, color: read.dev === "generational" ? "#f472b6" : "#f5c542", border: `1px solid currentColor`, borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>{read.dev === "generational" ? "Generational" : "Superstar"}</span>}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.name} <span className="sc-show"><Bdg pos={posTag(p)} /><RoleTag p={p} /></span>{["generational", "superstar", "star"].includes(read.dev) && <span title={DEV_TRAITS[read.dev].desc} style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, letterSpacing: 0.6, padding: "1px 7px", borderRadius: 999, color: DEV_STYLE[read.dev][0], border: `1px solid ${DEV_STYLE[read.dev][1]}`, background: DEV_STYLE[read.dev][0] + "1a", whiteSpace: "nowrap" }}>{DEV_TRAITS[read.dev].name.toUpperCase()}</span>}{read.flag && <span title={read.flagWhy || "Your scouts red-flagged him: high bust risk."} style={{ fontSize: 11, fontWeight: 800, color: "#fee2e2", background: "#991b1b", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>Red flag</span>}{read.sleeper ? <span title={`${read.who} have seen through the board: he's a sleeper, much better than where he's ranked.`} style={{ fontSize: 11, fontWeight: 800, color: "#fdf2f8", background: "#be185d", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>Sleeper</span> : read.hunch && <span title={`${read.who} has a hunch there's more to him than the board says. A report will tell.`} style={{ fontSize: 11, fontWeight: 800, color: "#f9a8d4", background: "#831843", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>Hunch</span>}{read.devEarly && ["generational", "superstar"].includes(read.dev) && <span title={`${read.who} already see a ${read.dev} development trait.`} style={{ fontSize: 11, fontWeight: 800, color: read.dev === "generational" ? "#f472b6" : "#f5c542", border: `1px solid currentColor`, borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>{read.dev === "generational" ? "Generational" : "Superstar"}</span>}</div>
         <div className="sc-sub" style={{ fontSize: 14, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260 }}>{p.bio?.college} ({regionName(regionOf(p))}) · {p.age} yrs · {htS(p.ht_)} {p.wt}</div>
       </td>
       <td className="sc-hide" style={{ ...td, textAlign: "center" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /></td>
@@ -217,7 +217,7 @@ function ProspectCard({ g, p, onDraft, canDraft, myRank, gone }) {
       <span style={{ width: 26, textAlign: "center", fontWeight: 900, fontSize: 14, color: myRank ? "#fcd34d" : "#94a3b8" }}>{myRank || csRank(p)}</span>
       <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ width: 30, minHeight: 36, background: "transparent", border: 0, fontSize: 20, color: listed ? C.gd : "#64748b", cursor: "pointer", padding: 0 }}>{listed ? "★" : "☆"}</button>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 14 }}><Bdg pos={posTag(p)} /><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><RoleTag p={p} />{read.flag && <span title={read.flagWhy || "Red flag"} style={{ fontSize: 12 }}>🚩</span>}</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 14 }}><Bdg pos={posTag(p)} /><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><RoleTag p={p} />{read.flag && <span title={read.flagWhy || "Red flag"} style={{ fontSize: 11, fontWeight: 800, color: "#fca5a5" }}>Flag</span>}</span>
         <span style={{ display: "block", fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.bio?.college}{read.lvl > 0 ? <> · <span style={{ color: stc }}>{st}</span></> : ""}</span>
       </span>
       <span style={{ textAlign: "center", minWidth: 28, lineHeight: 1.1 }}><Val txt={read.ovr} /><span style={{ display: "block", fontSize: 9, color: C.mt }}>OVR</span></span>
@@ -341,11 +341,11 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
           <option value="scouted">Scouted</option>
           <option value="unscouted">Not scouted yet</option>
           <option value="list">On my list</option>
-          <option value="flagged">💎 Sleepers & hunches</option>
-          <option value="redflags">🚩 Red flags (bust risks)</option>
-          <option value="special">⭐ Special dev traits spotted</option>
+          <option value="flagged">Sleepers & hunches</option>
+          <option value="redflags">Red flags (bust risks)</option>
+          <option value="special">Special dev traits spotted</option>
         </Select>
-        {MOBILE && !searching && <button onClick={() => setSearching(true)} aria-label="Search prospects" style={{ ...sel, width: 44, padding: 0, cursor: "pointer" }}>🔍</button>}
+        {MOBILE && !searching && <button onClick={() => setSearching(true)} aria-label="Search prospects" style={{ ...sel, width: 44, padding: 0, cursor: "pointer" }}>Go</button>}
         {(!MOBILE || searching) && <input value={q} autoFocus={MOBILE} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search name or college" aria-label="Search prospects" style={{ ...sel, flex: "1 1 160px" }} />}
       </div>
       {cy !== g.yr && <div style={{ ...muted, marginBottom: 8 }}>An early look at a future class: your scouts can only file reports on the {g.yr} class.</div>}
@@ -447,10 +447,9 @@ function AreaPicker({ g, slot }) {
   const mine = areasOf(s)[slot];
   const open = staffWindowOpen(g.sp);
   const set = (i, r) => { const x = assignArea(s, g.sp, slot, i, r, g.yr); g.sm(x.msg); if (x.ok) g.setScouting(x.sc); };
-  if (!open) return <div style={{ fontSize: 14, color: "#cbd5e1" }}>🗺️ {mine.map(regionName).join(" · ")}</div>;
+  if (!open) return <div style={{ fontSize: 14, color: "#cbd5e1" }}>{mine.map(regionName).join(" · ")}</div>;
   return (
     <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
-      <span style={{ fontSize: 14 }}>🗺️</span>
       {mine.map((r, i) => (
         <Select key={i} value={r} onChange={(e) => set(i, e.target.value)} aria-label={`${SCOUT_ROLES[slot].name} region ${i + 1}`} style={{ background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 6, padding: "4px 6px", fontSize: 14, flex: "1 1 120px", minWidth: 0 }}>
           {AREA_KEYS.map((k) => <option key={k} value={k}>{regionName(k)}{rep[k]?.strong ? ` · ▲${SCOUT_GROUP_SHORT[rep[k].strong.g]}` : ""}{rep[k]?.weak ? ` ▼${SCOUT_GROUP_SHORT[rep[k].weak.g]}` : ""}</option>)}
@@ -502,7 +501,7 @@ export function ScoutsView({ g }) {
   const gap = uncovered(s);
   const th = { padding: "6px 8px", fontSize: 11, fontWeight: 900, letterSpacing: 1, color: C.mt, textAlign: "left", borderBottom: `1px solid ${C.bd}`, whiteSpace: "nowrap" };
   const td = { padding: "7px 8px", borderBottom: `1px solid ${C.bd}66`, fontSize: 14, verticalAlign: "middle" };
-  const Trait = ({ x }) => (x.trait ? <span title={SCOUT_TRAITS[x.trait].desc} style={{ fontSize: 12, background: "#4c1d95", color: "#ddd6fe", borderRadius: 4, padding: "1px 6px", fontWeight: 700, whiteSpace: "nowrap" }}>{SCOUT_TRAITS[x.trait].name}</span> : <span style={{ color: "#475569" }}>—</span>);
+  const Trait = ({ x }) => (x.trait ? <span title={SCOUT_TRAITS[x.trait].desc} style={{ fontSize: 12, background: "#ffffff0f", color: "#e2e8f0", borderRadius: 99, padding: "2px 9px", fontWeight: 700, whiteSpace: "nowrap" }}>{SCOUT_TRAITS[x.trait].name}</span> : <span style={{ color: "#475569" }}>—</span>);
   return (
     <div>
       <ScoutReportCard g={g} />
@@ -519,7 +518,7 @@ export function ScoutsView({ g }) {
                   <td style={td}><Stars ev={x.eval} /> <span style={{ fontSize: 12, color: C.mt }}>{x.eval}</span></td>
                   <td style={{ ...td, color: "#67e8f9", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[x.group] || "—"}</td>
                   <td style={td}><Trait x={x} /></td>
-                  {open && <td style={td}><Btn onClick={() => act(releaseScout(s, g.sp, r))} bg="#7f1d1d" c="#fca5a5" style={{ fontSize: 12, padding: "3px 8px" }}>Let go</Btn></td>}
+                  {open && <td style={td}><Btn onClick={() => act(releaseScout(s, g.sp, r))} bg="transparent" c="#94a3b8" style={{ fontSize: 13, padding: "3px 8px" }}>Let go</Btn></td>}
                 </> : <td colSpan={open ? 5 : 4} style={{ ...td, color: C.mt }}>Vacant{open ? ": hire one below" : ""}</td>}
               </tr>); })}</tbody>
           </table>
@@ -545,7 +544,7 @@ export function ScoutsView({ g }) {
                 <td style={td}>{x.age}</td>
                 <td style={{ ...td, fontSize: 12, color: C.mt }}>{x.bg}</td>
                 <td style={td}><Trait x={x} /></td>
-                {open && <td style={td}><Btn onClick={() => act(hireScout(s, g.sp, x.id, role))} bg={`${C.gn}22`} c={C.gn} style={{ fontSize: 12, padding: "3px 10px", whiteSpace: "nowrap" }}>Hire</Btn></td>}
+                {open && <td style={td}><Btn onClick={() => act(hireScout(s, g.sp, x.id, role))} bg="#ffffff14" c="#fff" style={{ fontSize: 13, padding: "4px 12px", whiteSpace: "nowrap", borderRadius: 99 }}>Hire</Btn></td>}
               </tr>))}</tbody>
           </table>
           {!pool.length && <div style={{ ...muted, padding: 8 }}>Nobody's looking for work{want ? " at that position" : ""} right now.</div>}
@@ -603,8 +602,8 @@ export function ScoutShortlist({ g, isNeed, compact }) {
             <div style={{ fontSize: 14, color: "#94a3b8" }}>{(compact ? why.slice(0, 2) : why).join(" · ")}</div>
           </div>
           <div style={{ display: "flex", gap: 6 }}>
-            {workout && <Btn onClick={() => a.workout(p)} disabled={!(sc.workoutsLeft > 0)} bg="#0c4a6e" c="#7dd3fc" style={{ fontSize: 14, padding: "6px 10px" }} title="Free full workup">🏋️ Workout</Btn>}
-            {interview && <Btn onClick={() => a.interview(p)} disabled={!(sc.interviewsLeft > 0)} bg="#7c3aed33" c="#c4b5fd" style={{ fontSize: 14, padding: "6px 10px" }}>🎤 Interview</Btn>}
+            {workout && <Btn onClick={() => a.workout(p)} disabled={!(sc.workoutsLeft > 0)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 14, padding: "6px 10px" }} title="Free full workup">Workout</Btn>}
+            {interview && <Btn onClick={() => a.interview(p)} disabled={!(sc.interviewsLeft > 0)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 14, padding: "6px 10px" }}>Interview</Btn>}
           </div>
         </div>
       ))}
@@ -680,11 +679,11 @@ export function CombineView({ g, buzz }) {
   return (
     <div>
       {live && (
-        <div style={{ ...panel, display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", border: "1px solid #7c3aed2e" }}>
+        <div style={{ ...panel, display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", border: "1px solid #ffffff10" }}>
           <b style={{color: "#c4b5fd", fontSize: 14 }}>Combine week</b>
-          <span style={{ fontSize: 14 }}>🎤 <b>{sc.interviewsLeft || 0}</b> interviews</span>
-          <span style={{ fontSize: 14 }}>🏋️ <b>{sc.workoutsLeft || 0}</b> free workouts</span>
-          <span style={{ fontSize: 14 }}>🔎 <b>{sc.pts || 0}</b> scouting points</span>
+          <span style={{ fontSize: 14 }}><b>{sc.interviewsLeft || 0}</b> interviews</span>
+          <span style={{ fontSize: 14 }}><b>{sc.workoutsLeft || 0}</b> free workouts</span>
+          <span style={{ fontSize: 14 }}><b>{sc.pts || 0}</b> scouting points</span>
           <span style={{ ...muted, marginLeft: "auto" }}>Use them before the draft. Your scouts' picks are on Scouting HQ.</span>
         </div>
       )}
@@ -698,7 +697,7 @@ export function CombineView({ g, buzz }) {
         <div style={head}>Combine results<Right><input value={q} onChange={(e) => { setQ(e.target.value); setN(25); }} placeholder="Search name or college" aria-label="Search prospects" style={{ background: "#ffffff0a", color: C.tx, border: 0, borderRadius: 999, padding: "4px 8px", fontSize: 14, width: 200 }} />{rows.length} of {COMBINE_INVITES}</Right></div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
           {POS_GROUPS.map(([k]) => <button key={k} onClick={() => { setGrp(k); setN(25); }} style={pill(grp === k)}>{k}</button>)}
-          <button onClick={() => { setMine((v) => !v); setN(25); }} style={{ ...pill(mine), marginLeft: 6 }}>⭐ My needs ({needs.join(", ")})</button>
+          <button onClick={() => { setMine((v) => !v); setN(25); }} style={{ ...pill(mine), marginLeft: 6 }}>My needs ({needs.join(", ")})</button>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
@@ -720,9 +719,9 @@ export function CombineView({ g, buzz }) {
                     {COMBINE_TESTS.map((t) => <td key={t.k} style={{ ...td, color: p.combPcts?.[t.k] >= 0.9 ? C.gn : "#cbd5e1", fontWeight: p.combPcts?.[t.k] >= 0.9 || sort === t.k ? 800 : 400 }}>{(+p.combine[t.k]).toFixed(t.dp)}</td>)}
                     <td style={td}><GradeChip g={p.combGrade} small /></td>
                     <td style={{ ...td, display: "flex", gap: 4, justifyContent: "flex-end" }}>
-                      {live && read.lvl < 2 && <Btn onClick={() => a.workout(p)} disabled={!(sc.workoutsLeft > 0)} bg="#0c4a6e" c="#7dd3fc" style={{ fontSize: 12, padding: "4px 8px" }} title="Free full workup">🏋️ Workout</Btn>}
+                      {live && read.lvl < 2 && <Btn onClick={() => a.workout(p)} disabled={!(sc.workoutsLeft > 0)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 12, padding: "4px 8px" }} title="Free full workup">Workout</Btn>}
                       {p.scout?.intv ? <span title={[...(p.scout.intv.good || []), ...(p.scout.intv.bad || [])].join(" ") || p.scout.intv.note} style={{ fontSize: 12 }}>{p.scout.intv.verdict ? "Interview" : "Ethic"} <GradeChip g={p.scout.intv.overall || p.scout.intv.grade} small /></span>
-                        : live ? <Btn onClick={() => a.interview(p)} disabled={!(sc.interviewsLeft > 0)} bg="#7c3aed33" c="#c4b5fd" style={{ fontSize: 12, padding: "4px 8px" }}>🎤 Interview</Btn>
+                        : live ? <Btn onClick={() => a.interview(p)} disabled={!(sc.interviewsLeft > 0)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 12, padding: "4px 8px" }}>Interview</Btn>
                         : <span style={{ color: "#475569" }}>—</span>}
                     </td>
                   </tr>
@@ -808,7 +807,7 @@ export function ScoutPtsBadge({ pts = 0, sc, slim }) {
   // slim: one small pill for draft day, where the clock and the board need the room
   if (slim) return (
     <span title="Scouting points left" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 999, background: on ? `${C.gd}22` : C.cd, border: `1px solid ${on ? C.gd : C.bd}`, fontSize: 14, fontWeight: 800, color: on ? "#fde68a" : C.mt, whiteSpace: "nowrap" }}>
-      🔎 {pts} pts
+      {pts} pts
     </span>
   );
   return (
@@ -881,7 +880,7 @@ export function DraftReveal({ pick, team, onClose, onCard }) {
   const comb = p.combine && COMBINE_TESTS.filter((t) => p.combine[t.k] != null).slice(0, 4);
   const head = { fontSize: 14, fontWeight: 800, color: "#94a3b8", marginBottom: 4 };
   return (
-    <Spotlight p={p} team={team} num={num} kicker={`🏈 ${p.draftYr ?? ""} NFL Draft · Round ${pick.rd} · Pick ${pick.overall}`} title={p.name} bg={`#${pick.overall}`} cta="CONTINUE THE DRAFT →" onNext={onClose} label="Your draft pick"
+    <Spotlight p={p} team={team} num={num} kicker={`${p.draftYr != null ? p.draftYr + 1 : ""} NFL Draft · Round ${pick.rd} · Pick ${pick.overall}`} title={p.name} bg={`#${pick.overall}`} cta="CONTINUE THE DRAFT →" onNext={onClose} label="Your draft pick"
       more={onCard ? { label: "Full card", onClick: onCard } : null} confetti={pick.rd === 1 ? [team.clr, team.ac, "#ffffff", "#fde68a"] : null}>
       <div>{posTag(p)}{p.bio?.college || p.college ? ` · ${p.bio?.college || p.college}` : ""}{p.age ? ` · age ${p.age}` : ""}</div>
       <div style={{ marginTop: 8 }}><DevBadge dev={dev} size="lg" /></div>
@@ -1358,7 +1357,6 @@ export function ScoutingHQ({ g, go }) {
       <PickCabinet g={g} />
       {staffWindowOpen(g.sp) && s.areasYr !== areaSeason(g.sp, g.yr) && (
         <div style={{ ...card, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", borderColor: "#38bdf888" }}>
-          <span style={{ fontSize: 20 }}>🗺️</span>
           <div style={{ flex: 1, minWidth: 200 }}><div style={{ fontWeight: 800, fontSize: 14 }}>Send your scouts to their regions</div><div style={{ fontSize: 14, color: "#94a3b8" }}>{gap.length ? `Nobody works the ${gap.map(regionName).join(" or the ")}. ` : ""}Two regions for each major scout, one for each minor. They stay put once the season starts.</div></div>
           <Btn onClick={() => go("regions")} bg={C.bl} style={{ fontSize: 14, padding: "8px 14px" }}>Assign regions</Btn>
         </div>
@@ -1445,11 +1443,7 @@ export function ScoutingPage({ g }) {
   }
   return (
     <div>
-      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-        {/* the section header above has the class and your scouting points */}
-        
-        {g.sp === "combine" && <span style={{ fontSize: 14, padding: "4px 10px", borderRadius: 10, background: "#7c3aed33", color: "#c4b5fd", fontWeight: 700 }}>Interviews: {g.scouting?.interviewsLeft || 0}</span>}
-      </div>
+      {/* the section header above has the class and your scouting points; combine week has its own strip */}
       <div className="pill-row" style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
         {views.map(([k, label]) => <button key={k} onClick={() => setView(k)} style={{ background: v === k ? "#fff" : "#ffffff12", color: v === k ? "#0b1220" : "#cbd5e1", border: 0, borderRadius: 999, fontSize: 14, fontWeight: 800, padding: "9px 16px", cursor: "pointer" }}>{label}</button>)}
       </div>
@@ -1457,10 +1451,12 @@ export function ScoutingPage({ g }) {
       {(v === "board" || v === "combine") && <div style={{ marginBottom: 12 }}><PickCabinet g={g} /></div>}
       {v === "board" && (
         <>
-          <div style={{ ...panel, display: "flex", gap: "8px 24px", flexWrap: "wrap", alignItems: "center", fontSize: 14 }}>
-            <span><span style={{ color: C.mt }}>Your scouts: </span>{SCOUT_SLOTS.map((r) => g.scouting?.[r] ? <b key={r} style={{ marginRight: 10 }}>{SCOUT_GROUP_SHORT[g.scouting[r].group] || "?"} in {areasOf(g.scouting)[r].join("/")} <span style={{ color: C.mt, fontWeight: 400 }}>({SCOUT_ROLES[r].short.toLowerCase()})</span></b> : null)}{!SCOUT_SLOTS.some((r) => g.scouting?.[r]) && <span style={{ color: C.mt }}>none</span>}<Btn onClick={() => setView("scouts")} bg={C.bd} c="#cbd5e1" style={{ fontSize: 12, padding: "3px 10px" }}>Manage</Btn></span>
+          {/* one quiet line: who's scouting what, and how to read the grades (no boxes) */}
+          <div style={{ display: "flex", gap: "6px 22px", flexWrap: "wrap", alignItems: "center", fontSize: 13, color: C.mt, margin: "0 4px 12px" }}>
+            <span>Scouts: {SCOUT_SLOTS.filter((r) => g.scouting?.[r]).map((r) => <b key={r} style={{ color: "#cbd5e1", marginRight: 8 }}>{SCOUT_GROUP_SHORT[g.scouting[r].group] || "?"} <span style={{ fontWeight: 500, color: C.mt }}>{areasOf(g.scouting)[r].join("/")}</span></b>)}{!SCOUT_SLOTS.some((r) => g.scouting?.[r]) && "none"}
+              <button onClick={() => setView("scouts")} style={{ background: "transparent", border: 0, padding: 0, color: "#7dd3fc", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Manage</button></span>
+            <span style={{ marginLeft: "auto" }}><b style={{ color: "#64748b" }}>?</b> not scouted · <b style={{ color: TONE.a }}>B+</b> rough idea · <b style={{ color: "#cbd5e1" }}>~84</b> report · <b style={{ color: C.gn }}>84</b> exact</span>
           </div>
-          <Legend />
           <Board g={g} classYr={g.yr} />
         </>
       )}
@@ -1521,18 +1517,19 @@ function TeamNeedsPanel({ g, p }) {
       </div>
     );
   };
-  const strong = [...list].sort((a, b) => a.score - b.score)[0], weak = list[0];
+  // the short read first: how he fits, and your top needs; the full table one tap away
+  const [all, setAll] = React.useState(false);
+  const top = list.slice(0, 3).map((x) => x.pos), sc = need[mine]?.score || 0;
+  const verdict = top[0] === mine ? ["Fills your biggest need", "#4ade80"] : sc >= 0.35 ? ["Fills a need", "#4ade80"] : sc >= 0.15 ? ["Depth at a thin spot", "#e2e8f0"] : ["You're set here", "#94a3b8"];
   return (
     <div>
-      <div style={{fontSize: 14, fontWeight: 800, color: C.mt, marginBottom: 4 }}>Your team needs</div>
-      <div style={{fontSize: 14, fontWeight: 800, color: "#64748b", margin: "4px 0 2px" }}>Offense</div>
-      {OFF_NEEDS.map(row)}
-      <div style={{fontSize: 14, fontWeight: 800, color: "#64748b", margin: "6px 0 2px" }}>Defense</div>
-      {DEF_NEEDS.map(row)}
-      <div style={{ marginTop: 8, fontSize: 14, fontWeight: 900, lineHeight: 1.5 }}>
-        <div>STRONGEST: <span style={{ color: "#4ade80" }}>{strong?.pos}</span></div>
-        <div>Biggest need: <span style={{ color: "#f87171" }}>{weak?.pos}</span></div>
-      </div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.mt, marginBottom: 6 }}>Fit with your team</div>
+      <div style={{ fontSize: 17, fontWeight: 900, color: verdict[1] }}>{verdict[0]}</div>
+      <div style={{ margin: "6px 0 10px" }}>{row(mine)}</div>
+      <div style={{ fontSize: 13, color: C.mt }}>Your top needs</div>
+      <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>{top.map((k) => <span key={k} style={{ fontSize: 13, fontWeight: 800, padding: "3px 10px", borderRadius: 99, background: k === mine ? "#ffffff1f" : "#ffffff0d", color: "#e2e8f0" }}>{k}</span>)}</div>
+      <button onClick={() => setAll((v) => !v)} style={{ marginTop: 10, background: "transparent", border: 0, padding: 0, color: "#7dd3fc", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{all ? "Hide the depth chart grades" : "Every position group"}</button>
+      {all && <div style={{ marginTop: 6 }}>{OFF_NEEDS.map(row)}<div style={{ height: 6 }} />{DEF_NEEDS.map(row)}</div>}
     </div>
   );
 }
@@ -1584,8 +1581,8 @@ export function ProspectProfile({ g, p }) {
                 <div style={{ fontSize: 14, lineHeight: 1.55 }}>
                   {s.notes?.flag && <div style={{ color: "#fca5a5", fontWeight: 800 }}>{s.notes.flag}</div>}
                   {s.notes?.gem && <div style={{ color: "#f9a8d4", fontWeight: 700 }}>{s.notes.gem}</div>}
-                  {!s.notes && read.flag && <div style={{ color: "#fca5a5", fontWeight: 800 }}>🚩 {read.flagWhy}</div>}
-                  {!s.notes && read.sleeper && <div style={{ color: "#f9a8d4", fontWeight: 700 }}>💎 Your scouts think he's a sleeper.</div>}
+                  {!s.notes && read.flag && <div style={{ color: "#fca5a5", fontWeight: 800 }}>Red flag: {read.flagWhy}</div>}
+                  {!s.notes && read.sleeper && <div style={{ color: "#f9a8d4", fontWeight: 700 }}>Your scouts think he's a sleeper.</div>}
                   {s.notes?.strengths?.map((x) => <div key={x}>• {x}</div>)}
                   {s.notes?.weaknesses?.map((x) => <div key={x} style={{ color: "#fdba74" }}>• {x}</div>)}
                   {!s.notes && <div style={{ color: C.mt }}>{explain(read, p)}</div>}
@@ -1641,13 +1638,13 @@ export function ProspectProfile({ g, p }) {
             </div>
           ) : g.sp === "combine" && p.combine && p.draftYear === g.yr && (
             <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
-              <Btn onClick={() => a.interview(p)} disabled={!(g.scouting?.interviewsLeft > 0)} bg="#7c3aed33" c="#c4b5fd" style={{ fontSize: 11, padding: "2px 8px" }}>Interview him</Btn>
+              <Btn onClick={() => a.interview(p)} disabled={!(g.scouting?.interviewsLeft > 0)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 11, padding: "2px 8px" }}>Interview him</Btn>
               <span style={muted}>{g.scouting?.interviewsLeft || 0} left. Grades his work ethic, football IQ, leadership and coachability, and flags anything that worries you. Work ethic tends to go with how fast he develops.</span>
             </div>
           )}
         </div></> : (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {[["🏈 NFL COMBINE", "Data available after the NFL Scouting Combine"], ["🏟️ PRO DAYS", "Data available after college pro days"]].map(([t, d]) => <div key={t} style={{ ...box, textAlign: "center", padding: "26px 12px" }}><div style={{ fontSize: 20, fontWeight: 900 }}>{t}</div><div style={{ fontSize: 14, color: C.mt, marginTop: 6 }}>{d}</div></div>)}
+                {[["NFL COMBINE", "Data available after the NFL Scouting Combine"], ["PRO DAYS", "Data available after college pro days"]].map(([t, d]) => <div key={t} style={{ ...box, textAlign: "center", padding: "26px 12px" }}><div style={{ fontSize: 20, fontWeight: 900 }}>{t}</div><div style={{ fontSize: 14, color: C.mt, marginTop: 6 }}>{d}</div></div>)}
               </div>
             )}
             {Object.keys(col).length > 0 && (
@@ -1767,6 +1764,8 @@ function PhoneProspectPage({ g, p, onClose }) {
 
 export function ProspectModal({ g, p, onClose }) {
   const [first, ...rest] = (p.name || "").split(" ");
+  // Escape closes it, like every other window in the game
+  useEffect(() => { const k = (e) => { if (e.key === "Escape") onClose?.(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
   if (MOBILE) return <PhoneProspectPage g={g} p={p} onClose={onClose} />;
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.88)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }} onClick={onClose}>

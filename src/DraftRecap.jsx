@@ -120,7 +120,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
       <div style={panel}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
           <div style={{ ...head, marginBottom: 0, flex: 1 }}>Every pick</div>
-          {[["all", "All"], ["mine", "Mine"], ["hits", "Hits"]].map(([k, l]) => <Btn key={k} onClick={() => setShow(k)} bg={show === k ? "#1e3a5f" : "transparent"} c={show === k ? "#7dd3fc" : C.mt} style={{ fontSize: 13, padding: "4px 10px", border: "1px solid #ffffff10" }}>{l}</Btn>)}
+          {[["all", "All"], ["mine", "Mine"], ["hits", "Hits"]].map(([k, l]) => <Btn key={k} onClick={() => setShow(k)} bg={show === k ? "#fff" : "transparent"} c={show === k ? "#0b1220" : C.mt} style={{ fontSize: 13, padding: "4px 10px", border: "1px solid #ffffff10" }}>{l}</Btn>)}
           {teamF >= 0 && <Btn onClick={() => setTeamF(-1)} bg="transparent" c={C.mt} style={{ fontSize: 13, padding: "4px 10px", border: "1px solid #ffffff10" }}>{teams[teamF]?.ab} ✕</Btn>}
         </div>
         <div style={{ overflowX: "auto" }}>

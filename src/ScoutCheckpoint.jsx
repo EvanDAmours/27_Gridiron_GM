@@ -35,15 +35,15 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], pick
         <CloseX onClick={onClose} />
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 10, paddingRight: 40 }}>
           <div style={{ flex: 1, minWidth: 220 }}>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#38bdf8" }}>🔭 {last ? "END OF THE SEASON" : "TRADE DEADLINE"} · SCOUTING CHECK-IN</div>
+            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#38bdf8" }}>{last ? "END OF THE SEASON" : "TRADE DEADLINE"} · SCOUTING CHECK-IN</div>
             <div style={{ fontSize: MOBILE ? 19 : 23, fontWeight: 900 }}>{last ? "Your scouts' last report of the season" : "Your scouts are back from the road"}</div>
             <div style={{ fontSize: 13, color: "#cbd5e1" }}>You pick around <b>#{pick}</b> right now. Every report you file now is a pick you don't make blind in April.</div>
-            {simTo && <div style={{ fontSize: 13, color: "#7dd3fc", fontWeight: 700, marginTop: 4 }}>{allDone && !startedDone.current ? "✓ All scouted. Back to the sim…" : `⏸ Sim paused. It carries on to week ${simTo} when you're done here.`}</div>}
+            {simTo && <div style={{ fontSize: 13, color: "#7dd3fc", fontWeight: 700, marginTop: 4 }}>{allDone && !startedDone.current ? "✓ All scouted. Back to the sim…" : `Sim paused. It carries on to week ${simTo} when you're done here.`}</div>}
           </div>
           <ScoutPtsBadge pts={pts} sc={sc} />
         </div>
         {last && pts > 0 && <div style={{ ...box, background: "#7c2d1222", fontSize: 13, color: "#fdba74" }}>
-          ⚠ Use them or lose them: your <b>{pts}</b> point{pts === 1 ? "" : "s"} expire when the playoffs end. The Combine brings {SCOUT_PTS_COMBINE} fresh ones for draft week, nothing more.
+          Use them or lose them: your <b>{pts}</b> point{pts === 1 ? "" : "s"} expire when the playoffs end. The Combine brings {SCOUT_PTS_COMBINE} fresh ones for draft week, nothing more.
         </div>}
         <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "1fr 1.2fr", gap: 10 }}>
           <div style={box}>

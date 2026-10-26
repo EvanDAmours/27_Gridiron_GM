@@ -1922,4 +1922,14 @@ export const PATCH_NOTES = [
     "Punts hang like NFL punts (about 4 to 4.5 seconds), so the gunners get downfield; the coverage fans out in lanes across the field and closes into a net, and the return team peels back to set a wall (or drifts back on a fair catch)",
     "Kick returns: the blocks meet at staggered depths instead of one flat wall, and the tackle comes from the right side, so the tackler and the returner go down together",
   ] },
+  { v: "4.77", date: "2026-10-23", title: "Scouting and draft, calm pass", notes: [
+    "Scouting and the draft, reviewed against the calm style: no emoji anywhere in scouting, the combine, draft day or the recap (sleeper, red flag, hunch, workout, interview, the incoming call and the recap's verdicts are words now)",
+    "Section headers are one compact row: the title, the section's tabs beside it and its numbers on the right, so every screen gets more room (the Big Board shows two more prospects without scrolling)",
+    "Big Board: your scouts and how to read the grades share one quiet line instead of two boxes; players likely gone before your pick are dimmed less, so they stay readable",
+    "Prospect profile: the 14-row team-needs table is now a short Fit with your team (Fills your biggest need, Fills a need, Depth, or You're set here) with your top three needs; every position group is one tap away. Escape closes the profile",
+    "Scouts: quiet Let go and Hire buttons and plain trait chips instead of red and purple blocks; Workout and Interview buttons share the calm style",
+    "Draft day: the red, white and blue stripes and the red LATEST tag are gone; an incoming trade call no longer covers the messages in the corner",
+    "Your pick's reveal reads the right draft year (2027 NFL Draft, not 2026)",
+    "Draft Recap: the All / Mine / Hits switch uses the white selected pill like everywhere else",
+  ] },
 ];

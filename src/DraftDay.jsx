@@ -24,7 +24,7 @@ export function DraftTickerBar({ log, ui }) {
   const items = log.slice(-32).reverse();
   return (
     <div style={{ display: "flex", alignItems: "stretch", background: "#020617", border: "1px solid #ffffff10", borderRadius: 8, marginBottom: 10, height: 34, overflow: "hidden" }}>
-      <div style={{ flexShrink: 0, background: "#b91c1c", color: "#fff", fontWeight: 900, fontSize: 12, letterSpacing: 1.5, padding: "0 10px", display: "flex", alignItems: "center" }}>LATEST</div>
+      <div style={{ flexShrink: 0, color: "#94a3b8", fontWeight: 800, fontSize: 12, letterSpacing: 1.2, padding: "0 12px", display: "flex", alignItems: "center", borderRight: "1px solid #ffffff10" }}>LATEST</div>
       <div style={{ display: "flex", whiteSpace: "nowrap", overflowX: "auto", scrollbarWidth: "none" }}>
         {items.map((d, i) => (
           <span key={d.overall ?? i} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "0 16px", fontSize: 13, borderRight: `1px solid ${C.bd}`, color: d.owner === ui ? C.gn : "#e2e8f0", opacity: i === 0 ? 1 : 0.85 }}>
@@ -47,7 +47,6 @@ export function PickIsIn({ entry, team, yr, onDone, ms = 2300 }) {
     <div onClick={onDone} style={{ position: "fixed", left: 0, right: 0, top: 70, zIndex: 1500, display: "flex", justifyContent: "center", padding: "0 12px", cursor: "pointer" }}>
       <style>{`@keyframes dd-in{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}}`}</style>
       <div style={{ width: "100%", maxWidth: 560, borderRadius: 14, overflow: "hidden", boxShadow: "0 18px 50px #000c", animation: "dd-in .35s ease-out", border: "1px solid #ffffff22" }}>
-        <div style={{ height: 6, background: "linear-gradient(90deg,#1d4ed8 0 33%,#fff 33% 66%,#b91c1c 66%)" }} />
         <div style={{ background: `linear-gradient(120deg,${team.clr} 0%,#0b1120 75%)`, padding: "14px 18px", display: "flex", gap: 14, alignItems: "center" }}>
           <TeamLogo t={team} sz={MOBILE ? 46 : 64} />
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -68,7 +67,7 @@ export function PickIsIn({ entry, team, yr, onDone, ms = 2300 }) {
 export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = [], fits = [], onSim, onSimPick, onCalls, callsOpen, onForPick, forPickOpen, onPause }) {
   const clock = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
   // Pause sits right by the clock, big enough to find in a hurry.
-  const pauseBtn = (big) => onPause && <button onClick={onPause} aria-label={paused ? "Resume the draft" : "Pause the draft"} style={{ background: paused ? C.gn : "#f97316", color: "#fff", border: "2px solid #ffffff55", borderRadius: 10, padding: big ? "10px 18px" : "6px 10px", fontSize: big ? 17 : 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 12px #0007", flexShrink: 0 }}>{paused ? "▶ Resume" : "⏸ Pause"}</button>;
+  const pauseBtn = (big) => onPause && <button onClick={onPause} aria-label={paused ? "Resume the draft" : "Pause the draft"} style={{ background: paused ? C.gn : "#f97316", color: "#fff", border: "2px solid #ffffff55", borderRadius: 10, padding: big ? "10px 18px" : "6px 10px", fontSize: big ? 17 : 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 12px #0007", flexShrink: 0 }}>{paused ? "Resume" : "Pause"}</button>;
   // Phones: a compact clock bar pinned under the header, the buttons in one swipeable row.
   if (MOBILE) return (
     <div style={{ position: "sticky", top: "calc(56px + env(safe-area-inset-top))", zIndex: 20, borderRadius: 12, overflow: "hidden", marginBottom: 10, border: mine ? `2px solid ${C.gn}` : `1px solid ${C.bd}`, boxShadow: "0 8px 20px #0009" }}>
@@ -95,7 +94,6 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
   );
   return (
     <div style={{ borderRadius: 14, overflow: "hidden", marginBottom: 10, border: mine ? `2px solid ${C.gn}` : `1px solid ${C.bd}` }}>
-      <div style={{ height: 5, background: "linear-gradient(90deg,#1d4ed8 0 33%,#fff 33% 66%,#b91c1c 66%)" }} />
       <div style={{ background: `linear-gradient(120deg,${team.clr} 0%,#0b1120 80%)`, padding: "14px 18px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
         <TeamLogo t={team} sz={64} />
         <div style={{ flex: "1 1 220px", minWidth: 0 }}>
@@ -155,7 +153,7 @@ export function ForPickPanel({ quote, team, yr, onAccept, onClose }) {
   const o = quote.offer;
   return (<PhoneSheet onClose={onClose}>
     <div style={{ background: C.cd, border: "1px solid #ca8a0466", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
-      <div style={{ fontSize: 14, fontWeight: 800, color: "#fde68a", marginBottom: 6 }}>🔁 Trade for this pick <span style={{ fontSize: 12, color: C.mt, fontWeight: 500 }}>· the draft is paused. Make the trade and you're on the clock.</span></div>
+      <div style={{ fontSize: 14, fontWeight: 800, color: "#fde68a", marginBottom: 6 }}>Trade for this pick <span style={{ fontSize: 12, color: C.mt, fontWeight: 500 }}>· the draft is paused. Make the trade and you're on the clock.</span></div>
       {!o && <div style={{ fontSize: 14, color: C.mt }}>{FORPICK_NO[quote.no](team.name)}</div>}
       {o && <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div style={{ fontSize: 14 }}>The {team.name} give you <b style={{ color: "#86efac" }}>#{o.theirPick.overall}</b> (up {o.up} spots) for</div>
@@ -173,7 +171,7 @@ export function ForPickPanel({ quote, team, yr, onAccept, onClose }) {
 export function TradeUpPanel({ offers, yr, onAccept, onPass, onClose }) {
   return (<PhoneSheet onClose={onClose}>
     <div style={{ background: C.cd, border: "1px solid #7c3aed66", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
-      <div style={{ fontSize: 14, fontWeight: 800, color: "#c4b5fd", marginBottom: 6 }}>📞 Trade up <span style={{ fontSize: 12, color: C.mt, fontWeight: 500 }}>· the draft is paused while you work the phones. Prices from the draft trade chart; moving up costs a premium.</span></div>
+      <div style={{ fontSize: 14, fontWeight: 800, color: "#c4b5fd", marginBottom: 6 }}>Trade up <span style={{ fontSize: 12, color: C.mt, fontWeight: 500 }}>· the draft is paused while you work the phones. Prices from the draft trade chart; moving up costs a premium.</span></div>
       {!offers.length && <div style={{ fontSize: 13, color: C.mt }}>Nobody ahead of you is willing to move down right now (or you don't have the picks to pay for it).</div>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 8 }}>
         {offers.map((o) => (
@@ -201,12 +199,12 @@ export function IncomingCall({ offer, team, curPick, yr, onAccept, onMore, onDec
   // on the page itself (inside the board, its layers covered it), bottom right over the recent
   // picks, so it never hides the board you're picking from
   return createPortal(
-    <div style={{ position: "fixed", right: MOBILE ? 8 : 18, left: MOBILE ? 8 : "auto", top: MOBILE ? 64 : "auto", bottom: MOBILE ? "auto" : 18, zIndex: 2400, fontFamily: C.f, color: C.tx, width: MOBILE ? "auto" : 380, borderRadius: 16, overflow: "hidden", background: "linear-gradient(160deg,#1e1b4b,#0b1120 70%)", border: "1px solid #a78bfa88", boxShadow: "0 20px 60px #000d, 0 0 0 1px #000", animation: "dd-in .3s ease-out" }}>
+    <div style={{ position: "fixed", right: MOBILE ? 8 : 18, left: MOBILE ? 8 : "auto", top: MOBILE ? 64 : "auto", bottom: MOBILE ? "auto" : 100, /* desktop: bottom right, above the messages that appear there */ zIndex: 2400, fontFamily: C.f, color: C.tx, width: MOBILE ? "auto" : 380, borderRadius: 16, overflow: "hidden", background: "linear-gradient(160deg,#1e1b4b,#0b1120 70%)", border: "1px solid #a78bfa88", boxShadow: "0 20px 60px #000d, 0 0 0 1px #000", animation: "dd-in .3s ease-out" }}>
       <style>{"@keyframes dd-in{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}} @keyframes callRing{0%{box-shadow:0 0 0 0 #a78bfa99}70%{box-shadow:0 0 0 16px #a78bfa00}100%{box-shadow:0 0 0 0 #a78bfa00}} @keyframes callBar{from{width:100%}to{width:0%}} @keyframes callShake{0%,100%{transform:rotate(0)}10%,30%{transform:rotate(-12deg)}20%,40%{transform:rotate(12deg)}50%{transform:rotate(0)}}"}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px 10px" }}>
         <div style={{ borderRadius: "50%", padding: 6, background: "#0b1120", animation: "callRing 1.4s infinite" }}><TeamLogo t={team} sz={46} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#c4b5fd" }}><span style={{ display: "inline-block", animation: "callShake 1.2s infinite" }}>📞</span> {offer.faller ? <span style={{color: "#fca5a5" }}>Urgent call · he's sliding</span> : "INCOMING CALL"}</div>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#c4b5fd" }}>{offer.faller ? <span style={{color: "#fca5a5" }}>Urgent call · he's sliding</span> : "INCOMING CALL"}</div>
           <div style={{ fontSize: 17, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{team.city} {team.name}</div>
           <div style={{ fontSize: 12.5, color: "#cbd5e1" }}>{offer.faller ? `"${offer.target.name} (${offer.target.pos}) was a top-${Math.max(5, Math.ceil(curPick.overall - offer.fell))} player on every board and he's still there. We'll overpay to jump you at #${curPick.overall}."` : `"We'd like to move up to #${curPick.overall}${offer.target ? ` for ${offer.target.name}` : ""}."`}</div>
         </div>
