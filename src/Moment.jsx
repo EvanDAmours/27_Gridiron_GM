@@ -3,7 +3,7 @@
 // agency; a blockbuster trade; and the season kickoff preview. One look for all of them, like the Super Bowl's.
 import React from "react";
 import { HolidayResult } from "./Atmosphere.jsx";
-import { C, TeamLogo, Face, Bdg } from "./ui.jsx";
+import { TeamLogo, Face, Bdg, T, S, txt } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import goldJacket from "./assets/gold-jacket.webp";
 import lombardiArt from "./assets/lombardi.webp";
@@ -27,7 +27,11 @@ const CSS = `
 .mm-title { background: linear-gradient(100deg, #fff 30%, #fde68a 50%, #fff 70%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: mmShine 3.2s linear infinite; }
 `;
 
-const KICKER = { top: "THE ROAD GOES THROUGH", div: "DIVISION CHAMPIONS", berth: "PLAYOFF BOUND" };
+// a caption's words in sentence case ("RING OF HONOR" from older saves reads "Ring of honor")
+const sentence = (k) => (typeof k === "string" && k === k.toUpperCase() && /[A-Z]{3}/.test(k) ? k.charAt(0) + k.slice(1).toLowerCase() : k);
+// dark text on a light button, white on a dark one
+const ink = (hex) => { const h = String(hex || "").replace("#", ""); if (h.length < 6) return "#0b1220"; const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? "#0b1220" : "#fff"; };
+const CTA = { borderRadius: 14, padding: "14px 0", fontSize: T.md, fontWeight: 900, border: 0, width: "100%", cursor: "pointer" };
 
 function Confetti({ colors }) {
   return (
@@ -38,9 +42,9 @@ function Confetti({ colors }) {
 }
 
 const Line = ({ k, v, tone }) => (
-  <div style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "6px 0", borderBottom: "1px solid #ffffff14" }}>
-    <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: "#cbd5e1", minWidth: MOBILE ? 92 : 128 }}>{k}</span>
-    <span style={{ fontSize: MOBILE ? 14 : 15.5, fontWeight: 700, color: tone || "#fff" }}>{v}</span>
+  <div style={{ display: "flex", alignItems: "baseline", gap: S[3], padding: `${S[2]}px 0`, borderBottom: "1px solid #ffffff10" }}>
+    <span style={{ ...txt.caption, minWidth: MOBILE ? 92 : 128 }}>{sentence(k)}</span>
+    <span style={{ fontSize: T.md, fontWeight: 700, color: tone || "#fff" }}>{v}</span>
   </div>
 );
 
@@ -66,20 +70,20 @@ function CareerHaul({ haul, tone = "#fde68a" }) {
                 <img src={TROPHY[k][0]} alt={TROPHY[k][1]} style={{ height: k === "sbmvp" ? h * 0.6 : h, objectFit: "contain", filter: "drop-shadow(0 6px 10px #000a)" }} />
                 {n > 1 && <span style={{ position: "absolute", right: -4, bottom: 0, background: "#0b1220", border: `1.5px solid ${tone}`, color: tone, borderRadius: 999, padding: "0 4px", fontSize: MOBILE ? 9.5 : 11, lineHeight: 1.35, fontWeight: 900 }}>×{n}</span>}
               </div>
-              <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 1, color: "#cbd5e1", marginTop: 3 }}>{TROPHY[k][1].toUpperCase()}</div>
+              <div style={{ ...txt.caption, marginTop: S[1] }}>{TROPHY[k][1]}</div>
             </div>
           ))}
         </div>
       )}
       {honors.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-          {honors.map(({ label, n }) => <span key={label} style={{ fontSize: 12.5, fontWeight: 800, color: "#e2e8f0", background: "#ffffff14", border: "1px solid #ffffff22", borderRadius: 999, padding: "3px 10px" }}><b style={{ color: tone }}>{n}×</b> {label}</span>)}
+          {honors.map(({ label, n }) => <span key={label} style={{ fontSize: T.xs, fontWeight: 800, color: "#e2e8f0", background: "#ffffff14", borderRadius: 999, padding: `${S[1]}px ${S[3]}px` }}><b style={{ color: tone }}>{n}×</b> {label}</span>)}
         </div>
       )}
       {ranks.length > 0 && (
         <div style={{ marginTop: 10 }}>
           {ranks.slice(0, 4).map((r) => (
-            <div key={r.ab + r.key} style={{ fontSize: MOBILE ? 13.5 : 15, fontWeight: 700, color: "#e2e8f0", padding: "3px 0" }}>
+            <div key={r.ab + r.key} style={{ fontSize: T.sm, fontWeight: 700, color: "#e2e8f0", padding: `${S[1]}px 0` }}>
               <b style={{ color: tone }}>{ord(r.rank)}</b> in {r.team || r.ab} franchise {r.label.replace(/^\w/, (c) => c.toLowerCase())} <span style={{ color: "#94a3b8" }}>({r.v.toLocaleString()})</span>
             </div>
           ))}
@@ -92,10 +96,10 @@ function CareerHaul({ haul, tone = "#fde68a" }) {
 function HofCeremony({ m, onClose }) {
   const t = m.team;
   return (
-    <Spotlight p={m.p} team={t} gold smoke kicker={`Pro Football Hall of Fame · Class of ${m.cls}`} title={m.p.name} bg="HOF" confetti={["#fbbf24", "#fde68a", "#d4a017", "#ffffff"]} cta="WELCOME TO CANTON →" onNext={onClose} label="Hall of Fame"
+    <Spotlight p={m.p} team={t} gold smoke kicker={`Pro Football Hall of Fame · Class of ${m.cls}`} title={m.p.name} bg="HOF" confetti={["#fbbf24", "#fde68a", "#d4a017", "#ffffff"]} cta="Welcome to Canton →" onNext={onClose} label="Hall of Fame"
       side={<img src={goldJacket} alt="The gold jacket" style={{ width: "100%", maxHeight: MOBILE ? 130 : "44vh", objectFit: "contain", filter: "drop-shadow(0 12px 28px #000c) drop-shadow(0 0 22px #fbbf2455)" }} />}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Bdg pos={m.p.pos} /><TeamLogo t={t} sz={24} /><span style={{ color: "#e7cf8a" }}>{m.tagline || `${t.city} ${t.name}`}</span></div>
-      {m.sub && <div style={{ fontSize: MOBILE ? 14 : 17, color: "#e2e8f0", marginTop: 10, lineHeight: 1.5, fontStyle: "italic" }}>{m.sub}</div>}
+      {m.sub && <div style={{ fontSize: T.md, color: "#e2e8f0", marginTop: S[3], lineHeight: 1.5, fontStyle: "italic" }}>{m.sub}</div>}
       {m.lines?.length > 0 && <div style={{ marginTop: 10, maxWidth: 520 }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone || "#fde68a"} />)}</div>}
       <CareerHaul haul={m.haul} />
     </Spotlight>
@@ -110,26 +114,26 @@ function RaftersNight({ m, onClose }) {
       <style>{CSS + "@keyframes raise{0%{transform:translateY(160px) scale(.9);opacity:0}70%{transform:translateY(-6px)}100%{transform:none;opacity:1}} @keyframes beam{0%,100%{opacity:.35}50%{opacity:.7}}"}</style>
       <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "conic-gradient(from 160deg at 20% -5%, transparent 0deg, #ffffff22 12deg, transparent 26deg), conic-gradient(from 174deg at 80% -5%, transparent 0deg, #ffffff22 12deg, transparent 26deg)", animation: "beam 4s ease-in-out infinite" }} />
       <div role="dialog" aria-label={ring ? "Ring of Honor" : "Jersey retirement"} onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(560px, 100%)", textAlign: "center", color: "#fff", animation: "mmIn .45s ease-out" }}>
-        <div style={{ fontSize: 12.5, fontWeight: 900, letterSpacing: 4, color: t.ac === "#ffffff" ? "#fde68a" : (t.ac || "#fde68a") }}>{ring ? "RING OF HONOR" : "JERSEY RETIREMENT NIGHT"}</div>
-        <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 2 }}>{t.city} {t.name} · {m.yr}</div>
+        <div style={{ fontSize: T.sm, fontWeight: 800, color: t.ac === "#ffffff" ? "#fde68a" : (t.ac || "#fde68a") }}>{ring ? "Ring of Honor" : "Jersey retirement night"}</div>
+        <div style={{ ...txt.muted, color: "#cbd5e1", marginTop: 2 }}>{t.city} {t.name} · {m.yr}</div>
         <div style={{ display: "flex", justifyContent: "center", margin: "18px 0 6px", animation: "raise 1.6s cubic-bezier(.2,.8,.3,1) both" }}>
           {ring ? (
-            <div style={{ border: `3px solid ${t.ac || "#fde68a"}`, borderRadius: 10, background: `linear-gradient(180deg, ${t.clr}, #0b1220)`, padding: "14px 26px", boxShadow: "0 10px 40px #000c" }}>
-              <div style={{ fontSize: 11, letterSpacing: 3, color: "#fde68a", fontWeight: 900 }}>{t.name.toUpperCase()} RING OF HONOR</div>
-              <div style={{ fontSize: MOBILE ? 26 : 34, fontWeight: 900, letterSpacing: 2 }}>{m.p.name.toUpperCase()}</div>
-              <div style={{ fontSize: 13, color: "#cbd5e1" }}>{m.p.pos}{m.p.num ? ` · #${m.p.num}` : ""}</div>
+            <div style={{ borderRadius: 18, background: `linear-gradient(180deg, ${t.clr}, #0b1220)`, padding: `${S[4]}px ${S[5]}px`, boxShadow: "0 10px 40px #000c" }}>
+              <div style={{ ...txt.caption, color: "#fde68a" }}>{t.name} Ring of Honor</div>
+              <div style={{ fontSize: T.xl, fontWeight: 900, letterSpacing: 1 }}>{m.p.name.toUpperCase()}</div>
+              <div style={{ ...txt.muted, color: "#cbd5e1" }}>{m.p.pos}{m.p.num ? ` · #${m.p.num}` : ""}</div>
             </div>
           ) : (
-            <div style={{ position: "relative", padding: "10px 18px 4px", border: `3px solid ${t.ac || "#fde68a"}`, borderRadius: "6px 6px 50% 50% / 6px 6px 18% 18%", background: `linear-gradient(180deg, ${t.clr}, #0b1220)`, boxShadow: "0 12px 50px #000c" }}>
+            <div style={{ position: "relative", padding: `${S[3]}px ${S[4]}px ${S[1]}px`, borderRadius: "18px 18px 50% 50% / 18px 18px 18% 18%", background: `linear-gradient(180deg, ${t.clr}, #0b1220)`, boxShadow: "0 12px 50px #000c" }}>
               <Jersey team={t} name={m.p.name} num={m.p.num} size={MOBILE ? 150 : 190} />
-              <div style={{ fontSize: 12, letterSpacing: 2, fontWeight: 900, color: "#fde68a", paddingBottom: 10 }}>NO ONE WILL WEAR #{m.p.num} AGAIN</div>
+              <div style={{ fontSize: T.sm, fontWeight: 800, color: "#fde68a", paddingBottom: S[3] }}>No one will wear #{m.p.num} again</div>
             </div>
           )}
         </div>
-        <div className="mm-title" style={{ fontSize: MOBILE ? 26 : 34, fontWeight: 900, fontStyle: "italic", marginTop: 8 }}>{m.p.name}</div>
-        {m.sub && <div style={{ fontSize: 15, color: "#e2e8f0", marginTop: 6, lineHeight: 1.45 }}>{m.sub}</div>}
-        {m.lines?.length > 0 && <div style={{ marginTop: 10, textAlign: "left", background: "#00000055", borderRadius: 12, padding: "4px 14px" }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone} />)}</div>}
-        <button onClick={onClose} style={{ marginTop: 16, width: "100%", background: t.ac || "#fde68a", color: "#0b1220", border: 0, borderRadius: 10, padding: "12px 0", fontSize: 16, fontWeight: 900, letterSpacing: 1, cursor: "pointer" }}>CONTINUE →</button>
+        <div className="mm-title" style={{ ...txt.title, fontSize: MOBILE ? T.xl : T.xxl, marginTop: S[2] }}>{m.p.name}</div>
+        {m.sub && <div style={{ ...txt.body, marginTop: S[2] }}>{m.sub}</div>}
+        {m.lines?.length > 0 && <div style={{ marginTop: S[3], textAlign: "left", background: "#ffffff0d", borderRadius: 18, padding: `${S[1]}px ${S[4]}px` }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone} />)}</div>}
+        <button onClick={onClose} style={{ ...CTA, marginTop: S[4], background: t.ac || "#fde68a", color: ink(t.ac || "#fde68a") }}>Continue →</button>
       </div>
     </div>
   );
@@ -149,16 +153,16 @@ function RingNight({ m, onClose }) {
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2600, background: "radial-gradient(ellipse at 50% 30%, #3b2a0acc, #02040af5 70%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <style>{CSS + "@keyframes ringSpin{0%{transform:rotateY(80deg) scale(.6);opacity:0}100%{transform:none;opacity:1}}"}</style>
       <Confetti colors={[t.clr || "#1e3a8a", "#e8c45a", "#fde68a", "#ffffff"]} />
-      <div role="dialog" aria-label="Ring night" onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(600px, 100%)", textAlign: "center", color: "#fff", background: "linear-gradient(170deg,#1c1206,#0b0703 70%)", border: "2px solid #d4a017", borderRadius: 18, padding: MOBILE ? "18px 16px" : "22px 28px", boxShadow: "0 0 80px #d4a01744", animation: "mmIn .45s ease-out" }}>
-        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 4, color: "#d4a017" }}>RING NIGHT · {m.yr + 1} HOME OPENER</div>
+      <div role="dialog" aria-label="Ring night" onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(600px, 100%)", textAlign: "center", color: "#fff", background: "linear-gradient(170deg,#1c1206,#0b0703 70%)", borderRadius: 22, padding: MOBILE ? `${S[5]}px ${S[4]}px` : `${S[5]}px ${S[6]}px`, boxShadow: "0 30px 80px #000c, 0 0 80px #d4a01733", animation: "mmIn .45s ease-out" }}>
+        <div style={{ fontSize: T.sm, fontWeight: 800, color: "#d4a017" }}>Ring night · {m.yr + 1} home opener</div>
         <div style={{ display: "flex", justifyContent: "center", marginTop: 8, perspective: 600 }}><div style={{ animation: "ringSpin 1.3s cubic-bezier(.2,.8,.3,1) both" }}><TeamRing t={t} yr={m.yr} titles={m.titles} size={MOBILE ? 230 : 290} /></div></div>
-        <div className="mm-title" style={{ fontSize: MOBILE ? 26 : 34, fontWeight: 900, fontStyle: "italic", marginTop: 4 }}>{m.sbName || `${m.yr} WORLD CHAMPIONS`}</div>
-        <div style={{ fontSize: 15, color: "#e2e8f0", marginTop: 6, lineHeight: 1.45 }}>{m.score ? <>Champions by {m.score}{m.opp ? <> over the {m.opp}</> : null}. </> : null}The {t.city} {t.name} raise the banner and hand out the rings before the {m.yr + 1} opener.</div>
-        {m.names?.length > 0 && <div style={{ marginTop: 12, background: "#00000055", borderRadius: 12, padding: "10px 14px", textAlign: "left" }}>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#d4a017", marginBottom: 4 }}>GETTING THEIR RINGS</div>
-          <div style={{ fontSize: 14, color: "#fde68a", lineHeight: 1.6 }}>{m.names.join(" · ")}</div>
+        <div className="mm-title" style={{ ...txt.title, fontSize: MOBILE ? T.xl : T.xxl, marginTop: S[1] }}>{m.sbName || `${m.yr} world champions`}</div>
+        <div style={{ ...txt.body, marginTop: S[2] }}>{m.score ? <>Champions by {m.score}{m.opp ? <> over the {m.opp}</> : null}. </> : null}The {t.city} {t.name} raise the banner and hand out the rings before the {m.yr + 1} opener.</div>
+        {m.names?.length > 0 && <div style={{ marginTop: S[3], background: "#ffffff0d", borderRadius: 18, padding: `${S[3]}px ${S[4]}px`, textAlign: "left" }}>
+          <div style={{ ...txt.caption, color: "#d4a017", marginBottom: S[1] }}>Getting their rings</div>
+          <div style={{ fontSize: T.sm, color: "#fde68a", lineHeight: 1.6 }}>{m.names.join(" · ")}</div>
         </div>}
-        <button onClick={onClose} style={{ marginTop: 16, width: "100%", background: "linear-gradient(90deg,#b45309,#fbbf24,#b45309)", color: "#1c1206", border: 0, borderRadius: 10, padding: "12px 0", fontSize: 16, fontWeight: 900, letterSpacing: 2, cursor: "pointer" }}>DEFEND THE TITLE →</button>
+        <button onClick={onClose} style={{ ...CTA, marginTop: S[4], background: "linear-gradient(90deg,#b45309,#fbbf24,#b45309)", color: "#1c1206" }}>Defend the title →</button>
       </div>
     </div>
   );
@@ -186,16 +190,16 @@ function RecordSpot({ m, onClose }) {
   const t = m.team;
   return (
     <Spotlight p={m.p} team={t} gold={m.nfl} kicker={m.nfl ? (m.career ? "★ New NFL career record ★" : "★ New NFL record ★") : m.career ? `${t.name} all-time record` : `New ${t.name} record`} title={m.p.name} bg={jerseyNum(m.p) != null ? `#${jerseyNum(m.p)}` : null}
-      confetti={m.nfl ? ["#fbbf24", "#fde68a", "#d4a017", t.clr, "#ffffff"] : [t.clr, t.ac, "#fde68a", "#ffffff"]} cta={m.nfl ? "INTO THE RECORD BOOK →" : "CONTINUE →"} onNext={onClose} label={m.nfl ? "New NFL record" : "New franchise record"}>
+      confetti={m.nfl ? ["#fbbf24", "#fde68a", "#d4a017", t.clr, "#ffffff"] : [t.clr, t.ac, "#fde68a", "#ffffff"]} cta={m.nfl ? "Into the record book →" : "Continue →"} onNext={onClose} label={m.nfl ? "New NFL record" : "New franchise record"}>
       <style>{"@keyframes rsStrike{from{width:0}to{width:100%}}"}</style>
       <div>{m.p.pos} · {t.city} {t.name}{m.yr ? ` · ${m.yr}` : ""}</div>
       <div style={{ fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 52 : 88, lineHeight: 1, color: "#fde68a", marginTop: MOBILE ? 8 : 14, fontVariantNumeric: "tabular-nums" }}><CountUp value={m.value} /></div>
-      <div style={{ fontSize: MOBILE ? 12 : 14, fontWeight: 900, letterSpacing: 2, color: "#d4a017", textTransform: "uppercase" }}>{m.nfl ? `The most ${m.label} in league history` : m.label}</div>
-      {m.prev && <div style={{ display: "inline-block", position: "relative", marginTop: 10, fontSize: MOBILE ? 14 : 16, color: "#94a3b8" }}>
-        <span style={{ fontWeight: 900, letterSpacing: 1.5, fontSize: 11, color: "#78716c", marginRight: 6 }}>OLD RECORD</span>{m.prev}
+      <div style={{ fontSize: T.md, fontWeight: 800, color: "#d4a017" }}>{m.nfl ? `The most ${m.label} in league history` : m.label}</div>
+      {m.prev && <div style={{ display: "inline-block", position: "relative", marginTop: S[3], fontSize: T.md, color: "#94a3b8" }}>
+        <span style={{ ...txt.caption, color: "#78716c", marginRight: S[2] }}>Old record</span>{m.prev}
         <span aria-hidden style={{ position: "absolute", left: 0, top: "52%", height: 2, background: "#ef4444", animation: "rsStrike .7s 1.9s ease-out both" }} />
       </div>}
-      {m.sub && <div style={{ fontSize: MOBILE ? 14 : 16, color: "#cbd5e1", marginTop: 10, fontStyle: "italic" }}>{m.sub}</div>}
+      {m.sub && <div style={{ fontSize: T.md, color: "#cbd5e1", marginTop: S[3], fontStyle: "italic" }}>{m.sub}</div>}
     </Spotlight>
   );
 }
@@ -207,8 +211,8 @@ function SigningSpot({ m, onClose }) {
     <Spotlight p={m.p} team={t} num={m.num} kicker={`✍️ Signing day · Welcome to ${t.city}`} title={m.p.name} bg={m.num != null ? `#${m.num}` : null} onNext={onClose} label={`${m.p.name} signs`}>
       <div>{m.p.pos} · {m.p.ovr} OVR · age {m.p.age}</div>
       <div style={{ fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 34 : 54, lineHeight: 1.05, color: "#fde68a", marginTop: MOBILE ? 8 : 14 }}>{m.yrs} {m.yrs === 1 ? "YEAR" : "YEARS"} · ${(+m.sal).toFixed(1)}M A YEAR</div>
-      {m.sub && <div style={{ fontSize: MOBILE ? 14 : 16, color: "#cbd5e1", marginTop: 10 }}>{m.sub}</div>}
-      {m.lines?.length > 0 && <div style={{ marginTop: 10, maxWidth: 520 }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone} />)}</div>}
+      {m.sub && <div style={{ fontSize: T.md, color: "#cbd5e1", marginTop: S[3] }}>{m.sub}</div>}
+      {m.lines?.length > 0 && <div style={{ marginTop: S[3], maxWidth: 520 }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone} />)}</div>}
     </Spotlight>
   );
 }
@@ -224,54 +228,54 @@ export default function Moment({ m, onClose }) {
   const t = m.team;
   const clr = t.clr || "#1e3a8a", ac = t.ac || "#f59e0b";
   const party = m.kind === "clinch";
-  const kicker = m.kind === "clinch" ? (m.level === "top" ? "NO. 1 SEED CLINCHED" : m.level === "div" ? "DIVISION CLINCHED" : "PLAYOFF BERTH CLINCHED")
-    : m.kind === "record" ? (m.nfl ? "NEW NFL RECORD" : "NEW FRANCHISE RECORD")
-    : m.kind === "signing" ? "SIGNING DAY" : m.kind === "trade" ? "BREAKING · BLOCKBUSTER TRADE" : m.kind === "legend" ? "A FRANCHISE LEGEND RETIRES" : `THE ${m.yr} SEASON`;
-  const title = m.kind === "clinch" ? (m.level === "top" ? `${KICKER.top} ${t.city.toUpperCase()}` : m.level === "div" ? `${t.c || ""} ${(t.d || "").toUpperCase()} CHAMPIONS`.trim() : `${t.name.toUpperCase()} ARE ${KICKER.berth}`)
-    : m.kind === "record" ? m.p.name.toUpperCase()
-    : m.kind === "signing" ? `WELCOME TO ${t.city.toUpperCase()}`
-    : m.kind === "legend" ? m.p.name.toUpperCase()
-    : m.kind === "trade" ? (m.got ? `${t.name.toUpperCase()} LAND ${m.p.name.split(" ").slice(-1)[0].toUpperCase()}` : `${m.p.name.split(" ").slice(-1)[0].toUpperCase()} TRADED`)
-    : `${t.city.toUpperCase()} ${t.name.toUpperCase()}`;
+  const kicker = m.kind === "clinch" ? (m.level === "top" ? "No. 1 seed clinched" : m.level === "div" ? "Division clinched" : "Playoff berth clinched")
+    : m.kind === "record" ? (m.nfl ? "New NFL record" : "New franchise record")
+    : m.kind === "signing" ? "Signing day" : m.kind === "trade" ? "Breaking · blockbuster trade" : m.kind === "legend" ? "A franchise legend retires" : `The ${m.yr} season`;
+  const title = m.kind === "clinch" ? (m.level === "top" ? `The road goes through ${t.city}` : m.level === "div" ? `${t.c || ""} ${t.d || ""} champions`.trim() : `The ${t.name} are playoff bound`)
+    : m.kind === "record" ? m.p.name
+    : m.kind === "signing" ? `Welcome to ${t.city}`
+    : m.kind === "legend" ? m.p.name
+    : m.kind === "trade" ? (m.got ? `The ${t.name} land ${m.p.name.split(" ").slice(-1)[0]}` : `${m.p.name.split(" ").slice(-1)[0]} traded`)
+    : `${t.city} ${t.name}`;
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2600, background: `radial-gradient(ellipse at 50% 20%, ${clr}cc, #030712f2 70%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <style>{CSS}</style>
       {party && <Confetti colors={[clr, ac, "#fde68a", "#ffffff"]} />}
-      <div role="dialog" aria-label={kicker} onClick={(e) => e.stopPropagation()} style={{ "--mm-glow": `${ac}55`, position: "relative", width: "min(660px, 100%)", maxHeight: "calc(var(--vh, 100vh) - 32px)", overflowY: "auto", background: `linear-gradient(160deg, ${clr}, #0b1220 62%)`, border: `2px solid ${ac}`, borderRadius: 18, padding: MOBILE ? "18px 16px" : "26px 30px", color: "#fff", animation: "mmIn .45s ease-out, mmPulse 2.8s 0.5s ease-in-out infinite", boxShadow: "0 30px 80px #000c" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <div role="dialog" aria-label={kicker} onClick={(e) => e.stopPropagation()} style={{ "--mm-glow": `${ac}55`, position: "relative", width: "min(660px, 100%)", maxHeight: "calc(var(--vh, 100vh) - 32px)", overflowY: "auto", background: `radial-gradient(120% 90% at 0% 0%, ${clr}, #0b1220 68%)`, borderRadius: 22, padding: MOBILE ? `${S[5]}px ${S[4]}px` : `${S[6]}px ${S[6]}px`, color: "#fff", animation: "mmIn .45s ease-out", boxShadow: "0 30px 80px #000c" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: S[4] }}>
           <TeamLogo t={t} sz={MOBILE ? 56 : 76} glow />
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 900, letterSpacing: 3, color: ac === "#ffffff" ? "#fde68a" : ac }}>{kicker}</div>
-            <div className="mm-title" style={{ fontSize: MOBILE ? 26 : 38, fontWeight: 900, fontStyle: "italic", lineHeight: 1.02, letterSpacing: 0.5 }}>{title}</div>
+            <div style={{ fontSize: T.sm, fontWeight: 800, color: ac === "#ffffff" ? "#fde68a" : ac }}>{kicker}</div>
+            <div className="mm-title" style={{ ...txt.title, fontSize: MOBILE ? T.xl : T.xxl, lineHeight: 1.05 }}>{title}</div>
           </div>
         </div>
-        {m.sub && <div style={{ fontSize: MOBILE ? 14 : 16, color: "#e2e8f0", marginTop: 12, lineHeight: 1.45 }}>{m.sub}</div>}
+        {m.sub && <div style={{ ...txt.body, marginTop: S[3] }}>{m.sub}</div>}
 
         {m.kind === "legend" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 16, background: "linear-gradient(135deg,#78350f66,#00000040)", border: "1px solid #f59e0b55", borderRadius: 12, padding: "14px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: S[4], marginTop: S[4], background: "#ffffff0d", borderRadius: 18, padding: `${S[4]}px ${S[4]}px` }}>
             <div style={{ borderRadius: "50%", padding: 3, background: "linear-gradient(135deg,#fde68a,#b45309)" }}><Face s={m.p.face} sz={MOBILE ? 72 : 96} /></div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Bdg pos={m.p.pos} /><span style={{ fontSize: 14, color: "#fde68a", fontWeight: 800 }}>Thank you, {m.p.name.split(" ").slice(-1)[0]}.</span></div>
-              <div style={{ fontSize: MOBILE ? 36 : 48, fontWeight: 900, lineHeight: 1, color: "#fde68a", marginTop: 4 }}>{m.p.peak || m.p.ovr}<span style={{ fontSize: 14, color: "#cbd5e1", marginLeft: 6 }}>peak OVR</span></div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Bdg pos={m.p.pos} /><span style={{ fontSize: T.sm, color: "#fde68a", fontWeight: 800 }}>Thank you, {m.p.name.split(" ").slice(-1)[0]}.</span></div>
+              <div style={{ fontSize: T.xxl, fontWeight: 900, lineHeight: 1, color: "#fde68a", marginTop: S[1] }}>{m.p.peak || m.p.ovr}<span style={{ fontSize: T.sm, color: "#cbd5e1", marginLeft: S[2] }}>peak OVR</span></div>
             </div>
           </div>
         )}
         {m.kind === "trade" && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 16, background: "#00000040", borderRadius: 12, padding: "14px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: S[4], marginTop: S[4], background: "#ffffff0d", borderRadius: 18, padding: `${S[4]}px ${S[4]}px` }}>
             <TeamLogo t={m.got ? m.other : t} sz={MOBILE ? 44 : 60} />
             <div style={{ textAlign: "center" }}>
               <Face s={m.p.face} sz={MOBILE ? 64 : 84} />
-              <div style={{ fontSize: MOBILE ? 16 : 19, fontWeight: 900, marginTop: 4 }}>{m.p.name}</div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}><Bdg pos={m.p.pos} /><span style={{ fontSize: 13, color: "#cbd5e1" }}>{m.p.ovr} OVR · age {m.p.age}</span></div>
+              <div style={{ fontSize: T.lg, fontWeight: 900, marginTop: S[1] }}>{m.p.name}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}><Bdg pos={m.p.pos} /><span style={{ fontSize: T.sm, color: "#cbd5e1" }}>{m.p.ovr} OVR · age {m.p.age}</span></div>
             </div>
             <span style={{ fontSize: 28, color: "#fde68a", fontWeight: 900 }}>→</span>
             <TeamLogo t={m.got ? t : m.other} sz={MOBILE ? 44 : 60} />
           </div>
         )}
-        {m.lines?.length > 0 && <div style={{ marginTop: 14 }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone} />)}</div>}
+        {m.lines?.length > 0 && <div style={{ marginTop: S[4] }}>{m.lines.map(([k, v, tone]) => <Line key={k} k={k} v={v} tone={tone} />)}</div>}
         {m.kind === "legend" && <CareerHaul haul={m.haul} />}
-        {m.note && <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 12, fontStyle: "italic" }}>{m.note}</div>}
-        <button onClick={onClose} style={{ marginTop: 18, width: "100%", background: ac, color: "#0b1220", border: 0, borderRadius: 10, padding: "12px 0", fontSize: 16, fontWeight: 900, letterSpacing: 1, cursor: "pointer" }}>{m.kind === "kickoff" ? "LET'S GO →" : "CONTINUE →"}</button>
+        {m.note && <div style={{ ...txt.muted, color: "#cbd5e1", marginTop: S[3], fontStyle: "italic" }}>{m.note}</div>}
+        <button onClick={onClose} style={{ ...CTA, marginTop: S[5], background: ac, color: ink(ac) }}>{m.kind === "kickoff" ? "Let's go →" : "Continue →"}</button>
       </div>
     </div>
   );

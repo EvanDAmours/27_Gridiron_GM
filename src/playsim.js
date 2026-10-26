@@ -480,12 +480,22 @@ function kickoff(g, ev, depth = 0) {
     else newPossession(g, 100 - spot);
     return;
   }
+  // Seconds left in the half: no touchback (that leaves a snap for a Hail Mary). The kicker drops a
+  // short, high kick in bounds and the coverage swarms it; the return takes the rest of the clock.
+  const runOut = !g.ot && (g.qtr === 2 || g.qtr === 4) && g.clock > 0 && g.clock <= 12 && !!R && !depth;
   newPossession(g, 35);
-  if (rand() < 0.3 || !R) return; // touchback
-  const r = R.krR ?? 80, catchAt = Math.round(rand() * 8);
-  let spot = 28.5 + (r - 85) * 0.25 - ((K?.stCov ?? 70) - 70) * 0.06 + gauss(rand) * 6;
-  if (rand() < 0.026 * Math.exp((r - 85) / 8)) spot += 20 + rand() * 65; // breaks one (a typical club's returner is about an 85)
-  spot = Math.round(clamp(spot, catchAt + 5, 100));
+  if (!runOut && (rand() < 0.3 || !R)) return; // touchback
+  const r = R.krR ?? 80, catchAt = runOut ? 18 + Math.round(rand() * 8) : Math.round(rand() * 8);
+  let spot = runOut ? catchAt + 4 + (r - 85) * 0.15 - ((K?.stCov ?? 70) - 70) * 0.08 + gauss(rand) * 3 : 28.5 + (r - 85) * 0.25 - ((K?.stCov ?? 70) - 70) * 0.06 + gauss(rand) * 6;
+  if (!runOut && rand() < 0.026 * Math.exp((r - 85) / 8)) spot += 20 + rand() * 65; // breaks one (a typical club's returner is about an 85)
+  spot = Math.round(clamp(spot, catchAt + 2, runOut ? 45 : 100));
+  if (runOut) {
+    if (ko) Object.assign(ko, { tb: false, kr: R.kr || null, catchAt, spot, squib: true });
+    const l = line(g, recv, R.kr); add(l, "kr", 1); add(l, "krYds", spot - catchAt);
+    g.yard = spot; g.toGo = 10;
+    if (ev) { ev.text += ` A short kick in bounds and the coverage swallows the return at the ${spot}.`; const n = tick(g, g.clock); ev.note = [ev.note, n].filter(Boolean).join(" "); }
+    return;
+  }
   const p = R.kr, l = line(g, recv, p);
   if (ko) Object.assign(ko, { tb: false, kr: p || null, catchAt, spot, td: spot >= 100 });
   add(l, "kr", 1);
@@ -510,7 +520,7 @@ function returnTD(g, ev, recv, p, l, ydsKey, tdKey, yds, what, depth) {
   add(kl, "xpA", 1);
   if (g.rand() < 0.955) { add(kl, "xpM", 1); add(kl, "pts", 1); pts++; }
   scored(g, recv, pts);
-  if (ev) { ev.text += ` 🔥 ${p?.name || "The returner"} takes the ${what} back ${yds} yards for a TOUCHDOWN!`; ev.retTD = recv; }
+  if (ev) { ev.text += ` ${p?.name || "The returner"} takes the ${what} back ${yds} yards for a TOUCHDOWN!`; ev.retTD = recv; }
   if (!g.done && depth < 3) kickoff(g, ev, depth + 1);
 }
 
@@ -626,11 +636,11 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   // Victory formation: ahead in the 4th with few enough seconds left that kneeling runs it out.
   // A defense that's out of reach (down more than two scores) doesn't bother with its timeouts.
   const defTO = lead <= 16 ? g.to?.[def] ?? 0 : 0, kneels = 4 - g.down;
-  if (!call && g.qtr === 4 && !g.ot && lead > 0 && g.down < 4 && g.clock <= 40 * Math.max(0, kneels - defTO) + 2 * kneels) {
+  if (call === "kneel" || !call && g.qtr === 4 && !g.ot && lead > 0 && g.down < 4 && g.clock <= 40 * Math.max(0, kneels - defTO) + 2 * kneels) {
     const ql = line(g, off, o.qb); add(ql, "rushAtt", 1); add(ql, "rushYds", -1); st.rushAtt++; st.rushYds -= 1;
     g.yard = Math.max(1, g.yard - 1); g.down++; g.toGo += 1;
     ev.type = "run"; ev.k = "kneel"; ev.kneel = true; ev.yards = -1; ev.player = o.qb; ev.qb = o.qb; ev.text = `${o.qb?.name || "The QB"} takes a knee.`;
-    if (defTO > 0 && g.clock > 2) { g.to[def]--; ev.text += ` Timeout, ${sideName(g, def)}.`; ev.note = tick(g, 2); }
+    if (defTO > 0 && g.clock > 2 && lead > 0 && g.qtr === 4) { g.to[def]--; ev.text += ` Timeout, ${sideName(g, def)}.`; ev.note = tick(g, 2); }
     else ev.note = tick(g, 40);
     return ev;
   }
@@ -692,22 +702,31 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const pp = o.p, pl = pp ? line(g, off, pp) : null;
     // Distance from his rating and leg (league average: a 77 punter with a 93 leg, ~46 yards).
     const acc = o.pAcc ?? 82;
-    const gross = Math.round(clamp(47 + ((o.pOvr ?? 77) - 77) * 0.3 + ((o.pPow ?? 93) - 93) * 0.15 + gauss(rand) * 7, 22, 72));
+    let gross = Math.round(clamp(47 + ((o.pOvr ?? 77) - 77) * 0.3 + ((o.pPow ?? 93) - 93) * 0.15 + gauss(rand) * 7, 22, 72));
+    // The punter's head: with a short field to work with (inside about 58 yards of the goal line)
+    // he doesn't bomb it into the end zone, he aims for the coffin corner and tries to pin them
+    // inside the 10. A good punter does it more often and drops it closer to the goal line.
+    const skill = ((o.pOvr ?? 77) - 77) * 0.02 + (acc - 82) * 0.015;
+    const toGoal = 100 - g.yard, aims = toGoal <= 58 && toGoal >= 30;
+    const pinned = aims ? rand() < clamp(0.5 + skill, 0.2, 0.9) : g.yard + gross >= 90 && rand() < 0.4 + (acc - 82) * 0.015;
+    if (pinned) gross = Math.min(gross, toGoal - clamp(Math.round(2 + rand() * 8 - skill * 6), 1, 12));
+    else if (aims && g.yard + gross > 100 && rand() < 0.5) gross = toGoal - 12 - Math.round(rand() * 8); // played it safe: fair caught around the 15
     const land = g.yard + gross;
     st.punts++;
     if (pl) { add(pl, "punts", 1); add(pl, "puntYds", Math.min(gross, 100 - g.yard)); }
     ev.type = "punt"; ev.turnover = false;
     ev.k = "punt"; ev.punter = pp; ev.gross = gross; ev.ret = 0; ev.pr = d.pr;
     ev.note = tick(g, 8);
-    // Near the goal line a good punter pins it inside the 10 instead of sailing it into the end zone.
-    const pinned = land >= 90 && rand() < 0.4 + (acc - 82) * 0.015;
-    if (land >= 100 && !pinned) {
-      ev.text = `Punt of ${100 - g.yard} yards into the end zone, touchback.`; ev.tb = true;
+    if (land >= 100) {
+      ev.text = `Punt of ${100 - g.yard} yards into the end zone, touchback.`; ev.tb = true; ev.gross = toGoal;
+      ev.land = Math.min(98, g.yard + Math.max(30, gross - 6));
       if (!g.done) newPossession(g, 20);
       return ev;
     }
-    const spot = pinned && land >= 100 ? 92 + Math.round(rand() * 6) : land; // where it's caught or downed
+    const spot = land; // where it's caught or downed: the ball never rolls past it
     ev.spot = spot;
+    // a pinned punt hits short and the coverage downs it where it stops
+    ev.land = pinned ? spot - 2 - Math.round(rand() * 4) : spot;
     let ret = 0;
     const r = d.prR ?? 80, p = d.pr, rl = line(g, def, p);
     // Hang time: a high punt gets the coverage there first (more fair catches, shorter returns).
@@ -732,8 +751,9 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       add(rl, "prYds", ret);
     }
     const recvYard = 100 - spot + ret;
+    if (pinned && !ret) ev.downed = true;
     if (pl && recvYard <= 20) add(pl, "in20", 1);
-    ev.text = ret >= 20 ? `Punt, ${gross} yards. ${p?.name || "The returner"} brings it back ${ret} yards!` : ret > 0 ? `Punt, ${gross} yards, returned ${ret}.` : `Punt, ${gross} yards${recvYard <= 10 ? `, downed at the ${recvYard}` : ", fair catch"}.`;
+    ev.text = ret >= 20 ? `Punt, ${gross} yards. ${p?.name || "The returner"} brings it back ${ret} yards!` : ret > 0 ? `Punt, ${gross} yards, returned ${ret}.` : `Punt, ${gross} yards${pinned || recvYard <= 10 ? `, downed at the ${recvYard}` : ", fair catch"}.`;
     if (!g.done) newPossession(g, recvYard);
     return ev;
   }
@@ -752,7 +772,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     if (!offF && yds >= g.toGo) { g.down = 1; g.toGo = Math.min(10, 100 - g.yard); } else g.toGo = Math.max(1, g.toGo - yds);
     ev.type = "penalty"; ev.yards = yds;
     ev.pen = { side: offF ? "off" : "def", kind, label: PEN_LABEL[kind], yds: 5, player: who, accepted: true, pre: true };
-    ev.text = `🚩 ${PEN_LABEL[kind]}${who ? `, ${who.name}` : ""}, ${offF ? "offense" : "defense"}. 5-yard penalty${!offF && g.down === 1 && ev.down !== 1 ? ", automatic first down" : ""}.`;
+    ev.text = `${PEN_LABEL[kind]}${who ? `, ${who.name}` : ""}, ${offF ? "offense" : "defense"}. 5-yard penalty${!offF && g.down === 1 && ev.down !== 1 ? ", automatic first down" : ""}.`;
     ev.note = tick(g, 3);
     return ev;
   }
@@ -968,7 +988,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const label = PEN_LABEL[kind];
     g.stats[side].penalties = (g.stats[side].penalties || 0) + (accepted ? 1 : 0);
     ev.pen = { side: offF ? "off" : "def", kind, label, yds: kind === "dpi" ? air : Y, player: who, accepted, tack, play: { yards, td: ev.td, type } };
-    const tag = `🚩 ${label}${who ? `, ${who.name}` : ""}, ${offF ? "offense" : "defense"}.`;
+    const tag = `${label}${who ? `, ${who.name}` : ""}, ${offF ? "offense" : "defense"}.`;
     if (!accepted) ev.text += ` ${tag} Declined.`;
     else if (Y === 15 && ev.td) { ev.pen.onKick = true; ev.text += ` ${tag} Enforced on the kickoff.`; g.stats[side].penYds = (g.stats[side].penYds || 0) + 15; if (who) add(line(g, side, who), "pen", 1); }
     else if (tack) { tackOn = Math.min(15, Math.max(0, 99 - (g.yard + yards))); ev.text += ` ${tag} 15 yards tacked on, automatic first down.`; g.stats[side].penYds = (g.stats[side].penYds || 0) + tackOn; if (who) add(line(g, side, who), "pen", 1); }
@@ -994,7 +1014,9 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     // Extra point (or the occasional two-point try).
     const kl = line(g, off, o.k);
     let pts = 6;
-    if (rand() < 0.05 * (o.hcAgg ?? 1) ** 2 || (g.qtr === 4 && g.clock < 300 && [-2, -10, 5, 1].includes(g.score[off] + 6 - g.score[def]))) {
+    // your own call when you have one (g.patCall: { h|a: "one" | "two" }), else the coach's
+    const mine = g.patCall?.[off];
+    if (mine === "two" || !mine && (rand() < 0.05 * (o.hcAgg ?? 1) ** 2 || (g.qtr === 4 && g.clock < 300 && [-2, -10, 5, 1].includes(g.score[off] + 6 - g.score[def])))) {
       const good = rand() < 0.48;
       if (good) { pts += 2; ev.text += " Two-point try is good."; } else ev.text += " Two-point try fails.";
       // the try, for the field to act it out: the same kind of play that scored, to the same man

@@ -30,6 +30,9 @@ import { aiDraftScore, devOf, rankClass, plantGems, plantBusts, gemGap, draftCol
 const INCENTIVES={QB:['4,000 pass yds','30 pass TD','Pro Bowl','12+ wins'],RB:['1,000 rush yds','10 rush TD','Pro Bowl'],WR:['1,000 rec yds','8 rec TD','80 catches'],TE:['700 rec yds','60 catches','6 rec TD'],
   OL:['Pro Bowl','All-Pro','17 starts'],DL:['10 sacks','8 sacks','Pro Bowl'],LB:['100 tackles','5 sacks','Pro Bowl'],CB:['5 INT','15 pass def','Pro Bowl'],S:['4 INT','90 tackles','Pro Bowl'],K:['30 FG made','90% on FGs'],P:['45.0 yd avg','Pro Bowl']};
 const INC_GROUP={LT:'OL',LG:'OL',C:'OL',RG:'OL',RT:'OL',OL:'OL',G:'OL',T:'OL',DL:'DL',DE:'DL',DT:'DL',LE:'DL',RE:'DL',EDGE:'DL',LB:'LB',MLB:'LB',OLB:'LB',ROLB:'LB',LOLB:'LB',MIKE:'LB',CB:'CB',S:'S',FS:'S',SS:'S'};
+// Game injuries as they happen in the NFL: [name, how common, fewest and most weeks out].
+const INJURIES=[["Ankle sprain",16,1,3],["Hamstring strain",16,1,4],["Knee sprain (MCL)",8,2,6],["Shoulder sprain",10,1,3],["Concussion",10,1,2],["Quad strain",6,1,2],["Calf strain",6,1,3],["Back spasms",6,1,2],["Groin strain",6,1,3],["High ankle sprain",6,3,6],["Broken hand",3,3,5],["Broken collarbone",2,6,8],["Torn ACL",1.5,30,30],["Torn Achilles",1,30,30],["Torn pectoral",1,30,30]];
+export function pickInjury(rand=Math.random){const tot=INJURIES.reduce((a,x)=>a+x[1],0);let r=rand()*tot;for(const [n,w,min,max] of INJURIES){if((r-=w)<0)return{n,min,max};}return{n:"Ankle sprain",min:1,max:3};}
 export const incentiveOptions=(pos)=>INCENTIVES[pos]||INCENTIVES[INC_GROUP[pos]]||['Pro Bowl','10+ wins'];
 // Older saves picked incentives from one list for everybody; show a fitting one instead.
 export const fitIncentive=(p)=>{const o=incentiveOptions(p.mpos==='EDGE'?'DL':p.pos);const th=p.bonus?.threshold;if(o.includes(th))return th;let h=0;for(const c of String(p.id))h=(h*31+c.charCodeAt(0))>>>0;return o[h%o.length];};
@@ -471,7 +474,7 @@ export function applyGame(t,snaps,lines,playoff=false){
     const gs={...(lines[p.id]||{})};delete gs.name;delete gs.pos;if(p.pos==="QB"&&gs.att)gs.rate=qbRate(gs.comp||0,gs.att,gs.passYds||0,gs.passTD||0,gs.passInt||0);
     const S=playoff?(p.pss=p.pss||{}):p.ss;S.gp=(S.gp||0)+1;if(!playoff)p.ss.snp=(p.ss.snp||0)+_sh;if(_sh>=50)S.gs=(S.gs||0)+1;/* the role he started at (role-shaped development) */const _rl=snaps.roles?.[p.id];if(_rl&&_sh>=20&&!playoff)p.ss.rl={...(p.ss.rl||{}),[_rl]:((p.ss.rl||{})[_rl]||0)+1};
     if(Object.keys(gs).length){addS(S,gs);if(p.pos==="QB"&&S.att>0)S.rate=qbRate(S.comp,S.att,S.passYds||0,S.passTD||0,S.passInt||0);if(!playoff){const _gl={...gs,gp:1};for(const k of GRADE_KEYS)delete _gl[k];p.gl.push(_gl);}/* the grades' sums stay on the season line, not in the game log */box[p.id]={...gs,name:p.name,pos:p.pos};}
-    const injMult=(p.fragile?1.5:1)*(p.traits?.includes('Injury Prone')?2.5:p.traits?.includes('Ironman')?0:1);if(INJ_ON&&Math.random()<.025*injMult*Math.max(.15,_sh/100)){p.injured=true;p.injCount=(p.injCount||0)+1;p.fragile=p.injCount>=2;const injCauses=['high-impact collision','awkward landing','non-contact','blocked low','tackled from behind','turf contact','pile-up'];p.injType=`${pick(["Hamstring","Ankle","Knee (MCL)","Shoulder","Concussion","Quad","Calf","Back"])} (${pick(injCauses)})`;const sevRoll=Math.random();if(sevRoll<0.25){/* questionable: he plays through it, at a reduced rating */p.injured=false;p.injCount--;p.fragile=p.injCount>=2;p.hurt={wks:R(1,2),pen:R(3,7),type:p.injType.replace(/ \(.*\)$/,"")};p.hurtNew=true;p.injType="";return;}if(sevRoll<0.45){p.injSev="minor";p.injRecWks=R(1,2);}else if(sevRoll<0.8){p.injSev="moderate";p.injRecWks=R(3,5);}else{p.injSev="major";p.injRecWks=R(6,8);}p.injWk=p.injRecWks;p.injNew=true;}
+    const injMult=(p.fragile?1.5:1)*(p.traits?.includes('Injury Prone')?2.5:p.traits?.includes('Ironman')?0:1);if(INJ_ON&&Math.random()<.025*injMult*Math.max(.15,_sh/100)){p.injured=true;p.injCount=(p.injCount||0)+1;p.fragile=p.injCount>=2;/* a real injury with its own usual recovery (weeks); only the rare tears end a season */const _it=pickInjury();p.injType=_it.n;const sevRoll=Math.random();if(sevRoll<0.25&&_it.max<=4){/* questionable: he plays through it, at a reduced rating */p.injured=false;p.injCount--;p.fragile=p.injCount>=2;p.hurt={wks:R(1,2),pen:R(3,7),type:p.injType};p.hurtNew=true;p.injType="";return;}p.injRecWks=R(_it.min,_it.max);p.injSev=p.injRecWks<=2?"minor":p.injRecWks<=5?"moderate":"major";p.injWk=p.injRecWks;p.injNew=true;}
   });
   return box;
 }
@@ -544,7 +547,8 @@ export const sL=k=>({passYds:"PYDS",passTD:"PTD",passInt:"INT",comp:"CMP",att:"A
 
 // Milliseconds per AI pick, by speed setting: first-round picks take longer, like on TV.
 // Live game: milliseconds between plays.
-export const LIVE_SPEEDS={Slow:2200,Normal:1100,Fast:600};
+// Condensed: routine plays flash by and only the key plays (acted out on the field) take time
+export const LIVE_SPEEDS={Slow:2200,Normal:1100,Fast:600,Condensed:150};
 export const DRAFT_SPEEDS=["Slow","Normal","Fast"];
 // The draft clock: every pick gets two minutes and AI clubs use 45-75 seconds of it. Round 1 always
 // runs in real time, whatever the speed (time to work the phones for a top pick; "Sim this pick"

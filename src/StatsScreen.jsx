@@ -69,14 +69,14 @@ function AwardRaces({ teams, ui, yr, onPlayer, mobile }) {
           <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 6 }}>{l}</div>
           {r[k].length ? r[k].map((e, i) => (
             <div key={e.pid} onClick={() => { const p = find(e); if (p) onPlayer(p); }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderTop: i ? "1px solid #ffffff10" : "none", cursor: "pointer" }}>
-              <span style={{ width: 16, fontSize: 13, fontWeight: 900, color: i ? C.mt : "#fcd34d" }}>{i + 1}</span>
+              <span style={{ width: 16, fontSize: 14, fontWeight: 900, color: i ? C.mt : "#fcd34d" }}>{i + 1}</span>
               <TeamLogo t={teams[e.ti]} sz={20} />
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 14.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: e.ti === ui ? "#86efac" : "#e2e8f0" }}>{e.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>{posTag(e)}</span></div>
-                <div style={{ fontSize: 12.5, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.stat}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: e.ti === ui ? "#86efac" : "#e2e8f0" }}>{e.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>{posTag(e)}</span></div>
+                <div style={{ fontSize: 12, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.stat}</div>
               </div>
             </div>
-          )) : <div style={{ fontSize: 13, color: C.mt }}>No games yet.</div>}
+          )) : <div style={{ fontSize: 14, color: C.mt }}>No games yet.</div>}
         </div>
       ))}
     </div>
@@ -112,7 +112,7 @@ function PersonnelStats({ team, teams, mobile }) {
   };
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: 13, color: C.mt, marginBottom: 6 }}>Personnel this season: the club's numbers, then the league's (after the slash). Success: a snap that gains 40% of the yards needed on first down, 60% on second, all of them on third and fourth.</div>
+      <div style={{ fontSize: 14, color: C.mt, marginBottom: 6 }}>Personnel this season: the club's numbers, then the league's (after the slash). Success: a snap that gains 40% of the yards needed on first down, 60% on second, all of them on third and fourth.</div>
       <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit,minmax(${mobile ? 280 : 360}px,1fr))`, gap: 8 }}>
         <Table side="off" title="Offense by grouping" keys={["11", "12", "21", "13", "10"]} name={PERS_NAME} good />
         <Table side="def" title="Defense by package (allowed)" keys={["base", "nickel", "dime"]} name={{}} good={false} />
@@ -164,7 +164,7 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
             <TeamLogo t={team} sz={40} glow />
-            <div><div style={{ fontSize: 20, fontWeight: 900 }}>{team.city} {team.name}</div><div style={{ fontSize: 13, color: C.mt }}>Leader at every position · {team.w}-{team.l}{team.t ? `-${team.t}` : ""}</div></div>
+            <div><div style={{ fontSize: 20, fontWeight: 900 }}>{team.city} {team.name}</div><div style={{ fontSize: 14, color: C.mt }}>Leader at every position · {team.w}-{team.l}{team.t ? `-${team.t}` : ""}</div></div>
           </div>
           <PersonnelStats team={team} teams={teams} mobile={mobile} />
           <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill,minmax(${mobile ? 260 : 300}px,1fr))`, gap: 8, marginBottom: 16 }}>
@@ -176,8 +176,8 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
                   {best ? <>
                     <Face s={best.p.face} sz={30} />
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontWeight: 800, fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{best.p.name}{grade && teamId === ui && <span style={{ marginLeft: 6, fontSize: 13, fontWeight: 900, color: GRADE_C[grade(best.p)] || C.mt }}>{grade(best.p)}</span>}</div>
-                      <div style={{ fontSize: 13, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{line(best.p.ss)}</div>
+                      <div style={{ fontWeight: 800, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{best.p.name}{grade && teamId === ui && <span style={{ marginLeft: 6, fontSize: 14, fontWeight: 900, color: GRADE_C[grade(best.p)] || C.mt }}>{grade(best.p)}</span>}</div>
+                      <div style={{ fontSize: 14, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{line(best.p.ss)}</div>
                     </div>
                   </> : <span style={{ color: C.mt, fontSize: 14 }}>No stats yet</span>}
                 </div>
@@ -191,8 +191,8 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
             const top = players.filter((x) => ok(x.p) && val(x.p.ss) > 0).sort((a, b) => val(b.p.ss) - val(a.p.ss)).slice(0, 3);
             return (
               <div key={title} style={{ background: "#ffffff0d", borderRadius: 18, padding: "14px 16px" }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#94a3b8", marginBottom: 8 }}>{title}</div>
-                {!top.length && <div style={{ fontSize: 13, color: C.mt }}>No stats yet</div>}
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#94a3b8", marginBottom: 8 }}>{title}</div>
+                {!top.length && <div style={{ fontSize: 14, color: C.mt }}>No stats yet</div>}
                 {top.map((x, i) => (
                   <div key={x.p.id} onClick={() => onPlayer(x.p)} style={{ display: "grid", gridTemplateColumns: i ? "18px 1fr auto" : "18px 30px 1fr auto", alignItems: "center", gap: 8, padding: i ? "5px 0" : "2px 0 8px", borderTop: i ? "1px solid #ffffff10" : "none", cursor: "pointer" }}>
                     <span style={{ fontSize: 12, color: C.mt, fontWeight: 800 }}>{i + 1}</span>
@@ -201,7 +201,7 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
                       <div style={{ fontSize: i ? 14 : 16, fontWeight: i ? 600 : 900, color: i ? "#cbd5e1" : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.p.name}</div>
                       <div style={{ fontSize: 11, color: x.ti === ui ? C.gn : C.mt, fontWeight: 700 }}>{x.t.ab} · {x.p.pos}</div>
                     </div>
-                    <span style={{ fontSize: i ? 15 : 20, fontWeight: 900, color: i ? "#cbd5e1" : "#fff" }}>{n(val(x.p.ss))}<span style={{ fontSize: 11, color: C.mt, fontWeight: 700, marginLeft: 3 }}>{unit}</span></span>
+                    <span style={{ fontSize: i ? 14 : 20, fontWeight: 900, color: i ? "#cbd5e1" : "#fff" }}>{n(val(x.p.ss))}<span style={{ fontSize: 11, color: C.mt, fontWeight: 700, marginLeft: 3 }}>{unit}</span></span>
                   </div>
                 ))}
               </div>
@@ -215,8 +215,8 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
         {Object.keys(TABLES).map((k) => <button key={k} onClick={() => { setCat(k); setSort(null); }} style={{ ...pill(cat === k), flex: "0 0 auto", whiteSpace: "nowrap" }}>{k}</button>)}
       </div>
       {cat === "Grades" && <div style={{ display: "flex", gap: 5, flexWrap: mobile ? "nowrap" : "wrap", overflowX: mobile ? "auto" : undefined, alignItems: "center", marginBottom: 8 }}>
-        {["All", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((k) => <button key={k} onClick={() => setGpos(k)} style={{ ...pill(gpos === k), padding: "4px 11px", fontSize: 13, flex: "0 0 auto" }}>{k}</button>)}
-        {!mobile && <span style={{ fontSize: 12.5, color: C.mt, marginLeft: 6 }}>Graded play by play against an average player in the same spot: how well he played, not how good his team is. 90+ elite · 80s high quality · 70s above average · 60s average.</span>}
+        {["All", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((k) => <button key={k} onClick={() => setGpos(k)} style={{ ...pill(gpos === k), padding: "4px 11px", fontSize: 14, flex: "0 0 auto" }}>{k}</button>)}
+        {!mobile && <span style={{ fontSize: 12, color: C.mt, marginLeft: 6 }}>Graded play by play against an average player in the same spot: how well he played, not how good his team is. 90+ elite · 80s high quality · 70s above average · 60s average.</span>}
       </div>}
       <div style={{ overflowX: "auto", background: "#ffffff0d", borderRadius: 18, padding: "4px 8px" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -256,8 +256,8 @@ function PhoneStats({ teams, ui, yr, me, scope, setScope, cat, setCat, sort, set
   const line = (i, onClick, face, name, sub, big, unit, you) => (
     <button key={i} onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 52, background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: 0, color: "#fff", cursor: "pointer", textAlign: "left" }}>
       {face}
-      <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: you ? C.gn : "#f1f5f9" }}>{name}</span><span style={{ display: "block", fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</span></span>
-      <span style={{ textAlign: "right" }}><b style={{ display: "block", fontSize: 19, fontVariantNumeric: "tabular-nums" }}>{big}</b>{unit && <span style={{ fontSize: 10, fontWeight: 800, color: C.mt }}>{unit}</span>}</span>
+      <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: you ? C.gn : "#f1f5f9" }}>{name}</span><span style={{ display: "block", fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</span></span>
+      <span style={{ textAlign: "right" }}><b style={{ display: "block", fontSize: 20, fontVariantNumeric: "tabular-nums" }}>{big}</b>{unit && <span style={{ fontSize: 10, fontWeight: 800, color: C.mt }}>{unit}</span>}</span>
     </button>
   );
   const scopes = [["league", "League"], ["AFC", "AFC"], ["NFC", "NFC"], ["div", `${me.c} ${me.d}`], [`team:${ui}`, me.name], ["races", "Award races"]];
@@ -281,7 +281,7 @@ function PhoneStats({ teams, ui, yr, me, scope, setScope, cat, setCat, sort, set
               {POS_LEAD.map(([pos, val, ln], i) => { const best = players.filter((x) => x.p.pos === pos && val(x.p.ss) > 0).sort((a, b) => val(b.p.ss) - val(a.p.ss))[0]; return (
                 <div key={pos} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 56, borderTop: i ? "1px solid #ffffff10" : 0, cursor: best ? "pointer" : "default" }} onClick={() => best && onPlayer(best.p)}>
                   <span style={{ width: 34, flexShrink: 0 }}><Bdg pos={pos} /></span>
-                  {best ? <><Face s={best.p.face} sz={34} /><span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{best.p.name}</span><span style={{ display: "block", fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ln(best.p.ss)}</span></span></> : <span style={{ color: C.mt, fontSize: 14 }}>No stats yet</span>}
+                  {best ? <><Face s={best.p.face} sz={34} /><span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{best.p.name}</span><span style={{ display: "block", fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ln(best.p.ss)}</span></span></> : <span style={{ color: C.mt, fontSize: 14 }}>No stats yet</span>}
                 </div>
               ); })}
             </div>
@@ -302,12 +302,12 @@ function PhoneStats({ teams, ui, yr, me, scope, setScope, cat, setCat, sort, set
           <div style={{ ...soft, marginTop: 10 }}>
             {rows.map((x, i) => { const rest = cols.filter((c) => c[0] !== col[0]).slice(0, 4).map(([l, f]) => `${l} ${n(f(x.p.ss, x.p))}`).join(" · "); const v = col[1](x.p.ss, x.p); return (
               <button key={x.p.id} onClick={() => onPlayer(x.p)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 58, background: x.ti === ui ? "#22c55e10" : "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "6px 0", color: "#fff", cursor: "pointer", textAlign: "left" }}>
-                <span style={{ width: 22, fontSize: 13, fontWeight: 800, color: C.mt }}>{i + 1}</span>
-                <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: x.ti === ui ? C.gn : "#f1f5f9" }}>{x.p.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>{x.t.ab} · {x.p.pos}</span></span><span style={{ display: "block", fontSize: 12, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 2 }}>{rest}</span></span>
-                <span style={{ textAlign: "right" }}><b style={{ display: "block", fontSize: 19, fontVariantNumeric: "tabular-nums", color: typeof v === "number" && (col[0] === "GRADE" || cat === "Grades") ? gradeColor(v) : "#fff" }}>{n(v)}</b><span style={{ fontSize: 10, fontWeight: 800, color: C.mt }}>{col[0]}</span></span>
+                <span style={{ width: 22, fontSize: 14, fontWeight: 800, color: C.mt }}>{i + 1}</span>
+                <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: x.ti === ui ? C.gn : "#f1f5f9" }}>{x.p.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>{x.t.ab} · {x.p.pos}</span></span><span style={{ display: "block", fontSize: 12, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 2 }}>{rest}</span></span>
+                <span style={{ textAlign: "right" }}><b style={{ display: "block", fontSize: 20, fontVariantNumeric: "tabular-nums", color: typeof v === "number" && (col[0] === "GRADE" || cat === "Grades") ? gradeColor(v) : "#fff" }}>{n(v)}</b><span style={{ fontSize: 10, fontWeight: 800, color: C.mt }}>{col[0]}</span></span>
               </button>
             ); })}
-            {!rows.length && <div style={{ padding: "18px 0", color: C.mt, fontSize: 15 }}>No {cat.toLowerCase()} stats yet.</div>}
+            {!rows.length && <div style={{ padding: "18px 0", color: C.mt, fontSize: 14 }}>No {cat.toLowerCase()} stats yet.</div>}
           </div>
         </Section>
       </>)}

@@ -47,3 +47,9 @@ test("a contract far above market costs value; a rookie deal adds it", () => {
   // and it's never part of the saved value (that would change on a reload)
   assert.equal(playerValue({ ...base, salary: 40 }), playerValue({ ...base, salary: 3 }));
 });
+
+import { contractMult as cm } from "../src/trade.js";
+test("contract value: a depth player near the minimum isn't priced like an albatross; an old star on a big deal is", () => {
+  assert.ok(cm({ pos: "DL", ovr: 66, age: 24, salary: 2.3, contract: 3 }) > 0.85);
+  assert.ok(cm({ pos: "LT", ovr: 88, age: 34, salary: 30, contract: 4 }) < 0.8);
+});

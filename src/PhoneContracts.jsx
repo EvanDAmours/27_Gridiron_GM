@@ -24,12 +24,12 @@ export default function PhoneContracts({ shown, filters, filter, setFilter, sort
             <span style={{ width: 42, flexShrink: 0 }}><Bdg pos={posTag(p)} /></span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: "block", fontWeight: 800, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#f1f5f9" }}>{p.name}{p.holdout && <span style={{ color: "#f59e0b", fontSize: 12, marginLeft: 6 }}>holdout</span>}</span>
-              <span style={{ display: "block", fontSize: 13, color: "#94a3b8", marginTop: 2 }}><b style={{ color: C.gd }}>{$(p.salary)}</b> · <span style={{ color: yl <= 1 ? "#f59e0b" : "#94a3b8" }}>{yl} yr{yl === 1 ? "" : "s"} left</span>{canExt(p) ? <span style={{ color: "#c4b5fd" }}> · can extend</span> : rp ? <span style={{ color: "#7dd3fc" }}> · can restructure</span> : ""}</span>
+              <span style={{ display: "block", fontSize: 14, color: "#94a3b8", marginTop: 2 }}><b style={{ color: C.gd }}>{$(p.salary)}</b> · <span style={{ color: yl <= 1 ? "#f59e0b" : "#94a3b8" }}>{yl} yr{yl === 1 ? "" : "s"} left</span>{canExt(p) ? <span style={{ color: "#c4b5fd" }}> · can extend</span> : rp ? <span style={{ color: "#7dd3fc" }}> · can restructure</span> : ""}</span>
             </span>
-            <b style={{ fontSize: 22, color: oC(p.ovr) }}>{p.ovr}</b>
+            <b style={{ fontSize: 20, color: oC(p.ovr) }}>{p.ovr}</b>
           </button>
         ))}
-        {!shown.length && <div style={{ padding: "18px 0", color: C.mt, fontSize: 15 }}>Nobody fits that filter.</div>}
+        {!shown.length && <div style={{ padding: "18px 0", color: C.mt, fontSize: 14 }}>Nobody fits that filter.</div>}
       </div>
       {sortOpen && <Sheet title="Sort" onClose={() => setSortOpen(false)}>{SORTS.map(([k, l], i) => <Row key={k} first={i === 0} label={l} value={sort === k ? "✓" : ""} tone={C.gn} onClick={() => { setSort(k); setSortOpen(false); }} />)}<div style={{ height: 8 }} /></Sheet>}
       {r && (
@@ -37,16 +37,16 @@ export default function PhoneContracts({ shown, filters, filter, setFilter, sort
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12, paddingRight: 40 }}>
             <Face s={r.p.face} sz={60} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.15 }}>{r.p.name}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.15 }}>{r.p.name}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}><Bdg pos={posTag(r.p)} /><span style={{ fontSize: 14, color: "#94a3b8" }}>Age {r.p.age}</span></div>
             </div>
-            <b style={{ fontSize: 36, color: oC(r.p.ovr) }}>{r.p.ovr}</b>
+            <b style={{ fontSize: 40, color: oC(r.p.ovr) }}>{r.p.ovr}</b>
           </div>
           {[["Cap hit", $(r.p.salary), C.gd], ["Years left", `${r.yl}`, r.yl <= 1 ? "#f59e0b" : "#fff"], ["Bonus a year", $(r.pr), "#fff"], ["Dead money if cut", $(r.dm.total), r.dm.total ? C.rd : C.mt], ...(r.p.ext ? [["Extension", `${$(r.p.ext.sal)} × ${r.p.ext.yrs} from ${yr + r.p.contract}`, "#c4b5fd"]] : [])].map(([l, v, c]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", minHeight: 44, borderTop: "1px solid #ffffff14", fontSize: 16 }}><span style={{ color: "#94a3b8" }}>{l}</span><b style={{ marginLeft: "auto", color: c }}>{v}</b></div>
           ))}
-          {holdout(r.p) ? <button onClick={() => { onExtend(r.p); setPick(null); }} style={{ width: "100%", minHeight: 52, marginTop: 12, borderRadius: 14, border: 0, background: "#78350f", color: "#fcd34d", fontSize: 17, fontWeight: 900, cursor: "pointer" }}>Talk to his agent</button>
-            : canExt(r.p) && <button onClick={() => { onExtend(r.p); setPick(null); }} style={{ width: "100%", minHeight: 52, marginTop: 12, borderRadius: 14, border: 0, background: "#7c3aed", color: "#fff", fontSize: 17, fontWeight: 900, cursor: "pointer" }}>Extend his deal</button>}
+          {holdout(r.p) ? <button onClick={() => { onExtend(r.p); setPick(null); }} style={{ width: "100%", minHeight: 52, marginTop: 12, borderRadius: 14, border: 0, background: "#78350f", color: "#fcd34d", fontSize: 16, fontWeight: 900, cursor: "pointer" }}>Talk to his agent</button>
+            : canExt(r.p) && <button onClick={() => { onExtend(r.p); setPick(null); }} style={{ width: "100%", minHeight: 52, marginTop: 12, borderRadius: 14, border: 0, background: "#7c3aed", color: "#fff", fontSize: 16, fontWeight: 900, cursor: "pointer" }}>Extend his deal</button>}
           {r.rp && <button onClick={() => { onRestructure(r.p); setPick(null); }} style={{ width: "100%", minHeight: 50, marginTop: 8, borderRadius: 14, border: 0, background: "#0c4a6e", color: "#bae6fd", fontSize: 16, fontWeight: 900, cursor: "pointer" }}>Restructure · frees {$(r.rp.saved)}</button>}
           <button onClick={() => { setSel(r.p); setPick(null); }} style={{ width: "100%", minHeight: 48, marginTop: 8, borderRadius: 14, border: 0, background: "transparent", color: "#7dd3fc", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>Player card</button>
           <div style={{ height: 8 }} />

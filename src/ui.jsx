@@ -10,6 +10,22 @@ export const sheetWrap=(m)=>m?{alignItems:"flex-end",justifyContent:"stretch",pa
 export const sheetBox=(m)=>m?{width:"100%",maxWidth:"none",borderRadius:"18px 18px 0 0",maxHeight:"92vh",paddingBottom:"calc(16px + env(safe-area-inset-bottom))",animation:"sheetUp .22s ease-out",borderBottom:0}:{};
 export function SheetGrip({onClose}){const st=React.useRef(null);return<div onTouchStart={e=>{st.current=e.touches[0].clientY;}} onTouchEnd={e=>{const y=e.changedTouches[0].clientY;if(st.current!=null&&y-st.current>70)onClose();st.current=null;}} style={{display:"flex",justifyContent:"center",padding:"2px 0 10px",margin:"-6px 0 0",touchAction:"none"}} aria-hidden="true"><span style={{width:44,height:5,borderRadius:3,background:"#ffffff40"}}/></div>;}
 export const CloseX=({onClick,label="Close",style:st})=><button onClick={onClick} aria-label={label} title={label} style={{position:"absolute",top:10,right:10,zIndex:5,width:36,height:36,borderRadius:18,background:"#000a",color:"#fff",border:"1px solid #ffffff33",fontSize:18,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",...(st||{})}}>✕</button>;
+// The type and spacing scale every screen draws from. Sizes: T.xs 12 (captions, tags), T.sm 14
+// (secondary text, table cells), T.md 16 (body, rows), T.lg 20 (section titles), T.xl 28 (screen
+// titles, big numbers), T.xxl 40 (hero numbers). Space: S[1] 4 … S[6] 32. A size off the scale is a
+// bug unless it's a badge's own small print.
+export const T = { xs: 12, sm: 14, md: 16, lg: 20, xl: 28, xxl: 40 };
+export const S = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 24, 6: 32 };
+export const txt = {
+  title: { fontSize: T.xl, fontWeight: 900, lineHeight: 1.1, letterSpacing: -0.4, color: "#fff" },
+  section: { fontSize: T.lg, fontWeight: 900, lineHeight: 1.2, color: "#fff" },
+  body: { fontSize: T.md, lineHeight: 1.5, color: "#e2e8f0" },
+  muted: { fontSize: T.sm, lineHeight: 1.5, color: "#94a3b8" },
+  caption: { fontSize: T.xs, fontWeight: 700, color: "#94a3b8" },
+};
+// The calm card every screen uses: a faint fill, round corners, no border.
+export const soft = { background: "#ffffff0d", borderRadius: 18, padding: `${S[3]}px ${S[4]}px` };
+
 // Phone primitives (mobile redo). Sheet: a bottom sheet over everything, tap outside or drag the
 // grip down to close. Row: one line, label left, a short value right, tap for more. Segments: a
 // pill switch between a few views.
@@ -22,15 +38,15 @@ export function Sheet({ title, onClose, children, wide, z = 450 }) {
   // the ✕ is always in reach.
   return createPortal(
     <div className="keep-dark" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: z, background: "#000000a6", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", display: "flex", fontFamily: C.f, ...(phone ? sheetWrap(true) : { alignItems: "center", justifyContent: "center", padding: 24 }) }}>
-      <div role="dialog" aria-label={title} className="gm-sheet" onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: "#0d1424", border: phone ? `1px solid ${C.bd}` : 0, color: C.tx, padding: phone ? "14px 0 0" : "18px 6px 0", display: "flex", flexDirection: "column", overflow: "hidden", ...(phone ? { ...sheetBox(true), maxHeight: undefined } : { width: wide ? 820 : 560, maxWidth: "100%", maxHeight: "86vh", borderRadius: 22, boxShadow: "0 30px 80px #000c" }) }}>
-        <div style={{ flexShrink: 0, padding: "0 14px" }}>
+      <div role="dialog" aria-label={title} className="gm-sheet" onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: "#0d1424", border: phone ? `1px solid ${C.bd}` : 0, color: C.tx, padding: phone ? `${S[4]}px 0 0` : `${S[4]}px ${S[1]}px 0`, display: "flex", flexDirection: "column", overflow: "hidden", ...(phone ? { ...sheetBox(true), maxHeight: undefined } : { width: wide ? 820 : 560, maxWidth: "100%", maxHeight: "86vh", borderRadius: 22, boxShadow: "0 30px 80px #000c" }) }}>
+        <div style={{ flexShrink: 0, padding: `0 ${S[4]}px` }}>
           {phone && onClose && <SheetGrip onClose={onClose} />}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 44, marginBottom: 8 }}>
-            <div style={{ flex: 1, minWidth: 0, fontSize: 20, fontWeight: 900, padding: "0 2px" }}>{title}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: S[3], minHeight: 44, marginBottom: S[2] }}>
+            <div style={{ flex: 1, minWidth: 0, ...txt.section, padding: "0 2px" }}>{title}</div>
             {onClose && <CloseX onClick={onClose} style={{ position: "static", width: 40, height: 40, borderRadius: 20, flexShrink: 0 }} />}
           </div>
         </div>
-        <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", padding: phone ? "0 14px" : "0 14px 16px" }}>{children}</div>
+        <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", padding: phone ? `0 ${S[4]}px` : `0 ${S[4]}px ${S[4]}px` }}>{children}</div>
       </div>
     </div>,
     document.body
@@ -41,9 +57,9 @@ export function Sheet({ title, onClose, children, wide, z = 450 }) {
 export function Dialog({ title, sub, onClose, children, actions, wide, z = 2000 }) {
   return (
     <Sheet title={title} onClose={onClose} wide={wide} z={z}>
-      {sub && <div style={{ fontSize: 15, color: "#94a3b8", lineHeight: 1.5, margin: "-4px 2px 12px" }}>{sub}</div>}
+      {sub && <div style={{ ...txt.muted, fontSize: T.md, margin: `-${S[1]}px 2px ${S[3]}px` }}>{sub}</div>}
       {children}
-      {actions && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16, paddingBottom: 4 }}>{actions}</div>}
+      {actions && <div style={{ display: "flex", gap: S[2], flexWrap: "wrap", marginTop: S[4], paddingBottom: S[1] }}>{actions}</div>}
     </Sheet>
   );
 }
@@ -51,24 +67,24 @@ export function Dialog({ title, sub, onClose, children, actions, wide, z = 2000 
 const DB_TONE = { primary: ["#16a34a", "#fff"], danger: ["#7f1d1d", "#fecaca"], gold: ["#eab308", "#111"], quiet: ["#ffffff14", "#e2e8f0"] };
 export function DBtn({ kind = "quiet", onClick, disabled, children, title, grow = true, style }) {
   const [bg, c] = DB_TONE[kind] || DB_TONE.quiet;
-  return <button onClick={onClick} disabled={disabled} title={title} style={{ flex: grow ? "1 1 160px" : "0 0 auto", minHeight: 48, padding: "0 18px", borderRadius: 14, border: 0, background: bg, color: c, fontSize: 15, fontWeight: 800, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1, ...(style || {}) }}>{children}</button>;
+  return <button onClick={onClick} disabled={disabled} title={title} style={{ flex: grow ? "1 1 160px" : "0 0 auto", minHeight: 48, padding: "0 18px", borderRadius: 14, border: 0, background: bg, color: c, fontSize: T.md, fontWeight: 800, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1, ...(style || {}) }}>{children}</button>;
 }
 // A soft panel and a quiet label inside a dialog.
-export const softBox = { background: "#ffffff0d", borderRadius: 14, padding: "12px 14px" };
+export const softBox = { background: "#ffffff0d", borderRadius: 14, padding: `${S[3]}px ${S[4]}px` };
 
 export function Row({ label, value, tone, onClick, first, tour }) {
   return (
-    <button onClick={onClick} data-tour={tour} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 52, textAlign: "left", background: "transparent", border: 0, borderTop: first ? 0 : "1px solid #ffffff14", padding: "0 4px", color: "#fff", cursor: "pointer" }}>
-      <span style={{ fontSize: 16, fontWeight: 700, flexShrink: 0 }}>{label}</span>
-      <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: tone || "#94a3b8", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{value}</span>
-      <span style={{ fontSize: 20, color: "#64748b", lineHeight: 1 }}>›</span>
+    <button onClick={onClick} data-tour={tour} style={{ display: "flex", alignItems: "center", gap: S[3], width: "100%", minHeight: 52, textAlign: "left", background: "transparent", border: 0, borderTop: first ? 0 : "1px solid #ffffff14", padding: "0 4px", color: "#fff", cursor: "pointer" }}>
+      <span style={{ fontSize: T.md, fontWeight: 700, flexShrink: 0 }}>{label}</span>
+      <span style={{ flex: 1, minWidth: 0, fontSize: T.sm, color: tone || "#94a3b8", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{value}</span>
+      <span style={{ fontSize: T.lg, color: "#64748b", lineHeight: 1 }}>›</span>
     </button>
   );
 }
 export function Segments({ items, value, onChange }) {
   return (
-    <div role="tablist" style={{ display: "flex", gap: 4, padding: 3, borderRadius: 10, background: "#ffffff0f", marginBottom: 12 }}>
-      {items.map(([k, l]) => <button key={k} role="tab" aria-selected={value === k} onClick={() => onChange(k)} style={{ flex: 1, minHeight: 38, borderRadius: 8, border: 0, background: value === k ? "linear-gradient(180deg, #ffffff2b, #ffffff1a)" : "transparent", boxShadow: value === k ? "0 1px 3px #0007, inset 0 1px 0 #ffffff1f" : "none", color: value === k ? "#fff" : "#94a3b8", fontSize: 15, fontWeight: 800, cursor: "pointer", transition: "background .18s, color .18s" }}>{l}</button>)}
+    <div role="tablist" style={{ display: "flex", gap: 4, padding: 3, borderRadius: 10, background: "#ffffff0f", marginBottom: S[3] }}>
+      {items.map(([k, l]) => <button key={k} role="tab" aria-selected={value === k} onClick={() => onChange(k)} style={{ flex: 1, minHeight: 38, borderRadius: 8, border: 0, background: value === k ? "linear-gradient(180deg, #ffffff2b, #ffffff1a)" : "transparent", boxShadow: value === k ? "0 1px 3px #0007, inset 0 1px 0 #ffffff1f" : "none", color: value === k ? "#fff" : "#94a3b8", fontSize: T.sm, fontWeight: 800, cursor: "pointer", transition: "background .18s, color .18s" }}>{l}</button>)}
     </div>
   );
 }
@@ -77,14 +93,14 @@ export function Segments({ items, value, onChange }) {
 // anything below (a button). Section: a title with an optional link on the right.
 export function Hero({ clr = "#1e3a8a", eyebrow, title, sub, right, children, compact, logo }) {
   return (
-    <div className="keep-dark" style={{ position: "relative", overflow: "hidden", margin: "-6px -8px 0", padding: compact ? "14px 16px 12px" : "22px 16px 20px", color: "#fff", background: `linear-gradient(180deg, transparent 45%, ${C.bg} 100%), radial-gradient(120% 100% at 0% 0%, ${clr}cc, ${clr}22 70%)` }}>
+    <div className="keep-dark" style={{ position: "relative", overflow: "hidden", margin: "-6px -8px 0", padding: compact ? `${S[4]}px ${S[4]}px ${S[3]}px` : `${S[5]}px ${S[4]}px ${S[5]}px`, color: "#fff", background: `linear-gradient(180deg, transparent 45%, ${C.bg} 100%), radial-gradient(120% 100% at 0% 0%, ${clr}cc, ${clr}22 70%)` }}>
       {/* the club's mark, big and faint behind the headline */}
       {logo && <span aria-hidden="true" style={{ position: "absolute", right: -28, top: -18, opacity: 0.07, pointerEvents: "none", transform: "rotate(-8deg)", filter: "grayscale(1) brightness(4)" }}><TeamLogo t={logo} sz={compact ? 150 : 190} /></span>}
-      {eyebrow && <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.6, textTransform: "uppercase", color: "#ffffffb3" }}>{eyebrow}</div>}
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginTop: 4 }}>
+      {eyebrow && <div style={{ fontSize: T.xs, fontWeight: 800, letterSpacing: 0.4, color: "#ffffffb3" }}>{eyebrow}</div>}
+      <div style={{ display: "flex", alignItems: "flex-end", gap: S[3], marginTop: S[1] }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: compact ? 24 : 30, fontWeight: 900, lineHeight: 1.05, letterSpacing: -0.5, position: "relative" }}>{title}</div>
-          {sub && <div style={{ fontSize: 15, color: "#ffffffb3", marginTop: 6 }}>{sub}</div>}
+          <div style={{ fontSize: T.xl, fontWeight: 900, lineHeight: 1.05, letterSpacing: -0.5, position: "relative" }}>{title}</div>
+          {sub && <div style={{ fontSize: T.sm, color: "#ffffffb3", marginTop: S[2] }}>{sub}</div>}
         </div>
         {right}
       </div>
@@ -94,10 +110,10 @@ export function Hero({ clr = "#1e3a8a", eyebrow, title, sub, right, children, co
 }
 export function Section({ title, action, onAction, children, style }) {
   return (
-    <div style={{ marginTop: 26, ...(style || {}) }}>
-      <div style={{ display: "flex", alignItems: "baseline", marginBottom: 10, padding: "0 2px" }}>
-        <span style={{ fontSize: 20, fontWeight: 900 }}>{title}</span>
-        {action && <button onClick={onAction} style={{ marginLeft: "auto", background: "transparent", border: 0, color: "#7dd3fc", fontSize: 15, fontWeight: 700, cursor: "pointer", padding: "6px 0" }}>{action}</button>}
+    <div style={{ marginTop: S[5], ...(style || {}) }}>
+      <div style={{ display: "flex", alignItems: "baseline", marginBottom: S[3], padding: "0 2px" }}>
+        <span style={txt.section}>{title}</span>
+        {action && <button onClick={onAction} style={{ marginLeft: "auto", background: "transparent", border: 0, color: "#7dd3fc", fontSize: T.sm, fontWeight: 700, cursor: "pointer", padding: "6px 0" }}>{action}</button>}
       </div>
       {children}
     </div>
@@ -106,8 +122,8 @@ export function Section({ title, action, onAction, children, style }) {
 // a strip of choices you swipe sideways (positions, filters): one is on
 export function Chips({ items, value, onChange }) {
   return (
-    <div className="pill-row" style={{ display: "flex", gap: 8, overflowX: "auto", margin: "0 -8px", padding: "0 8px 2px", scrollbarWidth: "none" }}>
-      {items.map(([k, l]) => <button key={k} onClick={() => onChange(k)} style={{ flexShrink: 0, minHeight: 38, borderRadius: 999, border: 0, padding: "0 16px", background: value === k ? "#fff" : "#ffffff12", color: value === k ? "#0b1220" : "#cbd5e1", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
+    <div className="pill-row" style={{ display: "flex", gap: S[2], overflowX: "auto", margin: "0 -8px", padding: "0 8px 2px", scrollbarWidth: "none" }}>
+      {items.map(([k, l]) => <button key={k} onClick={() => onChange(k)} style={{ flexShrink: 0, minHeight: 38, borderRadius: 999, border: 0, padding: "0 16px", background: value === k ? "#fff" : "#ffffff12", color: value === k ? "#0b1220" : "#cbd5e1", fontSize: T.sm, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
     </div>
   );
 }

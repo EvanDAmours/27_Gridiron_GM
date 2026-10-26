@@ -24,7 +24,7 @@ const SORTS = {
   age: { label: "Age", key: (p) => p.age, dir: 1 },
 };
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
-const sel = { background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 6, padding: "8px 10px", fontSize: 15 };
+const sel = { background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 6, padding: "8px 10px", fontSize: 14 };
 
 // The league's best at one position (other clubs' players): pick one and he's loaded into a trade
 // with his team.
@@ -33,17 +33,17 @@ function BestAt({ teams, ui, pos, setPos, onPick, setSel }) {
   return (
     <div style={{ background: C.cd, border: "1px solid #ffffff10", borderRadius: 10, padding: 10 }}>
       <div style={{ display: "flex", gap: 5, flexWrap: MOBILE ? "nowrap" : "wrap", overflowX: MOBILE ? "auto" : undefined, marginBottom: 8, paddingBottom: 2 }}>
-        {POS.map((x) => <button key={x} onClick={() => setPos(x)} style={{ flex: "0 0 auto", background: pos === x ? `${C.bl}33` : C.bg, color: pos === x ? "#fff" : "#cbd5e1", border: `1px solid ${pos === x ? C.bl : C.bd}`, borderRadius: 999, padding: "5px 11px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{x}</button>)}
+        {POS.map((x) => <button key={x} onClick={() => setPos(x)} style={{ flex: "0 0 auto", background: pos === x ? `${C.bl}33` : C.bg, color: pos === x ? "#fff" : "#cbd5e1", border: `1px solid ${pos === x ? C.bl : C.bd}`, borderRadius: 999, padding: "5px 11px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{x}</button>)}
       </div>
       {rows.map(({ t, p }, i) => (
         <div key={p.id} onClick={() => onPick(t, p)} title={`Trade for ${p.name}`} style={{ display: "grid", gridTemplateColumns: MOBILE ? "20px 26px 1fr auto auto" : "22px 30px 1fr 70px 60px 110px 70px auto", alignItems: "center", gap: 8, padding: "7px 4px", borderTop: i ? `1px solid ${C.bd}66` : "none", cursor: "pointer" }}>
           <span style={{ fontSize: 12, color: C.mt, fontWeight: 800 }}>{i + 1}</span>
           <TeamLogo t={t} sz={MOBILE ? 24 : 28} />
           <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><span onClick={(e) => { e.stopPropagation(); setSel(p); }} style={{ fontWeight: 800, textDecoration: "underline", textDecorationColor: "#334155", textUnderlineOffset: 3 }}>{p.name}</span> <span style={{ fontSize: 12, color: C.mt }}>{t.ab}{MOBILE ? ` · ${p.age}` : ""}</span></span>
-          {!MOBILE && <span style={{ fontSize: 13, color: "#cbd5e1" }}>age {p.age}</span>}
-          <b style={{ fontSize: 17, color: oC(p.ovr), textAlign: "center" }}>{p.ovr}</b>
-          {!MOBILE && <span style={{ fontSize: 13, color: "#cbd5e1", whiteSpace: "nowrap" }}>{money(p.salary)} · {yrsLeft(p)}y</span>}
-          {!MOBILE && <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24" }} title="Trade value">{p.tradeVal}</span>}
+          {!MOBILE && <span style={{ fontSize: 14, color: "#cbd5e1" }}>age {p.age}</span>}
+          <b style={{ fontSize: 16, color: oC(p.ovr), textAlign: "center" }}>{p.ovr}</b>
+          {!MOBILE && <span style={{ fontSize: 14, color: "#cbd5e1", whiteSpace: "nowrap" }}>{money(p.salary)} · {yrsLeft(p)}y</span>}
+          {!MOBILE && <span style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24" }} title="Trade value">{p.tradeVal}</span>}
           <span style={{ fontSize: 12, fontWeight: 800, color: C.bl, whiteSpace: "nowrap" }}>Trade →</span>
         </div>
       ))}
@@ -68,14 +68,14 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
   const payCol = MOBILE && (sort === "salary" || sort === "years");
   const sh = (k) => ({ cursor: "pointer", color: k === sort ? C.tx : C.mt, userSelect: "none" });
   const th = { padding: "6px 6px", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: C.mt, borderBottom: `1px solid ${C.bd}`, textAlign: "center", position: "sticky", top: 0, background: C.cd };
-  const td = { padding: "8px 6px", borderBottom: `1px solid ${C.bd}55`, textAlign: "center", fontSize: 15 };
+  const td = { padding: "8px 6px", borderBottom: `1px solid ${C.bd}55`, textAlign: "center", fontSize: 14 };
   return (
     <div style={{ flex: "1 1 420px", minWidth: 0, background: C.cd, border: "1px solid #ffffff10", borderRadius: 10, padding: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
         <TeamLogo t={team} sz={40} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color }}>{title}</div>
-          <div style={{ fontSize: 18, fontWeight: 900 }}>{team.city} {team.name} <span style={{ fontSize: 14, color: C.mt, fontWeight: 600 }}>{team.w}-{team.l}{team.t ? `-${team.t}` : ""}</span></div>
+          <div style={{ fontSize: 20, fontWeight: 900 }}>{team.city} {team.name} <span style={{ fontSize: 14, color: C.mt, fontWeight: 600 }}>{team.w}-{team.l}{team.t ? `-${team.t}` : ""}</span></div>
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: MOBILE ? "nowrap" : "wrap" }}>
@@ -106,7 +106,7 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
                   </td>
                   <td style={td}><Bdg pos={posTag(p)} /></td>
                   <td className="tr-hide" style={{ ...td, color: "#cbd5e1" }}>{p.age}</td>
-                  <td style={{ ...td, fontWeight: 900, fontSize: 17, color: oC(p.ovr) }}>{p.ovr}</td>
+                  <td style={{ ...td, fontWeight: 900, fontSize: 16, color: oC(p.ovr) }}>{p.ovr}</td>
                   <td className="tr-hide" style={{ ...td, color: "#cbd5e1", whiteSpace: "nowrap", fontSize: 14 }}>{money(p.salary)} · {yrsLeft(p)}y</td>
                   {payCol ? <td style={{ ...td, color: "#cbd5e1", whiteSpace: "nowrap", fontSize: 14 }}>{sort === "years" ? `${yrsLeft(p)}y` : money(p.salary)}</td> : <td style={{ ...td, fontWeight: 800, color: "#fbbf24" }}>{p.tradeVal}</td>}
                 </tr>
@@ -179,7 +179,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
     : [`They want about ${ev.gap} more value`, C.rd];
   const chip = (x, key, label, color) => (
     <span key={x.id} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: C.bg, border: `1px solid ${color}55`, borderRadius: 8, padding: "5px 8px", fontSize: 14 }}>
-      {label}<button onClick={() => flip(key, x)} aria-label="Remove" style={{ background: "transparent", border: 0, color: C.mt, cursor: "pointer", fontSize: 15, padding: 0 }}>✕</button>
+      {label}<button onClick={() => flip(key, x)} aria-label="Remove" style={{ background: "transparent", border: 0, color: C.mt, cursor: "pointer", fontSize: 14, padding: 0 }}>✕</button>
     </span>
   );
   const pick = (id) => { setTrTm(id); setTrOff({ g: [], r: [], gPk: [], rPk: [] }); };
@@ -203,28 +203,28 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <Face s={p.face} sz={50} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 17, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#94a3b8", marginTop: 2 }}><TeamLogo t={t} sz={18} />{t.ab} · Age {p.age}</div>
+                      <div style={{ fontSize: 16, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: "#94a3b8", marginTop: 2 }}><TeamLogo t={t} sz={18} />{t.ab} · Age {p.age}</div>
                     </div>
-                    <b style={{ fontSize: 30, color: oC(p.ovr) }}>{p.ovr}</b>
+                    <b style={{ fontSize: 28, color: oC(p.ovr) }}>{p.ovr}</b>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span style={{ marginLeft: "auto", fontSize: 14, fontWeight: 800, color: "#cbd5e1" }}>{money(p.salary)} · {yrsLeft(p)}y</span></div>
                 </button>
               ))}
-              {!targets.length && <div style={{ color: C.mt, fontSize: 15, padding: "8px 2px" }}>Nobody to show.</div>}
+              {!targets.length && <div style={{ color: C.mt, fontSize: 14, padding: "8px 2px" }}>Nobody to show.</div>}
             </div>
           </Section>
           <Section title="Pick a team">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
               {teams.filter((t) => t.id !== ui).sort((a, b) => a.city.localeCompare(b.city)).map((t) => { const m = modes?.[t.id]; return (
                 <button key={t.id} onClick={() => open(t)} aria-label={`Trade with the ${t.city} ${t.name}`} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "12px 0 10px", background: m === "buyer" ? "#22c55e14" : m === "seller" ? "#eab30814" : "#ffffff0f", border: 0, borderRadius: 16, color: "#e2e8f0", cursor: "pointer" }}>
-                  <TeamLogo t={t} sz={40} /><b style={{ fontSize: 13 }}>{t.ab}</b>
+                  <TeamLogo t={t} sz={40} /><b style={{ fontSize: 14 }}>{t.ab}</b>
                   {/* buying or selling in words under the club, so you can tell at a glance */}
                   <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 0.8, color: m === "buyer" ? C.gn : m === "seller" ? C.gd : "#64748b" }}>{m === "buyer" ? "BUYING" : m === "seller" ? "SELLING" : `${t.w}-${t.l}`}</span>
                 </button>
               ); })}
             </div>
-            {modes && Object.values(modes).some((v) => v !== "neutral") && <div style={{ fontSize: 13, color: C.mt, marginTop: 10, textAlign: "center" }}>Buyers want win-now help; sellers will move veterans for picks.</div>}
+            {modes && Object.values(modes).some((v) => v !== "neutral") && <div style={{ fontSize: 14, color: C.mt, marginTop: 10, textAlign: "center" }}>Buyers want win-now help; sellers will move veterans for picks.</div>}
           </Section>
         </div>
       );
@@ -234,9 +234,9 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
     return (
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0 14px" }}>
-          <button onClick={() => pick(null)} aria-label="All teams" style={{ width: 40, height: 40, borderRadius: 20, border: 0, background: "#ffffff0f", color: "#fff", fontSize: 22, cursor: "pointer" }}>‹</button>
+          <button onClick={() => pick(null)} aria-label="All teams" style={{ width: 40, height: 40, borderRadius: 20, border: 0, background: "#ffffff0f", color: "#fff", fontSize: 20, cursor: "pointer" }}>‹</button>
           <TeamLogo t={them} sz={36} />
-          <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 20, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{them.name}</div><div style={{ fontSize: 13, color: C.mt }}>{them.w}-{them.l}{modes?.[them.id] ? ` · ${modes[them.id] === "buyer" ? "buying" : "selling"}` : ""}</div></div>
+          <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 20, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{them.name}</div><div style={{ fontSize: 14, color: C.mt }}>{them.w}-{them.l}{modes?.[them.id] ? ` · ${modes[them.id] === "buyer" ? "buying" : "selling"}` : ""}</div></div>
         </div>
         <Segments items={[["them", `${them.ab} players`], ["me", "Your players"]]} value={side} onChange={setSide} />
         {side === "them"
@@ -246,8 +246,8 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
         {/* the deal, pinned by your thumb while you browse the rosters */}
         <div className="keep-dark" style={{ position: "fixed", left: 0, right: 0, bottom: "calc(58px + env(safe-area-inset-bottom))", zIndex: 396, background: "#0d1424", borderTop: "1px solid #ffffff14", padding: "12px 14px 10px", boxShadow: "0 -10px 30px #0008" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div style={{ minWidth: 0 }}><div style={{fontSize: 13, fontWeight: 800, color: "#fca5a5" }}>You send</div>{list(trOff.g, trOff.gPk, "g", "gPk", "#fca5a5", "Tap your players")}</div>
-            <div style={{ minWidth: 0 }}><div style={{fontSize: 13, fontWeight: 800, color: "#86efac" }}>You get</div>{list(trOff.r, trOff.rPk, "r", "rPk", "#86efac", "Tap their players")}</div>
+            <div style={{ minWidth: 0 }}><div style={{fontSize: 14, fontWeight: 800, color: "#fca5a5" }}>You send</div>{list(trOff.g, trOff.gPk, "g", "gPk", "#fca5a5", "Tap your players")}</div>
+            <div style={{ minWidth: 0 }}><div style={{fontSize: 14, fontWeight: 800, color: "#86efac" }}>You get</div>{list(trOff.r, trOff.rPk, "r", "rPk", "#86efac", "Tap their players")}</div>
           </div>
           {any && <div style={{ position: "relative", height: 6, background: "#ffffff14", borderRadius: 3, margin: "8px 0 0" }}>
             <div style={{ position: "absolute", left: "50%", top: -3, bottom: -3, width: 2, background: "#94a3b8" }} />
@@ -255,8 +255,8 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
           </div>}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 900, color: verdict ? verdict[1] : C.mt, lineHeight: 1.25 }}>{verdict ? verdict[0] : "Build a deal"}</div>
-              {any && !accept && <button onClick={balance} style={{ background: "transparent", border: 0, padding: 0, marginTop: 2, color: "#7dd3fc", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>What would make this work?</button>}
+              <div style={{ fontSize: 14, fontWeight: 900, color: verdict ? verdict[1] : C.mt, lineHeight: 1.25 }}>{verdict ? verdict[0] : "Build a deal"}</div>
+              {any && !accept && <button onClick={balance} style={{ background: "transparent", border: 0, padding: 0, marginTop: 2, color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>What would make this work?</button>}
               {any && accept && <div style={{ fontSize: 12, color: C.mt, marginTop: 2 }}>Cap after: {money(capAfter)}</div>}
             </div>
             <button onClick={execTr} disabled={!accept || closed} style={{ minHeight: 48, padding: "0 20px", borderRadius: 14, border: 0, background: accept && !closed ? C.gn : "#ffffff14", color: accept && !closed ? "#fff" : "#64748b", fontSize: 16, fontWeight: 900, cursor: accept && !closed ? "pointer" : "default", whiteSpace: "nowrap" }}>{closed ? "Closed" : "Propose"}</button>
@@ -269,7 +269,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
     <div>
       <style>{"@media (max-width: 640px) { .tr-hide { display: none } }"}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-        <span style={{ fontSize: MOBILE ? 24 : 18, fontWeight: 800 }}>Trade with</span>
+        <span style={{ fontSize: MOBILE ? 28 : 20, fontWeight: 800 }}>Trade with</span>
         {them && <button onClick={() => pick(null)} title="Pick a different team" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#ffffff12", border: 0, borderRadius: 999, padding: "4px 14px 4px 6px", color: "#e2e8f0", cursor: "pointer", fontSize: 16, fontWeight: 800 }}><TeamLogo t={them} sz={28} />{MOBILE ? them.ab : `${them.city} ${them.name}`}<span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>change ▾</span></button>}
         <span style={{ fontSize: 14, color: C.mt }}>Your cap space: <b style={{ color: capSpace(me) >= 0 ? C.gn : C.rd }}>{money(capSpace(me))}</b></span>
       </div>
@@ -304,10 +304,10 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
             </>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-            {verdict && <span style={{ fontSize: 20, fontWeight: 900, color: verdict[1], flex: "1 1 240px" }}>{verdict[0]}{ev.why && !accept && <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#fca5a5" }}>{ev.why}</span>}{ev.notes?.length > 0 && <span style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#cbd5e1", marginTop: 3 }}>How they see it: {ev.notes.slice(0, 3).join("; ")}.</span>}</span>}
+            {verdict && <span style={{ fontSize: 20, fontWeight: 900, color: verdict[1], flex: "1 1 240px" }}>{verdict[0]}{ev.why && !accept && <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#fca5a5" }}>{ev.why}</span>}{ev.notes?.length > 0 && <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#cbd5e1", marginTop: 3 }}>How they see it: {ev.notes.slice(0, 3).join("; ")}.</span>}</span>}
             {any && <span style={{ fontSize: 14, color: C.mt }}>Cap space after: <b style={{ color: capAfter >= 0 ? C.gn : C.rd }}>{money(capAfter)}</b>{dead.now + dead.next > 0.05 && <span style={{ display: "block", fontSize: 12 }}>incl. {money(dead.now)} dead money{dead.next > 0.05 ? ` (+${money(dead.next)} next year)` : ""}</span>}</span>}
-            {any && <Btn onClick={balance} bg={C.bd} c="#e2e8f0" style={{ fontSize: 15, padding: "9px 14px" }}>What would make this work?</Btn>}
-            {any && <Btn onClick={() => setTrOff({ g: [], r: [], gPk: [], rPk: [] })} bg="transparent" c={C.mt} style={{ fontSize: 15, padding: "9px 12px", border: "1px solid #ffffff10" }}>Clear</Btn>}
+            {any && <Btn onClick={balance} bg={C.bd} c="#e2e8f0" style={{ fontSize: 14, padding: "9px 14px" }}>What would make this work?</Btn>}
+            {any && <Btn onClick={() => setTrOff({ g: [], r: [], gPk: [], rPk: [] })} bg="transparent" c={C.mt} style={{ fontSize: 14, padding: "9px 12px", border: "1px solid #ffffff10" }}>Clear</Btn>}
             <Btn onClick={execTr} disabled={!accept || closed} bg={C.gn} style={{ fontSize: 16, padding: "10px 20px", fontWeight: 900 }}>{closed ? "Trade deadline passed" : "Propose trade"}</Btn>
           </div>
         </div>
@@ -330,7 +330,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
             return (
               <button key={t.id} onClick={() => pick(t.id)} title={`${t.city} ${t.name}`} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "10px 2px 8px", background: m === "buyer" ? "#22c55e14" : m === "seller" ? "#eab30814" : "#ffffff0a", border: 0, borderRadius: 12, color: "#e2e8f0", cursor: "pointer" }}>
                 <TeamLogo t={t} sz={34} />
-                <b style={{ fontSize: 13 }}>{t.ab}</b>
+                <b style={{ fontSize: 14 }}>{t.ab}</b>
                 <span style={{ fontSize: 11, color: C.mt }}>{t.w}-{t.l}</span>
                 {(() => { const cs = capSpace(t); return <span title={`${t.name} cap space`} style={{ fontSize: 11, fontWeight: 700, color: cs < 0 ? C.rd : "#94a3b8" }}>{cs < 0 ? `-${money(-cs)}` : money(cs)}</span>; })()}
                 {(m === "buyer" || m === "seller") && <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.8, color: m === "buyer" ? C.gn : C.gd }}>{m === "buyer" ? "BUYING" : "SELLING"}</span>}
@@ -388,10 +388,10 @@ function PhoneSide({ team, players, picks, chosen, chosenPk, toggle, togglePk, p
               <span style={{ display: "block", fontWeight: 800, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#f1f5f9" }}>{p.name}{p.injured && <span style={{ color: C.rd, marginLeft: 6 }}>+</span>}</span>
               <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, fontSize: 12, color: "#94a3b8" }}><Bdg pos={posTag(p)} /><RoleTag p={p} />{money(p.salary)} · {yrsLeft(p)}y</span>
             </span>
-            <b style={{ fontSize: 22, color: oC(p.ovr) }}>{p.ovr}</b>
+            <b style={{ fontSize: 20, color: oC(p.ovr) }}>{p.ovr}</b>
           </button>
         ); })}
-        {!rows.length && <div style={{ padding: "16px 0", color: C.mt, fontSize: 15 }}>Nobody here.</div>}
+        {!rows.length && <div style={{ padding: "16px 0", color: C.mt, fontSize: 14 }}>Nobody here.</div>}
       </div>
       {pos === "ALL" && picks.length > 0 && <>
         <div style={{ fontSize: 20, fontWeight: 900, margin: "22px 2px 10px" }}>Draft picks</div>
@@ -399,7 +399,7 @@ function PhoneSide({ team, players, picks, chosen, chosenPk, toggle, togglePk, p
           {picks.map((pk, i) => { const on = chosenPk.some((x) => x.id === pk.id); return (
             <button key={pk.id} onClick={() => togglePk(pk)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 54, textAlign: "left", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, color: C.tx, cursor: "pointer" }}>
               {tick(on)}
-              <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 800 }}>{pk.yr || ""} Round {pk.rd}{pk.overall ? ` · #${pk.overall}` : ""}{pk.orig !== team.id && <span style={{ color: C.mt, fontWeight: 600, fontSize: 13 }}> via {pk.origAb}</span>}</span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 800 }}>{pk.yr || ""} Round {pk.rd}{pk.overall ? ` · #${pk.overall}` : ""}{pk.orig !== team.id && <span style={{ color: C.mt, fontWeight: 600, fontSize: 14 }}> via {pk.origAb}</span>}</span>
             </button>
           ); })}
         </div>

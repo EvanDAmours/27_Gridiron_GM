@@ -7,6 +7,7 @@
 import { clubMode, fitsTeam } from "./tradeOffers.js";
 import { isFaceOf } from "./faceOfFranchise.js";
 import { keepChance, askingPrice } from "./offseason.js";
+import { leagueCap } from "./cap.js";
 
 export const POS_MULT = { QB: 1.8, DL: 1.15, LT: 1.1, WR: 1.05, CB: 1.0, RT: 0.95, TE: 0.8, LB: 0.8, S: 0.8, C: 0.7, LG: 0.65, RG: 0.65, RB: 0.52, K: 0.2, P: 0.15 };
 const DEV_MULT = { generational: 1.2, superstar: 1.1, star: 1.04 };
@@ -28,7 +29,9 @@ export function contractMult(p) {
   if (p.salary == null || (p.contract ?? 0) <= 1) return 1;
   const fair = askingPrice(p);
   if (!(fair > 0)) return 1;
-  const over = (p.salary - fair) / fair;
+  // overpay is measured in real money: against at least 2% of the cap, so a depth player on a near-minimum
+  // deal (a few hundred thousand over his market) isn't priced like an albatross
+  const over = (p.salary - fair) / Math.max(fair, leagueCap() * 0.02);
   const yrs = Math.min(4, p.contract) / 4;
   return Math.max(0.6, Math.min(1.15, 1 - over * 0.35 * (0.5 + yrs)));
 }

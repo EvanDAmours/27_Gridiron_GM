@@ -1851,4 +1851,34 @@ export const PATCH_NOTES = [
     "Scouts tab is just for your staff and hiring now (regions moved to the Regions tab)",
     "Combine screen trimmed: one line with your interviews, workouts and points, stock up and stock down, and the results table (now with a search box). Your scouts' visit list moved to Scouting HQ during Combine week",
   ] },
+  { v: "4.63", date: "2026-10-23", title: "Calm finish, drive tracker, scout report card", notes: [
+    "One type and spacing system across the game: every screen now uses the same handful of text sizes and spacing steps, so pages line up and read the same",
+    "Calm style finished: Season Awards, the big moment cards (clinches, trades, Ring of Honor and jersey nights, ring night, legends), League History plaques, transactions, the walkthrough and the offline panel now match Home: team-color washes, soft cards, sentence-case titles, one clear button",
+    "Live games: a broadcast drive tracker replaces the settings panel on a computer. Drives are listed newest first with plays, yards, time and how they ended (touchdown, punt, turnover...); the drive on the field shows its plays and the rest open on a tap. The current drive also shows next to down and distance. Settings moved behind a ⚙ button",
+    "Phones: the live game shows the same drive tracker under the last play",
+    "Scout report card: on draft day each scout is graded A+ to D on that class: how close his reads were, and the sleepers, red flags and special development traits he caught. It shows on the Scouts tab with his grades from earlier years, so you can tell who is worth keeping",
+  ] },
+  { v: "4.64", date: "2026-10-23", title: "Contract-aware AI trades, condensed games", notes: [
+    "AI trades now account for contracts: clubs pay less for an overpaid veteran and more for a star on a cheap rookie deal, both when they trade with each other and when they call you with offers. At the deadline an expiring player is priced as a rental",
+    "Fix: depth players on near-minimum deals no longer count as badly overpaid in trade talks (overpay is now measured in real money against at least 2% of the cap)",
+    "Live games: a new Condensed speed. Routine plays flash by and only the key plays (third and fourth downs, goal to go, big plays, a close finish) play out on the field",
+    "Standings and Coaching use the same text sizes as the rest of the game",
+  ] },
+  { v: "4.65", date: "2026-10-23", title: "Steady live game screen", notes: [
+    "Live games no longer jump around: the field stays put all game like a TV broadcast (away end zone on the left, home end zone on the right) and the home team drives right to left, instead of the whole field flipping every change of possession. The play caption under the field keeps one fixed size, and its flash is off at Fast and Condensed, so the buttons below never move",
+  ] },
+  { v: "4.66", date: "2026-10-23", title: "Calm live settings", notes: [
+    "Live game settings redone in the calm style: one setting per row with a plain title, a full-width pill switch (the choice in white) and a short line on what it does. No more emoji or colored boxes, and Speed no longer spills into the Camera column",
+  ] },
+  { v: "4.67", date: "2026-10-23", title: "Kicks, punts, tackles and injuries", notes: [
+    "Field goals tell you in the air: a good kick stays true and is still climbing over the bar; a miss hooks away wide halfway out, or a long one dies short of the crossbar",
+    "Punts stop where they're spotted: a punt downed at the 5 lands short and rolls to the 5, never into the end zone first",
+    "Punter smarts: with a short field (inside about 58 yards) the punter aims for the coffin corner instead of booming a touchback; better punters pin it closer to the goal line",
+    "Kicker smarts: with seconds left in a half, the kick goes short and in bounds and the coverage swallows the return, so there's no time left for a Hail Mary",
+    "Tackles look like tackles: the tackler latches on to the ball carrier and rides him down at the spot, instead of diving at the turf",
+    "Calling your plays: Kneel (victory formation) late in a half or protecting a fourth-quarter lead, and your choice after a touchdown: Coach, Kick for 1 or Go for 2",
+    "No more emoji on the play-calling cards",
+    "Injuries are real injuries with real recovery times (ankle sprain 1-3 weeks, high ankle 3-6, concussion 1-2...). Only rare tears (ACL, Achilles, pec) end a season, and no more 'tackled from behind' as an injury",
+    "The player card's front shows an injury: what it is and how long he's out",
+  ] },
 ];

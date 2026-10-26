@@ -10,7 +10,7 @@ import { HOLIDAYS } from "./holidays.js";
 
 const card = { background: "#ffffff0d", borderRadius: 18, padding: "16px 18px", minWidth: 0 };
 const h2 = { fontSize: 20, fontWeight: 900, margin: "0 0 6px", display: "flex", alignItems: "baseline", gap: 8 };
-const tag = { fontSize: 13, fontWeight: 800, color: "#fff", background: "#00000066", borderRadius: 999, padding: "6px 12px", whiteSpace: "nowrap" };
+const tag = { fontSize: 14, fontWeight: 800, color: "#fff", background: "#00000066", borderRadius: 999, padding: "6px 12px", whiteSpace: "nowrap" };
 const rec = (t) => `${t.w ?? 0}-${t.l ?? 0}${t.t ? `-${t.t}` : ""}`;
 const TONE = { urgent: C.rd, action: C.gd, info: "#60a5fa" };
 
@@ -21,13 +21,13 @@ function Side({ t, rating, right, star, teams }) {
   return (
     <div style={{ position: "absolute", top: "18%", [right ? "right" : "left"]: 56, textAlign: right ? "right" : "left", zIndex: 2, maxWidth: "30%" }}>
       <div style={{ display: "flex", justifyContent: right ? "flex-end" : "flex-start" }}><TeamLogo t={t} sz={104} glow /></div>
-      <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 2, color: "#ffffffb3", marginTop: 14, textTransform: "uppercase" }}>{t.city}</div>
+      <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: 2, color: "#ffffffb3", marginTop: 14, textTransform: "uppercase" }}>{t.city}</div>
       <div style={{ fontFamily: BLOCK, fontSize: 52, fontWeight: 700, lineHeight: 1, textTransform: "uppercase", textShadow: "0 4px 24px #0009" }}>{t.name}</div>
-      <div style={{ fontSize: 19, color: "#ffffffcc", marginTop: 6 }}>{rec(t)}{Number.isFinite(rating?.ovr) ? ` · ${Math.round(rating.ovr)} OVR` : ""}</div>
+      <div style={{ fontSize: 20, color: "#ffffffcc", marginTop: 6 }}>{rec(t)}{Number.isFinite(rating?.ovr) ? ` · ${Math.round(rating.ovr)} OVR` : ""}</div>
       {star && <div style={{ marginTop: 22 }}>
         <div style={{ fontFamily: BLOCK, fontSize: 28, fontWeight: 700, lineHeight: 1.05, textTransform: "uppercase" }}>{star.name}</div>
         <div style={{ fontSize: 16, color: "#ffffffcc", marginTop: 2 }}>{star.pos} · {star.ovr} OVR</div>
-        {line && <div style={{ fontSize: 15, fontWeight: 800, color: "#fde68a", marginTop: 6 }}>{line}</div>}
+        {line && <div style={{ fontSize: 14, fontWeight: 800, color: "#fde68a", marginTop: 6 }}>{line}</div>}
       </div>}
     </div>
   );
@@ -42,15 +42,15 @@ function PhaseHero({ me, eyebrow, title, sub, stats = [], primary = [] }) {
       <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 26 }}>
         <TeamLogo t={me} sz={112} glow />
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 1.8, color: "#ffffffcc", textTransform: "uppercase" }}>{eyebrow}</div>
+          <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: 1.8, color: "#ffffffcc", textTransform: "uppercase" }}>{eyebrow}</div>
           <div style={{ fontFamily: BLOCK, fontSize: 64, fontWeight: 700, lineHeight: 1, textTransform: "uppercase", marginTop: 6, textShadow: "0 4px 24px #0009" }}>{title}</div>
-          {sub && <div style={{ fontSize: 18, color: "#ffffffcc", marginTop: 8 }}>{sub}</div>}
+          {sub && <div style={{ fontSize: 20, color: "#ffffffcc", marginTop: 8 }}>{sub}</div>}
         </div>
       </div>
       <div style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 34, marginTop: 30, flexWrap: "wrap" }}>
-        {stats.map(([l, v, c]) => <div key={l}><div style={{ fontSize: 30, fontWeight: 900, color: c || "#fff", lineHeight: 1 }}>{v}</div><div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: "#ffffffb3", marginTop: 6, textTransform: "uppercase" }}>{l}</div></div>)}
+        {stats.map(([l, v, c]) => <div key={l}><div style={{ fontSize: 28, fontWeight: 900, color: c || "#fff", lineHeight: 1 }}>{v}</div><div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: "#ffffffb3", marginTop: 6, textTransform: "uppercase" }}>{l}</div></div>)}
         <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-          {primary.map((b, i) => <button key={b.label} onClick={b.onClick} style={{ minHeight: 52, padding: "0 26px", borderRadius: 14, border: 0, background: i === 0 ? C.gn : "#ffffff24", color: "#fff", fontSize: 17, fontWeight: 900, cursor: "pointer", boxShadow: i === 0 ? "0 8px 24px #0008" : "none" }}>{b.label.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, "")}</button>)}
+          {primary.map((b, i) => <button key={b.label} onClick={b.onClick} style={{ minHeight: 52, padding: "0 26px", borderRadius: 14, border: 0, background: i === 0 ? C.gn : "#ffffff24", color: "#fff", fontSize: 16, fontWeight: 900, cursor: "pointer", boxShadow: i === 0 ? "0 8px 24px #0008" : "none" }}>{b.label.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, "")}</button>)}
         </div>
       </div>
     </div>
@@ -86,29 +86,29 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
         {pa && <div style={{ position: "absolute", left: "23%", bottom: -20 }}><PlayerArt p={pa} ab={away.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         {ph && <div style={{ position: "absolute", right: "23%", bottom: -20 }}><PlayerArt p={ph} ab={home.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, transparent 52%, ${C.bg} 100%)` }} />
-        <div style={{ position: "absolute", top: 24, left: 0, right: 0, textAlign: "center", fontSize: 13, fontWeight: 900, letterSpacing: 1.8, color: "#ffffffcc", textTransform: "uppercase", zIndex: 2 }}>{[eyebrow, game?.date ? kickoff(game).replace(" ET", "") : null].filter(Boolean).join(" · ")}</div>
+        <div style={{ position: "absolute", top: 24, left: 0, right: 0, textAlign: "center", fontSize: 14, fontWeight: 900, letterSpacing: 1.8, color: "#ffffffcc", textTransform: "uppercase", zIndex: 2 }}>{[eyebrow, game?.date ? kickoff(game).replace(" ET", "") : null].filter(Boolean).join(" · ")}</div>
         <Side t={away} rating={ra} star={pa} teams={teams} />
         <Side t={home} rating={rh} star={ph} teams={teams} right />
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 28, display: "flex", justifyContent: "center", alignItems: "center", gap: 10, zIndex: 2 }}>
           {hol && <span style={{ ...tag, background: `linear-gradient(90deg, ${hol.c2}, ${hol.c1})` }}>{hol.icon} {hol.name}</span>}
           {spread && <span style={tag}>{spread}</span>}
           {forecast && <span style={tag} title={forecast.note || undefined}>{forecast.icon} {forecast.label}</span>}
-          {primary.map((b, i) => <button key={b.label} onClick={b.onClick} style={{ marginLeft: i === 0 ? 12 : 0, minHeight: 52, padding: "0 26px", borderRadius: 14, border: 0, background: i === 0 ? C.gn : "#ffffff24", color: "#fff", fontSize: 17, fontWeight: 900, cursor: "pointer", boxShadow: i === 0 ? "0 8px 24px #0008" : "none" }}>{b.label}</button>)}
+          {primary.map((b, i) => <button key={b.label} onClick={b.onClick} style={{ marginLeft: i === 0 ? 12 : 0, minHeight: 52, padding: "0 26px", borderRadius: 14, border: 0, background: i === 0 ? C.gn : "#ffffff24", color: "#fff", fontSize: 16, fontWeight: 900, cursor: "pointer", boxShadow: i === 0 ? "0 8px 24px #0008" : "none" }}>{b.label}</button>)}
         </div>
       </div>}
       {extra}
       {/* three quiet cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14, marginTop: 16 }}>
         <div data-tour="todo" style={card}>
-          <div style={h2}>To do{todo.length > 0 && <span style={{ fontSize: 15, color: C.mt }}>{todo.length + (moreTodo ? Number(moreTodo.label.match(/\d+/)?.[0] || 0) : 0)}</span>}</div>
+          <div style={h2}>To do{todo.length > 0 && <span style={{ fontSize: 14, color: C.mt }}>{todo.length + (moreTodo ? Number(moreTodo.label.match(/\d+/)?.[0] || 0) : 0)}</span>}</div>
           {todo.slice(0, 3).map((m, i) => (
             <button key={m.label} onClick={m.onClick} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 50, background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff14" : 0, color: "#fff", textAlign: "left", cursor: "pointer", padding: 0 }}>
               <span style={{ width: 8, height: 8, borderRadius: 4, flexShrink: 0, background: TONE[m.tone] || "#64748b" }} />
-              <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.label.replace(/^[\p{Extended_Pictographic}️‍\s]+/u, "")}</span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.label.replace(/^[\p{Extended_Pictographic}️‍\s]+/u, "")}</span>
               <span style={{ fontSize: 20, color: "#64748b" }}>›</span>
             </button>
           ))}
-          {!todo.length && <div style={{ fontSize: 15, color: "#94a3b8", padding: "10px 0" }}>Nothing needs you this week.</div>}
+          {!todo.length && <div style={{ fontSize: 14, color: "#94a3b8", padding: "10px 0" }}>Nothing needs you this week.</div>}
           <div style={{ display: "flex", gap: 16, marginTop: 6 }}>
             {(todo.length > 3 || moreTodo) && <button onClick={onInbox || moreTodo?.onClick} style={{ background: "transparent", border: 0, padding: "6px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>See all</button>}
             {side && <button onClick={() => setDevOpen(true)} style={{ background: "transparent", border: 0, padding: "6px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Development focus</button>}
@@ -116,7 +116,7 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
         </div>
         <div style={card}>
           <div style={h2}>{middle ? middle.title : "Game plan"}</div>
-          {middle ? middle.body : plan || <div style={{ fontSize: 15, color: "#94a3b8" }}>Your coaches set it before every game.</div>}
+          {middle ? middle.body : plan || <div style={{ fontSize: 14, color: "#94a3b8" }}>Your coaches set it before every game.</div>}
         </div>
         <div style={{ ...card, cursor: lead && (lead.inc || lead.retire) && onStory ? "pointer" : "default" }} onClick={lead && (lead.inc || lead.retire) && onStory ? () => onStory(lead) : undefined}>
           <div style={h2}>Top story</div>
@@ -124,10 +124,10 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
             {/* the club's logo beside the headline, and no emoji leading it */}
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
               {leadT && <span style={{ flexShrink: 0, marginTop: 2 }}><TeamLogo t={leadT} sz={34} glow /></span>}
-              <div style={{ fontSize: 18, fontWeight: 900, lineHeight: 1.25 }}>{String(lead.head || "").replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, "")}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.25 }}>{String(lead.head || "").replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, "")}</div>
             </div>
             <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.45, marginTop: 6, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{lead.text}</div>
-          </> : news[0] ? <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.4 }}>{news[0].text}</div> : <div style={{ fontSize: 15, color: "#94a3b8" }}>Quiet around the league so far. Stories arrive after every week.</div>}
+          </> : news[0] ? <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.4 }}>{news[0].text}</div> : <div style={{ fontSize: 14, color: "#94a3b8" }}>Quiet around the league so far. Stories arrive after every week.</div>}
         </div>
       </div>
       {rest}
@@ -151,12 +151,12 @@ export function SectionHero({ me, title, sub, stats = [], tabs = [], onTab, righ
           <div style={{ fontFamily: BLOCK, fontSize: 44, fontWeight: 700, lineHeight: 1, textTransform: "uppercase", marginTop: 4 }}>{title}</div>
         </div>
         <div style={{ display: "flex", gap: 30, marginLeft: "auto", alignItems: "flex-end" }}>
-          {stats.map(([l, v, c]) => <div key={l} style={{ textAlign: "right" }}><div style={{ fontSize: 26, fontWeight: 900, color: c || "#fff", lineHeight: 1 }}>{v}</div><div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 5, textTransform: "uppercase" }}>{l}</div></div>)}
+          {stats.map(([l, v, c]) => <div key={l} style={{ textAlign: "right" }}><div style={{ fontSize: 28, fontWeight: 900, color: c || "#fff", lineHeight: 1 }}>{v}</div><div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 5, textTransform: "uppercase" }}>{l}</div></div>)}
           {right}
         </div>
       </div>
       <div style={{ position: "relative", display: "flex", gap: 4, marginTop: 18, paddingBottom: tabs.length > 1 ? 0 : 18 }}>
-        {tabs.length > 1 && tabs.map(([l, k, on]) => <button key={k} onClick={() => onTab(k)} style={{ background: "transparent", border: 0, borderBottom: `3px solid ${on ? "#fff" : "transparent"}`, color: on ? "#fff" : "#ffffffa6", padding: "8px 14px 12px", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
+        {tabs.length > 1 && tabs.map(([l, k, on]) => <button key={k} onClick={() => onTab(k)} style={{ background: "transparent", border: 0, borderBottom: `3px solid ${on ? "#fff" : "transparent"}`, color: on ? "#fff" : "#ffffffa6", padding: "8px 14px 12px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
       </div>
     </div>
   );

@@ -6,6 +6,10 @@
 import { nflSeeds } from "./playoffs.js";
 import { needGroup, NEED_STARTERS } from "./needs.js";
 import { isFaceOf } from "./faceOfFranchise.js";
+import { contractMult } from "./trade.js";
+// what a player is worth in a deal: his trade value, priced up or down by his contract (an overpaid
+// veteran is worth less, a bargain more). Read at trade time, never saved.
+const tv = (p) => (p?.tradeVal || 0) * contractMult(p);
 
 export const MAX_OVERPAY = 1.15; // the most an offer can be worth, as a multiple of your player
 const MIN_FAIR = 0.75; // and the least
@@ -84,17 +88,17 @@ export function fairPicks(pks, value, pkV) {
 // What one club would offer for one of your players: an even player swap, a player plus a pick or
 // two, or picks alone, worth MIN_FAIR to MAX_OVERPAY of him. null if it can't build a fair one.
 function buildOffer(teams, fromTm, want, picks, pkV, rand) {
-  const aiT = teams[fromTm], wv = want.tradeVal || 0, wPos = want.pos;
+  const aiT = teams[fromTm], wv = tv(want) || 0, wPos = want.pos;
   const aiPks = (picks || []).filter((pk) => pk.owner === fromTm);
   const roll = rand();
   if (roll < 0.35) {
-    const give = aiT.roster.filter((p) => p.tradeVal >= wv * MIN_FAIR && p.tradeVal <= wv * MAX_OVERPAY && p.pos !== wPos && !isFaceOf(p, aiT)).sort((a, b) => Math.abs(a.tradeVal - wv) - Math.abs(b.tradeVal - wv))[0];
+    const give = aiT.roster.filter((p) => tv(p) >= wv * MIN_FAIR && tv(p) <= wv * MAX_OVERPAY && p.pos !== wPos && !isFaceOf(p, aiT)).sort((a, b) => Math.abs(tv(a) - wv) - Math.abs(tv(b) - wv))[0];
     if (give) return { fromTm, give, want, givePicks: [], wantPicks: [] };
   }
   if (roll < 0.75) {
-    const give = aiT.roster.filter((p) => p.tradeVal >= wv * 0.35 && p.tradeVal < wv * 0.85 && p.pos !== wPos && !isFaceOf(p, aiT)).sort((a, b) => b.tradeVal - a.tradeVal)[0];
+    const give = aiT.roster.filter((p) => tv(p) >= wv * 0.35 && tv(p) < wv * 0.85 && p.pos !== wPos && !isFaceOf(p, aiT)).sort((a, b) => tv(b) - tv(a))[0];
     if (give) {
-      const gap = wv - give.tradeVal;
+      const gap = wv - tv(give);
       const pks = fairPicks(aiPks, gap, pkV);
       if (pks) return { fromTm, give, want, givePicks: pks, wantPicks: [] };
     }

@@ -51,7 +51,7 @@ export function YourOffers({ fa, market, teams, ui, onRaise, phone }) {
     <div style={phone ? { marginTop: 26 } : { background: C.cd, border: `1px solid ${C.bl}55`, borderRadius: 10, padding: "10px 14px", marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: phone ? 10 : 6, padding: phone ? "0 2px" : 0 }}>
         <span style={phone ? { fontSize: 20, fontWeight: 900 } : { fontSize: 14, fontWeight: 900, letterSpacing: 1, color: "#93c5fd" }}>{phone ? "Your offers" : "YOUR OFFERS"}</span>
-        <span style={{ fontSize: 13, fontWeight: 800, color: lead === mine.length ? C.gn : "#fbbf24" }}>leading {lead} of {mine.length}</span>
+        <span style={{ fontSize: 14, fontWeight: 800, color: lead === mine.length ? C.gn : "#fbbf24" }}>leading {lead} of {mine.length}</span>
       </div>
       <div style={phone ? { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" } : { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))", gap: "0 18px" }}>
         {mine.map(({ p, me, rivals, top, st }, i) => {
@@ -62,7 +62,7 @@ export function YourOffers({ fa, market, teams, ui, onRaise, phone }) {
               <Face s={p.face} sz={phone ? 40 : 32} />
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 800, fontSize: 16 }}><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><Bdg pos={posTag(p)} /><b style={{ color: oC(p.ovr), fontSize: 14 }}>{p.ovr}</b></span>
-                <span style={{ display: "block", fontSize: 13, color: "#cbd5e1", marginTop: 3 }}>You <b style={{ color: "#fff" }}>{money(me.sal)}</b> × {me.yrs}y · {top ? <>top rival <b style={{ color: top.sal > me.sal ? "#fca5a5" : "#fff" }}>{money(top.sal)}</b> × {top.yrs}y ({teams[top.team]?.ab}){rivals.length > 1 ? ` +${rivals.length - 1}` : ""}</> : "no other offers"}</span>
+                <span style={{ display: "block", fontSize: 14, color: "#cbd5e1", marginTop: 3 }}>You <b style={{ color: "#fff" }}>{money(me.sal)}</b> × {me.yrs}y · {top ? <>top rival <b style={{ color: top.sal > me.sal ? "#fca5a5" : "#fff" }}>{money(top.sal)}</b> × {top.yrs}y ({teams[top.team]?.ab}){rivals.length > 1 ? ` +${rivals.length - 1}` : ""}</> : "no other offers"}</span>
                 <span style={{ display: "block", fontSize: 12, color: C.mt, marginTop: 2 }}>{dd <= market.day ? "Decides today" : `Decides day ${dd}`} · asks {money(askingPrice(p))}</span>
               </span>
               <span style={{ textAlign: "right", flexShrink: 0 }}>
@@ -81,7 +81,7 @@ export function YourOffers({ fa, market, teams, ui, onRaise, phone }) {
 // the defensive line is two positions here: edge rushers and interior tackles
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P"];
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
-const sel = { background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 6, padding: "8px 10px", fontSize: 15 };
+const sel = { background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 6, padding: "8px 10px", fontSize: 14 };
 
 export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk, cy, market, onNextDay, sp }) {
   const [pos, setPos] = useState(startPos || "ALL");
@@ -105,23 +105,23 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
       {label}{sort[0] === k ? (sort[1] < 0 ? " ▼" : " ▲") : ""}
     </th>
   );
-  const td = { padding: "9px 6px", borderBottom: `1px solid ${C.bd}55`, textAlign: "center", fontSize: 15 };
+  const td = { padding: "9px 6px", borderBottom: `1px solid ${C.bd}55`, textAlign: "center", fontSize: 14 };
   const negotiate = () => (<Negotiate note={market && offer.ovr >= MARKET_MIN ? (() => { const o = bidsFor(market, offer.id).filter((b) => b.team !== ui).length, dd = Math.max(market.day, decideDay(offer, market.yr)); const st = standing(offer, market, teams, ui); return `📋 ${o ? `${o} club${o > 1 ? "s have" : " has"} made him an offer.` : "No offers yet."}${st === "lead" ? " Your offer is the best one for him right now." : st === "behind" ? " Another club's offer is better for him right now." : ""} He decides ${dd <= market.day ? "at the end of today" : `on day ${dd}`}. He takes the best offer for him: more money, or a club with what he wants. Only a big overpay (20%+ over his ask) signs him on the spot.`; })() : null} team={team} cy={cy} p={offer} mode="fa" cap={cap + (bidsFor(market, offer.id).find((b) => b.team === ui)?.sal || 0)} t={termsFor(offer, "fa")} talk={talkFor(offer)} onResult={(r, o) => onTalk(offer, "fa", r, o)} onClose={() => setOffer(null)} rivalName={(id) => teams[id] && `${teams[id].city} ${teams[id].name}`} />);
   if (MOBILE) return <PhoneFA {...{ sp, fa, rows, n, setN, pos, setPos, needs, q, setQ, find, setFind, sort, setSort, cap, out, nOut, open, market, onNextDay, sheets, extras, teams, ui, talkFor, setSel, offer, setOffer, team }} negotiate={offer && negotiate()} />;
   return (
     <div>
       <style>{"@media (max-width: 640px) { .fa-hide { display: none } }"}</style>
       {/* the Trades & FA header above has the cap and roster; what's left: open offers and the pool size */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: "6px 20px", flexWrap: "wrap", marginBottom: 12, fontSize: 15, color: C.mt }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: "6px 20px", flexWrap: "wrap", marginBottom: 12, fontSize: 14, color: C.mt }}>
         <span><b style={{ color: "#fff" }}>{fa.length}</b> free agents</span>
         {out > 0 && <span><b style={{ color: "#fde68a" }}>{money(out)}</b> held in {nOut} open offer{nOut > 1 ? "s" : ""}</span>}
       </div>
-      {!open && <div style={{ background: "#ffffff0d", borderRadius: 14, padding: "12px 16px", marginBottom: 12, fontSize: 15, color: "#cbd5e1" }}>The big free agency period opens after the Combine. Right now it's whoever is left on the market.</div>}
+      {!open && <div style={{ background: "#ffffff0d", borderRadius: 14, padding: "12px 16px", marginBottom: 12, fontSize: 14, color: "#cbd5e1" }}>The big free agency period opens after the Combine. Right now it's whoever is left on the market.</div>}
       {market && (
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#ffffff0d", borderRadius: 18, padding: "12px 16px", marginBottom: 12 }}>
-          <span style={{ fontSize: 18, fontWeight: 800 }}>Day {market.day} of {FA_DAYS}</span>
-          <span style={{ flex: "1 1 260px", fontSize: 13, color: "#cbd5e1", lineHeight: 1.4 }}>Clubs make offers every day. Each player takes the best one on his day: the money, plus the role, scheme and winning he wants. Only a big overpay signs him on the spot.</span>
-          {market.day < FA_DAYS ? <Btn onClick={onNextDay} bg={C.bl} style={{ fontSize: 15, padding: "9px 18px", fontWeight: 900 }}>Next day →</Btn> : <span style={{ fontSize: 13, color: "#fde68a", fontWeight: 700 }}>Last day: everyone still deciding chooses when you finish free agency.</span>}
+          <span style={{ fontSize: 20, fontWeight: 800 }}>Day {market.day} of {FA_DAYS}</span>
+          <span style={{ flex: "1 1 260px", fontSize: 14, color: "#cbd5e1", lineHeight: 1.4 }}>Clubs make offers every day. Each player takes the best one on his day: the money, plus the role, scheme and winning he wants. Only a big overpay signs him on the spot.</span>
+          {market.day < FA_DAYS ? <Btn onClick={onNextDay} bg={C.bl} style={{ fontSize: 14, padding: "9px 18px", fontWeight: 900 }}>Next day →</Btn> : <span style={{ fontSize: 14, color: "#fde68a", fontWeight: 700 }}>Last day: everyone still deciding chooses when you finish free agency.</span>}
         </div>
       )}
       {sheets}
@@ -160,16 +160,16 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
                   <span onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0, cursor: "pointer" }}>
                     <Face s={p.face} sz={34} />
                     <span style={{ minWidth: 0 }}>
-                      <span style={{ display: "block", fontWeight: 800, fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}<DevTag p={p} /></span>
-                      <span style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span>Age {p.age}</span><span style={{ color: ask <= cap ? "#e2e8f0" : C.rd, fontWeight: 700 }}>{money(ask)}/yr</span>{from && <span style={{ color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `ex-${from.ab}`}</span>}<MarketTag p={p} market={market} ui={ui} teams={teams} /></span>
+                      <span style={{ display: "block", fontWeight: 800, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}<DevTag p={p} /></span>
+                      <span style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span>Age {p.age}</span><span style={{ color: ask <= cap ? "#e2e8f0" : C.rd, fontWeight: 700 }}>{money(ask)}/yr</span>{from && <span style={{ color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `ex-${from.ab}`}</span>}<MarketTag p={p} market={market} ui={ui} teams={teams} /></span>
                     </span>
                   </span>
-                  <span style={{ fontSize: 22, fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
+                  <span style={{ fontSize: 20, fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
                   {talkFor(p).walked ? <span style={{ fontSize: 12, color: C.rd, fontWeight: 700, width: 64, textAlign: "center" }}>Not interested</span> : <Btn onClick={() => setOffer(p)} bg={C.gn} style={{ fontSize: 14, minHeight: 42, padding: "6px 12px" }}>Offer</Btn>}
                 </div>
               );
             })}
-            {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 15 }}>Nobody matches.</div>}
+            {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 14 }}>Nobody matches.</div>}
           </div>
         ) : (
         <div style={{ maxHeight: "70vh", overflow: "auto" }}>
@@ -194,16 +194,16 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
                     </td>
                     <td style={td}><Bdg pos={posTag(p)} /><RoleTag p={p} /></td>
                     <td style={{ ...td, color: "#cbd5e1" }}>{p.age}</td>
-                    <td style={{ ...td, fontWeight: 900, fontSize: 18, color: oC(p.ovr) }}>{p.ovr}</td>
+                    <td style={{ ...td, fontWeight: 900, fontSize: 20, color: oC(p.ovr) }}>{p.ovr}</td>
                     <td className="fa-hide" style={{ ...td, color: oC(p.pot || p.ovr) }}>{p.pot || p.ovr}</td>
                     <td style={{ ...td, whiteSpace: "nowrap", color: ask <= cap ? "#e2e8f0" : C.rd }}>{money(ask)}<span className="fa-hide" style={{ color: C.mt, fontSize: 12 }}>/yr</span></td>
-                    <td style={{ ...td, textAlign: "right" }}>{talkFor(p).walked ? <span style={{ fontSize: 13, color: C.rd, fontWeight: 700 }}>Not interested</span> : <Btn onClick={() => setOffer(p)} bg="#22c55e1f" c="#4ade80" style={{ fontSize: 14, padding: "6px 14px", border: "1px solid #22c55e55", borderRadius: 8 }}>Negotiate</Btn>}</td>
+                    <td style={{ ...td, textAlign: "right" }}>{talkFor(p).walked ? <span style={{ fontSize: 14, color: C.rd, fontWeight: 700 }}>Not interested</span> : <Btn onClick={() => setOffer(p)} bg="#22c55e1f" c="#4ade80" style={{ fontSize: 14, padding: "6px 14px", border: "1px solid #22c55e55", borderRadius: 8 }}>Negotiate</Btn>}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 15 }}>Nobody matches.</div>}
+          {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 14 }}>Nobody matches.</div>}
         </div>
         )}
         {rows.length > n && <div style={{ textAlign: "center", marginTop: 10 }}><Btn onClick={() => setN(n + 50)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 14, padding: "6px 14px" }}>Show more ({rows.length - n} left)</Btn></div>}
@@ -231,7 +231,7 @@ function PhoneFA({ sp, fa, rows, n, setN, pos, setPos, needs, q, setQ, find, set
     <div>
       <Hero clr={team?.clr} logo={team} eyebrow={market ? `Day ${market.day} of ${FA_DAYS}` : open ? "The market" : ["preseason", "regular"].includes(sp) ? "In season" : sp === "draft" ? "After the market" : "Before the Combine"} title="Free Agency"
         sub={out > 0 ? `${money(out)} held in ${nOut} open offer${nOut > 1 ? "s" : ""}` : `${fa.length} players available`}
-        right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, color: cap >= 0 ? "#fff" : C.rd }}>{money(cap)}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>TO SPEND</div></div>}>
+        right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1, color: cap >= 0 ? "#fff" : C.rd }}>{money(cap)}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>TO SPEND</div></div>}>
         {!open && <div style={{ fontSize: 14, color: "#fde68a", marginTop: 12 }}>{["preseason", "regular"].includes(sp) ? "Whoever's still unsigned. Sign him any time." : sp === "draft" ? "What's left after free agency." : "The main market opens after the Combine."}</div>}
         {market && market.day < FA_DAYS && <button onClick={onNextDay} style={{ marginTop: 16, width: "100%", minHeight: 48, borderRadius: 14, border: 0, background: "#ffffff1f", color: "#fff", fontSize: 16, fontWeight: 900, cursor: "pointer" }}>Next day ›</button>}
       </Hero>
@@ -246,13 +246,13 @@ function PhoneFA({ sp, fa, rows, n, setN, pos, setPos, needs, q, setQ, find, set
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <Face s={p.face} sz={52} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-                    <div style={{ fontSize: 13, color: "#94a3b8", marginTop: 2 }}>Age {p.age}</div>
+                    <div style={{ fontSize: 16, fontWeight: 900, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                    <div style={{ fontSize: 14, color: "#94a3b8", marginTop: 2 }}>Age {p.age}</div>
                   </div>
-                  <b style={{ fontSize: 30, color: oC(p.ovr) }}>{p.ovr}</b>
+                  <b style={{ fontSize: 28, color: oC(p.ovr) }}>{p.ovr}</b>
                 </div>
                 <div style={{ marginTop: 10 }}>{tags(p)}</div>
-                <div style={{ fontSize: 15, fontWeight: 800, marginTop: 10, color: st ? st[1] : askingPrice(p) <= cap ? "#e2e8f0" : C.rd }}>{st ? st[0] : `Asks ${money(askingPrice(p))} a year`}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, marginTop: 10, color: st ? st[1] : askingPrice(p) <= cap ? "#e2e8f0" : C.rd }}>{st ? st[0] : `Asks ${money(askingPrice(p))} a year`}</div>
               </button>
             ); })}
           </div>
@@ -274,33 +274,33 @@ function PhoneFA({ sp, fa, rows, n, setN, pos, setPos, needs, q, setQ, find, set
                 <span style={{ display: "block", marginTop: 3 }}>{tags(p)}</span>
               </span>
               <span style={{ textAlign: "right", flexShrink: 0 }}>
-                <b style={{ display: "block", fontSize: 22, lineHeight: 1, color: oC(p.ovr) }}>{p.ovr}</b>
+                <b style={{ display: "block", fontSize: 20, lineHeight: 1, color: oC(p.ovr) }}>{p.ovr}</b>
                 <span style={{ display: "block", fontSize: 12, fontWeight: 700, marginTop: 4, color: st ? st[1] : walked ? C.rd : "#94a3b8" }}>{st ? (st[1] === C.gn ? "Leading" : "Outbid") : walked ? "No" : money(askingPrice(p))}</span>
               </span>
             </button>
           ); })}
-          {!rows.length && <div style={{ padding: "18px 0", color: C.mt, fontSize: 15 }}>Nobody here.</div>}
+          {!rows.length && <div style={{ padding: "18px 0", color: C.mt, fontSize: 14 }}>Nobody here.</div>}
         </div>
-        {rows.length > n && <button onClick={() => setN(n + 50)} style={{ width: "100%", minHeight: 48, marginTop: 10, borderRadius: 14, border: 0, background: "#ffffff0f", color: "#cbd5e1", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Show more</button>}
+        {rows.length > n && <button onClick={() => setN(n + 50)} style={{ width: "100%", minHeight: 48, marginTop: 10, borderRadius: 14, border: 0, background: "#ffffff0f", color: "#cbd5e1", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Show more</button>}
       </Section>
       {extras}
 
-      {sortOpen && <Sheet title="Sort" onClose={() => setSortOpen(false)}>{FA_SORTS.map(([k, l], i) => <button key={k} onClick={() => { setSort([k, ["name"].includes(k) ? 1 : k === "ovr" ? -1 : 1]); setSortOpen(false); }} style={{ display: "flex", width: "100%", minHeight: 52, alignItems: "center", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff14" : 0, color: "#fff", fontSize: 17, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}><span style={{ flex: 1, textAlign: "left" }}>{l}</span>{sort[0] === k && <span style={{ color: C.gn }}>✓</span>}</button>)}<div style={{ height: 8 }} /></Sheet>}
+      {sortOpen && <Sheet title="Sort" onClose={() => setSortOpen(false)}>{FA_SORTS.map(([k, l], i) => <button key={k} onClick={() => { setSort([k, ["name"].includes(k) ? 1 : k === "ovr" ? -1 : 1]); setSortOpen(false); }} style={{ display: "flex", width: "100%", minHeight: 52, alignItems: "center", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff14" : 0, color: "#fff", fontSize: 16, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}><span style={{ flex: 1, textAlign: "left" }}>{l}</span>{sort[0] === k && <span style={{ color: C.gn }}>✓</span>}</button>)}<div style={{ height: 8 }} /></Sheet>}
       {pk && !offer && (
         <Sheet onClose={() => setPick(null)}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14, paddingRight: 40 }}>
             <Face s={pk.face} sz={64} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.15 }}>{pk.name}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.15 }}>{pk.name}</div>
               <div style={{ fontSize: 14, color: "#94a3b8", marginTop: 2 }}>Age {pk.age}{pk.formerTeam != null && teams[pk.formerTeam] ? ` · last with ${pk.formerTeam === ui ? "you" : teams[pk.formerTeam].ab}` : ""}</div>
             </div>
-            <b style={{ fontSize: 38, color: oC(pk.ovr) }}>{pk.ovr}</b>
+            <b style={{ fontSize: 40, color: oC(pk.ovr) }}>{pk.ovr}</b>
           </div>
           <div style={{ marginBottom: 12 }}>{tags(pk)}</div>
           <div style={{ display: "flex", alignItems: "center", minHeight: 48, fontSize: 16, borderTop: "1px solid #ffffff14" }}><span style={{ color: "#94a3b8" }}>Asking</span><b style={{ marginLeft: "auto", color: askingPrice(pk) <= cap ? "#fff" : C.rd }}>{money(askingPrice(pk))} a year</b></div>
           {market && pk.ovr >= MARKET_MIN && <div style={{ padding: "10px 0", borderTop: "1px solid #ffffff14" }}><MarketTag p={pk} market={market} ui={ui} teams={teams} /></div>}
-          {talkFor(pk).walked ? <div style={{ fontSize: 15, color: C.rd, fontWeight: 700, textAlign: "center", padding: "14px 0" }}>He isn't interested in your club.</div>
-            : <button onClick={() => { setOffer(pk); setPick(null); }} style={{ width: "100%", minHeight: 54, marginTop: 10, borderRadius: 14, border: 0, background: C.gn, color: "#fff", fontSize: 17, fontWeight: 900, cursor: "pointer" }}>Make an offer</button>}
+          {talkFor(pk).walked ? <div style={{ fontSize: 14, color: C.rd, fontWeight: 700, textAlign: "center", padding: "14px 0" }}>He isn't interested in your club.</div>
+            : <button onClick={() => { setOffer(pk); setPick(null); }} style={{ width: "100%", minHeight: 54, marginTop: 10, borderRadius: 14, border: 0, background: C.gn, color: "#fff", fontSize: 16, fontWeight: 900, cursor: "pointer" }}>Make an offer</button>}
           <button onClick={() => { setSel(pk); setPick(null); }} style={{ width: "100%", minHeight: 48, marginTop: 8, borderRadius: 14, border: 0, background: "transparent", color: "#7dd3fc", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>Player card</button>
           <div style={{ height: 8 }} />
         </Sheet>

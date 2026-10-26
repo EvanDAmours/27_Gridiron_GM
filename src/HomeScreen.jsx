@@ -89,7 +89,7 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
   const Team = ({ t }) => (
     <div style={{ minWidth: 0, textAlign: "center" }}>
       <div style={{ display: "inline-flex" }}><TeamLogo t={t} sz={84} glow /></div>
-      <div style={{ fontSize: 19, fontWeight: 900, marginTop: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+      <div style={{ fontSize: 20, fontWeight: 900, marginTop: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
       <div style={{ fontSize: 14, color: "#ffffffb3" }}>{rec(t)}</div>
     </div>
   );
@@ -109,7 +109,7 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
   const leadText = lead ? lead.head : news[0]?.text;
   const sec = { padding: "0 16px", marginTop: 26 };
   const h2 = { fontSize: 20, fontWeight: 900 };
-  const link = { background: "transparent", border: 0, color: "#7dd3fc", fontSize: 15, fontWeight: 700, cursor: "pointer", padding: "6px 0" };
+  const link = { background: "transparent", border: 0, color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer", padding: "6px 0" };
   const heroBg = game
     ? `linear-gradient(180deg, transparent 45%, ${C.bg} 100%), linear-gradient(100deg, ${away.clr}d9 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr}d9 100%)`
     : `linear-gradient(180deg, transparent 40%, ${C.bg} 100%), radial-gradient(120% 90% at 50% 0%, ${me.clr}cc, ${me.clr}22 70%)`;
@@ -125,8 +125,8 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
           <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 6, marginTop: 18 }}>
             <Team t={away} />
             <div style={{ padding: "0 4px", minWidth: 92 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#ffffffb3" }}>{hero.day || "Kickoff"}</div>
-              <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.1, whiteSpace: "nowrap" }}>{hero.time}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#ffffffb3" }}>{hero.day || "Kickoff"}</div>
+              <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.1, whiteSpace: "nowrap" }}>{hero.time}</div>
               {hero.line && <div style={{ display: "inline-block", fontSize: 12, fontWeight: 800, color: "#fff", background: "#00000055", borderRadius: 999, padding: "3px 9px", marginTop: 8, whiteSpace: "nowrap" }}>{hero.line}</div>}
             </div>
             <Team t={home} />
@@ -136,14 +136,14 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
             {HOLIDAYS[game.holiday] && (() => { const h = HOLIDAYS[game.holiday]; return <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 900, color: "#fff", background: `linear-gradient(90deg, ${h.c2}, ${h.c1})`, borderRadius: 999, padding: "6px 14px" }}>{h.icon} {h.name}</span>; })()}
             {forecast && forecast.kind !== "clear" && <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 800, color: "#fff", background: "#00000059", borderRadius: 999, padding: "6px 14px" }}>{forecast.icon} {forecast.label}</span>}
           </div>}
-          {forecast?.note && <div style={{ fontSize: 13, color: "#ffffffb3", marginTop: 8 }}>{forecast.note.replace(/^./, (x) => x.toUpperCase())}</div>}
+          {forecast?.note && <div style={{ fontSize: 14, color: "#ffffffb3", marginTop: 8 }}>{forecast.note.replace(/^./, (x) => x.toUpperCase())}</div>}
         </div>
       ) : (
         <div style={{ background: heroBg, padding: "30px 16px 22px", textAlign: "center" }}>
           <div style={{ display: "inline-flex" }}><TeamLogo t={me} sz={96} glow /></div>
           <div style={{ ...eyebrow, marginTop: 14 }}>{sp === "regular" ? `${yr} · Week ${wk + 1}` : `${yr} · ${playoff ? "Playoffs" : "Offseason"}`}</div>
-          <div style={{ fontSize: 32, fontWeight: 900, textTransform: "uppercase", lineHeight: 1.05, marginTop: 4 }}>{sp === "regular" ? "Bye week" : playoff ? "Season over" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>
-          <div style={{ fontSize: 15, color: "#ffffffb3", marginTop: 6 }}>{nextGame ? `Next: Week ${nextGame.wk} ${nextGame.h === ui ? "vs" : "at"} ${teams[nextGame.h === ui ? nextGame.a : nextGame.h].name}` : `${me.city} ${me.name} · ${rec(me)}`}</div>
+          <div style={{ fontSize: 28, fontWeight: 900, textTransform: "uppercase", lineHeight: 1.05, marginTop: 4 }}>{sp === "regular" ? "Bye week" : playoff ? "Season over" : PHASE[sp]?.replace("Offseason: ", "") || "Season complete"}</div>
+          <div style={{ fontSize: 14, color: "#ffffffb3", marginTop: 6 }}>{nextGame ? `Next: Week ${nextGame.wk} ${nextGame.h === ui ? "vs" : "at"} ${teams[nextGame.h === ui ? nextGame.a : nextGame.h].name}` : `${me.city} ${me.name} · ${rec(me)}`}</div>
         </div>
       )}
 
@@ -152,9 +152,9 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
           <div style={{ display: "flex", alignItems: "center", gap: 12, borderRadius: 16, background: rest.on ? "#0c4a6e66" : "#ffffff0d", padding: "12px 14px" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 800 }}>No. 1 seed clinched</div>
-              <div style={{ fontSize: 13, color: "#94a3b8" }}>{rest.on ? "Starters are resting until the playoffs" : "Rest starters to keep them healthy"}</div>
+              <div style={{ fontSize: 14, color: "#94a3b8" }}>{rest.on ? "Starters are resting until the playoffs" : "Rest starters to keep them healthy"}</div>
             </div>
-            <button onClick={rest.toggle} style={{ minHeight: 40, borderRadius: 999, border: 0, padding: "0 16px", background: rest.on ? "#334155" : "#0284c7", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{rest.on ? "Play them" : "Rest"}</button>
+            <button onClick={rest.toggle} style={{ minHeight: 40, borderRadius: 999, border: 0, padding: "0 16px", background: rest.on ? "#334155" : "#0284c7", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{rest.on ? "Play them" : "Rest"}</button>
           </div>
         </div>
       )}
@@ -172,7 +172,7 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
               return (
                 <button key={m.label} onClick={m.onClick} style={{ flex: `0 0 ${todos.length === 1 ? "100%" : "78%"}`, minWidth: 0, scrollSnapAlign: "start", minHeight: 118, display: "flex", flexDirection: "column", textAlign: "left", whiteSpace: "normal", borderRadius: 18, border: 0, padding: 16, color: "#fff", cursor: "pointer", background: i === 0 ? `linear-gradient(140deg, ${me.clr}, ${me.clr}55)` : "#ffffff0f" }}>
                   <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 900, letterSpacing: 1.2, textTransform: "uppercase", color: i === 0 ? "#ffffffcc" : c }}>{i > 0 && <span style={{ width: 8, height: 8, borderRadius: 4, background: c }} />}{word}</span>
-                  <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.25, marginTop: 8, ...clamp(2) }}>{plain(m.label)}</span>
+                  <span style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.25, marginTop: 8, ...clamp(2) }}>{plain(m.label)}</span>
                   {m.sub && <span style={{ fontSize: 14, color: "#ffffffb3", marginTop: 4, lineHeight: 1.35, ...clamp(2) }}>{m.sub}</span>}
                 </button>
               );
@@ -205,8 +205,8 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
           </div>
           <button onClick={() => (lead && (lead.inc || lead.retire) ? onStory?.(lead) : news2("stories"))} style={{ display: "flex", gap: 12, alignItems: "flex-start", width: "100%", textAlign: "left", whiteSpace: "normal", borderRadius: 18, border: 0, padding: 16, color: "#fff", cursor: "pointer", background: leadT ? `linear-gradient(135deg, ${leadT.clr}cc, #ffffff0f 75%)` : "#ffffff0f" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              {lead?.breaking && <div style={{fontSize: 13, fontWeight: 800, color: "#fca5a5", marginBottom: 4 }}>Breaking</div>}
-              <div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.3, ...clamp(3) }}>{leadText}</div>
+              {lead?.breaking && <div style={{fontSize: 14, fontWeight: 800, color: "#fca5a5", marginBottom: 4 }}>Breaking</div>}
+              <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.3, ...clamp(3) }}>{leadText}</div>
             </div>
             {(leadT || news[0]?.team) && <TeamLogo t={leadT || news[0].team} sz={40} glow />}
           </button>
@@ -222,7 +222,7 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
                 <span style={{ width: 10, height: 10, borderRadius: 5, background: c, flexShrink: 0 }} />
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontSize: 16, fontWeight: 700, lineHeight: 1.3 }}>{plain(m.label)}</span>
-                  {i === 0 && m.sub && <span style={{ display: "block", fontSize: 13, color: "#94a3b8" }}>{m.sub}</span>}
+                  {i === 0 && m.sub && <span style={{ display: "block", fontSize: 14, color: "#94a3b8" }}>{m.sub}</span>}
                 </span>
                 <span style={{ fontSize: 20, color: "#64748b" }}>›</span>
               </button>
@@ -246,7 +246,7 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
 
 // This week's top stories (written after every week), with the league wire as a fallback.
 function Stories({ stories, news, teams, onStory }) {
-  if (!stories.length && !news.length) return <div style={{ fontSize: 15, color: "#cbd5e1" }}>Quiet around the league so far. Stories arrive after every week.</div>;
+  if (!stories.length && !news.length) return <div style={{ fontSize: 14, color: "#cbd5e1" }}>Quiet around the league so far. Stories arrive after every week.</div>;
   if (!stories.length) return news.map((n, i) => (
     <div key={i} style={{ background: "#ffffff0d", border: "1px solid #ffffff1a", borderRadius: 10, padding: 12, marginBottom: 10 }}>
       {n.team && <div style={{ marginBottom: 6 }}><TeamLogo t={n.team} sz={28} /></div>}
@@ -267,10 +267,10 @@ function Stories({ stories, news, teams, onStory }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
           {t && <TeamLogo t={t} sz={i === 0 ? 40 : 26} />}
           {st.breaking && <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, color: "#fff", background: "#dc2626", borderRadius: 4, padding: "2px 6px" }}>BREAKING</span>}
-          {st.mine && <span style={{fontSize: 13, fontWeight: 800, color: "#fdba74" }}>Your team</span>}
+          {st.mine && <span style={{fontSize: 14, fontWeight: 800, color: "#fdba74" }}>Your team</span>}
         </div>
-        <div style={{ fontSize: i === 0 ? 17 : 15, fontWeight: 800, lineHeight: 1.3 }}>{st.head}</div>
-        <div style={{ fontSize: 13, color: "#cbd5e1", lineHeight: 1.45, marginTop: 4 }}>{st.text}</div>
+        <div style={{ fontSize: i === 0 ? 16 : 14, fontWeight: 800, lineHeight: 1.3 }}>{st.head}</div>
+        <div style={{ fontSize: 14, color: "#cbd5e1", lineHeight: 1.45, marginTop: 4 }}>{st.text}</div>
         {(st.inc || st.retire) && onStory && <div style={{ fontSize: 12, fontWeight: 800, color: "#7dd3fc", marginTop: 6 }}>{st.retire ? "👋 See the whole retirement class →" : "📰 Read the full story →"}</div>}
       </div>
     );
@@ -292,11 +292,11 @@ function Injuries({ teams, ui, onNav, wk }) {
   );
   return (
     <>
-      <div style={{fontSize: 13, fontWeight: 800, color: "#94a3b8", margin: "2px 0 4px" }}>Your team · {mine.length}</div>
+      <div style={{fontSize: 14, fontWeight: 800, color: "#94a3b8", margin: "2px 0 4px" }}>Your team · {mine.length}</div>
       {mine.length ? mine.map(({ p, st }) => row(p, null, st)) : <div style={{ fontSize: 14, color: C.gn, padding: "6px 0 10px" }}>Fully healthy.</div>}
-      <div style={{fontSize: 13, fontWeight: 800, color: "#94a3b8", margin: "14px 0 4px" }}>Around the league</div>
+      <div style={{fontSize: 14, fontWeight: 800, color: "#94a3b8", margin: "14px 0 4px" }}>Around the league</div>
       {league.length ? league.map(({ p, t, st }) => row(p, t, st)) : <div style={{ fontSize: 14, color: "#cbd5e1", padding: "6px 0" }}>No big names out.</div>}
-      {mine.length > 0 && <button onClick={() => onNav("roster")} style={{ marginTop: 10, background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", padding: 0 }}>Manage roster →</button>}
+      {mine.length > 0 && <button onClick={() => onNav("roster")} style={{ marginTop: 10, background: "transparent", border: 0, color: "#7dd3fc", fontSize: 14, cursor: "pointer", padding: 0 }}>Manage roster →</button>}
     </>
   );
 }
@@ -319,7 +319,7 @@ function OffseasonBoard({ me, sp, onNav }) {
         {needs.length ? needs.map((n) => (
           <button key={n.pos} onClick={() => onNav(go)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", background: "transparent", border: 0, borderBottom: "1px solid #ffffff10", padding: "5px 0", color: "#fff", cursor: "pointer" }}>
             <Bdg pos={n.pos} /><b style={{ fontSize: 14, textTransform: "capitalize" }}>{needName(n.pos)}</b>
-            <span style={{ fontSize: 12.5, color: "#94a3b8", marginLeft: "auto", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.why[0] || ""}</span>
+            <span style={{ fontSize: 12, color: "#94a3b8", marginLeft: "auto", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.why[0] || ""}</span>
           </button>
         )) : <div style={{ fontSize: 14, color: "#cbd5e1" }}>No glaring holes. Build depth and stay young.</div>}
       </div>
@@ -348,18 +348,18 @@ function RosterChecklist({ me, sp, fa, capRoom, onFa, mobile }) {
   return (
     <div style={{ background: "#00000040", border: "1px solid #ffffff1a", borderRadius: 10, padding: "10px 12px", marginTop: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-        <span style={{fontSize: 13, fontWeight: 800, color: "#94a3b8" }}>Build your 53</span>
-        <b style={{ fontSize: 15, color: plan.open ? C.gd : C.gn }}>{plan.count}/{plan.target}</b>
+        <span style={{fontSize: 14, fontWeight: 800, color: "#94a3b8" }}>Build your 53</span>
+        <b style={{ fontSize: 14, color: plan.open ? C.gd : C.gn }}>{plan.count}/{plan.target}</b>
         <div style={{ flex: "1 1 80px", height: 6, borderRadius: 3, background: "#ffffff14", overflow: "hidden", minWidth: 60 }}><div style={{ width: `${pct}%`, height: "100%", background: plan.open ? C.gd : C.gn }} /></div>
-        <span style={{ fontSize: 12.5, color: "#cbd5e1" }}>{plan.open ? `${plan.open} spot${plan.open > 1 ? "s" : ""} to fill` : "Full roster"}{sp === "combine" || sp === "resign" ? " next season" : ""} · <b style={{ color: capRoom >= 0 ? C.gn : C.rd }}>{money(capRoom)}</b> cap space</span>
+        <span style={{ fontSize: 12, color: "#cbd5e1" }}>{plan.open ? `${plan.open} spot${plan.open > 1 ? "s" : ""} to fill` : "Full roster"}{sp === "combine" || sp === "resign" ? " next season" : ""} · <b style={{ color: capRoom >= 0 ? C.gn : C.rd }}>{money(capRoom)}</b> cap space</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", columnGap: 14 }}>
         {plan.rows.map((r) => (
           <button key={r.key} onClick={() => onFa(r.pos)} title={r.best ? `Best free agent: ${r.best.name} (${r.best.pos} ${r.best.ovr}), asking about ${money(r.ask)} a year` : "Nobody left on the market here"} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minWidth: 0, textAlign: "left", background: "transparent", border: 0, borderBottom: "1px solid #ffffff10", padding: "4px 0", color: "#fff", cursor: "pointer" }}>
             <span style={{ width: 9, height: 9, borderRadius: 5, background: tone(r), flexShrink: 0 }} />
-            <span style={{ fontSize: 13.5, fontWeight: 700, width: mobile ? 112 : 104, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</span>
-            <b style={{ fontSize: 13, color: tone(r), width: 34, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{r.have}/{r.want}</b>
-            <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: r.short ? "#e2e8f0" : "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "right" }}>
+            <span style={{ fontSize: 14, fontWeight: 700, width: mobile ? 112 : 104, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.label}</span>
+            <b style={{ fontSize: 14, color: tone(r), width: 34, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{r.have}/{r.want}</b>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: r.short ? "#e2e8f0" : "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "right" }}>
               {r.best ? <>{r.best.name} <b style={{ color: oC(r.best.ovr) }}>{r.best.ovr}</b> · {money(r.ask)}</> : "market empty"}
             </span>
           </button>
@@ -410,7 +410,7 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
     const spread = sp2 ? (sp2.pts ? `${(sp2.home ? home : away).ab} −${sp2.pts}` : "Pick'em") : null;
     const restEl = rest && (
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, padding: "12px 16px", borderRadius: 16, background: rest.on ? "#0c4a6e55" : "#ffffff0d" }}>
-        <div style={{ flex: 1, fontSize: 15, color: "#e2e8f0" }}><b style={{ color: "#7dd3fc" }}>No. 1 seed clinched.</b> {rest.on ? "Your starters are resting until the playoffs." : "Rest your starters to keep them healthy for the playoffs."}</div>
+        <div style={{ flex: 1, fontSize: 14, color: "#e2e8f0" }}><b style={{ color: "#7dd3fc" }}>No. 1 seed clinched.</b> {rest.on ? "Your starters are resting until the playoffs." : "Rest your starters to keep them healthy for the playoffs."}</div>
         <Btn onClick={rest.toggle} bg={rest.on ? "#334155" : "#0284c7"} style={{ fontSize: 14, fontWeight: 900, padding: "9px 16px", borderRadius: 10 }}>{rest.on ? "Play starters" : "Rest starters"}</Btn>
       </div>
     );
@@ -429,10 +429,10 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
     const goNeed = sp === "freeagency" ? "freeagency" : sp === "draft" ? "draft" : sp === "combine" ? "scouting" : sp === "resign" ? "freeagency" : "roster";
     const middle = { title: "Biggest needs", body: needs.length ? needs.map((n, i) => (
       <button key={n.pos} onClick={() => (onFa && (sp === "freeagency" || sp === "resign") ? onFa(n.pos) : onNav(goNeed))} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 50, background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff14" : 0, color: "#fff", textAlign: "left", cursor: "pointer", padding: 0 }}>
-        <Bdg pos={n.pos} /><b style={{ fontSize: 15, textTransform: "capitalize" }}>{needName(n.pos)}</b>
-        <span style={{ marginLeft: "auto", fontSize: 13, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "55%" }}>{n.why[0] || ""}</span>
+        <Bdg pos={n.pos} /><b style={{ fontSize: 14, textTransform: "capitalize" }}>{needName(n.pos)}</b>
+        <span style={{ marginLeft: "auto", fontSize: 14, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "55%" }}>{n.why[0] || ""}</span>
       </button>
-    )) : <div style={{ fontSize: 15, color: "#94a3b8" }}>No glaring holes. Build depth and stay young.</div> };
+    )) : <div style={{ fontSize: 14, color: "#94a3b8" }}>No glaring holes. Build depth and stay young.</div> };
     const below = ["combine", "resign", "freeagency", "draft"].includes(sp) && onFa ? <div style={{ marginTop: 14 }}><RosterChecklist me={me} sp={sp} fa={fa} capRoom={capRoom} onFa={onFa} mobile={false} /></div> : null;
     // the to-do list's first row is the phase's main job; on this Home the hero's buttons do it
     return <DeskHome {...{ primary: primary.slice(0, 2), menu, stories, news, teams, onStory, side, rest: below, injuries: <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />, onInbox: () => onNav("inbox"), middle, phase: { me, eyebrow: sp === "regular" ? `${yr} · Week ${nextWk}` : sp === "playoffs" ? `${yr} season` : `${yr} offseason`, title: titles[sp] || label, sub, stats } }} />;
