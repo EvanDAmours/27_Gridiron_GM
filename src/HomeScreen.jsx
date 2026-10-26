@@ -369,7 +369,7 @@ function RosterChecklist({ me, sp, fa, capRoom, onFa, mobile }) {
   );
 }
 
-export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory, rivalId, h2h, devFocus }) {
+export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mobile, teams, ui, depthOrder, playingTime, sched, wk, sp, yr, pb, byeMap, news, stories = [], messages, menu, primary, onNav, side, planCard, onStory, rivalId, h2h, devFocus, devStrip }) {
   const me = teams[ui];
   const [panel, setPanel] = useState("stories");
   const nextWk = sp === "preseason" ? 1 : wk + 1;
@@ -414,7 +414,7 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
         <Btn onClick={rest.toggle} bg={rest.on ? "#334155" : "#0284c7"} style={{ fontSize: 14, fontWeight: 900, padding: "9px 16px", borderRadius: 10 }}>{rest.on ? "Play starters" : "Rest starters"}</Btn>
       </div>
     );
-    return <DeskHome {...{ away, home, ra, rh, game, eyebrow, forecast, spread, primary: primary.slice(0, 2), menu, planCard, stories, news, teams, onStory, side, rest: restEl, injuries: <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />, onInbox: () => onNav("inbox") }} />;
+    return <DeskHome {...{ devStrip, away, home, ra, rh, game, eyebrow, forecast, spread, primary: primary.slice(0, 2), menu, planCard, stories, news, teams, onStory, side, rest: restEl, injuries: <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />, onInbox: () => onNav("inbox") }} />;
   }
   // desktop with no game this week (a bye, the off-season, a season that's over): the same Home,
   // a hero for the time of year in place of the promo, your biggest needs in the middle card
@@ -435,6 +435,6 @@ export default function HomeScreen({ rest = null, fa = [], capRoom = 0, onFa, mo
     )) : <div style={{ fontSize: 14, color: "#94a3b8" }}>No glaring holes. Build depth and stay young.</div> };
     const below = ["combine", "resign", "freeagency", "draft"].includes(sp) && onFa ? <div style={{ marginTop: 14 }}><RosterChecklist me={me} sp={sp} fa={fa} capRoom={capRoom} onFa={onFa} mobile={false} /></div> : null;
     // the to-do list's first row is the phase's main job; on this Home the hero's buttons do it
-    return <DeskHome {...{ primary: primary.slice(0, 2), menu, stories, news, teams, onStory, side, rest: below, injuries: <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />, onInbox: () => onNav("inbox"), middle, phase: { me, eyebrow: sp === "regular" ? `${yr} · Week ${nextWk}` : sp === "playoffs" ? `${yr} season` : `${yr} offseason`, title: titles[sp] || label, sub, stats } }} />;
+    return <DeskHome {...{ devStrip, primary: primary.slice(0, 2), menu, stories, news, teams, onStory, side, rest: below, injuries: <Injuries teams={teams} ui={ui} onNav={onNav} wk={wk} />, onInbox: () => onNav("inbox"), middle, phase: { me, eyebrow: sp === "regular" ? `${yr} · Week ${nextWk}` : sp === "playoffs" ? `${yr} season` : `${yr} offseason`, title: titles[sp] || label, sub, stats } }} />;
   }
 }

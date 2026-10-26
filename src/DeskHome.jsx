@@ -61,7 +61,7 @@ function PhaseHero({ me, eyebrow, title, sub, stats = [], primary = [] }) {
 // this week (Play, Sim). spread: "NYG −3" or "Pick'em". eyebrow: what kind of game it is.
 // No game this week (a bye, or the off-season): phase = { me, eyebrow, title, sub, stats: [[label, value, color]] }
 // takes the promo's place, and middle = { title, body } the game plan's.
-export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, spread, primary = [], menu = [], planCard, stories = [], news = [], teams, onStory, side, rest, extra, injuries, onInbox, phase, middle }) {
+export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, spread, primary = [], menu = [], planCard, stories = [], news = [], teams, onStory, side, rest, extra, injuries, onInbox, phase, middle, devStrip }) {
   const [devOpen, setDevOpen] = useState(false);
   const [injOpen, setInjOpen] = useState(false);
   // the to-do list (and the inbox) open these sheets from anywhere in the app
@@ -111,7 +111,6 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
           {!todo.length && <div style={{ fontSize: 14, color: "#94a3b8", padding: "10px 0" }}>Nothing needs you this week.</div>}
           <div style={{ display: "flex", gap: 16, marginTop: 6 }}>
             {(todo.length > 3 || moreTodo) && <button onClick={onInbox || moreTodo?.onClick} style={{ background: "transparent", border: 0, padding: "6px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>See all</button>}
-            {side && <button onClick={() => setDevOpen(true)} style={{ background: "transparent", border: 0, padding: "6px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Development focus</button>}
           </div>
         </div>
         <div style={card}>
@@ -130,6 +129,7 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
           </> : news[0] ? <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.4 }}>{news[0].text}</div> : <div style={{ fontSize: 14, color: "#94a3b8" }}>Quiet around the league so far. Stories arrive after every week.</div>}
         </div>
       </div>
+      {devStrip}
       {rest}
       {devOpen && <Sheet title="Development focus" onClose={() => setDevOpen(false)}>{side}<div style={{ height: 10 }} /></Sheet>}
       {injOpen && injuries && <Sheet title="Injury report" onClose={() => setInjOpen(false)}>{injuries}<div style={{ height: 10 }} /></Sheet>}
