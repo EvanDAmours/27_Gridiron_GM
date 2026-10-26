@@ -1913,4 +1913,7 @@ export const PATCH_NOTES = [
     "Super Bowl live game: the old brown banner is now one slim gold title strip (Super Bowl LXIV, stadium and city) in the new style, and the field gives up exactly that much room, so the controls stay on screen without scrolling",
     "Live game buttons without emoji: Sim to end of Q1, Pause, Finish game, Box score, Settings",
   ] },
+  { v: "4.75", date: "2026-10-23", title: "Score bug spacing", notes: [
+    "Score bug: the scores sit further in from the slanted edges, so two-digit scores are never clipped, and possession is a small gold dot instead of a football emoji",
+  ] },
 ];
