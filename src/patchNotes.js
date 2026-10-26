@@ -1909,4 +1909,8 @@ export const PATCH_NOTES = [
   { v: "4.73", date: "2026-10-23", title: "Super Bowl home, refined", notes: [
     "Super Bowl week on Home, redone: the Lombardi Trophy is now a tall, soft silhouette behind the two stars, fading into the banner, with Super Bowl LXI as a gold title between thin gold rules and a fine gold edge on the banner",
   ] },
+  { v: "4.74", date: "2026-10-23", title: "Super Bowl live strip", notes: [
+    "Super Bowl live game: the old brown banner is now one slim gold title strip (Super Bowl LXIV, stadium and city) in the new style, and the field gives up exactly that much room, so the controls stay on screen without scrolling",
+    "Live game buttons without emoji: Sim to end of Q1, Pause, Finish game, Box score, Settings",
+  ] },
 ];
