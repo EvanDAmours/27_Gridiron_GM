@@ -1939,4 +1939,7 @@ export const PATCH_NOTES = [
     "Draft day, fewer layers and pop-ups: no pop-up for every first-round pick (the ticker has them), no duplicate on-the-clock message, no picks strip, the war room is one line, and an incoming trade call is a card on the page instead of a pop-up over it. The right side is just Up next and your list",
     "On the clock, the board no longer dims the players who are still there for you",
   ] },
+  { v: "4.79", date: "2026-10-23", title: "Quiet draft-day offers", notes: [
+    "Draft-day trade calls redone: no more pop-up card with a countdown bar, ringing logo and purple panels. When your pick is on the clock, the clubs that want to move up sit in one quiet Offers list beside the board: who, what you would get (R1 #21 · 2027 R1 · 2027 R2) and how it grades on the trade chart, with Accept, Counter and Pass. A star sliding down the board puts that club first, with a short line on who they are after. The board never moves",
+  ] },
 ];

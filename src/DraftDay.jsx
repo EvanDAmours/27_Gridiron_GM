@@ -1,7 +1,7 @@
 // Draft day presentation: the on-the-clock stage, the commissioner's "pick is in" card, the
 // steal/reach ticker and the trade-up phone bank.
 import { MOBILE } from "./mobile.js";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { C, Bdg, Btn, TeamLogo, SheetGrip, CloseX, Sheet, Segments, Icon } from "./ui.jsx";
 import { pickValueTag, pickLabel } from "./draftTrade.js";
@@ -189,44 +189,6 @@ export function TradeUpPanel({ offers, yr, onAccept, onPass, onClose }) {
   );
 }
 
-// The phone rings while you're on the clock: a club behind you wants your pick. The best offer comes
-// in as a call (logo, who they're after, what they'll give) with a few seconds to answer before
-// they hang up and try someone else. The full list of offers stays below the clock.
-export function IncomingCall({ offer, team, curPick, yr, onAccept, onMore, onDecline, secs = 20, inline = false }) {
-  const drop = useRef(onDecline);
-  drop.current = onDecline;
-  useEffect(() => { const t = setTimeout(() => drop.current(), secs * 1000); return () => clearTimeout(t); }, [offer.id, secs]);
-  // on the page itself (inside the board, its layers covered it), bottom right over the recent
-  // picks, so it never hides the board you're picking from
-  // inline (desktop): a card in the war room, part of the page rather than a pop-up over it
-  const wrapIt = (el) => (inline ? el : createPortal(el, document.body));
-  return wrapIt(
-    <div style={{ ...(inline ? { position: "relative", marginBottom: 10, maxWidth: 560 } : { position: "fixed", right: MOBILE ? 8 : 18, left: MOBILE ? 8 : "auto", top: MOBILE ? 64 : "auto", bottom: MOBILE ? "auto" : 100, zIndex: 2400, width: MOBILE ? "auto" : 380 }), fontFamily: C.f, color: C.tx, borderRadius: 16, overflow: "hidden", background: "linear-gradient(160deg,#1e1b4b,#0b1120 70%)", border: "1px solid #a78bfa88", boxShadow: "0 20px 60px #000d, 0 0 0 1px #000", animation: "dd-in .3s ease-out" }}>
-      <style>{"@keyframes dd-in{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}} @keyframes callRing{0%{box-shadow:0 0 0 0 #a78bfa99}70%{box-shadow:0 0 0 16px #a78bfa00}100%{box-shadow:0 0 0 0 #a78bfa00}} @keyframes callBar{from{width:100%}to{width:0%}} @keyframes callShake{0%,100%{transform:rotate(0)}10%,30%{transform:rotate(-12deg)}20%,40%{transform:rotate(12deg)}50%{transform:rotate(0)}}"}</style>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px 10px" }}>
-        <div style={{ borderRadius: "50%", padding: 6, background: "#0b1120", animation: "callRing 1.4s infinite" }}><TeamLogo t={team} sz={46} /></div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 2, color: "#c4b5fd" }}>{offer.faller ? <span style={{color: "#fca5a5" }}>Urgent call · he's sliding</span> : "INCOMING CALL"}</div>
-          <div style={{ fontSize: 17, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{team.city} {team.name}</div>
-          <div style={{ fontSize: 12.5, color: "#cbd5e1" }}>{offer.faller ? `"${offer.target.name} (${offer.target.pos}) was a top-${Math.max(5, Math.ceil(curPick.overall - offer.fell))} player on every board and he's still there. We'll overpay to jump you at #${curPick.overall}."` : `"We'd like to move up to #${curPick.overall}${offer.target ? ` for ${offer.target.name}` : ""}."`}</div>
-        </div>
-      </div>
-      <div style={{ padding: "0 16px 12px" }}>
-        <div style={{fontSize: 13, fontWeight: 800, color: C.mt, marginBottom: 4 }}>They offer</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>{[offer.theirPick, ...offer.extras].map((a, i) => <span key={i} style={{ fontSize: 13, fontWeight: 800, padding: "3px 9px", borderRadius: 6, background: i ? "#1e293b" : "#14532d", color: i ? "#e2e8f0" : "#86efac" }}>{pickLabel(a, yr)}</span>)}</div>
-        <div style={{ fontSize: 12, color: offer.pct >= 0 ? C.gn : C.gd, marginTop: 6 }}>Trade chart: {offer.pct >= 0 ? `+${offer.pct}% in your favor` : `${offer.pct}% (they're asking a discount)`}</div>
-        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-          <Btn onClick={onAccept} bg={C.gn} style={{ flex: 1, fontSize: 14, padding: "8px 0", fontWeight: 900 }}>Accept</Btn>
-          <Btn onClick={onMore} bg="#ffffff14" c="#e2e8f0" style={{ flex: 1, fontSize: 14, padding: "8px 0" }}>Ask for more</Btn>
-          <Btn onClick={onDecline} bg="transparent" c="#94a3b8" style={{ fontSize: 14, padding: "8px 12px" }}>Hang up</Btn>
-        </div>
-      </div>
-      <div style={{ height: 4, background: "#ffffff14" }}><div key={offer.id} style={{ height: "100%", background: "#a78bfa", animation: `callBar ${secs}s linear forwards` }} /></div>
-    </div>
-  );
-}
-
-
 // ---------- Phones: the draft room ----------
 // One calm card for who's on the clock (sticky while you work the board), one line for what just
 // happened, and everything else (trades, the draft log) a tap away in a sheet.
@@ -363,3 +325,45 @@ export function PhoneCall({ offer, team, curPick, yr, onAccept, onMore, onDeclin
 }
 
 export const PhoneDraftButtons = ({ items }) => <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>{items.filter(Boolean).map(([l, ic, on, fn]) => <button key={l} onClick={fn} style={pillBtn(on)}><Icon k={ic} size={18} />{l}</button>)}</div>;
+
+// Draft day, your pick on the clock: the clubs that want to move up, as one quiet list beside the
+// board (never over it, never pushing it down). One row per offer: who, what you'd get and how it
+// grades on the trade chart; Accept, Counter or Pass. A star sliding down the board makes the most
+// urgent call, so that club comes first with a short line on who they're after.
+export function TradeOffers({ offers, teams, curPick, yr, onAccept, onCounter, onPass }) {
+  const [all, setAll] = useState(false);
+  if (!offers.length) return null;
+  const list = [...offers].sort((a, b) => (b.faller ? 1 : 0) - (a.faller ? 1 : 0) || b.pct - a.pct);
+  const shown = all ? list : list.slice(0, 3);
+  const quiet = { background: "transparent", border: 0, padding: "6px 4px", fontSize: 13, fontWeight: 700, color: "#94a3b8", cursor: "pointer" };
+  return (
+    <div style={{ background: C.cd, border: "1px solid #ffffff0d", borderRadius: 18, padding: "14px 16px 8px", marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+        <span style={{ fontSize: 16, fontWeight: 900 }}>Offers for #{curPick.overall}</span>
+        <span style={{ marginLeft: "auto", fontSize: 13, color: C.mt }}>{list.length} club{list.length > 1 ? "s" : ""} calling</span>
+      </div>
+      {shown.map((o, i) => {
+        const t = teams[o.team], gets = [o.theirPick, ...o.extras].map((a) => pickLabel(a, yr).replace(/^(\d{4}) Round (\d)$/, "$1 R$2"));
+        return (
+          <div key={o.id} style={{ padding: "12px 0 6px", borderTop: i ? "1px solid #ffffff0d" : 0, marginTop: i ? 0 : 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <TeamLogo t={t} sz={30} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 800 }}>{t.name}</div>
+                <div style={{ fontSize: 13, color: "#cbd5e1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{gets.join(" · ")}</div>
+              </div>
+              <span title="On the trade chart: what you get against what you give" style={{ fontSize: 15, fontWeight: 900, color: o.pct >= 0 ? "#4ade80" : "#fbbf24", fontVariantNumeric: "tabular-nums" }}>{o.pct >= 0 ? "+" : ""}{o.pct}%</span>
+            </div>
+            {o.faller && o.target && <div style={{ fontSize: 12.5, color: "#fbbf24", margin: "4px 0 0 42px" }}>After {o.target.name} ({o.target.pos}), sliding down the board</div>}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, margin: "6px 0 0 42px" }}>
+              <button onClick={() => onAccept(o)} style={{ background: "#fff", color: "#0b1220", border: 0, borderRadius: 99, padding: "6px 16px", fontSize: 13, fontWeight: 900, cursor: "pointer" }}>Accept</button>
+              <button onClick={() => onCounter(o)} style={quiet}>Counter</button>
+              <button onClick={() => onPass(o)} style={quiet}>Pass</button>
+            </div>
+          </div>
+        );
+      })}
+      {list.length > 3 && <button onClick={() => setAll((v) => !v)} style={{ ...quiet, display: "block", marginTop: 2 }}>{all ? "Fewer" : `${list.length - 3} more`}</button>}
+    </div>
+  );
+}
