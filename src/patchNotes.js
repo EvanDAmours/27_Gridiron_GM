@@ -1890,4 +1890,11 @@ export const PATCH_NOTES = [
   { v: "4.69", date: "2026-10-23", title: "Positions on Development", notes: [
     "Development: every player in Worth knowing shows his age, position and OVR (so you can tell your focus players apart), and the Season plan shows each focus player's position",
   ] },
+  { v: "4.70", date: "2026-10-23", title: "Development by position group", notes: [
+    "Season plan: Offensive and Defensive focus players side by side as cards 1 and 2, each with position, age and OVR",
+    "Camp priority is now a position group: QB room, RB room, Receivers (WR and TE), Offensive line, Defensive line, Linebackers or Defensive backs (or Balanced). Everyone in that room gets about +0.7 next summer",
+    "Development overview: the two columns line up, and the screen fits without scrolling",
+    "Home: the Development strip is slimmer and the page fits without scrolling",
+    "Rehab plan: the top line no longer gets clipped, and the player's name opens his card (the same fix for every dialog's top line)",
+  ] },
 ];

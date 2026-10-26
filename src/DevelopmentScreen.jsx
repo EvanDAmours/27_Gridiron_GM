@@ -7,7 +7,7 @@ import { C, Sheet } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { posTag } from "./dline.js";
 import DevFocusCard from "./DevFocus.jsx";
-import { CAMP, projShare, projGrowth, roleOf, trendOf, perSeason } from "./development.js";
+import { CAMP, inCamp, projShare, projGrowth, roleOf, trendOf, perSeason } from "./development.js";
 
 const ROLE = { starter: "starter", rotation: "rotation", backup: "backup" };
 const sign = (g) => (g > 0 ? `+${g}` : `${g}`);
@@ -15,23 +15,24 @@ const tone = (g) => (g >= 0.8 ? "#4ade80" : g <= -0.8 ? "#f87171" : "#cbd5e1");
 
 function Tabs({ value, onChange }) {
   return (
-    <div style={{ display: "flex", gap: 6, marginBottom: MOBILE ? 18 : 26 }}>
+    <div style={{ display: "flex", gap: 6, marginBottom: MOBILE ? 18 : 18 }}>
       {[["overview", "Overview"], ["plan", "Season plan"], ["young", "Young players"]].map(([k, l]) => (
         <button key={k} onClick={() => onChange(k)} style={{ border: 0, borderRadius: 99, padding: "8px 16px", fontSize: 15, fontWeight: 800, cursor: "pointer", background: value === k ? "#ffffff1a" : "transparent", color: value === k ? "#fff" : "#94a3b8" }}>{l}</button>
       ))}
     </div>
   );
 }
+const CAMP_GROUPS_SUB = (camp, n) => (camp && camp !== "balanced" && CAMP[camp] ? `About +0.7 next summer for the ${n} players in the room` : "Even time for every position group");
 const H1 = ({ children, sub }) => (
-  <div style={{ marginBottom: MOBILE ? 18 : 28 }}>
-    <div style={{ fontSize: MOBILE ? 30 : 44, fontWeight: 900, letterSpacing: -1, lineHeight: 1.05 }}>{children}</div>
+  <div style={{ marginBottom: MOBILE ? 18 : 20 }}>
+    <div style={{ fontSize: MOBILE ? 30 : 38, fontWeight: 900, letterSpacing: -1, lineHeight: 1.05 }}>{children}</div>
     {sub && <div style={{ fontSize: MOBILE ? 15 : 18, color: "#94a3b8", marginTop: 8 }}>{sub}</div>}
   </div>
 );
 const Card = ({ children, style }) => <div style={{ background: C.cd, borderRadius: 18, padding: "4px 22px", border: "1px solid #ffffff0d", ...style }}>{children}</div>;
 function Row({ title, sub, right, rightColor, onClick, last }) {
   return (
-    <div onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 0", borderBottom: last ? 0 : "1px solid #ffffff10", cursor: onClick ? "pointer" : "default" }}>
+    <div onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 0", borderBottom: last ? 0 : "1px solid #ffffff10", cursor: onClick ? "pointer" : "default" }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>{title}</div>
         {sub && <div style={{ fontSize: 14, color: "#94a3b8", marginTop: 3 }}>{sub}</div>}
@@ -41,7 +42,7 @@ function Row({ title, sub, right, rightColor, onClick, last }) {
     </div>
   );
 }
-const Label = ({ children, right }) => <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 15, fontWeight: 700, color: "#94a3b8", margin: "0 4px 10px" }}><span>{children}</span>{right}</div>;
+const Label = ({ children, right }) => <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 40, fontSize: 15, fontWeight: 700, color: "#94a3b8", margin: "0 4px 10px" }}><span>{children}</span>{right}</div>;
 
 // roster: your players; gp: games your club has played this season; focus/setFocus: the two
 // focus players; camp/setCamp: the camp priority; planYr/setPlanYr: the year the plan was locked
@@ -70,7 +71,7 @@ export default function DevelopmentScreen({ roster, yr, sp, wk, gp = 0, focus, s
   ].slice(0, 5);
   const list = rows.filter((r) => trendOf(r.g) === trend).sort((a, b) => (trend === "declining" ? a.g - b.g : trend === "growing" ? b.g - a.g : b.p.ovr - a.p.ovr));
   const [showAll, setShowAll] = useState(false);
-  const shown = showAll ? list : list.slice(0, 6);
+  const shown = showAll ? list : list.slice(0, 5);
   const locked = planYr === yr;
 
   const wrap = { maxWidth: view === "overview" ? 1240 : 900, margin: "0 auto", padding: MOBILE ? "6px 2px 30px" : "10px 12px 40px", color: C.tx };
@@ -89,28 +90,36 @@ export default function DevelopmentScreen({ roster, yr, sp, wk, gp = 0, focus, s
             <Label right={<div style={{ display: "flex", background: "#ffffff0d", borderRadius: 99, padding: 3 }}>{[["growing", "Growing"], ["peak", "Peak"], ["declining", "Declining"]].map(([k, l]) => <button key={k} onClick={() => { setTrend(k); setShowAll(false); }} style={{ border: 0, borderRadius: 99, padding: "6px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer", background: trend === k ? "#fff" : "transparent", color: trend === k ? "#0b1220" : "#cbd5e1" }}>{l}</button>)}</div>}>Next summer</Label>
             <Card>{shown.length ? shown.map((r, i) => <Row key={r.p.id} title={name(r.p)} sub={`${r.p.age} · ${posTag(r.p)} · ${r.p.ovr} OVR · ${ROLE[r.role]}`} right={trend === "peak" ? r.p.ovr : sign(Math.round(r.g))} rightColor={trend === "peak" ? "#fff" : tone(r.g)} onClick={() => setSel?.(r.p)} last={i === shown.length - 1} />)
               : <Row title="Nobody here" last />}</Card>
-            {list.length > 6 && <button onClick={() => setShowAll((v) => !v)} style={{ background: "transparent", border: 0, color: "#cbd5e1", fontSize: 15, fontWeight: 700, padding: "12px 4px", cursor: "pointer" }}>{showAll ? "Show fewer" : `All ${list.length} ${trend === "peak" ? "at their peak" : trend} →`}</button>}
+            {list.length > 5 && <button onClick={() => setShowAll((v) => !v)} style={{ background: "transparent", border: 0, color: "#cbd5e1", fontSize: 15, fontWeight: 700, padding: "12px 4px", cursor: "pointer" }}>{showAll ? "Show fewer" : `All ${list.length} ${trend === "peak" ? "at their peak" : trend} →`}</button>}
           </div>
         </div>
       </>}
 
       {view === "plan" && <>
-        <div style={{ textAlign: "center" }}><H1 sub={locked ? "Locked in. You can still change it any time." : "Three choices. Set them before the season starts."}>Plan your season.</H1></div>
-        {[
-          { n: 1, label: "Focus players", title: focusRows.length ? focusRows.map((r) => `${name(r.p)} (${posTag(r.p)})`).join(" · ") : "Nobody yet", sub: focusRows.length ? focusRows.map((r) => `${r.p.name.split(" ").slice(-1)[0]} about +${perSeason(r.p)} from the extra coaching`).join(" · ") : "One on offense, one on defense: each gets extra coaching every week", act: "Change", on: () => setFocusOpen(true) },
-          { n: 2, label: "Camp priority", title: CAMP[camp], sub: camp === "youth" ? `About +0.5 next summer for ${rows.filter((r) => r.p.age <= 25).length} players 25 and under` : camp === "vets" ? `Slows the decline of ${rows.filter((r) => r.p.age >= 29).length} players 29 and over` : "Even time for everyone", act: "Change", on: () => setCampOpen(true) },
-          { n: 3, label: "Young players", title: `${young.filter((r) => r.role !== "backup").length} playing · ${buried.length} stuck behind someone`, sub: buried[0] ? `${name(buried[0].p)} has the most to gain from snaps` : "Every young player with upside is getting snaps", act: "Review", on: () => setView("young") },
-        ].map((s) => (
-          <div key={s.n} style={{ display: "flex", alignItems: "center", gap: 18, background: C.cd, border: "1px solid #ffffff0d", borderRadius: 18, padding: MOBILE ? "16px 16px" : "22px 26px", marginBottom: 14 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 99, background: "#ffffff12", display: "grid", placeItems: "center", fontWeight: 800, flexShrink: 0 }}>{s.n}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, color: "#94a3b8", fontWeight: 700 }}>{s.label}</div>
-              <div style={{ fontSize: MOBILE ? 19 : 23, fontWeight: 900, marginTop: 2 }}>{s.title}</div>
-              <div style={{ fontSize: 14, color: "#94a3b8", marginTop: 4 }}>{s.sub}</div>
+        <div style={{ textAlign: "center" }}><H1 sub={locked ? "Locked in. You can still change it any time." : "Set them before the season starts."}>Plan your season.</H1></div>
+        {(() => {
+          const card = (n, label, title, sub, act, on, style) => (
+            <div key={n} style={{ display: "flex", alignItems: "center", gap: 16, background: C.cd, border: "1px solid #ffffff0d", borderRadius: 18, padding: MOBILE ? "14px 16px" : "18px 22px", minWidth: 0, ...style }}>
+              <div style={{ width: 32, height: 32, borderRadius: 99, background: "#ffffff12", display: "grid", placeItems: "center", fontWeight: 800, flexShrink: 0 }}>{n}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, color: "#94a3b8", fontWeight: 700 }}>{label}</div>
+                <div style={{ fontSize: MOBILE ? 18 : 21, fontWeight: 900, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
+                <div style={{ fontSize: 14, color: "#94a3b8", marginTop: 3 }}>{sub}</div>
+              </div>
+              <button onClick={on} style={{ border: 0, borderRadius: 99, background: "#ffffff14", color: "#fff", padding: "10px 18px", fontSize: 15, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}>{act}</button>
             </div>
-            <button onClick={s.on} style={{ border: 0, borderRadius: 99, background: "#ffffff14", color: "#fff", padding: "10px 18px", fontSize: 15, fontWeight: 800, cursor: "pointer", flexShrink: 0 }}>{s.act}</button>
-          </div>
-        ))}
+          );
+          const fp = (side) => roster.find((p) => focus?.[side] != null && String(p.id) === String(focus[side]));
+          const fcard = (n, side, label) => { const p = fp(side); return card(n, label, p ? `${p.name}` : "Nobody yet", p ? `${p.age} · ${posTag(p)} · ${p.ovr} OVR · about +${perSeason(p)} from the extra coaching` : "Extra coaching every week", p ? "Change" : "Choose", () => setFocusOpen(true)); };
+          const nCamp = rows.filter((r) => inCamp(camp, r.p)).length;
+          return <>
+            <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "1fr 1fr", gap: 14, marginBottom: 14 }}>{fcard(1, "off", "Offensive focus player")}{fcard(2, "def", "Defensive focus player")}</div>
+            <div style={{ display: "grid", gap: 14 }}>
+              {card(3, "Camp priority", CAMP[camp] || "Balanced", CAMP_GROUPS_SUB(camp, nCamp), "Change", () => setCampOpen(true))}
+              {card(4, "Young players", `${young.filter((r) => r.role !== "backup").length} playing · ${buried.length} stuck behind someone`, buried[0] ? `${name(buried[0].p)} (${posTag(buried[0].p)}) has the most to gain from snaps` : "Every young player with upside is getting snaps", "Review", () => setView("young"))}
+            </div>
+          </>;
+        })()}
         <div style={{ textAlign: "center", marginTop: 26 }}>
           <button onClick={() => setPlanYr?.(yr)} disabled={locked} style={{ border: 0, borderRadius: 99, background: locked ? "#ffffff14" : "#16a34a", color: "#fff", padding: "16px 46px", fontSize: 18, fontWeight: 900, cursor: locked ? "default" : "pointer" }}>{locked ? "Plan locked in" : "Lock in the plan"}</button>
         </div>
@@ -127,9 +136,9 @@ export default function DevelopmentScreen({ roster, yr, sp, wk, gp = 0, focus, s
 
       {focusOpen && <Sheet title="Focus players" onClose={() => setFocusOpen(false)}><DevFocusCard roster={roster} focus={focus} setFocus={setFocus} setSel={setSel} /><div style={{ height: 10 }} /></Sheet>}
       {campOpen && <Sheet title="Camp priority" onClose={() => setCampOpen(false)}>
-        {[["youth", "Youth", "Extra time with players 25 and under: about half a point more growth each"], ["balanced", "Balanced", "Even time for everyone"], ["vets", "Veterans", "Keep the 29-and-overs sharp: about half as much decline"]].map(([k, l, d]) => (
-          <button key={k} onClick={() => { setCamp?.(k); setCampOpen(false); }} style={{ display: "block", width: "100%", textAlign: "left", background: camp === k ? "#ffffff14" : "transparent", border: "1px solid #ffffff12", borderRadius: 14, padding: "14px 16px", marginBottom: 8, color: "#fff", cursor: "pointer" }}>
-            <div style={{ fontSize: 17, fontWeight: 800 }}>{l}</div><div style={{ fontSize: 14, color: "#94a3b8", marginTop: 3 }}>{d}</div>
+        {Object.entries(CAMP).map(([k, l]) => (
+          <button key={k} onClick={() => { setCamp?.(k); setCampOpen(false); }} style={{ display: "block", width: "100%", textAlign: "left", background: camp === k ? "#ffffff14" : "transparent", border: "1px solid #ffffff12", borderRadius: 14, padding: "12px 16px", marginBottom: 8, color: "#fff", cursor: "pointer" }}>
+            <div style={{ fontSize: 17, fontWeight: 800 }}>{l}</div><div style={{ fontSize: 14, color: "#94a3b8", marginTop: 3 }}>{k === "balanced" ? "Even time for every position group" : `${rows.filter((r) => inCamp(k, r.p)).length} players get extra work: about +0.7 each next summer`}</div>
           </button>
         ))}
       </Sheet>}
@@ -142,10 +151,10 @@ export function DevStrip({ yr, sp, planYr, focusNames, onOpen }) {
   const pre = sp !== "regular" && sp !== "playoffs";
   const line = pre && planYr !== yr ? "Plan your season" : focusNames.length ? `Focus: ${focusNames.join(" · ")}` : "Pick your focus players";
   return (
-    <div onClick={onOpen} style={{ display: "flex", alignItems: "center", gap: 16, background: C.cd, border: "1px solid #ffffff0d", borderRadius: 16, padding: "14px 22px", marginTop: 16, cursor: "pointer" }}>
+    <div onClick={onOpen} style={{ display: "flex", alignItems: "center", gap: 16, background: C.cd, border: "1px solid #ffffff0d", borderRadius: 14, padding: "8px 10px 8px 20px", marginTop: 12, cursor: "pointer" }}>
       <span style={{ fontSize: 15, color: "#94a3b8", fontWeight: 700 }}>Development</span>
       <span style={{ fontSize: 17, fontWeight: 800, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{line}</span>
-      <span style={{ background: "#ffffff14", borderRadius: 99, padding: "8px 18px", fontSize: 15, fontWeight: 800 }}>Open</span>
+      <span style={{ background: "#ffffff14", borderRadius: 99, padding: "6px 16px", fontSize: 14, fontWeight: 800 }}>Open</span>
     </div>
   );
 }

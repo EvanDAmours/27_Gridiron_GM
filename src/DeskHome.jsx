@@ -82,7 +82,7 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
       <style>{FONT_CSS}</style>
       {phase && <PhaseHero {...phase} primary={primary} />}
       {/* the promo */}
-      {!phase && <div data-tour="promo" style={{ position: "relative", height: "clamp(380px, calc(var(--vh, 100vh) - 420px), 560px)", borderRadius: 22, overflow: "hidden", background: `linear-gradient(100deg, ${away.clr} 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr} 100%)` }}>
+      {!phase && <div data-tour="promo" style={{ position: "relative", height: "clamp(380px, calc(var(--vh, 100vh) - 470px), 560px)", borderRadius: 22, overflow: "hidden", background: `linear-gradient(100deg, ${away.clr} 0%, ${away.clr}33 46%, ${home.clr}33 54%, ${home.clr} 100%)` }}>
         {pa && <div style={{ position: "absolute", left: "23%", bottom: -20 }}><PlayerArt p={pa} ab={away.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         {ph && <div style={{ position: "absolute", right: "23%", bottom: -20 }}><PlayerArt p={ph} ab={home.ab} width={300} style={{ filter: "drop-shadow(0 20px 30px #000a)" }} /></div>}
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, transparent 52%, ${C.bg} 100%)` }} />

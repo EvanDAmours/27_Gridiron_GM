@@ -17,6 +17,9 @@ updated 2026-10-26.
 
 - **The test for every screen:** "Would you want to spend time on that screen? Would you leave
   because it's too busy?" Clean, calm, premium, few taps, no clutter, no desktop-crammed-into-a-phone.
+- **No unnecessary scrolling, no poor offset.** A screen that fits should fit: Home and other
+  summary screens must not need a scroll at a normal laptop window, and side-by-side cards must line
+  up (same header heights, same top edge). Text never clipped. Check scroll height in screenshots.
 - **Home is the standard.** The phone Home and the desktop "broadcast" Home are the look every
   other screen should follow: big team-colored hero, soft rounded cards (`#ffffff0d`, radius 18,
   no border), plain white section titles, one clear action.

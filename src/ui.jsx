@@ -57,7 +57,7 @@ export function Sheet({ title, onClose, children, wide, z = 450 }) {
 export function Dialog({ title, sub, onClose, children, actions, wide, z = 2000 }) {
   return (
     <Sheet title={title} onClose={onClose} wide={wide} z={z}>
-      {sub && <div style={{ ...txt.muted, fontSize: T.md, margin: `-${S[1]}px 2px ${S[3]}px` }}>{sub}</div>}
+      {sub && <div style={{ ...txt.muted, fontSize: T.md, margin: `2px 2px ${S[3]}px`, lineHeight: 1.5 }}>{sub}</div>}
       {children}
       {actions && <div style={{ display: "flex", gap: S[2], flexWrap: "wrap", marginTop: S[4], paddingBottom: S[1] }}>{actions}</div>}
     </Sheet>

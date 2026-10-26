@@ -237,14 +237,14 @@ export function eliteTaper(before, after, rand = Math.random, rising = false) {
 
 // ---------- The development plan (the Development screen) ----------
 
-// Camp priority for the summer: who the coaching staff spends its extra time on. Youth gives a
-// young player (25 or under) half a point more growth on average; Veterans slows a 29-and-over
-// player's decline by about the same. Balanced does neither.
-export const CAMP = { youth: "Youth", balanced: "Balanced", vets: "Veterans" };
+// Camp priority for the summer: the position room the coaching staff spends its extra time on.
+// Everyone in that room gets about two-thirds of a point more growth next summer (or that much
+// less decline). Balanced spreads the time evenly and gives no one extra.
+export const CAMP_GROUPS = { QB: ["QB"], RB: ["RB"], WR: ["WR", "TE"], OL: ["LT", "LG", "C", "RG", "RT", "OL"], DL: ["DL", "EDGE", "DT", "LE", "RE"], LB: ["LB"], DB: ["CB", "S"] };
+export const CAMP = { balanced: "Balanced", QB: "QB room", RB: "RB room", WR: "Receivers (WR and TE)", OL: "Offensive line", DL: "Defensive line", LB: "Linebackers", DB: "Defensive backs" };
+export const inCamp = (pri, p) => !!CAMP_GROUPS[pri]?.includes(p.pos);
 export function campBonus(pri, p, change, rand = Math.random) {
-  if (pri === "youth" && p.age <= 25 && rand() < 0.5) return 1;
-  if (pri === "vets" && p.age >= 29 && change < 0 && rand() < 0.5) return 1;
-  return 0;
+  return inCamp(pri, p) && rand() < 0.65 ? 1 : 0;
 }
 
 // How many of each position play every snap; the next man up rotates in.
