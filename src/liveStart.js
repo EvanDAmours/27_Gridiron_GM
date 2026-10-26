@@ -50,6 +50,8 @@ export function applyLiveInjuries(teams, live) {
 }
 
 // teams: the league's teams (index = team id); sched: the season's games ({wk, h, a} as team ids).
+// Every final game in the file is applied, including those of a week still in progress (a Sunday
+// slate played, Monday night not yet): those stay settled and only the unplayed ones can be simmed.
 // Changes both in place. Returns { wk: weeks completed, games, players, unmatched, injured }.
 // injuries: also apply the real injury report.
 export function applyLiveSeason(teams, sched, live, { injuries = false } = {}) {
@@ -58,7 +60,6 @@ export function applyLiveSeason(teams, sched, live, { injuries = false } = {}) {
   const id = Object.fromEntries(teams.map((t, i) => [t.ab, i]));
   let games = 0;
   for (const r of live.games) {
-    if (r.wk > through) continue;
     const h = id[r.h], a = id[r.a];
     const g = sched.find((x) => x.wk === r.wk && x.h === h && x.a === a) || sched.find((x) => x.wk === r.wk && x.h === a && x.a === h);
     if (!g || g.played) continue;
