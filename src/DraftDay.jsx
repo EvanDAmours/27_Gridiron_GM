@@ -192,14 +192,16 @@ export function TradeUpPanel({ offers, yr, onAccept, onPass, onClose }) {
 // The phone rings while you're on the clock: a club behind you wants your pick. The best offer comes
 // in as a call (logo, who they're after, what they'll give) with a few seconds to answer before
 // they hang up and try someone else. The full list of offers stays below the clock.
-export function IncomingCall({ offer, team, curPick, yr, onAccept, onMore, onDecline, secs = 20 }) {
+export function IncomingCall({ offer, team, curPick, yr, onAccept, onMore, onDecline, secs = 20, inline = false }) {
   const drop = useRef(onDecline);
   drop.current = onDecline;
   useEffect(() => { const t = setTimeout(() => drop.current(), secs * 1000); return () => clearTimeout(t); }, [offer.id, secs]);
   // on the page itself (inside the board, its layers covered it), bottom right over the recent
   // picks, so it never hides the board you're picking from
-  return createPortal(
-    <div style={{ position: "fixed", right: MOBILE ? 8 : 18, left: MOBILE ? 8 : "auto", top: MOBILE ? 64 : "auto", bottom: MOBILE ? "auto" : 100, /* desktop: bottom right, above the messages that appear there */ zIndex: 2400, fontFamily: C.f, color: C.tx, width: MOBILE ? "auto" : 380, borderRadius: 16, overflow: "hidden", background: "linear-gradient(160deg,#1e1b4b,#0b1120 70%)", border: "1px solid #a78bfa88", boxShadow: "0 20px 60px #000d, 0 0 0 1px #000", animation: "dd-in .3s ease-out" }}>
+  // inline (desktop): a card in the war room, part of the page rather than a pop-up over it
+  const wrapIt = (el) => (inline ? el : createPortal(el, document.body));
+  return wrapIt(
+    <div style={{ ...(inline ? { position: "relative", marginBottom: 10, maxWidth: 560 } : { position: "fixed", right: MOBILE ? 8 : 18, left: MOBILE ? 8 : "auto", top: MOBILE ? 64 : "auto", bottom: MOBILE ? "auto" : 100, zIndex: 2400, width: MOBILE ? "auto" : 380 }), fontFamily: C.f, color: C.tx, borderRadius: 16, overflow: "hidden", background: "linear-gradient(160deg,#1e1b4b,#0b1120 70%)", border: "1px solid #a78bfa88", boxShadow: "0 20px 60px #000d, 0 0 0 1px #000", animation: "dd-in .3s ease-out" }}>
       <style>{"@keyframes dd-in{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}} @keyframes callRing{0%{box-shadow:0 0 0 0 #a78bfa99}70%{box-shadow:0 0 0 16px #a78bfa00}100%{box-shadow:0 0 0 0 #a78bfa00}} @keyframes callBar{from{width:100%}to{width:0%}} @keyframes callShake{0%,100%{transform:rotate(0)}10%,30%{transform:rotate(-12deg)}20%,40%{transform:rotate(12deg)}50%{transform:rotate(0)}}"}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px 10px" }}>
         <div style={{ borderRadius: "50%", padding: 6, background: "#0b1120", animation: "callRing 1.4s infinite" }}><TeamLogo t={team} sz={46} /></div>
@@ -215,13 +217,12 @@ export function IncomingCall({ offer, team, curPick, yr, onAccept, onMore, onDec
         <div style={{ fontSize: 12, color: offer.pct >= 0 ? C.gn : C.gd, marginTop: 6 }}>Trade chart: {offer.pct >= 0 ? `+${offer.pct}% in your favor` : `${offer.pct}% (they're asking a discount)`}</div>
         <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
           <Btn onClick={onAccept} bg={C.gn} style={{ flex: 1, fontSize: 14, padding: "8px 0", fontWeight: 900 }}>Accept</Btn>
-          <Btn onClick={onMore} bg="#1e3a5f" c="#7dd3fc" style={{ flex: 1, fontSize: 14, padding: "8px 0" }}>Ask for more</Btn>
-          <Btn onClick={onDecline} bg="#7f1d1d" c="#fecaca" style={{ fontSize: 14, padding: "8px 12px" }}>Hang up</Btn>
+          <Btn onClick={onMore} bg="#ffffff14" c="#e2e8f0" style={{ flex: 1, fontSize: 14, padding: "8px 0" }}>Ask for more</Btn>
+          <Btn onClick={onDecline} bg="transparent" c="#94a3b8" style={{ fontSize: 14, padding: "8px 12px" }}>Hang up</Btn>
         </div>
       </div>
       <div style={{ height: 4, background: "#ffffff14" }}><div key={offer.id} style={{ height: "100%", background: "#a78bfa", animation: `callBar ${secs}s linear forwards` }} /></div>
-    </div>,
-    document.body
+    </div>
   );
 }
 

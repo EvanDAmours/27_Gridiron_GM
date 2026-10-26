@@ -1932,4 +1932,11 @@ export const PATCH_NOTES = [
     "Your pick's reveal reads the right draft year (2027 NFL Draft, not 2026)",
     "Draft Recap: the All / Mine / Hits switch uses the white selected pill like everywhere else",
   ] },
+  { v: "4.78", date: "2026-10-23", title: "Calm Big Board and draft day", notes: [
+    "The Big Board rebuilt in the game's calm style: each prospect is one clean row (rank, face, name, position and school, one tag that matters most such as Need, Sleeper, Red flag or a special trait, his ceiling as your scouts read it, and one action). Size, age, region, overall, scouting status and the rest live on his profile, one click away",
+    "One quiet control row on the board: Consensus / Your scouts / Your list, position pills, a search and one filter. The legend, the scouts strip, the picks strip and the explanation paragraph are gone; your picks show as lines across the board",
+    "Scouting has four views instead of seven: Scouting HQ, Big Board (your list is part of it), Mock Draft and Scouts (your staff and regions together), plus Combine in combine week",
+    "Draft day, fewer layers and pop-ups: no pop-up for every first-round pick (the ticker has them), no duplicate on-the-clock message, no picks strip, the war room is one line, and an incoming trade call is a card on the page instead of a pop-up over it. The right side is just Up next and your list",
+    "On the clock, the board no longer dims the players who are still there for you",
+  ] },
 ];

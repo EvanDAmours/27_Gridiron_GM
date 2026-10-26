@@ -81,30 +81,15 @@ export function CovTag({ read }) {
   return <span title={title} style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", padding: "2px 6px", borderRadius: 3, border: `1px solid ${c}66`, color: c, whiteSpace: "nowrap" }}>{role === "office" ? "No scout" : crew.length > 1 ? `${crew.length} scouts` : SCOUT_ROLES[role].short}</span>;
 }
 
-function Arrow({ p }) {
-  const c = p.cons;
-  const cur = c?.final ?? c?.now;
-  if (!cur || cur === c.mid) return null;
-  const up = cur < c.mid;
-  return <span title={`Preseason #${c.mid} → ${c.final ? "final" : "now"} #${cur}`} style={{ display: "block", fontSize: 9, fontWeight: 700, color: up ? C.gn : C.rd }}>{up ? "▲" : "▼"}{Math.abs(c.mid - cur)}</span>;
-}
-
 // A line across the board where one of your picks falls.
 function PickMark({ pk }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0", color: C.gd, fontSize: 12, fontWeight: 900, letterSpacing: 1.2 }}>
       <span style={{ flex: "0 0 12px", height: 2, background: C.gd }} />
-      <span style={{ whiteSpace: "nowrap" }}>{pk.i === 0 ? "▼ YOUR FIRST PICK" : "▼ YOUR PICK"} · #{pk.n}</span>
+      <span style={{ whiteSpace: "nowrap" }}>{pk.i === 0 ? "YOUR FIRST PICK" : "YOUR PICK"} · #{pk.n}</span>
       <span style={{ flex: 1, height: 2, background: `linear-gradient(90deg, ${C.gd}, transparent)` }} />
     </div>
   );
-}
-
-// On your scouts' board: where the consensus has him, and whether your scouts like him more or less.
-function MyDelta({ mine, cons }) {
-  const d = cons - mine;
-  const c = d >= 10 ? C.gn : d <= -10 ? C.rd : "#64748b";
-  return <span title={`Consensus #${cons}; your scouts #${mine}`} style={{ display: "block", fontSize: 9, fontWeight: 700, color: c }}>{Math.abs(d) >= 10 ? (d > 0 ? "▲" : "▼") : ""}cons {cons}</span>;
 }
 
 // ---------- Actions ----------
@@ -169,68 +154,8 @@ function Val({ txt, title }) {
   return <b title={title} style={{ fontSize: 20, color, fontVariantNumeric: "tabular-nums" }}>{unk ? "?" : txt}</b>;
 }
 
-const STATUS = (read) => (read.lvl >= 2 ? ["Full workup", C.gn] : read.lvl === 1 ? ["Report", "#60a5fa"] : ["—", "#475569"]);
-
-function ProspectRow({ g, p, onDraft, canDraft, myRank, gone }) {
-  const a = useActions(g);
-  const read = prospectRead(g.scouting, p);
-  const listed = listIds(g.scouting, p.draftYear).includes(p.id);
-  const [st, stc] = STATUS(read);
-  const td = { padding: "10px 6px", borderBottom: `1px solid ${C.bd}66`, verticalAlign: "middle" };
-  return (
-    <tr onClick={() => g.setSel(p)} style={{ cursor: "pointer", opacity: gone ? 0.75 : 1 }} title={gone ? "Likely gone before your first pick: the board has him well above it" : undefined} onMouseOver={(e) => (e.currentTarget.style.background = "#1e293b55")} onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}>
-      <td style={{ ...td, textAlign: "center", fontWeight: 800, fontSize: 16, color: myRank ? "#fcd34d" : "#94a3b8", width: 36 }}>{myRank || csRank(p)}{myRank ? <MyDelta mine={myRank} cons={csRank(p)} /> : <Arrow p={p} />}</td>
-      <td style={{ ...td, width: 26 }}>
-        <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} title={listed ? "Remove from your list" : "Add to your list"} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ background: "transparent", border: 0, cursor: "pointer", color: listed ? "#f5c542" : "#475569", fontSize: 20, padding: 0, lineHeight: 1 }}>{listed ? "★" : "☆"}</button>
-      </td>
-      <td style={{ ...td, minWidth: 0 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.name} <span className="sc-show"><Bdg pos={posTag(p)} /><RoleTag p={p} /></span>{["generational", "superstar", "star"].includes(read.dev) && <span title={DEV_TRAITS[read.dev].desc} style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, letterSpacing: 0.6, padding: "1px 7px", borderRadius: 999, color: DEV_STYLE[read.dev][0], border: `1px solid ${DEV_STYLE[read.dev][1]}`, background: DEV_STYLE[read.dev][0] + "1a", whiteSpace: "nowrap" }}>{DEV_TRAITS[read.dev].name.toUpperCase()}</span>}{read.flag && <span title={read.flagWhy || "Your scouts red-flagged him: high bust risk."} style={{ fontSize: 11, fontWeight: 800, color: "#fee2e2", background: "#991b1b", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>Red flag</span>}{read.sleeper ? <span title={`${read.who} have seen through the board: he's a sleeper, much better than where he's ranked.`} style={{ fontSize: 11, fontWeight: 800, color: "#fdf2f8", background: "#be185d", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>Sleeper</span> : read.hunch && <span title={`${read.who} has a hunch there's more to him than the board says. A report will tell.`} style={{ fontSize: 11, fontWeight: 800, color: "#f9a8d4", background: "#831843", borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>Hunch</span>}{read.devEarly && ["generational", "superstar"].includes(read.dev) && <span title={`${read.who} already see a ${read.dev} development trait.`} style={{ fontSize: 11, fontWeight: 800, color: read.dev === "generational" ? "#f472b6" : "#f5c542", border: `1px solid currentColor`, borderRadius: 999, padding: "1px 7px", marginLeft: 6 }}>{read.dev === "generational" ? "Generational" : "Superstar"}</span>}</div>
-        <div className="sc-sub" style={{ fontSize: 14, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 260 }}>{p.bio?.college} ({regionName(regionOf(p))}) · {p.age} yrs · {htS(p.ht_)} {p.wt}</div>
-      </td>
-      <td className="sc-hide" style={{ ...td, textAlign: "center" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /></td>
-      <td style={{ ...td, textAlign: "center" }}><Val txt={read.ovr} /></td>
-      <td style={{ ...td, textAlign: "center" }}><Val txt={read.pot} title={read.tier ? `Projects as: ${read.tier}` : undefined} /></td>
-      <td className="sc-hide" style={{ ...td, textAlign: "center", fontSize: 14, color: stc, whiteSpace: "nowrap" }}>{st}</td>
-      <td style={{ ...td, textAlign: "right", whiteSpace: "nowrap" }} onClick={(e) => e.stopPropagation()}>
-        <ScoutButton g={g} p={p} read={read} />
-        {/* Draft only shows when it's your pick: a column of grayed buttons the rest of the time is just noise */}
-        {onDraft && canDraft && <Btn onClick={() => onDraft(p)} bg={C.gn} style={{ padding: "6px 14px", fontSize: 14, marginLeft: 6, borderRadius: 8 }}>Draft</Btn>}
-      </td>
-    </tr>
-  );
-}
-
-// Phones: the same prospect as a card, with the Draft button big when you're on the clock.
-// Phones: one compact row per prospect. The single button is Draft while you're on the clock,
-// otherwise Scout / Workup; tap the row for his full profile.
-function ProspectCard({ g, p, onDraft, canDraft, myRank, gone }) {
-  const a = useActions(g);
-  const read = prospectRead(g.scouting, p);
-  const listed = listIds(g.scouting, p.draftYear).includes(p.id);
-  const [st, stc] = STATUS(read);
-  const drafting = onDraft && canDraft;
-  // a pick can't be taken back, so on a phone the first tap arms the button and the second drafts
-  const [arm, setArm] = useState(false);
-  useEffect(() => { if (!arm) return; const t = setTimeout(() => setArm(false), 3000); return () => clearTimeout(t); }, [arm]);
-  return (
-    <div onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 6, background: C.bg, border: `1px solid ${drafting ? `${C.gn}66` : C.bd}`, borderRadius: 8, padding: "4px 8px 4px 4px", cursor: "pointer" }}>
-      <span style={{ width: 26, textAlign: "center", fontWeight: 900, fontSize: 14, color: myRank ? "#fcd34d" : "#94a3b8" }}>{myRank || csRank(p)}</span>
-      <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ width: 30, minHeight: 36, background: "transparent", border: 0, fontSize: 20, color: listed ? C.gd : "#64748b", cursor: "pointer", padding: 0 }}>{listed ? "★" : "☆"}</button>
-      <span style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 800, fontSize: 14 }}><Bdg pos={posTag(p)} /><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><RoleTag p={p} />{read.flag && <span title={read.flagWhy || "Red flag"} style={{ fontSize: 11, fontWeight: 800, color: "#fca5a5" }}>Flag</span>}</span>
-        <span style={{ display: "block", fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.bio?.college}{read.lvl > 0 ? <> · <span style={{ color: stc }}>{st}</span></> : ""}</span>
-      </span>
-      <span style={{ textAlign: "center", minWidth: 28, lineHeight: 1.1 }}><Val txt={read.ovr} /><span style={{ display: "block", fontSize: 9, color: C.mt }}>OVR</span></span>
-      <span style={{ textAlign: "center", minWidth: 28, lineHeight: 1.1 }}><Val txt={read.pot} /><span style={{ display: "block", fontSize: 9, color: C.mt }}>POT</span></span>
-      <span onClick={(e) => e.stopPropagation()} style={{ minWidth: 66, display: "flex", justifyContent: "flex-end" }}>
-        {drafting ? <Btn onClick={() => (arm ? onDraft(p) : setArm(true))} bg={arm ? C.gd : C.gn} c={arm ? "#111" : undefined} style={{ minHeight: 40, padding: "4px 12px", fontSize: 14, fontWeight: 900 }}>{arm ? "Confirm" : "Draft"}</Btn> : <ScoutButton g={g} p={p} read={read} small />}
-      </span>
-    </div>
-  );
-}
 
 const sel = { background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 6, padding: "7px 10px", fontSize: 14, minHeight: MOBILE ? 44 : undefined };
-
 // Phones: a prospect as a clean row (rank, face, name, position, role and what your scouts see,
 // his potential big). A tap opens his profile, where you scout him; on the clock, Draft sits on the row.
 function PhoneProspect({ g, p, onDraft, canDraft, myRank, gone, first }) {
@@ -257,9 +182,39 @@ function PhoneProspect({ g, p, onDraft, canDraft, myRank, gone, first }) {
     </div>
   );
 }
+// The desktop Big Board row, calm: rank, face, name with one quiet line under it, at most one tag
+// (the most telling thing your scouts know), his ceiling as your scouts read it, and one action.
+// Everything else (ratings, size, combine, region) lives on his profile, one click away.
+function BoardRow({ g, p, onDraft, canDraft, myRank, gone, needs = [] }) {
+  const a = useActions(g);
+  const read = prospectRead(g.scouting, p);
+  const listed = listIds(g.scouting, p.draftYear).includes(p.id);
+  const need = fillsNeed(needs, p);
+  const tag = read.flag ? ["Red flag", "#fca5a5"] : read.sleeper ? ["Sleeper", "#f9a8d4"] : ["generational", "superstar", "star"].includes(read.dev) ? [DEV_TRAITS[read.dev].name, DEV_STYLE[read.dev][0]] : read.hunch ? ["Hunch", "#f9a8d4"] : need ? ["Need", "#86efac"] : null;
+  const rank = myRank || csRank(p), cons = csRank(p);
+  return (
+    <div className="bd-row" onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 16, padding: "10px 12px", borderRadius: 14, cursor: "pointer", opacity: gone ? 0.6 : 1 }}>
+      <span style={{ width: 30, textAlign: "right", fontSize: 17, fontWeight: 900, color: myRank ? "#fcd34d" : "#64748b", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{rank}</span>
+      <Face s={p.face} sz={42} />
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 17, fontWeight: 800, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden" }}>{p.name}
+          <button onClick={(e) => { e.stopPropagation(); a.toggle(p); }} title={listed ? "On your list" : "Add to your list"} aria-label={listed ? "Remove from your list" : "Add to your list"} style={{ background: "transparent", border: 0, padding: 0, cursor: "pointer", fontSize: 15, color: listed ? C.gd : "#33415500", lineHeight: 1 }} className="bd-star">{listed ? "★" : "☆"}</button>
+        </span>
+        <span style={{ display: "block", fontSize: 13.5, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{posTag(p)} · {p.bio?.college || p.college}{myRank && myRank !== cons ? ` · consensus #${cons}` : ""}</span>
+      </span>
+      <span style={{ width: 96, textAlign: "right", fontSize: 13, fontWeight: 800, color: tag ? tag[1] : "transparent", flexShrink: 0 }}>{tag ? tag[0] : ""}</span>
+      <span style={{ width: 48, textAlign: "center", flexShrink: 0 }}><Val txt={read.pot} title={read.tier ? `Your scouts' read of his ceiling: ${read.tier}` : "His ceiling, as your scouts read it"} /></span>
+      <span style={{ width: 104, textAlign: "right", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+        {onDraft && canDraft ? <Btn onClick={() => onDraft(p)} bg={C.gn} style={{ padding: "7px 18px", fontSize: 14, borderRadius: 99 }}>Draft</Btn> : <span className="bd-act"><ScoutButton g={g} p={p} read={read} /></span>}
+      </span>
+    </div>
+  );
+}
+const BOARD_CSS = ".bd-row:hover{background:#ffffff0a}.bd-row .bd-act{opacity:.55;transition:opacity .15s}.bd-row:hover .bd-act{opacity:1}.bd-row:hover .bd-star{color:#64748b !important}";
+
 const SHOWS = [["all", "Everyone"], ["covered", "Regions my scouts cover"], ["scouted", "Scouted"], ["unscouted", "Not scouted yet"], ["list", "On my list"], ["flagged", "Sleepers & hunches"], ["redflags", "Red flags"], ["special", "Special dev traits"]];
 
-export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = "Big Board", page = 40 }) {
+export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 40, withList = false, startList = false }) {
   const years = Object.keys(g.dc).map(Number).sort((x, y) => x - y);
   const [yrSel, setYrSel] = useState(null);
   const cy = fixedYr ? classYr : years.includes(yrSel) ? yrSel : classYr;
@@ -267,11 +222,11 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
   const [q, setQ] = useState("");
   const [show, setShow] = useState("all");
   const [n, setN] = useState(page);
-  const [mine, setMine] = useState(false);
+  const [mine, setMine] = useState(startList ? "list" : false);
   const [searching, setSearching] = useState(false);
   const [showOpen, setShowOpen] = useState(false);
   const all = useMemo(() => g.dc[cy] || [], [g.dc, cy]);
-  const ranks = useMemo(() => (mine ? myBoard(g.scouting, all) : null), [mine, g.scouting, all]);
+  const ranks = useMemo(() => (mine === true ? myBoard(g.scouting, all) : null), [mine, g.scouting, all]);
   const ids = listIds(g.scouting, cy);
   const list = all
     .filter((p) => pos === "ALL" || p.pos === pos || (pos.startsWith("R:") && roleFilterMatch(p, pos)))
@@ -287,12 +242,12 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
     .sort((a, b) => (ranks ? ranks.get(a.id) - ranks.get(b.id) : csRank(a) - csRank(b)));
   const final = all.some((p) => p.cons?.final);
   // your picks as lines across the board: everyone above your first pick's reach is likely gone
-  const slots = cy === g.yr ? mySlots(g) : [];
+  const slots = cy === g.yr && !onDraft ? mySlots(g) : [];
   const rankOf = (p) => (ranks ? ranks.get(p.id) : csRank(p));
   const reach = slots.length ? pickWindow(slots[0])[0] : 0;
   const marked = [];
-  { let k = 0; const left = [...slots]; for (const p of list.slice(0, n)) { while (left.length && rankOf(p) >= left[0]) { marked.push({ pk: { n: left[0], i: k++ }, key: `pk${left[0]}` }); left.shift(); } marked.push({ p, gone: !p.drafted && rankOf(p) < reach }); } }
-  const climbers = ranks ? all.filter((p) => csRank(p) - ranks.get(p.id) >= 25).length : 0;
+  { let k = 0; const left = [...slots]; for (const p of list.slice(0, n)) { while (left.length && rankOf(p) >= left[0]) { marked.push({ pk: { n: left[0], i: k++ }, key: `pk${left[0]}` }); left.shift(); } marked.push({ p, gone: !onDraft && !p.drafted && rankOf(p) < reach }); } }
+  const needs = useMemo(() => topNeeds(g.teams?.[g.ui]?.roster || [], 3), [g.teams, g.ui]);
   const th = { padding: "6px", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: C.mt, borderBottom: `1px solid ${C.bd}`, textAlign: "center" };
   if (MOBILE) {
     let k = 0;
@@ -316,57 +271,37 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, title = 
     );
   }
   return (
-    <div style={panel}>
-      <style>{"@media (max-width: 640px) { .sc-hide { display: none } .sc-t td, .sc-t th { padding-left: 3px !important; padding-right: 3px !important } .sc-sub { max-width: 120px !important } .sc-t button { padding: 5px 8px !important; font-size: 13px !important } } @media (min-width: 641px) { .sc-show { display: none } }"}</style>
-      <div style={head}>
-        {title}
-        <Right>
-          {[[false, "Consensus"], [true, "Your scouts"]].map(([k, l]) => <button key={l} onClick={() => setMine(k)} style={{ ...chipBtn(mine === k), fontSize: 14, padding: "4px 12px" }}>{l}</button>)}
-        </Right>
+    <div>
+      <style>{BOARD_CSS}</style>
+      {/* one quiet control row: whose board, position, a search, and (rarely needed) more filters */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", background: "#ffffff0d", borderRadius: 99, padding: 3 }}>
+          {[[false, "Consensus"], [true, "Your scouts"], ...(withList ? [["list", `Your list (${ids.length})`]] : [])].map(([k, l]) => <button key={l} onClick={() => setMine(k)} style={{ border: 0, borderRadius: 99, padding: "6px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer", background: mine === k ? "#fff" : "transparent", color: mine === k ? "#0b1220" : "#cbd5e1" }}>{l}</button>)}
+        </div>
+        <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+          {["ALL", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((x) => { const on = x === "OL" ? pos === "R:OL" || ["LT", "LG", "C", "RG", "RT"].includes(pos) : pos === x; return <button key={x} onClick={() => { setPos(x === "OL" ? (on ? "ALL" : "LT") : x); setN(page); }} style={{ border: 0, borderRadius: 99, padding: "6px 11px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#ffffff1f" : "transparent", color: on ? "#fff" : "#94a3b8" }}>{x === "ALL" ? "All" : x}</button>; })}
+        </div>
+        <input value={q} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search" aria-label="Search prospects" style={{ ...sel, marginLeft: "auto", width: onDraft ? 120 : 170, borderRadius: 99 }} />
+        {!onDraft && <Select value={show} onChange={(e) => { setShow(e.target.value); setN(page); }} aria-label="Show" style={{ ...sel, borderRadius: 99 }}>
+          {SHOWS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+        </Select>}
+        {!fixedYr && years.length > 1 && <Select value={cy} onChange={(e) => { setYrSel(+e.target.value); setN(page); }} aria-label="Draft class" style={{ ...sel, borderRadius: 99 }}>{years.map((y) => <option key={y} value={y}>{y + 1} class</option>)}</Select>}
       </div>
-      {!MOBILE && <div style={{ ...muted, marginBottom: 8 }}>{mine ? `Your scouts' board: everyone ranked on your own scouts' reads (and the development traits they've seen); where they don't know a player, they go with the consensus. ▲ means your scouts like him a lot more than the consensus does, ▼ a lot less.${climbers ? ` They have ${climbers} prospect${climbers > 1 ? "s" : ""} 25+ spots higher than the consensus.` : ""}` : `Consensus ${final ? "final" : "preseason"} rankings: what the league's analysts think. AI teams mostly draft off this board.`}</div>}
-      <div style={{ display: "flex", gap: MOBILE ? 6 : 8, marginBottom: MOBILE ? 8 : 10, flexWrap: MOBILE && !searching ? "nowrap" : "wrap" }}>
-        {!fixedYr && years.length > 1 && (
-          <Select value={cy} onChange={(e) => { setYrSel(+e.target.value); setN(page); }} aria-label="Draft class" style={MOBILE ? { ...sel, flex: "1 1 0", minWidth: 0 } : sel}>
-            {years.map((y) => <option key={y} value={y}>{y + 1}{MOBILE ? "" : " draft"}</option>)}
-          </Select>
-        )}
-        <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(page); }} aria-label="Position" style={MOBILE ? { ...sel, flex: "1 1 0", minWidth: 0 } : sel}>
-          {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? (MOBILE ? "All pos." : "All positions") : x}</option>)}
-          {ROLE_FILTERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-        </Select>
-        <Select value={show} onChange={(e) => { setShow(e.target.value); setN(page); }} aria-label="Show" style={MOBILE ? { ...sel, flex: "1 1 0", minWidth: 0 } : sel}>
-          <option value="all">{MOBILE ? "All" : "Everyone"}</option>
-          <option value="covered">Regions my scouts cover</option>
-          <option value="scouted">Scouted</option>
-          <option value="unscouted">Not scouted yet</option>
-          <option value="list">On my list</option>
-          <option value="flagged">Sleepers & hunches</option>
-          <option value="redflags">Red flags (bust risks)</option>
-          <option value="special">Special dev traits spotted</option>
-        </Select>
-        {MOBILE && !searching && <button onClick={() => setSearching(true)} aria-label="Search prospects" style={{ ...sel, width: 44, padding: 0, cursor: "pointer" }}>Go</button>}
-        {(!MOBILE || searching) && <input value={q} autoFocus={MOBILE} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search name or college" aria-label="Search prospects" style={{ ...sel, flex: "1 1 160px" }} />}
+      {mine === "list" ? <YourList g={g} classYr={cy} /> : <>
+      {cy !== g.yr && <div style={{ ...muted, margin: "0 4px 8px" }}>A future class: your scouts can only file reports on the {g.yr + 1} draft.</div>}
+      <div style={{ background: "#ffffff08", borderRadius: 18, padding: "6px 6px" }}>
+        <div style={{ display: "flex", gap: 16, padding: "4px 12px 6px", fontSize: 11.5, fontWeight: 800, letterSpacing: 1, color: "#64748b" }}>
+          <span style={{ flex: 1, paddingLeft: 88 }}>{mine ? "YOUR SCOUTS' BOARD" : final ? "CONSENSUS FINAL BOARD" : "CONSENSUS BOARD"}</span>
+          <span style={{ width: 48, textAlign: "center" }} title="? not scouted · B+ a scout's rough idea · ~84 a report's estimate · 84 exact">CEILING</span>
+          <span style={{ width: 104 }} />
+        </div>
+        {marked.map((x) => x.pk ? <div key={x.key} style={{ padding: "0 12px" }}><PickMark pk={x.pk} /></div> : <BoardRow key={x.p.id} g={g} p={x.p} onDraft={onDraft} canDraft={canDraft} myRank={ranks?.get(x.p.id)} gone={x.gone} needs={needs} />)}
       </div>
-      {cy !== g.yr && <div style={{ ...muted, marginBottom: 8 }}>An early look at a future class: your scouts can only file reports on the {g.yr} class.</div>}
-      {MOBILE ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>{marked.map((x) => x.pk ? <PickMark key={x.key} pk={x.pk} /> : <div key={x.p.id} style={{ opacity: x.gone ? 0.5 : 1 }}><ProspectCard g={g} p={x.p} onDraft={onDraft} canDraft={canDraft} myRank={ranks?.get(x.p.id)} gone={x.gone} /></div>)}</div>
-      ) : (
-      <div style={{ overflowX: "auto" }}>
-        <table className="sc-t" style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead><tr><th style={th}>#</th><th style={th}></th><th style={{ ...th, textAlign: "left" }}>PLAYER</th><th className="sc-hide" style={th}>POS</th><th style={th}>OVR</th><th style={th}>POT</th><th className="sc-hide" style={th}>SCOUTED</th><th style={th}></th></tr></thead>
-          <tbody>{marked.map((x) => x.pk ? <tr key={x.key}><td colSpan={8} style={{ padding: 0 }}><PickMark pk={x.pk} /></td></tr> : <ProspectRow key={x.p.id} g={g} p={x.p} onDraft={onDraft} canDraft={canDraft} myRank={ranks?.get(x.p.id)} gone={x.gone} />)}</tbody>
-        </table>
-      </div>
-      )}
       {!list.length && <div style={{ ...muted, padding: 8 }}>No prospects match.</div>}
-      {list.length > n && <div style={{ marginTop: 10, textAlign: "center" }}><Btn onClick={() => setN(n + page)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 14, padding: "6px 14px" }}>Show more ({list.length - n} left)</Btn></div>}
+      {list.length > n && <div style={{ marginTop: 10, textAlign: "center" }}><button onClick={() => setN(n + page)} style={{ background: "transparent", border: 0, color: "#cbd5e1", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Show more ({list.length - n})</button></div>}
+      </>}
     </div>
   );
-}
-
-export function Legend() {
-  return <div style={{ ...muted, marginBottom: 10 }}><b style={{ color: "#cbd5e1" }}>Reading the board:</b> <b style={{ color: "#64748b" }}>?</b> not scouted yet · <b style={{ color: TONE.a }}>B+</b> your scout's rough idea · <b style={{ color: "#cbd5e1" }}>~84</b> estimate from a report · <b style={{ color: C.gn }}>84</b> exact. Tap a player for his full profile.</div>;
 }
 
 // ---------- Your list ----------
@@ -1441,31 +1376,25 @@ export function ScoutingPage({ g }) {
     </div>
   );
   }
+  // desktop: four views (five in combine week); your list sits on the board, regions with the scouts
+  const deskViews = [["hq", "Scouting HQ"], ["board", "Big Board"], ["mock", "Mock Draft"], hasCombine && ["combine", "Combine"], ["scouts", "Scouts"]].filter(Boolean);
+  const dv = v === "list" ? "board" : v === "regions" ? "scouts" : v;
   return (
     <div>
-      {/* the section header above has the class and your scouting points; combine week has its own strip */}
-      <div className="pill-row" style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
-        {views.map(([k, label]) => <button key={k} onClick={() => setView(k)} style={{ background: v === k ? "#fff" : "#ffffff12", color: v === k ? "#0b1220" : "#cbd5e1", border: 0, borderRadius: 999, fontSize: 14, fontWeight: 800, padding: "9px 16px", cursor: "pointer" }}>{label}</button>)}
+      {/* the section header above has the class and your scouting points */}
+      <div className="pill-row" style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+        {deskViews.map(([k, label]) => <button key={k} onClick={() => setView(k)} style={{ background: dv === k ? "#fff" : "#ffffff12", color: dv === k ? "#0b1220" : "#cbd5e1", border: 0, borderRadius: 999, fontSize: 14, fontWeight: 800, padding: "9px 16px", cursor: "pointer" }}>{label}</button>)}
       </div>
-      {/* the picks strip leads the screens you pick prospects on: HQ, the Big Board and the Combine */}
-      {(v === "board" || v === "combine") && <div style={{ marginBottom: 12 }}><PickCabinet g={g} /></div>}
-      {v === "board" && (
-        <>
-          {/* one quiet line: who's scouting what, and how to read the grades (no boxes) */}
-          <div style={{ display: "flex", gap: "6px 22px", flexWrap: "wrap", alignItems: "center", fontSize: 13, color: C.mt, margin: "0 4px 12px" }}>
-            <span>Scouts: {SCOUT_SLOTS.filter((r) => g.scouting?.[r]).map((r) => <b key={r} style={{ color: "#cbd5e1", marginRight: 8 }}>{SCOUT_GROUP_SHORT[g.scouting[r].group] || "?"} <span style={{ fontWeight: 500, color: C.mt }}>{areasOf(g.scouting)[r].join("/")}</span></b>)}{!SCOUT_SLOTS.some((r) => g.scouting?.[r]) && "none"}
-              <button onClick={() => setView("scouts")} style={{ background: "transparent", border: 0, padding: 0, color: "#7dd3fc", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Manage</button></span>
-            <span style={{ marginLeft: "auto" }}><b style={{ color: "#64748b" }}>?</b> not scouted · <b style={{ color: TONE.a }}>B+</b> rough idea · <b style={{ color: "#cbd5e1" }}>~84</b> report · <b style={{ color: C.gn }}>84</b> exact</span>
-          </div>
-          <Board g={g} classYr={g.yr} />
-        </>
-      )}
-      {v === "hq" && <ScoutingHQ g={g} go={setView} />}
-      {v === "list" && <YourList g={g} classYr={g.yr} />}
-      {v === "combine" && <CombineView g={g} buzz={g.buzz} />}
-      {v === "mock" && <MockDraft g={g} />}
-      {v === "regions" && <RegionsView g={g} />}
-      {v === "scouts" && <ScoutsView g={g} />}
+      {dv === "board" && <Board g={g} classYr={g.yr} withList startList={v === "list"} key={v} />}
+      {dv === "hq" && <ScoutingHQ g={g} go={setView} />}
+      {dv === "combine" && <CombineView g={g} buzz={g.buzz} />}
+      {dv === "mock" && <MockDraft g={g} />}
+      {dv === "scouts" && <>
+        <div style={{ display: "inline-flex", background: "#ffffff0d", borderRadius: 99, padding: 3, marginBottom: 12 }}>
+          {[["scouts", "Your staff"], ["regions", "Regions"]].map(([k, l]) => <button key={k} onClick={() => setView(k)} style={{ border: 0, borderRadius: 99, padding: "6px 16px", fontSize: 14, fontWeight: 800, cursor: "pointer", background: v === k ? "#fff" : "transparent", color: v === k ? "#0b1220" : "#cbd5e1" }}>{l}</button>)}
+        </div>
+        {v === "regions" ? <RegionsView g={g} /> : <ScoutsView g={g} />}
+      </>}
     </div>
   );
 }

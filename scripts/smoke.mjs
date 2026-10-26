@@ -193,8 +193,8 @@ try {
   for (const want of ["Depth Chart", "Front Office", "Schedule", "Standings", "Draft", "League"]) if (!seen.includes(want)) fail(`couldn't open ${want}`);
   log("every main screen opens");
   await dismiss(); await page.locator(`button:text-is("Draft")`).first().click(); await page.waitForTimeout(400); await page.locator('button:text-is("Scouting")').first().click(); await page.waitForTimeout(500);
-  // preseason: send a scout to a region and lock the assignments in
-  await must("Regions", 500);
+  // preseason: send a scout to a region (Scouts → Regions) and lock the assignments in
+  await must("Scouts", 400); await must("Regions", 500);
   // each scout has a picker per region slot; free the slot that holds the SEC
   const reg = page.locator('button[aria-label*=": region "]').filter({ hasText: /^SEC/ });
   if (!(await reg.count())) fail("no scout slot holds the SEC");
@@ -202,7 +202,7 @@ try {
   await page.locator('[role="option"]').filter({ hasText: /^Nobody/ }).first().click(); await page.waitForTimeout(300);
   await healthy("scout regions");
   { const ar = (await save()).scouting?.areas || {}; if (Object.values(ar).some((x) => (x || []).includes("SEC"))) fail("region assignment didn't save"); }
-  await must("Regions", 500); await healthy("regions view");
+  await must("Scouts", 400); await must("Regions", 500); await healthy("regions view");
   log("scout regions");
   await must("Big Board", 400); await must("Your scouts", 600); await healthy("your scouts' board"); log("your scouts' board");
   await startSeason();
