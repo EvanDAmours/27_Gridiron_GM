@@ -1897,4 +1897,7 @@ export const PATCH_NOTES = [
     "Home: the Development strip is slimmer and the page fits without scrolling",
     "Rehab plan: the top line no longer gets clipped, and the player's name opens his card (the same fix for every dialog's top line)",
   ] },
+  { v: "4.71", date: "2026-10-23", title: "Calm menu", notes: [
+    "The menu behind the top-right button is redone in the calm style: no emoji, clean rows, quiet section labels with soft dividers, a white pill switch for Display and a proper toggle for Injuries",
+  ] },
 ];

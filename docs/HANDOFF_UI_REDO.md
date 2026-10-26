@@ -20,6 +20,9 @@ updated 2026-10-26.
 - **No unnecessary scrolling, no poor offset.** A screen that fits should fit: Home and other
   summary screens must not need a scroll at a normal laptop window, and side-by-side cards must line
   up (same header heights, same top edge). Text never clipped. Check scroll height in screenshots.
+- **No emoji in the interface.** Menus, buttons, labels and cards use words (and real logos or
+  art), never emoji: they cheapen the look. Anything still carrying them from the old game gets
+  converted when it's touched.
 - **Home is the standard.** The phone Home and the desktop "broadcast" Home are the look every
   other screen should follow: big team-colored hero, soft rounded cards (`#ffffff0d`, radius 18,
   no border), plain white section titles, one clear action.
