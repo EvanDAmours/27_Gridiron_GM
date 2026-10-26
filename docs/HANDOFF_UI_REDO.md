@@ -285,6 +285,9 @@ Office title, "2026 Schedule", "2027 Draft Class" + points box).
   and the purple "trade deadline surge" banner is folded into the one countdown.
 - Removed four popups nothing could open (media day, the parade, the locker-room speech, a
   second player comparison) and a switched-off Hall of Fame card; their state stays.
+- Live field (`LiveField.jsx`): the yard numbers sat at the sideline edge and a holiday frame
+  covered them; they're set in from both sidelines now (`y={H-40}` and `y={54}`, the far ones
+  rotated). The bye-week Home screen (`PhaseHero`) was praised by the owner as the bar for others.
 
 ## 5. Features added along the way
 - Free agency **Your offers** list (`YourOffers` in FreeAgency.jsx): each of your bids vs the top
