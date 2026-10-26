@@ -1864,4 +1864,7 @@ export const PATCH_NOTES = [
     "Live games: a new Condensed speed. Routine plays flash by and only the key plays (third and fourth downs, goal to go, big plays, a close finish) play out on the field",
     "Standings and Coaching use the same text sizes as the rest of the game",
   ] },
+  { v: "4.65", date: "2026-10-23", title: "Steady live game screen", notes: [
+    "Live games no longer jump around: the field stays put all game like a TV broadcast (away end zone on the left, home end zone on the right) and the home team drives right to left, instead of the whole field flipping every change of possession. The play caption under the field keeps one fixed size, and its flash is off at Fast and Condensed, so the buttons below never move",
+  ] },
 ];

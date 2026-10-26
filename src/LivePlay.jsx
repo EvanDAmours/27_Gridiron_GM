@@ -16,7 +16,8 @@ const BANNER = 1100, LEAD_IN = 450, CARD = 1700, CARD_SHORT = 800;
 // zoom: how far the camera pushes in; speed: play speed (1 normal); onPhase("play" | "card");
 // onDone: the play's over.
 // paused: the game's paused, so the play holds where it is
-export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, speed = 1, paused = false, onPhase, onDone }) {
+// mir: the play is drawn mirrored (the offense driving right to left), so the camera aims at the mirrored spot
+export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, speed = 1, paused = false, mir = false, onPhase, onDone }) {
   const sc = useMemo(() => buildPlay(anim.ev, slots, anim.id * 7919 + 13), [anim.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [t, setT] = useState(0);
   const done = useRef(onDone), phase = useRef(onPhase), hold = useRef(paused);
@@ -36,7 +37,7 @@ export default function LivePlay({ anim, slots, X, Y, cam, W, H, zoom = 2.1, spe
       if (ms >= lead) tell(ms >= lead + playMs ? "card" : "play");
       // the camera follows the ball, a little ahead of it, and never shows past the edge of the field
       const b = ballAt(sc, Math.min(tt, sc.T));
-      const k = zoom, tx = X(b.x) + 30, ty = Y(b.y);
+      const k = zoom, tx = mir ? W - X(b.x) - 30 : X(b.x) + 30, ty = Y(b.y);
       const a = ms < lead ? 1 - Math.exp(-dt * 7) : 1 - Math.exp(-dt * 4.5);
       c.k += (k - c.k) * a; c.x += (tx - c.x) * a; c.y += (ty - c.y) * a;
       const hw = W / (2 * c.k), hh = H / (2 * c.k);

@@ -306,7 +306,7 @@ function LiveFieldView({ ballYard, toGo, off, def, offHome = true, offDepth, def
       {[...Array(20)].map((_, i) => <rect key={i} x={xOf(i * 5)} y="0" width={xOf(5) - xOf(0) + 0.5} height={H} fill={i % 2 ? "#2f8a3a" : "#287c33"} />)}
       {/* end zones: plain grass with the club's wordmark painted big across it (club color, white
           outline), its logo painted at each end, and orange pylons at the four corners */}
-      {[[0, off, -90], [W - EZ, def, 90]].map(([x, t, rot], i) => t && (sb ? (
+      {[[0, offHome ? def : off, -90], [W - EZ, offHome ? off : def, 90]].map(([x, t, rot], i) => t && (sb ? (
         // the Super Bowl: each club's end zone painted solid in its color, pinstriped, framed in gold,
         // its name big in white with a trim in its second color, and its logo at both ends
         <g key={i}>
@@ -335,7 +335,7 @@ function LiveFieldView({ ballYard, toGo, off, def, offHome = true, offDepth, def
         <image href={lombardiArt} x={W / 2 - 18} y={H / 2 - 38} width="36" height="72" preserveAspectRatio="xMidYMid meet" />
       </g>}
       {/* each club's logo painted at its own 25 */}
-      {sb && [[25, off, -90], [75, def, 90]].map(([y, t, rot]) => t?.ab && <image key={y} href={logoUrl(t.ab)} x={xOf(y) - 30} y={H / 2 - 30} width="60" height="60" opacity=".8" filter="url(#lf-paint)" transform={`rotate(${rot} ${xOf(y)} ${H / 2})`} />)}
+      {sb && [[25, offHome ? def : off, -90], [75, offHome ? off : def, 90]].map(([y, t, rot]) => t?.ab && <image key={y} href={logoUrl(t.ab)} x={xOf(y) - 30} y={H / 2 - 30} width="60" height="60" opacity=".8" filter="url(#lf-paint)" transform={`rotate(${rot} ${xOf(y)} ${H / 2})`} />)}
       {/* (the grain is left out while the camera moves: re-drawing it every frame is slow) */}
       {!anim && <rect x="0" y="0" width={W} height={H} filter="url(#lf-grain)" opacity=".55" />}
       <Ground wx={W8} kind={wx} />
@@ -358,13 +358,19 @@ function LiveFieldView({ ballYard, toGo, off, def, offHome = true, offDepth, def
       {night && <g pointerEvents="none"><rect x="0" y="0" width={W} height={H} fill="#050c24" opacity=".55" />{[[0.18, 0], [0.82, 0], [0.18, 1], [0.82, 1]].map(([fx, fy], i) => <ellipse key={i} cx={W * fx} cy={H * fy} rx={W * 0.34} ry={H * 0.7} fill="url(#lf-light)" />)}</g>}
       <rect x="1" y="1" width={W - 2} height={H - 2} fill="none" stroke={sb ? "url(#lf-gold)" : "#fff"} strokeOpacity=".85" strokeWidth={sb ? 5 : 2} rx="9" />
       {[2, EZ - 3, W - EZ - 3, W - 8].flatMap((x) => [2, H - 8].map((y) => <rect key={`${x}-${y}`} x={x} y={y} width="6" height="6" rx="1" fill="#f97316" stroke="#7c2d12" strokeWidth=".6" />))}
+      {/* the field stays put all game (the away end zone on the left, the home end zone on the right,
+          like a broadcast); when the home team has the ball the play is drawn mirrored so it drives
+          right to left, with its writing turned back the right way (lf-mir) */}
+      <g className={offHome ? "lf-mir" : undefined} transform={offHome ? `translate(${W} 0) scale(-1 1)` : undefined}>
+      {offHome && <style>{".lf-mir text { transform-box: fill-box; transform-origin: center; transform: scaleX(-1) }"}</style>}
       {/* line of scrimmage and the line to gain, with a soft glow */}
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#3b82f6" strokeWidth="8" strokeOpacity=".25" />
       <line x1={x0} y1="0" x2={x0} y2={H} stroke="#60a5fa" strokeWidth="3" />
       {toGo > 0 && !st && !anim?.ev?.offAb && los + toGo < 100 && <><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#facc15" strokeWidth="8" strokeOpacity=".25" /><line x1={xOf(los + toGo)} y1="0" x2={xOf(los + toGo)} y2={H} stroke="#fde047" strokeWidth="3" /></>}
-      {anim ? <LivePlay key={anim.id} anim={anim} slots={slots} X={xOf} Y={yOf} cam={cam} W={W} H={H} zoom={camMode === "Field" ? 1 : MOBILE ? 2.2 : 2.1} speed={animSpeed} paused={paused} onPhase={setPhase} onDone={() => onAnimDone?.()} /> : <>{defMen}{offMen}</>}
+      {anim ? <LivePlay key={anim.id} anim={anim} slots={slots} X={xOf} Y={yOf} cam={cam} W={W} H={H} mir={offHome} zoom={camMode === "Field" ? 1 : MOBILE ? 2.2 : 2.1} speed={animSpeed} paused={paused} onPhase={setPhase} onDone={() => onAnimDone?.()} /> : <>{defMen}{offMen}</>}
       {/* a field goal try: the goalposts at the back of the end zone, seen from above */}
       {st === "fg" && <g pointerEvents="none"><line x1={W - 5} y1={yOf(-3.1)} x2={W - 5} y2={yOf(3.1)} stroke="#facc15" strokeWidth="3" strokeLinecap="round" /><circle cx={W - 5} cy={H / 2} r="3.5" fill="#facc15" /></g>}
+      </g>
       <HolidayDecor holiday={holiday} />
       </g>
       <Falling wx={W8} />
