@@ -282,6 +282,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
         <div style={{ display: "flex", background: "#ffffff0d", borderRadius: 99, padding: 3 }}>
           {[[false, "Consensus"], [true, "Your scouts"], ...(withList ? [["list", `Your list (${ids.length})`]] : [])].map(([k, l]) => <button key={l} onClick={() => setMine(k)} style={{ border: 0, borderRadius: 99, padding: "6px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer", background: mine === k ? "#fff" : "transparent", color: mine === k ? "#0b1220" : "#cbd5e1" }}>{l}</button>)}
         </div>
+        {mine !== "list" && <>
         <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
           {["ALL", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((x) => { const on = x === "OL" ? ["LT", "LG", "C", "RG", "RT"].includes(pos) : pos === x || (pos.startsWith("R:") && { WR: ["R:X", "R:Z", "R:SLOT"], CB: ["R:OUT", "R:NB"], S: ["R:FS", "R:SS"], LB: ["R:SAM", "R:MIKE", "R:WILL"] }[x]?.includes(pos)); return <button key={x} onClick={() => { setPos(x === "OL" ? (on ? "ALL" : "LT") : x); setN(page); }} style={{ border: 0, borderRadius: 99, padding: "6px 11px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#ffffff1f" : "transparent", color: on ? "#fff" : "#94a3b8" }}>{x === "ALL" ? "All" : x}</button>; })}
         </div>
@@ -291,6 +292,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
           {SHOWS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
         </Select>}
         {!fixedYr && years.length > 1 && <Select value={cy} onChange={(e) => { setYrSel(+e.target.value); setN(page); }} aria-label="Draft class" style={{ ...sel, borderRadius: 99 }}>{years.map((y) => <option key={y} value={y}>{y + 1} class</option>)}</Select>}
+        </>}
       </div>
       {mine === "list" ? <YourList g={g} classYr={cy} /> : <>
       {cy !== g.yr && <div style={{ ...muted, margin: "0 4px 8px" }}>A future class: your scouts can only file reports on the {g.yr + 1} draft.</div>}
@@ -340,31 +342,33 @@ export function YourList({ g, classYr, onDraft, canDraft, compact = false }) {
       </div>
     </div>
   );
+  // desktop, calm: your own ranking as rows (your rank, face, name, role, school, ceiling), with
+  // the order controls quiet until you hover; drafted players stay, dimmed, with where they went
+  const quiet = { background: "transparent", border: 0, color: "#94a3b8", cursor: "pointer", fontSize: 15, padding: "2px 6px" };
   return (
-    <div style={{ ...panel, background: "#0d1a0d", border: "1px solid #1665342e" }}>
-      <div style={{...head, color: C.gn }}>Your list<Right>{rows.filter((x) => x.p).length} available</Right></div>
-      {!rows.length && <div style={muted}>Star prospects on the Big Board (☆) to build your own ranking. It stays in the order you set, and if the draft clock runs out you take the top name on it.</div>}
+    <div style={{ background: "#ffffff08", borderRadius: 18, padding: compact ? "10px 6px 6px" : 6, marginBottom: compact ? 10 : 0 }}>
+      <style>{BOARD_CSS}</style>
+      {compact && <div style={{ display: "flex", alignItems: "baseline", margin: "0 10px 4px" }}><b style={{ fontSize: 15 }}>Your list</b><span style={{ marginLeft: "auto", fontSize: 13, color: C.mt }}>{rows.filter((x) => x.p).length} available</span></div>}
+      {!rows.length && <div style={{ ...muted, padding: "12px 12px" }}>Nobody on it yet. Star prospects on the Big Board to build your own ranking. It keeps the order you set, and if the draft clock runs out you take the top name.</div>}
       {shown.map(({ id, p, d }) => {
-        const i = ids.indexOf(id);
-        const pl = p || d.player;
-        const read = p ? prospectRead(g.scouting, p) : null;
+        const i = ids.indexOf(id), pl = p || d.player, read = p ? prospectRead(g.scouting, p) : null;
         return (
-          <div key={id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 4px", borderBottom: `1px solid ${C.bd}44`, fontSize: 16, flexWrap: "wrap", opacity: p ? 1 : 0.5 }}>
-            <b style={{ minWidth: 28, color: "#fef3c7", fontSize: 20 }}>{i + 1}.</b>
-            <Bdg pos={posTag(pl)} />
-            {p ? <PN p={p} setSel={g.setSel} /> : <span>{pl.name}</span>}
-            <span style={{ color: C.mt, fontSize: 14 }}>consensus #{csRank(pl)}</span>
-            {read && <span style={{ display: "inline-flex", gap: 14, marginLeft: "auto", alignItems: "baseline" }}><span style={{ fontSize: 12, color: C.mt }}>OVR <Val txt={read.ovr} /></span><span style={{ fontSize: 12, color: C.mt }}>POT <Val txt={read.pot} /></span></span>}
-            <span style={{ display: "inline-flex", gap: 3, alignItems: "center", marginLeft: read ? 0 : "auto" }}>
-              {d ? <span style={{ color: C.mt, fontSize: 11 }}>#{d.overall} {g.teams[d.owner]?.ab}</span> : (
-                <>
-                  {!compact && <button aria-label="Move up" disabled={i === 0} onClick={() => a.move(pl, -1)} style={{ background: "transparent", color: C.mt, border: "none", cursor: "pointer", fontSize: 20 }}>↑</button>}
-                  {!compact && <button aria-label="Move down" disabled={i === ids.length - 1} onClick={() => a.move(pl, 1)} style={{ background: "transparent", color: C.mt, border: "none", cursor: "pointer", fontSize: 20 }}>↓</button>}
-                  {onDraft && <Btn onClick={() => onDraft(p)} disabled={!canDraft} bg={C.gn} style={{ padding: "5px 12px", fontSize: 14 }}>Draft</Btn>}
-                </>
-              )}
-              {!compact && <Btn onClick={() => a.toggle(pl)} bg="#7f1d1d22" c="#fca5a5" style={{ fontSize: 14, padding: "4px 9px" }}>✕</Btn>}
+          <div key={id} className="bd-row" onClick={() => p && g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 14, padding: compact ? "6px 10px" : "9px 12px", borderRadius: 14, cursor: p ? "pointer" : "default", opacity: p ? 1 : 0.5 }}>
+            <span style={{ width: 24, textAlign: "right", fontSize: 16, fontWeight: 900, color: "#fcd34d" }}>{i + 1}</span>
+            {!compact && <Face s={pl.face} sz={40} />}
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: compact ? 14.5 : 16, fontWeight: 800, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{pl.name}</span>
+              <span style={{ display: "block", fontSize: 13, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{posTag(pl)}{roleWord(pl) && <b style={{ color: "#e2e8f0" }}> · {roleWord(pl)}</b>}{compact ? "" : ` · ${pl.bio?.college || pl.college || ""} · board #${csRank(pl)}`}</span>
             </span>
+            {d ? <span style={{ fontSize: 13, color: C.mt }}>Gone #{d.overall} {g.teams[d.owner]?.ab}</span> : read && <span style={{ width: 44, textAlign: "center" }}><Val txt={read.pot} /></span>}
+            {p && <span onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {!compact && <span className="bd-act" style={{ display: "flex" }}>
+                <button aria-label="Move up" disabled={i === 0} onClick={() => a.move(pl, -1)} style={quiet}>↑</button>
+                <button aria-label="Move down" disabled={i === ids.length - 1} onClick={() => a.move(pl, 1)} style={quiet}>↓</button>
+                <button aria-label="Remove from your list" onClick={() => a.toggle(pl)} style={quiet}>✕</button>
+              </span>}
+              {onDraft && <Btn onClick={() => onDraft(p)} disabled={!canDraft} bg={C.gn} style={{ padding: "5px 14px", fontSize: 13.5, borderRadius: 99 }}>Draft</Btn>}
+            </span>}
           </div>
         );
       })}
@@ -415,13 +419,11 @@ export function ScoutReportCard({ g }) {
       <div style={head}>Report card · {y + 1} draft class</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,240px),1fr))", gap: 8 }}>
         {cards.map((c) => (
-          <div key={c.id} style={{ background: "#ffffff0a", borderRadius: 14, padding: "10px 12px", display: "flex", gap: 12, alignItems: "center" }}>
-            <div style={{ fontSize: 34, fontWeight: 900, color: GRADE_CLR(c.grade), width: 52, textAlign: "center", lineHeight: 1 }}>{c.grade}</div>
+          <div key={c.id} title={`${c.n} reads · sleepers ${frac(c.found, c.gems)} · red flags ${frac(c.caught, c.busts)} · dev traits ${frac(c.called, c.devs)}`} style={{ background: "#ffffff0a", borderRadius: 14, padding: "10px 12px", display: "flex", gap: 12, alignItems: "center" }}>
+            <div style={{ fontSize: 28, fontWeight: 900, color: GRADE_CLR(c.grade), width: 52, textAlign: "center", lineHeight: 1 }}>{c.grade}</div>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name} <span style={{ color: "#67e8f9", fontSize: 13 }}>{SCOUT_GROUP_SHORT[c.group] || ""}</span></div>
-              <div style={{ fontSize: 13, color: "#94a3b8" }}>{c.n} reads, off by {c.miss} on average</div>
-              <div style={{ fontSize: 13, color: "#cbd5e1" }}>Sleepers {frac(c.found, c.gems)} · Red flags {frac(c.caught, c.busts)} · Dev traits {frac(c.called, c.devs)}</div>
-              {past(c.id).length > 0 && <div style={{ fontSize: 12, color: C.mt }}>Before: {past(c.id).map((p) => p.grade).join(", ")}</div>}
+              <div style={{ fontWeight: 800, fontSize: 15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name} <span style={{ color: "#94a3b8", fontSize: 13, fontWeight: 600 }}>{SCOUT_GROUP_SHORT[c.group] || ""}</span></div>
+              <div style={{ fontSize: 13, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Off by {c.miss}{c.gems ? ` · ${c.found} of ${c.gems} sleepers` : ""}{past(c.id).length ? ` · before ${past(c.id).map((p) => p.grade).join(", ")}` : ""}</div>
             </div>
           </div>
         ))}
@@ -446,17 +448,17 @@ export function ScoutsView({ g }) {
     <div>
       <ScoutReportCard g={g} />
       <div style={panel}>
-        <div style={head}>MY SCOUTS<Right>{open ? "Staff and regions can change now" : "On the road: changes in free agency or the preseason"}</Right></div>
+        <div style={head}>Your staff<Right>{open ? "Staff and regions can change now" : "On the road: changes in free agency or the preseason"}</Right></div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
             <thead><tr><th style={th}>ROLE</th><th style={th}>NAME</th><th style={th}>TIER</th><th style={th}>SPECIALTY</th><th style={th}>TRAIT</th>{open && <th style={th}></th>}</tr></thead>
             <tbody>{SCOUT_SLOTS.map((r) => { const x = s[r]; return (
               <tr key={r}>
-                <td style={{ ...td, fontSize: 12, fontWeight: 900, color: slotKind(r) === "major" ? "#f5c542" : "#60a5fa", whiteSpace: "nowrap" }}>{SCOUT_ROLES[r].short.toUpperCase()}</td>
+                <td style={{ ...td, fontSize: 14, color: "#94a3b8", whiteSpace: "nowrap" }}>{SCOUT_ROLES[r].short}</td>
                 {x ? <>
                   <td style={td}><div style={{ display: "flex", alignItems: "center", gap: 6 }}><Face s={x.face} sz={24} /><b style={{ whiteSpace: "nowrap" }}>{x.name}</b></div></td>
                   <td style={td}><Stars ev={x.eval} /> <span style={{ fontSize: 12, color: C.mt }}>{x.eval}</span></td>
-                  <td style={{ ...td, color: "#67e8f9", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[x.group] || "—"}</td>
+                  <td style={{ ...td, color: "#fff", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[x.group] || "—"}</td>
                   <td style={td}><Trait x={x} /></td>
                   {open && <td style={td}><Btn onClick={() => act(releaseScout(s, g.sp, r))} bg="transparent" c="#94a3b8" style={{ fontSize: 13, padding: "3px 8px" }}>Let go</Btn></td>}
                 </> : <td colSpan={open ? 5 : 4} style={{ ...td, color: C.mt }}>Vacant{open ? ": hire one below" : ""}</td>}
@@ -469,7 +471,7 @@ export function ScoutsView({ g }) {
         </div>
       </div>
       <div style={panel}>
-        <div style={head}>SCOUTS AVAILABLE{open && <Right>Hire as <Select value={role} onChange={(e) => setRole(e.target.value)} aria-label="Hire into" style={{ background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 6, padding: "3px 6px", fontSize: 14, minWidth: 150 }}>{SCOUT_SLOTS.map((r) => <option key={r} value={r}>{SCOUT_ROLES[r].name}{s[r] ? ` (replaces ${s[r].name.split(" ").slice(-1)[0]})` : ""}</option>)}</Select></Right>}</div>
+        <div style={head}>Scouts available{open && <Right>Hire as <Select value={role} onChange={(e) => setRole(e.target.value)} aria-label="Hire into" style={{ background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 6, padding: "3px 6px", fontSize: 14, minWidth: 150 }}>{SCOUT_SLOTS.map((r) => <option key={r} value={r}>{SCOUT_ROLES[r].name}{s[r] ? ` (replaces ${s[r].name.split(" ").slice(-1)[0]})` : ""}</option>)}</Select></Right>}</div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
           {[null, "QB", "RB", "REC", "OL", "DL", "LB", "DB"].map((k) => <button key={k || "all"} onClick={() => setWant(k)} title={k ? `Scouts who specialize in ${SCOUT_GROUPS[k].toLowerCase()}` : "Everyone"} style={chipBtn(want === k)}>{k ? SCOUT_GROUP_SHORT[k] : "All"}{k && staffGroups.includes(k) ? " ✓" : ""}</button>)}
         </div>
@@ -480,7 +482,7 @@ export function ScoutsView({ g }) {
               <tr key={x.id}>
                 <td style={td}><div style={{ display: "flex", alignItems: "center", gap: 6 }}><Face s={x.face} sz={24} /><b style={{ whiteSpace: "nowrap" }}>{x.name}</b></div></td>
                 <td style={td}><Stars ev={x.eval} /> <span style={{ fontSize: 12, color: C.mt }}>{x.eval}</span></td>
-                <td style={{ ...td, color: "#67e8f9", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[x.group] || "—"}</td>
+                <td style={{ ...td, color: "#fff", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[x.group] || "—"}</td>
                 <td style={td}>{x.age}</td>
                 <td style={{ ...td, fontSize: 12, color: C.mt }}>{x.bg}</td>
                 <td style={td}><Trait x={x} /></td>
@@ -951,7 +953,6 @@ export function MockDraft({ g }) {
   const listed = new Set(listIds(g.scouting, g.yr));
   const myNext = order.find((pk) => pk.owner === g.ui);
   const before = myNext ? mock.filter((m) => listed.has(m.player.id) && m.pick.overall < myNext.overall) : [];
-  const td = { padding: "9px 6px", borderBottom: `1px solid ${C.bd}66`, verticalAlign: "middle" };
   // phones: one row a pick (the club, then who the experts have them taking), your picks lit up
   if (MOBILE) return (
     <div>
@@ -975,40 +976,36 @@ export function MockDraft({ g }) {
       </div>
     </div>
   );
+  // desktop, calm: one line (whose mock, your next pick and who'll be gone by then, rounds), then
+  // one row a pick. Your picks are lit; the other names linked to a pick are on hover.
+  const segB = (on) => ({ border: 0, borderRadius: 99, padding: "6px 14px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#fff" : "transparent", color: on ? "#0b1220" : "#cbd5e1" });
   return (
     <div>
-      <div style={{ ...panel, display: "flex", gap: "6px 16px", flexWrap: "wrap", alignItems: "center", fontSize: 14 }}>
-        <span><b>Experts' mock draft</b> <span style={{ color: C.mt }}>· consensus board plus each club's needs{g.sp === "draft" && g.curPick ? ", updated live" : ", in today's draft order"}</span></span>
-        <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>{[1, 2].map((r) => <button key={r} onClick={() => setRounds(r)} style={{ ...chipBtn(rounds === r), fontSize: 14, padding: "6px 12px" }}>{r === 1 ? "Round 1" : "Rounds 1-2"}</button>)}</span>
-      </div>
-      {myNext && (
-        <div style={{ ...panel, borderColor: before.length ? C.gd : C.bd, fontSize: 14 }}>
-          Your next pick: <b>#{myNext.overall}</b>.{" "}
-          {before.length ? <>Projected to be gone before then: {before.map((m, i) => <span key={m.player.id}>{i ? ", " : ""}<b style={{ color: C.gd }}>{m.player.name}</b> (#{m.pick.overall} to the {g.teams[m.pick.owner].name})</span>)}. Trade up if you want him.</> : listed.size ? <span style={{ color: C.gn }}>Everyone on your list is projected to still be there.</span> : <span style={{ color: C.mt }}>Star prospects to add them to your list and see where they're projected.</span>}
+      <style>{BOARD_CSS}</style>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "0 4px 12px", flexWrap: "wrap" }}>
+        <div style={{ fontSize: 14, color: "#94a3b8", flex: 1, minWidth: 0 }}>
+          {myNext ? <>Your next pick is <b style={{ color: "#fff" }}>#{myNext.overall}</b>{before.length ? <>. Gone before then on your list: {before.map((m, i) => <span key={m.player.id}>{i ? ", " : ""}<b style={{ color: C.gd }}>{m.player.name}</b> (#{m.pick.overall})</span>)}</> : listed.size ? ". Everyone on your list should still be there." : ". Star prospects to see where they're projected."}</> : "The experts' mock: the consensus board plus each club's needs."}
         </div>
-      )}
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead><tr style={{ color: C.mt, fontSize: 14, textAlign: "left" }}><th style={{ padding: 6 }}>Pick</th><th style={{ padding: 6 }}>Team</th><th style={{ padding: 6 }}>Projected pick</th><th className="sc-hide" style={{ padding: 6 }}>Also linked</th></tr></thead>
-          <tbody>
-            {mock.filter((m) => m.pick.rd <= rounds).map(({ pick, player, alts }) => {
-              const t = g.teams[pick.owner], mine = pick.owner === g.ui, star = listed.has(player.id);
-              return (
-                <tr key={pick.id || pick.overall} style={{ background: mine ? `${C.gn}14` : "transparent" }}>
-                  <td style={{ ...td, width: 64, fontWeight: 800, color: mine ? C.gn : "#94a3b8", fontVariantNumeric: "tabular-nums" }}>R{pick.rd} #{pick.overall}</td>
-                  <td style={{ ...td, whiteSpace: "nowrap" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><TeamLogo t={t} sz={26} /><span style={{ fontWeight: mine ? 800 : 600 }}>{t.name}{mine ? " (you)" : ""}</span>{pick.orig != null && pick.orig !== pick.owner && <span style={{ fontSize: 12, color: C.mt }}>via {g.teams[pick.orig]?.ab}</span>}</span></td>
-                  <td style={{ ...td, cursor: "pointer" }} onClick={() => g.setSel(player)}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Bdg pos={posTag(player)} /><span style={{ fontSize: 16, fontWeight: 700 }}>{star ? "★ " : ""}{player.name}</span></div>
-                    <div style={{ fontSize: 14, color: C.mt }}>{player.bio?.college} · consensus #{csRank(player)}</div>
-                  </td>
-                  <td className="sc-hide" style={{ ...td, fontSize: 14, color: "#94a3b8" }}>{alts.map((a) => `${a.name} (${a.pos})`).join(", ")}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div style={{ display: "flex", background: "#ffffff0d", borderRadius: 99, padding: 3 }}>{[1, 2].map((r) => <button key={r} onClick={() => setRounds(r)} style={segB(rounds === r)}>{r === 1 ? "Round 1" : "Rounds 1-2"}</button>)}</div>
       </div>
-      {!mock.length && <div style={{ color: C.mt, padding: 12 }}>No draft class yet.</div>}
+      <div style={{ background: "#ffffff08", borderRadius: 18, padding: 6 }}>
+        {mock.filter((m) => m.pick.rd <= rounds).map(({ pick, player, alts }) => {
+          const t = g.teams[pick.owner], mine = pick.owner === g.ui, star = listed.has(player.id);
+          return (
+            <div key={pick.id || pick.overall} className="bd-row" onClick={() => g.setSel(player)} title={alts.length ? `Also linked: ${alts.map((x) => `${x.name} (${x.pos})`).join(", ")}` : undefined} style={{ display: "flex", alignItems: "center", gap: 14, padding: "8px 12px", borderRadius: 14, cursor: "pointer", background: mine ? "#f5c54212" : undefined, boxShadow: mine ? `inset 3px 0 0 ${C.gd}` : "none" }}>
+              <span style={{ width: 34, textAlign: "right", fontSize: 16, fontWeight: 900, color: mine ? C.gd : "#64748b", fontVariantNumeric: "tabular-nums" }}>{pick.overall}</span>
+              <span style={{ width: 170, display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}><TeamLogo t={t} sz={28} /><span style={{ fontSize: 14.5, fontWeight: mine ? 900 : 700, color: mine ? C.gd : "#cbd5e1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{mine ? "You" : t.name}</span></span>
+              <Face s={player.face} sz={38} />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 16, fontWeight: 800, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{player.name}{star && <span style={{ color: C.gd, marginLeft: 6 }}>★</span>}</span>
+                <span style={{ display: "block", fontSize: 13.5, color: "#94a3b8" }}>{posTag(player)}{roleWord(player) && <b style={{ color: "#e2e8f0" }}> · {roleWord(player)}</b>} · {player.bio?.college || player.college}</span>
+              </span>
+              <span style={{ fontSize: 13, color: "#64748b", whiteSpace: "nowrap" }}>board #{csRank(player)}</span>
+            </div>
+          );
+        })}
+        {!mock.length && <div style={{ ...muted, padding: 12 }}>No draft class yet.</div>}
+      </div>
     </div>
   );
 }
@@ -1055,7 +1052,7 @@ function PhoneScouts({ g }) {
             {sc ? <Face s={sc.face} sz={42} /> : <span style={{ width: 42, height: 42, borderRadius: 21, border: "2px dashed #475569", flexShrink: 0 }} />}
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sc ? sc.name : open ? "Hire a scout" : "Vacant"}</span>
-              <span style={{ display: "block", fontSize: 14, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><b style={{ color: slotKind(sl) === "major" ? "#f5c542" : "#60a5fa" }}>{slotKind(sl) === "major" ? "Major" : "Minor"}</b>{sc ? <> · knows <b style={{ color: "#67e8f9" }}>{SCOUT_GROUP_SHORT[sc.group] || "—"}</b> · {ar[sl].length ? ar[sl].map((r, i) => <React.Fragment key={r}>{i ? ", " : ""}<span style={{ color: REGION_CLR[r], fontWeight: 700 }}>{REGIONS_SHORT[r]}</span></React.Fragment>) : "no region"}</> : ` · covers ${areaCap(sl)} region${areaCap(sl) > 1 ? "s" : ""}`}</span>
+              <span style={{ display: "block", fontSize: 14, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><b style={{ color: slotKind(sl) === "major" ? "#f5c542" : "#60a5fa" }}>{slotKind(sl) === "major" ? "Major" : "Minor"}</b>{sc ? <> · knows <b style={{ color: "#fff" }}>{SCOUT_GROUP_SHORT[sc.group] || "—"}</b> · {ar[sl].length ? ar[sl].map((r, i) => <React.Fragment key={r}>{i ? ", " : ""}<span style={{ color: REGION_CLR[r], fontWeight: 700 }}>{REGIONS_SHORT[r]}</span></React.Fragment>) : "no region"}</> : ` · covers ${areaCap(sl)} region${areaCap(sl) > 1 ? "s" : ""}`}</span>
             </span>
             {sc && <Stars ev={sc.eval} />}
             <span style={{ fontSize: 20, color: "#64748b" }}>›</span>
@@ -1085,7 +1082,7 @@ function PhoneScouts({ g }) {
         <div style={{ ...soft, marginTop: 12 }}>
           {pool.map((p, i) => <button key={p.id} onClick={() => setCand(p.id)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 62, background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, color: "#fff", textAlign: "left", cursor: "pointer", padding: 0 }}>
             <Face s={p.face} sz={38} />
-            <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><span style={{ display: "block", fontSize: 14, color: "#94a3b8", marginTop: 2 }}>Knows <b style={{ color: "#67e8f9" }}>{SCOUT_GROUP_SHORT[p.group] || "—"}</b> · age {p.age}{p.trait ? ` · ${SCOUT_TRAITS[p.trait].name}` : ""}</span></span>
+            <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><span style={{ display: "block", fontSize: 14, color: "#94a3b8", marginTop: 2 }}>Knows <b style={{ color: "#fff" }}>{SCOUT_GROUP_SHORT[p.group] || "—"}</b> · age {p.age}{p.trait ? ` · ${SCOUT_TRAITS[p.trait].name}` : ""}</span></span>
             <Stars ev={p.eval} />
           </button>)}
           {!pool.length && <div style={{ padding: "16px 0", color: "#94a3b8", fontSize: 14 }}>Nobody's looking for work{want ? " at that position" : ""} right now.</div>}
@@ -1127,7 +1124,7 @@ export function RegionsView({ g }) {
     <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "10px 10px 12px" }}>
       <StaffMap colorOf={(r) => (who(r) ? REGION_CLR[r] : null)} labelOf={(r) => (who(r) ? nm(who(r)) : "No scout")} onRegion={open ? tap : undefined} hot={!MOBILE ? pick : null} />
       <div style={{ display: MOBILE ? "flex" : "none", flexWrap: "wrap", gap: "6px 14px", justifyContent: "center", marginTop: 6 }}>
-        {staff.map((sl) => { const n = ar[sl].length, cap = areaCap(sl); return <span key={sl} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 700 }}>{ar[sl].map((r) => <span key={r} title={regionName(r)} style={{ width: 10, height: 10, borderRadius: 5, background: REGION_CLR[r] }} />)}{nm(sl)} <span style={{ color: "#67e8f9", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[s[sl].group] || ""}</span><span style={{ color: n >= cap ? C.mt : C.gd, fontWeight: 800 }}>{n}/{cap}</span></span>; })}
+        {staff.map((sl) => { const n = ar[sl].length, cap = areaCap(sl); return <span key={sl} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 700 }}>{ar[sl].map((r) => <span key={r} title={regionName(r)} style={{ width: 10, height: 10, borderRadius: 5, background: REGION_CLR[r] }} />)}{nm(sl)} <span style={{ color: "#fff", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[s[sl].group] || ""}</span><span style={{ color: n >= cap ? C.mt : C.gd, fontWeight: 800 }}>{n}/{cap}</span></span>; })}
         {!staff.length && <span style={{ fontSize: 14, color: C.mt }}>No scouts on staff. Hire some on the Scouts screen.</span>}
       </div>
     </div>
@@ -1214,7 +1211,7 @@ export function RegionsView({ g }) {
             <Face s={sc.face} sz={34} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sc.name}</div>
-              <div style={{ fontSize: 14, color: "#94a3b8" }}><b style={{ color: slotKind(sl) === "major" ? "#f5c542" : "#60a5fa" }}>{slotKind(sl) === "major" ? "Major" : "Minor"}</b> · knows <b style={{ color: "#67e8f9" }}>{SCOUT_GROUP_SHORT[sc.group] || "—"}</b> · {n} of {areaCap(sl)} region{areaCap(sl) > 1 ? "s" : ""}</div>
+              <div style={{ fontSize: 14, color: "#94a3b8" }}><b style={{ color: slotKind(sl) === "major" ? "#f5c542" : "#60a5fa" }}>{slotKind(sl) === "major" ? "Major" : "Minor"}</b> · knows <b style={{ color: "#fff" }}>{SCOUT_GROUP_SHORT[sc.group] || "—"}</b> · {n} of {areaCap(sl)} region{areaCap(sl) > 1 ? "s" : ""}</div>
             </div>
             <Stars ev={sc.eval} />
           </div>
@@ -1272,9 +1269,8 @@ function TalentMap({ g, go, card, h }) {
       {AREA_KEYS.map((k) => { const r = rep[k]; const on = SCOUT_SLOTS.filter((sl) => s[sl] && ar[sl].includes(k)); return (
         <div key={k} onClick={() => go("regions")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderTop: `1px solid ${C.bd}66`, fontSize: 14, cursor: "pointer" }}>
           <b style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{regionName(k)}</b>
-          <span style={{ width: 76, whiteSpace: "nowrap", color: "#4ade80", fontWeight: 800 }}>{r?.strong ? `▲ ${SCOUT_GROUP_SHORT[r.strong.g]}` : ""}</span>
-          <span style={{ width: 76, whiteSpace: "nowrap", color: "#f87171", fontWeight: 800 }}>{r?.weak ? `▼ ${SCOUT_GROUP_SHORT[r.weak.g]}` : <span style={{ color: C.mt, fontWeight: 600 }}>small</span>}</span>
-          <span style={{ width: 90, textAlign: "right", color: on.length ? "#67e8f9" : "#fcd34d", fontWeight: 700 }}>{on.length ? on.map((sl) => SCOUT_GROUP_SHORT[s[sl].group] || "—").join(" · ") : "no scout"}</span>
+          <span style={{ width: 150, whiteSpace: "nowrap", color: "#cbd5e1" }}>{r?.strong ? <>deep at <b style={{ color: "#fff" }}>{SCOUT_GROUP_SHORT[r.strong.g]}</b></> : <span style={{ color: C.mt }}>a small region</span>}</span>
+          <span style={{ width: 90, textAlign: "right", color: on.length ? "#94a3b8" : C.gd, fontWeight: on.length ? 600 : 800 }}>{on.length ? on.map((sl) => SCOUT_GROUP_SHORT[s[sl].group] || "—").join(" · ") + " scout" : "no scout"}</span>
         </div>); })}
     </div>
   );
@@ -1356,7 +1352,8 @@ export function ScoutingHQ({ g, go }) {
   }
   return (
     <div style={{ display: "grid", gap: 12 }}>
-      <PickCabinet g={g} />
+      <style>{BOARD_CSS}</style>
+      {slots.length > 0 && <div style={{ fontSize: 14, color: "#94a3b8", margin: "0 4px" }}>Your picks <b style={{ color: "#fff", marginLeft: 6 }}>{slots.map((x) => `#${x}`).join("  ·  ")}</b></div>}
       {staffWindowOpen(g.sp) && s.areasYr !== areaSeason(g.sp, g.yr) && (
         <div style={{ ...card, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", borderColor: "#38bdf888" }}>
           <div style={{ flex: 1, minWidth: 200 }}><div style={{ fontWeight: 800, fontSize: 14 }}>Send your scouts to their regions</div><div style={{ fontSize: 14, color: "#94a3b8" }}>{gap.length ? `Nobody works the ${gap.map(regionName).join(" or the ")}. ` : ""}Two regions for each major scout, one for each minor. They stay put once the season starts.</div></div>
@@ -1365,19 +1362,9 @@ export function ScoutingHQ({ g, go }) {
       )}
       <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "minmax(0,1.35fr) minmax(0,1fr)", gap: 12, alignItems: "start" }}>
         <div style={card}>
-          <div style={h}>Scout these next<span style={{ marginLeft: "auto", color: C.mt, fontSize: 14, fontWeight: 600 }}>in range of your picks · needs: {needs.join(", ")}</span></div>
+          <div style={h}>Scout these next<span style={{ marginLeft: "auto", color: C.mt, fontSize: 13, fontWeight: 600 }}>likely there at your picks, needs first</span></div>
           {g.sp === "combine" && <div style={{ paddingBottom: 8, borderBottom: "1px solid #ffffff12" }}><div style={{ fontSize: 14, fontWeight: 800, color: "#c4b5fd", marginBottom: 4 }}>Combine visits: interview or work out these before the draft</div><ScoutShortlist g={g} isNeed={isNeed} compact /></div>}
-          {targets.map(({ p, read }) => (
-            <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: "1px solid #ffffff0a" }}>
-              <span style={{ width: 34, textAlign: "right", fontSize: 14, fontWeight: 800, color: C.mt, fontVariantNumeric: "tabular-nums" }}>#{csRank(p)}</span>
-              <Bdg pos={posTag(p)} />
-              <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => g.setSel(p)}>
-                <div style={{ fontWeight: 800, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}{isNeed(p) && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, color: C.gn }}>NEED</span>}</div>
-                <div style={{ fontSize: 12, color: C.mt }}>{p.bio?.college || p.college} · {read.lvl === 0 ? (read.grade ? `your read ${read.grade}` : "no read") : "reported"}</div>
-              </div>
-              <ScoutButton g={g} p={p} read={read} small />
-            </div>
-          ))}
+          <div style={{ margin: "0 -12px" }}>{targets.map(({ p }) => <BoardRow key={p.id} g={g} p={p} needs={needs} />)}</div>
           {!targets.length && <div style={{ fontSize: 14, color: "#94a3b8", padding: "6px 0" }}>Everyone in range of your picks is scouted.</div>}
           <div style={{ display: "flex", gap: 8, marginTop: 10 }}><Btn onClick={() => go("board")} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 14, padding: "6px 14px", borderRadius: 999 }}>Big Board →</Btn><Btn onClick={() => go("list")} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 14, padding: "6px 14px", borderRadius: 999 }}>Your list →</Btn></div>
         </div>
@@ -1387,8 +1374,8 @@ export function ScoutingHQ({ g, go }) {
             <div style={h}>Your scouts<span style={{ marginLeft: "auto" }}><Btn onClick={() => go("scouts")} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 14, padding: "4px 12px", borderRadius: 999 }}>Manage →</Btn></span></div>
             {SCOUT_SLOTS.map((r) => { const sc = s[r]; return (
               <div key={r} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderTop: `1px solid ${C.bd}66`, fontSize: 14 }}>
-                <span style={{ width: 60, whiteSpace: "nowrap", fontSize: 11, fontWeight: 900, color: slotKind(r) === "major" ? "#f5c542" : "#60a5fa" }}>{SCOUT_ROLES[r].short.toUpperCase()}</span>
-                {sc ? <><b style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sc.name}</b><Stars ev={sc.eval} /><span style={{ width: 46, color: "#67e8f9", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[sc.group] || "—"}</span><span style={{ width: 74, color: C.mt }}>{areasOf(s)[r].join("/")}</span></> : <span style={{ color: C.mt }}>Vacant</span>}
+                <span style={{ width: 60, whiteSpace: "nowrap", fontSize: 13, color: "#94a3b8" }}>{SCOUT_ROLES[r].short}</span>
+                {sc ? <><b style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sc.name}</b><Stars ev={sc.eval} /><span style={{ width: 46, color: "#fff", fontWeight: 800 }}>{SCOUT_GROUP_SHORT[sc.group] || "—"}</span><span style={{ width: 74, color: C.mt }}>{areasOf(s)[r].join("/")}</span></> : <span style={{ color: C.mt }}>Vacant</span>}
               </div>); })}
           </div>
         </div>

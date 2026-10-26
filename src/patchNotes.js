@@ -1957,4 +1957,10 @@ export const PATCH_NOTES = [
   { v: "4.82", date: "2026-10-23", title: "Potential picks", notes: [
     "The Combine opens on Potential picks: one section per pick you hold (Round 1 · Pick #14, Round 2 · Pick #46...), each listing the tested players the board ranks in that pick's likely range, your need positions first (marked Need). Five per pick, the rest a tap away. Your needs and All positions are the other two views; position filters, search and sort work in all three",
   ] },
+  { v: "4.83", date: "2026-10-23", title: "Calmer scouting HQ, mock draft and staff", notes: [
+    "Scouting HQ is calmer: one line for your picks, 'Scout these next' uses the same rows as the Big Board, and the talent map reads in plain words.",
+    "Mock Draft: one quiet row per pick with your own picks lit in gold; who else is linked sits in the row's tooltip.",
+    "Your list: calm rows with the reorder controls hidden until you hover.",
+    "Scouts: the report card shows one grade and one line per scout (hover for the detail), and the staff tables drop the bright colors.",
+  ] },
 ];
