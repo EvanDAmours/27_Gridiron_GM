@@ -1948,7 +1948,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
             ddOffers.current=offers.length?{offers,accept,askMore}:null;return null;})()}
         </div>}
       </>}
-        {sp==="combine"&&<div style={{background:"#7c3aed22",border:"1px solid #7c3aed44",borderRadius:5,padding:"8px 12px",fontSize:14,color:"#c4b5fd",marginBottom:6}}>✅ Combine & Pro Days complete! Interview prospects and spend your last scouting points in the Scouting tab.</div>}
+        {sp==="combine"&&<div style={{fontSize:14,color:"#94a3b8",margin:"0 4px 10px"}}>The Combine and pro days are done: interview prospects and spend your last scouting points in Scouting.</div>}
       {sp==="draft"&&!draftActive&&<DraftGrades g={scoutG}/>}
       <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"flex-start"}}>
         <div style={{flex:"2 1 520px",minWidth:0}}>

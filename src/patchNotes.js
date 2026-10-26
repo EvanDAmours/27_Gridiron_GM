@@ -1948,4 +1948,10 @@ export const PATCH_NOTES = [
     "Draft classes have realistic roles: about a third of the corners are nickels, receivers split about 40% X and 30% each Z and slot, safeties half free and half strong, linebackers about a third each. Before, a class could have 2 nickels in 23 corners or 30 SAMs in 36 linebackers. Real prospects keep the role the scouting data gives them; saves in progress get the fix when loaded",
     "Your pick lines only show on the full board, so they don't bunch up when you filter",
   ] },
+  { v: "4.81", date: "2026-10-23", title: "Calm Combine", notes: [
+    "The Combine opens on what matters to you: your need positions and the players you can actually get (ranked at or after the top of your first pick's range; no point studying the top ten without a pick up there). All positions and Everyone are one tap away",
+    "Combine results as calm rows like the Big Board: rank, face, name with position, role, size and school, his two standout tests (the best of his testing for his position, green when top 10%), his combine grade, and Workout or Interview. Sort by a test and that number leads the row; every number is on his profile",
+    "Stock up and Stock down only show players you can get, three each, in the same calm rows with their role and rank move",
+    "Combine week's points, interviews and workouts are one quiet line instead of a box, and the Draft tab's combine note lost its emoji",
+  ] },
 ];
