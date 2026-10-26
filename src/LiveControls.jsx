@@ -61,7 +61,7 @@ export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, 
       <Setting icon="🎬" title="Live plays" why={WHY.live[livePlays]}>
         <Seg value={livePlays} onChange={onLivePlays} tone="#facc15" options={[["Key", "Key"], ["All", "Every"], ["Off", "Off"]]} />
       </Setting>
-      <Setting icon="⏱" title="Speed" why="How long the game waits between plays.">
+      <Setting icon="⏱" title="Speed" why={speed === "Condensed" ? (livePlays === "Off" ? "Condensed game: routine plays flash by. Turn Live plays on to watch the key ones." : "Condensed game: routine plays flash by and only the key plays take time.") : "How long the game waits between plays."}>
         <Seg value={speed} onChange={onSpeed} options={speeds.map((k) => [k, k])} />
       </Setting>
       {onCam && <Setting icon="🎥" title="Camera" why={WHY.cam[cam]}>

@@ -544,7 +544,8 @@ export const sL=k=>({passYds:"PYDS",passTD:"PTD",passInt:"INT",comp:"CMP",att:"A
 
 // Milliseconds per AI pick, by speed setting: first-round picks take longer, like on TV.
 // Live game: milliseconds between plays.
-export const LIVE_SPEEDS={Slow:2200,Normal:1100,Fast:600};
+// Condensed: routine plays flash by and only the key plays (acted out on the field) take time
+export const LIVE_SPEEDS={Slow:2200,Normal:1100,Fast:600,Condensed:150};
 export const DRAFT_SPEEDS=["Slow","Normal","Fast"];
 // The draft clock: every pick gets two minutes and AI clubs use 45-75 seconds of it. Round 1 always
 // runs in real time, whatever the speed (time to work the phones for a top pick; "Sim this pick"

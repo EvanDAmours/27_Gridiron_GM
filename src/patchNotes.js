@@ -1858,4 +1858,10 @@ export const PATCH_NOTES = [
     "Phones: the live game shows the same drive tracker under the last play",
     "Scout report card: on draft day each scout is graded A+ to D on that class: how close his reads were, and the sleepers, red flags and special development traits he caught. It shows on the Scouts tab with his grades from earlier years, so you can tell who is worth keeping",
   ] },
+  { v: "4.64", date: "2026-10-23", title: "Contract-aware AI trades, condensed games", notes: [
+    "AI trades now account for contracts: clubs pay less for an overpaid veteran and more for a star on a cheap rookie deal, both when they trade with each other and when they call you with offers. At the deadline an expiring player is priced as a rental",
+    "Fix: depth players on near-minimum deals no longer count as badly overpaid in trade talks (overpay is now measured in real money against at least 2% of the cap)",
+    "Live games: a new Condensed speed. Routine plays flash by and only the key plays (third and fourth downs, goal to go, big plays, a close finish) play out on the field",
+    "Standings and Coaching use the same text sizes as the rest of the game",
+  ] },
 ];

@@ -5,8 +5,13 @@
 // picks really change hands.
 import { teamNeeds, needGroup, NEED_STARTERS } from "./needs.js";
 import { withRace, clubMode } from "./tradeOffers.js";
-import { isFranchisePlayer } from "./offseason.js";
+import { isFranchisePlayer, keepChance } from "./offseason.js";
 import { tradeAway } from "./bonus.js";
+import { contractMult, RENTAL, RENTAL_GONE } from "./trade.js";
+// what a player is worth in a deal: his trade value, priced up or down by his contract (an overpaid
+// veteran is worth less, a bargain more). Read at trade time, never saved.
+// these deals happen in season, so an expiring contract is a rental, priced like one in your trades
+const tv = (p) => (p?.tradeVal || 0) * contractMult(p) * ((p?.contract ?? 2) <= 1 && p?.salary != null ? (keepChance(p) < 0.5 ? RENTAL_GONE : RENTAL) : 1);
 
 export const TRADE_DEADLINE_WEEK = 9;
 const STARTERS = NEED_STARTERS;
@@ -24,7 +29,7 @@ const isQB1 = (t, p) => p.pos === "QB" && p === [...t.roster].filter((q) => q.po
 function payment(buyer, bi, picks, want, pkV) {
   const lo = want * FAIR[0], hi = want * FAIR[1];
   const own = picks.filter((pk) => pk.owner === bi).map((pk) => ({ pk, v: pkV(pk) })).sort((a, b) => b.v - a.v);
-  const young = buyer.roster.filter((p) => p.age <= 25 && !isFranchisePlayer(p, buyer) && !isQB1(buyer, p) && p.tradeVal > 0).map((p) => ({ p, v: p.tradeVal })).sort((a, b) => b.v - a.v);
+  const young = buyer.roster.filter((p) => p.age <= 25 && !isFranchisePlayer(p, buyer) && !isQB1(buyer, p) && tv(p) > 0).map((p) => ({ p, v: tv(p) })).sort((a, b) => b.v - a.v);
   // One or two picks.
   for (let i = 0; i < own.length; i++) {
     if (own[i].v >= lo && own[i].v <= hi) return { picks: [own[i].pk], players: [], value: own[i].v };
@@ -67,7 +72,7 @@ function aiTradeWeekNow(teams, picks, ui, { week, pkV, capSpace, rand = Math.ran
         .map((p) => ({ si, p })))
         .sort((a, b) => b.p.ovr - a.p.ovr);
       for (const { si, p } of options) {
-        const pay = payment(buyer, bi, out.picks, p.tradeVal || 1, pkV);
+        const pay = payment(buyer, bi, out.picks, tv(p) || 1, pkV);
         if (!pay) continue;
         const outgoing = pay.players.reduce((s, q) => s + (q.salary || 0), 0);
         if (capSpace(buyer) + outgoing < (p.salary || 0)) continue;
