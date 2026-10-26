@@ -30,14 +30,14 @@ export function contractYearWeek(team, yr, wk, rand = Math.random) {
       p.ovr = Math.min(99, p.ovr + 1);
       if (p.trueOvr != null) p.trueOvr = Math.max(p.trueOvr, p.ovr);
       c.gain = (c.gain || 0) + 1;
-      news.push(`💪 CONTRACT YEAR: ${p.name} (${p.pos}) is playing for his next deal: +1 OVR → ${p.ovr}`);
+      news.push(`CONTRACT YEAR: ${p.name} (${p.pos}) is playing for his next deal: +1 OVR → ${p.ovr}`);
     }
     // a star betting on himself on a losing team gets restless
     const games = team.w + team.l + (team.t || 0);
     if (!c.asked && (p.ovr || 0) >= 85 && wk >= 7 && games >= 6 && pct(team) <= 0.4 && rand() < 0.12) {
       c.asked = true;
       p.tradeRequest = true;
-      news.push(`😤 CONTRACT YEAR: ${p.name} (${p.pos}), playing out his deal on a ${team.w}-${team.l} team, wants out. He's asked for a trade.`);
+      news.push(`CONTRACT YEAR: ${p.name} (${p.pos}), playing out his deal on a ${team.w}-${team.l} team, wants out. He's asked for a trade.`);
     }
   }
   return news;

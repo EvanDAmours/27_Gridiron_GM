@@ -152,7 +152,7 @@ function PhoneSchedule({ g, view, setView }) {
             const isNext = next && game === next;
             // a holiday game says so all season; the forecast only for the game coming up
             const hol = HOLIDAYS[game.holiday], wx = isNext ? wxOf(gameWeather(game, yr, teams[game.h]?.ab)) : null;
-            const tags = [hol && `${hol.icon} ${hol.short}`, wx && (wx.rain || wx.snow || wx.cold || wx.label === "Windy") && `${wx.icon} ${wx.label}`, opp.c === me.c && opp.d === me.d && "Division", rivalId === opp.id && "Rival", game.intl && game.city].filter(Boolean).join(" · ");
+            const tags = [hol && `$${hol.short}`, wx && (wx.rain || wx.snow || wx.cold || wx.label === "Windy") && `$${wx.label}`, opp.c === me.c && opp.d === me.d && "Division", rivalId === opp.id && "Rival", game.intl && game.city].filter(Boolean).join(" · ");
             return (
               <button key={w} onClick={() => game.played && (game.boxH || game.boxA) && onBox(game)} style={{ ...row, borderTop: top, cursor: game.played ? "pointer" : "default", background: isNext ? `${C.gn}14` : "transparent", margin: isNext ? "0 -14px" : 0, padding: isNext ? "8px 14px" : "8px 0", width: isNext ? "calc(100% + 28px)" : "100%" }}>
                 <span style={{ width: 34, fontSize: 13, fontWeight: 900, color: isNext ? C.gn : C.mt }}>{w}</span>

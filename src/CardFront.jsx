@@ -68,7 +68,7 @@ export default function CardFront({ p, team, lastTeam, ovr, pot, dev, label, yr,
           </div>
           <div style={{ fontSize: MOBILE ? 12.5 : 15, color: "#cbd5e1", marginTop: 8 }}>{[p.age && `Age ${p.age}`, p.ht_ && `${ht(p.ht_)} ${p.wt} lbs`, p.bio?.college || p.college].filter(Boolean).join(" · ")}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-            {p.xf && <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 9px", borderRadius: 999, border: "1px solid #8a6d1d", color: "#fde68a", background: "#f5c54214" }}>⚡ {p.xf}</span>}
+            {p.xf && <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 9px", borderRadius: 999, border: "1px solid #8a6d1d", color: "#fde68a", background: "#f5c54214" }}>{p.xf}</span>}
             {(p.injured || p.hurt) && <span style={{ fontSize: 12, fontWeight: 800, padding: "2px 9px", borderRadius: 999, background: p.injured ? "#7f1d1d" : "#78350f", color: p.injured ? "#fecaca" : "#fde68a" }}>{p.injured ? `OUT · ${String(p.injType || "Injury").replace(/ \(.*\)$/, "")} · ${p.injWk > 0 ? `${p.injWk} wk${p.injWk === 1 ? "" : "s"}` : "day to day"}${p.irWk ? " · IR" : ""}` : `PLAYING HURT · ${p.hurt.type || "injury"}`}</span>}
             {p.contract > 0 && !p.retiredYr && <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 9px", borderRadius: 999, border: `1px solid ${C.bd}`, color: "#e2e8f0" }}>Contract: {p.contract} yr{p.contract === 1 ? "" : "s"}</span>}
           </div>

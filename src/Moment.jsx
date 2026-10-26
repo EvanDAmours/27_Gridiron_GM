@@ -208,7 +208,7 @@ function RecordSpot({ m, onClose }) {
 function SigningSpot({ m, onClose }) {
   const t = m.team;
   return (
-    <Spotlight p={m.p} team={t} num={m.num} kicker={`✍️ Signing day · Welcome to ${t.city}`} title={m.p.name} bg={m.num != null ? `#${m.num}` : null} onNext={onClose} label={`${m.p.name} signs`}>
+    <Spotlight p={m.p} team={t} num={m.num} kicker={`Signing day · Welcome to ${t.city}`} title={m.p.name} bg={m.num != null ? `#${m.num}` : null} onNext={onClose} label={`${m.p.name} signs`}>
       <div>{m.p.pos} · {m.p.ovr} OVR · age {m.p.age}</div>
       <div style={{ fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 34 : 54, lineHeight: 1.05, color: "#fde68a", marginTop: MOBILE ? 8 : 14 }}>{m.yrs} {m.yrs === 1 ? "YEAR" : "YEARS"} · ${(+m.sal).toFixed(1)}M A YEAR</div>
       {m.sub && <div style={{ fontSize: T.md, color: "#cbd5e1", marginTop: S[3] }}>{m.sub}</div>}

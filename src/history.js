@@ -206,9 +206,9 @@ export const ringCandidates = (retired, team, hall) => (retired || []).filter((r
 // that season), MVP and the other awards, All-Pro and Pro Bowl selections. teams: today's clubs
 // (champs carry the club's index); yr: the current season (its stats aren't in his season lines yet).
 const ACCOLADES = [
-  ["sb", "🏆", "Super Bowl"], ["mvp", "🏅", "MVP"], ["sbmvp", "🏟️", "Super Bowl MVP"], ["opoy", "⭐", "Off. Player of the Year"],
-  ["dpoy", "🛡️", "Def. Player of the Year"], ["oroy", "🌱", "Off. Rookie of the Year"], ["droy", "🌱", "Def. Rookie of the Year"], ["cpoy", "💪", "Comeback Player of the Year"],
-  ["best", "👑", "Best at his position"], ["ap1", "🥇", "First-team All-Pro"], ["ap2", "🥈", "Second-team All-Pro"], ["pb", "🎖️", "Pro Bowl"], ["potw", "📣", "Player of the Week"],
+  ["sb", "", "Super Bowl"], ["mvp", "", "MVP"], ["sbmvp", "", "Super Bowl MVP"], ["opoy", "", "Off. Player of the Year"],
+  ["dpoy", "", "Def. Player of the Year"], ["oroy", "", "Off. Rookie of the Year"], ["droy", "", "Def. Rookie of the Year"], ["cpoy", "", "Comeback Player of the Year"],
+  ["best", "", "Best at his position"], ["ap1", "", "First-team All-Pro"], ["ap2", "", "Second-team All-Pro"], ["pb", "", "Pro Bowl"], ["potw", "", "Player of the Week"],
 ];
 export function accoladesOf(p, { awards = [], champs = [], teams = [], yr, teamAb } = {}) {
   if (!p) return [];

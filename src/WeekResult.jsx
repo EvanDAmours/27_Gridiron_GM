@@ -193,7 +193,7 @@ function DeskCard({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam,
         <div style={{fontSize: 13, fontWeight: 800, color: C.gd }}>Regular season complete</div>
         <div style={{ fontSize: MOBILE ? 22 : 34, fontWeight: 900, lineHeight: 1.1, marginTop: 4 }}>{me.city} {me.name} {fmtRec(me)}</div>
         <div style={{ fontSize: MOBILE ? 13 : 16, color: "#cbd5e1", marginTop: 4 }}>{divPlace(teams, me)} · {result.playoffs ? "Playoff bound!" : "Missed the playoffs"}</div>
-        {onRecap && <Btn onClick={onRecap} bg={C.bd} c="#7dd3fc" style={{ fontSize: 13, padding: "6px 12px", marginTop: 8 }}>📊 Season recap card</Btn>}
+        {onRecap && <Btn onClick={onRecap} bg={C.bd} c="#7dd3fc" style={{ fontSize: 13, padding: "6px 12px", marginTop: 8 }}>Season recap card</Btn>}
       </div>
     );
   }
@@ -279,7 +279,7 @@ function DeskCard({ result, teams, ui, sched, sgLog, yr, onClose, onBox, onTeam,
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: C.mt, marginBottom: 4 }}>{g.gd?.top ? "TOP PERFORMERS" : "YOUR STARS"}</div>
           {(g.gd?.top || stars).map((s) => <div key={s.name} style={{ fontSize: 14, padding: "1px 0" }}><b>{s.name}</b> <span style={{ color: C.mt, fontSize: 12 }}>{s.pos}{s.side ? ` · ${teams[s.side === "h" ? g.h : g.a]?.ab}` : ""}</span> <span style={{ color: "#cbd5e1" }}>{s.line}</span></div>)}
           {!(g.gd?.top || stars).length && <div style={{ color: C.mt }}>No standout performances.</div>}
-          <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}><Btn onClick={() => onBox(g)} bg={C.bl} style={{ fontSize: 13 }}>{g.gd ? "Game recap & box score" : "Box score"}</Btn>{result.paper && onPaper && <Btn onClick={() => onPaper(result.paper)} bg="#d4a017" c="#111" style={{ fontSize: 13, fontWeight: 800 }}>📰 Read the Gazette</Btn>}</div>
+          <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}><Btn onClick={() => onBox(g)} bg={C.bl} style={{ fontSize: 13 }}>{g.gd ? "Game recap & box score" : "Box score"}</Btn>{result.paper && onPaper && <Btn onClick={() => onPaper(result.paper)} bg="#d4a017" c="#111" style={{ fontSize: 13, fontWeight: 800 }}>Read the Gazette</Btn>}</div>
         </div>
       </div>
       {sg && <Scorigami us={us} them={them} />}

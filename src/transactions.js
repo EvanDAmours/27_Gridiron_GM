@@ -13,14 +13,17 @@ export const KINDS = [
   ["retire", "Retirements"],
 ];
 
-// What kind of transaction a log line records, or null if it isn't one.
+// What kind of transaction a log line records, or null if it isn't one. Reads the words (older saves
+// led each line with an emoji, so that's dropped first).
+const LEAD = /^(?:[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{20E3}0-9]|\u{200D})+\s*/u;
 export function classify(text) {
-  const s = String(text || "");
-  if (/^📡|^🔁 DRAFT-DAY TRADE|^⚡ URGENT TRADE|^🤝 Trade with/.test(s)) return "trade";
-  if (/^🤝 The .* hire |^🔥 The .* fire |^👋 .* (head coach|coordinator|special teams coach) .* retires at|^✍️ The .* sign head coach |^📣 .* head coach .* says .* last season/.test(s)) return "coach";
-  if (/^✍️ (Signed|Re-signed|VET MIN)|^📰 .* signs with |^🏷️|^5️⃣/.test(s)) return "sign";
+  const raw = String(text || "");
+  const s = /^\d/.test(raw) && !/^\d\u{FE0F}?\u{20E3}/u.test(raw) ? raw : raw.replace(LEAD, "");
+  if (/^(DEADLINE DEAL|DRAFT-DAY TRADE|URGENT TRADE|Trade with )/.test(s)) return "trade";
+  if (/^The .* hire |^The .* fire |^.* (head coach|coordinator|special teams coach) .* retires at|^The .* sign head coach |^.* head coach .* says .* last season/.test(s)) return "coach";
+  if (/^(Signed|Re-signed|VET MIN|Franchise tagged|Picked up the fifth-year option|OFFER SHEET)|^.* signs with /.test(s)) return "sign";
   if (/^Released |→ WAIVERS/.test(s)) return "release";
-  if ((/^👋 .* retires/.test(s) && !/free agent\) retires/.test(s)) || /^🎖️ .* retires at/.test(s)) return "retire";
+  if (/ retires (after|at) /.test(s) && !/free agent\) retires/.test(s)) return "retire";
   return null;
 }
 

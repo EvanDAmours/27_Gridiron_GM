@@ -95,12 +95,12 @@ function HolidayDecor({ holiday: hk }) {
   if (holiday === "halloween") return (
     <g pointerEvents="none"><style>{HOL_CSS}</style>
       <rect x="0" y="0" width={W} height={H} fill="#2e1065" opacity=".22" />
-      {[[EZ, 14], [EZ, H - 6], [W - EZ, 14], [W - EZ, H - 6]].map(([x, y], i) => <g key={i} style={{ animation: `lfFlick ${1.6 + i * 0.3}s ease-in-out infinite` }}><circle cx={x} cy={y - 6} r="16" fill="#f97316" opacity=".3" /><text x={x} y={y} fontSize="16" textAnchor="middle">🎃</text></g>)}
+      {[[EZ, 14], [EZ, H - 6], [W - EZ, 14], [W - EZ, H - 6]].map(([x, y], i) => <g key={i} style={{ animation: `lfFlick ${1.6 + i * 0.3}s ease-in-out infinite` }}><circle cx={x} cy={y - 6} r="16" fill="#f97316" opacity=".3" /><ellipse cx={x} cy={y - 6} rx="8" ry="6.5" fill="#f97316" /><rect x={x - 1.2} y={y - 15} width="2.4" height="4" rx="1" fill="#4d7c0f" /></g>)}
     </g>
   );
   if (holiday === "thanksgiving") return (
     <g pointerEvents="none">
-      {[...Array(18)].map((_, i) => <text key={i} x={10 + rnd(i, 21) * (W - 20)} y={i % 2 ? 12 + rnd(i, 22) * 8 : H - 4 - rnd(i, 22) * 8} fontSize={9 + rnd(i, 23) * 6} transform={`rotate(${rnd(i, 24) * 360} ${10 + rnd(i, 21) * (W - 20)} ${i % 2 ? 12 : H - 8})`} opacity=".85">{["🍂", "🍁"][i % 2]}</text>)}
+      {[...Array(18)].map((_, i) => { const x = 10 + rnd(i, 21) * (W - 20), y = i % 2 ? 12 + rnd(i, 22) * 8 : H - 4 - rnd(i, 22) * 8, s = 3 + rnd(i, 23) * 2.5; return <ellipse key={i} cx={x} cy={y} rx={s} ry={s * 0.55} fill={["#c2410c", "#d97706", "#92400e"][i % 3]} transform={`rotate(${rnd(i, 24) * 360} ${x} ${y})`} opacity=".85" />; })}
     </g>
   );
   return null;
@@ -374,7 +374,7 @@ function LiveFieldView({ ballYard, toGo, off, def, offHome = true, offDepth, def
       <HolidayDecor holiday={holiday} />
       </g>
       <Falling wx={W8} />
-      {(W8.rain || W8.snow || W8.cold || wx === "wind") && <g pointerEvents="none"><rect x="10" y="12" width={W8.label.length * 7.4 + 34} height="22" rx="11" fill="#0b1220" opacity=".72" /><text x="20" y="27" fontSize="12" fontWeight="800" fill="#e2e8f0" fontFamily="system-ui">{W8.icon} {W8.label}</text></g>}
+      {(W8.rain || W8.snow || W8.cold || wx === "wind") && <g pointerEvents="none"><rect x="10" y="12" width={W8.label.length * 7.4 + 20} height="22" rx="11" fill="#0b1220" opacity=".72" /><text x="20" y="27" fontSize="12" fontWeight="800" fill="#e2e8f0" fontFamily="system-ui">{W8.label}</text></g>}
       {!SPRITES && <ellipse cx={x0 - 4} cy={H / 2} rx="7" ry="4.5" fill="#8B4513" stroke="#fff" strokeWidth="1" style={{ transition: "cx .55s ease" }} />}
       {!anim && !lastPlay?.live && <Callout play={lastPlay} W={W} H={H} />}
     </svg>

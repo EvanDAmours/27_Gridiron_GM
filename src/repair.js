@@ -43,7 +43,7 @@ export function repairSave(d) {
   if (Array.isArray(d.log)) {
     const bad = d.log.filter((l) => typeof l !== "string").length;
     if (bad) {
-      d.log = d.log.map((l) => (typeof l === "string" ? l : l && typeof l.msg === "string" ? `🎖️ ${l.msg}` : null)).filter(Boolean);
+      d.log = d.log.map((l) => (typeof l === "string" ? l : l && typeof l.msg === "string" ? `${l.msg}` : null)).filter(Boolean);
       fixes.push(`${bad} log entries`);
     }
   }

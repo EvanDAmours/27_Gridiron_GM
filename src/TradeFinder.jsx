@@ -25,7 +25,7 @@ const m1 = (n) => `${n < 0 ? "-" : ""}$${Math.abs(n).toFixed(1)}M`;
 function CapNote({ space, inSal, outSal, who }) {
   if (space == null) return null;
   const after = space - inSal + outSal, bad = after < 0;
-  return <span title={`${who} cap space now ${m1(space)}; after this trade ${m1(after)}`} style={{ fontSize: 12, fontWeight: 700, color: bad ? C.rd : after < 5 ? "#fbbf24" : "#94a3b8", whiteSpace: "nowrap" }}>{who === "You" ? "You" : "Cap"} {m1(space)} → <b style={{ color: bad ? C.rd : after < 5 ? "#fbbf24" : C.gn }}>{m1(after)}</b>{bad ? " ⚠" : ""}</span>;
+  return <span title={`${who} cap space now ${m1(space)}; after this trade ${m1(after)}`} style={{ fontSize: 12, fontWeight: 700, color: bad ? C.rd : after < 5 ? "#fbbf24" : "#94a3b8", whiteSpace: "nowrap" }}>{who === "You" ? "You" : "Cap"} {m1(space)} → <b style={{ color: bad ? C.rd : after < 5 ? "#fbbf24" : C.gn }}>{m1(after)}</b>{bad ? "" : ""}</span>;
 }
 
 export default function TradeFinder({ results, needs = [], onRun, onLoad, onPlayer, capOf, myCap }) {

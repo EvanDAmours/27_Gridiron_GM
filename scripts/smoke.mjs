@@ -80,8 +80,8 @@ async function simUntil(text, done, where) {
     if (await page.evaluate(done)) return;
     await dismiss();
     let b = page.locator("button:visible", { hasText: text });
-    // Sim to Deadline and Sim All live in the ⏩ menu next to Sim Week
-    if (!(await b.count())) { const m = page.locator("button:visible", { hasText: "⏩" }); if (await m.count()) { await m.first().click(); await page.waitForTimeout(200); } b = page.locator("button:visible", { hasText: text }); }
+    // Sim to Deadline and Sim All live in the "More sims" menu next to Sim Week
+    if (!(await b.count())) { const m = page.locator("button:visible", { hasText: "More sims" }); if (await m.count()) { await m.first().click(); await page.waitForTimeout(200); } b = page.locator("button:visible", { hasText: text }); }
     if (await b.count()) await b.first().click({ timeout: 3000 }).catch(() => {});
     // a scouting checkpoint pauses the sim: Keep simming carries it on without pressing Sim again
     for (let t = 0; t < 60 && !(await page.evaluate(done)); t++) { const k = page.locator("button:visible", { hasText: "Keep simming" }); if (await k.count()) await k.first().click().catch(() => {}); await page.waitForTimeout(500); }

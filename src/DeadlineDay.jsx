@@ -161,7 +161,7 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
           <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#fca5a5" }}>{dl.done ? "FINAL" : "● LIVE"}</span>
           <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 22, fontWeight: 900, color: dl.done ? "#94a3b8" : "#fff" }}>{DEADLINE_HOURS[dl.hour]}</span>
           <span style={{ fontSize: 12, fontWeight: 800, color: "#fecaca", flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{dl.done ? "Deadline passed" : left === 1 ? "Final hour" : `${left} hrs left`}</span>
-          {!dl.done && <button onClick={() => setAuto((a) => !a)} style={{ background: auto ? "#7f1d1d" : "#1e293b", color: "#fecaca", border: "1px solid #ef444455", borderRadius: 8, padding: "4px 10px", fontSize: 13, fontWeight: 800, minHeight: 34 }}>{auto ? "⏸ Pause" : "▶ Run clock"}</button>}
+          {!dl.done && <button onClick={() => setAuto((a) => !a)} style={{ background: auto ? "#7f1d1d" : "#1e293b", color: "#fecaca", border: "1px solid #ef444455", borderRadius: 8, padding: "4px 10px", fontSize: 13, fontWeight: 800, minHeight: 34 }}>{auto ? "Pause" : "▶ Run clock"}</button>}
         </div>
         <div style={{ display: "flex", gap: 3, marginTop: 6 }}>{DEADLINE_HOURS.map((h, i) => <div key={h} style={{ flex: 1, height: 4, borderRadius: 2, background: i < dl.hour ? "#ef4444" : i === dl.hour ? "#fff" : "#ffffff22" }} />)}</div>
       </div>
@@ -240,8 +240,8 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
           {!dl.done ? (
             <>
               <Btn onClick={onAdvance} bg="#dc2626" style={{ fontWeight: 900, fontSize: 15, padding: "8px 16px" }}>Advance to {DEADLINE_HOURS[dl.hour + 1]} ▸</Btn>
-              <Btn onClick={() => setAuto((a) => !a)} bg={auto ? "#7f1d1d" : "#1e293b"} c="#fecaca" style={{ fontSize: 14 }}>{auto ? "⏸ Pause clock" : "▶ Run the clock"}</Btn>
-              <Btn onClick={onOpenTrade} bg="#1d4ed8" style={{ fontSize: 14 }}>📞 Make a call (trade screen)</Btn>
+              <Btn onClick={() => setAuto((a) => !a)} bg={auto ? "#7f1d1d" : "#1e293b"} c="#fecaca" style={{ fontSize: 14 }}>{auto ? "Pause clock" : "▶ Run the clock"}</Btn>
+              <Btn onClick={onOpenTrade} bg="#1d4ed8" style={{ fontSize: 14 }}>Make a call (trade screen)</Btn>
               <Btn onClick={onFinish} bg="#1e293b" c="#94a3b8" style={{ fontSize: 13 }}>Sim to 4:00 PM</Btn>
             </>
           ) : <Btn onClick={onClose} bg={C.gn} style={{ fontWeight: 900, fontSize: 15, padding: "8px 18px" }}>Back to the season ▸</Btn>}

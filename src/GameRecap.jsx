@@ -137,7 +137,7 @@ export function KeyPlays({ keys, home, away }) {
         return (
           <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "5px 0", borderTop: i ? `1px solid ${C.bd}55` : "none" }}>
             <span style={{ fontSize: 11, color: C.mt, width: 54, flex: "0 0 auto" }}>{qLabel(k.q)} {clk(k.c)}</span>
-            <span style={{ flex: 1, fontSize: 13, lineHeight: 1.35 }}>{k.td ? "🏈 " : k.to ? "🔄 " : ""}{k.x}</span>
+            <span style={{ flex: 1, fontSize: 13, lineHeight: 1.35 }}>{k.td ? "" : k.to ? "" : ""}{k.x}</span>
             <span style={{ flex: "0 0 auto", fontSize: 11, fontWeight: 900, padding: "1px 6px", borderRadius: 4, background: `${vivid(fav)}55`, color: "#fff" }}>{fav.ab} +{Math.abs(k.sw)}%</span>
           </div>
         );

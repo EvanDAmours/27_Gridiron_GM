@@ -24,7 +24,7 @@ class ErrorBoundary extends React.Component{
       return(
       <div style={{background:"#0f172a",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Segoe UI',system-ui,sans-serif",padding:24}}>
         <div style={{background:"#111827",border:"1px solid #ef4444",borderRadius:12,padding:24,maxWidth:520,width:"100%",textAlign:"center",color:"#e2e8f0"}}>
-          <div style={{fontSize:32,marginBottom:8}}>🏈</div>
+          
           <div style={{fontSize:16,fontWeight:800,color:"#ef4444",marginBottom:6}}>Something went wrong</div>
           <div style={{fontSize:13,color:"#94a3b8",marginBottom:12}}>Your save is safe. Try reloading{backup?`, or restore the backup from ${backup}`:""}.</div>
           <pre style={{fontSize:11,textAlign:"left",background:"#0b1220",border:"1px solid #1e293b",borderRadius:8,padding:10,whiteSpace:"pre-wrap",wordBreak:"break-word",color:"#fca5a5",maxHeight:150,overflow:"auto"}}>{details}</pre>

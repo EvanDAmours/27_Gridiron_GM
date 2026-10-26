@@ -22,18 +22,18 @@ export const PERS_COUNT = { 10: { rb: 1, te: 0, wr: 4 }, 11: { rb: 1, te: 1, wr:
 export const PERS_LEAN = { 10: 0.14, 11: 0.05, 12: -0.08, 13: -0.24, 21: -0.15 };
 
 export const OFF_SETS = [
-  { key: "auto", label: "Auto (best fit)", icon: "🤖", desc: "Your coordinator picks the identity that suits the roster this week." },
-  { key: "balanced", label: "Balanced", icon: "⚖️", mix: { 11: 0.6, 12: 0.22, 21: 0.07, 13: 0.05, 10: 0.06 }, desc: "The league norm: mostly three receivers, two tight ends a fifth of the time." },
-  { key: "spread", label: "Spread", icon: "📡", mix: { 11: 0.72, 10: 0.18, 12: 0.1 }, desc: "Three and four wide: needs four real receivers, barely uses a second tight end." },
-  { key: "twoTE", label: "Two tight ends", icon: "🧱", mix: { 12: 0.5, 11: 0.35, 13: 0.1, 21: 0.05 }, desc: "12 personnel: two tight ends on the field half the time, so a third receiver matters less." },
-  { key: "fullback", label: "Fullback", icon: "🐂", mix: { 21: 0.4, 11: 0.35, 12: 0.2, 13: 0.05 }, desc: "21 personnel: a lead-blocking fullback and play-action off it." },
-  { key: "heavy", label: "Heavy", icon: "🪨", mix: { 12: 0.42, 13: 0.2, 21: 0.13, 11: 0.25 }, desc: "Extra blockers everywhere: run it, then play-action over the top." },
+  { key: "auto", label: "Auto (best fit)", icon: "", desc: "Your coordinator picks the identity that suits the roster this week." },
+  { key: "balanced", label: "Balanced", icon: "", mix: { 11: 0.6, 12: 0.22, 21: 0.07, 13: 0.05, 10: 0.06 }, desc: "The league norm: mostly three receivers, two tight ends a fifth of the time." },
+  { key: "spread", label: "Spread", icon: "", mix: { 11: 0.72, 10: 0.18, 12: 0.1 }, desc: "Three and four wide: needs four real receivers, barely uses a second tight end." },
+  { key: "twoTE", label: "Two tight ends", icon: "", mix: { 12: 0.5, 11: 0.35, 13: 0.1, 21: 0.05 }, desc: "12 personnel: two tight ends on the field half the time, so a third receiver matters less." },
+  { key: "fullback", label: "Fullback", icon: "", mix: { 21: 0.4, 11: 0.35, 12: 0.2, 13: 0.05 }, desc: "21 personnel: a lead-blocking fullback and play-action off it." },
+  { key: "heavy", label: "Heavy", icon: "", mix: { 12: 0.42, 13: 0.2, 21: 0.13, 11: 0.25 }, desc: "Extra blockers everywhere: run it, then play-action over the top." },
 ];
 export const DEF_SETS = [
-  { key: "auto", label: "Auto (best fit)", icon: "🤖", shift: null, desc: "Your coordinator leans base or nickel by who you have at SAM and nickel." },
-  { key: "match", label: "Match personnel", icon: "⚖️", shift: 0, desc: "Base against heavy sets, nickel against three receivers, dime against four." },
-  { key: "base", label: "Base-heavy", icon: "🧱", shift: 0.22, desc: "Keep the SAM on the field: stout against the run, a linebacker on the slot." },
-  { key: "nickel", label: "Nickel-heavy", icon: "🛡️", shift: -0.22, desc: "Stay in nickel even against two tight ends: fast, but lighter against the run." },
+  { key: "auto", label: "Auto (best fit)", icon: "", shift: null, desc: "Your coordinator leans base or nickel by who you have at SAM and nickel." },
+  { key: "match", label: "Match personnel", icon: "", shift: 0, desc: "Base against heavy sets, nickel against three receivers, dime against four." },
+  { key: "base", label: "Base-heavy", icon: "", shift: 0.22, desc: "Keep the SAM on the field: stout against the run, a linebacker on the slot." },
+  { key: "nickel", label: "Nickel-heavy", icon: "", shift: -0.22, desc: "Stay in nickel even against two tight ends: fast, but lighter against the run." },
 ];
 const MIX = Object.fromEntries(OFF_SETS.filter((s) => s.mix).map((s) => [s.key, s.mix]));
 export const LEAGUE_MIX = MIX.balanced;

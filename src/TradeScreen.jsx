@@ -79,7 +79,7 @@ function Side({ title, color, team, players, picks, chosen, chosenPk, toggle, to
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: MOBILE ? "nowrap" : "wrap" }}>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Search players" aria-label="Search players" style={{ ...sel, padding: "6px 9px", fontSize: 14, flex: "1 1 140px", minWidth: 0 }} />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search players" aria-label="Search players" style={{ ...sel, padding: "6px 9px", fontSize: 14, flex: "1 1 140px", minWidth: 0 }} />
         <Select value={pos} onChange={(e) => setPos(e.target.value)} aria-label="Position" style={{ ...sel, padding: "6px 8px", fontSize: 14, flex: "0 0 auto" }}>
           {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? (MOBILE ? "All" : "All positions") : x}</option>)}
         </Select>

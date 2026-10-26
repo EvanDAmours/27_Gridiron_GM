@@ -118,7 +118,7 @@ export default function BroadcastMatchup({ away, home, teams, awayRating, homeRa
         <Half team={away} player={pa} rating={awayRating} other={homeRating} teams={teams} art={art} late={late} />
         <Half team={home} player={ph} rating={homeRating} other={awayRating} teams={teams} art={art} late={late} home />
         <div className="bm-at">AT</div>
-        {weather && <div className={`bm-wx bm-wx--${weather.kind}`}><b>{weather.icon} {weather.label}</b>{weather.note ? ` · ${weather.note}` : ""}</div>}
+        {weather && <div className={`bm-wx bm-wx--${weather.kind}`}><b>{weather.label}</b>{weather.note ? ` · ${weather.note}` : ""}</div>}
       </div>
     </article>
   );

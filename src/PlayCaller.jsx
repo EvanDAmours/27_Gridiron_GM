@@ -51,9 +51,9 @@ function DeskCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth,
     return (
       <Card team={off} title="Fourth down: your call" sub={situation} tone="#f87171">
         <div style={grid(mobile ? 1 : 3)}>
-          <Tile icon="⬆️" label="Punt" note="Flip the field and give them the ball deep" tone="#94a3b8" onClick={() => onFourth("punt")} />
-          {inRange && k && <Tile icon="🎯" label={`Field goal, ${fgDist} yards`} note={`${k.name} (${k.ovr} OVR)`} tone="#facc15" onClick={() => onFourth("fg")} />}
-          <Tile icon="💪" label={`Go for it on 4th & ${toGo}`} note="Pick the play next" tone="#4ade80" strong onClick={() => onFourth("go")} />
+          <Tile label="Punt" note="Flip the field and give them the ball deep" tone="#94a3b8" onClick={() => onFourth("punt")} />
+          {inRange && k && <Tile label={`Field goal, ${fgDist} yards`} note={`${k.name} (${k.ovr} OVR)`} tone="#facc15" onClick={() => onFourth("fg")} />}
+          <Tile label={`Go for it on 4th & ${toGo}`} note="Pick the play next" tone="#4ade80" strong onClick={() => onFourth("go")} />
         </div>
       </Card>
     );
@@ -88,8 +88,8 @@ function DeskCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth,
   }
   const best = (pos) => off.roster.filter((p) => p.pos === pos && !p.injured).sort((a, b) => b.ovr - a.ovr)[0];
   const qb = best("QB"), rb = best("RB");
-  const RUNS = [["run_inside", "🏃", "Inside Run", `${rb?.name || "Your back"} between the tackles`], ["run_outside", "↪️", "Outside Run", `Get him to the edge: ${rb?.spd ?? "?"} speed`], ["run_screen", "🪤", "Screen", "Let the rush come, dump it to the back"], ["scramble", "🏃‍♂️", "QB Run", `${qb?.name || "The QB"} keeps it: ${qb?.spd ?? "?"} speed`]];
-  const PASSES = [["pass_quick", "⚡", "Quick Pass", "Gets it out fast: rarely picked off"], ["pass_medium", "🎯", "Medium Route", "The balanced throw"], ["pass_deep", "🚀", "Deep Shot", "Big gain or bust: picked off more"], ["pass_rpo", "🔀", "RPO", "He reads it: hand off or throw"]];
+  const RUNS = [["run_inside", "", "Inside Run", `${rb?.name || "Your back"} between the tackles`], ["run_outside", "", "Outside Run", `Get him to the edge: ${rb?.spd ?? "?"} speed`], ["run_screen", "", "Screen", "Let the rush come, dump it to the back"], ["scramble", "", "QB Run", `${qb?.name || "The QB"} keeps it: ${qb?.spd ?? "?"} speed`]];
+  const PASSES = [["pass_quick", "", "Quick Pass", "Gets it out fast: rarely picked off"], ["pass_medium", "", "Medium Route", "The balanced throw"], ["pass_deep", "", "Deep Shot", "Big gain or bust: picked off more"], ["pass_rpo", "", "RPO", "He reads it: hand off or throw"]];
   return (
     <Card team={off} title="Your call" sub={`${situation}${g.scheme ? ` · ${g.scheme}, ${g.runPct}% runs` : ""}`}>
       <div style={{ fontSize: 13, fontWeight: 800, color: "#facc15", margin: "0 0 5px" }}>Run</div>

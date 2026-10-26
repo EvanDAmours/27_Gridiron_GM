@@ -107,12 +107,12 @@ export function coachingCarousel(coachTeams, perf, ui, { pool = [], rand = Math.
 
 export const describeMove = (m, teams) => {
   const t = teams[m.ti];
-  if (m.kind === "retired") return `👋 ${t.city} ${t.name} ${TITLE[m.role]} ${m.name} retires at ${m.age}.`;
-  if (m.kind === "renewed") return `✍️ The ${t.city} ${t.name} sign head coach ${m.name} to a ${m.yrs}-year extension.`;
-  if (m.kind === "lastDeal") return `📣 ${t.city} ${t.name} head coach ${m.name} (${m.age}) says ${m.end} will be his last season.`;
+  if (m.kind === "retired") return `${t.city} ${t.name} ${TITLE[m.role]} ${m.name} retires at ${m.age}.`;
+  if (m.kind === "renewed") return `The ${t.city} ${t.name} sign head coach ${m.name} to a ${m.yrs}-year extension.`;
+  if (m.kind === "lastDeal") return `${t.city} ${t.name} head coach ${m.name} (${m.age}) says ${m.end} will be his last season.`;
   return m.kind === "fired"
-    ? `🔥 The ${t.city} ${t.name} fire ${TITLE[m.role]} ${m.name} after ${m.why}.`
-    : `🤝 The ${t.city} ${t.name} hire ${m.name} as ${TITLE[m.role]}${m.scheme && m.role !== "st" ? ` (${m.scheme})` : ""}, rated ${m.rating}.`;
+    ? `The ${t.city} ${t.name} fire ${TITLE[m.role]} ${m.name} after ${m.why}.`
+    : `The ${t.city} ${t.name} hire ${m.name} as ${TITLE[m.role]}${m.scheme && m.role !== "st" ? ` (${m.scheme})` : ""}, rated ${m.rating}.`;
 };
 
 // The owner's verdict on your season. Returns { patience, verdict, msg }.

@@ -229,7 +229,7 @@ export function RecordsWall({ team, retired, book, teams = [], allRetired = reti
                 </div>
                 <div style={recValue}>{recordValue(r.key, r.rec.val)}</div>
                 <div style={recWho}>{r.rec.name}<span style={{ color: C.mt, fontWeight: 600 }}>{r.rec.yr ? ` · ${r.rec.yr}` : " · tied"}</span></div>
-                {(r.rec.ties || []).map((x, j) => <div key={j} style={recNote}>🤝 Tied by {x.name} ({x.yr})</div>)}
+                {(r.rec.ties || []).map((x, j) => <div key={j} style={recNote}>Tied by {x.name} ({x.yr})</div>)}
                 {r.rec.prev && mine && <div style={recNote}>Broke {r.rec.prev.name}'s {recordValue(r.key, r.rec.prev.val)}{r.rec.prev.yr ? ` (${r.rec.prev.yr})` : ""}</div>}
                 {r.lead && !(mine && r.rec.name === r.lead.name) && <div style={{ marginTop: 8 }}>
                   <div style={{ height: 6, background: "#ffffff14", borderRadius: 3 }}><div style={{ width: `${pct}%`, height: "100%", background: pct >= 90 ? "#ef4444" : "#3b82f6", borderRadius: 3 }} /></div>
@@ -268,7 +268,7 @@ export function RecordsWall({ team, retired, book, teams = [], allRetired = reti
         }) : <div style={{ color: C.mt, fontSize: 14, padding: 10 }}>No records yet.</div>}
       </div>
       <div style={{ marginTop: 8, fontSize: 12, color: C.mt }}>● still playing. Real players carry what they did here before 2026; anyone who passes #1 makes the news.</div>
-      {held.length > 0 && <div style={{ marginTop: 8, fontSize: 13, color: "#fde68a" }}>🏅 League records held: {held.map((b) => `${b.label}: ${b.name}, ${b.yr}`).join(" · ")}</div>}
+      {held.length > 0 && <div style={{ marginTop: 8, fontSize: 13, color: "#fde68a" }}>League records held: {held.map((b) => `${b.label}: ${b.name}, ${b.yr}`).join(" · ")}</div>}
     </div>
   );
 }

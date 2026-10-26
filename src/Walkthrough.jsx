@@ -50,7 +50,7 @@ export function TourOffer({ team, onStart, onSkip }) {
   return (
     <div onClick={skip} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.8)", zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: "#0d1424", borderRadius: 22, padding: 24, maxWidth: 440, width: "100%", boxShadow: "0 30px 80px #000c" }}>
-        <div style={{ fontSize: 40, textAlign: "center" }}>🏈</div>
+        
         <div style={{ fontSize: 28, fontWeight: 900, textAlign: "center", margin: "6px 0 4px" }}>Welcome to the {team}, GM</div>
         <div style={{ fontSize: 14, color: "#cbd5e1", textAlign: "center", lineHeight: 1.5, marginBottom: 18 }}>Want a quick tour of where everything is? About two minutes, and you can leave it any time.</div>
         <button onClick={onStart} style={{ width: "100%", background: C.gn, color: "#fff", border: 0, borderRadius: 14, padding: "13px 0", fontSize: 16, fontWeight: 900, cursor: "pointer", marginBottom: 8 }}>Show me around</button>

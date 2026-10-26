@@ -70,13 +70,13 @@ export default function PhoneCoaching({ hcNote, hcExtOk = true, staff, yr, scPts
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.15 }}>{sel.name}</div><div style={{ fontSize: 14, color: "#94a3b8", marginTop: 2 }}>{ROLE_NAME[pick]} · age {coachAge(sel, yr)}</div></div>
             <b style={{ fontSize: 40, color: oC(sel.rating) }}>{sel.rating}</b>
           </div>
-          {pick === "HC" && hcTrait(sel) && <div style={{ fontSize: 14, color: "#cbd5e1", lineHeight: 1.45, marginBottom: 6 }}><b style={{ color: "#fbbf24" }}>{hcTrait(sel).icon} {sel.trait}</b> · {hcTrait(sel).desc}</div>}
+          {pick === "HC" && hcTrait(sel) && <div style={{ fontSize: 14, color: "#cbd5e1", lineHeight: 1.45, marginBottom: 6 }}><b style={{ color: "#fbbf24" }}>{sel.trait}</b> · {hcTrait(sel).desc}</div>}
           {[["Scheme", pick !== "HC" ? sel.scheme : null], ["Style", pick !== "HC" ? sel.trait : hcStyle(sel)], ["Salary", `$${sel.salary}M`], ["Contract", `${sel.contract || "?"} year${sel.contract === 1 ? "" : "s"} left`]].filter(([, v]) => v).map(([l, v]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", minHeight: 44, borderTop: "1px solid #ffffff14", fontSize: 16 }}><span style={{ color: "#94a3b8" }}>{l}</span><b style={{ marginLeft: "auto" }}>{v}</b></div>
           ))}
           {pick !== "HC" && <div style={{ borderTop: "1px solid #ffffff14", padding: "10px 0 4px" }}><div style={{ display: "flex", fontSize: 14, color: "#94a3b8", marginBottom: 6 }}><span>Experience</span><span style={{ marginLeft: "auto" }}>{(sel.xp || 0) % 20}/20 to +1</span></div><div style={{ height: 6, background: "#ffffff14", borderRadius: 3, overflow: "hidden" }}><div style={{ width: `${Math.round((((sel.xp || 0) % 20) / 20) * 100)}%`, height: "100%", background: "#3b82f6" }} /></div></div>}
           {pick !== "HC" && <button disabled={scPts < 2 || sel.rating >= 95} onClick={() => { onUpgrade(pick); setPick(null); }} style={{ ...big("#1e3a5f", "#bfdbfe"), opacity: scPts < 2 || sel.rating >= 95 ? 0.5 : 1 }}>Upgrade +5 · 2 SP</button>}
-          {pick === "HC" && hcNote && <div style={{ background: "#78350f33", borderRadius: 14, padding: "10px 14px", margin: "10px 0 2px", fontSize: 14, color: "#fde68a", lineHeight: 1.5 }}>👋 {hcNote}</div>}
+          {pick === "HC" && hcNote && <div style={{ background: "#78350f33", borderRadius: 14, padding: "10px 14px", margin: "10px 0 2px", fontSize: 14, color: "#fde68a", lineHeight: 1.5 }}>{hcNote}</div>}
           {(pick !== "HC" || hcExtOk) && <button disabled={scPts < 1} onClick={() => { onExtend(pick); setPick(null); }} style={{ ...big("#14532d", "#bbf7d0"), opacity: scPts < 1 ? 0.5 : 1 }}>Extend his contract</button>}
           <button onClick={() => { if (window.confirm(`Fire ${sel.name}? He goes into the coaching pool, where any club can hire him.`)) { onFire(pick); setPick(null); } }} style={big("transparent", "#fca5a5")}>Fire {sel.name.split(" ").slice(-1)[0]}</button>
           <div style={{ height: 8 }} />

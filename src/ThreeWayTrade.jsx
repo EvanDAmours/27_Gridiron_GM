@@ -31,7 +31,7 @@ export default function ThreeWayTrade({ teams, ui, closed, ctx, mobile, sm, onDo
     const r = executeLegs(teams, [{ from: ui, to: b, players: sel.you }, { from: b, to: c, players: sel.b }, { from: c, to: ui, players: sel.c }], ctx);
     if (r.error) { sm(r.error); setSel({ you: [], b: [], c: [] }); return; }
     const t = r.teams;
-    onDone(t, `⚖️ 3-WAY TRADE: ${t[ui].ab} → ${t[b].ab}: ${names(sel.you)} · ${t[b].ab} → ${t[c].ab}: ${names(sel.b)} · ${t[c].ab} → ${t[ui].ab}: ${names(sel.c)}`);
+    onDone(t, `3-WAY TRADE: ${t[ui].ab} → ${t[b].ab}: ${names(sel.you)} · ${t[b].ab} → ${t[c].ab}: ${names(sel.b)} · ${t[c].ab} → ${t[ui].ab}: ${names(sel.c)}`);
     sm("3-Way trade executed!");
   };
 
@@ -74,7 +74,7 @@ export default function ThreeWayTrade({ teams, ui, closed, ctx, mobile, sm, onDo
         <div style={{ color: C.mt, marginTop: 2 }}>Each club has to get back about as much value as it gives.</div>
       </div>
       <div style={{ display: "flex", gap: 8 }}>
-        <Btn style={{ flex: 1, fontSize: 15, padding: "10px 14px" }} onClick={execute} bg={C.gn}>✅ Execute Trade</Btn>
+        <Btn style={{ flex: 1, fontSize: 15, padding: "10px 14px" }} onClick={execute} bg={C.gn}>Execute Trade</Btn>
         <Btn style={{ fontSize: 15, padding: "10px 14px" }} onClick={onCancel} bg={C.bd}>Cancel</Btn>
       </div>
     </div>

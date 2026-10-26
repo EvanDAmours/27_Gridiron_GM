@@ -56,7 +56,7 @@ export default function Personnel({ team, depthOrder, snaps, onSet, compact }) {
             return (
               <button key={s.key} onClick={() => onSet("personnel", s.key)} title={s.desc} style={{ textAlign: "left", background: on ? `${C.bl}2a` : "#ffffff08", border: `1px solid ${on ? C.bl : "transparent"}`, borderRadius: 12, padding: "8px 11px", color: C.tx, cursor: "pointer" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 14, fontWeight: 800 }}>{on ? "✓ " : ""}{s.icon} {s.label}</span>
+                  <span style={{ fontSize: 14, fontWeight: 800 }}>{on ? "✓ " : ""}{s.label}</span>
                   {s.key === info.auto && s.key !== "auto" && <span style={{ fontSize: 10, fontWeight: 900, color: C.gn, border: `1px solid ${C.gn}66`, borderRadius: 4, padding: "0 4px" }}>BEST FIT</span>}
                   {coachChip(cf.ocOk, cf.ocWants, s.key, "OC")}
                   <span style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}>Pass <b style={{ color: oC(u.pass) }}>{r0(u.pass)}</b> · Run <b style={{ color: oC(u.run) }}>{r0(u.run)}</b></span>
@@ -92,7 +92,7 @@ export default function Personnel({ team, depthOrder, snaps, onSet, compact }) {
             return (
               <button key={s.key} onClick={() => onSet("defPkg", s.key)} title={s.desc} style={{ textAlign: "left", background: on ? `${C.bl}2a` : "#ffffff08", border: `1px solid ${on ? C.bl : "transparent"}`, borderRadius: 12, padding: "8px 11px", color: C.tx, cursor: "pointer" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 14, fontWeight: 800 }}>{on ? "✓ " : ""}{s.icon} {s.label}</span>
+                  <span style={{ fontSize: 14, fontWeight: 800 }}>{on ? "✓ " : ""}{s.label}</span>
                   {coachChip(cf.dcOk, cf.dcWants, s.key, "DC")}
                   <span style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}>Cover <b style={{ color: oC(pd) }}>{r0(pd)}</b> · Run D <b style={{ color: oC(rd) }}>{r0(rd)}</b></span>
                 </div>

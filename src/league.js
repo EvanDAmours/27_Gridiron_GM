@@ -61,16 +61,16 @@ export const WKNS={QB:["Holds ball too long","Inconsistent footwork","Limited mo
 export const FACTS=["Grew up on a ranch, didn't play football until sophomore year.","State champion wrestler.","Has an identical twin brother.","First in, last out of the weight room.","Speaks three languages fluently.","Walk-on who earned a scholarship.","Set his high school's scoring record.","Ran a 4.33 forty at Pro Day.","Father played 10 seasons in the league.","Volunteers at youth camps.","Recruited as basketball player.","Turned down baseball draft.","Bench pressed 225 for 30 reps.","Overcame torn ACL in college.","High school valedictorian.","Clocked at 22.4 mph in-game.","Played both ways in high school.","Captain three consecutive years.","From a town under 2,000 people.","Studies 30+ hours of film per week.","Once scored 6 TDs in a single game.","Named team captain as a freshman.","Started a foundation for underprivileged youth.","Was a national chess champion in high school.","Raised on a military base overseas.","Went undrafted; earned his roster spot as a street free agent.","His mother attended every single college game.","Works as a volunteer firefighter in the offseason.","Learned to play guitar while recovering from injury.","Grew up speaking Spanish as his first language.","Once returned a kickoff 109 yards in a state championship game.","Recruited to three different positions before settling into his current role.","His high school team went winless his freshman year; state champions his senior year.","Graduated with a degree in aerospace engineering.","Holds a black belt in Brazilian jiu-jitsu.","His older brother plays professionally for a different team.","Ran a 4.28 forty but pulled a hamstring at the combine.","Listed as the 300th-ranked recruit; outperformed every player ranked above him.","Turned down a full wrestling scholarship to play football.","Earned All-Conference honors at two different schools.","Has never missed a practice or game due to illness.","Memorizes the entire team playbook in the first week of training camp.","Led his college team in tackles despite weighing under 200 lbs.","Was told by three scouts he was too small for his position.","Grew up without running water for two years; uses it as daily motivation.","Plays piano and credits it for his hand-eye coordination."];
 // INNO I71: achievement definitions
 export const ACH_DEFS=[
-  {id:'first_win',label:'First Win',desc:'Win your first game',icon:'🏈'},
-  {id:'first_champ',label:'Champion',desc:'Win the championship',icon:'🏆'},
-  {id:'win_streak_5',label:'On Fire',desc:'Win 5 in a row',icon:'🔥'},
-  {id:'shutout_def',label:'Lockdown',desc:'Hold opponent to 0 points in Play',icon:'🛡'},
-  {id:'comeback_win',label:'Never Say Die',desc:'Win after trailing by 14+',icon:'💪'},
-  {id:'perfect_draft',label:'War Room',desc:'Draft 3 players with A+ combine grades',icon:'📋'},
-  {id:'dynasty_3',label:'Dynasty',desc:'Win 3+ consecutive championships',icon:'👑'},
-  {id:'trade_master',label:'Trade Master',desc:'Complete 10 trades',icon:'🤝'},
-  {id:'big_spender',label:'Cap Wizard',desc:'Sign a player for $20M+',icon:'💰'},
-  {id:'scout_gem',label:'Diamond Scout',desc:'Develop a gem prospect to OVR 85+',icon:'💎'},
+  {id:'first_win',label:'First Win',desc:'Win your first game',icon:''},
+  {id:'first_champ',label:'Champion',desc:'Win the championship',icon:''},
+  {id:'win_streak_5',label:'On Fire',desc:'Win 5 in a row',icon:''},
+  {id:'shutout_def',label:'Lockdown',desc:'Hold opponent to 0 points in Play',icon:''},
+  {id:'comeback_win',label:'Never Say Die',desc:'Win after trailing by 14+',icon:''},
+  {id:'perfect_draft',label:'War Room',desc:'Draft 3 players with A+ combine grades',icon:''},
+  {id:'dynasty_3',label:'Dynasty',desc:'Win 3+ consecutive championships',icon:''},
+  {id:'trade_master',label:'Trade Master',desc:'Complete 10 trades',icon:''},
+  {id:'big_spender',label:'Cap Wizard',desc:'Sign a player for $20M+',icon:''},
+  {id:'scout_gem',label:'Diamond Scout',desc:'Develop a gem prospect to OVR 85+',icon:''},
 ];
 // v21: AI GM data
 export const AI_GM_NAMES=["Harlan Briggs","Dez Monroe","Victor Choi","Pete Salazar","Roy Engel","Chance Webb","Marcus Holt","Daria Steele","Jim Kowalski","Tasha Burrows","Owen Payne","Ed Strickland","Lamar Voss","Sam Dubois","Nina Carver","Ted Rusk","Beau Hollins","Carmen Dix","Walt Greer","Rex Fontaine","Ida Nwosu","Kirk Patton","Sasha Tate","Lloyd Ashby","Ana Duval","Hank Pryor","Cleo Marsh","Bart Osei","Vince Lutz","Faye Cannon","Myron York","Gene Tran"];
@@ -159,7 +159,7 @@ export const REAL_PKS=Object.fromEntries([...(M27.teams||[]).flatMap(t=>[...(t.r
 export const REAL_OVR0=Object.fromEntries([...(M27.teams||[]).flatMap(t=>[...(t.roster||[]),...(t.ps||[])]),...(M27.fa||[])].map(d=>[`${d.name}|${d.pos}`,d.ovr]));
 export const withRealPicks=ts=>ts.map(t=>({...t,roster:(t.roster||[]).map(p=>p.pk||p.draftPk>0||!REAL_PKS[`${p.name}|${p.pos}`]?p:{...p,pk:REAL_PKS[`${p.name}|${p.pos}`]})}));
 // A wire line for an AI-to-AI trade.
-export const tradeWireText=(x,ts,yr)=>{const b=ts[x.buyer],sl=ts[x.seller];const got=[...x.players.map(p=>`${p.name} (${p.pos} ${p.ovr})`),...x.picks.map(pk=>pk.yr&&pk.yr!==yr?`${pk.yr} R${pk.rd}`:`R${pk.rd}${pk.overall?` #${pk.overall}`:""}`)].join(" + ");return`📡 TRADE: ${b.city} ${b.name} acquire ${x.player.name} (${x.player.pos} ${x.player.ovr}, age ${x.player.age}) from ${sl.city} ${sl.name} for ${got}`;};
+export const tradeWireText=(x,ts,yr)=>{const b=ts[x.buyer],sl=ts[x.seller];const got=[...x.players.map(p=>`${p.name} (${p.pos} ${p.ovr})`),...x.picks.map(pk=>pk.yr&&pk.yr!==yr?`${pk.yr} R${pk.rd}`:`R${pk.rd}${pk.overall?` #${pk.overall}`:""}`)].join(" + ");return`TRADE: ${b.city} ${b.name} acquire ${x.player.name} (${x.player.pos} ${x.player.ovr}, age ${x.player.age}) from ${sl.city} ${sl.name} for ${got}`;};
 // Saves from before the line had spots: your hand-set DL order becomes edges outside, tackles inside.
 export const dlSlotsMigrate=d=>{const o=d.depthOrder||{};if(d.dlSlots||!o.DL?.length)return o;const ros=(d.teams?.[d.ui]?.roster||[]).filter(p=>p.pos==="DL");const ps=o.DL.map(id=>ros.find(p=>p.id===id)).filter(Boolean);return{...o,DL:arrangeDL(ps).map(p=>p.id)};};
 export const withTradeValues=ts=>(ts||[]).map(t=>({...t,pf:Math.round(t.pf||0),pa:Math.round(t.pa||0),roster:(t.roster||[]).map(p=>({...p,tradeVal:tradeValue(p)}))}));
@@ -453,8 +453,8 @@ export function tickInjuries(nt,nw,ui){
         // back from a real injury, he's not quite himself for a game
         if(_was&&_was!=="minor"&&Math.random()<0.6)p.hurt={wks:1,pen:R(2,4),type:`Returning from ${String(_ty||"injury").replace(/ \(.*\)$/,"").toLowerCase()}`};}}
     if((t.ir||[]).length){const ready=t.ir.filter(p=>!p.injured&&nw-(p.irWk??0)>=4);const back=[];
-      for(const p of ready){if(ti!==ui||t.roster.length+back.length<53)back.push(p);else if(!p.irReady){p.irReady=true;logs.push(`🏥 ${p.name} is healthy and ready to come off IR. Make room on the 53 to activate him.`);}}
-      if(back.length){t.ir=t.ir.filter(p=>!back.includes(p));t.roster.push(...back.map(({irWk,irMin,irType,irReturnWk,irReady,...p})=>p));if(ti===ui)logs.push(...back.map(p=>`🏥 ${p.name} (${p.pos}) is back from injured reserve.`));}}
+      for(const p of ready){if(ti!==ui||t.roster.length+back.length<53)back.push(p);else if(!p.irReady){p.irReady=true;logs.push(`${p.name} is healthy and ready to come off IR. Make room on the 53 to activate him.`);}}
+      if(back.length){t.ir=t.ir.filter(p=>!back.includes(p));t.roster.push(...back.map(({irWk,irMin,irType,irReturnWk,irReady,...p})=>p));if(ti===ui)logs.push(...back.map(p=>`${p.name} (${p.pos}) is back from injured reserve.`));}}
   });
   return logs;
 }

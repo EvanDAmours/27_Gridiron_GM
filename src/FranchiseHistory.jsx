@@ -67,7 +67,7 @@ export default function FranchiseHistory({ team, seasons = [], current, titles =
             <b style={{ width: 44, color: C.mt }}>{s.yr}</b>
             <b style={{ width: 48, fontSize: 14, color: s.w > s.l ? C.gn : s.w < s.l ? C.rd : C.gd }}>{s.w}-{s.l}</b>
             <div style={{ flex: 1, height: 8, background: "#ffffff10", borderRadius: 4, overflow: "hidden" }}><div style={{ width: `${(g / best) * wp * 100}%`, height: "100%", background: champ ? "#f59e0b" : wp >= 0.6 ? C.gn : wp >= 0.45 ? "#84cc16" : C.rd }} /></div>
-            <span style={{ width: MOBILE ? 90 : 180, fontSize: 14, color: champ ? "#fcd34d" : C.mt, fontWeight: champ ? 800 : 500, textAlign: "right" }}>{champ ? "🏆 Super Bowl champions" : s.yr === current?.yr ? "In progress" : ""}</span>
+            <span style={{ width: MOBILE ? 90 : 180, fontSize: 14, color: champ ? "#fcd34d" : C.mt, fontWeight: champ ? 800 : 500, textAlign: "right" }}>{champ ? "Super Bowl champions" : s.yr === current?.yr ? "In progress" : ""}</span>
           </div>); })}
       </div>
     </div>

@@ -133,8 +133,8 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
           </div>
           {/* the day it's played on and the weather it's played in, big enough to plan around */}
           {(HOLIDAYS[game.holiday] || (forecast && forecast.kind !== "clear")) && <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
-            {HOLIDAYS[game.holiday] && (() => { const h = HOLIDAYS[game.holiday]; return <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 900, color: "#fff", background: `linear-gradient(90deg, ${h.c2}, ${h.c1})`, borderRadius: 999, padding: "6px 14px" }}>{h.icon} {h.name}</span>; })()}
-            {forecast && forecast.kind !== "clear" && <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 800, color: "#fff", background: "#00000059", borderRadius: 999, padding: "6px 14px" }}>{forecast.icon} {forecast.label}</span>}
+            {HOLIDAYS[game.holiday] && (() => { const h = HOLIDAYS[game.holiday]; return <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 900, color: "#fff", background: `linear-gradient(90deg, ${h.c2}, ${h.c1})`, borderRadius: 999, padding: "6px 14px" }}>{h.name}</span>; })()}
+            {forecast && forecast.kind !== "clear" && <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 800, color: "#fff", background: "#00000059", borderRadius: 999, padding: "6px 14px" }}>{forecast.label}</span>}
           </div>}
           {forecast?.note && <div style={{ fontSize: 14, color: "#ffffffb3", marginTop: 8 }}>{forecast.note.replace(/^./, (x) => x.toUpperCase())}</div>}
         </div>
@@ -271,7 +271,7 @@ function Stories({ stories, news, teams, onStory }) {
         </div>
         <div style={{ fontSize: i === 0 ? 16 : 14, fontWeight: 800, lineHeight: 1.3 }}>{st.head}</div>
         <div style={{ fontSize: 14, color: "#cbd5e1", lineHeight: 1.45, marginTop: 4 }}>{st.text}</div>
-        {(st.inc || st.retire) && onStory && <div style={{ fontSize: 12, fontWeight: 800, color: "#7dd3fc", marginTop: 6 }}>{st.retire ? "👋 See the whole retirement class →" : "📰 Read the full story →"}</div>}
+        {(st.inc || st.retire) && onStory && <div style={{ fontSize: 12, fontWeight: 800, color: "#7dd3fc", marginTop: 6 }}>{st.retire ? "See the whole retirement class →" : "Read the full story →"}</div>}
       </div>
     );
   }), ...wire];

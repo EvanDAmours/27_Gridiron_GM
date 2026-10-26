@@ -1,12 +1,12 @@
 // Head coach traits: each head coach is known for one thing, and it shows up in the game.
 export const HC_TRAITS = {
-  "Player Developer": { icon: "🌱", desc: "Young players (under 27) grow faster: an extra point of OVR in many off-seasons." },
-  "QB Whisperer": { icon: "🎯", desc: "Quarterbacks develop faster and hold off decline longer." },
-  "Talent Evaluator": { icon: "🔎", desc: "+3 scouting points every season for your draft room." },
-  "Offensive Guru": { icon: "📋", desc: "Game plans add about half a point a game on offense." },
-  "Defensive Mastermind": { icon: "🛡️", desc: "Game plans take about half a point a game off the opponent." },
-  "Culture Builder": { icon: "🤝", desc: "Players want to play for him: free agents and re-signs ask for less." },
-  "Veteran Manager": { icon: "🧓", desc: "Veterans past their prime decline more slowly." },
+  "Player Developer": { icon: "", desc: "Young players (under 27) grow faster: an extra point of OVR in many off-seasons." },
+  "QB Whisperer": { icon: "", desc: "Quarterbacks develop faster and hold off decline longer." },
+  "Talent Evaluator": { icon: "", desc: "+3 scouting points every season for your draft room." },
+  "Offensive Guru": { icon: "", desc: "Game plans add about half a point a game on offense." },
+  "Defensive Mastermind": { icon: "", desc: "Game plans take about half a point a game off the opponent." },
+  "Culture Builder": { icon: "", desc: "Players want to play for him: free agents and re-signs ask for less." },
+  "Veteran Manager": { icon: "", desc: "Veterans past their prime decline more slowly." },
 };
 export const HC_TRAIT_NAMES = Object.keys(HC_TRAITS);
 

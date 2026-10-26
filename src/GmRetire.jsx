@@ -65,7 +65,7 @@ export default function GmRetire({ career: c, team, gmName, retired, yr, achieve
           <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr 1fr" : "repeat(4,1fr)", gap: 8 }}>
             {ACHIEVEMENTS.filter((a) => locked || achievements[a.id]).map((a) => { const got = achievements[a.id]; return (
               <div key={a.id} title={a.desc} style={{ borderRadius: 12, padding: "8px 10px", background: got ? "#064e3b55" : "#ffffff08", opacity: got ? 1 : 0.6 }}>
-                <div style={{ fontSize: 14, fontWeight: 800 }}>{got ? a.icon : ""} {a.name}</div>
+                <div style={{ fontSize: 14, fontWeight: 800 }}>{a.name}</div>
                 <div style={{ fontSize: 11, color: got ? "#a7f3d0" : C.mt, marginTop: 1 }}>{got ? `Earned ${got}` : a.desc}</div>
               </div>
             ); })}
@@ -78,7 +78,7 @@ export default function GmRetire({ career: c, team, gmName, retired, yr, achieve
             return <div key={g.name + g.you} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 6px", borderRadius: 10, background: g.you ? "#22c55e22" : "transparent", fontSize: 14 }}>
               <span style={{ width: 26, fontWeight: 900, color: n <= 3 ? "#fbbf24" : C.mt }}>#{n}</span>
               <span style={{ flex: 1, minWidth: 0 }}><b>{g.name}</b> <span style={{ color: C.mt }}>{g.club} · {g.yrs}</span>{!g.you && !MOBILE && <div style={{ fontSize: 11, color: "#94a3b8" }}>{g.note}</div>}</span>
-              <span style={{ color: "#fbbf24", whiteSpace: "nowrap" }}>{"🏆".repeat(Math.min(6, g.titles))}</span>
+              <span style={{ color: "#fbbf24", whiteSpace: "nowrap" }}>{g.titles ? `${g.titles} ring${g.titles === 1 ? "" : "s"}` : ""}</span>
               <span style={{ width: 48, textAlign: "right", fontWeight: 900 }}>{g.score}</span>
             </div>;
           })}

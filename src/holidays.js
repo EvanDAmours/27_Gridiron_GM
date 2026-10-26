@@ -7,13 +7,13 @@
 // A season on the real schedule (it has dates) uses the games actually played on those days.
 
 export const HOLIDAYS = {
-  halloween: { key: "halloween", name: "Halloween Night", short: "Halloween", icon: "🎃", c1: "#f97316", c2: "#7c3aed", bg: "#1a0b2e", line: "Under the full moon, a costume-party crowd and a game nobody forgets." },
-  thanksgiving: { key: "thanksgiving", name: "Thanksgiving Day", short: "Thanksgiving", icon: "🦃", c1: "#d97706", c2: "#9a3412", bg: "#2a1406", line: "Football and family: the whole country is watching." },
-  xmaseve: { key: "xmaseve", theme: "christmas", name: "Christmas Eve", short: "Christmas Eve", icon: "🎄", c1: "#dc2626", c2: "#15803d", bg: "#0b2015", line: "The night before Christmas, and the whole league is watching." },
-  christmas: { key: "christmas", name: "Christmas Day", short: "Christmas", icon: "🎄", c1: "#dc2626", c2: "#15803d", bg: "#0b2015", line: "The league's gift to everyone home for the holiday." },
+  halloween: { key: "halloween", name: "Halloween Night", short: "Halloween", icon: "", c1: "#f97316", c2: "#7c3aed", bg: "#1a0b2e", line: "Under the full moon, a costume-party crowd and a game nobody forgets." },
+  thanksgiving: { key: "thanksgiving", name: "Thanksgiving Day", short: "Thanksgiving", icon: "", c1: "#d97706", c2: "#9a3412", bg: "#2a1406", line: "Football and family: the whole country is watching." },
+  xmaseve: { key: "xmaseve", theme: "christmas", name: "Christmas Eve", short: "Christmas Eve", icon: "", c1: "#dc2626", c2: "#15803d", bg: "#0b2015", line: "The night before Christmas, and the whole league is watching." },
+  christmas: { key: "christmas", name: "Christmas Day", short: "Christmas", icon: "", c1: "#dc2626", c2: "#15803d", bg: "#0b2015", line: "The league's gift to everyone home for the holiday." },
   // New Year's Eve and Day share one look (theme): midnight, gold and silver, fireworks
-  nye: { key: "nye", theme: "newyear", name: "New Year's Eve", short: "New Year's Eve", icon: "🎆", c1: "#fbbf24", c2: "#94a3b8", bg: "#0a0b1f", line: "The last game of the year, and the clock runs out at midnight." },
-  nyd: { key: "nyd", theme: "newyear", name: "New Year's Day", short: "New Year's Day", icon: "🎆", c1: "#fbbf24", c2: "#94a3b8", bg: "#0a0b1f", line: "A new year, a clean slate, and a game the whole country wakes up to." },
+  nye: { key: "nye", theme: "newyear", name: "New Year's Eve", short: "New Year's Eve", icon: "", c1: "#fbbf24", c2: "#94a3b8", bg: "#0a0b1f", line: "The last game of the year, and the clock runs out at midnight." },
+  nyd: { key: "nyd", theme: "newyear", name: "New Year's Day", short: "New Year's Day", icon: "", c1: "#fbbf24", c2: "#94a3b8", bg: "#0a0b1f", line: "A new year, a clean slate, and a game the whole country wakes up to." },
 };
 // the look a holiday uses (New Year's Eve and Day share one)
 export const themeOf = (key) => HOLIDAYS[key]?.theme || key;

@@ -46,14 +46,14 @@ const DEV_RANK = { generational: 4, superstar: 3, star: 2, normal: 1, late: 0 };
 function Badges({ p, focus, mine }) {
   const b = [];
   const isFocus = focus && ["off", "def"].some((k) => focus[k] != null && String(focus[k]) === String(p.id));
-  if (isFocus) b.push(["🔬", "Development focus: can gain a point each regular-season week"]);
-  if (mine && (p.contract || 0) === 1 && !p.ext) b.push(["✍️", p.cyr?.choice === "bet" ? "Contract year: playing out his deal" : "Contract year: last year of his deal"]);
-  if (p.ext) b.push(["📝", "Extended: his new deal starts next season"]);
+  if (isFocus) b.push(["DEV", "Development focus: can gain a point each regular-season week"]);
+  if (mine && (p.contract || 0) === 1 && !p.ext) b.push(["CY", p.cyr?.choice === "bet" ? "Contract year: playing out his deal" : "Contract year: last year of his deal"]);
+  if (p.ext) b.push(["EXT", "Extended: his new deal starts next season"]);
   if (p.potRev && p.potRev.stage < 3) b.push(["~", "Unproven: his real ceiling is still coming into focus"]);
-  if (p.tradeRequest) b.push(["🔁", "Has asked for a trade"]);
-  if (p.suspended) b.push(["🚫", `Suspended${p.suspWksLeft ? ` (${p.suspWksLeft} more game${p.suspWksLeft === 1 ? "" : "s"})` : ""}`]);
+  if (p.tradeRequest) b.push(["TR", "Has asked for a trade"]);
+  if (p.suspended) b.push(["SUSP", `Suspended${p.suspWksLeft ? ` (${p.suspWksLeft} more game${p.suspWksLeft === 1 ? "" : "s"})` : ""}`]);
   if (!b.length) return null;
-  return <span style={{ marginLeft: 6, display: "inline-flex", gap: 3, verticalAlign: "middle" }}>{b.map(([i, t]) => <span key={t} title={t} style={{ fontSize: 12, fontWeight: 900, color: "#cbd5e1", cursor: "help" }}>{i}</span>)}</span>;
+  return <span style={{ marginLeft: 6, display: "inline-flex", gap: 3, verticalAlign: "middle" }}>{b.map(([i, t]) => <span key={t} title={t} style={{ fontSize: 10, fontWeight: 900, letterSpacing: 0.4, color: "#94a3b8", cursor: "help" }}>{i}</span>)}</span>;
 }
 
 export default function RosterTable({ players, depth, setSel, devOf, wk = 0, focus = null, mine = false }) {
@@ -90,7 +90,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
         </Select>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search roster" style={{ ...sel, flex: "1 1 160px" }} />
       </div>
-      {mine && !MOBILE && <div style={{ fontSize: 12, color: C.mt, margin: "-4px 0 8px" }}>🔬 development focus · ✍️ contract year · 📝 extended · ~ unproven rookie · 🔁 trade request · 🚫 suspended</div>}
+      {mine && !MOBILE && <div style={{ fontSize: 12, color: C.mt, margin: "-4px 0 8px" }}><b>DEV</b> development focus · <b>CY</b> contract year · <b>EXT</b> extended · <b>~</b> unproven rookie · <b>TR</b> trade request · <b>SUSP</b> suspended</div>}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 300px", gap: 12, alignItems: "start" }}>
       <div style={{ maxHeight: "calc(var(--vh, 100vh) - 260px)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>

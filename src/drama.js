@@ -167,7 +167,7 @@ export function offFieldWeek({ teams, sched, wk, ui, yr, rand = Math.random }) {
   const add = (s) => out.push({ id: `${yr}-${wk}-o${out.length}`, kind: "drama", ...s, mine: s.team === ui });
   const played = new Set();
   for (const g of sched || []) if (g.wk === wk && g.played) { played.add(g.h); played.add(g.a); }
-  for (const p of serveSuspensions(teams, played, ui)) log.push(`✅ ${p.name} has served his suspension and is back.`);
+  for (const p of serveSuspensions(teams, played, ui)) log.push(`${p.name} has served his suspension and is back.`);
   // Off the field: serious trouble, a league suspension (generated players only; see above).
   if (rand() < 0.3) {
     const pool = teams.flatMap((t, ti) => (t.roster || []).filter((p) => isFictional(p) && !p.suspended && p.ovr >= 62).map((p) => ({ p, t, ti })));
@@ -183,7 +183,7 @@ export function offFieldWeek({ teams, sched, wk, ui, yr, rand = Math.random }) {
         inc: { k: ev.k, wks, yr, wk, pid: c.p.id, name: c.p.name, pos: posTag(c.p), age: c.p.age, ovr: c.p.ovr, salary: c.p.salary || 0, contract: c.p.contract || 0, city: c.t.city, club: c.t.name, prior } });
       // yours: you decide whether he stays (the suspension popup shows why)
       if (c.ti === ui) mine.push({ pid: c.p.id, k: ev.k, wks, head: ev.head(c.p.name, wks, c.t), text: ev.text(c.p.name, c.t, c.p.pos, wks) });
-      if (c.ti === ui) log.push(`🚨 ${c.p.name} (${c.p.pos}) is out ${wks} game${wks > 1 ? "s" : ""}: ${ev.head(c.p.name, wks, c.t)}.`);
+      if (c.ti === ui) log.push(`${c.p.name} (${c.p.pos}) is out ${wks} game${wks > 1 ? "s" : ""}: ${ev.head(c.p.name, wks, c.t)}.`);
     }
   }
   return { stories: out, log, mine };

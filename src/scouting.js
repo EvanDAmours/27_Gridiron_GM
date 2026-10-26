@@ -370,7 +370,7 @@ function fileReport(sc, p, lvl, teams) {
     who: cov.others ? [cov.scout, ...cov.others].map((x) => x.name).join(" & ") : cov.scout?.name || "Your front office",
     dev: seesDev(cov, lvl, ev, p) ? devOf(p) : prev.dev || null,
     skills,
-    notes: p.bust ? { ...notesFor(p, skills, r), flag: `🚩 Red flag: ${p.bust.why}. ${cov.role === "office" ? "Our people" : "Your scout"} sees a high bust risk.` } : p.gem ? { ...notesFor(p, skills, r), gem: `💎 Sleeper: ${p.gem.why}. ${cov.role === "office" ? "Our people think" : "Your scout thinks"} he's much better than where the board has him.` } : notesFor(p, skills, r),
+    notes: p.bust ? { ...notesFor(p, skills, r), flag: `Red flag: ${p.bust.why}. ${cov.role === "office" ? "Our people" : "Your scout"} sees a high bust risk.` } : p.gem ? { ...notesFor(p, skills, r), gem: `Sleeper: ${p.gem.why}. ${cov.role === "office" ? "Our people think" : "Your scout thinks"} he's much better than where the board has him.` } : notesFor(p, skills, r),
     comp: comparable(teams, p, ePot),
   };
   // The older fields other screens read: scoutLvl 2 means "exact".
@@ -990,9 +990,8 @@ export function interviewProspect(sc, sp, p) {
   if (p.combDip === "fluke") good.unshift("About the Combine: he tested with a tight hamstring; his pro day numbers were back to normal. The tape says he's fine.");
   const avg = traits.reduce((s2, t) => s2 + t.v, 0) / traits.length;
   const verdict = char || avg < 70 ? "Concerning" : avg >= 86 ? "Impressive" : avg >= 78 ? "Solid" : "Mixed";
-  const intv = { grade: potGrade(v), overall: potGrade(avg), verdict, traits: traits.map(({ label, grade }) => ({ label, grade })), good, bad, note: r.pick(INTERVIEW_NOTES[v >= 85 ? "high" : v >= 77 ? "mid" : "low"]), ...(char ? { flag: `🚩 Red flag from the interview: ${p.bust.why}.` } : {}) };
-  const icon = { Impressive: "🌟", Solid: "👍", Mixed: "🤔", Concerning: "⚠️" }[verdict];
-  const msg = `${icon} Interview with ${p.name}: ${verdict.toLowerCase()} (${intv.overall}). ${p.combDip === "real" ? bad[0] : p.combDip === "fluke" ? good[0] : good[0] || bad[0] || ""}${char ? " Red flag raised." : ""} Full notes are on his profile.`;
+  const intv = { grade: potGrade(v), overall: potGrade(avg), verdict, traits: traits.map(({ label, grade }) => ({ label, grade })), good, bad, note: r.pick(INTERVIEW_NOTES[v >= 85 ? "high" : v >= 77 ? "mid" : "low"]), ...(char ? { flag: `Red flag from the interview: ${p.bust.why}.` } : {}) };
+    const msg = `Interview with ${p.name}: ${verdict.toLowerCase()} (${intv.overall}). ${p.combDip === "real" ? bad[0] : p.combDip === "fluke" ? good[0] : good[0] || bad[0] || ""}${char ? " Red flag raised." : ""} Full notes are on his profile.`;
   return { ok: true, msg, sc: { ...sc, interviewsLeft: sc.interviewsLeft - 1 }, p: { ...p, scout: { ...(p.scout || { lvl: 0 }), intv } } };
 }
 

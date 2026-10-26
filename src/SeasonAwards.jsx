@@ -89,7 +89,7 @@ const findPlayer = (t, w) => (t && w?.pid != null ? [...(t.roster || []), ...(t.
 function YourWinner({ yr, k, label, w, teams, onNext, last }) {
   const t = teams[w.ti], p = findPlayer(t, w) || { name: w.name, pos: w.pos };
   return (
-    <Spotlight p={p} team={t} kicker={k === "sbmvp" ? `🏆 ${sbName(sbNumber(yr))} MVP · World Champions` : `🏆 ${yr} ${label}`} title={w.name} bg={jerseyNum(p) != null ? `#${jerseyNum(p)}` : null} smoke={BIG.has(k)} confetti={["#fbbf24", "#fde68a", t.clr, t.ac, "#ffffff"]} label={`${label}: ${w.name}`}
+    <Spotlight p={p} team={t} kicker={k === "sbmvp" ? `${sbName(sbNumber(yr))} MVP · World Champions` : `${yr} ${label}`} title={w.name} bg={jerseyNum(p) != null ? `#${jerseyNum(p)}` : null} smoke={BIG.has(k)} confetti={["#fbbf24", "#fde68a", t.clr, t.ac, "#ffffff"]} label={`${label}: ${w.name}`}
       side={TROPHY[k] && <img src={TROPHY[k]} alt="" style={{ height: MOBILE ? 110 : "min(40vh, 360px)", maxWidth: "100%", objectFit: "contain", filter: "drop-shadow(0 16px 24px #000c)" }} />}
       cta={last ? "The league's awards →" : "Next award →"} onNext={onNext}>
       <div>{posTag(p)} · {t.city} {t.name}</div>
@@ -124,7 +124,7 @@ function HonorsPage({ yr, h, teams, ui, onBack, onClose, cta }) {
             return (
               <div key={p.id} style={{ display: "flex", alignItems: "center", gap: S[2], fontSize: T.sm, padding: `${S[1]}px 0` }}>
                 <Bdg pos={posTag(p)} />
-                <span style={{ minWidth: 0, flex: 1, lineHeight: 1.3 }}><b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</b><span style={{ color: "#cbd5e1", fontSize: T.xs }}>{HONOR_LABEL[k]}{(h.best || []).some((e) => e.pid === p.id) ? ` · 👑 ${bestLabel(h.best.find((e) => e.pid === p.id).slot)}` : ""}</span></span>
+                <span style={{ minWidth: 0, flex: 1, lineHeight: 1.3 }}><b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</b><span style={{ color: "#cbd5e1", fontSize: T.xs }}>{HONOR_LABEL[k]}{(h.best || []).some((e) => e.pid === p.id) ? ` · ${bestLabel(h.best.find((e) => e.pid === p.id).slot)}` : ""}</span></span>
                 <span style={{ marginLeft: "auto", fontWeight: 900, color: g ? C.gn : C.mt, fontSize: T.sm, whiteSpace: "nowrap" }}>{g ? `+${g} OVR` : "already elite"}</span>
               </div>
             );

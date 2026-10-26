@@ -154,23 +154,23 @@ export function recordStories({ broken = [], tied = [], watch = [], franchise = 
   const teamIdx = (ab) => teams.findIndex((t) => t.ab === ab);
   const s = [];
   for (const b of tied) {
-    s.push({ id: `tie-${yr}-${wk}-${b.team}-${b.key}-${b.pid}`, kind: "record", team: teamIdx(b.team), head: `🤝 RECORD TIED: ${b.name} matches the ${b.fr ? `${b.team} ` : ""}single-season ${b.label.toLowerCase()} mark`,
+    s.push({ id: `tie-${yr}-${wk}-${b.team}-${b.key}-${b.pid}`, kind: "record", team: teamIdx(b.team), head: `RECORD TIED: ${b.name} matches the ${b.fr ? `${b.team} ` : ""}single-season ${b.label.toLowerCase()} mark`,
       text: `${b.name} (${b.team}) has ${fmt(b.key, b.val)} ${b.label.toLowerCase()}, level with ${b.prev.name}${b.prev.yr ? ` (${b.prev.yr})` : ""}. One more and it's his alone.` });
   }
   for (const b of broken) {
-    s.push({ id: `rec-${yr}-${wk}-${b.key}`, kind: "record", team: teamIdx(b.team), head: `🏆 NEW RECORD: ${b.name} sets the single-season ${b.label.toLowerCase()} mark`,
+    s.push({ id: `rec-${yr}-${wk}-${b.key}`, kind: "record", team: teamIdx(b.team), head: `NEW RECORD: ${b.name} sets the single-season ${b.label.toLowerCase()} mark`,
       text: `${b.name} (${b.team}) now has ${fmt(b.key, b.val)} ${b.label.toLowerCase()}, passing ${b.prev.name}'s ${fmt(b.key, b.prev.val)} from ${b.prev.yr}${wk && wk < GAMES + 1 ? `, and there's still football left` : ""}.` });
   }
   for (const f of franchise) {
-    s.push({ id: `frec-${yr}-${wk}-${f.team}-${f.key}`, kind: "record", team: teamIdx(f.team), head: `🏟️ FRANCHISE RECORD: ${f.name} owns the ${f.team} single-season ${f.label.toLowerCase()} mark`,
+    s.push({ id: `frec-${yr}-${wk}-${f.team}-${f.key}`, kind: "record", team: teamIdx(f.team), head: `FRANCHISE RECORD: ${f.name} owns the ${f.team} single-season ${f.label.toLowerCase()} mark`,
       text: `${f.name} is up to ${fmt(f.key, f.val)} ${f.label.toLowerCase()}${f.prev ? `, past ${f.prev.name}'s ${fmt(f.key, f.prev.val)}${f.prev.yr ? ` from ${f.prev.yr}` : ""}` : ""}.` });
   }
   for (const w of fwatch.slice(0, 1)) {
-    s.push({ id: `fpace-${yr}-${wk}-${w.key}-${w.pid}`, kind: "pace", team: myTi, head: `📈 Franchise watch: ${w.name} on pace for ${fmt(w.key, w.pace)} ${w.label.toLowerCase()}`,
+    s.push({ id: `fpace-${yr}-${wk}-${w.key}-${w.pid}`, kind: "pace", team: myTi, head: `Franchise watch: ${w.name} on pace for ${fmt(w.key, w.pace)} ${w.label.toLowerCase()}`,
       text: `He has ${fmt(w.key, w.val)} so far. The club record is ${fmt(w.key, w.record.val)}, held by ${w.record.name}${w.record.yr ? ` (${w.record.yr})` : ""}.` });
   }
   for (const w of watch.slice(0, 2)) {
-    s.push({ id: `pace-${yr}-${wk}-${w.key}-${w.pid}`, kind: "pace", team: w.ti, head: `📈 Record watch: ${w.name} on pace for ${fmt(w.key, w.pace)} ${w.label.toLowerCase()}`,
+    s.push({ id: `pace-${yr}-${wk}-${w.key}-${w.pid}`, kind: "pace", team: w.ti, head: `Record watch: ${w.name} on pace for ${fmt(w.key, w.pace)} ${w.label.toLowerCase()}`,
       text: `${w.name} (${w.team}) has ${fmt(w.key, w.val)} so far. The record is ${fmt(w.key, w.record.val)}, set by ${w.record.name} in ${w.record.yr}.` });
   }
   return s;

@@ -17,14 +17,14 @@ const HEAVY = 0.35, WIND = 0.05;
 // What it does to the coaches: kick: yards off the longest field goal they will try; go: how much
 // likelier they are to go for it on fourth and short (a bad kicking day makes points scarce).
 export const WX = {
-  clear: { label: "Clear", icon: "☀️" },
-  dome: { label: "Indoors", icon: "🏟️" },
-  wind: { label: "Windy", icon: "💨", run: 0.03, comp: -0.02, int: 0.003, fg: -0.06, kick: 6, go: 1.15 },
-  lightRain: { label: "Light rain", icon: "🌦️", rain: 1, run: 0.05, comp: -0.03, int: 0.004, fum: 1.5, fg: -0.04, kick: 2, go: 1.1 },
-  heavyRain: { label: "Heavy rain", icon: "🌧️", rain: 2, run: 0.12, comp: -0.07, int: 0.009, fum: 2.3, fg: -0.1, runYds: -0.2, kick: 5, go: 1.3 },
-  lightSnow: { label: "Light snow", icon: "🌨️", snow: 1, run: 0.07, comp: -0.03, int: 0.004, fum: 1.4, fg: -0.05, runYds: -0.2, kick: 4, go: 1.15 },
-  frigid: { label: "Frigid", icon: "🥶", cold: 1, run: 0.03, comp: -0.015, int: 0.002, fum: 1.25, fg: -0.04, kick: 3, go: 1.05 },
-  heavySnow: { label: "Heavy snow", icon: "❄️", snow: 2, run: 0.15, comp: -0.07, int: 0.008, fum: 2.0, fg: -0.12, runYds: -0.5, kick: 8, go: 1.4 },
+  clear: { label: "Clear", icon: "" },
+  dome: { label: "Indoors", icon: "" },
+  wind: { label: "Windy", icon: "", run: 0.03, comp: -0.02, int: 0.003, fg: -0.06, kick: 6, go: 1.15 },
+  lightRain: { label: "Light rain", icon: "", rain: 1, run: 0.05, comp: -0.03, int: 0.004, fum: 1.5, fg: -0.04, kick: 2, go: 1.1 },
+  heavyRain: { label: "Heavy rain", icon: "", rain: 2, run: 0.12, comp: -0.07, int: 0.009, fum: 2.3, fg: -0.1, runYds: -0.2, kick: 5, go: 1.3 },
+  lightSnow: { label: "Light snow", icon: "", snow: 1, run: 0.07, comp: -0.03, int: 0.004, fum: 1.4, fg: -0.05, runYds: -0.2, kick: 4, go: 1.15 },
+  frigid: { label: "Frigid", icon: "", cold: 1, run: 0.03, comp: -0.015, int: 0.002, fum: 1.25, fg: -0.04, kick: 3, go: 1.05 },
+  heavySnow: { label: "Heavy snow", icon: "", snow: 2, run: 0.15, comp: -0.07, int: 0.008, fum: 2.0, fg: -0.12, runYds: -0.5, kick: 8, go: 1.4 },
 };
 export const wxOf = (key) => WX[key] || WX.clear;
 export const isWet = (key) => !!(WX[key]?.rain || WX[key]?.snow);

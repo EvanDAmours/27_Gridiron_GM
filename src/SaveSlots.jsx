@@ -23,7 +23,7 @@ function SlotCard({ i, meta, teams, onSave, onLoad, onDelete }) {
         <div style={{ fontSize: 13, color: C.mt, fontWeight: 700 }}>Slot {i + 1}</div>
         {meta ? (<>
           <div style={{ fontSize: 16, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{meta.city} {meta.name}</div>
-          <div style={{ fontSize: 13, color: C.tx }}>{meta.yr} · {PHASE[meta.sp] || meta.sp}{meta.sp === "regular" ? ` wk ${meta.wk}` : ""} · <b>{meta.w}-{meta.l}{meta.t ? `-${meta.t}` : ""}</b>{meta.champs ? ` · 🏆×${meta.champs}` : ""}</div>
+          <div style={{ fontSize: 13, color: C.tx }}>{meta.yr} · {PHASE[meta.sp] || meta.sp}{meta.sp === "regular" ? ` wk ${meta.wk}` : ""} · <b>{meta.w}-{meta.l}{meta.t ? `-${meta.t}` : ""}</b>{meta.champs ? ` · ${meta.champs} ring${meta.champs === 1 ? "" : "s"}` : ""}</div>
           <div style={{ fontSize: 11, color: C.mt }}>Saved {new Date(meta.savedAt).toLocaleString()}</div>
         </>) : <div style={{ fontSize: 14, color: C.mt }}>Empty</div>}
       </div>

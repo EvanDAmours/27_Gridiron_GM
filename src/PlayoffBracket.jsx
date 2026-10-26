@@ -85,7 +85,7 @@ export default function PlayoffBracket({ pb, teams, ui, onBox, onSim, onPlay, ti
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
-        <div style={{ fontSize: 24, fontWeight: 900, color: pb.ch != null ? C.gd : "#fff" }}>{pb.ch != null ? `🏆 ${teams[pb.ch].city} ${teams[pb.ch].name} win the Super Bowl!` : title || `Playoffs · ${ROUND_NAMES[pb.rd]}`}</div>
+        <div style={{ fontSize: 24, fontWeight: 900, color: pb.ch != null ? C.gd : "#fff" }}>{pb.ch != null ? `${teams[pb.ch].city} ${teams[pb.ch].name} win the Super Bowl!` : title || `Playoffs · ${ROUND_NAMES[pb.rd]}`}</div>
         {pb.ch == null && onSim && (
           <span style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
             {mine && <Btn onClick={() => onPlay(mine)} bg={C.gn} style={{ fontSize: 14, padding: "7px 14px" }}>▶ Play your {ROUND_NAMES[pb.rd]} game</Btn>}

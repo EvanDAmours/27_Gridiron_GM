@@ -45,7 +45,7 @@ export default function GlobalSearch({ open, onClose, teams, ui, fa = [], prospe
             <div key={r.key} onMouseEnter={() => setHi(i)} onClick={() => pick(r)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", cursor: "pointer", background: i === hi ? `${C.bl}26` : "transparent", borderLeft: `3px solid ${i === hi ? C.bl : "transparent"}` }}>
               {r.kind === "player" && <><Bdg pos={r.p.pos} /><b style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.p.name}</b><span style={{ fontSize: 13, color: C.mt }}>{r.where === "FA" ? "Free agent" : r.where === "Draft" ? "Draft prospect" : r.where}{r.p.ovr != null && r.where !== "Draft" ? ` · ${r.p.ovr} OVR` : ""}</span></>}
               {r.kind === "team" && <><TeamLogo t={r.t} sz={24} /><b style={{ flex: 1 }}>{r.t.city} {r.t.name}</b><span style={{ fontSize: 13, color: C.mt }}>{r.ti === ui ? "Your team" : "Team roster"}</span></>}
-              {r.kind === "screen" && <><span style={{ fontSize: 16 }}>📄</span><b style={{ flex: 1 }}>{r.s.label}</b><span style={{ fontSize: 13, color: C.mt }}>Screen</span></>}
+              {r.kind === "screen" && <><b style={{ flex: 1 }}>{r.s.label}</b><span style={{ fontSize: 13, color: C.mt }}>Screen</span></>}
             </div>
           ))}
         </div>

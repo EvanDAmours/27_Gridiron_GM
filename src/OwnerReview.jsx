@@ -27,7 +27,7 @@ function Patience({ before, after }) {
 
 const Row = ({ label, value, ok }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderTop: `1px solid ${C.bd}` }}>
-    <span style={{ width: 22, textAlign: "center", fontSize: 16 }}>{ok == null ? "•" : ok ? "✅" : "❌"}</span>
+    <span style={{ width: 22, textAlign: "center", fontSize: 16 }}>{ok == null ? "•" : ok ? "✓" : "✕"}</span>
     <span style={{ flex: 1, fontSize: 14, color: "#cbd5e1" }}>{label}</span>
     <b style={{ fontSize: 14, textAlign: "right" }}>{value}</b>
   </div>

@@ -92,7 +92,7 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
                       <span onClick={() => open(r.pid)} style={{ fontWeight: 800, cursor: r.pid ? "pointer" : "default" }}>{r.name}</span> <span style={{ color: C.mt, whiteSpace: "nowrap" }}>({r.team}, {r.yr})</span>
                       {mine && <span style={{marginLeft: 6, fontSize: 11, fontWeight: 900, color: C.gn }}>Set in your league</span>}
                       {mine && r.prev && <div style={{ fontSize: 12, color: C.mt }}>Broke {r.prev.name}'s {recordValue(d.key, r.prev.val)} ({r.prev.yr})</div>}
-                      {(r.ties || []).map((x, j) => <div key={j} style={{ fontSize: 12, color: "#fbbf24" }}>🤝 Tied by <span onClick={() => open(x.pid)} style={{ fontWeight: 800, cursor: "pointer" }}>{x.name}</span> ({x.team}, {x.yr})</div>)}
+                      {(r.ties || []).map((x, j) => <div key={j} style={{ fontSize: 12, color: "#fbbf24" }}>Tied by <span onClick={() => open(x.pid)} style={{ fontWeight: 800, cursor: "pointer" }}>{x.name}</span> ({x.team}, {x.yr})</div>)}
                     </td>
                   </tr>
                 );
@@ -105,7 +105,7 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
         <div style={head}>Records broken or tied in your league</div>
         {[...book.history].reverse().map((h, i) => (
           <div key={i} style={{ fontSize: 14, padding: "6px 0", borderBottom: `1px solid ${C.bd}66` }}>
-            <b>{h.yr}</b> · <span onClick={() => open(h.pid)} style={{ fontWeight: 800, cursor: "pointer" }}>{h.name}</span> ({h.team}) {h.tie ? <>tied {h.prev.name}'s {h.label.toLowerCase()} record ({recordValue(h.key, h.val)}) 🤝</> : <>took the {h.career ? "career " : ""}{h.label.toLowerCase()} record from {h.prev.name} ({recordValue(h.key, h.prev.val)})</>}
+            <b>{h.yr}</b> · <span onClick={() => open(h.pid)} style={{ fontWeight: 800, cursor: "pointer" }}>{h.name}</span> ({h.team}) {h.tie ? <>tied {h.prev.name}'s {h.label.toLowerCase()} record ({recordValue(h.key, h.val)})</> : <>took the {h.career ? "career " : ""}{h.label.toLowerCase()} record from {h.prev.name} ({recordValue(h.key, h.prev.val)})</>}
           </div>
         ))}
         {!book.history.length && <div style={{ fontSize: 14, color: C.mt }}>No records have fallen yet. When one does, it's written here.</div>}

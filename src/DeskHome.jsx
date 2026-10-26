@@ -102,9 +102,9 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
         <Side t={away} rating={ra} star={pa} teams={teams} />
         <Side t={home} rating={rh} star={ph} teams={teams} right />
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 28, display: "flex", justifyContent: "center", alignItems: "center", gap: 10, zIndex: 2 }}>
-          {hol && <span style={{ ...tag, background: `linear-gradient(90deg, ${hol.c2}, ${hol.c1})` }}>{hol.icon} {hol.name}</span>}
+          {hol && <span style={{ ...tag, background: `linear-gradient(90deg, ${hol.c2}, ${hol.c1})` }}>{hol.name}</span>}
           {spread && <span style={tag}>{spread}</span>}
-          {forecast && <span style={tag} title={forecast.note || undefined}>{forecast.icon} {forecast.label}</span>}
+          {forecast && <span style={tag} title={forecast.note || undefined}>{forecast.label}</span>}
           {primary.map((b, i) => <button key={b.label} onClick={b.onClick} style={{ marginLeft: i === 0 ? 12 : 0, minHeight: 52, padding: "0 26px", borderRadius: 14, border: 0, background: i === 0 ? C.gn : "#ffffff24", color: "#fff", fontSize: 16, fontWeight: 900, cursor: "pointer", boxShadow: i === 0 ? "0 8px 24px #0008" : "none" }}>{b.label}</button>)}
         </div>
       </div>}

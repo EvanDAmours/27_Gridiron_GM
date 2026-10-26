@@ -61,9 +61,9 @@ export function revealRookies(teams, ui, yr, wk) {
 export function revealLine({ p, stage, from, to, gap }) {
   const up = gap > 0, who = `${p.name} (${p.pos})`;
   if (stage >= 3) return up
-    ? `💎 SCOUTING STEAL: ${who} is better than anyone thought. His ceiling is ${to}, not the ${from} your draft-day read had`
-    : `📉 SCOUTING MISS: ${who} isn't what the scouts said. His ceiling is ${to}, not the ${from} your draft-day read had`;
+    ? `SCOUTING STEAL: ${who} is better than anyone thought. His ceiling is ${to}, not the ${from} your draft-day read had`
+    : `SCOUTING MISS: ${who} isn't what the scouts said. His ceiling is ${to}, not the ${from} your draft-day read had`;
   return up
-    ? `📈 ${who} is showing more than expected: the coaches now see a ceiling around ${to} (draft-day read ${from})`
-    : `⚠️ ${who} isn't developing like the scouts said: the coaches now see a ceiling around ${to} (draft-day read ${from})`;
+    ? `${who} is showing more than expected: the coaches now see a ceiling around ${to} (draft-day read ${from})`
+    : `${who} isn't developing like the scouts said: the coaches now see a ceiling around ${to} (draft-day read ${from})`;
 }

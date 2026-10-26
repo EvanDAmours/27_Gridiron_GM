@@ -6,7 +6,7 @@ import { MOBILE } from "./mobile.js";
 import Select from "./Select.jsx";
 import { KINDS } from "./transactions.js";
 
-const ICON = { trade: "🔁", sign: "✍️", release: "✂️", coach: "📋", retire: "👋" };
+const ICON = { trade: "", sign: "", release: "", coach: "", retire: "" }; // words, never emoji
 const TAG = { trade: "Trade", sign: "Signing", release: "Release", coach: "Coaching", retire: "Retirement" };
 const TONE = { trade: "#a78bfa", sign: C.gn, release: "#f87171", coach: "#7dd3fc", retire: "#fbbf24" };
 

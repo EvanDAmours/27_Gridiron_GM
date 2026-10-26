@@ -12,7 +12,7 @@ test("a damaged save is repaired instead of crashing every screen", () => {
   assert.deepEqual(d.teams[0].ps, []);
   assert.equal(d.fa.length, 1); assert.ok(Array.isArray(d.fa[0].gl));
   assert.equal(d.sched.length, 1); assert.equal(d.draftPicks.length, 0);
-  assert.deepEqual(d.log, ["ok", "🎖️ X has retired."]);
+  assert.deepEqual(d.log, ["ok", "X has retired."]);
   assert.ok(fixes.length >= 4);
   assert.deepEqual(repairSave(d).fixes, [], "a clean save needs nothing");
 });

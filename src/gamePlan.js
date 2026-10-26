@@ -8,15 +8,15 @@
 // mine / theirs: unitRatings() from gamesim.js (pass, run, passD, runD, rush, ol).
 
 export const OFF_PLANS = [
-  { key: "run_heavy", label: "Run heavy", icon: "🦶" },
-  { key: "balanced", label: "Balanced", icon: "⚖️" },
-  { key: "pass_heavy", label: "Pass heavy", icon: "🏈" },
+  { key: "run_heavy", label: "Run heavy", icon: "" },
+  { key: "balanced", label: "Balanced", icon: "" },
+  { key: "pass_heavy", label: "Pass heavy", icon: "" },
 ];
 export const DEF_PLANS = [
-  { key: "run_stop", label: "Stack the box", icon: "🧱" },
-  { key: "balanced", label: "Balanced", icon: "⚖️" },
-  { key: "aggressive", label: "Blitz", icon: "⚡" },
-  { key: "coverage", label: "Drop into coverage", icon: "🛡️" },
+  { key: "run_stop", label: "Stack the box", icon: "" },
+  { key: "balanced", label: "Balanced", icon: "" },
+  { key: "aggressive", label: "Blitz", icon: "" },
+  { key: "coverage", label: "Drop into coverage", icon: "" },
 ];
 // older saves' defensive plans
 const OLD_DEF = { conservative: "coverage", prevent: "coverage" };

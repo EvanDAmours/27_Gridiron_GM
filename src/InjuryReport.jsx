@@ -7,9 +7,9 @@ import { MOBILE } from "./mobile.js";
 import { posTag } from "./dline.js";
 
 export const REHAB = [
-  { id: "aggressive", lbl: "🔥 Aggressive", desc: "back 2 weeks early, 15% re-injury risk", wkBonus: -2, risk: 0.15 },
-  { id: "standard", lbl: "🏃 Standard", desc: "normal timeline, low risk", wkBonus: 0, risk: 0.05 },
-  { id: "cautious", lbl: "🛡 Cautious", desc: "1 week longer, almost no risk", wkBonus: 1, risk: 0.01 },
+  { id: "aggressive", lbl: "Aggressive", desc: "back 2 weeks early, 15% re-injury risk", wkBonus: -2, risk: 0.15 },
+  { id: "standard", lbl: "Standard", desc: "normal timeline, low risk", wkBonus: 0, risk: 0.05 },
+  { id: "cautious", lbl: "Cautious", desc: "1 week longer, almost no risk", wkBonus: 1, risk: 0.01 },
 ];
 
 const Section = ({ label, color, children }) => (
@@ -27,7 +27,6 @@ export default function InjuryReport({ rep, rehab = {}, onPick, onRehab, onClose
   return (
     <div role="dialog" aria-label="Injury report" style={{ position: "fixed", zIndex: 1200, ...(MOBILE ? { left: 8, right: 8, bottom: "calc(72px + env(safe-area-inset-bottom))" } : { left: 16, bottom: 16, width: 380 }), maxHeight: "70vh", overflowY: "auto", background: C.cd, border: `1px solid ${C.rd}55`, borderRadius: 14, padding: 14, boxShadow: "0 14px 40px #000b" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 20 }}>🏥</span>
         <div style={{ flex: 1 }}>
           <div style={{fontSize: 13, fontWeight: 800, color: "#fca5a5" }}>Injury report</div>
           <div style={{ fontSize: 15, fontWeight: 800 }}>Week {rep.wk}{out.length ? ` · ${out.length} out` : ""}{hurt.length ? ` · ${hurt.length} banged up` : ""}{back.length ? ` · ${back.length} back` : ""}</div>

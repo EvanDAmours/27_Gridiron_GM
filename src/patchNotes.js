@@ -281,16 +281,16 @@ export const PATCH_NOTES = [
   { v: "1.73", date: "2026-10-09", title: "Hidden Gems in the Draft", notes: [
     "Every draft class now has 4-6 hidden gems: players far better than the board says, like Brock Purdy or Davante Adams. Each has a reason he slid (small school, undersized, an injury-shortened final season, raw, a bad pro day, or a quarterback with an average arm who processes like a vet), a real ceiling in the 80s or higher, and a Star-or-better development trait (or he's a late bloomer).",
     "The consensus board and almost every AI team see only what the public sees, so gems slide to the middle and late rounds, and now and then one goes undrafted. Analytics-minded front offices catch one now and then.",
-    "Your scouts can find them. Before a report, your scout only has the public read, but a good scout (especially a small-school specialist) sometimes has a hunch: look for 👀 on the Big Board. A scouting report shows his real ceiling and flags him as a sleeper.",
+    "Your scouts can find them. Before a report, your scout only has the public read, but a good scout (especially a small-school specialist) sometimes has a hunch: look for on the Big Board. A scouting report shows his real ceiling and flags him as a sleeper.",
     "The draft board is a little less certain overall, so the occasional first-round talent slides and the occasional first-rounder busts, like the real thing.",
-    "The Draft Recap marks every gem (💎 Hidden gem), so you can see who found them and who missed.",
+    "The Draft Recap marks every gem (Hidden gem), so you can see who found them and who missed.",
     "Classes already made in your franchise get their gems at the Combine.",
   ] },
   { v: "1.74", date: "2026-10-09", title: "League-Ready Rookies and Scouting Crews", notes: [
     "Draft prospects in the early rounds now come in close to league ready, like real NFL rookies: first-rounders average about 77 OVR (top-10 picks around 81), second-rounders about 71, third-rounders about 68. A second-round tight end can step in and take real snaps. Late-rounders are still low-ceiling depth.",
     "Ceilings didn't change: a prospect's potential is the same as before, he just starts closer to it (younger and higher-ceiling prospects are rawer, some are more polished).",
     "Your current franchise's upcoming draft classes are updated too: unscouted prospects get the new, higher starting ratings (nobody goes down).",
-    "Scouting crews: stack several good scouts on one position group and they see through the board. They flag that group's hidden gems as 💎 sleepers and spot Superstar and Generational development traits before you spend a point. With four good DB scouts, about 9 in 10 DB sleepers get flagged and almost every special DB trait is spotted early. A single scout still only gets the occasional 👀 hunch.",
+    "Scouting crews: stack several good scouts on one position group and they see through the board. They flag that group's hidden gems as sleepers and spot Superstar and Generational development traits before you spend a point. With four good DB scouts, about 9 in 10 DB sleepers get flagged and almost every special DB trait is spotted early. A single scout still only gets the occasional hunch.",
     "The 'Pro-ready' label now means it: a prospect who can play now, not a low-ceiling late-rounder. Low-rated, low-ceiling prospects are labeled 'Developmental depth'.",
     "AI teams no longer cut their fresh draft picks first on cut-down day: a young player's upside counts when they decide who to keep.",
   ] },
@@ -300,7 +300,7 @@ export const PATCH_NOTES = [
   ] },
   { v: "1.76", date: "2026-10-10", title: "Regional Scouting", notes: [
     "New Regions view on the Scouting page: send area scouts through a conference (SEC, Big Ten, ACC, Big 12, Pac-12 & Mountain West, and the AAC / Sun Belt / MAC / C-USA) and you get a rough read on every prospect from there, not just the positions you need.",
-    "Area scouting has its own budget: 2 area points to start the season plus 1 every week, and a trip costs 2. Each trip back to a region sharpens every read there (up to 4 trips). From the third trip on, your area scouts start seeing through the board to that region's hidden gems (look for 👀 and 💎 on the Big Board), and each region's card counts the sleepers flagged there.",
+    "Area scouting has its own budget: 2 area points to start the season plus 1 every week, and a trip costs 2. Each trip back to a region sharpens every read there (up to 4 trips). From the third trip on, your area scouts start seeing through the board to that region's hidden gems (look for and on the Big Board), and each region's card counts the sleepers flagged there.",
     "Depth or volume: individual scouting reports, full workups and development traits are still your position scouts' job, with your regular scouting points. A prospect's read uses whichever of your scouts knows him best.",
     "Draft classes now come from where real prospects do: the SEC and Big Ten produce the most, then the ACC and Big 12, with fewer from smaller conferences and FCS schools (which are too spread out for area trips). The Big Board shows each prospect's conference.",
   ] },
@@ -315,7 +315,7 @@ export const PATCH_NOTES = [
     "AI teams still mostly draft off the consensus, so the gap between the two boards is where you find value.",
   ] },
   { v: "1.79", date: "2026-10-10", title: "Turn Off Getting Fired", notes: [
-    "New option on the main menu, under New Game: '👔 Owner can fire you: ON/OFF'. Turn it off before you start a franchise and the owner still judges your seasons (owner patience still moves, and he'll let you know when he's unhappy), but he never issues an ultimatum or fires you.",
+    "New option on the main menu, under New Game: 'Owner can fire you: ON/OFF'. Turn it off before you start a franchise and the owner still judges your seasons (owner patience still moves, and he'll let you know when he's unhappy), but he never issues an ultimatum or fires you.",
     "The setting is saved with your franchise. Older franchises keep firing on.",
     "Casual difficulty now really means no firing, as its description always said.",
   ] },
@@ -326,7 +326,7 @@ export const PATCH_NOTES = [
   ] },
   { v: "1.81", date: "2026-10-10", title: "Better Area Scouting Reads and Board Filters", notes: [
     "After your fourth trip to a region (4/4), your area scouts put a number on every prospect from there: you see an estimated current OVR (~xx), not just his ceiling. Your scouts' board uses it too.",
-    "New Big Board filters (Show menu), across every position at once: 💎 Sleepers & hunches (everyone your scouts have flagged), ⭐ Special dev traits spotted (Star, Superstar or Generational traits your scouts have seen), and 🗺️ From regions I've scouted. Combine them with the Your scouts board to see your scouts' favorite targets in order.",
+    "New Big Board filters (Show menu), across every position at once: Sleepers & hunches (everyone your scouts have flagged), Special dev traits spotted (Star, Superstar or Generational traits your scouts have seen), and From regions I've scouted. Combine them with the Your scouts board to see your scouts' favorite targets in order.",
   ] },
   { v: "1.82", date: "2026-10-10", title: "Dev Traits on the Depth Chart", notes: [
     "The Depth Chart's List view now shows every player's development trait (Normal, Late bloomer, Star, Superstar, Generational) next to his rating, so you can see who's worth giving snaps to grow.",
@@ -353,8 +353,8 @@ export const PATCH_NOTES = [
   ] },
   { v: "1.86", date: "2026-10-10", title: "Red Flags", notes: [
     "Every draft class now has 3-5 red-flag prospects: players whose tape, numbers and Combine look great (the consensus board usually has them in the first three rounds) but whose real ceiling is 8-15 points lower than it looks. Each has a reason: character concerns, a medical red flag, a one-year wonder, a system product, or a workout warrior.",
-    "Your scouts can catch them. A full report on a red-flag prospect always flags him; a deep crew at his position can flag him from a general look; 3-4 area trips to his region may turn it up; and a Combine interview exposes character concerns. Flagged players get a 🚩 chip on the board with the reason, and the board's Show filter has '🚩 Red flags (bust risks)'.",
-    "AI teams fall for them too (most go in rounds 1-3), so a flag from your scouts is a real edge. The Draft Recap marks them '🚩 Bust'.",
+    "Your scouts can catch them. A full report on a red-flag prospect always flags him; a deep crew at his position can flag him from a general look; 3-4 area trips to his region may turn it up; and a Combine interview exposes character concerns. Flagged players get a chip on the board with the reason, and the board's Show filter has 'Red flags (bust risks)'.",
+    "AI teams fall for them too (most go in rounds 1-3), so a flag from your scouts is a real edge. The Draft Recap marks them 'Bust'.",
     "Existing saves get red flags in their next draft class at the Combine.",
   ] },
   { v: "1.87", date: "2026-10-10", title: "Real Draft Classes, and No More Vanishing Stars", notes: [
@@ -374,7 +374,7 @@ export const PATCH_NOTES = [
     "Stars get a star's share: season leaders now land where the NFL's do (about 5,000 passing yards and 40 TDs, 1,700 rushing and receiving yards, 17 sacks), so a record can fall in a career year, but not every season.",
     "Bigger Field / List buttons on the depth chart.",
     "Fixed: in a real draft class, a generated prospect could end up with the same name as a real one.",
-    "Depth chart list: every defensive lineman shows whether he's an edge rusher or a tackle by trade and which spot he's playing (EDGE @LE, DT @DT1...). A starter playing out of position is outlined in red with a ⚠, since he's rated lower there.",
+    "Depth chart list: every defensive lineman shows whether he's an edge rusher or a tackle by trade and which spot he's playing (EDGE @LE, DT @DT1...). A starter playing out of position is outlined in red, since he's rated lower there.",
   ] },
   { v: "1.89", date: "2026-10-10", title: "Drama Around the League", notes: [
     "Top Stories now cover more than big stat lines. From the box scores: interception-riddled games (and the quarterback controversy that follows when the backup is close), kickers whose misses cost their team the game, ball-security problems, and blowouts that boil over on the sideline.",
@@ -692,8 +692,8 @@ export const PATCH_NOTES = [
   ] },
   { v: "2.36", date: "2026-10-12", title: "Draft Day on Your Phone", notes: [
     "The draft board on phones is one compact row per prospect (rank, ★, name, OVR, POT and a single button), so about three times as many fit on the screen. The button is Draft when you're on the clock and Scout otherwise; tap a row for the full profile.",
-    "Less above the board on phones: the scouting points badge and pick strip step aside once the draft is running (the clock bar shows your next pick), the board's explanation is gone, the filters share one row and search sits behind 🔍.",
-    "When you're on the clock on a phone, draft-day trade offers fold into one '📞 3 trade offers' button; tap it to see them.",
+    "Less above the board on phones: the scouting points badge and pick strip step aside once the draft is running (the clock bar shows your next pick), the board's explanation is gone, the filters share one row and search sits behind the magnifier.",
+    "When you're on the clock on a phone, draft-day trade offers fold into one '3 trade offers' button; tap it to see them.",
     "Fix: continuing a save made in the middle of the draft now picks up at the right pick (paused, press Resume). Before, the draft could get stuck with no way to go on.",
   ] },
   { v: "2.37", date: "2026-10-12", title: "Smarter 4th Downs", notes: [
@@ -758,7 +758,7 @@ export const PATCH_NOTES = [
     "Finishing the Combine, Re-sign Week or Free Agency now lands you on Home, where the new phase's card takes you in. The draft clock waits until you open the Draft.",
     "Phones: the season recap card slides up from the bottom like every other sheet.",
     "Phones: messages drop in at the top of the screen (tap to dismiss) instead of covering the action bar and popups.",
-    "Phones: Free Agency's filters fit on one line (position, sort, needs, and search behind 🔍); Stats' team and category chips are single swipeable rows; the trade block header fits on one line.",
+    "Phones: Free Agency's filters fit on one line (position, sort, needs, and search behind the magnifier); Stats' team and category chips are single swipeable rows; the trade block header fits on one line.",
     "Coaching: each coordinator's Upgrade and Extend buttons sit in a row under him instead of stacked down the side.",
     "Power rankings and the coach-synergy bonus no longer disappear when you reload.",
     "Fixed: the injured reserve list could crash when showing how many weeks until a player returns.",
@@ -864,9 +864,9 @@ export const PATCH_NOTES = [
   { v: "2.58", date: "2026-10-13", title: "Offline Play", notes: [
     "Play with no connection, like on a plane. Open the game once while you're online and it saves itself to your device (about 5 MB: all the code, rosters, history and logos); after that it starts and plays with no internet at all, on desktop and phone.",
     "Install it as an app for one-tap offline play: Chrome or Edge offer an Install button (or use the install icon in the address bar); on iPhone, Safari's Share → Add to Home Screen. The app now installs properly with its own icon (the install setup pointed at the wrong address before).",
-    "A new Offline Play panel (Saves screen, and \"✈️ Offline play\" on the main menu) shows whether the game is ready to play offline, saves it on demand along with your team's matchup artwork, and walks you through installing.",
+    "A new Offline Play panel (Saves screen, and \"Offline play\" on the main menu) shows whether the game is ready to play offline, saves it on demand along with your team's matchup artwork, and walks you through installing.",
     "Team logos now ship with the game instead of loading from ESPN, so they show offline (and load faster).",
-    "Offline, a small \"✈️ Offline\" tag sits in the top bar. The old floating offline banner, which covered buttons, is gone.",
+    "Offline, a small \"Offline\" tag sits in the top bar. The old floating offline banner, which covered buttons, is gone.",
     "Your saves were already stored on your device, so they work offline as before. Offline you only miss the online extras (the global leaderboard and sharing); other teams' matchup artwork shows once it has been seen online, with a team badge standing in until then.",
   ] },
   { v: "2.59", date: "2026-10-14", title: "Real Moves, Smarter Trades", notes: [
@@ -971,7 +971,7 @@ export const PATCH_NOTES = [
     "The game plan card grades the lineup you just set (it could be one change behind).",
   ] },
   { v: "2.76", date: "2026-10-14", title: "Cornerstone Seasons", notes: [
-    "Lead the NFL by a landslide (a running back far ahead in rushing yards, a corner with 11 picks when nobody else has 8) and a player becomes a cornerstone: +3 OVR on top of the usual off-season growth, a higher ceiling and a better development trait (up to age 29; a Superstar or better gets another point instead). They're marked 🌟 in the off-season log.",
+    "Lead the NFL by a landslide (a running back far ahead in rushing yards, a corner with 11 picks when nobody else has 8) and a player becomes a cornerstone: +3 OVR on top of the usual off-season growth, a higher ceiling and a better development trait (up to age 29; a Superstar or better gets another point instead). They're marked in the off-season log.",
     "Ratings no longer creep up over the years. Ordinary growth now leans against how far each position has drifted from the real 2026 league, so a long dynasty keeps about as many 80s and 90s as day one. Earned boosts (All-Pro, Pro Bowl, big seasons, league leads) aren't affected.",
     "Removed the random breakout and Grinder rating bumps: a young player's jump now comes from playing time, his development trait and what he does on the field.",
     "A player in his prime who has reached his ceiling holds steady instead of creeping past it, and past his prime a Pro Bowl or All-Pro year slows his decline but no longer turns back the clock.",
@@ -1007,7 +1007,7 @@ export const PATCH_NOTES = [
     "Player cards on desktop no longer leave big empty gaps: the ratings, pedigree, Combine, college, scouting report, season stats, OVR history and contract all flow into two balanced columns.",
   ] },
   { v: "2.83", date: "2026-10-14", title: "Quick Camp", notes: [
-    "Training camp has one-click buttons: ⚔️ Run all position battles (every open battle your points cover, 1 SP each) and 🎲 Auto-pick for training focus (up to five players at random, 2 SP each: young players short of their ceiling work on their overall, everyone else on a physical tool). You can still pick them one by one.",
+    "Training camp has one-click buttons: Run all position battles (every open battle your points cover, 1 SP each) and Auto-pick for training focus (up to five players at random, 2 SP each: young players short of their ceiling work on their overall, everyone else on a physical tool). You can still pick them one by one.",
   ] },
   { v: "2.84", date: "2026-10-14", title: "No More Early Exits", notes: [
     "Good players no longer retire early: nobody rated 75 or better hangs it up before his position's usual retirement age (an 89 edge rusher at 29 could, about 3% a year on a roster and 30% if he was a free agent at season's end). The early years are left to fading veterans.",
@@ -1059,7 +1059,7 @@ export const PATCH_NOTES = [
     "The retirement class: when the season ends, a top story lists everyone who hung it up. Tap it to see them all, best careers first, with your own players marked.",
     "Free agents nobody signs for two full seasons retire. No more 36-year-olds who last played five years ago clogging the market.",
     "Free agents' development traits show on their cards and in the free agency list.",
-    "Your GM legacy is one click away: the 🎓 Legacy button sits next to Save in the top bar (in the More menu on phones).",
+    "Your GM legacy is one click away: the Legacy button sits next to Save in the top bar (in the More menu on phones).",
     "Depth chart: the schemes and playbook sit right under the field instead of on their own tab (the field is a little smaller to make room).",
     "Trades: each team's cap space shows under its logo when you pick who to trade with.",
   ] },
@@ -1082,7 +1082,7 @@ export const PATCH_NOTES = [
     "The franchise strip at the top of Home (needs attention, record, cap space, roster health, owner and locker room) is about half as tall on a computer: each tile's number and its detail share one line.",
   ] },
   { v: "2.96", date: "2026-10-18", title: "One Top Bar", notes: [
-    "On a computer the two top bars are one: your logo, then the screens, then the actions. Sim Week sits next to Play Week, and Sim to Deadline and Sim All are in the ⏩ menu beside it. Search, Save, GM legacy and the Menu are icon buttons (hover for what each does). Saves and Game Updates live in the Menu. On narrower screens a few tab names shorten so everything fits.",
+    "On a computer the two top bars are one: your logo, then the screens, then the actions. Sim Week sits next to Play Week, and Sim to Deadline and Sim All are in the menu beside it. Search, Save, GM legacy and the Menu are icon buttons (hover for what each does). Saves and Game Updates live in the Menu. On narrower screens a few tab names shorten so everything fits.",
     "Depth chart: the running back lines up beside the quarterback (shotgun), so nobody's name is covered: not the center's, not the quarterback's.",
   ] },
   { v: "2.97", date: "2026-10-18", title: "Camp and Home Fit the Screen", notes: [
@@ -1100,7 +1100,7 @@ export const PATCH_NOTES = [
   { v: "2.99", date: "2026-10-18", title: "Display Size, Off-season News, Achievements", notes: [
     "Display size, in the ☰ menu: Laptop shrinks the whole game so more fits on a small screen, Desktop scales it up for a big monitor, and Auto picks for your window (the default). Your choice is remembered on that computer. On a tall screen Home fills the window and shows the full-size matchup art.",
     "Off-season news: Top Stories now cover the whole off-season. The biggest free-agent signings (with the deal and who they left), trades, the best player still on the market, your own players who walk, the No. 1 overall pick and your first pick, and head coaching hires once the preseason starts.",
-    "GM achievements: 15 milestones to chase over a career (first win, a 12-win season, worst to first, a ring, back-to-back, a dynasty, 100 wins, a draftee who makes All-Pro or the Hall of Fame, passing a top-10 GM of all time and more). You get a note when you earn one, and they're all on your GM legacy page (🎓).",
+    "GM achievements: 15 milestones to chase over a career (first win, a 12-win season, worst to first, a ring, back-to-back, a dynasty, 100 wins, a draftee who makes All-Pro or the Hall of Fame, passing a top-10 GM of all time and more). You get a note when you earn one, and they're all on your GM legacy page.",
     "The Super Bowl result is a final scoreboard (both teams, the score and the box score) instead of repeating the champion headline over the bracket.",
   ] },
   { v: "3.0", date: "2026-10-18", title: "The Big Moments", notes: [
@@ -1193,13 +1193,13 @@ export const PATCH_NOTES = [
     "Calmer pop-ups: players becoming loyal no longer throw a stack of cards over the screen; it's one line in your news. Injuries from a game show as one small card (tap it to close) instead of up to four.",
   ] },
   { v: "3.12", date: "2026-10-20", title: "Players of the Week", notes: [
-    "Players of the Week: after every regular-season week the league names the best offensive and defensive game in each conference, from the real box scores (a win counts a little extra). They lead the week's stories when one is yours, and every award goes on the player's card (📣 Player of the Week, with the weeks).",
+    "Players of the Week: after every regular-season week the league names the best offensive and defensive game in each conference, from the real box scores (a win counts a little extra). They lead the week's stories when one is yours, and every award goes on the player's card (Player of the Week, with the weeks).",
     "Every club starts the season under the cap. AI clubs could keep a star they couldn't afford and stay over all year (in a 2039 test league twelve were over, the Chiefs by $54M). Now an over-the-cap club restructures its biggest deals first, then releases its most overpaid veteran, never a franchise player. Cap casualties show up on the Transactions page.",
     "Young stars break through: a player 27 or under who hasn't reached his ceiling now climbs from 93 up much more readily. In a 20-season test the 95+ club still thinned to the high twenties, with only three of them 25 or younger.",
     "Desktop: in season the top bar uses short names a little sooner, so the last screen isn't hidden behind Play Week and Sim Week.",
   ] },
   { v: "3.13", date: "2026-10-20", title: "Races and Rivals", notes: [
-    "Award races: Stats has a new 🏆 Award races view with the top five for MVP, Offensive and Defensive Player and both Rookie of the Year awards, updated every week by the same scoring the awards use. Your players are highlighted; tap one for his card.",
+    "Award races: Stats has a new Award races view with the top five for MVP, Offensive and Defensive Player and both Rookie of the Year awards, updated every week by the same scoring the awards use. Your players are highlighted; tap one for his card.",
     "Two new awards at season's end: Comeback Player of the Year (a big season after missing most of the last one) and Coach of the Year (the most wins, with a turnaround counting extra). A Coach of the Year shows it on his card on the Coaching page.",
     "Head to head: the weekly matchup preview now tells you your record against this week's opponent while you've been GM, and how the last meeting went.",
     "Wording: \"suspended 1 game\" (not \"1 games\"), \"1 year\" in contract offers, and an open coaching staff reads \"Your staff needs 3 coaches: OC, DC, ST\" instead of a string of \"or\"s.",
@@ -1287,7 +1287,7 @@ export const PATCH_NOTES = [
     "Each edition picks its headline, deck and byline from a bank, so no two seasons read alike. New editions show up in your inbox.",
   ] },
   { v: "3.29", date: "2026-10-20", title: "Gazette Archive", notes: [
-    "Gazette archive: the Legacy Hall has a new 📰 Gazette wing. Every front page from your seasons is kept there, newest season first: championship editions, the morning paper after each playoff game, Deadline Day, the Draft Extra and the Hall of Fame page. Tap any one to read it again.",
+    "Gazette archive: the Legacy Hall has a new Gazette wing. Every front page from your seasons is kept there, newest season first: championship editions, the morning paper after each playoff game, Deadline Day, the Draft Extra and the Hall of Fame page. Tap any one to read it again.",
     "Championship front pages are saved with the records as they were that night, so an old title paper still reads right years later. The archive always keeps every championship paper; once it gets long, the oldest other papers drop off.",
   ] },
   { v: "3.30", date: "2026-10-20", title: "Rival Papers", notes: [
@@ -1310,7 +1310,7 @@ export const PATCH_NOTES = [
     "Fixed: with roles, the next man up could land at any linebacker, corner or receiver spot, so a backup was sometimes left off the list. The options now show everyone who isn't already starting.",
   ] },
   { v: "3.34", date: "2026-10-20", title: "Week Prep", notes: [
-    "Week Prep: everything for this week's game on one screen. Open it with 📋 Week prep on the Home game-plan card. On the left are the scouting report on your opponent and your game plan. On the right are a Ready Check, your situational packages, and Play and Sim buttons.",
+    "Week Prep: everything for this week's game on one screen. Open it with Week prep on the Home game-plan card. On the left are the scouting report on your opponent and your game plan. On the right are a Ready Check, your situational packages, and Play and Sim buttons.",
     "The Ready Check flags what's worth a look before kickoff, with a one-tap fix where there is one: a starter who's hurt and still needs a replacement (Choose), an identity or defensive lean that rates worse against this opponent than another (Use it), and a set your OC or DC doesn't believe in. When everything checks out, it says ✓ Ready.",
     "Built to fit without scrolling on a laptop; on a phone it stacks into one column.",
   ] },
@@ -1462,7 +1462,7 @@ export const PATCH_NOTES = [
     "A retired free agent's card now names the club he last played for, instead of '(FA)'. A player who never signed anywhere says he retired as an unsigned free agent.",
   ] },
   { v: "3.68", date: "2026-10-20", title: "Broadcast View", notes: [
-    "A real TV view for live games. The old BCAST button only restyled the play-by-play; now 📺 TV view puts the field full width with each play captioned under it, broadcast style: the team's logo, the quarter and clock, the personnel matchup, and touchdowns and turnovers called out. Switch back to 📊 Full desk for the play-by-play and box score beside the field. The game remembers which one you like.",
+    "A real TV view for live games. The old BCAST button only restyled the play-by-play; now TV view puts the field full width with each play captioned under it, broadcast style: the team's logo, the quarter and clock, the personnel matchup, and touchdowns and turnovers called out. Switch back to Full desk for the play-by-play and box score beside the field. The game remembers which one you like.",
     "Cleaner situation line: one line reads like a broadcast ('NYG ball · 3rd & 4 on the DAL 27', or '& Goal' inside the 10), with the offense's momentum (Hot, Even, Cold) beside it. It replaces the old 'Ball at 73 yd line' text and the unlabeled DEF/OFF bar.",
     "The live game buttons say what they do: Call plays On/Off, TV view or Full desk, Pause/Resume and Finish.",
     "Fixes: the Live Game tab no longer shows up twice in the top bar, and in a narrow browser window the live game stacks (field, then play-by-play, then charts) instead of squeezing the field to a sliver.",
@@ -1685,13 +1685,13 @@ export const PATCH_NOTES = [
     "Live plays: the plays that matter now play out on the field in the live game. The camera pushes in, the ball is snapped, and you watch the routes, the throw or the handoff, the chase and the tackle, then the result pops up over the field (\"SACK! Brian Burns sacks Patrick Mahomes for an 8-yard loss\"). When it's one of your guys, the card says so, along with things like his 2nd sack of the game.",
     "Key plays get a KEY PLAY banner before the snap: 3rd downs past midfield or in the 4th quarter, 4th downs, goal to go, a close game's last two minutes, and overtime. The banner is decided before the play happens, so it never gives the result away: you'll see stops and incompletions too.",
     "Big plays anywhere else (sacks, interceptions, touchdowns, long runs and catches) play out without a banner, and so does the odd ordinary snap, so the field starting to move doesn't spoil anything. The scoreboard, the play-by-play and the charts wait until the play's over.",
-    "🎬 Live plays button next to the speed control: Key plays (the default), Every play, or Off. Tap the field to skip a play in progress.",
+    "Live plays button next to the speed control: Key plays (the default), Every play, or Off. Tap the field to skip a play in progress.",
   ] },
   { v: "4.27", date: "2026-10-20", title: "Your play calls count", notes: [
     "Calling plays: when you pick a receiver, the ball goes to him. The receivers you choose from are the ones actually on the field, each shown against the defender covering him, and a receiver who beats his man is open more often.",
     "Open or covered now matters: hitting the open man completes about 70% of the time; forcing it into coverage drops to about 40% and gets picked off more than twice as often.",
     "Runs and screens are up to your players, not your timing: the bar runs on its own and stops where your back and offensive line put it. Better players hit the hole more often. An inside run you call now stays inside.",
-    "Live games: ⏩ Sim to end of the quarter, next to Finish. Skip ahead and watch only the 4th quarter if you like; every play still goes in the play-by-play and the box score.",
+    "Live games: Sim to end of the quarter, next to Finish. Skip ahead and watch only the 4th quarter if you like; every play still goes in the play-by-play and the box score.",
   ] },
   { v: "4.28", date: "2026-10-20", title: "Cleaner game screen", notes: [
     "Live game screen tidied up: Pause/Resume, Sim to end of the quarter and Finish game are now big buttons right under the field.",
@@ -1703,8 +1703,8 @@ export const PATCH_NOTES = [
   { v: "4.29", date: "2026-10-20", title: "One game view", notes: [
     "Live game screen: one cleaner view. The big field, the play caption under it as the focal point (the old TV look), and the controls under that. The Desk/TV switch is gone.",
     "Recent plays: the last five plays show while the game runs. Pause it (or finish) and the whole play-by-play opens up to scroll back through.",
-    "📋 Box score is now a button that pops up both teams' stats, instead of a crowded panel. The defense shows tackles, sacks, pressures, pass breakups and interceptions, with every defender who made a play (safeties included) and their position (EDGE, DT, LB, CB, S).",
-    "⚙ Settings (play calling, live plays, speed) open under the controls when you want them, each with a line explaining what it does.",
+    "Box score is now a button that pops up both teams' stats, instead of a crowded panel. The defense shows tackles, sacks, pressures, pass breakups and interceptions, with every defender who made a play (safeties included) and their position (EDGE, DT, LB, CB, S).",
+    "Settings (play calling, live plays, speed) open under the controls when you want them, each with a line explaining what it does.",
   ] },
   { v: "4.30", date: "2026-10-20", title: "Game screen fixes", notes: [
     "Live game screen, take two: back to the field-with-the-desk layout (the field fits a laptop again), keeping the best of the TV view: the play caption under the field and the big Resume / Sim / Finish / Box score buttons under it.",
@@ -1814,7 +1814,7 @@ export const PATCH_NOTES = [
     "League scoring and team totals are unchanged (about 22-23 points a team per game)",
   ] },
   { v: "4.55", date: "2026-10-20", title: "Field view or action cam", notes: [
-    "Live games: pick your camera. Field view keeps the whole field in frame while a play plays out, like the All-22; Action cam pushes in on the ball and follows it (as before). On a computer it's under Camera in the live settings; on a phone, tap the 🎥 button. Your choice is remembered",
+    "Live games: pick your camera. Field view keeps the whole field in frame while a play plays out, like the All-22; Action cam pushes in on the ball and follows it (as before). On a computer it's under Camera in the live settings; on a phone, tap the button. Your choice is remembered",
   ] },
   { v: "4.56", date: "2026-10-23", title: "Scouting by region, two check-ins a season", notes: [
     "Scouting overhaul: your scouts now work regions, not position groups. Before the season (in free agency or the preseason) send each major scout to two regions and each minor scout to one: six assignments for the SEC, Big Ten, ACC, Big 12, Pac-12 & Mountain West and the Group of Five. Spread them over all six or double up for a second opinion. Area trips and area points are gone",
@@ -1824,7 +1824,7 @@ export const PATCH_NOTES = [
     "Live games: the field is a touch smaller, and the Record Watch and Milestone Watch rows stay on one line, so Pause, Sim to end of quarter and Finish game stay on screen without scrolling",
   ] },
   { v: "4.57", date: "2026-10-23", title: "Scout specialties and regional strengths", notes: [
-    "Scouts have a specialty again (🎯 on their card): each one reads his own position group a little better than his rating and every other group a lot worse. A great QB scout won't find you a cornerback, so hire for the positions you need. The scouts-available list has a filter by specialty (✓ marks groups you already cover)",
+    "Scouts have a specialty again (on their card): each one reads his own position group a little better than his rating and every other group a lot worse. A great QB scout won't find you a cornerback, so hire for the positions you need. The scouts-available list has a filter by specialty (✓ marks groups you already cover)",
     "Every draft class leans: each conference is deep at one position group and thin at another, and it changes every year. Scouting HQ has a new Where the Talent Is card, the Regions tab shows each conference's ▲ strength and ▼ weakness with counts from the board's top 160, and the region pickers on the Scouts tab list them too. Send your specialists where their position is deep",
     "The prospect card says when none of the scouts working his region specializes in his position",
   ] },
@@ -1854,7 +1854,7 @@ export const PATCH_NOTES = [
   { v: "4.63", date: "2026-10-23", title: "Calm finish, drive tracker, scout report card", notes: [
     "One type and spacing system across the game: every screen now uses the same handful of text sizes and spacing steps, so pages line up and read the same",
     "Calm style finished: Season Awards, the big moment cards (clinches, trades, Ring of Honor and jersey nights, ring night, legends), League History plaques, transactions, the walkthrough and the offline panel now match Home: team-color washes, soft cards, sentence-case titles, one clear button",
-    "Live games: a broadcast drive tracker replaces the settings panel on a computer. Drives are listed newest first with plays, yards, time and how they ended (touchdown, punt, turnover...); the drive on the field shows its plays and the rest open on a tap. The current drive also shows next to down and distance. Settings moved behind a ⚙ button",
+    "Live games: a broadcast drive tracker replaces the settings panel on a computer. Drives are listed newest first with plays, yards, time and how they ended (touchdown, punt, turnover...); the drive on the field shows its plays and the rest open on a tap. The current drive also shows next to down and distance. Settings moved behind a button",
     "Phones: the live game shows the same drive tracker under the last play",
     "Scout report card: on draft day each scout is graded A+ to D on that class: how close his reads were, and the sleepers, red flags and special development traits he caught. It shows on the Scouts tab with his grades from earlier years, so you can tell who is worth keeping",
   ] },
@@ -1968,5 +1968,12 @@ export const PATCH_NOTES = [
     "One tag per pick (the trait he really has, or Value, Miss, Bust, Hidden gem) instead of a trait and a verdict saying the same thing.",
     "Best of the class and the league's class grades sit beside your class; click a team's grade to see its picks.",
     "Every pick is its own view, split by round with your picks lit in gold, and the whole screen fits without scrolling.",
+  ] },
+  { v: "4.85", date: "2026-10-23", title: "No emoji anywhere", notes: [
+    "No more emoji anywhere in the game: messages, the news feed, menus, achievements, awards, weather and holiday tags, game plans, personnel identities, coach traits and the roster badges all read in plain words now.",
+    "Roster badges are short tags (DEV, CY, EXT, TR, SUSP) with a key above the table; champion seasons read CHAMPIONS or N rings instead of trophy icons.",
+    "Thanksgiving leaves and Halloween pumpkins on the field and in the stadium backdrop are drawn shapes instead of emoji.",
+    "The transactions wire reads each move by its words, so it keeps working with the new messages and old saves alike.",
+    "The quick-sim menu next to Sim Week is labelled \"More sims\" instead of an icon.",
   ] },
 ];

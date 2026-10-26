@@ -407,13 +407,13 @@ export function fillDepth(teams, pool, { ui, minSal = leagueMin(), cy } = {}) {
           const spare = [...t.roster].sort((a, b) => keepScore(a) - keepScore(b)).find((q) => q.pos !== pos && t.roster.filter((x) => x.pos === q.pos).length > (DEPTH_MIN[q.pos] || 1));
           if (!spare) break;
           release(t, spare, pool, i);
-          note(`✂️ ${spare.name} (${spare.pos} ${spare.ovr}) released to make room for a backup ${pos}.`);
+          note(`${spare.name} (${spare.pos} ${spare.ovr}) released to make room for a backup ${pos}.`);
         }
         let k = bestAt(t.ps, pos);
-        if (k >= 0) { const [p] = t.ps.splice(k, 1); t.roster.push(minDeal(p, minSal, cy)); note(`⬆️ ${p.name} (${pos} ${p.ovr}) promoted from the practice squad for depth.`); continue; }
+        if (k >= 0) { const [p] = t.ps.splice(k, 1); t.roster.push(minDeal(p, minSal, cy)); note(`${p.name} (${pos} ${p.ovr}) promoted from the practice squad for depth.`); continue; }
         k = bestAt(pool, pos);
         if (k < 0) break;
-        const [p] = pool.splice(k, 1); t.roster.push(minDeal(p, minSal, cy)); note(`✍️ ${p.name} (${pos} ${p.ovr}) signed to a minimum deal for depth.`);
+        const [p] = pool.splice(k, 1); t.roster.push(minDeal(p, minSal, cy)); note(`${p.name} (${pos} ${p.ovr}) signed to a minimum deal for depth.`);
       }
     }
     // 2. The rest of the 53 on minimum deals: the best players left, favouring thin positions.
@@ -421,7 +421,7 @@ export function fillDepth(teams, pool, { ui, minSal = leagueMin(), cy } = {}) {
       const thin = (pos) => t.roster.filter((p) => p.pos === pos).length - (DEPTH_MIN[pos] || 1);
       const k = pool.reduce((b, p, j) => (fullAt(t, p.pos) ? b : b < 0 || p.ovr - thin(p.pos) * 3 > pool[b].ovr - thin(pool[b].pos) * 3 ? j : b), -1);
       if (k < 0) break;
-      const [p] = pool.splice(k, 1); t.roster.push(minDeal(p, minSal, cy)); note(`✍️ ${p.name} (${p.pos} ${p.ovr}) signed to a minimum deal to fill the 53.`);
+      const [p] = pool.splice(k, 1); t.roster.push(minDeal(p, minSal, cy)); note(`${p.name} (${p.pos} ${p.ovr}) signed to a minimum deal to fill the 53.`);
     }
   });
   // 3. Practice squads: clubs take turns on the free agents still out there.
@@ -431,7 +431,7 @@ export function fillDepth(teams, pool, { ui, minSal = leagueMin(), cy } = {}) {
       if ((t.ps || []).length >= PS_SIZE || !pool.length) return;
       const [p] = pool.splice(0, 1);
       t.ps.push(psDeal(p, cy));
-      if (i === ui) mine.push(`📋 ${p.name} (${p.pos} ${p.ovr}) added to the practice squad.`);
+      if (i === ui) mine.push(`${p.name} (${p.pos} ${p.ovr}) added to the practice squad.`);
       more = true;
     });
   }
@@ -473,7 +473,7 @@ export function keepBackups(teams, fa, { ui, minSal = leagueMin() } = {}) {
       }
       t.ps.splice(t.ps.indexOf(cand), 1);
       t.roster.push(minDeal(cand, minSal));
-      let line = `⬆️ No healthy backup at ${pos}: ${cand.name} (${cand.ovr}) promoted from the practice squad${cut ? `; ${cut.name} (${cut.pos} ${cut.ovr}) released to make room` : ""}.`;
+      let line = `No healthy backup at ${pos}: ${cand.name} (${cand.ovr}) promoted from the practice squad${cut ? `; ${cut.name} (${cut.pos} ${cut.ovr}) released to make room` : ""}.`;
       // Refill the practice squad with a cheap fringe player at the position.
       const f = fa.reduce((b, p, j) => (p.pos === pos && p.ovr < 70 && (b < 0 || p.ovr > fa[b].ovr) ? j : b), -1);
       if (f >= 0 && t.ps.length < PS_SIZE) { const [p] = fa.splice(f, 1); t.ps.push(psDeal(p)); line += ` ${p.name} (${p.ovr}) signed to the practice squad.`; }
