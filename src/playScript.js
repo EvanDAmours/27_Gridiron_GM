@@ -20,11 +20,10 @@ const path = (...k) => (t) => {
   const l = k[k.length - 1];
   return [l[1], l[2]];
 };
-// from t0 on, leave f and head for a spot, getting there at t1
 // The tackle: the tackler closes, latches on to the ball carrier and rides him down; the carrier
 // is ridden down where he's stopped (the spot) and they hit the turf together (dir: the way the carrier is running).
 const wrap = (F, down, tk, cr, tEnd, dir) => {
-  const cf = F[cr], tf = F[tk], tc = tEnd - 0.2, tA = tc - 0.2;
+  const tf = F[tk], tc = tEnd - 0.2, tA = tc - 0.2;
   F[tk] = (t) => {
     if (t < tA) return tf(t);
     const [cx, cy] = F[cr](t), g = [cx + dir * 0.7, cy + 0.3];
@@ -34,6 +33,7 @@ const wrap = (F, down, tk, cr, tEnd, dir) => {
   };
   down[cr] = tEnd; down[tk] = tEnd + 0.03;
 };
+// from t0 on, leave f and head for a spot, getting there at t1
 const toward = (f, t0, [x, y], t1) => (t) => {
   if (t <= t0) return f(t);
   const [ax, ay] = f(t0), u = ease(clamp((t - t0) / Math.max(0.05, t1 - t0), 0, 1));
@@ -269,12 +269,35 @@ export function buildPlay(ev, slots, seed = 1) {
     const dir = carrier.side === "off" ? 1 : -1;
     // the linemen stay locked in the pile unless the play breaks well past the line
     const pile = Math.abs(end[0] - los) < 10;
-    for (const s of chasers) {
-      if (s === carrier || (pile && s !== tackler && is(s, "DL"))) continue;
-      const from = F[s.key](tE), lag = s === tackler ? (td ? 0.45 : 0) : 0.2 + R() * 1.1;
-      const spot = s === tackler ? [end[0] + dir * (td ? 2.5 : 0.8), end[1] + (R() - 0.5) * 0.8] : [end[0] + dir * (1.5 + R() * 3), end[1] + (R() - 0.5) * 6];
-      const t1 = s === tackler ? tEnd + lag : Math.max(tEnd + lag, tE + Math.hypot(spot[0] - from[0], spot[1] - from[1]) / SPEED);
-      F[s.key] = toward(F[s.key], tE, spot, t1);
+    // The pursuit, in tiers: the tackler (wrap, below); the next one or two closest arrive a beat
+    // later to finish it (one may dive in); everyone else keeps his own pursuit angle and pulls up
+    // short, further off the further he had to come, instead of piling onto the same spot.
+    const pace = (s) => (is(s, "DL", "LT", "LG", "C", "RG", "RT") ? 7.2 : is(s, "LB", "TE", "QB") ? 8.4 : 9.4);
+    const order = chasers.filter((s) => s !== carrier && s !== tackler && !(pile && is(s, "DL"))).sort((a, b) => reach(a) - reach(b));
+    let helpers = td ? 0 : Math.abs(end[0] - los) < 4 ? 2 : 1;
+    if (tackler) {
+      const spot = [end[0] + dir * (td ? 2.5 : 0.8), end[1] + (R() - 0.5) * 0.8];
+      F[tackler.key] = toward(F[tackler.key], tE, spot, tEnd + (td ? 0.45 : 0));
+    }
+    for (const s of order) {
+      const from = F[s.key](tE), dx = end[0] - from[0], dy = end[1] - from[1], d = Math.hypot(dx, dy) || 1;
+      const close = d / pace(s) <= (tEnd - tE) + 0.6;
+      if (helpers > 0 && close) {
+        helpers--;
+        // arrives from his own side of the pile, a yard or two off the ball
+        const a = Math.atan2(-dy, -dx) + (R() - 0.5) * 0.9, r = 1.1 + R() * 0.9;
+        const spot = [end[0] + Math.cos(a) * r, clamp(end[1] + Math.sin(a) * r, -LAT, LAT)];
+        const t1 = Math.max(tEnd + 0.12 + R() * 0.25, tE + Math.hypot(spot[0] - from[0], spot[1] - from[1]) / pace(s));
+        F[s.key] = toward(F[s.key], tE, spot, t1);
+        if (!td && helpers === 0 && R() < 0.5) down[s.key] = t1; // the second man dives in
+        continue;
+      }
+      // pull up on his angle: 4 yards off when he was close, up to 12 from across the field
+      const stop = clamp(3.5 + d * 0.22 + R() * 2, 4, 12);
+      if (d <= stop) { F[s.key] = toward(F[s.key], tE, [from[0] + dx * 0.15, from[1] + dy * 0.15], tEnd + 0.4); continue; }
+      const k = (d - stop) / d, spot = [from[0] + dx * k, clamp(from[1] + dy * k + (R() - 0.5) * 2, -LAT, LAT)];
+      const t1 = Math.max(tEnd + 0.3 + R() * 0.6, tE + (d - stop) / pace(s));
+      F[s.key] = toward(F[s.key], tE + R() * 0.15, spot, t1);
     }
     if (tackler) stars.push(tackler.key);
   }
@@ -358,7 +381,7 @@ function buildSpecial(ev, slots, R) {
     const px = punter.x, py = punter.y, tKick = 0.95;
     F[punter.key] = path([0, px, py], [0.5, px, py], [0.95, px + 1.2, py], [3, px + 1.4, py]);
     const ly = (R() - 0.5) * 14, sx = ev.tb ? 104 : Math.min(ev.spot ?? los + ev.gross, 108);
-    const flight = 1.4 + (ev.gross || 45) * 0.02, tLand = tKick + flight;
+    const flight = 3.3 + (ev.gross || 45) * 0.022, tLand = tKick + flight; // NFL hang time: about 4 to 4.5 seconds
     const catches = ev.returned || (!ev.tb && !ev.downed && (ev.spot ?? 0) < 88);
     // where it comes down: a punt left to bounce lands short and rolls to the exact spot it's downed
     const lx = catches || ev.muff ? sx : Math.min(ev.land ?? sx - 3, sx);
@@ -380,27 +403,46 @@ function buildSpecial(ev, slots, R) {
       if (ev.retTD) hop = { key: ret.key, at: tEnd };
     }
     F[ret.key] = carrierF;
-    // coverage: the gunners sprint at the catch from the snap; everyone else releases after the kick
+    // coverage: the gunners sprint at the catch from the snap; everyone else releases after the
+    // kick and runs his lane, the lanes fanning across the field and closing toward the returner
+    // into a net a few yards in front of him (not one column of bodies)
+    const lanes = [...cover].sort((a, b) => a.y - b.y);
     for (const s of cover) {
-      const gun = gunners.includes(s), t0 = gun ? 0.2 : tKick, dist = 3 + R() * (gun ? 2 : 12);
-      const spot = [sx - dist, clamp(ly + (R() - 0.5) * (gun ? 8 : 26), -LAT, LAT)];
+      const gun = gunners.includes(s), t0 = gun ? 0.2 : tKick, i = lanes.indexOf(s), laneY = lerp(-17, 17, lanes.length > 1 ? i / (lanes.length - 1) : 0.5);
+      const dist = gun ? 2.5 + R() * 2 : 7 + R() * 7;
+      const spot = [sx - dist, clamp(lerp(laneY, ly, gun ? 0.85 : 0.45) + (R() - 0.5) * 3, -LAT, LAT)];
       const arrive = Math.max(tLand + (gun ? 0.15 : 0.5 + R() * 0.6), t0 + Math.hypot(spot[0] - s.x, spot[1] - s.y) / SPEED);
       const base = F[s.key] || path([0, s.x, s.y]);
       F[s.key] = toward(base, t0, spot, arrive);
     }
-    // the return team: the jammers run with the gunners, the rest peel back to wall it off
+    // the return team: the jammers run with the gunners; the rest peel back. On a return they set a
+    // wall down one side; on a fair catch they drift back and pull up.
+    const wallSide = ly > 0 ? -1 : 1, back = def.filter((s) => s !== ret && s.pos !== "CB");
+    back.forEach((s, i) => {
+      const from = F[s.key] || path([0, s.x, s.y]);
+      const spot = catches && ev.returned
+        ? [sx - 13 - (i % 2) * 3 - R() * 2, clamp(ly + wallSide * (5 + i * 2.6), -LAT, LAT)]
+        : [s.x + 8 + R() * 6, clamp(s.y * 0.85 + (R() - 0.5) * 4, -LAT, LAT)];
+      F[s.key] = toward(from, s.pos === "DL" ? tKick : 0.4, spot, tLand + 0.3 + R() * 0.6);
+    });
     for (const s of def) {
-      if (s === ret) continue;
-      if (s.pos === "CB") { const g = near(gunners, s.x, s.y); F[s.key] = (t) => { const [gx, gy] = F[g.key](t); const u = clamp(t / 0.4, 0, 1); return [lerp(s.x, gx + 1.6, u), lerp(s.y, gy + (gy < 0 ? 0.8 : -0.8), u)]; }; continue; }
-      const back = [sx - 10 - R() * 10, clamp(ly + (R() - 0.5) * 24, -LAT, LAT)], from = F[s.key] || path([0, s.x, s.y]);
-      F[s.key] = toward(from, s.pos === "DL" ? tKick : 0.4, back, tLand + 0.4 + R() * 0.5);
+      if (s.pos !== "CB" || s === ret) continue;
+      const g = near(gunners, s.x, s.y); F[s.key] = (t) => { const [gx, gy] = F[g.key](t); const u = clamp(t / 0.4, 0, 1); return [lerp(s.x, gx + 1.6, u), lerp(s.y, gy + (gy < 0 ? 0.8 : -0.8), u)]; };
     }
     if (carrier) {
       // the coverage runs him down (or a return touchdown leaves them behind)
       tackler = ev.retTD ? null : cover.reduce((b, s) => (!b || Math.hypot(F[s.key](tLand)[0] - endP[0], F[s.key](tLand)[1] - endP[1]) < Math.hypot(F[b.key](tLand)[0] - endP[0], F[b.key](tLand)[1] - endP[1]) ? s : b), null);
-      for (const s of cover) {
-        const lag = s === tackler ? 0 : 0.3 + R() * 1.1, spot = s === tackler ? [endP[0] - 0.8, endP[1]] : [endP[0] - 1.5 - R() * 3, endP[1] + (R() - 0.5) * 6];
-        F[s.key] = toward(F[s.key], tLand, spot, Math.max(tEnd + lag, tLand + Math.hypot(spot[0] - F[s.key](tLand)[0], spot[1] - F[s.key](tLand)[1]) / SPEED));
+      // the tackler meets him; one more arrives to finish it; the rest close on their angles and
+      // pull up short of the pile
+      let helper = 1;
+      const byDist = [...cover].sort((a, b) => Math.hypot(F[a.key](tLand)[0] - endP[0], F[a.key](tLand)[1] - endP[1]) - Math.hypot(F[b.key](tLand)[0] - endP[0], F[b.key](tLand)[1] - endP[1]));
+      for (const s of byDist) {
+        const [fx, fy] = F[s.key](tLand), dx = endP[0] - fx, dy = endP[1] - fy, d = Math.hypot(dx, dy) || 1;
+        let spot, lag;
+        if (s === tackler) { spot = [endP[0] - 0.8, endP[1]]; lag = 0; }
+        else if (helper-- > 0) { const a = Math.atan2(-dy, -dx) + (R() - 0.5) * 0.8; spot = [endP[0] + Math.cos(a) * 1.6, clamp(endP[1] + Math.sin(a) * 1.6, -LAT, LAT)]; lag = 0.15 + R() * 0.25; }
+        else { const stop = clamp(3.5 + d * 0.2 + R() * 2, 4, 11), k = Math.max(0, (d - stop) / d); spot = [fx + dx * k, clamp(fy + dy * k, -LAT, LAT)]; lag = 0.3 + R() * 0.8; }
+        F[s.key] = toward(F[s.key], tLand, spot, Math.max(tEnd + lag, tLand + Math.hypot(spot[0] - fx, spot[1] - fy) / SPEED));
       }
       if (tackler) { wrap(F, down, tackler.key, carrier.key, tEnd, -1); stars.push(tackler.key); }
     }
@@ -471,7 +513,10 @@ function buildKickoff(ev, slots, R) {
   const mate = pairLine(cover, blockers);
   const pairs = {}, meetAt = {};
   for (const c of cover) {
-    const cp = [meetX + (R() - 0.5) * 4, clamp(lerp(c.y, cy, 0.35), -LAT, LAT)], tC = tLand - 0.1 + R() * 0.5;
+    // the blocks meet at staggered depths (the ones near the returner's lane deeper, the edges
+    // earlier), not in one flat wall across the field
+    const lane = Math.abs(c.y - cy), depth = meetX + (R() - 0.5) * 8 + Math.max(0, 10 - lane) * 0.6;
+    const cp = [depth, clamp(lerp(c.y, cy, 0.3) + (R() - 0.5) * 3, -LAT, LAT)], tC = tLand - 0.1 + R() * 0.5 + (depth - meetX) * 0.03;
     F[c.key] = path([0, c.x, c.y], [0.45, c.x, c.y], [tC, cp[0], cp[1]], [tC + 2, cp[0] + 1, cp[1]]);
     meetAt[c.key] = tC;
   }
@@ -491,10 +536,15 @@ function buildKickoff(ev, slots, R) {
   if (carrier && !td) {
     tackler = near(free.length ? free : cover, end[0], end[1]) || kicker;
     delete pairs[tackler.key];
-    F[tackler.key] = toward(F[tackler.key], Math.min(tLand, tEnd - 0.4), [end[0] + 0.8, end[1]], tEnd);
-    wrap(F, down, tackler.key, carrier.key, tEnd, 1); stars.push(tackler.key);
+    F[tackler.key] = toward(F[tackler.key], Math.min(tLand, tEnd - 0.4), [end[0] - 0.8, end[1]], tEnd);
+    wrap(F, down, tackler.key, carrier.key, tEnd, -1); stars.push(tackler.key);
   }
-  for (const c of free) if (c !== tackler) { delete pairs[c.key]; F[c.key] = toward(F[c.key], tLand, [end[0] + 2 + R() * 3, end[1] + (R() - 0.5) * 6], tEnd + 0.3 + R() * 0.6); }
+  // the rest of the free coverage closes on its own angle and pulls up around the tackle
+  for (const c of free) if (c !== tackler) {
+    delete pairs[c.key];
+    const [fx, fy] = F[c.key](tLand), dx = end[0] - fx, dy = end[1] - fy, d = Math.hypot(dx, dy) || 1, stop = clamp(3 + d * 0.2 + R() * 2, 3.5, 10), k = Math.max(0, (d - stop) / d);
+    F[c.key] = toward(F[c.key], tLand, [fx + dx * k, clamp(fy + dy * k, -LAT, LAT)], tEnd + 0.3 + R() * 0.6);
+  }
   // a muff: it bounces loose and the coverage falls on it
   let recov = null;
   if (muff) { recov = near(cover, cx, cy); delete pairs[recov.key]; F[recov.key] = toward(F[recov.key], tLand - 0.6, end, tLand + 0.6); down[recov.key] = tLand + 0.6; }

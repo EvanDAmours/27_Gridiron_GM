@@ -1916,4 +1916,10 @@ export const PATCH_NOTES = [
   { v: "4.75", date: "2026-10-23", title: "Score bug spacing", notes: [
     "Score bug: the scores sit further in from the slanted edges, so two-digit scores are never clipped, and possession is a small gold dot instead of a football emoji",
   ] },
+  { v: "4.76", date: "2026-10-23", title: "Realistic pursuit and tackling", notes: [
+    "Realistic pursuit and tackling: the man who makes the tackle wraps up the ball carrier and they go down together; one or two teammates arrive a beat later to finish it (one sometimes diving in); everyone else keeps his own pursuit angle and pulls up a few yards off, instead of eight defenders piling onto one spot",
+    "Pursuit speed by position: linemen are slower than linebackers, linebackers slower than defensive backs",
+    "Punts hang like NFL punts (about 4 to 4.5 seconds), so the gunners get downfield; the coverage fans out in lanes across the field and closes into a net, and the return team peels back to set a wall (or drifts back on a fair catch)",
+    "Kick returns: the blocks meet at staggered depths instead of one flat wall, and the tackle comes from the right side, so the tackler and the returner go down together",
+  ] },
 ];
