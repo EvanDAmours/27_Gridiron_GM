@@ -1,4 +1,4 @@
-# Handoff: the mobile redo, the desktop redo and the trade market
+# Handoff: the mobile redo, the desktop redo, the trade market and the game systems
 
 This is the complete record of the redo session that followed `docs/HANDOFF_MOBILE.md` and
 `docs/MOBILE_REDO_PLAN.md`. It covers every change, where in the code it lives, how it was
@@ -6,8 +6,10 @@ checked, what's left and how the owner likes to work. Read it top to bottom befo
 or the trade code.
 
 Branches: work on `claude/kind-hypatia-n43n55`; **`claude/scouting-overhaul` is the live branch**
-(see Deploying). The session's commits run from `41f46d4` (Mobile redo: Home) to the latest
-"Trade market recalibrated..." commit; `git log --oneline b42d13f..HEAD` lists them all.
+(see §10 Deploying). The session's commits run from `41f46d4` (Mobile redo: Home) through the
+UI redo, the trade market (`157b235`), the whole-game style sweep, safeties, contracts and head
+coach retirement (latest: `75aaeae`); `git log --oneline b42d13f..HEAD` lists them all. Last
+updated 2026-10-26.
 
 ---
 
@@ -27,12 +29,21 @@ Branches: work on `claude/kind-hypatia-n43n55`; **`claude/scouting-overhaul` is 
 - Pushes go live after every verified round (see Deploying). Report plainly what was checked.
 - Mobile and desktop are separate designs: phone changes go behind `MOBILE`; desktop changes
   must be checked on desktop. Both share game logic.
+- **Wants realism.** Ratings, contracts and careers should follow real football: safeties rated
+  on what a free or strong safety actually does, contracts on the real market, real coaches on
+  believable timelines (John Harbaugh "isn't gonna retire 2 years after starting in NY"). Check
+  numbers against real data and say what they were calibrated to.
+- Changes their mind mid-request sometimes (League as its own section, then into Front Office);
+  take the latest word and confirm the file state before re-applying an edit.
+- Gives praise and asks for polish ("rework it in a classier way, I trust you"): open-ended design
+  asks mean a real redesign with the existing assets, shown in screenshots, not a tweak.
 
 ## 2. Where things are (orientation)
 
 - `src/App.jsx` — the whole shell (state, top bar, nav, tabs, every screen's mount). Huge, minified
   style JSX; edit with exact-string replacements. Key landmarks (search for these):
   - `const DESK=[` — the six desktop sections and the screens under each (§4.1).
+  - `inboxItems` / `it.push({key:` — Home to-dos and inbox items.
   - `data-tour="phases"` — the team/record button that opens the season dropdown.
   - `SectionHero` — the desktop section header mount (§4.3).
   - `it.push({key:` — every to-do / inbox item and where it sends you (§6).
@@ -47,7 +58,11 @@ Branches: work on `claude/kind-hypatia-n43n55`; **`claude/scouting-overhaul` is 
   weeks), `SectionHero` (header for every desktop section).
 - `src/HomeScreen.jsx` — Home for both: `PhoneHome` (phone) and the desktop branch that builds
   props for `DeskHome`. The old desktop board layout was **deleted**.
-- `src/trade.js` — trade values and AI acceptance (§7).
+- `src/trade.js` — trade values and AI acceptance (§8).
+- Game systems touched later (§7): `roles.js` (positional roles incl. FS/SS), `offseason.js`
+  (asking prices, AI re-signs and free agency), `contracts.js` (tag, fifth-year option),
+  `negotiation.js` + `Negotiate.jsx` (the table), `cap.js` (cap, rookie scale), `carousel.js`
+  (coaches' ages, retirement, firings and hires), `Atmosphere.jsx` (holiday games).
 
 ## 3. Mobile (everything behind `MOBILE`)
 
@@ -97,14 +112,16 @@ Phone-only behaviours worth knowing:
   dropdown with the whole season (18 week boxes W/L/BYE, next ringed, the off-season stages,
   links to Schedule/Standings). The old two-row phase strip under the bar is gone.
 - Middle: six sections from `DESK` in App.jsx: **Home · Team (Depth Chart, Roster, Coaching) ·
-  Season (Schedule, Standings, Playoffs, Stats, League, Legacy) · Draft (Scouting, Draft, Draft
-  Recap) · Trades & FA (Trade, Free Agency) · Front Office**. `deskOf(tab)` finds a tab's section;
+  Season (Schedule, Standings, Playoffs, Stats) · Draft (Scouting, Draft, Draft Recap) · Trades &
+  FA (Trade, Free Agency) · Front Office (Front Office, League, Franchise History, Record Book,
+  League History, Transactions, Legacy Hall)**. `deskOf(tab)` finds a tab's section;
   `deskEntry(d)` picks where a section opens (Draft opens the draft room during the draft;
   Trades & FA opens Free Agency during re-sign/FA).
-- Right: phase buttons (Play / quiet Sim Week / ⏩ menu, or Finish… in the off-season) and one ⋯
-  menu. Search (/) and Save were moved into the top of that menu; the 🔍 💾 🎓 buttons are gone.
-- League keeps its own second row (Franchise History, Record Book, ...); Game Updates keeps its
-  row (patch notes / Timeline). Screens outside the six sections: Saves and Game Updates (⋯ menu),
+- Right: a Search field (`.hdr-search`, icon only under 1400px; / or Ctrl+K), the Trade Deadline /
+  Free Agency pills (§4.4), phase buttons (Play / quiet Sim Week / ⏩ menu, or Finish… in the
+  off-season) and one ⋯ menu (Save at its top; the 🔍 💾 🎓 buttons are gone).
+- Game Updates keeps its own second row (patch notes / Timeline); the League screens are Front
+  Office tabs now. Screens outside the six sections: Saves and Game Updates (⋯ menu),
   Trade Deadline Day (Home banner), live game (Play).
 
 ### 4.2 Home (layout "1 · Broadcast") — `src/DeskHome.jsx`
@@ -225,6 +242,50 @@ Office title, "2026 Schedule", "2027 Draft Class" + points box).
 `tourSteps(mobile)` in Walkthrough.jsx has a desktop branch rewritten for the new layout (targets
 `promo`, `todo`, `actions`, `phases`, `nav`). Mobile steps unchanged.
 
+### 4.6 Whole-game sweep (popups and the remaining screens)
+- `Sheet` (ui.jsx) is a centered dialog on a computer (560px, `wide` for 820px) and stays a
+  bottom sheet on phones; `onClose` is optional (no ✕ or tap-out when a choice is required) and
+  `z` sets its layer. New `Dialog({ title, sub, onClose, actions, wide, z })`, `DBtn({ kind:
+  primary|danger|gold|quiet })` and `softBox` give every decision the same look.
+- App.jsx popups moved onto Dialog with their logic unchanged: training-camp skip, move-on
+  confirm, coach extension, cut (dead money) and restructure, suspension, retirement talks,
+  rehab plan, bidding war, coordinator offer, pick trade, fired / job offers, coaching openings,
+  report card, leaderboard, documentary, dynasty report, ownership offer, pro day, spectator box
+  score, practice and injury reports, season champions, the intro. Themed ones kept on purpose:
+  the Gazette, the share card, the live-game final (softened frame) and the season recap card
+  (team-color header, no colored border). Media day, the parade, the locker-room speech and the
+  second compare popup were unreachable (nothing opens them); the next pass removed them.
+- Desktop no longer pops the weekly injury card (Home's injury sheet and the rehab to-do carry
+  it; the rehab to-do is switched back on for both builds) and uses the calm result card after
+  a sim (`PhoneCard` in WeekResult.jsx, 400px, a ✕ instead of the grip).
+- Restyled: Training Camp (soft panels, pill buttons, the SP box dropped: the Team header shows
+  it), Saves (slots first, then device transfer, offline play, the cap glossary folded), GM
+  career (earned achievements only, "Show locked" toggle), Inbox (a tone dot instead of colored
+  edges, quiet buttons), Week prep, Deadline Day panels (the live clock header kept), trade
+  finder / block / 3-way, the contracts table (quiet Extend and "Restructure +$X"), Negotiate
+  (since rebuilt, §7.2),
+  Game Updates, the player card back's section titles, the ⋯ menu group labels, the title
+  screen (Continue is the green button when a save exists).
+- The smoke test and the audit dismiss list also click "Let him go" (the coordinator dialog).
+
+### 4.7 Last old-style pass (scripted, then checked on screen)
+- Caps headings with wide letter spacing became sentence case across 26 files (about 60), plus
+  an explicit list of caps headings with emoji in front (War room, Market rates, Owner goal,
+  Drive log, Player comparison, College stock watch...). Kept on purpose: the header stat
+  captions (RECORD, POINTS, TEAM OVR under the big numbers), badges with their own fill
+  (BREAKING, BYE), short tags and column heads, the title screen, the draft clock, and the
+  themed screens (awards, moments, Super Bowl, newspapers, the card front).
+- Slate `${C.bd}` borders became a faint `#ffffff10` hairline; about 60 static bright frames
+  became a faint tint of their color (selection borders and accent edges untouched).
+- Playoff bracket: soft game boxes (your game outlined green), plain round titles. Live game:
+  plain Run / Pass labels, sentence-case card titles and control labels. Scouting checkpoint
+  popup in the dialog style.
+- **Bugs fixed:** two trade-deadline banners assumed week 10; the deadline is after week 9
+  (`TRADE_DEADLINE_WEEK`). The countdown and "deadline passed" banners now use the constant,
+  and the purple "trade deadline surge" banner is folded into the one countdown.
+- Removed four popups nothing could open (media day, the parade, the locker-room speech, a
+  second player comparison) and a switched-off Hall of Fame card; their state stays.
+
 ## 5. Features added along the way
 - Free agency **Your offers** list (`YourOffers` in FreeAgency.jsx): each of your bids vs the top
   rival's, lead/behind, decide day.
@@ -242,71 +303,86 @@ Every `it.push({key:...})` item in App.jsx was audited: all targets exist. The o
 `devfocus` and `injuries` (open Home sheets via `gm:home`, with fallbacks), `scoutAreas` (Regions
 via `gm:scouting`). DeskHome's "See all" calls `onNav("inbox")`.
 
-- **Whole-game sweep (popups and the remaining screens).**
-  - `Sheet` (ui.jsx) is a centered dialog on a computer (560px, `wide` for 820px) and stays a
-    bottom sheet on phones; `onClose` is optional (no ✕ or tap-out when a choice is required) and
-    `z` sets its layer. New `Dialog({ title, sub, onClose, actions, wide, z })`, `DBtn({ kind:
-    primary|danger|gold|quiet })` and `softBox` give every decision the same look.
-  - App.jsx popups moved onto Dialog with their logic unchanged: training-camp skip, move-on
-    confirm, coach extension, cut (dead money) and restructure, suspension, retirement talks,
-    rehab plan, bidding war, coordinator offer, pick trade, fired / job offers, coaching openings,
-    report card, leaderboard, documentary, dynasty report, ownership offer, pro day, spectator box
-    score, practice and injury reports, season champions, the intro. Themed ones kept on purpose:
-    the Gazette, the share card, the live-game final (softened frame) and the season recap card
-    (team-color header, no colored border). Media day, the parade, the locker-room speech and the
-    second compare popup are unreachable (nothing opens them) and were left alone.
-  - Desktop no longer pops the weekly injury card (Home's injury sheet and the rehab to-do carry
-    it; the rehab to-do is switched back on for both builds) and uses the calm result card after
-    a sim (`PhoneCard` in WeekResult.jsx, 400px, a ✕ instead of the grip).
-  - Restyled: Training Camp (soft panels, pill buttons, the SP box dropped: the Team header shows
-    it), Saves (slots first, then device transfer, offline play, the cap glossary folded), GM
-    career (earned achievements only, "Show locked" toggle), Inbox (a tone dot instead of colored
-    edges, quiet buttons), Week prep, Deadline Day panels (the live clock header kept), trade
-    finder / block / 3-way, the contracts table (quiet Extend and "Restructure +$X"), Negotiate,
-    Game Updates, the player card back's section titles, the ⋯ menu group labels, the title
-    screen (Continue is the green button when a save exists).
-  - The smoke test and the audit dismiss list also click "Let him go" (the coordinator dialog).
+## 7. Game systems (realism rounds)
 
-- **Last old-style pass (scripted, then checked on screen).**
-  - Caps headings with wide letter spacing became sentence case across 26 files (about 60), plus
-    an explicit list of caps headings with emoji in front (War room, Market rates, Owner goal,
-    Drive log, Player comparison, College stock watch...). Kept on purpose: the header stat
-    captions (RECORD, POINTS, TEAM OVR under the big numbers), badges with their own fill
-    (BREAKING, BYE), short tags and column heads, the title screen, the draft clock, and the
-    themed screens (awards, moments, Super Bowl, newspapers, the card front).
-  - Slate `${C.bd}` borders became a faint `#ffffff10` hairline; about 60 static bright frames
-    became a faint tint of their color (selection borders and accent edges untouched).
-  - Playoff bracket: soft game boxes (your game outlined green), plain round titles. Live game:
-    plain Run / Pass labels, sentence-case card titles and control labels. Scouting checkpoint
-    popup in the dialog style.
-  - **Bugs fixed:** two trade-deadline banners assumed week 10; the deadline is after week 9
-    (`TRADE_DEADLINE_WEEK`). The countdown and "deadline passed" banners now use the constant,
-    and the purple "trade deadline surge" banner is folded into the one countdown.
-  - Removed four popups nothing could open (media day, the parade, the locker-room speech, a
-    second player comparison) and a switched-off Hall of Fame card; their state stays.
+### 7.1 Safeties: free (FS) and strong (SS) roles (`roles.js`, like SAM/MIKE/WILL and CB1/CB2/NB)
+- FS score: range .25, coverage .2, ball-hawking .15, speed .15, communication .1, jumping,
+  versatility, tackling .05 each. SS score: run support .25, tackling .2, coverage .15, size
+  (`sSize`, weight around 205 lb) .1, strength .1, blitzing .1, versatility and communication .05.
+- Natural role: Madden's `mpos` (77 FS, 78 SS in the 2027 data); generated safeties (no mpos)
+  by whichever role they stand out at. BASE / CENTER are medians over the real safeties; a move
+  costs 2 (safeties swap more freely than corners). At his natural role a player is his OVR; at
+  the other he's re-rated on that role's skills and never above his OVR. Real checks: Kyle
+  Hamilton 94 SS / 84 FS, Derwin James 93 / 84, Jessie Bates 94 FS / 92 SS, Julian Love 86 FS /
+  78 SS; the Ravens line up Starks FS + Hamilton SS, the Lions Joseph FS + Branch SS.
+- Everything that uses roles picks it up: depth slots read FS / SS (was S1 / S2), game sim
+  ratings at the slot, injury replacements, off-season role growth (`ROLE_SKILLS`), role
+  needs, the FS / SS role tag, "S · Free" and "S · Strong" filters, market pay (equal).
+- A corner moved to safety becomes an FS or an SS by his translated skills (positions.js).
+- Draft: a real FS/SS prospect's generated skills lean to his label (`shapeSafety` in roles.js,
+  run in `genRealDC` after `genPAttrs`); older saves' draft classes are shaped once on load
+  (`shapeDCSafeties`, gated by the save's `sfv:1`). Generated prospects get their role from skills.
+  `shapeSafety` leans skills up to 30 points (12 missed about 3 in 1000 prospects); every real
+  labelled prospect now matches (test in roles.test.js).
+- Field spots: on the depth chart the FS is deep in the middle and the SS rolled down on the
+  strong side; on the live field the SAM now lines up on the tight end's side (it was on the
+  other) with the SS beside him and the FS deep. Tests in tests/roles.test.js.
 
-- **Safeties: free (FS) and strong (SS) roles** (`roles.js`, like SAM/MIKE/WILL and CB1/CB2/NB).
-  - FS score: range .25, coverage .2, ball-hawking .15, speed .15, communication .1, jumping,
-    versatility, tackling .05 each. SS score: run support .25, tackling .2, coverage .15, size
-    (`sSize`, weight around 205 lb) .1, strength .1, blitzing .1, versatility and communication .05.
-  - Natural role: Madden's `mpos` (77 FS, 78 SS in the 2027 data); generated safeties (no mpos)
-    by whichever role they stand out at. BASE / CENTER are medians over the real safeties; a move
-    costs 2 (safeties swap more freely than corners). At his natural role a player is his OVR; at
-    the other he's re-rated on that role's skills and never above his OVR. Real checks: Kyle
-    Hamilton 94 SS / 84 FS, Derwin James 93 / 84, Jessie Bates 94 FS / 92 SS, Julian Love 86 FS /
-    78 SS; the Ravens line up Starks FS + Hamilton SS, the Lions Joseph FS + Branch SS.
-  - Everything that uses roles picks it up: depth slots read FS / SS (was S1 / S2), game sim
-    ratings at the slot, injury replacements, off-season role growth (`ROLE_SKILLS`), role
-    needs, the FS / SS role tag, "S · Free" and "S · Strong" filters, market pay (equal).
-  - A corner moved to safety becomes an FS or an SS by his translated skills (positions.js).
-  - Draft: a real FS/SS prospect's generated skills lean to his label (`shapeSafety` in roles.js,
-    run in `genRealDC` after `genPAttrs`); older saves' draft classes are shaped once on load
-    (`shapeDCSafeties`, gated by the save's `sfv:1`). Generated prospects get their role from skills.
-  - Field spots: on the depth chart the FS is deep in the middle and the SS rolled down on the
-    strong side; on the live field the SAM now lines up on the tight end's side (it was on the
-    other) with the SS beside him and the FS deep. Tests in tests/roles.test.js.
+### 7.2 Contracts and the negotiation table
+- **Asking prices** (`askingPrice`, offseason.js) follow the real market by league rank: `MARKET`
+  matches each position's 2026 ratings at ranks 1/3/5/10/20/32/50/64/96/128 to 2025 average salaries
+  at those ranks (OverTheCap, as shares of the $279.2M 2025 cap), interpolated (`marketShare`),
+  times the cap of the deal's league year. EDGE and DT have their own tables (`naturalDL`). Before,
+  a single logistic curve paid the top right but the middle far too little (a top-10 WR asked $22M,
+  real ~$28M) and LT/guards/LB/TE too much at the top. Age discount starts 4 years later for QBs and
+  6 for K/P; `careerAge` does the same for deal length (`faYears`, `maxYears`). AI re-signs use
+  `faYears` (stars in their prime get 4-5 years). `marketLadder(p)` lists the league's salaries at
+  his market for the negotiation table.
+- **Franchise tag** groups positions like the real one (`tagGroup`: every OL together, K+P, EDGE vs
+  DT); the floor is an 82-rated player's ask (an 86 put the QB tag at $51M vs the real ~$43M).
+- **Rookie scale** (`rookieSalary`) matches the 2025 class: 4.37% of the cap at #1, 1.22% at #32,
+  0.93-0.68% in round 2, from 0.57% at #65 to the minimum.
+- Health run (6 seasons, `SEASONS=6 node scripts/health.mjs`): AI payrolls 93-97% of the cap from
+  year 4 (the old curve: 86-97%), nobody over, top-5 shares QB 17%, EDGE/DL 14%, CB 9%, LT 8.5%.
+  The "USER vs MATCHED" warning is the same on the old code. health.mjs now finds chromium-linux64.
+- Save fields: `talks[k].log` (the thread) is saved with `talks`. Load-time migrations keyed by
+  save flags in `fullSaveData`: `capv:2` (salaries to real dollars, `migrateCap`), `sfv:1` (draft
+  safeties shaped once, `shapeDCSafeties`). Add a new flag the same way for any one-time reshape,
+  or the smoke test's "reload + Continue changed" check fails.
+- **Negotiate.jsx** rebuilt: desktop two columns (left: his agent's thread, what he wants with your
+  fit on each, the position's market ladder with your offer in it; right: length chips that show
+  each length's ask, the offer with % of cap and total, bonus/void/incentive, cap room by year).
+  Phone: one column, offer first. Patience shows as three bars (offers left). The thread comes from
+  `talks[k].log` (App `talkLog`, last 8 offers and answers). Offer logic unchanged (hidden minimum
+  86-98% of the ask, fit pull, rivals, three tries). Checked with the re-sign save (`negshot`).
 
-## 7. The trade market (`src/trade.js`)
+### 7.3 Head coaches retire at the end of their contract
+- carousel.js: every head coach has an exit age (`hcRetireAge`, 64-72 from a hash of his name;
+  `HC_EXIT` sets the veterans: John Harbaugh 73 so he coaches the Giants through 2035, Andy Reid
+  71, Sean Payton and Mike McCarthy 68; the owner asked for Harbaugh ~2035). His contract now
+  counts down each off-season (it never did); when it ends he retires if he's reached that age
+  (`hcRetiring`), otherwise he re-signs for 2-4 years, never past it (AI clubs and yours). He no
+  longer retires at random mid-deal (coordinators still do). The off-season he first knows, a
+  `lastDeal` move goes on the wire and you get a toast; `coach.hc.lastSeason` keeps it to once.
+- App: `hcLeaving(c)` is the notice on the Coaching page (desktop and phone), in the extend dialog
+  and as a Home inbox item in his last two seasons (dismissible). `hcExtMax` caps extensions short
+  of his exit age; 0 shows "Retiring" instead of Extend, and `extendCoach` refuses it too.
+- The carousel runs in `newSeason` (after the draft), so in re-sign/FA/draft `yr` is still the
+  finished season and a coach whose deal is up reads "is retiring". Real coaches' starting contract
+  lengths are random per game (`realStaff`), so Reid may finish a deal to 2030 before he goes.
+- Tests: tests/carousel.test.js (retire at contract end, announce once, renewals stop short).
+
+### 7.4 Holiday game popups (Atmosphere.jsx)
+- `HolidayIntro` is a title card (one floating piece, the
+  name in Oswald, both clubs in their own color washes, "Tap for kickoff"); `HolidayResult` is a
+  `Spotlight` stage: the player of the game in uniform (`pog.p`, found on your roster by name),
+  the holiday sky as `backdrop`, the score as the faint background number, a holiday piece as `art`
+  when there is no player. Spotlight gained `backdrop` and `art` props.
+- Checked in a scratch harness (`_hol.html` + `_hol.jsx` + `_holshot.mjs`, git-ignored): Vite dev
+  server at `/gridiron-gm/_hol.html?h=<holiday>&k=intro|result&w=0|1&nop=1`, every holiday on
+  desktop and phone, because a holiday game is hard to reach in play.
+
+## 8. The trade market (`src/trade.js`)
 Recalibrated against real deadline deals; `tests/tradeMarket.test.js` pins ten of them (each must
 go through at about its real price, and a clearly smaller offer must be refused):
 Montez Sweat (2023, 2nd), Roquan Smith (2022, 2nd+5th), Jaelan Phillips (2025, 3rd), Jakobi Meyers
@@ -338,7 +414,7 @@ QB 90/28 ≈ 207, WR 90/26 ≈ 110, WR 82/27 ≈ 43, DL 85/29 ≈ 53, CB 78/25 �
 Not yet done on trades: AI-to-AI trades (`aiTrades.js`) and AI offers (`tradeOffers.js`) use
 `tradeVal` directly, so they don't see `contractMult`; worth a look if AI deals feel off.
 
-## 8. Checks and tools
+## 9. Checks and tools
 
 Before every push: `npm run lint` (0 errors; 15 warnings are pre-existing), `npm test`,
 `npm run build`, `npm run smoke` (17 steps; now clicks the six desktop sections — see the tab list
@@ -353,53 +429,24 @@ presses Continue; `SIMWK=n` sims n weeks first. Useful scenarios: `mkdraft` (sim
 draft and dumps `save-fa.txt` / `save-draft.txt`), `dr` (plays a draft), `tour` (every phone screen
 and tab), `dtour` (every desktop section and tab), `navb` (desktop sections, season dropdown, ⋯
 menu), `todoall` (clicks every Home to-do), `sweep` (taps up to 30 buttons per screen and checks
-for crashes, sideways scroll, stuck close buttons). If these scripts are gone, recreate the idea:
+for crashes, sideways scroll, stuck close buttons), `rsshot` (re-sign week, with the re-sign save),
+`negshot` (opens Negotiate from re-sign week; `NTH=` which player, `LOW=` how many "Less" taps
+before offering, to see counters), `coachshot` (Coaching page; on a phone it opens the HC sheet).
+Saves dumped by `mkdraft` live in the scratchpad (`save-fa.txt`, `save-draft.txt`,
+`save-resign.txt`); they're not in the repo. `_bench*.mjs` (git-ignored) print asking prices,
+tags and payroll totals for the opening league. If these scripts are gone, recreate the idea:
 build, `vite preview`, Playwright, screenshot, look.
+
+Long run: `SEASONS=6 node scripts/health.mjs` (about 15 minutes, needs a fresh `npm run build`;
+don't rebuild while it runs) plays seasons in the browser and prints league numbers (payroll % of
+cap, top-5 salaries, ratings, roster health) against `balanceWatch.js` bands. To compare with older
+code: `git worktree add <dir> HEAD`, symlink node_modules, build and run it there.
 
 Gotchas: the mobile action bar's Sim All / Sim to Deadline need a second tap ("Tap again..."); a
 new phone game taps NFC before picking the Giants; `sleep` in the shell is blocked — use
 background commands with `until` loops.
 
-### Contracts, the negotiation table, holiday cards (latest round)
-- **Asking prices** (`askingPrice`, offseason.js) follow the real market by league rank: `MARKET`
-  matches each position's 2026 ratings at ranks 1/3/5/10/20/32/50/64/96/128 to 2025 average salaries
-  at those ranks (OverTheCap, as shares of the $279.2M 2025 cap), interpolated (`marketShare`),
-  times the cap of the deal's league year. EDGE and DT have their own tables (`naturalDL`). Before,
-  a single logistic curve paid the top right but the middle far too little (a top-10 WR asked $22M,
-  real ~$28M) and LT/guards/LB/TE too much at the top. Age discount starts 4 years later for QBs and
-  6 for K/P; `careerAge` does the same for deal length (`faYears`, `maxYears`). AI re-signs use
-  `faYears` (stars in their prime get 4-5 years). `marketLadder(p)` lists the league's salaries at
-  his market for the negotiation table.
-- **Franchise tag** groups positions like the real one (`tagGroup`: every OL together, K+P, EDGE vs
-  DT); the floor is an 82-rated player's ask (an 86 put the QB tag at $51M vs the real ~$43M).
-- **Rookie scale** (`rookieSalary`) matches the 2025 class: 4.37% of the cap at #1, 1.22% at #32,
-  0.93-0.68% in round 2, from 0.57% at #65 to the minimum.
-- Health run (6 seasons, `SEASONS=6 node scripts/health.mjs`): AI payrolls 93-97% of the cap from
-  year 4 (the old curve: 86-97%), nobody over, top-5 shares QB 17%, EDGE/DL 14%, CB 9%, LT 8.5%.
-  The "USER vs MATCHED" warning is the same on the old code. health.mjs now finds chromium-linux64.
-- **Negotiate.jsx** rebuilt: desktop two columns (left: his agent's thread, what he wants with your
-  fit on each, the position's market ladder with your offer in it; right: length chips that show
-  each length's ask, the offer with % of cap and total, bonus/void/incentive, cap room by year).
-  Phone: one column, offer first. Patience shows as three bars (offers left). The thread comes from
-  `talks[k].log` (App `talkLog`, last 8 offers and answers). Offer logic unchanged.
-- **Holiday popups** (Atmosphere.jsx): `HolidayIntro` is a title card (one floating piece, the
-  name in Oswald, both clubs in their own color washes, "Tap for kickoff"); `HolidayResult` is a
-  `Spotlight` stage: the player of the game in uniform (`pog.p`, found on your roster by name),
-  the holiday sky as `backdrop`, the score as the faint background number, a holiday piece as `art`
-  when there is no player. Spotlight gained `backdrop` and `art` props.
-- Draft safeties: `shapeSafety` leans up to 30 points (12 missed about 3 in 1000 prospects).
-
-### Head coaches retire at the end of their contract
-- carousel.js: every head coach has an exit age (`hcRetireAge`, 64-72 from his name; `HC_EXIT` sets the veterans: John Harbaugh 73, so through 2035, Reid 71, Payton and McCarthy 68). His contract
-  now counts down each off-season (it never did); when it ends he retires if he's reached that age
-  (`hcRetiring`), otherwise he re-signs for 2-4 years, never past it (AI clubs and yours). He no
-  longer retires at random mid-deal (coordinators still do). The off-season he first knows, a
-  `lastDeal` move goes on the wire and you get a toast; `coach.hc.lastSeason` keeps it to once.
-- App: `hcLeaving(c)` is the notice on the Coaching page (desktop and phone), in the extend dialog
-  and as a Home inbox item in his last two seasons (dismissible). `hcExtMax` caps extensions short
-  of his exit age; 0 shows "Retiring" instead of Extend, and `extendCoach` refuses it too.
-
-## 9. Deploying
+## 10. Deploying
 `.github/workflows/deploy-pages.yml` builds with `npm run build:pages:all` and deploys **only from
 `main` or `claude/scouting-overhaul`**. After verifying: push the work branch, then
 `git push origin HEAD:claude/scouting-overhaul` (fast-forward). Live:
@@ -407,10 +454,15 @@ https://evandamours.github.io/27_Gridiron_GM/ and `/mobile/`. Confirm by fetchin
 `assets/index-*.js` and grepping for a string from the change (code comments are stripped, use UI
 text). gh-pages / `scripts/publish-pages.sh` is **not** the live source.
 
-## 10. Known gaps / next steps
+## 11. Known gaps / next steps
 - Desktop is through every section in the calm style. Still in the older look, by choice or not
   yet reached: the player card itself (a trading-card design, deliberately kept), ceremony screens
   (Season Awards, Moments, Rafters night, documentary), small caps eyebrows inside cards (League
   History plaques, transaction kinds), the Walkthrough eyebrow and the Offline panel.
-- AI-to-AI trades ignore `contractMult` (see §7).
+- AI-to-AI trades ignore `contractMult` (see §8).
 - The 15 lint warnings are old `react-hooks/exhaustive-deps` warnings in App.jsx.
+- Contracts: the top-5 WR share settles near 10% of the cap (real 12.7%); elite WR asks match the
+  real market, so it was left. The health run's "USER vs MATCHED" warning (the scripted user club
+  wins ~25% less) predates this session's contract work.
+- Head coaches: only `HC_EXIT` coaches have hand-set exit ages; other real veterans (Jim Harbaugh,
+  Todd Bowles, Todd Monken) use the hash (64-72), which lands in the mid-2030s.
