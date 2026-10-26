@@ -27,13 +27,13 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
   const myTitles = titles.filter((c) => c.ti === ui).length;
   const hof = retired.filter((r) => r.hof).sort((a, b) => b.hofClass - a.hofClass || b.legacy - a.legacy);
   const notable = retired.filter((r) => !r.hof).sort((a, b) => b.retYr - a.retYr || b.legacy - a.legacy).slice(0, 40);
-  const empty = (t) => <div style={{ ...card, textAlign: "center", color: C.mt, fontSize: 15, padding: 28 }}>{t}</div>;
+  const empty = (t) => <div style={{ ...card, textAlign: "center", color: C.mt, fontSize: 14, padding: 28 }}>{t}</div>;
 
   return (
     <div style={{ maxWidth: 1100 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-        {MOBILE && <div style={{ fontSize: 26, fontWeight: 900 }}>League History</div>}
-        <div style={{ fontSize: 15, color: C.mt }}>Since your league began in 2026 · {titles.length} Super Bowl{titles.length === 1 ? "" : "s"} played{myTitles ? ` · ${myTitles} yours` : ""} · {hof.length} Hall of Famer{hof.length === 1 ? "" : "s"}</div>
+        {MOBILE && <div style={{ fontSize: 28, fontWeight: 900 }}>League History</div>}
+        <div style={{ fontSize: 14, color: C.mt }}>Since your league began in 2026 · {titles.length} Super Bowl{titles.length === 1 ? "" : "s"} played{myTitles ? ` · ${myTitles} yours` : ""} · {hof.length} Hall of Famer{hof.length === 1 ? "" : "s"}</div>
       </div>
       <div role="tablist" style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "10px 0 12px" }}>
         {SECTIONS.map(([k, l]) => <button key={k} role="tab" aria-selected={sec === k} onClick={() => setSec(k)} style={{ background: sec === k ? "#ffffff24" : "transparent", color: sec === k ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: "7px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
@@ -41,29 +41,29 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
 
       {sec === "champs" && (titles.length ? <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "repeat(auto-fill,minmax(250px,1fr))", gap: 10 }}>
         {titles.map((c) => { const t = teams[c.ti], o = c.opp != null ? teams[c.opp] : null, mine = c.ti === ui; return (
-          <div key={c.yr} style={{ ...card, display: "flex", alignItems: "center", gap: 12, borderColor: mine ? "#f59e0b" : C.bd, background: mine ? "linear-gradient(135deg,#78350f44,#111827)" : C.cd }}>
+          <div key={c.yr} style={{ ...card, display: "flex", alignItems: "center", gap: 12, background: mine ? "linear-gradient(135deg,#78350f55,#ffffff0d)" : "#ffffff0d" }}>
             {t && <TeamLogo t={t} sz={48} />}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: "#fcd34d" }}>{sbName(sbNumber(c.yr)).toUpperCase()} · {c.yr}</div>
-              <div style={{ fontSize: 17, fontWeight: 900 }}>{c.t}</div>
-              <div style={{ fontSize: 13, color: C.mt }}>{o ? `beat the ${o.name}` : ""}{c.score ? ` ${c.score}` : ""}{mine ? " · yours" : ""}</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#fcd34d" }}>{sbName(sbNumber(c.yr))} · {c.yr}</div>
+              <div style={{ fontSize: 16, fontWeight: 900 }}>{c.t}</div>
+              <div style={{ fontSize: 14, color: C.mt }}>{o ? `beat the ${o.name}` : ""}{c.score ? ` ${c.score}` : ""}{mine ? " · yours" : ""}</div>
             </div>
           </div>); })}
       </div> : empty("No Super Bowl has been played in your league yet."))}
 
       {sec === "awards" && (years.length ? <>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-          {years.map((y) => <button key={y} onClick={() => setAwYr(y)} style={{ background: awYr === y ? `${C.gd}22` : "transparent", color: awYr === y ? "#fde68a" : C.mt, border: `1px solid ${awYr === y ? C.gd : C.bd}`, borderRadius: 8, padding: "4px 10px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{y}</button>)}
+          {years.map((y) => <button key={y} onClick={() => setAwYr(y)} style={{ background: awYr === y ? `${C.gd}22` : "transparent", color: awYr === y ? "#fde68a" : C.mt, border: `1px solid ${awYr === y ? C.gd : C.bd}`, borderRadius: 8, padding: "4px 10px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{y}</button>)}
         </div>
         {(() => { const a = awards.find((x) => x.yr === awYr) || {}; return (
           <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "repeat(auto-fill,minmax(320px,1fr))", gap: 10 }}>
             {AW.map(([k, l]) => { const w = a[k], p = w && who(w.pid), t = w && teams[w.ti]; return (
-              <div key={k} onClick={w ? () => open(w.pid) : undefined} style={{ ...card, display: "flex", alignItems: "center", gap: 12, cursor: w && p ? "pointer" : "default", borderColor: w?.ti === ui ? C.gn : C.bd }}>
+              <div key={k} onClick={w ? () => open(w.pid) : undefined} style={{ ...card, display: "flex", alignItems: "center", gap: 12, cursor: w && p ? "pointer" : "default", background: w?.ti === ui ? "#22c55e17" : "#ffffff0d" }}>
                 {p ? <Face s={p.face} sz={52} /> : <div style={{ width: 52 }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: k === "sbmvp" ? "#fcd34d" : "#7dd3fc" }}>{l.toUpperCase()}</div>
-                  <div style={{ fontSize: 17, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w ? w.name : "—"}</div>
-                  {w && <div style={{ fontSize: 13, color: C.mt }}>{posTag(w)}{t ? ` · ${t.city} ${t.name}` : ""}{w.stat ? ` · ${w.stat}` : ""}</div>}
+                  <div style={{ fontSize: 12, fontWeight: 800, color: k === "sbmvp" ? "#fcd34d" : "#7dd3fc" }}>{l}</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{w ? w.name : "—"}</div>
+                  {w && <div style={{ fontSize: 14, color: C.mt }}>{posTag(w)}{t ? ` · ${t.city} ${t.name}` : ""}{w.stat ? ` · ${w.stat}` : ""}</div>}
                 </div>
                 {t && <TeamLogo t={t} sz={30} />}
               </div>); })}
@@ -72,14 +72,14 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
 
       {sec === "leaders" && <>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-          {CAREER_STATS.map((c) => <button key={c.key} onClick={() => setStat(c.key)} style={{ background: stat === c.key ? `${C.bl}33` : "transparent", color: stat === c.key ? "#bfdbfe" : C.mt, border: `1px solid ${stat === c.key ? C.bl : C.bd}`, borderRadius: 8, padding: "4px 10px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{c.label}</button>)}
+          {CAREER_STATS.map((c) => <button key={c.key} onClick={() => setStat(c.key)} style={{ background: stat === c.key ? `${C.bl}33` : "transparent", color: stat === c.key ? "#bfdbfe" : C.mt, border: `1px solid ${stat === c.key ? C.bl : C.bd}`, borderRadius: 8, padding: "4px 10px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{c.label}</button>)}
         </div>
         {(() => { const leaders = careerLeaders(teams, retired, stat, 10); return leaders.length ? <div style={card}>
           {leaders.map((r, i) => { const p = who(r.id), t = team(r.team); return (
             <div key={r.id} onClick={p ? () => open(r.id) : undefined} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 4px", borderBottom: i < leaders.length - 1 ? `1px solid ${C.bd}66` : "none", cursor: p ? "pointer" : "default" }}>
               <b style={{ width: 24, fontSize: 16, color: i < 3 ? "#fcd34d" : C.mt }}>{i + 1}</b>
               {p ? <Face s={p.face} sz={34} /> : <span style={{ width: 34 }} />}
-              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={posTag(r)} /> {r.active ? `active · ${r.team}` : `retired ${r.retYr} · ${r.team}`}</div></div>
+              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={posTag(r)} /> {r.active ? `active · ${r.team}` : `retired ${r.retYr} · ${r.team}`}</div></div>
               {t && <TeamLogo t={t} sz={24} />}
               <b style={{ fontSize: 20, minWidth: 70, textAlign: "right" }}>{num(r.v)}</b>
             </div>); })}
@@ -88,15 +88,15 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
 
       {sec === "hof" && (hof.length ? <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "repeat(auto-fill,minmax(300px,1fr))", gap: 10 }}>
         {hof.map((r) => { const c = retiredCard(r), in_ = r.hofClass <= yr; return (
-          <div key={r.id} onClick={setSel ? () => setSel(c) : undefined} title="Open his player card" style={{ ...card, cursor: "pointer", borderColor: in_ ? "#d4a017" : C.bd, background: in_ ? "linear-gradient(160deg,#3b2a0a,#111827 70%)" : C.cd }}>
+          <div key={r.id} onClick={setSel ? () => setSel(c) : undefined} title="Open his player card" style={{ ...card, cursor: "pointer", background: in_ ? "linear-gradient(160deg,#3b2a0a,#ffffff0d 70%)" : "#ffffff0d" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Face s={c.face} sz={52} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: in_ ? "#fcd34d" : C.mt }}>{in_ ? `CLASS OF ${r.hofClass}` : `ENSHRINED ${r.hofClass}`}</div>
-                <div style={{ fontSize: 17, fontWeight: 900 }}>{r.name}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: in_ ? "#fcd34d" : C.mt }}>{in_ ? `Class of ${r.hofClass}` : `Enshrined ${r.hofClass}`}</div>
+                <div style={{ fontSize: 16, fontWeight: 900 }}>{r.name}</div>
                 <div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={posTag(r)} /> {r.team} · retired {r.retYr} at {r.age}</div>
               </div>
-              <div style={{ textAlign: "right" }}><div style={{ fontSize: 20, fontWeight: 900, color: oC(r.peak) }}>{r.peak}</div><div style={{ fontSize: 10, color: C.mt, fontWeight: 800 }}>PEAK</div></div>
+              <div style={{ textAlign: "right" }}><div style={{ fontSize: 20, fontWeight: 900, color: oC(r.peak) }}>{r.peak}</div><div style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>peak</div></div>
             </div>
             <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 6 }}>{[...Object.entries(r.won || {}).map(([k, ys]) => `${ys.length}× ${AW_SHORT[k] || k.toUpperCase()}`), ...CAREER_STATS.filter((s) => (r.career?.[s.key] || 0) >= s.per * 2).map((s) => `${num(r.career[s.key])} ${s.label.toLowerCase()}`)].join(" · ") || "A legendary career"}</div>
           </div>); })}
@@ -107,8 +107,8 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
           <div key={r.id} onClick={setSel ? () => setSel(c) : undefined} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 4px", borderBottom: i < notable.length - 1 ? `1px solid ${C.bd}66` : "none", cursor: "pointer" }}>
             <b style={{ width: 44, color: C.mt }}>{r.retYr}</b>
             <Face s={c.face} sz={34} />
-            <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={posTag(r)} /> {r.team} · {r.seasons} season{r.seasons > 1 ? "s" : ""} in the league · legacy {r.legacy}</div></div>
-            <div style={{ textAlign: "right" }}><div style={{ fontSize: 18, fontWeight: 900, color: oC(r.peak) }}>{r.peak}</div><div style={{ fontSize: 10, color: C.mt, fontWeight: 800 }}>PEAK</div></div>
+            <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={posTag(r)} /> {r.team} · {r.seasons} season{r.seasons > 1 ? "s" : ""} in the league · legacy {r.legacy}</div></div>
+            <div style={{ textAlign: "right" }}><div style={{ fontSize: 20, fontWeight: 900, color: oC(r.peak) }}>{r.peak}</div><div style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>peak</div></div>
           </div>); })}
       </div> : empty("No notable retirements yet."))}
     </div>

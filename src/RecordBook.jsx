@@ -17,8 +17,8 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
   const open = (pid) => { const p = pid && findPlayer(pid); if (p) setSel(p); };
   return (
     <div style={{ maxWidth: 1100 }}>
-      {MOBILE && <div style={{ fontSize: 26, fontWeight: 900 }}>Record Book</div>}
-      <div style={{ fontSize: 15, color: C.mt, marginBottom: 12 }}>Regular season only. The NFL's marks stand until someone in your league beats them.</div>
+      {MOBILE && <div style={{ fontSize: 28, fontWeight: 900 }}>Record Book</div>}
+      <div style={{ fontSize: 14, color: C.mt, marginBottom: 12 }}>Regular season only. The NFL's marks stand until someone in your league beats them.</div>
       <div style={{ display: "inline-flex", gap: 4, background: "#ffffff0d", borderRadius: 999, padding: 3, marginBottom: 12 }}>
         {[["season", "Single season"], ["career", "Career"]].map(([k, l]) => <button key={k} onClick={() => setView(k)} style={{ background: view === k ? "#ffffff24" : "transparent", color: view === k ? "#fff" : C.mt, border: 0, borderRadius: 999, padding: "7px 16px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
       </div>
@@ -30,8 +30,8 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
             const r = career[d.key], mine = !r.nfl, c = chase[d.key];
             return (
               <div key={d.key} style={{ padding: "9px 6px", borderBottom: `1px solid ${C.bd}66`, background: mine ? "#22c55e10" : "transparent" }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ flex: 1 }}>{d.label}</b><span style={{ fontSize: 18, fontWeight: 900, color: mine ? C.gn : "#fff" }}>{recordValue(d.key, r.val)}</span></div>
-                <div style={{ fontSize: 13 }}><span onClick={() => open(r.pid)} style={{ fontWeight: 800 }}>{r.name}</span> <span style={{ color: C.mt }}>({r.team}{r.nfl ? `, ${r.yrs}` : `, record since ${r.yr}`})</span>{mine && <span style={{marginLeft: 6, fontSize: 11, fontWeight: 900, color: C.gn }}>Your league</span>}</div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ flex: 1 }}>{d.label}</b><span style={{ fontSize: 20, fontWeight: 900, color: mine ? C.gn : "#fff" }}>{recordValue(d.key, r.val)}</span></div>
+                <div style={{ fontSize: 14 }}><span onClick={() => open(r.pid)} style={{ fontWeight: 800 }}>{r.name}</span> <span style={{ color: C.mt }}>({r.team}{r.nfl ? `, ${r.yrs}` : `, record since ${r.yr}`})</span>{mine && <span style={{marginLeft: 6, fontSize: 11, fontWeight: 900, color: C.gn }}>Your league</span>}</div>
                 {c && <div style={{ fontSize: 12, color: C.mt }}>Closest active: <span onClick={() => open(c.pid)} style={{ color: "#e2e8f0", fontWeight: 700 }}>{c.name}</span> ({c.team}) {recordValue(d.key, c.v)} · <span style={{ color: c.v >= r.val * 0.85 ? "#facc15" : C.mt }}>{recordValue(d.key, r.val - c.v)} to go</span></div>}
               </div>
             );
@@ -45,7 +45,7 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
                   return (
                     <tr key={d.key} style={{ borderBottom: `1px solid ${C.bd}66`, background: mine ? "#22c55e10" : "transparent" }}>
                       <td style={{ padding: "9px 4px", fontWeight: 700 }}>{d.label}</td>
-                      <td style={{ padding: "9px 4px", fontSize: 18, fontWeight: 900, color: mine ? C.gn : "#fff" }}>{recordValue(d.key, r.val)}</td>
+                      <td style={{ padding: "9px 4px", fontSize: 20, fontWeight: 900, color: mine ? C.gn : "#fff" }}>{recordValue(d.key, r.val)}</td>
                       <td style={{ padding: "9px 4px" }}>
                         <span onClick={() => open(r.pid)} style={{ fontWeight: 800, cursor: r.pid ? "pointer" : "default" }}>{r.name}</span> <span style={{ color: C.mt, whiteSpace: "nowrap" }}>({r.team}{r.nfl ? `, ${r.yrs}` : `, record since ${r.yr}`})</span>
                         {mine && <span style={{marginLeft: 6, fontSize: 11, fontWeight: 900, color: C.gn }}>Set in your league</span>}
@@ -87,7 +87,7 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
                 return (
                   <tr key={d.key} style={{ borderBottom: `1px solid ${C.bd}66`, background: mine ? "#22c55e10" : "transparent" }}>
                     <td style={{ padding: "9px 4px", fontWeight: 700 }}>{d.label}</td>
-                    <td style={{ padding: "9px 4px", fontSize: 18, fontWeight: 900, color: mine ? C.gn : "#fff" }}>{recordValue(d.key, r.val)}</td>
+                    <td style={{ padding: "9px 4px", fontSize: 20, fontWeight: 900, color: mine ? C.gn : "#fff" }}>{recordValue(d.key, r.val)}</td>
                     <td style={{ padding: "9px 4px" }}>
                       <span onClick={() => open(r.pid)} style={{ fontWeight: 800, cursor: r.pid ? "pointer" : "default" }}>{r.name}</span> <span style={{ color: C.mt, whiteSpace: "nowrap" }}>({r.team}, {r.yr})</span>
                       {mine && <span style={{marginLeft: 6, fontSize: 11, fontWeight: 900, color: C.gn }}>Set in your league</span>}

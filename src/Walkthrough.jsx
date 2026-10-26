@@ -49,13 +49,13 @@ export function TourOffer({ team, onStart, onSkip }) {
   const skip = () => { if (never) { try { localStorage.setItem("gm_tour_never", "1"); } catch { /* private mode */ } } onSkip(); };
   return (
     <div onClick={skip} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.8)", zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: C.cd, border: `2px solid ${C.gn}`, borderRadius: 16, padding: 24, maxWidth: 440, width: "100%", boxShadow: "0 0 40px #22c55e22" }}>
-        <div style={{ fontSize: 36, textAlign: "center" }}>🏈</div>
-        <div style={{ fontSize: 24, fontWeight: 900, textAlign: "center", margin: "6px 0 4px" }}>Welcome to the {team}, GM</div>
-        <div style={{ fontSize: 15, color: "#cbd5e1", textAlign: "center", lineHeight: 1.5, marginBottom: 18 }}>Want a quick tour of where everything is? About two minutes, and you can leave it any time.</div>
-        <button onClick={onStart} style={{ width: "100%", background: C.gn, color: "#fff", border: 0, borderRadius: 10, padding: "12px 0", fontSize: 17, fontWeight: 900, cursor: "pointer", marginBottom: 8 }}>Show me around</button>
-        <button onClick={skip} style={{ width: "100%", background: "transparent", color: "#cbd5e1", border: "1px solid #ffffff10", borderRadius: 10, padding: "11px 0", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Skip the tour</button>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", marginTop: 12, fontSize: 13, color: C.mt, cursor: "pointer" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#0d1424", borderRadius: 22, padding: 24, maxWidth: 440, width: "100%", boxShadow: "0 30px 80px #000c" }}>
+        <div style={{ fontSize: 40, textAlign: "center" }}>🏈</div>
+        <div style={{ fontSize: 28, fontWeight: 900, textAlign: "center", margin: "6px 0 4px" }}>Welcome to the {team}, GM</div>
+        <div style={{ fontSize: 14, color: "#cbd5e1", textAlign: "center", lineHeight: 1.5, marginBottom: 18 }}>Want a quick tour of where everything is? About two minutes, and you can leave it any time.</div>
+        <button onClick={onStart} style={{ width: "100%", background: C.gn, color: "#fff", border: 0, borderRadius: 14, padding: "13px 0", fontSize: 16, fontWeight: 900, cursor: "pointer", marginBottom: 8 }}>Show me around</button>
+        <button onClick={skip} style={{ width: "100%", color: "#cbd5e1", border: 0, background: "#ffffff12", borderRadius: 14, padding: "12px 0", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Skip the tour</button>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", marginTop: 12, fontSize: 14, color: C.mt, cursor: "pointer" }}>
           <input type="checkbox" checked={never} onChange={(e) => setNever(e.target.checked)} /> Don't offer this on new franchises
         </label>
       </div>
@@ -100,18 +100,18 @@ export default function Walkthrough({ steps, step, setStep, onClose, mobile }) {
       {/* blocks clicks on the page while the tour is up; dims everything but the spotlight */}
       <div style={{ position: "fixed", inset: 0, zIndex: 3000, background: rect ? "transparent" : "rgba(0,0,0,.45)" }} />
       {rect && <div style={{ position: "fixed", left: rect.x - pad, top: rect.y - pad, width: rect.w + pad * 2, height: rect.h + pad * 2, borderRadius: 10, border: `3px solid ${C.gd}`, boxShadow: "0 0 0 9999px rgba(0,0,0,.6)", zIndex: 3001, pointerEvents: "none", transition: "all .25s ease" }} />}
-      <div role="dialog" aria-label="Tour" style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: mobile ? 84 : 24, zIndex: 3002, width: "min(94vw, 480px)", background: C.cd, border: `1px solid ${C.gd}88`, borderRadius: 14, padding: "14px 16px", boxShadow: "0 12px 40px #000c" }}>
+      <div role="dialog" aria-label="Tour" style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: mobile ? 84 : 24, zIndex: 3002, width: "min(94vw, 480px)", background: C.cd, borderRadius: 18, padding: "14px 16px", boxShadow: "0 12px 40px #000c" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-          <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.gd }}>TOUR · {step + 1} OF {steps.length}</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: C.gd }}>Tour · {step + 1} of {steps.length}</span>
           <div style={{ flex: 1, height: 4, background: C.bd, borderRadius: 2 }}><div style={{ width: `${((step + 1) / steps.length) * 100}%`, height: "100%", background: C.gd, borderRadius: 2, transition: "width .25s" }} /></div>
         </div>
-        <div style={{ fontSize: 19, fontWeight: 900, marginBottom: 4 }}>{s.title}</div>
-        <div style={{ fontSize: 15, color: "#cbd5e1", lineHeight: 1.5 }}>{s.body}</div>
+        <div style={{ fontSize: 20, fontWeight: 900, marginBottom: 4 }}>{s.title}</div>
+        <div style={{ fontSize: 14, color: "#cbd5e1", lineHeight: 1.5 }}>{s.body}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
           <button onClick={onClose} style={{ background: "transparent", border: 0, color: C.mt, fontSize: 14, fontWeight: 700, cursor: "pointer", padding: "8px 4px" }}>{last ? "Close" : "Skip tour"}</button>
           <span style={{ flex: 1 }} />
-          {step > 0 && <button onClick={() => setStep(step - 1)} style={{ background: C.bg, color: "#e2e8f0", border: "1px solid #ffffff10", borderRadius: 8, padding: "9px 14px", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>Back</button>}
-          <button onClick={() => (last ? onClose() : setStep(step + 1))} style={{ background: C.gn, color: "#fff", border: 0, borderRadius: 8, padding: "9px 18px", fontSize: 15, fontWeight: 900, cursor: "pointer" }}>{last ? "Let's go" : "Next →"}</button>
+          {step > 0 && <button onClick={() => setStep(step - 1)} style={{ background: C.bg, color: "#e2e8f0", border: "1px solid #ffffff10", borderRadius: 8, padding: "9px 14px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Back</button>}
+          <button onClick={() => (last ? onClose() : setStep(step + 1))} style={{ background: C.gn, color: "#fff", border: 0, borderRadius: 8, padding: "9px 18px", fontSize: 14, fontWeight: 900, cursor: "pointer" }}>{last ? "Let's go" : "Next →"}</button>
         </div>
       </div>
     </>

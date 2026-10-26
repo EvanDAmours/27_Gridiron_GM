@@ -35,10 +35,10 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
     <span onClick={() => onTeam?.(i)} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", minWidth: 0, opacity: won === false ? 0.55 : 1 }}>
       <TeamLogo t={t} sz={mobile ? 26 : 30} />
       <span style={{ lineHeight: 1.1 }}>
-        <b style={{ fontSize: 15, color: i === ui ? C.gn : "#fff" }}>{t.ab}</b>
+        <b style={{ fontSize: 14, color: i === ui ? C.gn : "#fff" }}>{t.ab}</b>
         <span style={{ display: "block", fontSize: 12, color: C.mt }}>{rec(t)}</span>
       </span>
-      {s != null && <b style={{ marginLeft: "auto", fontSize: 18, fontVariantNumeric: "tabular-nums", color: won ? "#fff" : "#94a3b8" }}>{s}</b>}
+      {s != null && <b style={{ marginLeft: "auto", fontSize: 20, fontVariantNumeric: "tabular-nums", color: won ? "#fff" : "#94a3b8" }}>{s}</b>}
     </span>
   );
   if (mobile) return <PhoneLeague {...{ teams, ui, games, byes, week, weeks, setW, leaders, onPlayer, onTeam, sp }} />;
@@ -80,7 +80,7 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
                 {b.cols.map(([l]) => <span key={l} style={{ width: 34, textAlign: "right" }}>{l}</span>)}
               </div>
               {b.top.map(({ p, t, ti }) => (
-                <div key={p.id} onClick={() => onPlayer?.(p)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 0", cursor: "pointer", fontSize: 12.5 }}>
+                <div key={p.id} onClick={() => onPlayer?.(p)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 0", cursor: "pointer", fontSize: 12 }}>
                   <Face s={p.face} sz={24} />
                   <span style={{ flex: 1, minWidth: 0, lineHeight: 1.1 }}>
                     <span style={{ display: "block", fontSize: 10, color: ti === ui ? C.gn : C.mt, fontWeight: 800 }}>{t.ab}</span>
@@ -101,7 +101,7 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
 const MAIN = { PASSING: "YDS", RUSHING: "YDS", RECEIVING: "YDS", SACKS: "SCK", INTERCEPTIONS: "INT", TACKLES: "TKL" };
 function PhoneLeague({ teams, ui, games, byes, week, weeks, setW, leaders, onPlayer, onTeam, sp }) {
   const shown = leaders.filter((b) => b.top.length);
-  const arrow = (on, dir) => ({ width: 44, height: 44, borderRadius: 22, border: 0, background: on ? "#ffffff14" : "transparent", color: on ? "#fff" : "#334155", fontSize: 22, cursor: on ? "pointer" : "default" });
+  const arrow = (on, dir) => ({ width: 44, height: 44, borderRadius: 22, border: 0, background: on ? "#ffffff14" : "transparent", color: on ? "#fff" : "#334155", fontSize: 20, cursor: on ? "pointer" : "default" });
   const first = weeks[0] || 1, lastW = weeks[weeks.length - 1] || 18;
   const Team = ({ i, right, s, won }) => {
     const t = teams[i];
@@ -109,7 +109,7 @@ function PhoneLeague({ teams, ui, games, byes, week, weeks, setW, leaders, onPla
       <button onClick={() => onTeam?.(i)} style={{ display: "flex", alignItems: "center", gap: 8, flexDirection: right ? "row-reverse" : "row", background: "transparent", border: 0, padding: 0, color: "#fff", cursor: "pointer", minWidth: 0, opacity: won === false ? 0.5 : 1 }}>
         <TeamLogo t={t} sz={28} />
         <b style={{ fontSize: 16, color: i === ui ? C.gn : "#fff" }}>{t.ab}</b>
-        {s != null ? <b style={{ fontSize: 18, fontVariantNumeric: "tabular-nums", margin: right ? "0 6px 0 0" : "0 0 0 6px" }}>{s}</b> : <span style={{ fontSize: 13, color: C.mt }}>{rec(t)}</span>}
+        {s != null ? <b style={{ fontSize: 20, fontVariantNumeric: "tabular-nums", margin: right ? "0 6px 0 0" : "0 0 0 6px" }}>{s}</b> : <span style={{ fontSize: 14, color: C.mt }}>{rec(t)}</span>}
       </button>
     );
   };
@@ -127,7 +127,7 @@ function PhoneLeague({ teams, ui, games, byes, week, weeks, setW, leaders, onPla
                   <button key={p.id} onClick={() => onPlayer?.(p)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 50, background: "transparent", border: 0, borderTop: k ? "1px solid #ffffff10" : 0, padding: 0, color: "#fff", cursor: "pointer", textAlign: "left" }}>
                     <Face s={p.face} sz={32} />
                     <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: "block", fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: ti === ui ? C.gn : "#f1f5f9" }}>{short(p.name)}</span>
+                      <span style={{ display: "block", fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: ti === ui ? C.gn : "#f1f5f9" }}>{short(p.name)}</span>
                       <span style={{ display: "block", fontSize: 12, color: C.mt }}>{t.ab} · {posTag(p)}</span>
                     </span>
                     <span style={{ textAlign: "right" }}>
@@ -153,9 +153,9 @@ function PhoneLeague({ teams, ui, games, byes, week, weeks, setW, leaders, onPla
               </div>
             );
           })}
-          {!games.length && <div style={{ color: C.mt, fontSize: 15, padding: "14px 0" }}>No games this week.</div>}
+          {!games.length && <div style={{ color: C.mt, fontSize: 14, padding: "14px 0" }}>No games this week.</div>}
         </div>
-        {games.length > 0 && byes.length > 0 && <div style={{ fontSize: 13, color: C.mt, marginTop: 8, padding: "0 2px" }}>Bye: {byes.join(", ")}</div>}
+        {games.length > 0 && byes.length > 0 && <div style={{ fontSize: 14, color: C.mt, marginTop: 8, padding: "0 2px" }}>Bye: {byes.join(", ")}</div>}
       </Section>
     </div>
   );

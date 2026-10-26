@@ -17,14 +17,14 @@ export default function PhoneStandings({ teams, ui, yr, confOf, divOf, extra }) 
   return (
     <div>
       <Hero clr={me.clr} logo={me} eyebrow={`${yr} standings`} title={`${ORD[place] || `${place + 1}th`} in the ${confOf(me)} ${divOf(me)}`}
-        right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1 }}>{rec(me)}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>RECORD</div></div>} />
+        right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 40, fontWeight: 900, lineHeight: 1 }}>{rec(me)}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>RECORD</div></div>} />
       <div style={{ marginTop: 16 }}><Segments items={[["AFC", "AFC"], ["NFC", "NFC"]]} value={conf} onChange={setConf} /></div>
       {["East", "North", "South", "West"].map((d) => { const list = divs[`${conf} ${d}`]; if (!list) return null; return (
         <div key={d} style={{ background: "#ffffff0f", borderRadius: 18, padding: "4px 14px 6px", marginBottom: 12 }}>
           <div style={{ display: "flex", fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: "#94a3b8", padding: "10px 0 4px" }}><span style={{ flex: 1 }}>{conf} {d.toUpperCase()}</span><span style={{ width: 52, textAlign: "right" }}>W-L</span><span style={{ width: 52, textAlign: "right" }}>DIFF</span></div>
           {list.map((t, i) => { const diff = t.pf - t.pa, you = t.id === ui; return (
             <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 48, borderTop: i ? "1px solid #ffffff10" : 0, background: you ? `${C.gn}14` : "transparent", margin: you ? "0 -14px" : 0, padding: you ? "0 14px" : 0 }}>
-              <span style={{ width: 14, fontSize: 13, fontWeight: 800, color: C.mt }}>{i + 1}</span>
+              <span style={{ width: 14, fontSize: 14, fontWeight: 800, color: C.mt }}>{i + 1}</span>
               <TeamLogo t={t} sz={28} />
               <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: you ? C.gn : "#f1f5f9" }}>{t.name}</span>
               <b style={{ width: 52, textAlign: "right", fontSize: 16, fontVariantNumeric: "tabular-nums" }}>{rec(t)}</b>

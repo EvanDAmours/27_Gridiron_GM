@@ -37,7 +37,7 @@ export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = 
     <div style={card}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
         <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{title}</span>
-        <span style={{ fontSize: 13, color: C.mt }}>Money already committed against each season's cap. Re-signings, rookies and free agents come out of the room.</span>
+        <span style={{ fontSize: 14, color: C.mt }}>Money already committed against each season's cap. Re-signings, rookies and free agents come out of the room.</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${mobile ? 2 : 4},minmax(0,1fr))`, gap: 10 }}>
         {yrs.map((y, i) => {
@@ -50,11 +50,11 @@ export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = 
                 <div style={{ width: `${pct}%`, height: "100%", background: y.room < 0 ? C.rd : "#38bdf8" }} />
                 {deadPct > 0 && <div style={{ position: "absolute", left: 0, top: 0, width: `${deadPct}%`, height: "100%", background: "#ef4444" }} />}
               </div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: tone, lineHeight: 1.1 }}>{y.room < 0 ? `-${$(-y.room)}` : $(y.room)}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: tone, lineHeight: 1.1 }}>{y.room < 0 ? `-${$(-y.room)}` : $(y.room)}</div>
               <div style={{ fontSize: 12, color: "#94a3b8" }}>room · {$(y.committed)} committed{y.dead > 0 ? ` (${$(y.dead)} dead)` : ""}</div>
               <div style={{ fontSize: 12, color: "#94a3b8" }}>{y.players} player{y.players === 1 ? "" : "s"} signed</div>
-              {y.expiring.length > 0 && <div style={{marginTop: 6, fontSize: 13, fontWeight: 800, color: C.mt }}>Deals ending</div>}
-              {y.expiring.slice(0, 4).map((p) => <div key={p.id} onClick={() => onPlayer?.(p)} style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 13, padding: "1px 0", cursor: onPlayer ? "pointer" : "default", minWidth: 0 }}><Bdg pos={posTag(p)} /><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span><b style={{ color: "#cbd5e1" }}>{p.ovr}</b></div>)}
+              {y.expiring.length > 0 && <div style={{marginTop: 6, fontSize: 14, fontWeight: 800, color: C.mt }}>Deals ending</div>}
+              {y.expiring.slice(0, 4).map((p) => <div key={p.id} onClick={() => onPlayer?.(p)} style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 14, padding: "1px 0", cursor: onPlayer ? "pointer" : "default", minWidth: 0 }}><Bdg pos={posTag(p)} /><span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span><b style={{ color: "#cbd5e1" }}>{p.ovr}</b></div>)}
               {y.expiring.length > 4 && <div style={{ fontSize: 12, color: C.mt }}>+{y.expiring.length - 4} more</div>}
             </div>
           );
@@ -83,11 +83,11 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
       <div style={{ marginBottom: 14 }}>
         <Section title="Cap advisor" style={{ marginTop: 18 }}>
           <div style={soft}>
-            {!tips.length && <div style={{ fontSize: 15, color: "#94a3b8", padding: "16px 0" }}>Your books are in good shape.</div>}
+            {!tips.length && <div style={{ fontSize: 14, color: "#94a3b8", padding: "16px 0" }}>Your books are in good shape.</div>}
             {tips.map((t, i) => (
               <button key={i} onClick={() => t.p && onPlayer(t.p)} style={{ display: "flex", gap: 12, width: "100%", textAlign: "left", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "12px 0", color: "#fff", cursor: t.p ? "pointer" : "default", whiteSpace: "normal" }}>
                 <span style={{ width: 10, height: 10, borderRadius: 5, background: t.tone, marginTop: 6, flexShrink: 0 }} />
-                <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 16, fontWeight: 800 }}>{t.title}</span><span style={{ display: "block", fontSize: 13, color: "#94a3b8", lineHeight: 1.4, marginTop: 2 }}>{t.text}</span></span>
+                <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 16, fontWeight: 800 }}>{t.title}</span><span style={{ display: "block", fontSize: 14, color: "#94a3b8", lineHeight: 1.4, marginTop: 2 }}>{t.text}</span></span>
               </button>
             ))}
           </div>
@@ -100,7 +100,7 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
                   <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: "#94a3b8" }}>{y.yr}{i === 0 ? " · THIS YEAR" : ""}</div>
                   <div style={{ fontSize: 28, fontWeight: 900, color: tone, marginTop: 4 }}>{y.room < 0 ? `-${$(-y.room)}` : $(y.room)}</div>
                   <div style={{ height: 6, borderRadius: 3, background: "#ffffff14", overflow: "hidden", margin: "8px 0" }}><div style={{ width: `${pct}%`, height: "100%", background: y.room < 0 ? C.rd : "#38bdf8" }} /></div>
-                  <div style={{ fontSize: 13, color: "#94a3b8" }}>{y.players} signed · {y.expiring.length} deal{y.expiring.length === 1 ? "" : "s"} ending</div>
+                  <div style={{ fontSize: 14, color: "#94a3b8" }}>{y.players} signed · {y.expiring.length} deal{y.expiring.length === 1 ? "" : "s"} ending</div>
                 </div>
               ); })}
             </div>
@@ -121,9 +121,9 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
           <div style={{ ...soft, padding: "14px" }}>
             <div style={{ height: 12, borderRadius: 6, background: "#ffffff14", overflow: "hidden", display: "flex", marginBottom: 12 }}>{byGroup.map(([g, v], i) => <div key={g} style={{ width: `${(v / cap) * 100}%`, background: CLR[i] }} />)}</div>
             {byGroup.map(([g, v, avg], i) => { const d = avg ? (v - avg) / avg : 0; return (
-              <div key={g} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 15, minHeight: 32 }}>
+              <div key={g} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, minHeight: 32 }}>
                 <span style={{ width: 10, height: 10, borderRadius: 3, background: CLR[i] }} /><span style={{ flex: 1 }}>{g}</span><b>{$(v)}</b>
-                {avg != null && <span style={{ width: 54, textAlign: "right", fontSize: 13, fontWeight: 800, color: d > 0.25 ? C.rd : d < -0.25 ? C.gn : C.mt }}>{d > 0 ? "+" : ""}{Math.round(d * 100)}%</span>}
+                {avg != null && <span style={{ width: 54, textAlign: "right", fontSize: 14, fontWeight: 800, color: d > 0.25 ? C.rd : d < -0.25 ? C.gn : C.mt }}>{d > 0 ? "+" : ""}{Math.round(d * 100)}%</span>}
               </div>
             ); })}
             {byGroup[0][2] != null && <div style={{ fontSize: 12, color: C.mt, marginTop: 6 }}>Against the league's average spend</div>}
@@ -138,7 +138,7 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
         {[["CAP SPACE", $(space), space < 0 ? C.rd : space < 15 ? C.gd : C.gn, `of ${$(cap)}${team?.rollover > 0 ? `, incl. ${$(team.rollover)} rolled over` : ""}`], ["NEXT SEASON'S ROOM", $(nextRoom), nextRoom < 0 ? C.rd : C.gn, rookies > 0 ? `after coaches and ~${$(rookies)} of rookies, before re-signings` : "after coaches, before re-signings"], ["DEAD MONEY", $(dead), dead > 0 ? C.rd : C.mt, deadNext ? `+${$(deadNext)} next year` : "none next year"], ["EXPIRING DEALS", rows.filter((r) => r.yl <= 1).length, C.tx, onContracts ? "after this season · see them →" : "after this season", "expiring"]].filter(([l]) => cy == null || !["CAP SPACE", "NEXT SEASON'S ROOM"].includes(l)).map(([l, v, c, sub, f]) => (
           <div key={l} onClick={f && onContracts ? () => onContracts(f) : undefined} style={{ ...card, cursor: f && onContracts ? "pointer" : "default" }}>
             <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: C.mt }}>{l}</div>
-            <div style={{ fontSize: 24, fontWeight: 900, color: c }}>{v}</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: c }}>{v}</div>
             <div style={{ fontSize: 12, color: "#94a3b8" }}>{sub}</div>
           </div>
         ))}
@@ -166,7 +166,7 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
           })}
         </div>
         <div style={card}>
-          <div style={{ ...head, display: "flex" }}><span style={{ flex: 1 }}>Biggest cap hits</span>{onContracts && <button onClick={() => onContracts("all")} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", letterSpacing: 0, fontWeight: 700 }}>All {rows.length} contracts →</button>}</div>
+          <div style={{ ...head, display: "flex" }}><span style={{ flex: 1 }}>Biggest cap hits</span>{onContracts && <button onClick={() => onContracts("all")} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 14, cursor: "pointer", letterSpacing: 0, fontWeight: 700 }}>All {rows.length} contracts →</button>}</div>
           {top.map((p) => <div key={p.id} onClick={() => onPlayer(p)} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 14, padding: "3px 0", cursor: "pointer" }}><Bdg pos={posTag(p)} /><span style={{ flex: 1 }}>{p.name}</span><b style={{ color: C.gd }}>{$(p.salary)}</b><span style={{ color: C.mt, minWidth: 44, textAlign: "right" }}>{Math.round(((p.salary || 0) / cap) * 100)}%</span></div>)}
         </div>
         <div style={card}>
@@ -176,10 +176,10 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
           {(allTips ? tips : tips.slice(0, 3)).map((t, i) => (
             <div key={i} onClick={() => t.p && onPlayer(t.p)} style={{ borderLeft: `3px solid ${t.tone}`, background: C.bg, borderRadius: 8, padding: "8px 10px", marginBottom: 6, cursor: t.p ? "pointer" : "default" }}>
               <div style={{ fontSize: 14, fontWeight: 800 }}>{t.title}</div>
-              <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.4 }}>{t.text}</div>
+              <div style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.4 }}>{t.text}</div>
             </div>
           ))}
-          {tips.length > 3 && <button onClick={() => setAllTips((v) => !v)} style={{ background: "transparent", border: 0, padding: "4px 0", color: "#7dd3fc", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{allTips ? "Show fewer" : `${tips.length - 3} more suggestions`}</button>}
+          {tips.length > 3 && <button onClick={() => setAllTips((v) => !v)} style={{ background: "transparent", border: 0, padding: "4px 0", color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>{allTips ? "Show fewer" : `${tips.length - 3} more suggestions`}</button>}
         </div>
       </div>
     </div>

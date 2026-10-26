@@ -7,7 +7,7 @@ import Select from "./Select.jsx";
 import { KINDS } from "./transactions.js";
 
 const ICON = { trade: "🔁", sign: "✍️", release: "✂️", coach: "📋", retire: "👋" };
-const TAG = { trade: "TRADE", sign: "SIGNING", release: "RELEASE", coach: "COACHING", retire: "RETIREMENT" };
+const TAG = { trade: "Trade", sign: "Signing", release: "Release", coach: "Coaching", retire: "Retirement" };
 const TONE = { trade: "#a78bfa", sign: C.gn, release: "#f87171", coach: "#7dd3fc", retire: "#fbbf24" };
 
 export default function TransactionsWire({ wire = [], teams = [], ui }) {
@@ -25,7 +25,7 @@ export default function TransactionsWire({ wire = [], teams = [], ui }) {
     if (groups[groups.length - 1]?.key !== key) groups.push({ key, items: [] });
     groups[groups.length - 1].items.push(e);
   }
-  const chip = (on) => ({ background: on ? "#ffffff24" : "transparent", color: on ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: MOBILE ? "8px 12px" : "5px 12px", fontSize: 13, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" });
+  const chip = (on) => ({ background: on ? "#ffffff24" : "transparent", color: on ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: MOBILE ? "8px 12px" : "5px 12px", fontSize: 14, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" });
   const selStyle = { background: "#ffffff12", color: C.tx, border: 0, borderRadius: 999, padding: "8px 14px", fontSize: 14, flex: MOBILE ? 1 : "0 0 auto", minWidth: 0 };
   const filters = (<>
     <Select value={team} onChange={(e) => setTeam(e.target.value)} aria-label="Club" style={selStyle}>
@@ -40,8 +40,8 @@ export default function TransactionsWire({ wire = [], teams = [], ui }) {
   return (
     <div style={{ maxWidth: 1100 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-        {MOBILE && <div style={{ fontSize: 22, fontWeight: 900 }}>Transactions</div>}
-        {!MOBILE && <div style={{ fontSize: 15, color: C.mt }}>Every trade, signing, release, coaching move and retirement around the league.</div>}
+        {MOBILE && <div style={{ fontSize: 20, fontWeight: 900 }}>Transactions</div>}
+        {!MOBILE && <div style={{ fontSize: 14, color: C.mt }}>Every trade, signing, release, coaching move and retirement around the league.</div>}
       </div>
       <div style={{ display: "flex", gap: 6, flexWrap: MOBILE ? "nowrap" : "wrap", overflowX: MOBILE ? "auto" : "visible", alignItems: "center", marginBottom: MOBILE ? 6 : 10, paddingBottom: MOBILE ? 2 : 0 }}>
         <button onClick={() => setKind("all")} style={chip(kind === "all")}>All</button>
@@ -52,14 +52,14 @@ export default function TransactionsWire({ wire = [], teams = [], ui }) {
       {!groups.length && <div style={{ background: "#ffffff0d", borderRadius: 18, padding: 16, color: C.mt, fontSize: 14 }}>Nothing on the wire yet. Trades, signings and coaching moves show up here as they happen.</div>}
       {groups.map((g) => (
         <div key={g.key} style={{ background: "#ffffff0d", borderRadius: 18, padding: "12px 16px", marginBottom: 10 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 6 }}>{g.key}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 6 }}>{g.key}</div>
           {g.items.map((e, i) => {
             const mine = (e.tm || []).includes(ui);
             return (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: i ? `1px solid ${C.bd}55` : "none", background: mine ? "#14532d22" : "transparent" }}>
-                {!MOBILE && <span style={{ width: 22, textAlign: "center", fontSize: 15 }} title={e.k}>{ICON[e.k]}</span>}
+                {!MOBILE && <span style={{ width: 22, textAlign: "center", fontSize: 14 }} title={e.k}>{ICON[e.k]}</span>}
                 <span style={{ display: "inline-flex", gap: 2, minWidth: MOBILE ? 24 : 48 }}>{(e.tm || []).slice(0, MOBILE ? 1 : 2).map((ti) => teams[ti] && <TeamLogo key={ti} t={teams[ti]} sz={22} />)}</span>
-                <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: "#e2e8f0", lineHeight: 1.35 }}><b style={{ color: TONE[e.k], fontSize: 11, letterSpacing: 1, marginRight: 6 }}>{TAG[e.k]}</b>{e.t}</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: "#e2e8f0", lineHeight: 1.35 }}><b style={{ color: TONE[e.k], fontSize: 12, marginRight: 6 }}>{TAG[e.k]}</b>{e.t}</span>
               </div>
             );
           })}

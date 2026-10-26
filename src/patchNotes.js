@@ -1851,4 +1851,11 @@ export const PATCH_NOTES = [
     "Scouts tab is just for your staff and hiring now (regions moved to the Regions tab)",
     "Combine screen trimmed: one line with your interviews, workouts and points, stock up and stock down, and the results table (now with a search box). Your scouts' visit list moved to Scouting HQ during Combine week",
   ] },
+  { v: "4.63", date: "2026-10-23", title: "Calm finish, drive tracker, scout report card", notes: [
+    "One type and spacing system across the game: every screen now uses the same handful of text sizes and spacing steps, so pages line up and read the same",
+    "Calm style finished: Season Awards, the big moment cards (clinches, trades, Ring of Honor and jersey nights, ring night, legends), League History plaques, transactions, the walkthrough and the offline panel now match Home: team-color washes, soft cards, sentence-case titles, one clear button",
+    "Live games: a broadcast drive tracker replaces the settings panel on a computer. Drives are listed newest first with plays, yards, time and how they ended (touchdown, punt, turnover...); the drive on the field shows its plays and the rest open on a tap. The current drive also shows next to down and distance. Settings moved behind a ⚙ button",
+    "Phones: the live game shows the same drive tracker under the last play",
+    "Scout report card: on draft day each scout is graded A+ to D on that class: how close his reads were, and the sleepers, red flags and special development traits he caught. It shows on the Scouts tab with his grades from earlier years, so you can tell who is worth keeping",
+  ] },
 ];

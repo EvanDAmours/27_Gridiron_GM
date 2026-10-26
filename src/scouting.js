@@ -1222,3 +1222,34 @@ export function setRegionScout(sc, sp, region, slot, yr) {
   const msg = slot ? `${sc[slot].name} will cover the ${regionName(region)}.${dropped ? ` He leaves the ${regionName(dropped)}.` : ""}` : `Nobody covers the ${regionName(region)} now.`;
   return { ok: true, msg, sc: nsc };
 }
+
+// ---------- Scout report card ----------
+// When the draft starts, each scout is graded on the prospects he led the reads on (his regions):
+// how close his ceiling reads were, the sleepers and red flags he caught, the special development
+// traits he called early, and the hunches that were wrong. Returns { [slot]: card } for this class.
+const SPECIAL_DEV = ["generational", "superstar", "star"];
+export const reportGrade = (s) => (s >= 93 ? "A+" : s >= 88 ? "A" : s >= 84 ? "A-" : s >= 80 ? "B+" : s >= 76 ? "B" : s >= 72 ? "B-" : s >= 68 ? "C+" : s >= 64 ? "C" : s >= 60 ? "C-" : "D");
+export function scoutReportCard(sc, cls) {
+  const top = [...(cls || [])].sort((a, b) => csRank(a) - csRank(b)).slice(0, 224);
+  const out = {};
+  for (const slot of SCOUT_SLOTS) {
+    const x = sc?.[slot];
+    if (!x) continue;
+    const mine = top.filter((p) => coverage(sc, p).scout?.id === x.id);
+    let err = 0, n = 0, gems = 0, found = 0, busts = 0, caught = 0, devs = 0, called = 0, wrong = 0;
+    for (const p of mine) {
+      const r = prospectRead(sc, p);
+      if (r.potV != null) { err += Math.abs(r.potV - p.truePot); n++; }
+      if (p.gem) { gems++; if (r.sleeper || r.hunch) found++; } else if (r.hunch || r.sleeper) wrong++;
+      if (p.bust) { busts++; if (r.flag) caught++; }
+      if (SPECIAL_DEV.includes(devOf(p))) { devs++; if (r.dev === devOf(p)) called++; }
+    }
+    if (!n) { out[slot] = { id: x.id, name: x.name, group: x.group, n: 0, grade: null }; continue; }
+    const miss = err / n, rate = (a, b) => (b ? a / b : 0.5);
+    const score = clamp(112 - 9 * miss + 12 * (rate(found, gems) - 0.5) + 10 * (rate(caught, busts) - 0.5) + 8 * (rate(called, devs) - 0.5) - 3 * wrong, 30, 100);
+    out[slot] = { id: x.id, name: x.name, group: x.group, n, miss: +miss.toFixed(1), gems, found, busts, caught, devs, called, wrong, score: Math.round(score), grade: reportGrade(score) };
+  }
+  return out;
+}
+// Save this class's report card (once per draft year).
+export const fileReportCard = (sc, cls, yr) => (sc?.reports?.[yr] ? sc : { ...sc, reports: { ...(sc?.reports || {}), [yr]: scoutReportCard(sc, cls) } });

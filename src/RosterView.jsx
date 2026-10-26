@@ -11,7 +11,7 @@ import RoleTag from "./RoleTag.jsx";
 
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
 const GROUPS = { ALL: null, OFF: ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT"], DEF: ["DL", "LB", "CB", "S"], ST: ["K", "P"] };
-const sel = { background: "#ffffff0a", color: C.tx, border: 0, borderRadius: 12, padding: "9px 12px", fontSize: 15, minHeight: MOBILE ? 44 : undefined };
+const sel = { background: "#ffffff0a", color: C.tx, border: 0, borderRadius: 12, padding: "9px 12px", fontSize: 14, minHeight: MOBILE ? 44 : undefined };
 const POS_NAME = { QB: "Quarterbacks", RB: "Running backs", WR: "Wide receivers", TE: "Tight ends", LT: "Left tackles", LG: "Left guards", C: "Centers", RG: "Right guards", RT: "Right tackles", DL: "Defensive line", LB: "Linebackers", CB: "Cornerbacks", S: "Safeties", K: "Kickers", P: "Punters" };
 const htS = (i) => (i ? `${Math.floor(i / 12)}'${i % 12}"` : "—");
 // the player picked in the table: who he is, his deal and his best ratings
@@ -23,19 +23,19 @@ function SideCard({ p, slot, dev, onOpen }) {
   return (
     <div style={{ position: "sticky", top: 0, background: "#ffffff0a", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ textAlign: "center", border: `2px solid ${oC(p.ovr)}`, borderRadius: 10, padding: "4px 8px" }}><div style={{ fontSize: 26, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</div><div style={{ fontSize: 10, fontWeight: 900, color: C.mt }}>OVR</div></div>
+        <div style={{ textAlign: "center", border: `2px solid ${oC(p.ovr)}`, borderRadius: 10, padding: "4px 8px" }}><div style={{ fontSize: 28, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</div><div style={{ fontSize: 10, fontWeight: 900, color: C.mt }}>OVR</div></div>
         <Face s={p.face} sz={64} />
       </div>
       <div>
         <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.1 }}>{p.name}</div>
-        <div style={{ fontSize: 13, color: "#94a3b8", marginTop: 2 }}>{p.num != null ? `#${p.num} ` : ""}{posTag(p)}{slot?.label ? ` · ${slot.label}` : ""}</div>
+        <div style={{ fontSize: 14, color: "#94a3b8", marginTop: 2 }}>{p.num != null ? `#${p.num} ` : ""}{posTag(p)}{slot?.label ? ` · ${slot.label}` : ""}</div>
       </div>
       <div><DevChip dev={dev} /></div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, borderTop: "1px solid #ffffff12", paddingTop: 8 }}>
         {stat("AGE", p.age)}{stat("HT", htS(p.ht_))}{stat("WT", p.wt || "—")}{stat("POT", p.pot || p.ovr)}
       </div>
-      <div style={{ fontSize: 13, color: "#cbd5e1" }}>Contract: <b>${(p.salary || 0).toFixed(1)}M</b> a year, {p.contract} year{p.contract === 1 ? "" : "s"} left</div>
-      {top.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px" }}>{top.map(([k, v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}><span style={{ color: C.mt }}>{lbl(k)}</span><b style={{ color: oC(v) }}>{v}</b></div>)}</div>}
+      <div style={{ fontSize: 14, color: "#cbd5e1" }}>Contract: <b>${(p.salary || 0).toFixed(1)}M</b> a year, {p.contract} year{p.contract === 1 ? "" : "s"} left</div>
+      {top.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px" }}>{top.map(([k, v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}><span style={{ color: C.mt }}>{lbl(k)}</span><b style={{ color: oC(v) }}>{v}</b></div>)}</div>}
       <button onClick={onOpen} style={{ background: "#fff", color: "#0b1220", border: 0, borderRadius: 999, padding: "10px 12px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Open player card</button>
     </div>
   );
@@ -77,7 +77,7 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
       {label}{sort[0] === k ? (sort[1] < 0 ? " ▼" : " ▲") : ""}
     </th>
   );
-  const td = { padding: "2px 6px", borderBottom: "1px solid #ffffff08", textAlign: "center", fontSize: 13.5, height: 26 };
+  const td = { padding: "2px 6px", borderBottom: "1px solid #ffffff08", textAlign: "center", fontSize: 14, height: 26 };
   const picked = rows.find((p) => p.id === pick) || rows[0] || null;
   let lastPos = null;
   return (
@@ -123,14 +123,14 @@ export default function RosterTable({ players, depth, setSel, devOf, wk = 0, foc
                   <td style={{ ...td, fontWeight: 900, fontSize: 16, color: oC(p.ovr) }}>{p.ovr}</td>
                   <td className="ro-hide" style={{ ...td, color: oC(p.pot || p.ovr) }}>{p.pot || p.ovr}</td>
                   <td className="ro-hide" style={td}><DevChip dev={devOf(p)} /></td>
-                  <td className="ro-hide" style={{ ...td, color: "#cbd5e1", whiteSpace: "nowrap", fontSize: 13 }}>${(p.salary || 0).toFixed(1)}M · {p.contract}y</td>
+                  <td className="ro-hide" style={{ ...td, color: "#cbd5e1", whiteSpace: "nowrap", fontSize: 14 }}>${(p.salary || 0).toFixed(1)}M · {p.contract}y</td>
                 </tr>
                 </React.Fragment>
               );
             })}
           </tbody>
         </table>
-        {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 15 }}>Nobody matches.</div>}
+        {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 14 }}>Nobody matches.</div>}
       </div>
       <SideCard p={picked} slot={picked && slot(picked)} dev={picked && devOf(picked)} onOpen={() => picked && setSel(picked)} />
       </div>
@@ -171,8 +171,8 @@ export function PhoneRosterPage({ team, depth, setSel, devOf, wk = 0, focus = nu
     <div>
       <Hero clr={team.clr} logo={team} eyebrow={mine ? `${yr || ""} Roster` : "Their roster"} title={team.name}
         sub={`${team.roster.length} players${ps.length ? ` · ${ps.length} practice squad` : ""}${ir.length ? ` · ${ir.length} on IR` : ""}`}
-        right={ovr ? <div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1 }}>{ovr}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>TEAM OVR</div></div> : null}>
-        {onBack && <button onClick={onBack} style={{ marginTop: 14, minHeight: 40, borderRadius: 999, border: 0, padding: "0 16px", background: "#ffffff1f", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>‹ Back to your team</button>}
+        right={ovr ? <div style={{ textAlign: "right" }}><div style={{ fontSize: 40, fontWeight: 900, lineHeight: 1 }}>{ovr}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>TEAM OVR</div></div> : null}>
+        {onBack && <button onClick={onBack} style={{ marginTop: 14, minHeight: 40, borderRadius: 999, border: 0, padding: "0 16px", background: "#ffffff1f", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>‹ Back to your team</button>}
       </Hero>
       <div style={{ marginTop: 18 }}><Chips items={chips} value={view} onChange={setView} /></div>
       <Section title={{ ALL: "Everyone", OFF: "Offense", DEF: "Defense", ST: "Special teams", PS: "Practice squad", IR: "Injured reserve" }[view]} action={view === "PS" || view === "IR" ? null : `Sort: ${(SORTS.find(([k]) => k === sort) || SORTS[0])[1]}`} onAction={() => setSortOpen(true)} style={{ marginTop: 20 }}>
@@ -191,14 +191,14 @@ export function PhoneRosterPage({ team, depth, setSel, devOf, wk = 0, focus = nu
                     <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} />{special(p) && <DevChip dev={devOf(p)} />}<Badges p={p} focus={focus} mine={mine} /><InjTag p={p} wk={wk} />{p.holdout && <span style={{ fontSize: 12, color: C.gd, fontWeight: 800 }}>Holdout</span>}</span>
                   </span>
                   <span style={{ textAlign: "right", flexShrink: 0 }}>
-                    <b style={{ display: "block", fontSize: 22, lineHeight: 1, color: oC(p.ovr) }}>{p.ovr}</b>
+                    <b style={{ display: "block", fontSize: 20, lineHeight: 1, color: oC(p.ovr) }}>{p.ovr}</b>
                     <span style={{ display: "block", fontSize: 12, fontWeight: 800, marginTop: 4, color: s?.starter && sort === "pos" ? C.gn : "#64748b" }}>{side(p)}</span>
                   </span>
                 </button>
               </React.Fragment>
             );
           })}
-          {!rows.length && <div style={{ padding: "18px 0", color: C.mt, fontSize: 15 }}>{view === "PS" ? "Nobody on the practice squad." : view === "IR" ? "Nobody on injured reserve." : "Nobody here."}</div>}
+          {!rows.length && <div style={{ padding: "18px 0", color: C.mt, fontSize: 14 }}>{view === "PS" ? "Nobody on the practice squad." : view === "IR" ? "Nobody on injured reserve." : "Nobody here."}</div>}
         </div>
       </Section>
       {sortOpen && <Sheet title="Sort" onClose={() => setSortOpen(false)}>{SORTS.map(([k, l], i) => <Row key={k} first={i === 0} label={l} value={sort === k ? "✓" : ""} tone={C.gn} onClick={() => { setSort(k); setSortOpen(false); }} />)}<div style={{ height: 8 }} /></Sheet>}
@@ -207,10 +207,10 @@ export function PhoneRosterPage({ team, depth, setSel, devOf, wk = 0, focus = nu
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12, paddingRight: 40 }}>
             <Face s={pick.face} sz={60} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.15 }}>{pick.name}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.15 }}>{pick.name}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, flexWrap: "wrap" }}><Bdg pos={posTag(pick)} /><RoleTag p={pick} /><span style={{ fontSize: 14, color: "#94a3b8" }}>Age {pick.age}</span></div>
             </div>
-            <b style={{ fontSize: 36, color: oC(pick.ovr) }}>{pick.ovr}</b>
+            <b style={{ fontSize: 40, color: oC(pick.ovr) }}>{pick.ovr}</b>
           </div>
           {(acts(pick) || []).map((a, i) => a.note
             ? <div key={i} style={{ fontSize: 14, color: a.tone || "#94a3b8", padding: "8px 2px" }}>{a.note}</div>

@@ -129,3 +129,18 @@ test("region dropdowns: one scout per region, a full scout gives up his first re
   assert.ok(uncovered(n).includes("PAC"));
   assert.equal(setRegionScout(sc, "regular", "PAC", "major", 2030).ok, false);
 });
+
+import { scoutReportCard, fileReportCard } from "../src/scouting.js";
+test("scout report card: a sharp specialist grades better than a weak scout on the same ground", () => {
+  let good = 0, bad = 0;
+  for (const c of classes(6, 2700)) {
+    const mk2 = (ev, group) => ({ major: { id: "a", name: "A", eval: ev, group }, major2: { id: "b", name: "B", eval: ev, group }, minor: { id: "c", name: "C", eval: ev, group }, minor2: { id: "d", name: "D", eval: ev, group } });
+    const hi = scoutReportCard(mk2(92), c), lo = scoutReportCard(mk2(56), c);
+    for (const k of ["major", "major2"]) { if (hi[k].grade) good += hi[k].score; if (lo[k].grade) bad += lo[k].score; }
+  }
+  assert.ok(good > bad + 40, `${good} vs ${bad}`);
+  const c = genDC(2800), sc = staff(70);
+  const f = fileReportCard(sc, c, 2800);
+  assert.ok(f.reports[2800].major.grade);
+  assert.equal(fileReportCard(f, c, 2800), f, "graded once per class");
+});
