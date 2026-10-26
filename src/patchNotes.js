@@ -1887,4 +1887,7 @@ export const PATCH_NOTES = [
     "Young players: every player 24 and under, his role (starter, rotation, backup) and whether it's helping him grow, with a shortcut to the depth chart",
     "Home: a Development strip along the bottom, one tap to the plan",
   ] },
+  { v: "4.69", date: "2026-10-23", title: "Positions on Development", notes: [
+    "Development: every player in Worth knowing shows his age, position and OVR (so you can tell your focus players apart), and the Season plan shows each focus player's position",
+  ] },
 ];

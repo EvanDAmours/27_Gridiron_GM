@@ -64,9 +64,9 @@ export default function DevelopmentScreen({ roster, yr, sp, wk, gp = 0, focus, s
   const name = (p) => p.name;
 
   const worth = [
-    ...focusRows.map((r) => ({ k: `f${r.p.id}`, title: name(r.p), sub: `Your focus player. About ${sign(r.g)} by next summer.`, right: sign(r.g), color: tone(r.g), p: r.p })),
-    ...buried.slice(0, 2).map((r) => ({ k: `b${r.p.id}`, title: name(r.p), sub: `${r.p.age} · ${posTag(r.p)} backup. Regular snaps would speed up his growth.`, right: sign(r.g), color: tone(r.g), p: r.p })),
-    ...fading.slice(0, 2).map((r) => ({ k: `d${r.p.id}`, title: name(r.p), sub: `${r.p.age}. Expect a drop next summer.`, right: sign(r.g), color: tone(r.g), p: r.p })),
+    ...focusRows.map((r) => ({ k: `f${r.p.id}`, title: name(r.p), sub: `${r.p.age} · ${posTag(r.p)} · ${r.p.ovr} OVR. Your focus player: about ${sign(r.g)} by next summer.`, right: sign(r.g), color: tone(r.g), p: r.p })),
+    ...buried.slice(0, 2).map((r) => ({ k: `b${r.p.id}`, title: name(r.p), sub: `${r.p.age} · ${posTag(r.p)} · ${r.p.ovr} OVR backup. Regular snaps would speed up his growth.`, right: sign(r.g), color: tone(r.g), p: r.p })),
+    ...fading.slice(0, 2).map((r) => ({ k: `d${r.p.id}`, title: name(r.p), sub: `${r.p.age} · ${posTag(r.p)} · ${r.p.ovr} OVR. Expect a drop next summer.`, right: sign(r.g), color: tone(r.g), p: r.p })),
   ].slice(0, 5);
   const list = rows.filter((r) => trendOf(r.g) === trend).sort((a, b) => (trend === "declining" ? a.g - b.g : trend === "growing" ? b.g - a.g : b.p.ovr - a.p.ovr));
   const [showAll, setShowAll] = useState(false);
@@ -97,7 +97,7 @@ export default function DevelopmentScreen({ roster, yr, sp, wk, gp = 0, focus, s
       {view === "plan" && <>
         <div style={{ textAlign: "center" }}><H1 sub={locked ? "Locked in. You can still change it any time." : "Three choices. Set them before the season starts."}>Plan your season.</H1></div>
         {[
-          { n: 1, label: "Focus players", title: focusRows.length ? focusRows.map((r) => name(r.p)).join(" · ") : "Nobody yet", sub: focusRows.length ? focusRows.map((r) => `${r.p.name.split(" ").slice(-1)[0]} about +${perSeason(r.p)} from the extra coaching`).join(" · ") : "One on offense, one on defense: each gets extra coaching every week", act: "Change", on: () => setFocusOpen(true) },
+          { n: 1, label: "Focus players", title: focusRows.length ? focusRows.map((r) => `${name(r.p)} (${posTag(r.p)})`).join(" · ") : "Nobody yet", sub: focusRows.length ? focusRows.map((r) => `${r.p.name.split(" ").slice(-1)[0]} about +${perSeason(r.p)} from the extra coaching`).join(" · ") : "One on offense, one on defense: each gets extra coaching every week", act: "Change", on: () => setFocusOpen(true) },
           { n: 2, label: "Camp priority", title: CAMP[camp], sub: camp === "youth" ? `About +0.5 next summer for ${rows.filter((r) => r.p.age <= 25).length} players 25 and under` : camp === "vets" ? `Slows the decline of ${rows.filter((r) => r.p.age >= 29).length} players 29 and over` : "Even time for everyone", act: "Change", on: () => setCampOpen(true) },
           { n: 3, label: "Young players", title: `${young.filter((r) => r.role !== "backup").length} playing · ${buried.length} stuck behind someone`, sub: buried[0] ? `${name(buried[0].p)} has the most to gain from snaps` : "Every young player with upside is getting snaps", act: "Review", on: () => setView("young") },
         ].map((s) => (
