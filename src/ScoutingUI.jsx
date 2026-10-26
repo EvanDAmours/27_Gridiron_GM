@@ -563,9 +563,13 @@ export function CombineView({ g, buzz }) {
   const [grp, setGrp] = useState("All");
   // opens on what's relevant to you: your need positions, and players you can actually get (no
   // point studying the top ten without a pick up there); everything else is a tap away
-  const [mine, setMine] = useState(needs.length > 0);
+  // three ways in: Potential picks (the default: who's likely there at each of your picks), your
+  // need positions (players you can get), or every position
   const slots = mySlots(g), reach = slots.length ? pickWindow(slots[0])[0] : 0;
-  const [inRange, setInRange] = useState(reach > 1);
+  const [view, setView] = useState(slots.length ? "picks" : needs.length ? "needs" : "all");
+  const mine = view === "needs";
+  const inRange = view === "needs" && reach > 1;
+  const [openPk, setOpenPk] = useState({});
   const [sort, setSort] = useState("rank");
   const [n, setN] = useState(25);
   const [q, setQ] = useState("");
@@ -574,7 +578,8 @@ export function CombineView({ g, buzz }) {
   const val = (p) => sort === "rank" ? -csRank(p) : sort === "grade" ? GRADE_ORDER[p.combGrade] || 0 : (() => { const t = COMBINE_TESTS.find((x) => x.k === sort); return t ? (t.lowGood ? -p.combine[t.k] : +p.combine[t.k]) : 0; })();
   const qq = q.trim().toLowerCase();
   const reachable = (p) => !inRange || csRank(p) >= reach;
-  const rows = all.filter((p) => inGroup(p, g0) && (!mine || isNeed(p)) && reachable(p) && (!qq || `${p.name} ${p.bio?.college || p.college || ""}`.toLowerCase().includes(qq))).sort((x, y) => val(y) - val(x));
+  const atAPick = (p) => slots.some((pk) => { const [lo, hi] = pickWindow(pk); return csRank(p) >= lo && csRank(p) <= hi; });
+  const rows = all.filter((p) => inGroup(p, g0) && (!mine || isNeed(p)) && reachable(p) && (view !== "picks" || atAPick(p)) && (!qq || `${p.name} ${p.bio?.college || p.college || ""}`.toLowerCase().includes(qq))).sort((x, y) => val(y) - val(x));
   // stock up: tested great relative to where the board has him; stock down: the reverse
   const up = all.filter(reachable).filter((p) => (GRADE_ORDER[p.combGrade] || 0) >= 11 && csRank(p) > 40).sort((x, y) => (GRADE_ORDER[y.combGrade] - GRADE_ORDER[x.combGrade]) || csRank(x) - csRank(y)).slice(0, 4);
   // early names (preseason top 64) who tested poorly; the biggest slides first
@@ -610,8 +615,8 @@ export function CombineView({ g, buzz }) {
         {up.length > 0 && <><div style={{...label, color: "#4ade80" }}>Stock up</div><div style={soft}>{up.map((p, i) => row(p, i, <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, color: "#94a3b8" }}>{p.cons?.mid && p.cons.mid !== csRank(p) ? `#${p.cons.mid} → #${csRank(p)}` : ""}</span><GradeChip g={p.combGrade} /></span>))}</div></>}
         {down.length > 0 && <><div style={{...label, color: "#f87171" }}>Stock down</div><div style={soft}>{down.map((p, i) => row(p, i, <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, color: "#94a3b8" }}>{p.cons?.mid && p.cons.mid !== csRank(p) ? `#${p.cons.mid} → #${csRank(p)}` : ""}</span><GradeChip g={p.combGrade} /></span>))}</div></>}
         <div style={{ display: "flex", alignItems: "baseline", margin: "26px 2px 10px" }}><span style={{ fontSize: 20, fontWeight: 900 }}>Results</span><button onClick={() => setSortOpen(true)} style={{ marginLeft: "auto", background: "transparent", border: 0, color: "#7dd3fc", fontSize: 14, fontWeight: 700, cursor: "pointer", padding: "6px 0" }}>{sort === "rank" ? "Board order" : sort === "grade" ? "Combine grade" : t?.name} ▾</button></div>
-        <Chips items={[["__mine", "My needs"], ...POS_GROUPS.map(([k]) => [k, k])]} value={mine ? "__mine" : grp} onChange={(k) => { if (k === "__mine") setMine((v) => !v); else { setMine(false); setGrp(k); } setN(25); }} />
-        {reach > 1 && <button onClick={() => { setInRange((v) => !v); setN(25); }} style={{ marginTop: 8, background: "transparent", border: 0, padding: "4px 2px", color: inRange ? "#7dd3fc" : "#94a3b8", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>{inRange ? `Players you can get (#${reach} on) · show everyone` : "Everyone · show only players you can get"}</button>}
+        <Chips items={[...(slots.length ? [["__picks", "Potential picks"]] : []), ["__mine", "My needs"], ...POS_GROUPS.map(([k]) => [k, k])]} value={view === "picks" ? "__picks" : mine ? "__mine" : grp} onChange={(k) => { if (k === "__picks") setView("picks"); else if (k === "__mine") setView("needs"); else { setView("all"); setGrp(k); } setN(25); }} />
+        {view === "picks" && <div style={{ fontSize: 13, color: "#94a3b8", margin: "8px 2px 0" }}>Likely there at your picks: {slots.slice(0, 4).map((pk) => `#${pk}`).join(", ")}{slots.length > 4 ? "…" : ""}</div>}
         <div style={{ ...soft, marginTop: 12 }}>
           {rows.slice(0, n).map((p, i) => row(p, i, t ? <span style={{ textAlign: "right", lineHeight: 1.1 }}><b style={{ fontSize: 20, color: p.combPcts?.[t.k] >= 0.9 ? C.gn : "#fff" }}>{(+p.combine[t.k]).toFixed(t.dp)}{t.unit === "s" ? "s" : t.unit === "in" ? '"' : ""}</b><span style={{ display: "block", fontSize: 10, fontWeight: 800, color: C.mt, marginTop: 2 }}>{t.short.toUpperCase()}</span></span> : <GradeChip g={p.combGrade} />))}
           {!rows.length && <div style={{ padding: "16px 0", color: "#94a3b8", fontSize: 14 }}>Nobody tested at that position.</div>}
@@ -640,6 +645,39 @@ export function CombineView({ g, buzz }) {
       <GradeChip g={p.combGrade} small />
     </div>
   );
+  const resRow = (p) => {
+          const read = prospectRead(sc, p), st = standouts(p);
+          return (
+            <div key={p.id} className="bd-row" onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "9px 12px", borderRadius: 14, cursor: "pointer" }}>
+              <span style={{ width: 30, textAlign: "right", fontSize: 16, fontWeight: 900, color: "#64748b", fontVariantNumeric: "tabular-nums" }}>{csRank(p)}</span>
+              <Face s={p.face} sz={40} />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 16, fontWeight: 800, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+                <span style={{ display: "block", fontSize: 13.5, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{posTag(p)}{roleWord(p) && <b style={{ color: "#e2e8f0", fontWeight: 800 }}> · {roleWord(p)}</b>}{isNeed(p) && <b style={{ color: C.gd, fontWeight: 800 }}> · Need</b>} · {htS(p.ht_)} {p.wt} · {p.bio?.college || p.college}</span>
+              </span>
+              <span style={{ width: 210, textAlign: "right", fontSize: 14, color: "#cbd5e1", whiteSpace: "nowrap" }}>
+                {t ? <b style={{ fontSize: 18, color: (p.combPcts?.[t.k] ?? 0) >= 0.9 ? C.gn : "#fff", fontVariantNumeric: "tabular-nums" }}>{p.combine?.[t.k] != null ? fmt(t, p) : "—"}</b>
+                  : st.length ? st.map((x) => <span key={x.k} style={{ marginLeft: 12 }}><b style={{ color: (p.combPcts[x.k] || 0) >= 0.9 ? C.gn : "#fff" }}>{fmt(x, p)}</b> <span style={{ color: "#64748b" }}>{x.short}</span></span>)
+                  : <span style={{ color: "#475569" }}>—</span>}
+              </span>
+              <span style={{ width: 40, textAlign: "center" }}><GradeChip g={p.combGrade} small /></span>
+              <span style={{ width: 170, display: "flex", gap: 4, justifyContent: "flex-end" }} onClick={(e) => e.stopPropagation()}>
+                {p.scout?.intv ? <span title={[...(p.scout.intv.good || []), ...(p.scout.intv.bad || [])].join(" ") || p.scout.intv.note} style={{ fontSize: 12.5, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4 }}>Interview <GradeChip g={p.scout.intv.overall || p.scout.intv.grade} small /></span>
+                  : live && <span className="bd-act" style={{ display: "flex", gap: 4 }}>
+                    {read.lvl < 2 && <Btn onClick={() => a.workout(p)} disabled={!(sc.workoutsLeft > 0)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 12.5, padding: "4px 10px", borderRadius: 99 }} title="Free full workup">Workout</Btn>}
+                    <Btn onClick={() => a.interview(p)} disabled={!(sc.interviewsLeft > 0)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 12.5, padding: "4px 10px", borderRadius: 99 }}>Interview</Btn>
+                  </span>}
+              </span>
+            </div>
+          );
+  };
+  // Potential picks: for each pick you hold, the tested players whose board rank puts them in that
+  // pick's likely range (pickWindow), your need positions first
+  const pickGroups = slots.map((pk) => {
+    const [lo, hi] = pickWindow(pk);
+    const list = all.filter((p) => csRank(p) >= lo && csRank(p) <= hi && inGroup(p, g0) && (!qq || `${p.name} ${p.bio?.college || p.college || ""}`.toLowerCase().includes(qq))).sort((x, y) => (isNeed(y) - isNeed(x)) || (val(y) - val(x)));
+    return { pk, lo, hi, list, rd: (g.draftPicks || []).find((d) => d.owner === g.ui && d.overall === pk)?.rd };
+  });
   return (
     <div>
       <style>{BOARD_CSS}</style>
@@ -662,11 +700,11 @@ export function CombineView({ g, buzz }) {
       )}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
         <div style={{ display: "flex", background: "#ffffff0d", borderRadius: 99, padding: 3 }}>
-          {needs.length > 0 && <button onClick={() => { setMine(true); setGrp("All"); setN(25); }} style={seg(mine)}>Your needs · {needs.join(", ")}</button>}
-          <button onClick={() => { setMine(false); setN(25); }} style={seg(!mine)}>All positions</button>
+          {slots.length > 0 && <button onClick={() => { setView("picks"); setN(25); }} style={seg(view === "picks")}>Potential picks</button>}
+          {needs.length > 0 && <button onClick={() => { setView("needs"); setGrp("All"); setN(25); }} style={seg(view === "needs")}>Your needs · {needs.join(", ")}</button>}
+          <button onClick={() => { setView("all"); setN(25); }} style={seg(view === "all")}>All positions</button>
         </div>
-        {!mine && <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>{POS_GROUPS.map(([k]) => <button key={k} onClick={() => { setGrp(k); setN(25); }} style={{ border: 0, borderRadius: 99, padding: "6px 10px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: grp === k ? "#ffffff1f" : "transparent", color: grp === k ? "#fff" : "#94a3b8" }}>{k}</button>)}</div>}
-        {reach > 1 && <button onClick={() => { setInRange((v) => !v); setN(25); }} title={`Players ranked #${reach} or later: the ones still likely there at your first pick`} style={{ border: 0, borderRadius: 99, padding: "6px 13px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: inRange ? "#ffffff1f" : "transparent", color: inRange ? "#fff" : "#94a3b8" }}>{inRange ? "Players you can get" : "Everyone"}</button>}
+        {view !== "needs" && <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>{POS_GROUPS.map(([k]) => <button key={k} onClick={() => { setGrp(k); setN(25); }} style={{ border: 0, borderRadius: 99, padding: "6px 10px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: grp === k ? "#ffffff1f" : "transparent", color: grp === k ? "#fff" : "#94a3b8" }}>{k}</button>)}</div>}
         <input value={q} onChange={(e) => { setQ(e.target.value); setN(25); }} placeholder="Search" aria-label="Search prospects" style={{ ...sel, marginLeft: "auto", width: 150, borderRadius: 99 }} />
         <Select value={sort} onChange={(e) => { setSort(e.target.value); setN(25); }} aria-label="Sort by" style={{ ...sel, borderRadius: 99 }}>
           {[["rank", "Board order"], ["grade", "Combine grade"], ...COMBINE_TESTS.map((x) => [x.k, x.name])].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
@@ -674,40 +712,29 @@ export function CombineView({ g, buzz }) {
       </div>
       <div style={{ background: "#ffffff08", borderRadius: 18, padding: 6 }}>
         <div style={{ display: "flex", gap: 14, padding: "4px 12px 6px", fontSize: 11.5, fontWeight: 800, letterSpacing: 1, color: "#64748b" }}>
-          <span style={{ flex: 1, paddingLeft: 84 }}>{rows.length} TESTED{mine ? " AT YOUR NEEDS" : ""}{inRange ? " · IN YOUR RANGE" : ""}</span>
+          <span style={{ flex: 1, paddingLeft: 84 }}>{view === "picks" ? "LIKELY THERE AT YOUR PICKS" : `${rows.length} TESTED${mine ? " AT YOUR NEEDS · IN YOUR RANGE" : ""}`}</span>
           <span style={{ width: 210, textAlign: "right" }}>{t ? t.name.toUpperCase() : "STANDOUT TESTS"}</span>
           <span style={{ width: 40, textAlign: "center" }}>GRADE</span>
           <span style={{ width: 170 }} />
         </div>
-        {rows.slice(0, n).map((p) => {
-          const read = prospectRead(sc, p), st = standouts(p);
+        {view !== "picks" && rows.slice(0, n).map(resRow)}
+        {view === "picks" && pickGroups.map(({ pk, lo, hi, list, rd }) => {
+          const open = openPk[pk], shown = open ? list : list.slice(0, 5);
           return (
-            <div key={p.id} className="bd-row" onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "9px 12px", borderRadius: 14, cursor: "pointer" }}>
-              <span style={{ width: 30, textAlign: "right", fontSize: 16, fontWeight: 900, color: "#64748b", fontVariantNumeric: "tabular-nums" }}>{csRank(p)}</span>
-              <Face s={p.face} sz={40} />
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: "block", fontSize: 16, fontWeight: 800, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
-                <span style={{ display: "block", fontSize: 13.5, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{posTag(p)}{roleWord(p) && <b style={{ color: "#e2e8f0", fontWeight: 800 }}> · {roleWord(p)}</b>} · {htS(p.ht_)} {p.wt} · {p.bio?.college || p.college}</span>
-              </span>
-              <span style={{ width: 210, textAlign: "right", fontSize: 14, color: "#cbd5e1", whiteSpace: "nowrap" }}>
-                {t ? <b style={{ fontSize: 18, color: (p.combPcts?.[t.k] ?? 0) >= 0.9 ? C.gn : "#fff", fontVariantNumeric: "tabular-nums" }}>{p.combine?.[t.k] != null ? fmt(t, p) : "—"}</b>
-                  : st.length ? st.map((x) => <span key={x.k} style={{ marginLeft: 12 }}><b style={{ color: (p.combPcts[x.k] || 0) >= 0.9 ? C.gn : "#fff" }}>{fmt(x, p)}</b> <span style={{ color: "#64748b" }}>{x.short}</span></span>)
-                  : <span style={{ color: "#475569" }}>—</span>}
-              </span>
-              <span style={{ width: 40, textAlign: "center" }}><GradeChip g={p.combGrade} small /></span>
-              <span style={{ width: 170, display: "flex", gap: 4, justifyContent: "flex-end" }} onClick={(e) => e.stopPropagation()}>
-                {p.scout?.intv ? <span title={[...(p.scout.intv.good || []), ...(p.scout.intv.bad || [])].join(" ") || p.scout.intv.note} style={{ fontSize: 12.5, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4 }}>Interview <GradeChip g={p.scout.intv.overall || p.scout.intv.grade} small /></span>
-                  : live && <span className="bd-act" style={{ display: "flex", gap: 4 }}>
-                    {read.lvl < 2 && <Btn onClick={() => a.workout(p)} disabled={!(sc.workoutsLeft > 0)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 12.5, padding: "4px 10px", borderRadius: 99 }} title="Free full workup">Workout</Btn>}
-                    <Btn onClick={() => a.interview(p)} disabled={!(sc.interviewsLeft > 0)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 12.5, padding: "4px 10px", borderRadius: 99 }}>Interview</Btn>
-                  </span>}
-              </span>
+            <div key={pk} style={{ marginBottom: 6 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "12px 12px 4px" }}>
+                <span style={{ fontSize: 16, fontWeight: 900, color: C.gd }}>{rd ? `Round ${rd} · ` : ""}Pick #{pk}</span>
+                <span style={{ fontSize: 13, color: "#94a3b8" }}>players the board ranks #{lo}–{hi}</span>
+              </div>
+              {shown.map(resRow)}
+              {!list.length && <div style={{ ...muted, padding: "6px 12px 10px" }}>No tested players in that range{g0 ? " at this position" : ""}.</div>}
+              {list.length > 5 && <button onClick={() => setOpenPk((m) => ({ ...m, [pk]: !open }))} style={{ background: "transparent", border: 0, color: "#94a3b8", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "4px 12px 8px 108px" }}>{open ? "Fewer" : `${list.length - 5} more likely there`}</button>}
             </div>
           );
         })}
-        {!rows.length && <div style={{ ...muted, padding: "14px 12px" }}>{mine ? "Nobody at your need positions in your range tested. Try All positions or Everyone." : "Nobody matches."}</div>}
+        {view !== "picks" && !rows.length && <div style={{ ...muted, padding: "14px 12px" }}>{mine ? "Nobody at your need positions in your range tested. Try All positions." : "Nobody matches."}</div>}
       </div>
-      {rows.length > n && <div style={{ marginTop: 10, textAlign: "center" }}><button onClick={() => setN(n + 25)} style={{ background: "transparent", border: 0, color: "#cbd5e1", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Show more ({rows.length - n})</button></div>}
+      {view !== "picks" && rows.length > n && <div style={{ marginTop: 10, textAlign: "center" }}><button onClick={() => setN(n + 25)} style={{ background: "transparent", border: 0, color: "#cbd5e1", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Show more ({rows.length - n})</button></div>}
     </div>
   );
 }

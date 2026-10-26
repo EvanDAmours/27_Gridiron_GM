@@ -1954,4 +1954,7 @@ export const PATCH_NOTES = [
     "Stock up and Stock down only show players you can get, three each, in the same calm rows with their role and rank move",
     "Combine week's points, interviews and workouts are one quiet line instead of a box, and the Draft tab's combine note lost its emoji",
   ] },
+  { v: "4.82", date: "2026-10-23", title: "Potential picks", notes: [
+    "The Combine opens on Potential picks: one section per pick you hold (Round 1 · Pick #14, Round 2 · Pick #46...), each listing the tested players the board ranks in that pick's likely range, your need positions first (marked Need). Five per pick, the rest a tap away. Your needs and All positions are the other two views; position filters, search and sort work in all three",
+  ] },
 ];
