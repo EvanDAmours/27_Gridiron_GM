@@ -108,7 +108,7 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
           {mine && <div style={{ fontSize: 14, color: "#fffc", marginTop: 2 }}>{paused ? "Draft paused" : "Make your pick from the board below"}</div>}
         </div>
         {mine ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>{pauseBtn(true)}<div style={{ textAlign: "right" }}><div style={{ fontSize: 40, fontWeight: 900, color: timer <= 10 ? C.rd : C.gd, fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</div><div style={{ fontSize: 12, color: "#fffa" }}>TIME LEFT</div></div></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>{pauseBtn(true)}<div style={{ textAlign: "right" }}><div style={{ fontSize: 40, fontWeight: 900, color: timer <= 10 ? C.rd : C.gd, fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</div><div style={{ fontSize: 12, color: "#fffa" }}>{mine ? "REAL TIME · YOUR PICK" : "TIME LEFT"}</div></div></div>
         ) : (
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>{pauseBtn(true)}
             <div style={{ textAlign: "right", lineHeight: 1 }}><span style={{ fontSize: 28, fontWeight: 900, color: timer <= 10 ? C.rd : "#fff", fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</span><div style={{ fontSize: 11, color: "#fffa", marginTop: 2 }}>ON THE CLOCK</div></div>

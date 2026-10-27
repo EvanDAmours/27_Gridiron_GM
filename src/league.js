@@ -556,5 +556,6 @@ export const DRAFT_SPEEDS=["Slow","Normal","Fast"];
 // and "Sim to my pick" are there to skip ahead). After it: Slow stays real time, Normal is quicker,
 // Fast blows through it.
 export const DRAFT_CLOCK=120;
-export const clockTick=(speed,rd)=>rd===1?1000:({Slow:1000,Normal:rd<=3?250:100,Fast:40})[speed]||250;
+// your own pick always runs on real seconds (two real minutes); everyone else speeds up in later rounds
+export const clockTick=(speed,rd,mine)=>mine||rd===1?1000:({Slow:1000,Normal:rd<=3?250:100,Fast:40})[speed]||250;
 export const aiPickAt=(pickId)=>{let h=2166136261;for(const c of String(pickId))h=Math.imul(h^c.charCodeAt(0),16777619);return 45+((h>>>0)%31);};

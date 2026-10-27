@@ -41,6 +41,8 @@ import PhoneCoaching from "./PhoneCoaching.jsx";
 import StatsScreen from "./StatsScreen.jsx";
 import GamePlan from "./GamePlan.jsx";
 import TradeFinder from "./TradeFinder.jsx";
+import { ScoutsPicks, ScoutsWeighed } from "./ScoutsPicks.jsx";
+import { scoutsPicks, scoutsAutoPick } from "./draftScouts.js";
 import PlayoffPicture from "./PlayoffPicture.jsx";
 import { applyLiveSeason } from "./liveStart.js";
 import { terms as talkTerms, yearlyAsk, maxYears } from "./negotiation.js";
@@ -252,7 +254,7 @@ export default function GridironGM(){
   const[faCoaches,setFaCoaches]=useState([]);
   const[trTm,setTrTm]=useState(null);const[trOff,setTrOff]=useState({g:[],r:[],gPk:[],rPk:[]});
   const[draftPicks,setDraftPicks]=useState([]);const[draftIdx,setDraftIdx]=useState(0);const[draftLog,setDraftLog]=useState([]);
-  const[draftTimer,setDraftTimer]=useState(120);const[draftActive,setDraftActive]=useState(false);const[draftPaused,setDraftPaused]=useState(false);const[draftReveal,setDraftReveal]=useState(null);const[futurePicks,setFuturePicks]=useState([]);const[awardsShow,setAwardsShow]=useState(null);const[tdCalls,setTdCalls]=useState({});const[callSeen,setCallSeen]=useState({});const[tdOpen,setTdOpen]=useState(false);const[dlOpen,setDlOpen]=useState(false);const[seasonOpen,setSeasonOpen]=useState(false);const[draftView,setDraftView]=useState('board');const[talks,setTalks]=useState({});/* the free-agent market while free agency is open (faMarket.js): the day and every club's offers */const[faMarket,setFaMarket]=useState(null);const[resignTalk,setResignTalk]=useState(null);const[draftSpeed,setDraftSpeed]=useState(()=>{try{return localStorage.getItem("gm_draft_speed")||"Normal";}catch{return "Normal";}});
+  const scoutRoomRef=useRef({});const[draftTimer,setDraftTimer]=useState(120);const[draftActive,setDraftActive]=useState(false);const[draftPaused,setDraftPaused]=useState(false);const[draftReveal,setDraftReveal]=useState(null);const[futurePicks,setFuturePicks]=useState([]);const[awardsShow,setAwardsShow]=useState(null);const[tdCalls,setTdCalls]=useState({});const[callSeen,setCallSeen]=useState({});const[tdOpen,setTdOpen]=useState(false);const[dlOpen,setDlOpen]=useState(false);const[seasonOpen,setSeasonOpen]=useState(false);const[draftView,setDraftView]=useState('scouts');const[talks,setTalks]=useState({});/* the free-agent market while free agency is open (faMarket.js): the day and every club's offers */const[faMarket,setFaMarket]=useState(null);const[resignTalk,setResignTalk]=useState(null);const[draftSpeed,setDraftSpeed]=useState(()=>{try{return localStorage.getItem("gm_draft_speed")||"Normal";}catch{return "Normal";}});
   
 const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]=useState(false);const[showPS,setShowPS]=useState(false);const[showIR,setShowIR]=useState(false);const[preseasonGames,setPreseasonGames]=useState([]);
   const[trProp,setTrProp]=useState(null);const[gamePlan,setGamePlan]=useState({off:'balanced',def:'balanced',twoPoint:false});
@@ -614,15 +616,15 @@ const _wireLog=useRef(null);
   useEffect(()=>{
     if(!draftActive||sp!=="draft"||draftPaused)return;
     const rd=draftPicks[draftIdx]?.rd||1;
-    timerRef.current=setInterval(()=>setDraftTimer(t=>t<=1?0:t-1),clockTick(draftSpeed,rd));
+    timerRef.current=setInterval(()=>setDraftTimer(t=>t<=1?0:t-1),clockTick(draftSpeed,rd,draftPicks[draftIdx]?.owner===ui));
     return()=>clearInterval(timerRef.current);
-  },[draftActive,sp,draftPaused,draftSpeed,draftPicks[draftIdx]?.rd]);// eslint-disable-line react-hooks/exhaustive-deps
+  },[draftActive,sp,draftPaused,draftSpeed,draftPicks[draftIdx]?.rd,draftPicks[draftIdx]?.owner===ui]);// eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{
     if(sp!=="draft"||!draftActive||draftPaused)return;
     const picks=draftPicks;const idx=draftIdx;if(idx>=picks.length){setDraftActive(false);return;}
     const cur=picks[idx];
     if(cur.owner!==ui)return;
-    if(draftTimer<=0){const to=setTimeout(()=>{const cls=dc[yr]||[];if(cls.length)makePick(userAutoPick(cls,teams[ui]?.roster));},200);return()=>clearTimeout(to);}
+    if(draftTimer<=0){const to=setTimeout(()=>{const cls=dc[yr]||[];if(!cls.length)return;let sp_=null;try{sp_=listedPick(scouting,yr,cls)||scoutsAutoPick({sc:scouting,teams,ui,picks,pool:cls,at:idx,now:idx,capRoom:ut?capSpace(ut):null});}catch(e){console.error(e);}makePick(sp_||userAutoPick(cls,teams[ui]?.roster));},200);return()=>clearTimeout(to);}
   },[draftIdx,draftActive,draftTimer,sp,draftPaused]);
   // AI clubs take their time on the clock (kept apart from the 1-second clock tick so it doesn't reset the wait).
   useEffect(()=>{
@@ -1265,6 +1267,7 @@ const _won=ts>os;const _spEarned=Math.min(3,(_won?1:0)+Math.floor(ts/14)+(os===0
   
   const curPick=draftPicks[draftIdx];
 // Scouting & draft screens
+const _sk=sp==="draft"&&draftActive&&curPick&&draftView==='scouts'&&!(sp==="draft"&&!draftActive)?`${yr}-${draftIdx}-${(dc[yr]||[]).length}-${scouting?.pts}`:null;if(_sk&&scoutRoomRef.current.k!==_sk){const _at=draftPicks.findIndex((pk,i)=>i>=draftIdx&&pk.owner===ui);let room=null;try{room=_at<0?null:scoutsPicks({sc:scouting,teams,ui,picks:draftPicks,pool:dc[yr]||[],at:_at,now:draftIdx,capRoom:ut?capSpace(ut):null});}catch(e){console.error(e);}scoutRoomRef.current={k:_sk,room};}const scoutRoom=_sk?scoutRoomRef.current.room:null;
 const scoutG={dc,setDc,yr,sp,teams,ui,pb,scouting,setScouting,sm,setSel,draftLog,draftPicks,draftIdx,curPick:sp==="draft"&&draftActive?curPick:null,makePick,buzz:draftBuzz,sL,findPlayer:pid=>{for(const t of teams){const f=t.roster.find(x=>x.id===pid);if(f)return f;}return null;}};
 
   // I39: canonical save shape — all saves merge against this to prevent missing-field bugs
@@ -1958,10 +1961,11 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       {sp==="draft"&&!draftActive&&<DraftGrades g={scoutG}/>}
       <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"flex-start"}}>
         <div style={{flex:"2 1 520px",minWidth:0}}>
-        {!(sp==="draft"&&!draftActive&&draftLog.length)&&!(MOBILE&&sp==="draft"&&draftActive)&&(MOBILE?<div style={{margin:"12px 0 6px"}}><Segments items={[['board','Big Board'],['mock','Mock Draft']]} value={draftView==='mock'?'mock':'board'} onChange={setDraftView}/></div>:<div style={{display:'flex',gap:6,marginBottom:8}}>{[['board','Big Board'],['mock','Mock Draft']].map(([k,l])=><button key={k} onClick={()=>setDraftView(k)} style={{background:draftView===k?'#fff':'#ffffff12',color:draftView===k?'#0b1220':'#cbd5e1',border:0,padding:'9px 16px',borderRadius:999,fontSize:15,fontWeight:800,cursor:'pointer'}}>{l}</button>)}</div>)}
-        {draftView==='mock'&&!(sp==="draft"&&!draftActive&&draftLog.length)?<MockDraft g={scoutG}/>:sp==="draft"&&draftActive&&curPick?<Board g={scoutG} classYr={yr} fixedYr onDraft={makePick} canDraft={curPick.owner===ui} title="Best available" page={30}/>:<Board g={scoutG} classYr={yr} title={sp==="draft"&&!draftActive&&draftLog.length?"Still on the board":`${yr+1} Big Board`}/>}
+        {!(sp==="draft"&&!draftActive&&draftLog.length)&&(()=>{const _its=[sp==="draft"&&draftActive&&["scouts","Scouts' picks"],["board",sp==="draft"&&draftActive?"Best available":"Big Board"],["mock","Mock Draft"]].filter(Boolean);const _v=draftView==='scouts'&&!(sp==="draft"&&draftActive)?'board':draftView;return MOBILE?<div style={{margin:"12px 0 6px"}}><Segments items={_its} value={_v} onChange={setDraftView}/></div>:<Pills big items={_its} value={_v} onChange={setDraftView} label="Draft board" style={{marginBottom:10}}/>;})()}
+        {scoutRoom?<ScoutsPicks room={scoutRoom} g={scoutG} onDraft={makePick} canDraft={curPick?.owner===ui}/>:draftView==='mock'&&!(sp==="draft"&&!draftActive&&draftLog.length)?<MockDraft g={scoutG}/>:sp==="draft"&&draftActive&&curPick?<Board g={scoutG} classYr={yr} fixedYr onDraft={makePick} canDraft={curPick.owner===ui} title="Best available" page={30}/>:<Board g={scoutG} classYr={yr} title={sp==="draft"&&!draftActive&&draftLog.length?"Still on the board":`${yr+1} Big Board`}/>}
         </div>
         {/* phones mid-draft: the order and the log live behind the last-pick line */}{!(MOBILE&&sp==="draft"&&draftActive)&&<div style={{flex:"1 1 280px",minWidth:0}}>
+          {scoutRoom&&<ScoutsWeighed room={scoutRoom}/>}
           {sp==="draft"&&draftActive&&curPick?.owner===ui&&ddOffers.current&&<TradeOffers offers={ddOffers.current.offers} teams={teams} curPick={curPick} yr={yr} onAccept={ddOffers.current.accept} onCounter={ddOffers.current.askMore} onPass={o=>setTdCalls(c=>({...c,[o.id]:{team:o.team,gone:true}}))}/>}
           {sp==="draft"&&draftActive&&<DraftQueue picks={draftPicks} idx={draftIdx} teams={teams} ui={ui}/>}
           {draftLog.length>0&&!draftActive&&<div style={{background:C.cd,border:'1px solid #ffffff10',borderRadius:8,padding:"12px 14px",marginBottom:10}}><div style={{fontSize:14,fontWeight:800,color:C.gd,marginBottom:8}}>Recent picks</div>{draftLog.slice().reverse().slice(0,10).map((d,i)=>{const _me=d.owner===ui;return<div key={i} onClick={()=>d.player&&setSel(d.player)} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 4px",borderBottom:`1px solid ${C.bd}55`,cursor:"pointer",background:_me?"#14532d33":"transparent",borderRadius:4}}><span style={{color:C.mt,fontSize:13,minWidth:34,fontVariantNumeric:"tabular-nums"}}>#{d.overall}</span><b style={{minWidth:40,fontSize:14,color:_me?C.gn:"#93c5fd"}}>{TEAMS[d.owner]?.ab}</b><span style={{flex:1,minWidth:0,fontSize:15,fontWeight:_me?800:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.player?.name}</span>{d.player&&<Bdg pos={d.player.pos}/>}</div>;})}</div>}

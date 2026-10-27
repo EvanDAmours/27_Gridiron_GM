@@ -3,6 +3,7 @@
 import Select from "./Select.jsx";
 import { US_NATION, US_BORDERS, SCHOOL_XY } from "./usMap.js";
 import { posTag } from "./dline.js";
+import { currentOvr, ovrText } from "./draftScouts.js";
 import { slotsFor } from "./draftProjection.js";
 import { topNeeds, fillsNeed, teamNeeds, needGroup, NEED_STARTERS } from "./needs.js";
 import { MOBILE } from "./mobile.js";
@@ -178,7 +179,7 @@ function PhoneProspect({ g, p, onDraft, canDraft, myRank, gone, first }) {
       </span>
       {/* what your scouts have on him (overall and ceiling) stays on the row, on the clock too */}
       <span style={{ display: "flex", gap: 10, flexShrink: 0, textAlign: "center", lineHeight: 1.1 }}>
-        <span><Val txt={read.ovr} /><span style={{ display: "block", fontSize: 10, fontWeight: 800, color: C.mt, marginTop: 2 }}>OVR</span></span>
+        <span>{(() => { const o = currentOvr(g.scouting, p); return <b style={{ fontSize: o.lo === o.hi ? 18 : 15, fontWeight: 900, color: o.kind === "estimate" ? "#94a3b8" : oC(o.v), whiteSpace: "nowrap" }}>{ovrText(o)}</b>; })()}<span style={{ display: "block", fontSize: 10, fontWeight: 800, color: C.mt, marginTop: 2 }}>NOW</span></span>
         <span><Val txt={read.pot} /><span style={{ display: "block", fontSize: 10, fontWeight: 800, color: C.mt, marginTop: 2 }}>POT</span></span>
       </span>
       {drafting && <span onClick={(e) => e.stopPropagation()}><button onClick={() => (arm ? onDraft(p) : setArm(true))} style={{ minHeight: 44, padding: "0 14px", borderRadius: 12, border: 0, background: arm ? C.gd : "#22c55e26", color: arm ? "#111" : "#4ade80", fontSize: 14, fontWeight: 900, cursor: "pointer" }}>{arm ? "Confirm" : "Draft"}</button></span>}
@@ -206,6 +207,7 @@ function BoardRow({ g, p, onDraft, canDraft, myRank, gone, needs = [] }) {
         <span style={{ display: "block", fontSize: 13.5, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{posTag(p)}{roleWord(p) && <b style={{ color: "#e2e8f0", fontWeight: 800 }}> · {roleWord(p)}</b>} · {p.bio?.college || p.college}{myRank && myRank !== cons ? ` · consensus #${cons}` : ""}</span>
       </span>
       <span style={{ width: 96, textAlign: "right", fontSize: 13, fontWeight: 800, color: tag ? tag[1] : "transparent", flexShrink: 0 }}>{tag ? tag[0] : ""}</span>
+      {(() => { const o = currentOvr(g.scouting, p); return <span title={o.kind === "workup" ? "Exact, from a full workup" : o.kind === "report" ? "Close, from a scouting report" : "A range: scout him for a closer read"} style={{ width: 66, textAlign: "center", flexShrink: 0, fontSize: o.lo === o.hi ? 17 : 15, fontWeight: 900, color: o.kind === "estimate" ? "#94a3b8" : oC(o.v), fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{ovrText(o)}</span>; })()}
       <span style={{ width: 48, textAlign: "center", flexShrink: 0 }}><Val txt={read.pot} title={read.tier ? `Your scouts' read of his ceiling: ${read.tier}` : "His ceiling, as your scouts read it"} /></span>
       <span style={{ width: 104, textAlign: "right", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
         {onDraft && canDraft ? <Btn onClick={() => onDraft(p)} bg={C.gn} style={{ padding: "7px 18px", fontSize: 14, borderRadius: 99 }}>Draft</Btn> : <span className="calm-act"><ScoutButton g={g} p={p} read={read} /></span>}
@@ -269,7 +271,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
     let k = 0;
     return (
       <div>
-        <Segments items={[[false, "Consensus"], [true, "Your scouts"]]} value={mine} onChange={setMine} />
+        {!onDraft && <Segments items={[[false, "Consensus"], [true, "Your scouts"]]} value={mine} onChange={setMine} />}
         {onDraft && <div style={{ display: "flex", margin: "0 0 10px" }}><PicksLeft g={g} /></div>}
         <Chips items={[["ALL", "All"], ...POS.map((x) => [x, x])]} value={pos} onChange={(x) => { setPos(x); setN(page); }} />
         <div style={{ display: "flex", justifyContent: "flex-end", margin: "8px 2px 6px" }}>
@@ -293,7 +295,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
       <style>{BOARD_CSS}</style>
       {/* one quiet control row: whose board, position, a search, and (rarely needed) more filters */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
-        <Pills items={[[false, "Consensus"], [true, "Your scouts"], withList && ["list", `Your list (${ids.length})`]]} value={mine} onChange={setMine} label="Whose board" />
+        {!onDraft && <Pills items={[[false, "Consensus"], [true, "Your scouts"], withList && ["list", `Your list (${ids.length})`]]} value={mine} onChange={setMine} label="Whose board" />}
         {mine !== "list" && <>
         <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
           {["ALL", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((x) => { const on = x === "OL" ? pos === "OL" || OL_POS.includes(pos) : pos === x || (pos.startsWith("R:") && { WR: ["R:X", "R:Z", "R:SLOT"], CB: ["R:OUT", "R:NB"], S: ["R:FS", "R:SS"], LB: ["R:SAM", "R:MIKE", "R:WILL"] }[x]?.includes(pos)); return <button key={x} onClick={() => { setPos(x === "OL" ? (on ? "ALL" : "OL") : x); setN(page); }} style={quietPill(on)}>{x === "ALL" ? "All" : x}</button>; })}
@@ -313,6 +315,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
       <div style={{ background: "#ffffff08", borderRadius: 18, padding: "6px 6px" }}>
         <div style={{ display: "flex", gap: 16, padding: "4px 12px 6px", fontSize: 11.5, fontWeight: 800, letterSpacing: 1, color: "#64748b" }}>
           <span style={{ flex: 1, paddingLeft: 88 }}>{mine ? "YOUR SCOUTS' BOARD" : final ? "CONSENSUS FINAL BOARD" : "CONSENSUS BOARD"}</span>
+          <span style={{ width: 66, textAlign: "center" }} title="How good he is today: exact after a workup, close after a report, a range before that">CURRENT</span>
           <span style={{ width: 48, textAlign: "center" }} title="? not scouted · B+ a scout's rough idea · ~84 a report's estimate · 84 exact">CEILING</span>
           <span style={{ width: 104 }} />
         </div>

@@ -2048,4 +2048,11 @@ export const PATCH_NOTES = [
   { v: "4.99", date: "2026-10-23", title: "Dev traits on Young players", notes: [
     "Development > Young players shows each player's development trait in its color (Generational, Superstar, Star, Late bloomer, Normal) on his second line.",
   ] },
+  { v: "5.0", date: "2026-10-23", title: "The scouts' room", notes: [
+    "Draft day: your clock always runs on real seconds. Every round you get a true two minutes; the other clubs still speed up in the later rounds.",
+    "Scouts' picks: when your pick comes up, your scouts meet and bring you five players for it, weighed for your roster: your needs, starters who are getting old, your cap room and whether you're built to win now. Each comes with one line on why, and how many of your scouts are behind him.",
+    "Every recommendation shows his current overall beside his ceiling: exact after a full workup, close after a report, a range before that. A late bloomer with a huge ceiling who can't beat your starters yet reads as two years away; a player who starts now says so.",
+    "Your scouts also tell you who'll still be there at your next pick. They play out the picks in between the way the other clubs really see the players, so a gem only your scouts have found shows as safe to wait on, and a player every club rates shows as one to take now.",
+    "The Big Board shows each prospect's current overall too, and the draft board no longer has the old Your scouts ranking (Scouts' picks replaces it). If your clock runs out, you get your list's top player, or your scouts' first choice.",
+  ] },
 ];
