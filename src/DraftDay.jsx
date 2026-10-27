@@ -64,7 +64,7 @@ export function PickIsIn({ entry, team, yr, onDone, ms = 2300 }) {
 }
 
 // The on-the-clock stage. needs: positions the club is short at; fits: best available for them.
-export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = [], fits = [], onSim, onSimPick, onCalls, callsOpen, onForPick, forPickOpen, onPause }) {
+export function OnTheClock({ pick, team, mine, paused, timer, nextMine, myPicks = [], needs = [], fits = [], onSim, onSimPick, onCalls, callsOpen, onForPick, forPickOpen, onPause }) {
   const clock = `${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, "0")}`;
   // Pause sits right by the clock, big enough to find in a hurry.
   const pauseBtn = (big) => onPause && <button onClick={onPause} aria-label={paused ? "Resume the draft" : "Pause the draft"} style={{ background: paused ? C.gn : "#f97316", color: "#fff", border: "2px solid #ffffff55", borderRadius: 10, padding: big ? "10px 18px" : "6px 10px", fontSize: big ? 17 : 14, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 12px #0007", flexShrink: 0 }}>{paused ? "Resume" : "Pause"}</button>;
@@ -103,8 +103,11 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 1 }}>
             <span style={{ fontSize: 20, fontWeight: 900, color: "#fff", lineHeight: 1.2 }}>{team.city} {team.name}</span>
             {needs.length > 0 && <span style={{ display: "flex", gap: 3, alignItems: "center" }}><span style={{ fontSize: 11, color: "#ffffff99", fontWeight: 800, letterSpacing: 1, marginRight: 2 }}>NEEDS</span>{needs.map((n) => <Bdg key={n} pos={n} />)}</span>}
-            {!mine && nextMine && <span style={{ fontSize: 13, color: "#ffffffb3" }}>Your pick: #{nextMine.overall} ({nextMine.overall - pick.overall} away)</span>}
           </div>
+          {/* every pick you have left in this draft, the next one first */}
+          {myPicks.length > 0 && <div style={{ fontSize: 12.5, color: "#ffffffb3", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            Your picks: {myPicks.map((pk, i) => <span key={pk.id}>{i ? " · " : ""}<b style={{ color: pk.id === pick.id ? C.gd : i === 0 ? "#fff" : "#ffffffd9" }}>R{pk.rd} #{pk.overall}</b>{pk.id === pick.id ? " now" : i === 0 && !mine ? ` (${pk.overall - pick.overall} away)` : ""}</span>)}
+          </div>}
           {!mine && fits.length > 0 && <div style={{ fontSize: 12, color: "#fffc", marginTop: 2 }}>Mock pick: {fits.map((p) => `${p.name} (${posTag(p)})`).join(" · ")}</div>}
         </div>
         {!mine && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

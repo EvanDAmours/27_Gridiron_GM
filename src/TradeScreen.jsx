@@ -241,7 +241,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
     );
   }
   const chip = (x, key, label) => (
-    <span key={x.id} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#ffffff0f", borderRadius: 99, padding: "6px 8px 6px 14px", fontSize: 14 }}>
+    <span key={x.id} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#ffffff0f", borderRadius: 99, padding: "4px 6px 4px 12px", fontSize: 13.5 }}>
       {label}<button onClick={() => flip(key, x)} aria-label="Remove" style={{ width: 22, height: 22, borderRadius: 11, background: "#ffffff14", border: 0, color: "#cbd5e1", cursor: "pointer", fontSize: 12, padding: 0 }}>✕</button>
     </span>
   );
@@ -250,15 +250,15 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
     <div>
       {them ? <>
         {/* the deal: what goes, what comes, whether they'd take it, and the one button */}
-        <div style={{ ...card, padding: "16px 20px", marginBottom: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+        <div style={{ ...card, padding: "12px 18px", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
             <button onClick={() => pick(null)} title="Pick a different team" style={{ ...pill(false), color: "#94a3b8", background: "#ffffff0d" }}>‹ All teams</button>
             <span style={{ ...cardTitle, flex: 1 }}>The deal</span>
             <span style={{ fontSize: 14, color: "#94a3b8" }}>Cap space <b style={{ color: capSpace(me) >= 0 ? "#86efac" : "#fca5a5" }}>{money(capSpace(me))}</b>{any && <> · after <b style={{ color: capAfter >= 0 ? "#86efac" : "#fca5a5" }}>{money(capAfter)}</b>{dead.now + dead.next > 0.05 && <span title={`${money(dead.now)} dead money${dead.next > 0.05 ? `, ${money(dead.next)} next year` : ""}`}> (incl. {money(dead.now)} dead)</span>}</>}</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: "#fca5a5", marginBottom: 8 }}>YOU SEND <span style={{ color: "#64748b" }}>· worth {ev.gv} to them</span></div>
+              <div style={{ fontSize: 11.5, fontWeight: 900, letterSpacing: 1, color: "#fca5a5", marginBottom: 6 }}>YOU SEND <span style={{ color: "#64748b" }}>· worth {ev.gv} to them</span></div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {trOff.g.map((p) => chip(p, "g", plabel(p)))}
                 {trOff.gPk.map((pk) => chip(pk, "gPk", <b>{pkLabel(pk)}</b>))}
@@ -266,7 +266,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
               </div>
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: "#86efac", marginBottom: 8 }}>YOU GET <span style={{ color: "#64748b" }}>· worth {ev.rv}{ev.ask > ev.rv ? `, they ask ${ev.ask}` : ""}</span></div>
+              <div style={{ fontSize: 11.5, fontWeight: 900, letterSpacing: 1, color: "#86efac", marginBottom: 6 }}>YOU GET <span style={{ color: "#64748b" }}>· worth {ev.rv}{ev.ask > ev.rv ? `, they ask ${ev.ask}` : ""}</span></div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {trOff.r.map((p) => chip(p, "r", plabel(p)))}
                 {trOff.rPk.map((pk) => chip(pk, "rPk", <b>{pkLabel(pk)}</b>))}
@@ -274,21 +274,21 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
               </div>
             </div>
           </div>
-          {any && <div title="Left of the line: short of their asking price. Right: more than enough." style={{ position: "relative", height: 6, background: "#ffffff12", borderRadius: 3, margin: "16px 0 0" }}>
+          {any && <div title="Left of the line: short of their asking price. Right: more than enough." style={{ position: "relative", height: 6, background: "#ffffff12", borderRadius: 3, margin: "12px 0 0" }}>
             <div style={{ position: "absolute", left: "50%", top: -4, bottom: -4, width: 2, background: "#94a3b8" }} />
             <div style={{ position: "absolute", top: 0, bottom: 0, borderRadius: 3, background: meter >= 0 ? C.gn : C.rd, left: meter >= 0 ? "50%" : `${50 + meter * 50}%`, width: `${Math.abs(meter) * 50}%` }} />
           </div>}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
             <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: "block", fontSize: 18, fontWeight: 900, color: verdict ? verdict[1] : "#94a3b8" }}>{verdict ? verdict[0] : `Build a deal with the ${them.name}`}</span>
-              {(ev.why && !accept) || ev.notes?.length > 0 ? <span style={{ display: "block", fontSize: 14, color: "#94a3b8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={[ev.why, ...(ev.notes || [])].filter(Boolean).join("; ")}>{ev.why && !accept ? ev.why : `How they see it: ${ev.notes.slice(0, 3).join("; ")}.`}</span> : null}
+              <span style={{ display: "block", fontSize: 16, fontWeight: 900, color: verdict ? verdict[1] : "#94a3b8" }}>{verdict ? verdict[0] : `Build a deal with the ${them.name}`}</span>
+              {(ev.why && !accept) || ev.notes?.length > 0 ? <span style={{ display: "block", fontSize: 13, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={[ev.why, ...(ev.notes || [])].filter(Boolean).join("; ")}>{ev.why && !accept ? ev.why : `How they see it: ${ev.notes.slice(0, 3).join("; ")}.`}</span> : null}
             </span>
             {any && !accept && <button onClick={balance} style={actBtn("#7dd3fc")}>What would make this work?</button>}
             {any && <button onClick={() => setTrOff({ g: [], r: [], gPk: [], rPk: [] })} style={actBtn("#94a3b8")}>Clear</button>}
-            <button onClick={execTr} disabled={!accept || closed} style={{ ...actBtn(C.gn, accept && !closed), padding: "10px 22px", fontSize: 15, ...(accept && !closed ? null : { color: "#64748b", cursor: "default" }) }}>{closed ? "Trade deadline passed" : "Propose trade"}</button>
+            <button onClick={execTr} disabled={!accept || closed} style={{ ...actBtn(C.gn, accept && !closed), padding: "8px 20px", fontSize: 14.5, ...(accept && !closed ? null : { color: "#64748b", cursor: "default" }) }}>{closed ? "Trade deadline passed" : "Propose trade"}</button>
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, height: "calc(100vh - 470px)", minHeight: 360 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, height: "calc(100vh - 360px)", minHeight: 380 }}>
           <Side title="YOU SEND" color={C.rd} team={me} players={me.roster} picks={draftPicks.filter((pk) => pk.owner === ui).map(withAb)} chosen={trOff.g} chosenPk={trOff.gPk} toggle={(p) => flip("g", p)} togglePk={(pk) => flip("gPk", pk)} pickVal={pickVal} setSel={setSel} />
           <Side title="YOU GET" color={C.gn} team={them} players={them.roster} picks={draftPicks.filter((pk) => pk.owner === trTm).map(withAb)} chosen={trOff.r} chosenPk={trOff.rPk} toggle={(p) => flip("r", p)} togglePk={(pk) => flip("rPk", pk)} pickVal={pickVal} setSel={setSel} />
         </div>

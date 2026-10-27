@@ -2075,4 +2075,10 @@ export const PATCH_NOTES = [
     "The check-in names your pick even when you're projected first overall, and leaves out the odds of lasting when nobody picks before you.",
     "Playoffs: Home has a View the bracket button beside Sim Round, on computers and phones.",
   ] },
+  { v: "5.13", date: "2026-10-23", title: "Trade screen room, used picks gone, Draft button", notes: [
+    "Trades: picks already used in the draft are gone from the trade screen the moment they're made, on both sides.",
+    "The Make a trade screen gives the lists the room: a slim section header, a tighter deal card, and taller player and pick lists.",
+    "While the draft is on, a red Draft button sits in the top bar on every other screen, next to Resume, to take you straight back.",
+    "The on-the-clock bar lists every pick you have left in the draft again, the next one first.",
+  ] },
 ];
