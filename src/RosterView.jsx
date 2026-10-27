@@ -152,6 +152,8 @@ export function PhoneRosterPage({ team, depth, setSel, devOf, wk = 0, focus = nu
   const [sort, setSort] = useState("pos");
   const [sortOpen, setSortOpen] = useState(false);
   const [pick, setPick] = useState(null);
+  // by position, each group shows its starters; its backups open with a tap on the group
+  const [openPos, setOpenPos] = useState({});
   const ps = team.ps || [], ir = team.ir || [];
   const list = view === "PS" ? ps : view === "IR" ? ir : team.roster.filter((p) => !GROUPS[view] || GROUPS[view].includes(p.pos));
   const slot = (p) => depth?.[p.id];
@@ -184,11 +186,14 @@ export function PhoneRosterPage({ team, depth, setSel, devOf, wk = 0, focus = nu
             const head = grouped && p.pos !== last;
             last = p.pos;
             const s = slot(p);
+            const inPos = grouped ? rows.filter((x) => x.pos === p.pos) : [];
+            const bench = inPos.filter((x) => !slot(x)?.starter);
+            const hidden = grouped && !openPos[p.pos] && !s?.starter && inPos.some((x) => slot(x)?.starter);
             return (
               <React.Fragment key={p.id}>
-                {head && <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: "#94a3b8", padding: `${i ? 18 : 14}px 0 4px` }}>{(POS_NAME[p.pos] || p.pos).toUpperCase()}</div>}
-                <button onClick={() => tap(p)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 64, textAlign: "left", background: "transparent", border: 0, borderTop: head || i === 0 ? 0 : "1px solid #ffffff10", padding: "8px 0", color: C.tx, cursor: "pointer", whiteSpace: "normal" }}>
-                  <Face s={p.face} sz={40} />
+                {head && <button onClick={() => setOpenPos((o) => ({ ...o, [p.pos]: !o[p.pos] }))} style={{ display: "flex", width: "100%", alignItems: "center", background: "transparent", border: 0, cursor: bench.length ? "pointer" : "default", fontSize: 12, fontWeight: 900, letterSpacing: 1.3, color: "#94a3b8", padding: `${i ? 14 : 12}px 0 2px`, textAlign: "left" }}><span style={{ flex: 1 }}>{(POS_NAME[p.pos] || p.pos).toUpperCase()}</span>{bench.length > 0 && <span style={{ letterSpacing: 0.4, fontWeight: 800, color: "#7dd3fc" }}>{openPos[p.pos] ? "Hide backups" : `+${bench.length} backup${bench.length === 1 ? "" : "s"}`}</span>}</button>}
+                {!hidden && <button onClick={() => tap(p)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 56, textAlign: "left", background: "transparent", border: 0, borderTop: head || i === 0 ? 0 : "1px solid #ffffff10", padding: "6px 0", color: C.tx, cursor: "pointer", whiteSpace: "normal" }}>
+                  <Face s={p.face} sz={36} />
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: "block", fontWeight: 800, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#f1f5f9" }}>{p.name}</span>
                     <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} />{special(p) && <DevChip dev={devOf(p)} />}<Badges p={p} focus={focus} mine={mine} players={team.roster} /><InjTag p={p} wk={wk} />{p.holdout && <span style={{ fontSize: 12, color: C.gd, fontWeight: 800 }}>Holdout</span>}</span>
@@ -197,7 +202,7 @@ export function PhoneRosterPage({ team, depth, setSel, devOf, wk = 0, focus = nu
                     <b style={{ display: "block", fontSize: 20, lineHeight: 1, color: oC(p.ovr) }}>{p.ovr}</b>
                     <span style={{ display: "block", fontSize: 12, fontWeight: 800, marginTop: 4, color: s?.starter && sort === "pos" ? C.gn : "#64748b" }}>{side(p)}</span>
                   </span>
-                </button>
+                </button>}
               </React.Fragment>
             );
           })}

@@ -82,7 +82,7 @@ export default function CardFront({ p, team, lastTeam, ovr, pot, dev, label, yr,
               {/* a young QB learning the position behind a veteran (mentor.js) */}
               {!p.retiredYr && (() => { const m = learningFrom(p, team?.roster, yr); const done = p.mentored?.yrs > 0; return m || done ? <div title="A young quarterback who sits behind a veteran starter learns his reads, decisions and pocket feel, and his ceiling rises." style={{ color: "#fcd34d" }}>{m ? `Learning behind ${m.name}` : `Learned behind ${p.mentored.by.join(" and ")}`}{done ? ` · ${p.mentored.yrs} season${p.mentored.yrs === 1 ? "" : "s"}` : ""}</div> : null; })()}
               {y && ol && <div>{y}: {ol.sacks} sack{ol.sacks === 1 ? "" : "s"} allowed · {ol.pres} pressures{ol.passGrade != null ? ` · ${ol.passGrade} pass grade` : ""}</div>}
-              {y && !ol && tiles.length > 0 && <div>{y}: {tiles.slice(-3).map(([l, v]) => `${num(v)} ${l.toLowerCase()}`).join(" · ")}</div>}
+              {!MOBILE && y && !ol && tiles.length > 0 && <div>{y}: {tiles.slice(-3).map(([l, v]) => `${num(v)} ${l.toLowerCase()}`).join(" · ")}</div>}
               {/* his grade: how well he played, not how good the team around him is */}
               {grade && <div title="Graded play by play against an average player in the same spot (same teammates, line, coverage and call): how well he played, not how good his team is." style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
                 <span style={{ fontFamily: BLOCK, fontWeight: 700, fontSize: MOBILE ? 22 : 26, lineHeight: 1, color: gradeColor(grade.overall) }}>{grade.overall.toFixed(1)}</span>
@@ -94,7 +94,8 @@ export default function CardFront({ p, team, lastTeam, ovr, pot, dev, label, yr,
         </div>
       </div>
       {/* his NFL career: the real one (before your league too), and where it ranks all-time */}
-      {career.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: MOBILE ? 12 : 26, padding: MOBILE ? "10px 14px" : "11px 26px", borderTop: `1px solid ${C.bd}`, background: "#0e172b" }}>
+      {/* a first-year career is just this season: phones show it once, in the season numbers below */}
+      {career.length > 0 && !(MOBILE && career.every((c) => !c.rank && tiles.some(([, v]) => v === c.val))) && <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: MOBILE ? 12 : 26, padding: MOBILE ? "10px 14px" : "11px 26px", borderTop: `1px solid ${C.bd}`, background: "#0e172b" }}>
         <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.8, color: "#fcd34d", lineHeight: 1.2 }}>NFL<br />CAREER</div>
         {career.map((c) => (
           <div key={c.key} style={{ minWidth: 0 }}>
@@ -119,10 +120,10 @@ export default function CardFront({ p, team, lastTeam, ovr, pot, dev, label, yr,
             </div>
           ))}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, alignContent: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${MOBILE ? Math.min(5, Math.max(3, tiles.length)) : 3}, 1fr)`, gap: MOBILE ? 6 : 10, alignContent: "center" }}>
           {tiles.map(([l, v]) => (
             <div key={l} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: MOBILE ? 22 : 24, fontWeight: 900, color: "#fff", lineHeight: 1.1 }}>{num(v)}</div>
+              <div style={{ fontSize: MOBILE ? 19 : 24, fontWeight: 900, color: "#fff", lineHeight: 1.1 }}>{num(v)}</div>
               <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.2, color: "#64748b" }}>{l}</div>
             </div>
           ))}

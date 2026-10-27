@@ -20,11 +20,11 @@ export default function PhoneContracts({ shown, filters, filter, setFilter, sort
       </div>
       <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px" }}>
         {shown.map(({ p, yl, rp }, i) => (
-          <button key={p.id} onClick={() => setPick(p.id)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 62, textAlign: "left", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "8px 0", color: C.tx, cursor: "pointer", whiteSpace: "normal" }}>
+          <button key={p.id} onClick={() => setPick(p.id)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 54, textAlign: "left", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "6px 0", color: C.tx, cursor: "pointer", whiteSpace: "normal" }}>
             <span style={{ width: 42, flexShrink: 0 }}><Bdg pos={posTag(p)} /></span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: "block", fontWeight: 800, fontSize: 16, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#f1f5f9" }}>{p.name}{p.holdout && <span style={{ color: "#f59e0b", fontSize: 12, marginLeft: 6 }}>holdout</span>}</span>
-              <span style={{ display: "block", fontSize: 14, color: "#94a3b8", marginTop: 2 }}><b style={{ color: C.gd }}>{$(p.salary)}</b> · <span style={{ color: yl <= 1 ? "#f59e0b" : "#94a3b8" }}>{yl} yr{yl === 1 ? "" : "s"} left</span>{canExt(p) ? <span style={{ color: "#c4b5fd" }}> · can extend</span> : rp ? <span style={{ color: "#7dd3fc" }}> · can restructure</span> : ""}</span>
+              <span style={{ display: "block", fontSize: 14, color: "#94a3b8", marginTop: 2 }}><b style={{ color: C.gd }}>{$(p.salary)}</b> · <span style={{ color: yl <= 1 ? "#f59e0b" : "#94a3b8" }}>{yl} yr{yl === 1 ? "" : "s"} left</span>{/* only the calls worth making now (the filters above list everyone who could) */}{canExt(p) && yl <= 1 ? <span style={{ color: "#c4b5fd" }}> · extend now</span> : rp && p.salary >= 8 ? <span style={{ color: "#7dd3fc" }}> · can restructure</span> : ""}</span>
             </span>
             <b style={{ fontSize: 20, color: oC(p.ovr) }}>{p.ovr}</b>
           </button>

@@ -2086,4 +2086,10 @@ export const PATCH_NOTES = [
     "Phones: tighter standings and schedule rows, a five-across Pick a team grid on Trades with smaller logos, Trade finder deals with Open deal beside the club instead of a full-width button, and a slightly tighter More menu.",
     "The Playoffs screen during the next season says Last season: who won the Super Bowl, instead of announcing it again as news.",
   ] },
+  { v: "5.15", date: "2026-10-23", title: "Live playoff picture, starter warning, phone polish", notes: [
+    "In season the Playoffs tab shows the live playoff picture (who's in if the season ended today, and where you stand) instead of last year's bracket.",
+    "Home warns you when a starting spot has nobody healthy to fill it (say, no center), with a tap straight to the depth chart.",
+    "Phones: the roster shows each position's starters, with +N backups to open the rest; the player card shows a first-year career once instead of three times, with the season in one row; Home's injury and development tiles are one compact line each; the trade screen drops its extra header (cap space sits on the Targets title); contracts only flag the calls worth making now (extend now, can restructure); Legacy Hall hangs four banners to a row.",
+    "Draft (computer): the offers for your pick show the best two (the rest behind N more), so Before your next pick stays on screen.",
+  ] },
 ];

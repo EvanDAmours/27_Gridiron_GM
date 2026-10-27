@@ -2,7 +2,7 @@
 // picks on two big roster tables, and the summary tells you plainly whether they'd take it.
 import Select from "./Select.jsx";
 import React, { useState } from "react";
-import { C, oC, Bdg, Face, TeamLogo, Hero, Section, Chips, Segments, Pills, pill, actBtn, card, cardTitle, field } from "./ui.jsx";
+import { C, oC, Bdg, Face, TeamLogo, Section, Chips, Segments, Pills, pill, actBtn, card, cardTitle, field } from "./ui.jsx";
 import RoleTag from "./RoleTag.jsx";
 import { deadMoney, proration, yearsLeft } from "./bonus.js";
 import { getCapPhase } from "./cap.js";
@@ -169,8 +169,8 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
       const targets = teams.filter((t) => t.id !== ui).flatMap((t) => t.roster.filter((p) => !p.injured && (tpos === "NEEDS" ? needs.includes(needGroup(p)) : posTag(p) === tpos)).map((p) => ({ p, t }))).sort((a, b) => b.p.ovr - a.p.ovr || a.p.age - b.p.age).slice(0, 8);
       return (
         <div>
-          <Hero clr={me.clr} logo={me} eyebrow="Trades" title="Make a deal" sub={`${money(capSpace(me))} in cap space`} />
-          <Section title="Targets">
+          {/* no hero: the section's chips and the deadline bar already head the screen; the cap space rides on the first title */}
+          <Section title={<span style={{ display: "flex", alignItems: "baseline", gap: 10 }}>Targets<span style={{ fontSize: 14, fontWeight: 700, color: "#94a3b8" }}>{money(capSpace(me))} in cap space</span></span>} style={{ marginTop: 4 }}>
             <Chips items={[["NEEDS", "Your needs"], ...POS.map((x) => [x, x])]} value={tpos} onChange={setTpos} />
             <div className="pill-row" style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", margin: "12px -8px 0", padding: "0 8px 4px", scrollPaddingLeft: 8 }}>
               {targets.map(({ p, t }) => (

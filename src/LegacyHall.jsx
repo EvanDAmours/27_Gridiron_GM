@@ -1,6 +1,7 @@
 // The Legacy Hall around the trophy shelves: championship banners in the rafters, gold jackets
 // for the franchise's Hall of Famers, the Ring of Honor and retired numbers, and the franchise
 // records wall.
+import { MOBILE } from "./mobile.js";
 import React from "react";
 import { C, Btn, TeamLogo } from "./ui.jsx";
 import { CAREER_STATS, ringCandidates, franchiseBoard, teamCareer, normName } from "./history.js";
@@ -68,7 +69,8 @@ export function Rafters({ team, sbs = [], titles = [], confs = [], divs = [] }) 
     <div className="keep-dark" style={{ background: "linear-gradient(180deg,#0b0f19,#111827)", borderRadius: 18, overflow: "hidden", padding: "0 12px 14px", position: "relative", marginBottom: 10 }}>
       <div style={{ height: 8, margin: "0 -12px 0", background: "repeating-linear-gradient(90deg,#374151 0 14px,#1f2937 14px 28px)" }} />
       <div style={{ fontSize: 14, fontWeight: 700, color: "#94a3b8", padding: "8px 2px 0" }}>{label}</div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, paddingTop: 2, minHeight: 190, alignItems: "flex-start" }}>{children}</div>
+      {/* phones hang them a little smaller, four to a row, like a real rafter line */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: MOBILE ? 8 : 12, paddingTop: 2, minHeight: MOBILE ? 150 : 190, alignItems: "flex-start", zoom: MOBILE ? 0.8 : undefined }}>{children}</div>
     </div>
   );
   const nDiv = divs.length, nTitles = sbs.length + titles.length;

@@ -332,7 +332,8 @@ export function TradeOffers({ offers, teams, curPick, yr, onAccept, onCounter, o
   const [all, setAll] = useState(false);
   if (!offers.length) return null;
   const list = [...offers].sort((a, b) => (b.faller ? 1 : 0) - (a.faller ? 1 : 0) || b.pct - a.pct);
-  const shown = all ? list : list.slice(0, 3);
+  // the best two up front, so the league intel below stays on screen
+  const shown = all ? list : list.slice(0, 2);
   const quiet = { background: "transparent", border: 0, padding: "6px 4px", fontSize: 13, fontWeight: 700, color: "#94a3b8", cursor: "pointer" };
   return (
     <div style={{ background: C.cd, border: "1px solid #ffffff0d", borderRadius: 18, padding: "14px 16px 8px", marginBottom: 12 }}>
@@ -343,7 +344,7 @@ export function TradeOffers({ offers, teams, curPick, yr, onAccept, onCounter, o
       {shown.map((o, i) => {
         const t = teams[o.team], gets = [o.theirPick, ...o.extras].map((a) => pickLabel(a, yr).replace(/^(\d{4}) Round (\d)$/, "$1 R$2"));
         return (
-          <div key={o.id} style={{ padding: "12px 0 6px", borderTop: i ? "1px solid #ffffff0d" : 0, marginTop: i ? 0 : 6 }}>
+          <div key={o.id} style={{ padding: "9px 0 4px", borderTop: i ? "1px solid #ffffff0d" : 0, marginTop: i ? 0 : 4 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <TeamLogo t={t} sz={30} />
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -361,7 +362,7 @@ export function TradeOffers({ offers, teams, curPick, yr, onAccept, onCounter, o
           </div>
         );
       })}
-      {list.length > 3 && <button onClick={() => setAll((v) => !v)} style={{ ...quiet, display: "block", marginTop: 2 }}>{all ? "Fewer" : `${list.length - 3} more`}</button>}
+      {list.length > 2 && <button onClick={() => setAll((v) => !v)} style={{ ...quiet, display: "block", marginTop: 2 }}>{all ? "Fewer" : `${list.length - 2} more`}</button>}
     </div>
   );
 }

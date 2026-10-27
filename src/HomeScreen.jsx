@@ -46,7 +46,7 @@ const ICON = {
   needs: "M12 3a9 9 0 100 18 9 9 0 000-18zM12 7.5a4.5 4.5 0 100 9 4.5 4.5 0 000-9zM12 11.2a.8.8 0 100 1.6.8.8 0 000-1.6z",
 };
 const Icon = ({ k, c }) => (
-  <span style={{ width: 36, height: 36, borderRadius: 18, background: `${c}22`, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+  <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 17, background: `${c}22`, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICON[k]} /></svg>
   </span>
 );
@@ -185,11 +185,12 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
       <div style={{ ...sec, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         {/* an odd one out runs the full width, laid on its side */}
         {tiles.map((t, i) => { const wide = i === tiles.length - 1 && tiles.length % 2 === 1; return (
-          <button key={t.k} data-tour={t.tour} onClick={() => tap(t.k)} style={{ gridColumn: wide ? "span 2" : undefined, minHeight: wide ? 68 : 104, display: "flex", flexDirection: wide ? "row" : "column", alignItems: wide ? "center" : "flex-start", gap: wide ? 12 : 0, textAlign: "left", borderRadius: 18, border: 0, background: "#ffffff0f", padding: 14, color: "#fff", cursor: "pointer" }}>
+          <button key={t.k} data-tour={t.tour} onClick={() => tap(t.k)} style={{ gridColumn: wide ? "span 2" : undefined, minHeight: 64, display: "flex", flexDirection: "row", alignItems: "center", gap: 10, textAlign: "left", borderRadius: 18, border: 0, background: "#ffffff0f", padding: "10px 12px", color: "#fff", cursor: "pointer" }}>
+            {/* one compact line each: icon, what it is, where it stands */}
             <Icon k={t.icon} c={t.c} />
-            <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: wide ? 1 : undefined, maxWidth: "100%", marginTop: wide ? 0 : 10 }}>
-              <span style={{ fontSize: 16, fontWeight: 800 }}>{t.label}</span>
-              <span style={{ fontSize: 14, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.value}</span>
+            <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1, maxWidth: "100%" }}>
+              <span style={{ fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.label}</span>
+              <span style={{ fontSize: 13, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.value}</span>
             </span>
             {wide && <span style={{ fontSize: 20, color: "#64748b" }}>›</span>}
           </button>
