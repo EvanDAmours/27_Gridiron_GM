@@ -44,11 +44,11 @@ const MORE_EXTRA = ["saves", "gameinfo"];
 export function MoreSheet({ tabs, labels, tab, go, onClose, actions }) {
   const [extra, setExtra] = React.useState(false);
   const row = (key, label, onClick, on, first) => (
-    <button key={key} onClick={onClick} style={{ display: "flex", alignItems: "center", width: "100%", minHeight: 52, textAlign: "left", background: "transparent", border: 0, borderTop: first ? 0 : "1px solid #ffffff10", padding: "0 4px", fontSize: 17, fontWeight: 700, color: on ? "#fff" : C.tx, cursor: "pointer" }}>
+    <button key={key} onClick={onClick} style={{ display: "flex", alignItems: "center", width: "100%", minHeight: 48, textAlign: "left", background: "transparent", border: 0, borderTop: first ? 0 : "1px solid #ffffff10", padding: "0 4px", fontSize: 17, fontWeight: 700, color: on ? "#fff" : C.tx, cursor: "pointer" }}>
       <span style={{ flex: 1 }}>{label}</span>{on && <span style={{ width: 8, height: 8, borderRadius: 4, background: C.gn, marginRight: 8 }} />}<span style={{ fontSize: 20, color: "#64748b" }}>›</span>
     </button>
   );
-  const group = { background: C.cd, borderRadius: 14, padding: "0 12px", marginBottom: 18 };
+  const group = { background: C.cd, borderRadius: 14, padding: "0 12px", marginBottom: 14 };
   const head = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: C.mt, margin: "0 4px 6px" };
   const save = actions.find((a) => /save game/i.test(a.label));
   const rest = actions.filter((a) => a !== save);

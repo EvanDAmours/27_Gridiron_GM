@@ -2,7 +2,7 @@
 // rows (a tap opens a coach with what you can do: upgrade, extend, fire), the game plan, the locker
 // room in one line, and the coaches you could hire.
 import React, { useState } from "react";
-import { C, oC, Bdg, Face, Sheet, Hero, Section } from "./ui.jsx";
+import { C, oC, Bdg, Face, Sheet, Hero, Section, Segments } from "./ui.jsx";
 import { posTag } from "./dline.js";
 
 const ROLE_NAME = { HC: "Head coach", OC: "Offensive coordinator", DC: "Defensive coordinator", ST: "Special teams" };
@@ -11,6 +11,8 @@ const tag = (t, c) => <span style={{ fontSize: 11, fontWeight: 800, color: c, ba
 export default function PhoneCoaching({ hcNote, hcExtOk = true, staff, yr, scPts, coachAge, hcTrait, hcStyle, hotSeat = [], roster = [], faCoaches = [], cap, gamePlan, clr, logo, onUpgrade, onExtend, onFire, onHire, onMeeting }) {
   const [pick, setPick] = useState(null); // ["HC" | "OC" | ...] or { hire: coach }
   const [room, setRoom] = useState(false);
+  // the coaches you could hire, one role at a time (its best four), so the list never runs long
+  const [hireRole, setHireRole] = useState("OC");
   const roles = ["HC", "OC", "DC", "ST"];
   const coachOf = (r) => staff[r.toLowerCase()];
   const conf = roster.map((p) => p.conf || 60);
@@ -21,6 +23,7 @@ export default function PhoneCoaching({ hcNote, hcExtOk = true, staff, yr, scPts
   const big = (bg, c) => ({ width: "100%", minHeight: 50, marginTop: 8, borderRadius: 14, border: 0, background: bg, color: c, fontSize: 16, fontWeight: 900, cursor: "pointer" });
   const sel = typeof pick === "string" ? coachOf(pick) : null;
   const pool = [...faCoaches].sort((a, b) => roles.indexOf(a.role) - roles.indexOf(b.role) || (b.rating || 0) - (a.rating || 0));
+  const hr = pool.some((c) => c.role === hireRole) ? hireRole : roles.find((r) => pool.some((c) => c.role === r));
   return (
     <div>
       <Hero clr={clr} logo={logo} eyebrow="Coaching" title="Your staff" sub={staff.hc ? `${staff.hc.name} · ${hcStyle(staff.hc)} on game day` : "No head coach"}
@@ -48,8 +51,9 @@ export default function PhoneCoaching({ hcNote, hcExtOk = true, staff, yr, scPts
       </Section>
       {pool.length > 0 && (
         <Section title="Hire a coach">
+          <div style={{ marginBottom: 10 }}><Segments items={roles.filter((r) => pool.some((c) => c.role === r)).map((r) => [r, r])} value={hr} onChange={setHireRole} /></div>
           <div style={soft}>
-            {pool.slice(0, 12).map((c, i) => (
+            {pool.filter((c) => c.role === hr).sort((a, b) => b.rating - a.rating).slice(0, 4).map((c, i) => (
               <button key={c.id} onClick={() => setPick({ hire: c })} style={{ ...row, borderTop: i ? "1px solid #ffffff10" : 0 }}>
                 <Face s={c.face} coach={c.name} sz={40} />
                 <span style={{ flex: 1, minWidth: 0 }}>

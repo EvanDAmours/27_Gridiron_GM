@@ -79,6 +79,8 @@ export function YourOffers({ fa, market, teams, ui, onRaise, phone }) {
 
 // the defensive line is two positions here: edge rushers and interior tackles
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P"];
+// phones show a screenful at a time: twenty, then more on a tap
+const PAGE = MOBILE ? 20 : 50;
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const sel = field;
 
@@ -88,7 +90,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
   const [find, setFind] = useState(false);
   const [needOnly, setNeedOnly] = useState(false);
   const [sort, setSort] = useState(["ovr", -1]);
-  const [n, setN] = useState(50);
+  const [n, setN] = useState(PAGE);
   const [offer, setOffer] = useState(null);
   // your open offers hold their money until the player decides
   const out = market ? committed(market, ui) : 0, nOut = market ? Object.values(market.bids).flat().filter((b) => b.team === ui).length : 0;
@@ -125,7 +127,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
       <div style={{ ...card, padding: "12px 12px 8px", ...fitH, height: "calc(100vh - 340px)", display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center", padding: "0 4px" }}>
           <Pills items={[[false, "Everyone"], [true, `Your needs${needs.length ? `: ${needs.slice(0, 3).join(", ")}` : ""}`]]} value={needOnly} onChange={setNeedOnly} label="Show" />
-          <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(50); }} aria-label="Position" style={field}>
+          <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(PAGE); }} aria-label="Position" style={field}>
             {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? "All positions" : x}</option>)}
             {ROLE_FILTERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </Select>
@@ -159,7 +161,7 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
             );
           })}
           {!rows.length && <div style={{ padding: 16, color: "#94a3b8", fontSize: 15 }}>Nobody matches.</div>}
-          {rows.length > n && <div style={{ textAlign: "center", padding: 10 }}><button onClick={() => setN(n + 50)} style={actBtn("#cbd5e1")}>Show more · {rows.length - n} left</button></div>}
+          {rows.length > n && <div style={{ textAlign: "center", padding: 10 }}><button onClick={() => setN(n + PAGE)} style={actBtn("#cbd5e1")}>Show more · {rows.length - n} left</button></div>}
         </div>
       </div>
       {extras}
@@ -215,7 +217,7 @@ function PhoneFA({ sp, fa, rows, n, setN, pos, setPos, needs, q, setQ, find, set
 
       <Section title="Everyone" action={find || q ? "Done" : "Search"} onAction={() => { setFind((v) => !v); if (find) setQ(""); }}>
         {(find || q) && <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search free agents" style={{ ...sel, width: "100%", boxSizing: "border-box", marginBottom: 10, borderRadius: 12, minHeight: 46 }} />}
-        <Chips items={[["ALL", "All"], ...POS.map((x) => [x, x])]} value={pos} onChange={(k) => { setPos(k); setN(50); }} />
+        <Chips items={[["ALL", "All"], ...POS.map((x) => [x, x])]} value={pos} onChange={(k) => { setPos(k); setN(PAGE); }} />
         <div style={{ display: "flex", justifyContent: "flex-end", margin: "8px 2px 6px" }}>
           <button onClick={() => setSortOpen(true)} style={{ background: "transparent", border: 0, color: "#94a3b8", fontSize: 14, fontWeight: 700, cursor: "pointer", padding: "4px 0" }}>Sorted: {(FA_SORTS.find(([k]) => k === sort[0]) || FA_SORTS[0])[1]} ▾</button>
         </div>
@@ -235,7 +237,7 @@ function PhoneFA({ sp, fa, rows, n, setN, pos, setPos, needs, q, setQ, find, set
           ); })}
           {!rows.length && <div style={{ padding: "18px 0", color: C.mt, fontSize: 14 }}>Nobody here.</div>}
         </div>
-        {rows.length > n && <button onClick={() => setN(n + 50)} style={{ width: "100%", minHeight: 48, marginTop: 10, borderRadius: 14, border: 0, background: "#ffffff0f", color: "#cbd5e1", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Show more</button>}
+        {rows.length > n && <button onClick={() => setN(n + PAGE)} style={{ width: "100%", minHeight: 48, marginTop: 10, borderRadius: 14, border: 0, background: "#ffffff0f", color: "#cbd5e1", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Show more</button>}
       </Section>
       {extras}
 

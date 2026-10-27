@@ -174,28 +174,28 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
             <Chips items={[["NEEDS", "Your needs"], ...POS.map((x) => [x, x])]} value={tpos} onChange={setTpos} />
             <div className="pill-row" style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", margin: "12px -8px 0", padding: "0 8px 4px", scrollPaddingLeft: 8 }}>
               {targets.map(({ p, t }) => (
-                <button key={p.id} onClick={() => open(t, p)} style={{ flex: "0 0 70%", minWidth: 0, scrollSnapAlign: "start", background: "#ffffff0f", border: 0, borderRadius: 18, padding: 16, textAlign: "left", color: "#fff", cursor: "pointer", whiteSpace: "normal" }}>
+                <button key={p.id} onClick={() => open(t, p)} style={{ flex: "0 0 70%", minWidth: 0, scrollSnapAlign: "start", background: "#ffffff0f", border: 0, borderRadius: 18, padding: 12, textAlign: "left", color: "#fff", cursor: "pointer", whiteSpace: "normal" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <Face s={p.face} sz={50} />
+                    <Face s={p.face} sz={44} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 16, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: "#94a3b8", marginTop: 2 }}><TeamLogo t={t} sz={18} />{t.ab} · Age {p.age}</div>
                     </div>
                     <b style={{ fontSize: 28, color: oC(p.ovr) }}>{p.ovr}</b>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span style={{ marginLeft: "auto", fontSize: 14, fontWeight: 800, color: "#cbd5e1" }}>{money(p.salary)} · {yrsLeft(p)}y</span></div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span style={{ marginLeft: "auto", fontSize: 14, fontWeight: 800, color: "#cbd5e1" }}>{money(p.salary)} · {yrsLeft(p)}y</span></div>
                 </button>
               ))}
               {!targets.length && <div style={{ color: C.mt, fontSize: 14, padding: "8px 2px" }}>Nobody to show.</div>}
             </div>
           </Section>
           <Section title="Pick a team">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
               {teams.filter((t) => t.id !== ui).sort((a, b) => a.city.localeCompare(b.city)).map((t) => { const m = modes?.[t.id]; return (
-                <button key={t.id} onClick={() => open(t)} aria-label={`Trade with the ${t.city} ${t.name}`} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "12px 0 10px", background: m === "buyer" ? "#22c55e14" : m === "seller" ? "#eab30814" : "#ffffff0f", border: 0, borderRadius: 16, color: "#e2e8f0", cursor: "pointer" }}>
-                  <TeamLogo t={t} sz={40} /><b style={{ fontSize: 14 }}>{t.ab}</b>
+                <button key={t.id} onClick={() => open(t)} aria-label={`Trade with the ${t.city} ${t.name}`} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "8px 0 7px", background: m === "buyer" ? "#22c55e14" : m === "seller" ? "#eab30814" : "#ffffff0f", border: 0, borderRadius: 16, color: "#e2e8f0", cursor: "pointer" }}>
+                  <TeamLogo t={t} sz={30} /><b style={{ fontSize: 13 }}>{t.ab}</b>
                   {/* buying or selling in words under the club, so you can tell at a glance */}
-                  <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 0.8, color: m === "buyer" ? C.gn : m === "seller" ? C.gd : "#64748b" }}>{m === "buyer" ? "BUYING" : m === "seller" ? "SELLING" : `${t.w}-${t.l}`}</span>
+                  <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.6, color: m === "buyer" ? C.gn : m === "seller" ? C.gd : "#64748b" }}>{m === "buyer" ? "BUYING" : m === "seller" ? "SELLING" : `${t.w}-${t.l}`}</span>
                 </button>
               ); })}
             </div>

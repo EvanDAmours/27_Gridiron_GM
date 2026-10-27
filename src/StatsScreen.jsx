@@ -245,6 +245,7 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
 // cards you swipe (your team: its leader at every position), then the stat tables as clean rows: the
 // stat you sort by big on the right, the rest on one line under the name.
 function PhoneStats({ teams, ui, yr, me, scope, setScope, cat, setCat, sort, setSort, gpos, setGpos, players, rows, cols, col, team, teamId, onPlayer }) {
+  const [shown, setShown] = useState(15); // a screenful of a table, then more on a tap
   const [sortOpen, setSortOpen] = useState(false);
   const soft = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
   const races = useMemo(() => (scope === "races" ? awardRaces(teams, yr) : null), [scope, teams, yr]);
@@ -294,11 +295,11 @@ function PhoneStats({ teams, ui, yr, me, scope, setScope, cat, setCat, sort, set
           </Section>
         ) : null; })()}
         <Section title="Stat tables" action={`Sorted: ${col[0]} ▾`} onAction={() => setSortOpen(true)}>
-          <Chips items={Object.keys(TABLES).map((k) => [k, k])} value={cat} onChange={(k) => { setCat(k); setSort(null); }} />
+          <Chips items={Object.keys(TABLES).map((k) => [k, k])} value={cat} onChange={(k) => { setCat(k); setSort(null); setShown(15); }} />
           {cat === "Grades" && <div style={{ marginTop: 8 }}><Chips items={["All", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((k) => [k, k])} value={gpos} onChange={setGpos} /></div>}
           <div style={{ ...soft, marginTop: 10 }}>
-            {rows.map((x, i) => { const rest = cols.filter((c) => c[0] !== col[0]).slice(0, 4).map(([l, f]) => `${l} ${n(f(x.p.ss, x.p))}`).join(" · "); const v = col[1](x.p.ss, x.p); return (
-              <button key={x.p.id} onClick={() => onPlayer(x.p)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 58, background: x.ti === ui ? "#22c55e10" : "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "6px 0", color: "#fff", cursor: "pointer", textAlign: "left" }}>
+            {rows.slice(0, shown).map((x, i) => { const rest = cols.filter((c) => c[0] !== col[0]).slice(0, 4).map(([l, f]) => `${l} ${n(f(x.p.ss, x.p))}`).join(" · "); const v = col[1](x.p.ss, x.p); return (
+              <button key={x.p.id} onClick={() => onPlayer(x.p)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", minHeight: 50, background: x.ti === ui ? "#22c55e10" : "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "6px 0", color: "#fff", cursor: "pointer", textAlign: "left" }}>
                 <span style={{ width: 22, fontSize: 14, fontWeight: 800, color: C.mt }}>{i + 1}</span>
                 <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: x.ti === ui ? C.gn : "#f1f5f9" }}>{x.p.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>{x.t.ab} · {x.p.pos}</span></span><span style={{ display: "block", fontSize: 12, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: 2 }}>{rest}</span></span>
                 <span style={{ textAlign: "right" }}><b style={{ display: "block", fontSize: 20, fontVariantNumeric: "tabular-nums", color: typeof v === "number" && (col[0] === "GRADE" || cat === "Grades") ? gradeColor(v) : "#fff" }}>{n(v)}</b><span style={{ fontSize: 10, fontWeight: 800, color: C.mt }}>{col[0]}</span></span>
@@ -306,6 +307,7 @@ function PhoneStats({ teams, ui, yr, me, scope, setScope, cat, setCat, sort, set
             ); })}
             {!rows.length && <div style={{ padding: "18px 0", color: C.mt, fontSize: 14 }}>No {cat.toLowerCase()} stats yet.</div>}
           </div>
+          {rows.length > shown && <button onClick={() => setShown(shown + 15)} style={{ width: "100%", minHeight: 46, marginTop: 10, borderRadius: 14, border: 0, background: "#ffffff0f", color: "#cbd5e1", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Show more · {rows.length - shown} left</button>}
         </Section>
       </>)}
       {sortOpen && <Sheet title="Sort by" onClose={() => setSortOpen(false)}>{cols.map(([l], i) => <Row key={l} first={i === 0} label={l} value={l === col[0] ? "✓" : ""} tone={C.gn} onClick={() => { setSort(l); setSortOpen(false); }} />)}<div style={{ height: 8 }} /></Sheet>}

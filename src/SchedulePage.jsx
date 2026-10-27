@@ -130,19 +130,19 @@ function PhoneSchedule({ g, view, setView }) {
   const [week, setWeek] = useState(Math.min(18, Math.max(1, wk + (sp === "regular" ? 1 : 0))));
   const next = sp === "regular" ? sched.find((x) => !x.played && (x.h === ui || x.a === ui)) : null;
   const card = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
-  const row = { display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 62, textAlign: "left", background: "transparent", border: 0, padding: "8px 0", color: C.tx };
+  const row = { display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 50, textAlign: "left", background: "transparent", border: 0, padding: "5px 0", color: C.tx };
   const arrow = (on) => ({ width: 44, height: 44, borderRadius: 22, border: 0, background: on ? "#ffffff14" : "transparent", color: on ? "#fff" : "#334155", fontSize: 22, cursor: on ? "pointer" : "default" });
   return (
     <div>
       <Hero clr={me.clr} logo={me} eyebrow={`${yr} season`} title="Schedule" sub={next ? `Next: week ${next.wk} ${next.h === ui ? "vs" : "at"} ${teams[next.h === ui ? next.a : next.h].name}` : null}
         right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1 }}>{rec(me)}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>RECORD</div></div>} />
-      <div style={{ margin: "16px 0 0" }}><Segments items={[["mine", "Your games"], ["league", "Around the league"]]} value={view} onChange={setView} /></div>
+      <div style={{ margin: "12px 0 10px" }}><Segments items={[["mine", "Your games"], ["league", "Around the league"]]} value={view} onChange={setView} /></div>
       {view === "mine" ? (<>
         <div style={card}>
           {Array.from({ length: 18 }, (_, i) => i + 1).map((w, i) => {
             const game = sched.find((x) => x.wk === w && (x.h === ui || x.a === ui));
             const top = i ? "1px solid #ffffff10" : 0;
-            if (!game) return <div key={w} style={{ ...row, minHeight: 44, borderTop: top }}><span style={{ width: 34, fontSize: 13, fontWeight: 900, color: C.mt }}>{w}</span><span style={{ fontSize: 15, fontWeight: 800, color: "#a78bfa" }}>Bye week</span></div>;
+            if (!game) return <div key={w} style={{ ...row, minHeight: 38, borderTop: top }}><span style={{ width: 34, fontSize: 13, fontWeight: 900, color: C.mt }}>{w}</span><span style={{ fontSize: 15, fontWeight: 800, color: "#a78bfa" }}>Bye week</span></div>;
             const home = game.h === ui, opp = teams[home ? game.a : game.h];
             const us = home ? game.hs : game.as, them = home ? game.as : game.hs;
             const res = game.played ? (us > them ? ["W", C.gn] : us < them ? ["L", C.rd] : ["T", C.gd]) : null;
@@ -151,12 +151,12 @@ function PhoneSchedule({ g, view, setView }) {
             const hol = HOLIDAYS[game.holiday], wx = isNext ? wxOf(gameWeather(game, yr, teams[game.h]?.ab)) : null;
             const tags = [hol && `$${hol.short}`, wx && (wx.rain || wx.snow || wx.cold || wx.label === "Windy") && `$${wx.label}`, opp.c === me.c && opp.d === me.d && "Division", rivalId === opp.id && "Rival", game.intl && game.city].filter(Boolean).join(" · ");
             return (
-              <button key={w} onClick={() => game.played && (game.boxH || game.boxA) && onBox(game)} style={{ ...row, borderTop: top, cursor: game.played ? "pointer" : "default", background: isNext ? `${C.gn}14` : "transparent", margin: isNext ? "0 -14px" : 0, padding: isNext ? "8px 14px" : "8px 0", width: isNext ? "calc(100% + 28px)" : "100%" }}>
+              <button key={w} onClick={() => game.played && (game.boxH || game.boxA) && onBox(game)} style={{ ...row, borderTop: top, cursor: game.played ? "pointer" : "default", background: isNext ? `${C.gn}14` : "transparent", margin: isNext ? "0 -14px" : 0, padding: isNext ? "5px 14px" : "5px 0", width: isNext ? "calc(100% + 28px)" : "100%" }}>
                 <span style={{ width: 34, fontSize: 13, fontWeight: 900, color: isNext ? C.gn : C.mt }}>{w}</span>
-                <TeamLogo t={opp} sz={32} />
+                <TeamLogo t={opp} sz={28} />
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><span style={{ color: C.mt, fontWeight: 700 }}>{home || game.neutral ? "vs" : "@"}</span> {opp.name}</span>
-                  <span style={{ display: "block", fontSize: 12, color: C.mt, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[!game.played && game.date ? kickoff(game).replace(" ET", "") : rec(opp), tags].filter(Boolean).join(" · ")}</span>
+                  <span style={{ display: "block", fontSize: 15.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><span style={{ color: C.mt, fontWeight: 700 }}>{home || game.neutral ? "vs" : "@"}</span> {opp.name}</span>
+                  <span style={{ display: "block", fontSize: 12, color: C.mt, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[!game.played && game.date ? kickoff(game).replace(" ET", "") : rec(opp), tags].filter(Boolean).join(" · ")}</span>
                 </span>
                 {res ? <span style={{ whiteSpace: "nowrap", fontSize: 16 }}><b style={{ color: res[1] }}>{res[0]}</b> <b>{us}-{them}</b></span>
                   : isNext && onPlay ? <span onClick={(e) => { e.stopPropagation(); onPlay(game); }} style={{ background: C.gn, color: "#fff", borderRadius: 12, padding: "10px 14px", fontSize: 15, fontWeight: 900 }}>Play</span> : null}

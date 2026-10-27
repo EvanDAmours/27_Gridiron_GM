@@ -51,9 +51,9 @@ export default function TradeFinder({ results, needs = [], onRun, onLoad, onPlay
           const tag = <span style={{ fontSize: 13, fontWeight: 800, color: r.ratingColor, whiteSpace: "nowrap", textTransform: "capitalize" }}>{String(r.rating).toLowerCase()}</span>;
           if (MOBILE) return (
             <div key={i} style={{ padding: "12px 8px", borderTop: i ? "1px solid #ffffff10" : 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>{club}<span style={{ marginLeft: "auto" }}>{tag}</span></div>
-              <div style={{ display: "grid", gap: 10, margin: "10px 0" }}><Who label="YOU GET" p={r.get} tone="#86efac" onPlayer={onPlayer} /><Who label="YOU SEND" p={r.send} tone="#fca5a5" onPlayer={onPlayer} /></div>
-              <button onClick={() => onLoad(r)} style={{ ...actBtn("#fff"), width: "100%", minHeight: 44 }}>Open deal</button>
+              {/* the club, how fair it is and the button on one line, then the two players */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>{club}<span style={{ marginLeft: "auto" }}>{tag}</span><button onClick={() => onLoad(r)} style={{ ...actBtn("#fff"), minHeight: 40 }}>Open deal</button></div>
+              <div style={{ display: "grid", gap: 8, marginTop: 8 }}><Who label="YOU GET" p={r.get} tone="#86efac" onPlayer={onPlayer} /><Who label="YOU SEND" p={r.send} tone="#fca5a5" onPlayer={onPlayer} /></div>
             </div>
           );
           return (

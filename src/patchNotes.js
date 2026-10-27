@@ -2081,4 +2081,9 @@ export const PATCH_NOTES = [
     "While the draft is on, a red Draft button sits in the top bar on every other screen, next to Resume, to take you straight back.",
     "The on-the-clock bar lists every pick you have left in the draft again, the next one first.",
   ] },
+  { v: "5.14", date: "2026-10-23", title: "Phone pass: less scrolling", notes: [
+    "Phone pass, less scrolling on every long screen: Free Agency shows 20 players at a time (Show more for the rest), Stats tables 15 at a time, and Coaching's Hire a coach list picks a role (HC, OC, DC, ST) and shows its best four.",
+    "Phones: tighter standings and schedule rows, a five-across Pick a team grid on Trades with smaller logos, Trade finder deals with Open deal beside the club instead of a full-width button, and a slightly tighter More menu.",
+    "The Playoffs screen during the next season says Last season: who won the Super Bowl, instead of announcing it again as news.",
+  ] },
 ];
