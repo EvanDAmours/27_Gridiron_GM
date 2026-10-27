@@ -2070,4 +2070,9 @@ export const PATCH_NOTES = [
     "Your scouts weigh known development traits much more: a superstar or generational talent outranks a few points of ceiling or readiness. They only suggest waiting on a player when he's close to certain to be there at your next pick, and a superstar or better only when he's all but guaranteed; otherwise they take the more NFL-ready player now.",
     "The draft board can filter kickers and punters (K/P).",
   ] },
+  { v: "5.12", date: "2026-10-23", title: "Check-in scout fix, bracket button", notes: [
+    "Scouting check-in: filing a report or workup on one of your scouts' five now shows on that player right away (the button moves on to Workup, his read and current overall update). Before, only the players under They also want eyes on updated.",
+    "The check-in names your pick even when you're projected first overall, and leaves out the odds of lasting when nobody picks before you.",
+    "Playoffs: Home has a View the bracket button beside Sim Round, on computers and phones.",
+  ] },
 ];

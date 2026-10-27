@@ -33,7 +33,8 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], onOp
   const pts = sc.pts || 0, last = wk >= SCOUT_CHECKPOINTS[SCOUT_CHECKPOINTS.length - 1];
   const room = useMemo(() => checkpointRoom(g), [g.yr, g.ui, wk]); // eslint-disable-line react-hooks/exhaustive-deps
   const five = room?.five || [];
-  const pk = room?.upAt;
+  // your projected pick; the odds of lasting to it only mean something when someone picks before you
+  const pk = room?.mine, odds = !!room?.upAt;
   const cls = g.dc?.[g.yr] || [];
   const byId = new Map(cls.map((p) => [p.id, p]));
   const moved = new Map(news.map((n) => [n.pid, n]));
@@ -42,7 +43,9 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], onOp
   const others = targetIds.map((id) => byId.get(id)).filter((p) => p && !inFive.has(p.id)).slice(0, 2);
   // board moves in your range only (the rest are in the log)
   const nearMoves = news.filter((n) => !inFive.has(n.pid) && !others.some((o) => o.id === n.pid) && pk && Math.abs(n.to - pk.overall) <= 20).slice(0, 3);
-  const listed = [...five.map((x) => x.p), ...others];
+  // the five were worked out when this opened; scouting saves a new copy of each player, so read the current one
+  const fresh = (p) => byId.get(p.id) || p;
+  const listed = [...five.map((x) => fresh(x.p)), ...others];
   const allDone = listed.length > 0 && listed.every((p) => !needsWork(sc, p));
   const startedDone = useRef(allDone);
   useEffect(() => {
@@ -69,7 +72,7 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], onOp
         {x && <span style={{ width: MOBILE ? 52 : 70, textAlign: "center" }}><b style={{ display: "block", fontSize: 15, color: cur.kind === "estimate" ? "#e2e8f0" : oC(cur.v) }}>{ovrText(cur)}</b><span style={mini}>NOW</span></span>}
         {x && !MOBILE && <span style={{ width: 44, textAlign: "center" }}><b style={{ display: "block", fontSize: 15 }}>{potGrade(x.ceil)}</b><span style={mini}>CEIL.</span></span>}
         {x && !MOBILE && <span style={{ width: 44, textAlign: "center" }}><b style={{ display: "block", fontSize: 15 }}>#{csRank(p)}</b><span style={mini}>BOARD</span></span>}
-        {x && pk && <span style={{ width: MOBILE ? 44 : 60, textAlign: "center" }}><b style={{ display: "block", fontSize: 15, color: tone(x.there) }}>{pct(x.there)}</b><span style={mini}>AT #{pk.overall}</span></span>}
+        {x && pk && odds && <span style={{ width: MOBILE ? 44 : 60, textAlign: "center" }}><b style={{ display: "block", fontSize: 15, color: tone(x.there) }}>{pct(x.there)}</b><span style={mini}>AT #{pk.overall}</span></span>}
         <span style={{ width: MOBILE ? 78 : 92, textAlign: "right" }}><ScoutButton g={g} p={p} read={r} small /></span>
       </div>
     );
@@ -91,7 +94,7 @@ export default function ScoutCheckpoint({ g, wk, news = [], targetIds = [], onOp
         </div>
 
         {five.length > 0 && <div style={{ background: "#ffffff08", borderRadius: 16, padding: "6px 14px", marginBottom: 10 }}>
-          {five.map((x, i) => row(x.p, x, i))}
+          {five.map((x, i) => row(fresh(x.p), x, i))}
         </div>}
         {others.length > 0 && <>
           <div style={{ ...mini, fontSize: 11, margin: "8px 4px 2px" }}>THEY ALSO WANT EYES ON</div>

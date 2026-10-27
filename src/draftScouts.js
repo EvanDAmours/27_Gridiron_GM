@@ -151,7 +151,7 @@ export function scoutsPicks({ sc, teams, ui, picks, pool, at, now, capRoom, like
   for (const x of five) x.why = reason(x, ctx, next);
   // the clubs ahead of you: before your pick if it isn't up yet, else before your next one
   const intel = before || after;
-  return { five, radar, ctx, next, scouts, upAt: at > now ? picks[at] : null, intel, intelTo: at > now ? picks[at] : next };
+  return { five, radar, ctx, next, scouts, mine: picks[at], upAt: at > now ? picks[at] : null, intel, intelTo: at > now ? picks[at] : next };
 }
 
 const yrs = (n) => (n <= 1 ? "a year" : `${n} years`);
