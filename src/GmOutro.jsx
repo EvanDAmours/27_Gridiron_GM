@@ -2,7 +2,7 @@
 // First the career you retire with, on one full screen in your club's colors; then a quiet last
 // frame, and back to the main menu.
 import React, { useState } from "react";
-import { TeamLogo } from "./ui.jsx";
+import { TeamLogo, LogoMark } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { legacyTier } from "./gmLegacy.js";
 import { ACHIEVEMENTS } from "./achievements.js";
@@ -21,7 +21,7 @@ export default function GmOutro({ career: c, rank, team, yr, achievements = {}, 
   return (
     <div role="dialog" aria-label="Retirement" className="keep-dark" style={{ position: "fixed", inset: 0, zIndex: 5000, overflow: "hidden", color: "#fff", background: `radial-gradient(120% 90% at 50% 0%, ${clr}66, transparent 70%) #05080f`, display: "flex", alignItems: "center", justifyContent: "center", padding: MOBILE ? 18 : 32 }}>
       <style>{"@keyframes goIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}@keyframes goFade{from{opacity:0}to{opacity:1}}"}</style>
-      {team && <span aria-hidden="true" style={{ position: "absolute", right: "-6%", bottom: "-12%", opacity: 0.06, filter: "grayscale(1) brightness(4)", pointerEvents: "none" }}><TeamLogo t={team} sz={MOBILE ? 360 : 620} /></span>}
+      <LogoMark t={team} sz={MOBILE ? 360 : 620} opacity={0.06} style={{ right: "-6%", bottom: "-12%", transform: "none" }} />
 
       {stage === 0 && (
         <div key="acc" style={{ position: "relative", width: "100%", maxWidth: 860, animation: "goIn .6s ease-out", maxHeight: "100%", overflowY: "auto" }}>

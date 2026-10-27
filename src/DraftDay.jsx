@@ -3,7 +3,7 @@
 import { MOBILE } from "./mobile.js";
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { C, Bdg, Btn, TeamLogo, SheetGrip, CloseX, Sheet, Segments, Icon } from "./ui.jsx";
+import { C, Bdg, Btn, TeamLogo, LogoMark, SheetGrip, CloseX, Sheet, Segments, Icon } from "./ui.jsx";
 import { pickValueTag, pickLabel } from "./draftTrade.js";
 import { posTag } from "./dline.js";
 
@@ -72,7 +72,7 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
   if (MOBILE) return (
     <div style={{ position: "sticky", top: "calc(56px + env(safe-area-inset-top))", zIndex: 20, borderRadius: 12, overflow: "hidden", marginBottom: 10, border: mine ? `2px solid ${C.gn}` : `1px solid ${C.bd}`, boxShadow: "0 8px 20px #0009" }}>
       <div style={{ background: `linear-gradient(120deg,${team.clr} 0%,#0b1120 85%)`, padding: "8px 10px", display: "flex", alignItems: "center", gap: 10 }}>
-        <TeamLogo t={team} sz={34} />
+        <TeamLogo t={team} sz={34} glow />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.2, color: "#fffb" }}>{paused ? "PAUSED" : mine ? "YOU'RE ON THE CLOCK" : "ON THE CLOCK"} · R{pick.rd} #{pick.overall}</div>
           <div style={{ fontSize: 17, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{team.city} {team.name}</div>
@@ -92,38 +92,33 @@ export function OnTheClock({ pick, team, mine, paused, timer, nextMine, needs = 
       )}
     </div>
   );
+  // Desktop: one slim bar. The club, the pick, its needs, the calls you can make and the clock.
+  const quiet = (open) => ({ fontSize: 13.5, padding: "7px 13px", fontWeight: 800, borderRadius: 10, background: open ? "#ffffff2e" : "#ffffff14", color: "#e2e8f0" });
   return (
-    <div style={{ borderRadius: 14, overflow: "hidden", marginBottom: 10, border: mine ? `2px solid ${C.gn}` : `1px solid ${C.bd}` }}>
-      <div style={{ background: `linear-gradient(120deg,${team.clr} 0%,#0b1120 80%)`, padding: "14px 18px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <TeamLogo t={team} sz={64} />
+    <div style={{ borderRadius: 16, overflow: "hidden", marginBottom: 10, boxShadow: mine ? `inset 0 0 0 2px ${C.gn}` : undefined, background: `linear-gradient(110deg,${team.clr} 0%,#0b1120 70%)` }}>
+      <div style={{ padding: "9px 16px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+        <TeamLogo t={team} sz={42} glow />
         <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <span style={{ background: paused ? "#475569" : "#b91c1c", color: "#fff", fontSize: 11, fontWeight: 900, letterSpacing: 2, padding: "2px 8px", borderRadius: 4 }}>{paused ? "PAUSED" : "ON THE CLOCK"}</span>
-            <span style={{ fontSize: 13, color: "#fffa", letterSpacing: 2, fontWeight: 800 }}>ROUND {pick.rd} · PICK {pick.num} · #{pick.overall} OVERALL</span>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.4, color: paused ? "#fde68a" : "#ffffffb3" }}>{paused ? "PAUSED" : mine ? "YOU'RE ON THE CLOCK" : "ON THE CLOCK"} · ROUND {pick.rd} · PICK {pick.num} · #{pick.overall}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 1 }}>
+            <span style={{ fontSize: 20, fontWeight: 900, color: "#fff", lineHeight: 1.2 }}>{team.city} {team.name}</span>
+            {needs.length > 0 && <span style={{ display: "flex", gap: 3, alignItems: "center" }}><span style={{ fontSize: 11, color: "#ffffff99", fontWeight: 800, letterSpacing: 1, marginRight: 2 }}>NEEDS</span>{needs.map((n) => <Bdg key={n} pos={n} />)}</span>}
+            {!mine && nextMine && <span style={{ fontSize: 13, color: "#ffffffb3" }}>Your pick: #{nextMine.overall} ({nextMine.overall - pick.overall} away)</span>}
           </div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", lineHeight: 1.15, marginTop: 2 }}>{team.city} {team.name}{mine ? " (YOU)" : ""}</div>
-          {needs.length > 0 && <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap", marginTop: 4 }}><span style={{ fontSize: 11, color: "#fffa", fontWeight: 800, letterSpacing: 1 }}>NEEDS</span>{needs.map((n) => <Bdg key={n} pos={n} />)}</div>}
-          {!mine && fits.length > 0 && <div style={{ fontSize: 12, color: "#fffc", marginTop: 4 }}>Mock pick: {fits.map((p) => `${p.name} (${posTag(p)})`).join(" · ")}</div>}
-          {!mine && nextMine && <div style={{ fontSize: 13, color: "#fffc", marginTop: 2 }}>Your next pick: #{nextMine.overall} ({nextMine.overall - pick.overall} away)</div>}
-          {mine && <div style={{ fontSize: 14, color: "#fffc", marginTop: 2 }}>{paused ? "Draft paused" : "Make your pick from the board below"}</div>}
+          {!mine && fits.length > 0 && <div style={{ fontSize: 12, color: "#fffc", marginTop: 2 }}>Mock pick: {fits.map((p) => `${p.name} (${posTag(p)})`).join(" · ")}</div>}
         </div>
-        {mine ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>{pauseBtn(true)}<div style={{ textAlign: "right" }}><div style={{ fontSize: 40, fontWeight: 900, color: timer <= 10 ? C.rd : C.gd, fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</div><div style={{ fontSize: 12, color: "#fffa" }}>{mine ? "REAL TIME · YOUR PICK" : "TIME LEFT"}</div></div></div>
-        ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>{pauseBtn(true)}
-            <div style={{ textAlign: "right", lineHeight: 1 }}><span style={{ fontSize: 28, fontWeight: 900, color: timer <= 10 ? C.rd : "#fff", fontVariantNumeric: "tabular-nums" }}>{Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}</span><div style={{ fontSize: 11, color: "#fffa", marginTop: 2 }}>ON THE CLOCK</div></div>
-          </div>
-        )}
+        {!mine && <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {nextMine && <Btn onClick={onSim} bg={C.gn} style={{ fontSize: 13.5, padding: "7px 14px", fontWeight: 900, borderRadius: 10 }}>Sim to my pick</Btn>}
+          {onSimPick && <Btn onClick={onSimPick} style={quiet(false)}>Sim this pick</Btn>}
+          {nextMine && <Btn onClick={onForPick} style={quiet(forPickOpen)}>{forPickOpen ? "Never mind" : "Trade for this pick"}</Btn>}
+          {nextMine && <Btn onClick={onCalls} style={quiet(callsOpen)}>{callsOpen ? "Hide calls" : "Trade up"}</Btn>}
+        </div>}
+        {onPause && <button onClick={onPause} aria-label={paused ? "Resume the draft" : "Pause the draft"} style={{ background: paused ? C.gn : "#ffffff1f", color: "#fff", border: 0, borderRadius: 10, padding: "7px 14px", fontSize: 13.5, fontWeight: 900, cursor: "pointer" }}>{paused ? "Resume" : "Pause"}</button>}
+        <div style={{ textAlign: "right", minWidth: 74 }}>
+          <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1, color: timer <= 10 ? C.rd : mine ? C.gd : "#fff", fontVariantNumeric: "tabular-nums" }}>{clock}</div>
+          <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 0.8, color: "#ffffff99", marginTop: 3 }}>{mine ? "REAL TIME" : "TIME LEFT"}</div>
+        </div>
       </div>
-      {!mine && (onSimPick || nextMine) && (
-        <div style={{ background: "#0b1120", padding: "8px 14px", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", borderTop: "1px solid #ffffff14" }}>
-          {/* one calm style; sim-to-my-pick is the one that leads */}
-          {nextMine && <Btn onClick={onSim} bg={C.gn} style={{ fontSize: 14, padding: "8px 16px", fontWeight: 900, borderRadius: 10 }}>Sim to my pick</Btn>}
-          {onSimPick && <Btn onClick={onSimPick} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 14, padding: "8px 16px", fontWeight: 800, borderRadius: 10 }}>Sim this pick</Btn>}
-          {nextMine && <Btn onClick={onForPick} bg={forPickOpen ? "#ffffff2e" : "#ffffff12"} c="#e2e8f0" style={{ fontSize: 14, padding: "8px 16px", fontWeight: 800, borderRadius: 10 }}>{forPickOpen ? "Never mind" : "Trade for this pick"}</Btn>}
-          {nextMine && <Btn onClick={onCalls} bg={callsOpen ? "#ffffff2e" : "#ffffff12"} c="#e2e8f0" style={{ fontSize: 14, padding: "8px 16px", fontWeight: 800, borderRadius: 10 }}>{callsOpen ? "Hide calls" : "Trade up"}</Btn>}
-        </div>
-      )}
     </div>
   );
 }
@@ -200,7 +195,7 @@ export function PhoneClock({ pick, team, mine, paused, onPause, timer, nextMine,
   const sub = mine ? `$${wage}M/yr rookie wage${needs.length ? ` · need ${needs.slice(0, 2).join(", ")}` : ""}` : nextMine ? `Your pick #${nextMine.overall} · ${nextMine.overall - pick.overall} away` : "Your picks are done";
   return (
     <div className="keep-dark" style={{ position: "sticky", top: "calc(56px + env(safe-area-inset-top))", zIndex: 20, borderRadius: 20, overflow: "hidden", margin: "0 0 10px", background: `radial-gradient(120% 140% at 0% 0%, ${team.clr}, #0b1120 72%)`, boxShadow: mine ? `0 0 0 2px ${C.gn}, 0 10px 24px #000a` : "0 10px 24px #000a" }}>
-      <span aria-hidden="true" style={{ position: "absolute", right: -18, top: -22, opacity: 0.08, pointerEvents: "none", transform: "rotate(-8deg)", filter: "grayscale(1) brightness(4)" }}><TeamLogo t={team} sz={120} /></span>
+      <LogoMark t={team} sz={120} opacity={0.08} style={{ right: -18, top: -22 }} />
       <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12, padding: "12px 12px 12px 14px" }}>
         <TeamLogo t={team} sz={42} glow />
         <div style={{ flex: 1, minWidth: 0 }}>

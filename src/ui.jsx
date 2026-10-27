@@ -93,7 +93,7 @@ export function Hero({ clr = "#1e3a8a", eyebrow, title, sub, right, children, co
   return (
     <div className="keep-dark" style={{ position: "relative", overflow: "hidden", margin: "-6px -8px 0", padding: compact ? `${S[4]}px ${S[4]}px ${S[3]}px` : `${S[5]}px ${S[4]}px ${S[5]}px`, color: "#fff", background: `linear-gradient(180deg, transparent 45%, ${C.bg} 100%), radial-gradient(120% 100% at 0% 0%, ${clr}cc, ${clr}22 70%)` }}>
       {/* the club's mark, big and faint behind the headline */}
-      {logo && <span aria-hidden="true" style={{ position: "absolute", right: -28, top: -18, opacity: 0.07, pointerEvents: "none", transform: "rotate(-8deg)", filter: "grayscale(1) brightness(4)" }}><TeamLogo t={logo} sz={compact ? 150 : 190} /></span>}
+      {logo && <LogoMark t={logo} sz={compact ? 150 : 190} style={{ right: -28, top: -18 }} />}
       {eyebrow && <div style={{ fontSize: T.xs, fontWeight: 800, letterSpacing: 0.4, color: "#ffffffb3" }}>{eyebrow}</div>}
       <div style={{ display: "flex", alignItems: "flex-end", gap: S[3], marginTop: S[1] }}>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -195,9 +195,22 @@ export const logoUrl = (ab) => `${import.meta.env.BASE_URL}logos/${String(ab || 
 // glow: a thin light outline so dark logos (Giants, Bears, Texans) read on dark or team-color
 // backgrounds without sitting on a white tile.
 const GLOW = "drop-shadow(0 0 1px #ffffffd9) drop-shadow(0 0 1px #ffffffb3) drop-shadow(0 2px 6px #0008)";
-export function TeamLogo({ t, sz = 40, glow = false }) {
+// The club's mark, big and faint behind a headline. Most logos wash to a light silhouette; the two
+// drawn on a white disc (Steelers, Titans) would wash to a plain circle, so they keep their shapes
+// in gray instead.
+const DISC = { PIT: 1, TEN: 1 };
+export function LogoMark({ t, sz, opacity = 0.07, style }) {
+  if (!t) return null;
+  const disc = DISC[String(t.ab || "").toUpperCase()];
+  return <span aria-hidden="true" style={{ position: "absolute", pointerEvents: "none", transform: "rotate(-8deg)", ...(style || {}), opacity: disc ? opacity * 1.8 : opacity, filter: disc ? "grayscale(1)" : "grayscale(1) brightness(4)" }}><TeamLogo t={t} sz={sz} glow={false} plain /></span>;
+}
+// the marks that are mostly navy, black or dark green get the outline everywhere: on a dark screen
+// or their own team color they'd disappear without it
+const DARK = { NYG: 1, NYJ: 1, CHI: 1, HOU: 1, NE: 1, DAL: 1, BAL: 1, PHI: 1, SEA: 1, LAR: 1, LV: 1, CAR: 1, IND: 1, DEN: 1, TEN: 1 };
+export function TeamLogo({ t, sz = 40, glow: glowIn = false, plain = false }) {
   const [bad, setBad] = React.useState(false);
   if (!t) return null;
+  const glow = glowIn || (!plain && sz >= 18 && DARK[String(t.ab || "").toUpperCase()]);
   const box = { width: sz, height: sz, flexShrink: 0, borderRadius: Math.round(sz / 5), display: "inline-flex", alignItems: "center", justifyContent: "center" };
   if (bad) return <span style={{ ...box, background: `linear-gradient(135deg,${t.clr},${t.ac})`, fontWeight: 900, fontSize: Math.max(9, Math.round(sz / 3)), color: "#fff" }}>{t.ab}</span>;
   return <img src={logoUrl(t.ab)} alt={`${t.city || ""} ${t.name || t.ab}`.trim()} title={`${t.city || ""} ${t.name || ""}`.trim()} width={sz} height={sz} loading="lazy" onError={() => setBad(true)} style={{ ...box, objectFit: "contain", ...(glow ? { filter: GLOW } : {}) }} />;

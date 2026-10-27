@@ -80,8 +80,8 @@ async function simUntil(text, done, where) {
     if (await page.evaluate(done)) return;
     await dismiss();
     let b = page.locator("button:visible", { hasText: text });
-    // Sim to Deadline and Sim All live in the "More sims" menu next to Sim Week
-    if (!(await b.count())) { const m = page.locator("button:visible", { hasText: "More sims" }); if (await m.count()) { await m.first().click(); await page.waitForTimeout(200); } b = page.locator("button:visible", { hasText: text }); }
+    // the trade deadline and the end of the season live in the "Sim to…" menu next to Sim Week
+    if (!(await b.count())) { const m = page.locator("button:visible", { hasText: "Sim to…" }); if (await m.count()) { await m.first().click(); await page.waitForTimeout(200); } b = page.locator("button:visible", { hasText: text }); }
     if (await b.count()) await b.first().click({ timeout: 3000 }).catch(() => {});
     // a scouting checkpoint pauses the sim: Keep simming carries it on without pressing Sim again
     for (let t = 0; t < 60 && !(await page.evaluate(done)); t++) { const k = page.locator("button:visible", { hasText: "Keep simming" }); if (await k.count()) await k.first().click().catch(() => {}); await page.waitForTimeout(500); }
@@ -208,10 +208,10 @@ try {
   await startSeason();
   await must("Sim Week", 1500); await healthy("sim week"); log("sim week");
   await reloadCheck("mid-season");
-  await simUntil("Sim to Deadline", () => document.body.innerText.includes("TRADE DEADLINE DAY"), "sim to deadline"); await healthy("sim to deadline");
+  await simUntil(": trade deadline", () => document.body.innerText.includes("TRADE DEADLINE DAY"), "sim to deadline"); await healthy("sim to deadline");
   if (!(await page.evaluate(() => document.body.innerText.includes("TRADE DEADLINE DAY")))) fail("deadline day didn't open");
   await must("Advance to", 800); await must("Sim to 4:00 PM", 800); await must("Back to the season", 800); log("trade deadline day");
-  await simUntil("Sim All", () => ((t) => !/Sim All/.test(t) && /Sim Round/.test(t))([...document.querySelectorAll("button")].map((b) => b.innerText).join(" ")), "sim all"); await page.waitForTimeout(2500); await healthy("sim all");
+  await simUntil(": end of season", () => ((t) => !/Sim to…/.test(t) && /Sim Round/.test(t))([...document.querySelectorAll("button")].map((b) => b.innerText).join(" ")), "sim all"); await page.waitForTimeout(2500); await healthy("sim all");
   let d = await save();
   for (let i = 0; i < 60 && d.sp !== "playoffs"; i++) { await page.waitForTimeout(1000); d = await save(); } // a slow machine is still playing out the last weeks
   if (d.sp !== "playoffs" || d.wk !== 18) fail(`expected playoffs after Sim All, got ${d.sp} wk ${d.wk}`);

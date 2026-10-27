@@ -21,20 +21,20 @@ import RoleTag from "./RoleTag.jsx";
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const r1 = (x) => Math.round(x * 10) / 10;
 const ord = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"}`;
-const card = { background: "#ffffff0b", borderRadius: 16, padding: "12px 14px" };
-const label = { fontSize: 13, fontWeight: 700, color: "#94a3b8", marginBottom: 8 };
+const card = { background: "#ffffff0b", borderRadius: 16, padding: "10px 12px", marginBottom: 10 };
+const label = { fontSize: 12.5, fontWeight: 700, color: "#94a3b8", marginBottom: 6 };
 const TONE = { accept: "#4ade80", pending: "#93c5fd", counter: "#facc15", reject: "#fb923c", walk: "#f87171", lost: "#f87171" };
 
 // One choice in a row of them: the shared white pill, with an optional line under it (a price).
 function Chip({ on, onClick, disabled, children, sub }) {
   return (
-    <button onClick={onClick} disabled={disabled} style={{ ...pill(on), flex: 1, minWidth: 0, minHeight: sub ? 48 : 36, borderRadius: sub ? 14 : 99, lineHeight: 1.15, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.3 : 1 }}>
+    <button onClick={onClick} disabled={disabled} style={{ ...pill(on), flex: 1, minWidth: 0, minHeight: sub ? 40 : MOBILE ? 36 : 30, padding: "3px 6px", fontSize: 13.5, borderRadius: sub ? 13 : 99, lineHeight: 1.15, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.3 : 1 }}>
       {children}
-      {sub && <div style={{ fontSize: 11.5, fontWeight: 700, opacity: on ? 0.7 : 0.6, marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, fontWeight: 700, opacity: on ? 0.7 : 0.6, marginTop: 1 }}>{sub}</div>}
     </button>
   );
 }
-const Track = ({ children, round }) => <div style={{ ...pillTrack, display: "flex", width: "100%", borderRadius: round ? 16 : 99, marginBottom: 8 }}>{children}</div>;
+const Track = ({ children, round, style }) => <div style={{ ...pillTrack, display: "flex", flex: 1, minWidth: 0, width: "100%", boxSizing: "border-box", borderRadius: round ? 15 : 99, ...(style || {}) }}>{children}</div>;
 
 // Room in each of the next four seasons if he signs this offer (for an extension, the new deal
 // starts when his current one ends; for a re-sign, his old deal is replaced).
@@ -43,18 +43,15 @@ function FutureRoom({ team, cy, p, mode, sal, yrs, room0 }) {
   const ext = mode === "extend";
   const ys = capProjection(team, cy, { extra: ext ? { sal, yrs, start: p.contract || 0 } : { sal, yrs, skip: mode === "resign" ? p.id : null }, room0 });
   return (
-    <div style={{ ...card, marginBottom: 12 }} title="Before re-signings, rookies and free agents in later years">
-      <div style={label}>Your cap room with this deal</div>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${ys.length},1fr)`, gap: 8, alignItems: "end" }}>
+    <div style={card} title="Before re-signings, rookies and free agents in later years">
+      <div style={{ ...label, marginBottom: 4 }}>Your cap room with this deal</div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${ys.length},1fr)`, gap: 8 }}>
         {ys.map((y) => {
           const tone = y.room < 0 ? C.rd : y.room < y.cap * 0.08 ? C.gd : C.gn;
           return (
             <div key={y.yr} style={{ textAlign: "center" }}>
-              <div style={{ height: 18, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-                <div style={{ width: "62%", height: `${Math.max(6, Math.min(100, (Math.max(0, y.room) / (y.cap * 0.25)) * 100))}%`, borderRadius: "6px 6px 2px 2px", background: tone, opacity: 0.85 }} />
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 900, color: tone, marginTop: 4 }}>{y.room < 0 ? "-" : ""}${Math.abs(y.room).toFixed(1)}M</div>
-              <div style={{ fontSize: 12, color: C.mt }}>{y.yr}</div>
+              <div style={{ fontSize: 14.5, fontWeight: 900, color: tone }}>{y.room < 0 ? "-" : ""}${Math.abs(y.room).toFixed(1)}M</div>
+              <div style={{ fontSize: 11.5, color: C.mt }}>{y.yr}</div>
             </div>
           );
         })}
@@ -71,17 +68,17 @@ function Ladder({ p, sal }) {
   const tag = posTag(p);
   const lo = Math.max(1, Math.min(idx - 2, rows.length - 4)), shown = rows.slice(lo, Math.min(rows.length, lo + 4));
   const Row = ({ r, n }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 34, fontSize: 14 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 27, fontSize: 13 }}>
       <span style={{ width: 26, color: C.mt, fontWeight: 700, textAlign: "right" }}>{n}</span>
-      <Face s={r.face} sz={24} />
+      <Face s={r.face} sz={20} />
       <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#e2e8f0" }}>{r.name} <span style={{ color: C.mt, fontSize: 12 }}>{r.ab} · {r.ovr}</span></span>
       <span style={{ fontWeight: 800, color: "#cbd5e1" }}>{money(r.sal)}</span>
     </div>
   );
   const Me = () => (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 38, fontSize: 14, background: "#3b82f622", borderRadius: 10, padding: "0 8px", margin: "2px -8px" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 30, fontSize: 13, background: "#3b82f622", borderRadius: 10, padding: "0 8px", margin: "1px -8px" }}>
       <span style={{ width: 26, color: "#93c5fd", fontWeight: 900, textAlign: "right" }}>{rank}</span>
-      <Face s={p.face} sz={24} />
+      <Face s={p.face} sz={20} />
       <span style={{ flex: 1, minWidth: 0, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name} <span style={{ color: "#93c5fd", fontSize: 12, fontWeight: 700 }}>your offer</span></span>
       <span style={{ fontWeight: 900, color: "#fff" }}>{money(sal)}</span>
     </div>
@@ -89,11 +86,11 @@ function Ladder({ p, sal }) {
   const list = [];
   if (idx === 0) list.push(<Me key="me" />);
   list.push(<Row key={rows[0].id} r={rows[0]} n={idx === 0 ? 2 : 1} />);
-  if (lo > 1 && idx > 0) list.push(<div key="gap" style={{ color: C.mt, fontSize: 12, padding: "0 0 0 34px" }}>⋯</div>);
+  if (lo > 1 && idx > 0) list.push(<div key="gap" style={{ color: C.mt, fontSize: 11, lineHeight: 1, padding: "0 0 0 34px" }}>⋯</div>);
   shown.forEach((r, k) => { const i = lo + k; if (idx > 0 && i === idx) list.push(<Me key="me" />); list.push(<Row key={r.id} r={r} n={i >= idx ? i + 2 : i + 1} />); });
   if (idx > 0 && idx >= lo + shown.length) list.push(<Me key="me" />);
   return (
-    <div style={{ ...card, marginBottom: 12 }}>
+    <div style={card}>
       <div style={{ ...label, display: "flex", justifyContent: "space-between", gap: 8 }}>
         <span>The {tag} market</span>
         <span style={{ color: rank <= 5 ? "#facc15" : rank <= 32 ? "#e2e8f0" : C.mt }}>{rank === 1 ? `Highest-paid ${tag}` : `${ord(rank)}-highest-paid ${tag}`}</span>
@@ -114,12 +111,11 @@ function Wants({ t }) {
   ];
   const dot = (g) => (g > 0 ? ["✓", "#4ade80"] : g < 0 ? ["✕", "#f87171"] : ["·", "#94a3b8"]);
   return (
-    <div style={{ ...card, marginBottom: 12 }}>
-      <div style={label} title={t.prio.key !== "money" ? "A club that gives him what he wants can sign him for less" : undefined}>What he wants most</div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginBottom: 8 }}>{t.prio.label[0].toUpperCase() + t.prio.label.slice(1)}</div>
+    <div style={card}>
+      <div style={label} title={t.prio.key !== "money" ? "A club that gives him what he wants can sign him for less" : undefined}>What he wants most: <b style={{ color: "#fff" }}>{t.prio.label}</b></div>
       {rows.map((r) => { const [i, c] = dot(r.good); return (
-        <div key={r.k} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 30, fontSize: 14 }}>
-          <span style={{ width: 92, color: r.k === t.prio.key ? "#fff" : "#94a3b8", fontWeight: r.k === t.prio.key ? 800 : 600 }}>{r.name}</span>
+        <div key={r.k} style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 24, fontSize: 13 }}>
+          <span style={{ width: 88, color: r.k === t.prio.key ? "#fff" : "#94a3b8", fontWeight: r.k === t.prio.key ? 800 : 600 }}>{r.name}</span>
           <span style={{ display: "flex", gap: 3 }}>{[0.15, 0.25, 0.45].map((x) => <span key={x} style={{ width: 6, height: 6, borderRadius: 3, background: r.w >= x ? "#e2e8f0" : "#ffffff22" }} />)}</span>
           <span style={{ flex: 1, minWidth: 0, color: "#cbd5e1" }}><b style={{ color: c, marginRight: 4 }}>{i}</b>{r.txt}</span>
         </div>
@@ -133,15 +129,15 @@ function Thread({ p, talk, ask, yrs, rivalName }) {
   const first = String(p.name || "").split(" ")[0] || "He";
   const log = talk.log?.length ? talk.log : talk.last ? [{ r: talk.last }] : [];
   const reply = (r) => r.result === "lost" ? `He signed with the ${rivalName?.(r.team) || "other club"}: ${money(r.sal)} a year${r.why ? ` (${r.why})` : ""}.`
-    : r.rivalBid ? <>"We have <b>{money(r.sal)} a year for {r.yrs} years</b> from the {rivalName?.(r.team) || "another club"}{r.why ? ` (${r.why})` : ""}. Give him a reason to choose you." <span style={{ display: "block", fontSize: 13, color: "#cbd5e1", marginTop: 4, fontWeight: 600 }}>About {money(r.counter)} would make it close. Even then it's his call.</span></>
+    : r.rivalBid ? <>"We have <b>{money(r.sal)} a year for {r.yrs} years</b> from the {rivalName?.(r.team) || "another club"}{r.why ? ` (${r.why})` : ""}. Give him a reason to choose you." <span style={{ display: "block", fontSize: 12.5, color: "#cbd5e1", marginTop: 3, fontWeight: 600 }}>About {money(r.counter)} would make it close. Even then it's his call.</span></>
     : r.msg;
   const bubble = (mine, children, tone) => (
-    <div style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start", marginBottom: 6 }}>
-      <div style={{ maxWidth: "86%", padding: "8px 12px", borderRadius: mine ? "14px 14px 4px 14px" : "14px 14px 14px 4px", background: mine ? "#2563eb" : "#ffffff12", color: mine ? "#fff" : tone || "#e2e8f0", fontSize: 14.5, fontWeight: mine ? 800 : 600, lineHeight: 1.4 }}>{children}</div>
+    <div style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start", marginBottom: 4 }}>
+      <div style={{ maxWidth: "90%", padding: "6px 11px", borderRadius: mine ? "13px 13px 4px 13px" : "13px 13px 13px 4px", background: mine ? "#2563eb" : "#ffffff12", color: mine ? "#fff" : tone || "#e2e8f0", fontSize: 13.5, fontWeight: mine ? 800 : 600, lineHeight: 1.4 }}>{children}</div>
     </div>
   );
   return (
-    <div style={{ ...card, marginBottom: 12 }}>
+    <div style={{ ...card, paddingBottom: 6 }}>
       <div style={label}>His agent</div>
       {bubble(false, <>"{first} is looking for about <b>{money(ask)}</b> a year on a {yrs}-year deal."</>)}
       {log.map((e, i) => (
@@ -192,113 +188,109 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   const tag = posTag(p);
   const eyebrow = mode === "resign" ? "Re-sign" : ext ? "Contract extension" : "Free agent";
 
+  // who he is, what he's asking and how many offers he'll still hear, in one block
   const header = (
-    <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 14, paddingRight: 40 }}>
-      <Face s={p.face} sz={MOBILE ? 60 : 72} />
+    <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 10, paddingRight: 44 }}>
+      <Face s={p.face} sz={MOBILE ? 50 : 54} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8" }}>{eyebrow}</div>
-        <div style={{ fontSize: MOBILE ? 22 : 26, fontWeight: 900, lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", fontSize: 14, color: "#94a3b8", marginTop: 3 }}>
-          <span>{tag} · {p.age}{(mode === "resign" || ext) && p.salary ? ` · now ${money(p.salary)}${ext ? ` · ${p.contract} yr${p.contract === 1 ? "" : "s"} left` : ""}` : ""}</span><RoleTag p={p} />
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
+          <span style={{ fontSize: MOBILE ? 19 : 21, fontWeight: 900, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+          <b style={{ fontSize: 17, color: oC(p.ovr) }}>{p.ovr}</b>
+        </div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", fontSize: 13, color: "#94a3b8", marginTop: 1 }}>
+          <span>{eyebrow} · {tag} · {p.age}{(mode === "resign" || ext) && p.salary ? ` · now ${money(p.salary)}${ext ? ` · ${p.contract} yr${p.contract === 1 ? "" : "s"} left` : ""}` : ""}</span><RoleTag p={p} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "2px 14px", flexWrap: "wrap", fontSize: 13, color: "#94a3b8", marginTop: 3 }}>
+          <span>Asking <b style={{ color: "#fff" }}>{money(ask)}</b> a year</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }} title="He walks away after three offers he doesn't like">
+            <span style={{ display: "flex", gap: 3 }}>{[0, 1, 2].map((i) => <span key={i} style={{ width: 14, height: 5, borderRadius: 3, background: i < 3 - tries ? (tries >= 2 ? C.rd : tries === 1 ? C.gd : C.gn) : "#ffffff18" }} />)}</span>
+            {done ? (talk.signed ? "Signed" : "Talks are over") : `${3 - tries} offer${3 - tries === 1 ? "" : "s"} left`}
+          </span>
+          {t.rival && mode === "fa" && !done && <span style={{ color: "#fca5a5" }}>Other clubs are calling</span>}
         </div>
       </div>
-      <div style={{ textAlign: "center" }}><div style={{ fontSize: 34, fontWeight: 900, color: oC(p.ovr), lineHeight: 1 }}>{p.ovr}</div><div style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>OVR</div></div>
     </div>
   );
 
-  // asking, his patience and the market, on one quiet line
-  const status = (
-    <div style={{ display: "flex", alignItems: "center", gap: "6px 18px", flexWrap: "wrap", fontSize: 14, color: "#94a3b8", margin: "-4px 0 14px" }}>
-      <span>Asking <b style={{ color: "#fff", fontSize: 16 }}>{money(ask)}</b> a year</span>
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }} title="He walks away after three offers he doesn't like">
-        <span style={{ display: "flex", gap: 4 }}>{[0, 1, 2].map((i) => <span key={i} style={{ width: 18, height: 6, borderRadius: 3, background: i < 3 - tries ? (tries >= 2 ? C.rd : tries === 1 ? C.gd : C.gn) : "#ffffff18" }} />)}</span>
-        {done ? (talk.signed ? "Signed" : "Talks are over") : `${3 - tries} offer${3 - tries === 1 ? "" : "s"} left`}
-      </span>
-      {t.rival && mode === "fa" && !done && <span style={{ color: "#fca5a5", fontWeight: 700 }}>Other clubs are calling</span>}
+  const notes = (perfNote || note) && <div style={{ fontSize: 12.5, color: "#94a3b8", margin: "0 2px 10px", lineHeight: 1.45 }}>
+    {perfNote && <span style={{ color: f > 1 ? "#fde68a" : "#bfdbfe" }}>{perfNote} </span>}
+    {note}
+  </div>;
+
+  const futureRoom = <FutureRoom team={team} cy={cy} p={p} mode={mode} sal={sal} yrs={yrs} room0={ext ? nowRoom - (cur.nowAdd || 0) : after} />;
+  // one row of a structure choice: its name on the left, the choices beside it
+  const opt = (name, hint, track) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6, flexWrap: MOBILE ? "wrap" : "nowrap" }}>
+      <span title={hint} style={{ width: MOBILE ? "100%" : 92, flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: "#94a3b8" }}>{name}</span>
+      {track}
     </div>
   );
-
-  const notes = <>
-    {perfNote && <div style={{ fontSize: 14, color: f > 1 ? "#fde68a" : "#bfdbfe", margin: "0 2px 12px", lineHeight: 1.45 }}>{perfNote}</div>}
-    {note && <div style={{ fontSize: 14, color: "#94a3b8", margin: "0 2px 12px", lineHeight: 1.45 }}>{note}</div>}
-  </>;
-
   const builder = !done && (
     <>
-      <div style={label}>Length</div>
-      <Track round>
+      <Track round style={{ marginBottom: 10 }}>
         {[1, 2, 3, 4, 5].map((y) => <Chip key={y} on={yrs === y} disabled={y > maxYears(p)} onClick={() => { setYrs(y); setSal(r1(yearlyAsk(p, y, mode) * 0.9)); }} sub={y > maxYears(p) ? "-" : money(yearlyAsk(p, y, mode))}>{y} yr{y > 1 ? "s" : ""}</Chip>)}
       </Track>
-      <div style={{ height: 6 }} />
 
-      <div style={{ ...card, marginBottom: 12, padding: "14px 14px 10px" }}>
-        <div style={{ ...label, marginBottom: 2 }}>Your offer per year</div>
+      <div style={{ ...card, padding: "10px 12px 8px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={() => step(big ? -1 : -0.5)} aria-label="Less" style={{ width: 46, height: 46, borderRadius: 23, border: 0, background: "#ffffff14", color: "#fff", fontSize: 22, cursor: "pointer" }}>−</button>
+          <button onClick={() => step(big ? -1 : -0.5)} aria-label="Less" style={{ width: 38, height: 38, borderRadius: 19, border: 0, background: "#ffffff14", color: "#fff", fontSize: 20, cursor: "pointer" }}>−</button>
           <div style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ fontSize: 38, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.1, color: sal >= ask ? "#4ade80" : "#fff" }}>{money(sal)}</div>
-            <div style={{ fontSize: 13, color: "#94a3b8" }}>{capPct.toFixed(1)}% of the cap · {money(sal * yrs)} total</div>
+            <div style={{ fontSize: 29, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.1, color: sal >= ask ? "#4ade80" : "#fff" }}>{money(sal)}<span style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8", letterSpacing: 0 }}> a year</span></div>
+            <div style={{ fontSize: 12.5, color: "#94a3b8" }}>{capPct.toFixed(1)}% of the cap · {money(sal * yrs)} total</div>
           </div>
-          <button onClick={() => step(big ? 1 : 0.5)} aria-label="More" style={{ width: 46, height: 46, borderRadius: 23, border: 0, background: "#ffffff14", color: "#fff", fontSize: 22, cursor: "pointer" }}>+</button>
+          <button onClick={() => step(big ? 1 : 0.5)} aria-label="More" style={{ width: 38, height: 38, borderRadius: 19, border: 0, background: "#ffffff14", color: "#fff", fontSize: 20, cursor: "pointer" }}>+</button>
         </div>
-        <div style={{ position: "relative", margin: "10px 2px 0" }}>
+        <div style={{ position: "relative", margin: "8px 2px 16px" }}>
           <input type="range" min={lo} max={hi} step={0.1} value={sal} onChange={(e) => setSal(+e.target.value)} aria-label="Offer per year" style={{ width: "100%", accentColor: C.bl, margin: 0 }} />
-          <div style={{ position: "absolute", left: `${askAt}%`, top: 22, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", fontSize: 11, color: "#94a3b8", fontWeight: 700, whiteSpace: "nowrap" }}><span style={{ width: 2, height: 6, background: "#94a3b8", borderRadius: 1 }} />his ask</div>
+          <div style={{ position: "absolute", left: `${askAt}%`, top: 20, transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 3, fontSize: 10.5, color: "#94a3b8", fontWeight: 700, whiteSpace: "nowrap" }}>his ask</div>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.mt, marginTop: 20 }}>
+        {(team == null || cy == null) && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: C.mt }}>
           <span>{ext ? "Next year's cap after" : "Cap room after"}</span>
           <b style={{ color: after >= 0 ? C.gn : C.rd }}>{money(after)}</b>
-        </div>
+        </div>}
       </div>
 
-      {!ext && yrs >= 2 && <div style={{ ...card, marginBottom: 12 }}>
-        <div style={label}>Signing bonus <span style={{ fontWeight: 600, color: C.mt }}>· part of year one, spread over {Math.min(5, yrs)} years</span></div>
-        <Track>
+      {!ext && <div style={{ ...card, paddingTop: 4 }}>
+        {yrs >= 2 && opt("Signing bonus", `Part of year one, spread over ${Math.min(5, yrs)} years. Guaranteed money is worth a little more to him; cut him early and the rest is dead money.`, <Track>
           {SIGN_BONUS.map((b) => <Chip key={b} on={share === b} onClick={() => setShare(b)}>{b ? `${Math.round(b * 100)}%` : "None"}</Chip>)}
-        </Track>
-        <div style={{ fontSize: 13, color: "#cbd5e1", lineHeight: 1.5 }} title="Guaranteed money is worth a little more to him; cut him early and the rest is dead money">
-          {share ? <>Bonus <b style={{ color: "#fff" }}>{money(cur.bonus)}</b> · this year <b style={{ color: C.gn }}>{money(cur.hit)}</b>, then <b style={{ color: C.gd }}>{money(cur.later)}</b> a year</> : <span style={{ color: "#94a3b8" }}>Lowers this year's hit for a little more later</span>}
-        </div>
-        {share > 0 && yrs < 5 && <>
-          <div style={{ ...label, marginTop: 12 }}>Void years <span style={{ fontWeight: 600, color: C.mt }}>· fake years that spread the bonus thinner</span></div>
-          <Track>
-            {VOID_YEARS.filter((v) => yrs + v <= 5).map((v) => <Chip key={v} on={voidYrs === v} onClick={() => setVoidYrs(v)}>{v ? `+${v}` : "None"}</Chip>)}
-          </Track>
-          {cur.voidYrs > 0 && <div style={{ fontSize: 13, color: "#cbd5e1", lineHeight: 1.5, marginTop: 8 }}>Spread over {yrs + cur.voidYrs} years: <b style={{ color: C.gn }}>{money(cur.hit)}</b> this year. When his {yrs}-year deal ends, <b style={{ color: C.rd }}>{money(cur.voidDead)}</b> hits your cap as dead money.</div>}
-        </>}
-      </div>}
-
-      {!ext && <div style={{ ...card, marginBottom: 12 }}>
-        <div style={label}>Incentive <span style={{ fontWeight: 600, color: C.mt }}>· paid only if he earns it, on next year's cap</span></div>
-        <Track>
+        </Track>)}
+        {yrs >= 2 && share > 0 && yrs < 5 && opt("Void years", "Fake years that spread the bonus thinner; what's left hits your cap as dead money when the deal ends", <Track>
+          {VOID_YEARS.filter((v) => yrs + v <= 5).map((v) => <Chip key={v} on={voidYrs === v} onClick={() => setVoidYrs(v)}>{v ? `+${v}` : "None"}</Chip>)}
+        </Track>)}
+        {opt("Incentive", "Paid only if he earns it, on next year's cap", <Track>
           {INCENTIVE_SIZES.map((v) => <Chip key={v} on={incSize === v} onClick={() => setIncSize(v)}>{v ? money(sal * v) : "None"}</Chip>)}
-        </Track>
-        {incSize > 0 && <Pills quiet items={incOpts.map((o) => [o, o])} value={incLabel} onChange={setIncLabel} label="Incentive" />}
+        </Track>)}
+        {incSize > 0 && <div style={{ marginTop: 6 }}><Pills quiet items={incOpts.map((o) => [o, o])} value={incLabel} onChange={setIncLabel} label="Incentive" /></div>}
+        <div style={{ fontSize: 12.5, color: "#94a3b8", lineHeight: 1.45, marginTop: 6 }}>
+          {yrs >= 2 && share ? <>Bonus <b style={{ color: "#fff" }}>{money(cur.bonus)}</b> · this year <b style={{ color: C.gn }}>{money(cur.hit)}</b>, then <b style={{ color: C.gd }}>{money(cur.later)}</b> a year{cur.voidYrs > 0 ? <> · <b style={{ color: C.rd }}>{money(cur.voidDead)}</b> dead money when the deal ends</> : null}</> : yrs >= 2 ? "A signing bonus lowers this year's hit for a little more later." : "One year: no bonus to spread."}
+        </div>
       </div>}
 
-      {ext && <div style={{ ...card, marginBottom: 12 }}>
-        <div style={label}>Signing bonus <span style={{ fontWeight: 600, color: C.mt }}>· spread over {Math.min(5, yrs + 1)} years from this season</span></div>
-        <Track>
+      {ext && <div style={{ ...card, paddingTop: 4 }}>
+        {opt("Signing bonus", `Spread over ${Math.min(5, yrs + 1)} years from this season`, <Track>
           {EXT_BONUS.map((b) => <Chip key={b} on={share === b} onClick={() => setShare(b)}>{b ? `${Math.round(b * 100)}%` : "None"}</Chip>)}
-        </Track>
-        <div style={{ fontSize: 13, color: "#cbd5e1", lineHeight: 1.5 }}>
+        </Track>)}
+        <div style={{ fontSize: 12.5, color: "#94a3b8", lineHeight: 1.45, marginTop: 6 }}>
           Cap hit each new year: <b style={{ color: "#fff" }}>{money(cur.hit)}</b>{share ? <> (vs {money(sal)} with no bonus) · this season's hit goes up <b style={{ color: nowRoom - cur.nowAdd >= 0 ? C.gd : C.rd }}>{money(cur.nowAdd)}</b>{nowRoom !== Infinity ? ` (room now ${money(nowRoom)})` : ""} · bonus {money(cur.bonus)}, dead money if he's cut</> : <>. A signing bonus lowers it, so the deal fits next year's cap.</>}
         </div>
       </div>}
 
-      <FutureRoom team={team} cy={cy} p={p} mode={mode} sal={sal} yrs={yrs} room0={ext ? nowRoom - (cur.nowAdd || 0) : after} />
+      {futureRoom}
     </>
   );
 
+  // phones: once talks have started, his agent's last word sits above your next offer
+  const talking = MOBILE && (talk.log?.length || talk.last);
+  const thread = <Thread p={p} talk={talk} ask={ask} yrs={yrs} rivalName={rivalName} />;
   const room = <>
-    <Thread p={p} talk={talk} ask={ask} yrs={yrs} rivalName={rivalName} />
+    {!talking && thread}
     {!done && <Wants t={t} />}
-    <Ladder p={p} sal={done ? 0 : sal} />
+    {!done && <Ladder p={p} sal={sal} />}
   </>;
 
-  const btn = (bg, c) => ({ flex: "2 1 160px", minHeight: 50, borderRadius: 14, border: 0, background: bg, color: c, fontSize: 16, fontWeight: 900, cursor: "pointer" });
+  const btn = (bg, c) => ({ flex: "2 1 160px", minHeight: MOBILE ? 48 : 42, borderRadius: 14, border: 0, background: bg, color: c, fontSize: 15, fontWeight: 900, cursor: "pointer" });
   const footer = (
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", position: "sticky", bottom: MOBILE ? -16 : -20, background: "#0d1424", padding: "12px 0 8px", marginBottom: MOBILE ? -6 : -8, boxShadow: "0 -12px 18px -8px #0d1424" }}>
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", position: "sticky", bottom: MOBILE ? -14 : -16, background: "#0d1424", padding: "8px 0 6px", marginBottom: -6, boxShadow: "0 -12px 18px -8px #0d1424" }}>
       <button onClick={onClose} style={{ ...btn("#ffffff14", "#e2e8f0"), flex: "1 1 100px", fontWeight: 800 }}>{done ? "Close" : "Not now"}</button>
       {!done && last?.result === "counter" && <button onClick={() => offer(last.counter)} disabled={!fits(last.counter)} style={{ ...btn("#facc15", "#111"), opacity: fits(last.counter) ? 1 : 0.5 }}>{last.rivalBid ? "Offer" : "Accept"} {money(last.counter)}</button>}
       {!done && <button onClick={() => offer(sal)} disabled={!fits(sal)} style={{ ...btn("#16a34a", "#fff"), opacity: fits(sal) ? 1 : 0.5 }}>{fits(sal) ? `Offer ${money(sal)} × ${yrs}` : after < 0 ? (ext && share < EXT_BONUS[EXT_BONUS.length - 1] ? "Not enough cap: add a bonus" : "Not enough cap") : "Not enough room this season"}</button>}
@@ -308,14 +300,13 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   // drawn on the page itself, so opening it from a sheet never traps it inside the sheet
   return createPortal(
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "#000000b3", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", zIndex: 1000, fontFamily: C.f, color: C.tx, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, ...sheetWrap(MOBILE) }}>
-      <div role="dialog" aria-label={`Negotiate with ${p.name}`} onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: "#0d1424", boxShadow: "0 30px 80px #000c", borderRadius: 24, padding: MOBILE ? 16 : 20, width: "100%", maxWidth: MOBILE ? 520 : 940, maxHeight: "92vh", overflowY: "auto", ...sheetBox(MOBILE) }}>
+      <div role="dialog" aria-label={`Negotiate with ${p.name}`} onClick={(e) => e.stopPropagation()} style={{ position: "relative", background: "#0d1424", boxShadow: "0 30px 80px #000c", borderRadius: 22, padding: MOBILE ? "10px 14px 14px" : 16, width: "100%", maxWidth: MOBILE ? 520 : 900, maxHeight: "94vh", overflowY: "auto", ...sheetBox(MOBILE) }}>
         {MOBILE && <SheetGrip onClose={onClose} />}
         <CloseX onClick={onClose} />
         {header}
-        {status}
         {notes}
-        {MOBILE ? <>{builder}{room}</> : (
-          <div style={{ display: "grid", gridTemplateColumns: done ? "1fr" : "minmax(0,1fr) minmax(0,1.1fr)", gap: 16, alignItems: "start" }}>
+        {MOBILE ? <>{talking && thread}{builder}{room}</> : (
+          <div style={{ display: "grid", gridTemplateColumns: done ? "1fr" : "minmax(0,1fr) minmax(0,1.1fr)", gap: 12, alignItems: "start" }}>
             <div>{room}</div>
             {!done && <div>{builder}</div>}
           </div>

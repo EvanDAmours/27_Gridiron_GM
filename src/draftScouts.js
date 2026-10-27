@@ -48,43 +48,61 @@ export function teamContext(team, capRoom) {
 }
 
 // Who goes between two picks, played out n times the way the other clubs really pick.
-// Returns Map(id -> share of the runs in which he's still there when pick `to` comes up).
-export function survival(pool, picks, from, to, teams, ui, n = 24) {
+// left: Map(id -> share of the runs in which he's still there when pick `to` comes up).
+// picks: for each club's pick in between, what it takes: pos [[group, share]] and who [[player, share]],
+// most likely first. That's the league intel: who's after what before you're up.
+export function leagueIntel(pool, picks, from, to, teams, ui, n = 24) {
   const left = new Map(pool.map((p) => [p.id, 0]));
   const between = picks.slice(from, to).filter((pk) => pk.owner !== ui);
-  if (!between.length) { for (const k of left.keys()) left.set(k, 1); return left; }
+  if (!between.length) { for (const k of left.keys()) left.set(k, 1); return { left, picks: [] }; }
   // only the top of the board is ever in play for these picks
   const cut = [...pool].sort((a, b) => csRank(a) - csRank(b)).slice(0, Math.min(pool.length, between.length * 3 + 60));
   const inPlay = new Set(cut.map((p) => p.id));
+  const took = between.map(() => ({ pos: {}, who: new Map() }));
   for (let run = 0; run < n; run++) {
     const avail = [...cut], added = {};
-    for (const pk of between) {
+    between.forEach((pk, k) => {
       const t = teams[pk.owner];
-      if (!t || !avail.length) continue;
+      if (!t || !avail.length) return;
       const bp = aiBestPick([...(t.roster || []), ...(added[pk.owner] || [])], avail, t.gmStyle);
       const i = avail.indexOf(bp);
       if (i >= 0) avail.splice(i, 1);
       (added[pk.owner] ||= []).push(bp);
-    }
+      const g = needGroup(bp);
+      took[k].pos[g] = (took[k].pos[g] || 0) + 1;
+      took[k].who.set(bp, (took[k].who.get(bp) || 0) + 1);
+    });
     for (const p of avail) left.set(p.id, left.get(p.id) + 1);
   }
   for (const [k, v] of left) left.set(k, inPlay.has(k) ? v / n : 1);
-  return left;
+  const top = (o) => [...o].map(([k, v]) => [k, v / n]).sort((a, b) => b[1] - a[1]);
+  return { left, picks: between.map((pk, k) => ({ pk, pos: top(Object.entries(took[k].pos)), who: top(took[k].who) })) };
+}
+export const survival = (...a) => leagueIntel(...a).left;
+
+// The intel in a sentence or two: how many of the clubs in between are likely after each
+// position, your needs first. [{ g, n, mine }]
+export function intelRuns(intel, needs = []) {
+  const count = {};
+  for (const x of intel.picks) { const [g, sh] = x.pos[0] || []; if (g && sh >= 0.4) count[g] = (count[g] || 0) + 1; }
+  return Object.entries(count).map(([g, n]) => ({ g, n, mine: needs.includes(g) })).sort((a, b) => (b.mine - a.mine) || b.n - a.n);
 }
 
 // What the rest of the league sees in him: his ceiling as the other clubs read it.
 const leagueSees = (p) => p.truePot - gemGap(p) * 0.85;
 
 // The five your scouts bring you for your pick (index `at` in picks), and why.
-// opts: { sc, teams, ui, picks, pool (the players still on the board), at, now (the pick on the clock), capRoom }
-export function scoutsPicks({ sc, teams, ui, picks, pool, at, now, capRoom }) {
+// opts: { sc, teams, ui, picks, pool (the players still on the board), at, now (the pick on the clock), capRoom,
+//   likely (leave out the ones who'll almost surely be gone by your pick) }
+export function scoutsPicks({ sc, teams, ui, picks, pool, at, now, capRoom, likely = false }) {
   const team = teams[ui];
   const ctx = teamContext(team, capRoom);
   const nextAt = picks.findIndex((pk, i) => i > at && pk.owner === ui);
   const next = nextAt >= 0 ? picks[nextAt] : null;
   // there at your pick (if it isn't up yet), and there at the one after it
-  const atMine = at > now ? survival(pool, picks, now, at, teams, ui, 16) : null;
-  const atNext = next ? survival(pool, picks, at + 1, nextAt, teams, ui, 16) : null;
+  const before = at > now ? leagueIntel(pool, picks, now, at, teams, ui, 16) : null;
+  const after = next ? leagueIntel(pool, picks, at + 1, nextAt, teams, ui, 16) : null;
+  const atMine = before?.left, atNext = after?.left;
   const rated = pool.map((p) => {
     const r = prospectRead(sc, p), g = needGroup(p), cur = currentOvr(sc, p);
     const ceil = Math.round(r.potV ?? csScore(p) + 4);
@@ -97,8 +115,9 @@ export function scoutsPicks({ sc, teams, ui, picks, pool, at, now, capRoom }) {
     const there = atMine ? atMine.get(p.id) ?? 1 : 1;
     const later = atNext ? atNext.get(p.id) ?? 1 : 0;
     return { p, r, g, cur, ceil, need, short, weakest, starts, value, there, later };
-  }).filter((x) => x.there >= 0.3);
+  }).filter((x) => !likely || x.there >= 0.3); // likely: only players with a real chance to be there
   // the ones they'd take: best for you, a little lower when he'll still be there next time
+  // (before your pick is up, the ones who'll likely be gone still show: that's what a trade up is for)
   rated.sort((a, b) => b.value - b.later * 3 - (a.value - a.later * 3));
   const five = rated.slice(0, 5);
   // each scout makes his case: his own read of the five, leaning to the positions he knows
@@ -110,7 +129,9 @@ export function scoutsPicks({ sc, teams, ui, picks, pool, at, now, capRoom }) {
     if (best) best.votes.push(s);
   }
   for (const x of five) x.why = reason(x, ctx, next);
-  return { five, ctx, next, scouts };
+  // the clubs ahead of you: before your pick if it isn't up yet, else before your next one
+  const intel = before || after;
+  return { five, ctx, next, scouts, upAt: at > now ? picks[at] : null, intel, intelTo: at > now ? picks[at] : next };
 }
 
 const yrs = (n) => (n <= 1 ? "a year" : `${n} years`);

@@ -2,7 +2,7 @@
 // stars standing toward the middle, Play right on it), then three quiet cards under it: what needs
 // you, the game plan, and the top story. The rest of the game is one click away in the bar above.
 import React, { useEffect, useState } from "react";
-import { C, TeamLogo, kickoff, Sheet } from "./ui.jsx";
+import { C, TeamLogo, LogoMark, kickoff, Sheet } from "./ui.jsx";
 import PlayerArt from "./PlayerArt.jsx";
 import { LombardiStill } from "./Lombardi.jsx";
 import { featuredPlayer, headline } from "./BroadcastMatchup.jsx";
@@ -39,7 +39,7 @@ function Side({ t, rating, right, star, teams }) {
 function PhaseHero({ me, eyebrow, title, sub, stats = [], primary = [] }) {
   return (
     <div data-tour="promo" style={{ position: "relative", minHeight: 300, borderRadius: 22, overflow: "hidden", padding: "34px 44px", background: `radial-gradient(120% 140% at 0% 0%, ${me.clr}, ${me.clr}33 55%, #0b1120 100%)` }}>
-      <span aria-hidden="true" style={{ position: "absolute", right: -40, top: -50, opacity: 0.09, pointerEvents: "none", transform: "rotate(-8deg)", filter: "grayscale(1) brightness(4)" }}><TeamLogo t={me} sz={420} /></span>
+      <LogoMark t={me} sz={420} opacity={0.09} style={{ right: -40, top: -50 }} />
       <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 26 }}>
         <TeamLogo t={me} sz={112} glow />
         <div style={{ minWidth: 0 }}>
@@ -152,14 +152,31 @@ export default function DeskHome({ away, home, ra, rh, game, eyebrow, forecast, 
 // Desktop: the header every section opens on (Team, Season, Draft, Trades & FA, Front Office), in
 // Home's style: the club's colors and faint mark, the section's name, a few numbers that matter
 // there, and its screens as tabs along the bottom. tabs: [[label, key, on]]; onTab(key).
-export function SectionHero({ me, title, sub, stats = [], tabs = [], onTab, right }) {
+export function SectionHero({ me, title, sub, stats = [], tabs = [], onTab, right, slim }) {
   // one row: the title, the section's tabs beside it (underlined on the hero's bottom edge), and
   // its numbers on the right. Compact, so the screen below gets the room.
   const tabbed = tabs.length > 1;
+  // slim: a thin bar for screens that need every pixel (the live draft)
+  if (slim) return (
+    <div className="keep-dark" style={{ position: "relative", borderRadius: 16, overflow: "hidden", marginBottom: 10, padding: "0 20px", color: "#fff", background: `radial-gradient(120% 220% at 0% 0%, ${me.clr}c0, ${me.clr}26 55%, #0b1120 100%)` }}>
+      <style>{FONT_CSS}</style>
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 22, minHeight: 46 }}>
+        <span style={{ fontFamily: BLOCK, fontSize: 22, fontWeight: 700, lineHeight: 1, textTransform: "uppercase", whiteSpace: "nowrap" }}>{title}</span>
+        {sub && <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.4, color: "#ffffffa6", textTransform: "uppercase", whiteSpace: "nowrap" }}>{sub}</span>}
+        {tabbed && <div style={{ display: "flex", gap: 2, alignSelf: "stretch" }}>
+          {tabs.map(([l, k, on]) => <button key={k} onClick={() => onTab(k)} style={{ background: "transparent", border: 0, borderBottom: `3px solid ${on ? "#fff" : "transparent"}`, color: on ? "#fff" : "#ffffffa6", padding: "0 12px", fontSize: 14, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>{l}</button>)}
+        </div>}
+        <div style={{ display: "flex", gap: 20, marginLeft: "auto", alignItems: "baseline" }}>
+          {stats.map(([l, v, c]) => <span key={l} style={{ whiteSpace: "nowrap" }}><b style={{ fontSize: 17, fontWeight: 900, color: c || "#fff" }}>{v}</b> <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.1, color: "#ffffffa6", textTransform: "uppercase" }}>{l}</span></span>)}
+          {right}
+        </div>
+      </div>
+    </div>
+  );
   return (
     <div className="keep-dark" style={{ position: "relative", borderRadius: 20, overflow: "hidden", marginBottom: 14, padding: `16px 26px ${tabbed ? 0 : 16}px`, color: "#fff", background: `radial-gradient(120% 160% at 0% 0%, ${me.clr}d9, ${me.clr}26 55%, #0b1120 100%)` }}>
       <style>{FONT_CSS}</style>
-      <span aria-hidden="true" style={{ position: "absolute", right: -30, top: -70, opacity: 0.07, pointerEvents: "none", transform: "rotate(-8deg)", filter: "grayscale(1) brightness(4)" }}><TeamLogo t={me} sz={260} /></span>
+      <LogoMark t={me} sz={260} style={{ right: -30, top: -70 }} />
       <div style={{ position: "relative", display: "flex", alignItems: "flex-end", gap: 28, flexWrap: "wrap" }}>
         <div style={{ minWidth: 0, paddingBottom: tabbed ? 14 : 0 }}>
           {sub && <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.8, color: "#ffffffb3", textTransform: "uppercase" }}>{sub}</div>}

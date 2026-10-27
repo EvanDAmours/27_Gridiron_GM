@@ -2055,4 +2055,14 @@ export const PATCH_NOTES = [
     "Your scouts also tell you who'll still be there at your next pick. They play out the picks in between the way the other clubs really see the players, so a gem only your scouts have found shows as safe to wait on, and a player every club rates shows as one to take now.",
     "The Big Board shows each prospect's current overall too, and the draft board no longer has the old Your scouts ranking (Scouts' picks replaces it). If your clock runs out, you get your list's top player, or your scouts' first choice.",
   ] },
+  { v: "5.1", date: "2026-10-23", title: "Draft intel, scouting check-in, tighter negotiation", notes: [
+    "Draft day: the old news and rumors box is gone (draft buzz, class rating, needs boxes). The AI team intel is now real and sits on the draft screen: Ahead of you lists every club picking before you, what position each is likely to take and who, played out the way they really pick. Read it to judge a trade up.",
+    "Scouts' picks before your turn show how often each player is still there when you're up, marked Trade up when he likely won't last.",
+    "The draft screen is tighter: a slim section header, a one-line on-the-clock bar with the calls beside the clock, and smaller numbers so names lead. On phones the scouts' five are shorter rows and the league intel sits below them.",
+    "Dark team logos (Giants, Jets, Bears, Texans and others) now carry a light outline everywhere, so they show on their own team colors. The faint logo behind section headers is fixed for the Steelers and Titans, which showed as a plain circle.",
+    "The scouting check-in at the trade deadline and the end of the season is new: your scouts' five for the pick you'd have today, with current overall, ceiling, board rank and how often each is still there at your pick, and a report or workup button beside each. Board moves show only for players near your pick, and the sim only stops when you have points to spend on players near your pick.",
+    "The negotiation table fits on one screen: a compact header with his ask and your offers left, smaller money and choices, the bonus and incentive on one card, and your future cap room in one row. On phones, once talks start, his agent's last word sits above your next offer.",
+    "Free agency: the old market rates, bargains, scarcity and FA Showcase box is gone (the negotiation table covers it). In season, the waiver wire is its own calm card.",
+    "The sim menu next to Sim Week is now Sim to…, with Week 9: trade deadline and Week 18: end of season.",
+  ] },
 ];

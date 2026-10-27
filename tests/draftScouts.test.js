@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { genDC, initTeams } from "../src/league.js";
-import { scoutsPicks, currentOvr, survival } from "../src/draftScouts.js";
+import { scoutsPicks, currentOvr, survival, leagueIntel, intelRuns } from "../src/draftScouts.js";
 import { csRank, newScouting } from "../src/scouting.js";
 
 const setup = () => {
@@ -37,4 +37,19 @@ test("current overall: a range before anyone has scouted him, exact after a work
   assert.ok(est.hi > est.lo && est.lo <= p.trueOvr + 4 && est.hi >= p.trueOvr - 4);
   p.scout = { lvl: 2, eOvr: p.trueOvr, ePot: p.truePot, exact: true };
   assert.deepEqual(currentOvr({}, p), { v: p.trueOvr, lo: p.trueOvr, hi: p.trueOvr, kind: "workup" });
+});
+
+test("league intel: what each club in between is likely to take, from the same runs", () => {
+  const { teams, cls, picks } = setup();
+  const r = leagueIntel(cls, picks, 0, 10, teams, 31, 8);
+  assert.equal(r.picks.length, 10);
+  for (const x of r.picks) {
+    assert.ok(x.pos.length >= 1);
+    assert.ok(Math.abs(x.pos.reduce((s, [, v]) => s + v, 0) - 1) < 1e-9, "each pick's positions add up to every run");
+    assert.ok(x.who[0][1] >= x.who[x.who.length - 1][1], "most likely first");
+  }
+  const all = intelRuns(r);
+  assert.ok(all.length);
+  const last = all[all.length - 1].g;
+  assert.equal(intelRuns(r, [last])[0].g, last, "your needs lead the summary");
 });
