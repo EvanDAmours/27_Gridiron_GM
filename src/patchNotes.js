@@ -2009,4 +2009,8 @@ export const PATCH_NOTES = [
   { v: "4.91", date: "2026-10-23", title: "Stage lighting on the spotlight", notes: [
     "Spotlight moments (draft night, awards, signings, the Hall of Fame) light the player like a stage: a spot from above catches his helmet and shoulders and the rest of him falls away into shadow, so the jersey and its number disappear into the dark.",
   ] },
+  { v: "4.92", date: "2026-10-23", title: "Solid spotlight silhouettes", notes: [
+    "Spotlight art, take two: no more see-through players. He stays solid and falls into shadow instead, matched to his outline.",
+    "How far the shadow comes up depends on the art: a player with his own custom render is lit down to the waist and only his legs fade, while a generic body with a number put on it goes dark from the shoulders down, so its number and rough details stay out of sight.",
+  ] },
 ];

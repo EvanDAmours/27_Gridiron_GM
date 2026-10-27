@@ -15,6 +15,19 @@ export function usePlayerArt(p, ab) {
   return src;
 }
 
+// What kind of render he gets: "made" (his own custom render, made for him) or "blank" (a generic
+// body, or a ready-made one for his number: not him), or null (none yet).
+export function useArtKind(p, ab) {
+  const [kind, setKind] = useState(null);
+  const look = `${ab}|${p?.name}|${p?.num}|${p?.pos}|${p?.face?.espn ?? p?.face?.pid ?? p?.face?.sk ?? ""}`;
+  useEffect(() => {
+    let live = true;
+    loadArt().then((m) => { const a = m && artFor(p, ab, m); if (live) setKind(!a ? null : a.key.startsWith("c:") ? "made" : "blank"); });
+    return () => { live = false; };
+  }, [look]); // eslint-disable-line react-hooks/exhaustive-deps
+  return kind;
+}
+
 // width: px; the picture is 3:4 (helmet to mid-thigh). crop: the share of its height to show.
 // A picture already made when the screen opens is simply there; one that arrives later eases in.
 export default function PlayerArt({ p, ab, width, crop = 1, fallback = null, style }) {
