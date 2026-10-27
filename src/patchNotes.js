@@ -2013,4 +2013,7 @@ export const PATCH_NOTES = [
     "Spotlight art, take two: no more see-through players. He stays solid and falls into shadow instead, matched to his outline.",
     "How far the shadow comes up depends on the art: a player with his own custom render is lit down to the waist and only his legs fade, while a generic body with a number put on it goes dark from the shoulders down, so its number and rough details stay out of sight.",
   ] },
+  { v: "4.93", date: "2026-10-23", title: "One spotlight look", notes: [
+    "Every spotlight player is now lit the same way: helmet, jersey and number down to the waist, with the hands and legs falling away into shadow.",
+  ] },
 ];
