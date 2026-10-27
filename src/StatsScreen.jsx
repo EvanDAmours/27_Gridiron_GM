@@ -127,6 +127,7 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
   const [cat, setCat] = useState("Passing");
   const [sort, setSort] = useState(null);
   const [gpos, setGpos] = useState("All"); // the Grades table's position
+  const [dv, setDv] = useState("leaders"); // computers: the leaders, or one full table
   const teamId = scope.startsWith("team:") ? +scope.slice(5) : null;
   const inScope = (t) => scope === "league" || (scope === "AFC" || scope === "NFC" ? t.c === scope : scope === "div" ? t.c === me.c && t.d === me.d : t.id === teamId);
   const players = useMemo(() => {
@@ -143,7 +144,7 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
   // the Grades table shows only the columns its players have (a QB table isn't nine columns of dashes)
   const cols = cat === "Grades" ? T.cols.filter(([l, f], i) => i === 0 || rows.some((x) => f(x.p.ss, x.p) !== "–")) : T.cols;
   const team = teamId != null ? teams[teamId] : null;
-  const th = { padding: "10px 8px", fontSize: 12, fontWeight: 800, letterSpacing: 0.5, color: C.mt, textAlign: "right", borderBottom: "1px solid #ffffff14", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" };
+  const th = { padding: "10px 8px", fontSize: 12, fontWeight: 800, letterSpacing: 0.5, color: C.mt, textAlign: "right", borderBottom: "1px solid #ffffff14", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none", position: "sticky", top: 0, background: "#111827", zIndex: 1 };
   if (mobile) return <PhoneStats {...{ teams, ui, yr, me, scope, setScope, cat, setCat, sort, setSort, gpos, setGpos, players, rows, cols, col, team, teamId, onPlayer }} />;
   const td = { padding: "8px 8px", fontSize: 14, textAlign: "right", borderBottom: "1px solid #ffffff0a", whiteSpace: "nowrap" };
 
@@ -158,7 +159,8 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
         </Select>
       </div>
 
-      {scope === "races" ? <AwardRaces teams={teams} ui={ui} yr={yr} onPlayer={onPlayer} mobile={mobile} /> : team ? (
+      {scope !== "races" && <Pills items={[["__lead", "Leaders"], ...Object.keys(TABLES).map((k) => [k, k])]} value={dv === "leaders" ? "__lead" : cat} onChange={(k) => { if (k === "__lead") setDv("leaders"); else { setDv("tables"); setCat(k); setSort(null); } }} label="Category" style={{ marginBottom: 12 }} />}
+      {scope === "races" ? <AwardRaces teams={teams} ui={ui} yr={yr} onPlayer={onPlayer} mobile={mobile} /> : dv !== "leaders" ? null : team ? (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
             <TeamLogo t={team} sz={40} glow />
@@ -188,7 +190,7 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
           {BOARDS.map(([title, val, unit, ok]) => {
             const top = players.filter((x) => ok(x.p) && val(x.p.ss) > 0).sort((a, b) => val(b.p.ss) - val(a.p.ss)).slice(0, 3);
             return (
-              <div key={title} style={{ background: "#ffffff0d", borderRadius: 18, padding: "14px 16px" }}>
+              <div key={title} style={{ background: "#111827", borderRadius: 20, padding: "14px 16px" }}>
                 <div style={{ fontSize: 14, fontWeight: 800, color: "#94a3b8", marginBottom: 8 }}>{title}</div>
                 {!top.length && <div style={{ fontSize: 14, color: C.mt }}>No stats yet</div>}
                 {top.map((x, i) => (
@@ -196,7 +198,7 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
                     <span style={{ fontSize: 12, color: C.mt, fontWeight: 800 }}>{i + 1}</span>
                     {!i && <Face s={x.p.face} sz={30} />}
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: i ? 14 : 16, fontWeight: i ? 600 : 900, color: i ? "#cbd5e1" : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.p.name}</div>
+                      <div title={x.p.name} style={{ fontSize: i ? 14 : 16, fontWeight: i ? 600 : 900, color: i ? "#cbd5e1" : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{!i && x.p.name.length > 13 ? `${x.p.name[0]}. ${x.p.name.split(" ").slice(1).join(" ")}` : x.p.name}</div>
                       <div style={{ fontSize: 11, color: x.ti === ui ? C.gn : C.mt, fontWeight: 700 }}>{x.t.ab} · {x.p.pos}</div>
                     </div>
                     <span style={{ fontSize: i ? 14 : 20, fontWeight: 900, color: i ? "#cbd5e1" : "#fff" }}>{n(val(x.p.ss))}<span style={{ fontSize: 11, color: C.mt, fontWeight: 700, marginLeft: 3 }}>{unit}</span></span>
@@ -208,24 +210,21 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
         </div>
       )}
 
-      {scope !== "races" && <>
-      <div style={{ display: "flex", gap: 6, flexWrap: mobile ? "nowrap" : "wrap", overflowX: mobile ? "auto" : undefined, marginBottom: 8, paddingBottom: mobile ? 2 : 0 }}>
-        <Pills items={Object.keys(TABLES).map((k) => [k, k])} value={cat} onChange={(k) => { setCat(k); setSort(null); }} label="Category" />
-      </div>
+      {scope !== "races" && dv === "tables" && <>
       {cat === "Grades" && <div style={{ display: "flex", gap: 5, flexWrap: mobile ? "nowrap" : "wrap", overflowX: mobile ? "auto" : undefined, alignItems: "center", marginBottom: 8 }}>
         <Pills quiet wrap={!mobile} items={["All", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((k) => [k, k])} value={gpos} onChange={setGpos} label="Position" />
-        {!mobile && <span style={{ fontSize: 12, color: C.mt, marginLeft: 6 }}>Graded play by play against an average player in the same spot: how well he played, not how good his team is. 90+ elite · 80s high quality · 70s above average · 60s average.</span>}
+        {!mobile && <span title="Graded play by play against an average player in the same spot: how well he played, not how good his team is." style={{ fontSize: 13, color: C.mt, marginLeft: 6 }}>90+ elite · 80s high quality · 70s above average · 60s average</span>}
       </div>}
-      <div style={{ overflowX: "auto", background: "#ffffff0d", borderRadius: 18, padding: "4px 8px" }}>
+      <div style={{ overflow: "auto", background: "#111827", borderRadius: 20, padding: "4px 8px", maxHeight: cat === "Grades" ? "calc(100vh - 340px)" : "calc(100vh - 300px)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr>
-            <th style={{ ...th, textAlign: "left", position: "sticky", left: 0, background: "#141820", cursor: "default" }}>PLAYER</th>
+            <th style={{ ...th, textAlign: "left", position: "sticky", left: 0, zIndex: 2, cursor: "default" }}>PLAYER</th>
             {cols.map(([l]) => <th key={l} onClick={() => setSort(l)} style={{ ...th, color: l === col[0] ? "#fff" : C.mt }}>{l}{l === col[0] ? " ▼" : ""}</th>)}
           </tr></thead>
           <tbody>
             {rows.map((x, i) => (
               <tr key={x.p.id} style={{ background: x.ti === ui ? "#22c55e10" : "transparent" }}>
-                <td onClick={() => onPlayer(x.p)} style={{ ...td, textAlign: "left", position: "sticky", left: 0, background: x.ti === ui ? "#13261d" : "#141820", cursor: "pointer", minWidth: mobile ? 150 : 220 }}>
+                <td onClick={() => onPlayer(x.p)} style={{ ...td, textAlign: "left", position: "sticky", left: 0, background: x.ti === ui ? "#13261d" : "#111827", cursor: "pointer", minWidth: mobile ? 150 : 220 }}>
                   <span style={{ color: C.mt, fontSize: 12, marginRight: 8, display: "inline-block", minWidth: 16 }}>{i + 1}</span>
                   <span style={{ fontWeight: 700 }}>{x.p.name}</span>
                   <span style={{ marginLeft: 6, fontSize: 12, color: C.mt }}>{x.p.pos} · {x.t.ab}</span>

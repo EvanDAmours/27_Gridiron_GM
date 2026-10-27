@@ -2033,4 +2033,10 @@ export const PATCH_NOTES = [
     "The trade finder and your trade block are calm rows too: who you get, who you send, and the deal one click away.",
     "Free agency on a computer is one calm list with sortable columns and the negotiate button on hover. The negotiation dialog is tighter: asking price and patience on one line, the shared pill choices, and fewer explanations in the way.",
   ] },
+  { v: "4.97", date: "2026-10-23", title: "Calmer Front Office and stats", notes: [
+    "The Front Office tabs, calmer: League leaders are bigger and easier to read; the Record Book is one list of records beside what's being chased and what has fallen; Franchise History puts your seasons beside the summary; League History and Transactions drop the boxed buttons and fit the screen.",
+    "Stats on a computer: Leaders is the first choice, and each full table has the screen to itself, with its header pinned while you scroll. Long names no longer get cut off.",
+    "Depth chart: the game plan sits beside the field, under who plays, so nothing falls below the fold.",
+    "The prospect profile drops the outlined chips, the blue labels and the stars: the shared pill tabs, plain labels and quiet buttons.",
+  ] },
 ];

@@ -30,7 +30,7 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
   const empty = (t) => <div style={{ ...card, textAlign: "center", color: C.mt, fontSize: 14, padding: 28 }}>{t}</div>;
 
   return (
-    <div style={{ maxWidth: 1100 }}>
+    <div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
         {MOBILE && <div style={{ fontSize: 28, fontWeight: 900 }}>League History</div>}
         <div style={{ fontSize: 14, color: C.mt }}>Since your league began in 2026 · {titles.length} Super Bowl{titles.length === 1 ? "" : "s"} played{myTitles ? ` · ${myTitles} yours` : ""} · {hof.length} Hall of Famer{hof.length === 1 ? "" : "s"}</div>

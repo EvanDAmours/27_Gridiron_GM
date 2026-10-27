@@ -9,7 +9,7 @@ import { MOBILE } from "./mobile.js";
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { mockDraft } from "./mockDraft.js";
-import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo, CloseX, Segments, Sheet, Row, Hero, Section, Chips, Pills, pill, quietPill, pillTrack } from "./ui.jsx";
+import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo, CloseX, Segments, Sheet, Row, Hero, Section, Chips, Pills, pill, quietPill, pillTrack, actBtn } from "./ui.jsx";
 import { Jersey, rookieNum } from "./Jersey.jsx";
 import RoleTag from "./RoleTag.jsx";
 import Spotlight, { Dim } from "./Spotlight.jsx";
@@ -81,7 +81,7 @@ export function CovTag({ read }) {
   const c = role === "major" ? "#f5c542" : role === "minor" ? "#60a5fa" : "#64748b";
   const crew = read.scout ? [read.scout, ...(read.others || [])] : [];
   const title = crew.length > 1 ? `${crew.length} scouts on it: ${crew.map((x) => x.name).join(", ")} all work the ${regionName(read.region)}` : read.scout ? `${SCOUT_ROLES[role].name}: ${read.scout.name} (${regionName(read.region)}, evaluation ${read.scout.eval}${read.scout.group ? `, specialty ${SCOUT_GROUP_SHORT[read.scout.group]}` : ""})` : `None of your scouts works the ${regionName(read.region)}, so your front office's generalists file the reports.`;
-  return <span title={title} style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", padding: "2px 6px", borderRadius: 3, border: `1px solid ${c}66`, color: c, whiteSpace: "nowrap" }}>{role === "office" ? "No scout" : crew.length > 1 ? `${crew.length} scouts` : SCOUT_ROLES[role].short}</span>;
+  return <span title={title} style={{ fontSize: 13, fontWeight: 800, color: c, whiteSpace: "nowrap" }}>{role === "office" ? "No scout" : crew.length > 1 ? `${crew.length} scouts` : SCOUT_ROLES[role].short}</span>;
 }
 
 // A line across the board where one of your picks falls.
@@ -1533,7 +1533,7 @@ function TeamNeedsPanel({ g, p }) {
 }
 
 const Tile = ({ big, label, tone }) => (
-  <div style={{ background: "#1e293b", border: "1px solid #ffffff10", borderRadius: 8, padding: "8px 6px", textAlign: "center", minWidth: 0 }}>
+  <div style={{ background: "#ffffff0a", borderRadius: 14, padding: "10px 6px", textAlign: "center", minWidth: 0 }}>
     <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.05, color: tone || (big === "?" ? "#94a3b8" : "#fff") }}>{big}</div>
     <div style={{ fontSize: 12, color: "#cbd5e1", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</div>
   </div>
@@ -1548,8 +1548,8 @@ export function ProspectProfile({ g, p }) {
   const live = g.sp === "draft" && !!g.curPick;
   const onClock = live && g.curPick.owner === g.ui && p.draftYear === g.yr;
   const listed = listIds(g.scouting, p.draftYear).includes(p.id);
-  const box = { background: C.bg, borderRadius: 8, padding: "10px 12px", marginBottom: 10 };
-  const lab = { fontSize: 12, fontWeight: 900, letterSpacing: 1.4, marginBottom: 6, color: C.mt };
+  const box = { background: "#ffffff08", borderRadius: 16, padding: "12px 14px", marginBottom: 10 };
+  const lab = { fontSize: 13, fontWeight: 800, marginBottom: 6, color: "#94a3b8" };
   const col = p.colStats || {};
   const skills = s.skills || {};
   const keys = Object.keys(p.posAttrs || {});
@@ -1569,9 +1569,7 @@ export function ProspectProfile({ g, p }) {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "minmax(0,1fr) 250px", gap: 16, alignItems: "start" }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
-            {tabs.map(([k, l]) => <button key={k} onClick={() => setTab(k)} style={quietPill(tab === k)}>{l}</button>)}
-          </div>
+          <Pills items={tabs} value={tab} onChange={setTab} label="Prospect" style={{ marginBottom: 12 }} />
           {tab === "report" && <>
             <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "minmax(0,1.2fr) minmax(0,1fr)", gap: 12 }}>
               <div>
@@ -1590,7 +1588,7 @@ export function ProspectProfile({ g, p }) {
               <div>
                 <div style={lab}>Player profile</div>
                 <div style={{ display: "grid", gridTemplateColumns: "84px 1fr", rowGap: 3, fontSize: 14 }}>
-                  {[["DEV TRAIT", <DevBadge key="d" dev={read.dev} size="sm" />], ["HEIGHT", htS(p.ht_)], ["WEIGHT", `${p.wt} lbs`], ["AGE", p.age], ["COLLEGE", `${p.bio?.college || "?"}${isSmallSchool(p) ? " (small school)" : ""}`], ["REGION", regionName(regionOf(p))], ["SCOUT", <CovTag key="c" read={read} />]].map(([k, v]) => <React.Fragment key={k}><span style={{ fontSize: 11, fontWeight: 900, color: "#7dd3fc", alignSelf: "center" }}>{k}</span><b style={{ minWidth: 0 }}>{v}</b></React.Fragment>)}
+                  {[["DEV TRAIT", <DevBadge key="d" dev={read.dev} size="sm" />], ["HEIGHT", htS(p.ht_)], ["WEIGHT", `${p.wt} lbs`], ["AGE", p.age], ["COLLEGE", `${p.bio?.college || "?"}${isSmallSchool(p) ? " (small school)" : ""}`], ["REGION", regionName(regionOf(p))], ["SCOUT", <CovTag key="c" read={read} />]].map(([k, v]) => <React.Fragment key={k}><span style={{ fontSize: 13, color: "#94a3b8", alignSelf: "center" }}>{k[0] + k.slice(1).toLowerCase()}</span><b style={{ minWidth: 0 }}>{v}</b></React.Fragment>)}
                 </div>
               </div>
             </div>
@@ -1611,7 +1609,7 @@ export function ProspectProfile({ g, p }) {
               const pct = r === (p.combine || p.proDay) ? p.combPcts?.[t.k] : null;
               if (v == null) return null;
               return (
-                <div key={t.k} style={{ background: C.cd, borderRadius: 3, padding: "3px 4px", textAlign: "center" }}>
+                <div key={t.k} style={{ background: "#ffffff0a", borderRadius: 10, padding: "5px 4px", textAlign: "center" }}>
                   <div style={{ fontSize: 11, color: C.mt }}>{t.short.toUpperCase()}</div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: pct >= 0.9 ? C.gn : "#cbd5e1" }}>{(+v).toFixed(t.dp)}{t.unit === "s" ? "s" : t.unit === "in" ? '"' : ""}</div>
                   {(() => { const rk = combineRank(g.dc?.[p.draftYear], p, t, r); return rk ? <div title={`Where he ranks among the ${rk.n} ${p.pos}s in the class who tested`} style={{ fontSize: 11, fontWeight: 800, color: rankColor(rk) }}>({rk.rank} of {rk.n})</div> : null; })()}
@@ -1622,7 +1620,7 @@ export function ProspectProfile({ g, p }) {
           </div></React.Fragment>)}
           {p.combine && p.proDay && <div style={{ ...muted, fontSize: 10, marginTop: 3 }}>Bars show where he ranked among Combine invitees at his position.</div>}
           {s.intv ? (
-            <div style={{ marginTop: 8, background: "#7c3aed14", border: "1px solid #7c3aed44", borderRadius: 8, padding: "8px 10px", fontSize: 14 }}>
+            <div style={{ marginTop: 8, background: "#7c3aed14", borderRadius: 14, padding: "10px 12px", fontSize: 14 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
                 <b style={{color: "#c4b5fd", fontSize: 14 }}>Your interview</b>
                 {s.intv.verdict && <b style={{ color: { Impressive: C.gn, Solid: "#7dd3fc", Mixed: C.gd, Concerning: C.rd }[s.intv.verdict] }}>{s.intv.verdict}</b>}
@@ -1650,7 +1648,7 @@ export function ProspectProfile({ g, p }) {
                 <div style={lab}>College career</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(64px,1fr))", gap: 4 }}>
                   {COL_KEYS.filter((k) => col[k] > 0).map((k) => (
-                    <div key={k} style={{ background: C.cd, borderRadius: 3, padding: "2px", textAlign: "center" }}>
+                    <div key={k} style={{ background: "#ffffff0a", borderRadius: 10, padding: "4px 2px", textAlign: "center" }}>
                       <div style={{ fontSize: 11, color: C.mt }}>{g.sL ? g.sL(k) : k}</div><div style={{ fontSize: 16, fontWeight: 700, color: "#fdba74" }}>{Number.isInteger(col[k]) ? col[k] : col[k].toFixed(1)}</div>
                     </div>
                   ))}
@@ -1667,11 +1665,11 @@ export function ProspectProfile({ g, p }) {
           </>}
         </div>
         <div style={{ display: "grid", gap: 10 }}>
-          <div style={{ ...box, marginBottom: 0, border: "1px solid #ffffff10" }}>
+          <div style={{ ...box, marginBottom: 0 }}>
             <ScoutButton g={g} p={p} read={read} />
             <div style={{ fontSize: 14, fontWeight: 800, color: (g.scouting?.pts || 0) > 0 ? C.gd : C.mt, marginTop: 6 }}>{g.scouting?.pts || 0} scouting point{g.scouting?.pts === 1 ? "" : "s"} left</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-              <Btn onClick={() => a.toggle(p)} bg={listed ? "#b4530944" : C.bd} c={listed ? "#fef3c7" : "#cbd5e1"} style={{ fontSize: 14, padding: "5px 10px" }}>{listed ? "★ On your list" : "☆ Add to your list"}</Btn>
+              <button onClick={() => a.toggle(p)} style={actBtn(listed ? "#fde68a" : "#e2e8f0")}>{listed ? "On your list" : "Add to your list"}</button>
               {live && p.draftYear === g.yr && <span title={onClock ? "" : "Wait until you're on the clock"}><Btn onClick={() => { g.makePick(p); g.setSel(null); }} disabled={!onClock} bg={C.gn} style={{ fontSize: 14, padding: "5px 10px" }}>Draft him</Btn></span>}
             </div>
           </div>

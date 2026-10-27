@@ -252,10 +252,9 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
             ))}
           </Field>
           {!MOBILE && <div style={{ fontSize: 12, color: C.mt, marginTop: 6, textAlign: "center" }}>{side === "defense" ? "The SAM plays in base (against heavy sets), the nickel back (NB) in nickel and dime. " : ""}Tap a spot to change the starter and set snap shares. Red rings are injured starters.</div>}
-          {/* the schemes and personnel sit right under the field, with the players they're built for */}
-          {gamePlan && !MOBILE && <div style={{ marginTop: 12 }}>{gamePlan}</div>}
         </div>
-        <div style={{ flex: "1 1 300px", minWidth: 0, background: MOBILE ? "#ffffff0f" : "#ffffff0d", borderRadius: 18, padding: MOBILE ? "12px 14px" : "14px 16px" }}>
+        <div style={{ flex: "1 1 300px", minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ background: MOBILE ? "#ffffff0f" : "#111827", borderRadius: MOBILE ? 18 : 20, padding: MOBILE ? "12px 14px" : "14px 16px" }}>
           {!pick || MOBILE ? (
             <>
               <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>Who plays</div>
@@ -274,6 +273,9 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
               })}
             </>
           ) : pickView}
+        </div>
+        {/* the schemes and personnel sit beside the field, under the players they're built for */}
+        {gamePlan && !MOBILE && gamePlan}
         </div>
       </div>
       {MOBILE && pick && <Sheet onClose={() => setPick(null)}>{pickView}<div style={{ height: 8 }} /></Sheet>}
