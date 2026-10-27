@@ -2,7 +2,7 @@
 // picks on two big roster tables, and the summary tells you plainly whether they'd take it.
 import Select from "./Select.jsx";
 import React, { useState } from "react";
-import { C, oC, Bdg, Btn, Face, TeamLogo, Hero, Section, Chips, Segments } from "./ui.jsx";
+import { C, oC, Bdg, Btn, Face, TeamLogo, Hero, Section, Chips, Segments, Pills } from "./ui.jsx";
 import RoleTag from "./RoleTag.jsx";
 import { deadMoney, proration, yearsLeft } from "./bonus.js";
 import { getCapPhase } from "./cap.js";
@@ -319,9 +319,7 @@ export default function TradeScreen({ teams, ui, trTm, setTrTm, trOff, setTrOff,
           <Side title="THEIR TEAM" color={C.gn} team={them} players={them.roster} picks={draftPicks.filter((pk) => pk.owner === trTm).map(withAb)} chosen={trOff.r} chosenPk={trOff.rPk} toggle={(p) => flip("r", p)} togglePk={(pk) => flip("rPk", pk)} pickVal={pickVal} setSel={setSel} />
         </div>
       ) : (<>
-        <div role="tablist" style={{ display: "flex", gap: 6, marginBottom: 10 }}>
-          {[["teams", "By team"], ["best", "League's best by position"]].map(([k, l]) => <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)} style={{ background: view === k ? "#ffffff24" : "transparent", color: view === k ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: "6px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
-        </div>
+        <Pills items={[["teams", "By team"], ["best", "League's best by position"]]} value={view} onChange={setView} label="Browse" style={{ marginBottom: 10 }} />
         {view === "best" ? <BestAt teams={teams} ui={ui} pos={bpos} setPos={setBpos} onPick={(t, p) => { setTrTm(t.id); setTrOff({ g: [], r: [p], gPk: [], rPk: [] }); }} setSel={setSel} /> :
         // a grid of logos beats a 31-line dropdown
         <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "repeat(4, 1fr)" : "repeat(auto-fill, minmax(92px, 1fr))", gap: 6 }}>

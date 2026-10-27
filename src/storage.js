@@ -27,8 +27,12 @@ export function saveJSON(key, value) {
 export function loadJSON(key) {
   const raw = localStorage.getItem(key);
   if (!raw) return null;
-  return JSON.parse(raw.startsWith(TAG) ? LZString.decompressFromUTF16(raw.slice(TAG.length)) : raw);
+  const text = raw.startsWith(TAG) ? LZString.decompressFromUTF16(raw.slice(TAG.length)) : raw;
+  // saves from before the game dropped emoji still carry them in news, logs and labels
+  return JSON.parse(EMOJI.test(text) ? text.replace(EMOJI_ALL, "") : text);
 }
+const EMOJI = /\p{Extended_Pictographic}/u;
+const EMOJI_ALL = /(?:(?![\u2605\u2606])\p{Extended_Pictographic}|[\uFE0F\u200D])+ ?/gu; // the game's own stars stay
 
 // Delete a save, and drop any write of it still being compressed (it would bring the save back).
 export function removeJSON(key) {

@@ -2021,4 +2021,10 @@ export const PATCH_NOTES = [
     "The draft board can now filter and sort: show everyone, your list, your sleepers and hunches, known star traits or red flags, and sort by the board, your read of a player's ceiling, or his development trait (known traits first, the rarest on top). The Big Board gets the same sort.",
     "The draft room shows the picks you have left this draft, round and number, with the one on the clock lit.",
   ] },
+  { v: "4.95", date: "2026-10-23", title: "One set of controls", notes: [
+    "One set of controls everywhere: every choice of views or filters, on a computer and on a phone, is now the same white pill in a soft track, and the quieter position filters share one look too, so no screen drifts from another.",
+    "Rows across the Front Office, coaching, draft recap and scouting share one calm highlight, with their actions quiet until you hover.",
+    "The Timeline tab is gone. Your achievements still show on your GM career.",
+    "Old saves no longer show emoji in the news and logs.",
+  ] },
 ];

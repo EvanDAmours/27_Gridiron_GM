@@ -1,7 +1,7 @@
 // The League > Transactions page: the wire (transactions.js), newest first, filtered by kind, club
 // and season, grouped by season and week.
 import React, { useState, useMemo } from "react";
-import { C, TeamLogo } from "./ui.jsx";
+import { C, TeamLogo, quietPill } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import Select from "./Select.jsx";
 import { KINDS } from "./transactions.js";
@@ -25,7 +25,7 @@ export default function TransactionsWire({ wire = [], teams = [], ui }) {
     if (groups[groups.length - 1]?.key !== key) groups.push({ key, items: [] });
     groups[groups.length - 1].items.push(e);
   }
-  const chip = (on) => ({ background: on ? "#ffffff24" : "transparent", color: on ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: MOBILE ? "8px 12px" : "5px 12px", fontSize: 14, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" });
+  const chip = quietPill;
   const selStyle = { background: "#ffffff12", color: C.tx, border: 0, borderRadius: 999, padding: "8px 14px", fontSize: 14, flex: MOBILE ? 1 : "0 0 auto", minWidth: 0 };
   const filters = (<>
     <Select value={team} onChange={(e) => setTeam(e.target.value)} aria-label="Club" style={selStyle}>

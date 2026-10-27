@@ -6,7 +6,7 @@
 import { capProjection } from "./capProjection.js";
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { C, oC, Bdg, Face, CloseX, sheetWrap, sheetBox, SheetGrip } from "./ui.jsx";
+import { C, oC, Bdg, Face, CloseX, sheetWrap, sheetBox, SheetGrip, Pills } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { yearlyAsk, maxYears, respond } from "./negotiation.js";
 import { EXT_BONUS, extStructure } from "./extensions.js";
@@ -278,7 +278,7 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
         <div style={{ display: "flex", gap: 6 }}>
           {INCENTIVE_SIZES.map((v) => <Chip key={v} on={incSize === v} onClick={() => setIncSize(v)} tint="#67e8f9">{v ? money(sal * v) : "None"}</Chip>)}
         </div>
-        {incSize > 0 && <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>{incOpts.map((o) => <button key={o} onClick={() => setIncLabel(o)} style={{ padding: "6px 12px", fontSize: 13, fontWeight: 700, borderRadius: 999, cursor: "pointer", background: incLabel === o ? "#fff" : "#ffffff10", color: incLabel === o ? "#0b1220" : "#cbd5e1", border: 0 }}>{o}</button>)}</div>}
+        {incSize > 0 && <Pills items={incOpts.map((o) => [o, o])} value={incLabel} onChange={setIncLabel} label="Incentive" style={{ marginTop: 8 }} />}
       </div>}
 
       {ext && <div style={{ ...card, marginBottom: 12 }}>

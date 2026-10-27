@@ -3,7 +3,7 @@
 // camp priority, your young players' roles) and Young players (where each one fits on the depth
 // chart, and whether that's helping him grow).
 import React, { useMemo, useState } from "react";
-import { C, Sheet } from "./ui.jsx";
+import { C, Sheet, Pills } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { posTag } from "./dline.js";
 import { devOf, DEV_TRAITS } from "./scouting.js";
@@ -15,11 +15,7 @@ const tone = (g) => (g >= 0.8 ? "#4ade80" : g <= -0.8 ? "#f87171" : "#cbd5e1");
 
 function Tabs({ value, onChange }) {
   return (
-    <div style={{ display: "flex", gap: 6, marginBottom: MOBILE ? 18 : 18 }}>
-      {[["overview", "Overview"], ["plan", "Season plan"], ["young", "Young players"]].map(([k, l]) => (
-        <button key={k} onClick={() => onChange(k)} style={{ border: 0, borderRadius: 99, padding: "8px 16px", fontSize: 15, fontWeight: 800, cursor: "pointer", background: value === k ? "#ffffff1a" : "transparent", color: value === k ? "#fff" : "#94a3b8" }}>{l}</button>
-      ))}
-    </div>
+    <Pills big items={[["overview", "Overview"], ["plan", "Season plan"], ["young", "Young players"]]} value={value} onChange={onChange} label="Development" style={{ marginBottom: 18 }} />
   );
 }
 const CAMP_GROUPS_SUB = (camp, n) => (camp && camp !== "balanced" && CAMP[camp] ? `About +0.7 next summer for the ${n} players in the room` : "Even time for every position group");
@@ -93,7 +89,7 @@ export default function DevelopmentScreen({ roster, yr, sp, wk, gp = 0, focus, s
               : <Row title="Nothing needs you" sub="Pick focus players in the Season plan to get the most out of your best young talent." last />}</Card>
           </div>
           <div>
-            <Label right={<div style={{ display: "flex", background: "#ffffff0d", borderRadius: 99, padding: 3 }}>{[["growing", "Growing"], ["peak", "Peak"], ["declining", "Declining"]].map(([k, l]) => <button key={k} onClick={() => { setTrend(k); setShowAll(false); }} style={{ border: 0, borderRadius: 99, padding: "6px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer", background: trend === k ? "#fff" : "transparent", color: trend === k ? "#0b1220" : "#cbd5e1" }}>{l}</button>)}</div>}>Next summer</Label>
+            <Label right={<Pills items={[["growing", "Growing"], ["peak", "Peak"], ["declining", "Declining"]]} value={trend} onChange={(k) => { setTrend(k); setShowAll(false); }} label="Trend" />}>Next summer</Label>
             <Card>{shown.length ? shown.map((r, i) => <Row key={r.p.id} title={name(r.p)} meta={`${r.p.age} · ${posTag(r.p)}`} sub={ROLE[r.role][0].toUpperCase() + ROLE[r.role].slice(1)} ovr={r.p.ovr} delta={trend === "peak" ? null : Math.round(r.g * 10) / 10} onClick={() => setSel?.(r.p)} last={i === shown.length - 1} />)
               : <Row title="Nobody here" last />}</Card>
             {list.length > 5 && <button onClick={() => setShowAll((v) => !v)} style={{ background: "transparent", border: 0, color: "#cbd5e1", fontSize: 15, fontWeight: 700, padding: "12px 4px", cursor: "pointer" }}>{showAll ? "Show fewer" : `All ${list.length} ${trend === "peak" ? "at their peak" : trend} →`}</button>}

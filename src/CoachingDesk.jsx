@@ -3,19 +3,16 @@
 // name, what he does, his rating; the money and years in one quiet line; actions quiet until you
 // hover. Phones have their own screen (PhoneCoaching.jsx).
 import React, { useState } from "react";
-import { C, Face, oC, OverflowMenu, TeamLogo } from "./ui.jsx";
+import { C, Face, oC, OverflowMenu, TeamLogo, Pills, actBtn, card, cardTitle, fitH } from "./ui.jsx";
 
 const ROLE = { HC: "Head coach", OC: "Offensive coordinator", DC: "Defensive coordinator", ST: "Special teams" };
 const SHORT = { HC: "Head coach", OC: "Offense", DC: "Defense", ST: "Special teams" };
-const CSS = ".cd-card .cd-act{opacity:.6;transition:opacity .15s}.cd-card:hover .cd-act{opacity:1}.cd-row:hover{background:#ffffff0a}";
-const seg = (on) => ({ border: 0, borderRadius: 99, padding: "6px 13px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#fff" : "transparent", color: on ? "#0b1220" : "#cbd5e1", whiteSpace: "nowrap" });
-const pill = { background: "#ffffff0f", color: "#e2e8f0", border: 0, borderRadius: 99, padding: "7px 14px", fontSize: 13, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" };
+const pill = actBtn();
 
 export default function CoachingDesk({ staff, yr, scPts, coachAge, hcTrait, hcStyle, hcNote, hcExtOk, coy = [], hotSeat = [], faCoaches = [], cap, teams, ui, gamePlan, roster = [], onUpgrade, onExtend, onFire, onHire, onMeeting }) {
   const [view, setView] = useState("staff");
   const [role, setRole] = useState("ALL");
   const [lkr, setLkr] = useState(false);
-  const card = { background: C.cd, borderRadius: 20, padding: "16px 18px" };
   const meta = (c) => [c.role !== "HC" && `$${c.salary}M`, `${c.contract || "?"} yr${c.contract === 1 ? "" : "s"} left`, `age ${coachAge(c, yr)}`].filter(Boolean).join(" · ");
 
   const Coach = ({ c, r, wide }) => {
@@ -28,7 +25,7 @@ export default function CoachingDesk({ staff, yr, scPts, coachAge, hcTrait, hcSt
     const hot = hotSeat.includes(r), t = r === "HC" ? hcTrait(c) : null, xp = (c.xp || 0) % 20, leaving = r === "HC" && hcNote;
     const line = r === "HC" ? [c.trait, hcStyle(c)].filter(Boolean).join(" · ") : [c.scheme, c.trait].filter(Boolean).join(" · ");
     return (
-      <div className="cd-card" style={{ ...card, display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="calm-card" style={{ ...card, display: "flex", flexDirection: "column", gap: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <Face s={c.face} coach={c.name} sz={wide ? 52 : 44} />
           <span style={{ flex: 1, minWidth: 0 }}>
@@ -44,7 +41,7 @@ export default function CoachingDesk({ staff, yr, scPts, coachAge, hcTrait, hcSt
           <span style={{ fontSize: 13, color: (c.contract || 0) <= 1 ? "#fca5a5" : "#94a3b8", flex: 1 }}>{meta(c)}</span>
           {r !== "HC" && <span title="A win is 3 XP, a loss 1. Every 20 XP: +1 rating." style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 54, height: 4, borderRadius: 2, background: "#ffffff14", overflow: "hidden" }}><span style={{ display: "block", width: `${(xp / 20) * 100}%`, height: "100%", background: "#38bdf8" }} /></span><span style={{ fontSize: 12, color: "#64748b" }}>{xp}/20</span></span>}
         </div>
-        <div className="cd-act" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <div className="calm-act" style={{ display: "flex", gap: 6, alignItems: "center" }}>
           {r !== "HC" && <button onClick={() => onUpgrade(r)} disabled={scPts < 2 || c.rating >= 95} title="+5 rating" style={{ ...pill, opacity: scPts < 2 || c.rating >= 95 ? 0.45 : 1 }}>Upgrade · 2 SP</button>}
           {(r !== "HC" || hcExtOk) && <button onClick={() => onExtend(r)} disabled={scPts < 1} style={{ ...pill, opacity: scPts < 1 ? 0.45 : 1 }}>Extend</button>}
           <span style={{ marginLeft: "auto" }}><OverflowMenu label={`More for ${c.name}`} items={[{ label: `Fire ${c.name}`, danger: true, confirm: `Fire ${ROLE[r].toLowerCase()} ${c.name}? He goes into the coaching pool, where any club can hire him.`, onClick: () => onFire(r) }]} /></span>
@@ -54,15 +51,11 @@ export default function CoachingDesk({ staff, yr, scPts, coachAge, hcTrait, hcSt
   };
 
   const pool = [...faCoaches].filter((c) => role === "ALL" || c.role === role).sort((a, b) => ["HC", "OC", "DC", "ST"].indexOf(a.role) - ["HC", "OC", "DC", "ST"].indexOf(b.role) || (b.rating || 0) - (a.rating || 0));
-  const fit = { height: "calc(100vh - 290px)", minHeight: 380 };
 
   return (
     <div>
-      <style>{CSS}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-        <div style={{ display: "inline-flex", gap: 2, padding: 3, borderRadius: 99, background: "#ffffff0d" }}>
-          {[["staff", "Your staff"], ["hire", `Hire${faCoaches.length ? ` · ${faCoaches.length}` : ""}`], ["league", "League staffs"]].map(([k, l]) => <button key={k} onClick={() => setView(k)} style={seg(view === k)}>{l}</button>)}
-        </div>
+        <Pills items={[["staff", "Your staff"], ["hire", `Hire${faCoaches.length ? ` · ${faCoaches.length}` : ""}`], ["league", "League staffs"]]} value={view} onChange={setView} label="Coaching" />
         {view === "staff" && <span style={{ fontSize: 14, color: "#64748b" }}>A better head coach is worth up to a point a game; coordinators run your schemes.</span>}
       </div>
 
@@ -73,7 +66,7 @@ export default function CoachingDesk({ staff, yr, scPts, coachAge, hcTrait, hcSt
           <Coach c={staff.dc} r="DC" />
           <Coach c={staff.st} r="ST" />
         </div>
-        <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", margin: "20px 0 10px" }}>Schemes and game plan</div>
+        <div style={{ ...cardTitle, margin: "20px 0 10px" }}>Schemes and game plan</div>
         {gamePlan}
         <div style={{ ...card, marginTop: 14, padding: "12px 18px" }}>
           <div onClick={() => setLkr((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
@@ -94,16 +87,14 @@ export default function CoachingDesk({ staff, yr, scPts, coachAge, hcTrait, hcSt
       </>}
 
       {view === "hire" && (
-        <div style={{ ...card, ...fit, display: "flex", flexDirection: "column" }}>
+        <div style={{ ...card, ...fitH, display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-            <span style={{ flex: 1, fontSize: 17, fontWeight: 800 }}>Coaches available</span>
-            <div style={{ display: "inline-flex", gap: 2, padding: 3, borderRadius: 99, background: "#ffffff0d" }}>
-              {[["ALL", "All"], ["HC", "Head coach"], ["OC", "OC"], ["DC", "DC"], ["ST", "ST"]].map(([k, l]) => <button key={k} onClick={() => setRole(k)} style={seg(role === k)}>{l}</button>)}
-            </div>
+            <span style={{ ...cardTitle, flex: 1 }}>Coaches available</span>
+            <Pills items={[["ALL", "All"], ["HC", "Head coach"], ["OC", "OC"], ["DC", "DC"], ["ST", "ST"]]} value={role} onChange={setRole} label="Job" />
           </div>
           <div style={{ overflowY: "auto", minHeight: 0, flex: 1, margin: "0 -8px" }}>
             {pool.map((c) => { const afford = c.role === "HC" || cap >= (c.salary || 0); const sub = [ROLE[c.role], c.role === "HC" ? hcStyle(c) : c.scheme, c.trait, (c.fired || c.expired) && c.from && `${c.fired ? "fired by" : "let go by"} ${c.from}`].filter(Boolean).join(" · "); return (
-              <div key={c.id} className="cd-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "8px 10px", borderRadius: 14 }}>
+              <div key={c.id} className="calm-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "8px 10px", borderRadius: 14 }}>
                 <Face s={c.face} coach={c.name} sz={40} />
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontSize: 16, fontWeight: 800, color: "#f8fafc" }}>{c.name}{c.real && <span style={{ fontSize: 12, color: "#86efac", fontWeight: 800 }}> · real coach</span>}</span>
@@ -120,11 +111,11 @@ export default function CoachingDesk({ staff, yr, scPts, coachAge, hcTrait, hcSt
       )}
 
       {view === "league" && (
-        <div style={{ ...card, ...fit, display: "flex", flexDirection: "column" }}>
+        <div style={{ ...card, ...fitH, display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", gap: 14, padding: "0 10px 8px", fontSize: 12, fontWeight: 800, letterSpacing: 0.6, color: "#64748b" }}><span style={{ width: 150 }}>TEAM</span><span style={{ flex: 1 }}>HEAD COACH</span><span style={{ flex: 1 }}>OFFENSE</span><span style={{ flex: 1 }}>DEFENSE</span></div>
           <div style={{ overflowY: "auto", minHeight: 0, flex: 1 }}>
             {teams.map((t, i) => { const cell = (c) => c ? <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}><Face s={c.face} coach={c.name} sz={24} /><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#e2e8f0" }}>{c.name}</span><b style={{ color: oC(c.rating), fontSize: 13 }}>{c.rating}</b></span> : <span style={{ flex: 1, color: "#64748b" }}>Vacant</span>; return (
-              <div key={i} className="cd-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "6px 10px", borderRadius: 12, fontSize: 14, background: i === ui ? "#f5c54210" : "transparent" }}>
+              <div key={i} className="calm-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "6px 10px", borderRadius: 12, fontSize: 14, background: i === ui ? "#f5c54210" : "transparent" }}>
                 <span style={{ width: 150, display: "flex", alignItems: "center", gap: 8, fontWeight: 800, color: i === ui ? C.gd : "#e2e8f0" }}><TeamLogo t={t} sz={22} />{t.name}</span>
                 {cell(t.coach?.hc)}{cell(t.coach?.oc)}{cell(t.coach?.dc)}
               </div>

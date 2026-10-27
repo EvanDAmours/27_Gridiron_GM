@@ -9,7 +9,7 @@ import { MOBILE } from "./mobile.js";
 import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { mockDraft } from "./mockDraft.js";
-import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo, CloseX, Segments, Sheet, Row, Hero, Section, Chips } from "./ui.jsx";
+import { C, oC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo, CloseX, Segments, Sheet, Row, Hero, Section, Chips, Pills, pill, quietPill, pillTrack } from "./ui.jsx";
 import { Jersey, rookieNum } from "./Jersey.jsx";
 import RoleTag from "./RoleTag.jsx";
 import Spotlight, { Dim } from "./Spotlight.jsx";
@@ -31,7 +31,7 @@ const htS = (i) => `${Math.floor(i / 12)}'${i % 12}"`;
 const panel = { background: "#ffffff0d", borderRadius: 18, padding: "16px 18px", marginBottom: 12 };
 const head = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 10, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" };
 const muted = { fontSize: 14, color: C.mt, lineHeight: 1.5 };
-const chipBtn = (on) => ({ background: on ? "#ffffff24" : "transparent", color: on ? "#fff" : "#94a3b8", border: 0, padding: "5px 12px", borderRadius: 999, fontSize: 14, fontWeight: 700, cursor: "pointer" });
+const chipBtn = quietPill;
 const Right = ({ children }) => <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 400, letterSpacing: 0, color: C.mt, fontSize: 14 }}>{children}</span>;
 
 // ---------- Small pieces ----------
@@ -196,7 +196,7 @@ function BoardRow({ g, p, onDraft, canDraft, myRank, gone, needs = [] }) {
   const tag = read.flag ? ["Red flag", "#fca5a5"] : read.sleeper ? ["Sleeper", "#f9a8d4"] : ["generational", "superstar", "star"].includes(read.dev) ? [DEV_TRAITS[read.dev].name, DEV_STYLE[read.dev][0]] : read.hunch ? ["Hunch", "#f9a8d4"] : need ? ["Need", "#86efac"] : null;
   const rank = myRank || csRank(p), cons = csRank(p);
   return (
-    <div className="bd-row" onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 16, padding: "10px 12px", borderRadius: 14, cursor: "pointer", opacity: gone ? 0.6 : 1 }}>
+    <div className="calm-row" onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 16, padding: "10px 12px", borderRadius: 14, cursor: "pointer", opacity: gone ? 0.6 : 1 }}>
       <span style={{ width: 30, textAlign: "right", fontSize: 17, fontWeight: 900, color: myRank ? "#fcd34d" : "#64748b", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{rank}</span>
       <Face s={p.face} sz={42} />
       <span style={{ flex: 1, minWidth: 0 }}>
@@ -208,12 +208,12 @@ function BoardRow({ g, p, onDraft, canDraft, myRank, gone, needs = [] }) {
       <span style={{ width: 96, textAlign: "right", fontSize: 13, fontWeight: 800, color: tag ? tag[1] : "transparent", flexShrink: 0 }}>{tag ? tag[0] : ""}</span>
       <span style={{ width: 48, textAlign: "center", flexShrink: 0 }}><Val txt={read.pot} title={read.tier ? `Your scouts' read of his ceiling: ${read.tier}` : "His ceiling, as your scouts read it"} /></span>
       <span style={{ width: 104, textAlign: "right", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-        {onDraft && canDraft ? <Btn onClick={() => onDraft(p)} bg={C.gn} style={{ padding: "7px 18px", fontSize: 14, borderRadius: 99 }}>Draft</Btn> : <span className="bd-act"><ScoutButton g={g} p={p} read={read} /></span>}
+        {onDraft && canDraft ? <Btn onClick={() => onDraft(p)} bg={C.gn} style={{ padding: "7px 18px", fontSize: 14, borderRadius: 99 }}>Draft</Btn> : <span className="calm-act"><ScoutButton g={g} p={p} read={read} /></span>}
       </span>
     </div>
   );
 }
-const BOARD_CSS = ".bd-row:hover{background:#ffffff0a}.bd-row .bd-act{opacity:.55;transition:opacity .15s}.bd-row:hover .bd-act{opacity:1}.bd-row:hover .bd-star{color:#64748b !important}";
+const BOARD_CSS = ".calm-row:hover .bd-star{color:#64748b !important}";
 
 const OL_POS = ["LT", "LG", "C", "RG", "RT"];
 const DEV_ORDER = { generational: 5, superstar: 4, star: 3, late: 2, normal: 1 };
@@ -291,14 +291,12 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
       <style>{BOARD_CSS}</style>
       {/* one quiet control row: whose board, position, a search, and (rarely needed) more filters */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", background: "#ffffff0d", borderRadius: 99, padding: 3 }}>
-          {[[false, "Consensus"], [true, "Your scouts"], ...(withList ? [["list", `Your list (${ids.length})`]] : [])].map(([k, l]) => <button key={l} onClick={() => setMine(k)} style={{ border: 0, borderRadius: 99, padding: "6px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer", background: mine === k ? "#fff" : "transparent", color: mine === k ? "#0b1220" : "#cbd5e1" }}>{l}</button>)}
-        </div>
+        <Pills items={[[false, "Consensus"], [true, "Your scouts"], withList && ["list", `Your list (${ids.length})`]]} value={mine} onChange={setMine} label="Whose board" />
         {mine !== "list" && <>
         <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-          {["ALL", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((x) => { const on = x === "OL" ? pos === "OL" || OL_POS.includes(pos) : pos === x || (pos.startsWith("R:") && { WR: ["R:X", "R:Z", "R:SLOT"], CB: ["R:OUT", "R:NB"], S: ["R:FS", "R:SS"], LB: ["R:SAM", "R:MIKE", "R:WILL"] }[x]?.includes(pos)); return <button key={x} onClick={() => { setPos(x === "OL" ? (on ? "ALL" : "OL") : x); setN(page); }} style={{ border: 0, borderRadius: 99, padding: "6px 11px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#ffffff1f" : "transparent", color: on ? "#fff" : "#94a3b8" }}>{x === "ALL" ? "All" : x}</button>; })}
+          {["ALL", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((x) => { const on = x === "OL" ? pos === "OL" || OL_POS.includes(pos) : pos === x || (pos.startsWith("R:") && { WR: ["R:X", "R:Z", "R:SLOT"], CB: ["R:OUT", "R:NB"], S: ["R:FS", "R:SS"], LB: ["R:SAM", "R:MIKE", "R:WILL"] }[x]?.includes(pos)); return <button key={x} onClick={() => { setPos(x === "OL" ? (on ? "ALL" : "OL") : x); setN(page); }} style={quietPill(on)}>{x === "ALL" ? "All" : x}</button>; })}
         </div>
-        {(() => { const base = pos.startsWith("R:") ? { SAM: "LB", MIKE: "LB", WILL: "LB", OUT: "CB", NB: "CB", FS: "S", SS: "S", X: "WR", Z: "WR", SLOT: "WR" }[pos.slice(2)] : pos; const roles = ROLE_FILTERS.filter(([v]) => ({ LB: ["SAM", "MIKE", "WILL"], CB: ["OUT", "NB"], S: ["FS", "SS"], WR: ["X", "Z", "SLOT"] })[base]?.includes(v.slice(2))); if (!roles.length) return null; return <div style={{ display: "flex", gap: 2, background: "#ffffff0a", borderRadius: 99, padding: 2 }}>{[[base, `All ${base}`], ...roles.map(([v, l]) => [v, l.split(" · ")[1]])].map(([v, l]) => <button key={v} onClick={() => { setPos(v); setN(page); }} style={{ border: 0, borderRadius: 99, padding: "5px 11px", fontSize: 13, fontWeight: 800, cursor: "pointer", background: pos === v ? "#fff" : "transparent", color: pos === v ? "#0b1220" : "#cbd5e1" }}>{l}</button>)}</div>; })()}
+        {(() => { const base = pos.startsWith("R:") ? { SAM: "LB", MIKE: "LB", WILL: "LB", OUT: "CB", NB: "CB", FS: "S", SS: "S", X: "WR", Z: "WR", SLOT: "WR" }[pos.slice(2)] : pos; const roles = ROLE_FILTERS.filter(([v]) => ({ LB: ["SAM", "MIKE", "WILL"], CB: ["OUT", "NB"], S: ["FS", "SS"], WR: ["X", "Z", "SLOT"] })[base]?.includes(v.slice(2))); if (!roles.length) return null; return <div style={pillTrack}>{[[base, `All ${base}`], ...roles.map(([v, l]) => [v, l.split(" · ")[1]])].map(([v, l]) => <button key={v} onClick={() => { setPos(v); setN(page); }} style={pill(pos === v)}>{l}</button>)}</div>; })()}
         <input value={q} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search" aria-label="Search prospects" style={{ ...sel, marginLeft: "auto", width: onDraft ? 120 : 170, borderRadius: 99 }} />
         <Select value={show} onChange={(e) => { setShow(e.target.value); setN(page); }} aria-label="Show" style={{ ...sel, borderRadius: 99 }}>
           {(onDraft ? SHOWS.filter(([k]) => ["all", "list", "flagged", "special", "redflags", "scouted"].includes(k)) : SHOWS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
@@ -367,7 +365,7 @@ export function YourList({ g, classYr, onDraft, canDraft, compact = false }) {
       {shown.map(({ id, p, d }) => {
         const i = ids.indexOf(id), pl = p || d.player, read = p ? prospectRead(g.scouting, p) : null;
         return (
-          <div key={id} className="bd-row" onClick={() => p && g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 14, padding: compact ? "6px 10px" : "9px 12px", borderRadius: 14, cursor: p ? "pointer" : "default", opacity: p ? 1 : 0.5 }}>
+          <div key={id} className="calm-row" onClick={() => p && g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 14, padding: compact ? "6px 10px" : "9px 12px", borderRadius: 14, cursor: p ? "pointer" : "default", opacity: p ? 1 : 0.5 }}>
             <span style={{ width: 24, textAlign: "right", fontSize: 16, fontWeight: 900, color: "#fcd34d" }}>{i + 1}</span>
             {!compact && <Face s={pl.face} sz={40} />}
             <span style={{ flex: 1, minWidth: 0 }}>
@@ -376,7 +374,7 @@ export function YourList({ g, classYr, onDraft, canDraft, compact = false }) {
             </span>
             {d ? <span style={{ fontSize: 13, color: C.mt }}>Gone #{d.overall} {g.teams[d.owner]?.ab}</span> : read && <span style={{ width: 44, textAlign: "center" }}><Val txt={read.pot} /></span>}
             {p && <span onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 2 }}>
-              {!compact && <span className="bd-act" style={{ display: "flex" }}>
+              {!compact && <span className="calm-act" style={{ display: "flex" }}>
                 <button aria-label="Move up" disabled={i === 0} onClick={() => a.move(pl, -1)} style={quiet}>↑</button>
                 <button aria-label="Move down" disabled={i === ids.length - 1} onClick={() => a.move(pl, 1)} style={quiet}>↓</button>
                 <button aria-label="Remove from your list" onClick={() => a.toggle(pl)} style={quiet}>✕</button>
@@ -616,7 +614,6 @@ export function CombineView({ g, buzz }) {
   const down = all.filter(reachable).filter((p) => ((GRADE_ORDER[p.combGrade] || 0) <= 4 || p.combDip) && p.combine && (p.cons?.mid ?? csRank(p)) <= 64).sort((x, y) => (csRank(y) - (y.cons?.mid ?? 0)) - (csRank(x) - (x.cons?.mid ?? 0))).slice(0, 4);
   const th = { padding: "7px 6px", textAlign: "right", color: C.mt, fontWeight: 800, whiteSpace: "nowrap", fontSize: 12, cursor: "pointer", userSelect: "none" };
   const td = { padding: "7px 6px", textAlign: "right", whiteSpace: "nowrap", fontSize: 14 };
-  const pill = (on) => ({ ...chipBtn(on), fontSize: 14, padding: "5px 11px" });
   const Mover = ({ p, tone }) => (
     <div onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: `1px solid ${C.bd}66`, cursor: "pointer" }}>
       <Bdg pos={posTag(p)} /><span style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
@@ -663,9 +660,8 @@ export function CombineView({ g, buzz }) {
   const t = COMBINE_TESTS.find((x) => x.k === sort);
   const fmt = (x, p) => `${(+p.combine[x.k]).toFixed(x.dp)}${x.unit === "s" ? "s" : x.unit === "in" ? '"' : ""}`;
   const standouts = (p) => COMBINE_TESTS.filter((x) => p.combine?.[x.k] != null && (p.combPcts?.[x.k] ?? 0) >= 0.8).sort((x, y) => (p.combPcts[y.k] || 0) - (p.combPcts[x.k] || 0)).slice(0, 2);
-  const seg = (on) => ({ border: 0, borderRadius: 99, padding: "6px 13px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#fff" : "transparent", color: on ? "#0b1220" : "#cbd5e1" });
   const MoveRow = ({ p, i }) => (
-    <div className="bd-row" onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 8px", borderRadius: 12, cursor: "pointer", borderTop: i ? "1px solid #ffffff0a" : 0 }}>
+    <div className="calm-row" onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 8px", borderRadius: 12, cursor: "pointer", borderTop: i ? "1px solid #ffffff0a" : 0 }}>
       <Face s={p.face} sz={34} />
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: "block", fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
@@ -678,7 +674,7 @@ export function CombineView({ g, buzz }) {
   const resRow = (p) => {
           const read = prospectRead(sc, p), st = standouts(p);
           return (
-            <div key={p.id} className="bd-row" onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "9px 12px", borderRadius: 14, cursor: "pointer" }}>
+            <div key={p.id} className="calm-row" onClick={() => g.setSel(p)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "9px 12px", borderRadius: 14, cursor: "pointer" }}>
               <span style={{ width: 30, textAlign: "right", fontSize: 16, fontWeight: 900, color: "#64748b", fontVariantNumeric: "tabular-nums" }}>{csRank(p)}</span>
               <Face s={p.face} sz={40} />
               <span style={{ flex: 1, minWidth: 0 }}>
@@ -693,7 +689,7 @@ export function CombineView({ g, buzz }) {
               <span style={{ width: 40, textAlign: "center" }}><GradeChip g={p.combGrade} small /></span>
               <span style={{ width: 170, display: "flex", gap: 4, justifyContent: "flex-end" }} onClick={(e) => e.stopPropagation()}>
                 {p.scout?.intv ? <span title={[...(p.scout.intv.good || []), ...(p.scout.intv.bad || [])].join(" ") || p.scout.intv.note} style={{ fontSize: 12.5, color: "#94a3b8", display: "flex", alignItems: "center", gap: 4 }}>Interview <GradeChip g={p.scout.intv.overall || p.scout.intv.grade} small /></span>
-                  : live && <span className="bd-act" style={{ display: "flex", gap: 4 }}>
+                  : live && <span className="calm-act" style={{ display: "flex", gap: 4 }}>
                     {read.lvl < 2 && <Btn onClick={() => a.workout(p)} disabled={!(sc.workoutsLeft > 0)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 12.5, padding: "4px 10px", borderRadius: 99 }} title="Free full workup">Workout</Btn>}
                     <Btn onClick={() => a.interview(p)} disabled={!(sc.interviewsLeft > 0)} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 12.5, padding: "4px 10px", borderRadius: 99 }}>Interview</Btn>
                   </span>}
@@ -729,12 +725,8 @@ export function CombineView({ g, buzz }) {
         </div>
       )}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", background: "#ffffff0d", borderRadius: 99, padding: 3 }}>
-          {slots.length > 0 && <button onClick={() => { setView("picks"); setN(25); }} style={seg(view === "picks")}>Potential picks</button>}
-          {needs.length > 0 && <button onClick={() => { setView("needs"); setGrp("All"); setN(25); }} style={seg(view === "needs")}>Your needs · {needs.join(", ")}</button>}
-          <button onClick={() => { setView("all"); setN(25); }} style={seg(view === "all")}>All positions</button>
-        </div>
-        {view !== "needs" && <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>{POS_GROUPS.map(([k]) => <button key={k} onClick={() => { setGrp(k); setN(25); }} style={{ border: 0, borderRadius: 99, padding: "6px 10px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: grp === k ? "#ffffff1f" : "transparent", color: grp === k ? "#fff" : "#94a3b8" }}>{k}</button>)}</div>}
+        <Pills items={[slots.length > 0 && ["picks", "Potential picks"], needs.length > 0 && ["needs", `Your needs · ${needs.join(", ")}`], ["all", "All positions"]]} value={view} onChange={(k) => { setView(k); if (k === "needs") setGrp("All"); setN(25); }} label="Show" />
+        {view !== "needs" && <Pills quiet items={POS_GROUPS.map(([k]) => [k, k])} value={grp} onChange={(k) => { setGrp(k); setN(25); }} label="Position" />}
         <input value={q} onChange={(e) => { setQ(e.target.value); setN(25); }} placeholder="Search" aria-label="Search prospects" style={{ ...sel, marginLeft: "auto", width: 150, borderRadius: 99 }} />
         <Select value={sort} onChange={(e) => { setSort(e.target.value); setN(25); }} aria-label="Sort by" style={{ ...sel, borderRadius: 99 }}>
           {[["rank", "Board order"], ["grade", "Combine grade"], ...COMBINE_TESTS.map((x) => [x.k, x.name])].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
@@ -1006,7 +998,6 @@ export function MockDraft({ g }) {
   );
   // desktop, calm: one line (whose mock, your next pick and who'll be gone by then, rounds), then
   // one row a pick. Your picks are lit; the other names linked to a pick are on hover.
-  const segB = (on) => ({ border: 0, borderRadius: 99, padding: "6px 14px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#fff" : "transparent", color: on ? "#0b1220" : "#cbd5e1" });
   return (
     <div>
       <style>{BOARD_CSS}</style>
@@ -1014,13 +1005,13 @@ export function MockDraft({ g }) {
         <div style={{ fontSize: 14, color: "#94a3b8", flex: 1, minWidth: 0 }}>
           {myNext ? <>Your next pick is <b style={{ color: "#fff" }}>#{myNext.overall}</b>{before.length ? <>. Gone before then on your list: {before.map((m, i) => <span key={m.player.id}>{i ? ", " : ""}<b style={{ color: C.gd }}>{m.player.name}</b> (#{m.pick.overall})</span>)}</> : listed.size ? ". Everyone on your list should still be there." : ". Star prospects to see where they're projected."}</> : "The experts' mock: the consensus board plus each club's needs."}
         </div>
-        <div style={{ display: "flex", background: "#ffffff0d", borderRadius: 99, padding: 3 }}>{[1, 2].map((r) => <button key={r} onClick={() => setRounds(r)} style={segB(rounds === r)}>{r === 1 ? "Round 1" : "Rounds 1-2"}</button>)}</div>
+        <Pills items={[[1, "Round 1"], [2, "Rounds 1-2"]]} value={rounds} onChange={setRounds} label="Rounds" />
       </div>
       <div style={{ background: "#ffffff08", borderRadius: 18, padding: 6 }}>
         {mock.filter((m) => m.pick.rd <= rounds).map(({ pick, player, alts }) => {
           const t = g.teams[pick.owner], mine = pick.owner === g.ui, star = listed.has(player.id);
           return (
-            <div key={pick.id || pick.overall} className="bd-row" onClick={() => g.setSel(player)} title={alts.length ? `Also linked: ${alts.map((x) => `${x.name} (${x.pos})`).join(", ")}` : undefined} style={{ display: "flex", alignItems: "center", gap: 14, padding: "8px 12px", borderRadius: 14, cursor: "pointer", background: mine ? "#f5c54212" : undefined, boxShadow: mine ? `inset 3px 0 0 ${C.gd}` : "none" }}>
+            <div key={pick.id || pick.overall} className="calm-row" onClick={() => g.setSel(player)} title={alts.length ? `Also linked: ${alts.map((x) => `${x.name} (${x.pos})`).join(", ")}` : undefined} style={{ display: "flex", alignItems: "center", gap: 14, padding: "8px 12px", borderRadius: 14, cursor: "pointer", background: mine ? "#f5c54212" : undefined, boxShadow: mine ? `inset 3px 0 0 ${C.gd}` : "none" }}>
               <span style={{ width: 34, textAlign: "right", fontSize: 16, fontWeight: 900, color: mine ? C.gd : "#64748b", fontVariantNumeric: "tabular-nums" }}>{pick.overall}</span>
               <span style={{ width: 170, display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}><TeamLogo t={t} sz={28} /><span style={{ fontSize: 14.5, fontWeight: mine ? 900 : 700, color: mine ? C.gd : "#cbd5e1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{mine ? "You" : t.name}</span></span>
               <Face s={player.face} sz={38} />
@@ -1464,17 +1455,13 @@ export function ScoutingPage({ g }) {
   return (
     <div>
       {/* the section header above has the class and your scouting points */}
-      <div className="pill-row" style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
-        {deskViews.map(([k, label]) => <button key={k} onClick={() => setView(k)} style={{ background: dv === k ? "#fff" : "#ffffff12", color: dv === k ? "#0b1220" : "#cbd5e1", border: 0, borderRadius: 999, fontSize: 14, fontWeight: 800, padding: "9px 16px", cursor: "pointer" }}>{label}</button>)}
-      </div>
+      <Pills big items={deskViews} value={dv} onChange={setView} label="Scouting" style={{ marginBottom: 14 }} />
       {dv === "board" && <Board g={g} classYr={g.yr} withList startList={v === "list"} key={v} />}
       {dv === "hq" && <ScoutingHQ g={g} go={setView} />}
       {dv === "combine" && <CombineView g={g} buzz={g.buzz} />}
       {dv === "mock" && <MockDraft g={g} />}
       {dv === "scouts" && <>
-        <div style={{ display: "inline-flex", background: "#ffffff0d", borderRadius: 99, padding: 3, marginBottom: 12 }}>
-          {[["scouts", "Your staff"], ["regions", "Regions"]].map(([k, l]) => <button key={k} onClick={() => setView(k)} style={{ border: 0, borderRadius: 99, padding: "6px 16px", fontSize: 14, fontWeight: 800, cursor: "pointer", background: v === k ? "#fff" : "transparent", color: v === k ? "#0b1220" : "#cbd5e1" }}>{l}</button>)}
-        </div>
+        <Pills items={[["scouts", "Your staff"], ["regions", "Regions"]]} value={v} onChange={setView} label="Scouts" style={{ marginBottom: 12, display: "flex", width: "fit-content" }} />
         {v === "regions" ? <RegionsView g={g} /> : <ScoutsView g={g} />}
       </>}
     </div>
@@ -1583,7 +1570,7 @@ export function ProspectProfile({ g, p }) {
       <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "minmax(0,1fr) 250px", gap: 16, alignItems: "start" }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
-            {tabs.map(([k, l]) => <button key={k} onClick={() => setTab(k)} style={{ ...chipBtn(tab === k), fontSize: 14, padding: "6px 14px", textTransform: "uppercase", letterSpacing: 0.6 }}>{l}</button>)}
+            {tabs.map(([k, l]) => <button key={k} onClick={() => setTab(k)} style={quietPill(tab === k)}>{l}</button>)}
           </div>
           {tab === "report" && <>
             <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "minmax(0,1.2fr) minmax(0,1fr)", gap: 12 }}>

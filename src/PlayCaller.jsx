@@ -2,7 +2,7 @@
 // kick or go for it), the playbook (four runs and four passes), the pre-snap read, then picking
 // your receiver. Styled like the rest of the game screen (dark card, team color on the edge).
 import React from "react";
-import { C, TeamLogo } from "./ui.jsx";
+import { C, TeamLogo, pill } from "./ui.jsx";
 
 const nth = (n) => ["", "1st", "2nd", "3rd", "4th"][n] || "";
 const CALL_NAMES = { run_inside: "Inside Run", run_outside: "Outside Run", run_screen: "Screen", scramble: "QB Scramble", pass_quick: "Quick Pass", pass_medium: "Medium Route", pass_deep: "Deep Shot", pass_rpo: "RPO" };
@@ -106,7 +106,7 @@ const kneelOk = (qtr, clock, lead) => clock != null && (((qtr === 2 || qtr === 4
 // Under the playbook: the victory formation when it's there, and your call on the try after a touchdown.
 function Extras({ pat, onPat, kneel, onKneel, compact }) {
   if (!onPat) return null;
-  const seg = (v, l) => <button key={l} type="button" onClick={() => onPat(v)} style={{ border: 0, borderRadius: 99, padding: compact ? "6px 10px" : "6px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer", background: pat === v ? "#fff" : "transparent", color: pat === v ? "#0b1220" : "#cbd5e1" }}>{l}</button>;
+  const seg = (v, l) => <button key={l} type="button" onClick={() => onPat(v)} style={pill(pat === v)}>{l}</button>;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
       {kneel && <button type="button" onClick={onKneel} style={{ height: 34, padding: "0 14px", borderRadius: 99, border: "1px solid #94a3b855", background: "#0b1220", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Kneel (victory formation)</button>}

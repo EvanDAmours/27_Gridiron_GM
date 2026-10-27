@@ -2,7 +2,7 @@
 // (every choice visible, the one that's on lit up, so "Off" never looks like a disabled button),
 // and the actions (pause, skip ahead, finish) as one matched set of buttons.
 import React from "react";
-import { C } from "./ui.jsx";
+import { C, Pills } from "./ui.jsx";
 
 // options: [[value, text, title?]]. The calm switch: a soft track, the chosen option a white pill.
 // full: the options share the whole width (so a long row never spills out of its box).
@@ -10,17 +10,7 @@ export function Seg({ label, options, value, onChange, title, full }) {
   return (
     <div title={title} style={{ display: full ? "flex" : "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
       {label && <span style={{ fontSize: 12, fontWeight: 700, color: C.mt, whiteSpace: "nowrap" }}>{label}</span>}
-      <span style={{ display: "flex", flex: full ? 1 : "none", minWidth: 0, background: "#ffffff0d", borderRadius: 999, padding: 3, gap: 2 }}>
-        {options.map(([v, text, tip]) => {
-          const on = v === value;
-          return (
-            <button key={String(v)} type="button" title={tip} onClick={() => !on && onChange(v)} aria-pressed={on}
-              style={{ flex: full ? 1 : "none", minWidth: 0, border: 0, borderRadius: 999, padding: "6px 12px", fontSize: 14, fontWeight: 700, cursor: on ? "default" : "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", background: on ? "#fff" : "transparent", color: on ? "#0b1220" : "#94a3b8", transition: "background .15s, color .15s" }}>
-              {text}
-            </button>
-          );
-        })}
-      </span>
+      <Pills full={full} items={options} value={value} onChange={(v) => v !== value && onChange(v)} style={full ? { flex: 1, width: "auto" } : undefined} />
     </div>
   );
 }

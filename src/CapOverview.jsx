@@ -2,7 +2,7 @@
 // goes by position, and the cap advisor's suggestions (restructures, cuts that free real money,
 // extensions to get done early, and what to do with room to spare).
 import React from "react";
-import { C, Bdg, Section } from "./ui.jsx";
+import { C, Bdg, Section, cardTitle } from "./ui.jsx";
 import { capProjection } from "./capProjection.js";
 import { posTag } from "./dline.js";
 
@@ -35,7 +35,7 @@ export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = 
   return (
     <div style={{ background: "#ffffff0d", borderRadius: 20, padding: "16px 18px" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
-        <span title="Money already committed against each season's cap. Re-signings, rookies and free agents come out of the room." style={{ fontSize: 17, fontWeight: 800, color: "#fff", flex: 1 }}>{title}</span>
+        <span title="Money already committed against each season's cap. Re-signings, rookies and free agents come out of the room." style={{ ...cardTitle, flex: 1 }}>{title}</span>
         {note && <span style={{ fontSize: 14, color: "#94a3b8" }}>{note}</span>}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: `repeat(${mobile ? 2 : 4},minmax(0,1fr))`, gap: 10 }}>
@@ -158,13 +158,12 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
           <div style={head}>Cap advisor</div>
           {!tips.length && <div style={{ fontSize: 15, color: "#94a3b8" }}>Your books are in good shape. Nothing needs doing right now.</div>}
           {(allTips ? tips : tips.slice(0, 3)).map((t, i) => (
-            <div key={i} onClick={() => t.p && onPlayer(t.p)} className={t.p ? "ca-row" : undefined} style={{ display: "flex", gap: 12, padding: "9px 8px", margin: "0 -8px", borderRadius: 12, cursor: t.p ? "pointer" : "default" }}>
+            <div key={i} onClick={() => t.p && onPlayer(t.p)} className={t.p ? "calm-row" : undefined} style={{ display: "flex", gap: 12, padding: "9px 8px", margin: "0 -8px", borderRadius: 12, cursor: t.p ? "pointer" : "default" }}>
               {dot(t.tone)}
               <span style={{ minWidth: 0 }}><span style={{ display: "block", fontSize: 15, fontWeight: 800, color: "#f8fafc" }}>{t.title}</span><span style={{ display: "block", fontSize: 14, color: "#94a3b8", lineHeight: 1.4 }}>{t.text}</span></span>
             </div>
           ))}
           {tips.length > 3 && <button onClick={() => setAllTips((v) => !v)} style={{ background: "transparent", border: 0, padding: "6px 0 0", color: "#94a3b8", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>{allTips ? "Show fewer" : `${tips.length - 3} more`}</button>}
-          <style>{".ca-row:hover{background:#ffffff0a}"}</style>
         </div>
       </div>
     </div>

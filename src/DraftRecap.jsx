@@ -3,7 +3,7 @@
 // each pick has become since.
 import Select from "./Select.jsx";
 import React, { useMemo, useState } from "react";
-import { C, TeamLogo, Bdg, Face, Hero, Row, Sheet, Segments } from "./ui.jsx";
+import { C, TeamLogo, Bdg, Face, Hero, Row, Sheet, Segments, Pills, pill, card as cardBase, cardTitle, fitH } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { DevChip, DEV_STYLE } from "./ScoutingUI.jsx";
 import { recapEntry, gradePicks, classGrades, devCounts, VERDICT } from "./draftRecap.js";
@@ -58,10 +58,9 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
   const face = (id) => findPlayer(id)?.face;
   const best = mine?.picks.filter((r) => r.rd >= 2 && r.score >= 2).sort((x, y) => y.score - x.score || x.overall - y.overall)[0];
   const ord = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"}`;
-  const seg = (on) => ({ border: 0, borderRadius: 99, padding: "6px 13px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#fff" : "transparent", color: on ? "#0b1220" : "#cbd5e1" });
-  const card = { background: C.cd, borderRadius: 20, padding: "16px 18px", minHeight: 0, display: "flex", flexDirection: "column" };
-  const h = { fontSize: 17, fontWeight: 800, color: "#fff" };
-  const fit = { height: "calc(100vh - 290px)", minHeight: 400 };
+  const card = { ...cardBase, minHeight: 0, display: "flex", flexDirection: "column" };
+  const h = cardTitle;
+  const fit = { ...fitH, minHeight: 400 };
   const dev = (r) => (r.dev && r.dev !== "normal" ? <span style={{ fontSize: 13, fontWeight: 800, color: DEV_STYLE[r.dev]?.[0] }}>{DEV_TRAITS[r.dev]?.name}</span> : null);
   const verdict = (r) => { if (!["gem", "bust"].includes(r.verdict) && r.dev && r.dev !== "normal") return <span style={{ width: 110, textAlign: "right", flexShrink: 0 }}>{dev(r)}</span>;
     const [vt, vc] = VERDICT[r.verdict]; return <span style={{ width: 110, textAlign: "right", fontSize: 13, fontWeight: 800, color: r.verdict === "solid" ? "#64748b" : vc, flexShrink: 0 }}>{vt}</span>; };
@@ -74,11 +73,8 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
 
   return (
     <div>
-      <style>{".rc-row:hover{background:#ffffff0a}"}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-        <div style={{ display: "inline-flex", gap: 2, padding: 3, borderRadius: 99, background: "#ffffff0d" }}>
-          {[["class", mine?.picks.length ? "Your class" : "The class"], ["all", "Every pick"]].map(([k, l]) => <button key={k} onClick={() => setMode(k)} style={seg(mode === k)}>{l}</button>)}
-        </div>
+        <Pills items={[["class", mine?.picks.length ? "Your class" : "The class"], ["all", "Every pick"]]} value={mode} onChange={setMode} label="Recap" />
         <span style={{ fontSize: 14, color: "#64748b", flex: 1 }}>{past ? "True ratings revealed, and what each pick has become since." : "True ratings and development traits, revealed."}</span>
         {years.length > 1 && <Select value={view} onChange={(e) => setPickYr(+e.target.value)} aria-label="Draft year" style={{ background: C.cd, color: "#e2e8f0", border: "1px solid #ffffff10", borderRadius: 99, padding: "6px 12px", fontSize: 14 }}>{years.map((y) => <option key={y} value={y}>{y + 1} draft</option>)}</Select>}
       </div>
@@ -98,7 +94,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
               </div>
               <div style={{ overflowY: "auto", minHeight: 0, flex: 1, margin: "0 -6px" }}>
                 {mine.picks.map((r) => (
-                  <div key={r.id} className="rc-row" onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "8px 10px", borderRadius: 14, cursor: "pointer" }}>
+                  <div key={r.id} className="calm-row" onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "8px 10px", borderRadius: 14, cursor: "pointer" }}>
                     <span style={{ width: 34, textAlign: "right", fontSize: 16, fontWeight: 900, color: "#64748b", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{r.overall}</span>
                     <Face s={face(r.id)} sz={40} />
                     <span style={{ flex: 1, minWidth: 0 }}>
@@ -116,7 +112,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
             <div style={card}>
               <div style={{ ...h, marginBottom: 6 }}>Best of the class</div>
               {jackpots.slice(0, 5).map((r) => (
-                <div key={r.id} className="rc-row" onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 8px", margin: "0 -8px", borderRadius: 12, cursor: "pointer" }}>
+                <div key={r.id} className="calm-row" onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 8px", margin: "0 -8px", borderRadius: 12, cursor: "pointer" }}>
                   <span style={{ width: 34, textAlign: "right", fontSize: 13, fontWeight: 800, color: "#64748b", fontVariantNumeric: "tabular-nums" }}>{r.overall}</span>
                   {teams[r.owner] && <TeamLogo t={teams[r.owner]} sz={22} />}
                   <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, color: r.owner === ui ? C.gd : "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.name} <span style={{ color: "#64748b", fontWeight: 600, fontSize: 13 }}>{posTag(r)}</span></span>
@@ -129,7 +125,7 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
               <div style={{ ...h, marginBottom: 6 }}>Class grades</div>
               <div style={{ overflowY: "auto", minHeight: 0, flex: 1, margin: "0 -8px" }}>
                 {topClasses.map((c) => (
-                  <div key={c.ti} className="rc-row" onClick={() => { setTeamF(c.ti); setShow("all"); setMode("all"); }} title={`${c.picks.length} picks · ${c.hits} hits`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 8px", borderRadius: 12, cursor: "pointer", background: c.ti === ui ? "#f5c54214" : "transparent" }}>
+                  <div key={c.ti} className="calm-row" onClick={() => { setTeamF(c.ti); setShow("all"); setMode("all"); }} title={`${c.picks.length} picks · ${c.hits} hits`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 8px", borderRadius: 12, cursor: "pointer", background: c.ti === ui ? "#f5c54214" : "transparent" }}>
                     <span style={{ width: 22, textAlign: "right", fontSize: 13, color: "#64748b", fontVariantNumeric: "tabular-nums" }}>{c.rank}</span>
                     {teams[c.ti] && <TeamLogo t={teams[c.ti]} sz={22} />}
                     <span style={{ flex: 1, fontSize: 15, color: c.ti === ui ? C.gd : "#e2e8f0", fontWeight: c.ti === ui ? 800 : 600 }}>{teams[c.ti]?.city} {teams[c.ti]?.name}</span>
@@ -144,16 +140,14 @@ export default function DraftRecap({ teams, ui, yr, draftLog = [], history = {},
         <div style={{ ...card, ...fit }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
             <div style={{ ...h, flex: 1 }}>{teamF >= 0 ? `${teams[teamF]?.city} ${teams[teamF]?.name}` : "Every pick"}</div>
-            {teamF >= 0 && <button onClick={() => setTeamF(-1)} style={{ ...seg(false), color: "#94a3b8" }}>All teams</button>}
-            <div style={{ display: "inline-flex", gap: 2, padding: 3, borderRadius: 99, background: "#ffffff0d" }}>
-              {[["all", "All"], ["mine", "Mine"], ["hits", "Hits"]].map(([k, l]) => <button key={k} onClick={() => setShow(k)} style={seg(show === k)}>{l}</button>)}
-            </div>
+            {teamF >= 0 && <button onClick={() => setTeamF(-1)} style={{ ...pill(false), color: "#94a3b8" }}>All teams</button>}
+            <Pills items={[["all", "All"], ["mine", "Mine"], ["hits", "Hits"]]} value={show} onChange={setShow} label="Show" />
           </div>
           <div style={{ overflowY: "auto", minHeight: 0, flex: 1, margin: "0 -8px" }}>
             {shown.map((r, i) => (
               <React.Fragment key={r.id}>
                 {(i === 0 || shown[i - 1].rd !== r.rd) && <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, color: "#64748b", padding: "12px 10px 4px" }}>ROUND {r.rd}</div>}
-                <div className="rc-row" onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 10px", borderRadius: 12, cursor: "pointer", background: r.owner === ui ? "#f5c54210" : "transparent", boxShadow: r.owner === ui ? `inset 3px 0 0 ${C.gd}` : "none" }}>
+                <div className="calm-row" onClick={() => open(r.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 10px", borderRadius: 12, cursor: "pointer", background: r.owner === ui ? "#f5c54210" : "transparent", boxShadow: r.owner === ui ? `inset 3px 0 0 ${C.gd}` : "none" }}>
                   <span style={{ width: 34, textAlign: "right", fontSize: 14, fontWeight: 800, color: "#64748b", fontVariantNumeric: "tabular-nums" }}>{r.overall}</span>
                   {teams[r.owner] && <TeamLogo t={teams[r.owner]} sz={22} />}
                   <span style={{ width: 40, fontSize: 13, fontWeight: 700, color: r.owner === ui ? C.gd : "#94a3b8" }}>{r.owner === ui ? "You" : teams[r.owner]?.ab}</span>

@@ -2,7 +2,7 @@
 // single team. Pick a team and you get its leader at every position; click a column to sort.
 import Select from "./Select.jsx";
 import React, { useMemo, useState } from "react";
-import { C, Bdg, Face, TeamLogo, Hero, Section, Chips, Sheet, Row } from "./ui.jsx";
+import { C, Bdg, Face, TeamLogo, Hero, Section, Chips, Sheet, Row, Pills } from "./ui.jsx";
 import { awardRaces } from "./awards.js";
 import { olLine, OL_POS } from "./olStats.js";
 import { gradesOf, gradeColor } from "./grades.js";
@@ -143,7 +143,6 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
   // the Grades table shows only the columns its players have (a QB table isn't nine columns of dashes)
   const cols = cat === "Grades" ? T.cols.filter(([l, f], i) => i === 0 || rows.some((x) => f(x.p.ss, x.p) !== "–")) : T.cols;
   const team = teamId != null ? teams[teamId] : null;
-  const pill = (on) => ({ background: on ? "#fff" : "#ffffff12", color: on ? "#0b1220" : "#cbd5e1", border: 0, borderRadius: 999, padding: "8px 15px", fontSize: 14, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" });
   const th = { padding: "10px 8px", fontSize: 12, fontWeight: 800, letterSpacing: 0.5, color: C.mt, textAlign: "right", borderBottom: "1px solid #ffffff14", whiteSpace: "nowrap", cursor: "pointer", userSelect: "none" };
   if (mobile) return <PhoneStats {...{ teams, ui, yr, me, scope, setScope, cat, setCat, sort, setSort, gpos, setGpos, players, rows, cols, col, team, teamId, onPlayer }} />;
   const td = { padding: "8px 8px", fontSize: 14, textAlign: "right", borderBottom: "1px solid #ffffff0a", whiteSpace: "nowrap" };
@@ -152,8 +151,7 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
     <div>
       {/* phones: each row of chips is one swipeable line instead of wrapping onto two */}
       <div style={{ display: "flex", gap: 6, flexWrap: mobile ? "nowrap" : "wrap", overflowX: mobile ? "auto" : undefined, alignItems: "center", marginBottom: 12, paddingBottom: mobile ? 2 : 0 }}>
-        {[["league", "League"], ["AFC", "AFC"], ["NFC", "NFC"], ["div", `${me.c} ${me.d}`], [`team:${ui}`, mobile ? me.ab : `My team (${me.ab})`]].map(([k, l]) => <button key={k} onClick={() => setScope(k)} style={{ ...pill(scope === k), flex: "0 0 auto", whiteSpace: "nowrap" }}>{l}</button>)}
-        <button onClick={() => setScope("races")} style={{ ...pill(scope === "races"), flex: "0 0 auto" }}>Award races</button>
+        <Pills items={[["league", "League"], ["AFC", "AFC"], ["NFC", "NFC"], ["div", `${me.c} ${me.d}`], [`team:${ui}`, mobile ? me.ab : `My team (${me.ab})`], ["races", "Award races"]]} value={scope} onChange={setScope} label="Scope" />
         <Select value={teamId != null && teamId !== ui ? scope : ""} onChange={(e) => e.target.value && setScope(e.target.value)} style={{ background: teamId != null && teamId !== ui ? "#fff" : "#ffffff12", color: teamId != null && teamId !== ui ? "#0b1220" : C.tx, border: 0, borderRadius: 999, padding: "8px 12px", fontSize: 14, fontWeight: 700, flex: "0 0 auto" }}>
           <option value="">{mobile ? "Other team…" : "Another team…"}</option>
           {teams.map((t, i) => ({ t, i })).sort((a, b) => a.t.city.localeCompare(b.t.city)).map(({ t, i }) => <option key={i} value={`team:${i}`}>{t.city} {t.name}</option>)}
@@ -212,10 +210,10 @@ export default function StatsScreen({ teams, ui, yr, onPlayer, grade, mobile }) 
 
       {scope !== "races" && <>
       <div style={{ display: "flex", gap: 6, flexWrap: mobile ? "nowrap" : "wrap", overflowX: mobile ? "auto" : undefined, marginBottom: 8, paddingBottom: mobile ? 2 : 0 }}>
-        {Object.keys(TABLES).map((k) => <button key={k} onClick={() => { setCat(k); setSort(null); }} style={{ ...pill(cat === k), flex: "0 0 auto", whiteSpace: "nowrap" }}>{k}</button>)}
+        <Pills items={Object.keys(TABLES).map((k) => [k, k])} value={cat} onChange={(k) => { setCat(k); setSort(null); }} label="Category" />
       </div>
       {cat === "Grades" && <div style={{ display: "flex", gap: 5, flexWrap: mobile ? "nowrap" : "wrap", overflowX: mobile ? "auto" : undefined, alignItems: "center", marginBottom: 8 }}>
-        {["All", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((k) => <button key={k} onClick={() => setGpos(k)} style={{ ...pill(gpos === k), padding: "4px 11px", fontSize: 14, flex: "0 0 auto" }}>{k}</button>)}
+        <Pills quiet wrap={!mobile} items={["All", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((k) => [k, k])} value={gpos} onChange={setGpos} label="Position" />
         {!mobile && <span style={{ fontSize: 12, color: C.mt, marginLeft: 6 }}>Graded play by play against an average player in the same spot: how well he played, not how good his team is. 90+ elite · 80s high quality · 70s above average · 60s average.</span>}
       </div>}
       <div style={{ overflowX: "auto", background: "#ffffff0d", borderRadius: 18, padding: "4px 8px" }}>

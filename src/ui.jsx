@@ -1,6 +1,7 @@
 // Shared look: colors, badges, buttons and faces used across the app.
 import React from "react";
 import { createPortal } from "react-dom";
+import { MOBILE as MOBILE_UI } from "./mobile.js";
 
 export { Face } from "./Face.jsx";
 // The one close button every popup uses: round, top-right, same size everywhere. The popup's box
@@ -81,12 +82,9 @@ export function Row({ label, value, tone, onClick, first, tour }) {
     </button>
   );
 }
+// The phone's segmented control: the same white-pill track, full width, big enough to tap.
 export function Segments({ items, value, onChange }) {
-  return (
-    <div role="tablist" style={{ display: "flex", gap: 4, padding: 3, borderRadius: 10, background: "#ffffff0f", marginBottom: S[3] }}>
-      {items.map(([k, l]) => <button key={k} role="tab" aria-selected={value === k} onClick={() => onChange(k)} style={{ flex: 1, minHeight: 38, borderRadius: 8, border: 0, background: value === k ? "linear-gradient(180deg, #ffffff2b, #ffffff1a)" : "transparent", boxShadow: value === k ? "0 1px 3px #0007, inset 0 1px 0 #ffffff1f" : "none", color: value === k ? "#fff" : "#94a3b8", fontSize: T.sm, fontWeight: 800, cursor: "pointer", transition: "background .18s, color .18s" }}>{l}</button>)}
-    </div>
-  );
+  return <Pills full items={items} value={value} onChange={onChange} style={{ marginBottom: S[3] }} />;
 }
 // The phone look (Home's): a full-width hero in the club's colors with one big headline, then big
 // section titles over soft cards. Hero: eyebrow, title, a line under it, an optional right side and
@@ -119,13 +117,41 @@ export function Section({ title, action, onAction, children, style }) {
     </div>
   );
 }
-// a strip of choices you swipe sideways (positions, filters): one is on
-export function Chips({ items, value, onChange }) {
+// ---- The shared calm pieces (one source, so no screen drifts from another) ----
+// A choice of a few views or filters: white pill for the one that's on, in one soft track.
+// `big` for a screen's top-level views; otherwise the compact size used inside a card.
+export const pill = (on, big) => ({ border: 0, borderRadius: 99, padding: big ? "8px 16px" : "6px 13px", minHeight: MOBILE_UI ? 38 : undefined, fontSize: big ? 14.5 : 13.5, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, background: on ? "#fff" : "transparent", color: on ? "#0b1220" : "#cbd5e1", transition: "background .15s, color .15s" });
+export const pillTrack = { display: "inline-flex", alignItems: "center", gap: 2, padding: 3, borderRadius: 99, background: "#ffffff0d", maxWidth: "100%", overflowX: "auto", scrollbarWidth: "none", flexShrink: 0 };
+// The quieter second tier (positions, groups inside a view): a soft lit pill, no track.
+export const quietPill = (on) => ({ border: 0, borderRadius: 99, padding: "6px 11px", minHeight: MOBILE_UI ? 38 : undefined, fontSize: 13.5, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, background: on ? "#ffffff1f" : "transparent", color: on ? "#fff" : "#94a3b8", transition: "background .15s, color .15s" });
+export function Pills({ items, value, onChange, big, quiet, full, wrap, label, style }) {
+  const on = (k) => (typeof value === "function" ? value(k) : value === k);
+  const box = quiet ? { display: "flex", gap: 2, flexWrap: wrap === false ? "nowrap" : "wrap" } : full ? { ...pillTrack, display: "flex", width: "100%" } : pillTrack;
   return (
-    <div className="pill-row" style={{ display: "flex", gap: S[2], overflowX: "auto", margin: "0 -8px", padding: "0 8px 2px", scrollbarWidth: "none" }}>
-      {items.map(([k, l]) => <button key={k} onClick={() => onChange(k)} style={{ flexShrink: 0, minHeight: 38, borderRadius: 999, border: 0, padding: "0 16px", background: value === k ? "#fff" : "#ffffff12", color: value === k ? "#0b1220" : "#cbd5e1", fontSize: T.sm, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
+    <div role="tablist" aria-label={label} className="pill-row" style={{ ...box, ...(style || {}) }}>
+      {items.filter(Boolean).map(([k, l, title]) => <button key={String(k)} role="tab" aria-selected={on(k)} title={title} onClick={() => onChange(k)} style={{ ...(quiet ? quietPill(on(k)) : pill(on(k), big)), ...(full ? { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" } : null) }}>{l}</button>)}
     </div>
   );
+}
+// A quiet action (Extend, Restructure, Hire): a soft pill, tinted text for what it does.
+export const actBtn = (color = "#e2e8f0", strong) => ({ background: strong ? color : "#ffffff0f", color: strong ? "#fff" : color, border: 0, borderRadius: 99, padding: "7px 14px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" });
+// A card and its title (the Big Board's look).
+export const card = { background: "#111827", borderRadius: 20, padding: "16px 18px" };
+export const cardTitle = { fontSize: 17, fontWeight: 800, color: "#fff" };
+// The height a full-screen list fits in without the page scrolling (desktop).
+export const fitH = { height: "calc(100vh - 290px)", minHeight: 380 };
+// A calm row: a soft highlight on hover, and its actions (className "calm-act") quiet until then.
+// A whole card can do the same with "calm-card".
+if (typeof document !== "undefined" && !document.getElementById("calm-css")) {
+  const st = document.createElement("style");
+  st.id = "calm-css";
+  st.textContent = ".calm-row{border-radius:14px;transition:background .12s}.calm-row:hover{background:#ffffff0a}.calm-row .calm-act,.calm-card .calm-act{opacity:.55;transition:opacity .15s}.calm-row:hover .calm-act,.calm-card:hover .calm-act,.calm-act:focus-within{opacity:1}html.gm-mobile .calm-act{opacity:1}";
+  document.head.appendChild(st);
+}
+
+// a strip of choices you swipe sideways (positions, filters): one is on
+export function Chips({ items, value, onChange }) {
+  return <Pills items={items} value={value} onChange={onChange} style={{ display: "flex", width: "fit-content" }} />;
 }
 // Line icons for the phone chrome (tab bar, header): one stroke weight, so nothing looks like an emoji.
 const ICONS = {

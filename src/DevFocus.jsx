@@ -2,7 +2,7 @@
 import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { C, oC, pC, Bdg, CloseX, Segments } from "./ui.jsx";
+import { C, oC, pC, Bdg, CloseX, Segments, Pills } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { devOf, DEV_TRAITS } from "./scouting.js";
 import { OFFENSE, DEFENSE, focusChance, perSeason } from "./development.js";
@@ -81,7 +81,7 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
         <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: C.mt }}>{label.toUpperCase()}</span>
         <span style={{ marginLeft: "auto", fontSize: 11, color: C.mt }}>Sort</span>
-        {[["pos", "Position"], ["growth", "Growth"]].map(([k, l]) => <button key={k} onClick={() => setBy(k)} style={{ fontSize: 11, fontWeight: 800, padding: "3px 8px", borderRadius: 999, cursor: "pointer", border: `1px solid ${by === k ? C.bl : C.bd}`, background: by === k ? `${C.bl}33` : "transparent", color: by === k ? "#fff" : C.mt }}>{l}</button>)}
+        <Pills quiet items={[["pos", "Position"], ["growth", "Growth"]]} value={by} onChange={setBy} label="Sort" />
       </div>
       {p && !MOBILE ? (
         // desktop: one slim row so Home fits on one screen

@@ -2,7 +2,7 @@
 // training focus and extensions showing their top 5 (the rest behind Show all).
 import Select from "./Select.jsx";
 import React, { useState } from "react";
-import { C, oC, Bdg, Btn, Face, Hero, Section, Chips, Sheet } from "./ui.jsx";
+import { C, oC, Bdg, Btn, Face, Hero, Section, Chips, Sheet, Pills } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { yearlyAsk } from "./negotiation.js";
 import { posTag } from "./dline.js";
@@ -21,7 +21,6 @@ const groupByPos = (ps) => {
   return [...m.entries()].sort((a, b) => rank(a[0]) - rank(b[0])).map(([pos, list]) => [pos, list.sort((a, b) => (b.ovr || 0) - (a.ovr || 0))]);
 };
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
-const chip = (on) => ({ padding: "7px 14px", borderRadius: 999, fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#fff" : "#ffffff12", color: on ? "#0b1220" : "#cbd5e1", border: 0, whiteSpace: "nowrap" });
 
 export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk, onSimGame, onReport, onDevCamp, onTrain, onAutoTrain, battlesDone, onBattle, onBattleAll, otcFocus, onOtc, onExtend, setSel }) {
   const roster = team.roster;
@@ -70,11 +69,7 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
             <span style={{ fontSize: 16, fontWeight: 800 }}>Camp focus</span>
             <span style={{ fontSize: 13, color: C.mt }}>Top 5 in the group gain +1 OVR at season's end.</span>
           </div>
-          <div style={{ display: "flex", gap: 6 }}>
-            {[["passing", "Passing"], ["rushing", "Run game & line"], ["defense", "Defense"]].map(([k, l]) => (
-              <button key={k} disabled={!pre} onClick={() => onOtc(otcFocus === k ? null : k)} style={{ ...chip(otcFocus === k), flex: 1, cursor: pre ? "pointer" : "default" }}>{otcFocus === k ? "✓ " : ""}{l}</button>
-            ))}
-          </div>
+          <Pills full items={[["passing", "Passing"], ["rushing", "Run game & line"], ["defense", "Defense"]]} value={otcFocus} onChange={(k) => pre && onOtc(otcFocus === k ? null : k)} label="Camp focus" />
         </div>
       </div>
 
@@ -113,7 +108,7 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-start" }}>
         <div style={{ ...panel, flex: "1 1 520px" }}>
-          {head(`Training focus · 2 SP`, <span style={{ display: "inline-flex", gap: 4, flexWrap: "wrap" }}>{ATTRS.map(([k, l]) => <button key={k} onClick={() => setAttr(k)} title={`+1 ${l}, once per player each camp`} style={{ ...chip(attr === k), padding: "3px 9px", fontSize: 12 }}>{l === "Acceleration" ? "Accel" : l}</button>)}</span>,
+          {head(`Training focus · 2 SP`, <Pills quiet items={ATTRS.map(([k, l]) => [k, l === "Acceleration" ? "Accel" : l, `+1 ${l}, once per player each camp`])} value={attr} onChange={setAttr} label="Training focus" />,
             onAutoTrain && (() => { const n = Math.min(5, trainable.length, Math.floor(scPts / 2)); return <Btn onClick={() => onAutoTrain(5)} disabled={!pre || n < 1} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 13, padding: "6px 14px", borderRadius: 999 }} title="Picks players at random: young players under their ceiling work on overall, the rest on a physical tool">Auto-pick {n > 0 ? `${n} · ${n * 2} SP` : ""}</Btn>; })())}
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
             {trainTop.slice(0, 5).map((p) => (
@@ -191,9 +186,7 @@ function PhoneCamp({ team, yr, scPts, games, risk, onRisk, onSimGame, onReport, 
       </Section>
 
       <Section title="Camp focus">
-        <div style={{ display: "flex", gap: 4, padding: 3, borderRadius: 12, background: "#ffffff0f" }}>
-          {[["passing", "Passing"], ["rushing", "Run game"], ["defense", "Defense"]].map(([k, l]) => <button key={k} disabled={!pre} onClick={() => onOtc(otcFocus === k ? null : k)} style={{ flex: 1, minHeight: 44, borderRadius: 10, border: 0, background: otcFocus === k ? "#ffffff26" : "transparent", color: otcFocus === k ? "#fff" : "#94a3b8", fontSize: 15, fontWeight: 800, cursor: pre ? "pointer" : "default" }}>{l}</button>)}
-        </div>
+        <Pills full items={[["passing", "Passing"], ["rushing", "Run game"], ["defense", "Defense"]]} value={otcFocus} onChange={(k) => pre && onOtc(otcFocus === k ? null : k)} label="Camp focus" />
         <div style={{ fontSize: 13, color: C.mt, margin: "6px 2px 0" }}>The top five in that group gain +1 at season's end.</div>
       </Section>
 

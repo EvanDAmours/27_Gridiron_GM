@@ -2,7 +2,7 @@
 // grouping you pick to look at (11, 12, 21...), the defense with its SAM, MIKE and WILL and the
 // nickel back, and the kicker. Tap a spot to choose who starts there.
 import React, { useState } from "react";
-import { C, oC, pC, Btn, Face, Segments, Sheet, Row, Chips } from "./ui.jsx";
+import { C, oC, pC, Btn, Face, Segments, Sheet, Row, Chips, quietPill } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { DL_SLOTS, slotKind, dlOvrAt, naturalDL, posTag } from "./dline.js";
 
@@ -238,12 +238,12 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
         <div style={{ flex: "3 1 480px", minWidth: 0, maxWidth: 640 }}>
           {side === "offense" && !MOBILE && <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: C.mt, marginRight: 2 }}>Personnel</span>
-            {Object.keys(FORMS).map((k) => <button key={k} onClick={() => { setForm(k); setPick(null); }} title={{ 11: "1 back, 1 tight end, 3 receivers", 12: "1 back, 2 tight ends, 2 receivers", 21: "2 backs (a fullback), 1 tight end, 2 receivers", 10: "1 back, 4 receivers", 13: "1 back, 3 tight ends, 1 receiver" }[k]} style={{ background: form === k ? "#ffffff24" : "transparent", color: form === k ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: "4px 11px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{k}</button>)}
+            {Object.keys(FORMS).map((k) => <button key={k} onClick={() => { setForm(k); setPick(null); }} title={{ 11: "1 back, 1 tight end, 3 receivers", 12: "1 back, 2 tight ends, 2 receivers", 21: "2 backs (a fullback), 1 tight end, 2 receivers", 10: "1 back, 4 receivers", 13: "1 back, 3 tight ends, 1 receiver" }[k]} style={quietPill(form === k)}>{k}</button>)}
             {personnel && <span style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}>Your identity: <b style={{ color: "#e2e8f0" }}>{personnel}</b></span>}
           </div>}
           {side === "defense" && !MOBILE && <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: C.mt, marginRight: 2 }}>Package</span>
-            {Object.keys(DEF_FORMS).map((k) => <button key={k} onClick={() => { setPkg(k); setPick(null); }} title={{ base: "3 linebackers: against heavy sets", nickel: "2 linebackers and a nickel back: against 3 receivers", dime: "1 linebacker and 2 extra defensive backs: passing downs" }[k]} style={{ background: pkg === k ? "#ffffff24" : "transparent", color: pkg === k ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: "4px 11px", fontSize: 13, fontWeight: 800, cursor: "pointer", textTransform: "capitalize" }}>{k}</button>)}
+            {Object.keys(DEF_FORMS).map((k) => <button key={k} onClick={() => { setPkg(k); setPick(null); }} title={{ base: "3 linebackers: against heavy sets", nickel: "2 linebackers and a nickel back: against 3 receivers", dime: "1 linebacker and 2 extra defensive backs: passing downs" }[k]} style={{ ...quietPill(pkg === k), textTransform: "capitalize" }}>{k}</button>)}
             {team && <span style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}>Your lean: <b style={{ color: "#e2e8f0" }}>{(DEF_SETS.find((d) => d.key === (team.defPkg || "auto")) || DEF_SETS[0]).label}</b></span>}
           </div>}
           <Field los={set.los}>

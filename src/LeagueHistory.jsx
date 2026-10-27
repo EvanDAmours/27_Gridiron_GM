@@ -1,7 +1,7 @@
 // League history, one section at a time: the Super Bowl champions, the award winners year by year,
 // career leaders since the league began, the Hall of Fame and notable retirements.
 import React, { useState } from "react";
-import { C, TeamLogo, Bdg, Face, oC } from "./ui.jsx";
+import { C, TeamLogo, Bdg, Face, oC, Pills } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { CAREER_STATS, careerLeaders, retiredCard } from "./history.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
@@ -35,9 +35,7 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
         {MOBILE && <div style={{ fontSize: 28, fontWeight: 900 }}>League History</div>}
         <div style={{ fontSize: 14, color: C.mt }}>Since your league began in 2026 · {titles.length} Super Bowl{titles.length === 1 ? "" : "s"} played{myTitles ? ` · ${myTitles} yours` : ""} · {hof.length} Hall of Famer{hof.length === 1 ? "" : "s"}</div>
       </div>
-      <div role="tablist" style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "10px 0 12px" }}>
-        {SECTIONS.map(([k, l]) => <button key={k} role="tab" aria-selected={sec === k} onClick={() => setSec(k)} style={{ background: sec === k ? "#ffffff24" : "transparent", color: sec === k ? "#fff" : "#94a3b8", border: 0, borderRadius: 999, padding: "7px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
-      </div>
+      <Pills big items={SECTIONS} value={sec} onChange={setSec} label="League history" style={{ margin: "10px 0 12px" }} />
 
       {sec === "champs" && (titles.length ? <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "repeat(auto-fill,minmax(250px,1fr))", gap: 10 }}>
         {titles.map((c) => { const t = teams[c.ti], o = c.opp != null ? teams[c.opp] : null, mine = c.ti === ui; return (

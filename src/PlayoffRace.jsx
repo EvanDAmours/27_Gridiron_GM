@@ -2,7 +2,7 @@
 // teams in the hunt, each with its clinch mark (z: No. 1 seed, y: division, x: playoff spot) or e
 // once it can't catch the last seed. Your conference shows first.
 import React, { useState } from "react";
-import { C, TeamLogo } from "./ui.jsx";
+import { C, TeamLogo, Pills } from "./ui.jsx";
 import { nflSeeds } from "./playoffs.js";
 import { clinchStatus } from "./clinch.js";
 
@@ -42,7 +42,7 @@ export default function PlayoffRace({ teams, sched, ui }) {
     <div style={{ background: "#ffffff0d", borderRadius: 18, padding: "12px 14px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
         <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", flex: 1 }}>Playoff race{played ? "" : " · preseason"}</span>
-        {["AFC", "NFC"].map((c) => <button key={c} onClick={() => setConf(c)} style={{ background: conf === c ? "#ffffff24" : "transparent", border: 0, color: conf === c ? "#fff" : C.mt, borderRadius: 999, padding: "3px 11px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{c}</button>)}
+        <Pills items={[["AFC", "AFC"], ["NFC", "NFC"]]} value={conf} onChange={setConf} label="Conference" />
       </div>
       {seeds.map((id, i) => row(id, i + 1))}
       <div style={{ fontSize: 13, fontWeight: 700, color: C.mt, margin: "6px 6px 1px" }}>In the hunt</div>

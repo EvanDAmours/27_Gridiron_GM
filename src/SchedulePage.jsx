@@ -2,13 +2,12 @@
 // games in a second tab. The playoff tree has its own tab.
 import Select from "./Select.jsx";
 import React, { useState } from "react";
-import { C, Btn, TeamLogo, kickoff, Hero } from "./ui.jsx";
+import { C, Btn, TeamLogo, kickoff, Hero, Pills, Segments } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { HOLIDAYS } from "./holidays.js";
 import { gameWeather, wxOf } from "./weather.js";
 
 const rec = (t) => `${t.w}-${t.l}${t.t ? `-${t.t}` : ""}`;
-const tabBtn = (on) => ({ background: on ? "#fff" : "#ffffff12", color: on ? "#0b1220" : "#cbd5e1", border: 0, padding: "9px 16px", borderRadius: 999, fontSize: 15, fontWeight: 800, cursor: "pointer" });
 const panel = { background: "#ffffff0d", borderRadius: 18, padding: 14, marginBottom: 12 };
 
 function MySchedule({ g }) {
@@ -137,9 +136,7 @@ function PhoneSchedule({ g, view, setView }) {
     <div>
       <Hero clr={me.clr} logo={me} eyebrow={`${yr} season`} title="Schedule" sub={next ? `Next: week ${next.wk} ${next.h === ui ? "vs" : "at"} ${teams[next.h === ui ? next.a : next.h].name}` : null}
         right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1 }}>{rec(me)}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>RECORD</div></div>} />
-      <div style={{ display: "flex", gap: 18, margin: "16px 2px 12px" }}>
-        {[["mine", "Your games"], ["league", "Around the league"]].map(([k, l]) => <button key={k} onClick={() => setView(k)} style={{ background: "transparent", border: 0, padding: "4px 0", color: view === k ? "#fff" : "#64748b", fontSize: 16, fontWeight: 900, cursor: "pointer", borderBottom: `2px solid ${view === k ? C.gn : "transparent"}` }}>{l}</button>)}
-      </div>
+      <div style={{ margin: "16px 0 0" }}><Segments items={[["mine", "Your games"], ["league", "Around the league"]]} value={view} onChange={setView} /></div>
       {view === "mine" ? (<>
         <div style={card}>
           {Array.from({ length: 18 }, (_, i) => i + 1).map((w, i) => {
@@ -203,10 +200,7 @@ export default function SchedulePage(g) {
   return (
     <div>
       {/* the section header above has the season and record */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-        <button onClick={() => setView("mine")} style={tabBtn(view === "mine")}>{me.name} schedule</button>
-        <button onClick={() => setView("league")} style={tabBtn(view === "league")}>League schedule</button>
-      </div>
+      <Pills big items={[["mine", `${me.name} schedule`], ["league", "League schedule"]]} value={view} onChange={setView} label="Schedule" style={{ marginBottom: 12 }} />
       {view === "mine" ? (
         <>
           <MySchedule g={g} />

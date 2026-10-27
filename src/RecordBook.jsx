@@ -1,7 +1,7 @@
 // The record book: every single-season and career record, who holds it (the NFL's mark until
 // someone in your league beats it), the records your league has broken, and who's chasing one.
 import React, { useMemo, useState } from "react";
-import { C, TeamLogo } from "./ui.jsx";
+import { C, TeamLogo, Pills } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { RECORD_DEFS, recordWatch, recordValue } from "./records.js";
 import { CAREER_DEFS, newCareerBook, careerChasers } from "./careerRecords.js";
@@ -19,9 +19,7 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
     <div style={{ maxWidth: 1100 }}>
       {MOBILE && <div style={{ fontSize: 28, fontWeight: 900 }}>Record Book</div>}
       <div style={{ fontSize: 14, color: C.mt, marginBottom: 12 }}>Regular season only. The NFL's marks stand until someone in your league beats them.</div>
-      <div style={{ display: "inline-flex", gap: 4, background: "#ffffff0d", borderRadius: 999, padding: 3, marginBottom: 12 }}>
-        {[["season", "Single season"], ["career", "Career"]].map(([k, l]) => <button key={k} onClick={() => setView(k)} style={{ background: view === k ? "#ffffff24" : "transparent", color: view === k ? "#fff" : C.mt, border: 0, borderRadius: 999, padding: "7px 16px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{l}</button>)}
-      </div>
+      <Pills items={[["season", "Single season"], ["career", "Career"]]} value={view} onChange={setView} label="Records" style={{ marginBottom: 12 }} />
       {view === "career" && (
         <div style={panel}>
           <div style={head}>NFL career records</div>
