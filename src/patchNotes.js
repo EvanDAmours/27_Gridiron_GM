@@ -2095,4 +2095,9 @@ export const PATCH_NOTES = [
   { v: "5.16", date: "2026-10-23", title: "Regions tab", notes: [
     "Scouting (computer): Regions is its own tab beside Scouts, instead of a toggle inside it.",
   ] },
+  { v: "5.17", date: "2026-10-23", title: "Calmer holiday games, readable result names", notes: [
+    "Live holiday games are calmer: no more turkey, cornucopia or other stickers floating in the corners, no falling leaves, bats or confetti over the screen, and no sticker popping over the field on a touchdown. The holiday frame, the scoreboard trim and real weather (rain, snow) stay.",
+    "Live holiday games (computer): the field sizes for the holiday frame around it, so the game controls stay on screen without scrolling.",
+    "Game results: both team names are white in the box score columns and the score header, so dark team colors (Falcons, Giants) are readable.",
+  ] },
 ];

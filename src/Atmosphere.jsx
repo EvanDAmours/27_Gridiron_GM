@@ -77,10 +77,11 @@ function Fireworks({ n = 7 }) {
 }
 
 // wx: weather key; holiday: holidays.js key; z: stacking (0 behind the screen's panels).
-export function Sky({ wx, holiday, z = 0, density = 1, corners = false, contained = false }) {
+export function Sky({ wx, holiday, z = 0, density = 1, corners = false, contained = false, calm = false }) {
+  // calm (the live game): the weather and the holiday's light, but nothing floating over the screen
   const w = wxOf(wx), h = HOLIDAYS[holiday], th = themeOf(holiday);
   const heavy = (w.rain || w.snow) === 2;
-  const snow = w.snow || th === "christmas";
+  const snow = w.snow || (!calm && th === "christmas");
   // as heavy as what's on the field: a drizzle or a downpour, flurries or a blizzard
   const nSnow = Math.round((w.snow ? (heavy ? 260 : 55) : 35) * density), nRain = Math.round((heavy ? 260 : 30) * density);
   return (
@@ -88,7 +89,7 @@ export function Sky({ wx, holiday, z = 0, density = 1, corners = false, containe
     <div className="at-sky" aria-hidden style={{ position: contained ? "absolute" : "fixed", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: z, borderRadius: contained ? "inherit" : undefined }}>
       <style>{CSS}</style>
       {h && <div style={{ position: "absolute", inset: 0, background: th === "newyear" ? "radial-gradient(ellipse at 50% 120%, #fbbf2418, transparent 60%)" : th === "halloween" ? "radial-gradient(ellipse at 50% 120%, #7c3aed33, transparent 60%)" : th === "thanksgiving" ? "radial-gradient(ellipse at 50% 110%, #d9770624, transparent 60%)" : "radial-gradient(ellipse at 50% 110%, #15803d26, transparent 60%)" }} />}
-      {th === "newyear" && <><div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% -10%, #fbbf2422, transparent 55%)" }} /><Fireworks n={Math.round(7 * density)} />{[...Array(Math.round(50 * density))].map((_, i) => <span key={`c${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 41) * 100}%`, width: 5, height: 9, borderRadius: 1, background: ["#fbbf24", "#e5e7eb", "#fde68a", "#cbd5e1"][i % 4], opacity: 0.85, animation: `atConf ${5 + rnd(i, 42) * 5}s ${-rnd(i, 43) * 10}s linear infinite` }} />)}</>}
+      {th === "newyear" && !calm && <><div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% -10%, #fbbf2422, transparent 55%)" }} /><Fireworks n={Math.round(7 * density)} />{[...Array(Math.round(50 * density))].map((_, i) => <span key={`c${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 41) * 100}%`, width: 5, height: 9, borderRadius: 1, background: ["#fbbf24", "#e5e7eb", "#fde68a", "#cbd5e1"][i % 4], opacity: 0.85, animation: `atConf ${5 + rnd(i, 42) * 5}s ${-rnd(i, 43) * 10}s linear infinite` }} />)}</>}
       {th === "halloween" && !contained && <div style={{ position: "absolute", right: "6vw", top: "6vh", width: 90, height: 90, borderRadius: "50%", background: "radial-gradient(circle at 40% 40%, #fff7d6, #fde68a 55%, #f59e0b 100%)", boxShadow: "0 0 60px 20px #fde68a44", animation: "atGlow 5s ease-in-out infinite" }} />}
       {th === "christmas" && !contained && <Lights />}
       {heavy && (w.rain || w.snow) && <div style={{ position: "absolute", inset: 0, background: w.snow ? "#e2e8f0" : "#64748b", opacity: w.snow ? 0.05 : 0.08 }} />}
@@ -96,11 +97,11 @@ export function Sky({ wx, holiday, z = 0, density = 1, corners = false, containe
         ? <span key={`r${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 1) * 125}%`, width: 1.6 + rnd(i, 5) * 0.8, height: 30 + rnd(i, 2) * 26, background: "linear-gradient(#cbd5e100, #cbd5e1bb)", animation: `atPour ${0.38 + rnd(i, 3) * 0.22}s ${-rnd(i, 4)}s linear infinite` }} />
         : <span key={`r${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 1) * 110}%`, width: 1, height: 8 + rnd(i, 2) * 6, background: "linear-gradient(#cbd5e100, #cbd5e177)", transform: "rotate(10deg)", animation: `atRain ${0.9 + rnd(i, 3) * 0.5}s ${-rnd(i, 4)}s linear infinite` }} />)}
       {snow && [...Array(nSnow)].map((_, i) => { const big = i % 6 === 0, bz = w.snow === 2, sz = bz ? (big ? 9 : 3 + rnd(i, 6) * 4) : big ? 6 : 2.5 + rnd(i, 6) * 2.5, dur = bz ? 2.4 + rnd(i, 7) * 2.4 : 7 + rnd(i, 7) * 6; return <span key={`s${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 5) * (bz ? 130 : 100)}%`, width: sz, height: sz, borderRadius: "50%", background: "#fff", opacity: big ? 0.5 : 0.78, filter: big ? "blur(1.5px)" : undefined, animation: `${bz ? "atBlizzard" : "atSnow"} ${dur}s ${-rnd(i, 8) * dur}s linear infinite` }} />; })}
-      {th === "thanksgiving" && [...Array(Math.round(18 * density))].map((_, i) => <span key={`l${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 9) * 100}%`, width: 10 + rnd(i, 10) * 9, height: 7 + rnd(i, 10) * 6, borderRadius: "0 80% 0 80%", background: ["#c2410c", "#d97706", "#92400e"][i % 3], opacity: 0.8, animation: `atLeaf ${9 + rnd(i, 11) * 7}s ${-rnd(i, 12) * 16}s linear infinite` }} />)}
-      {th === "halloween" && [...Array(Math.round(7 * density))].map((_, i) => <img key={`b${i}`} alt="" src={sticker(holiday, 1)} style={{ position: "absolute", left: 0, top: `${8 + rnd(i, 13) * 40}%`, width: 34 + rnd(i, 14) * 34, animation: `atBat ${11 + rnd(i, 15) * 8}s ${-rnd(i, 16) * 18}s linear infinite` }} />)}
+      {th === "thanksgiving" && !calm && [...Array(Math.round(18 * density))].map((_, i) => <span key={`l${i}`} style={{ position: "absolute", top: 0, left: `${rnd(i, 9) * 100}%`, width: 10 + rnd(i, 10) * 9, height: 7 + rnd(i, 10) * 6, borderRadius: "0 80% 0 80%", background: ["#c2410c", "#d97706", "#92400e"][i % 3], opacity: 0.8, animation: `atLeaf ${9 + rnd(i, 11) * 7}s ${-rnd(i, 12) * 16}s linear infinite` }} />)}
+      {th === "halloween" && !calm && [...Array(Math.round(7 * density))].map((_, i) => <img key={`b${i}`} alt="" src={sticker(holiday, 1)} style={{ position: "absolute", left: 0, top: `${8 + rnd(i, 13) * 40}%`, width: 34 + rnd(i, 14) * 34, animation: `atBat ${11 + rnd(i, 15) * 8}s ${-rnd(i, 16) * 18}s linear infinite` }} />)}
     </div>
       {/* two of the holiday's stickers keep the bottom corners, bobbing gently */}
-          {corners && h && artOf(holiday).corners.map((t, i) => <img key={`k${i}`} alt="" src={sticker(holiday, t)} className="at-deco" style={{ position: "fixed", zIndex: 40, pointerEvents: "none", bottom: MOBILE ? 64 : 10, [i ? "right" : "left"]: MOBILE ? 4 : 14, width: MOBILE ? 64 : 112, filter: "drop-shadow(0 8px 16px #000a)", animation: `${i ? "atDrift" : "atBob"} ${4.5 + i}s ease-in-out infinite` }} />)}
+          {corners && !calm && h && artOf(holiday).corners.map((t, i) => <img key={`k${i}`} alt="" src={sticker(holiday, t)} className="at-deco" style={{ position: "fixed", zIndex: 40, pointerEvents: "none", bottom: MOBILE ? 64 : 10, [i ? "right" : "left"]: MOBILE ? 4 : 14, width: MOBILE ? 64 : 112, filter: "drop-shadow(0 8px 16px #000a)", animation: `${i ? "atDrift" : "atBob"} ${4.5 + i}s ease-in-out infinite` }} />)}
     </>
   );
 }
@@ -203,8 +204,6 @@ export function HolidayFrame({ holiday, children, tdKey, maxW }) {
         {/* New Year's art is just corner flourishes: a fine gold double rule joins them */}
         {themeOf(holiday) === "newyear" && <div className="at-deco" style={{ position: "absolute", inset: "-2.2% -1.1%", border: "1px solid #d4af372e", borderRadius: 12, boxShadow: "0 0 0 4px #0b122000, 0 0 0 5px #d4af3766, 0 0 18px #fbbf2455, inset 0 0 18px #fbbf2422", pointerEvents: "none", zIndex: 2, animation: "atShimmer 3s ease-in-out infinite" }} />}
         <img alt="" src={holArt(holiday, "frame")} className="at-deco" style={{ position: "absolute", left: "-4.1667%", top: "-9.259%", width: "108.333%", height: "118.52%", pointerEvents: "none", zIndex: 3, animation: FRAME_ANIM[themeOf(holiday)] }} />
-        {/* a touchdown: the holiday's sticker pops over the field */}
-        {tdKey != null && <img key={tdKey} alt="" src={sticker(holiday, artOf(holiday).td)} className="at-deco" style={{ position: "absolute", left: "50%", top: "38%", width: "18%", pointerEvents: "none", zIndex: 4, filter: "drop-shadow(0 12px 24px #000c)", animation: "atPop 1.8s ease-out both" }} />}
       </div>
     </div>
     </div>
