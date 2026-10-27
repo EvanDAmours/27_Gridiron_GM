@@ -2006,4 +2006,7 @@ export const PATCH_NOTES = [
     "Retiring as GM now ends the franchise. You confirm first (the sheet names exactly which saves go), then every save of this franchise is deleted: the autosave, its backup and any save slot holding it. Saves of other franchises are left alone.",
     "Then the send-off: a full screen in your club's colors with the career you retire with (legacy score and where it ranks all time, seasons, record, Super Bowls, playoff trips, your best draft picks and your achievements), then a last 'Thank you, GM.' and back to the main menu.",
   ] },
+  { v: "4.91", date: "2026-10-23", title: "Stage lighting on the spotlight", notes: [
+    "Spotlight moments (draft night, awards, signings, the Hall of Fame) light the player like a stage: a spot from above catches his helmet and shoulders and the rest of him falls away into shadow, so the jersey and its number disappear into the dark.",
+  ] },
 ];

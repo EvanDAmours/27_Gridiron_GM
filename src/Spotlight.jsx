@@ -18,6 +18,8 @@ ${FONT_CSS}
 @keyframes spRise { from { opacity: 0; transform: translateY(40px) } to { opacity: 1; transform: none } }
 @keyframes spFall { 0% { transform: translateY(-40px) rotate(0deg); opacity: 0 } 8% { opacity: 1 } 100% { transform: translateY(105vh) rotate(540deg); opacity: .9 } }
 `;
+// the spot's fall-off on the player art: lit at the helmet, gone by the waist
+const SHADE = "radial-gradient(ellipse 40% 30% at 50% 18%, #000 45%, #0004 80%, transparent 100%), linear-gradient(180deg, #000 0%, #000 24%, #0006 34%, #0001 41%, transparent 46%)";
 const BITS = Array.from({ length: 46 }, (_, i) => ({ left: (i * 37) % 100, delay: (i * 0.13) % 2.4, dur: 2.8 + ((i * 7) % 10) / 10, rot: (i * 47) % 360, w: 6 + (i % 3) * 2 }));
 
 function useVh() {
@@ -64,7 +66,9 @@ export default function Spotlight({ p, team, num, kicker, title, children, bg, s
       {/* the player */}
       <div style={{ position: "absolute", bottom: MOBILE ? "auto" : 0, top: MOBILE ? 12 : "auto", ...(MOBILE ? { left: 0, right: 0 } : { right: side ? "14%" : "9%" }), display: "flex", justifyContent: "center", alignItems: "flex-end", animation: "spRise .7s .1s ease-out both" }}>
         <div style={{ position: "relative" }}>
-        {art || <PlayerArt p={who} ab={team?.ab} width={Math.round(artH * 0.75)} style={{ filter: `drop-shadow(0 0 40px ${clr}66) drop-shadow(0 20px 30px #000c)`, ...(MOBILE ? { maskImage: "linear-gradient(#000 82%, transparent)", WebkitMaskImage: "linear-gradient(#000 82%, transparent)" } : {}) }} fallback={fallback} />}
+        {/* stage lighting: a spot from above catches his helmet and shoulders and the rest of him (the
+            jersey, its number, his hands) falls away into the dark, so the art reads as a silhouette */}
+        {art || <PlayerArt p={who} ab={team?.ab} width={Math.round(artH * 0.75)} style={{ filter: `brightness(.74) contrast(1.12) saturate(.8) drop-shadow(0 0 40px ${clr}55)`, maskImage: SHADE, WebkitMaskImage: SHADE }} fallback={fallback} />}
         {/* hung off his side, so it never pushes him toward the words */}
         {side && <div style={{ position: "absolute", left: MOBILE ? "72%" : "78%", bottom: MOBILE ? 24 : "5vh", width: MOBILE ? 120 : "19vw", zIndex: 1 }}>{side}</div>}
         </div>
