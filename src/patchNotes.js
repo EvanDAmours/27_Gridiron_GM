@@ -2092,4 +2092,7 @@ export const PATCH_NOTES = [
     "Phones: the roster shows each position's starters, with +N backups to open the rest; the player card shows a first-year career once instead of three times, with the season in one row; Home's injury and development tiles are one compact line each; the trade screen drops its extra header (cap space sits on the Targets title); contracts only flag the calls worth making now (extend now, can restructure); Legacy Hall hangs four banners to a row.",
     "Draft (computer): the offers for your pick show the best two (the rest behind N more), so Before your next pick stays on screen.",
   ] },
+  { v: "5.16", date: "2026-10-23", title: "Regions tab", notes: [
+    "Scouting (computer): Regions is its own tab beside Scouts, instead of a toggle inside it.",
+  ] },
 ];

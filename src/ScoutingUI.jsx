@@ -1454,9 +1454,9 @@ export function ScoutingPage({ g }) {
     </div>
   );
   }
-  // desktop: four views (five in combine week); your list sits on the board, regions with the scouts
-  const deskViews = [["hq", "Scouting HQ"], ["board", "Big Board"], ["mock", "Mock Draft"], hasCombine && ["combine", "Combine"], ["scouts", "Scouts"]].filter(Boolean);
-  const dv = v === "list" ? "board" : v === "regions" ? "scouts" : v;
+  // desktop: five views (six in combine week); your list sits on the board, regions their own tab beside the scouts
+  const deskViews = [["hq", "Scouting HQ"], ["board", "Big Board"], ["mock", "Mock Draft"], hasCombine && ["combine", "Combine"], ["scouts", "Scouts"], ["regions", "Regions"]].filter(Boolean);
+  const dv = v === "list" ? "board" : v;
   return (
     <div>
       {/* the section header above has the class and your scouting points */}
@@ -1465,10 +1465,8 @@ export function ScoutingPage({ g }) {
       {dv === "hq" && <ScoutingHQ g={g} go={setView} />}
       {dv === "combine" && <CombineView g={g} buzz={g.buzz} />}
       {dv === "mock" && <MockDraft g={g} />}
-      {dv === "scouts" && <>
-        <Pills items={[["scouts", "Your staff"], ["regions", "Regions"]]} value={v} onChange={setView} label="Scouts" style={{ marginBottom: 12, display: "flex", width: "fit-content" }} />
-        {v === "regions" ? <RegionsView g={g} /> : <ScoutsView g={g} />}
-      </>}
+      {dv === "scouts" && <ScoutsView g={g} />}
+      {dv === "regions" && <RegionsView g={g} />}
     </div>
   );
 }
