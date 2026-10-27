@@ -1999,4 +1999,7 @@ export const PATCH_NOTES = [
     "Coaching, reworked into three views. Your staff: one card per coach (rating, role, scheme and trait, then money, years and age in one quiet line) with Upgrade and Extend quiet until you hover; schemes and the game plan below; the locker room tucked into one row. Hire: every available coach in calm rows, filtered by job, with one Hire button each. League staffs: who coaches where, with team logos.",
     "Punts on the live field fly faster: the engine still plays a real 4-4.5 second hang time, but on screen the ball no longer floats for ages.",
   ] },
+  { v: "4.89", date: "2026-10-23", title: "Who made the play", notes: [
+    "Live games credit the defense: after each run or catch, the tackler shows in grey after the play (two names when a teammate assisted), and a broken-up pass names the defender who got a hand on it the same way. It shows under the field and in the drive log.",
+  ] },
 ];

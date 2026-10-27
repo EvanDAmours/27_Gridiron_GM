@@ -961,7 +961,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       ev.turnover = true; type = "fumble"; desc += ` FUMBLE — the defense recovers!`;
     } else {
       const t = pickW(rand, dP.tackleW);
-      if (t) { ev.tkl ||= t; add(line(g, def, t), "tkl", 1); if (rand() < 0.3) { const t2 = pickW(rand, dP.tackleW); if (t2 && t2 !== t) add(line(g, def, t2), "ast", 1); } }
+      if (t) { ev.tkl ||= t; add(line(g, def, t), "tkl", 1); if (rand() < 0.3) { const t2 = pickW(rand, dP.tackleW); if (t2 && t2 !== t) { add(line(g, def, t2), "ast", 1); if (ev.tkl === t) ev.ast = t2; } } }
       if (rand() < 0.14) clockStops = true; // out of bounds
     }
   }

@@ -45,7 +45,7 @@ export function DriveFeed({ log, teams, userSide, max = 40 }) {
             {show && <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 3 }}>
               {[...d.plays].reverse().map((e, k) => (
                 <div key={k} style={{ fontSize: 13, lineHeight: 1.35, color: e.type === "td" ? "#86efac" : e.type === "int" || e.type === "fumble" ? "#fca5a5" : "#cbd5e1" }}>
-                  <span style={{ color: "#64748b", fontVariantNumeric: "tabular-nums", marginRight: 6 }}>{e.qtr === "OT" ? "OT" : `Q${e.qtr}`} {mmss(e.clock ?? 0)}</span>{e.text}
+                  <span style={{ color: "#64748b", fontVariantNumeric: "tabular-nums", marginRight: 6 }}>{e.qtr === "OT" ? "OT" : `Q${e.qtr}`} {mmss(e.clock ?? 0)}</span>{e.text}{e.by && <span style={{ color: "#64748b" }}> ({e.by.join(", ")})</span>}
                 </div>
               ))}
             </div>}
