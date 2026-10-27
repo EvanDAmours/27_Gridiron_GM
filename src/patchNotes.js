@@ -2016,4 +2016,9 @@ export const PATCH_NOTES = [
   { v: "4.93", date: "2026-10-23", title: "One spotlight look", notes: [
     "Every spotlight player is now lit the same way: helmet, jersey and number down to the waist, with the hands and legs falling away into shadow.",
   ] },
+  { v: "4.94", date: "2026-10-23", title: "Draft board sort and filters", notes: [
+    "Fixed: the OL filter on the boards only showed left tackles. It now shows the whole offensive line.",
+    "The draft board can now filter and sort: show everyone, your list, your sleepers and hunches, known star traits or red flags, and sort by the board, your read of a player's ceiling, or his development trait (known traits first, the rarest on top). The Big Board gets the same sort.",
+    "The draft room shows the picks you have left this draft, round and number, with the one on the clock lit.",
+  ] },
 ];

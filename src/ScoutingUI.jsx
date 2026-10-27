@@ -215,7 +215,10 @@ function BoardRow({ g, p, onDraft, canDraft, myRank, gone, needs = [] }) {
 }
 const BOARD_CSS = ".bd-row:hover{background:#ffffff0a}.bd-row .bd-act{opacity:.55;transition:opacity .15s}.bd-row:hover .bd-act{opacity:1}.bd-row:hover .bd-star{color:#64748b !important}";
 
-const SHOWS = [["all", "Everyone"], ["covered", "Regions my scouts cover"], ["scouted", "Scouted"], ["unscouted", "Not scouted yet"], ["list", "On my list"], ["flagged", "Sleepers & hunches"], ["redflags", "Red flags"], ["special", "Special dev traits"]];
+const OL_POS = ["LT", "LG", "C", "RG", "RT"];
+const DEV_ORDER = { generational: 5, superstar: 4, star: 3, late: 2, normal: 1 };
+const SORTS = [["board", "Sort: board"], ["ceiling", "Sort: your read of his ceiling"], ["dev", "Sort: dev trait"]];
+const SHOWS = [["all", "Everyone"], ["covered", "Regions my scouts cover"], ["scouted", "Scouted"], ["unscouted", "Not scouted yet"], ["list", "On my list"], ["flagged", "Sleepers & hunches"], ["redflags", "Red flags"], ["special", "Known star traits (or better)"]];
 
 export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 40, withList = false, startList = false }) {
   const years = Object.keys(g.dc).map(Number).sort((x, y) => x - y);
@@ -228,11 +231,12 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
   const [mine, setMine] = useState(startList ? "list" : false);
   const [searching, setSearching] = useState(false);
   const [showOpen, setShowOpen] = useState(false);
+  const [sortBy, setSortBy] = useState("board");
   const all = useMemo(() => g.dc[cy] || [], [g.dc, cy]);
   const ranks = useMemo(() => (mine === true ? myBoard(g.scouting, all) : null), [mine, g.scouting, all]);
   const ids = listIds(g.scouting, cy);
   const list = all
-    .filter((p) => pos === "ALL" || p.pos === pos || (pos.startsWith("R:") && roleFilterMatch(p, pos)))
+    .filter((p) => pos === "ALL" || p.pos === pos || (pos === "OL" && OL_POS.includes(p.pos)) || (pos.startsWith("R:") && roleFilterMatch(p, pos)))
     .filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()) || (p.bio?.college || "").toLowerCase().includes(q.toLowerCase()))
     .filter((p) => {
       if (show === "all") return true;
@@ -242,16 +246,24 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
       }
       return show === "scouted" ? p.scout?.lvl > 0 : show === "unscouted" ? !p.scout?.lvl : show === "list" ? ids.includes(p.id) : coverage(g.scouting, p).role !== "office";
     })
-    .sort((a, b) => (ranks ? ranks.get(a.id) - ranks.get(b.id) : csRank(a) - csRank(b)));
+    .sort((a, b) => {
+      const byBoard = ranks ? ranks.get(a.id) - ranks.get(b.id) : csRank(a) - csRank(b);
+      if (sortBy === "board") return byBoard;
+      const ra = prospectRead(g.scouting, a), rb = prospectRead(g.scouting, b);
+      // your read of his ceiling (unread ones last), or his development trait (known ones first, the rarest on top)
+      const d = sortBy === "ceiling" ? (rb.potV ?? -1) - (ra.potV ?? -1) : (DEV_ORDER[rb.dev] ?? -1) - (DEV_ORDER[ra.dev] ?? -1);
+      return d || byBoard;
+    });
   const final = all.some((p) => p.cons?.final);
   // your picks as lines across the board: everyone above your first pick's reach is likely gone
   // your picks as lines across the full board (filtered down, they would bunch up meaninglessly)
-  const slots = cy === g.yr && !onDraft && pos === "ALL" && !q && show === "all" ? mySlots(g) : [];
+  const slots = cy === g.yr && !onDraft && pos === "ALL" && !q && show === "all" && sortBy === "board" ? mySlots(g) : [];
   const rankOf = (p) => (ranks ? ranks.get(p.id) : csRank(p));
   const reach = slots.length ? pickWindow(slots[0])[0] : 0;
   const marked = [];
   { let k = 0; const left = [...slots]; for (const p of list.slice(0, n)) { while (left.length && rankOf(p) >= left[0]) { marked.push({ pk: { n: left[0], i: k++ }, key: `pk${left[0]}` }); left.shift(); } marked.push({ p, gone: !onDraft && !p.drafted && rankOf(p) < reach }); } }
   const needs = useMemo(() => topNeeds(g.teams?.[g.ui]?.roster || [], 3), [g.teams, g.ui]);
+  const sortPick = <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} aria-label="Sort" style={{ ...sel, borderRadius: 99 }}>{SORTS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select>;
   const th = { padding: "6px", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: C.mt, borderBottom: `1px solid ${C.bd}`, textAlign: "center" };
   if (MOBILE) {
     let k = 0;
@@ -284,16 +296,18 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
         </div>
         {mine !== "list" && <>
         <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-          {["ALL", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((x) => { const on = x === "OL" ? ["LT", "LG", "C", "RG", "RT"].includes(pos) : pos === x || (pos.startsWith("R:") && { WR: ["R:X", "R:Z", "R:SLOT"], CB: ["R:OUT", "R:NB"], S: ["R:FS", "R:SS"], LB: ["R:SAM", "R:MIKE", "R:WILL"] }[x]?.includes(pos)); return <button key={x} onClick={() => { setPos(x === "OL" ? (on ? "ALL" : "LT") : x); setN(page); }} style={{ border: 0, borderRadius: 99, padding: "6px 11px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#ffffff1f" : "transparent", color: on ? "#fff" : "#94a3b8" }}>{x === "ALL" ? "All" : x}</button>; })}
+          {["ALL", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((x) => { const on = x === "OL" ? pos === "OL" || OL_POS.includes(pos) : pos === x || (pos.startsWith("R:") && { WR: ["R:X", "R:Z", "R:SLOT"], CB: ["R:OUT", "R:NB"], S: ["R:FS", "R:SS"], LB: ["R:SAM", "R:MIKE", "R:WILL"] }[x]?.includes(pos)); return <button key={x} onClick={() => { setPos(x === "OL" ? (on ? "ALL" : "OL") : x); setN(page); }} style={{ border: 0, borderRadius: 99, padding: "6px 11px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#ffffff1f" : "transparent", color: on ? "#fff" : "#94a3b8" }}>{x === "ALL" ? "All" : x}</button>; })}
         </div>
         {(() => { const base = pos.startsWith("R:") ? { SAM: "LB", MIKE: "LB", WILL: "LB", OUT: "CB", NB: "CB", FS: "S", SS: "S", X: "WR", Z: "WR", SLOT: "WR" }[pos.slice(2)] : pos; const roles = ROLE_FILTERS.filter(([v]) => ({ LB: ["SAM", "MIKE", "WILL"], CB: ["OUT", "NB"], S: ["FS", "SS"], WR: ["X", "Z", "SLOT"] })[base]?.includes(v.slice(2))); if (!roles.length) return null; return <div style={{ display: "flex", gap: 2, background: "#ffffff0a", borderRadius: 99, padding: 2 }}>{[[base, `All ${base}`], ...roles.map(([v, l]) => [v, l.split(" · ")[1]])].map(([v, l]) => <button key={v} onClick={() => { setPos(v); setN(page); }} style={{ border: 0, borderRadius: 99, padding: "5px 11px", fontSize: 13, fontWeight: 800, cursor: "pointer", background: pos === v ? "#fff" : "transparent", color: pos === v ? "#0b1220" : "#cbd5e1" }}>{l}</button>)}</div>; })()}
         <input value={q} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search" aria-label="Search prospects" style={{ ...sel, marginLeft: "auto", width: onDraft ? 120 : 170, borderRadius: 99 }} />
-        {!onDraft && <Select value={show} onChange={(e) => { setShow(e.target.value); setN(page); }} aria-label="Show" style={{ ...sel, borderRadius: 99 }}>
-          {SHOWS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-        </Select>}
+        <Select value={show} onChange={(e) => { setShow(e.target.value); setN(page); }} aria-label="Show" style={{ ...sel, borderRadius: 99 }}>
+          {(onDraft ? SHOWS.filter(([k]) => ["all", "list", "flagged", "special", "redflags", "scouted"].includes(k)) : SHOWS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+        </Select>
+        {!onDraft && sortPick}
         {!fixedYr && years.length > 1 && <Select value={cy} onChange={(e) => { setYrSel(+e.target.value); setN(page); }} aria-label="Draft class" style={{ ...sel, borderRadius: 99 }}>{years.map((y) => <option key={y} value={y}>{y + 1} class</option>)}</Select>}
         </>}
       </div>
+      {onDraft && mine !== "list" && <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 10px" }}><PicksLeft g={g} />{sortPick}</div>}
       {mine === "list" ? <YourList g={g} classYr={cy} /> : <>
       {cy !== g.yr && <div style={{ ...muted, margin: "0 4px 8px" }}>A future class: your scouts can only file reports on the {g.yr + 1} draft.</div>}
       <div style={{ background: "#ffffff08", borderRadius: 18, padding: "6px 6px" }}>
@@ -522,6 +536,20 @@ const GRADE_ORDER = { "A+": 13, A: 12, "A-": 11, "B+": 10, B: 9, "B-": 8, "C+": 
 
 // Your remaining picks this year as overall numbers (the game keeps them projected from the
 // standings until the draft starts: draftProjection.js).
+// The draft room: the picks you still hold this draft, the one on the clock lit.
+function PicksLeft({ g }) {
+  const used = new Set((g.draftLog || []).map((d) => d.id));
+  const left = (g.draftPicks || []).filter((pk) => pk.owner === g.ui && (pk.yr == null || pk.yr === g.yr) && !used.has(pk.id)).sort((a, b) => a.overall - b.overall);
+  const now = g.curPick?.owner === g.ui ? g.curPick.overall : null;
+  return (
+    <div style={{ flex: 1, display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 14px", margin: "0 4px", fontSize: 14 }}>
+      <span style={{ color: "#94a3b8" }}>Your picks left</span>
+      {left.map((pk) => <span key={pk.id ?? pk.overall} style={{ fontWeight: 800, color: pk.overall === now ? C.gd : "#e2e8f0", fontVariantNumeric: "tabular-nums" }}>R{pk.rd ?? Math.ceil(pk.overall / 32)} <span style={{ color: pk.overall === now ? C.gd : "#94a3b8", fontWeight: 600 }}>#{pk.overall}</span>{pk.overall === now ? <span style={{ fontWeight: 700 }}> · on the clock</span> : null}</span>)}
+      {!left.length && <span style={{ color: "#64748b" }}>none: you're done for this draft</span>}
+    </div>
+  );
+}
+
 export const mySlots = (g) => slotsFor(g.draftPicks, g.ui, g.yr, (g.draftLog || []).map((d) => d.id));
 
 // The Combine shortlist from your scouts: who to interview and work out, picked for where you
