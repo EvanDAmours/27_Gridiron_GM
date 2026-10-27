@@ -2045,4 +2045,7 @@ export const PATCH_NOTES = [
     "Phones: the trade deadline note on the trade screen is a calm card with one white button; the deadline's action bar reads Advance to 1:00 PM instead of a red button.",
     "Computers: the top bar no longer cuts off Front Office on narrower screens; coaching cards show each coordinator's whole scheme line and the doubled game plan heading is gone; record holders' names wrap instead of being cut off.",
   ] },
+  { v: "4.99", date: "2026-10-23", title: "Dev traits on Young players", notes: [
+    "Development > Young players shows each player's development trait in its color (Generational, Superstar, Star, Late bloomer, Normal) on his second line.",
+  ] },
 ];

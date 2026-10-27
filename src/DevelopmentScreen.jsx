@@ -28,6 +28,13 @@ const H1 = ({ children, sub }) => (
 const Card = ({ children, style }) => <div style={{ background: C.cd, borderRadius: 18, padding: "4px 22px", border: "1px solid #ffffff0d", ...style }}>{children}</div>;
 // A player row: name with age and position beside it, a short note under it, and on the right his
 // overall with the expected change next to it (or a plain verdict).
+// his development trait in a word, in its color (the same colors as the player card)
+const DEV_C = { generational: "#f472b6", superstar: "#f5c542", star: "#60a5fa", late: "#c4b5fd", normal: "#64748b" };
+function DevWord({ p }) {
+  const d = devOf(p) || "normal";
+  return <span title={DEV_TRAITS[d]?.desc} style={{ color: DEV_C[d] || DEV_C.normal, fontWeight: 800 }}> · {DEV_TRAITS[d]?.name || "Normal"}</span>;
+}
+
 function Row({ title, meta, sub, right, rightColor, ovr, delta, onClick, last }) {
   return (
     <div onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 0", borderBottom: last ? 0 : "1px solid #ffffff10", cursor: onClick ? "pointer" : "default" }}>
@@ -134,7 +141,7 @@ export default function DevelopmentScreen({ roster, yr, sp, wk, gp = 0, focus, s
           const nc = MOBILE ? 1 : young.length > 10 ? 3 : 2, per = Math.ceil(young.length / nc);
           const rowOf = (r, i, arr) => {
             const st = r.role === "starter" || r.g >= 2 ? ["Growing", "#4ade80"] : r.role === "rotation" || r.g >= 1 ? ["On track", "#e2e8f0"] : (r.p.truePot ?? r.p.pot ?? 0) - r.p.ovr >= 8 ? ["Needs snaps", "#facc15"] : ["Long shot", "#f87171"];
-            return <Row key={r.p.id} title={name(r.p)} meta={`${r.p.age} · ${posTag(r.p)}`} sub={<><span style={{ color: st[1], fontWeight: 700 }}>{st[0]}</span>{` · ${ROLE[r.role]}${isFocus(r.p) ? " · focus player" : ""}`}</>} ovr={r.p.ovr} delta={Math.round(r.g * 10) / 10} onClick={() => setSel?.(r.p)} last={i === arr.length - 1} />;
+            return <Row key={r.p.id} title={name(r.p)} meta={`${r.p.age} · ${posTag(r.p)}`} sub={<><span style={{ color: st[1], fontWeight: 700 }}>{st[0]}</span>{` · ${ROLE[r.role]}${isFocus(r.p) ? " · focus player" : ""}`}<DevWord p={r.p} /></>} ovr={r.p.ovr} delta={Math.round(r.g * 10) / 10} onClick={() => setSel?.(r.p)} last={i === arr.length - 1} />;
           };
           const cols = Array.from({ length: nc }, (_, k) => young.slice(k * per, (k + 1) * per)).filter((c) => c.length);
           return <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols.length}, minmax(0, 1fr))`, gap: 16, alignItems: "start" }}>{cols.map((c, k) => <Card key={k}>{c.map((r, i) => rowOf(r, i, c))}</Card>)}</div>;
