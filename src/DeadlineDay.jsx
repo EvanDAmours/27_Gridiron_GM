@@ -1,10 +1,10 @@
-// Trade Deadline Day: a whole screen for the day, broadcast style. The clock runs 9 AM to the
-// 4 PM ET deadline an hour at a time; the feed breaks every deal and rumor, your phone shows the
-// offers coming in, and the board lists who's buying and who's selling.
+// Trade Deadline Day: the day as one calm screen. The clock runs 9 AM to the 4 PM ET deadline an
+// hour at a time. Your phone (the offers coming in) sits first; beside it the day's feed; then
+// who's on the block, and who's buying and who's selling.
 import { fillsNeed } from "./needs.js";
 import Select from "./Select.jsx";
 import React, { useEffect, useRef, useState } from "react";
-import { C, oC, Bdg, Btn, TeamLogo } from "./ui.jsx";
+import { C, oC, Face, TeamLogo, Pills, actBtn, card, cardTitle, fitH, field, Section } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { DEADLINE_HOURS, LAST_HOUR, marketBoard, leagueTradeBlock } from "./deadline.js";
 import { posTag } from "./dline.js";
@@ -12,84 +12,59 @@ import { evaluateTrade } from "./trade.js";
 
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
 const KIND = {
-  trade: { tag: "TRADE", c: "#ef4444" },
-  rumor: { tag: "RUMOR", c: "#f59e0b" },
-  news: { tag: "NEWS", c: "#38bdf8" },
-  mine: { tag: "YOUR PHONE", c: "#22c55e" },
+  trade: { tag: "Trade", c: "#fca5a5" },
+  rumor: { tag: "Rumor", c: "#fcd34d" },
+  news: { tag: "News", c: "#7dd3fc" },
+  mine: { tag: "You", c: "#86efac" },
 };
-
-function Clock({ hour, done }) {
-  const left = LAST_HOUR - hour;
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-      <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 40, fontWeight: 900, letterSpacing: 2, color: done ? "#94a3b8" : "#fff", textShadow: done ? "none" : "0 0 18px #ef444488" }}>{DEADLINE_HOURS[hour]}<span style={{ fontSize: 16, marginLeft: 6, color: "#fca5a5" }}>ET</span></div>
-      <div style={{ fontSize: 15, fontWeight: 800, color: done ? "#94a3b8" : "#fecaca" }}>{done ? "THE DEADLINE HAS PASSED" : left === 1 ? "FINAL HOUR" : `${left} HOURS TO THE DEADLINE`}</div>
-    </div>
-  );
-}
-
-function HourTrack({ hour }) {
-  return (
-    <div style={{ display: "flex", gap: 4, marginTop: 10 }}>
-      {DEADLINE_HOURS.map((h, i) => (
-        <div key={h} style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ height: 6, borderRadius: 3, background: i < hour ? "#ef4444" : i === hour ? "#fff" : "#ffffff22" }} />
-          <div style={{ fontSize: 10, color: i === hour ? "#fff" : "#ffffff66", marginTop: 3, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden" }}>{h.replace(":00", "")}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Ticker({ deals, teams, yr }) {
-  if (!deals.length) return null;
-  const text = deals.map((d) => `${teams[d.buyer]?.ab} get ${d.player.name} (${d.player.pos} ${d.player.ovr}) from ${teams[d.seller]?.ab}`).join("   •   ");
-  return (
-    <div style={{ overflow: "hidden", whiteSpace: "nowrap", background: "#7f1d1d", borderTop: "1px solid #ef4444", borderBottom: "1px solid #ef44442e", padding: "6px 0", fontSize: 14, fontWeight: 800, color: "#fee2e2" }}>
-      <style>{"@keyframes dl-tick { from { transform: translateX(0) } to { transform: translateX(-50%) } }"}</style>
-      <span style={{ display: "inline-block", paddingLeft: "100%", animation: `dl-tick ${Math.max(18, text.length / 6)}s linear infinite` }}>{`DEADLINE DEALS ${yr}:   ${text}   •   ${text}`}</span>
-    </div>
-  );
-}
+const hourOf = (h) => DEADLINE_HOURS[h].replace(":00", "");
 
 // How the offer stacks up for you, on the trade-value scale.
 function verdict(o, pickValue) {
   const get = (o.give?.tradeVal || 0) + (o.givePicks || []).reduce((s, pk) => s + pickValue(pk), 0);
-  const give = o.want.tradeVal || 1;
-  const r = get / give;
-  return r >= 1.08 ? { t: "Good value for you", c: C.gn } : r >= 0.92 ? { t: "Fair deal", c: "#facc15" } : { t: "They're asking a lot", c: "#f97316" };
+  const r = get / (o.want.tradeVal || 1);
+  return r >= 1.08 ? { t: "Good value for you", c: "#86efac" } : r >= 0.92 ? { t: "A fair deal", c: "#fde68a" } : { t: "They're asking a lot", c: "#fdba74" };
 }
+
+// One player in an offer: face, name, what he is.
+const Who = ({ p, setSel }) => (
+  <button onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", background: "transparent", border: 0, padding: 0, color: "inherit", cursor: "pointer", textAlign: "left" }}>
+    <Face s={p.face} sz={34} />
+    <span style={{ flex: 1, minWidth: 0 }}>
+      <span style={{ display: "block", fontSize: 15, fontWeight: 800, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
+      <span style={{ display: "block", fontSize: 13, color: "#94a3b8" }}>{posTag(p)} · {p.age} · {money(p.salary)}</span>
+    </span>
+    <b style={{ fontSize: 17, color: oC(p.ovr) }}>{p.ovr}</b>
+  </button>
+);
 
 function Offer({ o, teams, pickValue, onAccept, onDecline, setSel, hour }) {
   const t = teams[o.fromTm];
   const v = verdict(o, pickValue);
   const exp = 2 - (hour - o.hour);
+  const lbl = { fontSize: 12, fontWeight: 800, letterSpacing: 0.8, color: "#64748b", margin: "10px 0 6px" };
   return (
-    <div style={{ background: "#ffffff0a", borderRadius: 14, padding: "12px 14px", marginBottom: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        {t && <TeamLogo t={t} sz={30} />}
-        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 900 }}>{t ? `${t.city} ${t.name}` : "A club"}</div><div style={{ fontSize: 12, color: C.mt }}>{t ? `${t.w || 0}-${t.l || 0}` : ""} · offer good for {exp} more hour{exp === 1 ? "" : "s"}</div></div>
-        <span style={{ fontSize: 12, fontWeight: 800, color: v.c }}>{v.t}</span>
+    <div style={{ background: "#ffffff0a", borderRadius: 16, padding: "12px 14px", marginBottom: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {t && <TeamLogo t={t} sz={30} glow />}
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t ? `${t.city} ${t.name}` : "A club"}</span>
+          <span style={{ display: "block", fontSize: 13, color: "#94a3b8" }}>{t ? `${t.w || 0}-${t.l || 0} · ` : ""}good for {exp} more hour{exp === 1 ? "" : "s"}</span>
+        </span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: v.c, whiteSpace: "nowrap" }}>{v.t}</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 14 }}>
-        <div><div style={{ fontSize: 13, fontWeight: 800, color: "#fca5a5" }}>They want</div>
-          <div onClick={() => setSel(o.want)} style={{ cursor: "pointer", fontWeight: 800, display: "flex", alignItems: "center", gap: 5 }}><Bdg pos={o.want.pos} />{o.want.name} <span style={{ color: oC(o.want.ovr) }}>{o.want.ovr}</span></div>
-          <div style={{ fontSize: 12, color: C.mt }}>Age {o.want.age} · {money(o.want.salary)}</div></div>
-        <div><div style={{ fontSize: 13, fontWeight: 800, color: "#86efac" }}>You get</div>
-          {o.give && <div onClick={() => setSel(o.give)} style={{ cursor: "pointer", fontWeight: 800, display: "flex", alignItems: "center", gap: 5 }}><Bdg pos={o.give.pos} />{o.give.name} <span style={{ color: oC(o.give.ovr) }}>{o.give.ovr}</span></div>}
-          {o.give && <div style={{ fontSize: 12, color: C.mt }}>Age {o.give.age} · {money(o.give.salary)}</div>}
-          {(o.givePicks || []).map((pk) => <div key={pk.id} style={{ fontWeight: 800 }}>{pk.yr ? `${pk.yr} ` : ""}Round {pk.rd} pick{pk.overall ? ` (#${pk.overall})` : ""}</div>)}
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-        <Btn onClick={() => onAccept(o)} bg={C.gn} style={{ flex: 1, fontWeight: 900 }}>Accept</Btn>
-        <Btn onClick={() => onDecline(o)} bg="#334155" c="#e2e8f0" style={{ flex: 1 }}>Decline</Btn>
+      <div style={lbl}>THEY WANT</div>
+      <Who p={o.want} setSel={setSel} />
+      <div style={lbl}>YOU GET</div>
+      {o.give && <Who p={o.give} setSel={setSel} />}
+      {(o.givePicks || []).map((pk) => <div key={pk.id} style={{ fontSize: 15, fontWeight: 800, padding: "3px 0" }}>{pk.yr ? `${pk.yr} ` : ""}round {pk.rd} pick{pk.overall ? <span style={{ color: "#94a3b8", fontWeight: 600 }}> · #{pk.overall}</span> : null}</div>)}
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <button onClick={() => onAccept(o)} style={{ ...actBtn(C.gn, true), flex: 1, minHeight: MOBILE ? 44 : 36 }}>Accept</button>
+        <button onClick={() => onDecline(o)} style={{ ...actBtn("#cbd5e1"), flex: 1, minHeight: MOBILE ? 44 : 36 }}>Decline</button>
       </div>
     </div>
   );
 }
-
-const POSITIONS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S"];
 
 // What he'd really cost, in draft-pick terms: the latest round whose pick alone his club would take
 // for him today, judged the way your offer will be (their premium for a starter, how a rebuilding
@@ -100,44 +75,66 @@ function costIn(p, team, pickValue) {
   for (let rd = 7; rd >= 1; rd--) if (takes(rd)) return rd === 7 ? "a late pick" : `a ${RD[rd]}`;
   return "more than a 1st";
 }
+const POSITIONS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S"];
 
-// The league's trade block: who's available, why, and a button to call about him.
+// The league's trade block: who's available, why, what he'd cost, and a call about him.
 function TradeBlock({ teams, ui, needs, pickValue, onInquire, setSel, closed }) {
   const [needOnly, setNeedOnly] = useState(false);
   const [pos, setPos] = useState("ALL");
-  const all = leagueTradeBlock(teams, ui);
-  const list = all.filter((x) => (!needOnly || fillsNeed(needs, x.p)) && (pos === "ALL" || x.p.pos === pos));
-  const btn = (on) => ({ background: on ? `${C.bl}33` : C.bg, border: `1px solid ${on ? C.bl : C.bd}`, color: on ? "#bfdbfe" : "#cbd5e1", borderRadius: 6, padding: "4px 10px", fontSize: 13, fontWeight: 700, cursor: "pointer" });
+  const list = leagueTradeBlock(teams, ui).filter((x) => (!needOnly || fillsNeed(needs, x.p)) && (pos === "ALL" || x.p.pos === pos));
   return (
     <>
-      <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <button onClick={() => setNeedOnly((v) => !v)} style={btn(needOnly)} title={`Your needs: ${needs.join(", ") || "none"}`}>Your needs{needs.length ? ` (${needs.slice(0, 4).join(", ")})` : ""}</button>
-        <Select value={pos} onChange={(e) => setPos(e.target.value)} style={{ ...btn(pos !== "ALL"), padding: "4px 6px" }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+        <Pills items={[[false, "Everyone"], [true, "Your needs"]]} value={needOnly} onChange={setNeedOnly} label="Show" />
+        <Select value={pos} onChange={(e) => setPos(e.target.value)} aria-label="Position" style={field}>
           <option value="ALL">All positions</option>{POSITIONS.map((x) => <option key={x} value={x}>{x}</option>)}
         </Select>
-        <span style={{ fontSize: 12, color: C.mt, marginLeft: "auto" }}>{list.length} available</span>
       </div>
-      <div style={{ maxHeight: 520, overflowY: "auto" }}>
-        {list.slice(0, 60).map(({ p, ti, why }) => (
-          <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 2px", borderBottom: `1px solid ${C.bd}66` }}>
-            <TeamLogo t={teams[ti]} sz={24} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 14, fontWeight: 800 }}><Bdg pos={posTag(p)} /><span onClick={() => setSel(p)} style={{ cursor: "pointer", lineHeight: 1.2 }}>{p.name}</span>{needs.includes(p.pos) && <span title="A position you need" style={{ fontSize: 10, color: C.gn, fontWeight: 900 }}>NEED</span>}</div>
-              <div style={{ fontSize: 12, color: C.mt, lineHeight: 1.35 }}>{teams[ti].ab} · age {p.age} · {money(p.salary)}{p.contract ? `, ${p.contract} yr${p.contract > 1 ? "s" : ""}` : ""} · {why} · asking {costIn(p, teams[ti], pickValue)}</div>
-            </div>
-            <b style={{ fontSize: 16, color: oC(p.ovr), minWidth: 24, textAlign: "right" }}>{p.ovr}</b>
-            <Btn onClick={() => onInquire(p, ti)} disabled={closed} bg="#1d4ed8" style={{ fontSize: 12, padding: "4px 9px" }}>Inquire</Btn>
-          </div>
-        ))}
-        {!list.length && <div style={{ fontSize: 14, color: C.mt }}>{needOnly ? "Nobody at your positions of need is on the block." : "Nobody's on the block."}</div>}
-      </div>
+      {list.slice(0, 60).map(({ p, ti, why }) => (
+        <div key={p.id} className="calm-row" onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 8px", margin: "0 -8px", cursor: "pointer" }}>
+          <Face s={p.face} sz={36} />
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 15, fontWeight: 800, color: "#f8fafc" }}><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>{needs.includes(p.pos) && <span style={{ fontSize: 12, color: "#86efac", fontWeight: 800 }}>need</span>}</span>
+            <span title={why} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}><TeamLogo t={teams[ti]} sz={16} glow />{posTag(p)} · {p.age} · {money(p.salary)} · <span style={{ color: "#cbd5e1" }}>asks {costIn(p, teams[ti], pickValue)}</span></span>
+          </span>
+          <b style={{ fontSize: 17, color: oC(p.ovr), width: 28, textAlign: "right" }}>{p.ovr}</b>
+          {!closed && <span className="calm-act" onClick={(e) => e.stopPropagation()}><button onClick={() => onInquire(p, ti)} style={actBtn("#7dd3fc")}>Call</button></span>}
+        </div>
+      ))}
+      {!list.length && <div style={{ fontSize: 14, color: "#94a3b8", padding: "6px 0" }}>{needOnly ? "Nobody at your positions of need is on the block." : "Nobody's on the block."}</div>}
     </>
   );
 }
 
-export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, needs = [], onInquire, onAdvance, onFinish, onAccept, onDecline, onOpenTrade, onClose, setSel }) {
+function Feed({ dl, teams }) {
+  return dl.feed.map((f) => {
+    const k = KIND[f.kind] || KIND.news;
+    const t = f.ti != null ? teams[f.ti] : null;
+    return (
+      <div key={f.id} style={{ display: "flex", gap: 12, padding: "9px 10px", margin: "0 -8px", borderRadius: 12, background: f.big ? "#ef44440f" : "transparent" }}>
+        <span style={{ width: 50, flexShrink: 0, fontSize: 13, color: "#64748b", textAlign: "right", paddingTop: 2, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{hourOf(f.hour)}</span>
+        {t ? <TeamLogo t={t} sz={24} glow /> : <span style={{ width: 24, flexShrink: 0 }} />}
+        <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, lineHeight: 1.45, color: f.kind === "trade" ? "#f8fafc" : "#cbd5e1", fontWeight: f.kind === "trade" ? 700 : 400 }}>
+          <b style={{ color: k.c, fontWeight: 800, marginRight: 6 }}>{f.big ? "Breaking" : k.tag}</b>{f.text}
+        </span>
+      </div>
+    );
+  });
+}
+
+function Market({ buyers, sellers, teams }) {
+  const line = (x, c) => <div key={x.ti} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0" }}><TeamLogo t={teams[x.ti]} sz={22} /><span style={{ flex: 1, minWidth: 0, fontSize: 15, color: "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{teams[x.ti]?.name || x.name}</span><b style={{ fontSize: 14, color: c, fontVariantNumeric: "tabular-nums" }}>{x.rec}</b></div>;
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "1fr 1fr", gap: "0 24px" }}>
+      <div><div style={{ ...cardTitle, fontSize: 15, margin: "4px 0 6px" }}>Buying</div>{buyers.slice(0, 8).map((b) => line(b, "#86efac"))}{!buyers.length && <div style={{ fontSize: 14, color: "#94a3b8" }}>Nobody's clearly in win-now mode.</div>}</div>
+      <div><div style={{ ...cardTitle, fontSize: 15, margin: "4px 0 6px" }}>Selling</div>{sellers.slice(0, 8).map((s) => line(s, "#fca5a5"))}{!sellers.length && <div style={{ fontSize: 14, color: "#94a3b8" }}>Nobody's clearly selling.</div>}</div>
+    </div>
+  );
+}
+
+export default function DeadlineDay({ dl, teams, ui, capSpace, pickValue, needs = [], onInquire, onAdvance, onFinish, onAccept, onDecline, onOpenTrade, onClose, setSel }) {
   const [auto, setAuto] = useState(false);
-  const [view, setView] = useState("feed");
+  const [view, setView] = useState(MOBILE ? "phone" : "block");
   const me = teams[ui];
   const { buyers, sellers } = marketBoard(teams, ui);
   // Auto-advance the clock, pausing whenever your phone has offers waiting.
@@ -149,148 +146,79 @@ export default function DeadlineDay({ dl, teams, ui, yr, capSpace, pickValue, ne
     const t = setTimeout(() => advanceRef.current(), 4500);
     return () => clearTimeout(t);
   }, [auto, dl.hour, dl.done, dl.offers.length]);
-  const panel = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px", minWidth: 0 };
-  const head = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 10 };
   const left = LAST_HOUR - dl.hour;
-  // phones: a slim sticky clock bar, your phone first, the rest in tabs; the clock's controls
-  // sit in the action bar at the bottom of the screen
-  if (MOBILE) return (
-    <div style={{ margin: "-4px 0 0" }}>
-      <div style={{ position: "sticky", top: "calc(56px + env(safe-area-inset-top))", zIndex: 20, background: "linear-gradient(120deg,#450a0a,#0b0f19 70%)", border: "1px solid #ef444466", borderRadius: 12, padding: "8px 12px", marginBottom: 8, boxShadow: "0 6px 16px #0008" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: "#fca5a5" }}>{dl.done ? "FINAL" : "● LIVE"}</span>
-          <span style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 22, fontWeight: 900, color: dl.done ? "#94a3b8" : "#fff" }}>{DEADLINE_HOURS[dl.hour]}</span>
-          <span style={{ fontSize: 12, fontWeight: 800, color: "#fecaca", flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{dl.done ? "Deadline passed" : left === 1 ? "Final hour" : `${left} hrs left`}</span>
-          {!dl.done && <button onClick={() => setAuto((a) => !a)} style={{ background: auto ? "#7f1d1d" : "#1e293b", color: "#fecaca", border: "1px solid #ef444455", borderRadius: 8, padding: "4px 10px", fontSize: 13, fontWeight: 800, minHeight: 34 }}>{auto ? "Pause" : "▶ Run clock"}</button>}
+  const status = dl.done ? "The deadline has passed" : left === 1 ? "Final hour" : `${left} hours to go`;
+
+  // the clock: the hour, what's left, the day as a thin line
+  const clock = (
+    <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1.6, color: dl.done ? "#94a3b8" : "#fca5a5" }}>{dl.done ? "DEADLINE DAY · FINAL" : "TRADE DEADLINE DAY"}</div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <span style={{ fontSize: MOBILE ? 30 : 38, fontWeight: 900, letterSpacing: -0.5, fontVariantNumeric: "tabular-nums" }}>{DEADLINE_HOURS[dl.hour]}<span style={{ fontSize: 15, color: "#94a3b8", marginLeft: 6 }}>ET</span></span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: dl.done ? "#94a3b8" : "#fecaca" }}>{status}</span>
         </div>
-        <div style={{ display: "flex", gap: 3, marginTop: 6 }}>{DEADLINE_HOURS.map((h, i) => <div key={h} style={{ flex: 1, height: 4, borderRadius: 2, background: i < dl.hour ? "#ef4444" : i === dl.hour ? "#fff" : "#ffffff22" }} />)}</div>
       </div>
-      <Ticker deals={dl.deals} teams={teams} yr={yr} />
-      <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
-        <div style={panel}>
-          <div style={head}>Your phone {dl.offers.length > 0 && <span style={{ background: "#dc2626", color: "#fff", borderRadius: 10, padding: "0 7px", marginLeft: 6 }}>{dl.offers.length}</span>}</div>
-          {dl.offers.map((o) => <Offer key={o.id} o={o} teams={teams} pickValue={pickValue} onAccept={onAccept} onDecline={onDecline} setSel={setSel} hour={dl.hour} />)}
-          {!dl.offers.length && <div style={{ fontSize: 14, color: C.mt, lineHeight: 1.5 }}>{dl.done ? "The phones have gone quiet." : "No offers on the table right now. Calls come in through the day, and put players on the trade block to draw interest. Or pick up the phone yourself with Make a call."}{auto && !dl.done ? " The clock pauses whenever an offer comes in." : ""}</div>}
-          {dl.done && (
-            <div style={{ marginTop: 12 }}>
-              <div style={head}>TODAY'S DEALS ({dl.deals.length})</div>
-              {dl.deals.map((d, i) => <div key={i} style={{ fontSize: 14, padding: "5px 0", borderBottom: `1px solid ${C.bd}66` }}><b>{teams[d.buyer]?.ab}</b> get <b>{d.player.name}</b> ({d.player.pos} {d.player.ovr}) from <b>{teams[d.seller]?.ab}</b></div>)}
-              {!dl.deals.length && <div style={{ fontSize: 14, color: C.mt }}>A quiet deadline: no trades between other clubs.</div>}
-            </div>
-          )}
-        </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {[["feed", "Feed"], ["block", "Trade block"], ["market", "Buyers & sellers"]].map(([k, l]) => <button key={k} onClick={() => setView(k)} style={{ flex: 1, background: view === k ? `${C.bl}33` : C.cd, border: `1px solid ${view === k ? C.bl : C.bd}`, color: view === k ? "#bfdbfe" : "#cbd5e1", borderRadius: 8, padding: "6px 4px", fontSize: 13, fontWeight: 800 }}>{l}</button>)}
-        </div>
-        {view === "feed" && <>
-        <div style={{ ...panel, gridColumn: "span 1" }}>
-          <div style={head}>Deadline feed</div>
-          <div>
-            {dl.feed.map((f) => {
-              const k = KIND[f.kind] || KIND.news;
-              const t = f.ti != null ? teams[f.ti] : null;
-              return (
-                <div key={f.id} style={{ display: "flex", gap: 10, padding: "9px 4px", borderBottom: `1px solid ${C.bd}66`, background: f.big ? "#ef444414" : "transparent" }}>
-                  <div style={{ width: 52, flex: "0 0 auto", fontSize: 11, color: C.mt, textAlign: "right" }}>{DEADLINE_HOURS[f.hour].replace(":00", "")}</div>
-                  {t ? <TeamLogo t={t} sz={26} /> : <span style={{ width: 26 }} />}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: k.c, marginRight: 6 }}>{f.big ? "BREAKING" : k.tag}</span>
-                    <span style={{ fontSize: f.kind === "trade" ? 15 : 14, fontWeight: f.kind === "trade" ? 700 : 400, color: "#e2e8f0" }}>{f.text}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        </>}
-        {view === "block" && <>
-        <div style={panel}>
-          <div style={head}>Trade block</div>
-          <TradeBlock teams={teams} ui={ui} needs={needs} pickValue={pickValue} onInquire={onInquire} setSel={setSel} closed={dl.done} />
-        </div>
-        </>}
-        {view === "market" && <>
-        <div style={panel}>
-          <div style={head}>Buyers</div>
-          {buyers.slice(0, 8).map((b) => <div key={b.ti} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}><TeamLogo t={teams[b.ti]} sz={22} /><span style={{ flex: 1, fontSize: 14 }}>{b.name}</span><b style={{ fontSize: 14, color: C.gn }}>{b.rec}</b></div>)}
-          {!buyers.length && <div style={{ fontSize: 13, color: C.mt }}>Nobody's clearly in win-now mode.</div>}
-          <div style={{ ...head, marginTop: 14 }}>Sellers</div>
-          {sellers.slice(0, 8).map((s) => <div key={s.ti} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}><TeamLogo t={teams[s.ti]} sz={22} /><span style={{ flex: 1, fontSize: 14 }}>{s.name}</span><b style={{ fontSize: 14, color: C.rd }}>{s.rec}</b></div>)}
-          {!sellers.length && <div style={{ fontSize: 13, color: C.mt }}>Nobody's clearly selling.</div>}
-        </div>
-        </>}
+      {!MOBILE && <span style={{ marginLeft: "auto", textAlign: "right", fontSize: 14, color: "#94a3b8" }}>
+        <b style={{ color: "#fff", fontSize: 16 }}>{me?.w || 0}-{me?.l || 0}</b> after week 9<br />
+        Cap space <b style={{ color: capSpace >= 0 ? "#86efac" : "#fca5a5" }}>{money(capSpace)}</b>
+      </span>}
+    </div>
+  );
+  const track = <div style={{ display: "flex", gap: 3, marginTop: 10 }}>{DEADLINE_HOURS.map((h, i) => <div key={h} title={h} style={{ flex: 1, height: 4, borderRadius: 2, background: i < dl.hour ? "#ef4444aa" : i === dl.hour ? "#fff" : "#ffffff1a" }} />)}</div>;
+  const actions = !dl.done ? <>
+    <button onClick={onAdvance} style={{ ...actBtn("#fff", false), background: "#fff", color: "#0b1220", padding: "9px 18px", fontSize: 14.5 }}>Advance to {DEADLINE_HOURS[dl.hour + 1]}</button>
+    <button onClick={() => setAuto((a) => !a)} style={{ ...actBtn("#e2e8f0"), padding: "9px 16px" }}>{auto ? "Pause the clock" : "Run the clock"}</button>
+    <button onClick={onOpenTrade} style={{ ...actBtn("#7dd3fc"), padding: "9px 16px" }}>Make a call</button>
+    <button onClick={onFinish} style={{ ...actBtn("#94a3b8"), padding: "9px 16px" }}>Sim to 4:00 PM</button>
+  </> : <button onClick={onClose} style={{ ...actBtn(C.gn, true), padding: "9px 18px", fontSize: 14.5 }}>Back to the season</button>;
+
+  const phone = (
+    <>
+      <div style={{ ...cardTitle, display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>Your phone{dl.offers.length > 0 && <span style={{ fontSize: 13, fontWeight: 900, color: "#0b1220", background: "#fff", borderRadius: 99, padding: "1px 8px" }}>{dl.offers.length}</span>}</div>
+      {dl.offers.map((o) => <Offer key={o.id} o={o} teams={teams} pickValue={pickValue} onAccept={onAccept} onDecline={onDecline} setSel={setSel} hour={dl.hour} />)}
+      {!dl.offers.length && <div style={{ fontSize: 14.5, color: "#94a3b8", lineHeight: 1.5 }}>{dl.done ? "The phones have gone quiet." : "No offers right now. Calls come in through the day."}{auto && !dl.done ? " The clock stops when one does." : ""}</div>}
+      {dl.done && <>
+        <div style={{ ...cardTitle, fontSize: 15, margin: "16px 0 6px" }}>Today's deals · {dl.deals.length}</div>
+        {dl.deals.map((d, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, padding: "4px 0", color: "#cbd5e1" }}>{teams[d.buyer] && <TeamLogo t={teams[d.buyer]} sz={18} />}<span style={{ minWidth: 0 }}><b style={{ color: "#fff" }}>{d.player.name}</b> {d.player.pos} {d.player.ovr} from {teams[d.seller]?.ab}</span></div>)}
+        {!dl.deals.length && <div style={{ fontSize: 14, color: "#94a3b8" }}>A quiet deadline: no trades between other clubs.</div>}
+      </>}
+    </>
+  );
+
+  // phones: the clock, then one thing at a time; advancing it is the action bar's job
+  if (MOBILE) return (
+    <div>
+      <div style={{ ...card, padding: "14px 16px", marginBottom: 12 }}>
+        {clock}{track}
+        {!dl.done && <button onClick={() => setAuto((a) => !a)} style={{ ...actBtn("#e2e8f0"), width: "100%", minHeight: 44, marginTop: 12 }}>{auto ? "Pause the clock" : "Run the clock"}</button>}
+      </div>
+      <Pills full items={[["phone", `Phone${dl.offers.length ? ` · ${dl.offers.length}` : ""}`], ["feed", "Feed"], ["block", "Block"], ["market", "Market"]]} value={view} onChange={setView} label="Deadline" style={{ marginBottom: 12 }} />
+      <div style={{ ...card, padding: "14px 16px" }}>
+        {view === "phone" && phone}
+        {view === "feed" && <Feed dl={dl} teams={teams} />}
+        {view === "block" && <TradeBlock teams={teams} ui={ui} needs={needs} pickValue={pickValue} onInquire={onInquire} setSel={setSel} closed={dl.done} />}
+        {view === "market" && <Market buyers={buyers} sellers={sellers} teams={teams} />}
       </div>
     </div>
   );
   return (
-    <div style={{ margin: "-4px 0 0" }}>
-      <div style={{ background: "linear-gradient(120deg,#450a0a,#0b0f19 55%,#1e1b4b)", border: "1px solid #ef444466", borderRadius: 14, padding: "14px 16px", marginBottom: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: 3, color: "#fca5a5" }}>{dl.done ? "DEADLINE DAY · FINAL" : "● LIVE · TRADE DEADLINE DAY"}</div>
-            <Clock hour={dl.hour} done={dl.done} />
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            {me && <TeamLogo t={me} sz={40} />}
-            <div style={{ fontSize: 13, color: "#cbd5e1" }}><div><b style={{ color: "#fff" }}>{me?.w || 0}-{me?.l || 0}</b> after week 9</div><div>Cap space <b style={{ color: capSpace >= 0 ? C.gn : C.rd }}>{money(capSpace)}</b></div></div>
-          </div>
-        </div>
-        <HourTrack hour={dl.hour} />
-        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-          {!dl.done ? (
-            <>
-              <Btn onClick={onAdvance} bg="#dc2626" style={{ fontWeight: 900, fontSize: 15, padding: "8px 16px" }}>Advance to {DEADLINE_HOURS[dl.hour + 1]} ▸</Btn>
-              <Btn onClick={() => setAuto((a) => !a)} bg={auto ? "#7f1d1d" : "#1e293b"} c="#fecaca" style={{ fontSize: 14 }}>{auto ? "Pause clock" : "▶ Run the clock"}</Btn>
-              <Btn onClick={onOpenTrade} bg="#1d4ed8" style={{ fontSize: 14 }}>Make a call (trade screen)</Btn>
-              <Btn onClick={onFinish} bg="#1e293b" c="#94a3b8" style={{ fontSize: 13 }}>Sim to 4:00 PM</Btn>
-            </>
-          ) : <Btn onClick={onClose} bg={C.gn} style={{ fontWeight: 900, fontSize: 15, padding: "8px 18px" }}>Back to the season ▸</Btn>}
-        </div>
+    <div>
+      <div style={{ ...card, padding: "16px 20px", marginBottom: 14, background: "radial-gradient(120% 140% at 0% 0%, #7f1d1d44, transparent 60%), #111827" }}>
+        {clock}{track}
+        <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>{actions}</div>
       </div>
-      <Ticker deals={dl.deals} teams={teams} yr={yr} />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,300px),1fr))", gap: 10, marginTop: 10 }}>
-        <div style={panel}>
-          <div style={head}>Your phone {dl.offers.length > 0 && <span style={{ background: "#dc2626", color: "#fff", borderRadius: 10, padding: "0 7px", marginLeft: 6 }}>{dl.offers.length}</span>}</div>
-          {dl.offers.map((o) => <Offer key={o.id} o={o} teams={teams} pickValue={pickValue} onAccept={onAccept} onDecline={onDecline} setSel={setSel} hour={dl.hour} />)}
-          {!dl.offers.length && <div style={{ fontSize: 14, color: C.mt, lineHeight: 1.5 }}>{dl.done ? "The phones have gone quiet." : "No offers on the table right now. Calls come in through the day, and put players on the trade block to draw interest. Or pick up the phone yourself with Make a call."}{auto && !dl.done ? " The clock pauses whenever an offer comes in." : ""}</div>}
-          {dl.done && (
-            <div style={{ marginTop: 12 }}>
-              <div style={head}>TODAY'S DEALS ({dl.deals.length})</div>
-              {dl.deals.map((d, i) => <div key={i} style={{ fontSize: 14, padding: "5px 0", borderBottom: `1px solid ${C.bd}66` }}><b>{teams[d.buyer]?.ab}</b> get <b>{d.player.name}</b> ({d.player.pos} {d.player.ovr}) from <b>{teams[d.seller]?.ab}</b></div>)}
-              {!dl.deals.length && <div style={{ fontSize: 14, color: C.mt }}>A quiet deadline: no trades between other clubs.</div>}
-            </div>
-          )}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1.15fr) minmax(0,1.15fr)", gap: 14, ...fitH, height: "calc(100vh - 300px)" }}>
+        <div style={{ ...card, overflowY: "auto", minHeight: 0 }}>{phone}</div>
+        <div style={{ ...card, display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <div style={{ ...cardTitle, marginBottom: 6 }}>The feed</div>
+          <div style={{ overflowY: "auto", minHeight: 0, flex: 1 }}><Feed dl={dl} teams={teams} /></div>
         </div>
-        <div style={{ ...panel, gridColumn: "span 1" }}>
-          <div style={head}>Deadline feed</div>
-          <div style={{ maxHeight: 560, overflowY: "auto" }}>
-            {dl.feed.map((f) => {
-              const k = KIND[f.kind] || KIND.news;
-              const t = f.ti != null ? teams[f.ti] : null;
-              return (
-                <div key={f.id} style={{ display: "flex", gap: 10, padding: "9px 4px", borderBottom: `1px solid ${C.bd}66`, background: f.big ? "#ef444414" : "transparent" }}>
-                  <div style={{ width: 52, flex: "0 0 auto", fontSize: 11, color: C.mt, textAlign: "right" }}>{DEADLINE_HOURS[f.hour].replace(":00", "")}</div>
-                  {t ? <TeamLogo t={t} sz={26} /> : <span style={{ width: 26 }} />}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: k.c, marginRight: 6 }}>{f.big ? "BREAKING" : k.tag}</span>
-                    <span style={{ fontSize: f.kind === "trade" ? 15 : 14, fontWeight: f.kind === "trade" ? 700 : 400, color: "#e2e8f0" }}>{f.text}</span>
-                  </div>
-                </div>
-              );
-            })}
+        <div style={{ ...card, display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <Pills items={[["block", "On the block"], ["market", "Buying and selling"]]} value={view} onChange={setView} label="Market" style={{ marginBottom: 10, alignSelf: "flex-start" }} />
+          <div style={{ overflowY: "auto", minHeight: 0, flex: 1 }}>
+            {view === "market" ? <Market buyers={buyers} sellers={sellers} teams={teams} /> : <TradeBlock teams={teams} ui={ui} needs={needs} pickValue={pickValue} onInquire={onInquire} setSel={setSel} closed={dl.done} />}
           </div>
-        </div>
-        <div style={panel}>
-          <div style={head}>Trade block</div>
-          <TradeBlock teams={teams} ui={ui} needs={needs} pickValue={pickValue} onInquire={onInquire} setSel={setSel} closed={dl.done} />
-        </div>
-        <div style={panel}>
-          <div style={head}>Buyers</div>
-          {buyers.slice(0, 8).map((b) => <div key={b.ti} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}><TeamLogo t={teams[b.ti]} sz={22} /><span style={{ flex: 1, fontSize: 14 }}>{b.name}</span><b style={{ fontSize: 14, color: C.gn }}>{b.rec}</b></div>)}
-          {!buyers.length && <div style={{ fontSize: 13, color: C.mt }}>Nobody's clearly in win-now mode.</div>}
-          <div style={{ ...head, marginTop: 14 }}>Sellers</div>
-          {sellers.slice(0, 8).map((s) => <div key={s.ti} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}><TeamLogo t={teams[s.ti]} sz={22} /><span style={{ flex: 1, fontSize: 14 }}>{s.name}</span><b style={{ fontSize: 14, color: C.rd }}>{s.rec}</b></div>)}
-          {!sellers.length && <div style={{ fontSize: 13, color: C.mt }}>Nobody's clearly selling.</div>}
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@
 // the middle, and the league leaders on the right (all on one screen, no scrolling). Phones: the
 // leaders as cards you swipe, then the week's games one line each.
 import React, { useMemo, useState } from "react";
-import { C, Face, TeamLogo, Hero, Section } from "./ui.jsx";
+import { C, Face, TeamLogo, Hero, Section, card, cardTitle } from "./ui.jsx";
 import { posTag } from "./dline.js";
 
 const LEADERS = [
@@ -29,14 +29,14 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
     teams.forEach((t, ti) => [...t.roster, ...(t.ir || [])].forEach((p) => { if (p.ss && (p.ss.gp || 0) > 0) all.push({ p, t, ti }); }));
     return LEADERS.map(([title, v, ok, cols]) => ({ title, cols, top: all.filter((x) => ok(x.p) && v(x.p.ss) > 0).sort((a, b) => v(b.p.ss) - v(a.p.ss)).slice(0, 3) }));
   }, [teams]);
-  const panel = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px" };
-  const head = { fontSize: 16, fontWeight: 800, color: "#fff" };
+  const panel = card;
+  const head = cardTitle;
   const Side = ({ t, i, s, won }) => (
     <span onClick={() => onTeam?.(i)} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", minWidth: 0, opacity: won === false ? 0.55 : 1 }}>
-      <TeamLogo t={t} sz={mobile ? 26 : 30} />
+      <TeamLogo t={t} sz={mobile ? 26 : 30} glow />
       <span style={{ lineHeight: 1.1 }}>
-        <b style={{ fontSize: 14, color: i === ui ? C.gn : "#fff" }}>{t.ab}</b>
-        <span style={{ display: "block", fontSize: 12, color: C.mt }}>{rec(t)}</span>
+        <b style={{ fontSize: 15, color: i === ui ? C.gn : "#fff" }}>{t.ab}</b>
+        <span style={{ display: "block", fontSize: 13, color: C.mt }}>{rec(t)}</span>
       </span>
       {s != null && <b style={{ marginLeft: "auto", fontSize: 20, fontVariantNumeric: "tabular-nums", color: won ? "#fff" : "#94a3b8" }}>{s}</b>}
     </span>
@@ -49,9 +49,9 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
           <span style={head}>Weekly schedule</span>
           <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <button aria-label="Previous week" disabled={week <= (weeks[0] || 1)} onClick={() => setW(Math.max(weeks[0] || 1, week - 1))} style={{ background: C.bg, color: "#fff", border: "1px solid #ffffff10", borderRadius: 6, padding: "2px 9px", cursor: "pointer" }}>‹</button>
-            <b style={{ fontSize: 14, minWidth: 64, textAlign: "center" }}>Week {week}</b>
-            <button aria-label="Next week" disabled={week >= (weeks[weeks.length - 1] || 18)} onClick={() => setW(Math.min(weeks[weeks.length - 1] || 18, week + 1))} style={{ background: C.bg, color: "#fff", border: "1px solid #ffffff10", borderRadius: 6, padding: "2px 9px", cursor: "pointer" }}>›</button>
+            <button aria-label="Previous week" disabled={week <= (weeks[0] || 1)} onClick={() => setW(Math.max(weeks[0] || 1, week - 1))} style={{ width: 32, height: 32, borderRadius: 16, background: "#ffffff0f", color: "#fff", border: 0, cursor: "pointer", fontSize: 16 }}>‹</button>
+            <b style={{ fontSize: 15, minWidth: 70, textAlign: "center" }}>Week {week}</b>
+            <button aria-label="Next week" disabled={week >= (weeks[weeks.length - 1] || 18)} onClick={() => setW(Math.min(weeks[weeks.length - 1] || 18, week + 1))} style={{ width: 32, height: 32, borderRadius: 16, background: "#ffffff0f", color: "#fff", border: 0, cursor: "pointer", fontSize: 16 }}>›</button>
           </span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", gap: 6 }}>
@@ -59,9 +59,9 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
             const A = teams[g.a], H = teams[g.h];
             const mine = g.h === ui || g.a === ui;
             return (
-              <div key={k} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8, background: mine ? "#16a34a1a" : "#ffffff08", borderRadius: 12, padding: "7px 12px" }}>
+              <div key={k} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 8, background: mine ? "#16a34a1a" : "#ffffff08", borderRadius: 14, padding: "8px 12px" }}>
                 <Side t={A} i={g.a} s={g.played ? g.as : null} won={g.played ? g.as > g.hs : undefined} />
-                <span style={{ fontSize: 11, color: C.mt, fontWeight: 800 }}>{g.played ? "FINAL" : "AT"}</span>
+                <span style={{ fontSize: 12, color: C.mt, fontWeight: 800 }}>{g.played ? "FINAL" : "AT"}</span>
                 <Side t={H} i={g.h} s={g.played ? g.hs : null} won={g.played ? g.hs > g.as : undefined} />
               </div>
             );
@@ -72,21 +72,21 @@ export default function LeagueView({ teams, ui, sched, wk, sp, mobile, onPlayer,
       </div>
       <div style={panel}>
         <div style={{ ...head, marginBottom: 6 }}>League leaders</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 14px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 22px" }}>
           {leaders.map((b) => (
             <div key={b.title} style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", fontSize: 10.5, fontWeight: 900, letterSpacing: 1, color: C.mt, borderBottom: `1px solid ${C.bd}`, paddingBottom: 3, marginBottom: 3 }}>
+              <div style={{ display: "flex", fontSize: 12, fontWeight: 900, letterSpacing: 0.8, color: C.mt, paddingBottom: 4, marginBottom: 2 }}>
                 <span style={{ flex: 1 }}>{b.title}</span>
-                {b.cols.map(([l]) => <span key={l} style={{ width: 34, textAlign: "right" }}>{l}</span>)}
+                {b.cols.map(([l]) => <span key={l} style={{ width: 40, textAlign: "right" }}>{l}</span>)}
               </div>
               {b.top.map(({ p, t, ti }) => (
-                <div key={p.id} onClick={() => onPlayer?.(p)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 0", cursor: "pointer", fontSize: 12 }}>
-                  <Face s={p.face} sz={24} />
+                <div key={p.id} className="calm-row" onClick={() => onPlayer?.(p)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 6px", margin: "0 -6px", cursor: "pointer", fontSize: 14 }}>
+                  <Face s={p.face} sz={30} />
                   <span style={{ flex: 1, minWidth: 0, lineHeight: 1.1 }}>
-                    <span style={{ display: "block", fontSize: 10, color: ti === ui ? C.gn : C.mt, fontWeight: 800 }}>{t.ab}</span>
                     <b style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: ti === ui ? C.gn : "#f1f5f9" }}>{short(p.name)}</b>
+                    <span style={{ display: "block", fontSize: 12, color: ti === ui ? C.gn : C.mt, fontWeight: 700 }}>{t.ab}</span>
                   </span>
-                  {b.cols.map(([l, f]) => <span key={l} style={{ width: 34, textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: l === "YDS" || l === "SCK" || l === "INT" || l === "TKL" ? 900 : 600, color: "#e2e8f0" }}>{f ? f(p.ss).toLocaleString() : posTag(p)}</span>)}
+                  {b.cols.map(([l, f]) => <span key={l} style={{ width: 40, textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: l === "YDS" || l === "SCK" || l === "INT" || l === "TKL" ? 900 : 600, color: "#e2e8f0" }}>{f ? f(p.ss).toLocaleString() : posTag(p)}</span>)}
                 </div>
               ))}
               {!b.top.length && <div style={{ fontSize: 12, color: C.mt, padding: "4px 0" }}>No games yet.</div>}

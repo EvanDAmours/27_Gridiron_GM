@@ -1,14 +1,13 @@
 // The League > Transactions page: the wire (transactions.js), newest first, filtered by kind, club
 // and season, grouped by season and week.
 import React, { useState, useMemo } from "react";
-import { C, TeamLogo, quietPill } from "./ui.jsx";
+import { C, TeamLogo, Pills, card, field, fitH } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import Select from "./Select.jsx";
 import { KINDS } from "./transactions.js";
 
-const ICON = { trade: "", sign: "", release: "", coach: "", retire: "" }; // words, never emoji
 const TAG = { trade: "Trade", sign: "Signing", release: "Release", coach: "Coaching", retire: "Retirement" };
-const TONE = { trade: "#a78bfa", sign: C.gn, release: "#f87171", coach: "#7dd3fc", retire: "#fbbf24" };
+const TONE = { trade: "#c4b5fd", sign: "#86efac", release: "#fca5a5", coach: "#7dd3fc", retire: "#fde68a" };
 
 export default function TransactionsWire({ wire = [], teams = [], ui }) {
   const [kind, setKind] = useState("all");
@@ -25,12 +24,11 @@ export default function TransactionsWire({ wire = [], teams = [], ui }) {
     if (groups[groups.length - 1]?.key !== key) groups.push({ key, items: [] });
     groups[groups.length - 1].items.push(e);
   }
-  const chip = quietPill;
-  const selStyle = { background: "#ffffff12", color: C.tx, border: 0, borderRadius: 999, padding: "8px 14px", fontSize: 14, flex: MOBILE ? 1 : "0 0 auto", minWidth: 0 };
+  const selStyle = { ...field, flex: MOBILE ? 1 : "0 0 auto", minWidth: 0 };
   const filters = (<>
     <Select value={team} onChange={(e) => setTeam(e.target.value)} aria-label="Club" style={selStyle}>
       <option value="all">All clubs</option>
-      {teams.map((t, i) => <option key={i} value={i}>{i === ui ? "★ " : ""}{t.city} {t.name}</option>)}
+      {teams.map((t, i) => <option key={i} value={i}>{t.city} {t.name}{i === ui ? " (you)" : ""}</option>)}
     </Select>
     <Select value={season} onChange={(e) => setSeason(e.target.value)} aria-label="Season" style={selStyle}>
       <option value="all">All seasons</option>
@@ -38,34 +36,31 @@ export default function TransactionsWire({ wire = [], teams = [], ui }) {
     </Select>
   </>);
   return (
-    <div style={{ maxWidth: 1100 }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-        {MOBILE && <div style={{ fontSize: 20, fontWeight: 900 }}>Transactions</div>}
-        {!MOBILE && <div style={{ fontSize: 14, color: C.mt }}>Every trade, signing, release, coaching move and retirement around the league.</div>}
+    <div>
+      {MOBILE && <div style={{ fontSize: 20, fontWeight: 900, marginBottom: 8 }}>Transactions</div>}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10, flexWrap: MOBILE ? "wrap" : "nowrap" }}>
+        <Pills quiet wrap={false} items={[["all", "All"], ...KINDS.filter(([k]) => total[k] || kind === k).map(([k, l]) => [k, <>{l} <span style={{ opacity: 0.55, fontWeight: 700 }}>{counts[k]}</span></>])]} value={kind} onChange={setKind} label="Kind" style={MOBILE ? { overflowX: "auto", width: "100%" } : undefined} />
+        {!MOBILE && <span style={{ flex: 1 }} />}
+        {filters}
       </div>
-      <div style={{ display: "flex", gap: 6, flexWrap: MOBILE ? "nowrap" : "wrap", overflowX: MOBILE ? "auto" : "visible", alignItems: "center", marginBottom: MOBILE ? 6 : 10, paddingBottom: MOBILE ? 2 : 0 }}>
-        <button onClick={() => setKind("all")} style={chip(kind === "all")}>All</button>
-        {KINDS.filter(([k]) => total[k] || kind === k).map(([k, l]) => <button key={k} onClick={() => setKind(k)} style={chip(kind === k)}>{ICON[k]} {l} <span style={{ color: C.mt, fontWeight: 600 }}>{counts[k]}</span></button>)}
-        {!MOBILE && <><span style={{ flex: 1 }} />{filters}</>}
+      <div style={{ ...card, padding: "10px 16px", ...(MOBILE ? null : { ...fitH, overflowY: "auto" }) }}>
+        {!groups.length && <div style={{ color: "#94a3b8", fontSize: 14.5, padding: "6px 0" }}>Nothing on the wire yet. Trades, signings and coaching moves show up here as they happen.</div>}
+        {groups.map((g, gi) => (
+          <div key={g.key} style={{ marginTop: gi ? 14 : 2 }}>
+            <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 1, color: "#64748b", margin: "0 0 4px" }}>{g.key.toUpperCase()}</div>
+            {g.items.map((e, i) => {
+              const mine = (e.tm || []).includes(ui);
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 8px", margin: "0 -8px", borderRadius: 12, background: mine ? "#22c55e0f" : "transparent" }}>
+                  <span style={{ display: "inline-flex", gap: 2, minWidth: MOBILE ? 24 : 48 }}>{(e.tm || []).slice(0, MOBILE ? 1 : 2).map((ti) => teams[ti] && <TeamLogo key={ti} t={teams[ti]} sz={22} glow />)}</span>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, color: "#e2e8f0", lineHeight: 1.4 }}><b style={{ color: TONE[e.k], fontSize: 13, marginRight: 8 }}>{TAG[e.k]}</b>{e.t}</span>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+        {list.length > 400 && <div style={{ fontSize: 13, color: "#64748b", padding: "10px 0 4px" }}>Showing the latest 400. Filter by club or season to see more.</div>}
       </div>
-      {MOBILE && <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>{filters}</div>}
-      {!groups.length && <div style={{ background: "#ffffff0d", borderRadius: 18, padding: 16, color: C.mt, fontSize: 14 }}>Nothing on the wire yet. Trades, signings and coaching moves show up here as they happen.</div>}
-      {groups.map((g) => (
-        <div key={g.key} style={{ background: "#ffffff0d", borderRadius: 18, padding: "12px 16px", marginBottom: 10 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 6 }}>{g.key}</div>
-          {g.items.map((e, i) => {
-            const mine = (e.tm || []).includes(ui);
-            return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: i ? `1px solid ${C.bd}55` : "none", background: mine ? "#14532d22" : "transparent" }}>
-                {!MOBILE && <span style={{ width: 22, textAlign: "center", fontSize: 14 }} title={e.k}>{ICON[e.k]}</span>}
-                <span style={{ display: "inline-flex", gap: 2, minWidth: MOBILE ? 24 : 48 }}>{(e.tm || []).slice(0, MOBILE ? 1 : 2).map((ti) => teams[ti] && <TeamLogo key={ti} t={teams[ti]} sz={22} />)}</span>
-                <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: "#e2e8f0", lineHeight: 1.35 }}><b style={{ color: TONE[e.k], fontSize: 12, marginRight: 6 }}>{TAG[e.k]}</b>{e.t}</span>
-              </div>
-            );
-          })}
-        </div>
-      ))}
-      {list.length > 400 && <div style={{ fontSize: 12, color: C.mt }}>Showing the latest 400. Filter by club or season to see more.</div>}
     </div>
   );
 }

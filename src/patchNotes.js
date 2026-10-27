@@ -2027,4 +2027,10 @@ export const PATCH_NOTES = [
     "The Timeline tab is gone. Your achievements still show on your GM career.",
     "Old saves no longer show emoji in the news and logs.",
   ] },
+  { v: "4.96", date: "2026-10-23", title: "Calmer trades and free agency", notes: [
+    "Trade Deadline Day, calmer: the clock and its buttons in one card, then your phone, the day's feed and the market side by side, all on one screen. No scrolling ticker, no flashing red. On a phone, one thing at a time, and the action bar advances the clock.",
+    "Making a trade: the deal sits on top (what you send, what you get, whether they'd take it, one button), with each club's roster as calm rows underneath. The club picker is a tidy grid with each club's record and cap room.",
+    "The trade finder and your trade block are calm rows too: who you get, who you send, and the deal one click away.",
+    "Free agency on a computer is one calm list with sortable columns and the negotiate button on hover. The negotiation dialog is tighter: asking price and patience on one line, the shared pill choices, and fewer explanations in the way.",
+  ] },
 ];

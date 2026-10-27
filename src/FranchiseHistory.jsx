@@ -1,12 +1,12 @@
 // Your franchise's story at a glance: the record, the titles, your GM legacy, the documentaries and
 // every season you've run the club.
 import React from "react";
-import { C, TeamLogo } from "./ui.jsx";
+import { C, TeamLogo, actBtn, card as cardBase, fitH } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { legacyRank, legacyTier } from "./gmLegacy.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 
-const card = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px", marginBottom: 12 };
+const card = { ...cardBase, marginBottom: 12 };
 // section titles are plain white now; the color argument is kept so callers don't change
 const head = () => ({ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 8 });
 
@@ -25,20 +25,22 @@ export default function FranchiseHistory({ team, seasons = [], current, titles =
           {MOBILE ? <><div style={{ fontSize: 20, fontWeight: 900 }}>Franchise History</div>
           <div style={{ fontSize: 14, color: C.mt }}>{team.city} {team.name} · since you took over</div></> : <div style={{ fontSize: 14, color: C.mt }}>{team.city} {team.name} since you took over</div>}
         </div>
-        {onShare && <button onClick={onShare} style={{ background: "#ffffff12", color: "#e2e8f0", border: 0, borderRadius: 999, padding: "8px 14px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Share</button>}
+        {onShare && <button onClick={onShare} style={actBtn()}>Share</button>}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "repeat(3,1fr)" : "repeat(6,1fr)", gap: 8, marginBottom: 12 }}>
+      <div style={MOBILE ? undefined : { display: "grid", gridTemplateColumns: "minmax(0,1.3fr) minmax(0,1fr)", gap: 14, ...fitH, height: undefined, maxHeight: fitH.height }}>
+      <div style={MOBILE ? undefined : { minWidth: 0, overflowY: "auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "repeat(3,1fr)" : "repeat(3,1fr)", gap: 8, marginBottom: 12 }}>
         {[["Record", `${w}-${l}`], ["Win %", `${pct}%`], ["Super Bowls", titles.length, titles.length ? "#fbbf24" : null], ["Playoff trips", playoffs], ["Seasons", rows.length || 1], ["GM legacy", career?.score ?? 0, "#fde68a"]].map(([k, v, c]) => (
           <div key={k} style={{ ...card, marginBottom: 0, textAlign: "center", padding: "10px 6px" }}><div style={{ fontSize: 20, fontWeight: 900, color: c || C.tx }}>{v}</div><div style={{ fontSize: 14, fontWeight: 700, color: C.mt }}>{k}</div></div>
         ))}
       </div>
-      <div style={{ ...card, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "linear-gradient(135deg,#78350f44,#ffffff0d)" }}>
+      <div style={{ ...card, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "linear-gradient(135deg,#78350f44,#111827)" }}>
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={head("#fcd34d")}>Your GM legacy</div>
           <div style={{ fontSize: 16, fontWeight: 900 }}>{gmRetired ? `Retired after ${gmRetired.yr}` : career ? legacyTier(career.score, career.seasons) : "Just getting started"}{rank && rank <= 10 ? ` · #${rank} all time` : ""}</div>
           <div style={{ fontSize: 14, color: "#cbd5e1" }}>{gmRetired ? "Your career is in the books. Look back on it, or come out of retirement." : "Your whole career, a legacy score, and where you rank among the greatest GMs ever."}</div>
         </div>
-        <button onClick={onLegacy} style={{ background: "#b45309", color: "#fff", border: 0, borderRadius: 8, padding: "9px 14px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>{gmRetired ? "View career" : "Career & retire"}</button>
+        <button onClick={onLegacy} style={{ ...actBtn("#fde68a"), padding: "9px 16px" }}>{gmRetired ? "View career" : "Career & retire"}</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "1fr 1fr", gap: 12 }}>
         <div style={{ ...card, marginBottom: 0 }}>
@@ -55,12 +57,13 @@ export default function FranchiseHistory({ team, seasons = [], current, titles =
           {docs.length ? docs.map((d) => (
             <div key={d.yrs} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: `1px solid ${C.bd}66` }}>
               <span style={{ flex: 1, fontSize: 14 }}><b>The {d.yrs} Era</b> <span style={{ color: C.mt }}>· {d.w}-{d.l} · {d.tier}</span></span>
-              <button onClick={() => onWatch(d)} style={{ background: "#92400e33", color: "#fcd34d", border: "1px solid #f59e0b55", borderRadius: 6, padding: "4px 12px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>▶ Watch</button>
+              <button onClick={() => onWatch(d)} style={actBtn("#fde68a")}>Watch</button>
             </div>
           )) : <div style={{ fontSize: 14, color: C.mt }}>Every five seasons your club gets a documentary. The first comes out after the 2030 season.</div>}
         </div>
       </div>
-      <div style={{ ...card, marginTop: 12 }}>
+      </div>
+      <div style={{ ...card, ...(MOBILE ? { marginTop: 12 } : { marginBottom: 0, overflowY: "auto", minHeight: 0 }) }}>
         <div style={head()}>Season by season</div>
         {rows.map((s) => { const g = (s.w || 0) + (s.l || 0), wp = g ? s.w / g : 0, champ = won.has(s.yr); return (
           <div key={s.yr} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0", borderBottom: `1px solid ${C.bd}55` }}>
@@ -69,6 +72,7 @@ export default function FranchiseHistory({ team, seasons = [], current, titles =
             <div style={{ flex: 1, height: 8, background: "#ffffff10", borderRadius: 4, overflow: "hidden" }}><div style={{ width: `${(g / best) * wp * 100}%`, height: "100%", background: champ ? "#f59e0b" : wp >= 0.6 ? C.gn : wp >= 0.45 ? "#84cc16" : C.rd }} /></div>
             <span style={{ width: MOBILE ? 90 : 180, fontSize: 14, color: champ ? "#fcd34d" : C.mt, fontWeight: champ ? 800 : 500, textAlign: "right" }}>{champ ? "Super Bowl champions" : s.yr === current?.yr ? "In progress" : ""}</span>
           </div>); })}
+      </div>
       </div>
     </div>
   );

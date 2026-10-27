@@ -135,6 +135,8 @@ export function Pills({ items, value, onChange, big, quiet, full, wrap, label, s
 }
 // A quiet action (Extend, Restructure, Hire): a soft pill, tinted text for what it does.
 export const actBtn = (color = "#e2e8f0", strong) => ({ background: strong ? color : "#ffffff0f", color: strong ? "#fff" : color, border: 0, borderRadius: 99, padding: "7px 14px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" });
+// A select or search box: a soft pill, no border.
+export const field = { background: "#ffffff0d", color: "#e2e8f0", border: 0, borderRadius: 99, padding: "7px 14px", fontSize: 14, fontWeight: 700, minHeight: MOBILE_UI ? 44 : undefined, outline: "none" };
 // A card and its title (the Big Board's look).
 export const card = { background: "#111827", borderRadius: 20, padding: "16px 18px" };
 export const cardTitle = { fontSize: 17, fontWeight: 800, color: "#fff" };

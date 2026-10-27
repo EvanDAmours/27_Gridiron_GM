@@ -1,7 +1,7 @@
 // League history, one section at a time: the Super Bowl champions, the award winners year by year,
 // career leaders since the league began, the Hall of Fame and notable retirements.
 import React, { useState } from "react";
-import { C, TeamLogo, Bdg, Face, oC, Pills } from "./ui.jsx";
+import { C, TeamLogo, Face, oC, Pills, card as cardBase } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { CAREER_STATS, careerLeaders, retiredCard } from "./history.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
@@ -17,7 +17,7 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
   const [stat, setStat] = useState("passYds");
   const years = [...new Set(awards.map((a) => a.yr))].sort((a, b) => b - a);
   const [awYr, setAwYr] = useState(years[0]);
-  const card = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px" };
+  const card = cardBase;
   const team = (ab) => teams.find((t) => t.ab === ab);
   const retiredById = new Map(retired.map((r) => [r.id, r]));
   // a player wherever he is now: on a roster, or retired (his saved card)
@@ -39,7 +39,7 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
 
       {sec === "champs" && (titles.length ? <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "repeat(auto-fill,minmax(250px,1fr))", gap: 10 }}>
         {titles.map((c) => { const t = teams[c.ti], o = c.opp != null ? teams[c.opp] : null, mine = c.ti === ui; return (
-          <div key={c.yr} style={{ ...card, display: "flex", alignItems: "center", gap: 12, background: mine ? "linear-gradient(135deg,#78350f55,#ffffff0d)" : "#ffffff0d" }}>
+          <div key={c.yr} style={{ ...card, display: "flex", alignItems: "center", gap: 12, background: mine ? "linear-gradient(135deg,#78350f55,#111827)" : "#111827" }}>
             {t && <TeamLogo t={t} sz={48} />}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: "#fcd34d" }}>{sbName(sbNumber(c.yr))} · {c.yr}</div>
@@ -50,13 +50,11 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
       </div> : empty("No Super Bowl has been played in your league yet."))}
 
       {sec === "awards" && (years.length ? <>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-          {years.map((y) => <button key={y} onClick={() => setAwYr(y)} style={{ background: awYr === y ? `${C.gd}22` : "transparent", color: awYr === y ? "#fde68a" : C.mt, border: `1px solid ${awYr === y ? C.gd : C.bd}`, borderRadius: 8, padding: "4px 10px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{y}</button>)}
-        </div>
+        <Pills quiet items={years.map((y) => [y, String(y)])} value={awYr} onChange={setAwYr} label="Season" style={{ marginBottom: 10 }} />
         {(() => { const a = awards.find((x) => x.yr === awYr) || {}; return (
           <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "repeat(auto-fill,minmax(320px,1fr))", gap: 10 }}>
             {AW.map(([k, l]) => { const w = a[k], p = w && who(w.pid), t = w && teams[w.ti]; return (
-              <div key={k} onClick={w ? () => open(w.pid) : undefined} style={{ ...card, display: "flex", alignItems: "center", gap: 12, cursor: w && p ? "pointer" : "default", background: w?.ti === ui ? "#22c55e17" : "#ffffff0d" }}>
+              <div key={k} onClick={w ? () => open(w.pid) : undefined} style={{ ...card, display: "flex", alignItems: "center", gap: 12, cursor: w && p ? "pointer" : "default", background: w?.ti === ui ? "linear-gradient(135deg,#14532d55,#111827)" : "#111827" }}>
                 {p ? <Face s={p.face} sz={52} /> : <div style={{ width: 52 }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 800, color: k === "sbmvp" ? "#fcd34d" : "#7dd3fc" }}>{l}</div>
@@ -69,16 +67,14 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
       </> : empty("Awards are handed out after the Super Bowl."))}
 
       {sec === "leaders" && <>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-          {CAREER_STATS.map((c) => <button key={c.key} onClick={() => setStat(c.key)} style={{ background: stat === c.key ? `${C.bl}33` : "transparent", color: stat === c.key ? "#bfdbfe" : C.mt, border: `1px solid ${stat === c.key ? C.bl : C.bd}`, borderRadius: 8, padding: "4px 10px", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>{c.label}</button>)}
-        </div>
+        <Pills quiet items={CAREER_STATS.map((c) => [c.key, c.label])} value={stat} onChange={setStat} label="Stat" style={{ marginBottom: 10 }} />
         {(() => { const leaders = careerLeaders(teams, retired, stat, 10); return leaders.length ? <div style={card}>
           {leaders.map((r, i) => { const p = who(r.id), t = team(r.team); return (
-            <div key={r.id} onClick={p ? () => open(r.id) : undefined} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 4px", borderBottom: i < leaders.length - 1 ? `1px solid ${C.bd}66` : "none", cursor: p ? "pointer" : "default" }}>
+            <div key={r.id} onClick={p ? () => open(r.id) : undefined} className="calm-row" style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 8px", cursor: p ? "pointer" : "default" }}>
               <b style={{ width: 24, fontSize: 16, color: i < 3 ? "#fcd34d" : C.mt }}>{i + 1}</b>
               {p ? <Face s={p.face} sz={34} /> : <span style={{ width: 34 }} />}
-              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={posTag(r)} /> {r.active ? `active · ${r.team}` : `retired ${r.retYr} · ${r.team}`}</div></div>
-              {t && <TeamLogo t={t} sz={24} />}
+              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}>{posTag(r)} · {r.active ? `active · ${r.team}` : `retired ${r.retYr} · ${r.team}`}</div></div>
+              {t && <TeamLogo t={t} sz={24} glow />}
               <b style={{ fontSize: 20, minWidth: 70, textAlign: "right" }}>{num(r.v)}</b>
             </div>); })}
         </div> : empty("Career totals start counting with your league's first games."); })()}
@@ -86,13 +82,13 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
 
       {sec === "hof" && (hof.length ? <div style={{ display: "grid", gridTemplateColumns: MOBILE ? "1fr" : "repeat(auto-fill,minmax(300px,1fr))", gap: 10 }}>
         {hof.map((r) => { const c = retiredCard(r), in_ = r.hofClass <= yr; return (
-          <div key={r.id} onClick={setSel ? () => setSel(c) : undefined} title="Open his player card" style={{ ...card, cursor: "pointer", background: in_ ? "linear-gradient(160deg,#3b2a0a,#ffffff0d 70%)" : "#ffffff0d" }}>
+          <div key={r.id} onClick={setSel ? () => setSel(c) : undefined} title="Open his player card" style={{ ...card, cursor: "pointer", background: in_ ? "linear-gradient(160deg,#3b2a0a,#111827 70%)" : "#111827" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Face s={c.face} sz={52} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: in_ ? "#fcd34d" : C.mt }}>{in_ ? `Class of ${r.hofClass}` : `Enshrined ${r.hofClass}`}</div>
                 <div style={{ fontSize: 16, fontWeight: 900 }}>{r.name}</div>
-                <div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={posTag(r)} /> {r.team} · retired {r.retYr} at {r.age}</div>
+                <div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}>{posTag(r)} · {r.team} · retired {r.retYr} at {r.age}</div>
               </div>
               <div style={{ textAlign: "right" }}><div style={{ fontSize: 20, fontWeight: 900, color: oC(r.peak) }}>{r.peak}</div><div style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>peak</div></div>
             </div>
@@ -102,10 +98,10 @@ export default function LeagueHistory({ teams, champs = [], awards = [], retired
 
       {sec === "retired" && (notable.length ? <div style={card}>
         {notable.map((r, i) => { const c = retiredCard(r); return (
-          <div key={r.id} onClick={setSel ? () => setSel(c) : undefined} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 4px", borderBottom: i < notable.length - 1 ? `1px solid ${C.bd}66` : "none", cursor: "pointer" }}>
+          <div key={r.id} onClick={setSel ? () => setSel(c) : undefined} className="calm-row" style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 8px", cursor: "pointer" }}>
             <b style={{ width: 44, color: C.mt }}>{r.retYr}</b>
             <Face s={c.face} sz={34} />
-            <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}><Bdg pos={posTag(r)} /> {r.team} · {r.seasons} season{r.seasons > 1 ? "s" : ""} in the league · legacy {r.legacy}</div></div>
+            <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 800 }}>{r.name}</div><div style={{ fontSize: 12, color: C.mt, display: "flex", gap: 6, alignItems: "center" }}>{posTag(r)} · {r.team} · {r.seasons} season{r.seasons > 1 ? "s" : ""} in the league · legacy {r.legacy}</div></div>
             <div style={{ textAlign: "right" }}><div style={{ fontSize: 20, fontWeight: 900, color: oC(r.peak) }}>{r.peak}</div><div style={{ fontSize: 12, color: C.mt, fontWeight: 700 }}>peak</div></div>
           </div>); })}
       </div> : empty("No notable retirements yet."))}

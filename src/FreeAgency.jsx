@@ -4,7 +4,7 @@ import { fillsNeed } from "./needs.js";
 import Select from "./Select.jsx";
 import { MOBILE } from "./mobile.js";
 import React, { useState } from "react";
-import { C, oC, Bdg, Btn, Face, Sheet, Hero, Section, Chips, Icon } from "./ui.jsx";
+import { C, oC, Bdg, Face, Sheet, Hero, Section, Chips, Pills, actBtn, card, cardTitle, fitH, field } from "./ui.jsx";
 import { yearlyAsk, maxYears } from "./negotiation.js";
 // what the negotiation table opens at: his ask for the default length (two years, or one for a 33+ veteran)
 const askingPrice = (p) => yearlyAsk(p, Math.min(2, maxYears(p)), "fa");
@@ -18,7 +18,7 @@ import { ROLE_FILTERS, roleFilterMatch } from "./roleNeeds.js";
 
 // his development trait as a small tag (normal shows nothing)
 const DEV_C = { generational: "#f472b6", superstar: "#f5c542", star: "#60a5fa", late: "#34d399" };
-const DevTag = ({ p }) => { const d = devOf(p); return DEV_C[d] ? <span title={DEV_TRAITS[d]?.desc} style={{ fontSize: 11, fontWeight: 900, color: DEV_C[d], border: `1px solid ${DEV_C[d]}66`, borderRadius: 999, padding: "0 6px", marginLeft: 6, whiteSpace: "nowrap" }}>{DEV_TRAITS[d]?.name}</span> : null; };
+const DevTag = ({ p }) => { const d = devOf(p); return DEV_C[d] ? <span title={DEV_TRAITS[d]?.desc} style={{ fontSize: 12.5, fontWeight: 800, color: DEV_C[d], marginLeft: 8, whiteSpace: "nowrap" }}>{DEV_TRAITS[d]?.name}</span> : null; };
 
 // The market on a player: how many clubs have offered, yours and where it stands if you have, and
 // when he decides.
@@ -31,7 +31,7 @@ function MarketTag({ p, market, ui, teams }) {
   const st = mine ? standing(p, market, teams, ui) : null;
   return (
     <span style={{ fontSize: 12, fontWeight: 800, whiteSpace: "nowrap", color: mine ? "#93c5fd" : "#fca5a5" }}>
-      {mine ? <>Your offer ${mine.sal}M <span style={{ color: st === "lead" ? C.gn : "#fbbf24" }}>{st === "lead" ? "✓ leading" : "▲ outbid"}</span></> : ""}{mine && others ? " · " : ""}{others ? `${others} other offer${others > 1 ? "s" : ""}` : ""}{` · ${when}`}
+      {mine ? <>Your offer ${mine.sal}M <span style={{ color: st === "lead" ? C.gn : "#fbbf24" }}>{st === "lead" ? "leading" : "outbid"}</span></> : ""}{mine && others ? " · " : ""}{others ? `${others} other offer${others > 1 ? "s" : ""}` : ""}{` · ${when}`}
     </span>
   );
 }
@@ -48,9 +48,9 @@ export function YourOffers({ fa, market, teams, ui, onRaise, phone }) {
   if (!mine.length) return null;
   const lead = mine.filter((x) => x.st === "lead").length;
   return (
-    <div style={phone ? { marginTop: 26 } : { background: C.cd, border: `1px solid ${C.bl}55`, borderRadius: 10, padding: "10px 14px", marginBottom: 12 }}>
+    <div title={phone ? undefined : "Leading counts the whole offer (money, years, his role and fit), so less money can still lead. Click one to raise it."} style={phone ? { marginTop: 26 } : { ...card, padding: "14px 18px", marginBottom: 14 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: phone ? 10 : 6, padding: phone ? "0 2px" : 0 }}>
-        <span style={phone ? { fontSize: 20, fontWeight: 900 } : { fontSize: 14, fontWeight: 900, letterSpacing: 1, color: "#93c5fd" }}>{phone ? "Your offers" : "YOUR OFFERS"}</span>
+        <span style={phone ? { fontSize: 20, fontWeight: 900 } : cardTitle}>Your offers</span>
         <span style={{ fontSize: 14, fontWeight: 800, color: lead === mine.length ? C.gn : "#fbbf24" }}>leading {lead} of {mine.length}</span>
       </div>
       <div style={phone ? { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" } : { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))", gap: "0 18px" }}>
@@ -58,22 +58,21 @@ export function YourOffers({ fa, market, teams, ui, onRaise, phone }) {
           const ahead = st === "lead", dd = Math.max(market.day, decideDay(p, market.yr));
           return (
             <button key={p.id} onClick={() => onRaise(p)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 70, textAlign: "left", background: "transparent", border: 0, borderTop: i && (phone || i > 1) ? "1px solid #ffffff10" : 0, padding: "8px 0", color: C.tx, cursor: "pointer", whiteSpace: "normal" }}>
-              <span style={{ width: 6, alignSelf: "stretch", borderRadius: 3, background: ahead ? C.gn : "#f59e0b", flexShrink: 0 }} />
+              
               <Face s={p.face} sz={phone ? 40 : 32} />
               <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 800, fontSize: 16 }}><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><Bdg pos={posTag(p)} /><b style={{ color: oC(p.ovr), fontSize: 14 }}>{p.ovr}</b></span>
+                <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 800, fontSize: 16 }}><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><span style={{ color: "#94a3b8", fontWeight: 600, fontSize: 13 }}>{posTag(p)}</span><b style={{ color: oC(p.ovr), fontSize: 15 }}>{p.ovr}</b></span>
                 <span style={{ display: "block", fontSize: 14, color: "#cbd5e1", marginTop: 3 }}>You <b style={{ color: "#fff" }}>{money(me.sal)}</b> × {me.yrs}y · {top ? <>top rival <b style={{ color: top.sal > me.sal ? "#fca5a5" : "#fff" }}>{money(top.sal)}</b> × {top.yrs}y ({teams[top.team]?.ab}){rivals.length > 1 ? ` +${rivals.length - 1}` : ""}</> : "no other offers"}</span>
                 <span style={{ display: "block", fontSize: 12, color: C.mt, marginTop: 2 }}>{dd <= market.day ? "Decides today" : `Decides day ${dd}`} · asks {money(askingPrice(p))}</span>
               </span>
               <span style={{ textAlign: "right", flexShrink: 0 }}>
                 <b style={{ display: "block", fontSize: 14, color: ahead ? C.gn : "#fbbf24" }}>{ahead ? "Leading" : "Outbid"}</b>
-                {!ahead && <span style={{ fontSize: 12, fontWeight: 800, color: "#7dd3fc" }}>Raise ›</span>}
+                {!ahead && <span style={{ fontSize: 13, fontWeight: 800, color: "#7dd3fc" }}>Raise</span>}
               </span>
             </button>
           );
         })}
       </div>
-      {!phone && <div style={{ fontSize: 12, color: C.mt, marginTop: 6 }}>Leading counts the whole offer (money, years, his role and fit), so less money can still lead. Click one to raise it.</div>}
     </div>
   );
 }
@@ -81,7 +80,7 @@ export function YourOffers({ fa, market, teams, ui, onRaise, phone }) {
 // the defensive line is two positions here: edge rushers and interior tackles
 const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DT", "LB", "CB", "S", "K", "P"];
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
-const sel = { background: C.bg, color: C.tx, border: "1px solid #ffffff10", borderRadius: 6, padding: "8px 10px", fontSize: 14 };
+const sel = field;
 
 export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSpace, setSel, open, extras, sheets, talkFor, termsFor, onTalk, cy, market, onNextDay, sp }) {
   const [pos, setPos] = useState(startPos || "ALL");
@@ -108,105 +107,60 @@ export default function FreeAgency({ startPos, fa, team, teams, ui, needs, capSp
   const td = { padding: "9px 6px", borderBottom: `1px solid ${C.bd}55`, textAlign: "center", fontSize: 14 };
   const negotiate = () => (<Negotiate note={market && offer.ovr >= MARKET_MIN ? (() => { const o = bidsFor(market, offer.id).filter((b) => b.team !== ui).length, dd = Math.max(market.day, decideDay(offer, market.yr)); const st = standing(offer, market, teams, ui); return `${o ? `${o} club${o > 1 ? "s have" : " has"} made him an offer.` : "No offers yet."}${st === "lead" ? " Your offer is the best one for him right now." : st === "behind" ? " Another club's offer is better for him right now." : ""} He decides ${dd <= market.day ? "at the end of today" : `on day ${dd}`}. He takes the best offer for him: more money, or a club with what he wants. Only a big overpay (20%+ over his ask) signs him on the spot.`; })() : null} team={team} cy={cy} p={offer} mode="fa" cap={cap + (bidsFor(market, offer.id).find((b) => b.team === ui)?.sal || 0)} t={termsFor(offer, "fa")} talk={talkFor(offer)} onResult={(r, o) => onTalk(offer, "fa", r, o)} onClose={() => setOffer(null)} rivalName={(id) => teams[id] && `${teams[id].city} ${teams[id].name}`} />);
   if (MOBILE) return <PhoneFA {...{ sp, fa, rows, n, setN, pos, setPos, needs, q, setQ, find, setFind, sort, setSort, cap, out, nOut, open, market, onNextDay, sheets, extras, teams, ui, talkFor, setSel, offer, setOffer, team }} negotiate={offer && negotiate()} />;
+  const head = (k, l, w, left) => (
+    <button key={k} onClick={() => setSort(([s, d]) => [k, s === k ? -d : k === "name" || k === "pos" || k === "ask" || k === "age" ? 1 : -1])} style={{ width: w, flex: w ? "none" : 1, textAlign: left ? "left" : "right", background: "transparent", border: 0, padding: 0, cursor: "pointer", fontSize: 12, fontWeight: 800, letterSpacing: 0.6, color: sort[0] === k ? "#fff" : "#64748b", flexShrink: 0 }}>{l}{sort[0] === k ? (sort[1] < 0 ? " ▾" : " ▴") : ""}</button>
+  );
   return (
     <div>
-      <style>{"@media (max-width: 640px) { .fa-hide { display: none } }"}</style>
-      {/* the Trades & FA header above has the cap and roster; what's left: open offers and the pool size */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: "6px 20px", flexWrap: "wrap", marginBottom: 12, fontSize: 14, color: C.mt }}>
-        <span><b style={{ color: "#fff" }}>{fa.length}</b> free agents</span>
-        {out > 0 && <span><b style={{ color: "#fde68a" }}>{money(out)}</b> held in {nOut} open offer{nOut > 1 ? "s" : ""}</span>}
+      {/* the Trades & FA header above has the cap and roster; this line has the market */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+        {market && <span style={{ fontSize: 18, fontWeight: 800 }}>Day {market.day} <span style={{ color: "#64748b", fontWeight: 600 }}>of {FA_DAYS}</span></span>}
+        <span style={{ fontSize: 14, color: "#94a3b8", flex: 1, minWidth: 0 }} title={market ? "Clubs make offers every day. Each player takes the best one on his day: the money, plus the role, scheme and winning he wants. Only a big overpay signs him on the spot." : undefined}>
+          {fa.length} free agents{out > 0 ? <> · <b style={{ color: "#fde68a" }}>{money(out)}</b> held in {nOut} open offer{nOut > 1 ? "s" : ""}</> : null}{!open ? " · the main market opens after the Combine" : ""}{market && market.day >= FA_DAYS ? " · last day: everyone still deciding chooses when you finish free agency" : ""}
+        </span>
+        {market && market.day < FA_DAYS && <button onClick={onNextDay} style={{ ...actBtn(), background: "#fff", color: "#0b1220", padding: "9px 18px" }}>Next day</button>}
       </div>
-      {!open && <div style={{ background: "#ffffff0d", borderRadius: 14, padding: "12px 16px", marginBottom: 12, fontSize: 14, color: "#cbd5e1" }}>The big free agency period opens after the Combine. Right now it's whoever is left on the market.</div>}
-      {market && (
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#ffffff0d", borderRadius: 18, padding: "12px 16px", marginBottom: 12 }}>
-          <span style={{ fontSize: 20, fontWeight: 800 }}>Day {market.day} of {FA_DAYS}</span>
-          <span style={{ flex: "1 1 260px", fontSize: 14, color: "#cbd5e1", lineHeight: 1.4 }}>Clubs make offers every day. Each player takes the best one on his day: the money, plus the role, scheme and winning he wants. Only a big overpay signs him on the spot.</span>
-          {market.day < FA_DAYS ? <Btn onClick={onNextDay} bg={C.bl} style={{ fontSize: 14, padding: "9px 18px", fontWeight: 900 }}>Next day →</Btn> : <span style={{ fontSize: 14, color: "#fde68a", fontWeight: 700 }}>Last day: everyone still deciding chooses when you finish free agency.</span>}
-        </div>
-      )}
       {sheets}
       <YourOffers fa={fa} market={market} teams={teams} ui={ui} onRaise={setOffer} />
-      <div style={{ background: C.cd, border: "1px solid #ffffff10", borderRadius: 10, padding: 12 }}>
-        {MOBILE ? (
-          <>
-            {/* phones: one row (position, sort, needs, search behind the magnifier) instead of three */}
-            <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center" }}>
-              <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(50); }} aria-label="Position" style={{ ...sel, flex: "1 1 0", minWidth: 0 }}>
-                {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? "All pos." : x}</option>)}
-              </Select>
-              <Select value={sort[0]} onChange={(e) => setSort([e.target.value, ["name", "pos"].includes(e.target.value) ? 1 : -1])} aria-label="Sort free agents" style={{ ...sel, flex: "1 1 0", minWidth: 0 }}>
-                {[["ovr", "Overall"], ["ask", "Price"], ["age", "Age"], ["pos", "Position"], ["name", "Name"]].map(([k, l]) => <option key={k} value={k}>{l}</option>)}
-              </Select>
-              <button onClick={() => setNeedOnly((v) => !v)} aria-pressed={needOnly} title={`Your needs: ${needs.slice(0, 4).join(", ") || "none"}`} style={{ ...sel, flex: "0 0 auto", cursor: "pointer", background: needOnly ? `${C.bl}33` : C.bg, borderColor: needOnly ? C.bl : C.bd, fontWeight: 700 }}>Needs</button>
-              <button onClick={() => { setFind((v) => !v); if (find) setQ(""); }} aria-label="Search by name" style={{ ...sel, flex: "0 0 auto", cursor: "pointer", background: find || q ? `${C.bl}33` : C.bg, display: "inline-flex", alignItems: "center" }}><Icon k="search" size={18} /></button>
-            </div>
-            {find && <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search free agents" style={{ ...sel, width: "100%", boxSizing: "border-box", marginBottom: 8 }} />}
-          </>
-        ) : <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
-          <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(50); }} aria-label="Position" style={sel}>
+      <div style={{ ...card, padding: "12px 12px 8px", ...fitH, height: "calc(100vh - 340px)", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center", padding: "0 4px" }}>
+          <Pills items={[[false, "Everyone"], [true, `Your needs${needs.length ? `: ${needs.slice(0, 3).join(", ")}` : ""}`]]} value={needOnly} onChange={setNeedOnly} label="Show" />
+          <Select value={pos} onChange={(e) => { setPos(e.target.value); setN(50); }} aria-label="Position" style={field}>
             {["ALL", ...POS].map((x) => <option key={x} value={x}>{x === "ALL" ? "All positions" : x}</option>)}
             {ROLE_FILTERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </Select>
-          <button onClick={() => setNeedOnly((v) => !v)} style={{ ...sel, cursor: "pointer", background: needOnly ? `${C.bl}33` : C.bg, borderColor: needOnly ? C.bl : C.bd, fontWeight: 700 }}>Your needs: {needs.slice(0, 4).join(", ") || "none"}</button>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name" aria-label="Search free agents" style={{ ...sel, flex: "1 1 160px" }} />
-        </div>}
-        {MOBILE ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {rows.slice(0, n).map((p) => {
-              const ask = askingPrice(p);
-              const from = p.formerTeam != null ? teams[p.formerTeam] : null;
-              return (
-                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, background: p.formerTeam === ui ? "#14532d22" : C.bg, border: "1px solid #ffffff10", borderRadius: 10, padding: "8px 10px" }}>
-                  <span onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0, cursor: "pointer" }}>
-                    <Face s={p.face} sz={34} />
-                    <span style={{ minWidth: 0 }}>
-                      <span style={{ display: "block", fontWeight: 800, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}<DevTag p={p} /></span>
-                      <span style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12, color: "#94a3b8", marginTop: 2, flexWrap: "wrap" }}><Bdg pos={posTag(p)} /><RoleTag p={p} /><span>Age {p.age}</span><span style={{ color: ask <= cap ? "#e2e8f0" : C.rd, fontWeight: 700 }}>{money(ask)}/yr</span>{from && <span style={{ color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `ex-${from.ab}`}</span>}<MarketTag p={p} market={market} ui={ui} teams={teams} /></span>
-                    </span>
-                  </span>
-                  <span style={{ fontSize: 20, fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
-                  {talkFor(p).walked ? <span style={{ fontSize: 12, color: C.rd, fontWeight: 700, width: 64, textAlign: "center" }}>Not interested</span> : <Btn onClick={() => setOffer(p)} bg={C.gn} style={{ fontSize: 14, minHeight: 42, padding: "6px 12px" }}>Offer</Btn>}
-                </div>
-              );
-            })}
-            {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 14 }}>Nobody matches.</div>}
-          </div>
-        ) : (
-        <div style={{ maxHeight: "70vh", overflow: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr>{th("name", "PLAYER", true)}{th("pos", "POS")}{th("age", "AGE")}{th("ovr", "OVR")}<th className="fa-hide" style={{ padding: "8px 6px", fontSize: 12, fontWeight: 800, letterSpacing: 1, color: C.mt, borderBottom: `1px solid ${C.bd}`, position: "sticky", top: 0, background: C.cd }}>POT</th>{th("ask", "ASKING")}<th style={{ borderBottom: `1px solid ${C.bd}`, position: "sticky", top: 0, background: C.cd }}></th></tr></thead>
-            <tbody>
-              {rows.slice(0, n).map((p) => {
-                const ask = askingPrice(p);
-                const from = p.formerTeam != null ? teams[p.formerTeam] : null;
-                return (
-                  <tr key={p.id} style={{ background: p.formerTeam === ui ? "#14532d22" : "transparent" }}>
-                    <td style={{ ...td, textAlign: "left" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                        <Face s={p.face} sz={28} />
-                        <span>
-                          <span onClick={() => setSel(p)} style={{ fontWeight: 700, color: "#f1f5f9", cursor: "pointer", textUnderlineOffset: 3 }}>{p.name}</span>
-                          {p.xf && <span title={`X-Factor: ${p.xf}`} style={{ marginLeft: 6, fontSize: 11, fontWeight: 900, color: "#f472b6" }}>XF</span>}<DevTag p={p} />
-                          {from && <span style={{ display: "block", fontSize: 12, color: p.formerTeam === ui ? C.gn : C.mt }}>{p.formerTeam === ui ? "Your former player" : `Last with ${from.ab}`}</span>}
-                          {market && p.ovr >= MARKET_MIN && <span style={{ display: "block" }}><MarketTag p={p} market={market} ui={ui} teams={teams} /></span>}
-                        </span>
-                      </span>
-                    </td>
-                    <td style={td}><Bdg pos={posTag(p)} /><RoleTag p={p} /></td>
-                    <td style={{ ...td, color: "#cbd5e1" }}>{p.age}</td>
-                    <td style={{ ...td, fontWeight: 900, fontSize: 20, color: oC(p.ovr) }}>{p.ovr}</td>
-                    <td className="fa-hide" style={{ ...td, color: oC(p.pot || p.ovr) }}>{p.pot || p.ovr}</td>
-                    <td style={{ ...td, whiteSpace: "nowrap", color: ask <= cap ? "#e2e8f0" : C.rd }}>{money(ask)}<span className="fa-hide" style={{ color: C.mt, fontSize: 12 }}>/yr</span></td>
-                    <td style={{ ...td, textAlign: "right" }}>{talkFor(p).walked ? <span style={{ fontSize: 14, color: C.rd, fontWeight: 700 }}>Not interested</span> : <Btn onClick={() => setOffer(p)} bg="#22c55e1f" c="#4ade80" style={{ fontSize: 14, padding: "6px 14px", border: "1px solid #22c55e55", borderRadius: 8 }}>Negotiate</Btn>}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {!rows.length && <div style={{ padding: 16, color: C.mt, fontSize: 14 }}>Nobody matches.</div>}
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" aria-label="Search free agents" style={{ ...field, marginLeft: "auto", width: 170 }} />
         </div>
-        )}
-        {rows.length > n && <div style={{ textAlign: "center", marginTop: 10 }}><Btn onClick={() => setN(n + 50)} bg={C.bd} c="#cbd5e1" style={{ fontSize: 14, padding: "6px 14px" }}>Show more ({rows.length - n} left)</Btn></div>}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "4px 12px 6px" }}>
+          {head("name", "PLAYER", null, true)}{head("age", "AGE", 44)}{head("ovr", "OVR", 44)}<span style={{ width: 44, textAlign: "right", fontSize: 12, fontWeight: 800, letterSpacing: 0.6, color: "#64748b" }}>POT</span>{head("ask", "ASKING", 92)}<span style={{ width: 120, flexShrink: 0 }} />
+        </div>
+        <div style={{ overflowY: "auto", minHeight: 0, flex: 1 }}>
+          {rows.slice(0, n).map((p) => {
+            const ask = askingPrice(p), walked = talkFor(p).walked;
+            const from = p.formerTeam != null ? teams[p.formerTeam] : null;
+            return (
+              <div key={p.id} className="calm-row" onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "7px 12px", cursor: "pointer", opacity: walked ? 0.5 : 1 }}>
+                <Face s={p.face} sz={38} />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "flex", alignItems: "center", fontSize: 16, fontWeight: 800, color: p.formerTeam === ui ? "#86efac" : "#f8fafc", whiteSpace: "nowrap", overflow: "hidden" }}><span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><DevTag p={p} /></span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden" }}>
+                    {posTag(p)}<RoleTag p={p} />{from && <span>· {p.formerTeam === ui ? "your former player" : `last with ${from.ab}`}</span>}
+                    {market && p.ovr >= MARKET_MIN && <><span>·</span><MarketTag p={p} market={market} ui={ui} teams={teams} /></>}
+                  </span>
+                </span>
+                <span style={{ width: 44, textAlign: "right", fontSize: 15, color: "#cbd5e1" }}>{p.age}</span>
+                <b style={{ width: 44, textAlign: "right", fontSize: 18, color: oC(p.ovr) }}>{p.ovr}</b>
+                <span style={{ width: 44, textAlign: "right", fontSize: 15, color: "#94a3b8" }}>{p.pot || p.ovr}</span>
+                <span style={{ width: 92, textAlign: "right", fontSize: 15, fontWeight: 700, color: ask <= cap ? "#e2e8f0" : "#fca5a5", fontVariantNumeric: "tabular-nums" }}>{money(ask)}</span>
+                <span className="calm-act" style={{ width: 120, textAlign: "right", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                  {walked ? <span style={{ fontSize: 13, color: "#fca5a5", fontWeight: 700 }}>Not interested</span> : <button onClick={() => setOffer(p)} style={actBtn("#86efac")}>Negotiate</button>}
+                </span>
+              </div>
+            );
+          })}
+          {!rows.length && <div style={{ padding: 16, color: "#94a3b8", fontSize: 15 }}>Nobody matches.</div>}
+          {rows.length > n && <div style={{ textAlign: "center", padding: 10 }}><button onClick={() => setN(n + 50)} style={actBtn("#cbd5e1")}>Show more · {rows.length - n} left</button></div>}
+        </div>
       </div>
       {extras}
       {offer && negotiate()}

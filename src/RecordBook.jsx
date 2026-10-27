@@ -1,10 +1,13 @@
 // The record book: every single-season and career record, who holds it (the NFL's mark until
 // someone in your league beats it), the records your league has broken, and who's chasing one.
+// One calm list of records, and beside it what's happening now: the chase and what has fallen.
 import React, { useMemo, useState } from "react";
-import { C, TeamLogo, Pills } from "./ui.jsx";
+import { TeamLogo, Pills, card, cardTitle, fitH } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { RECORD_DEFS, recordWatch, recordValue } from "./records.js";
 import { CAREER_DEFS, newCareerBook, careerChasers } from "./careerRecords.js";
+
+const GOLD = "#fde68a";
 
 export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlayer }) {
   const [view, setView] = useState("season");
@@ -12,102 +15,81 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
   const career = { ...newCareerBook(), ...(book.career || {}) };
   const chase = useMemo(() => (view === "career" ? careerChasers(book, teams) : {}), [view, book, teams]);
   const byAb = (ab) => teams.find((t) => t.ab === ab);
-  const panel = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px", marginBottom: 12 };
-  const head = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 10 };
   const open = (pid) => { const p = pid && findPlayer(pid); if (p) setSel(p); };
-  return (
-    <div style={{ maxWidth: 1100 }}>
-      {MOBILE && <div style={{ fontSize: 28, fontWeight: 900 }}>Record Book</div>}
-      <div style={{ fontSize: 14, color: C.mt, marginBottom: 12 }}>Regular season only. The NFL's marks stand until someone in your league beats them.</div>
-      <Pills items={[["season", "Single season"], ["career", "Career"]]} value={view} onChange={setView} label="Records" style={{ marginBottom: 12 }} />
-      {view === "career" && (
-        <div style={panel}>
-          <div style={head}>NFL career records</div>
-          {/* a phone: one stacked block per record */}
-          {MOBILE && CAREER_DEFS.map((d) => {
-            const r = career[d.key], mine = !r.nfl, c = chase[d.key];
-            return (
-              <div key={d.key} style={{ padding: "9px 6px", borderBottom: `1px solid ${C.bd}66`, background: mine ? "#22c55e10" : "transparent" }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ flex: 1 }}>{d.label}</b><span style={{ fontSize: 20, fontWeight: 900, color: mine ? C.gn : "#fff" }}>{recordValue(d.key, r.val)}</span></div>
-                <div style={{ fontSize: 14 }}><span onClick={() => open(r.pid)} style={{ fontWeight: 800 }}>{r.name}</span> <span style={{ color: C.mt }}>({r.team}{r.nfl ? `, ${r.yrs}` : `, record since ${r.yr}`})</span>{mine && <span style={{marginLeft: 6, fontSize: 11, fontWeight: 900, color: C.gn }}>Your league</span>}</div>
-                {c && <div style={{ fontSize: 12, color: C.mt }}>Closest active: <span onClick={() => open(c.pid)} style={{ color: "#e2e8f0", fontWeight: 700 }}>{c.name}</span> ({c.team}) {recordValue(d.key, c.v)} · <span style={{ color: c.v >= r.val * 0.85 ? "#facc15" : C.mt }}>{recordValue(d.key, r.val - c.v)} to go</span></div>}
-              </div>
-            );
-          })}
-          {!MOBILE && <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead><tr>{["RECORD", "MARK", "HELD BY", "CLOSEST ACTIVE"].map((h) => <th key={h} style={{ textAlign: "left", fontSize: 12, color: C.mt, letterSpacing: 1, padding: "6px 4px", borderBottom: `1px solid ${C.bd}` }}>{h}</th>)}</tr></thead>
-              <tbody>
-                {CAREER_DEFS.map((d) => {
-                  const r = career[d.key], mine = !r.nfl, c = chase[d.key];
-                  return (
-                    <tr key={d.key} style={{ borderBottom: `1px solid ${C.bd}66`, background: mine ? "#22c55e10" : "transparent" }}>
-                      <td style={{ padding: "9px 4px", fontWeight: 700 }}>{d.label}</td>
-                      <td style={{ padding: "9px 4px", fontSize: 20, fontWeight: 900, color: mine ? C.gn : "#fff" }}>{recordValue(d.key, r.val)}</td>
-                      <td style={{ padding: "9px 4px" }}>
-                        <span onClick={() => open(r.pid)} style={{ fontWeight: 800, cursor: r.pid ? "pointer" : "default" }}>{r.name}</span> <span style={{ color: C.mt, whiteSpace: "nowrap" }}>({r.team}{r.nfl ? `, ${r.yrs}` : `, record since ${r.yr}`})</span>
-                        {mine && <span style={{marginLeft: 6, fontSize: 11, fontWeight: 900, color: C.gn }}>Set in your league</span>}
-                        {mine && r.prev && <div style={{ fontSize: 12, color: C.mt }}>Passed {r.prev.name}'s {recordValue(d.key, r.prev.val)}{r.prev.yr ? ` (${r.prev.yr})` : ""}</div>}
-                      </td>
-                      <td style={{ padding: "9px 4px", fontSize: 14 }}>
-                        {c ? <><span onClick={() => open(c.pid)} style={{ fontWeight: 800, cursor: "pointer" }}>{c.name}</span> <span style={{ color: C.mt }}>({c.team})</span> <b>{recordValue(d.key, c.v)}</b>
-                          <div style={{ fontSize: 12, color: c.v >= r.val * 0.85 ? "#facc15" : C.mt }}>{recordValue(d.key, r.val - c.v)} to go</div></> : <span style={{ color: C.mt }}>–</span>}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>}
+  const name = (pid, n) => <span onClick={(e) => { e.stopPropagation(); open(pid); }} style={{ fontWeight: 800, color: "#f8fafc", cursor: pid ? "pointer" : "default" }}>{n}</span>;
+
+  // one record: what it is, who holds it (and from when), the mark; a mark set in your league is gold
+  const Record = ({ k, label, r, sub }) => {
+    const mine = !r.nfl;
+    return (
+      <div className="calm-row" onClick={() => open(r.pid)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "9px 10px", cursor: r.pid ? "pointer" : "default" }}>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#94a3b8" }}>{label}{mine && <span style={{ color: GOLD }}> · set in your league</span>}</span>
+          <span style={{ display: "block", fontSize: 15.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name(r.pid, r.name)} <span style={{ color: "#64748b" }}>{r.team}{r.nfl && r.yrs ? `, ${r.yrs}` : r.yr ? `, ${r.yr}` : ""}</span></span>
+          {sub}
+        </span>
+        <span style={{ fontSize: 22, fontWeight: 900, color: mine ? GOLD : "#fff", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{recordValue(k, r.val)}</span>
+      </div>
+    );
+  };
+  const small = { display: "block", fontSize: 13, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+
+  const records = view === "career"
+    ? CAREER_DEFS.map((d) => { const r = career[d.key], c = chase[d.key]; return <Record key={d.key} k={d.key} label={d.label} r={r} sub={<>
+        {!r.nfl && r.prev && <span style={small}>Passed {r.prev.name}'s {recordValue(d.key, r.prev.val)}</span>}
+        {c && <span style={small}>Closest active: {name(c.pid, c.name)} {c.team} · <span style={{ color: c.v >= r.val * 0.85 ? "#fcd34d" : "#94a3b8" }}>{recordValue(d.key, r.val - c.v)} to go</span></span>}
+      </>} />; })
+    : RECORD_DEFS.map((d) => { const r = book.best[d.key]; return <Record key={d.key} k={d.key} label={d.label} r={r} sub={<>
+        {!r.nfl && r.prev && <span style={small}>Broke {r.prev.name}'s {recordValue(d.key, r.prev.val)} ({r.prev.yr})</span>}
+        {(r.ties || []).map((x, j) => <span key={j} style={{ ...small, color: "#fcd34d" }}>Tied by {name(x.pid, x.name)} {x.team}, {x.yr}</span>)}
+      </>} />; });
+
+  const watchCard = view === "season" && watch.length > 0 && (
+    <div style={{ ...card, marginBottom: 14 }}>
+      <div style={{ ...cardTitle, marginBottom: 6 }}>Record watch · {yr}</div>
+      {watch.slice(0, 6).map((w) => (
+        <div key={`${w.key}${w.pid}`} className="calm-row" onClick={() => open(w.pid)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 8px", margin: "0 -8px", cursor: "pointer" }}>
+          {byAb(w.team) && <TeamLogo t={byAb(w.team)} sz={24} glow />}
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: 15, fontWeight: 800, color: "#f8fafc" }}>{w.name}</span>
+            <span style={small}>{w.label} · {recordValue(w.key, w.val)} so far · record {recordValue(w.key, w.record.val)}</span>
+          </span>
+          <span style={{ textAlign: "right" }}><b style={{ fontSize: 17, color: w.pace > w.record.val ? "#86efac" : "#fcd34d" }}>{recordValue(w.key, w.pace)}</b><span style={{ display: "block", fontSize: 12, color: "#64748b" }}>on pace</span></span>
         </div>
-      )}
-      {view === "season" && watch.length > 0 && (
-        <div style={{ ...panel, borderColor: "#f59e0b88" }}>
-          <div style={head}>Record watch · {yr}</div>
-          {watch.slice(0, 6).map((w) => (
-            <div key={`${w.key}${w.pid}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: `1px solid ${C.bd}66` }}>
-              {byAb(w.team) && <TeamLogo t={byAb(w.team)} sz={26} />}
-              <div style={{ flex: 1, minWidth: 0, fontSize: 14 }}><b onClick={() => open(w.pid)} style={{ cursor: "pointer" }}>{w.name}</b> <span style={{ color: C.mt }}>· {w.label}</span></div>
-              <div style={{ fontSize: 14, textAlign: "right" }}>{recordValue(w.key, w.val)} so far · on pace for <b style={{ color: w.pace > w.record.val ? C.gn : "#facc15" }}>{recordValue(w.key, w.pace)}</b> <span style={{ color: C.mt }}>(record {recordValue(w.key, w.record.val)})</span></div>
-            </div>
-          ))}
-        </div>
-      )}
-      {view === "season" && <div style={panel}>
-        <div style={head}>Single-season records</div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr>{["RECORD", "MARK", "HELD BY"].map((h) => <th key={h} style={{ textAlign: "left", fontSize: 12, color: C.mt, letterSpacing: 1, padding: "6px 4px", borderBottom: `1px solid ${C.bd}` }}>{h}</th>)}</tr></thead>
-            <tbody>
-              {RECORD_DEFS.map((d) => {
-                const r = book.best[d.key];
-                const mine = !r.nfl;
-                return (
-                  <tr key={d.key} style={{ borderBottom: `1px solid ${C.bd}66`, background: mine ? "#22c55e10" : "transparent" }}>
-                    <td style={{ padding: "9px 4px", fontWeight: 700 }}>{d.label}</td>
-                    <td style={{ padding: "9px 4px", fontSize: 20, fontWeight: 900, color: mine ? C.gn : "#fff" }}>{recordValue(d.key, r.val)}</td>
-                    <td style={{ padding: "9px 4px" }}>
-                      <span onClick={() => open(r.pid)} style={{ fontWeight: 800, cursor: r.pid ? "pointer" : "default" }}>{r.name}</span> <span style={{ color: C.mt, whiteSpace: "nowrap" }}>({r.team}, {r.yr})</span>
-                      {mine && <span style={{marginLeft: 6, fontSize: 11, fontWeight: 900, color: C.gn }}>Set in your league</span>}
-                      {mine && r.prev && <div style={{ fontSize: 12, color: C.mt }}>Broke {r.prev.name}'s {recordValue(d.key, r.prev.val)} ({r.prev.yr})</div>}
-                      {(r.ties || []).map((x, j) => <div key={j} style={{ fontSize: 12, color: "#fbbf24" }}>Tied by <span onClick={() => open(x.pid)} style={{ fontWeight: 800, cursor: "pointer" }}>{x.name}</span> ({x.team}, {x.yr})</div>)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>}
-      <div style={panel}>
-        <div style={head}>Records broken or tied in your league</div>
+      ))}
+    </div>
+  );
+  const fallen = (
+    <div style={{ ...card, ...(MOBILE ? null : { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }) }}>
+      <div style={{ ...cardTitle, marginBottom: 6 }}>Fallen in your league</div>
+      <div style={{ overflowY: "auto", minHeight: 0, flex: 1 }}>
         {[...book.history].reverse().map((h, i) => (
-          <div key={i} style={{ fontSize: 14, padding: "6px 0", borderBottom: `1px solid ${C.bd}66` }}>
-            <b>{h.yr}</b> · <span onClick={() => open(h.pid)} style={{ fontWeight: 800, cursor: "pointer" }}>{h.name}</span> ({h.team}) {h.tie ? <>tied {h.prev.name}'s {h.label.toLowerCase()} record ({recordValue(h.key, h.val)})</> : <>took the {h.career ? "career " : ""}{h.label.toLowerCase()} record from {h.prev.name} ({recordValue(h.key, h.prev.val)})</>}
+          <div key={i} style={{ fontSize: 14.5, lineHeight: 1.45, padding: "7px 0", borderTop: i ? "1px solid #ffffff0d" : 0, color: "#cbd5e1" }}>
+            <b style={{ color: "#64748b", marginRight: 8 }}>{h.yr}</b>{name(h.pid, h.name)} <span style={{ color: "#64748b" }}>{h.team}</span> {h.tie ? <>tied {h.prev.name}'s {h.label.toLowerCase()} record ({recordValue(h.key, h.val)})</> : <>took the {h.career ? "career " : ""}{h.label.toLowerCase()} record from {h.prev.name}: <b style={{ color: GOLD }}>{recordValue(h.key, h.val)}</b></>}
           </div>
         ))}
-        {!book.history.length && <div style={{ fontSize: 14, color: C.mt }}>No records have fallen yet. When one does, it's written here.</div>}
+        {!book.history.length && <div style={{ fontSize: 14.5, color: "#94a3b8" }}>No records have fallen yet.</div>}
       </div>
+    </div>
+  );
+
+  return (
+    <div>
+      {MOBILE && <div style={{ fontSize: 28, fontWeight: 900, marginBottom: 10 }}>Record Book</div>}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+        <Pills items={[["season", "Single season"], ["career", "Career"]]} value={view} onChange={setView} label="Records" />
+        {!MOBILE && <span style={{ fontSize: 14, color: "#64748b" }}>Regular season. The NFL's marks stand until someone in your league beats them.</span>}
+      </div>
+      {MOBILE ? <>
+        {watchCard}
+        <div style={{ ...card, padding: "8px 8px", marginBottom: 14 }}>{records}</div>
+        {fallen}
+      </> : (
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.5fr) minmax(0,1fr)", gap: 14, ...fitH }}>
+          <div style={{ ...card, padding: "10px 10px", overflowY: "auto", minHeight: 0 }}>{records}</div>
+          <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>{watchCard}{fallen}</div>
+        </div>
+      )}
     </div>
   );
 }

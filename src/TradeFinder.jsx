@@ -1,68 +1,74 @@
-// The trade finder: deals built around your biggest needs, with who you get and who
-// you send side by side, one compact row each. "Load" puts it on the Make a trade tab to tweak and propose.
+// The trade finder: deals built around your biggest needs, one calm row each. The club, who you
+// get, who you send, how much you overpay; "Open deal" puts it on the Make a trade tab to tweak.
 import React, { useEffect } from "react";
-import { C, Bdg, Btn, Face, TeamLogo, oC } from "./ui.jsx";
+import { C, Face, TeamLogo, oC, actBtn, card, cardTitle, fitH } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { posTag } from "./dline.js";
 
-function PlayerSide({ label, p, tone, onPlayer }) {
+const m1 = (n) => `${n < 0 ? "-" : ""}$${Math.abs(n).toFixed(1)}M`;
+
+function Who({ label, p, tone, onPlayer }) {
   return (
-    <div onClick={() => onPlayer(p)} title={`${label === "GET" ? "You get" : "You send"} ${p.name}. Tap for his card.`} style={{ flex: "1 1 210px", minWidth: 0, display: "flex", alignItems: "center", gap: 8, background: C.bg, border: `1px solid ${tone}33`, borderRadius: 8, padding: "4px 8px", cursor: "pointer" }}>
-      <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: tone, width: 30 }}>{label}</span>
-      <Face s={p.face} sz={28} />
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", display: "flex", gap: 5, alignItems: "center", whiteSpace: "nowrap" }}><Bdg pos={posTag(p)} /> Age {p.age} · ${(p.salary || 0).toFixed(1)}M · {p.contract || 0} yr</div>
-      </div>
-      <b style={{ fontSize: 19, color: oC(p.ovr) }}>{p.ovr}</b>
-    </div>
+    <span onClick={(e) => { e.stopPropagation(); onPlayer(p); }} title={`${p.name}: his card`} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+      <Face s={p.face} sz={36} />
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", fontSize: 11.5, fontWeight: 900, letterSpacing: 0.9, color: tone }}>{label}</span>
+        <span style={{ display: "block", fontSize: 15, fontWeight: 800, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name} <b style={{ color: oC(p.ovr) }}>{p.ovr}</b></span>
+        <span style={{ display: "block", fontSize: 13, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{posTag(p)} · {p.age} · {m1(p.salary || 0)} × {p.contract || 0}</span>
+      </span>
+    </span>
   );
 }
 
 // results: [{ team, get, send, rating, ratingColor }]
-const m1 = (n) => `${n < 0 ? "-" : ""}$${Math.abs(n).toFixed(1)}M`;
-// Their cap room now and after the deal (they take on who you send and lose who you get).
-function CapNote({ space, inSal, outSal, who }) {
-  if (space == null) return null;
-  const after = space - inSal + outSal, bad = after < 0;
-  return <span title={`${who} cap space now ${m1(space)}; after this trade ${m1(after)}`} style={{ fontSize: 12, fontWeight: 700, color: bad ? C.rd : after < 5 ? "#fbbf24" : "#94a3b8", whiteSpace: "nowrap" }}>{who === "You" ? "You" : "Cap"} {m1(space)} → <b style={{ color: bad ? C.rd : after < 5 ? "#fbbf24" : C.gn }}>{m1(after)}</b>{bad ? "" : ""}</span>;
-}
-
 export default function TradeFinder({ results, needs = [], onRun, onLoad, onPlayer, capOf, myCap }) {
   useEffect(() => { if (!results.length) onRun(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // their room after the deal (they take on who you send and lose who you get)
+  const after = (r) => (capOf ? capOf(r.team) - (r.send.salary || 0) + (r.get.salary || 0) : null);
+  const mineAfter = (r) => (myCap != null ? myCap - (r.get.salary || 0) + (r.send.salary || 0) : null);
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-        <div style={{ flex: 1, minWidth: 220 }}>
-          {MOBILE && <div style={{ fontSize: 20, fontWeight: 900 }}>Trade finder</div>}
-          <div style={{ fontSize: 14, color: C.mt }}>Deals for your biggest needs{needs.length ? `: ${needs.join(", ")}` : ""}. {MOBILE ? "They'd accept every one." : "Every deal here is one they would accept; the tag says how much you overpay to get it. Cap shows their room now → after the deal (and yours on the right)."}</div>
-        </div>
-        <Btn onClick={onRun} bg="#ffffff14" c="#e2e8f0" style={{ fontSize: 15, padding: "9px 18px", borderRadius: 999 }}>Find new deals</Btn>
+    <div style={{ ...card, padding: "14px 16px", ...(MOBILE ? null : { maxHeight: fitH.height, display: "flex", flexDirection: "column" }) }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", ...cardTitle }}>Deals for your needs</span>
+          <span style={{ display: "block", fontSize: 14, color: "#94a3b8", marginTop: 1 }}>{needs.length ? `${needs.join(", ")} · ` : ""}every one is a deal they'd take</span>
+        </span>
+        <button onClick={onRun} style={actBtn("#e2e8f0")}>Find new deals</button>
       </div>
-      {!results.length && <div style={{ background: "#ffffff0d", borderRadius: 18, padding: 24, textAlign: "center", color: C.mt, fontSize: 15 }}>No fair deals right now. Your roster may be balanced, or nobody has what you need at a price that works.</div>}
-      <div style={{ display: "grid", gap: 8 }}>
-        {results.map((r, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: "#ffffff0d", borderRadius: 16, padding: "10px 14px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, width: MOBILE ? "auto" : 170, flex: MOBILE ? 1 : "none", minWidth: 0, order: 0 }} title={`${r.team.city} ${r.team.name}`}>
-              <TeamLogo t={r.team} sz={26} glow />
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.team.name}{MOBILE && <span style={{ color: C.mt, fontWeight: 600, fontSize: 12 }}> {r.team.w}-{r.team.l}</span>}</div>
-                <div style={{ display: MOBILE ? "none" : "block", fontSize: 12, color: C.mt }}>{r.team.w}-{r.team.l}</div>
-                {capOf && <CapNote space={capOf(r.team)} inSal={r.send.salary || 0} outSal={r.get.salary || 0} who={r.team.name} />}
-              </div>
+      {!results.length && <div style={{ color: "#94a3b8", fontSize: 15, padding: "16px 4px" }}>No fair deals right now. Your roster may be balanced, or nobody has what you need at a price that works.</div>}
+      <div style={{ overflowY: "auto", minHeight: 0, flex: 1, margin: "0 -8px" }}>
+        {results.map((r, i) => {
+          const a = after(r), mine = mineAfter(r);
+          const club = (
+            <span title={`${r.team.city} ${r.team.name}${a != null ? ` · their cap space after: ${m1(a)}` : ""}`} style={{ display: "flex", alignItems: "center", gap: 10, width: MOBILE ? "auto" : 170, flexShrink: 0, minWidth: 0 }}>
+              <TeamLogo t={r.team} sz={30} glow />
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 15, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.team.name}</span>
+                <span style={{ display: "block", fontSize: 13, color: a != null && a < 0 ? "#fca5a5" : "#64748b" }}>{r.team.w}-{r.team.l}{a != null && a < 0 ? " · over the cap after" : ""}</span>
+              </span>
+            </span>
+          );
+          const tag = <span style={{ fontSize: 13, fontWeight: 800, color: r.ratingColor, whiteSpace: "nowrap", textTransform: "capitalize" }}>{String(r.rating).toLowerCase()}</span>;
+          if (MOBILE) return (
+            <div key={i} style={{ padding: "12px 8px", borderTop: i ? "1px solid #ffffff10" : 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>{club}<span style={{ marginLeft: "auto" }}>{tag}</span></div>
+              <div style={{ display: "grid", gap: 10, margin: "10px 0" }}><Who label="YOU GET" p={r.get} tone="#86efac" onPlayer={onPlayer} /><Who label="YOU SEND" p={r.send} tone="#fca5a5" onPlayer={onPlayer} /></div>
+              <button onClick={() => onLoad(r)} style={{ ...actBtn("#fff"), width: "100%", minHeight: 44 }}>Open deal</button>
             </div>
-            <div style={{ flex: "1 1 460px", minWidth: 0, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", order: MOBILE ? 2 : 1 }}>
-              <PlayerSide label="GET" p={r.get} tone={C.gn} onPlayer={onPlayer} />
-              {!MOBILE && <span style={{ fontSize: 16, color: C.mt }}>⇄</span>}
-              <PlayerSide label="SEND" p={r.send} tone={C.rd} onPlayer={onPlayer} />
+          );
+          return (
+            <div key={i} className="calm-row" onClick={() => onLoad(r)} style={{ display: "flex", alignItems: "center", gap: 18, padding: "10px 10px", cursor: "pointer" }}>
+              {club}
+              <Who label="YOU GET" p={r.get} tone="#86efac" onPlayer={onPlayer} />
+              <Who label="YOU SEND" p={r.send} tone="#fca5a5" onPlayer={onPlayer} />
+              <span style={{ width: 120, flexShrink: 0, textAlign: "right" }}>
+                {tag}
+                {mine != null && <span title="Your cap space after this trade" style={{ display: "block", fontSize: 13, color: mine < 0 ? "#fca5a5" : "#64748b" }}>you {m1(mine)} after</span>}
+              </span>
+              <span className="calm-act" style={{ ...actBtn("#7dd3fc"), flexShrink: 0 }}>Open deal</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto", order: MOBILE ? 1 : 2 }}>
-              {myCap != null && !MOBILE && <CapNote space={myCap} inSal={r.get.salary || 0} outSal={r.send.salary || 0} who="You" />}
-              <span style={{ fontSize: 12, fontWeight: 800, color: r.ratingColor, background: `${r.ratingColor}1f`, borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap", textTransform: "capitalize" }}>{String(r.rating).toLowerCase()}</span>
-              <Btn onClick={() => onLoad(r)} bg="#ffffff14" c="#fff" style={{ fontSize: 13, padding: "7px 14px", whiteSpace: "nowrap", borderRadius: 999 }}>Open deal</Btn>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
