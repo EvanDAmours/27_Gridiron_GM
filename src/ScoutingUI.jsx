@@ -269,12 +269,12 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
     let k = 0;
     return (
       <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, margin: "0 2px 10px" }}>
-          {[[false, "Consensus"], [true, "Your scouts"]].map(([k, l]) => <button key={l} onClick={() => setMine(k)} style={{ background: "transparent", border: 0, padding: "4px 0", color: mine === k ? "#fff" : "#64748b", fontSize: 16, fontWeight: 900, cursor: "pointer", borderBottom: `2px solid ${mine === k ? C.gn : "transparent"}` }}>{l}</button>)}
-          <button onClick={() => setShowOpen(true)} style={{ marginLeft: "auto", background: "transparent", border: 0, padding: 0, color: show !== "all" || q ? "#7dd3fc" : "#94a3b8", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>{q ? `"${q}"` : (SHOWS.find(([x]) => x === show) || SHOWS[0])[1]} ▾</button>
-        </div>
+        <Segments items={[[false, "Consensus"], [true, "Your scouts"]]} value={mine} onChange={setMine} />
+        {onDraft && <div style={{ display: "flex", margin: "0 0 10px" }}><PicksLeft g={g} /></div>}
         <Chips items={[["ALL", "All"], ...POS.map((x) => [x, x])]} value={pos} onChange={(x) => { setPos(x); setN(page); }} />
-        <div style={{ height: 10 }} />
+        <div style={{ display: "flex", justifyContent: "flex-end", margin: "8px 2px 6px" }}>
+          <button onClick={() => setShowOpen(true)} style={{ background: "transparent", border: 0, padding: "6px 0", color: show !== "all" || q || sortBy !== "board" ? "#7dd3fc" : "#94a3b8", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>{q ? `"${q}"` : (SHOWS.find(([x]) => x === show) || SHOWS[0])[1]}{sortBy !== "board" ? ` · ${SORTS.find(([k]) => k === sortBy)[1].replace("Sort: ", "")}` : ""} ▾</button>
+        </div>
         <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px" }}>
           {marked.map((x) => x.pk
             ? <div key={x.key} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 0", color: C.gd, fontSize: 12, fontWeight: 900, letterSpacing: 1.2 }}><span style={{ flex: 1, height: 2, background: `${C.gd}66` }} />YOUR PICK · #{x.pk.n}<span style={{ flex: 1, height: 2, background: `${C.gd}66` }} /></div>
@@ -282,7 +282,9 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
           {!list.length && <div style={{ padding: "18px 0", color: C.mt, fontSize: 14 }}>No prospects match.</div>}
         </div>
         {list.length > n && <button onClick={() => setN(n + page)} style={{ width: "100%", minHeight: 48, marginTop: 10, borderRadius: 14, border: 0, background: "#ffffff0f", color: "#cbd5e1", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Show more</button>}
-        {showOpen && <Sheet title="Show" onClose={() => setShowOpen(false)}><input value={q} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search name or college" aria-label="Search prospects" style={{ ...sel, width: "100%", boxSizing: "border-box", marginBottom: 8, borderRadius: 12 }} />{SHOWS.map(([x, l], i) => <Row key={x} first={i === 0} label={l} value={show === x ? "✓" : ""} tone={C.gn} onClick={() => { setShow(x); setN(page); setShowOpen(false); }} />)}<div style={{ height: 8 }} /></Sheet>}
+        {showOpen && <Sheet title="Show and sort" onClose={() => setShowOpen(false)}><input value={q} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search name or college" aria-label="Search prospects" style={{ ...sel, width: "100%", boxSizing: "border-box", marginBottom: 8, borderRadius: 12 }} />{(onDraft ? SHOWS.filter(([k]) => ["all", "list", "flagged", "special", "redflags", "scouted"].includes(k)) : SHOWS).map(([x, l], i) => <Row key={x} first={i === 0} label={l} value={show === x ? "✓" : ""} tone={C.gn} onClick={() => { setShow(x); setN(page); setShowOpen(false); }} />)}
+          <div style={{ fontSize: 13, fontWeight: 800, color: "#94a3b8", margin: "16px 2px 6px" }}>Sort</div>
+          {SORTS.map(([x, l], i) => <Row key={x} first={i === 0} label={l.replace("Sort: ", "").replace(/^./, (c) => c.toUpperCase())} value={sortBy === x ? "✓" : ""} tone={C.gn} onClick={() => { setSortBy(x); setN(page); setShowOpen(false); }} />)}<div style={{ height: 8 }} /></Sheet>}
       </div>
     );
   }

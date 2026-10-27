@@ -31,7 +31,7 @@ export default function CoachingDesk({ staff, yr, scPts, coachAge, hcTrait, hcSt
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: "block", fontSize: 12, fontWeight: 900, letterSpacing: 1.1, color: "#94a3b8" }}>{SHORT[r].toUpperCase()}{hot && <span style={{ color: "#fca5a5" }}> · HOT SEAT</span>}{coy.length > 0 && r === "HC" && <span style={{ color: "#fcd34d" }}> · COACH OF THE YEAR {coy.length > 1 ? `×${coy.length}` : coy[0]}</span>}</span>
             <span style={{ display: "block", fontSize: wide ? 20 : 17, fontWeight: 800, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.name}</span>
-            <span title={t?.desc || (r === "HC" ? "Game-day style: how often he goes for it on 4th down and tries for two" : undefined)} style={{ display: "block", fontSize: 14, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{line}</span>
+            <span title={t?.desc || (r === "HC" ? "Game-day style: how often he goes for it on 4th down and tries for two" : undefined)} style={{ display: "block", fontSize: 14, color: "#94a3b8", lineHeight: 1.35 }}>{line}</span>
           </span>
           <span style={{ textAlign: "right" }}><span style={{ display: "block", fontSize: wide ? 30 : 26, fontWeight: 900, color: oC(c.rating), lineHeight: 1 }}>{c.rating}</span><span style={{ fontSize: 11, fontWeight: 800, color: "#64748b", letterSpacing: 1 }}>RATING</span></span>
         </div>
@@ -66,8 +66,7 @@ export default function CoachingDesk({ staff, yr, scPts, coachAge, hcTrait, hcSt
           <Coach c={staff.dc} r="DC" />
           <Coach c={staff.st} r="ST" />
         </div>
-        <div style={{ ...cardTitle, margin: "20px 0 10px" }}>Schemes and game plan</div>
-        {gamePlan}
+        <div style={{ marginTop: 14 }}>{gamePlan}</div>
         <div style={{ ...card, marginTop: 14, padding: "12px 18px" }}>
           <div onClick={() => setLkr((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
             <span style={{ flex: 1, fontSize: 15, fontWeight: 800 }}>Locker room <span style={{ color: "#64748b", fontWeight: 600 }}>· player confidence</span></span>

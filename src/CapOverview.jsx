@@ -2,7 +2,7 @@
 // goes by position, and the cap advisor's suggestions (restructures, cuts that free real money,
 // extensions to get done early, and what to do with room to spare).
 import React from "react";
-import { C, Bdg, Section, cardTitle } from "./ui.jsx";
+import { C, Bdg, Section, Sheet, cardTitle } from "./ui.jsx";
 import { capProjection } from "./capProjection.js";
 import { posTag } from "./dline.js";
 
@@ -66,6 +66,7 @@ export function CapLongView({ team, cy, onPlayer, mobile, extra = null, room0 = 
 
 export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext, rows, canExtend, starters, onPlayer, mobile, leagueAvg, onContracts, cy, rookies = 0 }) {
   const [allTips, setAllTips] = React.useState(false);
+  const [tip, setTip] = React.useState(null); // phones: the advice behind one line
   const used = cap - space;
   const byGroup = GROUPS.map(([g, ps]) => [g, team.roster.filter((p) => ps.includes(p.pos)).reduce((s, p) => s + (p.salary || 0), 0), leagueAvg ? leagueAvg(ps) : null]);
   const top = [...team.roster].sort((a, b) => (b.salary || 0) - (a.salary || 0)).slice(0, 8);
@@ -80,17 +81,24 @@ export default function CapOverview({ team, cap, space, nextRoom, dead, deadNext
     const yrs = cy != null ? capProjection(team, cy, { room0: space, rookies }) : [];
     return (
       <div style={{ marginBottom: 14 }}>
-        <Section title="Cap advisor" style={{ marginTop: 18 }}>
+        <Section title="Cap advisor" style={{ marginTop: 18 }} action={tips.length > 3 && !allTips ? `All ${tips.length}` : null} onAction={() => setAllTips(true)}>
           <div style={soft}>
             {!tips.length && <div style={{ fontSize: 14, color: "#94a3b8", padding: "16px 0" }}>Your books are in good shape.</div>}
-            {tips.map((t, i) => (
-              <button key={i} onClick={() => t.p && onPlayer(t.p)} style={{ display: "flex", gap: 12, width: "100%", textAlign: "left", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "12px 0", color: "#fff", cursor: t.p ? "pointer" : "default", whiteSpace: "normal" }}>
-                <span style={{ width: 10, height: 10, borderRadius: 5, background: t.tone, marginTop: 6, flexShrink: 0 }} />
-                <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", fontSize: 16, fontWeight: 800 }}>{t.title}</span><span style={{ display: "block", fontSize: 14, color: "#94a3b8", lineHeight: 1.4, marginTop: 2 }}>{t.text}</span></span>
+            {/* one line each; the why is a tap away */}
+            {tips.slice(0, allTips ? tips.length : 3).map((t, i) => (
+              <button key={i} onClick={() => setTip(t)} style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", minHeight: 54, textAlign: "left", background: "transparent", border: 0, borderTop: i ? "1px solid #ffffff10" : 0, padding: "8px 0", color: "#fff", cursor: "pointer" }}>
+                <span style={{ width: 10, height: 10, borderRadius: 5, background: t.tone, flexShrink: 0 }} />
+                <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.title}</span>
+                <span style={{ fontSize: 20, color: "#64748b" }}>›</span>
               </button>
             ))}
           </div>
         </Section>
+        {tip && <Sheet title={tip.title} onClose={() => setTip(null)}>
+          <div style={{ fontSize: 16, color: "#cbd5e1", lineHeight: 1.5, margin: "0 2px 16px" }}>{tip.text}</div>
+          {tip.p && <button onClick={() => { const p = tip.p; setTip(null); onPlayer(p); }} style={{ width: "100%", minHeight: 50, borderRadius: 14, border: 0, background: "#ffffff14", color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>Open his card</button>}
+          <div style={{ height: 8 }} />
+        </Sheet>}
         {yrs.length > 0 && (
           <Section title="The next four years">
             <div className="pill-row" style={{ display: "flex", gap: 10, overflowX: "auto", scrollSnapType: "x mandatory", margin: "0 -8px", padding: "0 8px 4px", scrollPaddingLeft: 8 }}>

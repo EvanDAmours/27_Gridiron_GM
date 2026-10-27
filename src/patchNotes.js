@@ -2039,4 +2039,10 @@ export const PATCH_NOTES = [
     "Depth chart: the game plan sits beside the field, under who plays, so nothing falls below the fold.",
     "The prospect profile drops the outlined chips, the blue labels and the stars: the shared pill tabs, plain labels and quiet buttons.",
   ] },
+  { v: "4.98", date: "2026-10-23", title: "Phones, and the audit", notes: [
+    "Phones: the Big Board's show and sort live in one sheet (sleepers and hunches, star traits, sort by your read of his ceiling or by dev trait), your picks left show while you draft, and Consensus / Your scouts is the same switch as everywhere else.",
+    "Phones: the cap advisor is one line per tip, with the reasoning a tap away, and the draft recap drops its explainer.",
+    "Phones: the trade deadline note on the trade screen is a calm card with one white button; the deadline's action bar reads Advance to 1:00 PM instead of a red button.",
+    "Computers: the top bar no longer cuts off Front Office on narrower screens; coaching cards show each coordinator's whole scheme line and the doubled game plan heading is gone; record holders' names wrap instead of being cut off.",
+  ] },
 ];

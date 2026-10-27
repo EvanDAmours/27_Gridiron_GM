@@ -190,7 +190,6 @@ function PhoneRecap({ teams, ui, view, years, setPickYr, onNext, mine, topClasse
         sub={mine?.picks.length ? `${mine.picks.length} picks · ${mine.hits} hit${mine.hits === 1 ? "" : "s"} · #${mine.rank} of ${topClasses.length}` : "Every pick with his true ratings revealed"}
         right={onNext ? <button onClick={onNext} style={{ minHeight: 44, padding: "0 16px", borderRadius: 14, border: 0, background: C.gn, color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" }}>Next season ›</button> : null} />
       {years.length > 1 && <div style={{ marginTop: 12 }}><Segments items={years.slice(0, 4).map((y) => [y, `${y + 1}`])} value={view} onChange={(y) => setPickYr(+y)} /></div>}
-      <div style={{ fontSize: 14, color: "#94a3b8", margin: "12px 2px 0" }}>{past ? "What each pick has become since." : "Development traits decide how fast a player grows: this is where you find out if you hit."}</div>
       {mine?.picks.length > 0 && <><div style={label}>Your class</div><div style={soft}>{mine.picks.map((r, i) => line(r, i, `Rd ${r.rd} · #${r.overall} · age ${r.age} ·`))}</div></>}
       <div style={label}>Best traits in the class</div>
       <div style={soft}>

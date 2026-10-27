@@ -25,14 +25,14 @@ export default function RecordBook({ book, teams, yr, inSeason, setSel, findPlay
       <div className="calm-row" onClick={() => open(r.pid)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "9px 10px", cursor: r.pid ? "pointer" : "default" }}>
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: "block", fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#94a3b8" }}>{label}{mine && <span style={{ color: GOLD }}> · set in your league</span>}</span>
-          <span style={{ display: "block", fontSize: 15.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name(r.pid, r.name)} <span style={{ color: "#64748b" }}>{r.team}{r.nfl && r.yrs ? `, ${r.yrs}` : r.yr ? `, ${r.yr}` : ""}</span></span>
+          <span style={{ display: "block", fontSize: 15.5, lineHeight: 1.35 }}>{name(r.pid, r.name)} <span style={{ color: "#64748b" }}>{r.team}{r.nfl && r.yrs ? `, ${r.yrs}` : r.yr ? `, ${r.yr}` : ""}</span></span>
           {sub}
         </span>
         <span style={{ fontSize: 22, fontWeight: 900, color: mine ? GOLD : "#fff", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{recordValue(k, r.val)}</span>
       </div>
     );
   };
-  const small = { display: "block", fontSize: 13, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+  const small = { display: "block", fontSize: 13, color: "#94a3b8", lineHeight: 1.4 };
 
   const records = view === "career"
     ? CAREER_DEFS.map((d) => { const r = career[d.key], c = chase[d.key]; return <Record key={d.key} k={d.key} label={d.label} r={r} sub={<>
