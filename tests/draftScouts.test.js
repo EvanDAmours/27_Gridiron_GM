@@ -53,3 +53,12 @@ test("league intel: what each club in between is likely to take, from the same r
   const last = all[all.length - 1].g;
   assert.equal(intelRuns(r, [last])[0].g, last, "your needs lead the summary");
 });
+
+test("the radar lists other players worth a look, never one of the five, each with a reason", () => {
+  const { teams, cls, picks, sc } = setup();
+  const at = picks.findIndex((pk) => pk.owner === 0);
+  const r = scoutsPicks({ sc, teams, ui: 0, picks, pool: cls, at, now: at });
+  const five = new Set(r.five.map((x) => x.p.id));
+  assert.ok(Array.isArray(r.radar) && r.radar.length <= 5);
+  for (const x of r.radar) { assert.ok(!five.has(x.p.id)); assert.ok(x.note[0]); }
+});

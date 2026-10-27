@@ -30,6 +30,35 @@ const Votes = ({ x, n }) => (
   </span>
 );
 
+// The rest of the board your scouts would flag: a trait they've seen, a player they rate well above
+// the board, the biggest ceiling left. Closed until you want it; the line says what's inside.
+const NOTE_C = { dev: "#f5c542", gem: "#86efac", ceil: "#7dd3fc" };
+function Radar({ room, open, onDraft, canDraft }) {
+  const list = room.radar || [];
+  if (!list.length) return null;
+  const n = (k) => list.filter((x) => x.note[1] === k).length;
+  const parts = [n("dev") && `${n("dev")} with a star trait or better`, n("gem") && `${n("gem")} your scouts rate above the board`, n("ceil") && "the biggest ceiling left"].filter(Boolean);
+  const atPk = room.upAt || room.next, odds = (x) => (room.upAt ? x.there : x.later);
+  return (
+    <details style={{ marginTop: MOBILE ? 10 : 4, padding: MOBILE ? "0 14px" : "0 10px", background: MOBILE ? "#ffffff0f" : undefined, borderRadius: MOBILE ? 18 : 0 }}>
+      <summary style={{ cursor: "pointer", padding: "10px 0", fontSize: 13.5, color: "#cbd5e1" }}><b style={{ color: "#fff" }}>Also on your scouts' radar</b> <span style={{ color: "#94a3b8" }}>· {parts.join(", ")}</span></summary>
+      {list.map((x) => (
+        <div key={x.p.id} className="calm-row" onClick={() => open(x.p)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "7px 0", borderTop: "1px solid #ffffff0a", cursor: "pointer" }}>
+          <Face s={x.p.face} sz={30} />
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: 14.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.p.name} <span style={{ fontSize: 12.5, fontWeight: 600, color: "#94a3b8" }}>{posTag(x.p)} · #{csRank(x.p)}</span></span>
+            <span style={{ display: "block", fontSize: 12.5, color: NOTE_C[x.note[1]] }}>{x.note[0]}</span>
+          </span>
+          <span style={{ width: 64, textAlign: "center" }}><b style={{ display: "block", fontSize: 14.5, color: x.cur.kind === "estimate" ? "#e2e8f0" : oC(x.cur.v) }}>{ovrText(x.cur)}</b><span style={{ fontSize: 10, fontWeight: 900, color: "#64748b" }}>NOW</span></span>
+          {!MOBILE && <span style={{ width: 44, textAlign: "center" }}><b style={{ display: "block", fontSize: 14.5 }}>{potGrade(x.ceil)}</b><span style={{ fontSize: 10, fontWeight: 900, color: "#64748b" }}>CEIL.</span></span>}
+          {atPk && !MOBILE && <span style={{ width: 64, textAlign: "center" }}><b style={{ display: "block", fontSize: 14.5, color: laterTone(odds(x)) }}>{pct(odds(x))}</b><span style={{ fontSize: 10, fontWeight: 900, color: "#64748b" }}>AT #{atPk.overall}</span></span>}
+          {canDraft && <span onClick={(e) => e.stopPropagation()}><button onClick={() => onDraft(x.p)} style={{ ...actBtn("#86efac"), padding: "6px 14px" }}>Draft</button></span>}
+        </div>
+      ))}
+    </details>
+  );
+}
+
 export function ScoutsPicks({ room, g, onDraft, canDraft }) {
   if (!room) return null;
   const { five, next, scouts, upAt } = room;
@@ -39,7 +68,7 @@ export function ScoutsPicks({ room, g, onDraft, canDraft }) {
   const open = (p) => g.setSel?.(p);
   const why = (x) => <><b style={{ color: TONE[x.why.lead[0][1]], fontWeight: 800 }}>{x.why.lead[0][0]}.</b> {x.why.rest ? `${x.why.rest[0].toUpperCase()}${x.why.rest.slice(1)}.` : ""}{x.why.wait && !upAt ? <span style={{ color: "#94a3b8" }}> Can wait.</span> : null}</>;
   const dev = (x) => (x.r.dev && DEV_C[x.r.dev] ? <span style={{ color: DEV_C[x.r.dev] }}>{DEV_TRAITS[x.r.dev]?.name}</span> : null);
-  if (MOBILE) return (
+  if (MOBILE) return (<>
     <div style={{ background: "#ffffff0f", borderRadius: 18, padding: "0 14px" }}>
       {five.map((x, i) => (
         <div key={x.p.id} style={{ padding: "10px 0", borderTop: i ? "1px solid #ffffff10" : 0 }}>
@@ -60,7 +89,8 @@ export function ScoutsPicks({ room, g, onDraft, canDraft }) {
         </div>
       ))}
     </div>
-  );
+    <Radar room={room} open={open} onDraft={onDraft} canDraft={canDraft} />
+  </>);
   return (
     <div style={{ ...card, padding: "10px 12px 8px" }}>
       <div style={{ display: "flex", gap: 14, padding: "4px 10px 6px 64px", fontSize: 11, fontWeight: 900, letterSpacing: 0.9, color: "#64748b" }}>
@@ -85,6 +115,7 @@ export function ScoutsPicks({ room, g, onDraft, canDraft }) {
         </div>
       ))}
       {!five.length && <div style={{ fontSize: 15, color: "#94a3b8", padding: 12 }}>Nobody left your scouts would take here.</div>}
+      <Radar room={room} open={open} onDraft={onDraft} canDraft={canDraft} />
     </div>
   );
 }

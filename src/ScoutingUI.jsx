@@ -238,7 +238,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
   const ranks = useMemo(() => (mine === true ? myBoard(g.scouting, all) : null), [mine, g.scouting, all]);
   const ids = listIds(g.scouting, cy);
   const list = all
-    .filter((p) => pos === "ALL" || p.pos === pos || (pos === "OL" && OL_POS.includes(p.pos)) || (pos.startsWith("R:") && roleFilterMatch(p, pos)))
+    .filter((p) => pos === "ALL" || p.pos === pos || (pos === "OL" && OL_POS.includes(p.pos)) || (pos === "K/P" && (p.pos === "K" || p.pos === "P")) || (pos.startsWith("R:") && roleFilterMatch(p, pos)))
     .filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()) || (p.bio?.college || "").toLowerCase().includes(q.toLowerCase()))
     .filter((p) => {
       if (show === "all") return true;
@@ -298,7 +298,7 @@ export function Board({ g, classYr, fixedYr = false, onDraft, canDraft, page = 4
         {!onDraft && <Pills items={[[false, "Consensus"], [true, "Your scouts"], withList && ["list", `Your list (${ids.length})`]]} value={mine} onChange={setMine} label="Whose board" />}
         {mine !== "list" && <>
         <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-          {["ALL", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((x) => { const on = x === "OL" ? pos === "OL" || OL_POS.includes(pos) : pos === x || (pos.startsWith("R:") && { WR: ["R:X", "R:Z", "R:SLOT"], CB: ["R:OUT", "R:NB"], S: ["R:FS", "R:SS"], LB: ["R:SAM", "R:MIKE", "R:WILL"] }[x]?.includes(pos)); return <button key={x} onClick={() => { setPos(x === "OL" ? (on ? "ALL" : "OL") : x); setN(page); }} style={quietPill(on)}>{x === "ALL" ? "All" : x}</button>; })}
+          {["ALL", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S", "K/P"].map((x) => { const on = x === "OL" ? pos === "OL" || OL_POS.includes(pos) : pos === x || (pos.startsWith("R:") && { WR: ["R:X", "R:Z", "R:SLOT"], CB: ["R:OUT", "R:NB"], S: ["R:FS", "R:SS"], LB: ["R:SAM", "R:MIKE", "R:WILL"] }[x]?.includes(pos)); return <button key={x} onClick={() => { setPos(x === "OL" ? (on ? "ALL" : "OL") : x); setN(page); }} style={quietPill(on)}>{x === "ALL" ? "All" : x}</button>; })}
         </div>
         {(() => { const base = pos.startsWith("R:") ? { SAM: "LB", MIKE: "LB", WILL: "LB", OUT: "CB", NB: "CB", FS: "S", SS: "S", X: "WR", Z: "WR", SLOT: "WR" }[pos.slice(2)] : pos; const roles = ROLE_FILTERS.filter(([v]) => ({ LB: ["SAM", "MIKE", "WILL"], CB: ["OUT", "NB"], S: ["FS", "SS"], WR: ["X", "Z", "SLOT"] })[base]?.includes(v.slice(2))); if (!roles.length) return null; return <div style={pillTrack}>{[[base, `All ${base}`], ...roles.map(([v, l]) => [v, l.split(" · ")[1]])].map(([v, l]) => <button key={v} onClick={() => { setPos(v); setN(page); }} style={pill(pos === v)}>{l}</button>)}</div>; })()}
         <input value={q} onChange={(e) => { setQ(e.target.value); setN(page); }} placeholder="Search" aria-label="Search prospects" style={{ ...sel, marginLeft: "auto", width: onDraft ? 120 : 170, borderRadius: 99 }} />

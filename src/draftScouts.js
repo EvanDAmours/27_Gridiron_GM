@@ -14,6 +14,13 @@ import { posTag } from "./dline.js";
 // a number from 0 to 1 that's always the same for the same key (a scout's take, a range's offset)
 const hash = (s) => { let h = 2166136261; for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
 const POS_VALUE = { QB: 1.03, EDGE: 1.04, LT: 1.035, CB: 1.025, WR: 1.015, DT: 1, RT: 1, S: 0.975, LB: 0.965, TE: 0.965, LG: 0.96, RG: 0.96, C: 0.955, RB: 0.955, K: 0.85, P: 0.85 };
+// what a known development trait is worth to your scouts: a superstar or a generational talent
+// changes a franchise, so it outweighs a few points of ceiling or a starter's readiness
+const DEV_BONUS = { generational: 9, superstar: 6, star: 3 };
+const DEV_WORD = { generational: "Generational talent", superstar: "Superstar trait", star: "Star trait" };
+// how much they mark a player down for being likely there at your next pick: only a near-sure
+// thing waits, and a superstar or better waits only when he's all but guaranteed to last
+const waitCost = (x) => (x.later >= 0.9 ? 4 : x.later >= 0.7 && (DEV_BONUS[x.r.dev] || 0) < 6 ? 1.5 : 0);
 const OLD = { QB: 35, RB: 29, WR: 31, TE: 31, LT: 33, LG: 33, C: 33, RG: 33, RT: 33, EDGE: 31, DT: 31, LB: 30, CB: 30, S: 31, K: 38, P: 38 };
 
 // His current overall as your scouts see it: { v, lo, hi, kind } (kind: "workup" exact, "report"
@@ -111,37 +118,51 @@ export function scoutsPicks({ sc, teams, ui, picks, pool, at, now, capRoom, like
     const short = st.length < (NEED_STARTERS[g] || 1);
     const weakest = short ? null : st[st.length - 1];
     const starts = !weakest || cur.v >= (weakest.ovr || 0);
-    const value = (ceil * (1 - ctx.ready) + cur.v * ctx.ready + 7 * need + (starts ? 2 : 0) + ({ generational: 3, superstar: 2, star: 1 }[r.dev] || 0)) * (POS_VALUE[g] || 1);
+    const value = (ceil * (1 - ctx.ready) + cur.v * ctx.ready + 7 * need + (starts ? 2 : 0) + (DEV_BONUS[r.dev] || 0)) * (POS_VALUE[g] || 1);
     const there = atMine ? atMine.get(p.id) ?? 1 : 1;
     const later = atNext ? atNext.get(p.id) ?? 1 : 0;
     return { p, r, g, cur, ceil, need, short, weakest, starts, value, there, later };
   }).filter((x) => !likely || x.there >= 0.3); // likely: only players with a real chance to be there
-  // the ones they'd take: best for you, a little lower when he'll still be there next time
+  // the ones they'd take: best for you, lower only when he's near-certain to be there next time
   // (before your pick is up, the ones who'll likely be gone still show: that's what a trade up is for)
-  rated.sort((a, b) => b.value - b.later * 3 - (a.value - a.later * 3));
+  rated.sort((a, b) => b.value - waitCost(b) - (a.value - waitCost(a)));
   const five = rated.slice(0, 5);
+  // the rest of the board worth a look: a trait your scouts have seen, a player they rate well
+  // above the board, the biggest ceiling left; with a real chance to be there
+  const inFive = new Set(five.map((x) => x.p.id));
+  const topCeil = Math.max(0, ...rated.filter((x) => !inFive.has(x.p.id) && x.there >= 0.3).map((x) => x.ceil));
+  let ceilShown = false;
+  const radar = rated.filter((x) => !inFive.has(x.p.id) && x.there >= 0.3).map((x) => {
+    const gap = x.r.potV != null ? x.r.potV - leagueSees(x.p) : 0;
+    const note = DEV_BONUS[x.r.dev] ? [DEV_WORD[x.r.dev], "dev"]
+      : gap >= 5 ? ["Rated well above the board", "gem"]
+      : !ceilShown && x.ceil === topCeil && x.ceil >= 80 ? ((ceilShown = true), ["Highest ceiling left", "ceil"])
+      : null;
+    return note ? { ...x, note } : null;
+  }).filter(Boolean).slice(0, 5);
   // each scout makes his case: his own read of the five, leaning to the positions he knows
   const scouts = SCOUT_SLOTS.map((k) => sc?.[k]).filter(Boolean);
   for (const x of five) x.votes = [];
   for (const s of scouts) {
-    const take = (x) => x.value - x.later * 3 + (onSpec(s, x.p) ? 2.5 : 0) + (hash(`${s.name}${x.p.id}`) - 0.5) * (2 + (100 - (s.eval || 60)) / 10);
+    const take = (x) => x.value - waitCost(x) + (onSpec(s, x.p) ? 2.5 : 0) + (hash(`${s.name}${x.p.id}`) - 0.5) * (2 + (100 - (s.eval || 60)) / 10);
     const best = [...five].sort((a, b) => take(b) - take(a))[0];
     if (best) best.votes.push(s);
   }
   for (const x of five) x.why = reason(x, ctx, next);
   // the clubs ahead of you: before your pick if it isn't up yet, else before your next one
   const intel = before || after;
-  return { five, ctx, next, scouts, upAt: at > now ? picks[at] : null, intel, intelTo: at > now ? picks[at] : next };
+  return { five, radar, ctx, next, scouts, upAt: at > now ? picks[at] : null, intel, intelTo: at > now ? picks[at] : next };
 }
 
 const yrs = (n) => (n <= 1 ? "a year" : `${n} years`);
 const short = (n) => { const a = String(n || "").split(" "); return a.length > 1 ? `${a[0][0]}. ${a.slice(1).join(" ")}` : n; };
 function reason(x, ctx, next) {
-  const { p, g, cur, weakest, starts, later } = x;
+  const { p, g, cur, weakest, starts } = x;
   const old = ctx.aging.find((a) => a.g === g);
   // the one thing that matters most about him for you, after whether he plays now
   const extra =
-    x.r.potV != null && x.r.potV - leagueSees(p) >= 5 ? "the league hasn't seen what your scouts have"
+    (DEV_BONUS[x.r.dev] || 0) >= 6 ? `your scouts have seen a ${x.r.dev === "generational" ? "generational" : "superstar"} trait`
+    : x.r.potV != null && x.r.potV - leagueSees(p) >= 5 ? "the league hasn't seen what your scouts have"
     : g === "QB" && (ctx.score.QB || 0) <= 0.1 ? "you're set at quarterback"
     : old ? `${short(old.p.name)} is ${old.p.age}`
     : !weakest ? (x.short && (ctx.starters[g] || []).length ? `you're a ${needName(g)} short` : `you have no ${needName(g)}`)
@@ -150,7 +171,7 @@ function reason(x, ctx, next) {
     ? [weakest ? `${cur.kind === "estimate" ? "Should start" : "Starts"} over ${short(weakest.name)} (${weakest.ovr})` : cur.kind === "estimate" ? "Should start" : "Starts day one", "g"]
     : weakest && x.ceil > (weakest.ovr || 0) ? [`${yrs(Math.max(1, Math.ceil(((weakest.ovr || 0) - cur.v) / 4)))} from passing ${short(weakest.name)}`, "y"]
     : ["Depth", "dim"];
-  return { lead: [lead], rest: extra, wait: next && later >= 0.65 };
+  return { lead: [lead], rest: extra, wait: !!next && waitCost(x) > 0 };
 }
 
 // Your auto pick when your clock runs out: your scouts' first choice.

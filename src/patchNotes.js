@@ -2065,4 +2065,9 @@ export const PATCH_NOTES = [
     "Free agency: the old market rates, bargains, scarcity and FA Showcase box is gone (the negotiation table covers it). In season, the waiver wire is its own calm card.",
     "The sim menu next to Sim Week is now Sim to…, with Week 9: trade deadline and Week 18: end of season.",
   ] },
+  { v: "5.11", date: "2026-10-23", title: "Scouts' radar, dev traits weigh more, K/P filter", notes: [
+    "Draft day: under your scouts' five there's a new Also on your scouts' radar list (closed until you open it). It flags other players worth a look: a star, superstar or generational trait your scouts have seen, players they rate well above the board, and the biggest ceiling left, each with his current overall, ceiling, odds of lasting and a Draft button.",
+    "Your scouts weigh known development traits much more: a superstar or generational talent outranks a few points of ceiling or readiness. They only suggest waiting on a player when he's close to certain to be there at your next pick, and a superstar or better only when he's all but guaranteed; otherwise they take the more NFL-ready player now.",
+    "The draft board can filter kickers and punters (K/P).",
+  ] },
 ];
