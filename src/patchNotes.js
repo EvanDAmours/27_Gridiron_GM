@@ -2002,4 +2002,8 @@ export const PATCH_NOTES = [
   { v: "4.89", date: "2026-10-23", title: "Who made the play", notes: [
     "Live games credit the defense: after each run or catch, the tackler shows in grey after the play (two names when a teammate assisted), and a broken-up pass names the defender who got a hand on it the same way. It shows under the field and in the drive log.",
   ] },
+  { v: "4.90", date: "2026-10-23", title: "Retirement ends the franchise", notes: [
+    "Retiring as GM now ends the franchise. You confirm first (the sheet names exactly which saves go), then every save of this franchise is deleted: the autosave, its backup and any save slot holding it. Saves of other franchises are left alone.",
+    "Then the send-off: a full screen in your club's colors with the career you retire with (legacy score and where it ranks all time, seasons, record, Super Bowls, playoff trips, your best draft picks and your achievements), then a last 'Thank you, GM.' and back to the main menu.",
+  ] },
 ];

@@ -29,3 +29,9 @@ export function loadJSON(key) {
   if (!raw) return null;
   return JSON.parse(raw.startsWith(TAG) ? LZString.decompressFromUTF16(raw.slice(TAG.length)) : raw);
 }
+
+// Delete a save, and drop any write of it still being compressed (it would bring the save back).
+export function removeJSON(key) {
+  written[key] = ++nextId;
+  try { localStorage.removeItem(key); } catch { /* private mode */ }
+}

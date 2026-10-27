@@ -11,8 +11,9 @@ const box = { background: "#ffffff0d", borderRadius: 16, padding: "12px 14px", m
 const head = () => ({ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 8 });
 const btn = (bg, fg = "#fff") => ({ background: bg, color: fg, border: "none", borderRadius: 14, minHeight: 46, padding: "0 18px", fontWeight: 800, fontSize: 15, cursor: "pointer" });
 
-export default function GmRetire({ career: c, team, gmName, retired, yr, achievements = {}, onRetire, onUnretire, onMenu, onClose }) {
+export default function GmRetire({ career: c, team, gmName, retired, yr, achievements = {}, saves = [], onRetire, onClose }) {
   const [locked, setLocked] = React.useState(false);
+  const [confirm, setConfirm] = React.useState(false);
   const rank = legacyRank(c.score);
   const board = [...GREATS.map((g) => ({ ...g, you: false })), { name: gmName || "You", club: team ? `${team.city} ${team.name}` : "", yrs: c.seasons ? `${yr - c.seasons + 1}–${yr}` : `${yr}`, score: c.score, titles: c.titles.length, you: true }].sort((a, b) => b.score - a.score || (a.you ? 1 : -1));
   const youAt = board.findIndex((g) => g.you);
@@ -84,15 +85,18 @@ export default function GmRetire({ career: c, team, gmName, retired, yr, achieve
           })}
           <div style={{ fontSize: 11, color: C.mt, marginTop: 4 }}>Real GMs are scored the same way from approximate totals for the years they ran their clubs.</div>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-          {retired ? <>
-            <button onClick={onUnretire} style={btn("#1e293b", C.tx)}>Come out of retirement</button>
-            <button onClick={onMenu} style={btn("#b45309")}>Main menu</button>
-          </> : <>
-            <button onClick={onClose} style={btn("#1e293b", C.tx)}>Keep building</button>
-            <button onClick={onRetire} style={btn("#b45309")}>Retire as GM</button>
-          </>}
-        </div>
+        {/* retiring ends the franchise: say exactly what goes before it does */}
+        {!confirm ? <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={btn("#1e293b", C.tx)}>Keep building</button>
+          <button onClick={() => setConfirm(true)} style={btn("#b45309")}>Retire as GM</button>
+        </div> : <div style={{ ...box, marginBottom: 0, background: "#7f1d1d33" }}>
+          <div style={{ fontSize: 16, fontWeight: 800 }}>Retire for good?</div>
+          <div style={{ fontSize: 14, color: "#e2e8f0", lineHeight: 1.5, marginTop: 4 }}>This ends the franchise. {saves.length ? <>Its save{saves.length === 1 ? " is" : "s are"} deleted and can't be recovered: <b>{saves.join(", ")}</b>.</> : "There's no save of it to delete."} You'll see your career one last time.</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", marginTop: 10 }}>
+            <button onClick={() => setConfirm(false)} style={btn("#1e293b", C.tx)}>Not yet</button>
+            <button onClick={onRetire} style={btn("#b91c1c")}>Retire and delete the save</button>
+          </div>
+        </div>}
       </div>
     </div>
   );
