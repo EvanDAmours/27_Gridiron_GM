@@ -417,7 +417,12 @@ export function setLeague(base) {
 }
 export let SENSITIVITY = 0.6; // edge units per spread of advantage
 // How much a team's play swings from one game to the next (edge units, per side of the ball).
-export let GAME_DAY_SD = 0.45; // with SENSITIVITY 0.6: win totals spread like the NFL's (~3 wins), no routine 16-1 or 1-16 teams
+// Played after the edge cap (edges below), so a mismatch still has off days. 1.2 (measured over 30
+// seasons on the 2026 rosters): game margins land ~13.5 points either side of the spread like the
+// NFL's, win totals spread ~3 wins, the best record averages ~14.5 wins.
+export let GAME_DAY_SD = 1.2;
+// for calibration runs (scripts and tests): try other values of the two dials above
+export function setTuning({ sens, day } = {}) { if (Number.isFinite(sens)) SENSITIVITY = sens; if (Number.isFinite(day)) GAME_DAY_SD = day; }
 const z = (v, k) => (v - LEAGUE[k][0]) / LEAGUE[k][1];
 
 // Matchup edges for the team with the ball (passing and running), in edge units. Big offensive
@@ -442,9 +447,11 @@ function edges(g, pers = "11", pkg = "nickel") {
   const o = g.sides[g.poss], d = g.sides[other(g.poss)];
   // this snap's units: the offense in its grouping, the defense in its package
   const ou = o.oU?.[pers] || o.u, du = d.dU?.[pkg] || d.u;
-  const dd = g.day ? g.day[g.poss].o - g.day[other(g.poss)].d : 0;
-  const extra = o.mod / POINTS_PER_EDGE + (g.poss === "h" && !g.neutral ? HOME : 0) + dd + gameScript(g.ot ? 3 : g.qtr, g.score[g.poss] - g.score[other(g.poss)], g.clock);
-  return { o, d, passE: soft((z(ou.pass, "pass") - z(du.passD, "passD")) * SENSITIVITY + extra), runE: soft((z(ou.run, "run") - z(du.runD, "runD")) * SENSITIVITY + extra), rushE: z(du.rush, "rush") - z(o.u.ol, "ol"),
+  // the day, and a stacked roster's diminishing returns (league.js talentBrake, in points), both after the cap
+  const dd = (g.day ? g.day[g.poss].o - g.day[other(g.poss)].d : 0) + ((d.brake || 0) - (o.brake || 0)) / (2 * POINTS_PER_EDGE);
+  // the day (a good or bad game) goes on after the cap: even a mismatch near the cap has off days
+  const extra = o.mod / POINTS_PER_EDGE + (g.poss === "h" && !g.neutral ? HOME : 0) + gameScript(g.ot ? 3 : g.qtr, g.score[g.poss] - g.score[other(g.poss)], g.clock);
+  return { o, d, passE: soft((z(ou.pass, "pass") - z(du.passD, "passD")) * SENSITIVITY + extra) + dd, runE: soft((z(ou.run, "run") - z(du.runD, "runD")) * SENSITIVITY + extra) + dd, rushE: z(du.rush, "rush") - z(o.u.ol, "ol"),
     // for the grades: the same snap with one man swapped for an average one (gradeBook)
     gx: { passEWith: (dp) => soft((z(ou.pass + dp, "pass") - z(du.passD, "passD")) * SENSITIVITY + extra), runE0: soft(z(ou.run, "run") * SENSITIVITY + extra), rushE0: -z(o.u.ol, "ol") } };
 }

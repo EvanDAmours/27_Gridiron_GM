@@ -435,7 +435,9 @@ const wx=wxOverride||'clear';/* the weather is set per game (weather.js) and pla
   const _roles=(snaps,ord)=>{const r={};for(const pos of Object.keys(ROLE_SLOTS))ord(pos).slice(0,ROLE_SLOTS[pos].length).forEach((p,i)=>{r[p.id]=ROLE_SLOTS[pos][i];});Object.defineProperty(snaps,"roles",{value:r,enumerable:false});};_roles(hSnaps,hOrd);_roles(aSnaps,aOrd);
   // Play-calling tendency: the game plan, plus the coordinator's scheme (Air Raid throws more, Power Run runs more).
   const lean=(t,pl)=>(pl?.off==="pass_heavy"?0.07:pl?.off==="run_heavy"?-0.07:0)+(0.42-schemeRunPct(t))*0.5;
-  return{wx,hPlan,aPlan,hSnaps,aSnaps,home:makeSide({team:ht,order:hOrd,snaps:hSnaps,mod:hMod,lean:lean(ht,hPlan),plan:hPlan}),away:makeSide({team:at,order:aOrd,snaps:aSnaps,mod:aMod,lean:lean(at,aPlan),plan:aPlan})};
+  // a stacked roster's diminishing returns (above), played after the edge cap so it still bites when its edges are maxed
+  const home=makeSide({team:ht,order:hOrd,snaps:hSnaps,mod:hMod,lean:lean(ht,hPlan),plan:hPlan}),away=makeSide({team:at,order:aOrd,snaps:aSnaps,mod:aMod,lean:lean(at,aPlan),plan:aPlan});home.brake=talentBrake(ht);away.brake=talentBrake(at);
+  return{wx,hPlan,aPlan,hSnaps,aSnaps,home,away};
 }
 // After the final whistle: season stats, games played/started and injury checks for one team.
 // Returns the box score lines (with QB ratings) for the schedule.
@@ -463,6 +465,20 @@ export function tickInjuries(nt,nw,ui){
 // Your depth chart, snap shares and the difficulty adjustment, as set on your screens: the sim reads
 // them when it lines up your team (AI clubs use their own depth charts).
 let USER_DEPTH={},USER_SNAPS={},DDA=0;
+// Diminishing returns on team-wide talent. Inside the range real NFL rosters span (about 4 points of
+// top-22 OVR above the league's average) every point of talent counts in full, ~2 points of margin a
+// game. Past it, a roster stacked at every spot still gets better, but each extra point counts for
+// less: opponents game-plan for it, its stars split the ball, and a 22-man edge can't win every
+// snap. Calibrated so a club far beyond any real roster plays like the best real teams (+12 to +15
+// a game, 14-15 wins, 17-0 a few times a century), instead of +25 and 17-0 every other year.
+// TALENT_KNEE: top-22 OVR above the league average where it starts. The brake (points, played after
+// the edge cap) grows a little slower than the excess (TALENT_CURVE) so more talent always helps:
+// measured over 10-24 seasons each, a club +10 above the league plays at about +16 a game (14-15
+// wins, 17-0 in under 1 season in 10) and one +15 above at about +17 (the 2007 Patriots were +20).
+let LEAGUE_TAL=null;export const TALENT_KNEE=4;export let TALENT_DIM=1.7;const TALENT_CURVE=0.04;
+export const setTalentDim=v=>{if(Number.isFinite(v))TALENT_DIM=v;};
+export const top22=t=>{const r=(t?.roster||[]).filter(p=>!p.injured&&!p.holdout&&!p.suspended).map(p=>p.ovr||0).sort((a,b)=>b-a).slice(0,22);return r.length?r.reduce((s,v)=>s+v,0)/r.length:70;};
+const talentBrake=t=>{if(LEAGUE_TAL==null)return 0;const e=Math.min(30,Math.max(0,top22(t)-LEAGUE_TAL-TALENT_KNEE));return e*TALENT_DIM-TALENT_CURVE*e*e;};
 export const setUserLineup=(depth,snaps)=>{USER_DEPTH=depth||{};USER_SNAPS=snaps||{};};
 export const setDifficultyAdj=v=>{DDA=+v||0;};
 let INJ_ON=true;
@@ -487,6 +503,7 @@ export function calibrateLeague(teams){
   const us=(teams||[]).filter(t=>t?.roster?.length).map(t=>{const h=t.roster.filter(p=>!p.injured&&!p.holdout&&!p.suspended);const memo={};const order=pos=>memo[pos]||(memo[pos]=pos==="DL"?dlAsPlayed(depthOrderFor(h,{},"DL")):depthOrderFor(h,{},pos));const u=unitRatings(order,teamPersonnel(t,order));const u0=unitRatings(order);_pn++;for(const k of Object.keys(_po)){const d=defUnits(order,k);_po[k][0]+=d.passD-u0.passD;_po[k][1]+=d.runD-u0.runD;}return u;});
   // how defenses rate in each package against their average, for the auto personnel pick
   if(_pn)setPkgOff(Object.fromEntries(Object.entries(_po).map(([k,[a,b]])=>[k,{passD:a/_pn,runD:b/_pn}])));
+  {const ts=(teams||[]).filter(t=>t?.roster?.length);if(ts.length>=8)LEAGUE_TAL=ts.reduce((a,t)=>a+top22(t),0)/ts.length;}
   if(us.length<8)return null;
   const base={};for(const k of ["pass","run","passD","runD","rush","ol"]){const xs=us.map(u=>u[k]).filter(Number.isFinite);const m=xs.reduce((a,b)=>a+b,0)/xs.length;base[k]=[m,Math.sqrt(xs.reduce((a,b)=>a+(b-m)**2,0)/xs.length)];}
   setLeague(base);return base;
