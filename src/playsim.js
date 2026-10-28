@@ -31,6 +31,7 @@ import { hurtPen } from "./injuries.js";
 import { recPlay } from "./gameday.js";
 import { iqEdge, readOdds, readComp, readInt, intShift, sackShift } from "./qbiq.js";
 import { coachAggression } from "./coachStyle.js";
+import { resolveSpecs, passRushOf, powerOf, passBlockOf } from "./specialists.js";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const gauss = (rand) => { let u = 0, v = 0; while (!u) u = rand(); while (!v) v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
@@ -244,6 +245,24 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
     if (role === "TE2" || role === "TE3") return Ss[1] || L[1];
     return L[1] || L[2]; // backs: the MIKE (or WILL)
   };
+  // Situational specialists (specialists.js): the power back and the 3rd-down back, and on passing
+  // downs the rush package up front and the sub linebacker, each in for the man he spells.
+  const spec = resolveSpecs((role) => { const l = depth(role) || [], f = formed(l); Object.defineProperty(f, "chosen", { value: !!l.chosen }); return f; }, order);
+  const swapIn = (list, on, off) => list.some(([x]) => x.id === off.id) ? list.map(([x, w]) => (x.id === off.id ? [on, w * q(on, 0.01) / q(off, 0.01)] : [x, w])) : list;
+  const covRole = (x) => (x.pos === "CB" ? 1.4 : x.pos === "S" ? 1.1 : x.pos === "LB" ? 0.35 : 0.05);
+  const defPass = {};
+  for (const k0 of PKGS) {
+    const base = defBy[k0], sub = spec.subLB[k0];
+    let tl = base.tackleW;
+    for (const [on_, off] of spec.rush) tl = swapIn(tl, on_, off);
+    if (sub) tl = swapIn(tl, sub[0], sub[1]);
+    if (tl === base.tackleW) continue;
+    defPass[k0] = { ...base, tackleW: tl, rushW: tl.map(([x, w]) => [x, rushRole(x) * w * rushQ(x), rushRole(x) * w]), covW: tl.map(([x, w]) => [x, covRole(x) * w * q(x, 0.035)]),
+      on: sub ? { ...base.on, lbs: base.on.lbs.map((x) => (x.id === sub[1].id ? { ...sub[0], role: x.role } : x)) } : base.on, subs: [...spec.rush, ...(sub ? [sub] : [])] };
+  }
+  // what the rush package is worth: the front four's pass rush, in the rush unit's terms (defUnits)
+  const specRushE = spec.rush.reduce((s, [on_, off]) => s + passRushOf(on_) - passRushOf(off), 0) * 0.7 / 4 / LEAGUE.rush[1];
+  const coverSub = (pkg, role, target, onWR, pd) => { const c = cover(pkg, role, target, onWR), s = pd && spec.subLB[pkg]; return s && c && c.id === s[1].id ? s[0] : c; };
   const k = on("K")[0] || order("K")[0];
   // Special teams: the returners, and the coverage units (the special teams coach).
   const kr = order("KR")?.[0], pr = order("PR")?.[0];
@@ -259,7 +278,7 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
   const dStyle = defStyle(team, plan), paSpec = team?.coach?.oc?.spec === "Play-Action";
   // the five up front, left to right (the line's own stats: who allowed what)
   const ol = ["LT", "LG", "C", "RG", "RT"].map((pos) => on(pos)[0] || order(pos)[0] || null);
-  return { team, order, u, oU, dU, mix, tilt, recvBy, defBy, cover, mod, passLean, dStyle, paSpec, receivers, rushers, ol, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, hcAgg, kLeg, p, pOvr, pPow, pAcc, pHang };
+  return { team, order, u, oU, dU, mix, tilt, recvBy, defBy, cover: coverSub, spec, defPass, specRushE, mod, passLean, dStyle, paSpec, receivers, rushers, ol, qb, defs, rushW, covW, tackleW, k, kOvr: k?.ovr || 70, kr, krR: kr ? retRating(kr) : 80, pr, prR: pr ? retRating(pr) : 80, stCov, hcR, hcAgg, kLeg, p, pOvr, pPow, pAcc, pHang };
 }
 
 const emptyTeam = () => ({ blitz: 0, box: 0, cover: 0, dropbacks: 0, plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
@@ -601,6 +620,16 @@ function chooseCall(g, o, pers = "11") {
 // One play; recorded in g.pl when the game keeps a play log (your games, for the game recap).
 // pick (your called pass): { target: the receiver's id, open: whether he was open when you threw
 // it } — the ball goes to him, and throwing into coverage costs completions and risks a pick.
+// The specialists' snaps: each scrimmage snap counts for the offense and the defense on the field,
+// with who came on and who came off (specialists.js applySubSnaps turns it into snap shares).
+function subBook(g, off, def, oPairs, dPairs) {
+  const s = (g.sub ||= { h: { o: {}, d: {}, oN: 0, dN: 0 }, a: { o: {}, d: {}, oN: 0, dN: 0 } });
+  s[off].oN++; s[def].dN++;
+  for (const [side, u, pairs] of [[off, "o", oPairs], [def, "d", dPairs]]) for (const [on, offP] of pairs || []) {
+    if (!on || !offP) continue;
+    s[side][u][on.id] = (s[side][u][on.id] || 0) + 1; s[side][u][offP.id] = (s[side][u][offP.id] || 0) - 1;
+  }
+}
 export function step(g, call, bonus = 1, pick = null) {
   const ev = stepPlay(g, call, bonus, pick);
   if (g.pl) recPlay(g, ev);
@@ -798,7 +827,13 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   const st0 = g.stats[off], dst0 = g.stats[def];
   if (st0) (st0.pers ||= {})[pers] = (st0.pers[pers] || 0) + 1;
   if (dst0) (dst0.pkg ||= {})[pkg] = (dst0.pkg[pkg] || 0) + 1;
-  const dP = d.defBy?.[pkg] || d; // the defenders on the field this snap
+  // the specialists for this down (specialists.js): the power back in short yardage, the 3rd-down
+  // back and the rush package and sub linebacker on passing downs
+  const oShort = sitn.short || (g.down === 4 && g.toGo <= 2), passDown = (g.down >= 3 && g.toGo >= 6) || sitn.twoMin;
+  const oSub = oShort ? o.spec?.PWHB : passDown ? o.spec?.RB3D : null;
+  const dPass = passDown && d.defPass?.[pkg];
+  subBook(g, off, def, oSub ? [[oSub, o.spec.rb1]] : [], dPass ? dPass.subs : []);
+  const dP = dPass || d.defBy?.[pkg] || d; // the defenders on the field this snap
   const qb = o.qb;
   let yards = 0, desc = "", type = "", carrier = null, completed = false, clockStops = false;
   // The defense's call this snap (defStyle): more blitzes on third and long.
@@ -819,7 +854,8 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const sackAt = (rE) => clamp(0.055 + rE * 0.008 - passE * 0.004 + (deep ? 0.025 : quick || screen ? -0.035 : 0) + (B ? (quick || screen ? 0.02 : 0.06) : V ? -0.015 : 0), 0.02, 0.2);
     // his IQ: seeing the blitz and getting rid of it in time (qbiq.js)
     const iq = iqEdge(qb);
-    const sackP = clamp(sackAt(rushE) + sackShift(iq), 0.015, 0.22);
+    // the rush package on passing downs, and the back picking up the blitz (a 3rd-down back who can block)
+    const sackP = clamp(sackAt(rushE + (dPass ? d.specRushE || 0 : 0)) + sackShift(iq) - (oSub && passDown ? (passBlockOf(oSub) - passBlockOf(o.spec.rb1)) * 0.0006 : 0), 0.015, 0.22);
     const qbl = line(g, off, qb);
     if (!screen) ev._ol = { pass: true, sackP };
     gk = { qb, dropback: !screen, sackP0: sackAt(gx.rushE0) };
@@ -846,14 +882,16 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     } else {
       // Once a receiver has had a big day the ball spreads around (no 15-catch games every week).
       const busy = ([p, w]) => { const n = g.box[off][p.id]?.tgt || 0, s0 = 6 + Math.max(0, p.form || 0) * 0.5; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 3)]; };
-      const recv = o.recvBy?.[pers] || o.receivers;
+      const recv0 = o.recvBy?.[pers] || o.receivers;
+      // a specialist back on the field is the back they throw to (a 3rd-down back gets a few more looks)
+      const recv = oSub ? [...recv0.filter(([, , r]) => r !== "RB"), [oSub, recv0.filter(([, , r]) => r === "RB").reduce((s, [, w]) => s + w, 0) * (passDown ? 1.25 : 1) || 0.1, "RB"]] : recv0;
       // the receiver you threw to, if he's out there (any grouping); otherwise the quarterback's read
       const mine = !screen && pick?.target != null ? [...recv, ...Object.values(o.recvBy || {}).flat(), ...o.receivers].find(([p]) => p?.id === pick.target) : null;
-      const target = mine ? mine[0] : screen ? (o.rushers[0]?.[0] || pickW(rand, recv.map(busy))) : pickW(rand, recv.map(busy));
+      const target = mine ? mine[0] : screen ? (oSub || o.rushers[0]?.[0] || pickW(rand, recv.map(busy))) : pickW(rand, recv.map(busy));
       const tl = line(g, off, target);
       // the matchup: who has him in this package, and by how much the receiver wins it
       const role = recv.find(([p]) => p === target)?.[2] || (mine && typeof mine[2] === "string" ? mine[2] : "RB");
-      const cm = !screen && d.cover ? d.cover(pkg, role, target, o.oU?.[pers]?.on?.wr || []) : null;
+      const cm = !screen && d.cover ? d.cover(pkg, role, target, o.oU?.[pers]?.on?.wr || [], !!dPass) : null;
       ev.tgt = target; ev.cm = cm;
       const mm = cm ? clamp((target?.ovr || 75) - (cm.pos === "LB" ? lbCover(cm) : cm.ovr || 75) - MM0, -25, 25) : 0;
       // completion odds and yards for a throw, as functions of the passing edge, the receiver and the matchup
@@ -914,7 +952,8 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     // and the season record (416) stays out of reach.
     // A back in the form of his life gets fed a few more before the staff spells him.
     const tired = ([p, w]) => { const n = g.box[off][p.id]?.rushAtt || 0, s0 = 12 + Math.max(0, p.form || 0) * 0.5; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 4)]; };
-    carrier = keeper ? qb : pickW(rand, o.rushers.map(tired)) || qb;
+    // a specialist back on the field carries it
+    carrier = keeper ? qb : oSub || pickW(rand, o.rushers.map(tired)) || qb;
     ev.qb = qb; ev.keeper = keeper;
     const outside = call === "run_outside";
     // Heavy workloads wear a back down: past ~18 carries in a game he averages a little less.
@@ -926,7 +965,9 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     ev.edge = edgeRun; ev.outside = outside;
     const mike = lbsOn.find((p) => p.role === "MIKE"), sam = lbsOn.find((p) => p.role === "SAM"), nb = dP.on?.cbs?.[2];
     const poa = edgeRun ? (sam ? ((sam.ovr || 75) - 74) * 0.045 : nb ? ((nb.posAttrs?.tackling ?? 65) - 68) * 0.03 - 0.15 : 0) : mike ? ((mike.ovr || 75) - 76) * 0.035 : 0;
-    const mean = 3.85 - poa + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.022 + (keeper ? 0.6 : 0) - load * 0.06 + (X ? -0.9 : V ? 0.6 : B ? -0.3 : 0) + (g.wxE?.runYds || 0);
+    // in short yardage a back's power counts (the pile, the last yard), on top of his rating
+    const pow = oShort && !keeper && carrier ? (powerOf(carrier) - 76) * 0.035 : 0;
+    const mean = 3.85 - poa + runE * 0.3 + ((carrier?.ovr || 75) - 75) * 0.022 + pow + (keeper ? 0.6 : 0) - load * 0.06 + (X ? -0.9 : V ? 0.6 : B ? -0.3 : 0) + (g.wxE?.runYds || 0);
     { // the grades' baselines: an average back on this run; an average front against it (its chance of a stop)
       const sd = outside ? 3.3 : 2.5, mD = mean + poa - runE * 0.3 + gx.runE0 * 0.3 - 0.6;
       gk = { run: true, carrier, keeper, yA: mean + 0.2, yR0: mean - ((carrier?.ovr || 75) - AVG.rb) * 0.022 + 0.2, stopP0: phi((1.5 - mD) / sd) };

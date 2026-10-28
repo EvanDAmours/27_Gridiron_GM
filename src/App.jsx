@@ -45,6 +45,7 @@ import { ScoutsPicks, ScoutsWeighed, AheadOfYou } from "./ScoutsPicks.jsx";
 import { scoutsPicks, scoutsAutoPick } from "./draftScouts.js";
 import PlayoffPicture from "./PlayoffPicture.jsx";
 import { applyLiveSeason, applyLiveInjuries } from "./liveStart.js";
+import { applySubSnaps } from "./specialists.js";
 import { terms as talkTerms, yearlyAsk, maxYears } from "./negotiation.js";
 import { HC_TRAITS, hcGrowth, hcScoutBonus, hcCulture } from "./headCoach.js";
 import { playerValue, pickValue as chartPickValue, evaluateTrade, closeCall } from "./trade.js";
@@ -685,7 +686,7 @@ const _wireLog=useRef(null);
     const L=liveGameRef.current;if(!L)return;
     // The engine's full box score: season stats and injury checks for both teams.
     const nt=[...teams];
-    const bH=applyGame(nt[liveSim.h],L.hSnaps,L.g.box.h,!!liveSim.playoff),bA=applyGame(nt[liveSim.a],L.aSnaps,L.g.box.a,!!liveSim.playoff);liveBoxRef.current={h:bH,a:bA};addPersonnelStats(nt[liveSim.h],L.g.stats?.h);addPersonnelStats(nt[liveSim.a],L.g.stats?.a);
+    /* the snaps the specialists played (specialists.js) */applySubSnaps(L.hSnaps,L.g,"h");applySubSnaps(L.aSnaps,L.g,"a");const bH=applyGame(nt[liveSim.h],L.hSnaps,L.g.box.h,!!liveSim.playoff),bA=applyGame(nt[liveSim.a],L.aSnaps,L.g.box.a,!!liveSim.playoff);liveBoxRef.current={h:bH,a:bA};addPersonnelStats(nt[liveSim.h],L.g.stats?.h);addPersonnelStats(nt[liveSim.a],L.g.stats?.a);
     liveGameRef.current=null;
     if(liveSim.playoff){simPR({h:liveSim.h,a:liveSim.a,hs:liveScore.h,as:liveScore.a,boxH:bH,boxA:bA});return;}
     const ns=[...sched];const gi=ns.findIndex(g=>!g.played&&g.h===liveSim.h&&g.a===liveSim.a&&g.wk===liveSim.wk);

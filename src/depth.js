@@ -4,6 +4,7 @@ import { snapOrdered } from "./snaps.js";
 import { DL_SLOTS, dlOrder } from "./dline.js";
 import { returnerOrder } from "./special.js";
 import { ROLE_SLOTS, roleOrder } from "./roles.js";
+import { isSpec, specialistOrder } from "./specialists.js";
 
 // Starters per position: the same counts the game sim plays with.
 export const STARTERS = { QB: 1, RB: 1, WR: 3, TE: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, DL: 4, LB: 3, CB: 3, S: 2, K: 1, P: 1 };
@@ -16,6 +17,7 @@ export const byDepth = (a, b) => (a.dk ?? 99) - (b.dk ?? 99) || b.ovr - a.ovr;
 // snap shares and the players getting the most snaps move to the front: snap share decides who starts.
 export function depthOrderFor(roster, depthOrder, pos, snaps) {
   if (pos === "KR" || pos === "PR") return returnerOrder(roster, depthOrder, pos); // kick / punt returner
+  if (isSpec(pos)) return specialistOrder(roster, depthOrder, pos); // situational specialists
   // A tight end you've put in the receiver chart is split out wide: he plays receiver (rated at
   // the receiver role, roles.js) and leaves the tight end chart until you move him back.
   const wide = new Set(((depthOrder || {}).WR || []).filter((id) => roster.some((p) => p.id === id && p.pos === "TE")));

@@ -2123,4 +2123,10 @@ export const PATCH_NOTES = [
   { v: "5.23", date: "2026-10-23", title: "New lineman art, all teams", notes: [
     "New lineman art for the other 15 teams (Raiders, Chargers, Rams, Dolphins, Vikings, Patriots, Saints, Jets, Eagles, Steelers, 49ers, Seahawks, Buccaneers, Titans and Commanders), so every club but the Giants (who have their own numbered renders) now has the heavier, more realistic linemen.",
   ] },
+  { v: "5.24", date: "2026-10-23", title: "Situational specialists", notes: [
+    "Situational specialists, like Madden's Specialists tab: a new Specialists page in the depth chart (Subs on a phone) for a power back, a 3rd-down back, a rush left end, a rush tackle, a rush right end and a sub linebacker. Each is rated for his job: the power back on strength and tackle-breaking, the 3rd-down back on hands and pass protection, the rushers on pass rush and get-off, the sub linebacker on coverage and speed.",
+    "They come on in their situations: the power back in short yardage and at the goal line, the 3rd-down back on 3rd and long and in the two-minute drill, the rush package on passing downs, and the sub linebacker in nickel and dime on passing downs, each for the starter who fits that job worse.",
+    "It counts: they get those carries, targets, sacks and coverage snaps, their snap counts (and development) follow the downs they actually play, a real power back converts more short yardage, a better rush package gets home more on passing downs, and a cover linebacker makes it harder to throw to backs and tight ends.",
+    "Pick each one yourself, or leave it to the staff: they choose the best fit on the roster, and only sub him in when he's clearly better at the job than the starter. Every club in the league uses them.",
+  ] },
 ];

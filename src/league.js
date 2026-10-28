@@ -1,6 +1,7 @@
 // The league's engine room: player generation, schedules, the game sim wrapper, injuries,
 // coaches, the cap and the shared helpers the screens use. Pure JavaScript (no React), so it can
 // be tested directly. Moved out of App.jsx.
+import { applySubSnaps } from "./specialists.js";
 import { GRADE_KEYS } from "./grades.js";
 import { ROSTER_UPDATES } from "./rosterUpdates.js";
 import M27 from "./data/madden27.json" with { type: "json" };
@@ -523,7 +524,7 @@ export function simGame(ht,at,hPlan,aPlan,wxOverride,opts={}){
   const su=gameSetup(ht,at,hPlan,aPlan,wxOverride);
   const g=playGame(createGame(su.home,su.away,{playoff:!!opts.playoff,neutral:!!opts.neutral,rec:!!opts.rec,wx:su.wx}));
   if(opts.dry)return{hsc:g.score.h,asc:g.score.a,boxH:g.box.h,boxA:g.box.a,wx:su.wx,game:g};
-  addPersonnelStats(ht,g.stats.h);addPersonnelStats(at,g.stats.a);
+  addPersonnelStats(ht,g.stats.h);addPersonnelStats(at,g.stats.a);/* the snaps the specialists played (specialists.js) */applySubSnaps(su.hSnaps,g,"h");applySubSnaps(su.aSnaps,g,"a");
   return{hsc:g.score.h,asc:g.score.a,boxH:applyGame(ht,su.hSnaps,g.box.h,!!opts.playoff),boxA:applyGame(at,su.aSnaps,g.box.a,!!opts.playoff),wx:su.wx,...(g.pl?{game:g}:{})};
 }
 // ═══════════ SCOUTS ═══════════
