@@ -2104,4 +2104,7 @@ export const PATCH_NOTES = [
     "Game engine: a team stacked with stars everywhere no longer runs the table. Before, a club far above the league (the kind a few seasons of great drafting and signings builds) beat everyone by 25 points a game and went 17-0 about every other season. Now talent counts in full up to the best real NFL rosters, and past that each extra point still helps but counts for less (opponents game-plan for you, stars split the ball). Measured over 40 seasons, that club now plays like the best real teams: about +13 to +16 a game, 14 wins on average, 15-2 or 16-1 in its best years, 17-0 a few times in a hundred.",
     "Any given Sunday: every club's good and bad days now swing the game the way they do in the NFL, even for a heavy favorite. Games land about 13.5 points either side of the spread (the NFL's number), win totals spread about 3 wins, and the league's best record averages around 14.5 wins. Home field, scoring and the stat lines stay where they were.",
   ] },
+  { v: "5.19", date: "2026-10-23", title: "New lineman art", notes: [
+    "New lineman art on player cards for the Cardinals, Falcons, Ravens, Bills, Panthers, Bears, Bengals, Browns, Cowboys, Broncos, Lions, Packers, Texans, Colts, Jaguars and Chiefs: heavier, more realistic linemen in both skin tones, with the jersey number placed to fit each new render.",
+  ] },
 ];
