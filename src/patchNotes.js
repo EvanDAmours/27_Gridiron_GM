@@ -2112,4 +2112,8 @@ export const PATCH_NOTES = [
     "Pass interference is an automatic first down, so the offense now takes it over any catch that falls short of the sticks (no more declining the flag after a 20-yard catch on 3rd and 28 and then punting).",
     "Softer logo glow on the scoreboard and the play caption: a thin outline instead of a white halo, and a fainter gold glow for the team with the ball.",
   ] },
+  { v: "5.21", date: "2026-10-23", title: "Live game settings", notes: [
+    "Live game settings open in their own window over the game, two columns wide, so they never spill out of the drives panel onto the charts.",
+    "The drive chart under live games is gone: the Drives list beside the field already tells every drive, play by play.",
+  ] },
 ];

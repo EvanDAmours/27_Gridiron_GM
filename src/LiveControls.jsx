@@ -44,7 +44,7 @@ function Setting({ title, why, children }) {
 }
 export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, speeds, onSpeed, cam, onCam, field, onField }) {
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div style={{ display: "grid", gap: "16px 22px", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))" }}>
       <Setting title="Play calling" why={WHY.call[callMode]}>
         <Seg full value={callMode} onChange={onCall} options={[[false, "Coaches"], [true, "Me"]]} />
       </Setting>
