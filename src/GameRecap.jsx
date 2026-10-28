@@ -17,14 +17,14 @@ const clk = (c) => `${Math.floor((c || 0) / 60)}:${String(Math.max(0, Math.round
 // timeouts left under the name, then a strip with the down, distance and ball spot and a
 // win-probability line along the bottom. live: { q, clock, poss, down, toGo, yard, to } while a
 // game is on (yard: the offense's yard line; to: { h, a } timeouts left), else FINAL.
-const TRACE = "drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 0.6px #fff) drop-shadow(0 3px 5px #000a)";
+const TRACE = "drop-shadow(0 0 0.8px #ffffffd9) drop-shadow(0 0 0.5px #ffffffb3) drop-shadow(0 3px 5px #000a)";
 export function ScoreBug({ home, away, hs, as, live, final = true, label }) {
   const on = live && !final;
   const side = (t, pts, me, left) => {
     const ball = on && live.poss === me, to = live?.to?.[me];
     return (
       <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: MOBILE ? 6 : 10, padding: MOBILE ? "6px 10px" : "8px 16px", flexDirection: left ? "row" : "row-reverse", background: `linear-gradient(${left ? 90 : 270}deg, ${t.clr}, ${t.clr}dd 60%, ${t.clr}99)`, clipPath: left ? "polygon(0 0,100% 0,96% 100%,0 100%)" : "polygon(4% 0,100% 0,100% 100%,0 100%)" }}>
-        <span style={{ display: "inline-flex", flexShrink: 0, filter: `${TRACE}${ball ? " drop-shadow(0 0 6px #fbbf24)" : ""}` }}><TeamLogo t={t} sz={MOBILE ? 28 : 38} /></span>
+        <span style={{ display: "inline-flex", flexShrink: 0, filter: `${TRACE}${ball ? " drop-shadow(0 0 3px #fbbf2466)" : ""}` }}><TeamLogo t={t} sz={MOBILE ? 28 : 38} plain /></span>
         <div style={{ display: "flex", flexDirection: "column", alignItems: left ? "flex-start" : "flex-end", lineHeight: 1, minWidth: 0 }}>
           <b style={{ color: "#fff", fontSize: MOBILE ? 15 : 20, letterSpacing: 1.5, whiteSpace: "nowrap" }}>{t.ab}{ball && <i aria-label="has the ball" style={{ display: "inline-block", width: 7, height: 7, borderRadius: 4, background: "#fbbf24", boxShadow: "0 0 6px #fbbf24", margin: "0 0 3px 8px", verticalAlign: "middle" }} />}</b>
           {on && to != null && <span style={{ display: "inline-flex", gap: 3, marginTop: 4 }}>{[0, 1, 2].map((i) => <i key={i} style={{ width: MOBILE ? 8 : 12, height: 3, borderRadius: 2, background: i < to ? "#fbbf24" : "#ffffff30" }} />)}</span>}

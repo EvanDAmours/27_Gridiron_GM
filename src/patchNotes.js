@@ -2107,4 +2107,9 @@ export const PATCH_NOTES = [
   { v: "5.19", date: "2026-10-23", title: "New lineman art", notes: [
     "New lineman art on player cards for the Cardinals, Falcons, Ravens, Bills, Panthers, Bears, Bengals, Browns, Cowboys, Broncos, Lions, Packers, Texans, Colts, Jaguars and Chiefs: heavier, more realistic linemen in both skin tones, with the jersey number placed to fit each new render.",
   ] },
+  { v: "5.20", date: "2026-10-23", title: "Bigger live field", notes: [
+    "Live games have a bigger field. The new Big field view (on by default, under Settings beside the drives) gives the field the whole left side, with the last play and the game buttons beside it. Holiday games gain the most: the frame no longer squeezes the field, so a Thanksgiving or Halloween field is about 40% wider. Standard keeps the old layout.",
+    "Pass interference is an automatic first down, so the offense now takes it over any catch that falls short of the sticks (no more declining the flag after a 20-yard catch on 3rd and 28 and then punting).",
+    "Softer logo glow on the scoreboard and the play caption: a thin outline instead of a white halo, and a fainter gold glow for the team with the ball.",
+  ] },
 ];

@@ -1000,7 +1000,8 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     let accepted, tack = false;
     if (offF) accepted = !inc ? got > -Y * 0.6 : g.down < 3; // the defense takes it unless the play already cost them less
     else if (Y === 15) { accepted = true; tack = !ev.td; } // a personal foul: on top of the play
-    else if (kind === "dpi") accepted = inc || got < air;
+    // pass interference is an automatic first down: the offense takes it unless the play already moved the chains farther
+    else if (kind === "dpi") accepted = inc || sack || !first || got < air;
     else accepted = inc || sack || !first || got < Y;
     const label = PEN_LABEL[kind];
     g.stats[side].penalties = (g.stats[side].penalties || 0) + (accepted ? 1 : 0);

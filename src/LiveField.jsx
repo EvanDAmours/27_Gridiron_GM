@@ -218,8 +218,9 @@ const LP_CSS = `.lp-banner { position: absolute; left: 50%; top: 14%; transform:
 @keyframes lpPop { from { opacity: 0; transform: translate(-50%, 10px) scale(.85); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }`;
 
 // How wide the field may get (it keeps its shape, so this caps its height to fit the screen).
-// A frame around it (HolidayFrame) takes the same cap, so it hugs the field.
-export const fieldMaxW = (tall) => `calc(${MOBILE ? "min(56vh, 100%)" : tall ? "min(calc(var(--vh, 100vh) - 515px - var(--live-extra, 0px)), 700px)" : "min(calc(var(--vh, 100vh) - 470px - var(--live-extra, 0px)), 560px)"} * ${W / H})`;
+// A frame around it (HolidayFrame) takes the same cap, so it hugs the field; --live-frame is how
+// much taller the frame makes it. big: the caption and the buttons sit beside the field, not under it.
+export const fieldMaxW = (big) => `calc(${MOBILE ? "min(56vh, 100%)" : `min(calc((var(--vh, 100vh) - ${big ? 300 : 470}px - var(--live-extra, 0px)) / var(--live-frame, 1)), ${big ? 820 : 560}px)`} * ${W / H})`;
 
 // anim: a play to act out ({ ev, key, id, card }, livePlays.js), with animSpeed (1 normal) and
 // onAnimDone when it's over (a tap on the field skips it); paused holds it where it is.

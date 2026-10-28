@@ -29,6 +29,7 @@ export function Act({ children, onClick, kind, title, wide, big }) {
 // The game settings, each with a line saying what the current choice does.
 const WHY = {
   call: { false: "Your coaches call every play.", true: "You call each play when you have the ball, and pick the receiver on passes." },
+  field: { Big: "The field takes the whole left side; the last play and the buttons sit beside it.", Standard: "The last play and the buttons sit under the field." },
   cam: { Field: "The whole field stays in view while a play plays out, like the All-22.", Action: "The camera pushes in on the ball and follows the play." },
   live: { Key: "Third and fourth downs, goal to go, a close finish and big plays play out on the field.", All: "Every run and pass plays out on the field.", Off: "Results only: the field just resets between plays." },
 };
@@ -41,7 +42,7 @@ function Setting({ title, why, children }) {
     </div>
   );
 }
-export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, speeds, onSpeed, cam, onCam }) {
+export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, speeds, onSpeed, cam, onCam, field, onField }) {
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <Setting title="Play calling" why={WHY.call[callMode]}>
@@ -55,6 +56,9 @@ export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, 
       </Setting>
       {onCam && <Setting title="Camera" why={WHY.cam[cam]}>
         <Seg full value={cam} onChange={onCam} options={[["Field", "Field view"], ["Action", "Action cam"]]} />
+      </Setting>}
+      {onField && <Setting title="Field size" why={WHY.field[field]}>
+        <Seg full value={field} onChange={onField} options={[["Big", "Big"], ["Standard", "Standard"]]} />
       </Setting>}
     </div>
   );
