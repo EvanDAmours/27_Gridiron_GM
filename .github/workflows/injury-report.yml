@@ -1,9 +1,8 @@
 name: Sunday injury report
 
 # Every Sunday, after the inactives for the early games are out: pull ESPN's injury report (and
-# the season's results so far) into src/data/live2026.json on the game's branch, commit it, and
-# redeploy, so a real player on injured reserve sits out in the game too. Scheduled runs only start
-# from the default branch, so this file lives on main as well as on the game's branch.
+# the season's results so far) into src/data/live2026.json on main, commit it, and redeploy, so a
+# real player on injured reserve sits out in the game too.
 
 on:
   schedule:
@@ -19,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  GAME_BRANCH: claude/scouting-overhaul
+  GAME_BRANCH: main
 
 jobs:
   report:

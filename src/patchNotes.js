@@ -2120,4 +2120,7 @@ export const PATCH_NOTES = [
     "Real injury reports every Sunday: the game pulls ESPN's full report each week (the league page it used to read stopped at 25 names a team, so long-term injured reserve like Jalen Hurts, out for the season, was missing). A 2026 season you're playing picks up each new report when it ships: anyone on the real injured reserve, out or doubtful sits, questionable players play hurt, and nobody hurt in your league is healed by it.",
     "Today's report is in: 462 players listed across the league, Jalen Hurts on injured reserve through the season.",
   ] },
+  { v: "5.23", date: "2026-10-23", title: "New lineman art, all teams", notes: [
+    "New lineman art for the other 15 teams (Raiders, Chargers, Rams, Dolphins, Vikings, Patriots, Saints, Jets, Eagles, Steelers, 49ers, Seahawks, Buccaneers, Titans and Commanders), so every club but the Giants (who have their own numbered renders) now has the heavier, more realistic linemen.",
+  ] },
 ];
