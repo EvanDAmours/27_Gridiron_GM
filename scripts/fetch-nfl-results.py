@@ -106,7 +106,47 @@ INJ_URL = f"{BASE}/injuries"
 
 
 def injuries():
-    """Every team's current injury report (players listed Active are left out)."""
+    """Every team's current injury report (players listed Active are left out). ESPN's league report
+    stops at 25 names a team, most of them already back to Active, so a long-term injured reserve
+    (Jalen Hurts, out for the season) can drop off it: each team's roster lists everyone's status,
+    and a player it has hurt who isn't in the report gets his details from his own ESPN page."""
+    out = league_injuries()
+    seen = {(x["team"], x["name"]) for x in out}
+    for t in (get(f"{BASE}/teams").get("sports") or [{}])[0].get("leagues", [{}])[0].get("teams", []):
+        tm = t.get("team") or {}
+        try:
+            roster = get(f"{BASE}/teams/{tm.get('id')}/roster").get("athletes", [])
+        except Exception as e:  # one team's roster missing still leaves the rest of the report
+            print(f"  {tm.get('abbreviation')} roster skipped: {e}", file=sys.stderr)
+            continue
+        for grp in roster:
+            for a in grp.get("items", []):
+                st = ((a.get("injuries") or [{}])[0]).get("status") or ""
+                key = (ab(tm.get("abbreviation", "")), a.get("displayName", ""))
+                if not st or st == "Active" or key in seen:
+                    continue
+                seen.add(key)
+                x = {}
+                try:
+                    x = (get(f"{ATH_URL}/{a.get('id')}").get("athlete") or {}).get("injuries", [{}])[0]
+                except Exception:
+                    pass
+                d = x.get("details") or {}
+                out.append({
+                    "team": key[0], "name": key[1],
+                    "pos": (a.get("position") or {}).get("abbreviation", ""),
+                    "status": x.get("status") or st,
+                    "type": d.get("type") or "",
+                    "ret": (d.get("returnDate") or "")[:10] or None,
+                    "note": (x.get("shortComment") or "")[:200],
+                })
+    return out
+
+
+ATH_URL = "https://site.web.api.espn.com/apis/common/v3/sports/football/nfl/athletes"
+
+
+def league_injuries():
     out = []
     for t in get(INJ_URL).get("injuries", []):
         for x in t.get("injuries", []):

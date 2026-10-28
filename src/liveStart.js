@@ -18,7 +18,9 @@ const qbRate = (c, a, y, td, i) => {
   return +(((cl((c / a - 0.3) * 5) + cl((y / a - 3) * 0.25) + cl((td / a) * 20) + cl(2.375 - (i / a) * 25)) / 6) * 100).toFixed(1);
 };
 
-// The real injury report (with injuries on): everyone ESPN lists as Questionable plays hurt,
+// The real injury report (with injuries on), at the start of a career from the current week and
+// again in a 2026 season whenever a newer report ships (scripts/fetch-nfl-results.py, every Sunday):
+// everyone ESPN lists as Questionable plays hurt,
 // Doubtful misses the next game, Out and Injured Reserve miss until their expected return date
 // (or the season, for IR with no date), and a suspended player sits out his games.
 const DAY = 86400000;
@@ -38,11 +40,13 @@ export function applyLiveInjuries(teams, live) {
     if (!p) { unmatched++; continue; }
     const wks = weeksUntil(x.ret, live.updated);
     const type = x.type && x.type !== "Suspension" ? x.type : "Injury";
-    if (x.status === "Questionable") p.hurt = { wks: 1, pen: 3, type };
-    else if (x.status === "Doubtful") Object.assign(p, { injured: true, injWk: 1, injRecWks: 1, injType: type, injSev: "Doubtful" });
-    else if (x.status === "Out") Object.assign(p, { injured: true, injWk: wks || 1, injRecWks: wks || 1, injType: type, injSev: "Out" });
-    else if (x.status === "Injured Reserve" || x.status === "Reserve-Ret") Object.assign(p, { injured: true, injWk: wks || 30, injRecWks: wks || 30, injType: x.status === "Reserve-Ret" ? "Reserve/retired" : type });
-    else if (x.status === "Suspension") Object.assign(p, { suspended: true, suspWksLeft: wks || 1 });
+    // out for n weeks; a longer injury he already has stands (a report in mid-season never heals anyone)
+    const out = (n, more) => { if (p.injured && (p.injWk || 0) >= n) return; Object.assign(p, { injured: true, injWk: n, injRecWks: n, injType: type, ...more }); };
+    if (x.status === "Questionable") { if (p.injured) continue; p.hurt = { wks: 1, pen: 3, type }; }
+    else if (x.status === "Doubtful") out(1, { injSev: "Doubtful" });
+    else if (x.status === "Out") out(wks || 1, { injSev: "Out" });
+    else if (x.status === "Injured Reserve" || x.status === "Reserve-Ret") out(wks || 30, x.status === "Reserve-Ret" ? { injType: "Reserve/retired" } : {});
+    else if (x.status === "Suspension") Object.assign(p, { suspended: true, suspWksLeft: Math.max(p.suspWksLeft || 0, wks || 1) });
     else continue;
     injured++;
   }

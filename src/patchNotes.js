@@ -2116,4 +2116,8 @@ export const PATCH_NOTES = [
     "Live game settings open in their own window over the game, two columns wide, so they never spill out of the drives panel onto the charts.",
     "The drive chart under live games is gone: the Drives list beside the field already tells every drive, play by play.",
   ] },
+  { v: "5.22", date: "2026-10-23", title: "Real injury reports", notes: [
+    "Real injury reports every Sunday: the game pulls ESPN's full report each week (the league page it used to read stopped at 25 names a team, so long-term injured reserve like Jalen Hurts, out for the season, was missing). A 2026 season you're playing picks up each new report when it ships: anyone on the real injured reserve, out or doubtful sits, questionable players play hurt, and nobody hurt in your league is healed by it.",
+    "Today's report is in: 462 players listed across the league, Jalen Hurts on injured reserve through the season.",
+  ] },
 ];
