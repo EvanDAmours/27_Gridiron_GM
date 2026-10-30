@@ -11,7 +11,7 @@ const src = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 // one-off modals, and a few unused leftovers. Fine to lose on a reload.
 const SESSION_ONLY = new Set([
   "outro", // the retirement send-off: the franchise is over by then
-  "liveSetOpen livePat cardBack dlOpen seasonOpen pickTeam newInj ownerReviewShow injuryCalls injuryPick hubOpen holIntro injReport simBatch simHold faStart",
+  "liveSetOpen selTop livePat cardBack dlOpen seasonOpen pickTeam newInj ownerReviewShow injuryCalls injuryPick hubOpen holIntro injReport simBatch simHold faStart",
   "advanceAsk autoSaveTs awardsShow beatReports boxView",
   "capOutlookOpen capRollover celebrate challengeSeason chemGraph coachExt coachNag",
   "compareOpen compareSel compareSlots cutWarnPending deadlineUrgency",
