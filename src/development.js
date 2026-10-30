@@ -18,14 +18,15 @@ export function focusChance(p) {
 export const perSeason = (p) => Math.round(focusChance(p) * 17 * 10) / 10;
 
 // One week in the lab for each focused player on the roster. Mutates players; returns gains.
-export function runFocusWeeks(roster, focus, weeks) {
+// cap: stop at his ceiling (an AI staff's focus never pushes a player past it).
+export function runFocusWeeks(roster, focus, weeks, { cap = false } = {}) {
   const out = [];
   for (const side of ["off", "def"]) {
     const p = roster.find((x) => focus?.[side] != null && String(x.id) === String(focus[side]));
     if (!p) continue;
     let g = 0;
     for (let w = 0; w < weeks; w++) {
-      if (p.ovr >= 99 || p.injured) break;
+      if (p.ovr >= 99 || p.injured || (cap && p.ovr >= (p.truePot ?? p.pot ?? 99))) break;
       if (Math.random() < focusChance(p)) {
         p.ovr += 1;
         p.trueOvr = p.ovr;

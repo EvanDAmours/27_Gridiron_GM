@@ -108,8 +108,10 @@ export function autoCampPri(roster) {
   return best;
 }
 // The weekly development focus for a club that doesn't set one: the player on each side of the
-// ball who'd gain the most from it. chance(p): development.js focusChance.
+// ball who'd gain the most from it, among those still short of their ceiling (the staff doesn't
+// push a star past his). chance(p): development.js focusChance.
 export function autoFocus(roster, chance, OFF, DEF) {
-  const best = (side) => (roster || []).filter((p) => side.includes(p.pos) && !p.injured && p.ovr < 99).sort((a, b) => chance(b) - chance(a))[0];
+  const room = (p) => (p.truePot ?? p.pot ?? p.ovr) - p.ovr;
+  const best = (side) => (roster || []).filter((p) => side.includes(p.pos) && !p.injured && room(p) > 0).sort((a, b) => chance(b) * Math.min(1, room(b) / 4) - chance(a) * Math.min(1, room(a) / 4))[0];
   return { off: best(OFF)?.id ?? null, def: best(DEF)?.id ?? null };
 }
