@@ -39,7 +39,9 @@ export function sessionOdds(p) {
   if (p.ovr >= pot) return 0;
   const dev = devOf(p);
   const age = p.age <= 23 ? 0.45 : p.age <= 26 ? 0.3 : 0.15;
-  return age * (dev === "generational" || dev === "superstar" ? 1.2 : dev === "star" ? 1.1 : 1);
+  // the last points to the very top come from playing, not practice
+  const top = p.ovr >= 92 ? 0.15 : p.ovr >= 88 ? 0.4 : 1;
+  return age * top * (dev === "generational" || dev === "superstar" ? 1.2 : dev === "star" ? 1.1 : 1);
 }
 // Expected points from n sessions on him (for the camp screen).
 export const expectedGain = (p, n) => Math.round(STEP.slice(0, Math.min(n, MAX_PER_PLAYER)).reduce((s, k) => s + k * sessionOdds(p), 0) * 10) / 10;
@@ -108,10 +110,10 @@ export function autoCampPri(roster) {
   return best;
 }
 // The weekly development focus for a club that doesn't set one: the player on each side of the
-// ball who'd gain the most from it, among those still short of their ceiling (the staff doesn't
-// push a star past his). chance(p): development.js focusChance.
+// ball who'd gain the most from it, among the young players still climbing (under 90 and short of
+// their ceiling: the staff doesn't push a star past his). chance(p): development.js focusChance.
 export function autoFocus(roster, chance, OFF, DEF) {
   const room = (p) => (p.truePot ?? p.pot ?? p.ovr) - p.ovr;
-  const best = (side) => (roster || []).filter((p) => side.includes(p.pos) && !p.injured && room(p) > 0).sort((a, b) => chance(b) * Math.min(1, room(b) / 4) - chance(a) * Math.min(1, room(a) / 4))[0];
+  const best = (side) => (roster || []).filter((p) => side.includes(p.pos) && !p.injured && room(p) > 0 && p.ovr < 90).sort((a, b) => chance(b) * Math.min(1, room(b) / 4) - chance(a) * Math.min(1, room(a) / 4))[0];
   return { off: best(OFF)?.id ?? null, def: best(DEF)?.id ?? null };
 }

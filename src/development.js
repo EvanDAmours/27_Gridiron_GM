@@ -244,10 +244,10 @@ export function eliteTaper(before, after, rand = Math.random, rising = false) {
 export const CAMP_GROUPS = { QB: ["QB"], RB: ["RB"], WR: ["WR", "TE"], OL: ["LT", "LG", "C", "RG", "RT", "OL"], DL: ["DL", "EDGE", "DT", "LE", "RE"], LB: ["LB"], DB: ["CB", "S"] };
 export const CAMP = { balanced: "Balanced", QB: "QB room", RB: "RB room", WR: "Receivers (WR and TE)", OL: "Offensive line", DL: "Defensive line", LB: "Linebackers", DB: "Defensive backs" };
 export const inCamp = (pri, p) => !!CAMP_GROUPS[pri]?.includes(p.pos);
-// Within his ceiling: it softens a decline, or adds a point to a player still short of it.
+// Within his ceiling: it softens a decline, or adds a point to a player under 90 still short of it.
 export function campBonus(pri, p, change, rand = Math.random) {
   if (!inCamp(pri, p) || rand() >= 0.5) return 0;
-  return change < 0 || p.ovr + change < (p.truePot ?? p.pot ?? 99) ? 1 : 0;
+  return change < 0 || (p.ovr < 90 && p.ovr + change < (p.truePot ?? p.pot ?? 99)) ? 1 : 0;
 }
 
 // How many of each position play every snap; the next man up rotates in.
