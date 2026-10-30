@@ -1,44 +1,35 @@
-// Training camp (preseason): games and camp focus up top, battles and rookie camp always open, then
-// training focus and extensions showing their top 5 (the rest behind Show all).
-import Select from "./Select.jsx";
+// Training camp (preseason): the preseason games, your practice sessions (camp.js: each one is a
+// chance at a point for that player in the off-season, capped by age and ceiling, up to three per
+// player; any you leave, the staff assigns at kickoff) and the extensions.
 import React, { useState } from "react";
-import { C, oC, Bdg, Btn, Face, Hero, Section, Chips, Sheet, Pills } from "./ui.jsx";
+import { C, oC, Bdg, Btn, Face, Hero, Section } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { yearlyAsk } from "./negotiation.js";
 import { posTag } from "./dline.js";
+import { expectedGain, sessionOdds, MAX_PER_PLAYER } from "./camp.js";
 
 const panel = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px", minWidth: 0 };
 const row = { display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#ffffff08", borderRadius: 12, fontSize: 14, minWidth: 0 };
 const money = (n) => `$${(+n || 0).toFixed(1)}M`;
-const ATTRS = [["ovr", "Overall"], ["spd", "Speed"], ["str", "Strength"], ["agi", "Agility"], ["acc", "Acceleration"]];
-// The player picker: grouped by position (offense, then defense, then specialists), best first.
-const PICK_ORDER = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "EDGE", "DL", "DT", "LB", "CB", "S", "K", "P"];
-const POS_NAME = { QB: "Quarterbacks", RB: "Running backs", WR: "Wide receivers", TE: "Tight ends", LT: "Left tackles", LG: "Left guards", C: "Centers", RG: "Right guards", RT: "Right tackles", EDGE: "Edge rushers", DL: "Defensive line", DT: "Defensive tackles", LB: "Linebackers", CB: "Cornerbacks", S: "Safeties", K: "Kickers", P: "Punters" };
-const groupByPos = (ps) => {
-  const m = new Map();
-  for (const p of ps) { if (!m.has(p.pos)) m.set(p.pos, []); m.get(p.pos).push(p); }
-  const rank = (pos) => { const i = PICK_ORDER.indexOf(pos); return i < 0 ? 99 : i; };
-  return [...m.entries()].sort((a, b) => rank(a[0]) - rank(b[0])).map(([pos, list]) => [pos, list.sort((a, b) => (b.ovr || 0) - (a.ovr || 0))]);
-};
-const POS = ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"];
+const HOW = "Each session is a chance at a point for that player when the season's over: young players short of their ceiling gain most, veterans hold off some decline, and anyone at his ceiling gains nothing. Up to three each; the second and third are worth less.";
+// Who's worth a session: the players his next one would help most (young and short of his
+// ceiling first), with the ones you've already given sessions to on top.
+const campList = (roster, alloc) => roster.filter((p) => !p.injured && sessionOdds(p) > 0)
+  .map((p) => ({ p, n: alloc[p.id] || 0, next: expectedGain(p, (alloc[p.id] || 0) + 1) - expectedGain(p, alloc[p.id] || 0) }))
+  .sort((a, b) => (b.n > 0) - (a.n > 0) || b.next - a.next || b.p.ovr - a.p.ovr);
 
-export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk, onSimGame, onReport, onDevCamp, onTrain, onAutoTrain, battlesDone, onBattle, onBattleAll, otcFocus, onOtc, onExtend, setSel }) {
+export default function TrainingCamp({ team, yr, sp, games, risk, onRisk, onSimGame, onReport, sessions, alloc = {}, onCamp, onStaffCamp, onExtend, setSel }) {
   const roster = team.roster;
-  const [pick, setPick] = useState("");
-  const [attr, setAttr] = useState("ovr");
   const [allExt, setAllExt] = useState(false);
-  const rookies = roster.filter((p) => p.age <= 23 && (p.draftYr === yr || p.draftYr === yr - 1)).sort((a, b) => b.ovr - a.ovr).slice(0, 6);
-  const campUsed = team.devCampYr === yr;
-  const trainable = roster.filter((p) => !p.trainedThisCamp);
-  const trained = roster.filter((p) => p.trainedThisCamp);
+  const [allCamp, setAllCamp] = useState(false);
   const expiring = roster.filter((p) => p.contract === 1 || p.ext || p.resigned?.yr === yr).sort((a, b) => b.ovr - a.ovr);
   const extDone = expiring.filter((p) => p.ext || p.resigned?.yr === yr).length;
-  const battles = POS.map((pos) => [pos, roster.filter((p) => p.pos === pos).sort((a, b) => b.ovr - a.ovr).slice(0, 2)]).filter(([, t]) => t.length >= 2);
-  const openB = battles.filter(([pos]) => !battlesDone.includes(pos)).map(([pos]) => pos);
   const pre = sp === "preseason";
-  // the best uses of a training rep: young players furthest from their ceiling, then the best players
-  const trainTop = [...trainable].sort((a, b) => ((b.age <= 25 ? (b.pot || b.ovr) - b.ovr : 0) - (a.age <= 25 ? (a.pot || a.ovr) - a.ovr : 0)) || b.ovr - a.ovr);
-  const attrName = ATTRS.find(([k]) => k === attr)[1];
+  const used = Object.values(alloc).reduce((a, b) => a + b, 0), left = Math.max(0, sessions - used);
+  const list = campList(roster, alloc);
+  const total = Math.round(list.reduce((t, x) => t + expectedGain(x.p, x.n), 0) * 10) / 10;
+  const bump = (p, d) => { const n = Math.max(0, Math.min(MAX_PER_PLAYER, (alloc[p.id] || 0) + d)); if (d > 0 && left <= 0) return; onCamp({ ...alloc, [p.id]: n }); };
+  const camp = { list, used, left, total, bump, sessions };
   const head = (t, s, extra) => (
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
       <span style={{ fontSize: 16, fontWeight: 800 }}>{t}</span>
@@ -46,133 +37,89 @@ export default function TrainingCamp({ team, yr, sp, scPts, games, risk, onRisk,
       {extra}
     </div>
   );
-  if (MOBILE) return <PhoneCamp {...{ team, yr, scPts, games, risk, onRisk, onSimGame, onReport, onDevCamp, onTrain, onAutoTrain, battlesDone, onBattle, onBattleAll, otcFocus, onOtc, onExtend, setSel, roster, rookies, campUsed, trainable, trained, expiring, extDone, battles, openB, pre, trainTop, attr, setAttr, attrName }} />;
-  const more = (open, set, n) => n > 5 && <button onClick={() => set((v) => !v)} style={{ marginTop: 8, background: "#ffffff12", border: 0, color: "#e2e8f0", borderRadius: 999, padding: "6px 14px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{open ? "Top 5 only" : `Show all ${n}`}</button>;
+  if (MOBILE) return <PhoneCamp {...{ team, yr, games, risk, onRisk, onSimGame, onReport, onExtend, onStaffCamp, onCamp, setSel, expiring, extDone, pre, camp }} />;
+  const more = (open, set, n, k = 5) => n > k && <button onClick={() => set((v) => !v)} style={{ marginTop: 8, background: "#ffffff12", border: 0, color: "#e2e8f0", borderRadius: 999, padding: "6px 14px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{open ? "Fewer" : `Show all ${n}`}</button>;
+  const step = (on) => ({ width: 28, height: 28, borderRadius: 8, border: 0, background: on ? "#ffffff1f" : "#ffffff08", color: on ? "#fff" : "#475569", fontSize: 16, fontWeight: 900, cursor: on ? "pointer" : "default", lineHeight: 1 });
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        {!pre && <div style={{ ...panel, flex: "1 1 100%", color: "#fcd34d", fontWeight: 700 }}>Camp is closed for this year.</div>}
-        <div style={{ ...panel, flex: "1.3 1 440px" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
-            <span style={{ fontSize: 16, fontWeight: 800 }}>Preseason games {games.length}/4</span>
-            <span style={{ fontSize: 13, color: C.mt }}>Starters playing risks injuries.</span>
-          </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-            {games.map((g, i) => <span key={i} style={{ fontSize: 13, fontWeight: 800, padding: "5px 10px", borderRadius: 999, background: g.us > g.them ? "#14532d55" : "#7f1d1d55", color: g.us > g.them ? C.gn : "#fca5a5" }}>{g.us > g.them ? "W" : "L"} {g.us}–{g.them} {g.opp}</span>)}
-            <Btn onClick={onSimGame} disabled={!pre || games.length >= 4} bg={C.gn} style={{ fontSize: 13.5, padding: "7px 14px", borderRadius: 999 }}>▶ Play game</Btn>
-            <Btn onClick={onRisk} bg={risk ? "#7f1d1d" : "#ffffff12"} c={risk ? "#fca5a5" : "#cbd5e1"} style={{ fontSize: 13.5, padding: "7px 14px", borderRadius: 999 }}>Starters play: {risk ? "yes" : "no"}</Btn>
-            {games.length > 0 && <Btn onClick={onReport} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 13.5, padding: "7px 14px", borderRadius: 999 }}>Practice report</Btn>}
-          </div>
+      {!pre && <div style={{ ...panel, color: "#fcd34d", fontWeight: 700 }}>Camp is closed for this year. The sessions below pay off at the end of the season.</div>}
+      <div style={{ ...panel }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
+          <span style={{ fontSize: 16, fontWeight: 800 }}>Preseason games {games.length}/4</span>
+          <span style={{ fontSize: 13, color: C.mt }}>Starters playing risks injuries.</span>
         </div>
-        <div style={{ ...panel, flex: "1 1 360px" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
-            <span style={{ fontSize: 16, fontWeight: 800 }}>Camp focus</span>
-            <span style={{ fontSize: 13, color: C.mt }}>Top 5 in the group gain +1 OVR at season's end.</span>
-          </div>
-          <Pills full items={[["passing", "Passing"], ["rushing", "Run game & line"], ["defense", "Defense"]]} value={otcFocus} onChange={(k) => pre && onOtc(otcFocus === k ? null : k)} label="Camp focus" />
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+          {games.map((g, i) => <span key={i} style={{ fontSize: 13, fontWeight: 800, padding: "5px 10px", borderRadius: 999, background: g.us > g.them ? "#14532d55" : "#7f1d1d55", color: g.us > g.them ? C.gn : "#fca5a5" }}>{g.us > g.them ? "W" : "L"} {g.us}–{g.them} {g.opp}</span>)}
+          <Btn onClick={onSimGame} disabled={!pre || games.length >= 4} bg={C.gn} style={{ fontSize: 13.5, padding: "7px 14px", borderRadius: 999 }}>▶ Play game</Btn>
+          <Btn onClick={onRisk} bg={risk ? "#7f1d1d" : "#ffffff12"} c={risk ? "#fca5a5" : "#cbd5e1"} style={{ fontSize: 13.5, padding: "7px 14px", borderRadius: 999 }}>Starters play: {risk ? "yes" : "no"}</Btn>
+          {games.length > 0 && <Btn onClick={onReport} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 13.5, padding: "7px 14px", borderRadius: 999 }}>Practice report</Btn>}
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "stretch" }}>
-        <div style={{ ...panel, flex: "1.2 1 480px" }}>
-          {head(`Position battles · ${battles.length - openB.length}/${battles.length}`, "1 SP each. The top two compete; the winner gains +1 OVR.",
-            onBattleAll && openB.length > 0 && (() => { const n = Math.min(openB.length, scPts); return <Btn onClick={() => onBattleAll(openB)} disabled={!pre || n < 1} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 13, padding: "6px 14px", borderRadius: 999 }}>Run {n < openB.length ? `${n} of ${openB.length}` : `all ${openB.length}`} · {n} SP</Btn>; })())}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 6 }}>
-            {battles.map(([pos, top2]) => {
-              const done = battlesDone.includes(pos);
-              return (
-                <button key={pos} disabled={!pre || done || scPts < 1} onClick={() => onBattle(pos)} style={{ display: "flex", alignItems: "center", gap: 8, textAlign: "left", padding: "7px 10px", borderRadius: 12, cursor: !pre || done ? "default" : "pointer", background: done ? "#22c55e14" : "#ffffff08", border: 0, color: "#e2e8f0", opacity: done ? 0.7 : 1, minWidth: 0 }}>
-                  <Bdg pos={pos} />
-                  <span style={{ fontSize: 13, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{top2[0].name.split(" ").slice(-1)[0]} <span style={{ color: C.mt }}>vs</span> {top2[1].name.split(" ").slice(-1)[0]}</span>
-                  {done && <span style={{ color: C.gn, fontWeight: 800, fontSize: 13 }}>✓</span>}
-                </button>
-              );
-            })}
-          </div>
+      <div style={{ ...panel }}>
+        {head(`Practice sessions · ${used}/${sessions}`, `${HOW} Any you leave, the staff assigns at kickoff.`,
+          <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ fontSize: 13, color: C.mt, whiteSpace: "nowrap" }}>Expected <b style={{ color: "#e2e8f0" }}>+{total}</b> overall</span>
+            {pre && left > 0 && <Btn onClick={onStaffCamp} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 13, padding: "6px 14px", borderRadius: 999 }}>Let the staff assign {left}</Btn>}
+            {pre && used > 0 && <Btn onClick={() => onCamp({})} bg="transparent" c="#94a3b8" style={{ fontSize: 13, padding: "6px 10px", borderRadius: 999 }}>Clear</Btn>}
+          </span>)}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))", gap: 5 }}>
+          {(allCamp ? list : list.slice(0, 12)).map(({ p, n }) => (
+            <div key={p.id} style={{ ...row, background: n ? "#22c55e14" : row.background }}>
+              <span onClick={() => setSel(p)} style={{ flex: 1, minWidth: 0, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 400 }}>{p.age}</span></span><Bdg pos={posTag(p)} />
+              <span style={{ fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
+              <span style={{ fontSize: 11.5, color: C.mt, minWidth: 30 }}>/{p.pot || p.ovr}</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: C.gn, minWidth: 34, textAlign: "right" }}>{n ? `+${expectedGain(p, n)}` : ""}</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <button aria-label={`One less session for ${p.name}`} disabled={!pre || !n} onClick={() => bump(p, -1)} style={step(pre && n)}>−</button>
+                <b style={{ minWidth: 14, textAlign: "center" }}>{n}</b>
+                <button aria-label={`One more session for ${p.name}`} disabled={!pre || n >= MAX_PER_PLAYER || left <= 0} onClick={() => bump(p, 1)} style={step(pre && n < MAX_PER_PLAYER && left > 0)}>+</button>
+              </span>
+            </div>
+          ))}
         </div>
-        <div style={{ ...panel, flex: "1 1 440px" }}>
-          {head("Rookie camp · 3 SP", campUsed ? <b style={{ color: C.gn }}>✓ Used{team.devCampPid ? ` on ${roster.find((p) => p.id === team.devCampPid)?.name || "a rookie"}` : ""}</b> : "Once per preseason: one rookie gains up to +3 OVR.")}
-          {!rookies.length && <div style={{ fontSize: 13.5, color: C.mt }}>No rookies or second-year players on the roster.</div>}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 5 }}>
-            {rookies.map((p) => (
-              <div key={p.id} style={row}>
-                <Face s={p.face} sz={22} /><span onClick={() => setSel(p)} style={{ flex: 1, minWidth: 0, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><Bdg pos={posTag(p)} />
-                <span style={{ fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
-                <span style={{ fontSize: 11.5, color: C.mt, whiteSpace: "nowrap" }}>/{p.pot || p.ovr}</span>
-                <Btn onClick={() => onDevCamp(p)} disabled={!pre || campUsed || scPts < 3 || p.ovr >= (p.pot || p.ovr)} bg={C.bl} style={{ fontSize: 12.5, padding: "4px 12px" , borderRadius: 999 }}>{p.ovr >= (p.pot || p.ovr) ? "Max" : "Boost"}</Btn>
-              </div>
-            ))}
-          </div>
-        </div>
+        {more(allCamp, setAllCamp, list.length, 12)}
       </div>
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-start" }}>
-        <div style={{ ...panel, flex: "1 1 520px" }}>
-          {head(`Training focus · 2 SP`, <Pills quiet items={ATTRS.map(([k, l]) => [k, l === "Acceleration" ? "Accel" : l, `+1 ${l}, once per player each camp`])} value={attr} onChange={setAttr} label="Training focus" />,
-            onAutoTrain && (() => { const n = Math.min(5, trainable.length, Math.floor(scPts / 2)); return <Btn onClick={() => onAutoTrain(5)} disabled={!pre || n < 1} bg="#ffffff12" c="#e2e8f0" style={{ fontSize: 13, padding: "6px 14px", borderRadius: 999 }} title="Picks players at random: young players under their ceiling work on overall, the rest on a physical tool">Auto-pick {n > 0 ? `${n} · ${n * 2} SP` : ""}</Btn>; })())}
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {trainTop.slice(0, 5).map((p) => (
-              <div key={p.id} style={row}>
-                <span onClick={() => setSel(p)} style={{ flex: 1, minWidth: 0, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 400 }}>{p.age}</span></span><Bdg pos={posTag(p)} />
-                <span style={{ fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
-                <span style={{ fontSize: 11.5, color: C.mt, minWidth: 30 }}>/{p.pot || p.ovr}</span>
-                <Btn onClick={() => onTrain(p, attr)} disabled={!pre || scPts < 2} bg={C.gn} style={{ fontSize: 12.5, padding: "4px 12px", whiteSpace: "nowrap" , borderRadius: 999 }}>+1 {attrName}</Btn>
-              </div>
-            ))}
-          </div>
-          {trainTop.length > 5 && <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-            <Select value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Player to train" style={{ flex: 1, minWidth: 0, background: "#ffffff0a", color: C.tx, border: 0, borderRadius: 12, padding: "7px 12px", fontSize: 13 }}>
-              <option value="">Someone else…</option>
-              {groupByPos(trainTop.slice(5)).map(([pos, ps]) => (
-                <optgroup key={pos} label={POS_NAME[pos] || pos}>
-                  {ps.map((p) => <option key={p.id} value={p.id}>{p.name} · {p.ovr}{p.age <= 23 ? " · young" : ""}</option>)}
-                </optgroup>
-              ))}
-            </Select>
-            <Btn onClick={() => { const p = roster.find((x) => x.id === pick); if (p) { onTrain(p, attr); setPick(""); } }} disabled={!pre || !pick || scPts < 2} bg={C.gn} style={{ fontSize: 12.5, padding: "4px 12px", whiteSpace: "nowrap" , borderRadius: 999 }}>+1 {attrName}</Btn>
-          </div>}
-          {trained.length > 0 && <div style={{ fontSize: 12.5, color: C.mt, marginTop: 6 }}>Trained: {trained.map((p) => p.name).join(", ")}</div>}
+      <div style={{ ...panel }}>
+        {head(`Extensions · ${extDone}/${expiring.length}`, "The new deal starts next season, so it has to fit next year's cap.")}
+        {!expiring.length && <div style={{ fontSize: 13.5, color: C.mt }}>Nobody is in a contract year.</div>}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(420px,1fr))", gap: 5 }}>
+          {(allExt ? expiring : expiring.slice(0, 6)).map((p) => (
+            <div key={p.id} style={row}>
+              <span onClick={() => setSel(p)} style={{ flex: 1, minWidth: 0, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 400 }}>{p.age}</span></span><Bdg pos={posTag(p)} />
+              <span style={{ fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
+              {p.ext ? <span style={{ fontSize: 12.5, color: C.gn, fontWeight: 700, whiteSpace: "nowrap" }}>✓ {p.ext.yrs}y · {money(p.ext.apy ?? p.ext.sal)}</span>
+                : p.resigned?.yr === yr ? <span style={{ fontSize: 12.5, color: C.gn, fontWeight: 700, whiteSpace: "nowrap" }}>✓ {p.resigned.yrs}y · {money(p.resigned.sal)}</span>
+                : <><span style={{ fontSize: 12, color: C.mt, whiteSpace: "nowrap" }}>asks {money(yearlyAsk(p, 2, "extend"))}</span><Btn onClick={() => onExtend(p)} bg={C.gn} style={{ fontSize: 12.5, padding: "4px 12px", borderRadius: 999 }}>Negotiate</Btn></>}
+            </div>
+          ))}
         </div>
-        <div style={{ ...panel, flex: "1 1 520px" }}>
-          {head(`Extensions · ${extDone}/${expiring.length}`, "The new deal starts next season, so it has to fit next year's cap.")}
-          {!expiring.length && <div style={{ fontSize: 13.5, color: C.mt }}>Nobody is in a contract year.</div>}
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {(allExt ? expiring : expiring.slice(0, 5)).map((p) => (
-              <div key={p.id} style={row}>
-                <span onClick={() => setSel(p)} style={{ flex: 1, minWidth: 0, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name} <span style={{ fontSize: 12, color: C.mt, fontWeight: 400 }}>{p.age}</span></span><Bdg pos={posTag(p)} />
-                <span style={{ fontWeight: 900, color: oC(p.ovr) }}>{p.ovr}</span>
-                {p.ext ? <span style={{ fontSize: 12.5, color: C.gn, fontWeight: 700, whiteSpace: "nowrap" }}>✓ {p.ext.yrs}y · {money(p.ext.apy ?? p.ext.sal)}</span>
-                  : p.resigned?.yr === yr ? <span style={{ fontSize: 12.5, color: C.gn, fontWeight: 700, whiteSpace: "nowrap" }}>✓ {p.resigned.yrs}y · {money(p.resigned.sal)}</span>
-                  : <><span style={{ fontSize: 12, color: C.mt, whiteSpace: "nowrap" }}>asks {money(yearlyAsk(p, 2, "extend"))}</span><Btn onClick={() => onExtend(p)} bg={C.gn} style={{ fontSize: 12.5, padding: "4px 12px" , borderRadius: 999 }}>Negotiate</Btn></>}
-              </div>
-            ))}
-          </div>
-          {more(allExt, setAllExt, expiring.length)}
-        </div>
+        {more(allExt, setAllExt, expiring.length, 6)}
       </div>
     </div>
   );
 }
 
-// Phones: camp in the Home screen's look. A hero with your points, then each part of camp as a section
-// of clean rows. Anything that spends points has its own button (never the whole row, so a scroll
-// can't spend them), and the once-a-camp rookie boost asks first.
-function PhoneCamp({ team, yr, scPts, games, risk, onRisk, onSimGame, onReport, onDevCamp, onTrain, onAutoTrain, battlesDone, onBattle, onBattleAll, otcFocus, onOtc, onExtend, setSel, roster, rookies, campUsed, trainable, trained, expiring, extDone, battles, openB, pre, trainTop, attr, setAttr, attrName }) {
-  const [allTrain, setAllTrain] = useState(false), [allExt, setAllExt] = useState(false), [boost, setBoost] = useState(null);
+// Phones: camp in the Home screen's look. A hero with the sessions left, then each part of camp as
+// a section of clean rows; the session steppers are their own buttons (never the whole row).
+function PhoneCamp({ team, yr, games, risk, onRisk, onSimGame, onReport, onExtend, onStaffCamp, onCamp, setSel, expiring, extDone, pre, camp }) {
+  const [allCamp, setAllCamp] = useState(false), [allExt, setAllExt] = useState(false);
+  const { list, used, left, total, bump, sessions } = camp;
   const soft = { background: "#ffffff0f", borderRadius: 18, padding: "0 14px" };
   const line = { display: "flex", alignItems: "center", gap: 10, minHeight: 58, padding: "6px 0" };
-  const act = (on, primary) => ({ minHeight: 40, minWidth: 64, padding: "0 12px", borderRadius: 12, border: 0, background: on ? (primary ? C.gn : `${C.bl}33`) : "#ffffff0d", color: on ? (primary ? "#fff" : "#bfdbfe") : "#64748b", fontSize: 14, fontWeight: 900, cursor: on ? "pointer" : "default", whiteSpace: "nowrap", flexShrink: 0 });
+  const act = (on) => ({ minHeight: 40, minWidth: 64, padding: "0 12px", borderRadius: 12, border: 0, background: on ? `${C.bl}33` : "#ffffff0d", color: on ? "#bfdbfe" : "#64748b", fontSize: 14, fontWeight: 900, cursor: on ? "pointer" : "default", whiteSpace: "nowrap", flexShrink: 0 });
+  const step = (on) => ({ width: 40, height: 40, borderRadius: 12, border: 0, background: on ? "#ffffff1f" : "#ffffff08", color: on ? "#fff" : "#475569", fontSize: 20, fontWeight: 900, cursor: on ? "pointer" : "default", flexShrink: 0 });
   const who = (p, sub) => (
     <span onClick={() => setSel(p)} style={{ flex: 1, minWidth: 0, cursor: "pointer" }}>
       <span style={{ display: "block", fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
-      <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, fontSize: 12, color: C.mt }}><Bdg pos={posTag(p)} /><b style={{ color: oC(p.ovr), fontSize: 13 }}>{p.ovr}</b>{sub}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3, fontSize: 12, color: C.mt, whiteSpace: "nowrap", overflow: "hidden" }}><Bdg pos={posTag(p)} /><b style={{ color: oC(p.ovr), fontSize: 13 }}>{p.ovr}</b>{sub}</span>
     </span>
   );
-  const runN = Math.min(openB.length, scPts), autoN = Math.min(5, trainable.length, Math.floor(scPts / 2));
   return (
     <div>
-      <Hero clr={team.clr} logo={team} eyebrow={pre ? "Preseason" : "Camp is closed"} title="Training Camp" sub={pre ? "Get the roster ready for week 1" : "It opens again next preseason"}
-        right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, color: "#93c5fd" }}>{scPts}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>POINTS</div></div>} />
+      <Hero clr={team.clr} logo={team} eyebrow={pre ? "Preseason" : "Camp is closed"} title="Training Camp" sub={pre ? "Get the roster ready for week 1" : "Your sessions pay off at season's end"}
+        right={<div style={{ textAlign: "right" }}><div style={{ fontSize: 34, fontWeight: 900, lineHeight: 1, color: "#93c5fd" }}>{left}</div><div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, color: "#ffffffb3", marginTop: 4 }}>SESSIONS LEFT</div></div>} />
 
       <Section title={`Preseason games · ${games.length}/4`} action={games.length ? "Report" : null} onAction={onReport} style={{ marginTop: 18 }}>
         {games.length > 0 && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>{games.map((g, i) => <span key={i} style={{ fontSize: 14, fontWeight: 800, padding: "6px 10px", borderRadius: 10, background: g.us > g.them ? "#14532d55" : "#7f1d1d55", color: g.us > g.them ? C.gn : "#fca5a5" }}>{g.us > g.them ? "W" : "L"} {g.us}–{g.them} {g.opp}</span>)}</div>}
@@ -185,50 +132,20 @@ function PhoneCamp({ team, yr, scPts, games, risk, onRisk, onSimGame, onReport, 
         </div>
       </Section>
 
-      <Section title="Camp focus">
-        <Pills full items={[["passing", "Passing"], ["rushing", "Run game"], ["defense", "Defense"]]} value={otcFocus} onChange={(k) => pre && onOtc(otcFocus === k ? null : k)} label="Camp focus" />
-        <div style={{ fontSize: 13, color: C.mt, margin: "6px 2px 0" }}>The top five in that group gain +1 at season's end.</div>
-      </Section>
-
-      <Section title={`Position battles · ${battles.length - openB.length}/${battles.length}`} action={onBattleAll && openB.length > 0 && pre && runN > 0 ? `Run ${runN} · ${runN} SP` : null} onAction={() => onBattleAll(openB)}>
+      <Section title={`Practice sessions · ${used}/${sessions}`} action={pre && left > 0 ? `Staff assigns ${left}` : pre && used > 0 ? "Clear" : null} onAction={() => (left > 0 ? onStaffCamp() : onCamp({}))}>
+        <div style={{ fontSize: 13, color: C.mt, margin: "0 2px 8px", lineHeight: 1.45 }}>A chance at a point each when the season's over; young players short of their ceiling gain most. Up to three each. Expected <b style={{ color: "#e2e8f0" }}>+{total}</b> overall.</div>
         <div style={soft}>
-          {battles.map(([pos, top2], i) => { const done = battlesDone.includes(pos); return (
-            <div key={pos} style={{ ...line, borderTop: i ? "1px solid #ffffff10" : 0 }}>
-              <span style={{ width: 42, flexShrink: 0 }}><Bdg pos={pos} /></span>
-              <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{top2[0].name.split(" ").slice(-1)[0]} <span style={{ color: C.mt, fontWeight: 600 }}>vs</span> {top2[1].name.split(" ").slice(-1)[0]}</span>
-              {done ? <span style={{ color: C.gn, fontWeight: 900, fontSize: 15, minWidth: 64, textAlign: "center" }}>Done</span> : <button disabled={!pre || scPts < 1} onClick={() => onBattle(pos)} style={act(pre && scPts >= 1)}>Run · 1</button>}
-            </div>
-          ); })}
-        </div>
-      </Section>
-
-      <Section title="Rookie camp · 3 SP">
-        <div style={soft}>
-          {campUsed && <div style={{ ...line, color: C.gn, fontWeight: 800 }}>Used{team.devCampPid ? ` on ${roster.find((p) => p.id === team.devCampPid)?.name || "a rookie"}` : ""}</div>}
-          {!rookies.length && <div style={{ ...line, color: C.mt }}>No rookies or second-year players.</div>}
-          {rookies.map((p, i) => { const max = p.ovr >= (p.pot || p.ovr), ok = pre && !campUsed && scPts >= 3 && !max; return (
-            <div key={p.id} style={{ ...line, borderTop: i || campUsed ? "1px solid #ffffff10" : 0 }}>
-              <Face s={p.face} sz={36} />
-              {who(p, <>to {p.pot || p.ovr}</>)}
-              <button disabled={!ok} onClick={() => setBoost(p)} style={act(ok)}>{max ? "Max" : "Boost"}</button>
-            </div>
-          ); })}
-        </div>
-      </Section>
-
-      <Section title="Training · 2 SP" action={onAutoTrain && pre && autoN > 0 ? `Auto-pick ${autoN}` : null} onAction={() => onAutoTrain(5)}>
-        <Chips items={ATTRS.map(([k, l]) => [k, l === "Acceleration" ? "Accel" : l])} value={attr} onChange={setAttr} />
-        <div style={{ ...soft, marginTop: 10 }}>
-          {(allTrain ? trainTop : trainTop.slice(0, 5)).map((p, i) => (
+          {(allCamp ? list : list.slice(0, 8)).map(({ p, n }, i) => (
             <div key={p.id} style={{ ...line, borderTop: i ? "1px solid #ffffff10" : 0 }}>
               <Face s={p.face} sz={36} />
-              {who(p, <>age {p.age} · to {p.pot || p.ovr}</>)}
-              <button disabled={!pre || scPts < 2} onClick={() => onTrain(p, attr)} style={act(pre && scPts >= 2, true)}>+1</button>
+              {who(p, <>{p.age} · to {p.pot || p.ovr}{n ? <b style={{ color: C.gn }}> · +{expectedGain(p, n)}</b> : null}</>)}
+              <button aria-label={`One less session for ${p.name}`} disabled={!pre || !n} onClick={() => bump(p, -1)} style={step(pre && n)}>−</button>
+              <b style={{ minWidth: 14, textAlign: "center", fontSize: 16 }}>{n}</b>
+              <button aria-label={`One more session for ${p.name}`} disabled={!pre || n >= MAX_PER_PLAYER || left <= 0} onClick={() => bump(p, 1)} style={step(pre && n < MAX_PER_PLAYER && left > 0)}>+</button>
             </div>
           ))}
         </div>
-        {trainTop.length > 5 && <button onClick={() => setAllTrain((v) => !v)} style={{ width: "100%", minHeight: 44, marginTop: 8, borderRadius: 12, border: 0, background: "transparent", color: "#7dd3fc", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{allTrain ? "Top five only" : `Everyone (${trainTop.length})`}</button>}
-        {trained.length > 0 && <div style={{ fontSize: 13, color: C.mt, margin: "4px 2px 0" }}>+1 {attrName} done for {trained.length} player{trained.length > 1 ? "s" : ""} this camp</div>}
+        {list.length > 8 && <button onClick={() => setAllCamp((v) => !v)} style={{ width: "100%", minHeight: 44, marginTop: 8, borderRadius: 12, border: 0, background: "transparent", color: "#7dd3fc", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{allCamp ? "Top eight only" : `Everyone (${list.length})`}</button>}
       </Section>
 
       <Section title={`Extensions · ${extDone}/${expiring.length}`}>
@@ -244,15 +161,6 @@ function PhoneCamp({ team, yr, scPts, games, risk, onRisk, onSimGame, onReport, 
         </div>
         {expiring.length > 5 && <button onClick={() => setAllExt((v) => !v)} style={{ width: "100%", minHeight: 44, marginTop: 8, borderRadius: 12, border: 0, background: "transparent", color: "#7dd3fc", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>{allExt ? "Top five only" : `Everyone (${expiring.length})`}</button>}
       </Section>
-
-      {boost && (
-        <Sheet title="Rookie camp" onClose={() => setBoost(null)}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}><Face s={boost.face} sz={52} /><div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 20, fontWeight: 900 }}>{boost.name}</div><div style={{ fontSize: 14, color: "#94a3b8" }}>{posTag(boost)} · {boost.ovr} now, ceiling {boost.pot || boost.ovr}</div></div></div>
-          <div style={{ fontSize: 15, color: "#cbd5e1", lineHeight: 1.45, marginBottom: 12 }}>He gains up to +3. It's once a camp, so it can't go to anyone else this year.</div>
-          <button onClick={() => { onDevCamp(boost); setBoost(null); }} style={{ width: "100%", minHeight: 54, borderRadius: 14, border: 0, background: C.gn, color: "#fff", fontSize: 17, fontWeight: 900, cursor: "pointer" }}>Boost him · 3 SP</button>
-          <div style={{ height: 8 }} />
-        </Sheet>
-      )}
     </div>
   );
 }

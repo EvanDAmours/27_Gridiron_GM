@@ -167,7 +167,7 @@ export default function DevelopmentScreen({ roster, yr, sp, wk, gp = 0, focus, s
       {campOpen && <Sheet title="Camp priority" onClose={() => setCampOpen(false)}>
         {Object.entries(CAMP).map(([k, l]) => (
           <button key={k} onClick={() => { setCamp?.(k); setCampOpen(false); }} style={{ display: "block", width: "100%", textAlign: "left", background: camp === k ? "#ffffff14" : "transparent", border: "1px solid #ffffff12", borderRadius: 14, padding: "12px 16px", marginBottom: 8, color: "#fff", cursor: "pointer" }}>
-            <div style={{ fontSize: 17, fontWeight: 800 }}>{l}</div><div style={{ fontSize: 14, color: "#94a3b8", marginTop: 3 }}>{k === "balanced" ? "Even time for every position group" : `${rows.filter((r) => inCamp(k, r.p)).length} players get extra work: about +0.7 each next summer`}</div>
+            <div style={{ fontSize: 17, fontWeight: 800 }}>{l}</div><div style={{ fontSize: 14, color: "#94a3b8", marginTop: 3 }}>{k === "balanced" ? "Even time for every position group" : `${rows.filter((r) => inCamp(k, r.p)).length} players get extra work: about +0.5 each next summer`}</div>
           </button>
         ))}
       </Sheet>}
