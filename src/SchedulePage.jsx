@@ -49,7 +49,7 @@ function MySchedule({ g }) {
                     <span>
                       <span style={{ fontWeight: 800 }}>{opp.city} {opp.name}</span>
                       <span style={{ display: "block", fontSize: 13, color: C.mt }}>
-                        {rec(opp)}{opp.c === me.c && opp.d === me.d ? " · Division" : ""}{rivalId === opp.id ? " · Rival" : ""}{game.intl ? ` · ${game.city}` : ""}{!game.played && game.date ? ` · ${kickoff(game)}` : ""}
+                        {rec(opp)}{opp.c === me.c && opp.d === me.d ? " · Division" : ""}{rivalId === opp.id ? " · Rival" : ""}{game.intl && game.city ? ` · ${game.city}` : ""}{!game.played && game.date ? ` · ${kickoff(game)}` : ""}
                       </span>
                     </span>
                   </span>
@@ -108,7 +108,7 @@ function LeagueSchedule({ g }) {
               {side(x.a, x.played ? x.as : null, aw)}
               {side(x.h, x.played ? x.hs : null, hw)}
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 13, color: C.mt }}>
-                <span>{x.played ? "FINAL" : x.date ? kickoff(x) : `@ ${teams[x.h].name}`}{x.intl ? ` · ${x.city}` : ""}</span>
+                <span>{x.played ? "FINAL" : x.date ? kickoff(x) : `@ ${teams[x.h].name}`}{x.intl && x.city ? ` · ${x.city}` : ""}</span>
                 <span style={{ marginLeft: "auto" }}>
                   {x.played && (x.boxH || x.boxA) && <Btn onClick={() => onBox(x)} bg={C.bd} c="#e2e8f0" style={{ fontSize: 13, padding: "5px 10px" }}>Box score</Btn>}
                   {!x.played && !mine && sp === "regular" && week === wk + 1 && onWatch && <Btn onClick={() => onWatch(x)} bg={C.bd} c="#7dd3fc" style={{ fontSize: 13, padding: "5px 10px" }}>Watch</Btn>}

@@ -2129,4 +2129,12 @@ export const PATCH_NOTES = [
     "It counts: they get those carries, targets, sacks and coverage snaps, their snap counts (and development) follow the downs they actually play, a real power back converts more short yardage, a better rush package gets home more on passing downs, and a cover linebacker makes it harder to throw to backs and tight ends.",
     "Pick each one yourself, or leave it to the staff: they choose the best fit on the roster, and only sub him in when he's clearly better at the job than the starter. Every club in the league uses them.",
   ] },
+  { v: "5.25", date: "2026-10-23", title: "Staff budget and training camp", notes: [
+    "Staff points are a staff budget now: a set amount each league year from your coaching staff (about 12, more with a better staff), plus up to 5 left over from last year. They no longer pour in every week, and wins, endorsements, milestones, streaks and the deadline no longer hand out more. They pay for staff decisions: developing and extending coaches, team meetings, scheme installs.",
+    "Training camp is practice sessions instead of buying ratings. You get 8 (a strong head coach adds a couple), one player at a time, up to three each. Each is a chance at a point when the season's over: young players short of their ceiling gain most, veterans hold off some decline, and anyone at his ceiling gains nothing; the second and third sessions on a player are worth less. A full camp is worth about four points spread across a club's young players. Any sessions you leave, the staff assigns at kickoff.",
+    "Position battles, the rookie camp boost, +1 training and the camp focus are gone. They handed out rating on the spot.",
+    "Every club develops the same way: AI teams run their own camps, set a camp priority room and work with weekly focus players too, so your camp is about choosing where your growth goes, not out-growing the league. The extra work goes to young players still climbing, not to stars near the top.",
+    "Fixed: opening a player's card from an incident story (a criminal case) hid the card behind the keep-or-release decision. The card now opens over the story; close it and you're back in the story, then the decision.",
+    "Fixed: from the second season on, your international game showed \"undefined\" where its host city goes on the schedule. It's played in a real city now.",
+  ] },
 ];
