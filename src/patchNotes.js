@@ -2142,4 +2142,9 @@ export const PATCH_NOTES = [
     "Camera flashes in the stands: a wall of them after a touchdown, and a flicker after a turnover or a big gain.",
     "The other 31 stadiums are next; until then their games look as before.",
   ] },
+  { v: "5.27", date: "2026-10-23", title: "Smooth stadium", notes: [
+    "Live games at MetLife run smoothly again (60 frames a second, up from about 43): the stadium is now drawn once as a picture instead of thousands of shapes the browser redrew on every play.",
+    "Camera flashes are drawn on one layer and no longer slow the game during a touchdown celebration.",
+    "With reduced motion turned on in your system settings, the flashes are skipped.",
+  ] },
 ];

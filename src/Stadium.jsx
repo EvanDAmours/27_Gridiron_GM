@@ -1,12 +1,12 @@
 // The stadium around the live field: a top-down bowl (the home club's real stadium, where we've
 // drawn it) with a crowd of little blobs, and camera flashes in the stands after touchdowns and big
-// plays. Drawn once per game into a single SVG image (thousands of fans cost one <img>), from a
-// seeded layout so the same stadium always looks the same.
+// plays. Drawn once per game from a seeded layout (the same stadium always looks the same) and
+// rasterized to a single bitmap, so the thousands of fans cost nothing while the field animates.
 //
 // Layout: the field keeps its shape in the middle; the stands take PAD_X of the width on each side
 // and PAD_Y (of the width) above and below. A ring at depth t (0 at the field, 1 at the outer
 // wall) is a rounded rectangle; each stadium lists what sits at which depth.
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 export const PAD_X = 0.08, PAD_Y = 0.07;
 const VW = 1000, FW = VW * (1 - 2 * PAD_X), FH = FW * 0.45, VH = FH + 2 * VW * PAD_Y;
@@ -115,23 +115,39 @@ function drawStadium(st, night) {
   return { url: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(s.join(""))}`, seats };
 }
 
-const FLASH_CSS = `@keyframes stFlash { 0% { opacity: 0; transform: scale(.4) } 12% { opacity: 1; transform: scale(1) } 100% { opacity: 0; transform: scale(.7) } }
-.st-flash { animation: stFlash .38s ease-out both; transform-box: fill-box; transform-origin: center; }
-@media (prefers-reduced-motion: reduce) { .st-flash { animation: none; opacity: 0; } }`;
+// Camera flashes: n fans across the stands, most in the first second after the play. Drawn on one
+// canvas from a single pre-rendered glow (no SVG, no CSS animations), only while a burst runs.
+const FLASH_MS = 380, BURST_MS = 2000;
+let glow = null;
+function flashSprite() {
+  if (glow) return glow;
+  glow = document.createElement("canvas"); glow.width = glow.height = 32;
+  const g = glow.getContext("2d"), gr = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.22, "rgba(255,253,242,.9)"); gr.addColorStop(0.5, "rgba(255,251,230,.35)"); gr.addColorStop(1, "rgba(255,251,230,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
+  return glow;
+}
+const reducedMotion = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-// Camera flashes: n fans across the stands, most in the first second after the play.
-function Flashes({ seats, n, seed }) {
-  const pops = useMemo(() => {
-    const rnd = seeded(seed * 7919 + 13), out = [];
-    for (let i = 0; i < n && seats.length; i++) { const [x, y] = seats[Math.floor(rnd() * seats.length)]; out.push([x, y, 1.5 * rnd() ** 2]); }
-    return out;
-  }, [seats, n, seed]);
-  return (
-    <svg viewBox={`0 0 ${VW} ${f1(VH)}`} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1 }} aria-hidden="true">
-      <defs><radialGradient id="stf"><stop offset="0" stopColor="#ffffff" stopOpacity="1" /><stop offset=".22" stopColor="#fffdf2" stopOpacity=".9" /><stop offset=".5" stopColor="#fffbe6" stopOpacity=".35" /><stop offset="1" stopColor="#fffbe6" stopOpacity="0" /></radialGradient></defs>
-      {pops.map(([x, y, d], i) => <circle key={i} className="st-flash" cx={x} cy={y} r="7" fill="url(#stf)" style={{ animationDelay: `${d.toFixed(2)}s` }} />)}
-    </svg>
-  );
+// The stadium image, rasterized once to a bitmap at the size it's shown: a live SVG of thousands of
+// fans and blurred lights repaints every time the field over it animates, a bitmap doesn't.
+function useRaster(url, box) {
+  const [src, setSrc] = useState(null);
+  useEffect(() => {
+    if (!url) return;
+    let alive = true, out = null;
+    const img = new Image();
+    img.onload = () => {
+      if (!alive) return;
+      const w = Math.min(2600, Math.max(1000, Math.round((box.current?.clientWidth || 1200) * Math.min(2, window.devicePixelRatio || 1))));
+      const c = document.createElement("canvas"); c.width = w; c.height = Math.round((w * VH) / VW);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob((b) => { if (!alive || !b) return; out = URL.createObjectURL(b); setSrc(out); });
+    };
+    img.src = url;
+    return () => { alive = false; if (out) URL.revokeObjectURL(out); };
+  }, [url]); // eslint-disable-line react-hooks/exhaustive-deps
+  return src;
 }
 
 // The stadium around its children (the field). home: the home club's abbreviation; night: a night
@@ -139,20 +155,43 @@ function Flashes({ seats, n, seed }) {
 export default function Stadium({ home, night, flash, children }) {
   const st = STADIUMS[home];
   const art = useMemo(() => (st ? drawStadium(st, night) : null), [st, night]);
-  const [burst, setBurst] = useState(null);
+  const box = useRef(null), cv = useRef(null);
+  const src = useRaster(art?.url, box);
   useEffect(() => {
-    if (!flash?.key || !art) return;
-    setBurst({ k: flash.key, n: flash.size || 60 });
-    const t = setTimeout(() => setBurst(null), 2600);
-    return () => clearTimeout(t);
+    const c = cv.current;
+    if (!flash?.key || !art || !c || !art.seats.length || reducedMotion()) return;
+    const W = c.clientWidth, H = c.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (!W || !H) return;
+    c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
+    const g = c.getContext("2d"), k = c.width / VW, spr = flashSprite(), r = 7 * k;
+    const rnd = seeded((typeof flash.key === "number" ? flash.key : 1) * 7919 + 13);
+    const pops = Array.from({ length: flash.size || 60 }, () => { const [x, y] = art.seats[Math.floor(rnd() * art.seats.length)]; return [x * k, y * k, 1500 * rnd() ** 2]; });
+    let raf = 0;
+    const t0 = performance.now();
+    const frame = (now) => {
+      const t = now - t0;
+      g.clearRect(0, 0, c.width, c.height);
+      for (const [x, y, d] of pops) {
+        const u = (t - d) / FLASH_MS;
+        if (u < 0 || u > 1) continue;
+        // a pop: up fast, fade out while it shrinks a little
+        const a = u < 0.12 ? u / 0.12 : 1 - (u - 0.12) / 0.88, s = r * (u < 0.12 ? 0.4 + (0.6 * u) / 0.12 : 1 - (0.3 * (u - 0.12)) / 0.88);
+        g.globalAlpha = a; g.drawImage(spr, x - s, y - s, s * 2, s * 2);
+      }
+      g.globalAlpha = 1;
+      if (t < BURST_MS) raf = requestAnimationFrame(frame); else g.clearRect(0, 0, c.width, c.height);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => { cancelAnimationFrame(raf); g.clearRect(0, 0, c.width, c.height); };
   }, [flash?.key]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!st) return children;
+  const layer = { position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", userSelect: "none" };
   return (
-    <div style={{ position: "relative", padding: `${PAD_Y * 100}% ${PAD_X * 100}%` }}>
-      <style>{FLASH_CSS}</style>
-      <img src={art.url} alt="" aria-hidden="true" draggable="false" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", userSelect: "none" }} />
-      {burst && <Flashes key={burst.k} seats={art.seats} n={burst.n} seed={typeof burst.k === "number" ? burst.k : 1} />}
-      <div style={{ position: "relative", zIndex: 2 }}>{children}</div>
+    <div ref={box} style={{ position: "relative", padding: `${PAD_Y * 100}% ${PAD_X * 100}%`, isolation: "isolate" }}>
+      {src && <img src={src} alt="" aria-hidden="true" draggable="false" style={{ ...layer, transform: "translateZ(0)" }} />}
+      <canvas ref={cv} aria-hidden="true" style={{ ...layer, zIndex: 1 }} />
+      {/* the field on its own layer: its plays repaint only the field, never the stands */}
+      <div style={{ position: "relative", zIndex: 2, willChange: "transform" }}>{children}</div>
     </div>
   );
 }
