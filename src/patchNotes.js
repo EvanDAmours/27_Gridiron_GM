@@ -2137,4 +2137,9 @@ export const PATCH_NOTES = [
     "Fixed: opening a player's card from an incident story (a criminal case) hid the card behind the keep-or-release decision. The card now opens over the story; close it and you're back in the story, then the decision.",
     "Fixed: from the second season on, your international game showed \"undefined\" where its host city goes on the schedule. It's played in a real city now.",
   ] },
+  { v: "5.26", date: "2026-10-23", title: "MetLife Stadium", notes: [
+    "MetLife Stadium around the field for Giants and Jets home games (on a computer): a three-level bowl full of fans, the LED ribbon boards, a club level of suites, four corner video boards, the rim ringed with lights and the louvered outer skin lit Giants blue (or Jets green).",
+    "Camera flashes in the stands: a wall of them after a touchdown, and a flicker after a turnover or a big gain.",
+    "The other 31 stadiums are next; until then their games look as before.",
+  ] },
 ];
