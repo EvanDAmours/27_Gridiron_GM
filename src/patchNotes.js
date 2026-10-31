@@ -2147,4 +2147,11 @@ export const PATCH_NOTES = [
     "Camera flashes are drawn on one layer and no longer slow the game during a touchdown celebration.",
     "With reduced motion turned on in your system settings, the flashes are skipped.",
   ] },
+  { v: "5.28", date: "2026-10-23", title: "NFC East stadiums", notes: [
+    "The rest of the NFC East gets its home stadium around the field (on a computer).",
+    "AT&T Stadium (Cowboys): the silver dome with its roof rolled open over the field, the two great steel arches running end to end, and the glass walls at each end.",
+    "Lincoln Financial Field (Eagles): the open corners, a big video board over each end zone, and the winged canopies over the sidelines with their solar panels and wind turbines.",
+    "Northwest Stadium (Commanders): a deep oval of burgundy seats in a concrete shell, light banks on the rim, and the upper end zones covered in Commanders tarps.",
+    "Each crowd wears its team's colors, and the camera flashes after big plays work in every one.",
+  ] },
 ];
