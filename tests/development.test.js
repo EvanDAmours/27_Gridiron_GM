@@ -129,7 +129,9 @@ test("the wall at 33: most players fall off, the great ones and quarterbacks don
   assert.ok(hitsTheWall({ pos: "CB", ovr: 90, dev: "star" }));
   assert.ok(!hitsTheWall({ pos: "CB", ovr: 90, dev: "superstar" }));
   // a longer prime and a later retirement
-  assert.equal(agingEnd({ pos: "RB", dev: "generational" }) - agingEnd({ pos: "RB", dev: "star" }), 3);
+  assert.equal(agingEnd({ pos: "WR", dev: "generational" }) - agingEnd({ pos: "WR", dev: "star" }), 3);
+  // (a running back's trait buys him less: two years)
+  assert.equal(agingEnd({ pos: "RB", dev: "generational" }) - agingEnd({ pos: "RB", dev: "star" }), 2);
   assert.ok(retireAge({ pos: "WR", dev: "generational" }) > retireAge({ pos: "WR", dev: "superstar" }));
   assert.equal(retireAge({ pos: "WR", dev: "star" }), retireAge({ pos: "WR", dev: "normal" }));
 });
@@ -158,4 +160,26 @@ test("a league short of 99s lets a young 96-98 take the last step more often", (
   assert.equal(topEndNudge(26, 97, 40, () => 0.2, 7), 97, "enough 99s: nothing");
   assert.equal(topEndNudge(31, 97, 40, () => 0, 0), 97, "not for veterans");
   assert.equal(topEndNudge(26, 94, 40, () => 0, 0), 94, "only from 96 up");
+});
+
+// Real running backs hold to about 26, slip from 27, fall faster at 30 and hard at 32; even the
+// greats only stretch that by a year or two (Football Perspective, PFF, Rotowire aging studies).
+import { seasonGrowth as _sg } from "../src/development.js";
+import { retireAge as _ra } from "../src/retirement.js";
+test("running backs age out like real ones, the great ones a year or two later", () => {
+  let seed = 11; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const at = (dev, start, age) => { let tot = 0; for (let i = 0; i < 1500; i++) { let p = { pos: "RB", dev, ovr: start, pot: start, truePot: start, age: 25 }; while (p.age < age) p = { ...p, ovr: p.ovr + _sg(p, 0.8, rnd), age: p.age + 1 }; tot += p.ovr; } return tot / 1500; };
+  // an ordinary starter: down a little by 28, clearly by 30, a backup by 32
+  assert.ok(at("normal", 88, 28) < 88 && at("normal", 88, 28) > 84);
+  assert.ok(at("normal", 88, 30) <= 82, `normal at 30: ${at("normal", 88, 30)}`);
+  assert.ok(at("normal", 88, 32) <= 72, `normal at 32: ${at("normal", 88, 32)}`);
+  // a superstar is still good at 30 and fading by 32
+  assert.ok(at("superstar", 94, 30) >= 85 && at("superstar", 94, 32) <= 82, `superstar at 32: ${at("superstar", 94, 32)}`);
+  // a receiver of the same class barely moves by 32: running backs are the exception
+  const wr = (() => { let tot = 0; for (let i = 0; i < 1500; i++) { let p = { pos: "WR", dev: "superstar", ovr: 94, pot: 94, truePot: 94, age: 25 }; while (p.age < 32) p = { ...p, ovr: p.ovr + _sg(p, 0.8, rnd), age: p.age + 1 }; tot += p.ovr; } return tot / 1500; })();
+  assert.ok(wr > at("superstar", 94, 32) + 8);
+  // and they hang it up earlier than other positions' stars
+  assert.equal(_ra({ pos: "RB", dev: "normal" }), 30);
+  assert.equal(_ra({ pos: "RB", dev: "superstar" }), 31);
+  assert.equal(_ra({ pos: "RB", dev: "generational" }), 32);
 });

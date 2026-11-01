@@ -55,7 +55,7 @@ const ri = (rand, a, b) => a + Math.floor(rand() * (b - a + 1));
 // The last age of a player's prime, by position: running backs wear down first, then receivers,
 // corners and linebackers around 30; linemen and tight ends last longer, quarterbacks into their
 // mid-30s and kickers longest.
-export const PRIME_END = { RB: 27, WR: 29, CB: 29, LB: 29, S: 30, DL: 30, TE: 30, LT: 32, LG: 32, C: 32, RG: 32, RT: 32, QB: 34, K: 36, P: 36 };
+export const PRIME_END = { RB: 26, WR: 29, CB: 29, LB: 29, S: 30, DL: 30, TE: 30, LT: 32, LG: 32, C: 32, RG: 32, RT: 32, QB: 34, K: 36, P: 36 };
 export const primeEnd = (p) => PRIME_END[p.pos] ?? 30;
 // Years past his prime (negative while he's in or before it).
 export const yearsPastPrime = (p, age = p.age) => age - agingEnd(p);
@@ -65,7 +65,17 @@ export const yearsPastPrime = (p, age = p.age) => age - agingEnd(p);
 // a superstar two years longer, at 85%. A Star develops fast but ages like everyone else.
 export const PRIME_BONUS = { generational: 3, superstar: 2 };
 const DECLINE_PACE = { generational: 0.5, superstar: 0.85 };
-export const agingEnd = (p, trait = devOf(p)) => primeEnd(p) + (PRIME_BONUS[trait] || 0);
+// Running backs are the exception: the hits catch up with everyone. Real backs hold their level to
+// about 26, slip from 27, fall faster at 30 and hard at 32 (Football Perspective, PFF and Rotowire
+// aging studies); even the greats (Peterson, Gore, Henry) only stretch that by a year or two. So a
+// great back's trait buys him less: a year of prime for a superstar, two for a generational talent,
+// a decline only a little slower, and his own wall a couple of years before everyone else's.
+const RB_PRIME_BONUS = { generational: 2, superstar: 1 };
+const RB_DECLINE_PACE = { generational: 0.75 };
+export const RB_WALL_AGE = 31;
+const bonusOf = (p, trait) => (p.pos === "RB" ? RB_PRIME_BONUS : PRIME_BONUS)[trait] || 0;
+const paceOf = (p, trait) => (p.pos === "RB" ? RB_DECLINE_PACE : DECLINE_PACE)[trait];
+export const agingEnd = (p, trait = devOf(p)) => primeEnd(p) + bonusOf(p, trait);
 // The wall: from 33 on, most players' bodies give out and the explosiveness goes. Quarterbacks,
 // kickers and punters, high-quality offensive linemen and generational talents escape it; a
 // superstar meets a softer one a year later.
@@ -76,6 +86,12 @@ export const hitsTheWall = (p, trait = devOf(p)) => !exempt(p) && trait !== "gen
 // the wall's toll this off-season (age: the season just played)
 export function wallToll(p, trait = devOf(p), rand = Math.random) {
   const next = p.age + 1;
+  // a running back's wall: everyone meets it at 31, a superstar a year later, a generational back
+  // two years later and a little softer
+  if (p.pos === "RB") {
+    const at = RB_WALL_AGE + (trait === "generational" ? 2 : trait === "superstar" ? 1 : 0);
+    return next >= at ? (trait === "generational" ? ri(rand, 1, 3) : ri(rand, 2, 4)) : 0;
+  }
   if (hitsTheWall(p, trait) && next >= WALL_AGE) return ri(rand, 2, 4);
   if (trait === "superstar" && !exempt(p) && next >= WALL_AGE + 1) return ri(rand, 1, 2);
   return 0;
@@ -113,7 +129,7 @@ function baseGrowth(p, share, rand) {
   // Past his prime: the decline speeds up the further past it he is.
   const over = p.age - end;
   const g = -ri(rand, over >= 3 ? 2 : 1, over >= 4 ? 5 : over >= 2 ? 4 : 3);
-  return DECLINE_PACE[trait] ? Math.round(g * DECLINE_PACE[trait]) : g;
+  return paceOf(p, trait) ? Math.round(g * paceOf(p, trait)) : g;
 }
 
 // Development-trait growth, scaled by playing time (a generational talent still needs the field).
