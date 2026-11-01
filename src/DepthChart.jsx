@@ -15,6 +15,7 @@ import { ROLE_SLOTS, roleOvr, naturalRole, ROLE_WANTS, ROLE_NAME, roleKind } fro
 import { pickFB } from "./gamesim.js";
 import { viewFor, DEF_SETS } from "./personnel.js";
 import { SPEC_ROLES, SPEC_KEYS, isSpec, specFit, resolveSpecs } from "./specialists.js";
+import DepthDesk from "./DepthDesk.jsx";
 
 // The field view opens on what your team lines up in most (viewFor) and keeps the grouping you
 // last looked at until you change your identity or lean in Strategy.
@@ -227,6 +228,8 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
     const s = r.subLB.nickel || r.subLB.dime;
     return [["Sub linebacker", s ? `${s[0].name} for ${lastName(s[1].name)}` : "The starters stay on"]];
   };
+  // desktop: the field fills the screen and the menu opens beside the player (DepthDesk.jsx)
+  if (!MOBILE && !narrow()) return <DepthDesk api={{ roster, side, setSide, pick, setPick, form, setForm, pkg, setPkg, order, order0, depthList, fieldOrder, shares, pickedId, pickRole, chosen, place, switchSide, moveIn, splitOut, backToTE, situations, specOn, specNow, snaps, setSnaps, shape, setSel, onAutoFill, viewToggle, gamePlan, personnel, team, depthOrder, setDepthOrder, resetShares, previewPos, single, shown, lastName, spotName, spotOvr, STARTERS, defLean: team ? (DEF_SETS.find((d) => d.key === (team.defPkg || "auto")) || DEF_SETS[0]).label : null }} />;
   const pickView = pick ? (
             <>
               <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 6 }}>{spotName(pick[0], pickRole)} <span style={{ fontSize: 12, color: C.mt, fontWeight: 600 }}>· {pick[0] === "DL" ? (slotKind(pickRole) === "EDGE" ? "edge rusher" : "defensive tackle") : ROLE_SLOTS[pick[0]]?.[pickRole] ? ROLE_NAME[ROLE_SLOTS[pick[0]][pickRole]] : SPEC_ROLES[pick[0]] ? SPEC_ROLES[pick[0]].label.toLowerCase() : RET[pick[0]] ? RET[pick[0]] : `${STARTERS[pick[0]]} starter${STARTERS[pick[0]] > 1 ? "s" : ""}`}</span></div>

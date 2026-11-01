@@ -2213,4 +2213,10 @@ export const PATCH_NOTES = [
     "Each bar belongs to that role: the X bar always starts with the man the field shows at X, and its grey part says who takes the rest of that spot's snaps (two-tight-end and fullback sets for a receiver, nickel and dime for the SAM, base defense for the nickel back).",
     "The list beside the field follows the field: starters in role order, then the bench, and an injured player at the bottom marked OUT.",
   ] },
+  { v: "5.40", date: "2026-10-23", title: "Depth chart: the field with a menu", notes: [
+    "Desktop depth chart redesigned: the whole screen is the field, and it fits a laptop screen without scrolling. Every starter is a card where he lines up, showing his spot (X, Z, SLOT, SAM, MIKE, NB...), his name, his rating there and a bar for how much he plays.",
+    "Click a player and a menu opens right beside him: pick who starts there (each choice shows his natural spot, his snaps and his rating at this spot; an injured player shows how long he's out), set how much he plays with - and +, and see who takes the rest of the snaps. Running backs, linemen and linebackers also show their situations (short yardage, 3rd down, pass rush).",
+    "The bench runs along the bottom of the field: who rotates in and how much, and who's hurt. Click anyone there to open his position.",
+    "In nickel, the SAM linebacker stays on the field dashed out (off the field in nickel). A backup starting for an injured player is flagged in red with whom he's replacing. Your scheme and personnel moved to a Game plan button in the bar. The phone layout hasn't changed.",
+  ] },
 ];
