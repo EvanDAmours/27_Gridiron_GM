@@ -2177,4 +2177,10 @@ export const PATCH_NOTES = [
     "Back seven: Jacob Parrish 79 to 83 (the league lead in passes defensed), Hezekiah Masses 73 to 78, Renardo Green 77 to 81, Jordan Battle 77 to 81, Arvell Reese 82 to 85, Evan Williams 79 to 82.",
     "Young breakouts (Braelon Allen, Luther Burden III, Elijah Ponder, Jacob Parrish, Hezekiah Masses) now carry a Star development trait. The real 2026 season data and injury report are refreshed too.",
   ] },
+  { v: "5.33", date: "2026-10-23", title: "Running backs age out", notes: [
+    "Running backs age like real ones: they hold their level to about 26, slip from 27, fall faster at 30 and hit their own wall at 31, two years before other positions (the pattern in the Football Perspective, PFF and Rotowire aging studies).",
+    "The great backs last a little longer, not a lot: a superstar keeps his prime a year longer and meets the wall at 32, a generational back two years longer and a softer wall at 33. A superstar back is now about 88 at 30 and 79 at 32 (he used to be 93 and 89); a generational one is still about 90 at 32, like a Derrick Henry, but that's the exception.",
+    "Running backs retire earlier too: the great ones play a year or two past the usual age of 30, not two to four.",
+    "Receivers and every other position age as before.",
+  ] },
 ];
