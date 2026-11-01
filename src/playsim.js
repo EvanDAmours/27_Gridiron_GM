@@ -176,7 +176,8 @@ export function teamPersonnel(team, order) {
   return { offSet: team?.personnel && team.personnel !== "auto" ? team.personnel : auto, auto, mix, tilt, shape: snapShape(mix, tilt) };
 }
 
-export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = null, season = getLeagueYear() }) {
+// fixed: the snap shares you set yourself (your club only): they're played as set.
+export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = null, season = getLeagueYear(), fixed = null }) {
   // Everyone plays at his rating plus his form this season; the defensive line at its spots
   // (edges at LE/RE, tackles inside, each rated for his spot).
   // A player playing hurt (questionable) suits up at a reduced rating.
@@ -194,11 +195,13 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
   const q = (p, k) => Math.exp(((p.ovr || 70) - 75) * k);
   const receivers = [];
   for (const pos of ["WR", "TE", "RB"]) on(pos).forEach((p, i) => receivers.push([p, (TGT_RATE[pos][i] ?? 0.1) * share(p) * q(p, TALENT)]));
-  // Backs by snaps and talent; the next back up always spells the starter now and then, even
-  // when the starter plays every snap (nobody carries 25+ times every week).
+  // Backs by snaps and talent; the next back up spells the starter now and then, even when the
+  // starter plays every snap (nobody carries 25+ times every week), unless you set the starter's
+  // snaps yourself: then your call stands and the backup only plays the snaps you gave him.
   const rushers = on("RB").map((p) => [p, share(p) * q(p, TALENT)]);
   const relief = order("RB").find((p) => !rushers.some(([r]) => r === p));
-  if (relief && rushers.length < 2) rushers.push([relief, 0.2 * q(relief, TALENT)]);
+  const yourCall = rushers[0] && fixed?.[rushers[0][0].id] != null;
+  if (relief && rushers.length < 2 && !yourCall) rushers.push([relief, 0.2 * q(relief, TALENT)]);
   const qb = on("QB")[0] || order("QB")[0];
   const defs = [];
   for (const pos of ["DL", "LB", "CB", "S"]) on(pos).forEach((p, i) => defs.push([p, (TK[pos][i] ?? 0.01) * share(p) * q(p, 0.01)]));

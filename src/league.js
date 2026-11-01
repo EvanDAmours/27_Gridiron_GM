@@ -437,7 +437,7 @@ const wx=wxOverride||'clear';/* the weather is set per game (weather.js) and pla
   // Play-calling tendency: the game plan, plus the coordinator's scheme (Air Raid throws more, Power Run runs more).
   const lean=(t,pl)=>(pl?.off==="pass_heavy"?0.07:pl?.off==="run_heavy"?-0.07:0)+(0.42-schemeRunPct(t))*0.5;
   // a stacked roster's diminishing returns (above), played after the edge cap so it still bites when its edges are maxed
-  const home=makeSide({team:ht,order:hOrd,snaps:hSnaps,mod:hMod,lean:lean(ht,hPlan),plan:hPlan}),away=makeSide({team:at,order:aOrd,snaps:aSnaps,mod:aMod,lean:lean(at,aPlan),plan:aPlan});home.brake=talentBrake(ht);away.brake=talentBrake(at);
+  const home=makeSide({team:ht,order:hOrd,snaps:hSnaps,mod:hMod,lean:lean(ht,hPlan),plan:hPlan,fixed:ht.isUser?USER_SNAPS:null}),away=makeSide({team:at,order:aOrd,snaps:aSnaps,mod:aMod,lean:lean(at,aPlan),plan:aPlan,fixed:at.isUser?USER_SNAPS:null});home.brake=talentBrake(ht);away.brake=talentBrake(at);
   return{wx,hPlan,aPlan,hSnaps,aSnaps,home,away};
 }
 // After the final whistle: season stats, games played/started and injury checks for one team.

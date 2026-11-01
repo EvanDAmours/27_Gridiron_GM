@@ -181,3 +181,16 @@ test("situational packages: a club's short-yardage and 3rd-and-long calls overri
   }
   assert.ok(short + long > 3, `${short} short, ${long} long snaps`);
 });
+
+test("a back you set to every snap carries it all: no relief back unless you leave his snaps to the staff", () => {
+  const t = M.teams.find((x) => x.ab === "IND");
+  const roster = t.roster.map((p, i) => ({ ...p, id: `r-${i}` }));
+  const order = (pos) => roster.filter((p) => p.pos === pos).sort((a, b) => (a.dk ?? 99) - (b.dk ?? 99) || b.ovr - a.ovr);
+  const [rb1, rb2] = order("RB");
+  const yours = { [rb1.id]: 100, [rb2.id]: 0 };
+  const set = makeSide({ team: t, order, snaps: teamSnaps(order, yours), fixed: yours });
+  assert.deepEqual(set.rushers.map(([p]) => p.id), [rb1.id], "only your back carries it");
+  // left to the staff, the next back up still spells him now and then
+  const staff = makeSide({ team: t, order, snaps: teamSnaps(order, { [rb1.id]: 100 }) });
+  assert.ok(staff.rushers.some(([p]) => p.id !== rb1.id));
+});

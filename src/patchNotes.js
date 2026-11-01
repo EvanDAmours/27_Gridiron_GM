@@ -2183,4 +2183,8 @@ export const PATCH_NOTES = [
     "Running backs retire earlier too: the great ones play a year or two past the usual age of 30, not two to four.",
     "Receivers and every other position age as before.",
   ] },
+  { v: "5.34", date: "2026-10-23", title: "Your snaps stand", notes: [
+    "Your snap settings for running backs now stand: set your back to 100% and he gets every carry. The engine used to bring in the next back up for a breather (about one carry in six, more late in games) even when you'd set your starter to every snap.",
+    "Leave your backs' snaps to the staff and the backup still spells the starter now and then, as before (other clubs too). Your backup only gets the snaps you give him; in two-back sets he lines up as the blocking fullback, without carries.",
+  ] },
 ];
