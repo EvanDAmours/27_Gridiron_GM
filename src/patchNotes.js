@@ -2154,4 +2154,10 @@ export const PATCH_NOTES = [
     "Northwest Stadium (Commanders): a deep oval of burgundy seats in a concrete shell, light banks on the rim, and the upper end zones covered in Commanders tarps.",
     "Each crowd wears its team's colors, and the camera flashes after big plays work in every one.",
   ] },
+  { v: "5.29", date: "2026-10-23", title: "Every stadium", notes: [
+    "Every club now plays at home in its own stadium (on a computer): all 32, each with its crowd in the team's colors and the camera flashes after big plays.",
+    "AFC: Highmark's canopy over every seat; Hard Rock's canopy and corner spires; Gillette's open end with the lighthouse and bridge; M&T Bank's purple seats; Paycor's sideline canopies and open corners; the Dawg Pound bleachers; Acrisure's open end and gold seats; NRG's roof rolled back over the ends; Lucas Oil's window wall; EverBank's end-zone pools; Nissan's two-deck sidelines; the bronco on Mile High's board; the red sea at Arrowhead; Allegiant's black dome and torch; SoFi's see-through canopy.",
+    "NFC: Soldier Field's colonnades; Ford Field's warehouse; Lambeau's bowl; U.S. Bank's clear roof panels and glass doors; Mercedes-Benz's pinwheel roof; Bank of America's open corners; the gold Superdome; the pirate ship at Raymond James; State Farm's roof rolled back; Levi's suite tower with its green roof; Lumen Field's canopies and the Hawks Nest.",
+    "The Rams and Chargers share SoFi Stadium, and the Giants and Jets share MetLife, each lit in its own team's colors.",
+  ] },
 ];
