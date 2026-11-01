@@ -2164,4 +2164,9 @@ export const PATCH_NOTES = [
     "Running backs carry more trade value: an elite back was priced below a good defensive tackle. Jonathan Taylor now trades like the star he is (from about a mid-1st to more than a mid-1st on his own), and Bijan Robinson, Jahmyr Gibbs and the rest of the league's backs rise with him.",
     "Still checked against real deals: the Christian McCaffrey trade (a 2nd, 3rd, 4th and 5th) still goes through at its real price, and a lone 2nd for him still doesn't.",
   ] },
+  { v: "5.31", date: "2026-10-23", title: "Sellers sell", notes: [
+    "A losing, rebuilding club sells: its veterans (27 and up) cost less in a trade, and those 29 and older less again, since they'll be past it by the time the club is good.",
+    "A rebuilding club that's losing will now move even the face of its franchise if he's a veteran: a strong offer gets it done, not an overwhelming one. Jonathan Taylor from a losing Colts team now costs about a mid-1st instead of nearly two firsts.",
+    "Winning clubs, and young faces of the franchise, are as hard to pry loose as before.",
+  ] },
 ];

@@ -110,15 +110,25 @@ export function evaluateTrade({ send = [], sendPk = [], get = [], getPk = [], th
   const rental = (p) => season && (p.contract || 0) <= 1 && !(them && isFaceOf(p, them));
   const rentRate = (p) => (keepChance(p) < 0.5 ? RENTAL_GONE : RENTAL);
   const firm = get.filter((p) => !rental(p));
-  const rv = Math.round(get.reduce((s, p) => s + (p.tradeVal || 0) * (rental(p) ? rentRate(p) : contractMult(p)), 0) + getPk.reduce((s, pk) => s + pick(pk), 0));
+  // a rebuilding club is selling: its veterans (27 and up) go for less, the older the cheaper,
+  // since they won't be good anymore by the time the club is
+  const selling = them && clubMode(them) === "rebuild";
+  const sellOff = (p) => (selling && (p.age || 0) >= 27 ? ((p.age || 0) >= 29 ? 0.75 : 0.85) : 1);
+  const rv = Math.round(get.reduce((s, p) => s + (p.tradeVal || 0) * (rental(p) ? rentRate(p) : contractMult(p) * sellOff(p)), 0) + getPk.reduce((s, pk) => s + pick(pk), 0));
   // the margin they want to come out ahead by: small for an ordinary deal (a 2nd for a solid
   // starter gets done in the real league), bigger for stars and starting quarterbacks
   let mult = 1.05, why = null;
   if (firm.length < get.length) { mult = 1.05; why = "His deal is up and they won't be keeping him — they'd rather get something now than lose him for nothing"; }
-  if (firm.some((p) => p.tradeVal >= 150)) { mult = 1.15; why = "They want a big premium for a star"; }
+  if (firm.some((p) => p.tradeVal >= 150 && sellOff(p) === 1)) { mult = 1.15; why = "They want a big premium for a star"; }
   if (starter && starter.ovr >= 75 && firm.some((p) => p.id === starter.id)) { mult = 1.35; why = "That's their franchise quarterback — they'd need to be blown away"; }
   // the face of their franchise: only an overwhelming offer
-  if (them && get.some((p) => isFaceOf(p, them))) { mult = Math.max(mult, 1.7); why = "He's the face of their franchise — they'd need to be blown away"; }
+  // (a club that's rebuilding and losing will move a veteran face for a strong offer: he'd be past
+  // it by the time it's good again)
+  if (them && get.some((p) => isFaceOf(p, them))) {
+    if ((them.w || 0) < (them.l || 0) && get.some((p) => isFaceOf(p, them) && sellOff(p) < 1)) { mult = Math.max(mult, 1.1); why = "He's been the face of the franchise, but they're rebuilding and ready to move him for a strong offer"; }
+    else { mult = Math.max(mult, 1.7); why = "He's the face of their franchise — they'd need to be blown away"; }
+  }
+  if (selling && !why && firm.some((p) => sellOff(p) < 1)) why = "They're rebuilding and willing to move veterans";
   // a contender doesn't hand over a starter it needs without a premium
   if ((!why || firm.length < get.length) && them && clubMode(them) === "contend" && firm.some((p) => p.pos !== "QB" && (p.tradeVal || 0) >= 40 && fitsTeam({ ...them, roster: them.roster.filter((x) => x.id !== p.id) }, p))) { mult = Math.max(mult, 1.15); why = "They're contending and he's one of their starters"; }
   const ask = Math.round(rv * mult);

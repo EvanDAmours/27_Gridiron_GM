@@ -58,3 +58,18 @@ test("an expiring veteran his club won't keep goes cheap in season; not in the o
   const kc = club("KC"), m = faceOf(kc);
   assert.match(evaluateTrade({ send: [], get: [{ ...m, contract: 1, age: 34 }], them: kc, pick: () => 0, season: true }).why, /face of their franchise/);
 });
+
+test("a rebuilding club sells its veterans, a veteran face included, without the face premium", () => {
+  const ind = club("IND"), jt = ind.roster.find((p) => p.name === "Jonathan Taylor");
+  assert.ok(isFaceOf(jt, ind), "Taylor is the Colts' face");
+  const pick1 = { rd: 1, overall: 16 }, v = () => 126;
+  const winning = evaluateTrade({ sendPk: [pick1], get: [jt], them: { ...ind, w: 6, l: 2 }, pick: v });
+  const selling = evaluateTrade({ sendPk: [pick1], get: [jt], them: { ...ind, w: 1, l: 7 }, pick: v });
+  assert.equal(winning.accept, false, "a winning Colts team keeps its face for a 1st");
+  assert.ok(selling.ask < winning.ask * 0.6, `selling asks ${selling.ask}, winning ${winning.ask}`);
+  assert.equal(selling.accept, true, `a mid 1st (126) lands Taylor from a selling Colts team asking ${selling.ask}`);
+  // a young face stays off the market even while rebuilding
+  const kid = { ...jt, id: "kid", age: 24 };
+  const sell = { ...ind, w: 1, l: 7, roster: ind.roster.map((p) => (p.id === jt.id ? kid : p)) };
+  assert.equal(evaluateTrade({ sendPk: [pick1], get: [kid], them: sell, pick: v }).accept, false);
+});
