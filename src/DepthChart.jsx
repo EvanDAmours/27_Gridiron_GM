@@ -9,7 +9,8 @@ import { DL_SLOTS, slotKind, dlOvrAt, naturalDL, posTag } from "./dline.js";
 export { STARTERS, byDepth, depthOrderFor, depthSlots } from "./depth.js";
 import { STARTERS as STARTERS0, depthOrderFor } from "./depth.js";
 import { retRating } from "./special.js";
-import { positionSnaps, snapBudget } from "./snaps.js";
+import { positionSnaps, snapBudget, SNAP_SLOTS } from "./snaps.js";
+import { SplitBars } from "./SnapBars.jsx";
 import { ROLE_SLOTS, roleOvr, naturalRole, ROLE_WANTS, ROLE_NAME, roleKind } from "./roles.js";
 import { pickFB } from "./gamesim.js";
 import { viewFor, DEF_SETS } from "./personnel.js";
@@ -120,7 +121,6 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
   const set = side === "offense" ? { ...set0, spots: [...FORMS[form], ...LINE] } : side === "defense" ? { ...set0, spots: [...DEF_CORE, ...DEF_FORMS[pkg]] } : set0;
   // snap shares at a position, the way game day will hand them out (your personnel decides the shape)
   const shares = (pos) => positionSnaps(pos, depthList(pos).filter((p) => !p.injured), snaps || {}, shape);
-  const setShare = (pos, p, v) => { if (!setSnaps) return; const others = depthList(pos).filter((x) => x.id !== p.id && !x.injured && snaps?.[x.id] != null).reduce((t, x) => t + snaps[x.id], 0); setSnaps((sn) => ({ ...sn, [p.id]: Math.max(0, Math.min(v, 100, snapBudget(pos, shape) - others)) })); };
   const resetShares = (pos) => clearSnaps(pos);
   const sidePositions = [...new Set(set.spots.map(([pos]) => (pos === "FB" ? "RB" : pos)))];
   const order0 = (pos) => depthOrderFor(roster, depthOrder, pos, snaps);
@@ -200,6 +200,11 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
               {ROLE_SLOTS[pick[0]]?.[pick[1]] && <div style={{ fontSize: 12, color: "#cbd5e1", background: C.bg, borderRadius: 6, padding: "5px 8px", marginBottom: 6, lineHeight: 1.4 }}><b style={{ color: C.gd }}>Wants:</b> {ROLE_WANTS[roleKind(ROLE_SLOTS[pick[0]][pick[1]])]} The number is each player's rating here (his natural rating after the slash; ★ = his natural role).{pick[0] === "LB" && pick[1] === 0 ? " Plays in base only (against two tight ends or a fullback)." : pick[0] === "CB" && pick[1] === 2 ? " Plays in nickel and dime: most of the snaps in today's NFL." : pick[0] === "CB" && pick[1] === 0 ? " Follows the other team's best outside receiver." : ""}</div>}
               {SPEC_ROLES[pick[0]] && <div style={{ fontSize: 12, color: "#cbd5e1", background: C.bg, borderRadius: 6, padding: "5px 8px", marginBottom: 6, lineHeight: 1.4 }}><b style={{ color: C.gd }}>{SPEC_ROLES[pick[0]].when}.</b> {SPEC_ROLES[pick[0]].wants} The number is each player's fit for the job. {(depthOrder || {})[pick[0]]?.length ? <button onClick={() => setDepthOrder((d) => { const n = { ...d }; delete n[pick[0]]; return n; })} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 12, cursor: "pointer", padding: 0 }}>Leave it to the staff</button> : <span style={{ color: C.mt }}>The staff picks now (only someone clearly better at it than the starter).</span>}</div>}
               {!chosen.length && <div style={{ color: C.mt, fontSize: 13 }}>Nobody on the roster plays {SPEC_ROLES[pick[0]]?.pos || pick[0]}.</div>}
+              {/* snap shares: one bar per spot on the field, split between who plays it (SnapBars.jsx) */}
+              {!single(pick[0]) && setSnaps && depthList(pick[0]).some((p) => !p.injured) && <div style={{ background: C.bg, borderRadius: 12, padding: "8px 10px", margin: "0 0 8px" }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}><b style={{ fontSize: 13 }}>Snap shares</b><span style={{ fontSize: 12, color: C.mt }}>drag the white line between two players to trade snaps</span></div>
+                <SplitBars pos={pick[0]} players={depthList(pick[0])} overrides={snaps || {}} shape={shape} mobile={MOBILE} onChange={(next) => setSnaps(next)} laneName={(k) => (SNAP_SLOTS[pick[0]] > 1 ? `${pick[0]}${k + 1}` : pick[0])} />
+              </div>}
               <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 6px", flexWrap: "wrap" }}>
                 <button onClick={() => setPick(null)} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", padding: 0 }}>← All positions</button>
                 {!single(pick[0]) && setSnaps && order(pick[0]).some((p) => snaps?.[p.id] != null) && <button onClick={() => resetShares(pick[0])} style={{ background: "transparent", border: "1px solid #ffffff10", color: "#cbd5e1", borderRadius: 6, padding: "2px 8px", fontSize: 12, cursor: "pointer" }}>Reset snaps to auto</button>}
@@ -208,7 +213,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
               {RET[pick[0]] && <div style={{ marginBottom: 4 }}>Any receiver, back or defensive back can return. The number is his return rating (speed, acceleration, agility and a knack for it). A great returner flips field position and breaks a long one now and then, and it doesn't have to be a starter: a fast backup is a weapon here.</div>}
               {pick[0] === "DL" && <div style={{ marginBottom: 4 }}>Any lineman can play {slotKind(pick[1]) === "EDGE" ? "edge" : "tackle"} here. The number is his rating at this spot; edge rushers lose some inside and run stuffers lose some outside (his natural rating after the slash).</div>}
               {CROSS[pick[0]] && onMovePos && <div style={{ marginBottom: 4 }}>{["CB", "S"].includes(pick[0]) ? "Corners and safeties can switch." : "Linemen can move along the line."} Moving a player here changes his position; the Move button shows his rating at {pick[0]}. Moving him back restores his old rating.</div>}
-                  {!single(pick[0]) && setSnaps && <div>Snap shares fill by depth on their own; drag a slider to set one yourself (it turns yellow).</div>}
+                  {!single(pick[0]) && setSnaps && <div>Snap shares fill by depth on their own. Each bar is one spot on the field: drag the line between two players to trade snaps between them (the position's total never changes). "Rotate in" brings a bench player into the last spot. Reset hands it back to the staff.</div>}
                 </div></details>
               </div>
               {chosen.map(({ p, at, i, move, wide, back }) => {
@@ -224,11 +229,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
                       <div style={{ fontSize: 11, color: C.mt }}>{single(pick[0]) && <b style={{ marginRight: 4 }}>{posTag(p)} {p.ovr}</b>}{!RET[pick[0]] && p.pos === "TE" && pick[0] === "WR" && <b style={{ color: "#67e8f9", marginRight: 4 }}>TE {p.ovr}{at === "WR" ? " · split out" : ""}</b>}{back && <b style={{ color: "#67e8f9", marginRight: 4 }}>playing WR</b>}{p.pos === "DL" && <b style={{ color: naturalDL(p) === "DT" ? "#fb923c" : "#f472b6", marginRight: 4 }}>{naturalDL(p)}</b>}{ROLE_SLOTS[p.pos] && p.posAttrs && <b style={{ color: "#a5b4fc", marginRight: 4 }}>{({ OUT: "OUTSIDE", NB: "NICKEL" })[naturalRole(p)] || naturalRole(p)}{ROLE_SLOTS[pick[0]]?.[pick[1]] && roleKind(ROLE_SLOTS[pick[0]][pick[1]]) === naturalRole(p) ? " ★" : ""}</b>}Age {p.age}{p.injured ? <span style={{ color: C.rd, fontWeight: 700 }}> · injured</span> : ""}</div>
                     </div>
                     {(() => { const v = (p.pos === pick[0] || (pick[0] === "WR" && p.pos === "TE" && !back)) && (pick[0] === "DL" || ROLE_SLOTS[pick[0]]) ? spotOvr(p, pick[0], pick[1]) : shown(p, pick[0]); return <b title={RET[pick[0]] ? `Return rating (${posTag(p)} ${p.ovr} OVR)` : isSpec(pick[0]) ? `Fit as ${SPEC_ROLES[pick[0]].label.toLowerCase()} (${posTag(p)} ${p.ovr} OVR)` : v !== p.ovr ? `${p.ovr} at his natural spot` : undefined} style={{ fontSize: 16, color: oC(v), minWidth: 26, textAlign: "right" }}>{v}{v !== p.ovr && !single(pick[0]) && <span style={{ fontSize: 10, color: C.mt, fontWeight: 600 }}> /{p.ovr}</span>}</b>; })()}
-                    {at === pick[0] && !single(pick[0]) && setSnaps && !p.injured && (() => { const v = shares(pick[0])[p.id] ?? 0; const set_ = snaps?.[p.id] != null; return (
-                      <span title={set_ ? "Snap share you set" : "Snap share (automatic, by depth)"} style={{ display: "inline-flex", alignItems: "center", gap: 4, width: 128 }}>
-                        <input type="range" min={0} max={100} step={5} value={v} onChange={(e) => setShare(pick[0], p, +e.target.value)} aria-label={`${p.name} snap share`} style={{ width: 84, accentColor: v >= 70 ? C.gn : v >= 30 ? "#f59e0b" : "#64748b" }} />
-                        <span style={{ fontSize: 12, fontWeight: 800, minWidth: 34, textAlign: "right", color: set_ ? "#fde68a" : "#cbd5e1" }}>{v}%</span>
-                      </span>); })()}
+                    {at === pick[0] && !single(pick[0]) && setSnaps && !p.injured && (() => { const v = shares(pick[0])[p.id] ?? 0; return <span title="Snap share (set it with the bars above)" style={{ fontSize: 12, fontWeight: 800, minWidth: 38, textAlign: "right", color: v ? (snaps?.[p.id] != null ? "#fde68a" : "#cbd5e1") : C.mt }}>{v}%</span>; })()}
                     {wide ? <Btn onClick={() => splitOut(pick[1], p)} bg="#0e7490" c="#cffafe" style={{ fontSize: 11, padding: "3px 6px", width: 56 }} title={`Split him out wide: ${spotOvr(p, "WR", pick[1])} at ${spotName("WR", pick[1])} (he leaves the tight end chart until you move him back)`}>Split {spotOvr(p, "WR", pick[1])}</Btn>
                       : back ? <Btn onClick={() => backToTE(pick[1], p)} bg="#0e7490" c="#cffafe" style={{ fontSize: 11, padding: "3px 6px", width: 56 }} title="Bring him back in as a tight end">Back TE</Btn>
                       : move ? <Btn onClick={() => moveIn(pick[0], pick[1], p)} bg="#7c3aed" c="#ede9fe" style={{ fontSize: 11, padding: "3px 6px", width: 56 }} title={`Move him to ${pick[0]}: ${previewPos ? previewPos(p, pick[0]) : "?"} OVR there`}>Move {previewPos ? previewPos(p, pick[0]) : ""}</Btn>

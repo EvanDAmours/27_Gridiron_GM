@@ -110,6 +110,8 @@ import { coachAggression, styleLabel } from "./coachStyle.js";
 import OwnerReview from "./OwnerReview.jsx";
 import Lombardi from "./Lombardi.jsx";
 import { repairSave } from "./repair.js";
+import { LinkedSnap } from "./SnapBars.jsx";
+import { linkedSet } from "./snapEdit.js";
 import SeasonAwards, { superBowlMvp } from "./SeasonAwards.jsx";
 const ChampionGazette = lazyScreen(() => import("./ChampionGazette.jsx")); // loaded when first opened
 const SuperBowlWin = lazyScreen(() => import("./SuperBowlWin.jsx")); // the moment you win it, before the paper
@@ -337,7 +339,7 @@ const[fourthChoice,setFourthChoice]=useState(null);const[showDepth,setShowDepth]
   const[tradeHistory,setTradeHistory]=useState([]);
   const[breakoutAlerts,setBreakoutAlerts]=useState([]);
   // v38: Depth Chart & Playing Time
-  const[depthOrder,setDepthOrder]=useState({});const[rosterView,setRosterView]=useState("players");const[depthView,setDepthView]=useState("field");const[menuOpen,setMenuOpen]=useState(false);const[moreOpen,setMoreOpen]=useState(false);const[mobileHint,setMobileHint]=useState(()=>{try{return !MOBILE&&window.innerWidth<700&&!localStorage.getItem('gm_mobile_hint');}catch{return false;}});const[rosterTeam,setRosterTeam]=useState(null);const[theme,setTheme]=useState(getTheme);const[display,setDisplay]=useState(getDisplay);const pickDisplay=d=>{applyDisplay(d);setDisplay(d);};const[injuriesOn,setInjuriesOn]=useState(true);setInjuries(injuriesOn);const[playingTime,setPlayingTime]=useState({});
+  const[depthOrder,setDepthOrder]=useState({});const[rosterView,setRosterView]=useState("players");const[depthView,setDepthView]=useState("field");const[snapPins,setSnapPins]=useState(()=>new Set());/* list view: players whose share you locked (SnapBars.jsx) */const[menuOpen,setMenuOpen]=useState(false);const[moreOpen,setMoreOpen]=useState(false);const[mobileHint,setMobileHint]=useState(()=>{try{return !MOBILE&&window.innerWidth<700&&!localStorage.getItem('gm_mobile_hint');}catch{return false;}});const[rosterTeam,setRosterTeam]=useState(null);const[theme,setTheme]=useState(getTheme);const[display,setDisplay]=useState(getDisplay);const pickDisplay=d=>{applyDisplay(d);setDisplay(d);};const[injuriesOn,setInjuriesOn]=useState(true);setInjuries(injuriesOn);const[playingTime,setPlayingTime]=useState({});
   // v7.0 new features
   const[awards,setAwards]=useState([]);
   const[draftClassRating,setDraftClassRating]=useState('Average');
@@ -1763,12 +1765,12 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
         <div style={{fontSize:17,fontWeight:800,color:'#fff',margin:'4px 2px 8px'}}>{label}</div>
         {positions.map(pos=>{const players=getOrder(pos);const starters=DC_S[pos]||1;const shares=snapsFor(pos,players);const shareSum=Object.values(shares).reduce((s,v)=>s+v,0);const stIds=new Set(snapOrdered(pos,players.filter(p=>!p.injured),playingTime).slice(0,starters).filter(p=>(shares[p.id]||0)>0).map(p=>p.id));const custom=players.some(x=>playingTime[x.id]!=null);return(<div key={pos} style={{background:'#ffffff0d',borderRadius:14,padding:'10px 12px',marginBottom:8}}>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
-            <div style={{display:'flex',alignItems:'center',gap:6}}><span style={{fontSize:14,fontWeight:800,color:pC(pos)}}>{pos}</span>{MOBILE?<span style={{fontSize:11,color:C.mt}}>{starters} starter{starters>1?'s':''}{shareSum!==snapBudget(pos)&&<b style={{color:'#f59e0b'}}> · snaps {shareSum}/{snapBudget(pos)}%</b>}</span>:<><span style={{fontSize:11,color:C.mt}}>{players.length} player{players.length!==1?'s':''} ({starters} starter{starters>1?'s':''})</span><span style={{fontSize:11,color:shareSum===snapBudget(pos)?C.gn:'#f59e0b',fontWeight:700}}>Snaps {shareSum}% of {snapBudget(pos)}%</span></>}{custom&&<button onClick={()=>setPlayingTime(prev=>{const n={...prev};players.forEach(x=>delete n[x.id]);return n;})} style={{background:'transparent',color:C.mt,border:'1px solid #ffffff10',borderRadius:4,padding:'1px 6px',fontSize:10,cursor:'pointer'}}>{MOBILE?'Reset':'Reset to auto'}</button>}</div>
+            <div style={{display:'flex',alignItems:'center',gap:6}}><span style={{fontSize:14,fontWeight:800,color:pC(pos)}}>{pos}</span>{MOBILE?<span style={{fontSize:11,color:C.mt}}>{starters} starter{starters>1?'s':''}{shareSum!==snapBudget(pos,userShape)&&<b style={{color:'#f59e0b'}}> · snaps {shareSum}/{snapBudget(pos,userShape)}%</b>}</span>:<><span style={{fontSize:11,color:C.mt}}>{players.length} player{players.length!==1?'s':''} ({starters} starter{starters>1?'s':''})</span><span style={{fontSize:11,color:shareSum===snapBudget(pos,userShape)?C.gn:'#f59e0b',fontWeight:700}}>Snaps {shareSum}% of {snapBudget(pos,userShape)}%</span></>}{custom&&<button onClick={()=>{setPlayingTime(prev=>{const n={...prev};players.forEach(x=>delete n[x.id]);return n;});setSnapPins(s=>{const n=new Set(s);players.forEach(x=>n.delete(x.id));return n;});}} style={{background:'transparent',color:C.mt,border:'1px solid #ffffff10',borderRadius:4,padding:'1px 6px',fontSize:10,cursor:'pointer'}}>{MOBILE?'Reset':'Reset to auto'}</button>}</div>
             <button onClick={()=>autoFillPos(pos)} style={{background:'#ffffff12',color:'#cbd5e1',border:0,borderRadius:999,padding:'3px 10px',fontSize:12,fontWeight:700,cursor:'pointer'}}>Auto-fill</button>
           </div>
           {!players.length&&<div style={{fontSize:12,color:C.mt,padding:'4px 0'}}>No players at this position</div>}
           {players.map((p,i)=>{const isSt=stIds.has(p.id)||(p.injured&&i<starters);const snap=p.injured?0:(shares[p.id]??0);const snapClr=snap>=70?C.gn:snap>=40?'#f59e0b':snap<10?C.mt:C.rd;
-            const setSnap=e=>{const others=players.filter(x=>x.id!==p.id&&!x.injured&&playingTime[x.id]!=null).reduce((s,x)=>s+playingTime[x.id],0);const v=Math.max(0,Math.min(+e.target.value,100,snapBudget(pos)-others));setPlayingTime(prev=>({...prev,[p.id]:v}));};
+            const setSnap=v=>setPlayingTime(prev=>linkedSet(pos,players,prev,userShape,p.id,v,snapPins));const pinned=snapPins.has(p.id);const pin=()=>setSnapPins(s=>{const n=new Set(s);n.has(p.id)?n.delete(p.id):n.add(p.id);return n;});
             const dlChip=pos==='DL'&&(()=>{const nat=naturalDL(p);const slot=i<4?slotKind(i):null;const off=slot&&slot!==nat;return(<span title={`${nat==='DT'?'Defensive tackle':'Edge rusher'} by trade${slot?` · playing ${DL_SLOTS[i]}${off?' (out of position: rated lower there)':''}`:''}`} style={{fontSize:9,fontWeight:800,borderRadius:2,padding:'1px 4px',whiteSpace:'nowrap',background:nat==='DT'?'#fb923c22':'#f472b622',color:nat==='DT'?'#fb923c':'#f472b6',border:off?'1px solid #ef4444':'none'}}>{nat}{slot?` @${DL_SLOTS[i]}`:''}{off?'':''}</span>);})();
             const arrow=(dir)=>{const dis=dir<0?i===0:i===players.length-1;return <button onClick={()=>movePlayer(pos,i,dir)} disabled={dis} style={{background:'transparent',border:`1px solid ${dis?'#1e293b':C.bd}`,color:dis?'#1e293b':C.mt,borderRadius:4,width:MOBILE?30:22,height:MOBILE?26:18,cursor:dis?'default':'pointer',fontSize:11,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>{dir<0?'▲':'▼'}</button>;};
             if(MOBILE)return(<div key={p.id} style={{padding:'6px 6px',borderLeft:`3px solid ${isSt?(p.injured?C.rd:C.gn):'#334155'}`,marginBottom:4,background:isSt?'#22c55e08':'#ffffff04',borderRadius:'0 6px 6px 0',opacity:p.injured?.6:1}}>
@@ -1783,8 +1785,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
                 {p.injured&&<span style={{fontSize:9,color:C.rd,fontWeight:700}}>INJ</span>}
                 {dlChip}
                 <span style={{transform:'scale(.8)',transformOrigin:'left center',whiteSpace:'nowrap'}}><DevChip dev={devOf(p)}/></span>
-                <input type="range" min={0} max={100} step={5} value={snap} disabled={!!p.injured} onChange={setSnap} aria-label="snap share" style={{flex:1,minWidth:60,height:4,accentColor:snapClr,cursor:p.injured?'not-allowed':'pointer'}}/>
-                <span style={{fontSize:12,fontWeight:700,color:snapClr,minWidth:34,textAlign:'right'}}>{snap}%</span>
+              </div>
+              <div style={{marginTop:4,paddingLeft:22}}><LinkedSnap compact value={snap} locked={pinned} disabled={!!p.injured} onSet={setSnap} onLock={pin}/>
               </div>
             </div>);
             return(<div key={p.id} style={{display:'flex',alignItems:'center',gap:6,padding:'5px 4px',borderLeft:`3px solid ${isSt?(p.injured?C.rd:C.gn):'#334155'}`,marginBottom:2,background:isSt?'#22c55e08':'transparent',borderRadius:'0 4px 4px 0',opacity:p.injured?.6:1}}>
@@ -1802,15 +1804,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
               <div style={{fontSize:11,color:C.mt}}>{p.age}yr {p.contract}yr/${p.salary||0}M</div>
             </div>
             <span style={{fontWeight:900,fontSize:15,color:oC(p.ovr),minWidth:30,textAlign:'center'}}>{p.ovr}</span>
-            <div style={{display:'flex',flexDirection:'column',alignItems:'center',minWidth:90}}>
-              <div style={{display:'flex',alignItems:'center',gap:4,width:'100%'}}>
-                <input type="range" min={0} max={100} step={5} value={snap} disabled={!!p.injured}
-                  onChange={e=>{const others=players.filter(x=>x.id!==p.id&&!x.injured&&playingTime[x.id]!=null).reduce((s,x)=>s+playingTime[x.id],0);const v=Math.max(0,Math.min(+e.target.value,100,snapBudget(pos)-others));setPlayingTime(prev=>({...prev,[p.id]:v}));}}
-                  style={{flex:1,height:4,accentColor:snapClr,cursor:p.injured?'not-allowed':'pointer'}}/>
-                <span style={{fontSize:12,fontWeight:700,color:snapClr,minWidth:32,textAlign:'right'}}>{snap}%</span>
-              </div>
-              <span style={{fontSize:9,color:C.mt}}>snap share</span>
-            </div>
+            <div style={{flex:'0 1 300px',minWidth:220}}><LinkedSnap value={snap} locked={pinned} disabled={!!p.injured} onSet={setSnap} onLock={pin}/></div>
             <div style={{display:'flex',flexDirection:'column',gap:1}}>
               <button onClick={()=>movePlayer(pos,i,-1)} disabled={i===0} style={{background:'transparent',border:`1px solid ${i===0?'#1e293b':C.bd}`,color:i===0?'#1e293b':C.mt,borderRadius:3,width:22,height:18,cursor:i===0?'default':'pointer',fontSize:11,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>▲</button>
               <button onClick={()=>movePlayer(pos,i,1)} disabled={i===players.length-1} style={{background:'transparent',border:`1px solid ${i===players.length-1?'#1e293b':C.bd}`,color:i===players.length-1?'#1e293b':C.mt,borderRadius:3,width:22,height:18,cursor:i===players.length-1?'default':'pointer',fontSize:11,fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>▼</button>

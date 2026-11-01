@@ -2196,4 +2196,10 @@ export const PATCH_NOTES = [
     "Your 2026 franchise gets them too, once, when you load it: the AI clubs' rosters change, each stays at 53 (a practice-squad call-up first), and the moves show in your log. A real move involving your own team is never made for you; it's just noted. A player who's already moved in your league stays where he is.",
     "The draft picks that went the other way in those trades aren't tracked (every club still owns its own picks).",
   ] },
+  { v: "5.37", date: "2026-10-23", title: "Snap shares rebuilt", notes: [
+    "Snap shares, rebuilt. The budget at each position is always full now, so nothing sticks, overflows or quietly reshuffles players you didn't touch.",
+    "Field view: tap a spot and its snap shares show as bars, one per spot on the field (RB; WR1, WR2, WR3; DL1 to DL4...), split between the players who play it. Drag the white line between two players to trade snaps between just those two. A spot your formations don't always use shows its \"other personnel\" share in grey, and \"Rotate in\" brings a bench player into the last spot.",
+    "List view: the sliders are linked. Raise one player and the snaps come off the bench first (deepest first); lower him and they go to the next man down. Lock a player (gold) and other sliders never move him; - and + step by 5; the sliders are full width. Reset still hands a position back to the staff.",
+    "The same on phones: the bars sit at the top of a position's sheet, and the list view's linked sliders fit the screen.",
+  ] },
 ];
