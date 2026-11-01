@@ -4,6 +4,9 @@
 import { DEV_TRAITS } from "./scouting.js";
 import { REAL_STAFF, HC_RATING, HC_TRAIT } from "./data/realCoaches.js";
 import { applyRosterUpdates } from "./rosterUpdates.js";
+import { applyRealMoves } from "./realMoves.js";
+import { realPlayer } from "./league.js";
+import M27 from "./data/madden27.json" with { type: "json" };
 import { brokenReadDef, readDefOf } from "./qbiq.js";
 
 const okPlayer = (p) => p && typeof p === "object" && p.id != null && typeof p.pos === "string";
@@ -63,5 +66,11 @@ export function repairSave(d) {
   }
   // in-season roster updates (rosterUpdates.js), once each
   fixes.push(...applyRosterUpdates(d));
+  // real trades, releases and signings (realMoves.js), once each, for the AI clubs; into the log
+  {
+    const data = (name, pos) => [...M27.teams.flatMap((t) => [...t.roster, ...t.ps]), ...M27.fa].find((x) => x.name === name && x.pos === pos);
+    const lines = applyRealMoves(d, (name, pos) => { const x = data(name, pos); return x ? realPlayer(x) : null; });
+    if (lines.length) { d.log = [...lines, ...(Array.isArray(d.log) ? d.log : [])].slice(0, 150); fixes.push(`${lines.length} real roster move(s)`); }
+  }
   return { d, fixes };
 }

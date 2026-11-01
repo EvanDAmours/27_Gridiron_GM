@@ -2191,4 +2191,9 @@ export const PATCH_NOTES = [
     "Calling your own plays in a live game, you can kick a field goal on any down, not just 4th: whenever you're in range, a \"Kick a field goal\" button (with the distance and your kicker) sits under the playbook, next to the kneel. Twenty seconds left on 2nd down, take the points.",
     "On phones too.",
   ] },
+  { v: "5.36", date: "2026-10-23", title: "Real rosters", notes: [
+    "Rosters synced with the real NFL (ESPN's rosters, November 1): the trade-deadline deals are in. Jeffery Simmons is a Bear, Quenton Nelson a Seahawk and DeForest Buckner a 49er, along with the smaller trades, releases (Najee Harris, Camryn Bynum, Hollywood Brown, Darius Slayton, Xavier Woods...) and free-agent signings (Andy Dalton to Atlanta and more), 81 moves in all. The Rams (Joshua Karty) and Dolphins (Zane Gonzalez) have their new kickers.",
+    "Your 2026 franchise gets them too, once, when you load it: the AI clubs' rosters change, each stays at 53 (a practice-squad call-up first), and the moves show in your log. A real move involving your own team is never made for you; it's just noted. A player who's already moved in your league stays where he is.",
+    "The draft picks that went the other way in those trades aren't tracked (every club still owns its own picks).",
+  ] },
 ];
