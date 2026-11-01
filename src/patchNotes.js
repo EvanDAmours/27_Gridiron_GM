@@ -2169,4 +2169,12 @@ export const PATCH_NOTES = [
     "A rebuilding club that's losing will now move even the face of its franchise if he's a veteran: a strong offer gets it done, not an overwhelming one. Jonathan Taylor from a losing Colts team now costs about a mid-1st instead of nearly two firsts.",
     "Winning clubs, and young faces of the franchise, are as hard to pry loose as before.",
   ] },
+  { v: "5.32", date: "2026-10-23", title: "November roster update", notes: [
+    "Roster update (November): 23 real players whose play through Week 7 has outrun their ratings move up, along with the skills behind them. Your 2026 franchise gets it when you load it; anyone who has already grown past his update keeps his own numbers.",
+    "Quarterbacks: Jordan Love 84 to 89 (the league lead in passing yards), Bryce Young 80 to 85, Tyler Shough 80 to 84, Kirk Cousins 77 to 82.",
+    "Offense: Christian Watson 82 to 88, Matthew Golden 79 to 85, Luther Burden III 79 to 83, Tre Tucker 78 to 82, Jaylen Warren 84 to 87, Chuba Hubbard 83 to 86, Braelon Allen 73 to 79.",
+    "Pass rush: Chase Young 83 to 88 (the league lead in sacks), Dallas Turner 82 to 87, David Bailey 81 to 85, Elijah Ponder 72 to 79, Carl Granderson 79 to 83, David Walker 69 to 75.",
+    "Back seven: Jacob Parrish 79 to 83 (the league lead in passes defensed), Hezekiah Masses 73 to 78, Renardo Green 77 to 81, Jordan Battle 77 to 81, Arvell Reese 82 to 85, Evan Williams 79 to 82.",
+    "Young breakouts (Braelon Allen, Luther Burden III, Elijah Ponder, Jacob Parrish, Hezekiah Masses) now carry a Star development trait. The real 2026 season data and injury report are refreshed too.",
+  ] },
 ];
