@@ -2160,4 +2160,8 @@ export const PATCH_NOTES = [
     "NFC: Soldier Field's colonnades; Ford Field's warehouse; Lambeau's bowl; U.S. Bank's clear roof panels and glass doors; Mercedes-Benz's pinwheel roof; Bank of America's open corners; the gold Superdome; the pirate ship at Raymond James; State Farm's roof rolled back; Levi's suite tower with its green roof; Lumen Field's canopies and the Hawks Nest.",
     "The Rams and Chargers share SoFi Stadium, and the Giants and Jets share MetLife, each lit in its own team's colors.",
   ] },
+  { v: "5.30", date: "2026-10-23", title: "Running back trade value", notes: [
+    "Running backs carry more trade value: an elite back was priced below a good defensive tackle. Jonathan Taylor now trades like the star he is (from about a mid-1st to more than a mid-1st on his own), and Bijan Robinson, Jahmyr Gibbs and the rest of the league's backs rise with him.",
+    "Still checked against real deals: the Christian McCaffrey trade (a 2nd, 3rd, 4th and 5th) still goes through at its real price, and a lone 2nd for him still doesn't.",
+  ] },
 ];

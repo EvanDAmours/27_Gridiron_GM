@@ -9,7 +9,7 @@ import { isFaceOf } from "./faceOfFranchise.js";
 import { keepChance, askingPrice } from "./offseason.js";
 import { leagueCap } from "./cap.js";
 
-export const POS_MULT = { QB: 1.8, DL: 1.15, LT: 1.1, WR: 1.05, CB: 1.0, RT: 0.95, TE: 0.8, LB: 0.8, S: 0.8, C: 0.7, LG: 0.65, RG: 0.65, RB: 0.52, K: 0.2, P: 0.15 };
+export const POS_MULT = { QB: 1.8, DL: 1.15, LT: 1.1, WR: 1.05, CB: 1.0, RT: 0.95, TE: 0.8, LB: 0.8, S: 0.8, C: 0.7, LG: 0.65, RG: 0.65, RB: 0.6, K: 0.2, P: 0.15 };
 const DEV_MULT = { generational: 1.2, superstar: 1.1, star: 1.04 };
 
 // Calibrated against real deadline deals (see tests/tradeMarket.test.js): a 31-year-old star
