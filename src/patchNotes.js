@@ -2202,4 +2202,10 @@ export const PATCH_NOTES = [
     "List view: the sliders are linked. Raise one player and the snaps come off the bench first (deepest first); lower him and they go to the next man down. Lock a player (gold) and other sliders never move him; - and + step by 5; the sliders are full width. Reset still hands a position back to the staff.",
     "The same on phones: the bars sit at the top of a position's sheet, and the list view's linked sliders fit the screen.",
   ] },
+  { v: "5.38", date: "2026-10-23", title: "Depth chart redesign", notes: [
+    "The depth chart, redesigned for desktop. Field view: the field fills the screen, every player's rating sits in a ring that fills with his share of the snaps, and full last names never get cut off. An injured starter comes off the field (whoever will really play is shown) and the injured are listed under it.",
+    "Click a player and the panel beside the field shows that position: the snap-share bars, each player in the bar's color, and the situations that bring in a specialist (short yardage and 3rd down for backs, the pass-rush package, the sub linebacker). What each role wants is under \"How this works\".",
+    "List view is now a two-deep sheet, the way NFL clubs publish theirs: one row per spot on the field (QB, RB, WR1-3, TE, the line; the front four, linebackers, corners, safeties) with the starter, 2nd and 3rd, and each player's share of the snaps. Pick a row to edit it beside the sheet: the snap-share bars, who could start there, and who's out this week.",
+    "Phones keep their own layout.",
+  ] },
 ];

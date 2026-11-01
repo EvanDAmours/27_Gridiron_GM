@@ -10,7 +10,7 @@ export { STARTERS, byDepth, depthOrderFor, depthSlots } from "./depth.js";
 import { STARTERS as STARTERS0, depthOrderFor } from "./depth.js";
 import { retRating } from "./special.js";
 import { positionSnaps, snapBudget, SNAP_SLOTS } from "./snaps.js";
-import { SplitBars } from "./SnapBars.jsx";
+import { SplitBars, snapColor } from "./SnapBars.jsx";
 import { ROLE_SLOTS, roleOvr, naturalRole, ROLE_WANTS, ROLE_NAME, roleKind } from "./roles.js";
 import { pickFB } from "./gamesim.js";
 import { viewFor, DEF_SETS } from "./personnel.js";
@@ -65,10 +65,10 @@ const lastName = (n) => { const w = String(n || "").split(" ").filter((x) => !/^
 const narrow = () => typeof window !== "undefined" && window.innerWidth < 700;
 function Field({ los, children }) {
   const lines = [];
-  for (let i = 0; i <= 10; i++) lines.push(<div key={i} style={{ position: "absolute", left: 0, right: 0, top: `${i * 10}%`, borderTop: `1px solid rgba(255,255,255,${i % 2 ? 0.08 : 0.16})` }} />);
+  for (let i = 0; i <= 10; i++) lines.push(<div key={i} style={{ position: "absolute", left: 0, right: 0, top: `${i * 10}%`, borderTop: `1px solid rgba(255,255,255,${MOBILE ? (i % 2 ? 0.08 : 0.16) : i % 2 ? 0.03 : 0.07})` }} />);
   return (
     <div style={{ overflowX: "auto" }}>
-      <div style={{ position: "relative", width: "100%", maxWidth: 540, margin: "0 auto", minWidth: narrow() ? 340 : 0, aspectRatio: MOBILE ? "1 / 0.84" : narrow() ? "1 / 1.08" : "16 / 11", borderRadius: 10, overflow: "hidden", border: "1px solid #14532d2e", background: "repeating-linear-gradient(180deg,#166534 0 10%,#15803d 10% 20%)" }}>
+      <div style={{ position: "relative", width: "100%", maxWidth: MOBILE ? 540 : "none", margin: "0 auto", minWidth: narrow() ? 340 : 0, aspectRatio: MOBILE ? "1 / 0.84" : narrow() ? "1 / 1.08" : "16 / 8.6", borderRadius: MOBILE ? 10 : 16, overflow: "hidden", border: "1px solid #14532d2e", background: MOBILE ? "repeating-linear-gradient(180deg,#166534 0 10%,#15803d 10% 20%)" : "radial-gradient(ellipse at 50% 40%,#166534,#0f3a22 75%)" }}>
         {lines}
         {[25, 75].map((x) => <div key={x} style={{ position: "absolute", top: 0, bottom: 0, left: `${x}%`, borderLeft: "2px dashed rgba(255,255,255,0.12)" }} />)}
         <div title="Line of scrimmage" style={{ position: "absolute", left: 0, right: 0, top: `${los + 4.5}%`, borderTop: "2px solid #60a5fa" }} />
@@ -82,8 +82,9 @@ function Field({ los, children }) {
 export const spotName = (pos, idx) => (SPEC_TAG[pos] ? SPEC_TAG[pos] : pos === "DL" && idx < 4 ? DL_SLOTS[idx] : ROLE_SLOTS[pos]?.[idx] ? ROLE_SLOTS[pos][idx] : pos === "FB" ? "FB" : STARTERS[pos] > 1 || idx > 0 ? `${pos}${idx + 1}` : pos);
 // His rating at a spot: linemen as edge or tackle, linebackers, corners and receivers at their role.
 export const spotOvr = (p, pos, idx) => (!p ? null : pos === "DL" && idx < 4 ? dlOvrAt(p, slotKind(idx)) : ROLE_SLOTS[pos]?.[idx] ? roleOvr(p, ROLE_SLOTS[pos][idx]) : single(pos) ? shown(p, pos) : p.ovr);
-function Spot({ p: p0, pos, idx, x, y, on, onClick }) {
+function Spot({ p: p0, pos, idx, x, y, on, onClick, share }) {
   const sm = narrow();
+  if (!MOBILE && !sm) return <WideSpot p={p0} pos={pos} idx={idx} x={x} y={y} on={on} onClick={onClick} share={share} />;
   const label = spotName(pos, idx);
   const p = p0 ? { ...p0, ovr: spotOvr(p0, pos, idx) } : p0;
   return (
@@ -91,6 +92,26 @@ function Spot({ p: p0, pos, idx, x, y, on, onClick }) {
       <span style={{ width: sm ? 30 : 36, height: sm ? 30 : 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: p ? "#0b1220" : "#0b122099", border: `3px solid ${on ? "#facc15" : p?.injured ? C.rd : colorOf(pos)}`, boxShadow: on ? "0 0 0 3px #facc1566" : "0 2px 6px #0008", color: p ? oC(p.ovr) : C.mt, fontWeight: 900, fontSize: sm ? 12 : 14 }}>{p ? p.ovr : "—"}</span>
       <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", background: colorOf(pos), borderRadius: 3, padding: "0 4px", lineHeight: "14px" }}>{label}</span>
       {!(sm && ["LT", "LG", "C", "RG", "RT", "DL"].includes(pos)) && <span style={{ fontSize: sm ? 9 : ["LT", "LG", "C", "RG", "RT"].includes(pos) ? 10 : 11, fontWeight: 700, color: "#fff", textShadow: "0 1px 2px #000", maxWidth: sm ? 52 : ["LT", "LG", "C", "RG", "RT"].includes(pos) ? 46 : 70, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p ? lastName(p.name) : "Empty"}</span>}
+    </button>
+  );
+}
+
+// A spot on the desktop field: his rating in a ring that fills with his share of the snaps, the
+// spot's badge, and his last name in full.
+function WideSpot({ p: p0, pos, idx, x, y, on, onClick, share }) {
+  const label = spotName(pos, idx);
+  const p = p0 ? { ...p0, ovr: spotOvr(p0, pos, idx) } : p0;
+  const r = 24, c = 2 * Math.PI * r, v = share == null ? 100 : share;
+  const ol = ["LT", "LG", "C", "RG", "RT"].includes(pos);
+  return (
+    <button onClick={onClick} title={p ? `${label}: ${p.name} (${p.ovr})${share != null ? ` · ${share}% of the snaps` : ""}` : `${label}: empty`} style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%,-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "transparent", border: 0, cursor: "pointer", padding: 0, width: ol ? 84 : 110 }}>
+      <svg width="56" height="56" viewBox="0 0 56 56" style={{ filter: "drop-shadow(0 2px 6px #0009)" }}>
+        <circle cx="28" cy="28" r={r} fill="#0b1220" stroke="#ffffff1f" strokeWidth="4" />
+        {p && <circle cx="28" cy="28" r={r} fill="none" stroke={on ? "#facc15" : "#22c55e"} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(c * v) / 100} ${c}`} transform="rotate(-90 28 28)" />}
+        <text x="28" y="33.5" textAnchor="middle" fontWeight="900" fontSize="17" fill={p ? oC(p.ovr) : C.mt}>{p ? p.ovr : "—"}</text>
+      </svg>
+      <span style={{ fontSize: 10, fontWeight: 900, color: "#fff", background: colorOf(pos), borderRadius: 4, padding: "0 5px", lineHeight: "15px" }}>{label}</span>
+      <span style={{ fontSize: ol ? 12 : 13, fontWeight: 800, color: "#fff", textShadow: "0 1px 3px #000", whiteSpace: "nowrap" }}>{p ? lastName(p.name) : "Empty"}</span>
     </button>
   );
 }
@@ -194,21 +215,31 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
     setDepthOrder((d) => ({ ...d, WR: order0("WR").map((p) => p.id).filter((id) => id !== player.id), TE: ids }));
     clearSnaps("WR", "TE");
   };
+  // the specialists at a position (desktop panel): who comes on in which situation
+  const situations = (pos) => {
+    if (!["RB", "DL", "LB"].includes(pos)) return [];
+    const healthy = roster.filter((p) => !p.injured), o = (x) => depthOrderFor(healthy, depthOrder, x, snaps), r = resolveSpecs(o, o);
+    if (pos === "RB") return r.rb1 ? [["Short yardage", (r.PWHB || r.rb1).name], ["3rd down", (r.RB3D || r.rb1).name]] : [];
+    if (pos === "DL") return r.rush.length ? r.rush.map(([on, off, role]) => [`Pass rush (${SPEC_TAG[role]})`, `${on.name} for ${lastName(off.name)}`]) : [["Pass rush", "The starters stay on"]];
+    const s = r.subLB.nickel || r.subLB.dime;
+    return [["Sub linebacker", s ? `${s[0].name} for ${lastName(s[1].name)}` : "The starters stay on"]];
+  };
   const pickView = pick ? (
             <>
               <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 6 }}>{spotName(pick[0], pick[1])} <span style={{ fontSize: 12, color: C.mt, fontWeight: 600 }}>· {pick[0] === "DL" ? (slotKind(pick[1]) === "EDGE" ? "edge rusher" : "defensive tackle") : ROLE_SLOTS[pick[0]]?.[pick[1]] ? ROLE_NAME[ROLE_SLOTS[pick[0]][pick[1]]] : SPEC_ROLES[pick[0]] ? SPEC_ROLES[pick[0]].label.toLowerCase() : RET[pick[0]] ? RET[pick[0]] : `${STARTERS[pick[0]]} starter${STARTERS[pick[0]] > 1 ? "s" : ""}`}</span></div>
-              {ROLE_SLOTS[pick[0]]?.[pick[1]] && <div style={{ fontSize: 12, color: "#cbd5e1", background: C.bg, borderRadius: 6, padding: "5px 8px", marginBottom: 6, lineHeight: 1.4 }}><b style={{ color: C.gd }}>Wants:</b> {ROLE_WANTS[roleKind(ROLE_SLOTS[pick[0]][pick[1]])]} The number is each player's rating here (his natural rating after the slash; ★ = his natural role).{pick[0] === "LB" && pick[1] === 0 ? " Plays in base only (against two tight ends or a fullback)." : pick[0] === "CB" && pick[1] === 2 ? " Plays in nickel and dime: most of the snaps in today's NFL." : pick[0] === "CB" && pick[1] === 0 ? " Follows the other team's best outside receiver." : ""}</div>}
+              {MOBILE && ROLE_SLOTS[pick[0]]?.[pick[1]] && <div style={{ fontSize: 12, color: "#cbd5e1", background: C.bg, borderRadius: 6, padding: "5px 8px", marginBottom: 6, lineHeight: 1.4 }}><b style={{ color: C.gd }}>Wants:</b> {ROLE_WANTS[roleKind(ROLE_SLOTS[pick[0]][pick[1]])]} The number is each player's rating here (his natural rating after the slash; ★ = his natural role).{pick[0] === "LB" && pick[1] === 0 ? " Plays in base only (against two tight ends or a fullback)." : pick[0] === "CB" && pick[1] === 2 ? " Plays in nickel and dime: most of the snaps in today's NFL." : pick[0] === "CB" && pick[1] === 0 ? " Follows the other team's best outside receiver." : ""}</div>}
               {SPEC_ROLES[pick[0]] && <div style={{ fontSize: 12, color: "#cbd5e1", background: C.bg, borderRadius: 6, padding: "5px 8px", marginBottom: 6, lineHeight: 1.4 }}><b style={{ color: C.gd }}>{SPEC_ROLES[pick[0]].when}.</b> {SPEC_ROLES[pick[0]].wants} The number is each player's fit for the job. {(depthOrder || {})[pick[0]]?.length ? <button onClick={() => setDepthOrder((d) => { const n = { ...d }; delete n[pick[0]]; return n; })} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 12, cursor: "pointer", padding: 0 }}>Leave it to the staff</button> : <span style={{ color: C.mt }}>The staff picks now (only someone clearly better at it than the starter).</span>}</div>}
               {!chosen.length && <div style={{ color: C.mt, fontSize: 13 }}>Nobody on the roster plays {SPEC_ROLES[pick[0]]?.pos || pick[0]}.</div>}
               {/* snap shares: one bar per spot on the field, split between who plays it (SnapBars.jsx) */}
               {!single(pick[0]) && setSnaps && depthList(pick[0]).some((p) => !p.injured) && <div style={{ background: C.bg, borderRadius: 12, padding: "8px 10px", margin: "0 0 8px" }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}><b style={{ fontSize: 13 }}>Snap shares</b><span style={{ fontSize: 12, color: C.mt }}>drag the white line between two players to trade snaps</span></div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}><b style={{ fontSize: 13 }}>Snap shares</b><span style={{ fontSize: 12, color: C.mt }}>drag a line to trade snaps</span></div>
                 <SplitBars pos={pick[0]} players={depthList(pick[0])} overrides={snaps || {}} shape={shape} mobile={MOBILE} onChange={(next) => setSnaps(next)} laneName={(k) => (SNAP_SLOTS[pick[0]] > 1 ? `${pick[0]}${k + 1}` : pick[0])} />
               </div>}
               <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 6px", flexWrap: "wrap" }}>
                 <button onClick={() => setPick(null)} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", padding: 0 }}>← All positions</button>
                 {!single(pick[0]) && setSnaps && order(pick[0]).some((p) => snaps?.[p.id] != null) && <button onClick={() => resetShares(pick[0])} style={{ background: "transparent", border: "1px solid #ffffff10", color: "#cbd5e1", borderRadius: 6, padding: "2px 8px", fontSize: 12, cursor: "pointer" }}>Reset snaps to auto</button>}
                 <details style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}><summary style={{ cursor: "pointer", color: "#94a3b8" }}>How this works</summary><div style={{ marginTop: 4, maxWidth: 420 }}>
+              {!MOBILE && ROLE_SLOTS[pick[0]]?.[pick[1]] && <div style={{ marginBottom: 4 }}><b style={{ color: C.gd }}>{spotName(pick[0], pick[1])} wants:</b> {ROLE_WANTS[roleKind(ROLE_SLOTS[pick[0]][pick[1]])]} The number is each player's rating here (his natural rating after the slash; ★ = his natural role).</div>}
               {PARTNER[pick[0]] && setPositions && <div style={{ marginBottom: 4 }}>Tackles and guards play either side. Starting a {PARTNER[pick[0]]} here swaps the two.</div>}
               {RET[pick[0]] && <div style={{ marginBottom: 4 }}>Any receiver, back or defensive back can return. The number is his return rating (speed, acceleration, agility and a knack for it). A great returner flips field position and breaks a long one now and then, and it doesn't have to be a starter: a fast backup is a weapon here.</div>}
               {pick[0] === "DL" && <div style={{ marginBottom: 4 }}>Any lineman can play {slotKind(pick[1]) === "EDGE" ? "edge" : "tackle"} here. The number is his rating at this spot; edge rushers lose some inside and run stuffers lose some outside (his natural rating after the slash).</div>}
@@ -221,11 +252,12 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
                 const starter = startsNow(at).has(p.id);
                 return (
                   <React.Fragment key={`${at}${p.id}`}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "4px 4px", borderBottom: `1px solid ${C.bd}`, background: here ? "#facc1514" : "transparent", flexWrap: "wrap" }}>
-                    <span style={{ width: 40, fontSize: 12, fontWeight: 800, color: starter ? C.gn : C.mt }}>{at === pick[0] && !starter ? `#${i + 1}` : rowLabel(at, i)}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, padding: MOBILE ? "4px 4px" : "7px 4px", borderBottom: `1px solid ${C.bd}`, background: here ? "#facc1514" : "transparent", flexWrap: MOBILE ? "wrap" : "nowrap" }}>
+                    {!MOBILE && !single(pick[0]) && <span style={{ width: 4, height: 30, borderRadius: 2, flexShrink: 0, background: (at === pick[0] && (shares(pick[0])[p.id] || 0) > 0 && snapColor(depthList(pick[0]), p.id)) || "transparent" }} />}
+                    <span style={{ width: MOBILE ? 40 : 36, flexShrink: 0, fontSize: 12, fontWeight: 800, color: starter ? C.gn : C.mt }}>{at === pick[0] && !starter ? `#${i + 1}` : rowLabel(at, i)}</span>
                     <Face s={p.face} sz={22} />
-                    <div style={{ flex: 1, minWidth: 120 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} onClick={() => setSel(p)}>{p.name}</div>
+                    <div style={{ flex: 1, minWidth: MOBILE ? 120 : 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, cursor: "pointer", lineHeight: 1.25, ...(MOBILE ? { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } : {}) }} onClick={() => setSel(p)}>{p.name}</div>
                       <div style={{ fontSize: 11, color: C.mt }}>{single(pick[0]) && <b style={{ marginRight: 4 }}>{posTag(p)} {p.ovr}</b>}{!RET[pick[0]] && p.pos === "TE" && pick[0] === "WR" && <b style={{ color: "#67e8f9", marginRight: 4 }}>TE {p.ovr}{at === "WR" ? " · split out" : ""}</b>}{back && <b style={{ color: "#67e8f9", marginRight: 4 }}>playing WR</b>}{p.pos === "DL" && <b style={{ color: naturalDL(p) === "DT" ? "#fb923c" : "#f472b6", marginRight: 4 }}>{naturalDL(p)}</b>}{ROLE_SLOTS[p.pos] && p.posAttrs && <b style={{ color: "#a5b4fc", marginRight: 4 }}>{({ OUT: "OUTSIDE", NB: "NICKEL" })[naturalRole(p)] || naturalRole(p)}{ROLE_SLOTS[pick[0]]?.[pick[1]] && roleKind(ROLE_SLOTS[pick[0]][pick[1]]) === naturalRole(p) ? " ★" : ""}</b>}Age {p.age}{p.injured ? <span style={{ color: C.rd, fontWeight: 700 }}> · injured</span> : ""}</div>
                     </div>
                     {(() => { const v = (p.pos === pick[0] || (pick[0] === "WR" && p.pos === "TE" && !back)) && (pick[0] === "DL" || ROLE_SLOTS[pick[0]]) ? spotOvr(p, pick[0], pick[1]) : shown(p, pick[0]); return <b title={RET[pick[0]] ? `Return rating (${posTag(p)} ${p.ovr} OVR)` : isSpec(pick[0]) ? `Fit as ${SPEC_ROLES[pick[0]].label.toLowerCase()} (${posTag(p)} ${p.ovr} OVR)` : v !== p.ovr ? `${p.ovr} at his natural spot` : undefined} style={{ fontSize: 16, color: oC(v), minWidth: 26, textAlign: "right" }}>{v}{v !== p.ovr && !single(pick[0]) && <span style={{ fontSize: 10, color: C.mt, fontWeight: 600 }}> /{p.ovr}</span>}</b>; })()}
@@ -239,6 +271,10 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
                   </React.Fragment>
                 );
               })}
+              {!MOBILE && situations(pick[0]).length > 0 && <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, color: C.mt, textTransform: "uppercase", marginBottom: 2 }}>Situations <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 600 }}>· set them under Specialists</span></div>
+                {situations(pick[0]).map(([k, v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "7px 0", borderTop: `1px solid ${C.bd}`, fontSize: 14 }}><span style={{ color: C.mt }}>{k}</span><b style={{ textAlign: "right" }}>{v}</b></div>)}
+              </div>}
             </>
   ) : null;
   return (
@@ -252,7 +288,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
         <span style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>{viewToggle}<button onClick={onAutoFill} style={{ minHeight: 38, borderRadius: 999, border: 0, padding: "0 16px", background: "#ffffff12", color: "#e2e8f0", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Auto-fill by overall</button></span>
       </div>}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
-        <div style={{ flex: "3 1 480px", minWidth: 0, maxWidth: 640 }}>
+        <div style={{ flex: MOBILE ? "3 1 480px" : "1 1 0", minWidth: 0, maxWidth: MOBILE ? 640 : "none" }}>
           {side === "offense" && !MOBILE && <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: C.mt, marginRight: 2 }}>Personnel</span>
             {Object.keys(FORMS).map((k) => <button key={k} onClick={() => { setForm(k); setPick(null); }} title={{ 11: "1 back, 1 tight end, 3 receivers", 12: "1 back, 2 tight ends, 2 receivers", 21: "2 backs (a fullback), 1 tight end, 2 receivers", 10: "1 back, 4 receivers", 13: "1 back, 3 tight ends, 1 receiver" }[k]} style={quietPill(form === k)}>{k}</button>)}
@@ -264,13 +300,16 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
             {team && <span style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}>Your lean: <b style={{ color: "#e2e8f0" }}>{(DEF_SETS.find((d) => d.key === (team.defPkg || "auto")) || DEF_SETS[0]).label}</b></span>}
           </div>}
           <Field los={set.los}>
-            {set.spots.map(([pos, idx, x, y]) => (
-              <Spot key={`${pos}${idx}`} p={isSpec(pos) ? specOn(pos) : order(pos)[idx]} pos={pos} idx={idx} x={x} y={y} on={pick && pick[0] === pos && pick[1] === idx} onClick={() => setPick(pos === "FB" ? ["RB", Math.max(1, order0("RB").indexOf(order("FB")[0]))] : [pos, idx])} />
-            ))}
+            {set.spots.map(([pos, idx, x, y]) => {
+              const full = order(pos), p = isSpec(pos) ? specOn(pos) : MOBILE ? full[idx] : full.filter((q) => !q.injured)[idx];
+              const at = MOBILE || !p || isSpec(pos) ? idx : Math.max(0, full.indexOf(p));
+              const sh = !MOBILE && p && !single(pos) && pos !== "FB" ? shares(pos)[p.id] ?? 0 : null;
+              return <Spot key={`${pos}${idx}`} p={p} pos={pos} idx={idx} x={x} y={y} share={sh} on={pick && pick[0] === pos && pick[1] === at} onClick={() => setPick(pos === "FB" ? ["RB", Math.max(1, order0("RB").indexOf(order("FB")[0]))] : [pos, at])} />;
+            })}
           </Field>
-          {!MOBILE && <div style={{ fontSize: 12, color: C.mt, marginTop: 6, textAlign: "center" }}>{side === "defense" ? "The SAM plays in base (against heavy sets), the nickel back (NB) in nickel and dime. " : side === "specialists" ? "Each comes on in his situation for the starter who fits it worse; his snaps and stats follow. " : ""}Tap a spot to change the starter and set snap shares. Red rings are injured starters.</div>}
+          {!MOBILE && (() => { const outs = roster.filter((p) => p.injured && sidePositions.includes(p.pos)); return <div style={{ display: "flex", gap: 16, fontSize: 12, color: C.mt, marginTop: 8, flexWrap: "wrap" }}><span>{side === "defense" ? "The SAM plays in base, the nickel back (NB) in nickel and dime. " : side === "specialists" ? "Each comes on in his situation for the starter who fits it worse. " : ""}The ring is his share of the snaps. Click a player to change who plays.</span>{outs.length > 0 && <span style={{ marginLeft: "auto", color: "#f87171", fontWeight: 800 }}>Out: {outs.map((p) => `${lastName(p.name)} (${p.pos})`).join(" · ")}</span>}</div>; })()}
         </div>
-        <div style={{ flex: "1 1 300px", minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ flex: MOBILE ? "1 1 300px" : "0 0 400px", minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
         <div style={{ background: MOBILE ? "#ffffff0f" : "#111827", borderRadius: MOBILE ? 18 : 20, padding: MOBILE ? "12px 14px" : "14px 16px" }}>
           {!pick || MOBILE ? (
             <>

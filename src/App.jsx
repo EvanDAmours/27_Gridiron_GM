@@ -111,6 +111,7 @@ import OwnerReview from "./OwnerReview.jsx";
 import Lombardi from "./Lombardi.jsx";
 import { repairSave } from "./repair.js";
 import { LinkedSnap } from "./SnapBars.jsx";
+import DepthSheet from "./DepthSheet.jsx";
 import { linkedSet } from "./snapEdit.js";
 import SeasonAwards, { superBowlMvp } from "./SeasonAwards.jsx";
 const ChampionGazette = lazyScreen(() => import("./ChampionGazette.jsx")); // loaded when first opened
@@ -1814,6 +1815,8 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       </div>);
       const viewBtns=<div role="tablist" style={{display:'inline-flex',background:'#ffffff0d',borderRadius:999,padding:3}}>{[['field','Field'],['list','List']].map(([k,l])=><button key={k} role="tab" aria-selected={depthView===k} onClick={()=>setDepthView(k)} style={{background:depthView===k?'#ffffff24':'transparent',color:depthView===k?'#fff':'#94a3b8',border:0,borderRadius:999,padding:'6px 14px',fontSize:14,fontWeight:800,cursor:'pointer'}}>{l}</button>)}</div>;
       if(depthView==='field')return(<div><DepthChart viewToggle={MOBILE?null:viewBtns} onList={MOBILE?()=>setDepthView('list'):null} roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} setSel={setSel} onAutoFill={autoFillAll} onMovePos={movePlayerTo} previewPos={movePreview} gamePlan={gamePlanEl} shape={userShape} personnel={{auto:"Auto",balanced:"Balanced",spread:"Spread",twoTE:"Two TE",fullback:"Fullback",heavy:"Heavy"}[ut?.personnel||"auto"]} team={ut} setPositions={moves=>setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(p=>moves[p.id]?{...p,pos:moves[p.id]}:p)}))}/></div>);
+      /* desktop list view: the two-deep sheet (DepthSheet.jsx); phones keep the list below */
+      if(!MOBILE)return(<DepthSheet roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} shape={userShape} setSel={setSel} onAutoFill={autoFillAll} viewToggle={viewBtns}/>);
       return(<div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',marginBottom:12,gap:8,flexWrap:'wrap'}}>
           {MOBILE&&<div style={{fontSize:20,fontWeight:900,color:'#e2e8f0',marginRight:'auto'}}>Depth Chart</div>}{viewBtns}

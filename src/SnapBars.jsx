@@ -6,6 +6,8 @@ import React from "react";
 import { laneSplit, transfer, sharesOf } from "./snapEdit.js";
 
 const PAL = ["#2563eb", "#7c3aed", "#0891b2", "#b45309", "#be185d", "#4d7c0f", "#475569", "#0f766e"];
+// a player's color in the bars (the rows beside them use the same)
+export const snapColor = (players, id) => { const i = players.filter((p) => !p.injured).findIndex((p) => p.id === id); return i < 0 ? null : PAL[i % PAL.length]; };
 const lastName = (n) => { const w = (n || "").split(" ").filter((x) => !/^(Jr\.?|Sr\.?|II|III|IV|V)$/.test(x)); return w[w.length - 1] || n; };
 
 // players: everyone at the position in depth order. overrides: your snap settings. onChange(next).
@@ -46,7 +48,7 @@ export function SplitBars({ pos, players, overrides, shape, onChange, laneName, 
             <div style={{ position: "relative", flex: 1, minWidth: 0, height: H, borderRadius: 10, overflow: "hidden", display: "flex", background: "#0b1220", userSelect: "none", touchAction: "none" }}>
               {lane.segs.map((s) => (
                 <div key={s.id} title={`${name[s.id]} ${s.v}%`} style={{ width: `${s.v}%`, background: color[s.id], display: "flex", alignItems: "center", justifyContent: "center", minWidth: 0, overflow: "hidden", color: "#fff", fontSize: 12, fontWeight: 800, whiteSpace: "nowrap" }}>
-                  {s.v >= 9 && <span style={{ overflow: "hidden", textOverflow: "ellipsis", padding: "0 4px" }}>{s.v >= (mobile ? 30 : 22) ? `${name[s.id]} ` : ""}{s.v}%</span>}
+                  {s.v >= 14 && <span style={{ padding: "0 4px" }}>{s.v >= 45 && name[s.id].length <= 11 ? `${name[s.id]} ` : ""}{s.v}%</span>}
                 </div>
               ))}
               {lane.open > 0 && <div title="Nobody's playing these snaps" style={{ width: `${lane.open}%`, background: "repeating-linear-gradient(135deg,#ffffff08 0 6px,transparent 6px 12px)" }} />}
