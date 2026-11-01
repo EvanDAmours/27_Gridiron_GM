@@ -2187,4 +2187,8 @@ export const PATCH_NOTES = [
     "Your snap settings for running backs now stand: set your back to 100% and he gets every carry. The engine used to bring in the next back up for a breather (about one carry in six, more late in games) even when you'd set your starter to every snap.",
     "Leave your backs' snaps to the staff and the backup still spells the starter now and then, as before (other clubs too). Your backup only gets the snaps you give him; in two-back sets he lines up as the blocking fullback, without carries.",
   ] },
+  { v: "5.35", date: "2026-10-23", title: "Field goal on any down", notes: [
+    "Calling your own plays in a live game, you can kick a field goal on any down, not just 4th: whenever you're in range, a \"Kick a field goal\" button (with the distance and your kicker) sits under the playbook, next to the kneel. Twenty seconds left on 2nd down, take the points.",
+    "On phones too.",
+  ] },
 ];

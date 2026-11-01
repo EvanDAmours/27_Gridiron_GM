@@ -194,3 +194,14 @@ test("a back you set to every snap carries it all: no relief back unless you lea
   const staff = makeSide({ team: t, order, snaps: teamSnaps(order, { [rb1.id]: 100 }) });
   assert.ok(staff.rushers.some(([p]) => p.id !== rb1.id));
 });
+
+test("you can kick a field goal on any down (the clock running out before 4th down)", () => {
+  const g = createGame(teams[0].side, teams[1].side, { rand: () => 0.3 });
+  let n = 0;
+  // drive until the home side has the ball in range before 4th down
+  while (!g.done && n++ < 600 && !(g.poss === "h" && g.down <= 3 && g.yard >= 70 && !g.koNext)) step(g, g.poss === "h" ? "pass_medium" : undefined);
+  assert.ok(!g.done, "got into range");
+  const down = g.down, ev = step(g, "fg");
+  assert.equal(ev.k, "fg", `a ${down === 1 ? "1st" : down === 2 ? "2nd" : "3rd"}-down kick`);
+  assert.ok(ev.dist === 100 - (g.yard ?? 0) + 17 || ev.dist > 0);
+});

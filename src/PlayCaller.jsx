@@ -96,19 +96,26 @@ function DeskCaller({ g, phase, fourth, pending, targets = [], mobile, onFourth,
       <div style={{ ...grid(cols), marginBottom: 10 }}>{RUNS.map(([id, icon, l, n]) => <Tile key={id} icon={icon} label={l} note={n} tone="#facc15" onClick={() => onCall(id)} />)}</div>
       <div style={{ fontSize: 13, fontWeight: 800, color: "#60a5fa", margin: "0 0 5px" }}>Pass</div>
       <div style={grid(cols)}>{PASSES.map(([id, icon, l, n]) => <Tile key={id} icon={icon} label={l} note={n} tone="#60a5fa" onClick={() => onCall(id)} />)}</div>
-      <Extras pat={pat} onPat={onPat} kneel={kneelOk(qtr, clock, lead)} onKneel={() => onCall("kneel")} />
+      <Extras pat={pat} onPat={onPat} kneel={kneelOk(qtr, clock, lead)} onKneel={() => onCall("kneel")} fg={fgNow(g)} onFG={() => onCall("fg")} />
     </Card>
   );
 }
 
+// The field goal on any down: the kicker and the kick's length, when he's in range.
+const fgNow = (g) => {
+  const k = g.off.roster.filter((p) => p.pos === "K" && !p.injured).sort((a, b) => b.ovr - a.ovr)[0];
+  return k && g.yard >= 52 ? { k, dist: 100 - g.yard + 17 } : null;
+};
 // Taking a knee: late in a half, or protecting a lead in the fourth, instead of risking a turnover.
 const kneelOk = (qtr, clock, lead) => clock != null && (((qtr === 2 || qtr === 4) && clock <= 120) || (qtr === 4 && lead > 0 && clock <= 300));
 // Under the playbook: the victory formation when it's there, and your call on the try after a touchdown.
-function Extras({ pat, onPat, kneel, onKneel, compact }) {
+// fg: { dist, k } when a kick is in range (any down: before the half or the clock runs out, take the points).
+function Extras({ pat, onPat, kneel, onKneel, fg, onFG, compact }) {
   if (!onPat) return null;
   const seg = (v, l) => <button key={l} type="button" onClick={() => onPat(v)} style={pill(pat === v)}>{l}</button>;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+      {fg && <button type="button" onClick={onFG} style={{ height: 34, padding: "0 14px", borderRadius: 99, border: "1px solid #facc1566", background: "#facc151a", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Kick a {fg.dist}-yd field goal{compact ? "" : ` (${fg.k.name.split(" ").slice(-1)[0]}, ${fg.k.ovr})`}</button>}
       {kneel && <button type="button" onClick={onKneel} style={{ height: 34, padding: "0 14px", borderRadius: 99, border: "1px solid #94a3b855", background: "#0b1220", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>Kneel (victory formation)</button>}
       <span style={{ marginLeft: "auto", fontSize: 12, color: "#94a3b8", fontWeight: 700 }}>After a TD</span>
       <div style={{ display: "flex", background: "#0b1220", borderRadius: 99, padding: 3, boxShadow: "inset 0 0 0 1px #ffffff14" }}>{seg(null, "Coach")}{seg("one", "Kick for 1")}{seg("two", "Go for 2")}</div>
@@ -165,6 +172,6 @@ function PhoneCaller({ g, phase, fourth, pending, targets = [], onFourth, onCall
     {row([tile("ri", "Inside", last(rb), "#facc15", () => onCall("run_inside")), tile("ro", "Outside", rb ? `${rb.spd} spd` : "", "#facc15", () => onCall("run_outside")), tile("rs", "Screen", "to the back", "#facc15", () => onCall("run_screen")), tile("qr", "QB Run", last(qb), "#facc15", () => onCall("scramble"))])}
     <div style={{ fontSize: 13, fontWeight: 800, color: "#60a5fa", margin: "10px 2px 5px" }}>Pass</div>
     {row([tile("pq", "Quick", "safe", "#60a5fa", () => onCall("pass_quick")), tile("pm", "Medium", "balanced", "#60a5fa", () => onCall("pass_medium")), tile("pd", "Deep", "big or bust", "#60a5fa", () => onCall("pass_deep")), tile("pr", "RPO", "he reads it", "#60a5fa", () => onCall("pass_rpo"))])}
-    <Extras compact pat={pat} onPat={onPat} kneel={kneelOk(qtr, clock, lead)} onKneel={() => onCall("kneel")} />
+    <Extras compact pat={pat} onPat={onPat} kneel={kneelOk(qtr, clock, lead)} onKneel={() => onCall("kneel")} fg={fgNow(g)} onFG={() => onCall("fg")} />
   </>);
 }

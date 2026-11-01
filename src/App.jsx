@@ -1227,7 +1227,7 @@ const nt=newLeagueYear(ts.map((t,i)=>({...t,rollover:_ro[i]||0,roster:t.roster.m
   const coachExtTerms=(c,yrs)=>({yrs,salary:c.role==="HC"?0:+((c.salary||0)*(1+0.04*yrs+(c.rating>=80?0.06:0))).toFixed(1)});
   const extendCoach=(role,yrs)=>{if(scPts<1)return sm("Need 1 SP to extend a coach");const nt=[...teams];const key=role.toLowerCase();const c=nt[ui].coach?.[key];if(!c)return;if(c.role==="HC"&&yrs>hcExtMax(c,yr))return sm(`${c.name} plans to retire, so he will not sign that long`);const t=coachExtTerms(c,yrs);nt[ui]={...nt[ui],coach:{...nt[ui].coach,[key]:{...c,contract:(c.contract||1)+yrs,salary:c.role==="HC"?c.salary:t.salary}}};setTeams(nt);setScPts(p=>p-1);setLog(l=>[`Extended ${c.name} (${role}) ${yrs} more year${yrs>1?"s":""}${c.role==="HC"?"":` at $${t.salary}M`}`,...l.slice(0,149)]);sm(`${c.name} extended through ${yr+(c.contract||1)+yrs-1}`);setCoachExt(null);};
   const reSignCoach=(role)=>{if(scPts<1)return sm("Need 1 SP");const nt=[...teams];const c=nt[ui].coach?.[role.toLowerCase()];if(!c)return;c.contract=(c.contract||1)+2;setTeams(nt);setScPts(p=>p-1);sm(`Re-signed ${c.name} +2yr`);};
-  const selectCall=id=>{if(id==="kneel"){advanceLivePlay("kneel");return;}setLivePendingCall(id);setLivePhase("presnap");};
+  const selectCall=id=>{/* the kneel and the field goal go straight to the snap */if(id==="kneel"||id==="fg"){advanceLivePlay(id);return;}setLivePendingCall(id);setLivePhase("presnap");};
   /* your extra-point call after your touchdowns: null (the coach decides), "one" or "two" */
   const setPatCall=v=>{setLivePat(v);const g=liveGameRef.current?.g;if(g&&liveSim){const side=liveSim.h===ui?"h":"a";g.patCall={...(g.patCall||{}),[side]:v};}};
   const hikeSnap=()=>{
