@@ -2208,4 +2208,9 @@ export const PATCH_NOTES = [
     "List view is now a two-deep sheet, the way NFL clubs publish theirs: one row per spot on the field (QB, RB, WR1-3, TE, the line; the front four, linebackers, corners, safeties) with the starter, 2nd and 3rd, and each player's share of the snaps. Pick a row to edit it beside the sheet: the snap-share bars, who could start there, and who's out this week.",
     "Phones keep their own layout.",
   ] },
+  { v: "5.39", date: "2026-10-23", title: "One set of names", notes: [
+    "Depth chart: one set of names everywhere. The snap-share bars, the player list beside the field and the two-deep sheet now use the same spots as the field: X, Z and SLOT for receivers; SAM, MIKE and WILL for linebackers; CB1, CB2 and NB for corners; LE, DT1, DT2 and RE up front; FS and SS (no more WR1/WR2/WR3 on one screen and X/Z/SLOT on the next).",
+    "Each bar belongs to that role: the X bar always starts with the man the field shows at X, and its grey part says who takes the rest of that spot's snaps (two-tight-end and fullback sets for a receiver, nickel and dime for the SAM, base defense for the nickel back).",
+    "The list beside the field follows the field: starters in role order, then the bench, and an injured player at the bottom marked OUT.",
+  ] },
 ];

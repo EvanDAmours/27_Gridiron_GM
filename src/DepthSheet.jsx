@@ -9,6 +9,7 @@ import { depthOrderFor } from "./depth.js";
 import { SNAP_SLOTS } from "./snaps.js";
 import { laneSplit, sharesOf } from "./snapEdit.js";
 import { SplitBars } from "./SnapBars.jsx";
+import { spotName } from "./DepthChart.jsx";
 
 const SIDES = {
   offense: { label: "Offense", rows: [["QB", 0], ["RB", 0], ["WR", 0], ["WR", 1], ["WR", 2], ["TE", 0], ["LT", 0], ["LG", 0], ["C", 0], ["RG", 0], ["RT", 0]] },
@@ -16,7 +17,8 @@ const SIDES = {
   special: { label: "Special teams", rows: [["K", 0], ["P", 0]] },
 };
 const NAME = { QB: "Quarterback", RB: "Running back", WR: "Wide receiver", TE: "Tight end", LT: "Left tackle", LG: "Left guard", C: "Center", RG: "Right guard", RT: "Right tackle", DL: "Defensive line", LB: "Linebacker", CB: "Cornerback", S: "Safety", K: "Kicker", P: "Punter" };
-const label = (pos, k) => ((SNAP_SLOTS[pos] || 1) > 1 ? `${pos}${k + 1}` : pos);
+// the spot's name, the same as on the field: X, Z, SLOT; SAM, MIKE, WILL; CB1, CB2, NB; LE, DT1...
+const label = (pos, k) => spotName(pos, k);
 const injNote = (p) => `${p.injType || "Injured"}${p.injWk ? `, ${p.injWk} wk${p.injWk > 1 ? "s" : ""}` : ""}`;
 
 export default function DepthSheet({ roster, depthOrder, setDepthOrder, snaps, setSnaps, shape, setSel, onAutoFill, viewToggle }) {
@@ -24,11 +26,13 @@ export default function DepthSheet({ roster, depthOrder, setDepthOrder, snaps, s
   const [row, setRow] = useState(null); // [pos, k]
   const rows = SIDES[side].rows;
   const list = (pos) => depthOrderFor(roster, depthOrder, pos);
+  // the order game day plays them in (your snap shares included): the starters by role, as the field shows
+  const field = (pos) => depthOrderFor(roster, depthOrder, pos, snaps);
   const healthy = (pos) => list(pos).filter((p) => !p.injured);
   const byId = Object.fromEntries(roster.map((p) => [p.id, p]));
   const memo = {};
   const view = (pos) => (memo[pos] ||= (() => {
-    const lanes = laneSplit(pos, list(pos), snaps || {}, shape), sh = sharesOf(pos, list(pos), snaps || {}, shape);
+    const lanes = laneSplit(pos, field(pos), snaps || {}, shape), sh = sharesOf(pos, list(pos), snaps || {}, shape);
     const starters = lanes.map((l) => l.segs[0]?.id).filter(Boolean);
     const bench = healthy(pos).filter((p) => !starters.includes(p.id));
     return { lanes, sh, starters, bench };
@@ -113,7 +117,7 @@ export default function DepthSheet({ roster, depthOrder, setDepthOrder, snaps, s
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: 16 }}>{label(sp, sk)}</b><span style={{ color: C.mt, fontSize: 13 }}>{NAME[sp]}</span><button onClick={() => resetPos(sp)} style={{ marginLeft: "auto", background: "transparent", border: 0, color: "#7dd3fc", fontSize: 12, cursor: "pointer", padding: 0 }}>Reset to staff</button></div>
             {setSnaps && cands.length > 0 && <>
               <div style={{ fontSize: 12, color: C.mt, margin: "4px 0 2px" }}>Drag a line to trade snaps between two players</div>
-              <SplitBars pos={sp} players={list(sp)} overrides={snaps || {}} shape={shape} onChange={(n) => setSnaps(n)} laneName={(k) => label(sp, k)} />
+              <SplitBars pos={sp} players={field(sp)} overrides={snaps || {}} shape={shape} onChange={(n) => setSnaps(n)} laneName={(k) => label(sp, k)} />
             </>}
             <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, color: C.mt, textTransform: "uppercase", margin: "14px 0 4px" }}>Could start here</div>
             {cands.map((p) => (

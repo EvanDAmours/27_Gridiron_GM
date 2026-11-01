@@ -8,6 +8,8 @@ import { laneSplit, transfer, sharesOf } from "./snapEdit.js";
 const PAL = ["#2563eb", "#7c3aed", "#0891b2", "#b45309", "#be185d", "#4d7c0f", "#475569", "#0f766e"];
 // a player's color in the bars (the rows beside them use the same)
 export const snapColor = (players, id) => { const i = players.filter((p) => !p.injured).findIndex((p) => p.id === id); return i < 0 ? null : PAL[i % PAL.length]; };
+// what the grey part of a bar is: the snaps the club's personnel gives that spot to someone else
+const OTHER = { WR: "TE & FB sets", TE: "other sets", LB: "nickel & dime", CB: "base defense", S: "other packages", DL: "other fronts" };
 const lastName = (n) => { const w = (n || "").split(" ").filter((x) => !/^(Jr\.?|Sr\.?|II|III|IV|V)$/.test(x)); return w[w.length - 1] || n; };
 
 // players: everyone at the position in depth order. overrides: your snap settings. onChange(next).
@@ -52,7 +54,7 @@ export function SplitBars({ pos, players, overrides, shape, onChange, laneName, 
                 </div>
               ))}
               {lane.open > 0 && <div title="Nobody's playing these snaps" style={{ width: `${lane.open}%`, background: "repeating-linear-gradient(135deg,#ffffff08 0 6px,transparent 6px 12px)" }} />}
-              {lane.other > 0 && <div title="Other personnel: your formations put a different position in this spot" style={{ width: `${lane.other}%`, background: "#334155", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 11, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden" }}>{lane.other >= 18 ? "other personnel" : ""}</div>}
+              {lane.other > 0 && <div title={`${OTHER[pos] || "Other personnel"}: your formations put someone else in this spot`} style={{ width: `${lane.other}%`, background: "#334155", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 11, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden" }}>{lane.other >= 24 ? (OTHER[pos] || "other personnel") : lane.other >= 12 ? `${lane.other}%` : ""}</div>}
               {lane.segs.slice(0, -1).map((s, j) => {
                 acc += s.v;
                 const b = lane.segs[j + 1];

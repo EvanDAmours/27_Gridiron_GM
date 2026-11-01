@@ -53,28 +53,24 @@ export function transfer(pos, players, overrides, shape, fromId, toId, amount) {
   return explicit(overrides, s);
 }
 
-// The spots on the field for a position and who plays each, from the shares: each starter has his
-// own spot (as much of it as he plays), the bench fills the rest from the last spot up (backups
-// spell the slot and WR3 first), and a spot the club's personnel doesn't always use shows that as
-// "other" (a two-tight-end club's third receiver). Returns [{ segs: [{ id, v }], other }].
+// The spots on the field for a position and who plays each, named the way the depth chart names
+// them (X, Z, SLOT; SAM, MIKE, WILL; CB1, CB2, NB; LE, DT1, DT2, RE; FS, SS). players: the
+// position in the depth chart's order (the starters by role first, as the field shows them). Each
+// starter has his spot's bar (as much of it as he plays), the bench fills the bars from the last
+// one up (backups spell the slot and the WILL first), and what's left of a bar is the snaps the
+// club's personnel gives that spot to someone else (a two-tight-end set, a nickel back).
+// Returns [{ segs: [{ id, v }], other }].
 export function laneSplit(pos, players, overrides = {}, shape) {
   const s = sharesOf(pos, players, overrides, shape);
-  const order = healthyOf(players).map((p, i) => [p, i]).sort((a, b) => s[b[0].id] - s[a[0].id] || a[1] - b[1]).map(([p]) => p);
-  const n = SNAP_SLOTS[pos] || 1, budget = snapBudget(pos, shape);
-  // the room each spot really has (the budget can be less than n full spots)
-  const cap = Array.from({ length: n }, (_, k) => Math.max(0, Math.min(100, budget - 100 * k)));
-  const lanes = cap.map(() => ({ segs: [], other: 0 }));
-  const room = [...cap];
-  order.slice(0, n).forEach((p, k) => { const v = Math.min(s[p.id], room[k]); if (v > 0) { lanes[k].segs.push({ id: p.id, v }); room[k] -= v; } });
+  const order = healthyOf(players).filter((p) => s[p.id] != null);
+  const n = SNAP_SLOTS[pos] || 1;
+  const lanes = Array.from({ length: n }, () => ({ segs: [], other: 0, open: 0 }));
+  const room = Array(n).fill(100);
+  order.slice(0, n).forEach((p, k) => { const v = Math.min(100, s[p.id]); if (v > 0) { lanes[k].segs.push({ id: p.id, v }); room[k] -= v; } });
   for (const p of order.slice(n)) {
     let left = s[p.id];
     for (let k = n - 1; k >= 0 && left > 0; k--) { const v = Math.min(left, room[k]); if (v > 0) { lanes[k].segs.push({ id: p.id, v }); room[k] -= v; left -= v; } }
   }
-  // a starter who plays past his own spot's room (rare): the rest wherever there's room
-  order.slice(0, n).forEach((p, k) => {
-    let left = s[p.id] - (lanes[k].segs.find((x) => x.id === p.id)?.v || 0);
-    for (let j = n - 1; j >= 0 && left > 0; j--) { const v = Math.min(left, room[j]); if (v > 0) { lanes[j].segs.push({ id: p.id, v }); room[j] -= v; left -= v; } }
-  });
-  lanes.forEach((l, k) => { l.other = 100 - cap[k]; l.open = room[k]; });
+  lanes.forEach((l, k) => { l.other = room[k]; });
   return lanes;
 }
