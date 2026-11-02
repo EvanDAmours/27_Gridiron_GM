@@ -10,7 +10,7 @@ import { saveJSON, loadJSON, removeJSON } from "./storage.js";
 import GmOutro from "./GmOutro.jsx";
 import { isFaceOf } from "./faceOfFranchise.js";
 import { capCompliance, openFreeAgency as openFA, aiSignings, starterSignings, fillRosters, askingPrice, isFranchisePlayer, shortGaps, fillDepth, keepBackups, setMarket, leagueShift } from "./offseason.js";
-import DepthChart from "./DepthChart.jsx";
+import DepthChart, { openDepthSide } from "./DepthChart.jsx";
 import { depthSlots, depthOrderFor, byDepth, STARTERS as DEPTH_STARTERS } from "./depth.js";
 import CapOverview from "./CapOverview.jsx";
 import DevFocusCard from "./DevFocus.jsx";
@@ -1759,7 +1759,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       const getOrder=(pos)=>depthOrderFor(roster,depthOrder,pos);
       const movePlayer=(pos,idx,dir)=>{const order=getOrder(pos).map(p=>p.id);const ni=idx+dir;if(ni<0||ni>=order.length)return;[order[idx],order[ni]]=[order[ni],order[idx]];setDepthOrder(prev=>({...prev,[pos]:order}));};
       const autoFillPos=(pos)=>{const sorted=roster.filter(p=>p.pos===pos).sort((a,b)=>b.ovr-a.ovr).map(p=>p.id);setDepthOrder(prev=>({...prev,[pos]:sorted}));};
-      const autoFillAll=()=>{const o={};POS.forEach(pos=>{const ps=roster.filter(p=>p.pos===pos).sort((a,b)=>b.ovr-a.ovr);o[pos]=(pos==="DL"?arrangeDL(ps):ROLE_SLOTS[pos]?arrangeRoles(pos,ps):ps).map(p=>p.id);});setDepthOrder(o);sm('Depth chart auto-filled by OVR');};
+      const autoFillAll=()=>{const o={};POS.forEach(pos=>{/* by rating, but a fullback (Madden's FB) goes behind the halfbacks: he's the 21-personnel blocker, not the RB2 */const ps=roster.filter(p=>p.pos===pos).sort((a,b)=>(pos==='RB'?(a.mpos==='FB')-(b.mpos==='FB'):0)||b.ovr-a.ovr);o[pos]=(pos==="DL"?arrangeDL(ps):ROLE_SLOTS[pos]?arrangeRoles(pos,ps):ps).map(p=>p.id);});setDepthOrder(o);if(MOBILE)sm('Depth chart auto-filled by OVR');};
       const snapsFor=(pos,players)=>positionSnaps(pos,players.filter(p=>!p.injured),playingTime,userShape);
       const OFF_POS=['QB','RB','WR','TE','LT','LG','C','RG','RT'];const DEF_POS=['DL','LB','CB','S'];const ST_POS=['K','P'];
       const renderGroup=(label,positions)=>(<div key={label} style={{marginBottom:12}}>
@@ -1816,7 +1816,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
       const viewBtns=<div role="tablist" style={{display:'inline-flex',background:'#ffffff0d',borderRadius:999,padding:3}}>{[['field','Field'],['list','List']].map(([k,l])=><button key={k} role="tab" aria-selected={depthView===k} onClick={()=>setDepthView(k)} style={{background:depthView===k?'#ffffff24':'transparent',color:depthView===k?'#fff':'#94a3b8',border:0,borderRadius:999,padding:'6px 14px',fontSize:14,fontWeight:800,cursor:'pointer'}}>{l}</button>)}</div>;
       if(depthView==='field')return(<div><DepthChart viewToggle={MOBILE?null:viewBtns} onList={MOBILE?()=>setDepthView('list'):null} roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} locks={snapPins} setLocks={setSnapPins} setSel={setSel} onAutoFill={autoFillAll} onMovePos={movePlayerTo} previewPos={movePreview} gamePlan={gamePlanEl} shape={userShape} personnel={{auto:"Auto",balanced:"Balanced",spread:"Spread",twoTE:"Two TE",fullback:"Fullback",heavy:"Heavy"}[ut?.personnel||"auto"]} team={ut} setPositions={moves=>setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(p=>moves[p.id]?{...p,pos:moves[p.id]}:p)}))}/></div>);
       /* desktop list view: the two-deep sheet (DepthSheet.jsx); phones keep the list below */
-      if(!MOBILE)return(<DepthSheet roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} shape={userShape} setSel={setSel} onAutoFill={autoFillAll} viewToggle={viewBtns}/>);
+      if(!MOBILE)return(<DepthSheet roster={roster} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={playingTime} setSnaps={setPlayingTime} shape={userShape} setSel={setSel} onAutoFill={autoFillAll} viewToggle={viewBtns} locks={snapPins} setLocks={setSnapPins} onSpecialists={()=>{openDepthSide('specialists');setDepthView('field');}}/>);
       return(<div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',marginBottom:12,gap:8,flexWrap:'wrap'}}>
           {MOBILE&&<div style={{fontSize:20,fontWeight:900,color:'#e2e8f0',marginRight:'auto'}}>Depth Chart</div>}{viewBtns}

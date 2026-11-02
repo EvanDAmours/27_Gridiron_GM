@@ -2234,4 +2234,13 @@ export const PATCH_NOTES = [
     "Fixed: a real-life signing who had since gone on injured reserve could be signed a second time when you reopened a save (a duplicate of the same player on the club). Each real move now looks for the player on injured reserve, waivers and the retired list too before treating him as new to the league.",
     "Behind the scenes: the automatic checks that run after each update were failing (the reason for the failed-update emails). One caught the duplicate signing above; the other was a test script that hadn't kept up with the career setup screen and the Sim to... menu. Both are fixed.",
   ] },
+  { v: "5.44", date: "2026-10-23", title: "Depth chart: fixes for new players", notes: [
+    "Depth chart fixes from a new-player run-through. Picking a new starter now updates the menu right away: it shows him as the starter at the spot (before, it kept the old pick selected and renamed itself QB3).",
+    "Auto-fill asks before it replaces anything, and you can Undo it for a few seconds afterwards (in the field and list views). It also no longer starts a fullback at running back: halfbacks go ahead of fullbacks, so the fullback stays your 21-personnel blocker.",
+    "A How it works button explains the screen: why a starter can play well under 100% (hover any card for where the rest of his snaps go), how to set snaps and locks, and what specialists are.",
+    "The formation and package buttons now say what they show (1 RB · 1 TE · 3 WR...) and are labeled Show, since they only change the picture; what your team actually lines up in lives under Game plan.",
+    "Specialists use plain names on the field (Power back, 3rd-down back, Rush end, Rush tackle, Cover LB) and say when they come on and for whom.",
+    "No - and + on quarterbacks, linemen or kickers in the field view: one man plays every snap there (the list view still lets you).",
+    "The field and list views match: both say Auto-fill and Reset to auto, and the list view's Specialists tab takes you to the field's.",
+  ] },
 ];

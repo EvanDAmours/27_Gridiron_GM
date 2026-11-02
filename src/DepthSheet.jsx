@@ -10,6 +10,7 @@ import { SNAP_SLOTS } from "./snaps.js";
 import { laneSplit, sharesOf } from "./snapEdit.js";
 import { SplitBars } from "./SnapBars.jsx";
 import { spotName } from "./DepthChart.jsx";
+import AutoFill from "./AutoFill.jsx";
 
 const SIDES = {
   offense: { label: "Offense", rows: [["QB", 0], ["RB", 0], ["WR", 0], ["WR", 1], ["WR", 2], ["TE", 0], ["LT", 0], ["LG", 0], ["C", 0], ["RG", 0], ["RT", 0]] },
@@ -21,7 +22,7 @@ const NAME = { QB: "Quarterback", RB: "Running back", WR: "Wide receiver", TE: "
 const label = (pos, k) => spotName(pos, k);
 const injNote = (p) => `${p.injType || "Injured"}${p.injWk ? `, ${p.injWk} wk${p.injWk > 1 ? "s" : ""}` : ""}`;
 
-export default function DepthSheet({ roster, depthOrder, setDepthOrder, snaps, setSnaps, shape, setSel, onAutoFill, viewToggle }) {
+export default function DepthSheet({ roster, depthOrder, setDepthOrder, snaps, setSnaps, shape, setSel, onAutoFill, viewToggle, locks, setLocks, onSpecialists }) {
   const [side, setSide] = useState("offense");
   const [row, setRow] = useState(null); // [pos, k]
   const rows = SIDES[side].rows;
@@ -91,8 +92,8 @@ export default function DepthSheet({ roster, depthOrder, setDepthOrder, snaps, s
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-        <Chips items={Object.entries(SIDES).map(([k, s]) => [k, s.label])} value={side} onChange={(k) => { setSide(k); setRow(null); }} />
-        <span style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>{viewToggle}<button onClick={onAutoFill} style={{ minHeight: 38, borderRadius: 999, border: 0, padding: "0 16px", background: "#ffffff12", color: "#e2e8f0", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Auto-fill by overall</button></span>
+        <Chips items={[...Object.entries(SIDES).map(([k, s]) => [k, s.label]), ...(onSpecialists ? [["specialists", "Specialists"]] : [])]} value={side} onChange={(k) => { if (k === "specialists") { onSpecialists(); return; } setSide(k); setRow(null); }} />
+        <span style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>{viewToggle}<AutoFill onAutoFill={onAutoFill} depthOrder={depthOrder} setDepthOrder={setDepthOrder} snaps={snaps} setSnaps={setSnaps} locks={locks} setLocks={setLocks} /></span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 360px", gap: 16, alignItems: "start" }}>
         <div style={{ background: "#111827", borderRadius: 14, padding: "4px 0", overflow: "hidden" }}>
@@ -114,7 +115,7 @@ export default function DepthSheet({ roster, depthOrder, setDepthOrder, snaps, s
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ background: "#111827", borderRadius: 14, padding: 14 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: 16 }}>{label(sp, sk)}</b><span style={{ color: C.mt, fontSize: 13 }}>{NAME[sp]}</span><button onClick={() => resetPos(sp)} style={{ marginLeft: "auto", background: "transparent", border: 0, color: "#7dd3fc", fontSize: 12, cursor: "pointer", padding: 0 }}>Reset to staff</button></div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}><b style={{ fontSize: 16 }}>{label(sp, sk)}</b><span style={{ color: C.mt, fontSize: 13 }}>{NAME[sp]}</span><button onClick={() => resetPos(sp)} style={{ marginLeft: "auto", background: "transparent", border: 0, color: "#7dd3fc", fontSize: 12, cursor: "pointer", padding: 0 }}>Reset to auto</button></div>
             {setSnaps && cands.length > 0 && <>
               <div style={{ fontSize: 12, color: C.mt, margin: "4px 0 2px" }}>Drag a line to trade snaps between two players</div>
               <SplitBars pos={sp} players={field(sp)} overrides={snaps || {}} shape={shape} onChange={(n) => setSnaps(n)} laneName={(k) => label(sp, k)} />

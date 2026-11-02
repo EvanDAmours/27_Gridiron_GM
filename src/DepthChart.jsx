@@ -20,6 +20,9 @@ import DepthDesk from "./DepthDesk.jsx";
 // The field view opens on what your team lines up in most (viewFor) and keeps the grouping you
 // last looked at until you change your identity or lean in Strategy.
 let VIEW = { key: null, form: "11", pkg: "nickel" };
+// open the depth chart on a side (the list view's Specialists tab sends you to the field's)
+let SIDE0 = null;
+export const openDepthSide = (k) => { SIDE0 = k; };
 
 // Kick and punt returners: any receiver, back or defensive back, rated as a returner.
 const RET = { KR: "kick returner", PR: "punt returner" };
@@ -129,7 +132,7 @@ const CROSS = { CB: ["S"], S: ["CB"], LT: ["LG", "RG", "C"], RT: ["LG", "RG", "C
 export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps, onMovePos, previewPos, gamePlan, shape, personnel, team, onList, viewToggle, locks, setLocks }) {
   const leanKey = `${team?.personnel || "auto"}|${team?.defPkg || "auto"}|${team?.coach?.oc?.scheme}|${team?.coach?.dc?.scheme}`;
   if (VIEW.key !== leanKey) VIEW = { key: leanKey, ...viewFor(team) };
-  const [side, setSide] = useState("offense");
+  const [side, setSide] = useState(() => { const k = SIDE0 || "offense"; SIDE0 = null; return k; });
   const [pick, setPick] = useState(null); // [pos, idx]
   const [opts, setOpts] = useState(false); // phones: the ⋯ sheet (auto-fill, formation, game plan)
   const [form, setForm0] = useState(VIEW.form);
@@ -193,7 +196,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
   // who's in the spot you opened (fixed when you open it, so dragging a slider doesn't move "Here")
   const pickedRef = React.useRef(null);
   if (!pick) pickedRef.current = null;
-  else if (!pickedRef.current || pickedRef.current.key !== `${pick[0]}:${pick[1]}`) pickedRef.current = { key: `${pick[0]}:${pick[1]}`, id: isSpec(pick[0]) ? specOn(pick[0])?.id : order(pick[0])[pick[1]]?.id };
+  else if (!pickedRef.current || pickedRef.current.key !== pick.join(":")) pickedRef.current = { key: pick.join(":"), id: isSpec(pick[0]) ? specOn(pick[0])?.id : order(pick[0])[pick[1]]?.id };
   const pickedId = pickedRef.current?.id;
   // who starts on game day (snap shares included), for the row labels
   const fieldOrder = (at) => order(at).filter((p) => !p.injured);
