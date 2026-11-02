@@ -11,6 +11,7 @@ import { SPEC_ROLES, isSpec } from "./specialists.js";
 import { linkedSet, laneSplit } from "./snapEdit.js";
 import { SplitBars } from "./SnapBars.jsx";
 import AutoFill from "./AutoFill.jsx";
+import { RookieDot, DevTag, NameTags, isRookie } from "./PlayerTags.jsx";
 
 // Where each spot sits (x, y: the center of its card, in % of the field). Offense: the line, then
 // the backs and off-the-line receivers, then the deep backs. Defense faces it from the top.
@@ -66,7 +67,7 @@ const Lock = ({ on, size = 13 }) => <svg width={size} height={size} viewBox="0 0
 const mini = { width: 24, height: 22, border: 0, borderRadius: 6, background: "#ffffff17", color: "#fff", fontSize: 15, fontWeight: 900, lineHeight: 1, cursor: "pointer", flexShrink: 0, padding: 0 };
 
 // A starter's card. edit: snap counts mode (- and + right on the card). mine: you set his share.
-function Card({ label, p, rating, share, on, warn, ghost, onClick, x, y, edit, onStep, mine, locked, why }) {
+function Card({ label, p, rating, share, on, warn, ghost, onClick, x, y, edit, onStep, mine, locked, why, rookie }) {
   const stop = (f) => (e) => { e.stopPropagation(); f(); };
   return (
     <div role="button" tabIndex={0} onClick={onClick} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }} title={warn || (p ? `${label}: ${p.name}${why ? `. ${why}` : ""}${mine ? " Snaps set by you." : ""}${locked ? " Locked." : ""}` : `${label}: empty`)}
@@ -87,6 +88,7 @@ function Card({ label, p, rating, share, on, warn, ghost, onClick, x, y, edit, o
             {edit && <button type="button" aria-label={`5 more snaps for ${p?.name}`} onClick={stop(() => onStep(5))} style={mini}>+</button>}
           </> : <span style={{ fontSize: 12, color: on ? "#e0ecff" : "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p ? p.sub : ""}</span>}
         </div>}
+      {p && !ghost && <span style={{ position: "absolute", top: -9, left: 8, display: "inline-flex", gap: 4, zIndex: 1 }}>{rookie && <RookieDot />}<DevTag p={p} /></span>}
       {warn && <span style={{ position: "absolute", top: -9, right: -9, background: "#f87171", color: "#0b0f17", borderRadius: 99, fontSize: 11, fontWeight: 900, padding: "1px 7px" }}>!</span>}
     </div>
   );
@@ -135,7 +137,7 @@ export default function DepthDesk({ api }) {
     const missing = !isSpec(pos) && pos !== "FB" && full[idx]?.injured ? full[idx] : null;
     const label = pos === "FB" ? "FB" : SPEC_NAME[pos] || spotName(pos, idx);
     const sub = isSpec(pos) ? `${SPEC_WHEN[pos]} · ${specNow?.[pos] ? `in for ${lastName(specNow[pos][1].name)}` : "starter stays on"}` : "";
-    return { pos, idx, x, y, at, label, share, why: share != null && share < 100 ? `Plays ${share}% of the snaps. ${restFor(pos, p.id)}.` : null, p: p && { ...p, short: lastName(p.name), sub }, rating: p ? spotOvr(p, pos, idx) : null, warn: missing && p ? `Starting for the injured ${lastName(missing.name)}` : null };
+    return { pos, idx, x, y, at, label, share, rookie: isRookie(p, api.yr), why: share != null && share < 100 ? `Plays ${share}% of the snaps. ${restFor(pos, p.id)}.` : null, p: p && { ...p, short: lastName(p.name), sub }, rating: p ? spotOvr(p, pos, idx) : null, warn: missing && p ? `Starting for the injured ${lastName(missing.name)}` : null };
   });
   // in nickel the SAM steps off the field: show him, dashed, where he'd be
   const ghosts = side === "defense" && pkg === "nickel" ? (() => { const s = order("LB").filter((q) => !q.injured)[0]; return s ? [{ pos: "LB", idx: 0, x: 15, y: 46, label: "SAM", p: { ...s, short: lastName(s.name) }, rating: spotOvr(s, "LB", 0), ghost: "Off the field in nickel" }] : []; })() : [];
@@ -216,10 +218,10 @@ export default function DepthDesk({ api }) {
           const sub = [other ? `plays ${at}, they swap sides` : tag ? `starts at ${tag}, they swap` : natural(p), isOne && !SPEC_ROLES[pos]?.pos ? `${p.pos} ${p.ovr}` : ""].filter(Boolean).join(" · ");
           return (
             <div key={`${at}${p.id}`} role="button" tabIndex={0} onClick={() => { if (cur || p.injured) return; if (other) switchSide(pos, p); else place(pos, pick[1], p); refresh(other ? 0 : pick[1]); }}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 8px", borderRadius: 10, background: cur ? "#3b82f62b" : "transparent", opacity: p.injured ? 0.5 : 1, cursor: cur || p.injured ? "default" : "pointer" }}>
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 8px", borderRadius: 10, background: cur ? "#3b82f62b" : "transparent", opacity: p.injured ? 0.5 : 1, cursor: cur || p.injured ? "default" : "pointer" }}>
               <span style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${cur ? "#3b82f6" : "#ffffff44"}`, display: "grid", placeItems: "center", flexShrink: 0 }}>{cur && <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#3b82f6" }} />}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <b onClick={(e) => { e.stopPropagation(); setSel(p); }} title="Open his card" style={{ fontSize: 14.5, cursor: "pointer", whiteSpace: "nowrap" }}>{p.name}</b>
+                <b onClick={(e) => { e.stopPropagation(); setSel(p); }} title="Open his card" style={{ fontSize: 14.5, cursor: "pointer", whiteSpace: "nowrap" }}>{p.name}</b><NameTags p={p} yr={api.yr} />
                 {sub && <div style={{ fontSize: 12, color: "#a3adbd", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>}
               </div>
               {out && <span style={{ fontSize: 12.5, fontWeight: 800, color: p.injured ? "#f87171" : "#eab308", whiteSpace: "nowrap" }}>{out}</span>}
@@ -289,7 +291,7 @@ export default function DepthDesk({ api }) {
               <span key={p.id} style={{ display: "inline-flex", alignItems: "center", height: 34, background: out ? "#2a1518" : "#141b29", border: `1px solid ${out ? "#f8717155" : snaps?.[p.id] != null && s ? "#facc1566" : "#ffffff1f"}`, borderRadius: 10, whiteSpace: "nowrap", color: "#f3f5f8", overflow: "hidden", flexShrink: 0 }}>
                 {canAdd && s > 0 && <button type="button" aria-label={`5 fewer snaps for ${p.name}`} onClick={() => setShare(p.pos, p.id, s - 5)} style={{ ...mini, borderRadius: 0, height: 34, width: 28, background: "#ffffff0d" }}>−</button>}
                 <button type="button" onClick={() => benchOpen(p)} title={`${p.name}: ${p.pos} ${p.ovr}${out ? ` · out ${weeks(p.injWk || 1)}` : s ? ` · ${s}% of the snaps` : ""}`} style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 34, background: "transparent", border: 0, padding: "0 10px", cursor: "pointer", color: "#f3f5f8" }}>
-                  <b style={{ fontSize: 13.5 }}>{p.name}</b><b style={{ fontSize: 13.5, color: oC(p.ovr) }}>{p.ovr}</b>
+                  <b style={{ fontSize: 13.5 }}>{p.name}</b><NameTags p={p} yr={api.yr} gap={0} /><b style={{ fontSize: 13.5, color: oC(p.ovr) }}>{p.ovr}</b>
                   <span style={{ fontSize: 12, color: out ? "#f87171" : snaps?.[p.id] != null && s ? "#fde68a" : "#a3adbd", fontWeight: out ? 800 : 500 }}>{p.pos}{out ? ` · out ${weeks(p.injWk || 1)}` : p.hurt?.wks > 0 ? " · Q" : s ? ` · ${s}%` : ""}</span>
                 </button>
                 {canAdd && <button type="button" aria-label={`5 more snaps for ${p.name}`} title="Rotate him in: 5 more snaps" onClick={() => setShare(p.pos, p.id, s + 5)} style={{ ...mini, borderRadius: 0, height: 34, width: 28, background: "#22c55e33" }}>+</button>}

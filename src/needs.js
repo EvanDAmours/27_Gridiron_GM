@@ -37,14 +37,14 @@ export function teamNeeds(roster, personnel) {
     const starters = healthy.slice(0, n);
     const now = avg(pad(starters.map((p) => p.ovr || 0), n));
     // next season: expiring deals and aging starters count for less
-    const later = avg(pad(all.slice(0, n).map((p) => (p.ovr || 0) - ((p.contract ?? 2) <= 1 ? 10 : 0) - ((p.age || 26) >= DECLINE[g] ? 5 + 2 * ((p.age || 26) - DECLINE[g]) : 0)), n));
+    const later = avg(pad(all.slice(0, n).map((p) => (p.ovr || 0) - ((p.contract ?? 2) <= 1 && !(g === "QB" && keeper(p)) ? 10 : 0) - ((p.age || 26) >= DECLINE[g] ? 5 + 2 * ((p.age || 26) - DECLINE[g]) : 0)), n));
     const backup = healthy[n]?.ovr ?? 45;
     let s = 0.55 * clamp((PAR - now) / SPAN) + 0.35 * clamp((PAR - later) / SPAN) + (BENCH[g] ? 0.1 * clamp((66 - backup) / 16) : 0);
     const why = [];
     if (starters.length < n) why.push(starters.length ? `only ${starters.length} healthy starter${starters.length > 1 ? "s" : ""}` : `no ${needName(g)}`);
     else if (now < 74) why.push(`starter${n > 1 ? "s" : ""} rated ${Math.round(now)}`);
     const old = all.slice(0, n).filter((p) => (p.age || 26) >= DECLINE[g]);
-    const exp = all.slice(0, n).filter((p) => (p.contract ?? 2) <= 1);
+    const exp = all.slice(0, n).filter((p) => (p.contract ?? 2) <= 1 && !(g === "QB" && keeper(p)));
     if (old.length) why.push(`${old[0].name} is ${old[0].age}`);
     if (exp.length) why.push(`${exp[0].name}'s deal is up`);
     if (BENCH[g] && backup < 60 && starters.length >= n) why.push("no real backup");
@@ -53,7 +53,7 @@ export function teamNeeds(roster, personnel) {
     // a real starting quarterback (not near the end, not leaving) means no quarterback need
     if (g === "QB") {
       const q = all[0], next = all[1];
-      if (q && q.ovr >= 76 && (q.age || 27) <= 33 && (q.contract ?? 2) > 1) s = Math.min(s, 0.1);
+      if (q && q.ovr >= 76 && (q.age || 27) <= 33 && ((q.contract ?? 2) > 1 || keeper(q))) s = Math.min(s, q.ovr >= 80 && (q.age || 27) <= 30 ? 0 : 0.1);
       // near the end or leaving, with nobody ready behind him: time to find the quarterback of the future
       else if (q && ((q.age || 27) >= 34 || (q.contract ?? 2) <= 1) && !(next && next.ovr >= 74 && (next.age || 27) <= 30)) { s = Math.max(s, 0.45); why.push("no quarterback of the future"); }
     }
@@ -64,6 +64,8 @@ export function teamNeeds(roster, personnel) {
   list.sort((a, b) => b.score - a.score);
   return { score, list };
 }
+// a good young quarterback whose deal is up: clubs extend him, so it isn't a hole next year
+const keeper = (p) => (p.ovr || 0) >= 78 && (p.age || 27) <= 29;
 const pad = (xs, n) => { const o = xs.slice(0, n); while (o.length < n) o.push(50); return o; };
 const avg = (xs) => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length);
 

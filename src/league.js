@@ -14,7 +14,7 @@ import { depthOrderFor } from "./depth.js";
 import { roleGrowth, ROLE_SLOTS, shapeSafety, balanceRoles } from "./roles.js";
 import { playerValue, pickValue as chartPickValue } from "./trade.js";
 import { arrangeDL, dlAsPlayed, naturalDL } from "./dline.js";
-import { teamNeeds, topNeeds } from "./needs.js";
+import { teamNeeds, topNeeds, NEED_STARTERS } from "./needs.js";
 import { bestPlan, planEdge } from "./gamePlan.js";
 import { withHeadshot, prospectPhoto } from "./headshots.js";
 import { genIdentity } from "./portraits.js";
@@ -268,8 +268,19 @@ const DRAFT_POS_VALUE={QB:1.03,EDGE:1.04,LT:1.035,CB:1.025,WR:1.015,DT:1.0,RT:1.
 const groupOf=(p)=>(p.pos==="DL"?naturalDL(p):p.pos);
 // How badly a roster needs each position: 0 (set) to 1 (nothing there), from needs.js.
 export const draftNeeds=(roster)=>teamNeeds(roster).score;
-export function aiBestPick(roster,available,gmStyle){
-  const need=draftNeeds(roster),needW=gmStyle==='rebuilder'?0.05:gmStyle==='win-now'?0.09:0.07;
+// ctx: { yr, rd } of the pick (the round matters: a late-round backup quarterback is fine, a
+// first-round one behind a young starter isn't).
+export function aiBestPick(roster,available,gmStyle,ctx={}){
+  const need=draftNeeds(roster),needW=gmStyle==='rebuilder'?0.08:gmStyle==='win-now'?0.13:0.1,rd=ctx.rd||1;
+  // how set a club already is at each position: good players in their prime, under contract or worth keeping
+  const set={},drafted={};
+  for(const q of roster||[]){const g=groupOf(q);
+    // this draft's picks (a draftee this year, or a prospect a mock draft has handed it)
+    if((ctx.yr!=null&&q.draftYr===ctx.yr)||(q.draftYr==null&&q.contract==null&&q.truePot!=null)){drafted[g]=(drafted[g]||0)+1;continue;}
+    if((q.ovr||0)>=76&&(q.age||27)<=29)set[g]=(set[g]||0)+1;}
+  const qb=(roster||[]).filter(q=>q.pos==="QB").sort((a,b)=>(b.ovr||0)-(a.ovr||0))[0];
+  // a real starting quarterback: good, and young enough to be the guy for years
+  const qbSet=qb&&(qb.ovr||0)>=76&&(qb.age||27)<=31,qbYoung=qbSet&&(qb.age||27)<=26;
   // roles too: a club whose nickel or slot receiver is a hole looks harder at the ones built for it
   const rNeed=roleNeeds(roster);
   let best=null,bs=-Infinity;
@@ -278,8 +289,17 @@ export function aiBestPick(roster,available,gmStyle){
     let val=DRAFT_POS_VALUE[g]??1;
     // a running back only goes early if he's elite or the team has nothing at the position
     if(g==="RB"&&((p.truePot||0)>=90||n>=0.75))val=1;
-    if(g==="QB"&&n<=0.1)val=0.94; // set at quarterback: only a rare one is worth it
-    const sc=aiDraftScore(p,gmStyle)*val*(1+needW*n+0.05*roleFit(p,rNeed));
+    const starters=NEED_STARTERS[g]||1;
+    // already set there (enough good players in their prime): a luxury pick, less so in later rounds
+    let fit=1;
+    if((set[g]||0)>=starters)fit*=Math.max(0.84,0.93-0.04*((set[g]||0)-starters))+(rd>=4?0.04:0);
+    // a second (third...) pick at the same position in one draft: real clubs spread their picks out
+    if(drafted[g])fit*=Math.pow(rd>=5?0.9:starters>=3?0.9:starters===2?0.84:0.74,drafted[g]);
+    // early on, a position with no need at all has to be a clear best player to be the pick
+    if(rd<=2&&n<0.08&&g!=="QB")fit*=0.93;
+    // a quarterback behind a good one: only a rare talent early, a developmental backup late
+    if(g==="QB"&&qbSet)fit*=rd>=4?0.96:(p.truePot||0)>=93?0.9:qbYoung?0.72:0.8;
+    const sc=aiDraftScore(p,gmStyle)*val*fit*(1+needW*n+0.05*roleFit(p,rNeed));
     if(sc>bs){bs=sc;best=p;}
   }
   return best||available[0];

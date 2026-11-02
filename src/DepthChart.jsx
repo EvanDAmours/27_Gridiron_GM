@@ -129,7 +129,7 @@ export const PARTNER = { LT: "RT", RT: "LT", LG: "RG", RG: "LG" };
 // and tackles, guards and centers along the line (left/right swaps go through PARTNER instead).
 const CROSS = { CB: ["S"], S: ["CB"], LT: ["LG", "RG", "C"], RT: ["LG", "RG", "C"], LG: ["LT", "RT", "C"], RG: ["LT", "RT", "C"], C: ["LG", "RG", "LT", "RT"] };
 
-export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps, onMovePos, previewPos, gamePlan, shape, personnel, team, onList, viewToggle, locks, setLocks }) {
+export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, onAutoFill, setPositions, snaps, setSnaps, onMovePos, previewPos, gamePlan, shape, personnel, team, onList, viewToggle, locks, setLocks, yr }) {
   const leanKey = `${team?.personnel || "auto"}|${team?.defPkg || "auto"}|${team?.coach?.oc?.scheme}|${team?.coach?.dc?.scheme}`;
   if (VIEW.key !== leanKey) VIEW = { key: leanKey, ...viewFor(team) };
   const [side, setSide] = useState(() => { const k = SIDE0 || "offense"; SIDE0 = null; return k; });
@@ -232,7 +232,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
     return [["Sub linebacker", s ? `${s[0].name} for ${lastName(s[1].name)}` : "The starters stay on"]];
   };
   // desktop: the field fills the screen and the menu opens beside the player (DepthDesk.jsx)
-  if (!MOBILE && !narrow()) return <DepthDesk api={{ roster, side, setSide, pick, setPick, form, setForm, pkg, setPkg, order, order0, depthList, fieldOrder, shares, pickedId, pickRole, chosen, place, switchSide, moveIn, splitOut, backToTE, situations, specOn, specNow, snaps, setSnaps, shape, setSel, onAutoFill, viewToggle, gamePlan, personnel, team, depthOrder, setDepthOrder, resetShares, previewPos, single, shown, lastName, spotName, spotOvr, STARTERS, locks, setLocks, defLean: team ? (DEF_SETS.find((d) => d.key === (team.defPkg || "auto")) || DEF_SETS[0]).label : null }} />;
+  if (!MOBILE && !narrow()) return <DepthDesk api={{ roster, side, setSide, pick, setPick, form, setForm, pkg, setPkg, order, order0, depthList, fieldOrder, shares, pickedId, pickRole, chosen, place, switchSide, moveIn, splitOut, backToTE, situations, specOn, specNow, snaps, setSnaps, shape, setSel, onAutoFill, viewToggle, gamePlan, personnel, team, depthOrder, setDepthOrder, resetShares, previewPos, single, shown, lastName, spotName, spotOvr, STARTERS, locks, setLocks, yr, defLean: team ? (DEF_SETS.find((d) => d.key === (team.defPkg || "auto")) || DEF_SETS[0]).label : null }} />;
   const pickView = pick ? (
             <>
               <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 6 }}>{spotName(pick[0], pickRole)} <span style={{ fontSize: 12, color: C.mt, fontWeight: 600 }}>· {pick[0] === "DL" ? (slotKind(pickRole) === "EDGE" ? "edge rusher" : "defensive tackle") : ROLE_SLOTS[pick[0]]?.[pickRole] ? ROLE_NAME[ROLE_SLOTS[pick[0]][pickRole]] : SPEC_ROLES[pick[0]] ? SPEC_ROLES[pick[0]].label.toLowerCase() : RET[pick[0]] ? RET[pick[0]] : `${STARTERS[pick[0]]} starter${STARTERS[pick[0]] > 1 ? "s" : ""}`}</span></div>

@@ -49,3 +49,8 @@ test("a hurt starter out for the year counts now; no backup adds a little", () =
   assert.ok(teamNeeds(thin).score.RB > teamNeeds(solid()).score.RB);
   assert.ok(teamNeeds(thin).list.find((x) => x.pos === "RB").why.includes("no real backup"));
 });
+
+test("a good young quarterback in the last year of his deal is no need: clubs extend him", () => {
+  const exp = solid().map((p) => (p.pos === "QB" && p.ovr === 85 ? { ...p, age: 25, contract: 1 } : p));
+  assert.ok(teamNeeds(exp).score.QB <= 0.1, `${teamNeeds(exp).score.QB}`);
+});

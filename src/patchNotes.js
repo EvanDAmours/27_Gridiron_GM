@@ -2243,4 +2243,9 @@ export const PATCH_NOTES = [
     "No - and + on quarterbacks, linemen or kickers in the field view: one man plays every snap there (the list view still lets you).",
     "The field and list views match: both say Auto-fill and Reset to auto, and the list view's Specialists tab takes you to the field's.",
   ] },
+  { v: "5.45", date: "2026-10-23", title: "Smarter AI drafts; rookies and dev traits on the depth chart", notes: [
+    "Smarter AI drafts. A club with a good young quarterback no longer spends an early pick on another one: only a rare talent tempts it, and a developmental backup in the later rounds is still fine. A young star quarterback in the last year of his deal no longer counts as a need either; clubs extend that player rather than replace him (this is why Carolina kept drafting quarterbacks behind Bryce Young).",
+    "Clubs spread their picks across positions: a second pick at the same position in one draft is much rarer (in simulated drafts, doubling up at a one- or two-starter position in rounds 1-3 went from about 10 a draft to almost none), and early on a position with no need has to be clearly the best player available to be the pick. Need now counts for more, so most first-rounders fill a hole.",
+    "Depth chart: rookies have a circled R by their name, and players with a standout development trait show it (GEN, SUPER, STAR, LATE) in the field view, its player menus and bench, and the list view.",
+  ] },
 ];

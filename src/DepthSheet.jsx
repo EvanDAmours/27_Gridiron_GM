@@ -11,6 +11,7 @@ import { laneSplit, sharesOf } from "./snapEdit.js";
 import { SplitBars } from "./SnapBars.jsx";
 import { spotName } from "./DepthChart.jsx";
 import AutoFill from "./AutoFill.jsx";
+import { NameTags } from "./PlayerTags.jsx";
 
 const SIDES = {
   offense: { label: "Offense", rows: [["QB", 0], ["RB", 0], ["WR", 0], ["WR", 1], ["WR", 2], ["TE", 0], ["LT", 0], ["LG", 0], ["C", 0], ["RG", 0], ["RT", 0]] },
@@ -22,7 +23,7 @@ const NAME = { QB: "Quarterback", RB: "Running back", WR: "Wide receiver", TE: "
 const label = (pos, k) => spotName(pos, k);
 const injNote = (p) => `${p.injType || "Injured"}${p.injWk ? `, ${p.injWk} wk${p.injWk > 1 ? "s" : ""}` : ""}`;
 
-export default function DepthSheet({ roster, depthOrder, setDepthOrder, snaps, setSnaps, shape, setSel, onAutoFill, viewToggle, locks, setLocks, onSpecialists }) {
+export default function DepthSheet({ roster, depthOrder, setDepthOrder, snaps, setSnaps, shape, setSel, onAutoFill, viewToggle, locks, setLocks, onSpecialists, yr }) {
   const [side, setSide] = useState("offense");
   const [row, setRow] = useState(null); // [pos, k]
   const rows = SIDES[side].rows;
@@ -62,7 +63,7 @@ export default function DepthSheet({ roster, depthOrder, setDepthOrder, snaps, s
   const sel = row && rows.some(([p, k]) => p === row[0] && k === row[1]) ? row : rows[0];
   const outNow = roster.filter((p) => p.injured && rows.some(([pos]) => pos === p.pos));
 
-  const name = (p) => <span onClick={(e) => { e.stopPropagation(); setSel && setSel(p); }} style={{ cursor: "pointer" }}>{p.name}</span>;
+  const name = (p) => <span onClick={(e) => { e.stopPropagation(); setSel && setSel(p); }} style={{ cursor: "pointer" }}>{p.name}<NameTags p={p} yr={yr} /></span>;
   const cell = (pos, p, first) => {
     if (!p) return <td style={{ padding: "8px 14px", color: C.mt, fontSize: first ? 13 : 14 }}>{first ? "Your formations put another position here" : "—"}</td>;
     const v = view(pos).sh[p.id] || 0, q = p.hurt?.wks > 0;
@@ -124,7 +125,7 @@ export default function DepthSheet({ roster, depthOrder, setDepthOrder, snaps, s
             {cands.map((p) => (
               <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 0", borderTop: "1px solid #ffffff12" }}>
                 <Face s={p.face} sz={26} />
-                <b style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 14, cursor: "pointer" }} onClick={() => setSel && setSel(p)}>{p.name}</b>
+                <b style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 14, cursor: "pointer" }} onClick={() => setSel && setSel(p)}>{p.name}<NameTags p={p} yr={yr} /></b>
                 <b style={{ color: oC(p.ovr), width: 26, textAlign: "right" }}>{p.ovr}</b>
                 {p.id === startsHere ? <span style={{ width: 92, textAlign: "right", fontSize: 12, fontWeight: 800, color: C.gn }}>Starting</span>
                   : <button onClick={() => start(sp, sk, p)} style={{ width: 92, textAlign: "right", background: "transparent", border: 0, padding: 0, fontSize: 12, fontWeight: 800, color: p.hurt?.wks > 0 ? "#eab308" : "#7dd3fc", cursor: "pointer" }}>{p.hurt?.wks > 0 ? "Start (Q)" : "Start here"}</button>}
@@ -133,7 +134,7 @@ export default function DepthSheet({ roster, depthOrder, setDepthOrder, snaps, s
           </div>
           {outNow.length > 0 && <div style={{ background: "#111827", borderRadius: 14, padding: 14 }}>
             <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, color: "#f87171", textTransform: "uppercase", marginBottom: 2 }}>Out this week · {outNow.length}</div>
-            {outNow.map((p) => <div key={p.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "7px 0", borderTop: "1px solid #ffffff12", fontSize: 14 }}><span style={{ whiteSpace: "nowrap" }}><b style={{ cursor: "pointer" }} onClick={() => setSel && setSel(p)}>{p.name}</b> <span style={{ color: C.mt }}>{p.pos}</span></span><span style={{ color: "#f87171", fontSize: 12, fontWeight: 700, textAlign: "right" }}>{injNote(p)}</span></div>)}
+            {outNow.map((p) => <div key={p.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "7px 0", borderTop: "1px solid #ffffff12", fontSize: 14 }}><span style={{ whiteSpace: "nowrap" }}><b style={{ cursor: "pointer" }} onClick={() => setSel && setSel(p)}>{p.name}<NameTags p={p} yr={yr} /></b> <span style={{ color: C.mt }}>{p.pos}</span></span><span style={{ color: "#f87171", fontSize: 12, fontWeight: 700, textAlign: "right" }}>{injNote(p)}</span></div>)}
           </div>}
         </div>
       </div>

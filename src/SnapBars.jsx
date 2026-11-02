@@ -20,7 +20,7 @@ export function SplitBars({ pos, players, overrides, shape, onChange, laneName, 
   const shares = sharesOf(pos, players, overrides, shape);
   const color = Object.fromEntries(healthy.map((p, i) => [p.id, PAL[i % PAL.length]]));
   const name = Object.fromEntries(healthy.map((p) => [p.id, lastName(p.name)]));
-  const H = mobile ? 44 : compact ? 26 : 38;
+  const H = mobile ? 44 : compact ? 22 : 38;
   const drag = (e, lane, a, b) => {
     e.preventDefault();
     const bar = e.currentTarget.parentElement, r = bar.getBoundingClientRect(), x0 = e.clientX, start = overrides;
@@ -45,7 +45,7 @@ export function SplitBars({ pos, players, overrides, shape, onChange, laneName, 
       {lanes.map((lane, k) => {
         let acc = 0;
         return (
-          <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, margin: compact ? "4px 0" : "6px 0" }}>
+          <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, margin: compact ? "3px 0" : "6px 0" }}>
             <span style={{ width: mobile ? 38 : 44, fontSize: 12, fontWeight: 900, color: "#4ade80", flexShrink: 0 }}>{laneName(k)}</span>
             <div style={{ position: "relative", flex: 1, minWidth: 0, height: H, borderRadius: 10, overflow: "hidden", display: "flex", background: "#0b1220", userSelect: "none", touchAction: "none" }}>
               {lane.segs.map((s) => (
