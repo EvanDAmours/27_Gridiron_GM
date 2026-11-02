@@ -2248,4 +2248,7 @@ export const PATCH_NOTES = [
     "Clubs spread their picks across positions: a second pick at the same position in one draft is much rarer (in simulated drafts, doubling up at a one- or two-starter position in rounds 1-3 went from about 10 a draft to almost none), and early on a position with no need has to be clearly the best player available to be the pick. Need now counts for more, so most first-rounders fill a hole.",
     "Depth chart: rookies have a circled R by their name, and players with a standout development trait show it (GEN, SUPER, STAR, LATE) in the field view, its player menus and bench, and the list view.",
   ] },
+  { v: "5.46", date: "2026-10-23", title: "AI drafts: elite quarterbacks still go early", notes: [
+    "AI drafts, refined: only a clearly good starting quarterback (80+, 31 or younger) keeps a club off the early quarterbacks, and an elite quarterback prospect still goes early even to a club that has one. So a consensus top quarterback no longer slides to the end of the first round, while a club like the Giants with a young starter still passes on the good-not-great ones.",
+  ] },
 ];

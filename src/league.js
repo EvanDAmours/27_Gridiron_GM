@@ -280,7 +280,7 @@ export function aiBestPick(roster,available,gmStyle,ctx={}){
     if((q.ovr||0)>=76&&(q.age||27)<=29)set[g]=(set[g]||0)+1;}
   const qb=(roster||[]).filter(q=>q.pos==="QB").sort((a,b)=>(b.ovr||0)-(a.ovr||0))[0];
   // a real starting quarterback: good, and young enough to be the guy for years
-  const qbSet=qb&&(qb.ovr||0)>=76&&(qb.age||27)<=31,qbYoung=qbSet&&(qb.age||27)<=26;
+  const qbSet=qb&&(qb.ovr||0)>=80&&(qb.age||27)<=31,qbYoung=qbSet&&(qb.age||27)<=26;
   // roles too: a club whose nickel or slot receiver is a hole looks harder at the ones built for it
   const rNeed=roleNeeds(roster);
   let best=null,bs=-Infinity;
@@ -298,7 +298,7 @@ export function aiBestPick(roster,available,gmStyle,ctx={}){
     // early on, a position with no need at all has to be a clear best player to be the pick
     if(rd<=2&&n<0.08&&g!=="QB")fit*=0.93;
     // a quarterback behind a good one: only a rare talent early, a developmental backup late
-    if(g==="QB"&&qbSet)fit*=rd>=4?0.96:(p.truePot||0)>=93?0.9:qbYoung?0.72:0.8;
+    if(g==="QB"&&qbSet)fit*=rd>=4?0.96:(p.truePot||0)>=90?(qbYoung?0.86:0.93):qbYoung?0.72:0.8;
     const sc=aiDraftScore(p,gmStyle)*val*fit*(1+needW*n+0.05*roleFit(p,rNeed));
     if(sc>bs){bs=sc;best=p;}
   }
