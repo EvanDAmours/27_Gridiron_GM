@@ -2229,4 +2229,9 @@ export const PATCH_NOTES = [
     "Starters only: one click gives each starter every snap of his spot and sits the bench (players you locked keep their share). Reset to auto hands the position back to the staff.",
     "Shares you set yourself show in yellow on the field and the bench, so you can see at a glance what's yours and what the staff decides.",
   ] },
+  { v: "5.43", date: "2026-10-23", title: "Saved snap locks, and the failed-update emails fixed", notes: [
+    "Snap locks are saved: a player whose snaps you lock stays locked after you close and reopen the game, and the field view and the list view share the same locks.",
+    "Fixed: a real-life signing who had since gone on injured reserve could be signed a second time when you reopened a save (a duplicate of the same player on the club). Each real move now looks for the player on injured reserve, waivers and the retired list too before treating him as new to the league.",
+    "Behind the scenes: the automatic checks that run after each update were failing (the reason for the failed-update emails). One caught the duplicate signing above; the other was a test script that hadn't kept up with the career setup screen and the Sim to... menu. Both are fixed.",
+  ] },
 ];
