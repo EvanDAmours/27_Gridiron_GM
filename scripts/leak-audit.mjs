@@ -74,13 +74,16 @@ async function startSeason() {
   if (await go.count()) { await go.first().click(); await page.waitForTimeout(1200); }
 }
 // Sim several weeks: one real week at a time, pausing for decisions; press again until done.
+// The trade deadline and the end of the season live in the "Sim to…" menu next to Sim Week.
 async function simUntil(text, done) {
   for (let i = 0; i < 12; i++) {
     if (await page.evaluate(done)) return;
     await dismiss();
-    const b = page.locator("button:visible", { hasText: text });
-    if (await b.count()) await b.first().click();
-    for (let t = 0; t < 60 && !(await page.evaluate(done)); t++) await page.waitForTimeout(500);
+    let b = page.locator("button:visible", { hasText: text });
+    if (!(await b.count())) { const m = page.locator("button:visible", { hasText: "Sim to…" }); if (await m.count()) { await m.first().click(); await page.waitForTimeout(200); } b = page.locator("button:visible", { hasText: text }); }
+    if (await b.count()) await b.first().click({ timeout: 3000 }).catch(() => {});
+    // a scouting checkpoint pauses the sim: Keep simming carries it on
+    for (let t = 0; t < 60 && !(await page.evaluate(done)); t++) { const k = page.locator("button:visible", { hasText: "Keep simming" }); if (await k.count()) await k.first().click().catch(() => {}); await page.waitForTimeout(500); }
   }
   if (!(await page.evaluate(done))) fail(`"${text}" never finished`);
 }
@@ -180,14 +183,14 @@ let code = 0;
 try {
   await page.goto(url); await page.waitForTimeout(1200);
   await must("NEW GAME");
-  await page.locator("button", { hasText: "Giants" }).first().click(); await page.waitForTimeout(1500);
+  await page.locator("button", { hasText: "Giants" }).first().click(); await page.locator("button", { hasText: "START YOUR" }).first().click(); await page.waitForTimeout(1500); // the career setup: Week 1, injuries on
   await audit("start");
   for (let season = 0; season < 3; season++) {
     await startSeason(); await audit("season start");
     await must("Sim Week", 1500); await audit("week 1");
-    await simUntil("Sim to Deadline", () => document.body.innerText.includes("TRADE DEADLINE DAY"));
+    await simUntil(": trade deadline", () => document.body.innerText.includes("TRADE DEADLINE DAY"));
     await must("Advance to", 800); await must("Sim to 4:00 PM", 800); await must("Back to the season", 800); await audit("deadline");
-    await simUntil("Sim All", () => ((t) => !/Sim All/.test(t) && /Sim Round/.test(t))([...document.querySelectorAll("button")].map((b) => b.innerText).join(" "))); await page.waitForTimeout(2500); await audit("regular season");
+    await simUntil(": end of season", () => ((t) => !/Sim to…/.test(t) && /Sim Round/.test(t))([...document.querySelectorAll("button")].map((b) => b.innerText).join(" "))); await page.waitForTimeout(2500); await audit("regular season");
     for (let i = 0; i < 5; i++) { await click("Sim Round", 1000); const c = page.locator("button", { hasText: /^Continue$/ }); if (await c.count()) await c.first().click(); }
     await audit("playoffs");
     await must("→ Combine"); await audit("combine"); await advance("Finish Combine →"); await audit("re-sign"); await advance("Finish Re-signing →", 2500); await audit("free agency");

@@ -48,7 +48,10 @@ export function applyRealMoves(d, make = () => null, list = MOVES.moves, season 
     // where he is in this save: his old club (or the free agents, for a signing)
     const list0 = from ? on(from, m) : fa.some((p) => p?.name === m.name && p.pos === m.pos) ? fa : null;
     let p = list0 && list0.find((x) => x?.name === m.name && x.pos === m.pos);
-    if (!p && m.from === "FA" && !d.teams.some((t) => on(t, m))) { p = make(m.name, m.pos); if (p) p.rm = []; } // new to the league
+    // new to the league: only if he's nowhere in it (a club's roster, practice squad or injured
+    // reserve, waivers, retired). A signing who's since gone on IR is still that club's player.
+    const anywhere = () => d.teams.some((t) => t && [t.roster, t.ps, t.ir].some((l) => (l || []).some((x) => x?.name === m.name && x.pos === m.pos))) || [d.waivers, d.retired].some((l) => Array.isArray(l) && l.some((x) => x?.name === m.name && x.pos === m.pos));
+    if (!p && m.from === "FA" && !anywhere()) { p = make(m.name, m.pos); if (p) p.rm = []; }
     if (!p || (p.rm || []).includes(m.id)) continue; // already done, or he's somewhere else in your league
     p.rm = [...(p.rm || []), m.id];
     if ((from && from === yours) || (to && to === yours)) {

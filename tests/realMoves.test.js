@@ -59,3 +59,15 @@ test("a new league already has every real move: loading it changes nothing, even
 test("not in the playoffs or the off-season: the league's rosters have moved on", () => {
   for (const sp of ["playoffs", "draft", "free_agency"]) assert.equal(applyRealMoves({ ...save(), sp }, () => null, MOVES, 2026).length, 0, sp);
 });
+
+test("a real signing who has since gone on injured reserve isn't signed a second time", () => {
+  const d = save();
+  d.fa = d.fa.filter((p) => p.name !== "Andy Dalton");
+  const k = { ...P("Zane Gonzalez", "K", 70), rm: [] };
+  d.teams[4].ir = [k]; // he signed with Atlanta in this league and got hurt
+  let made = 0;
+  const lines = applyRealMoves(d, (name, pos) => { made++; return P(name, pos, 70); }, [{ id: "k1", name: "Zane Gonzalez", pos: "K", from: "FA", to: "ATL" }], 2026);
+  assert.equal(made, 0, "no new copy of him");
+  assert.equal(lines.length, 0);
+  assert.equal(d.teams.flatMap((t) => [...t.roster, ...(t.ir || [])]).filter((p) => p.name === "Zane Gonzalez").length, 1);
+});

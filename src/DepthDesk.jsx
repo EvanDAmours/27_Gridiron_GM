@@ -83,7 +83,9 @@ export default function DepthDesk({ api }) {
   const [popAt, setPopAt] = useState(null);
   const [plan, setPlan] = useState(false);
   const [edit, setEdit] = useState(false); // snap counts mode: - and + on every card and bench chip
-  const [locks, setLocks] = useState(() => new Set()); // players whose share you locked (this session)
+  // players whose share you locked: saved with the game, and shared with the list view (App's snapPins)
+  const [ownLocks, setOwnLocks] = useState(() => new Set());
+  const locks = api.locks || ownLocks, setLocks = api.setLocks || setOwnLocks;
   useLayoutEffect(() => {
     const fit = () => { const el = fieldRef.current; if (!el) return; let sp = el.parentElement; while (sp && sp !== document.body && !/(auto|scroll)/.test(getComputedStyle(sp).overflowY)) sp = sp.parentElement; if (!sp || sp === document.body) sp = document.documentElement;
       // fit inside the screen's scroll area (the display size setting zooms the page, so measure in its units)
