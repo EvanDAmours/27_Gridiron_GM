@@ -2251,4 +2251,7 @@ export const PATCH_NOTES = [
   { v: "5.46", date: "2026-10-23", title: "AI drafts: elite quarterbacks still go early", notes: [
     "AI drafts, refined: only a clearly good starting quarterback (80+, 31 or younger) keeps a club off the early quarterbacks, and an elite quarterback prospect still goes early even to a club that has one. So a consensus top quarterback no longer slides to the end of the first round, while a club like the Giants with a young starter still passes on the good-not-great ones.",
   ] },
+  { v: "5.47", date: "2026-10-23", title: "Phone depth chart: rookies and dev traits", notes: [
+    "Phone depth chart: rookies are marked with a circled R and standout development traits show too. On the field each rookie's rating circle carries a small R and a colored dot marks a Generational, Superstar, Star or Late bloomer player; the Who plays list and the player sheet spell them out (GEN, SUPER, STAR, LATE); the list view adds the R next to the trait it already showed.",
+  ] },
 ];

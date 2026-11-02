@@ -16,6 +16,8 @@ import { pickFB } from "./gamesim.js";
 import { viewFor, DEF_SETS } from "./personnel.js";
 import { SPEC_ROLES, SPEC_KEYS, isSpec, specFit, resolveSpecs } from "./specialists.js";
 import DepthDesk from "./DepthDesk.jsx";
+import { NameTags, isRookie } from "./PlayerTags.jsx";
+import { devOf } from "./scouting.js";
 
 // The field view opens on what your team lines up in most (viewFor) and keeps the grouping you
 // last looked at until you change your identity or lean in Strategy.
@@ -86,7 +88,9 @@ function Field({ los, children }) {
 export const spotName = (pos, idx) => (SPEC_TAG[pos] ? SPEC_TAG[pos] : pos === "DL" && idx < 4 ? DL_SLOTS[idx] : ROLE_SLOTS[pos]?.[idx] ? ROLE_SLOTS[pos][idx] : pos === "FB" ? "FB" : STARTERS[pos] > 1 || idx > 0 ? `${pos}${idx + 1}` : pos);
 // His rating at a spot: linemen as edge or tackle, linebackers, corners and receivers at their role.
 export const spotOvr = (p, pos, idx) => (!p ? null : pos === "DL" && idx < 4 ? dlOvrAt(p, slotKind(idx)) : ROLE_SLOTS[pos]?.[idx] ? roleOvr(p, ROLE_SLOTS[pos][idx]) : single(pos) ? shown(p, pos) : p.ovr);
-function Spot({ p: p0, pos, idx, x, y, on, onClick, share }) {
+// a small mark on a phone spot for a standout development trait (the menu spells it out)
+const DEV_DOT = { generational: "#f472b6", superstar: "#f5c542", star: "#60a5fa", late: "#c4b5fd" };
+function Spot({ p: p0, pos, idx, x, y, on, onClick, share, yr }) {
   const sm = narrow();
   if (!MOBILE && !sm) return <WideSpot p={p0} pos={pos} idx={idx} x={x} y={y} on={on} onClick={onClick} share={share} />;
   const label = spotName(pos, idx);
@@ -94,6 +98,8 @@ function Spot({ p: p0, pos, idx, x, y, on, onClick, share }) {
   return (
     <button onClick={onClick} title={p ? `${label}: ${p.name} (${p.ovr})` : `${label}: empty`} style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%,-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "transparent", border: 0, cursor: "pointer", padding: 0, width: sm ? 52 : 70 }}>
       <span style={{ width: sm ? 30 : 36, height: sm ? 30 : 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: p ? "#0b1220" : "#0b122099", border: `3px solid ${on ? "#facc15" : p?.injured ? C.rd : colorOf(pos)}`, boxShadow: on ? "0 0 0 3px #facc1566" : "0 2px 6px #0008", color: p ? oC(p.ovr) : C.mt, fontWeight: 900, fontSize: sm ? 12 : 14 }}>{p ? p.ovr : "—"}</span>
+      {p && isRookie(p0, yr) && <span title="Rookie" aria-label="Rookie" style={{ position: "absolute", top: -3, left: "50%", marginLeft: sm ? -20 : -23, width: 13, height: 13, borderRadius: "50%", background: "#0b0f17", border: "1.5px solid #fbbf24", color: "#fbbf24", fontSize: 8, fontWeight: 900, lineHeight: "10px", textAlign: "center" }}>R</span>}
+      {p && DEV_DOT[devOf(p0)] && <span title={`${devOf(p0)} development`} style={{ position: "absolute", top: -2, left: "50%", marginLeft: sm ? 9 : 12, width: 10, height: 10, borderRadius: "50%", background: DEV_DOT[devOf(p0)], border: "1.5px solid #0b0f17" }} />}
       <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", background: colorOf(pos), borderRadius: 3, padding: "0 4px", lineHeight: "14px" }}>{label}</span>
       {!(sm && ["LT", "LG", "C", "RG", "RT", "DL"].includes(pos)) && <span style={{ fontSize: sm ? 9 : ["LT", "LG", "C", "RG", "RT"].includes(pos) ? 10 : 11, fontWeight: 700, color: "#fff", textShadow: "0 1px 2px #000", maxWidth: sm ? 52 : ["LT", "LG", "C", "RG", "RT"].includes(pos) ? 46 : 70, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p ? lastName(p.name) : "Empty"}</span>}
     </button>
@@ -266,7 +272,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
                     <span style={{ width: MOBILE ? 40 : 36, flexShrink: 0, fontSize: 12, fontWeight: 800, color: starter ? C.gn : C.mt }}>{at === pick[0] && !single(at) ? (p.injured ? "OUT" : starter ? spotName(at, i) : `#${i + 1}`) : at === pick[0] && !starter ? `#${i + 1}` : rowLabel(at, i)}</span>
                     <Face s={p.face} sz={22} />
                     <div style={{ flex: 1, minWidth: MOBILE ? 120 : 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, cursor: "pointer", lineHeight: 1.25, ...(MOBILE ? { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } : {}) }} onClick={() => setSel(p)}>{p.name}</div>
+                      <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}><span style={{ fontSize: 14, fontWeight: 700, cursor: "pointer", lineHeight: 1.25, minWidth: 0, ...(MOBILE ? { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } : {}) }} onClick={() => setSel(p)}>{p.name}</span><NameTags p={p} yr={yr} /></div>
                       <div style={{ fontSize: 11, color: C.mt }}>{single(pick[0]) && <b style={{ marginRight: 4 }}>{posTag(p)} {p.ovr}</b>}{!RET[pick[0]] && p.pos === "TE" && pick[0] === "WR" && <b style={{ color: "#67e8f9", marginRight: 4 }}>TE {p.ovr}{at === "WR" ? " · split out" : ""}</b>}{back && <b style={{ color: "#67e8f9", marginRight: 4 }}>playing WR</b>}{p.pos === "DL" && <b style={{ color: naturalDL(p) === "DT" ? "#fb923c" : "#f472b6", marginRight: 4 }}>{naturalDL(p)}</b>}{ROLE_SLOTS[p.pos] && p.posAttrs && <b style={{ color: "#a5b4fc", marginRight: 4 }}>{({ OUT: "OUTSIDE", NB: "NICKEL" })[naturalRole(p)] || naturalRole(p)}{ROLE_SLOTS[pick[0]]?.[pick[1]] && roleKind(ROLE_SLOTS[pick[0]][pick[1]]) === naturalRole(p) ? " ★" : ""}</b>}Age {p.age}{p.injured ? <span style={{ color: C.rd, fontWeight: 700 }}> · injured</span> : ""}</div>
                     </div>
                     {(() => { const v = (p.pos === pick[0] || (pick[0] === "WR" && p.pos === "TE" && !back)) && (pick[0] === "DL" || ROLE_SLOTS[pick[0]]) ? spotOvr(p, pick[0], pickRole) : shown(p, pick[0]); return <b title={RET[pick[0]] ? `Return rating (${posTag(p)} ${p.ovr} OVR)` : isSpec(pick[0]) ? `Fit as ${SPEC_ROLES[pick[0]].label.toLowerCase()} (${posTag(p)} ${p.ovr} OVR)` : v !== p.ovr ? `${p.ovr} at his natural spot` : undefined} style={{ fontSize: 16, color: oC(v), minWidth: 26, textAlign: "right" }}>{v}{v !== p.ovr && !single(pick[0]) && <span style={{ fontSize: 10, color: C.mt, fontWeight: 600 }}> /{p.ovr}</span>}</b>; })()}
@@ -313,7 +319,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
               const full = order(pos), p = isSpec(pos) ? specOn(pos) : MOBILE ? full[idx] : full.filter((q) => !q.injured)[idx];
               const at = MOBILE || !p || isSpec(pos) ? idx : Math.max(0, full.indexOf(p));
               const sh = !MOBILE && p && !single(pos) && pos !== "FB" ? shares(pos)[p.id] ?? 0 : null;
-              return <Spot key={`${pos}${idx}`} p={p} pos={pos} idx={idx} x={x} y={y} share={sh} on={pick && pick[0] === pos && pick[1] === at} onClick={() => setPick(pos === "FB" ? ["RB", Math.max(1, order0("RB").indexOf(order("FB")[0]))] : [pos, at])} />;
+              return <Spot key={`${pos}${idx}`} yr={yr} p={p} pos={pos} idx={idx} x={x} y={y} share={sh} on={pick && pick[0] === pos && pick[1] === at} onClick={() => setPick(pos === "FB" ? ["RB", Math.max(1, order0("RB").indexOf(order("FB")[0]))] : [pos, at])} />;
             })}
           </Field>
           {!MOBILE && (() => { const outs = roster.filter((p) => p.injured && sidePositions.includes(p.pos)); return <div style={{ display: "flex", gap: 16, fontSize: 12, color: C.mt, marginTop: 8, flexWrap: "wrap" }}><span>{side === "defense" ? "The SAM plays in base, the nickel back (NB) in nickel and dime. " : side === "specialists" ? "Each comes on in his situation for the starter who fits it worse. " : ""}The ring is his share of the snaps. Click a player to change who plays.</span>{outs.length > 0 && <span style={{ marginLeft: "auto", color: "#f87171", fontWeight: 800 }}>Out: {outs.map((p) => `${lastName(p.name)} (${p.pos})`).join(" · ")}</span>}</div>; })()}
@@ -330,7 +336,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
                   <button key={pos} onClick={() => setPick([pos, 0])} style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "flex-start", gap: 8, padding: "8px 4px", background: "transparent", border: 0, borderBottom: "1px solid #ffffff0f", color: C.tx, cursor: "pointer" }}>
                     <span style={{ minWidth: 30, fontSize: 11, fontWeight: 900, color: "#fff", background: colorOf(pos), borderRadius: 4, textAlign: "center", padding: "1px 4px" }}>{SPEC_TAG[pos] || pos}</span>
                     <span style={{ flex: 1, minWidth: 0, fontSize: 13, lineHeight: 1.45 }}>
-                      {(isSpec(pos) ? [specOn(pos)].filter(Boolean) : o.slice(0, n)).map((p, i) => <span key={p.id} style={{ display: "inline-block", marginRight: 8, color: p.injured ? C.rd : "#e2e8f0", fontWeight: 700 }}>{(ROLE_SLOTS[pos] || pos === "DL") && <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, marginRight: 3 }}>{spotName(pos, i)}</span>}{lastName(p.name)} <span style={{ color: oC(spotOvr(p, pos, i)) }}>{spotOvr(p, pos, i)}</span>{!single(pos) && <span style={{ color: C.mt, fontWeight: 600 }}> {sh[p.id] ?? 0}%</span>}</span>)}
+                      {(isSpec(pos) ? [specOn(pos)].filter(Boolean) : o.slice(0, n)).map((p, i) => <span key={p.id} style={{ display: "inline-block", marginRight: 8, color: p.injured ? C.rd : "#e2e8f0", fontWeight: 700 }}>{(ROLE_SLOTS[pos] || pos === "DL") && <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, marginRight: 3 }}>{spotName(pos, i)}</span>}{lastName(p.name)}<NameTags p={p} yr={yr} gap={4} /> <span style={{ color: oC(spotOvr(p, pos, i)) }}>{spotOvr(p, pos, i)}</span>{!single(pos) && <span style={{ color: C.mt, fontWeight: 600 }}> {sh[p.id] ?? 0}%</span>}</span>)}
                       {isSpec(pos) && specNow && <span style={{ display: "block", fontSize: 12, color: C.mt }}>{(() => { const sp = specNow[pos]; return sp ? `In for ${lastName(sp[1].name)} · ${SPEC_ROLES[pos].when.toLowerCase()}` : `The starter stays on (he fits it best)${(depthOrder || {})[pos]?.length ? "" : " · auto"}`; })()}</span>}
                       {rot.length > 0 && <span style={{ display: "block", fontSize: 12, color: C.mt }}>Rotation: {rot.map((p) => `${lastName(p.name)} ${sh[p.id]}%`).join(" · ")}</span>}
                     </span>

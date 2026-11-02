@@ -11,6 +11,7 @@ import GmOutro from "./GmOutro.jsx";
 import { isFaceOf } from "./faceOfFranchise.js";
 import { capCompliance, openFreeAgency as openFA, aiSignings, starterSignings, fillRosters, askingPrice, isFranchisePlayer, shortGaps, fillDepth, keepBackups, setMarket, leagueShift } from "./offseason.js";
 import DepthChart, { openDepthSide } from "./DepthChart.jsx";
+import { RookieDot, isRookie } from "./PlayerTags.jsx";
 import { depthSlots, depthOrderFor, byDepth, STARTERS as DEPTH_STARTERS } from "./depth.js";
 import CapOverview from "./CapOverview.jsx";
 import DevFocusCard from "./DevFocus.jsx";
@@ -1777,7 +1778,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
             if(MOBILE)return(<div key={p.id} style={{padding:'6px 6px',borderLeft:`3px solid ${isSt?(p.injured?C.rd:C.gn):'#334155'}`,marginBottom:4,background:isSt?'#22c55e08':'#ffffff04',borderRadius:'0 6px 6px 0',opacity:p.injured?.6:1}}>
               <div style={{display:'flex',alignItems:'center',gap:6}}>
                 <span style={{fontSize:13,fontWeight:800,color:isSt?C.gn:C.mt,minWidth:16,textAlign:'center'}}>{i+1}</span>
-                <div style={{flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}><PN p={p} setSel={setSel} style={{fontSize:14,fontWeight:700}}/></div>
+                <div style={{flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}><PN p={p} setSel={setSel} style={{fontSize:14,fontWeight:700}}/>{/* the dev trait already shows under the name here: just the rookie mark */isRookie(p,yr)&&<RookieDot style={{marginLeft:6}}/>}</div>
                 <span style={{fontWeight:900,fontSize:16,color:oC(p.ovr),minWidth:28,textAlign:'right'}}>{p.ovr}</span>
                 <div style={{display:'flex',gap:3}}>{arrow(-1)}{arrow(1)}</div>
               </div>
