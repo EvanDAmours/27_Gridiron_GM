@@ -14,13 +14,13 @@ const lastName = (n) => { const w = (n || "").split(" ").filter((x) => !/^(Jr\.?
 
 // players: everyone at the position in depth order. overrides: your snap settings. onChange(next).
 // laneName(k): what to call spot k (RB, WR1, SLOT, LE...).
-export function SplitBars({ pos, players, overrides, shape, onChange, laneName, mobile }) {
+export function SplitBars({ pos, players, overrides, shape, onChange, laneName, mobile, compact }) {
   const healthy = players.filter((p) => !p.injured);
   const lanes = laneSplit(pos, players, overrides, shape);
   const shares = sharesOf(pos, players, overrides, shape);
   const color = Object.fromEntries(healthy.map((p, i) => [p.id, PAL[i % PAL.length]]));
   const name = Object.fromEntries(healthy.map((p) => [p.id, lastName(p.name)]));
-  const H = mobile ? 44 : 38;
+  const H = mobile ? 44 : compact ? 26 : 38;
   const drag = (e, lane, a, b) => {
     e.preventDefault();
     const bar = e.currentTarget.parentElement, r = bar.getBoundingClientRect(), x0 = e.clientX, start = overrides;
@@ -45,7 +45,7 @@ export function SplitBars({ pos, players, overrides, shape, onChange, laneName, 
       {lanes.map((lane, k) => {
         let acc = 0;
         return (
-          <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, margin: "6px 0" }}>
+          <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, margin: compact ? "4px 0" : "6px 0" }}>
             <span style={{ width: mobile ? 38 : 44, fontSize: 12, fontWeight: 900, color: "#4ade80", flexShrink: 0 }}>{laneName(k)}</span>
             <div style={{ position: "relative", flex: 1, minWidth: 0, height: H, borderRadius: 10, overflow: "hidden", display: "flex", background: "#0b1220", userSelect: "none", touchAction: "none" }}>
               {lane.segs.map((s) => (
@@ -64,8 +64,8 @@ export function SplitBars({ pos, players, overrides, shape, onChange, laneName, 
           </div>
         );
       })}
-      {lanes.length > 1 && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>{healthy.filter((p) => shares[p.id] > 0).map((p) => <span key={p.id} style={{ background: "#ffffff0d", borderRadius: 999, padding: "3px 10px", fontSize: 12, boxShadow: `inset 3px 0 0 ${color[p.id]}` }}>{name[p.id]} <b>{shares[p.id]}%</b></span>)}</div>}
-      {bench.length > 0 && <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>Rotate in: {bench.map((p) => <button key={p.id} type="button" onClick={() => rotateIn(p)} style={{ background: "transparent", border: 0, padding: 0, color: "#7dd3fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>+ {p.name}</button>)}</div>}
+      {lanes.length > 1 && !compact && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>{healthy.filter((p) => shares[p.id] > 0).map((p) => <span key={p.id} style={{ background: "#ffffff0d", borderRadius: 999, padding: "3px 10px", fontSize: 12, boxShadow: `inset 3px 0 0 ${color[p.id]}` }}>{name[p.id]} <b>{shares[p.id]}%</b></span>)}</div>}
+      {bench.length > 0 && !compact && <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>Rotate in: {bench.map((p) => <button key={p.id} type="button" onClick={() => rotateIn(p)} style={{ background: "transparent", border: 0, padding: 0, color: "#7dd3fc", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>+ {p.name}</button>)}</div>}
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { DL_SLOTS, slotKind, naturalDL } from "./dline.js";
 import { ROLE_SLOTS, ROLE_NAME, ROLE_WANTS, roleKind, naturalRole } from "./roles.js";
 import { SPEC_ROLES, isSpec } from "./specialists.js";
 import { linkedSet, laneSplit } from "./snapEdit.js";
+import { SplitBars } from "./SnapBars.jsx";
 
 // Where each spot sits (x, y: the center of its card, in % of the field). Offense: the line, then
 // the backs and off-the-line receivers, then the deep backs. Defense faces it from the top.
@@ -43,10 +44,16 @@ const outText = (p) => (p.injured ? `Out · ${weeks(p.injWk || 1)}` : p.hurt?.wk
 // what a player is by nature, under his name in the menu
 const natural = (p) => (p.pos === "DL" ? (naturalDL(p) === "DT" ? "natural tackle" : "natural edge") : ROLE_SLOTS[p.pos] && p.posAttrs ? `natural ${({ OUT: "outside corner", NB: "nickel", SLOT: "slot", X: "X", Z: "Z", SAM: "SAM", MIKE: "MIKE", WILL: "WILL", FS: "free safety", SS: "strong safety" })[naturalRole(p)] || naturalRole(p)}` : "");
 
-function Card({ label, p, rating, share, on, warn, ghost, onClick, x, y }) {
+// A small padlock (no emoji): locked players keep their share while you change the others.
+const Lock = ({ on, size = 13 }) => <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" style={{ display: "block" }}><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill={on ? "#facc15" : "none"} stroke={on ? "#facc15" : "#94a3b8"} strokeWidth="1.6" /><path d={on ? "M5.3 7V5a2.7 2.7 0 0 1 5.4 0v2" : "M5.3 7V5a2.7 2.7 0 0 1 5.3-.6"} fill="none" stroke={on ? "#facc15" : "#94a3b8"} strokeWidth="1.6" strokeLinecap="round" /></svg>;
+const mini = { width: 24, height: 22, border: 0, borderRadius: 6, background: "#ffffff17", color: "#fff", fontSize: 15, fontWeight: 900, lineHeight: 1, cursor: "pointer", flexShrink: 0, padding: 0 };
+
+// A starter's card. edit: snap counts mode (- and + right on the card). mine: you set his share.
+function Card({ label, p, rating, share, on, warn, ghost, onClick, x, y, edit, onStep, mine, locked }) {
+  const stop = (f) => (e) => { e.stopPropagation(); f(); };
   return (
-    <button type="button" onClick={onClick} title={warn || (p ? `${label}: ${p.name}` : `${label}: empty`)}
-      style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%,-50%)", width: label.length >= 4 ? "clamp(150px, 12.6%, 190px)" : "clamp(118px, 11.3%, 176px)", zIndex: on ? 6 : 1, textAlign: "left", cursor: "pointer", color: "#f3f5f8",
+    <div role="button" tabIndex={0} onClick={onClick} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }} title={warn || (p ? `${label}: ${p.name}${mine ? " · snaps set by you" : ""}${locked ? " · locked" : ""}` : `${label}: empty`)}
+      style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%,-50%)", width: label.length >= 4 ? "clamp(150px, 12.6%, 190px)" : "clamp(118px, 11.3%, 176px)", zIndex: on ? 6 : 1, textAlign: "left", cursor: "pointer", color: "#f3f5f8", userSelect: "none",
         background: on ? "#3b82f6" : ghost ? "#0f1a14" : "#141b29", border: `2px ${ghost ? "dashed" : "solid"} ${on ? "#93c5fd" : warn ? "#f87171" : ghost ? "#ffffff22" : "#ffffff2b"}`, borderRadius: 14, padding: "7px 9px 8px", boxShadow: "0 6px 18px #0008", opacity: ghost ? 0.6 : 1 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ fontSize: 11, fontWeight: 900, padding: "3px 6px", borderRadius: 6, background: on ? "#ffffff33" : "#ffffff17", letterSpacing: ".03em", flexShrink: 0 }}>{label}</span>
@@ -54,25 +61,17 @@ function Card({ label, p, rating, share, on, warn, ghost, onClick, x, y }) {
         {p && <b style={{ fontSize: 15, color: on ? "#fff" : oC(rating), flexShrink: 0 }}>{rating}</b>}
       </div>
       {ghost ? <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ghost}</div>
-        : <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 7, height: 15 }}>
+        : <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: edit && share != null ? 5 : 7, height: edit && share != null ? 22 : 15 }}>
           {share != null ? <>
-            <div style={{ flex: 1, height: 5, borderRadius: 9, background: "#ffffff1f", overflow: "hidden" }}><div style={{ width: `${share}%`, height: "100%", background: on ? "#fff" : "#22c55e" }} /></div>
-            <span style={{ fontSize: 12, fontWeight: 800, color: on ? "#fff" : "#cbd5e1", minWidth: 32, textAlign: "right" }}>{share}%</span>
+            {edit && <button type="button" aria-label={`5 fewer snaps for ${p?.name}`} onClick={stop(() => onStep(-5))} style={mini}>−</button>}
+            <div style={{ flex: 1, height: 5, borderRadius: 9, background: "#ffffff1f", overflow: "hidden" }}><div style={{ width: `${share}%`, height: "100%", background: on ? "#fff" : mine ? "#facc15" : "#22c55e" }} /></div>
+            {locked && <Lock on size={12} />}
+            <span style={{ fontSize: 12, fontWeight: 800, color: on ? "#fff" : mine ? "#fde68a" : "#cbd5e1", minWidth: 32, textAlign: "right" }}>{share}%</span>
+            {edit && <button type="button" aria-label={`5 more snaps for ${p?.name}`} onClick={stop(() => onStep(5))} style={mini}>+</button>}
           </> : <span style={{ fontSize: 12, color: on ? "#e0ecff" : "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p ? p.sub : ""}</span>}
         </div>}
       {warn && <span style={{ position: "absolute", top: -9, right: -9, background: "#f87171", color: "#0b0f17", borderRadius: 99, fontSize: 11, fontWeight: 900, padding: "1px 7px" }}>!</span>}
-    </button>
-  );
-}
-
-const stepBtn = { width: 38, height: 38, border: 0, background: "#ffffff0d", color: "#fff", fontSize: 20, fontWeight: 900, cursor: "pointer" };
-function Stepper({ value, onSet }) {
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", borderRadius: 10, background: "#0b0f17", border: "1px solid #ffffff22", overflow: "hidden", flexShrink: 0 }}>
-      <button type="button" aria-label="5 fewer snaps" onClick={() => onSet(value - 5)} style={stepBtn}>−</button>
-      <b style={{ width: 60, textAlign: "center", fontSize: 16 }}>{value}%</b>
-      <button type="button" aria-label="5 more snaps" onClick={() => onSet(value + 5)} style={stepBtn}>+</button>
-    </span>
+    </div>
   );
 }
 
@@ -83,6 +82,8 @@ export default function DepthDesk({ api }) {
   const [box, setBox] = useState({ w: 1200, h: 560 });
   const [popAt, setPopAt] = useState(null);
   const [plan, setPlan] = useState(false);
+  const [edit, setEdit] = useState(false); // snap counts mode: - and + on every card and bench chip
+  const [locks, setLocks] = useState(() => new Set()); // players whose share you locked (this session)
   useLayoutEffect(() => {
     const fit = () => { const el = fieldRef.current; if (!el) return; let sp = el.parentElement; while (sp && sp !== document.body && !/(auto|scroll)/.test(getComputedStyle(sp).overflowY)) sp = sp.parentElement; if (!sp || sp === document.body) sp = document.documentElement;
       // fit inside the screen's scroll area (the display size setting zooms the page, so measure in its units)
@@ -137,6 +138,18 @@ export default function DepthDesk({ api }) {
     const sh = (p) => (single(p.pos) ? 0 : shares(p.pos)[p.id] || 0);
     return pool.map((p) => ({ p, s: sh(p) })).sort((a, b) => (b.s > 0) - (a.s > 0) || b.s - a.s || (!!b.p.injured - !!a.p.injured) || b.p.ovr - a.p.ovr);
   })();
+  // set one player's share; the difference comes off (or goes to) the others at his position,
+  // never a locked one (snapEdit.js linkedSet)
+  const setShare = (pos, id, v) => setSnaps && setSnaps((o) => linkedSet(pos, order(pos), o || {}, shape, id, v, locks));
+  const shareOf = (pos, id) => shares(pos)[id] ?? 0;
+  const toggleLock = (id) => setLocks((l) => { const n = new Set(l); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  // the starters play every snap of their spot; the bench only keeps what you locked. Spot by spot,
+  // so a formation that takes a receiver off the field (two-TE sets) still does.
+  const startersOnly = (pos) => setSnaps && setSnaps((o0) => { const o = o0 || {}; const n = { ...o };
+    const lanes = laneSplit(pos, order(pos), o, shape), st = fieldOrder(pos).slice(0, lanes.length);
+    for (const q of order(pos).filter((x) => !x.injured)) if (!locks.has(q.id)) n[q.id] = 0;
+    lanes.forEach((ln, k) => { const who = st[k]; if (!who || locks.has(who.id)) return; n[who.id] = Math.min(100, ln.segs.reduce((t, sg) => t + (locks.has(sg.id) && sg.id !== who.id ? 0 : sg.v), 0)); });
+    return n; });
   const benchOpen = (p) => { const i = order(p.pos).findIndex((q) => q.id === p.id); setPick([p.pos, Math.max(0, Math.min(i, (fieldOrder(p.pos).length || 1) - 1))]); };
 
   // ---- the menu for the spot you opened
@@ -149,7 +162,6 @@ export default function DepthDesk({ api }) {
   const picked = pick && roster.find((p) => p.id === pickedId);
   const healthyHere = pick ? order(pos).filter((p) => !p.injured) : [];
   const myShare = pick && picked && !picked.injured && !isOne && setSnaps ? shares(pos)[picked.id] ?? 0 : null;
-  const setMine = (v) => setSnaps(linkedSet(pos, order(pos), snaps || {}, shape, picked.id, v));
   // who else plays his spot (the snaps he doesn't), from the split bars' lanes
   const restNote = (() => {
     if (myShare == null) return "";
@@ -166,7 +178,7 @@ export default function DepthDesk({ api }) {
   const ratingAt = (p) => ((p.pos === pos || (pos === "WR" && p.pos === "TE")) && (pos === "DL" || ROLE_SLOTS[pos]) ? spotOvr(p, pos, pickRole) : shown(p, pos));
 
   const pop = pick && (
-    <div ref={popRef} role="dialog" aria-label={`${spotName(pos, pickRole)} menu`} style={{ position: "absolute", zIndex: 8, width: sits.length ? 470 : 400, maxHeight: box.h - 20, overflowY: "auto", left: popAt?.left ?? 0, top: popAt?.top ?? 0, visibility: popAt ? "visible" : "hidden", background: "#1b2436", border: "1px solid #3b82f6", borderRadius: 16, boxShadow: "0 24px 60px #000c", padding: "14px 16px 16px", color: "#f3f5f8" }}>
+    <div ref={popRef} role="dialog" aria-label={`${spotName(pos, pickRole)} menu`} style={{ position: "absolute", zIndex: 8, width: !isOne && setSnaps ? 540 : sits.length ? 470 : 400, maxHeight: box.h - 20, overflowY: "auto", left: popAt?.left ?? 0, top: popAt?.top ?? 0, visibility: popAt ? "visible" : "hidden", background: "#1b2436", border: "1px solid #3b82f6", borderRadius: 16, boxShadow: "0 24px 60px #000c", padding: "14px 16px 16px", color: "#f3f5f8" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
         <b style={{ fontSize: 17 }}>{spotName(pos, pickRole)}</b>
         <span style={{ fontSize: 13, color: "#a3adbd", flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{roleText}</span>
@@ -189,16 +201,27 @@ export default function DepthDesk({ api }) {
                 {sub && <div style={{ fontSize: 12, color: "#a3adbd", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>}
               </div>
               {out && <span style={{ fontSize: 12.5, fontWeight: 800, color: p.injured ? "#f87171" : "#eab308", whiteSpace: "nowrap" }}>{out}</span>}
-              {!isOne && !p.injured && at === pos && <span style={{ fontSize: 12, color: "#a3adbd", minWidth: 34, textAlign: "right" }}>{shares(pos)[p.id] ?? 0}%</span>}
               <b style={{ fontSize: 15, color: oC(v), minWidth: 24, textAlign: "right" }}>{v}</b>
+              {!isOne && setSnaps && at === pos && !p.injured && (() => { const sv = shareOf(pos, p.id), lk = locks.has(p.id), mine = snaps?.[p.id] != null; return (
+                <span onClick={(e) => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: 3, cursor: "default", marginLeft: 4 }}>
+                  <button type="button" aria-label={`5 fewer snaps for ${p.name}`} disabled={lk} onClick={() => setShare(pos, p.id, sv - 5)} style={{ ...mini, opacity: lk ? 0.35 : 1 }}>−</button>
+                  <b style={{ width: 40, textAlign: "center", fontSize: 13, color: lk ? "#facc15" : mine ? "#fde68a" : "#e5e7eb" }}>{sv}%</b>
+                  <button type="button" aria-label={`5 more snaps for ${p.name}`} disabled={lk} onClick={() => setShare(pos, p.id, sv + 5)} style={{ ...mini, opacity: lk ? 0.35 : 1 }}>+</button>
+                  <button type="button" aria-label={lk ? `Unlock ${p.name}'s snaps` : `Lock ${p.name}'s snaps`} aria-pressed={lk} title={lk ? "Locked: changing the others won't move him. Click to unlock." : "Lock his snaps so changing the others won't move him"} onClick={() => toggleLock(p.id)} style={{ ...mini, background: lk ? "#facc1526" : "transparent", display: "grid", placeItems: "center" }}><Lock on={lk} /></button>
+                </span>); })()}
+              {(isOne || !setSnaps || at !== pos || p.injured) && !isOne && <span style={{ width: 120 }} />}
             </div>
           );
         })}
       </div>
       {SPEC_ROLES[pos] && (depthOrder || {})[pos]?.length > 0 && <button type="button" onClick={() => setDepthOrder((d) => { const n = { ...d }; delete n[pos]; return n; })} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", padding: "6px 0 0" }}>Leave it to the staff</button>}
       {myShare != null && <>
-        <div style={{ ...H, margin: "14px 0 8px", display: "flex" }}><span style={{ flex: 1 }}>How much he plays</span>{changed && <button type="button" onClick={() => resetShares(pos)} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, textTransform: "none", letterSpacing: 0 }}>Reset to auto</button>}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}><Stepper value={myShare} onSet={setMine} /><span style={{ fontSize: 13, color: "#a3adbd", lineHeight: 1.35 }}>{restNote}</span></div>
+        <div style={{ ...H, margin: "14px 0 4px", display: "flex", alignItems: "center", gap: 12 }}><span style={{ flex: 1 }}>Snap split</span>
+          {(api.STARTERS[pos] || 1) > 0 && healthyHere.length > (api.STARTERS[pos] || 1) && <button type="button" onClick={() => startersOnly(pos)} title="The starters play every snap they can; backups only fill in" style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, textTransform: "none", letterSpacing: 0 }}>Starters only</button>}
+          {changed && <button type="button" onClick={() => { resetShares(pos); setLocks((l) => { const n = new Set(l); for (const q of order(pos)) n.delete(q.id); return n; }); }} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, textTransform: "none", letterSpacing: 0 }}>Reset to auto</button>}
+        </div>
+        <SplitBars pos={pos} players={order(pos)} overrides={snaps || {}} shape={shape} compact onChange={(next) => setSnaps(next)} laneName={(k) => spotName(pos, k)} />
+        <div style={{ fontSize: 12.5, color: "#a3adbd", marginTop: 4, lineHeight: 1.35 }}>{restNote ? `${lastName(picked.name)} ${myShare}%. ${restNote}.` : ""} Drag a line in a bar to trade snaps, or use - and + beside each player.</div>
       </>}
       {sits.length > 0 && <>
         <div style={{ ...H, margin: "14px 0 4px", display: "flex" }}><span style={{ flex: 1 }}>Situations</span><button type="button" onClick={() => { setSide("specialists"); setPick(null); }} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, textTransform: "none", letterSpacing: 0 }}>Change under Specialists</button></div>
@@ -225,7 +248,8 @@ export default function DepthDesk({ api }) {
         {side === "offense" && <span style={{ display: "inline-flex", alignItems: "center", gap: 8, marginLeft: 8 }}><span style={{ fontSize: 13.5, color: "#94a3b8" }}>Formation</span><span style={{ display: "inline-flex", background: "#ffffff0d", borderRadius: 12, padding: 3 }}>{Object.keys(FORMS).map((k) => <button key={k} title={FORM_TIP[k]} onClick={() => { setForm(k); setPick(null); }} style={pill(form === k)}>{k}</button>)}</span>{personnel && <span style={{ fontSize: 13, color: "#94a3b8" }}>Your identity: <b style={{ color: "#e2e8f0" }}>{personnel}</b></span>}</span>}
         {side === "defense" && <span style={{ display: "inline-flex", alignItems: "center", gap: 8, marginLeft: 8 }}><span style={{ fontSize: 13.5, color: "#94a3b8" }}>Package</span><span style={{ display: "inline-flex", background: "#ffffff0d", borderRadius: 12, padding: 3 }}>{Object.keys(DEF_FORMS).map((k) => <button key={k} title={PKG_TIP[k]} onClick={() => { setPkg(k); setPick(null); }} style={{ ...pill(pkg === k), textTransform: "capitalize" }}>{k}</button>)}</span>{defLean && <span style={{ fontSize: 13, color: "#94a3b8" }}>Your lean: <b style={{ color: "#e2e8f0" }}>{defLean}</b></span>}</span>}
         <span style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ fontSize: 13, color: "#94a3b8" }}>Click a player to change him</span>
+          <span style={{ fontSize: 13, color: "#94a3b8" }}>{edit ? "Use - and + to set snaps" : "Click a player to change him"}</span>
+          {setSnaps && (side === "offense" || side === "defense") && <button type="button" aria-pressed={edit} onClick={() => { setPick(null); setEdit((v) => !v); }} title="Set everyone's snaps right on the field" style={{ minHeight: 38, borderRadius: 10, border: 0, padding: "0 14px", background: edit ? "#3b82f6" : "#ffffff12", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Snap counts</button>}
           {gamePlan && <button type="button" onClick={() => { setPick(null); setPlan((v) => !v); }} style={{ minHeight: 38, borderRadius: 10, border: 0, padding: "0 14px", background: plan ? "#3b82f6" : "#ffffff12", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Game plan</button>}
           {viewToggle}
           <button type="button" onClick={onAutoFill} style={{ minHeight: 38, borderRadius: 10, border: 0, padding: "0 14px", background: "#ffffff12", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Auto-fill</button>
@@ -233,17 +257,21 @@ export default function DepthDesk({ api }) {
       </div>
       <div ref={fieldRef} data-depth-field style={{ position: "relative", height: fh, borderRadius: 18, overflow: "hidden", border: "1px solid #ffffff12", background: "linear-gradient(180deg,#14402a,#0f3020)" }}>
         <div title="Line of scrimmage" style={{ position: "absolute", left: 0, right: 0, top: `${LOS[side]}%`, borderTop: "2px solid #ffffff3a" }} />
-        {cards.map((c) => <Card key={`${c.pos}${c.idx}`} {...c} on={!!sel && sel === c} onClick={() => openSpot(c)} />)}
+        {cards.map((c) => <Card key={`${c.pos}${c.idx}`} {...c} on={!!sel && sel === c} onClick={() => openSpot(c)} edit={edit && !pick} mine={!!c.p && snaps?.[c.p.id] != null} locked={!!c.p && locks.has(c.p.id)} onStep={(d) => setShare(c.pos, c.p.id, shareOf(c.pos, c.p.id) + d)} />)}
         {ghosts.map((g) => <Card key="ghost" {...g} on={!!sel && sel === g} onClick={() => setPick(["LB", Math.max(0, order("LB").indexOf(order("LB").filter((q) => !q.injured)[0]))])} />)}
         {cards.filter((c) => c.warn).map((c) => <div key={`w${c.pos}${c.idx}`} style={{ position: "absolute", left: `${c.x}%`, top: `calc(${c.y}% + 40px)`, transform: "translateX(-50%)", background: "#f87171", color: "#0b0f17", fontSize: 12, fontWeight: 800, borderRadius: 8, padding: "2px 8px", whiteSpace: "nowrap", zIndex: 2 }}>{c.warn}</div>)}
         {bench.length > 0 && <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 54, padding: "0 16px", background: "#0b0f17cc", borderTop: "1px solid #ffffff14", display: "flex", alignItems: "center", gap: 10, zIndex: 2 }}>
           <span style={{ ...H, flexShrink: 0 }}>Bench</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, height: 34, overflow: "hidden", flex: 1, minWidth: 0 }}>
-            {bench.map(({ p, s }) => { const out = p.injured; return (
-              <button key={p.id} type="button" onClick={() => benchOpen(p)} title={`${p.name}: ${p.pos} ${p.ovr}${out ? ` · out ${weeks(p.injWk || 1)}` : s ? ` · ${s}% of the snaps` : ""}`} style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 34, background: out ? "#2a1518" : "#141b29", border: `1px solid ${out ? "#f8717155" : "#ffffff1f"}`, borderRadius: 10, padding: "0 10px", whiteSpace: "nowrap", cursor: "pointer", color: "#f3f5f8" }}>
-                <b style={{ fontSize: 13.5 }}>{p.name}</b><b style={{ fontSize: 13.5, color: oC(p.ovr) }}>{p.ovr}</b>
-                <span style={{ fontSize: 12, color: out ? "#f87171" : "#a3adbd", fontWeight: out ? 800 : 500 }}>{p.pos}{out ? ` · out ${weeks(p.injWk || 1)}` : p.hurt?.wks > 0 ? " · Q" : s ? ` · ${s}%` : ""}</span>
-              </button>); })}
+            {bench.map(({ p, s }) => { const out = p.injured, canAdd = edit && !out && !single(p.pos) && setSnaps; return (
+              <span key={p.id} style={{ display: "inline-flex", alignItems: "center", height: 34, background: out ? "#2a1518" : "#141b29", border: `1px solid ${out ? "#f8717155" : snaps?.[p.id] != null && s ? "#facc1566" : "#ffffff1f"}`, borderRadius: 10, whiteSpace: "nowrap", color: "#f3f5f8", overflow: "hidden", flexShrink: 0 }}>
+                {canAdd && s > 0 && <button type="button" aria-label={`5 fewer snaps for ${p.name}`} onClick={() => setShare(p.pos, p.id, s - 5)} style={{ ...mini, borderRadius: 0, height: 34, width: 28, background: "#ffffff0d" }}>−</button>}
+                <button type="button" onClick={() => benchOpen(p)} title={`${p.name}: ${p.pos} ${p.ovr}${out ? ` · out ${weeks(p.injWk || 1)}` : s ? ` · ${s}% of the snaps` : ""}`} style={{ display: "inline-flex", alignItems: "center", gap: 7, height: 34, background: "transparent", border: 0, padding: "0 10px", cursor: "pointer", color: "#f3f5f8" }}>
+                  <b style={{ fontSize: 13.5 }}>{p.name}</b><b style={{ fontSize: 13.5, color: oC(p.ovr) }}>{p.ovr}</b>
+                  <span style={{ fontSize: 12, color: out ? "#f87171" : snaps?.[p.id] != null && s ? "#fde68a" : "#a3adbd", fontWeight: out ? 800 : 500 }}>{p.pos}{out ? ` · out ${weeks(p.injWk || 1)}` : p.hurt?.wks > 0 ? " · Q" : s ? ` · ${s}%` : ""}</span>
+                </button>
+                {canAdd && <button type="button" aria-label={`5 more snaps for ${p.name}`} title="Rotate him in: 5 more snaps" onClick={() => setShare(p.pos, p.id, s + 5)} style={{ ...mini, borderRadius: 0, height: 34, width: 28, background: "#22c55e33" }}>+</button>}
+              </span>); })}
           </div>
         </div>}
         {(pick || plan) && <div onClick={() => { setPick(null); setPlan(false); }} style={{ position: "absolute", inset: 0, background: "#05080da6", zIndex: 4 }} />}

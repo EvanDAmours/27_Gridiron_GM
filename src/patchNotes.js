@@ -2223,4 +2223,10 @@ export const PATCH_NOTES = [
     "Overtime fix: returning the overtime kickoff for a touchdown no longer ends the game. Under the current NFL rules (playoffs, and the regular season since 2025) both teams get the ball in overtime, and a kick return touchdown counts as the receiving team's possession, so the kicking team now gets its chance to answer. The game was wrongly counting that return as the receiving team's second possession.",
     "Everything else in overtime already followed the rules and still does: a field goal or touchdown on the first possession sends the ball to the other team; after both teams have had it, the next score wins; a safety by the kicking team on the first possession ends it; the regular season has one 10-minute period and can end tied; playoff games play 15-minute periods until someone wins.",
   ] },
+  { v: "5.42", date: "2026-10-23", title: "Depth chart: snap counts on the field", notes: [
+    "Depth chart (desktop field): snap counts are much easier to manage. A new Snap counts button puts - and + on every player's card and on every bench chip, so you can set the whole lineup's snaps right on the field without opening anything. A bench player's + rotates him in.",
+    "Clicking a player opens his position's full snap manager: every player has his own - and + (5% a click), a draggable split bar for each spot (X, Z, SLOT; CB1, CB2, NB; LE, DT1...) shows who plays it and how much, and a lock on each player keeps his share fixed while you change the others.",
+    "Starters only: one click gives each starter every snap of his spot and sits the bench (players you locked keep their share). Reset to auto hands the position back to the staff.",
+    "Shares you set yourself show in yellow on the field and the bench, so you can see at a glance what's yours and what the staff decides.",
+  ] },
 ];
