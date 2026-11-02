@@ -2219,4 +2219,8 @@ export const PATCH_NOTES = [
     "The bench runs along the bottom of the field: who rotates in and how much, and who's hurt. Click anyone there to open his position.",
     "In nickel, the SAM linebacker stays on the field dashed out (off the field in nickel). A backup starting for an injured player is flagged in red with whom he's replacing. Your scheme and personnel moved to a Game plan button in the bar. The phone layout hasn't changed.",
   ] },
+  { v: "5.41", date: "2026-10-23", title: "Overtime: a kick return touchdown no longer ends it", notes: [
+    "Overtime fix: returning the overtime kickoff for a touchdown no longer ends the game. Under the current NFL rules (playoffs, and the regular season since 2025) both teams get the ball in overtime, and a kick return touchdown counts as the receiving team's possession, so the kicking team now gets its chance to answer. The game was wrongly counting that return as the receiving team's second possession.",
+    "Everything else in overtime already followed the rules and still does: a field goal or touchdown on the first possession sends the ball to the other team; after both teams have had it, the next score wins; a safety by the kicking team on the first possession ends it; the regular season has one 10-minute period and can end tied; playoff games play 15-minute periods until someone wins.",
+  ] },
 ];

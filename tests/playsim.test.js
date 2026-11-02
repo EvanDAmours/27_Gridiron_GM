@@ -147,6 +147,32 @@ test("overtime: a first-possession field goal gives the other team the ball", ()
   assert.fail("never kicked");
 });
 
+test("overtime: a kickoff returned for a touchdown is the first possession, and the other team still gets the ball", () => {
+  for (let i = 0; i < 4000; i++) {
+    const g = createGame(teams[0].side, teams[1].side, { rand, playoff: true });
+    Object.assign(g, { koNext: true, poss: "a", qtr: 5, ot: true, otPoss: 1, clock: 900, yard: 35, down: 1, toGo: 10, score: { h: 20, a: 20 } });
+    const ev = step(g);
+    if (ev.retTD === "h") { assert.equal(g.done, false, "the game goes on"); assert.equal(g.poss, "a", "the kicking team gets its possession"); assert.equal(g.otPoss, 2); return; }
+    if (i < 3999) continue;
+  }
+  assert.fail("never returned one");
+});
+
+test("overtime: after a touchback the receiving team's drive is the first possession (a field goal doesn't end it)", () => {
+  for (let i = 0; i < 200; i++) {
+    const g = createGame(teams[0].side, teams[1].side, { rand, playoff: true });
+    Object.assign(g, { koNext: true, poss: "a", qtr: 5, ot: true, otPoss: 1, clock: 900, yard: 35, down: 1, toGo: 10, score: { h: 20, a: 20 } });
+    const ev = step(g);
+    if (ev.retTD || g.poss !== "h") continue;
+    assert.equal(g.otPoss, 1);
+    Object.assign(g, { yard: 80, down: 4, toGo: 8, clock: 700 });
+    const fg = step(g);
+    if (fg.type !== "fg") continue;
+    assert.equal(g.done, false); assert.equal(g.poss, "a"); return;
+  }
+  assert.fail("never kicked");
+});
+
 test("the play-by-play names the matchup on big catches, and each play carries its personnel and package", async () => {
   const { initTeams, simGame, calibrateLeague } = await import("../src/league.js");
   const T = initTeams(-1); calibrateLeague(T);

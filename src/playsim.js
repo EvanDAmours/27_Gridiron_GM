@@ -484,7 +484,7 @@ export const fgOdds = (dist, k = 75, leg = 95) => clamp(1.005 - 0.0045 * (dist -
 
 function newPossession(g, yard) {
   // Overtime (2025 rules): once both teams have had the ball, a team that's ahead has won.
-  if (g.ot) { g.otPoss = (g.otPoss || 1) + 1; if (g.otPoss >= 3 && g.score.h !== g.score.a) { g.done = true; return; } }
+  if (g.ot) { g.otPoss = (g.otPoss ?? 1) + 1; if (g.otPoss >= 3 && g.score.h !== g.score.a) { g.done = true; return; } }
   g.poss = other(g.poss);
   g.yard = clamp(Math.round(yard), 1, 99);
   g.down = 1; g.toGo = Math.min(10, 100 - g.yard);
@@ -644,9 +644,10 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   if (g.koNext) {
     g.koNext = false; g.plays++;
     const kick = g.poss, ev = { yard: 35, down: 1, toGo: 10, qtr: g.qtr, clock: g.clock, poss: kick, yards: 0, type: "kickoff", text: `${sideName(g, kick)} kick off.`, td: false, turnover: false, score: 0 };
-    const op = g.otPoss;
+    // the receiving team's first overtime possession starts here: a kick returned for a touchdown
+    // is that possession, and the other team still gets the ball
+    if (g.ot && g.otPoss === 1) g.otPoss = 0;
     kickoff(g, ev);
-    if (g.ot && !g.done) g.otPoss = op; // the overtime kickoff isn't a possession of its own
     if (ev.ko?.tb) ev.text += " Touchback.";
     ev.note = tick(g, ev.ko?.tb ? 0 : 6);
     return ev;
