@@ -574,7 +574,8 @@ export function calcDefStr(t){const r=t.roster.filter(p=>!p.injured&&!p.holdout&
 
 // Cap rollover (t.rollover): half of last year's unused room, up to 5% of the cap, counts as a credit.
 // Injured reserve still counts (an injured player is paid); deals ending in re-sign week don't.
-export function capHit(t){return+([...(t.roster||[]),...(t.ir||[])].reduce((s,p)=>s+(expiringNow(p)?0:(p.salary||0)),0)+((t.coach?.oc?.salary||0)+(t.coach?.dc?.salary||0)+(t.coach?.st?.salary||0))+(t.deadCap||0)+(t.incCharge||0)-(t.rollover||0)).toFixed(1);}
+// Players only: coaches are paid by the owner, off the cap, like the NFL.
+export function capHit(t){return+([...(t.roster||[]),...(t.ir||[])].reduce((s,p)=>s+(expiringNow(p)?0:(p.salary||0)),0)+(t.deadCap||0)+(t.incCharge||0)-(t.rollover||0)).toFixed(1);}
 // Cap room under the cap for the league year in force (see cap.js).
 export function capSpace(t){return+(leagueCap()-capHit(t)).toFixed(1);}
 

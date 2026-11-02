@@ -10,6 +10,7 @@
 // A restructure turns most of this year's base salary into bonus, spread over the years left:
 // space now, a bigger cap hit in every later year, and more dead money if he's cut.
 import { capFor, BASE_YEAR } from "./cap.js";
+import { guaranteedOwed, restructureSched, syncSalary, advanceSchedule } from "./contractSchedule.js";
 
 const r1 = (x) => Math.round((+x || 0) * 10) / 10;
 export const OFFSEASON = new Set(["resign", "freeagency", "draft"]);
@@ -35,10 +36,13 @@ export function yearsLeft(p, yr, sp) {
 export function deadMoney(p, { yr, sp, june1 = false } = {}) {
   const yl = yearsLeft(p, yr, sp);
   const pr = proration(p);
-  const total = r1(pr * yl);
-  if (!yl || !pr) return { now: 0, next: 0, total: 0 };
+  // a scheduled deal also leaves the guaranteed salary still owed (and a roster bonus already paid)
+  const g = guaranteedOwed(p, { sp, yl });
+  const total = r1(pr * yl + g.now + g.later);
+  if (!yl || !total) return { now: 0, next: 0, total: 0 };
   if (OFFSEASON.has(sp) && !june1) return { now: total, next: 0, total };
-  return { now: r1(pr), next: r1(total - pr), total };
+  const now = r1(pr + g.now);
+  return { now, next: r1(total - now), total };
 }
 
 // Charge dead money to a team (mutates it).
@@ -53,6 +57,7 @@ export function tradeAway(p, from, ctx) {
   const pr = proration(p);
   if (!pr || !from) return p;
   chargeDead(from, deadMoney(p, ctx));
+  if (p.sched?.length) return syncSalary({ ...p, sb: 0 });
   return { ...p, salary: r1((p.salary || 0) - pr), sb: 0 };
 }
 
@@ -61,6 +66,11 @@ export function tradeAway(p, from, ctx) {
 export function restructurePlan(p, { yr, sp, minSal }) {
   const yl = yearsLeft(p, yr, sp);
   if (yl < 2) return null;
+  if (p.sched?.length) {
+    const r = restructureSched(p, { minSal, yl });
+    if (!r) return null;
+    return { convert: r.convert, years: r.years, addPerYr: r.addPerYr, saved: r.saved, hitNow: r.p.salary, hitLater: r1((p.sched[1] ? p.sched[1].base + p.sched[1].rb : 0) + (r.p.sb || 0)), deadIfCut: r1((r.p.sb || 0) * yl) };
+  }
   const pr = proration(p);
   const convert = r1((p.salary || 0) - pr - minSal);
   if (convert < 1) return null;
@@ -75,6 +85,7 @@ export function restructurePlan(p, { yr, sp, minSal }) {
 export function restructure(p, ctx) {
   const plan = restructurePlan(p, ctx);
   if (!plan) return null;
+  if (p.sched?.length) return { plan, p: restructureSched(p, { minSal: ctx.minSal, yl: yearsLeft(p, ctx.yr, ctx.sp) }).p };
   return { plan, p: { ...p, salary: plan.hitNow, sb: r1(proration(p) + plan.addPerYr), baseBack: r1((p.baseBack || 0) + plan.convert), restructures: (p.restructures || 0) + 1 } };
 }
 
@@ -102,11 +113,11 @@ export function signedTerms(sal, yrs, share, ctx) {
 }
 
 // A brand-new contract: his old bonus and restructures don't come with him.
-export const freshDeal = (p) => { const { sb, baseBack, restructures, restructured, voidYrs, voidDead, inc, ...rest } = p; return rest; };
+export const freshDeal = (p) => { const { sb, baseBack, restructures, restructured, voidYrs, voidDead, inc, sched, schedYr, gtdAtSign, dealTotal, signBonus, ...rest } = p; return rest; };
 
 // A new league year (re-sign week): last year's dead money is off the books, money pushed to
 // this year arrives, and restructured base salaries come back. Mutates the teams.
-export function newLeagueYear(teams) {
+export function newLeagueYear(teams, leagueYr) {
   for (const t of teams) {
     if (!t) continue;
     t.deadCap = r1(t.deadNext || 0);
@@ -117,6 +128,8 @@ export function newLeagueYear(teams) {
     t.incNext = 0;
     for (const list of [t.roster, t.ir, t.ps]) for (const p of list || []) {
       if (p.baseBack) { p.salary = r1((p.salary || 0) + p.baseBack); delete p.baseBack; }
+      // a scheduled deal moves on to this league year's salary
+      if (p.sched?.length && leagueYr != null) advanceSchedule(p, leagueYr);
     }
   }
   return teams;

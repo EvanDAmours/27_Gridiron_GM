@@ -29,13 +29,13 @@ export const openMarket = (yr) => ({ yr, day: 1, bids: {} });
 // What an offer is worth to him: the money (guarantees and incentives count a little), plus or
 // minus how well that club gives him what he wants. Same weighing as your negotiation.
 export function offerValue(p, bid, team) {
-  const money = bid.sal * (1 + 0.06 * (bid.share || 0)) + incentiveWorth(bid.inc?.amt);
+  const money = bid.sal * (bid.vf || 1 + 0.06 * (bid.share || 0)) + incentiveWorth(bid.inc?.amt);
   return money * (1 + fitPull(priorities(p), teamFit(p, team)));
 }
 // The least he'd take per year for that many years (his hidden minimum, as in a negotiation).
 export const needFor = (p, yrs, yr) => r1(yearlyAsk(p, yrs, "fa") * terms(p, { yr, mode: "fa" }).minF);
 // Is your offer so far over his ask that he signs on the spot?
-export const isOverpay = (p, bid) => bid.sal * (1 + 0.06 * (bid.share || 0)) >= yearlyAsk(p, bid.yrs, "fa") * OVERPAY;
+export const isOverpay = (p, bid) => bid.sal * (bid.vf || 1 + 0.06 * (bid.share || 0)) >= yearlyAsk(p, bid.yrs, "fa") * OVERPAY;
 
 // Put a club's offer on the table (replacing its earlier one). Returns the new market.
 export function placeBid(market, pid, bid) {

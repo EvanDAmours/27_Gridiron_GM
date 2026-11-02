@@ -92,14 +92,14 @@ export default function CoachingDesk({ staff, yr, scPts, coachAge, hcTrait, hcSt
             <Pills items={[["ALL", "All"], ["HC", "Head coach"], ["OC", "OC"], ["DC", "DC"], ["ST", "ST"]]} value={role} onChange={setRole} label="Job" />
           </div>
           <div style={{ overflowY: "auto", minHeight: 0, flex: 1, margin: "0 -8px" }}>
-            {pool.map((c) => { const afford = c.role === "HC" || cap >= (c.salary || 0); const sub = [ROLE[c.role], c.role === "HC" ? hcStyle(c) : c.scheme, c.trait, (c.fired || c.expired) && c.from && `${c.fired ? "fired by" : "let go by"} ${c.from}`].filter(Boolean).join(" · "); return (
+            {pool.map((c) => { const afford = true; /* coaches are off the cap */ const sub = [ROLE[c.role], c.role === "HC" ? hcStyle(c) : c.scheme, c.trait, (c.fired || c.expired) && c.from && `${c.fired ? "fired by" : "let go by"} ${c.from}`].filter(Boolean).join(" · "); return (
               <div key={c.id} className="calm-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "8px 10px", borderRadius: 14 }}>
                 <Face s={c.face} coach={c.name} sz={40} />
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontSize: 16, fontWeight: 800, color: "#f8fafc" }}>{c.name}{c.real && <span style={{ fontSize: 12, color: "#86efac", fontWeight: 800 }}> · real coach</span>}</span>
                   <span title={c.role === "HC" ? hcTrait(c)?.desc : undefined} style={{ display: "block", fontSize: 13.5, color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</span>
                 </span>
-                <span style={{ width: 90, textAlign: "right", fontSize: 14, color: afford ? "#cbd5e1" : "#fca5a5" }} title={c.role === "HC" ? "Head coaches aren't paid out of the player cap" : undefined}>{c.role === "HC" ? "off the cap" : `$${c.salary}M`}</span>
+                <span style={{ width: 90, textAlign: "right", fontSize: 14, color: afford ? "#cbd5e1" : "#fca5a5" }} title={"Coaches are paid by the owner, off the player cap"}>{c.role === "HC" ? "off the cap" : `$${c.salary}M`}</span>
                 <span style={{ width: 44, textAlign: "right", fontSize: 20, fontWeight: 900, color: oC(c.rating) }}>{c.rating}</span>
                 <button onClick={() => onHire(c)} disabled={!afford} style={{ ...pill, width: 72, background: afford ? C.gn : "#ffffff0f", color: afford ? "#fff" : "#64748b" }}>Hire</button>
               </div>

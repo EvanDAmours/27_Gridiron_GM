@@ -86,14 +86,14 @@ export default function PhoneCoaching({ hcNote, hcExtOk = true, staff, yr, scPts
           <div style={{ height: 8 }} />
         </Sheet>
       )}
-      {pick?.hire && (() => { const c = pick.hire, ok = c.role === "HC" || cap >= (c.salary || 0); return (
+      {pick?.hire && (() => { const c = pick.hire, ok = true; return (
         <Sheet onClose={() => setPick(null)}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10, paddingRight: 40 }}>
             <Face s={c.face} coach={c.name} sz={60} />
             <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.15 }}>{c.name}</div><div style={{ fontSize: 14, color: "#94a3b8", marginTop: 2 }}>{ROLE_NAME[c.role]}{(c.fired || c.expired) && c.from ? ` · ${c.fired ? "fired by" : "let go by"} ${c.from}` : ""}</div></div>
             <b style={{ fontSize: 40, color: oC(c.rating) }}>{c.rating}</b>
           </div>
-          {[["Scheme", c.role !== "HC" ? c.scheme : null], ["Style", c.trait], ["Salary", c.role === "HC" ? "Off the player cap" : `$${c.salary}M`]].filter(([, v]) => v).map(([l, v]) => (
+          {[["Scheme", c.role !== "HC" ? c.scheme : null], ["Style", c.trait], ["Salary", `$${c.salary}M · off the cap`]].filter(([, v]) => v).map(([l, v]) => (
             <div key={l} style={{ display: "flex", alignItems: "center", minHeight: 44, borderTop: "1px solid #ffffff14", fontSize: 16 }}><span style={{ color: "#94a3b8" }}>{l}</span><b style={{ marginLeft: "auto" }}>{v}</b></div>
           ))}
           <button disabled={!ok} onClick={() => { onHire(c); setPick(null); }} style={{ ...big(ok ? C.gn : "#ffffff14", ok ? "#fff" : "#64748b"), minHeight: 54, marginTop: 12 }}>{ok ? `Hire as ${c.role}` : "Not enough cap room"}</button>

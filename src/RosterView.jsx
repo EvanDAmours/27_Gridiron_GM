@@ -35,7 +35,7 @@ function SideCard({ p, slot, dev, onOpen }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, borderTop: "1px solid #ffffff12", paddingTop: 8 }}>
         {stat("AGE", p.age)}{stat("HT", htS(p.ht_))}{stat("WT", p.wt || "—")}{stat("POT", p.pot || p.ovr)}
       </div>
-      <div style={{ fontSize: 14, color: "#cbd5e1" }}>Contract: <b>${(p.salary || 0).toFixed(1)}M</b> a year, {p.contract} year{p.contract === 1 ? "" : "s"} left</div>
+      <div style={{ fontSize: 14, color: "#cbd5e1" }}>Contract: <b>${(p.salary || 0).toFixed(1)}M</b> {p.sched?.length ? "cap hit this year" : "a year"}, {p.contract} year{p.contract === 1 ? "" : "s"} left{p.dealTotal ? ` · $${p.dealTotal.toFixed(1)}M total` : ""}</div>
       {top.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px" }}>{top.map(([k, v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}><span style={{ color: C.mt }}>{lbl(k)}</span><b style={{ color: oC(v) }}>{v}</b></div>)}</div>}
       <button onClick={onOpen} style={{ background: "#fff", color: "#0b1220", border: 0, borderRadius: 999, padding: "10px 12px", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Open player card</button>
     </div>

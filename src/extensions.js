@@ -1,6 +1,7 @@
 // Contract extensions during the season. You can extend a player in the last two years of his
 // deal (preseason through the Combine); the new contract starts when his current one runs out,
 // at the start of a new league year (re-sign week), so it has to fit under next season's cap.
+import { schedHit } from "./contractSchedule.js";
 import { capFor, capYearFor } from "./cap.js";
 import { freshDeal, yearsLeft } from "./bonus.js";
 import { accelerateVoid } from "./contractDepth.js";
@@ -12,19 +13,20 @@ export const canExtend = (p, sp) => EXT_PHASES.has(sp) && (p.contract || 0) >= 1
 // Money already on next season's books: deals still running then, extensions that start then,
 // and dead money pushed to next year. "Next season" is the one after the league year in force
 // (from re-sign week through the draft that's already yr + 1, so the next is yr + 2).
-// Also on those books, like the cap itself counts them: your coordinators' salaries, incentives
+// Also on those books, like the cap itself counts them (coaches aren't: owners pay them): incentives
 // already earned this season, void-year money that comes due when a deal ends, and (until the
 // draft) the rookie class your picks will sign (rookies: that total).
 export function nextYearCommitted(t, yr = 0, sp = "regular", { rookies = 0 } = {}) {
-  let s = (t.deadNext || 0) + coachPay(t) + (t.incNext || 0) + rookies;
+  let s = (t.deadNext || 0) + (t.incNext || 0) + rookies;
   for (const p of [...(t.roster || []), ...(t.ir || [])]) {
     const left = yearsLeft(p, yr, sp);
-    if (left >= 2) s += (p.salary || 0) + (p.baseBack || 0);
+    if (left >= 2) s += p.sched?.length ? schedHit(p, 1) ?? (p.salary || 0) : (p.salary || 0) + (p.baseBack || 0);
     else if (left === 1 && p.ext) s += p.ext.sal;
     if (left === 1) s += p.voidDead || 0;
   }
   return r1(s);
 }
+// What the owner pays the coordinators (off the cap; shown on the coaching screens)
 export const coachPay = (t) => (t.coach?.oc?.salary || 0) + (t.coach?.dc?.salary || 0) + (t.coach?.st?.salary || 0);
 export const nextYearRoom = (t, yr, sp = "regular", opts) => r1(capFor(capYearFor(yr, sp) + 1) - nextYearCommitted(t, yr, sp, opts));
 // Room for this player's new deal (a player with two years left is already counted next year).

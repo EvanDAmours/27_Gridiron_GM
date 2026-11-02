@@ -2254,4 +2254,13 @@ export const PATCH_NOTES = [
   { v: "5.47", date: "2026-10-23", title: "Phone depth chart: rookies and dev traits", notes: [
     "Phone depth chart: rookies are marked with a circled R and standout development traits show too. On the field each rookie's rating circle carries a small R and a colored dot marks a Generational, Superstar, Star or Late bloomer player; the Who plays list and the player sheet spell them out (GEN, SUPER, STAR, LATE); the list view adds the R next to the trait it already showed.",
   ] },
+  { v: "5.48", date: "2026-10-23", title: "Real contract structure, and coaches off the cap", notes: [
+    "Coaches are off the salary cap, like the NFL: owners pay the head coach and coordinators. Their salaries no longer count against this year's cap, next year's commitments or the four-year cap projection, hiring a coach no longer needs cap room, and firing one no longer leaves dead money.",
+    "Contracts you sign in free agency and re-sign week are built year by year, the way front offices write them. Shape: flat, front-loaded (more cap now, cheaper to move on later) or back-loaded (room now, more later). Signing bonus: a share of the whole deal, paid up front and prorated over up to five years (void years still spread it thinner).",
+    "Guarantees: choose how many years are guaranteed the day he signs, and whether the later years vest in March (each year's salary becomes guaranteed when its league year opens, if he's still on your roster). That gives you a real decision date every spring: cut him during re-sign week and that year costs nothing.",
+    "Roster bonuses: part of each year after the first can be a roster bonus paid when the league year opens in March. It counts on that year's cap; cut him before it's due and it's never paid.",
+    "Dead money follows the money: cutting a player now leaves his unpaid guaranteed salary and any roster bonus already paid, not just the signing-bonus proration. Restructures and trades work on these deals too, and guarantees travel with a traded player.",
+    "Players weigh the structure: guaranteed money and money paid early are worth more to them, so a front-loaded, guaranteed offer can land a player for less a year, and a back-loaded one with nothing guaranteed needs more. The negotiation table shows the deal year by year (salary, roster bonus, bonus, cap hit, guaranteed), the total and guaranteed money, and what it's worth to him; his player card shows his deal year by year too.",
+    "Extensions and AI clubs' deals keep the simpler structure for now.",
+  ] },
 ];
