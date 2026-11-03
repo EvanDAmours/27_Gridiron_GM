@@ -2288,4 +2288,10 @@ export const PATCH_NOTES = [
     "Depth chart bench: players that don't fit on the strip now show as '+N more'. Click it to see the whole bench.",
     "New franchises get a 'Set your depth chart' to-do at the top of Home until you open it. Each preseason it comes back as a reminder, and in season it flags any spot with no backup.",
   ] },
+  { v: "5.53", date: "2026-10-23", title: "Real rookie contracts, no streak penalty", notes: [
+    "Rookie contracts follow the real rookie wage scale. Every pick signs a four-year deal at his slot with no negotiating. Most of the money comes as a signing bonus up front (about two thirds at #1, under half late in round 1, a third in round 2, a fifth in round 3, a token one after), and base salaries climb each year, so a rookie's cap hit grows over the deal.",
+    "Rookie guarantees by round, as in the real league: first-round deals are fully guaranteed, early second-rounders get two years guaranteed and later second-rounders one, and from round 3 on only the signing bonus is guaranteed. Cutting a late-round rookie costs just what's left of his bonus; cutting a first-rounder costs the whole deal.",
+    "A fifth-year option an AI club picks up is now a clean one-year deal: the rookie deal's bonus no longer lingers on it as dead money.",
+    "Removed a hidden adjustment that took up to 2 points a game off your team during winning streaks and added up to 2 during losing streaks. Your results are now just your roster, coaching and game plan.",
+  ] },
 ];
