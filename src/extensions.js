@@ -1,7 +1,7 @@
 // Contract extensions during the season. You can extend a player in the last two years of his
 // deal (preseason through the Combine); the new contract starts when his current one runs out,
 // at the start of a new league year (re-sign week), so it has to fit under next season's cap.
-import { schedHit } from "./contractSchedule.js";
+import { schedHit, yearHit } from "./contractSchedule.js";
 import { capFor, capYearFor } from "./cap.js";
 import { freshDeal, yearsLeft } from "./bonus.js";
 import { accelerateVoid } from "./contractDepth.js";
@@ -21,7 +21,7 @@ export function nextYearCommitted(t, yr = 0, sp = "regular", { rookies = 0 } = {
   for (const p of [...(t.roster || []), ...(t.ir || [])]) {
     const left = yearsLeft(p, yr, sp);
     if (left >= 2) s += p.sched?.length ? schedHit(p, 1) ?? (p.salary || 0) : (p.salary || 0) + (p.baseBack || 0);
-    else if (left === 1 && p.ext) s += p.ext.sal;
+    else if (left === 1 && p.ext) s += p.ext.sched?.[0] ? yearHit(p.ext.sched[0], p.ext.sb) : p.ext.sal;
     if (left === 1) s += p.voidDead || 0;
   }
   return r1(s);
@@ -53,7 +53,10 @@ export function applyExtensions(teams, yr) {
       accelerateVoid(t, { ...p }); // bonus left on the old deal's void years comes due now
       const { ext, ...rest } = p;
       // contract counts the season about to end too (it ticks down after the draft)
-      return { ...freshDeal(rest), salary: ext.sal, ...(ext.sb ? { sb: ext.sb } : {}), contract: ext.yrs + 1, resigned: { yr, sal: ext.apy ?? ext.sal, yrs: ext.yrs, how: "extension" } };
+      const how = { contract: ext.yrs + 1, resigned: { yr, sal: ext.apy ?? ext.sal, yrs: ext.yrs, how: "extension" } };
+      // a structured extension (contractSchedule.js) brings its year-by-year schedule, from the new league year
+      if (ext.sched?.length) return { ...freshDeal(rest), sched: ext.sched, schedYr: yr + 1, sb: ext.sb || 0, salary: yearHit(ext.sched[0], ext.sb), ...(ext.gtd ? { gtdAtSign: ext.gtd } : {}), ...(ext.total ? { dealTotal: ext.total } : {}), ...how };
+      return { ...freshDeal(rest), salary: ext.sal, ...(ext.sb ? { sb: ext.sb } : {}), ...how };
     });
   }
   return done;

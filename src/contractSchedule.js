@@ -76,7 +76,29 @@ export function scheduledTerms(sal, yrs, opts, leagueYr) {
 // His cap hit k league years from the one in force (scheduled deals only; null past the end).
 export function schedHit(p, k) {
   const y = p.sched?.[k];
-  return y ? r1(y.base + y.rb + (p.sb || 0)) : null;
+  return y ? yearHit(y, p.sb) : null;
+}
+// One year's cap hit: base + roster bonus + bonus proration (a year can carry its own proration:
+// an extension's bonus is spread over the old deal's years too, so its later years may carry none).
+export const yearHit = (y, sb = 0) => r1(y.base + y.rb + (y.pr ?? sb ?? 0));
+
+// An extension: the new deal's years (they start when his current deal ends, oldLeft league years
+// from now counting this one), its signing bonus prorated from this season over the old deal's
+// years left and the new ones, five at most. Returns the schedule plus nowAdd: the proration that
+// lands on this season (and on any old year still to come).
+export function extensionSchedule(sal, yrs, opts, oldLeft = 1) {
+  const st = buildSchedule(sal, yrs, { ...opts, voidYrs: 0, opened: false });
+  const left = Math.max(1, oldLeft);
+  if (!st.bonus) return { ...st, years: st.years.map((y) => ({ ...y, pr: 0, hit: y.cash })), sb: 0, nowAdd: 0 };
+  const n = Math.min(5, yrs + left), pr = r1(st.bonus / n);
+  const years = st.years.map((y, i) => { const p_ = left + i < n ? pr : 0; return { ...y, pr: p_, hit: r1(y.cash + p_) }; });
+  return { ...st, years, sb: pr, nowAdd: pr };
+}
+// Dead money an extension adds if he's cut before it starts: its bonus proration still to come and
+// the money guaranteed at signing.
+export function extensionDead(ext) {
+  if (!ext?.sched?.length) return r1((ext?.sb || 0) * (ext?.yrs || 0));
+  return r1(ext.sched.reduce((s, y) => s + (y.pr ?? ext.sb ?? 0) + (y.g === "full" ? y.base + y.rb : 0), 0));
 }
 // Recompute his current cap hit after the schedule or proration changed.
 export const syncSalary = (p) => { if (p.sched?.length) p.salary = schedHit(p, 0); return p; };
@@ -114,7 +136,8 @@ export function restructureSched(p, { minSal, yl }) {
   const convert = r1(p.sched[0].base - minSal);
   if (convert < 1) return null;
   const n = Math.min(yl, 5), add = r1(convert / n);
-  const sched = p.sched.map((y, i) => (i === 0 ? { ...y, base: r1(minSal) } : y));
+  // years that carry their own proration (an extension's) take the new bonus share too
+  const sched = p.sched.map((y, i) => ({ ...y, ...(i === 0 ? { base: r1(minSal) } : {}), ...(y.pr != null ? { pr: r1(y.pr + (i < n ? add : 0)) } : {}) }));
   const q = { ...p, sched, sb: r1((p.sb || 0) + add), restructures: (p.restructures || 0) + 1 };
   return { convert, years: n, addPerYr: add, saved: r1(convert - add), p: syncSalary(q) };
 }

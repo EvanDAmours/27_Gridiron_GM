@@ -2263,4 +2263,9 @@ export const PATCH_NOTES = [
     "Players weigh the structure: guaranteed money and money paid early are worth more to them, so a front-loaded, guaranteed offer can land a player for less a year, and a back-loaded one with nothing guaranteed needs more. The negotiation table shows the deal year by year (salary, roster bonus, bonus, cap hit, guaranteed), the total and guaranteed money, and what it's worth to him; his player card shows his deal year by year too.",
     "Extensions and AI clubs' deals keep the simpler structure for now.",
   ] },
+  { v: "5.49", date: "2026-10-23", title: "Extensions on the new contract structure", notes: [
+    "Extensions use the new contract structure too: shape (flat, front-loaded, back-loaded), signing bonus as a share of the new money, years guaranteed at signing, later years that vest in March, and March roster bonuses. The negotiation table shows the new deal year by year from the season it starts.",
+    "An extension's signing bonus works like a real one: it's prorated from this season over the years left on his current deal and the new ones (five at most), so this season's cap hit goes up a little and the new years carry less. The table shows exactly which years carry it.",
+    "When his current deal runs out, the extension takes over with its whole schedule. Until then the player card shows both deals, and cutting him before the extension starts leaves its bonus and guaranteed money as dead money.",
+  ] },
 ];

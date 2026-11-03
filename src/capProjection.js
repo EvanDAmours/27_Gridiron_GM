@@ -4,7 +4,7 @@
 // if he has one; dead money lands in the years it was charged to.
 import { capFor, getCapPhase } from "./cap.js";
 import { yearsLeft } from "./bonus.js";
-import { schedHit } from "./contractSchedule.js";
+import { schedHit, yearHit } from "./contractSchedule.js";
 
 const r1 = (x) => Math.round((+x || 0) * 10) / 10;
 
@@ -14,7 +14,7 @@ const r1 = (x) => Math.round((+x || 0) * 10) / 10;
 export function hitIn(p, k, left = p.contract || 0) {
   // a scheduled deal (front- or back-loaded, roster bonuses) has its own hit each year
   if (k < left) return { hit: p.sched?.length ? schedHit(p, k) ?? (p.salary || 0) : (p.salary || 0) + (k >= 1 ? p.baseBack || 0 : 0), ext: false };
-  if (p.ext && k < left + (p.ext.yrs || 0)) return { hit: p.ext.sal || 0, ext: true };
+  if (p.ext && k < left + (p.ext.yrs || 0)) return { hit: p.ext.sched?.[k - left] ? yearHit(p.ext.sched[k - left], p.ext.sb) : p.ext.sal || 0, ext: true };
   return null;
 }
 

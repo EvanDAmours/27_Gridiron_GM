@@ -9,8 +9,7 @@ import { createPortal } from "react-dom";
 import { C, oC, Face, CloseX, sheetWrap, sheetBox, SheetGrip, Pills, pill, pillTrack } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { yearlyAsk, maxYears, respond } from "./negotiation.js";
-import { EXT_BONUS, extStructure } from "./extensions.js";
-import { buildSchedule, valueFactor, SHAPES, BONUS_SHARES, ROSTER_SHARES } from "./contractSchedule.js";
+import { buildSchedule, extensionSchedule, valueFactor, SHAPES, BONUS_SHARES, ROSTER_SHARES } from "./contractSchedule.js";
 import { leagueMin, leagueCap } from "./cap.js";
 import { VOID_YEARS, INCENTIVE_SIZES } from "./contractDepth.js";
 import { incentiveOptions } from "./league.js";
@@ -75,7 +74,7 @@ function SchedTable({ st, cy }) {
       <tbody>{st.years.map((y, i) => (
         <tr key={i} style={{ borderTop: "1px solid #ffffff10" }}>
           <td style={{ ...td, textAlign: "left", color: "#94a3b8", fontWeight: 700 }}>{cy != null ? cy + i : `Yr ${i + 1}`}</td>
-          <td style={td}>{money(y.base)}</td>{anyRb && <td style={td}>{y.rb ? money(y.rb) : "-"}</td>}{anySb && <td style={td}>{money(st.sb)}</td>}
+          <td style={td}>{money(y.base)}</td>{anyRb && <td style={td}>{y.rb ? money(y.rb) : "-"}</td>}{anySb && <td style={td}>{money(y.pr ?? st.sb)}</td>}
           <td style={{ ...td, fontWeight: 900, color: "#fff" }}>{money(y.hit)}</td>
           <td style={{ ...td, fontWeight: 700, color: y.g === "full" ? C.gn : y.g === "vest" ? "#93c5fd" : "#64748b" }}>{y.g === "full" ? "Yes" : y.g === "vest" ? "In March" : "No"}</td>
         </tr>
@@ -187,12 +186,12 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   const [incLabel, setIncLabel] = useState(incOpts[0]);
   const ext = mode === "extend";
   // extensions spread a bonus from this season; new deals turn part of year one into bonus
-  const shape = (amount) => { if (ext) return extStructure(amount, yrs, share); const st = buildSchedule(amount, yrs, { ...struct, minSal: leagueMin() }); return { hit: st.years[0].hit, later: st.years[1]?.hit ?? st.years[0].hit, nowAdd: 0, pr: st.sb, bonus: st.bonus, voidDead: st.voidDead, voidYrs: st.voidYrs, st }; };
+  const shape = (amount) => { const st = ext ? extensionSchedule(amount, yrs, { ...struct, minSal: leagueMin() }, p.contract || 1) : buildSchedule(amount, yrs, { ...struct, minSal: leagueMin() }); if (ext) return { hit: st.years[0].hit, later: st.years[1]?.hit ?? st.years[0].hit, nowAdd: st.nowAdd, pr: st.sb, bonus: st.bonus, st }; return { hit: st.years[0].hit, later: st.years[1]?.hit ?? st.years[0].hit, nowAdd: 0, pr: st.sb, bonus: st.bonus, voidDead: st.voidDead, voidYrs: st.voidYrs, st }; };
   // This season's room only matters for money that lands this season (an extension's signing
   // bonus); a plain extension starts next year, so being tight or over the cap now doesn't block it.
   const fits = (amount) => { const sh = shape(amount); return cap - sh.hit >= 0 && (sh.nowAdd <= 0 || nowRoom - sh.nowAdd >= 0); };
   const [yrs, setYrs] = useState(Math.min(2, maxYears(p)));
-  const struct = { shape: yrs >= 2 ? form : "flat", bonus: yrs >= 2 ? share : 0, gtdYrs: Math.min(gtdYrs, yrs), vest: vest && gtdYrs < yrs, roster: yrs >= 2 ? rosterB : 0, voidYrs: yrs >= 2 && share > 0 ? voidYrs : 0, opened: mode !== "resign" };
+  const struct = { shape: yrs >= 2 ? form : "flat", bonus: yrs >= 2 ? share : 0, gtdYrs: Math.min(gtdYrs, yrs), vest: vest && gtdYrs < yrs, roster: yrs >= 2 ? rosterB : 0, voidYrs: !ext && yrs >= 2 && share > 0 ? voidYrs : 0, opened: !ext && mode !== "resign" };
   const ask = yearlyAsk(p, yrs, mode);
   const f = p.perf?.f ?? 1;
   const perfNote = mode !== "fa" && Math.abs(f - 1) >= 0.05 ? (f > 1 ? `Coming off a big season: he's asking about ${Math.round((f - 1) * 100)}% more than his rating alone would get.` : `Coming off a down season: he'd take about ${Math.round((1 - f) * 100)}% less on a multi-year deal, or bet on himself with a 1-year prove-it deal near full price.`) : null;
@@ -204,7 +203,7 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   const offer = (amount) => {
     const s = shape(r1(amount));
     const inc = !ext && incSize ? { label: incLabel, amt: r1(amount * incSize) } : null;
-    const o = ext ? { sal: r1(amount), yrs, share: yrs >= 2 ? share : 0, hit: s.hit, pr: s.pr, bonus: s.bonus } : { sal: r1(amount), yrs, share: 0, hitNow: s.hit, bonus: s.bonus, voidYrs: s.voidYrs || 0, inc, struct, vf: valueFactor(r1(amount), yrs, s.st) };
+    const o = ext ? { sal: r1(amount), yrs, share: 0, hit: s.hit, pr: s.pr, bonus: s.bonus, struct, vf: valueFactor(r1(amount), yrs, s.st), extSched: s.st.years.map(({ base, rb, g, pr }) => ({ base, rb, g, pr })), gtd: s.st.gtd, total: s.st.total } : { sal: r1(amount), yrs, share: 0, hitNow: s.hit, bonus: s.bonus, voidYrs: s.voidYrs || 0, inc, struct, vf: valueFactor(r1(amount), yrs, s.st) };
     onResult(respond(p, o, t, talk), o);
   };
   const big = ask >= 15;
@@ -247,7 +246,7 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
     {note}
   </div>;
 
-  const futureRoom = <FutureRoom hits={!ext ? cur.st?.years.map((y) => y.hit) : null} team={team} cy={cy} p={p} mode={mode} sal={sal} yrs={yrs} room0={ext ? nowRoom - (cur.nowAdd || 0) : after} />;
+  const futureRoom = <FutureRoom hits={cur.st?.years.map((y) => y.hit)} team={team} cy={cy} p={p} mode={mode} sal={sal} yrs={yrs} room0={ext ? nowRoom - (cur.nowAdd || 0) : after} />;
   // one row of a structure choice: its name on the left, the choices beside it
   const opt = (name, hint, track) => (
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6, flexWrap: MOBILE ? "wrap" : "nowrap" }}>
@@ -280,14 +279,14 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
         </div>}
       </div>
 
-      {!ext && <div style={{ ...card, paddingTop: 4 }}>
+      {<div style={{ ...card, paddingTop: 4 }}>
         {yrs >= 2 && opt("Shape", "How the cash is spread: front-loaded pays more early (more cap now, cheaper to cut later); back-loaded saves cap now and pushes it to later years", <Track>
           {Object.entries(SHAPES).map(([k, l]) => <Chip key={k} on={form === k} onClick={() => setForm(k)}>{l}</Chip>)}
         </Track>)}
         {yrs >= 2 && opt("Signing bonus", `Share of the whole deal paid up front, spread over ${Math.min(5, yrs + (share ? voidYrs : 0))} years on the cap. It's guaranteed: cut him early and the rest is dead money`, <Track>
           {BONUS_SHARES.map((b) => <Chip key={b} on={share === b} onClick={() => setShare(b)}>{b ? `${Math.round(b * 100)}%` : "None"}</Chip>)}
         </Track>)}
-        {yrs >= 2 && share > 0 && yrs < 5 && opt("Void years", "Fake years that spread the bonus thinner; what's left hits your cap as dead money when the deal ends", <Track>
+        {!ext && yrs >= 2 && share > 0 && yrs < 5 && opt("Void years", "Fake years that spread the bonus thinner; what's left hits your cap as dead money when the deal ends", <Track>
           {VOID_YEARS.filter((v) => yrs + v <= 5).map((v) => <Chip key={v} on={voidYrs === v} onClick={() => setVoidYrs(v)}>{v ? `+${v}` : "None"}</Chip>)}
         </Track>)}
         {opt("Guaranteed", "Years whose salary is guaranteed the day he signs: cut him and it's dead money. Players take less a year for more guaranteed money", <Track>
@@ -299,25 +298,17 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
         {yrs >= 2 && opt("Roster bonus", "Part of each year after the first, paid when the league year opens in March: it counts on that year's cap, and cutting him before then means it's never paid", <Track>
           {ROSTER_SHARES.map((v) => <Chip key={v} on={rosterB === v} onClick={() => setRosterB(v)}>{v ? `${Math.round(v * 100)}%` : "None"}</Chip>)}
         </Track>)}
-        {opt("Incentive", "Paid only if he earns it, on next year's cap", <Track>
+        {!ext && opt("Incentive", "Paid only if he earns it, on next year's cap", <Track>
           {INCENTIVE_SIZES.map((v) => <Chip key={v} on={incSize === v} onClick={() => setIncSize(v)}>{v ? money(sal * v) : "None"}</Chip>)}
         </Track>)}
-        {incSize > 0 && <div style={{ marginTop: 6 }}><Pills quiet items={incOpts.map((o) => [o, o])} value={incLabel} onChange={setIncLabel} label="Incentive" /></div>}
-        <SchedTable st={cur.st} cy={cy} />
+        {!ext && incSize > 0 && <div style={{ marginTop: 6 }}><Pills quiet items={incOpts.map((o) => [o, o])} value={incLabel} onChange={setIncLabel} label="Incentive" /></div>}
+        <SchedTable st={cur.st} cy={cy != null && ext ? cy + (p.contract || 1) : cy} />
         {(() => { const vf = valueFactor(sal, yrs, cur.st), d = Math.round((vf - 1) * 100); return <div style={{ fontSize: 12.5, color: "#94a3b8", lineHeight: 1.45, marginTop: 6 }}>
           Total <b style={{ color: "#fff" }}>{money(cur.st.total)}</b> · guaranteed <b style={{ color: "#fff" }}>{money(cur.st.gtd)}</b> ({Math.round((cur.st.gtd / Math.max(0.1, cur.st.total)) * 100)}%)
           {cur.voidYrs > 0 && <> · <b style={{ color: C.rd }}>{money(cur.voidDead)}</b> dead money when it ends</>}
+          {ext && cur.nowAdd > 0 && <> · the bonus starts on the cap now: this season's hit goes up <b style={{ color: nowRoom - cur.nowAdd >= 0 ? C.gd : C.rd }}>{money(cur.nowAdd)}</b>{nowRoom !== Infinity ? ` (room now ${money(nowRoom)})` : ""}</>}
           {d !== 0 && <> · <b style={{ color: d > 0 ? C.gn : C.gd }}>{d > 0 ? `worth about ${d}% more` : `worth about ${-d}% less`}</b> to him than a flat deal</>}
         </div>; })()}
-      </div>}
-
-      {ext && <div style={{ ...card, paddingTop: 4 }}>
-        {opt("Signing bonus", `Spread over ${Math.min(5, yrs + 1)} years from this season`, <Track>
-          {EXT_BONUS.map((b) => <Chip key={b} on={share === b} onClick={() => setShare(b)}>{b ? `${Math.round(b * 100)}%` : "None"}</Chip>)}
-        </Track>)}
-        <div style={{ fontSize: 12.5, color: "#94a3b8", lineHeight: 1.45, marginTop: 6 }}>
-          Cap hit each new year: <b style={{ color: "#fff" }}>{money(cur.hit)}</b>{share ? <> (vs {money(sal)} with no bonus) · this season's hit goes up <b style={{ color: nowRoom - cur.nowAdd >= 0 ? C.gd : C.rd }}>{money(cur.nowAdd)}</b>{nowRoom !== Infinity ? ` (room now ${money(nowRoom)})` : ""} · bonus {money(cur.bonus)}, dead money if he's cut</> : <>. A signing bonus lowers it, so the deal fits next year's cap.</>}
-        </div>
       </div>}
 
       {futureRoom}
@@ -338,7 +329,7 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", position: "sticky", bottom: MOBILE ? -14 : -16, background: "#0d1424", padding: "8px 0 6px", marginBottom: -6, boxShadow: "0 -12px 18px -8px #0d1424" }}>
       <button onClick={onClose} style={{ ...btn("#ffffff14", "#e2e8f0"), flex: "1 1 100px", fontWeight: 800 }}>{done ? "Close" : "Not now"}</button>
       {!done && last?.result === "counter" && <button onClick={() => offer(last.counter)} disabled={!fits(last.counter)} style={{ ...btn("#facc15", "#111"), opacity: fits(last.counter) ? 1 : 0.5 }}>{last.rivalBid ? "Offer" : "Accept"} {money(last.counter)}</button>}
-      {!done && <button onClick={() => offer(sal)} disabled={!fits(sal)} style={{ ...btn("#16a34a", "#fff"), opacity: fits(sal) ? 1 : 0.5 }}>{fits(sal) ? `Offer ${money(sal)} × ${yrs}` : after < 0 ? (ext && share < EXT_BONUS[EXT_BONUS.length - 1] ? "Not enough cap: add a bonus" : "Not enough cap") : "Not enough room this season"}</button>}
+      {!done && <button onClick={() => offer(sal)} disabled={!fits(sal)} style={{ ...btn("#16a34a", "#fff"), opacity: fits(sal) ? 1 : 0.5 }}>{fits(sal) ? `Offer ${money(sal)} × ${yrs}` : after < 0 ? (ext && share < BONUS_SHARES[BONUS_SHARES.length - 1] ? "Not enough cap: add a bonus" : "Not enough cap") : "Not enough room this season"}</button>}
     </div>
   );
 

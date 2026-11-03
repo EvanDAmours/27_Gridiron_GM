@@ -10,7 +10,7 @@
 // A restructure turns most of this year's base salary into bonus, spread over the years left:
 // space now, a bigger cap hit in every later year, and more dead money if he's cut.
 import { capFor, BASE_YEAR } from "./cap.js";
-import { guaranteedOwed, restructureSched, syncSalary, advanceSchedule } from "./contractSchedule.js";
+import { guaranteedOwed, restructureSched, syncSalary, advanceSchedule, extensionDead } from "./contractSchedule.js";
 
 const r1 = (x) => Math.round((+x || 0) * 10) / 10;
 export const OFFSEASON = new Set(["resign", "freeagency", "draft"]);
@@ -38,6 +38,8 @@ export function deadMoney(p, { yr, sp, june1 = false } = {}) {
   const pr = proration(p);
   // a scheduled deal also leaves the guaranteed salary still owed (and a roster bonus already paid)
   const g = guaranteedOwed(p, { sp, yl });
+  // an extension that hasn't started yet: its bonus proration and guaranteed money (later caps)
+  if (p.ext) g.later = r1(g.later + extensionDead(p.ext));
   const total = r1(pr * yl + g.now + g.later);
   if (!yl || !total) return { now: 0, next: 0, total: 0 };
   if (OFFSEASON.has(sp) && !june1) return { now: total, next: 0, total };
@@ -57,7 +59,7 @@ export function tradeAway(p, from, ctx) {
   const pr = proration(p);
   if (!pr || !from) return p;
   chargeDead(from, deadMoney(p, ctx));
-  if (p.sched?.length) return syncSalary({ ...p, sb: 0 });
+  if (p.sched?.length) return syncSalary({ ...p, sb: 0, sched: p.sched.map(({ pr, ...y }) => y) });
   return { ...p, salary: r1((p.salary || 0) - pr), sb: 0 };
 }
 

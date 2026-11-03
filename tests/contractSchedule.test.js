@@ -82,3 +82,44 @@ test("a deal signed once the league year is open: a first year that vests in Mar
   assert.equal(rs.years[0].g, "vest", "re-sign week: it vests when the league year opens");
   assert.ok(fa.gtd > rs.gtd);
 });
+
+import { extensionSchedule, yearHit, extensionDead } from "../src/contractSchedule.js";
+import { applyExtensions } from "../src/extensions.js";
+
+test("an extension's bonus is prorated from this season over the old and new years, five at most", () => {
+  const st = extensionSchedule(30, 4, { bonus: 0.2, minSal: 1 }, 2);
+  assert.equal(st.bonus, 24);
+  assert.equal(st.sb, 4.8); // 24 over five years: this season, next (the old deal), then three new ones
+  assert.deepEqual(st.years.map((y) => y.pr), [4.8, 4.8, 4.8, 0]);
+  assert.equal(st.nowAdd, 4.8);
+});
+
+test("a structured extension takes over at the new league year with its schedule", () => {
+  const st = extensionSchedule(20, 3, { shape: "front", gtdYrs: 1, vest: true, bonus: 0.1, minSal: 1 }, 1);
+  const ext = { sal: st.years[0].hit, apy: 20, yrs: 3, yr: 2026, sb: st.sb, sched: st.years.map(({ base, rb, g, pr }) => ({ base, rb, g, pr })), gtd: st.gtd, total: st.total };
+  const t = { roster: [{ id: 7, name: "E", pos: "WR", contract: 1, salary: 8, ext }] };
+  applyExtensions([t], 2026);
+  const p = t.roster[0];
+  assert.equal(p.schedYr, 2027);
+  assert.equal(p.salary, yearHit(ext.sched[0], ext.sb));
+  assert.equal(p.contract, 4);
+  assert.ok(!p.ext);
+});
+
+test("cutting a player before his extension starts leaves its bonus and guarantees as dead money", () => {
+  const st = extensionSchedule(20, 3, { gtdYrs: 2, bonus: 0.2, minSal: 1 }, 1);
+  const ext = { yrs: 3, sb: st.sb, sched: st.years.map(({ base, rb, g, pr }) => ({ base, rb, g, pr })) };
+  const p = { id: 8, contract: 1, cy: 2026, salary: 10, ext };
+  const dead = deadMoney(p, { yr: 2026, sp: "regular" }).total;
+  const own = deadMoney({ ...p, ext: undefined }, { yr: 2026, sp: "regular" }).total; // his current deal's own bonus
+  assert.equal(dead, Math.round((own + extensionDead(ext)) * 10) / 10);
+  assert.ok(dead >= st.years[0].cash + st.years[1].cash);
+});
+
+test("the cap projection reads an extension's own years", () => {
+  const st = extensionSchedule(20, 3, { shape: "back", minSal: 1 }, 1);
+  const p = { id: 9, contract: 1, salary: 10, ext: { yrs: 3, sb: st.sb, sched: st.years.map(({ base, rb, g, pr }) => ({ base, rb, g, pr })) } };
+  assert.equal(hitIn(p, 1, 1).hit, st.years[0].hit);
+  assert.equal(hitIn(p, 3, 1).hit, st.years[2].hit);
+  assert.ok(hitIn(p, 3, 1).hit > hitIn(p, 1, 1).hit, "back-loaded");
+});
