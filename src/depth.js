@@ -26,7 +26,15 @@ export function depthOrderFor(roster, depthOrder, pos, snaps) {
   // the line's default order is its natural one (best fit at each spot), not the real depth chart's
   const base = pos === "DL" && !order.length ? naturalLine(players) : [...order, ...players.filter((p) => !order.includes(p)).sort(byDepth)];
   const ordered = snaps ? snapOrdered(pos, base, snaps) : base;
-  if (pos === "DL") return dlOrder(players, (depthOrder || {}).DL || [], ordered, snaps);
+  // The line plays by spot (two ends, two tackles), so who's out matters to where everyone lines up:
+  // the line is built from the players who can play (an injured starter's spot goes to the best
+  // fit for it), and the ones who can't come last. The game, the field view and the depth chart
+  // all read this same line, so a hurt end never shifts a teammate into a tackle spot.
+  if (pos === "DL") {
+    const out = (p) => p.injured || p.holdout || p.suspended;
+    const able = players.filter((p) => !out(p));
+    return [...dlOrder(able, (depthOrder || {}).DL || [], ordered.filter((p) => !out(p)), snaps), ...players.filter(out)];
+  }
   // linebackers (SAM, MIKE, WILL), corners (CB1, CB2, nickel) and receivers (X, Z, slot) by role
   return ROLE_SLOTS[pos] ? roleOrder(pos, players, (depthOrder || {})[pos] || [], ordered, snaps) : ordered;
 }

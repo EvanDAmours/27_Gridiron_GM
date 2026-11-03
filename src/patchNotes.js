@@ -2302,4 +2302,7 @@ export const PATCH_NOTES = [
     "Defensive line: setting a snap share on any lineman no longer scrambles the line. The game used to rebuild it from the real depth chart's order, which lists ends and tackles in separate columns (Brian Burns sat eighth). That could bench your best end or play an edge rusher like Abdul Carter at DT2. The two edges and two tackles with the most snaps now start at their own spots, and a third edge rusher with a big share rotates in on the edge.",
     "Swapping two players on the depth chart only moves those two: the player coming in takes the spot's snap share, the one going out takes his, and everyone else keeps their place and their snaps. Before, a swap reset every share you'd set at the position and reshuffled the backups on the line.",
   ] },
+  { v: "5.56", date: "2026-10-23", title: "Defensive line with injuries", notes: [
+    "Defensive line with an injured starter: the depth chart now lines up the line the way the game plays it. On a Start today franchise Brian Burns is on the real injury report, and the depth chart used to slide everyone up a spot around him, putting Abdul Carter at DT2. Now the best healthy fit fills each spot: Carter at left end, Reader and Harris inside, Thibodeaux at right end, with a note on Carter's card that he's starting for the injured Burns. The desktop field, the phone and the game all read the same line.",
+  ] },
 ];

@@ -39,3 +39,15 @@ test("swapping two linemen leaves everyone else's place and snap share alone", (
   }
   assert.equal(s1[before[4].id], s0[before[0].id], "the new starter takes the old one's share");
 });
+
+test("with Burns out (the real injury report), the line lines up again: Carter on the edge, not DT2", () => {
+  const t = giants();
+  for (const p of t.roster) if (["Brian Burns", "Chauncey Golston", "Roy Robertson-Harris"].includes(p.name)) p.injured = true;
+  const o = line(t);
+  assert.deepEqual(o.slice(0, 4).map(name), ["Carter", "Reader", "Harris", "Thibodeaux"]);
+  assert.deepEqual(o.slice(-3).map((p) => !!p.injured), [true, true, true], "the injured come last");
+  // the field and the phone read the healthy players in this order: the same four, same spots
+  assert.deepEqual(o.filter((p) => !p.injured).slice(0, 4).map(name), ["Carter", "Reader", "Harris", "Thibodeaux"]);
+  // and the game itself (it lines up from the healthy roster) agrees
+  assert.deepEqual(depthOrderFor(t.roster.filter((p) => !p.injured), {}, "DL").slice(0, 4).map(name), ["Carter", "Reader", "Harris", "Thibodeaux"]);
+});

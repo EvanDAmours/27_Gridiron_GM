@@ -12,7 +12,7 @@ import { linkedSet, laneSplit } from "./snapEdit.js";
 import { SplitBars } from "./SnapBars.jsx";
 import AutoFill from "./AutoFill.jsx";
 import { RookieDot, DevTag, NameTags, isRookie } from "./PlayerTags.jsx";
-import { depthGaps } from "./depth.js";
+import { depthGaps, depthOrderFor } from "./depth.js";
 
 // Where each spot sits (x, y: the center of its card, in % of the field). Offense: the line, then
 // the backs and off-the-line receivers, then the deep backs. Defense faces it from the top.
@@ -134,12 +134,15 @@ export default function DepthDesk({ api }) {
     if (ln.other > 0 && OTHER_SETS[pos]) bits.push(`${OTHER_SETS[pos]} ${ln.other}%`);
     return bits.length ? `The rest: ${bits.join(", ")}` : "Every snap at this spot";
   };
+  // the line as it would be with everyone healthy (for the "starting for the injured" notes)
+  const dlHealthyLine = depthOrderFor(roster.map((q) => (q.pos === "DL" && q.injured ? { ...q, injured: false, _out: true } : q)), depthOrder || {}, "DL", snaps).map((q) => (q._out ? { ...q, injured: true } : q));
   const cards = spots.map(([pos, idx, x, y]) => {
     const full = order(pos), p = isSpec(pos) ? specOn(pos) : full.filter((q) => !q.injured)[idx];
     const at = !p || isSpec(pos) ? idx : Math.max(0, full.indexOf(p));
     const share = p && !single(pos) && pos !== "FB" ? shares(pos)[p.id] ?? 0 : null;
-    // he's in because the man ahead of him is hurt
-    const missing = !isSpec(pos) && pos !== "FB" && full[idx]?.injured ? full[idx] : null;
+    // he's in because the man ahead of him is hurt (on the line: the man this spot would have
+    // with everyone healthy, since the line lines up again around whoever's out)
+    const missing = isSpec(pos) || pos === "FB" ? null : pos === "DL" ? (() => { const q = dlHealthyLine[idx]; return q?.injured && q.id !== p?.id ? q : null; })() : full[idx]?.injured ? full[idx] : null;
     const label = pos === "FB" ? "FB" : SPEC_NAME[pos] || spotName(pos, idx);
     const sub = isSpec(pos) ? `${SPEC_WHEN[pos]} · ${specNow?.[pos] ? `in for ${lastName(specNow[pos][1].name)}` : "starter stays on"}` : "";
     return { pos, idx, x, y, at, label, share, rookie: isRookie(p, api.yr), why: share != null && share < 100 ? `Plays ${share}% of the snaps. ${restFor(pos, p.id)}.` : null, p: p && { ...p, short: lastName(p.name), sub }, rating: p ? spotOvr(p, pos, idx) : null, warn: missing && p ? `Starting for the injured ${lastName(missing.name)}` : null };
