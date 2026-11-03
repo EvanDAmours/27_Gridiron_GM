@@ -33,3 +33,7 @@ test("cutting a rookie: a first-rounder is all dead money, a late pick only what
 test("late picks never go below the league minimum", () => {
   for (const o of [120, 180, 224, 257]) assert.ok(deal(o).sched.every((y) => y.base + y.rb >= 1), `pick ${o}`);
 });
+
+test("a rookie's base salary never drops from one year to the next", () => {
+  for (const o of [1, 33, 70, 90, 130, 200, 250]) { const b = deal(o).sched.map((y) => y.base); for (let i = 1; i < 4; i++) assert.ok(b[i] >= b[i - 1], `pick ${o}: ${b}`); }
+});

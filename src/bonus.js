@@ -133,7 +133,7 @@ export function signedTerms(sal, yrs, share, ctx) {
 }
 
 // A brand-new contract: his old bonus and restructures don't come with him.
-export const freshDeal = (p) => { const { sb, baseBack, restructures, restructured, voidYrs, voidDead, inc, sched, schedYr, gtdAtSign, dealTotal, signBonus, ...rest } = p; return rest; };
+export const freshDeal = (p) => { const { sb, baseBack, restructures, restructured, voidYrs, voidDead, inc, sched, schedYr, gtdAtSign, dealTotal, signBonus, rookieDeal, ...rest } = p; return rest; };
 
 // A new league year (re-sign week): last year's dead money is off the books, money pushed to
 // this year arrives, and restructured base salaries come back. Mutates the teams.

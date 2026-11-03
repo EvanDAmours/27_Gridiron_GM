@@ -191,7 +191,9 @@ export const rookieGtdYrs = (overall) => (overall <= 32 ? 4 : overall <= 48 ? 2 
 export function rookieTerms(sal, overall, leagueYr, { minSal = 1 } = {}) {
   const t = scheduledTerms(sal, 4, { shape: -0.5, bonus: rookieShare(overall), gtdYrs: rookieGtdYrs(overall), minSal }, leagueYr);
   // no year below the league minimum (the schedule's rounding lands on the last year)
-  t.sched = t.sched.map((y) => (y.base + y.rb < minSal ? { ...y, base: r1(minSal - y.rb) } : y));
+  // and a rookie's base never drops from one year to the next
+  let prev = 0;
+  t.sched = t.sched.map((y) => { const base = r1(Math.max(y.base, minSal - y.rb, prev)); prev = base; return { ...y, base }; });
   t.salary = schedHit(t, 0);
   t.dealTotal = r1((t.signBonus || 0) + t.sched.reduce((s, y) => s + y.base + y.rb, 0));
   t.gtdAtSign = r1((t.signBonus || 0) + t.sched.reduce((s, y) => s + (y.g === "full" ? (y.base + y.rb) * partOf(y) : 0), 0));
