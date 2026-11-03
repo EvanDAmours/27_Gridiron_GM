@@ -12,6 +12,7 @@ import { chromium } from "playwright-core";
 import LZ from "lz-string";
 import { capFor, setLeagueYear, setCapPhase } from "../src/cap.js";
 import { capSpace } from "../src/league.js";
+import { depthGaps } from "../src/depth.js";
 import { checkSeason, watchRun, flagText, matchedClubs, matchedSeason, matchedRun } from "../src/balanceWatch.js";
 
 const findChromium = () => {
@@ -154,7 +155,7 @@ try {
   // roster has thinned while theirs were managed, and the clubs level with you then are others
   let match = null; const vs = [];
   for (let s = 0; s < N; s++) {
-    { const d0 = await save(); match = matchedClubs(d0.teams, d0.ui); console.log(`MATCHED ${d0.yr}: ${d0.teams[d0.ui].ab} vs ${match.map((i) => d0.teams[i].ab).join(", ")}`); }
+    { const d0 = await save(); match = matchedClubs(d0.teams, d0.ui); console.log(`MATCHED ${d0.yr}: ${d0.teams[d0.ui].ab} vs ${match.map((i) => d0.teams[i].ab).join(", ")} (your roster ${d0.teams[d0.ui].roster.length}, gaps: ${depthGaps(d0.teams[d0.ui].roster).map((g) => `${g.pos}${g.kind === "short" ? "!" : ""}`).join(" ") || "none"})`); }
     await must("Start Season", 1500);
     { const go = page.locator("button", { hasText: "Start the season anyway" }); if (await go.count()) { await go.first().click(); await page.waitForTimeout(1500); } }
     // Sim to the end of the season plays one real week at a time and pauses for decisions: keep pressing until the playoffs
