@@ -55,7 +55,7 @@ export function applyExtensions(teams, yr) {
       // contract counts the season about to end too (it ticks down after the draft)
       const how = { contract: ext.yrs + 1, resigned: { yr, sal: ext.apy ?? ext.sal, yrs: ext.yrs, how: "extension" } };
       // a structured extension (contractSchedule.js) brings its year-by-year schedule, from the new league year
-      if (ext.sched?.length) return { ...freshDeal(rest), sched: ext.sched, schedYr: yr + 1, sb: ext.sb || 0, salary: yearHit(ext.sched[0], ext.sb), ...(ext.gtd ? { gtdAtSign: ext.gtd } : {}), ...(ext.total ? { dealTotal: ext.total } : {}), ...how };
+      if (ext.sched?.length) return { ...freshDeal(rest), sched: ext.sched, schedYr: yr + 1, sb: ext.sb || 0, salary: yearHit(ext.sched[0], ext.sb), ...(ext.voidYrs ? { voidYrs: ext.voidYrs, voidDead: ext.voidDead } : {}), ...(ext.gtd ? { gtdAtSign: ext.gtd } : {}), ...(ext.total ? { dealTotal: ext.total } : {}), ...how };
       return { ...freshDeal(rest), salary: ext.sal, ...(ext.sb ? { sb: ext.sb } : {}), ...how };
     });
   }

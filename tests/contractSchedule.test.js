@@ -123,3 +123,34 @@ test("the cap projection reads an extension's own years", () => {
   assert.equal(hitIn(p, 3, 1).hit, st.years[2].hit);
   assert.ok(hitIn(p, 3, 1).hit > hitIn(p, 1, 1).hit, "back-loaded");
 });
+
+import { aiTerms, TILTS } from "../src/contractSchedule.js";
+
+test("how hard a deal is front-loaded is up to you", () => {
+  const light = buildSchedule(20, 4, { shape: 0.2 }), heavy = buildSchedule(20, 4, { shape: 0.4 }), back = buildSchedule(20, 4, { shape: -0.4 });
+  assert.ok(heavy.years[0].cash > light.years[0].cash && light.years[0].cash > 20);
+  assert.ok(back.years[0].cash < 20 && back.years[3].cash > 20);
+  assert.ok(TILTS.includes(0));
+});
+
+test("half a year vesting in March: half the guarantee, half the dead money", () => {
+  const all = advanceSchedule({ ...signed({ vest: true }) }, 2028), half = advanceSchedule({ ...signed({ vest: true, vestPart: 0.5 }) }, 2028);
+  const d = (p) => deadMoney({ ...p, contract: 3, cy: 2027 }, { yr: 2027, sp: "freeagency" }).total;
+  assert.equal(d(half), Math.round(d(all) / 2 * 10) / 10);
+  assert.ok(valueFactor(20, 3, buildSchedule(20, 3, { vest: true })) > valueFactor(20, 3, buildSchedule(20, 3, { vest: true, vestPart: 0.5 })));
+});
+
+test("void years spread an extension's bonus thinner, and come due when it ends", () => {
+  const no = extensionSchedule(30, 2, { bonus: 0.3, minSal: 1 }, 1), two = extensionSchedule(30, 2, { bonus: 0.3, voidYrs: 2, minSal: 1 }, 1);
+  assert.ok(two.sb < no.sb);
+  assert.equal(two.voidYrs, 2);
+  assert.equal(two.voidDead, Math.round(two.sb * 2 * 10) / 10);
+});
+
+test("AI clubs structure their deals by tier", () => {
+  const cap = 300;
+  const star = aiTerms(30, 5, 2027, { cap, rand: () => 0.4 }), depth = aiTerms(2, 2, 2027, { cap, rand: () => 0.4 }), oneYr = aiTerms(20, 1, 2027, { cap });
+  assert.ok(star.sched?.length === 5 && star.signBonus > 0 && star.sched[0].g === "full" && star.sched[1].g === "full");
+  assert.ok(!depth.sched && depth.salary === 2);
+  assert.ok(!oneYr.sched);
+});

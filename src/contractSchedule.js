@@ -15,22 +15,31 @@
 const r1 = (x) => Math.round((+x || 0) * 10) / 10;
 
 export const SHAPES = { flat: "Flat", front: "Front-loaded", back: "Back-loaded" };
+// How hard a deal is front- or back-loaded: the first year's cash against an average year
+// (+0.4: 40% more in year one, tapering to 40% less in the last; negative is back-loaded).
+export const TILTS = [-0.4, -0.2, 0, 0.2, 0.4];
 export const BONUS_SHARES = [0, 0.1, 0.2, 0.3, 0.4];
-export const ROSTER_SHARES = [0, 0.25, 0.5];
+export const ROSTER_SHARES = [0, 0.25, 0.5, 0.75];
+// how much of a later year's money vests (becomes guaranteed) when its league year opens
+export const VEST_PARTS = [0.5, 1];
+const tiltOf = (shape) => (typeof shape === "number" ? Math.max(-0.5, Math.min(0.5, shape)) : { front: 0.35, back: -0.35 }[shape] || 0);
 
 // cash per year (before the signing bonus is taken out), shaped: front-loaded pays more early
 function weights(yrs, shape) {
-  if (yrs <= 1 || shape === "flat") return Array(yrs).fill(1);
-  const w = Array.from({ length: yrs }, (_, i) => 1 + 0.35 * (1 - (2 * i) / (yrs - 1)));
-  return shape === "front" ? w : w.reverse();
+  const t = tiltOf(shape);
+  if (yrs <= 1 || !t) return Array(yrs).fill(1);
+  return Array.from({ length: yrs }, (_, i) => 1 + t * (1 - (2 * i) / (yrs - 1)));
 }
+// the guaranteed share of a year's money: all of it, or (vesting years) the part that vests
+export const partOf = (y) => (y.g ? y.part ?? 1 : 0);
 
 // sal: the average a year (what the player hears), yrs: real years. opts: { shape, bonus (share of
 // the total), gtdYrs (years guaranteed at signing), vest (later years vest each March), roster
 // (share of each later year paid as a March roster bonus), voidYrs, minSal, opened (the league
-// year is already open, so a first year that vests in March has vested: re-sign week deals aren't) }.
+// year is already open, so a first year that vests in March has vested: re-sign week deals aren't),
+// vestPart (how much of each vesting year vests: 0.5 or all of it) }.
 // Returns { years: [{ base, rb, cash, hit, g }], sb, bonus, voidYrs, voidDead, total, gtd }.
-export function buildSchedule(sal, yrs, { shape = "flat", bonus = 0, gtdYrs = 0, vest = false, roster = 0, voidYrs = 0, minSal = 1, opened = false } = {}) {
+export function buildSchedule(sal, yrs, { shape = "flat", bonus = 0, gtdYrs = 0, vest = false, roster = 0, voidYrs = 0, minSal = 1, opened = false, vestPart = 1 } = {}) {
   const total = r1(sal * yrs);
   const sb0 = yrs >= 2 ? r1(total * bonus) : 0;
   const n = Math.min(5, yrs + (sb0 ? voidYrs : 0));
@@ -41,13 +50,14 @@ export function buildSchedule(sal, yrs, { shape = "flat", bonus = 0, gtdYrs = 0,
   let years = w.map((x, i) => {
     const cash = Math.max(minSal, r1((cashTotal * x) / ws));
     const rb = i >= 1 ? r1(cash * roster) : 0;
-    return { base: r1(cash - rb), rb, cash, g: i < gtdYrs || (vest && opened && i === 0) ? "full" : vest ? "vest" : "" };
+    const g = i < gtdYrs || (vest && opened && i === 0) ? "full" : vest ? "vest" : "";
+    return { base: r1(cash - rb), rb, cash, g, ...(g && i >= gtdYrs && vestPart < 1 ? { part: vestPart } : {}) };
   });
   // rounding: the last year absorbs it so the deal adds up
   const drift = r1(cashTotal - years.reduce((s, y) => s + y.cash, 0));
   if (drift && years.length) { const L = years[years.length - 1]; L.cash = r1(L.cash + drift); L.base = r1(L.cash - L.rb); }
   years = years.map((y) => ({ ...y, hit: r1(y.cash + pr) }));
-  const gtd = r1(sb0 + years.filter((y) => y.g === "full").reduce((s, y) => s + y.cash, 0));
+  const gtd = r1(sb0 + years.filter((y) => y.g === "full").reduce((s, y) => s + y.cash * partOf(y), 0));
   return { years, sb: pr, bonus: sb0, voidYrs: vy, voidDead: r1(pr * vy), total, gtd };
 }
 
@@ -56,9 +66,11 @@ export function buildSchedule(sal, yrs, { shape = "flat", bonus = 0, gtdYrs = 0,
 // 1 = the same; a front-loaded, guaranteed deal is worth a few percent more to him.
 export function valueFactor(sal, yrs, st) {
   const disc = (i) => Math.pow(0.96, i);
-  const risk = (i, g) => (g === "full" ? 1 : g === "vest" ? (i === 0 ? 0.995 : 0.975) : i === 0 ? 0.985 : 0.93);
-  const base = Array.from({ length: yrs }, (_, i) => sal * disc(i) * risk(i, "")).reduce((a, b) => a + b, 0);
-  const v = st.bonus + st.years.reduce((s, y, i) => s + y.cash * disc(i) * risk(i, y.g), 0);
+  const risk0 = (i, g) => (g === "full" ? 1 : g === "vest" ? (i === 0 ? 0.995 : 0.975) : i === 0 ? 0.985 : 0.93);
+  // a year only partly guaranteed: that part at the guaranteed weight, the rest at none
+  const risk = (i, y) => partOf(y) * risk0(i, y.g) + (1 - partOf(y)) * risk0(i, "");
+  const base = Array.from({ length: yrs }, (_, i) => sal * disc(i) * risk0(i, "")).reduce((a, b) => a + b, 0);
+  const v = st.bonus + st.years.reduce((s, y, i) => s + y.cash * disc(i) * risk(i, y), 0);
   return base ? +(v / base).toFixed(4) : 1;
 }
 
@@ -67,7 +79,7 @@ export function valueFactor(sal, yrs, st) {
 export function scheduledTerms(sal, yrs, opts, leagueYr) {
   const st = buildSchedule(sal, yrs, opts);
   return {
-    salary: st.years[0].hit, sb: st.sb, sched: st.years.map(({ base, rb, g }) => ({ base, rb, g })), schedYr: leagueYr,
+    salary: st.years[0].hit, sb: st.sb, sched: st.years.map(({ base, rb, g, part }) => ({ base, rb, g, ...(part != null ? { part } : {}) })), schedYr: leagueYr,
     ...(st.bonus ? { signBonus: st.bonus } : {}), ...(st.voidYrs ? { voidYrs: st.voidYrs, voidDead: st.voidDead } : {}),
     gtdAtSign: st.gtd, dealTotal: st.total,
   };
@@ -89,16 +101,18 @@ export const yearHit = (y, sb = 0) => r1(y.base + y.rb + (y.pr ?? sb ?? 0));
 export function extensionSchedule(sal, yrs, opts, oldLeft = 1) {
   const st = buildSchedule(sal, yrs, { ...opts, voidYrs: 0, opened: false });
   const left = Math.max(1, oldLeft);
-  if (!st.bonus) return { ...st, years: st.years.map((y) => ({ ...y, pr: 0, hit: y.cash })), sb: 0, nowAdd: 0 };
-  const n = Math.min(5, yrs + left), pr = r1(st.bonus / n);
+  if (!st.bonus) return { ...st, years: st.years.map((y) => ({ ...y, pr: 0, hit: y.cash })), sb: 0, nowAdd: 0, voidYrs: 0, voidDead: 0 };
+  // void years tacked on after the new ones spread the bonus thinner (still five years at most)
+  const n = Math.min(5, yrs + left + (opts.voidYrs || 0)), pr = r1(st.bonus / n);
+  const vy = Math.max(0, n - yrs - left);
   const years = st.years.map((y, i) => { const p_ = left + i < n ? pr : 0; return { ...y, pr: p_, hit: r1(y.cash + p_) }; });
-  return { ...st, years, sb: pr, nowAdd: pr };
+  return { ...st, years, sb: pr, nowAdd: pr, voidYrs: vy, voidDead: r1(pr * vy) };
 }
 // Dead money an extension adds if he's cut before it starts: its bonus proration still to come and
 // the money guaranteed at signing.
 export function extensionDead(ext) {
   if (!ext?.sched?.length) return r1((ext?.sb || 0) * (ext?.yrs || 0));
-  return r1(ext.sched.reduce((s, y) => s + (y.pr ?? ext.sb ?? 0) + (y.g === "full" ? y.base + y.rb : 0), 0));
+  return r1((ext.voidDead || 0) + ext.sched.reduce((s, y) => s + (y.pr ?? ext.sb ?? 0) + (y.g === "full" ? (y.base + y.rb) * partOf(y) : 0), 0));
 }
 // Recompute his current cap hit after the schedule or proration changed.
 export const syncSalary = (p) => { if (p.sched?.length) p.salary = schedHit(p, 0); return p; };
@@ -122,10 +136,10 @@ export function guaranteedOwed(p, { sp, yl }) {
   const y0 = p.sched[0];
   // how much of this season's base is still unpaid (it's paid out over the season)
   const unpaid = sp === "regular" ? 0.5 : sp === "playoffs" ? 0 : 1;
-  let now = vested(y0, sp) ? y0.base * unpaid : 0;
+  let now = vested(y0, sp) ? y0.base * unpaid * partOf(y0) : 0;
   if (sp !== "resign" && y0.rb) now += y0.rb; // paid when the league year opened
   let later = 0;
-  for (let i = 1; i < Math.min(yl, p.sched.length); i++) { const y = p.sched[i]; if (y.g === "full") later += y.base + y.rb; }
+  for (let i = 1; i < Math.min(yl, p.sched.length); i++) { const y = p.sched[i]; if (y.g === "full") later += (y.base + y.rb) * partOf(y); }
   return { now: r1(now), later: r1(later) };
 }
 
@@ -140,4 +154,24 @@ export function restructureSched(p, { minSal, yl }) {
   const sched = p.sched.map((y, i) => ({ ...y, ...(i === 0 ? { base: r1(minSal) } : {}), ...(y.pr != null ? { pr: r1(y.pr + (i < n ? add : 0)) } : {}) }));
   const q = { ...p, sched, sb: r1((p.sb || 0) + add), restructures: (p.restructures || 0) + 1 };
   return { convert, years: n, addPerYr: add, saved: r1(convert - add), p: syncSalary(q) };
+}
+
+// How an AI club structures a deal, the way NFL front offices do by tier: a star gets a big
+// signing bonus, two guaranteed years and the rest vesting in March; a solid starter a smaller
+// bonus and one guaranteed year; depth players a plain deal. Some clubs lean their deals a little
+// front or back. Returns the player fields (scheduledTerms), or a flat deal for one-year and
+// minimum contracts. cy: the league year the deal starts.
+export function aiTerms(sal, yrs, cy, { cap = 300, minSal = 1, rand = Math.random } = {}) {
+  const share = sal / Math.max(1, cap);
+  if (yrs < 2 || share < 0.012) return { salary: sal };
+  const star = share >= 0.06, starter = share >= 0.025;
+  const opts = {
+    bonus: star ? 0.3 : starter ? 0.2 : 0.1,
+    gtdYrs: star ? 2 : starter ? 1 : 0,
+    vest: starter, vestPart: star || rand() < 0.5 ? 1 : 0.5,
+    roster: rand() < 0.3 ? 0.25 : 0,
+    shape: TILTS[1 + Math.floor(rand() * 3)], // a light back-load, flat, or a light front-load
+    minSal, opened: true,
+  };
+  return scheduledTerms(sal, Math.min(yrs, 5), opts, cy);
 }

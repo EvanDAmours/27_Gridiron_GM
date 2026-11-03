@@ -5,6 +5,7 @@
 
 import { leagueCap, leagueMin, getLeagueYear } from "./cap.js";
 import { freshDeal, deadMoney, chargeDead, restructure } from "./bonus.js";
+import { aiTerms } from "./contractSchedule.js";
 import { retireAge } from "./retirement.js";
 import { faceOf, isFaceOf } from "./faceOfFranchise.js";
 import { rolePay } from "./roles.js";
@@ -98,7 +99,7 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
       if (i !== ui && (star || (rand() < keep && payroll + salary <= limit))) {
         // A franchise player who still doesn't fit a long-term deal gets the franchise tag.
         const tag = star && payroll + salary > limit && !tagged;
-        const deal = tag ? { ...freshDeal(p), sb: 0, contract: 1, salary: tagPrice(teams, p, cap), ftag: true, tagYr: yr, cy } : { ...freshDeal(p), contract: faYears(p, rand), salary, cy }; // a star in his prime gets a long deal, a veteran a short one
+        const deal = tag ? { ...freshDeal(p), sb: 0, contract: 1, salary: tagPrice(teams, p, cap), ftag: true, tagYr: yr, cy } : (() => { const y = faYears(p, rand); return { ...freshDeal(p), contract: y, salary, ...aiTerms(salary, y, cy, { cap, minSal: leagueMin(), rand }), cy }; })(); // a star in his prime gets a long deal, a veteran a short one; structured like real deals (contractSchedule.js)
         if (tag) tagged = true;
         roster.push(deal);
         payroll += deal.salary;
@@ -265,7 +266,8 @@ export function aiSignings(teams, pool, ui, { perTeam = 2, minOvr = 60, capSpace
         const k = pool.findIndex((p) => p.pos === pos && p.ovr >= bar && !skip(p) && askingPrice(p) <= capSpace(t));
         if (k < 0) continue;
         const [p] = pool.splice(k, 1);
-        const deal = { ...freshDeal(p), salary: askingPrice(p), contract: faYears(p, rand), cy, formerTeam: undefined };
+        const y = faYears(p, rand), sal = askingPrice(p);
+        const deal = { ...freshDeal(p), salary: sal, contract: y, ...aiTerms(sal, y, cy, { cap: leagueCap(), minSal: leagueMin(), rand }), cy, formerTeam: undefined };
         t.roster.push(deal);
         signed.push({ p: deal, team: i, from: p.formerTeam });
         break;
@@ -303,7 +305,8 @@ export function starterSignings(teams, pool, ui, { minOvr = 72, perTeam = 2, cap
     if (best < 0) continue;
     pool.splice(pool.indexOf(p), 1);
     const salary = +(askingPrice(p) * (1 - Math.max(0, bestPull) * 0.5)).toFixed(1);
-    const deal = { ...freshDeal(p), salary, contract: faYears(p, rand), cy, formerTeam: undefined };
+    const y = faYears(p, rand);
+    const deal = { ...freshDeal(p), salary, contract: y, ...aiTerms(salary, y, cy, { cap: leagueCap(), minSal: leagueMin(), rand }), cy, formerTeam: undefined };
     const t = teams[best];
     t.roster.push(deal);
     if (cut && t.roster.length > ROSTER_TARGET) {

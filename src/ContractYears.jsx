@@ -20,7 +20,7 @@ function Table({ title, rows, sb, y0 }) {
             <td style={td}>{money(y.base)}</td>{rb && <td style={td} title="Paid when the league year opens in March">{y.rb ? money(y.rb) : "-"}</td>}
             <td style={td}>{money(y.pr ?? sb ?? 0)}</td>
             <td style={{ ...td, fontWeight: 900, color: "#fff" }}>{money(yearHit(y, sb))}</td>
-            <td style={{ ...td, fontWeight: 700, color: y.g === "full" ? "#4ade80" : y.g === "vest" ? "#93c5fd" : "#64748b" }} title={y.g === "vest" ? "Becomes guaranteed when this league year opens, if he's still on the roster" : undefined}>{y.g === "full" ? "Yes" : y.g === "vest" ? "In March" : "No"}</td>
+            <td style={{ ...td, fontWeight: 700, color: y.g === "full" ? "#4ade80" : y.g === "vest" ? "#93c5fd" : "#64748b" }} title={y.g === "vest" ? "Becomes guaranteed when this league year opens, if he's still on the roster" : undefined}>{y.g === "full" ? (y.part < 1 ? `${Math.round(y.part * 100)}%` : "Yes") : y.g === "vest" ? (y.part < 1 ? `${Math.round(y.part * 100)}% Mar` : "In March") : "No"}</td>
           </tr>
         ))}</tbody>
       </table>

@@ -9,7 +9,7 @@ import { createPortal } from "react-dom";
 import { C, oC, Face, CloseX, sheetWrap, sheetBox, SheetGrip, Pills, pill, pillTrack } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { yearlyAsk, maxYears, respond } from "./negotiation.js";
-import { buildSchedule, extensionSchedule, valueFactor, SHAPES, BONUS_SHARES, ROSTER_SHARES } from "./contractSchedule.js";
+import { buildSchedule, extensionSchedule, valueFactor, TILTS, BONUS_SHARES, ROSTER_SHARES, VEST_PARTS } from "./contractSchedule.js";
 import { leagueMin, leagueCap } from "./cap.js";
 import { VOID_YEARS, INCENTIVE_SIZES } from "./contractDepth.js";
 import { incentiveOptions } from "./league.js";
@@ -76,7 +76,7 @@ function SchedTable({ st, cy }) {
           <td style={{ ...td, textAlign: "left", color: "#94a3b8", fontWeight: 700 }}>{cy != null ? cy + i : `Yr ${i + 1}`}</td>
           <td style={td}>{money(y.base)}</td>{anyRb && <td style={td}>{y.rb ? money(y.rb) : "-"}</td>}{anySb && <td style={td}>{money(y.pr ?? st.sb)}</td>}
           <td style={{ ...td, fontWeight: 900, color: "#fff" }}>{money(y.hit)}</td>
-          <td style={{ ...td, fontWeight: 700, color: y.g === "full" ? C.gn : y.g === "vest" ? "#93c5fd" : "#64748b" }}>{y.g === "full" ? "Yes" : y.g === "vest" ? "In March" : "No"}</td>
+          <td style={{ ...td, fontWeight: 700, color: y.g === "full" ? C.gn : y.g === "vest" ? "#93c5fd" : "#64748b" }}>{y.g === "full" ? (y.part < 1 ? `${Math.round(y.part * 100)}%` : "Yes") : y.g === "vest" ? (y.part < 1 ? `${Math.round(y.part * 100)}% Mar` : "In March") : "No"}</td>
         </tr>
       ))}</tbody>
     </table>
@@ -176,9 +176,10 @@ function Thread({ p, talk, ask, yrs, rivalName }) {
 export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = {}, onResult, onClose, rivalName, note, team, cy }) {
   const [share, setShare] = useState(0);
   // the deal's structure (new deals): shape, guarantees, March vesting and roster bonuses
-  const [form, setForm] = useState("flat");
+  const [form, setForm] = useState(0); // front-load: year one's cash against an average year (TILTS)
   const [gtdYrs, setGtdYrs] = useState(0);
   const [vest, setVest] = useState(false);
+  const [vestPart, setVestPart] = useState(1);
   const [rosterB, setRosterB] = useState(0);
   const [voidYrs, setVoidYrs] = useState(0);
   const [incSize, setIncSize] = useState(0);
@@ -186,12 +187,12 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   const [incLabel, setIncLabel] = useState(incOpts[0]);
   const ext = mode === "extend";
   // extensions spread a bonus from this season; new deals turn part of year one into bonus
-  const shape = (amount) => { const st = ext ? extensionSchedule(amount, yrs, { ...struct, minSal: leagueMin() }, p.contract || 1) : buildSchedule(amount, yrs, { ...struct, minSal: leagueMin() }); if (ext) return { hit: st.years[0].hit, later: st.years[1]?.hit ?? st.years[0].hit, nowAdd: st.nowAdd, pr: st.sb, bonus: st.bonus, st }; return { hit: st.years[0].hit, later: st.years[1]?.hit ?? st.years[0].hit, nowAdd: 0, pr: st.sb, bonus: st.bonus, voidDead: st.voidDead, voidYrs: st.voidYrs, st }; };
+  const shape = (amount) => { const st = ext ? extensionSchedule(amount, yrs, { ...struct, minSal: leagueMin() }, p.contract || 1) : buildSchedule(amount, yrs, { ...struct, minSal: leagueMin() }); if (ext) return { hit: st.years[0].hit, later: st.years[1]?.hit ?? st.years[0].hit, nowAdd: st.nowAdd, pr: st.sb, bonus: st.bonus, voidDead: st.voidDead, voidYrs: st.voidYrs, st }; return { hit: st.years[0].hit, later: st.years[1]?.hit ?? st.years[0].hit, nowAdd: 0, pr: st.sb, bonus: st.bonus, voidDead: st.voidDead, voidYrs: st.voidYrs, st }; };
   // This season's room only matters for money that lands this season (an extension's signing
   // bonus); a plain extension starts next year, so being tight or over the cap now doesn't block it.
   const fits = (amount) => { const sh = shape(amount); return cap - sh.hit >= 0 && (sh.nowAdd <= 0 || nowRoom - sh.nowAdd >= 0); };
   const [yrs, setYrs] = useState(Math.min(2, maxYears(p)));
-  const struct = { shape: yrs >= 2 ? form : "flat", bonus: yrs >= 2 ? share : 0, gtdYrs: Math.min(gtdYrs, yrs), vest: vest && gtdYrs < yrs, roster: yrs >= 2 ? rosterB : 0, voidYrs: !ext && yrs >= 2 && share > 0 ? voidYrs : 0, opened: !ext && mode !== "resign" };
+  const struct = { shape: yrs >= 2 ? form : 0, bonus: yrs >= 2 ? share : 0, gtdYrs: Math.min(gtdYrs, yrs), vest: vest && gtdYrs < yrs, vestPart, roster: yrs >= 2 ? rosterB : 0, voidYrs: yrs >= 2 && share > 0 ? voidYrs : 0, opened: !ext && mode !== "resign" };
   const ask = yearlyAsk(p, yrs, mode);
   const f = p.perf?.f ?? 1;
   const perfNote = mode !== "fa" && Math.abs(f - 1) >= 0.05 ? (f > 1 ? `Coming off a big season: he's asking about ${Math.round((f - 1) * 100)}% more than his rating alone would get.` : `Coming off a down season: he'd take about ${Math.round((1 - f) * 100)}% less on a multi-year deal, or bet on himself with a 1-year prove-it deal near full price.`) : null;
@@ -203,7 +204,7 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
   const offer = (amount) => {
     const s = shape(r1(amount));
     const inc = !ext && incSize ? { label: incLabel, amt: r1(amount * incSize) } : null;
-    const o = ext ? { sal: r1(amount), yrs, share: 0, hit: s.hit, pr: s.pr, bonus: s.bonus, struct, vf: valueFactor(r1(amount), yrs, s.st), extSched: s.st.years.map(({ base, rb, g, pr }) => ({ base, rb, g, pr })), gtd: s.st.gtd, total: s.st.total } : { sal: r1(amount), yrs, share: 0, hitNow: s.hit, bonus: s.bonus, voidYrs: s.voidYrs || 0, inc, struct, vf: valueFactor(r1(amount), yrs, s.st) };
+    const o = ext ? { sal: r1(amount), yrs, share: 0, hit: s.hit, pr: s.pr, bonus: s.bonus, struct, vf: valueFactor(r1(amount), yrs, s.st), extSched: s.st.years.map(({ base, rb, g, pr, part }) => ({ base, rb, g, pr, ...(part != null ? { part } : {}) })), gtd: s.st.gtd, total: s.st.total, voidYrs: s.st.voidYrs || 0, voidDead: s.st.voidDead || 0 } : { sal: r1(amount), yrs, share: 0, hitNow: s.hit, bonus: s.bonus, voidYrs: s.voidYrs || 0, inc, struct, vf: valueFactor(r1(amount), yrs, s.st) };
     onResult(respond(p, o, t, talk), o);
   };
   const big = ask >= 15;
@@ -280,20 +281,21 @@ export default function Negotiate({ p, mode, cap, nowRoom = Infinity, t, talk = 
       </div>
 
       {<div style={{ ...card, paddingTop: 4 }}>
-        {yrs >= 2 && opt("Shape", "How the cash is spread: front-loaded pays more early (more cap now, cheaper to cut later); back-loaded saves cap now and pushes it to later years", <Track>
-          {Object.entries(SHAPES).map(([k, l]) => <Chip key={k} on={form === k} onClick={() => setForm(k)}>{l}</Chip>)}
+        {yrs >= 2 && opt("Front-load", "How much more (or less) year one pays than an average year, tapering to the opposite in the last. Front-loading uses cap now and makes him cheaper to cut later; back-loading saves cap now and pushes it to later years", <Track>
+          {TILTS.map((v) => <Chip key={v} on={form === v} onClick={() => setForm(v)} sub={v === 0 ? "even" : v > 0 ? "front" : "back"}>{v === 0 ? "Flat" : `${Math.round(Math.abs(v) * 100)}%`}</Chip>)}
         </Track>)}
         {yrs >= 2 && opt("Signing bonus", `Share of the whole deal paid up front, spread over ${Math.min(5, yrs + (share ? voidYrs : 0))} years on the cap. It's guaranteed: cut him early and the rest is dead money`, <Track>
           {BONUS_SHARES.map((b) => <Chip key={b} on={share === b} onClick={() => setShare(b)}>{b ? `${Math.round(b * 100)}%` : "None"}</Chip>)}
         </Track>)}
-        {!ext && yrs >= 2 && share > 0 && yrs < 5 && opt("Void years", "Fake years that spread the bonus thinner; what's left hits your cap as dead money when the deal ends", <Track>
-          {VOID_YEARS.filter((v) => yrs + v <= 5).map((v) => <Chip key={v} on={voidYrs === v} onClick={() => setVoidYrs(v)}>{v ? `+${v}` : "None"}</Chip>)}
+        {yrs >= 2 && share > 0 && yrs + (ext ? p.contract || 1 : 0) < 5 && opt("Void years", "Fake years that spread the bonus thinner; what's left hits your cap as dead money when the deal ends", <Track>
+          {VOID_YEARS.filter((v) => yrs + (ext ? p.contract || 1 : 0) + v <= 5).map((v) => <Chip key={v} on={voidYrs === v} onClick={() => setVoidYrs(v)}>{v ? `+${v}` : "None"}</Chip>)}
         </Track>)}
         {opt("Guaranteed", "Years whose salary is guaranteed the day he signs: cut him and it's dead money. Players take less a year for more guaranteed money", <Track>
           {Array.from({ length: yrs + 1 }, (_, g) => <Chip key={g} on={Math.min(gtdYrs, yrs) === g} onClick={() => setGtdYrs(g)}>{g === 0 ? "None" : g === yrs ? "All" : `${g} yr${g > 1 ? "s" : ""}`}</Chip>)}
         </Track>)}
-        {Math.min(gtdYrs, yrs) < yrs && opt("Later years", "Vest in March: each later year's salary becomes guaranteed when its league year opens (after re-sign week) if he's still on your roster, so you get a decision date each spring", <Track>
-          <Chip on={!vest} onClick={() => setVest(false)}>Not guaranteed</Chip><Chip on={vest} onClick={() => setVest(true)}>Vest in March</Chip>
+        {Math.min(gtdYrs, yrs) < yrs && opt("Later years", "Vest in March: each later year's salary (half of it, or all) becomes guaranteed when its league year opens (after re-sign week) if he's still on your roster, so you get a decision date each spring. Less vested means less dead money if you move on", <Track>
+          <Chip on={!vest} onClick={() => setVest(false)}>Not guaranteed</Chip>
+          {VEST_PARTS.map((v) => <Chip key={v} on={vest && vestPart === v} onClick={() => { setVest(true); setVestPart(v); }}>{v < 1 ? `${Math.round(v * 100)}% in March` : "All in March"}</Chip>)}
         </Track>)}
         {yrs >= 2 && opt("Roster bonus", "Part of each year after the first, paid when the league year opens in March: it counts on that year's cap, and cutting him before then means it's never paid", <Track>
           {ROSTER_SHARES.map((v) => <Chip key={v} on={rosterB === v} onClick={() => setRosterB(v)}>{v ? `${Math.round(v * 100)}%` : "None"}</Chip>)}

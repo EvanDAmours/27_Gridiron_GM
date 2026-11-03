@@ -2268,4 +2268,11 @@ export const PATCH_NOTES = [
     "An extension's signing bonus works like a real one: it's prorated from this season over the years left on his current deal and the new ones (five at most), so this season's cap hit goes up a little and the new years carry less. The table shows exactly which years carry it.",
     "When his current deal runs out, the extension takes over with its whole schedule. Until then the player card shows both deals, and cutting him before the extension starts leaves its bonus and guaranteed money as dead money.",
   ] },
+  { v: "5.50", date: "2026-10-23", title: "AI clubs structure deals; more control over front-loading and vesting", notes: [
+    "AI clubs structure their deals like real front offices: stars get a big signing bonus, two guaranteed years and the rest vesting in March; solid starters a smaller bonus and one guaranteed year; depth players plain deals. Some clubs lean a little front- or back-loaded, and some add March roster bonuses. Their players' cards show the schedule, and cutting or trading them follows the same dead-money rules as yours.",
+    "Choose how hard to front- or back-load a deal: year one can pay 20% or 40% more than an average year (tapering to that much less in the last), or 20% or 40% less to save cap now.",
+    "Choose how much of each later year vests in March: half or all of it. Vesting half keeps more of the deal cuttable while still giving him security, and players value it in between.",
+    "Roster bonuses go up to 75% of each later year.",
+    "Extensions can add void years to spread their bonus thinner (within the five-year limit across his current deal and the new one); what's left on them comes due as dead money when the extension ends.",
+  ] },
 ];
