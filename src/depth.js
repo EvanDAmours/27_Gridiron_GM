@@ -1,7 +1,7 @@
 // Depth charts without the drawing: who starts where, from your order, the real depth chart and
 // snap shares. Pure (no React), so the game engine and the tests can use it.
 import { snapOrdered } from "./snaps.js";
-import { DL_SLOTS, dlOrder } from "./dline.js";
+import { DL_SLOTS, dlOrder, naturalLine } from "./dline.js";
 import { returnerOrder } from "./special.js";
 import { ROLE_SLOTS, roleOrder } from "./roles.js";
 import { isSpec, specialistOrder } from "./specialists.js";
@@ -23,7 +23,8 @@ export function depthOrderFor(roster, depthOrder, pos, snaps) {
   const wide = new Set(((depthOrder || {}).WR || []).filter((id) => roster.some((p) => p.id === id && p.pos === "TE")));
   const players = roster.filter((p) => (p.pos === pos && !(pos === "TE" && wide.has(p.id))) || (pos === "WR" && wide.has(p.id)));
   const order = ((depthOrder || {})[pos] || []).map((id) => players.find((p) => p.id === id)).filter(Boolean);
-  const base = [...order, ...players.filter((p) => !order.includes(p)).sort(byDepth)];
+  // the line's default order is its natural one (best fit at each spot), not the real depth chart's
+  const base = pos === "DL" && !order.length ? naturalLine(players) : [...order, ...players.filter((p) => !order.includes(p)).sort(byDepth)];
   const ordered = snaps ? snapOrdered(pos, base, snaps) : base;
   if (pos === "DL") return dlOrder(players, (depthOrder || {}).DL || [], ordered, snaps);
   // linebackers (SAM, MIKE, WILL), corners (CB1, CB2, nickel) and receivers (X, Z, slot) by role

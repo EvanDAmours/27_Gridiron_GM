@@ -170,12 +170,21 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
   // Choosing a starter here is your call: it clears snap shares you set at that position, so
   // the new order takes over.
   const clearSnaps = (...ps) => setSnaps && setSnaps((s) => { const n = { ...s }; for (const pos of ps) for (const p of roster) if (p.pos === pos) delete n[p.id]; return n; });
+  // A swap moves only the two players: the one coming in takes over the spot's snap share you set
+  // (and the one going out takes his), and everyone else at the position keeps his.
   const place = (pos, idx, player) => {
     const ids = order(pos).map((p) => p.id);
     const from = ids.indexOf(player.id);
+    const other = ids[idx];
     [ids[idx], ids[from]] = [ids[from], ids[idx]];
     setDepthOrder((d) => ({ ...d, [pos]: ids }));
-    clearSnaps(pos);
+    if (setSnaps && other != null && other !== player.id) setSnaps((s0) => {
+      const s = { ...(s0 || {}) }, a = s[player.id], b = s[other];
+      delete s[player.id]; delete s[other];
+      if (b != null) s[player.id] = b;
+      if (a != null) s[other] = a;
+      return s;
+    });
   };
   // Start a lineman from the other side here: he flips over, and the starter he
   // replaces takes his old spot on the other side.

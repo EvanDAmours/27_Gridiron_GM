@@ -52,14 +52,26 @@ export function dlAsPlayed(order) {
   return order.map((p, i) => (i < 4 && p.pos === "DL" ? { ...p, ovr: dlOvrAt(p, slotKind(i)), dlKind: slotKind(i) } : p));
 }
 
+// The line he'd field with nobody's settings: the best two edges and two tackles by their rating at
+// each spot, then the backups by rating. (The real depth charts' order is no use here: ESPN lists
+// linemen by its own end and tackle columns, so a star end can sit eighth.)
+export const naturalLine = (players) => arrangeDL([...players].sort((a, b) => b.ovr - a.ovr || (a.dk ?? 99) - (b.dk ?? 99)));
+
 // The defensive line as [LE, DT1, DT2, RE, backups]. A line you set keeps each player in his
-// spot (an injured one's spot goes to the best fit for it); otherwise the best two edges and two
-// tackles start, each where he's built to play.
+// spot (an injured one's spot goes to the best fit for it, the rest stay put) and your order behind
+// them. Otherwise the natural line starts. Snap shares decide who starts at each kind of spot: the
+// two edges and the two tackles with the most snaps, so a third edge rusher with a big share
+// rotates in on the edge instead of being pushed inside. ordered: the players by snap share, ties
+// in the natural line's order (depth.js).
 export function dlOrder(players, manual, ordered, snaps) {
+  const natural = naturalLine(players);
   if (manual.length) {
-    const slots = manual.slice(0, 4).map((id) => players.find((p) => p.id === id) || null);
+    const byId = (id) => players.find((p) => p.id === id) || null;
+    const slots = manual.slice(0, 4).map(byId);
+    while (slots.length < 4) slots.push(null);
     const used = new Set(slots.filter(Boolean).map((p) => p.id));
-    let rest = ordered.filter((p) => !used.has(p.id));
+    // behind the starters: your order, then anyone you haven't placed, in the natural order
+    let rest = [...manual.slice(4).map(byId).filter(Boolean), ...natural].filter((p, i, a) => !used.has(p.id) && a.indexOf(p) === i);
     slots.forEach((p, i) => {
       if (p) return;
       const k = slotKind(i);
@@ -68,7 +80,17 @@ export function dlOrder(players, manual, ordered, snaps) {
     });
     return [...slots.filter(Boolean), ...rest];
   }
-  // With snap shares set, the snap leaders start; otherwise the best fits from the whole group.
   const setSnaps = snaps && players.some((p) => snaps[p.id] != null);
-  return setSnaps ? [...arrangeDL(ordered.slice(0, 4)), ...ordered.slice(4)] : arrangeDL(ordered);
+  if (!setSnaps) return natural;
+  // the snap leaders at each kind of spot; a kind short of players borrows the best fit left
+  const pick = (kind, n, taken) => ordered.filter((p) => !taken.has(p.id) && naturalDL(p) === kind).slice(0, n);
+  const taken = new Set();
+  const edges = pick("EDGE", 2, taken); edges.forEach((p) => taken.add(p.id));
+  const dts = pick("DT", 2, taken); dts.forEach((p) => taken.add(p.id));
+  const fill = (list, kind) => { while (list.length < 2) { const b = ordered.filter((p) => !taken.has(p.id)).sort((a, c) => dlOvrAt(c, kind) - dlOvrAt(a, kind))[0]; if (!b) break; list.push(b); taken.add(b.id); } };
+  fill(edges, "EDGE"); fill(dts, "DT");
+  // a starter keeps his side of the line from the natural one where he can
+  const place = (list, a, b) => { const out = [null, null]; for (const p of list) { const i = natural.indexOf(p); if (i === a && !out[0]) out[0] = p; else if (i === b && !out[1]) out[1] = p; } for (const p of list) if (!out.includes(p)) out[out[0] ? 1 : 0] = p; return out; };
+  const [le, re] = place(edges, 0, 3), [d1, d2] = place(dts, 1, 2);
+  return [le, d1, d2, re, ...ordered.filter((p) => !taken.has(p.id))].filter(Boolean);
 }

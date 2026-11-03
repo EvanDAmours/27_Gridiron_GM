@@ -2298,4 +2298,8 @@ export const PATCH_NOTES = [
     "Start today now begins in Week 9, with every real 2026 result through Week 8 counted, along with the latest injury report.",
     "The real results now update every Tuesday morning, after Monday Night Football, so a finished week reaches Start today within a day. Before, the only update ran Sunday at noon, before that week's games, so Start today was always a week behind. The injury report also updates Thursdays and Sundays.",
   ] },
+  { v: "5.55", date: "2026-10-23", title: "Defensive line fixes", notes: [
+    "Defensive line: setting a snap share on any lineman no longer scrambles the line. The game used to rebuild it from the real depth chart's order, which lists ends and tackles in separate columns (Brian Burns sat eighth). That could bench your best end or play an edge rusher like Abdul Carter at DT2. The two edges and two tackles with the most snaps now start at their own spots, and a third edge rusher with a big share rotates in on the edge.",
+    "Swapping two players on the depth chart only moves those two: the player coming in takes the spot's snap share, the one going out takes his, and everyone else keeps their place and their snaps. Before, a swap reset every share you'd set at the position and reshuffled the backups on the line.",
+  ] },
 ];
