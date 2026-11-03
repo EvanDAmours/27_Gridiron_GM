@@ -2275,4 +2275,7 @@ export const PATCH_NOTES = [
     "Roster bonuses go up to 75% of each later year.",
     "Extensions can add void years to spread their bonus thinner (within the five-year limit across his current deal and the new one); what's left on them comes due as dead money when the extension ends.",
   ] },
+  { v: "5.51", date: "2026-10-23", title: "Depth chart: start a player with the button only", notes: [
+    "Depth chart menu: only the round button beside a player starts him. Clicking anywhere else in his row does nothing (his name still opens his card), so a stray click can't swap a starter.",
+  ] },
 ];

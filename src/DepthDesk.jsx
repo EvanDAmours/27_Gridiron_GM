@@ -217,9 +217,14 @@ export default function DepthDesk({ api }) {
           const tag = !cur && !p.injured && !isOne && at === pos && fieldOrder(at).slice(0, api.STARTERS[at] || 1).some((q) => q.id === p.id) ? spotName(at, fieldOrder(at).findIndex((q) => q.id === p.id)) : null;
           const sub = [other ? `plays ${at}, they swap sides` : tag ? `starts at ${tag}, they swap` : natural(p), isOne && !SPEC_ROLES[pos]?.pos ? `${p.pos} ${p.ovr}` : ""].filter(Boolean).join(" · ");
           return (
-            <div key={`${at}${p.id}`} role="button" tabIndex={0} onClick={() => { if (cur || p.injured) return; if (other) switchSide(pos, p); else place(pos, pick[1], p); refresh(other ? 0 : pick[1]); }}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 8px", borderRadius: 10, background: cur ? "#3b82f62b" : "transparent", opacity: p.injured ? 0.5 : 1, cursor: cur || p.injured ? "default" : "pointer" }}>
-              <span style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${cur ? "#3b82f6" : "#ffffff44"}`, display: "grid", placeItems: "center", flexShrink: 0 }}>{cur && <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#3b82f6" }} />}</span>
+            <div key={`${at}${p.id}`} data-start-row
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 8px", borderRadius: 10, background: cur ? "#3b82f62b" : "transparent", opacity: p.injured ? 0.5 : 1 }}>
+              {/* only the dot starts him: a click anywhere else in the row does nothing, so a stray click can't swap a starter */}
+              <button type="button" role="radio" aria-checked={cur} disabled={cur || p.injured} aria-label={cur ? `${p.name} starts here` : `Start ${p.name} at ${spotName(pos, pickRole)}`} title={cur ? "Starting here" : p.injured ? "Injured" : `Start ${p.name} here`}
+                onClick={() => { if (cur || p.injured) return; if (other) switchSide(pos, p); else place(pos, pick[1], p); refresh(other ? 0 : pick[1]); }}
+                style={{ width: 28, height: 28, margin: "-5px", padding: 0, border: 0, background: "transparent", display: "grid", placeItems: "center", flexShrink: 0, cursor: cur || p.injured ? "default" : "pointer" }}>
+                <span style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${cur ? "#3b82f6" : "#ffffff44"}`, display: "grid", placeItems: "center" }}>{cur && <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#3b82f6" }} />}</span>
+              </button>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <b onClick={(e) => { e.stopPropagation(); setSel(p); }} title="Open his card" style={{ fontSize: 14.5, cursor: "pointer", whiteSpace: "nowrap" }}>{p.name}</b><NameTags p={p} yr={api.yr} />
                 {sub && <div style={{ fontSize: 12, color: "#a3adbd", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>}
