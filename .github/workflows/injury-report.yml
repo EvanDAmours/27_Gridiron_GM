@@ -1,12 +1,17 @@
-name: Sunday injury report
+name: Weekly results and injury report
 
-# Every Sunday, after the inactives for the early games are out: pull ESPN's injury report (and
-# the season's results so far) into src/data/live2026.json on main, commit it, and redeploy, so a
-# real player on injured reserve sits out in the game too.
+# Pull the season's real results and ESPN's injury report into src/data/live2026.json on main,
+# commit it, and redeploy. A new franchise starts in the week after the last one whose games are
+# all final, so the week has to be pulled once Monday Night Football is over: Tuesday's run does
+# that. Thursday's catches the injury report ahead of the weekend, and Sunday's the inactives,
+# so a real player on injured reserve sits out in the game too. Scheduled runs can start hours
+# late, so each one lands well clear of the games.
 
 on:
   schedule:
-    - cron: "23 16 * * 0" # Sundays 16:23 UTC (about noon Eastern)
+    - cron: "17 11 * * 2" # Tuesdays 11:17 UTC (early morning Eastern, after Monday night's game)
+    - cron: "41 14 * * 4" # Thursdays 14:41 UTC (the week's injury report)
+    - cron: "23 16 * * 0" # Sundays 16:23 UTC (about noon Eastern, inactives)
   workflow_dispatch:
 
 permissions:
@@ -53,7 +58,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/data/live2026.json
-          git commit -m "Injury report $(date -u +%Y-%m-%d)"
+          WK=$(python3 -c 'import json; print(json.load(open("src/data/live2026.json"))["throughWeek"])')
+          git commit -m "Live 2026 results through week ${WK}, injury report $(date -u +%Y-%m-%d)"
           git push origin "HEAD:${GAME_BRANCH}"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 

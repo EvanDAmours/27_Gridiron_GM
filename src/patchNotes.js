@@ -2294,4 +2294,8 @@ export const PATCH_NOTES = [
     "A fifth-year option an AI club picks up is now a clean one-year deal: the rookie deal's bonus no longer lingers on it as dead money.",
     "Removed a hidden adjustment that took up to 2 points a game off your team during winning streaks and added up to 2 during losing streaks. Your results are now just your roster, coaching and game plan.",
   ] },
+  { v: "5.54", date: "2026-10-23", title: "Start today catches up to the real week", notes: [
+    "Start today now begins in Week 9, with every real 2026 result through Week 8 counted, along with the latest injury report.",
+    "The real results now update every Tuesday morning, after Monday Night Football, so a finished week reaches Start today within a day. Before, the only update ran Sunday at noon, before that week's games, so Start today was always a week behind. The injury report also updates Thursdays and Sundays.",
+  ] },
 ];
