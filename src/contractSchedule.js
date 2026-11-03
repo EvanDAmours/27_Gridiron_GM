@@ -175,3 +175,25 @@ export function aiTerms(sal, yrs, cy, { cap = 300, minSal = 1, rand = Math.rando
   };
   return scheduledTerms(sal, Math.min(yrs, 5), opts, cy);
 }
+
+// A drafted rookie's deal, the way the rookie wage scale writes them: four years at his slot's
+// total (sal: the slot's yearly average, cap.js rookieSalary), with no negotiating. Most of the
+// money comes as a signing bonus up front (about two thirds at #1, under half at the end of round
+// 1, a third in round 2, a fifth in round 3, a token one after), and the base salaries start low
+// and climb each year, so his cap hit grows as the bonus spreads over the four years. First-round
+// deals are guaranteed in full; early second-rounders get their first two years guaranteed, later
+// ones the first; after that only the bonus is guaranteed (cutting him costs just what's left of it).
+// overall: the pick. leagueYr: his first league year. Returns the player fields (scheduledTerms).
+export function rookieShare(overall) {
+  return overall <= 32 ? 0.66 - (0.19 * (overall - 1)) / 31 : overall <= 64 ? 0.42 - (0.12 * (overall - 33)) / 31 : overall <= 100 ? 0.22 : overall <= 140 ? 0.12 : 0.06;
+}
+export const rookieGtdYrs = (overall) => (overall <= 32 ? 4 : overall <= 48 ? 2 : overall <= 64 ? 1 : 0);
+export function rookieTerms(sal, overall, leagueYr, { minSal = 1 } = {}) {
+  const t = scheduledTerms(sal, 4, { shape: -0.5, bonus: rookieShare(overall), gtdYrs: rookieGtdYrs(overall), minSal }, leagueYr);
+  // no year below the league minimum (the schedule's rounding lands on the last year)
+  t.sched = t.sched.map((y) => (y.base + y.rb < minSal ? { ...y, base: r1(minSal - y.rb) } : y));
+  t.salary = schedHit(t, 0);
+  t.dealTotal = r1((t.signBonus || 0) + t.sched.reduce((s, y) => s + y.base + y.rb, 0));
+  t.gtdAtSign = r1((t.signBonus || 0) + t.sched.reduce((s, y) => s + (y.g === "full" ? (y.base + y.rb) * partOf(y) : 0), 0));
+  return { ...t, rookieDeal: true };
+}

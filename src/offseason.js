@@ -69,7 +69,7 @@ export function openFreeAgency(teams, ui, yr, rand = Math.random, { cap = league
       if (i !== ui && optionEligible(p, yr) && aiTakesOption(p) && !isFranchisePlayer(p)) {
         const salary = optionPrice(teams, p, cap);
         if (payroll + salary <= cap) {
-          roster.push({ ...p, contract: 1, salary, opt5: true, cy });
+          roster.push({ ...freshDeal(p), sb: 0, contract: 1, salary, opt5: true, cy }); // a new one-year deal: the rookie deal (and its bonus) is done
           payroll += salary;
           resigned.push({ p, team: i, how: "option" });
           continue;

@@ -40,7 +40,7 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 page.on("dialog", (d) => d.accept());
-await page.addInitScript(() => { localStorage.setItem("gm_nofire", "1"); localStorage.setItem("gm_intro_shown", "1"); sessionStorage.setItem("gm_preview", "1"); });
+await page.addInitScript(() => { localStorage.setItem("gm_nofire", "1"); localStorage.setItem("gm_botgm", "1"); localStorage.setItem("gm_intro_shown", "1"); sessionStorage.setItem("gm_preview", "1"); });
 
 // Close full-screen overlays (result cards, popups) by clicking the backdrop corner.
 async function dismiss() {

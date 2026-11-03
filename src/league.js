@@ -428,7 +428,7 @@ export function teamStr(t){const r=t.roster.filter(p=>!p.injured&&!p.holdout&&!p
 // Live-game box score in the shape the live screen shows (yards, TDs, tackles...).
 export function liveView(box){const out={h:{},a:{}};for(const side of["h","a"])for(const[id,l]of Object.entries(box[side]||{}))out[side][id]={name:l.name,pos:l.pos,passYds:l.passYds||0,rushYds:l.rushYds||0,recYds:l.recYds||0,td:(l.passTD||0)+(l.rushTD||0)+(l.recTD||0),comp:l.comp||0,att:l.att||0,rec:l.rec||0,tkl:l.tkl||0,sack:l.sacks||0,int:l.ints||0,rushAtt:l.rushAtt||0};return out;}
 // The shared setup for quick sims and live games: each side's depth chart, snap shares and
-// game-day modifiers (coaches, schemes, game plan, weather, matchups, difficulty).
+// game-day modifiers (coaches, schemes, game plan, weather, matchups).
 export function gameSetup(ht,at,hPlan,aPlan,wxOverride){
 const wx=wxOverride||'clear';/* the weather is set per game (weather.js) and played out in the engine */
   const hOC=ht.coach?.oc?(ht.coach.oc.rating-60)*.1:0,hDC=ht.coach?.dc?(ht.coach.dc.rating-60)*.1:0;
@@ -449,11 +449,10 @@ const wx=wxOverride||'clear';/* the weather is set per game (weather.js) and pla
   const _hRush=_pmAvg(_grp(ht,['DL','LB']))-_pmAvg(_grp(at,['LT','LG','C','RG','RT'])),_aRush=_pmAvg(_grp(at,['DL','LB']))-_pmAvg(_grp(ht,['LT','LG','C','RG','RT']));
   const _hCov=_pmAvg(_grp(ht,['CB','S']))-_pmAvg(_grp(at,['WR','TE'])),_aCov=_pmAvg(_grp(at,['CB','S']))-_pmAvg(_grp(ht,['WR','TE']));
   const _hClash=SCHEME_CLASH[ht.coach?.oc?.scheme]?.[at.coach?.dc?.scheme]||0,_aClash=SCHEME_CLASH[at.coach?.oc?.scheme]?.[ht.coach?.dc?.scheme]||0;
-  const _dda=DDA;
   // A scheme change takes a couple of weeks to install: the team plays a bit worse until it's in.
   const _trans=t=>(t._schemeTransWks||0)>0?-2:0;
-  let hMod=_trans(ht)+hOC-aDC+hFit*.5+_pe.h+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+_hClash+hHC+(ht.isUser?_dda:0);
-  let aMod=_trans(at)+aOC-hDC+aFit*.5+_pe.a+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+_aClash-hHC+(at.isUser?_dda:0);
+  let hMod=_trans(ht)+hOC-aDC+hFit*.5+_pe.h+(_hRush>5?.8:0)+(_aCov>5?-1:_aCov<-5?1:0)+(hPlan?.twoPoint?.15:0)+_hClash+hHC;
+  let aMod=_trans(at)+aOC-hDC+aFit*.5+_pe.a+(_aRush>5?.8:0)+(_hCov>5?-1:_hCov<-5?1:0)+(aPlan?.twoPoint?.15:0)+_aClash-hHC;
   // coordinators running what they believe in (personnel.js coordFit): a little for the offense, a little off the other side's
   {const hc=coordFit(ht,hP.offSet),ac=coordFit(at,aP.offSet);hMod+=hc.off-ac.def;aMod+=ac.off-hc.def;}
   const hSnaps=teamSnaps(hOrd,ht.isUser?USER_SNAPS:{},hP.shape),aSnaps=teamSnaps(aOrd,at.isUser?USER_SNAPS:{},aP.shape);
@@ -488,9 +487,9 @@ export function tickInjuries(nt,nw,ui){
   return logs;
 }
 // League setting: when off, nobody gets hurt anywhere (set from the Menu, saved with the franchise).
-// Your depth chart, snap shares and the difficulty adjustment, as set on your screens: the sim reads
+// Your depth chart and snap shares, as set on your screens: the sim reads
 // them when it lines up your team (AI clubs use their own depth charts).
-let USER_DEPTH={},USER_SNAPS={},DDA=0;
+let USER_DEPTH={},USER_SNAPS={};
 // Diminishing returns on team-wide talent. Inside the range real NFL rosters span (about 4 points of
 // top-22 OVR above the league's average) every point of talent counts in full, ~2 points of margin a
 // game. Past it, a roster stacked at every spot still gets better, but each extra point counts for
@@ -506,7 +505,6 @@ export const setTalentDim=v=>{if(Number.isFinite(v))TALENT_DIM=v;};
 export const top22=t=>{const r=(t?.roster||[]).filter(p=>!p.injured&&!p.holdout&&!p.suspended).map(p=>p.ovr||0).sort((a,b)=>b-a).slice(0,22);return r.length?r.reduce((s,v)=>s+v,0)/r.length:70;};
 const talentBrake=t=>{if(LEAGUE_TAL==null)return 0;const e=Math.min(30,Math.max(0,top22(t)-LEAGUE_TAL-TALENT_KNEE));return e*TALENT_DIM-TALENT_CURVE*e*e;};
 export const setUserLineup=(depth,snaps)=>{USER_DEPTH=depth||{};USER_SNAPS=snaps||{};};
-export const setDifficultyAdj=v=>{DDA=+v||0;};
 let INJ_ON=true;
 export const setInjuries=on=>{INJ_ON=!!on;};
 export const injuriesEnabled=()=>INJ_ON;
