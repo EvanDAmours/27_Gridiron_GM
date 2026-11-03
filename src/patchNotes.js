@@ -2278,4 +2278,14 @@ export const PATCH_NOTES = [
   { v: "5.51", date: "2026-10-23", title: "Depth chart: start a player with the button only", notes: [
     "Depth chart menu: only the round button beside a player starts him. Clicking anywhere else in his row does nothing (his name still opens his card), so a stray click can't swap a starter.",
   ] },
+  { v: "5.52", date: "2026-10-23", title: "Trades read contracts, smarter mock draft, depth chart warnings", notes: [
+    "Trades read contract structure. An AI club values an overpaid player by how much of his remaining salary is guaranteed: money it could cut him out of weighs about half as much. A club that just gave a player a big signing bonus asks more to move him, and says why.",
+    "Trading a player now leaves only his signing bonus behind as dead money (his bonus proration, his void years, and any extension bonus). His salaries, guaranteed or not, go with him to his new club. Before, his old club was also charged his guaranteed salary, and the new club still paid it.",
+    "Cap checks in trades count the dead money a deal leaves the other club this year.",
+    "Mock draft: the experts now read clubs the way the AI actually drafts. They pass on a quarterback when a club has a young starter, don't give a club the same position twice early, and fade positions a club is already set at.",
+    "Draft intel (who's likely to take whom before your pick) now knows which round each pick is in. It used to treat every pick as a first-rounder.",
+    "Depth chart (desktop field view): the bench shows a red 'No backup' marker for any position with no one healthy behind the starters, and positions short of starters are filled red. Click one to jump to that spot.",
+    "Depth chart bench: players that don't fit on the strip now show as '+N more'. Click it to see the whole bench.",
+    "New franchises get a 'Set your depth chart' to-do at the top of Home until you open it. Each preseason it comes back as a reminder, and in season it flags any spot with no backup.",
+  ] },
 ];
