@@ -269,8 +269,13 @@ const groupOf=(p)=>(p.pos==="DL"?naturalDL(p):p.pos);
 // How badly a roster needs each position: 0 (set) to 1 (nothing there), from needs.js.
 export const draftNeeds=(roster)=>teamNeeds(roster).score;
 // ctx: { yr, rd } of the pick (the round matters: a late-round backup quarterback is fine, a
-// first-round one behind a young starter isn't).
-export function aiBestPick(roster,available,gmStyle,ctx={}){
+// first-round one behind a young starter isn't), and score: how the club values a prospect before
+// its needs (its own scouts blended with the consensus board, aiDraftScore; the mock draft passes
+// the consensus board alone).
+export function aiBestPick(roster,available,gmStyle,ctx={}){return rankPicks(roster,available,gmStyle,ctx)[0]?.p||available[0];}
+// Every available prospect scored for this club, best first: [{ p, sc }].
+export function rankPicks(roster,available,gmStyle,ctx={}){
+  const base=ctx.score||(p=>aiDraftScore(p,gmStyle));
   const need=draftNeeds(roster),needW=gmStyle==='rebuilder'?0.08:gmStyle==='win-now'?0.13:0.1,rd=ctx.rd||1;
   // how set a club already is at each position: good players in their prime, under contract or worth keeping
   const set={},drafted={};
@@ -283,7 +288,7 @@ export function aiBestPick(roster,available,gmStyle,ctx={}){
   const qbSet=qb&&(qb.ovr||0)>=80&&(qb.age||27)<=31,qbYoung=qbSet&&(qb.age||27)<=26;
   // roles too: a club whose nickel or slot receiver is a hole looks harder at the ones built for it
   const rNeed=roleNeeds(roster);
-  let best=null,bs=-Infinity;
+  const out=[];
   for(const p of available){
     const g=groupOf(p),n=need[g]??0;
     let val=DRAFT_POS_VALUE[g]??1;
@@ -299,10 +304,9 @@ export function aiBestPick(roster,available,gmStyle,ctx={}){
     if(rd<=2&&n<0.08&&g!=="QB")fit*=0.93;
     // a quarterback behind a good one: only a rare talent early, a developmental backup late
     if(g==="QB"&&qbSet)fit*=rd>=4?0.96:(p.truePot||0)>=90?(qbYoung?0.86:0.93):qbYoung?0.72:0.8;
-    const sc=aiDraftScore(p,gmStyle)*val*fit*(1+needW*n+0.05*roleFit(p,rNeed));
-    if(sc>bs){bs=sc;best=p;}
+    out.push({p,sc:base(p)*val*fit*(1+needW*n+0.05*roleFit(p,rNeed))});
   }
-  return best||available[0];
+  return out.sort((a,b)=>b.sc-a.sc);
 }
 export const scGrade=ovr=>ovr>=90?"A+":ovr>=85?"A":ovr>=78?"B":ovr>=72?"C":ovr>=65?"D":"F";
 // FEATURE 1: Player Traits

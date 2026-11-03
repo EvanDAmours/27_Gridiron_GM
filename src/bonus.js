@@ -53,14 +53,32 @@ export function chargeDead(t, d) {
   if (d.next) t.deadNext = r1((t.deadNext || 0) + d.next);
 }
 
-// A player leaving his team in a trade: the team keeps his bonus as dead money, and he arrives
-// at his new club carrying only his base salary.
-export function tradeAway(p, from, ctx) {
+// Dead money his club keeps if it trades him: { now, next, total }. Only the signing bonus is
+// left behind (its proration for every year still to come, the void years' share, and the bonus
+// on an extension that hasn't started); his salaries, guaranteed or not, go with him to his new
+// club. Like a release, it all lands now in the off-season, this year and next once the season's on.
+export function tradeDead(p, { yr, sp } = {}) {
+  const yl = yearsLeft(p, yr, sp);
   const pr = proration(p);
-  if (!pr || !from) return p;
-  chargeDead(from, deadMoney(p, ctx));
-  if (p.sched?.length) return syncSalary({ ...p, sb: 0, sched: p.sched.map(({ pr, ...y }) => y) });
-  return { ...p, salary: r1((p.salary || 0) - pr), sb: 0 };
+  const ext = p.ext ? (p.ext.sched?.length ? r1((p.ext.voidDead || 0) + p.ext.sched.reduce((s, y) => s + (y.pr ?? p.ext.sb ?? 0), 0)) : r1((p.ext.sb || 0) * (p.ext.yrs || 0))) : 0;
+  const total = r1(pr * yl + (yl ? p.voidDead || 0 : 0) + ext);
+  if (!total) return { now: 0, next: 0, total: 0 };
+  if (OFFSEASON.has(sp)) return { now: total, next: 0, total };
+  const now = Math.min(total, r1(pr));
+  return { now, next: r1(total - now), total };
+}
+
+// A player leaving his team in a trade: the team keeps his bonus as dead money (tradeDead), and he
+// arrives at his new club carrying only his salaries.
+export function tradeAway(p, from, ctx) {
+  if (!from) return p;
+  const d = tradeDead(p, ctx);
+  if (!d.total) return p;
+  chargeDead(from, d);
+  const { voidDead, voidYrs, ...q } = p;
+  if (q.ext) q.ext = { ...q.ext, sb: 0, voidDead: 0, voidYrs: 0, ...(q.ext.sched?.length ? { sched: q.ext.sched.map((y) => ({ ...y, pr: 0 })) } : {}) };
+  if (q.sched?.length) return syncSalary({ ...q, sb: 0, sched: q.sched.map(({ pr, ...y }) => y) });
+  return { ...q, salary: r1((q.salary || 0) - proration(p)), sb: 0 };
 }
 
 // What a restructure would do, or null if he can't be restructured (fewer than 2 years left, or

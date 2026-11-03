@@ -71,7 +71,7 @@ export function leagueIntel(pool, picks, from, to, teams, ui, n = 24) {
     between.forEach((pk, k) => {
       const t = teams[pk.owner];
       if (!t || !avail.length) return;
-      const bp = aiBestPick([...(t.roster || []), ...(added[pk.owner] || [])], avail, t.gmStyle);
+      const bp = aiBestPick([...(t.roster || []), ...(added[pk.owner] || [])], avail, t.gmStyle, { rd: pk.rd });
       const i = avail.indexOf(bp);
       if (i >= 0) avail.splice(i, 1);
       (added[pk.owner] ||= []).push(bp);

@@ -1,9 +1,12 @@
 // The experts' mock draft: walk the draft order and give each club the prospect the analysts
-// expect, which is the best player on the consensus board, nudged toward what the club needs
-// (a QB-needy club reaches for a quarterback). Analysts disagree a little, so each pick also lists
-// the other names linked to that club.
-import { csRank } from "./scouting.js";
+// expect. Analysts don't see a club's own scouting, so they start from the consensus board, then
+// read each club the way its front office drafts (league.js rankPicks, the same rules the AI
+// clubs use on draft day): its needs, a position it's already set at, a quarterback behind a young
+// starter, not doubling up on a position in one draft. Analysts disagree a little, so each pick
+// also lists the other names linked to that club.
+import { csRank, csScore } from "./scouting.js";
 import { teamNeeds, needGroup } from "./needs.js";
+import { rankPicks } from "./league.js";
 
 const hash = (s) => { let h = 2166136261; for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
 
@@ -16,20 +19,27 @@ export function needBonus(team, p) {
   return Math.round(n * (g === "QB" ? 12 : 9));
 }
 
+// The board's value for a prospect (its score, or failing that one worked out from his rank).
+const boardValue = (p) => { const v = csScore(p); return Number.isFinite(v) ? v : 90 - 0.12 * csRank(p); };
+
 // order: the picks to project, in order ({ id, rd, overall, owner }). cls: prospects still on
 // the board. Returns [{ pick, player, alts }].
 export function mockDraft({ order, cls, teams, seed = "mock" }) {
   const board = [...cls].sort((a, b) => csRank(a) - csRank(b));
-  const out = [];
+  const out = [], added = {};
   for (const pick of order) {
     if (!board.length) break;
     const team = teams[pick.owner];
     // Analysts only look at the next dozen or so on the board, and never mock a kicker in round 1.
     const look = board.filter((p) => !["K", "P"].includes(p.pos) || pick.rd > 1).slice(0, pick.rd === 1 ? 12 : 16);
-    const score = (p) => -csRank(p) + needBonus(team, p) + ((hash(`${seed}:${pick.overall}:${p.id}`) % 5) - 2);
-    const ranked = [...look].sort((a, b) => score(b) - score(a));
-    const player = ranked[0];
+    // a little disagreement between analysts, fixed per pick so the mock doesn't reshuffle
+    const score = (p) => boardValue(p) + ((hash(`${seed}:${pick.overall}:${p.id}`) % 7) - 3) * 0.2;
+    // the prospects this mock has already given the club count as its picks this draft
+    const roster = [...(team?.roster || []), ...(added[pick.owner] || [])];
+    const ranked = rankPicks(roster, look, team?.gmStyle, { rd: pick.rd, score }).map((x) => x.p);
+    const player = ranked[0] || look[0];
     out.push({ pick, player, alts: ranked.slice(1, 3) });
+    (added[pick.owner] ||= []).push({ ...player, draftYr: undefined, contract: undefined, truePot: player.truePot ?? 0 });
     board.splice(board.indexOf(player), 1);
   }
   return out;

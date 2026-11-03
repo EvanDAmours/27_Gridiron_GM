@@ -15,3 +15,16 @@ test("mock draft: best on the board, nudged by need, each prospect once", () => 
   assert.equal(m[1].player.pos, "QB", "a QB-needy club takes a QB");
   assert.ok(needBonus(needsQB, "QB") > needBonus(strong, "QB"));
 });
+
+test("mock draft reads clubs like the AI drafts: no QB behind a young starter, no doubling up", () => {
+  const pos = ["QB", "WR", "DL", "CB", "LT", "S", "LB", "TE"];
+  const cls = Array.from({ length: 60 }, (_, i) => ({ id: `p${i}`, name: `P${i}`, pos: pos[i % 8], truePot: 80, trueOvr: 70, cons: { final: i + 1, fscore: 80 - i * 0.1 } }));
+  // a club with a young 85 QB picks first while a QB tops the board
+  const roster = [{ pos: "QB", ovr: 85, age: 24 }, ...["WR", "WR", "DL", "DL", "CB", "LT", "S", "LB", "TE"].map((p) => ({ pos: p, ovr: 70, age: 27 }))];
+  const teams = Array.from({ length: 32 }, () => ({ roster, gmStyle: "analytics" }));
+  const order = [{ id: 0, rd: 1, overall: 1, owner: 0 }, { id: 1, rd: 2, overall: 33, owner: 0 }];
+  const m = mockDraft({ order, cls, teams });
+  assert.notEqual(m[0].player.pos, "QB", "a club set at QB passes on the top QB in round 1");
+  assert.notEqual(needGroupOf(m[1].player), needGroupOf(m[0].player), "its next pick is another position");
+});
+const needGroupOf = (p) => p.pos;

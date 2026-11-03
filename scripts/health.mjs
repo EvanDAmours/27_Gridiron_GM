@@ -149,10 +149,12 @@ let code = 0;
 try {
   await page.goto(url); await page.waitForTimeout(1200);
   await must("NEW GAME"); await page.locator("button", { hasText: "Giants" }).first().click(); await page.locator("button", { hasText: "START YOUR" }).first().click(); await page.waitForTimeout(1500);
-  // your club vs the AI clubs that started level with it (balanceWatch.js)
+  // your club vs the AI clubs level with it (balanceWatch.js), picked again at the start of each
+  // season: this bot never re-signs or signs anyone for your club, so after one off-season your
+  // roster has thinned while theirs were managed, and the clubs level with you then are others
   let match = null; const vs = [];
-  { const d0 = await save(); match = matchedClubs(d0.teams, d0.ui); console.log(`MATCHED: ${d0.teams[d0.ui].ab} vs ${match.map((i) => d0.teams[i].ab).join(", ")}`); }
   for (let s = 0; s < N; s++) {
+    { const d0 = await save(); match = matchedClubs(d0.teams, d0.ui); console.log(`MATCHED ${d0.yr}: ${d0.teams[d0.ui].ab} vs ${match.map((i) => d0.teams[i].ab).join(", ")}`); }
     await must("Start Season", 1500);
     { const go = page.locator("button", { hasText: "Start the season anyway" }); if (await go.count()) { await go.first().click(); await page.waitForTimeout(1500); } }
     // Sim to the end of the season plays one real week at a time and pauses for decisions: keep pressing until the playoffs

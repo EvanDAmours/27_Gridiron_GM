@@ -12,6 +12,7 @@ import { linkedSet, laneSplit } from "./snapEdit.js";
 import { SplitBars } from "./SnapBars.jsx";
 import AutoFill from "./AutoFill.jsx";
 import { RookieDot, DevTag, NameTags, isRookie } from "./PlayerTags.jsx";
+import { depthGaps } from "./depth.js";
 
 // Where each spot sits (x, y: the center of its card, in % of the field). Offense: the line, then
 // the backs and off-the-line receivers, then the deep backs. Defense faces it from the top.
@@ -103,6 +104,10 @@ export default function DepthDesk({ api }) {
   const [plan, setPlan] = useState(false);
   const [help, setHelp] = useState(false);
   const [edit, setEdit] = useState(false); // snap counts mode: - and + on every card and bench chip
+  // the bench strip shows one row; the rest wait behind "+N more" until you open it
+  const [benchAll, setBenchAll] = useState(false);
+  const [benchHidden, setBenchHidden] = useState(0);
+  const benchRef = useRef(null);
   // players whose share you locked: saved with the game, and shared with the list view (App's snapPins)
   const [ownLocks, setOwnLocks] = useState(() => new Set());
   const locks = api.locks || ownLocks, setLocks = api.setLocks || setOwnLocks;
@@ -181,6 +186,19 @@ export default function DepthDesk({ api }) {
     for (const q of order(pos).filter((x) => !x.injured)) if (!locks.has(q.id)) n[q.id] = 0;
     lanes.forEach((ln, k) => { const who = st[k]; if (!who || locks.has(who.id)) return; n[who.id] = Math.min(100, ln.segs.reduce((t, sg) => t + (locks.has(sg.id) && sg.id !== who.id ? 0 : sg.v), 0)); });
     return n; });
+  // bench chips that didn't fit on the strip's one row
+  const benchKey = bench.map(({ p, s }) => `${p.id}:${s}`).join(",");
+  useLayoutEffect(() => {
+    const el = benchRef.current;
+    if (!el || benchAll) return;
+    const kids = [...el.children];
+    const top = kids[0]?.offsetTop ?? 0;
+    const n = kids.filter((k) => k.offsetTop > top + 4).length;
+    setBenchHidden((o) => (o === n ? o : n));
+  }, [benchKey, box.w, edit, benchAll, side]);
+  // positions with no one behind the starters (or not enough to start), every side
+  const gaps = depthGaps(roster);
+  const gapOpen = (g) => { setHelp(false); setPlan(false); if (g.side !== side) setSide(g.side); setPick([g.pos === "OL" ? "C" : g.pos, 0]); };
   const benchOpen = (p) => { const i = order(p.pos).findIndex((q) => q.id === p.id); setPick([p.pos, Math.max(0, Math.min(i, (fieldOrder(p.pos).length || 1) - 1))]); };
 
   // ---- the menu for the spot you opened
@@ -289,9 +307,13 @@ export default function DepthDesk({ api }) {
         {cards.map((c) => <Card key={`${c.pos}${c.idx}`} {...c} on={!!sel && sel === c} onClick={() => openSpot(c)} edit={edit && !pick && !NO_SNAPS.has(c.pos)} mine={!!c.p && snaps?.[c.p.id] != null} locked={!!c.p && locks.has(c.p.id)} onStep={(d) => setShare(c.pos, c.p.id, shareOf(c.pos, c.p.id) + d)} />)}
         {ghosts.map((g) => <Card key="ghost" {...g} on={!!sel && sel === g} onClick={() => setPick(["LB", Math.max(0, order("LB").indexOf(order("LB").filter((q) => !q.injured)[0]))])} />)}
         {cards.filter((c) => c.warn).map((c) => <div key={`w${c.pos}${c.idx}`} style={{ position: "absolute", left: `${c.x}%`, top: `calc(${c.y}% + 40px)`, transform: "translateX(-50%)", background: "#f87171", color: "#0b0f17", fontSize: 12, fontWeight: 800, borderRadius: 8, padding: "2px 8px", whiteSpace: "nowrap", zIndex: 2 }}>{c.warn}</div>)}
-        {bench.length > 0 && <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 54, padding: "0 16px", background: "#0b0f17cc", borderTop: "1px solid #ffffff14", display: "flex", alignItems: "center", gap: 10, zIndex: 2 }}>
-          <span style={{ ...H, flexShrink: 0 }}>Bench</span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, height: 34, overflow: "hidden", flex: 1, minWidth: 0 }}>
+        {(bench.length > 0 || gaps.length > 0) && <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, ...(benchAll ? { maxHeight: Math.round(fh * 0.55), padding: "10px 16px" } : { height: 54, padding: "0 16px" }), background: benchAll ? "#0b0f17f2" : "#0b0f17cc", borderTop: "1px solid #ffffff14", display: "flex", alignItems: benchAll ? "flex-start" : "center", gap: 10, zIndex: benchAll ? 3 : 2 }}>
+          <span style={{ ...H, flexShrink: 0, lineHeight: "34px" }}>Bench</span>
+          {gaps.length > 0 && <span title="Positions with no one healthy behind the starters: an injury there puts someone out of position, or leaves the spot empty" style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 34, flexShrink: 0, background: "#3a1518", border: "1px solid #f8717166", borderRadius: 10, padding: "0 4px 0 10px" }}>
+            <span style={{ fontSize: 12.5, fontWeight: 800, color: "#fca5a5", whiteSpace: "nowrap" }}>{gaps.some((g) => g.kind === "short") && gaps.every((g) => g.kind === "short") ? "Short at" : "No backup"}</span>
+            {gaps.map((g) => <button key={g.pos} type="button" onClick={() => gapOpen(g)} title={g.kind === "short" ? `${g.pos}: ${g.have} healthy, ${g.need} start` : g.pos === "OL" ? "Five healthy linemen and no one behind them" : `${g.pos}: no one healthy behind the ${g.need > 1 ? `${g.need} starters` : "starter"}`} style={{ height: 26, borderRadius: 7, border: 0, padding: "0 7px", background: g.kind === "short" ? "#f87171" : "#f8717133", color: g.kind === "short" ? "#0b0f17" : "#fecaca", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>{g.pos}</button>)}
+          </span>}
+          <div ref={benchRef} style={{ display: "flex", flexWrap: "wrap", gap: 8, ...(benchAll ? { maxHeight: Math.round(fh * 0.55) - 20, overflowY: "auto" } : { height: 34, overflow: "hidden" }), flex: 1, minWidth: 0 }}>
             {bench.map(({ p, s }) => { const out = p.injured, canAdd = edit && !out && !single(p.pos) && !NO_SNAPS.has(p.pos) && setSnaps; return (
               <span key={p.id} style={{ display: "inline-flex", alignItems: "center", height: 34, background: out ? "#2a1518" : "#141b29", border: `1px solid ${out ? "#f8717155" : snaps?.[p.id] != null && s ? "#facc1566" : "#ffffff1f"}`, borderRadius: 10, whiteSpace: "nowrap", color: "#f3f5f8", overflow: "hidden", flexShrink: 0 }}>
                 {canAdd && s > 0 && <button type="button" aria-label={`5 fewer snaps for ${p.name}`} onClick={() => setShare(p.pos, p.id, s - 5)} style={{ ...mini, borderRadius: 0, height: 34, width: 28, background: "#ffffff0d" }}>−</button>}
@@ -302,6 +324,7 @@ export default function DepthDesk({ api }) {
                 {canAdd && <button type="button" aria-label={`5 more snaps for ${p.name}`} title="Rotate him in: 5 more snaps" onClick={() => setShare(p.pos, p.id, s + 5)} style={{ ...mini, borderRadius: 0, height: 34, width: 28, background: "#22c55e33" }}>+</button>}
               </span>); })}
           </div>
+          {(benchAll || benchHidden > 0) && <button type="button" onClick={() => setBenchAll((v) => !v)} aria-expanded={benchAll} title={benchAll ? "Back to one row" : "Everyone on the bench"} style={{ height: 34, flexShrink: 0, borderRadius: 10, border: "1px solid #ffffff2b", background: "#ffffff12", color: "#f3f5f8", padding: "0 12px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>{benchAll ? "Show less" : `+${benchHidden} more`}</button>}
         </div>}
         {(pick || plan || help) && <div onClick={() => { setPick(null); setPlan(false); setHelp(false); }} style={{ position: "absolute", inset: 0, background: "#05080da6", zIndex: 4 }} />}
         {pop}

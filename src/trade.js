@@ -7,7 +7,9 @@
 import { clubMode, fitsTeam } from "./tradeOffers.js";
 import { isFaceOf } from "./faceOfFranchise.js";
 import { keepChance, askingPrice } from "./offseason.js";
-import { leagueCap } from "./cap.js";
+import { leagueCap, getCapPhase } from "./cap.js";
+import { tradeDead, yearsLeft, proration } from "./bonus.js";
+import { guaranteedOwed } from "./contractSchedule.js";
 
 export const POS_MULT = { QB: 1.8, DL: 1.15, LT: 1.1, WR: 1.05, CB: 1.0, RT: 0.95, TE: 0.8, LB: 0.8, S: 0.8, C: 0.7, LG: 0.65, RG: 0.65, RB: 0.6, K: 0.2, P: 0.15 };
 const DEV_MULT = { generational: 1.2, superstar: 1.1, star: 1.04 };
@@ -25,15 +27,42 @@ function ageMult(age, pos) {
 // left count (an expiring deal is a rental: see RENTAL). Players without a salary (prospects) are
 // left alone. Applied when a trade is weighed (it reads this year's cap), never baked into the
 // saved tradeVal, so a reload can't change anyone's value.
-export function contractMult(p) {
+// On a structured deal (p.sched) the new club takes on his salaries only (his signing bonus stays
+// behind as his old club's dead money), and an overpaid deal is only a burden as far as it's
+// guaranteed: money they could get out of by cutting him weighs about half as much.
+export function contractMult(p, ph = getCapPhase()) {
   if (p.salary == null || (p.contract ?? 0) <= 1) return 1;
   const fair = askingPrice(p);
   if (!(fair > 0)) return 1;
+  const sched = p.sched?.length > 0;
+  const cost = sched ? p.salary - (p.sb || 0) : p.salary;
   // overpay is measured in real money: against at least 2% of the cap, so a depth player on a near-minimum
   // deal (a few hundred thousand over his market) isn't priced like an albatross
-  const over = (p.salary - fair) / Math.max(fair, leagueCap() * 0.02);
+  const over = (cost - fair) / Math.max(fair, leagueCap() * 0.02);
   const yrs = Math.min(4, p.contract) / 4;
-  return Math.max(0.6, Math.min(1.15, 1 - over * 0.35 * (0.5 + yrs)));
+  return Math.max(0.6, Math.min(1.15, 1 - over * 0.35 * (0.5 + yrs) * (over > 0 && sched ? 0.5 + 0.5 * gtdShare(p, ph) : 1)));
+}
+// The share of what he's still owed in salary (this year's and later years') that's guaranteed.
+export function gtdShare(p, { sp = "regular", yr } = {}) {
+  if (!p?.sched?.length) return 1;
+  const yl = Math.max(1, Math.min(p.sched.length, yearsLeft(p, yr ?? p.schedYr, sp) || p.contract || 1));
+  // this season's base is paid out over the season; a roster bonus already paid isn't owed any more
+  const unpaid = sp === "regular" ? 0.5 : sp === "playoffs" ? 0 : 1, y0 = p.sched[0];
+  const owed = y0.base * unpaid + (sp === "resign" ? y0.rb : 0) + p.sched.slice(1, yl).reduce((s, y) => s + y.base + y.rb, 0);
+  if (!(owed > 0)) return 0;
+  const g = guaranteedOwed(p, { sp, yl });
+  const paidRb = sp !== "resign" ? y0.rb || 0 : 0;
+  return Math.max(0, Math.min(1, (g.now - paidRb + g.later) / owed));
+}
+// What it costs his club to trade him: the dead money left behind and the part landing this year,
+// and prem, what they'd want on top of his value for it. Real trades (the market tests) already
+// carry the usual bonus left behind, so only a bonus beyond that counts: a club that just handed
+// him a big one on a structured deal doesn't move him for his value alone.
+export const DEAD_NORMAL = 0.04;
+export function moveCost(p, ph = getCapPhase()) {
+  const d = tradeDead(p, ph), cap = Math.max(1, leagueCap());
+  const prem = p.sched?.length || p.signBonus ? Math.min(0.25, 1.5 * Math.max(0, d.total / cap - DEAD_NORMAL)) : 0;
+  return { dead: d.total, deadNow: d.now, prem: +prem.toFixed(3) };
 }
 
 export function playerValue(p, dev) {
@@ -114,7 +143,9 @@ export function evaluateTrade({ send = [], sendPk = [], get = [], getPk = [], th
   // since they won't be good anymore by the time the club is
   const selling = them && clubMode(them) === "rebuild";
   const sellOff = (p) => (selling && (p.age || 0) >= 27 ? ((p.age || 0) >= 29 ? 0.75 : 0.85) : 1);
-  const rv = Math.round(get.reduce((s, p) => s + (p.tradeVal || 0) * (rental(p) ? rentRate(p) : contractMult(p) * sellOff(p)), 0) + getPk.reduce((s, pk) => s + pick(pk), 0));
+  // the dead money each player they give up would leave behind (moveCost): they want it covered
+  const mc = new Map(get.map((p) => [p.id, moveCost(p)]));
+  const rv = Math.round(get.reduce((s, p) => s + (p.tradeVal || 0) * (rental(p) ? rentRate(p) : contractMult(p) * sellOff(p) * (1 + mc.get(p.id).prem)), 0) + getPk.reduce((s, pk) => s + pick(pk), 0));
   // the margin they want to come out ahead by: small for an ordinary deal (a 2nd for a solid
   // starter gets done in the real league), bigger for stars and starting quarterbacks
   let mult = 1.05, why = null;
@@ -131,12 +162,15 @@ export function evaluateTrade({ send = [], sendPk = [], get = [], getPk = [], th
   if (selling && !why && firm.some((p) => sellOff(p) < 1)) why = "They're rebuilding and willing to move veterans";
   // a contender doesn't hand over a starter it needs without a premium
   if ((!why || firm.length < get.length) && them && clubMode(them) === "contend" && firm.some((p) => p.pos !== "QB" && (p.tradeVal || 0) >= 40 && fitsTeam({ ...them, roster: them.roster.filter((x) => x.id !== p.id) }, p))) { mult = Math.max(mult, 1.15); why = "They're contending and he's one of their starters"; }
+  const deadBig = get.filter((p) => !rental(p) && mc.get(p.id).prem >= 0.05).sort((a, b) => mc.get(b.id).dead - mc.get(a.id).dead)[0];
+  if (deadBig && (!why || mult <= 1.05)) why = `Moving ${deadBig.name} leaves them $${mc.get(deadBig.id).dead.toFixed(1)}M in dead money, so they want more for him`;
   const ask = Math.round(rv * mult);
   const both = (send.length || sendPk.length) && (get.length || getPk.length);
-  // salary: what they take on has to fit under their cap
-  const addSal = send.reduce((s, p) => s + (p.salary || 0), 0) - get.reduce((s, p) => s + (p.salary || 0), 0);
+  // salary: what they take on has to fit under their cap, counting the dead money the players they
+  // send away leave behind this year (players you send arrive without their bonus proration)
+  const addSal = send.reduce((s, p) => s + (p.salary || 0) - proration(p), 0) - get.reduce((s, p) => s + (p.salary || 0) - mc.get(p.id).deadNow, 0);
   const noRoom = capRoom != null && addSal > 0 && addSal > capRoom;
-  if (noRoom) why = `They can't fit the extra $${addSal.toFixed(1)}M under their cap`;
+  if (noRoom) why = `They can't fit the extra $${addSal.toFixed(1)}M under their cap${get.some((p) => mc.get(p.id).deadNow > 0) ? ", counting the dead money the deal leaves them" : ""}`;
   const accept = !!both && gv >= ask && !noRoom;
   return { gv, rv, ask, accept, gap: Math.max(0, ask - gv), over: gv > ask * 1.35 + 10, nextWeight: PACKAGE[offered.length] ?? 0.25, why, notes, noRoom }; // nextWeight: how the next player you add would count
 }

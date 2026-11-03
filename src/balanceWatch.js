@@ -66,10 +66,18 @@ export function watchRun(rows) {
 }
 export const flagText = (f) => `${f.what}: ${f.v} (band ${f.band})${f.hard ? " [hard]" : ""}`;
 
-// Your club against AI clubs that started level with it: the health run picks the AI clubs whose
-// starters (best 22) rated closest to yours at the start, then compares win rates every season.
-// A big, lasting gap means the game favors the user (or the AI) beyond the rosters.
-const strength = (t) => { const r = [...(t.roster || [])].sort((a, b) => b.ovr - a.ovr).slice(0, 22); return r.reduce((a, p) => a + p.ovr, 0) / Math.max(1, r.length); };
+// Your club against AI clubs that started level with it: the health run picks the AI clubs rated
+// closest to yours at the start, then compares win rates every season. A big, lasting gap means the
+// game favors the user (or the AI) beyond the rosters.
+// Strength: the best 22's average plus the starting QB's weight. The best 22 alone missed how much
+// the QB decides games (the AI-run Giants won 35% while three clubs "level" with them on it averaged
+// 47%, Buffalo 60%); with the QB it tracks AI-vs-AI win rates much better (r 0.85 -> 0.89).
+export const QB_WEIGHT = 0.12;
+export const strength = (t) => {
+  const r = [...(t.roster || [])].sort((a, b) => b.ovr - a.ovr).slice(0, 22);
+  const qb = Math.max(0, ...(t.roster || []).filter((p) => p.pos === "QB").map((p) => p.ovr));
+  return r.reduce((a, p) => a + p.ovr, 0) / Math.max(1, r.length) + QB_WEIGHT * qb;
+};
 export function matchedClubs(teams, ui, n = 3) {
   const me = strength(teams[ui]);
   return teams.map((t, i) => [i, Math.abs(strength(t) - me)]).filter(([i]) => i !== ui).sort((a, b) => a[1] - b[1]).slice(0, n).map(([i]) => i);

@@ -43,3 +43,23 @@ export function depthSlots(roster, depthOrder, snaps) {
   }
   return out;
 }
+
+// Spots without cover: positions with fewer healthy players than starters ("short"), or with
+// just the starters and no one behind them ("thin"). The line counts as one group (a backup
+// lineman covers more than one spot), as long as every spot has someone; kickers and punters
+// carry no backups in the real league, so they only show when there's none.
+// Returns [{ pos, side, kind: "short" | "thin", have, need }].
+const SIDE_OF = { QB: "offense", RB: "offense", WR: "offense", TE: "offense", OL: "offense", LT: "offense", LG: "offense", C: "offense", RG: "offense", RT: "offense", DL: "defense", LB: "defense", CB: "defense", S: "defense", K: "special", P: "special" };
+export function depthGaps(roster) {
+  const ok = (roster || []).filter((p) => !p.injured && !p.holdout && !p.suspended);
+  const n = (pos) => ok.filter((p) => p.pos === pos).length;
+  const out = [];
+  for (const pos of ["QB", "RB", "WR", "TE", "LT", "LG", "C", "RG", "RT", "DL", "LB", "CB", "S", "K", "P"]) {
+    const have = n(pos), need = STARTERS[pos];
+    if (have < need) out.push({ pos, side: SIDE_OF[pos], kind: "short", have, need });
+    else if (have === need && !["LT", "LG", "C", "RG", "RT", "K", "P"].includes(pos)) out.push({ pos, side: SIDE_OF[pos], kind: "thin", have, need });
+  }
+  const ol = ["LT", "LG", "C", "RG", "RT"];
+  if (ol.every((pos) => n(pos) >= 1) && ol.reduce((s, pos) => s + n(pos), 0) <= 5) out.push({ pos: "OL", side: "offense", kind: "thin", have: 5, need: 5 });
+  return out;
+}
