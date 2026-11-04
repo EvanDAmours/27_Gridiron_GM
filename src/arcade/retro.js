@@ -246,6 +246,32 @@ export function drawWxChip(ctx, cam, wx, wind) {
   ctx.fillStyle = "rgba(8,10,16,.75)"; ctx.fillRect(x, y, w, h); pixText(ctx, text, x + px * 3, y + px * 2, px, "#cfe8ff");
 }
 
+// ---- the box score ----
+// The final screen: the score, the two clubs' totals side by side, and your leaders (with a
+// player of the game). box: { title, sub, rows: [[label, you, them]], leaders: [[role, line]], pog }.
+export function drawBoxScore(ctx, cam, box, teams, { time = 0, hint = "" } = {}) {
+  const { W, H } = cam, px = uiPx(cam), u = teams.user, o = teams.opp;
+  ctx.fillStyle = "rgba(6,8,12,.86)"; ctx.fillRect(0, 0, W, H);
+  const rowH = px * 9, pw = Math.min(W - px * 8, px * 240), ph = Math.min(H - px * 4, px * 44 + rowH * (box.rows.length + 1 + box.leaders.length) + px * 30), x0 = Math.round(W / 2 - pw / 2), y0 = Math.round(H / 2 - ph / 2);
+  ctx.fillStyle = "#121826"; ctx.fillRect(x0, y0, pw, ph); ctx.fillStyle = u.clr; ctx.fillRect(x0, y0, pw, px * 2);
+  pixShadow(ctx, box.title, W / 2, y0 + px * 6, Math.round(px * 1.6), "#ffd166", "center");
+  pixShadow(ctx, box.sub, W / 2, y0 + px * 20, px, "#fff", "center");
+  // the team totals: you | label | them
+  const cx = W / 2, colW = Math.min(px * 48, pw * 0.26); let y = y0 + px * 34;
+  pixText(ctx, u.ab, cx - colW, y, px, "#ffd166", "center"); pixText(ctx, o.ab, cx + colW, y, px, "#ffd166", "center"); y += rowH;
+  for (const [label, a, b] of box.rows) {
+    const better = typeof a === "number" && typeof b === "number" ? (/TURNOVERS|SACKED/.test(label) ? a < b : a > b) : false;
+    pixText(ctx, String(a), cx - colW, y, px, better ? "#9be29b" : "#fff", "center"); pixText(ctx, label, cx, y, px, "rgba(255,255,255,.6)", "center"); pixText(ctx, String(b), cx + colW, y, px, "#fff", "center"); y += rowH;
+  }
+  // your leaders
+  y += px * 3; ctx.fillStyle = "#2c3744"; ctx.fillRect(x0 + px * 6, y - px * 3, pw - px * 12, px);
+  const fit = Math.max(1, Math.min(px, ...box.leaders.map(([r, t]) => Math.floor((pw - px * 16) / ((12 + t.length) * 6))))); // one size for all three lines
+  for (const [role, text] of box.leaders) { pixText(ctx, role, x0 + px * 8, y, fit, "#7fe3ff"); pixText(ctx, text, x0 + px * 8 + 12 * 6 * fit, y, fit, "#fff"); y += rowH; }
+  y += px * 3;
+  if (box.pog) { const pulse = 0.6 + 0.4 * Math.sin(time * 4); pixShadow(ctx, `PLAYER OF THE GAME: ${box.pog}`, W / 2, y + px * 2, Math.max(1, Math.min(px, Math.floor((pw - px * 8) / ((box.pog.length + 20) * 6)))), `rgba(255,209,102,${pulse})`, "center"); }
+  if (hint) pixText(ctx, hint, W / 2, y0 + ph - px * 9, Math.max(1, px - 1), "rgba(255,255,255,.6)", "center");
+}
+
 export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   const { W, H, s, top, depth } = cam;
   ctx.imageSmoothingEnabled = false;

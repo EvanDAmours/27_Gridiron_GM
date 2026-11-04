@@ -17,7 +17,7 @@ import { sfx, unlock, toggleMute, isMuted } from "./sfx.js";
 import { FX } from "./fx.js";
 import { rollWeather } from "../weather.js";
 import { teamKey } from "../teamUniforms.js";
-import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawMenu, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
+import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, drawMenu, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
 
 const PULL = 3.2; // touch: the throw goes this many times the pull-back, the other way, on the screen
 const spotOf = (yard) => (yard === 50 ? "MIDFIELD" : yard < 50 ? `OWN ${yard}` : `OPP ${100 - yard}`);
@@ -128,7 +128,26 @@ export class ArcadeGame {
     this.two = { snap: snapshot(g) }; delete g.patPending; g.done = false; g.yard = 98; g.down = 1; g.toGo = 2;
     this.S = null; this.mode = "pick"; this.refresh(); sfx.select?.();
   }
-  endBanner() { const st = this.sit, lead = st.score.h - st.score.a; this.banner = { title: lead > 0 ? "YOU WIN!" : lead < 0 ? "YOU LOSE" : "TIE GAME", text: `${this.teams.user.name} ${st.score.h}, ${this.teams.opp.name} ${st.score.a}`, sub: null, at: performance.now(), hint: this.mobile ? "TAP FOR A NEW GAME" : "CLICK OR ENTER FOR A NEW GAME" }; if (lead > 0) { this.fx.confetti(this.cam.W, [this.teams.user.clr, this.teams.user.ac, "#ffd166", "#fff"]); sfx.touchdown(); } }
+  // the final box score from the engine's own book of the game
+  makeBox() {
+    const g = this.g, T = g.stats || {}, h = T.h || {}, a = T.a || {}, lines = Object.values(g.box?.h || {});
+    const tot = (t) => (t.passYds || 0) + (t.rushYds || 0), lead = (k) => lines.filter((l) => l[k]).sort((p, q) => q[k] - p[k])[0];
+    const qb = lead("passYds"), rb = lead("rushYds"), wr = lead("recYds");
+    const leaders = [];
+    if (qb) leaders.push(["PASSING", `${qb.name.toUpperCase()} ${qb.comp || 0}/${qb.att || 0} ${qb.passYds} YD${qb.passTD ? `, ${qb.passTD} TD` : ""}${qb.passInt ? `, ${qb.passInt} INT` : ""}`]);
+    if (rb) leaders.push(["RUSHING", `${rb.name.toUpperCase()} ${rb.rushAtt} CAR ${rb.rushYds} YD${rb.rushTD ? `, ${rb.rushTD} TD` : ""}`]);
+    if (wr) leaders.push(["RECEIVING", `${wr.name.toUpperCase()} ${wr.rec} REC ${wr.recYds} YD${wr.recTD ? `, ${wr.recTD} TD` : ""}`]);
+    // the player of the game: most yards plus twenty a touchdown, on your side
+    const val = (l) => (l.passYds || 0) * 0.5 + (l.rushYds || 0) + (l.recYds || 0) + 20 * ((l.passTD || 0) + (l.rushTD || 0) + (l.recTD || 0)) - 25 * (l.passInt || 0);
+    const pog = lines.slice().sort((p, q) => val(q) - val(p))[0];
+    const st = this.sit, lead_ = st.score.h - st.score.a;
+    this.box = {
+      title: lead_ > 0 ? "YOU WIN!" : lead_ < 0 ? "YOU LOSE" : "TIE GAME", sub: `${this.teams.user.name.toUpperCase()} ${st.score.h} - ${st.score.a} ${this.teams.opp.name.toUpperCase()}`,
+      rows: [["TOTAL YARDS", tot(h), tot(a)], ["PASSING", h.passYds || 0, a.passYds || 0], ["RUSHING", h.rushYds || 0, a.rushYds || 0], ["TURNOVERS", (h.ints || 0) + (h.fumLost || 0), (a.ints || 0) + (a.fumLost || 0)], ["SACKED", h.sacks || 0, a.sacks || 0]],
+      leaders, pog: pog && val(pog) > 0 ? pog.name.toUpperCase() : null,
+    };
+  }
+  endBanner() { this.makeBox(); const st = this.sit, lead = st.score.h - st.score.a; this.banner = { title: lead > 0 ? "YOU WIN!" : lead < 0 ? "YOU LOSE" : "TIE GAME", text: `${this.teams.user.name} ${st.score.h}, ${this.teams.opp.name} ${st.score.a}`, sub: null, at: performance.now(), hint: this.mobile ? "TAP FOR A NEW GAME" : "CLICK OR ENTER FOR A NEW GAME" }; if (lead > 0) { this.fx.confetti(this.cam.W, [this.teams.user.clr, this.teams.user.ac, "#ffd166", "#fff"]); sfx.touchdown(); } }
 
   // ---- the loop ----
   loop(now) {
@@ -261,6 +280,7 @@ export class ArcadeGame {
       this.lastButtons = this.buttons;
     }
     if (m === "opp") this.drawDrive(ctx);
+    if (m === "final" && this.box) { drawBoxScore(ctx, cam, this.box, teams, { time: this.time, hint: this.mobile ? "TAP FOR A NEW GAME" : "CLICK OR ENTER FOR A NEW GAME" }); return; }
     if ((m === "result" || m === "final") && this.banner) { const b = this.banner; drawBanner(ctx, cam, b.title, b.text, b.sub, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166", hint: b.hint || (this.mobile ? "TAP TO CONTINUE" : "CLICK OR SPACE TO CONTINUE") }); }
     // the pause button, and the menu
     if (!this.paused) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 13.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
