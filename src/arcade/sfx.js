@@ -43,5 +43,8 @@ export const sfx = {
   firstDown: () => { tone(660, 0.07, { vol: 0.06 }); tone(990, 0.1, { vol: 0.06, at: 0.08 }); },
   touchdown: () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, i === 5 ? 0.4 : 0.12, { vol: 0.07, at: i * 0.11 })),
   turnover: () => [392, 330, 262, 196].forEach((f, i) => tone(f, 0.14, { vol: 0.07, at: i * 0.12 })),
+  select: () => tone(988, 0.04, { type: "square", vol: 0.04 }),
+  // the crowd: a swell of noise, rising then falling
+  crowd: () => { const a = ac(); if (!a || muted) return; const t = a.currentTime, n = Math.floor(a.sampleRate * 2.4), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); src.buffer = buf; f.type = "bandpass"; f.frequency.value = 900; f.Q.value = 0.6; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.09, t + 0.4); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.4); src.connect(f).connect(g).connect(a.destination); src.start(t); },
   good: () => [784, 988, 1175].forEach((f, i) => tone(f, 0.15, { vol: 0.07, at: i * 0.1 })),
 };

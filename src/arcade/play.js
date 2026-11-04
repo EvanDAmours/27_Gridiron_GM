@@ -41,6 +41,20 @@ const PLAYS = {
   pass_medium: { X: "dig", Z: "out", SLOT: "hitch", TE: "drag", RB: "swing" },
   pass_deep: { X: "go", Z: "post", SLOT: "corner", TE: "seam", RB: "check" },
 };
+// A play's diagram for the play card: each receiver's route from his spot, in yards (x up the
+// field from the line, y across), and an arrow for a run.
+export function playDiagram(call) {
+  const lines = [];
+  if (PLAYS[call]) for (const r of ELIGIBLE) {
+    const R = ROUTES[PLAYS[call][r]], [dx, dy] = OFF_SPOTS[r], inward = dy < 0 ? 1 : -1;
+    let x = dx, y = dy; const pts = [{ x, y }];
+    for (const [up, side] of R.legs) { x += up; y = clamp(y + side * inward, -25, 25); pts.push({ x, y }); }
+    if (!R.stop && R.more) { const a = pts[pts.length - 2], b = pts[pts.length - 1], d = hyp(b.x - a.x, b.y - a.y) || 1; pts.push({ x: b.x + (b.x - a.x) / d * R.more * 0.5, y: b.y + (b.y - a.y) / d * R.more * 0.5 }); }
+    lines.push({ who: r, pts, stop: !!R.stop });
+  } else if (call === "run_inside") lines.push({ who: "RB", pts: [{ x: -7, y: 1.8 }, { x: -1, y: 3.5 }, { x: 8, y: 3.5 }], run: true });
+  else if (call === "run_outside") lines.push({ who: "RB", pts: [{ x: -7, y: 1.8 }, { x: -4, y: 9 }, { x: 0, y: 14 }, { x: 8, y: 15 }], run: true });
+  return { lines, spots: OFF_SPOTS };
+}
 export const PLAY_NAMES = { pass_quick: "Quick", pass_medium: "Medium", pass_deep: "Deep", run_inside: "Inside run", run_outside: "Outside run" };
 
 const mk = (key, p, side, x, y) => ({ key, p, side, x, y, vx: 0, vy: 0, face: side === "off" ? 1 : -1, top: topSpeed(p), acc: accelOf(p), mode: "idle", path: null, down: 0 });
@@ -354,7 +368,15 @@ export function tick(S, dt) {
 
   // the throw in the air
   if (ball.flight) {
-    const f = ball.flight, u = clamp((S.t - f.t0) / f.T, 0, 1);
+    const f = ball.flight;
+    // a bullet stays low: a defender standing in its lane can get a hand to it (a lob goes over him)
+    if (f.bullet && !f.kick && !f.tipped && S.t - f.t0 > 0.12 && S.t - f.t0 < f.T - 0.12) {
+      for (const d of Object.values(ents)) {
+        if (d.side !== "def" || d.down > 0 || d.heldUntil > S.t || d.mode === "rush") continue;
+        if (hyp(d.x - ball.x, d.y - ball.y) < 0.75 + (K.ballSkills(d.p) - 70) * 0.006) { f.tipped = true; f.to = { x: ball.x, y: ball.y }; f.T = S.t - f.t0; S.log.push("in the lane"); break; }
+      }
+    }
+    const u = clamp((S.t - f.t0) / f.T, 0, 1);
     ball.x = f.from.x + (f.to.x - f.from.x) * u; ball.y = f.from.y + (f.to.y - f.from.y) * u; ball.h = f.arc * 4 * u * (1 - u);
     if (u >= 1) { arrive(S); return S.phase !== "done"; }
   }
@@ -441,24 +463,36 @@ export function juke(S) {
 }
 
 // ---------- the throw ----------
-// You aimed at a spot. The ball takes off for it; the receiver who can best get there adjusts to
-// it. Nothing is decided until it comes down.
-export function throwTo(S, P, why = null) {
-  if (S.phase !== "live" || S.ball.holder !== "QB") return null;
-  const { ents } = S, qb = ents.QB;
-  const arm = K.qbArm(qb.p), reach = 38 + (arm - 70) * 0.55; // how far he can put it
+// Two kinds of throw. A BULLET is fired flat and fast: it beats the coverage to a man underneath
+// but can't get over a defender, and it gets wilder the further it goes. A LOB (touch pass) is
+// lofted: slower, so the coverage closes, but it drops over the top and is the deep ball. AUTO
+// picks a bullet inside BULLET_RANGE yards and a lob beyond it. passPlan is shared with the
+// renderer, so the arc you see while aiming is the throw you get.
+export const BULLET_RANGE = 20;
+export const PASS_KINDS = ["auto", "bullet", "lob"];
+export function passPlan(S, P, kind = "auto") {
+  const qb = S.ents.QB, arm = K.qbArm(qb.p), reach = 38 + (arm - 70) * 0.55; // how far he can put it
   let land = { x: clamp(P.x, S.los - 12, 109), y: clamp(P.y, -HALF + 0.3, HALF - 0.3) };
   let dist = hyp(land.x - qb.x, land.y - qb.y);
-  if (dist > reach) { const k = reach / dist; land = { x: qb.x + (land.x - qb.x) * k, y: qb.y + (land.y - qb.y) * k }; dist = reach; } // falls short of a spot he can't reach
-  // underneath it's a bullet (flat and fast); downfield it's lofted over the coverage, still quicker than a moonball
-  const bullet = dist < 20;
+  const short = dist > reach; // he can't get it there: it dies short of the spot
+  if (short) { const k = reach / dist; land = { x: qb.x + (land.x - qb.x) * k, y: qb.y + (land.y - qb.y) * k }; dist = reach; }
+  const bullet = kind === "bullet" || (kind === "auto" && dist < BULLET_RANGE);
+  const vel = bullet ? 27 + (arm - 70) * 0.2 : 22 + (arm - 70) * 0.15 - (dist < 12 ? 3 : 0); // yards a second (a short lob floats)
+  const T = clamp(dist / vel, 0.22, 2.0);
+  const arc = bullet ? clamp(dist / 40, 0.15, 0.55) : clamp(dist / 12, 1.4, 4);
+  return { land, dist, bullet, T, arc, short, reach, kind: bullet ? "bullet" : "lob", auto: kind === "auto" };
+}
+export function throwTo(S, P, why = null, kind = "auto") {
+  if (S.phase !== "live" || S.ball.holder !== "QB") return null;
+  const { ents } = S, qb = ents.QB;
+  const plan = passPlan(S, P, kind);
+  let { land } = plan; const { dist, bullet, T } = plan;
   const aimed = { ...land };
   // his accuracy (and touch, on a lofted ball): the ball drifts from the spot, more on a long throw
-  const accu = K.qbAccuracy(qb.p, !bullet);
-  const sig = (0.25 + Math.max(0, 95 - accu) * 0.05) * (0.5 + dist / 18), g1 = () => (rnd(S) + rnd(S) + rnd(S) - 1.5) * 1.6;
+  // (a bullet fired a long way is hard to put on a man: past BULLET_RANGE it sprays)
+  const accu = K.qbAccuracy(qb.p, !bullet), wild = bullet && dist > BULLET_RANGE ? 1 + (dist - BULLET_RANGE) / 15 : 1;
+  const sig = (0.25 + Math.max(0, 95 - accu) * 0.05) * (0.5 + dist / 18) * wild, g1 = () => (rnd(S) + rnd(S) + rnd(S) - 1.5) * 1.6;
   land = { x: clamp(land.x + g1() * sig, S.los - 12, 109), y: clamp(land.y + g1() * sig, -HALF + 0.3, HALF - 0.3) };
-  const vel = bullet ? 27 + (arm - 70) * 0.2 : 22 + (arm - 70) * 0.15; // yards per second through the air
-  const T = clamp(dist / vel, 0.22, 2.0);
   let best = null, bestD = 99;
   for (const r of ELIGIBLE) {
     const e = ents[r]; if (!e || e.mode === "block" || e.mode === "back" || (e.delay && S.t < e.delay)) continue;
@@ -471,7 +505,7 @@ export function throwTo(S, P, why = null) {
   const [rusher, near] = nearestDef(S, qb.x, qb.y);
   const hurried = why || (rusher && near < 1.5 ? "hurried" : null); // a man in his face as he lets it go
   S.ball.holder = null; S.thrownAt = S.t; qb.mode = "watch";
-  S.ball.flight = { from: { x: qb.x, y: qb.y }, to: land, t0: S.t, T, arc: bullet ? clamp(dist / 40, 0.15, 0.45) : clamp(dist / 13, 1.2, 3.5), target: best, hurried, bullet };
+  S.ball.flight = { from: { x: qb.x, y: qb.y }, to: land, t0: S.t, T, arc: plan.arc, target: best, hurried, bullet };
   // a hurried or wild throw sails: the spot drifts
   // (how much it sails depends on his poise in the pocket)
   if (hurried) { const k = (why === "late" ? 3 : 2) * clamp(1 + (80 - K.qbPoise(qb.p)) * 0.025, 0.45, 1.8); S.ball.flight.to = { x: land.x + (rnd(S) - 0.5) * k, y: clamp(land.y + (rnd(S) - 0.5) * k * 2, -HALF + 0.3, HALF - 0.3) }; }
@@ -506,7 +540,7 @@ function arrive(S) {
     const hands = K.hands(tgt.p), traffic = K.contested(tgt.p), ballSk = d ? K.ballSkills(d.p) : 50;
     const dive = dR > catchR ? 1 - (dR - catchR) / Math.max(0.5, reachR) : 1; // one just out of reach: a dive, less likely the further
     const first = tgt && d && dR < dD - 0.4 ? 0.12 : 0; // he got to it first
-    const pCatch = (open ? clamp(0.985 - (85 - hands) * 0.003, 0.9, 0.995) : clamp(0.67 + first + (traffic - ballSk) * 0.007 + (dD - 0.8) * 0.22 - (dR > 1.2 ? 0.08 : 0), 0.18, 0.9)) * clamp(dive, 0, 1);
+    const pCatch = (open ? clamp(0.985 - (85 - hands) * 0.003, 0.9, 0.995) : clamp(0.7 + first + (traffic - ballSk) * 0.007 + (dD - 0.8) * 0.22 - (dR > 1.2 ? 0.08 : 0), 0.18, 0.9)) * clamp(dive, 0, 1);
     if (rnd(S) < pCatch) {
       ball.x = tgt.x; ball.y = tgt.y; ball.holder = f.target; tgt.mode = "carry"; S.catchAt = S.t; S.phase = "carry";
       if (d && dD < 2.5) { d.down = Math.max(d.down, clamp(0.4 - (dD < 0.8 ? 0.2 : 0) - K.edge(K.tackling(d.p)) * 0.005, 0.15, 0.6)); d.vx *= 0.3; d.vy *= 0.3; } // he played the ball, not the man

@@ -144,3 +144,17 @@ test("ratings, form and injuries reach the field", async () => {
   };
   assert.ok(miss(60) > miss(95) * 2, "a 60 misses his spot by far more than a 95");
 });
+
+test("the pass you choose is the pass you get", async () => {
+  const { passPlan, BULLET_RANGE } = await import("../src/arcade/play.js");
+  const { g } = newGame(0, 1, { rand }); runPlay(g); toYourBall(g);
+  const S = setupPlay(g, lineups(g), "pass_medium"); snap(S); for (let k = 0; k < 80; k++) tick(S, 1 / 60);
+  const qb = S.ents.QB, near = { x: qb.x + 12, y: 4 }, far = { x: qb.x + 35, y: -6 };
+  assert.equal(passPlan(S, near, "auto").kind, "bullet", "AUTO is a bullet underneath");
+  assert.equal(passPlan(S, far, "auto").kind, "lob", `AUTO is a lob past ${BULLET_RANGE} yards`);
+  const b = passPlan(S, far, "bullet"), l = passPlan(S, far, "lob");
+  assert.equal(b.kind, "bullet"); assert.equal(l.kind, "lob");
+  assert.ok(b.T < l.T && b.arc < l.arc, "a bullet gets there sooner and flatter than a lob");
+  const f = throwTo(S, far, null, "lob");
+  assert.ok(f && !f.bullet && Math.abs(f.T - l.T) < 1e-9, "the throw flies the planned path");
+});

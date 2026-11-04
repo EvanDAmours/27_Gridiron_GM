@@ -5,10 +5,10 @@
 </head><body><div id="wrap"><canvas id="cv"></canvas></div>
 <script type="module">
   // The arcade straight from source (no build): scripts/arcade-dev/serve.mjs serves /src and /sprites.
+  // ?u= and ?o= pick the teams, ?seed= makes it repeatable, ?play skips the title screen.
   import { ArcadeGame } from "/src/arcade/game.js";
-  import { TEAMS } from "/src/arcade/bridge.js";
   const q = new URLSearchParams(location.search), u = +(q.get("u") ?? 17), o = +(q.get("o") ?? 8);
   let seed = +(q.get("seed") || 0);
   const rand = seed ? () => ((seed = (seed * 16807) % 2147483647) / 2147483647) : undefined;
-  window.game = new ArcadeGame(document.getElementById("cv"), { userTi: u, oppTi: o, teams: { user: TEAMS[u], opp: TEAMS[o] }, rand, onQuit: () => location.reload() });
+  window.game = new ArcadeGame(document.getElementById("cv"), { userTi: u, oppTi: o, rand, skipMenu: q.has("play"), onQuit: () => location.reload() });
 </script></body></html>
