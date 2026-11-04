@@ -69,7 +69,16 @@ export class ArcadeGame {
   get mobile() { return this.input === "touch"; }
 
   fit() {
-    const cv = this.cv, wrap = cv.parentElement, W = wrap.clientWidth, H = wrap.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
+    const cv = this.cv, wrap = cv.parentElement, dpr = Math.min(2, window.devicePixelRatio || 1);
+    let W = wrap.clientWidth, H = wrap.clientHeight;
+    // on a desktop window the game sits in a 16:9 frame (at most ~1000 px wide) in the middle of the
+    // page, like a console game in a browser; on a phone, or in full screen, it fills the screen
+    const full = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    if (this.input === "mouse" && !full) {
+      const fw = Math.min(1000, W * 0.9, (H * 0.9) * 16 / 9); W = Math.round(fw); H = Math.round(fw * 9 / 16);
+      Object.assign(wrap.style, { display: "flex", alignItems: "center", justifyContent: "center" });
+      cv.style.borderRadius = "6px"; cv.style.boxShadow = "0 0 0 2px #1d2433, 0 20px 60px rgba(0,0,0,.6)";
+    } else { cv.style.borderRadius = ""; cv.style.boxShadow = ""; }
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + "px"; cv.style.height = H + "px";
     const cam = makeCamera(W, H); cam.camX = this.cam?.camX ?? (this.S ? this.S.ball.x : this.g?.yard ?? 25) + cam.lead; this.cam = cam;
   }
