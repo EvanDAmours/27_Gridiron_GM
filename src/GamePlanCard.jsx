@@ -3,6 +3,7 @@
 // a pick lasts one game (see gamePlan.js).
 import React from "react";
 import { C } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 import { OFF_PLANS, DEF_PLANS, planOptions, bestPlan, defKey, planGrade } from "./gamePlan.js";
 import { edgeWord } from "./scoutReport.js";
 import { OFF_SETS, DEF_SETS } from "./personnel.js";
@@ -27,7 +28,7 @@ function Scout({ r, opp, onPersonnel }) {
       <div style={{ fontSize: 12.5, marginTop: 6, color: "#e2e8f0", lineHeight: 1.6 }}>
         <div>Best offense vs them: <b>{r.bestOff.label}</b>{r.bestOff.key === r.curOff ? <span style={{ color: C.gn }}> (yours)</span> : <span style={{ color: C.mt }}>, {edgeWord(r.offGap)} over your {lbl(OFF_SETS, r.curOff)}</span>}{onPersonnel && r.bestOff.key !== r.curOff && r.offGap >= 0.03 && pickBtn("personnel", r.bestOff.key, r.bestOff.label)}</div>
         <div>Best defensive lean: <b>{r.bestDef.label}</b>{r.curDef === r.bestDef.key ? <span style={{ color: C.gn }}> (yours)</span> : r.curDef ? <span style={{ color: C.mt }}>, {edgeWord(r.defGap)} over your {lbl(DEF_SETS, r.curDef)}</span> : <span style={{ color: C.mt }}> (yours is on auto)</span>}{onPersonnel && r.curDef !== r.bestDef.key && (r.defGap >= 0.03 || !r.curDef) && pickBtn("defPkg", r.bestDef.key, r.bestDef.label)}</div>
-        <div style={{ fontSize: 11.5, color: C.mt }}>Your identity and lean stay set until you change them (Depth Chart, Personnel).</div>
+        <div style={{ fontSize: MOBILE ? 12 : 11.5, color: C.mt }}>Your identity and lean stay set until you change them (Depth Chart, Personnel).</div>
       </div>
     </div>
   );

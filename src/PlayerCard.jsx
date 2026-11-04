@@ -2,6 +2,7 @@
 // skill group, a career OVR graph, season-by-season stats, a contract timeline and his honors.
 import React, { useEffect, useState } from "react";
 import { C, oC, Bdg, Face } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
 import { posTag, dlOvrAt, naturalDL } from "./dline.js";
 import { roleCard, naturalRole, roleKind } from "./roles.js";
 import { gradesOf, GRADE_KEYS } from "./grades.js";
@@ -17,7 +18,7 @@ export function OvrRing({ ovr, size = 70, label = "OVR" }) {
       <circle cx={size / 2} cy={size / 2} r={r} fill="#0008" stroke="#ffffff22" strokeWidth="6" />
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={oC(ovr)} strokeWidth="6" strokeLinecap="round" strokeDasharray={`${c * f} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
       <text x="50%" y="50%" dy={size * 0.04} textAnchor="middle" fontSize={size * 0.34} fontWeight="900" fill="#fff" fontFamily="system-ui">{ovr}</text>
-      <text x="50%" y="50%" dy={size * 0.26} textAnchor="middle" fontSize={size * 0.12} fontWeight="800" fill="#fffa" fontFamily="system-ui">{label}</text>
+      <text x="50%" y="50%" dy={size * 0.26 + (MOBILE ? 1 : 0)} textAnchor="middle" fontSize={MOBILE ? Math.max(10, size * 0.12) : size * 0.12} fontWeight="800" fill={MOBILE ? "#ffffffd9" : "#fffa"} fontFamily="system-ui">{label}</text>
     </svg>
   );
 }

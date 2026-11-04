@@ -2,7 +2,7 @@
 import Select from "./Select.jsx";
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { C, oC, pC, Bdg, CloseX, Segments, Pills } from "./ui.jsx";
+import { C, oC, pC, inkOn, Bdg, CloseX, Segments, Pills } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { devOf, DEV_TRAITS } from "./scouting.js";
 import { OFFENSE, DEFENSE, focusChance, perSeason } from "./development.js";
@@ -86,7 +86,7 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
       {p && !MOBILE ? (
         // desktop: one slim row so Home fits on one screen
         <div onClick={() => setSel(p)} style={{ display: "flex", alignItems: "center", gap: 8, borderRadius: 8, border: "1px solid #8a6d1d2e", background: "#f5c5420d", padding: "6px 10px", marginBottom: 6, cursor: "pointer", minWidth: 0 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: pC(p.pos), borderRadius: 4, padding: "2px 6px" }}>{posTag(p)}</span>
+          <span style={{ fontSize: MOBILE ? 12 : 11, fontWeight: 800, color: inkOn(pC(p.pos)), background: pC(p.pos), borderRadius: 4, padding: "2px 6px" }}>{posTag(p)}</span>
           <span style={{ minWidth: 0, flex: 1 }}>
             <span style={{ display: "block", fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
             <span style={{ display: "block", fontSize: 11.5, color: "#fbbf24", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Age {p.age} · {(DEV_TRAITS[devOf(p)]?.name || "Normal")} · {p.labGains ? `+${p.labGains} OVR from the lab` : "in the lab this week"}</span>
@@ -97,7 +97,7 @@ function FocusSlot({ label, side, players, focus, setFocus, setSel }) {
         <div style={{ borderRadius: 10, overflow: "hidden", border: "1px solid #8a6d1d2e", marginBottom: 6, cursor: "pointer" }} onClick={() => setSel(p)}>
           <div style={{ background: "linear-gradient(135deg,#0b1a3a,#13244a)", padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid #dc26262e", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12, color: "#fff" }}>{initials(p.name)}</span>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", background: pC(p.pos), borderRadius: 4, padding: "2px 7px" }}>{posTag(p)}</span>
+            <span style={{ fontSize: MOBILE ? 12 : 11, fontWeight: 800, color: inkOn(pC(p.pos)), background: pC(p.pos), borderRadius: 4, padding: "2px 7px" }}>{posTag(p)}</span>
             <span style={{ marginLeft: "auto", fontSize: 30, fontWeight: 900, fontStyle: "italic", color: oC(p.ovr) }}>{p.ovr}</span>
           </div>
           <div style={{ background: "#f5c5420d", padding: "8px 12px" }}>

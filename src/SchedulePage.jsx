@@ -159,7 +159,7 @@ function PhoneSchedule({ g, view, setView }) {
                   <span style={{ display: "block", fontSize: 12, color: C.mt, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[!game.played && game.date ? kickoff(game).replace(" ET", "") : rec(opp), tags].filter(Boolean).join(" · ")}</span>
                 </span>
                 {res ? <span style={{ whiteSpace: "nowrap", fontSize: 16 }}><b style={{ color: res[1] }}>{res[0]}</b> <b>{us}-{them}</b></span>
-                  : isNext && onPlay ? <span onClick={(e) => { e.stopPropagation(); onPlay(game); }} style={{ background: C.gn, color: "#fff", borderRadius: 12, padding: "10px 14px", fontSize: 15, fontWeight: 900 }}>Play</span> : null}
+                  : isNext && onPlay ? <span onClick={(e) => { e.stopPropagation(); onPlay(game); }} style={{ background: MOBILE ? "#15803d" : C.gn, color: "#fff", borderRadius: 12, padding: "10px 14px", fontSize: 15, fontWeight: 900 }}>Play</span> : null}
               </button>
             );
           })}

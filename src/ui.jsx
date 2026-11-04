@@ -129,7 +129,7 @@ export function Pills({ items, value, onChange, big, quiet, full, wrap, label, s
   const box = quiet ? { display: "flex", gap: 2, flexWrap: wrap === false ? "nowrap" : "wrap" } : full ? { ...pillTrack, display: "flex", width: "100%" } : pillTrack;
   return (
     <div role="tablist" aria-label={label} className="pill-row" style={{ ...box, ...(style || {}) }}>
-      {items.filter(Boolean).map(([k, l, title]) => <button key={String(k)} role="tab" aria-selected={on(k)} title={title} onClick={() => onChange(k)} style={{ ...(quiet ? quietPill(on(k)) : pill(on(k), big)), ...(full ? { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" } : null) }}>{l}</button>)}
+      {items.filter(Boolean).map(([k, l, title]) => <button key={String(k)} role="tab" aria-selected={on(k)} title={title} onClick={() => onChange(k)} style={{ ...(quiet ? quietPill(on(k)) : pill(on(k), big)), ...(full ? { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", ...(MOBILE_UI ? { paddingLeft: 4, paddingRight: 4 } : null) } : null) }}>{l}</button>)}
     </div>
   );
 }
@@ -180,11 +180,16 @@ const ICONS = {
 export const Icon = ({ k, size = 24, color = "currentColor", w = 2 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={ICONS[k] || ICONS.more} /></svg>
 );
-export const C={bg:"#080c14",cd:"#111827",bd:"#1e293b",tx:"#e0e6f0",mt:"#64748b",gn:"#22c55e",bl:"#3b82f6",gd:"#eab308",rd:"#ef4444",f:"'Segoe UI',system-ui,sans-serif"};
+// mt (muted text): brighter on phones, where it sits small on dark cards (#64748b read at about 4:1)
+export const C={bg:"#080c14",cd:"#111827",bd:"#1e293b",tx:"#e0e6f0",mt:MOBILE_UI?"#94a3b8":"#64748b",gn:"#22c55e",bl:"#3b82f6",gd:"#eab308",rd:"#ef4444",f:"'Segoe UI',system-ui,sans-serif"};
 export const oC=o=>o>=80?"#22c55e":o>=68?"#84cc16":o>=55?"#eab308":o>=42?"#f97316":"#ef4444";
-export const pC=p=>({QB:"#e74c3c",RB:"#3498db",WR:"#f39c12",TE:"#9b59b6",LT:"#1abc9c",LG:"#17a589",C:"#0e8c73",RG:"#17a589",RT:"#1abc9c",DL:"#e67e22",EDGE:"#d35400",DT:"#e67e22",LB:"#2ecc71",CB:"#e91e63",S:"#00bcd4",K:"#795548",P:"#8d6e63"}[p]||"#999");
+export const pC=p=>({QB:"#e74c3c",RB:"#3498db",WR:"#f39c12",TE:"#9b59b6",LT:"#1abc9c",LG:"#17a589",C:"#0e8c73",RG:"#17a589",RT:"#1abc9c",DL:"#e67e22",EDGE:"#d35400",DT:"#e67e22",LB:"#2ecc71",CB:MOBILE_UI?"#d81b60":"#e91e63",S:"#00bcd4",K:"#795548",P:"#8d6e63"}[p]||"#999");
 export const PA_LABELS={coffin:"Coffin Corner",armStr:"Arm Str",accuracy:"Accuracy",pocketAwr:"Pocket",decisions:"Decisions",mobility:"Mobility",touch:"Touch",readDef:"Read Def",vision:"Vision",elusiveness:"Elusive",breakTkl:"Break Tkl",passBlock:"Pass Blk",receiving:"Receiving",burst:"Burst",balance:"Balance",stiffArm:"Stiff Arm",routeRun:"Route Run",catching:"Catching",separation:"Separate",release:"Release",bodyCtrl:"Body Ctrl",yac:"YAC",deepSpd:"Deep Spd",catchTraffic:"Traffic",blocking:"Blocking",redZone:"Red Zone",seaming:"Seaming",toughness:"Toughness",footwork:"Footwork",anchor:"Anchor",awareness:"Awareness",handUse:"Hand Use",reach:"Reach",agility:"Agility",runBlock:"Run Blk",pulling:"Pulling",strength:"Strength",drive:"Drive",snapping:"Snapping",leadership:"Leadrshp",athleticism:"Athletic",power:"Power",passRush:"Pass Rush",runStop:"Run Stop",motor:"Motor",getOff:"Get Off",bullRush:"Bull Rush",swim:"Swim",spin:"Spin",tackling:"Tackling",coverage:"Coverage",blitzing:"Blitzing",runFit:"Run Fit",instincts:"Instinct",pursuit:"Pursuit",shedBlock:"Shed Blk",zoneAwr:"Zone Awr",manCov:"Man Cov",zoneCov:"Zone Cov",press:"Press",ballSkills:"Ball Sklls",recovery:"Recovery",playRec:"Play Rec",range:"Range",runSupport:"Run Supp",ballHawk:"Ball Hawk",comms:"Comms",versatility:"Versatile",legStr:"Leg Str",clutch:"Clutch",distance:"Distance",hangTime:"Hang Time",consistency:"Consist",coldWx:"Cold Wx",pressure:"Pressure"};
-export const Bdg=({pos})=><span style={{background:pC(pos),color:"#fff",padding:"1px 5px",borderRadius:3,fontSize:11,fontWeight:800}}>{pos}</span>;
+// Text that reads on a colored chip: white on the deep colors, near-black on the bright ones (white
+// on the receiver orange or the safety cyan is about 2:1). Phones only: the desktop keeps its look.
+const lum=(hex)=>{const h=hex.replace("#","");const v=[0,2,4].map(i=>{const c=parseInt(h.slice(i,i+2),16)/255;return c<=0.03928?c/12.92:((c+0.055)/1.055)**2.4;});return 0.2126*v[0]+0.7152*v[1]+0.0722*v[2];};
+export const inkOn=(bg)=>{if(!MOBILE_UI||!/^#[0-9a-f]{6}$/i.test(bg||""))return"#fff";const L=lum(bg);return 1.05/(L+0.05)>=(L+0.05)/(lum("#0b0f17")+0.05)?"#fff":"#0b0f17";};
+export const Bdg=({pos})=><span style={{background:pC(pos),color:inkOn(pC(pos)),padding:MOBILE_UI?"1px 6px":"1px 5px",borderRadius:3,fontSize:MOBILE_UI?12:11,fontWeight:800}}>{pos}</span>;
 export const Btn=({children,onClick,disabled,bg,c:co,style:st})=><button onClick={onClick} disabled={disabled} style={{background:bg||C.bl,color:co||"#fff",border:"none",padding:"4px 10px",borderRadius:4,fontWeight:700,fontSize:13,cursor:disabled?"default":"pointer",opacity:disabled?.5:1,...(st||{})}}>{children}</button>;
 export const PN=({p,setSel,style:st})=><span onClick={e=>{e.stopPropagation();setSel(p);}} style={{cursor:"pointer",fontWeight:600,textDecoration:"none",...(st||{})}} onMouseOver={e=>e.target.style.textDecoration="underline"} onMouseOut={e=>e.target.style.textDecoration="none"}>{p.name}</span>;
 

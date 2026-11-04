@@ -19,7 +19,7 @@ function Conference({ conf, teams, ui }) {
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 8, background: t.id === ui ? "#22c55e14" : "transparent", border: `1px solid ${t.id === ui ? "#22c55e66" : "transparent"}` }}>
       <span style={{ width: 22, textAlign: "right", fontWeight: 900, color: seed ? C.gd : C.mt, fontSize: 14 }}>{seed || ""}</span>
       <TeamLogo t={t} sz={26} glow />
-      <span style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 14, color: t.id === ui ? C.gn : C.tx, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.city} {t.name}</span>
+      <span style={{ flex: 1, minWidth: 0, fontWeight: 800, fontSize: 14, color: t.id === ui ? C.gn : C.tx, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{MOBILE ? t.name : `${t.city} ${t.name}`}</span>
       <span style={{ fontSize: 14, fontWeight: 700, minWidth: 44, textAlign: "right" }}>{rec(t)}</span>
       <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 0.8, minWidth: 64, textAlign: "right", color: tag === "BYE" ? C.gd : tag === "DIV" ? "#38bdf8" : tag === "WC" ? "#a78bfa" : C.mt }}>{gb != null ? (gb <= 0 ? "TIED" : `${gb} GB`) : tag}</span>
     </div>

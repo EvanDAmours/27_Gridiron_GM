@@ -22,14 +22,14 @@ export function MobileNav({ tab, sp, rosterView, go, onMore, moreOpen }) {
     ph,
   ];
   return (
-    <nav aria-label="Main" data-tour="nav" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 400, display: "flex", background: "#0b1220e6", borderTop: "1px solid #ffffff12", paddingBottom: "env(safe-area-inset-bottom)", backdropFilter: "blur(8px)" }}>
+    <nav aria-label="Main" data-tour="nav" className="keep-dark" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 400, display: "flex", background: "#0b1220e6", borderTop: "1px solid #ffffff12", paddingBottom: "env(safe-area-inset-bottom)", backdropFilter: "blur(8px)" }}>
       {[...items, { icon: "more", label: "More", more: true }].map((it) => {
         // Roster and Camp share a screen: Camp is lit only on its own view.
         const on = it.more ? moreOpen : !moreOpen && (it.tab === "depth" ? tab === "depth" || (tab === "roster" && rosterView !== "camp") : tab === it.tab && (it.tab !== "roster" || (it.sub === "camp") === (rosterView === "camp")));
         return (
           <button key={it.label} onClick={() => (it.more ? onMore() : go(it.tab, it.sub))} aria-current={on ? "page" : undefined} style={{ flex: 1, minWidth: 0, background: "transparent", border: 0, padding: "8px 2px 7px", color: on ? "#fff" : "#94a3b8", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
             <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 52, height: 30, borderRadius: 15, background: on ? "#ffffff1a" : "transparent", transition: "background .2s" }}><Icon k={it.icon} size={22} w={on ? 2.3 : 1.9} /></span>
-            <span style={{ fontSize: 11, fontWeight: on ? 800 : 600, letterSpacing: 0.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{it.label}</span>
+            <span style={{ fontSize: 12, fontWeight: on ? 800 : 600, letterSpacing: 0.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{it.label}</span>
           </button>
         );
       })}
@@ -91,14 +91,14 @@ export function MobileActionBar({ actions }) {
           <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", left: 10, right: 10, bottom: "calc(124px + env(safe-area-inset-bottom))", background: "#0d1424", border: "1px solid #ffffff14", borderRadius: 18, padding: "4px 14px", boxShadow: "0 -10px 40px #000a" }}>
             {rest.map((a, i) => { const arm = armed === a.label; return (
               <button key={a.label} onClick={() => { if (a.confirm && !arm) { setArmed(a.label); return; } setOpen(false); a.onClick(); }} style={{ display: "flex", alignItems: "center", width: "100%", minHeight: 56, border: 0, borderTop: i ? "1px solid #ffffff10" : 0, background: "transparent", color: arm ? "#fde68a" : "#fff", fontSize: 17, fontWeight: 800, cursor: "pointer", textAlign: "left", padding: 0 }}>
-                <span style={{ flex: 1 }}>{arm ? a.confirm : a.label}</span><span style={{ fontSize: 20, color: arm ? "#fde68a" : "#64748b" }}>{arm ? "✓" : "›"}</span>
+                <span style={{ flex: 1 }}>{arm ? a.confirm : a.label}</span><span style={{ fontSize: 20, color: arm ? "#fde68a" : "#94a3b8" }}>{arm ? "✓" : "›"}</span>
               </button>
             ); })}
           </div>
         </div>
       )}
       <div data-tour="actions" style={main.small ? { ...bar, background: "transparent", pointerEvents: "none" } : bar}>
-        <button onClick={main.onClick} style={{ flex: main.small ? "0 0 auto" : 1, marginLeft: 0, padding: main.small ? "0 18px" : 0, minHeight: main.small ? 40 : 48, borderRadius: main.small ? 999 : 12, border: 0, background: main.bg || C.gn, color: main.c || "#fff", fontSize: main.small ? 15 : 17, fontWeight: 900, cursor: "pointer", boxShadow: "0 6px 20px #0008", pointerEvents: "auto" }}>{main.label}</button>
+        <button onClick={main.onClick} style={{ flex: main.small ? "0 0 auto" : 1, marginLeft: 0, padding: main.small ? "0 18px" : 0, minHeight: main.small ? 40 : 48, borderRadius: main.small ? 999 : 12, border: 0, background: !main.bg || main.bg === C.gn ? "#15803d" : main.bg, color: main.c || "#fff", fontSize: main.small ? 15 : 17, fontWeight: 900, cursor: "pointer", boxShadow: "0 6px 20px #0008", pointerEvents: "auto" }}>{main.label}</button>
         {rest.length > 0 && <button onClick={() => setOpen((o) => !o)} aria-label="More actions" style={{ pointerEvents: "auto", width: 56, minHeight: 48, borderRadius: 12, border: "1px solid #ffffff10", background: open ? C.bl : C.cd, color: "#fff", fontSize: 18, fontWeight: 900, cursor: "pointer" }}>{open ? "✕" : "▾"}</button>}
       </div>
     </>

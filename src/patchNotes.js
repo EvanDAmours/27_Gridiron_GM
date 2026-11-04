@@ -2305,4 +2305,13 @@ export const PATCH_NOTES = [
   { v: "5.56", date: "2026-10-23", title: "Defensive line with injuries", notes: [
     "Defensive line with an injured starter: the depth chart now lines up the line the way the game plays it. On a Start today franchise Brian Burns is on the real injury report, and the depth chart used to slide everyone up a spot around him, putting Abdul Carter at DT2. Now the best healthy fit fills each spot: Carter at left end, Reader and Harris inside, Thibodeaux at right end, with a note on Carter's card that he's starting for the injured Burns. The desktop field, the phone and the game all read the same line.",
   ] },
+  { v: "5.57", date: "2026-10-23", title: "Phone readability pass", notes: [
+    "Phone readability pass. The phone used to draw the whole game at 90%, which shrank every label on top of already small type: it now draws at full size, so all text is about 11% larger.",
+    "Phone: no text under 12px anywhere. The tags that were drawn at 9-11px (role tags like SLOT and NICKEL, CY, the meters on Home, table headers, the contract table in negotiations, coaching traits) come up to 12px. The depth chart field's spot labels stay compact at 11px so the line still fits.",
+    "Phone: secondary grey text (records, dates, percentages, captions) is lighter and easier to read on the dark cards.",
+    "Phone: position badges (QB, WR, DT...) are bigger, and the bright ones (receiver orange, tackle teal, linebacker green, safety cyan) use dark text, which reads about twice as clearly as white did.",
+    "Phone: green and orange buttons with white text (Play Week, Make an offer, Pause) use deeper shades so the text reads.",
+    "Phone: the bottom bar labels are larger, and readable in light mode (they used to fade into the dark bar). Tabs like Offense, Defense, Special and Subs no longer cut off their names, and the playoff picture shows team nicknames so none get cut off.",
+    "Phone live games: the play-result card and the play strip use larger text.",
+  ] },
 ];

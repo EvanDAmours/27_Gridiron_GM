@@ -214,6 +214,10 @@ const LP_CSS = `.lp-banner { position: absolute; left: 50%; top: 14%; transform:
 .lp-note { font: 700 clamp(9px, 1.45cqw, 13px)/1.3 system-ui; color: #fde68a; margin-top: 2px; }
 .lp-chip { display: inline-block; font: 900 clamp(8px, 1.2cqw, 11px)/1 system-ui; letter-spacing: 1.4px; color: #fff; background: var(--lp-team); padding: 3px 8px; border-radius: 99px; margin-bottom: 4px; }
 .lp-strip { position: absolute; left: 50%; bottom: 5%; transform: translateX(-50%); max-width: 92%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 800 clamp(10px, 1.7cqw, 15px)/1 system-ui; color: #fff; background: #060b18d9; border: 1px solid #ffffff2a; padding: 7px 14px; border-radius: 99px; pointer-events: none; animation: lpIn .25s ease-out both; }
+html.gm-mobile .lp-line, html.gm-mobile .lp-strip, html.gm-mobile .lp-banner span { font-size: max(12.5px, 1.9cqw); }
+html.gm-mobile .lp-note { font-size: max(12px, 1.45cqw); }
+html.gm-mobile .lp-chip { font-size: max(10.5px, 1.2cqw); letter-spacing: 1px; }
+html.gm-mobile .lp-head { font-size: max(16px, 3.3cqw); }
 @keyframes lpIn { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
 @keyframes lpPop { from { opacity: 0; transform: translate(-50%, 10px) scale(.85); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }`;
 

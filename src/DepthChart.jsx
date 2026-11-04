@@ -2,7 +2,7 @@
 // grouping you pick to look at (11, 12, 21...), the defense with its SAM, MIKE and WILL and the
 // nickel back, and the kicker. Tap a spot to choose who starts there.
 import React, { useState } from "react";
-import { C, oC, pC, Btn, Face, Segments, Sheet, Row, Chips, quietPill } from "./ui.jsx";
+import { C, oC, pC, inkOn, Btn, Face, Segments, Sheet, Row, Chips, quietPill } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { DL_SLOTS, slotKind, dlOvrAt, naturalDL, posTag } from "./dline.js";
 
@@ -96,12 +96,12 @@ function Spot({ p: p0, pos, idx, x, y, on, onClick, share, yr }) {
   const label = spotName(pos, idx);
   const p = p0 ? { ...p0, ovr: spotOvr(p0, pos, idx) } : p0;
   return (
-    <button onClick={onClick} title={p ? `${label}: ${p.name} (${p.ovr})` : `${label}: empty`} style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%,-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "transparent", border: 0, cursor: "pointer", padding: 0, width: sm ? 52 : 70 }}>
+    <button onClick={onClick} title={p ? `${label}: ${p.name} (${p.ovr})` : `${label}: empty`} style={{ position: "absolute", left: `${x}%`, top: `${y}%`, transform: "translate(-50%,-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "transparent", border: 0, cursor: "pointer", padding: 0, width: sm ? (["LT", "LG", "C", "RG", "RT", "DL"].includes(pos) ? 52 : 62) : 70 }}>
       <span style={{ width: sm ? 30 : 36, height: sm ? 30 : 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: p ? "#0b1220" : "#0b122099", border: `3px solid ${on ? "#facc15" : p?.injured ? C.rd : colorOf(pos)}`, boxShadow: on ? "0 0 0 3px #facc1566" : "0 2px 6px #0008", color: p ? oC(p.ovr) : C.mt, fontWeight: 900, fontSize: sm ? 12 : 14 }}>{p ? p.ovr : "—"}</span>
       {p && isRookie(p0, yr) && <span title="Rookie" aria-label="Rookie" style={{ position: "absolute", top: -3, left: "50%", marginLeft: sm ? -20 : -23, width: 13, height: 13, borderRadius: "50%", background: "#0b0f17", border: "1.5px solid #fbbf24", color: "#fbbf24", fontSize: 8, fontWeight: 900, lineHeight: "10px", textAlign: "center" }}>R</span>}
       {p && DEV_DOT[devOf(p0)] && <span title={`${devOf(p0)} development`} style={{ position: "absolute", top: -2, left: "50%", marginLeft: sm ? 9 : 12, width: 10, height: 10, borderRadius: "50%", background: DEV_DOT[devOf(p0)], border: "1.5px solid #0b0f17" }} />}
-      <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", background: colorOf(pos), borderRadius: 3, padding: "0 4px", lineHeight: "14px" }}>{label}</span>
-      {!(sm && ["LT", "LG", "C", "RG", "RT", "DL"].includes(pos)) && <span style={{ fontSize: sm ? 9 : ["LT", "LG", "C", "RG", "RT"].includes(pos) ? 10 : 11, fontWeight: 700, color: "#fff", textShadow: "0 1px 2px #000", maxWidth: sm ? 52 : ["LT", "LG", "C", "RG", "RT"].includes(pos) ? 46 : 70, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p ? lastName(p.name) : "Empty"}</span>}
+      <span style={{ fontSize: 11.25, fontWeight: 800, color: inkOn(colorOf(pos)), background: colorOf(pos), borderRadius: 3, padding: "0 4px", lineHeight: "15px" }}>{label}</span>
+      {!(sm && ["LT", "LG", "C", "RG", "RT", "DL"].includes(pos)) && <span style={{ fontSize: sm ? 11.25 : 12, fontWeight: 700, color: "#fff", textShadow: "0 1px 2px #000", maxWidth: sm ? 62 : ["LT", "LG", "C", "RG", "RT"].includes(pos) ? 46 : 70, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p ? lastName(p.name) : "Empty"}</span>}
     </button>
   );
 }
@@ -343,7 +343,7 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
                 const rot = o.filter((p, i) => i >= n && (sh[p.id] || 0) > 0);
                 return (
                   <button key={pos} onClick={() => setPick([pos, 0])} style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "flex-start", gap: 8, padding: "8px 4px", background: "transparent", border: 0, borderBottom: "1px solid #ffffff0f", color: C.tx, cursor: "pointer" }}>
-                    <span style={{ minWidth: 30, fontSize: 11, fontWeight: 900, color: "#fff", background: colorOf(pos), borderRadius: 4, textAlign: "center", padding: "1px 4px" }}>{SPEC_TAG[pos] || pos}</span>
+                    <span style={{ minWidth: 30, fontSize: MOBILE ? 12 : 11, fontWeight: 900, color: inkOn(colorOf(pos)), background: colorOf(pos), borderRadius: 4, textAlign: "center", padding: "1px 4px" }}>{SPEC_TAG[pos] || pos}</span>
                     <span style={{ flex: 1, minWidth: 0, fontSize: 13, lineHeight: 1.45 }}>
                       {(isSpec(pos) ? [specOn(pos)].filter(Boolean) : o.slice(0, n)).map((p, i) => <span key={p.id} style={{ display: "inline-block", marginRight: 8, color: p.injured ? C.rd : "#e2e8f0", fontWeight: 700 }}>{(ROLE_SLOTS[pos] || pos === "DL") && <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 800, marginRight: 3 }}>{spotName(pos, i)}</span>}{lastName(p.name)}<NameTags p={p} yr={yr} gap={4} /> <span style={{ color: oC(spotOvr(p, pos, i)) }}>{spotOvr(p, pos, i)}</span>{!single(pos) && <span style={{ color: C.mt, fontWeight: 600 }}> {sh[p.id] ?? 0}%</span>}</span>)}
                       {isSpec(pos) && specNow && <span style={{ display: "block", fontSize: 12, color: C.mt }}>{(() => { const sp = specNow[pos]; return sp ? `In for ${lastName(sp[1].name)} · ${SPEC_ROLES[pos].when.toLowerCase()}` : `The starter stays on (he fits it best)${(depthOrder || {})[pos]?.length ? "" : " · auto"}`; })()}</span>}
