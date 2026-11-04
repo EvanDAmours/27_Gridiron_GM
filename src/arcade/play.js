@@ -33,8 +33,38 @@ const ROUTES = {
   slant: { legs: [[2, 0], [6, 5]], more: 4 }, hitch: { legs: [[5, 0], [-1, 0.5]], stop: true }, out: { legs: [[6, 0], [0.5, -7]], more: 3 },
   dig: { legs: [[12, 0], [0, 10]], more: 6 }, deepout: { legs: [[11, 0], [-0.5, -7]], more: 2 }, curl: { legs: [[9, 0], [-1.5, 1]], stop: true }, comeback: { legs: [[14, 0], [-2.5, -2]], stop: true }, corner: { legs: [[10, 0], [8, -7]], more: 8 },
   post: { legs: [[10, 0], [14, 8]], more: 12 }, go: { legs: [[45, 0]], more: 40 }, seam: { legs: [[4, 0], [30, 1.5]], more: 15 }, drag: { legs: [[2, 0], [2, 16]], more: 5 },
+  stick: { legs: [[6, 0], [0, 1]], stop: true }, spot: { legs: [[6, 0], [-1, 2.5]], stop: true }, qin: { legs: [[6, 0], [0, 8]], more: 4 },
+  arrow: { legs: [[1, 0], [4, -8]], more: 3 }, fade: { legs: [[30, -2]], more: 15 }, xing: { legs: [[8, 0], [12, 16]], more: 8 },
+  wheel: { legs: [[-1, -4], [3, -3], [25, 0]], more: 10 }, angle: { legs: [[2, -3], [4, 5]], more: 4 },
   flat: { legs: [[0.5, 0], [2, -9]], more: 3 }, swing: { legs: [[-1, -3], [3, -8]], more: 4 }, check: { legs: [[4, 0], [1, 0]], stop: true, delay: 0.9 },
 };
+// NFL pass concepts (X wide left, SLOT inside left, TE inline right, Z wide right, RB behind
+// the QB; "check" = the back stays in to block unless nobody comes). Each is filed under the
+// engine's play family (quick / medium / deep), which drives the drop and the engine's odds.
+export const CONCEPTS = {
+  slant_flat: { cat: "pass_quick", name: "SLANT-FLAT", routes: { X: "slant", SLOT: "flat", TE: "stick", Z: "slant", RB: "check" }, reads: ["X", "Z", "SLOT", "TE"] },
+  stick: { cat: "pass_quick", name: "STICK", routes: { X: "fade", SLOT: "stick", TE: "stick", Z: "hitch", RB: "swing" }, reads: ["SLOT", "TE", "RB", "Z", "X"] },
+  snag: { cat: "pass_quick", name: "SNAG", routes: { X: "spot", SLOT: "corner", TE: "flat", Z: "slant", RB: "check" }, reads: ["X", "SLOT", "TE", "Z"] },
+  quick_outs: { cat: "pass_quick", name: "QUICK OUTS", routes: { X: "out", SLOT: "out", TE: "flat", Z: "out", RB: "check" }, reads: ["X", "Z", "SLOT", "TE"] },
+  hitch_seam: { cat: "pass_quick", name: "HITCH-SEAM", routes: { X: "hitch", SLOT: "seam", TE: "seam", Z: "hitch", RB: "check" }, reads: ["X", "Z", "SLOT", "TE"] },
+  curl_flat: { cat: "pass_medium", name: "CURL-FLAT", routes: { X: "curl", SLOT: "arrow", TE: "flat", Z: "curl", RB: "check" }, reads: ["X", "SLOT", "Z", "TE"] },
+  dagger: { cat: "pass_medium", name: "DAGGER", routes: { X: "dig", SLOT: "seam", TE: "drag", Z: "go", RB: "check" }, reads: ["X", "TE", "SLOT", "Z"] },
+  smash: { cat: "pass_medium", name: "SMASH", routes: { X: "hitch", SLOT: "corner", TE: "corner", Z: "hitch", RB: "swing" }, reads: ["SLOT", "X", "TE", "Z", "RB"] },
+  levels: { cat: "pass_medium", name: "LEVELS", routes: { X: "dig", SLOT: "qin", TE: "drag", Z: "go", RB: "check" }, reads: ["X", "SLOT", "TE", "Z"] },
+  mesh: { cat: "pass_medium", name: "MESH", routes: { X: "corner", SLOT: "drag", TE: "drag", Z: "dig", RB: "angle" }, reads: ["SLOT", "TE", "Z", "X", "RB"] },
+  flood: { cat: "pass_medium", name: "FLOOD", routes: { X: "post", SLOT: "dig", TE: "deepout", Z: "go", RB: "swing" }, reads: ["TE", "Z", "RB", "SLOT", "X"] },
+  four_verts: { cat: "pass_deep", name: "FOUR VERTS", routes: { X: "go", SLOT: "seam", TE: "seam", Z: "go", RB: "check" }, reads: ["SLOT", "TE", "X", "Z"] },
+  mills: { cat: "pass_deep", name: "MILLS", routes: { X: "post", SLOT: "dig", TE: "drag", Z: "go", RB: "check" }, reads: ["X", "SLOT", "Z", "TE"] },
+  yankee: { cat: "pass_deep", name: "YANKEE", routes: { X: "xing", SLOT: "flat", TE: "check", Z: "post", RB: "check" }, reads: ["Z", "X", "SLOT"] },
+  post_wheel: { cat: "pass_deep", name: "POST-WHEEL", routes: { X: "fade", SLOT: "post", TE: "corner", Z: "fade", RB: "wheel" }, reads: ["SLOT", "RB", "TE", "X"] },
+  shot: { cat: "pass_deep", name: "GO-POST", routes: { X: "go", SLOT: "corner", TE: "seam", Z: "post", RB: "check" }, reads: ["X", "Z", "TE", "SLOT"] },
+};
+// a few concepts from each family, picked fresh for the play card screen
+export function conceptChoices(rand = Math.random) {
+  const by = (cat) => Object.keys(CONCEPTS).filter((k) => CONCEPTS[k].cat === cat).sort(() => rand() - 0.5);
+  const q = by("pass_quick"), m = by("pass_medium"), d = by("pass_deep");
+  return [q[0], m[0], m[1], d[0]];
+}
 const ROUTES_OF = (call) => PLAYS[call] || {};
 const PLAYS = {
   pass_quick: { X: "slant", Z: "hitch", SLOT: "drag", TE: "flat", RB: "check" },
@@ -45,8 +75,9 @@ const PLAYS = {
 // field from the line, y across), and an arrow for a run.
 export function playDiagram(call) {
   const lines = [];
-  if (PLAYS[call]) for (const r of ELIGIBLE) {
-    const R = ROUTES[PLAYS[call][r]], [dx, dy] = OFF_SPOTS[r], inward = dy < 0 ? 1 : -1;
+  const plan = CONCEPTS[call]?.routes || PLAYS[call];
+  if (plan) for (const r of ELIGIBLE) {
+    const R = ROUTES[plan[r]], [dx, dy] = OFF_SPOTS[r], inward = dy < 0 ? 1 : -1;
     let x = dx, y = dy; const pts = [{ x, y }];
     for (const [up, side] of R.legs) { x += up; y = clamp(y + side * inward, -25, 25); pts.push({ x, y }); }
     if (!R.stop && R.more) { const a = pts[pts.length - 2], b = pts[pts.length - 1], d = hyp(b.x - a.x, b.y - a.y) || 1; pts.push({ x: b.x + (b.x - a.x) / d * R.more * 0.5, y: b.y + (b.y - a.y) / d * R.more * 0.5 }); }
@@ -55,12 +86,14 @@ export function playDiagram(call) {
   else if (call === "run_outside") lines.push({ who: "RB", pts: [{ x: -7, y: 1.8 }, { x: -4, y: 9 }, { x: 0, y: 14 }, { x: 8, y: 15 }], run: true });
   return { lines, spots: OFF_SPOTS };
 }
+export const playName = (k) => CONCEPTS[k]?.name || PLAY_NAMES[k]?.toUpperCase() || "";
 export const PLAY_NAMES = { pass_quick: "Quick", pass_medium: "Medium", pass_deep: "Deep", run_inside: "Inside run", run_outside: "Outside run" };
 
 const mk = (key, p, side, x, y) => ({ key, p, side, x, y, vx: 0, vy: 0, face: side === "off" ? 1 : -1, top: topSpeed(p), acc: accelOf(p), mode: "idle", path: null, down: 0 });
 
 // ---------- setting up ----------
 export function setupPlay(g, L, call) {
+  const concept = CONCEPTS[call] ? call : null; if (concept) call = CONCEPTS[concept].cat; // a named concept plays as its family
   const los = g.yard, ents = {};
   for (const [k, [dx, dy]] of Object.entries(OFF_SPOTS)) { const p = L.off[k]; if (p) ents[k] = mk(k, p, "off", los + dx, dy); }
   const dl = L.def.DL, lb = L.def.LB, cb = L.def.CB, s = L.def.S;
@@ -74,7 +107,7 @@ export function setupPlay(g, L, call) {
   for (const r of ["X", "Z", "SLOT"]) { const k = cover[r]; if (k && ents[k] && ents[r]) ents[k].y = ents[r].y + (ents[r].y < 0 ? 1 : -1) * 0.8; }
   if (ents[cover.TE] && ents.TE && cover.TE.startsWith("LB")) ents[cover.TE].y = ents.TE.y;
   // the routes, laid out now so the field can show them before the snap
-  const routes = PLAYS[call];
+  const routes = concept ? CONCEPTS[concept].routes : PLAYS[call];
   if (routes) for (const r of ELIGIBLE) {
     const e = ents[r]; if (!e) continue;
     const Rt = ROUTES[routes[r]], inward = e.y < 0 ? 1 : -1;
@@ -83,7 +116,7 @@ export function setupPlay(g, L, call) {
     e.path = pts; e.stop = !!Rt.stop; e.delay = Rt.delay || 0; e.more = Rt.more || 0;
   }
   return {
-    g, L, call, los, firstDown: Math.min(100, los + g.toGo), t: 0, phase: "presnap", ents, cover,
+    g, L, call, concept, routes: concept ? CONCEPTS[concept].routes : PLAYS[call], los, firstDown: Math.min(100, los + g.toGo), t: 0, phase: "presnap", ents, cover,
     ball: { x: ents.QB.x, y: 0, h: 0, holder: "QB", flight: null },
     aim: null, steer: null, slideTo: null, text: "", ev: null, result: null, pick: null, shed: {}, pressureAt: 0, thrownAt: 0, endAt: 0, lane: 0, handoffAt: 0, tackler: null, broke: 0, log: [],
   };
@@ -138,7 +171,7 @@ export function snap(S) {
     if (bk) {
       const bl = ents[bk]; bl.mode = "blitz"; bl.x = Math.min(bl.x, S.los + 2.5); // he walked up to the line
       for (const r of Object.keys(S.cover)) if (S.cover[r] === bk) S.cover[r] = ents.S1 ? "S1" : bk;
-      const rb = ents.RB, staysIn = rb && ROUTES_OF(S.call).RB === "check";
+      const rb = ents.RB, staysIn = rb && (S.routes || ROUTES_OF(S.call)).RB === "check";
       if (staysIn && rnd(S) < clamp(0.65 + K.edge(K.passBlock(rb.p)) * 0.012, 0.3, 0.95)) { rb.mode = "protect"; rb.path = []; S.pickup = bk; }
       S.flash.push({ key: bk, text: "BLITZ", until: 1.2 });
     }
@@ -327,7 +360,7 @@ export function tick(S, dt) {
       else brake(d, dt);
       continue;
     }
-    if (carrier && carrier.key !== "QB") { const react = S.catchAt != null && S.t - S.catchAt < 0.3 && hyp(d.x - carrier.x, d.y - carrier.y) > 1.6 ? 0.85 : 1.0; steer(d, ...xy(intercept(d, carrier)), dt, react * clamp(1 + K.edge(K.pursuit(d.p)) * 0.002, 0.95, 1.04)); continue; }
+    if (carrier && carrier.key !== "QB") { const react = S.catchAt != null && false ? 0.85 : 1.0; steer(d, ...xy(intercept(d, carrier)), dt, react * clamp(1 + K.edge(K.pursuit(d.p)) * 0.002, 0.95, 1.04)); continue; }
     if (!isPass) { // the run: linebackers read it, then fill; the secondary comes late
       const read = k.startsWith("LB") ? 0.7 : k.startsWith("S") ? 1.0 : 1.4;
       if (S.t < read) { brake(d, dt); continue; }
@@ -377,7 +410,8 @@ export function tick(S, dt) {
     if (f.bullet && !f.kick && !f.tipped && S.t - f.t0 > 0.12 && S.t - f.t0 < f.T - 0.12) {
       for (const d of Object.values(ents)) {
         if (d.side !== "def" || d.down > 0 || d.heldUntil > S.t || d.mode === "rush") continue;
-        if (hyp(d.x - ball.x, d.y - ball.y) < 0.9 + (K.ballSkills(d.p) - 70) * 0.008) { f.tipped = true; f.to = { x: ball.x, y: ball.y }; f.T = S.t - f.t0; S.log.push("in the lane"); break; }
+        // (in between, not on the man: a cover man on the catch point plays it there)
+        if (S.t - f.t0 < f.T * 0.8 && hyp(d.x - f.to.x, d.y - f.to.y) > 1.8 && hyp(d.x - ball.x, d.y - ball.y) < 0.7 + (K.ballSkills(d.p) - 70) * 0.008) { f.tipped = true; f.to = { x: ball.x, y: ball.y }; f.T = S.t - f.t0; S.log.push("in the lane"); break; }
       }
     }
     const u = clamp((S.t - f.t0) / f.T, 0, 1);
@@ -395,8 +429,8 @@ export function tick(S, dt) {
     // a loose runner leans away from a tackler in his path when you aren't steering
     const lean = S.steer == null && d && dd < 4 && d.x > carrier.x - 0.5 ? (carrier.y > d.y ? 2 : -2) * clamp((K.vision(carrier.p) - 45) / 40, 0.3, 1.3) : 0;
     // a receiver secures the catch before he's at full stride
-    const fresh = S.catchAt != null && S.t - S.catchAt < 0.35 ? 0.8 : 1, stagger = S.stagger > S.t ? 0.7 : 1, burst = S.burstUntil > S.t ? 1.12 : 1;
-    steer(carrier, carrier.x + 8, clamp(wantY + lean, -HALF + 0.3, HALF - 0.3), dt, fresh * stagger * burst);
+    const fresh = S.catchAt != null && S.t - S.catchAt < 0.45 ? 0.7 : 1, stagger = S.stagger > S.t ? 0.7 : 1, burst = S.burstUntil > S.t ? 1.12 : 1;
+    steer(carrier, carrier.x + 8, clamp(wantY + lean, -HALF + 0.3, HALF - 0.3), dt, 0.94 * fresh * stagger * burst); // (a man with the ball tucked is a step slower than running free)
     if (carrier.x >= 100) { score(S); return true; }
     if (Math.abs(carrier.y) >= HALF - 0.4) { outOfBounds(S); return true; }
     const closing = d ? ((d.vx - carrier.vx) * (carrier.x - d.x) + (d.vy - carrier.vy) * (carrier.y - d.y)) / Math.max(0.1, dd) : 0; // yards/s he's gaining
@@ -408,6 +442,11 @@ export function tick(S, dt) {
       const pBreak = d.missed ? 0 : clamp(0.085 + (el - tk) * 0.005 + (S.broke ? -0.05 : 0), 0.05, 0.35);
       if (rnd(S) < pBreak) { d.down = 0.7; d.missed = true; S.broke++; const bal = clamp(1 - K.edge(K.balance(carrier.p)) * 0.012, 0.5, 1.4); S.stagger = S.t + 0.45 * bal; carrier.vx *= 1 - 0.45 * bal; carrier.vy *= 1 - 0.45 * bal; S.log.push(`${d.p.name} misses`); }
       else { tackle(S, d); return true; }
+    } else if (d && dd < 2.3 && dSpeed > 6 && !d.dove && !d.missed && (d.x - carrier.x) * Math.sign(carrier.vx || 1) < -0.6) { // (only from behind: a man in front just tackles him)
+      // a man closing from behind at full speed lays out for him: a shoestring tackle, or he's on the turf
+      d.dove = true; const el = Math.max(K.power(carrier.p), K.afterCatch(carrier.p)), tk = K.tackling(d.p);
+      if (rnd(S) < clamp(0.42 + (tk - el) * 0.006 - (S.broke ? 0.05 : 0), 0.15, 0.65)) { S.diveTackle = true; tackle(S, d); return true; }
+      d.down = 0.8; d.missed = true; S.log.push(`${d.p.name} dives and misses`);
     }
   }
   // a defender with the ball (a pick) heads the other way for a moment
@@ -575,7 +614,7 @@ function arrive(S) {
     // engine agrees, a pass broken up if not
     const ballSk = K.ballSkills(d.p);
     // a lofted ball hangs for him; one he beat the receiver to is his to lose
-    const pInt = clamp(0.045 + (ballSk - 70) * 0.006 + (f.bullet ? 0 : 0.07) + (f.tipped ? 0.16 : 0) + (dD < dR ? 0.1 : 0) - (dD > 1 ? 0.04 : 0), 0.02, 0.55);
+    const pInt = clamp(0.045 + (ballSk - 70) * 0.006 + (f.bullet ? 0 : 0.07) + (f.tipped ? 0.08 : 0) + (dD < dR ? 0.1 : 0) - (dD > 1 ? 0.04 : 0), 0.02, 0.55);
     want = { types: rnd(S) < pInt ? ["int"] : ["inc"], fallback: ["inc"] }; S.pick.open = false;
     const r = resolvePlay(S.g, S.call, want, { target: S.pick.target, open: false }, want.types[0] === "int" ? 60 : 10); // a pick is rare in the engine: give it the rolls to find one
     S.ev = r.ev; S.mismatch = r.ev && !["int", "inc", "penalty"].includes(r.ev.type);

@@ -2,7 +2,7 @@
 // throws to where he'll be (with some human error), steers runners away from tacklers; the other
 // team is the engine. Prints what a session feels like in numbers. Run: node scripts/arcade-playtest.mjs [games]
 import { newGame, lineups, runPlay, simOpponentDrive } from "../src/arcade/bridge.js";
-import { setupPlay, snap, tick, throwTo, juke, separation, ELIGIBLE } from "../src/arcade/play.js";
+import { setupPlay, snap, tick, throwTo, juke, separation, ELIGIBLE, CONCEPTS, passPlan } from "../src/arcade/play.js";
 
 const N = +process.argv[2] || 4, DT = 1 / 60;
 const SEED0 = +(process.env.SEED0 || 100);
@@ -15,7 +15,7 @@ function human(S, call, state) {
   if (call.startsWith("pass") && S.phase === "live" && S.ball.holder === "QB" && !state.thrown) {
     // a progression, like a real quarterback: the first read who's open once his route has developed,
     // then the next; late in the down, the check-down
-    const READS = { pass_quick: ["X", "Z", "SLOT", "TE", "RB"], pass_medium: ["Z", "SLOT", "X", "TE", "RB"], pass_deep: ["X", "Z", "SLOT", "TE", "RB"] }[call];
+    const READS = S.concept ? [...CONCEPTS[S.concept].reads, ...ELIGIBLE.filter((r) => !CONCEPTS[S.concept].reads.includes(r))] : { pass_quick: ["X", "Z", "SLOT", "TE", "RB"], pass_medium: ["Z", "SLOT", "X", "TE", "RB"], pass_deep: ["X", "Z", "SLOT", "TE", "RB"] }[call];
     let best = null, bs = -1;
     for (const [i, r] of READS.entries()) {
       const e = S.ents[r]; if (!e || e.mode === "block" || e.mode === "back" || Math.hypot(e.vx, e.vy) < 2.5 && e.mode !== "settle") continue;
@@ -28,13 +28,18 @@ function human(S, call, state) {
     }
     if (state.forced && S.t > 1.4 && !state.greedy) { const r = READS[0], e = S.ents[r]; if (e && e.mode !== "block" && e.mode !== "back") { best = r; bs = 9; } } // he's decided pre-snap: throws it to his first read whatever the coverage
     if (state.greedy) { const deepest = ELIGIBLE.filter((r) => S.ents[r].mode === "route" || S.ents[r].mode === "stride").sort((a, b) => S.ents[b].x - S.ents[a].x)[0]; if (deepest) { best = deepest; bs = separation(S, best); } } // forces one deep now and then
-    const open = bs > 2.6, clock = S.t > 1.6 + skill.patience || (S.pressureAt && S.t - S.pressureAt > skill.react);
+    const qbE = S.ents.QB, rushIn = Object.values(S.ents).some((d) => d.side === "def" && d.down <= 0 && !(d.heldUntil > S.t) && (d.mode === "free" || d.mode === "blitz") && Math.hypot(d.x - qbE.x, d.y - qbE.y) < 3.0); // he feels it coming
+    const open = bs > 2.6, clock = S.t > (call === "pass_quick" ? 1.25 : 1.6 + skill.patience) || (S.pressureAt && S.t - S.pressureAt > skill.react); // the quick game is thrown on rhythm
     if (best && S.t > 1.0 && (open || clock)) {
       const e = S.ents[best], qb = S.ents.QB, arm = qb.p.posAttrs?.armStr ?? 80, vel = 17 + (arm - 70) * 0.12;
       // lead him: where he'll be when the ball gets there (two passes, since the flight time depends on the spot)
-      let T = Math.max(0.35, Math.hypot(e.x - qb.x, e.y - qb.y) / vel); T = Math.max(0.35, Math.hypot(e.x + e.vx * T - qb.x, e.y + e.vy * T - qb.y) / vel);
+      // the flight time of the throw he'll actually make (the game's own model: what the aim line shows), refined twice
+      let T = passPlan(S, e, "auto").T; for (let k = 0; k < 2; k++) T = passPlan(S, { x: e.x + e.vx * T, y: e.y + e.vy * T }, "auto").T;
       const err = skill.aimErr * (Math.random() - 0.5);
-      throwTo(S, { x: e.x + e.vx * T + err, y: e.y + e.vy * T + skill.aimErr * (Math.random() - 0.5) });
+      const end = e.stop && e.path?.length ? e.path[e.path.length - 1] : null, settled = e.mode === "settle";
+      const tx = settled ? e.x : end ? end.x : e.x + e.vx * T, ty = settled ? e.y : end ? end.y : e.y + e.vy * T; // a route that stops: throw to where he'll sit
+      const fl = throwTo(S, { x: tx + err, y: ty + skill.aimErr * (Math.random() - 0.5) });
+      if (process.env.DBG && fl && !fl.target && (S.concept === "slant_flat" || S.concept === "hitch_seam") && (stat.dbg = (stat.dbg || 0) + 1) <= 8) console.log("THROWAWAY", S.concept, "t", S.t.toFixed(2), "read", best, e.mode, "pathlen", e.path?.length, "stop", !!e.stop, "at", (e.x - S.los).toFixed(1), e.y.toFixed(1), "v", e.vx.toFixed(1), e.vy.toFixed(1), "aim", (tx - S.los).toFixed(1), ty.toFixed(1), "land", (fl.to.x - S.los).toFixed(1), fl.to.y.toFixed(1), "T", T.toFixed(2));
       state.thrown = true; stat.pass.ttt.push(S.t); (stat.byCall ||= {}); const bc = (stat.byCall[call] ||= { n: 0, t: 0, d: 0, open: 0 }); bc.n++; bc.t += S.t; bc.d += e.x - S.los; if (open) bc.open++; if (open) stat.pass.openAtRelease++;
     }
   }
@@ -55,7 +60,8 @@ for (let gi = 0; gi < N; gi++) {
     if (g.koNext || g.poss !== "h") { simOpponentDrive(g); continue; }
     if (g.down === 4) { runPlay(g, g.toGo <= 2 && g.yard > 40 ? "run_inside" : g.yard >= 60 ? "fg" : "punt"); continue; }
     const call = g.toGo <= 3 && Math.random() < 0.5 ? (Math.random() < 0.5 ? "run_inside" : "run_outside") : ["pass_quick", "pass_medium", "pass_deep", "run_inside", "run_outside", "pass_medium"][Math.floor(Math.random() * 6)];
-    const S = setupPlay(g, lineups(g), call); snap(S);
+    const fam = Object.keys(CONCEPTS).filter((k) => CONCEPTS[k].cat === call), concept = fam.length ? fam[Math.floor(Math.random() * fam.length)] : null;
+    const S = setupPlay(g, lineups(g), concept || call); snap(S);
     skill.patience = 0.8 + Math.random() * 2.4; // some snaps he fires early, some he waits on
     const state = { thrown: false, greedy: Math.random() < 0.06, forced: Math.random() < 0.12 }; let frames = 0, maxV = 0;
     const prev = Object.fromEntries(Object.entries(S.ents).map(([k, e]) => [k, [e.x, e.y]]));
@@ -66,7 +72,8 @@ for (let gi = 0; gi < N; gi++) {
     }
     stat.maxSpeed = Math.max(stat.maxSpeed, maxV);
     const ev = S.result; if (!ev) { stat.off++; continue; }
-    if ((ev.type === "pass" || ev.type === "td") && S.catchAt != null) { const c = S.ents[S.ball.holder]; const depth = Math.round((S.catchX ?? c.x) - S.los); const k = state.greedy ? "greedy" : "normal"; (stat.comps[k] ||= []).push({ depth: S.catchDepth ?? depth, yds: ev.yards, td: ev.td ? 1 : 0, tgt: call.replace("pass_", "") + ":" + S.ball.holder }); }
+    if ((ev.type === "pass" || ev.type === "td") && S.catchAt != null) { const c = S.ents[S.ball.holder]; const depth = Math.round((S.catchX ?? c.x) - S.los); const k = state.greedy ? "greedy" : "normal"; (stat.comps[k] ||= []).push({ depth: S.catchDepth ?? depth, yds: ev.yards, td: ev.td ? 1 : 0, tgt: (S.concept || call.replace("pass_", "")) + ":" + S.ball.holder, yac: ev.yards - (S.catchDepth ?? depth) }); }
+    if (concept) { const c = ((stat.byConcept ||= {})[concept] ||= { n: 0, comp: 0, yds: 0, sack: 0, int: 0, why: {} }); const w = (S.log.join("/") || S.pick?.why || ev.type).replace(/\/[^/]*(juked|misses)/g, ""); c.why[w] = (c.why[w] || 0) + 1; c.n++; if (ev.type === "pass" || ev.type === "td" && S.catchAt != null) c.comp++; if (ev.type === "sack") c.sack++; if (ev.type === "int") c.int++; c.yds += ev.type === "sack" ? 0 : (ev.yards || 0); }
     stat.plays++; stat.dur.push(S.t); if (call.startsWith("pass")) { const k = S.log.join("/") || S.pick?.why || "?"; stat.outcomes[k] = (stat.outcomes[k] || 0) + 1; } stat.types[ev.type] = (stat.types[ev.type] || 0) + 1;
     if (S.exact === false) stat.inexact++; if (S.mismatch) stat.retries++;
     if (ev.type === "penalty") { stat.pen++; continue; }
@@ -95,6 +102,7 @@ for (const [k, v] of Object.entries(stat.comps)) { const by = {}; for (const r o
 console.log(`time to throw ${avg(p.ttt)}s, ball-to-receiver at arrival ${avg(stat.catchErr)} yd`);
 console.log(`run: ${r.att} att, ${(r.yds / Math.max(1, r.att)).toFixed(1)} yds/att, ${r.td} td, ${r.broke} broken tackles (${(r.broke / Math.max(1, r.att)).toFixed(2)}/run), jukes that worked ${stat.jukes || 0}`);
 if (stat.deepCatch) { const a = stat.deepCatch, m = (i) => (a.map((r) => r[i]).sort((x, y) => x - y)[a.length >> 1]).toFixed(1); console.log(`deep catches n${a.length}: nearest defender ${m(0)} yd, nearest safety ${m(1)} yd, past the deepest defender ${m(2)} yd (median); behind everyone ${Math.round(a.filter((r) => r[2] > 0).length / a.length * 100)}%`); }
+if (stat.byConcept) console.log("by concept:\n" + Object.entries(stat.byConcept).map(([k, c]) => `  ${k.padEnd(11)} n${String(c.n).padStart(4)} comp ${Math.round(c.comp / c.n * 100)}% Y/play ${(c.yds / c.n).toFixed(1)} sack ${Math.round(c.sack / c.n * 100)}% int ${c.int} | ${Object.entries(c.why).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([w, n]) => w + " " + n).join(", ")}`).join("\n"));
 if (stat.byCall) console.log("throws by call:", Object.entries(stat.byCall).map(([k, b]) => `${k} n${b.n} t${(b.t / b.n).toFixed(2)} depth${(b.d / b.n).toFixed(1)} open${Math.round(b.open / b.n * 100)}%`).join(" | "));
 if (stat.jump) console.log("teleports by man:", Object.entries(stat.jumpBy).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([k, v]) => `${k} ${v}`).join(", "));
 console.log(`play length ${avg(stat.dur)}s, longest ${stat.longest}, fumbles ${stat.fumble}, flags ${stat.pen}, engine off the field's number: ${pct(stat.inexact, stat.plays)}, engine contradicted the field: ${stat.retries}, no result: ${stat.off}, teleports: ${stat.jump}, max speed ${stat.maxSpeed.toFixed(2)}x`);
