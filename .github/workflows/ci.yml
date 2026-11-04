@@ -50,3 +50,8 @@ jobs:
       - run: npm run build
       - name: Smoke test
         run: SMOKE_TEAM=${{ matrix.team }} npm run smoke
+      # menus and rows that move under the pointer (the depth chart's spot menu, the phone's snap
+      # rows) fail the release: scripts/ui-stability.mjs
+      - name: UI stability
+        if: matrix.team == 'Giants'
+        run: npm run ui-stability

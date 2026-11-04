@@ -2335,4 +2335,9 @@ export const PATCH_NOTES = [
     "The menu keeps its title (SLOT stays SLOT) and its rows stay in the order they had when it opened, so a - or + never slides out from under the pointer. 'Here' marks whoever is playing that spot right now. Reopen the menu to see the new order.",
     "Phone: the snap-share rows also keep their order while the sheet is open.",
   ] },
+  { v: "5.62", date: "2026-10-23", title: "Your play call stands; incompletion notes", notes: [
+    "Live games: a play you call is the play that runs. Down three with 20 seconds left in field goal range, a called deep pass was being swapped for a field goal attempt, because the end-of-half kick didn't check whether you'd called a play. Now the coach only kicks there when you haven't made a call (or you call the field goal yourself).",
+    "Live games: every incompletion now says why in grey, like the tackler on a run or catch: (broken up by the defender), (dropped), or (off target). Drops are new: a receiver's hands decide how often, and they come out at about 3.5% of targets, close to the real league.",
+    "A new check runs before every release: it opens the depth chart's spot menus and presses + and - on every player, again and again, and the release fails if a menu moves, changes its title or reorders its rows (desktop), or if the phone's snap rows reorder.",
+  ] },
 ];

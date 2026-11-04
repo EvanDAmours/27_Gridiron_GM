@@ -1,6 +1,6 @@
 {
   "name": "gridiron-gm",
-  "version": "5.61.0",
+  "version": "5.62.0",
   "description": "Gridiron GM is a realistic football general manager simulation game based off the National Football League (NFL).",
   "homepage": "https://evandamours.github.io/27_Gridiron_GM/",
   "repository": {
@@ -18,7 +18,8 @@
     "build:mobile": "VITE_MOBILE=1 vite build --outDir dist-mobile --emptyOutDir",
     "build:pages:all": "VITE_APP_BASE_PATH=/27_Gridiron_GM/ npm run build:pages && VITE_APP_BASE_PATH=/27_Gridiron_GM/mobile/ npm run build:mobile && rm -rf dist/mobile && cp -r dist-mobile dist/mobile",
     "smoke": "node scripts/smoke.mjs",
-    "check": "npm run lint && npm test && npm run build && npm run smoke",
+    "ui-stability": "node scripts/ui-stability.mjs",
+    "check": "npm run lint && npm test && npm run build && npm run smoke && npm run ui-stability",
     "publish:pages": "bash scripts/publish-pages.sh",
     "health": "node scripts/health.mjs",
     "scoring": "node scripts/scoring.mjs",

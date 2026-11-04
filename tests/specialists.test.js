@@ -70,7 +70,8 @@ test("a real power back converts more short yardage, and a rush package gets hom
     const rb = M.teams.find((x) => x.ab === "PHI").roster.findIndex((p) => p.pos === "RB" && p.dk === 2);
     const phi = club("PHI", { PWHB: [`PHI-${rb}`] }, strong), opp = club("DAL");
     let n = 0, made = 0;
-    games(phi, opp, 120, (ev, b) => { if (b.poss === "h" && b.toGo <= 2 && b.down >= 3 && ev.type !== "punt" && ev.k === "run" && !ev.keeper) { n++; if (ev.yards >= b.toGo || ev.td) made++; } });
+    // 400 games: short-yardage runs are rare, and 120 games left the comparison at the mercy of the random draws
+    games(phi, opp, 400, (ev, b) => { if (b.poss === "h" && b.toGo <= 2 && b.down >= 3 && ev.type !== "punt" && ev.k === "run" && !ev.keeper) { n++; if (ev.yards >= b.toGo || ev.td) made++; } });
     return made / n;
   };
   const hi = conv(true), lo = conv(false);

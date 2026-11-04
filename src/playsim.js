@@ -701,7 +701,9 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   // Fourth down (or the end of a half in range): kick, punt or go for it.
   // weather pulls in the longest kick a coach will try (wind and snow the most)
   const wxKick = g.wxE?.kick || 0, maxFG = fgRange(o.kLeg) - wxKick, longFG = fgRange(o.kLeg, true) - wxKick;
-  const endOfHalf = ((g.qtr === 2 || g.qtr === 4 || g.ot) && g.clock <= 25 && fgDist <= longFG && !(g.qtr >= 4 && lead < -3)) || (!call && forTheKick(g, lead) && g.down >= 3 && (g.clock <= 40 || g.ot));
+  // (a play you called is the play: the end-of-half kick is only the coach's call when you haven't
+  // made one, so a deep shot down three with 20 seconds left isn't turned into a field goal)
+  const endOfHalf = (!call && (g.qtr === 2 || g.qtr === 4 || g.ot) && g.clock <= 25 && fgDist <= longFG && !(g.qtr >= 4 && lead < -3)) || (!call && forTheKick(g, lead) && g.down >= 3 && (g.clock <= 40 || g.ot));
   let decision = call === "punt" || call === "fg" ? call : null;
   if (!decision && (g.down === 4 || endOfHalf || (g.ot && g.down >= 3 && fgDist <= maxFG && lead <= 0 && lead >= -3))) {
     if (endOfHalf && fgDist <= longFG) decision = "fg";
@@ -946,7 +948,14 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       } else {
         type = "inc"; clockStops = true;
         if (rand() < 0.3) { const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW); if (db) add(line(g, def, db), "pd", 1); gk.pdBy = db; ev.db = db; desc = `${qb?.name || "QB"}'s pass for ${last(target)} is broken up${db ? ` by ${db.name}` : ""}.`; }
-        else desc = `${qb?.name || "QB"}'s pass ${deep ? "deep " : ""}for ${last(target)} falls incomplete.`;
+        else {
+          // not broken up: dropped (hands decide it; about a fifth of incompletions, like the real
+          // league's drop rate) or simply off target
+          const hands = target?.posAttrs?.catching ?? 72;
+          if (target && rand() < clamp(0.19 - (hands - 75) * 0.006, 0.05, 0.32)) { ev.drop = target; add(tl, "drops", 1); }
+          else ev.offTarget = true;
+          desc = `${qb?.name || "QB"}'s pass ${deep ? "deep " : ""}for ${last(target)} falls incomplete.`;
+        }
       }
     }
   } else {
