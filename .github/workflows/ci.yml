@@ -3,8 +3,22 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      # arcade mode is still being playtested: changes that only touch it skip the GM checks
+      - "src/arcade/**"
+      - "arcade.html"
+      - "scripts/arcade-*"
+      - "scripts/arcade-dev/**"
+      - "tests/arcade.test.js"
   pull_request:
     branches: [main]
+    paths-ignore:
+      # arcade mode is still being playtested: changes that only touch it skip the GM checks
+      - "src/arcade/**"
+      - "arcade.html"
+      - "scripts/arcade-*"
+      - "scripts/arcade-dev/**"
+      - "tests/arcade.test.js"
 
 jobs:
   build:
