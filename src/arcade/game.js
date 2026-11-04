@@ -129,7 +129,7 @@ export class ArcadeGame {
       }
     }
     if (m === "opp") { const f = this.feed; if (now - f.at > 600 && f.shown < f.list.length) { f.shown++; f.at = now; if (f.list[f.shown - 1]?.td) { sfx.turnover(); this.fx.hit(0.6); } } else if (f.shown >= f.list.length && now - f.at > 1100) this.advance(); }
-    if ((m === "result") && this.banner && now - this.banner.at > (/TOUCHDOWN/.test(this.banner.title) ? 3400 : 2300)) this.advance();
+    if ((m === "result") && this.banner && now - this.banner.at > (/TOUCHDOWN/.test(this.banner.title) ? 3400 : 1700)) this.advance();
   }
 
   // held keys and the pointer, every frame: the runner's steering, the mouse aim, the kick meter

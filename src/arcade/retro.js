@@ -78,7 +78,11 @@ const shadow = (ctx, cam, x, y, r = 0.9) => { const [sx, sy] = cam.toScreen(x, y
 
 // Which frame a man is in: the club's stance art at the line, the action frames once he moves.
 function poseFor(S, e, t) {
-  const moving = Math.hypot(e.vx, e.vy) > 1.2, stride = Math.floor(t * 7) % 2 === 0;
+  // the legs keep pace with the ground: one step every ~1.15 yards, so a sprinter's legs turn
+  // over faster than a jogging lineman's and nobody "moonwalks"
+  const sp = Math.hypot(e.vx, e.vy), moving = sp > 1.2;
+  if (e._gt == null || t < e._gt) e._gt = t; e._gait = (e._gait || 0) + sp * Math.min(0.1, t - e._gt); e._gt = t;
+  const stride = Math.floor(e._gait / 1.15) % 2 === 0;
   const hasBall = S.ball.holder === e.key;
   if (S.kind) { // a kick: the kicker swings through, the holder kneels, the line holds
     const t0 = S.ball.flight?.t0 ?? 9;
