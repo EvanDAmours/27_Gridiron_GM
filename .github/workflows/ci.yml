@@ -30,6 +30,14 @@ jobs:
       - name: Build
         run: npm run build
 
+      # the built site, downloadable from the run (a branch can be tried before it is merged)
+      - name: Save the build
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
   smoke:
     # A full season and off-season played in a real browser, as two different clubs.
     runs-on: ubuntu-latest
