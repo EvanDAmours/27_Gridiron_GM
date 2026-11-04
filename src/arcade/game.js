@@ -13,7 +13,7 @@
 import { TEAMS, newGame, lineups, runPlay, simOpponentDrive, situation, snapshot, restore, patWaiting, bookPat } from "./bridge.js";
 import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
 import { setupKick, kickFlick, tickKick } from "./kick.js";
-import { sfx, unlock, toggleMute, isMuted } from "./sfx.js";
+import { sfx, unlock, toggleMute, isMuted, ambient, ambientHype } from "./sfx.js";
 import { FX } from "./fx.js";
 import { rollWeather } from "../weather.js";
 import { teamKey } from "../teamUniforms.js";
@@ -49,7 +49,7 @@ export class ArcadeGame {
     if (skipMenu) this.start();
     this.last = 0; this.raf = requestAnimationFrame((t) => this.loop(t));
   }
-  destroy() {
+  destroy() { ambient(false);
     cancelAnimationFrame(this.raf);
     window.removeEventListener("resize", this.fit); document.removeEventListener("fullscreenchange", this.fit); document.removeEventListener("webkitfullscreenchange", this.fit); window.removeEventListener("keydown", this.onKey); window.removeEventListener("keyup", this.onKeyUp);
     for (const [n, f] of [["pointerdown", this.onDown], ["pointermove", this.onMove], ["pointerup", this.onUp], ["pointercancel", this.onUp], ["contextmenu", this.noMenu]]) this.cv.removeEventListener(n, f);
@@ -100,7 +100,7 @@ export class ArcadeGame {
     const mph = wx === "dome" ? 0 : Math.round(wx === "wind" ? 16 + R() * 10 : /heavy/i.test(wx) ? 8 + R() * 10 : R() * 9), ang = R() * Math.PI * 2;
     const wind = mph ? { mph, x: Math.cos(ang) * mph * 0.49, y: Math.sin(ang) * mph * 0.49 } : null; // (1 mph = 0.49 yards a second)
     this.g = newGame(this.userTi, this.oppTi, { ...(this.rand ? { rand: this.rand } : {}), pat: true, qLen: this.qMin * 60, wx, wind }).g; this.sit = situation(this.g);
-    this.fade = 1; this.advance();
+    this.fade = 1; this.advance(); ambient(true);
   }
   // what happens next: the other team's drive (and any kickoff), or your next call
   advance() {
@@ -158,7 +158,7 @@ export class ArcadeGame {
   }
   // one step of the game (the browser loop and the playtest harness both use it)
   update(dt, now = performance.now()) {
-    this.time += dt; this.fade = Math.max(0, this.fade - dt * 2.5); this.hype = Math.max(0, this.hype - dt * 0.5);
+    this.time += dt; this.fade = Math.max(0, this.fade - dt * 2.5); this.hype = Math.max(0, this.hype - dt * 0.5); ambientHype(this.hype);
     if (this.paused || this.mode === "menu") { this.fx.step(dt); return; }
     const live = this.fx.step(dt); // (hit-stop slows the field for a beat)
     const P = this.S, cam = this.cam, m = this.mode;
