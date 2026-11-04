@@ -2,12 +2,12 @@
 // throws to where he'll be (with some human error), steers runners away from tacklers; the other
 // team is the engine. Prints what a session feels like in numbers. Run: node scripts/arcade-playtest.mjs [games]
 import { newGame, lineups, runPlay, simOpponentDrive } from "../src/arcade/bridge.js";
-import { setupPlay, snap, tick, throwTo, separation, ELIGIBLE } from "../src/arcade/play.js";
+import { setupPlay, snap, tick, throwTo, juke, separation, ELIGIBLE } from "../src/arcade/play.js";
 
 const N = +process.argv[2] || 4, DT = 1 / 60;
 const seedOf = (s) => () => ((s = (s * 16807) % 2147483647) / 2147483647);
-const stat = { plays: 0, pass: { att: 0, comp: 0, yds: 0, td: 0, int: 0, sack: 0, drop: 0, late: 0, hurried: 0, openAtRelease: 0, contested: 0, ttt: [] }, run: { att: 0, yds: 0, td: 0, broke: 0 }, dur: [], tries: [], off: 0, inexact: 0, fumble: 0, pen: 0, oob: 0, types: {}, catchErr: [], longest: 0, retries: 0, maxSpeed: 0, jump: 0, jumpBy: {}, outcomes: {} };
-const skill = { react: 0.12, aimErr: 1.2, patience: 1.2 };
+const stat = { plays: 0, pass: { att: 0, comp: 0, yds: 0, td: 0, int: 0, sack: 0, drop: 0, late: 0, hurried: 0, openAtRelease: 0, contested: 0, ttt: [] }, run: { att: 0, yds: 0, td: 0, broke: 0 }, dur: [], tries: [], off: 0, inexact: 0, fumble: 0, pen: 0, oob: 0, types: {}, catchErr: [], longest: 0, retries: 0, maxSpeed: 0, jump: 0, jumpBy: {}, outcomes: {}, comps: {} };
+const skill = { react: 0.25, aimErr: 1.2, patience: 1.2 };
 
 function human(S, call, state) {
   // throw once someone is open (or on a clock), to where he'll be when the ball lands
@@ -31,6 +31,7 @@ function human(S, call, state) {
     // a runner follows his lane until someone's in it, then cuts away from him
     const lane = !call.startsWith("pass") && c.x < S.los + 2 ? S.lane : c.y;
     S.steer = nd && nb < 4.5 ? Math.max(-25, Math.min(25, c.y > nd.y ? c.y + 5 : c.y - 5)) : lane;
+    if (nd && nb < 2.4 && Math.random() < 0.5 && juke(S)) stat.jukes = (stat.jukes || 0) + 1;
   }
 }
 
@@ -42,15 +43,17 @@ for (let gi = 0; gi < N; gi++) {
     if (g.down === 4) { runPlay(g, g.toGo <= 2 && g.yard > 40 ? "run_inside" : g.yard >= 60 ? "fg" : "punt"); continue; }
     const call = g.toGo <= 3 && Math.random() < 0.5 ? (Math.random() < 0.5 ? "run_inside" : "run_outside") : ["pass_quick", "pass_medium", "pass_deep", "run_inside", "run_outside", "pass_medium"][Math.floor(Math.random() * 6)];
     const S = setupPlay(g, lineups(g), call); snap(S);
-    skill.patience = 0.7 + Math.random() * 2.2; // some snaps he fires early, some he waits on
+    skill.patience = 0.6 + Math.random() * 1.8; // some snaps he fires early, some he waits on
     const state = { thrown: false, greedy: Math.random() < 0.15 }; let frames = 0, maxV = 0;
     const prev = Object.fromEntries(Object.entries(S.ents).map(([k, e]) => [k, [e.x, e.y]]));
     while (tick(S, DT) && frames++ < 1500) {
       human(S, call, state);
+      if (S.catchAt != null && S.catchDepth == null) S.catchDepth = Math.round(S.ents[S.ball.holder].x - S.los);
       for (const [k, e] of Object.entries(S.ents)) { const [px, py] = prev[k], j = Math.hypot(e.x - px, e.y - py) / DT; if (j > e.top * 1.3 && S.phase !== "tackle" && S.phase !== "fall" && S.phase !== "done") { stat.jump++; const kk = `${k}:${e.mode}:${S.phase}:${call}:held${e.heldUntil > S.t ? 1 : 0}:t${S.t.toFixed(1)}:from${px.toFixed(0)},${py.toFixed(0)}:to${e.x.toFixed(0)},${e.y.toFixed(0)}`; stat.jumpBy[kk] = (stat.jumpBy[kk] || 0) + 1; } prev[k] = [e.x, e.y]; const v = Math.hypot(e.vx, e.vy) / e.top; if (v > maxV) maxV = v; }
     }
     stat.maxSpeed = Math.max(stat.maxSpeed, maxV);
     const ev = S.result; if (!ev) { stat.off++; continue; }
+    if ((ev.type === "pass" || ev.type === "td") && S.catchAt != null) { const c = S.ents[S.ball.holder]; const depth = Math.round((S.catchX ?? c.x) - S.los); const k = state.greedy ? "greedy" : "normal"; (stat.comps[k] ||= []).push({ depth: S.catchDepth ?? depth, yds: ev.yards, td: ev.td ? 1 : 0, tgt: S.ball.holder }); }
     stat.plays++; stat.dur.push(S.t); if (call.startsWith("pass")) { const k = S.log.join("/") || S.pick?.why || "?"; stat.outcomes[k] = (stat.outcomes[k] || 0) + 1; } stat.types[ev.type] = (stat.types[ev.type] || 0) + 1;
     if (S.exact === false) stat.inexact++; if (S.mismatch) stat.retries++;
     if (ev.type === "penalty") { stat.pen++; continue; }
@@ -72,7 +75,8 @@ const p = stat.pass, r = stat.run;
 console.log(`\n${stat.plays} plays in ${N} games. types:`, stat.types);
 console.log(`pass: ${p.att} att, ${pct(p.comp, p.att)} comp, ${(p.yds / Math.max(1, p.att)).toFixed(1)} yds/att, ${p.td} td, ${p.int} int (${pct(p.int, p.att)}), ${p.sack} sacks (${pct(p.sack, p.att)}), late ${p.late}, hurried ${p.hurried}, open at the catch ${pct(p.openN, p.att)} (caught ${pct(p.openC, p.openN)}), contested catches ${p.contested}`);
 console.log("what happened on throws:", Object.entries(stat.outcomes).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(", "));
+for (const [k, v] of Object.entries(stat.comps)) { const by = {}; for (const r of v) (by[r.tgt] ||= []).push(r); console.log(`${k} completions ${v.length}:`, Object.entries(by).map(([t, a]) => `${t} n${a.length} depth ${(a.reduce((s, r) => s + r.depth, 0) / a.length).toFixed(0)} yac ${(a.reduce((s, r) => s + r.yds - r.depth, 0) / a.length).toFixed(1)} td ${a.reduce((s, r) => s + r.td, 0)}`).join(" | ")); }
 console.log(`time to throw ${avg(p.ttt)}s, ball-to-receiver at arrival ${avg(stat.catchErr)} yd`);
-console.log(`run: ${r.att} att, ${(r.yds / Math.max(1, r.att)).toFixed(1)} yds/att, ${r.td} td, ${r.broke} broken tackles (${(r.broke / Math.max(1, r.att)).toFixed(2)}/run)`);
+console.log(`run: ${r.att} att, ${(r.yds / Math.max(1, r.att)).toFixed(1)} yds/att, ${r.td} td, ${r.broke} broken tackles (${(r.broke / Math.max(1, r.att)).toFixed(2)}/run), jukes that worked ${stat.jukes || 0}`);
 if (stat.jump) console.log("teleports by man:", Object.entries(stat.jumpBy).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => `${k} ${v}`).join(", "));
 console.log(`play length ${avg(stat.dur)}s, longest ${stat.longest}, fumbles ${stat.fumble}, flags ${stat.pen}, engine off the field's number: ${pct(stat.inexact, stat.plays)}, engine contradicted the field: ${stat.retries}, no result: ${stat.off}, teleports: ${stat.jump}, max speed ${stat.maxSpeed.toFixed(2)}x`);

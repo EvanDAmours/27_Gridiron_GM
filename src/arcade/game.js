@@ -2,7 +2,7 @@
 // controls. Arcade.jsx mounts it; scripts/arcade-dev/ loads it straight into a browser for
 // playtesting. Touch the field to snap and pull back to throw; swipe up and down to steer a runner.
 import { newGame, lineups, runPlay, simOpponentDrive, situation } from "./bridge.js";
-import { setupPlay, snap, tick, throwTo, PLAY_NAMES } from "./play.js";
+import { setupPlay, snap, tick, throwTo, juke, PLAY_NAMES } from "./play.js";
 import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawButtons, preload, pixText } from "./retro.js";
 
 const PULL = 3.2; // the throw goes this many times the pull-back, the other way, on the screen
@@ -66,6 +66,7 @@ export class ArcadeGame {
       }
     }
     if (m === "opp") { const f = this.feed; if (now - f.at > 650 && f.shown < f.list.length) { f.shown++; f.at = now; } else if (f.shown >= f.list.length && now - f.at > 900) this.advance(); }
+    if ((m === "result" || m === "kick") && this.banner) { this.banner.at ||= now; if (now - this.banner.at > (this.banner.title.includes("TOUCHDOWN") ? 3200 : 2300)) this.advance(); }
     if (m === "final" && !this.banner) { const st = this.sit, lead = st.score.h - st.score.a; this.banner = { title: lead > 0 ? "YOU WIN!" : lead < 0 ? "YOU LOSE" : "TIE GAME", text: `${this.teams.user.name} ${st.score.h}, ${this.teams.opp.name} ${st.score.a}`, sub: null }; }
   }
   draw() {
@@ -116,8 +117,13 @@ export class ArcadeGame {
       // pulling back from where you touched aims the throw the other way, mirrored on the screen
       const qb = P.ents.QB, [qx, qy] = cam.toScreen(qb.x, qb.y);
       const land = cam.toField(qx + (t.px - p.px) * PULL, qy + (t.py - p.py) * PULL);
-      P.aim = t.moved > 6 ? { x: Math.max(qb.x + 2, land.x), y: Math.max(-26, Math.min(26, land.y)) } : null;
-    } else if (P.phase === "carry") P.steer = cam.toField(p.px, p.py).y;
+      P.aim = t.moved > 6 ? { x: Math.max(qb.x - 1, land.x), y: Math.max(-26, Math.min(26, land.y)) } : null;
+    } else if (P.phase === "carry") {
+      P.steer = cam.toField(p.px, p.py).y;
+      // a quick flick across the field is a juke
+      const now = performance.now(); t.hist = (t.hist || []).filter((h) => now - h.t < 140); t.hist.push({ t: now, py: p.py });
+      if (t.hist.length > 1 && Math.abs(p.py - t.hist[0].py) > 34) { if (juke(P) !== null) t.hist = []; }
+    }
   }
   onUp() {
     const t = this.touch, P = this.S; this.touch = null; if (!t || !P) return;
