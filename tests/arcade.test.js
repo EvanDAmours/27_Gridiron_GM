@@ -151,7 +151,8 @@ test("the pass you choose is the pass you get", async () => {
   const S = setupPlay(g, lineups(g), "pass_medium"); snap(S); for (let k = 0; k < 80; k++) tick(S, 1 / 60);
   const qb = S.ents.QB, near = { x: qb.x + 12, y: 4 }, far = { x: qb.x + 35, y: -6 };
   assert.equal(passPlan(S, near, "auto").kind, "bullet", "AUTO is a bullet underneath");
-  assert.equal(passPlan(S, far, "auto").kind, "lob", `AUTO is a lob past ${BULLET_RANGE} yards`);
+  assert.equal(passPlan(S, far, "auto").kind, "lob", `AUTO is a lob past ${BULLET_RANGE} yards downfield`);
+  assert.equal(passPlan(S, { x: S.los + 6, y: 23 }, "auto").kind, "bullet", "an out to the sideline is a bullet, however far across");
   const b = passPlan(S, far, "bullet"), l = passPlan(S, far, "lob");
   assert.equal(b.kind, "bullet"); assert.equal(l.kind, "lob");
   assert.ok(b.T < l.T && b.arc < l.arc, "a bullet gets there sooner and flatter than a lob");

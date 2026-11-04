@@ -202,7 +202,7 @@ function drawAim(ctx, cam, S, kind) {
   const { s } = cam, qb = S.ents.QB, plan = passPlan(S, S.aim, kind), col = KIND_COLOR[plan.kind];
   const [qx, qy] = cam.toScreen(qb.x, qb.y), [ax, ay] = cam.toScreen(plan.land.x, plan.land.y), hand = PLAYER_H * s * 0.62;
   // in AUTO, the bullet range: inside it you get a bullet, outside a lob
-  if (kind === "auto") { ctx.strokeStyle = "rgba(127,227,255,.22)"; ctx.lineWidth = Math.max(1, s * 0.06); ctx.setLineDash([4, 6]); ctx.beginPath(); ctx.ellipse(qx, qy, BULLET_RANGE * s, BULLET_RANGE * s * 0.42, 0, -Math.PI / 2, Math.PI / 2); ctx.stroke(); ctx.setLineDash([]); }
+  if (kind === "auto") { const [lx, l1] = cam.toScreen(S.los + BULLET_RANGE, -HALF), [, l2] = cam.toScreen(S.los + BULLET_RANGE, HALF); ctx.strokeStyle = "rgba(127,227,255,.28)"; ctx.lineWidth = Math.max(1, s * 0.08); ctx.setLineDash([4, 6]); ctx.beginPath(); ctx.moveTo(lx, l1); ctx.lineTo(lx, l2); ctx.stroke(); ctx.setLineDash([]); }
   // the path, dot by dot, at its real height: a bullet barely rises, a lob climbs
   const n = 18, peak = plan.arc * s * 1.1;
   for (let i = 1; i < n; i++) {

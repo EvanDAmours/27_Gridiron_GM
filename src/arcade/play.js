@@ -20,8 +20,8 @@ export const topSpeed = (p) => 6.3 + (clamp((p?.spd ?? 70) + (p?.form || 0) / 3,
 const accelOf = (p) => 9 + (clamp((p?.acc ?? 70) + (p?.form || 0) / 3, 40, 99) - 60) / 39 * 9;
 
 // Pre-snap spots: [yards behind the line (-), lateral]. The offense's right is +y.
-const OFF_SPOTS = { LT: [-1, -7.2], LG: [-1, -3.6], C: [-1, 0], RG: [-1, 3.6], RT: [-1, 7.2], TE: [-1.2, 10.8], X: [-1, -21.5], Z: [-1, 21.5], SLOT: [-2.5, -15], QB: [-5, 0], RB: [-7, 1.8] };
-const DEF_SPOTS = { DL0: [1.6, -5.8], DL1: [1.6, -1.8], DL2: [1.6, 1.8], DL3: [1.6, 5.8], LB0: [5.5, 5], LB1: [5.5, -4], CB0: [6, -21.5], CB1: [6, 21.5], CB2: [5, -15], S0: [14, 0], S1: [10, 9] };
+const OFF_SPOTS = { LT: [-1, -7.2], LG: [-1, -3.6], C: [-1, 0], RG: [-1, 3.6], RT: [-1, 7.2], TE: [-1.2, 10.8], X: [-1, -18], Z: [-1, 18], SLOT: [-2.5, -11.5], QB: [-5, 0], RB: [-7, 1.8] };
+const DEF_SPOTS = { DL0: [1.6, -5.8], DL1: [1.6, -1.8], DL2: [1.6, 1.8], DL3: [1.6, 5.8], LB0: [5.5, 5], LB1: [5.5, -4], CB0: [6, -18], CB1: [6, 18], CB2: [5, -11.5], S0: [15, 0], S1: [10, 9] };
 const OL_VS = { DL0: "LT", DL1: "LG", DL2: "RG", DL3: "RT" };
 export const ELIGIBLE = ["X", "Z", "SLOT", "TE", "RB"];
 const LINE = ["LT", "LG", "C", "RG", "RT"];
@@ -31,14 +31,14 @@ const LINE = ["LT", "LG", "C", "RG", "RT"];
 // `more`: how far he keeps running his last leg before he eases up and looks back for the ball
 const ROUTES = {
   slant: { legs: [[2, 0], [6, 5]], more: 4 }, hitch: { legs: [[5, 0], [-1, 0.5]], stop: true }, out: { legs: [[6, 0], [0.5, -7]], more: 3 },
-  dig: { legs: [[10, 0], [0, 10]], more: 6 }, comeback: { legs: [[14, 0], [-2.5, -2]], stop: true }, corner: { legs: [[10, 0], [8, -7]], more: 8 },
+  dig: { legs: [[12, 0], [0, 10]], more: 6 }, deepout: { legs: [[11, 0], [-0.5, -7]], more: 2 }, curl: { legs: [[9, 0], [-1.5, 1]], stop: true }, comeback: { legs: [[14, 0], [-2.5, -2]], stop: true }, corner: { legs: [[10, 0], [8, -7]], more: 8 },
   post: { legs: [[10, 0], [14, 8]], more: 12 }, go: { legs: [[45, 0]], more: 40 }, seam: { legs: [[4, 0], [30, 1.5]], more: 15 }, drag: { legs: [[2, 0], [2, 16]], more: 5 },
   flat: { legs: [[0.5, 0], [2, -9]], more: 3 }, swing: { legs: [[-1, -3], [3, -8]], more: 4 }, check: { legs: [[4, 0], [1, 0]], stop: true, delay: 0.9 },
 };
 const ROUTES_OF = (call) => PLAYS[call] || {};
 const PLAYS = {
-  pass_quick: { X: "slant", Z: "hitch", SLOT: "out", TE: "flat", RB: "check" },
-  pass_medium: { X: "dig", Z: "out", SLOT: "hitch", TE: "drag", RB: "swing" },
+  pass_quick: { X: "slant", Z: "hitch", SLOT: "drag", TE: "flat", RB: "check" },
+  pass_medium: { X: "dig", Z: "deepout", SLOT: "curl", TE: "drag", RB: "swing" },
   pass_deep: { X: "go", Z: "post", SLOT: "corner", TE: "seam", RB: "check" },
 };
 // A play's diagram for the play card: each receiver's route from his spot, in yards (x up the
@@ -79,7 +79,7 @@ export function setupPlay(g, L, call) {
     const e = ents[r]; if (!e) continue;
     const Rt = ROUTES[routes[r]], inward = e.y < 0 ? 1 : -1;
     let x = e.x, y = e.y; const pts = [];
-    for (const [up, side] of Rt.legs) { x = Math.min(107, x + up); y = clamp(y + side * inward, -HALF + 1, HALF - 1); pts.push({ x, y }); }
+    for (const [up, side] of Rt.legs) { x = Math.min(107, x + up); y = clamp(y + side * inward, -HALF + 2.5, HALF - 2.5); pts.push({ x, y }); }
     e.path = pts; e.stop = !!Rt.stop; e.delay = Rt.delay || 0; e.more = Rt.more || 0;
   }
   return {
@@ -327,7 +327,7 @@ export function tick(S, dt) {
       else brake(d, dt);
       continue;
     }
-    if (carrier && carrier.key !== "QB") { const react = S.catchAt != null && S.t - S.catchAt < 0.5 && hyp(d.x - carrier.x, d.y - carrier.y) > 1.6 ? 0.7 : 1.0; steer(d, ...xy(intercept(d, carrier)), dt, react * clamp(1 + K.edge(K.pursuit(d.p)) * 0.002, 0.95, 1.04)); continue; }
+    if (carrier && carrier.key !== "QB") { const react = S.catchAt != null && S.t - S.catchAt < 0.3 && hyp(d.x - carrier.x, d.y - carrier.y) > 1.6 ? 0.85 : 1.0; steer(d, ...xy(intercept(d, carrier)), dt, react * clamp(1 + K.edge(K.pursuit(d.p)) * 0.002, 0.95, 1.04)); continue; }
     if (!isPass) { // the run: linebackers read it, then fill; the secondary comes late
       const read = k.startsWith("LB") ? 0.7 : k.startsWith("S") ? 1.0 : 1.4;
       if (S.t < read) { brake(d, dt); continue; }
@@ -345,14 +345,18 @@ export function tick(S, dt) {
       const lx = r.x - r.vx * 0.05, ly = r.y - r.vy * 0.05;
       const beaten = r.x > d.x + 1 ? 1 + (K.recovery(d.p) - 75) * 0.003 : 1; // beaten: his recovery speed closes it back up
       mirror(d, r, lx - trail, ly + in_, dt, q * beaten, 0.9, d.rv);
+    } else if (k === "S0" && S.dcall === "cover") { // two deep: he takes the other half
+      let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.y < 4 && (!deep || e.x > deep.x)) deep = e; }
+      steer(d, Math.min(106, Math.max(S.los + 13, deep ? deep.x + 4.5 + Math.max(0, deep.vx) * 0.7 : 0)), deep ? Math.min(-4, deep.y * 0.8) : -11, dt, 1);
     } else if (k === "S0") {
-      // the free safety: deeper than the deepest route, drifting toward it
+      // the single-high free safety: deeper than the deepest route, but he stays in the middle of
+      // the field so he can get to either sideline once the ball's in the air
       let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.x > S.los + 4 && (!deep || e.x > deep.x)) deep = e; }
-      const dx = deep ? Math.max(deep.x + 4.5 + Math.max(0, deep.vx) * 0.4, S.los + 13) : S.los + 14, dy = deep ? deep.y * 0.75 : 0;
+      const dx = deep ? Math.max(deep.x + 5.5 + Math.max(0, deep.vx) * 0.9, S.los + 13) : S.los + 14, dy = deep ? clamp(deep.y * 0.35, -7, 7) : 0;
       steer(d, Math.min(106, dx), dy, dt, 1);
     } else if (k === "S1" && S.dcall === "cover") { // two deep: he takes his half
       let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.y > -4 && (!deep || e.x > deep.x)) deep = e; }
-      steer(d, Math.min(106, Math.max(S.los + 13, deep ? deep.x + 4 : 0)), deep ? Math.max(4, deep.y * 0.8) : 11, dt, 1);
+      steer(d, Math.min(106, Math.max(S.los + 13, deep ? deep.x + 4.5 + Math.max(0, deep.vx) * 0.7 : 0)), deep ? Math.max(4, deep.y * 0.8) : 11, dt, 1);
     } else if (k === "S1") {
       // the strong safety: with two men going deep he takes the second over the top; otherwise a
       // robber in the middle, jumping anything that comes through his zone
@@ -373,7 +377,7 @@ export function tick(S, dt) {
     if (f.bullet && !f.kick && !f.tipped && S.t - f.t0 > 0.12 && S.t - f.t0 < f.T - 0.12) {
       for (const d of Object.values(ents)) {
         if (d.side !== "def" || d.down > 0 || d.heldUntil > S.t || d.mode === "rush") continue;
-        if (hyp(d.x - ball.x, d.y - ball.y) < 0.75 + (K.ballSkills(d.p) - 70) * 0.006) { f.tipped = true; f.to = { x: ball.x, y: ball.y }; f.T = S.t - f.t0; S.log.push("in the lane"); break; }
+        if (hyp(d.x - ball.x, d.y - ball.y) < 0.9 + (K.ballSkills(d.p) - 70) * 0.008) { f.tipped = true; f.to = { x: ball.x, y: ball.y }; f.T = S.t - f.t0; S.log.push("in the lane"); break; }
       }
     }
     const u = clamp((S.t - f.t0) / f.T, 0, 1);
@@ -391,7 +395,7 @@ export function tick(S, dt) {
     // a loose runner leans away from a tackler in his path when you aren't steering
     const lean = S.steer == null && d && dd < 4 && d.x > carrier.x - 0.5 ? (carrier.y > d.y ? 2 : -2) * clamp((K.vision(carrier.p) - 45) / 40, 0.3, 1.3) : 0;
     // a receiver secures the catch before he's at full stride
-    const fresh = 1, stagger = S.stagger > S.t ? 0.7 : 1, burst = S.burstUntil > S.t ? 1.12 : 1;
+    const fresh = S.catchAt != null && S.t - S.catchAt < 0.35 ? 0.8 : 1, stagger = S.stagger > S.t ? 0.7 : 1, burst = S.burstUntil > S.t ? 1.12 : 1;
     steer(carrier, carrier.x + 8, clamp(wantY + lean, -HALF + 0.3, HALF - 0.3), dt, fresh * stagger * burst);
     if (carrier.x >= 100) { score(S); return true; }
     if (Math.abs(carrier.y) >= HALF - 0.4) { outOfBounds(S); return true; }
@@ -414,7 +418,7 @@ export function tick(S, dt) {
     const weave = o && od < 4 ? (carrier.y > o.y ? 3 : -3) : 0;
     steer(carrier, Math.max(goal - 3, -9), clamp(carrier.y + weave, -HALF + 1, HALF - 1), dt, 1);
     for (const e of Object.values(ents)) if (e.side === "off" && e.down <= 0) steer(e, ...xy(intercept(e, carrier)), dt, 0.95);
-    if (carrier.x <= goal + 0.3) { S.tackler = o || null; if (o) { o.x = carrier.x + 0.7; o.y = carrier.y; } endAt(S, S.ev, carrier.x <= 0.5 ? "fall" : "tackle", 1.2); return true; }
+    if (carrier.x <= goal + 0.3) { S.tackler = o || null; const close = o && od < 2.5; if (!close) S.tackler = null; endAt(S, S.ev, carrier.x <= 0.5 || !close ? "fall" : "tackle", 1.2); return true; }
     if (S.t - S.pickAt > 8) { endAt(S, S.ev, "tackle"); return true; }
   }
 
@@ -457,7 +461,10 @@ export function juke(S) {
   const [d, dd] = nearestDef(S, c.x, c.y);
   if (d && dd < 2.6 && !d.missed) {
     const el = K.elusive(c.p), tk = K.tackling(d.p);
-    if (rnd(S) < clamp(0.35 + (el - tk) * 0.006, 0.15, 0.6)) { d.down = 0.6; d.missed = true; S.broke++; S.log.push(`${d.p.name} juked`); return true; }
+    // a well-timed one works; each one after that on the same run is easier to read
+    S.jukes = (S.jukes || 0) + 1;
+    if (rnd(S) < clamp(0.3 + (el - tk) * 0.006 - (S.jukes - 1) * 0.08, 0.08, 0.5)) { d.down = 0.6; d.missed = true; S.broke++; S.log.push(`${d.p.name} juked`); return true; }
+    S.stagger = S.t + 0.3; // he bit on nothing: the cut costs the runner a step
   }
   return false;
 }
@@ -468,7 +475,8 @@ export function juke(S) {
 // lofted: slower, so the coverage closes, but it drops over the top and is the deep ball. AUTO
 // picks a bullet inside BULLET_RANGE yards and a lob beyond it. passPlan is shared with the
 // renderer, so the arc you see while aiming is the throw you get.
-export const BULLET_RANGE = 20;
+export const BULLET_RANGE = 18; // AUTO throws a bullet to a spot short of this many yards past the line
+export const BULLET_MAX = 36; // ...and never one further than this; a bullet past it sprays
 export const PASS_KINDS = ["auto", "bullet", "lob"];
 export function passPlan(S, P, kind = "auto") {
   const qb = S.ents.QB, arm = K.qbArm(qb.p), reach = 38 + (arm - 70) * 0.55; // how far he can put it
@@ -476,7 +484,7 @@ export function passPlan(S, P, kind = "auto") {
   let dist = hyp(land.x - qb.x, land.y - qb.y);
   const short = dist > reach; // he can't get it there: it dies short of the spot
   if (short) { const k = reach / dist; land = { x: qb.x + (land.x - qb.x) * k, y: qb.y + (land.y - qb.y) * k }; dist = reach; }
-  const bullet = kind === "bullet" || (kind === "auto" && dist < BULLET_RANGE);
+  const bullet = kind === "bullet" || (kind === "auto" && land.x - S.los < BULLET_RANGE && dist < BULLET_MAX); // AUTO: a rope underneath, touch over the top
   const vel = bullet ? 27 + (arm - 70) * 0.2 : 22 + (arm - 70) * 0.15 - (dist < 12 ? 3 : 0); // yards a second (a short lob floats)
   const T = clamp(dist / vel, 0.22, 2.0);
   const arc = bullet ? clamp(dist / 40, 0.15, 0.55) : clamp(dist / 12, 1.4, 4);
@@ -489,8 +497,8 @@ export function throwTo(S, P, why = null, kind = "auto") {
   let { land } = plan; const { dist, bullet, T } = plan;
   const aimed = { ...land };
   // his accuracy (and touch, on a lofted ball): the ball drifts from the spot, more on a long throw
-  // (a bullet fired a long way is hard to put on a man: past BULLET_RANGE it sprays)
-  const accu = K.qbAccuracy(qb.p, !bullet), wild = bullet && dist > BULLET_RANGE ? 1 + (dist - BULLET_RANGE) / 15 : 1;
+  // (a bullet fired a long way is hard to put on a man: past BULLET_MAX it sprays)
+  const accu = K.qbAccuracy(qb.p, !bullet), wild = bullet && dist > BULLET_MAX ? 1 + (dist - BULLET_MAX) / 12 : 1;
   const sig = (0.25 + Math.max(0, 95 - accu) * 0.05) * (0.5 + dist / 18) * wild, g1 = () => (rnd(S) + rnd(S) + rnd(S) - 1.5) * 1.6;
   land = { x: clamp(land.x + g1() * sig, S.los - 12, 109), y: clamp(land.y + g1() * sig, -HALF + 0.3, HALF - 0.3) };
   let best = null, bestD = 99;
@@ -554,12 +562,13 @@ function arrive(S) {
     // engine agrees, a pass broken up if not
     const ballSk = K.ballSkills(d.p);
     // a lofted ball hangs for him; one he beat the receiver to is his to lose
-    const pInt = clamp(0.045 + (ballSk - 70) * 0.006 + (f.bullet ? 0 : 0.07) + (dD < dR ? 0.1 : 0) - (dD > 1 ? 0.04 : 0), 0.02, 0.4);
+    const pInt = clamp(0.045 + (ballSk - 70) * 0.006 + (f.bullet ? 0 : 0.07) + (f.tipped ? 0.16 : 0) + (dD < dR ? 0.1 : 0) - (dD > 1 ? 0.04 : 0), 0.02, 0.55);
     want = { types: rnd(S) < pInt ? ["int"] : ["inc"], fallback: ["inc"] }; S.pick.open = false;
-    const r = resolvePlay(S.g, S.call, want, { target: S.pick.target, open: false }, 10);
+    const r = resolvePlay(S.g, S.call, want, { target: S.pick.target, open: false }, want.types[0] === "int" ? 60 : 10); // a pick is rare in the engine: give it the rolls to find one
     S.ev = r.ev; S.mismatch = r.ev && !["int", "inc", "penalty"].includes(r.ev.type);
     if (r.ev?.type === "int") {
       ball.x = d.x; ball.y = d.y; ball.holder = d.key; d.mode = "carry"; S.pickAt = S.t; S.phase = "carry"; S.log.push("picked");
+      for (const e of Object.values(ents)) if (e.side === "off") e.mode = "pursue"; // routes are over: everyone chases
       // where the engine put the ball: the new offense's yard line, seen from ours
       S.retTo = S.g.poss === "a" ? clamp(100 - S.g.yard, -5, d.x) : d.x - 5;
       return;
