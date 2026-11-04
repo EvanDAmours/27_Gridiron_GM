@@ -2320,4 +2320,10 @@ export const PATCH_NOTES = [
     "Phone, live games: player name tags on the field are larger.",
     "Phone, draft: on the clock, the line with your rookie wage and your team's needs wraps instead of being cut off.",
   ] },
+  { v: "5.59", date: "2026-10-23", title: "Phone snap shares rebuilt", notes: [
+    "Phone snap shares, rebuilt without sliders or dragging. Tap a spot on the depth chart and each player gets a row: his share in big type with a bar under it, big - and + buttons (5 snaps a tap) and a lock. Change one player and the others at the position adjust the other way, bench players first; a locked player never moves.",
+    "Each row says where he plays: his spot (LE, RB, SLOT...) or 'rotates at DT2' for a rotation player. Players with no snaps sit under Bench; tap + to rotate one in.",
+    "Starters only (the starters take every snap, keeping anyone you locked) and Reset to auto (back to the staff's split) work on the whole position at once.",
+    "The depth chart's list view on phones uses the same - / + buttons and lock instead of a slider. Locks are shared with the desktop and saved with your game. Desktop is unchanged.",
+  ] },
 ];

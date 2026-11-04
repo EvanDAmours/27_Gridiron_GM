@@ -3,7 +3,9 @@
 // between them. LinkedSnap: one player's slider row for the list view, linked to the others,
 // with -/+ steps and a lock.
 import React from "react";
-import { laneSplit, transfer, sharesOf } from "./snapEdit.js";
+import { Icon } from "./ui.jsx";
+import { MOBILE } from "./mobile.js";
+import { laneSplit, transfer, sharesOf, linkedSet } from "./snapEdit.js";
 
 const PAL = ["#2563eb", "#7c3aed", "#0891b2", "#b45309", "#be185d", "#4d7c0f", "#475569", "#0f766e"];
 // a player's color in the bars (the rows beside them use the same)
@@ -73,6 +75,19 @@ export function SplitBars({ pos, players, overrides, shape, onChange, laneName, 
 // One player's linked slider (the list view). value: his share; locked: you've pinned it.
 export function LinkedSnap({ value, locked, onSet, onLock, disabled, compact }) {
   const step = (d) => !disabled && onSet(value + d);
+  // phones: steppers big enough for a thumb, a bar to read the share, and the lock; no slider
+  if (MOBILE) {
+    const big = { width: 44, height: 40, borderRadius: 10, border: 0, background: "#ffffff14", color: "#fff", fontSize: 22, fontWeight: 800, lineHeight: 1, cursor: "pointer", flexShrink: 0, touchAction: "manipulation" };
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", minWidth: 0, opacity: disabled ? 0.5 : 1 }}>
+        <div style={{ flex: 1, minWidth: 40, height: 6, borderRadius: 3, background: "#ffffff12", overflow: "hidden" }}><div style={{ width: `${value}%`, height: "100%", background: locked ? "#facc15" : "#22c55e" }} /></div>
+        <button type="button" aria-label="5 fewer snaps" disabled={disabled || locked || value <= 0} onClick={() => step(-5)} style={{ ...big, opacity: locked || value <= 0 ? 0.35 : 1 }}>−</button>
+        <b style={{ width: 48, textAlign: "center", fontSize: 18, fontWeight: 900, color: locked ? "#fde68a" : "#f1f5f9", fontVariantNumeric: "tabular-nums" }}>{value}%</b>
+        <button type="button" aria-label="5 more snaps" disabled={disabled || locked || value >= 100} onClick={() => step(5)} style={{ ...big, background: "#22c55e2e", opacity: locked || value >= 100 ? 0.35 : 1 }}>+</button>
+        <button type="button" aria-pressed={locked} aria-label={locked ? "Unlock his share" : "Lock his share"} onClick={onLock} disabled={disabled} style={{ ...big, width: 40, background: locked ? "#facc1533" : "transparent", border: `1px solid ${locked ? "#facc1599" : "#ffffff22"}`, color: locked ? "#fde68a" : "#94a3b8", display: "grid", placeItems: "center" }}><Icon k={locked ? "lock" : "unlock"} size={20} /></button>
+      </div>
+    );
+  }
   const btn = { width: compact ? 30 : 26, height: compact ? 30 : 26, borderRadius: 8, border: 0, background: "#ffffff10", color: "#fff", fontWeight: 900, fontSize: 15, cursor: disabled ? "default" : "pointer", flexShrink: 0 };
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", minWidth: 0, opacity: disabled ? 0.5 : 1 }}>
@@ -81,6 +96,70 @@ export function LinkedSnap({ value, locked, onSet, onLock, disabled, compact }) 
       <b style={{ width: 38, textAlign: "center", fontSize: 13, color: locked ? "#fde68a" : "#e5e7eb" }}>{value}%</b>
       <button type="button" aria-label="5 more snaps" onClick={() => step(5)} style={btn}>+</button>
       <button type="button" onClick={onLock} disabled={disabled} title={locked ? "Locked: other sliders won't move him. Click to unlock." : "Lock his share so other sliders don't move it"} style={{ height: compact ? 30 : 26, padding: "0 8px", borderRadius: 8, border: 0, background: locked ? "#facc1526" : "#ffffff0a", color: locked ? "#facc15" : "#94a3b8", fontSize: 10, fontWeight: 900, letterSpacing: 0.5, cursor: disabled ? "default" : "pointer", flexShrink: 0 }}>{locked ? "LOCKED" : "LOCK"}</button>
+    </div>
+  );
+}
+
+// Phones: no dragging. One row per player, the share in big type with a bar under it, big − and +
+// buttons (5 snaps a tap) and a lock. Changing one player moves the others at the position the
+// other way (bench first), never a locked one. Starters only / Reset to auto for the whole position.
+// laneName(k): the spot's name (RB, LE, SLOT...); players: everyone at the position in depth order.
+export function PhoneSnaps({ pos, players, overrides, shape, onChange, laneName, locks, setLocks, onReset }) {
+  const healthy = players.filter((p) => !p.injured);
+  const shares = sharesOf(pos, players, overrides, shape);
+  const lanes = laneSplit(pos, players, overrides, shape);
+  const color = Object.fromEntries(healthy.map((p, i) => [p.id, PAL[i % PAL.length]]));
+  const pinned = locks || new Set();
+  // where he plays most: the spot with his biggest piece
+  // where he plays most (the spot with his biggest piece), and whether he owns it or rotates in there
+  const spotOf = (id) => {
+    let best = -1, v = 0; lanes.forEach((l, k) => { const sg = l.segs.find((x) => x.id === id); if (sg && sg.v > v) { v = sg.v; best = k; } });
+    if (best < 0) return null;
+    const top = [...lanes[best].segs].sort((x, y) => y.v - x.v)[0];
+    return top?.id === id ? laneName(best) : `rotates at ${laneName(best)}`;
+  };
+  // "K. Thibodeaux": the row has room for an initial and the last name, not always the full name
+  const short = (n) => { const w = (n || "").split(" "); const last = lastName(n); return w.length > 1 && w[0] !== last ? `${w[0][0]}. ${last}` : n; };
+  const set = (id, v) => onChange(linkedSet(pos, players, overrides || {}, shape, id, v, pinned));
+  const lock = (id) => setLocks && setLocks((l) => { const n = new Set(l); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  // the starters play every snap of their spots; the bench keeps only what you locked
+  const startersOnly = () => {
+    const n = { ...(overrides || {}) };
+    for (const q of healthy) if (!pinned.has(q.id)) n[q.id] = 0;
+    lanes.forEach((ln, k) => { const who = healthy[k]; if (!who || pinned.has(who.id)) return; n[who.id] = Math.min(100, (n[who.id] || 0) + ln.segs.reduce((t, sg) => t + (pinned.has(sg.id) && sg.id !== who.id ? 0 : sg.v), 0)); });
+    onChange(n);
+  };
+  const playing = healthy.filter((p) => shares[p.id] > 0), bench = healthy.filter((p) => !shares[p.id]);
+  const big = { width: 44, height: 44, borderRadius: 12, border: 0, background: "#ffffff14", color: "#fff", fontSize: 24, fontWeight: 800, lineHeight: 1, cursor: "pointer", flexShrink: 0, touchAction: "manipulation" };
+  const row = (p, onBench) => {
+    const v = shares[p.id] || 0, mine = overrides?.[p.id] != null, locked = pinned.has(p.id), where = onBench ? "Bench" : spotOf(p.id);
+    return (
+      <div key={p.id} style={{ padding: "8px 0", borderTop: "1px solid #ffffff10" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 4, alignSelf: "stretch", borderRadius: 2, background: onBench ? "#334155" : color[p.id], flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div title={p.name} style={{ fontSize: 15, fontWeight: 800, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{short(p.name)}</div>
+            <div style={{ fontSize: 12, color: locked ? "#fde68a" : "#94a3b8" }}>{where}{locked ? " · locked" : ""}</div>
+          </div>
+          <button type="button" aria-label={`5 fewer snaps for ${p.name}`} disabled={locked || v <= 0} onClick={() => set(p.id, v - 5)} style={{ ...big, opacity: locked || v <= 0 ? 0.35 : 1 }}>−</button>
+          <b style={{ width: 50, textAlign: "center", fontSize: 20, fontWeight: 900, color: locked ? "#fde68a" : mine ? "#facc15" : "#f1f5f9", fontVariantNumeric: "tabular-nums" }}>{v}%</b>
+          <button type="button" aria-label={`5 more snaps for ${p.name}`} disabled={locked || v >= 100} onClick={() => set(p.id, v + 5)} style={{ ...big, background: "#22c55e2e", opacity: locked || v >= 100 ? 0.35 : 1 }}>+</button>
+          {setLocks && <button type="button" aria-pressed={locked} aria-label={locked ? `Unlock ${p.name}` : `Lock ${p.name}`} onClick={() => lock(p.id)} style={{ ...big, width: 36, fontSize: 15, background: locked ? "#facc1533" : "transparent", border: `1px solid ${locked ? "#facc1599" : "#ffffff22"}`, color: locked ? "#fde68a" : "#94a3b8", display: "grid", placeItems: "center" }}><Icon k={locked ? "lock" : "unlock"} size={20} /></button>}
+        </div>
+        {!onBench && <div style={{ height: 5, borderRadius: 3, background: "#ffffff12", margin: "7px 0 0 12px", overflow: "hidden" }}><div style={{ width: `${v}%`, height: "100%", background: locked ? "#facc15" : color[p.id] }} /></div>}
+      </div>
+    );
+  };
+  const chip = { minHeight: 36, borderRadius: 999, border: "1px solid #ffffff22", background: "transparent", color: "#e2e8f0", fontSize: 13, fontWeight: 800, padding: "0 14px", cursor: "pointer" };
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "2px 0 4px" }}>
+        {lanes.length > 0 && healthy.length > lanes.length && <button type="button" onClick={startersOnly} style={chip}>Starters only</button>}
+        {onReset && healthy.some((p) => overrides?.[p.id] != null) && <button type="button" onClick={onReset} style={chip}>Reset to auto</button>}
+      </div>
+      {playing.map((p) => row(p, false))}
+      {bench.length > 0 && <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, color: "#94a3b8", margin: "10px 0 0" }}>BENCH · tap + to rotate him in</div>}
+      {bench.map((p) => row(p, true))}
     </div>
   );
 }

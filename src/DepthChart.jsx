@@ -10,7 +10,7 @@ export { STARTERS, byDepth, depthOrderFor, depthSlots } from "./depth.js";
 import { STARTERS as STARTERS0, depthOrderFor } from "./depth.js";
 import { retRating } from "./special.js";
 import { positionSnaps, snapBudget, SNAP_SLOTS } from "./snaps.js";
-import { SplitBars, snapColor } from "./SnapBars.jsx";
+import { SplitBars, PhoneSnaps, snapColor } from "./SnapBars.jsx";
 import { ROLE_SLOTS, roleOvr, naturalRole, ROLE_WANTS, ROLE_NAME, roleKind } from "./roles.js";
 import { pickFB } from "./gamesim.js";
 import { viewFor, DEF_SETS } from "./personnel.js";
@@ -256,12 +256,14 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
               {!chosen.length && <div style={{ color: C.mt, fontSize: 13 }}>Nobody on the roster plays {SPEC_ROLES[pick[0]]?.pos || pick[0]}.</div>}
               {/* snap shares: one bar per spot on the field, split between who plays it (SnapBars.jsx) */}
               {!single(pick[0]) && setSnaps && depthList(pick[0]).some((p) => !p.injured) && <div style={{ background: C.bg, borderRadius: 12, padding: "8px 10px", margin: "0 0 8px" }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}><b style={{ fontSize: 13 }}>Snap shares</b><span style={{ fontSize: 12, color: C.mt }}>drag a line to trade snaps</span></div>
-                <SplitBars pos={pick[0]} players={order(pick[0])} overrides={snaps || {}} shape={shape} mobile={MOBILE} onChange={(next) => setSnaps(next)} laneName={(k) => spotName(pick[0], k)} />
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}><b style={{ fontSize: MOBILE ? 15 : 13 }}>Snap shares</b><span style={{ fontSize: 12, color: C.mt }}>{MOBILE ? "5 snaps a tap; the others adjust, locked players stay put" : "drag a line to trade snaps"}</span></div>
+                {/* phones: big steppers and locks, no dragging (SnapBars.jsx PhoneSnaps); desktop: the split bars */}
+                {MOBILE ? <PhoneSnaps pos={pick[0]} players={order(pick[0])} overrides={snaps || {}} shape={shape} onChange={(next) => setSnaps(next)} laneName={(k) => spotName(pick[0], k)} locks={locks} setLocks={setLocks} onReset={() => resetShares(pick[0])} />
+                  : <SplitBars pos={pick[0]} players={order(pick[0])} overrides={snaps || {}} shape={shape} mobile={MOBILE} onChange={(next) => setSnaps(next)} laneName={(k) => spotName(pick[0], k)} />}
               </div>}
               <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 0 6px", flexWrap: "wrap" }}>
                 <button onClick={() => setPick(null)} style={{ background: "transparent", border: 0, color: "#7dd3fc", fontSize: 13, cursor: "pointer", padding: 0 }}>← All positions</button>
-                {!single(pick[0]) && setSnaps && order(pick[0]).some((p) => snaps?.[p.id] != null) && <button onClick={() => resetShares(pick[0])} style={{ background: "transparent", border: "1px solid #ffffff10", color: "#cbd5e1", borderRadius: 6, padding: "2px 8px", fontSize: 12, cursor: "pointer" }}>Reset snaps to auto</button>}
+                {!MOBILE && !single(pick[0]) && setSnaps && order(pick[0]).some((p) => snaps?.[p.id] != null) && <button onClick={() => resetShares(pick[0])} style={{ background: "transparent", border: "1px solid #ffffff10", color: "#cbd5e1", borderRadius: 6, padding: "2px 8px", fontSize: 12, cursor: "pointer" }}>Reset snaps to auto</button>}
                 <details style={{ marginLeft: "auto", fontSize: 12, color: C.mt }}><summary style={{ cursor: "pointer", color: "#94a3b8" }}>How this works</summary><div style={{ marginTop: 4, maxWidth: 420 }}>
               {!MOBILE && ROLE_SLOTS[pick[0]]?.[pickRole] && <div style={{ marginBottom: 4 }}><b style={{ color: C.gd }}>{spotName(pick[0], pickRole)} wants:</b> {ROLE_WANTS[roleKind(ROLE_SLOTS[pick[0]][pickRole])]} The number is each player's rating here (his natural rating after the slash; ★ = his natural role).</div>}
               {PARTNER[pick[0]] && setPositions && <div style={{ marginBottom: 4 }}>Tackles and guards play either side. Starting a {PARTNER[pick[0]]} here swaps the two.</div>}
