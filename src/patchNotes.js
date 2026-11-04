@@ -2326,4 +2326,8 @@ export const PATCH_NOTES = [
     "Starters only (the starters take every snap, keeping anyone you locked) and Reset to auto (back to the staff's split) work on the whole position at once.",
     "The depth chart's list view on phones uses the same - / + buttons and lock instead of a slider. Locks are shared with the desktop and saved with your game. Desktop is unchanged.",
   ] },
+  { v: "5.60", date: "2026-10-23", title: "Greg Newsome's extension", notes: [
+    "Real contract: the Giants' 3-year, $46 million extension for Greg Newsome II (signed November 3, $32 million guaranteed, through 2029). New franchises start with it signed: he finishes 2026 on his current deal, and the extension takes over at the new league year at about a $15M cap hit a year, with 2027 and 2028 fully guaranteed. Its signing bonus starts counting this season, like any extension.",
+    "Existing 2026 saves get it once, while the 2026 regular season is still going, as long as Newsome is still a Giant on his original deal (not released, traded or already extended by you). It's noted in your log.",
+  ] },
 ];

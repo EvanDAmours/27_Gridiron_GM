@@ -5,6 +5,7 @@ import { DEV_TRAITS } from "./scouting.js";
 import { REAL_STAFF, HC_RATING, HC_TRAIT } from "./data/realCoaches.js";
 import { applyRosterUpdates } from "./rosterUpdates.js";
 import { applyRealMoves } from "./realMoves.js";
+import { applyRealExtensionsToSave } from "./realExtensions.js";
 import { realPlayer } from "./league.js";
 import M27 from "./data/madden27.json" with { type: "json" };
 import { brokenReadDef, readDefOf } from "./qbiq.js";
@@ -71,6 +72,11 @@ export function repairSave(d) {
     const data = (name, pos) => [...M27.teams.flatMap((t) => [...t.roster, ...t.ps]), ...M27.fa].find((x) => x.name === name && x.pos === pos);
     const lines = applyRealMoves(d, (name, pos) => { const x = data(name, pos); return x ? realPlayer(x) : null; });
     if (lines.length) { d.log = [...lines, ...(Array.isArray(d.log) ? d.log : [])].slice(0, 150); fixes.push(`${lines.length} real roster move(s)`); }
+  }
+  // real contract extensions (realExtensions.js), once each
+  {
+    const lines = applyRealExtensionsToSave(d);
+    if (lines.length) { d.log = [...lines, ...(Array.isArray(d.log) ? d.log : [])].slice(0, 150); fixes.push(`${lines.length} real extension(s)`); }
   }
   return { d, fixes };
 }
