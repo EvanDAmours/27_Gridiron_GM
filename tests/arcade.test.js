@@ -72,7 +72,7 @@ test("the rush gets home when the quarterback holds it", () => {
   const S = setupPlay(g, lineups(g), "pass_deep"); snap(S);
   let frames = 0; while (tick(S, 1 / 60) && frames++ < 1500);
   assert.equal(S.phase, "done");
-  assert.ok(S.pick?.why === "sacked" || S.pick?.why === "late", `the play ended on the rush or a late throw: ${S.pick?.why}`);
+  assert.ok(["sacked", "late", "hurried"].includes(S.pick?.why), `the play ended on the rush or a late throw: ${S.pick?.why}`);
 });
 
 test("nobody moves faster than his legs allow", () => {
@@ -102,4 +102,21 @@ test("the retro renderer draws a play without throwing", async () => {
   throwTo(S, S.aim); let n = 0; while (tick(S, 1 / 60) && n++ < 900) R.drawRetro(ctx, cam, S, teams, g, {});
   assert.ok(calls.fillRect > 100 && calls.drawImage == null, "drew pixels (no sheets loaded here, so no images)");
   const f = cam.toField(...cam.toScreen(42, -7)); assert.ok(Math.abs(f.x - 42) < 1e-6 && Math.abs(f.y + 7) < 1e-6, "camera round-trips");
+});
+
+test("a kick plays out and books one engine play", async () => {
+  const { setupKick, kickFlick, tickKick } = await import("../src/arcade/kick.js");
+  const { g } = newGame(1, 2, { rand });
+  runPlay(g); toYourBall(g);
+  g.yard = 70; g.down = 4; g.toGo = 8;
+  const plays = g.plays, K = setupKick(g, lineups(g), "fg");
+  assert.equal(K.dist, 47);
+  const ev = kickFlick(K, 12, 0.3);
+  assert.ok(ev && (ev.type === "fg" || ev.type === "fg_miss" || ev.type === "penalty"), `a kick result: ${ev?.type}`);
+  let n = 0; while (tickKick(K, 1 / 60) && n++ < 1000);
+  assert.equal(K.phase, "done"); assert.equal(g.plays, plays + 1);
+  toYourBall(g); g.yard = 30; g.down = 4; g.toGo = 9;
+  const P = setupKick(g, lineups(g), "punt"); const pev = kickFlick(P, 10, -1);
+  assert.ok(pev && (pev.type === "punt" || pev.type === "penalty"), `a punt: ${pev?.type}`);
+  n = 0; while (tickKick(P, 1 / 60) && n++ < 1000); assert.equal(P.phase, "done");
 });

@@ -9,7 +9,7 @@ import { HALF, ELIGIBLE } from "./play.js";
 
 const BASE = `${import.meta.env?.BASE_URL ?? "/"}sprites/`;
 const POSE = { QB: "qb", RB: "rb", WR: "wr", TE: "te", LT: "ol", LG: "ol", C: "ol", RG: "ol", RT: "ol", DL: "dl", LB: "lb", CB: "db", S: "db" };
-export const PLAYER_H = 3.3; // a standing quarterback, in yards (big, like Retro Bowl)
+export const PLAYER_H = 2.9; // a standing quarterback, in yards (big, like Retro Bowl)
 const SQUASH = 0.42; // the field's depth is foreshortened: a yard across is this much of a yard along
 
 // ---- sprite sheets (loaded once per club) ----
@@ -72,6 +72,14 @@ const shadow = (ctx, cam, x, y, r = 0.9) => { const [sx, sy] = cam.toScreen(x, y
 function poseFor(S, e, t) {
   const moving = Math.hypot(e.vx, e.vy) > 1.2, stride = Math.floor(t * 7) % 2 === 0;
   const hasBall = S.ball.holder === e.key;
+  if (S.kind) { // a kick: the kicker swings through, the holder kneels, the line holds
+    const t0 = S.ball.flight?.t0 ?? 9;
+    if (e.key === "K") return [S.phase === "presnap" || t < t0 - 0.45 ? "c1" : t < t0 + 0.4 ? "c2" : "c3", true];
+    if (e.key === "H") return ["c5", true];
+    if (e.key === "S0" && S.kind === "punt") return [hasBall ? (stride ? "a1" : "a2") : moving ? (stride ? "a5" : "a6") : "db", hasBall || moving];
+    if (e.side === "off") return [POSE[e.p.pos] === "qb" ? "ol" : POSE[e.p.pos] || "ol", false];
+    return [POSE[e.p.pos] || "db", false];
+  }
   if (S.phase === "presnap") return [POSE[e.p.pos] || "db", false];
   if (e.key === "QB") {
     if (S.thrownAt && t - S.thrownAt < 0.5) return ["a8", true];
@@ -117,10 +125,12 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   for (let i = 0; i < 9; i++) { const yd = 10 + i * 10, x = yardAt(yd); if (x < -40 || x > W + 40) continue; const n = String(yd > 50 ? 100 - yd : yd); const [, y1] = cam.toScreen(0, -HALF + 6), [, y2] = cam.toScreen(0, HALF - 9); pixText(ctx, n, x - s * 0.9, y1, Math.max(1, Math.round(s * 0.16)), "rgba(255,255,255,.75)"); pixText(ctx, n, x - s * 0.9, y2, Math.max(1, Math.round(s * 0.16)), "rgba(255,255,255,.75)"); }
   // end-zone names
   for (const [yd, t] of [[-10, teams.user], [100, teams.opp]]) { const x = yardAt(yd + 5); if (x < -200 || x > W + 200) continue; const [, y] = cam.toScreen(0, 0); ctx.save(); ctx.translate(x, y); ctx.rotate(-Math.PI / 2); pixText(ctx, t.name, 0, -s * 0.6, Math.max(1, Math.round(s * 0.2)), "rgba(255,255,255,.85)", "center"); ctx.restore(); }
+  // the uprights, on each goal line, seen side-on
+  for (const yd of [0, 100]) { const x = Math.round(yardAt(yd)); if (x < -20 || x > W + 20) continue; const [, gy] = cam.toScreen(0, 0); const h = s * 5.5; ctx.fillStyle = "#ffd700"; ctx.fillRect(x - 2, Math.round(gy - h), 4, Math.round(h)); ctx.fillRect(x - s * 1.1, Math.round(gy - h), Math.round(s * 2.2), 3); ctx.fillRect(x - s * 1.1, Math.round(gy - h - s * 2), 3, Math.round(s * 2)); ctx.fillRect(x + s * 1.1 - 3, Math.round(gy - h - s * 2), 3, Math.round(s * 2)); }
   if (!S) return;
   // the line of scrimmage and the line to gain
   const vline = (yd, color) => { const x = Math.round(yardAt(yd)); if (x < 0 || x > W) return; ctx.fillStyle = color; ctx.fillRect(x, Math.round(top), Math.max(2, lw * 2), Math.round(depth)); };
-  vline(S.los, "rgba(60,120,255,.8)"); if (S.firstDown < 100) vline(S.firstDown, "rgba(255,220,0,.9)");
+  vline(S.los, "rgba(60,120,255,.8)"); if (S.firstDown < 100 && !S.kind) vline(S.firstDown, "rgba(255,220,0,.9)");
   // routes, shown faintly before the snap and while the quarterback holds it (Retro Bowl shows them)
   if (S.phase === "presnap" || (S.phase === "live" && S.ball.holder === "QB")) {
     ctx.setLineDash([Math.max(2, s * 0.25), Math.max(2, s * 0.25)]); ctx.lineWidth = Math.max(1, s * 0.08); ctx.strokeStyle = "rgba(255,255,255,.45)";
@@ -136,8 +146,8 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1.5, s * 0.1); ctx.beginPath(); ctx.ellipse(ax, ay, s * 1.1, s * 1.1 * SQUASH, 0, 0, Math.PI * 2); ctx.stroke();
     ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fill();
   }
-  // players, far to near so the near ones overlap the far ones
-  const ents = Object.values(S.ents).sort((a, b) => a.y - b.y);
+  // players, far to near so the near ones overlap the far ones; the man with the ball on top
+  const ents = Object.values(S.ents).sort((a, b) => (a.key === S.ball.holder) - (b.key === S.ball.holder) || a.y - b.y);
   for (const e of ents) {
     const t = e.side === "off" ? teams.user : teams.opp, away = e.side === "def";
     const facing = Math.abs(e.vx) > 0.5 ? Math.sign(e.vx) : e.side === "off" ? 1 : -1;

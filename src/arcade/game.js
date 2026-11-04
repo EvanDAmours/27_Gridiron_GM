@@ -3,6 +3,7 @@
 // playtesting. Touch the field to snap and pull back to throw; swipe up and down to steer a runner.
 import { newGame, lineups, runPlay, simOpponentDrive, situation } from "./bridge.js";
 import { setupPlay, snap, tick, throwTo, juke, PLAY_NAMES } from "./play.js";
+import { setupKick, kickFlick, tickKick } from "./kick.js";
 import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawButtons, preload, pixText } from "./retro.js";
 
 const PULL = 3.2; // the throw goes this many times the pull-back, the other way, on the screen
@@ -42,7 +43,7 @@ export class ArcadeGame {
   }
   call(c) {
     const g = this.g;
-    if (c === "punt" || c === "fg") { const ev = runPlay(g, c); this.S = null; this.banner = ev ? { title: resultTitle(ev), text: ev.text, sub: null } : null; this.mode = "kick"; this.refresh(); return; }
+    if (c === "punt" || c === "fg") { const K = setupKick(g, lineups(g), c); this.S = K; this.cam.camX = K.ball.x + this.cam.lead; this.mode = "play"; this.refresh(); return; }
     const P = setupPlay(g, lineups(g), c); this.S = P; this.cam.camX = P.ball.x + this.cam.lead; this.mode = "play"; this.refresh();
   }
 
@@ -55,13 +56,14 @@ export class ArcadeGame {
   update(dt, now = performance.now()) {
     const P = this.S, cam = this.cam, m = this.mode;
     if (P && cam) {
-      const live = tick(P, dt);
+      const live = P.kind ? tickKick(P, dt) : tick(P, dt);
       // the camera leads the ball a little; with a throw in the air it frames the ball and where it's going
       const f = P.ball.flight, over = P.phase === "tackle" || P.phase === "fall" || P.phase === "done";
       const want = f ? (P.ball.x + f.to.x) / 2 + 2 : P.ball.x + (over ? 0 : cam.lead);
       cam.camX += (want - cam.camX) * Math.min(1, dt * (f ? 3.5 : 5));
+      cam.camX = Math.max(-10 + (cam.W * 0.42) / cam.s, Math.min(112 - (cam.W * 0.58) / cam.s, cam.camX)); // never past the end zones
       if (!live && P.phase === "done" && m === "play") {
-        const ev = P.result || P.ev; this.banner = { title: resultTitle(ev), text: P.text || ev?.text || "", sub: P.pick ? pickNote(P.pick) : null };
+        const ev = P.result || P.ev; this.banner = { title: resultTitle(ev), text: P.text || ev?.text || "", sub: P.kind ? kickNote(P) : P.pick ? pickNote(P.pick) : null };
         this.mode = "result"; this.refresh();
       }
     }
@@ -76,7 +78,10 @@ export class ArcadeGame {
     drawRetro(ctx, cam, P, teams, this.g, { ring: true });
     drawHud(ctx, cam, st, teams);
     this.buttons = [];
-    if (m === "play" && P) {
+    if (m === "play" && P && P.kind) {
+      if (P.phase === "presnap") { drawDownBox(ctx, cam, P.kind === "fg" ? `${P.dist} YARD FIELD GOAL` : "PUNT", "#fff"); pixText(ctx, "FLICK UP THE FIELD TO KICK", cam.W / 2, cam.H - Math.round(cam.s * 0.9), Math.max(2, Math.round(cam.s * 0.1)), "#fff", "center"); }
+      if (this.touch && P.phase === "presnap") { const [bx, by] = cam.toScreen(P.ball.x, P.ball.y); ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.setLineDash([6, 6]); ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + (this.touch.cx - this.touch.px), by + (this.touch.cy - this.touch.py)); ctx.stroke(); ctx.setLineDash([]); }
+    } else if (m === "play" && P) {
       const line = P.phase === "presnap" ? `${ordinal(st.down)} & ${st.toGo >= 100 - st.yard ? "goal" : st.toGo} - ${PLAY_NAMES[P.call]}` : P.phase === "live" && P.ball.holder === "QB" ? "PULL BACK TO THROW" : P.phase === "carry" ? "SWIPE TO STEER" : null;
       if (line) drawDownBox(ctx, cam, line, P.phase === "presnap" ? "#fff" : "#ffd166");
       if (P.phase === "presnap") pixText(ctx, "TOUCH THE FIELD TO SNAP", cam.W / 2, cam.H - Math.round(cam.s * 0.9), Math.max(2, Math.round(cam.s * 0.1)), "#fff", "center");
@@ -106,13 +111,15 @@ export class ArcadeGame {
     if (m === "opp") { this.feed.shown = this.feed.list.length; this.feed.at = 0; return; }
     if (m !== "play" || !P) return;
     this.cv.setPointerCapture?.(e.pointerId);
+    if (P.kind) { this.touch = { ...p, cx: p.px, cy: p.py, moved: 0 }; return; } // a kick: the flick is read when you let go
     if (P.phase === "presnap") snap(P);
     this.touch = { ...p, moved: 0 };
     if (P.phase === "carry") P.steer = this.cam.toField(p.px, p.py).y;
   }
   onMove(e) {
     const t = this.touch, P = this.S, cam = this.cam; if (!t || !P) return;
-    const p = this.pt(e); t.moved = Math.max(t.moved, Math.hypot(p.px - t.px, p.py - t.py));
+    const p = this.pt(e); t.moved = Math.max(t.moved, Math.hypot(p.px - t.px, p.py - t.py)); t.cx = p.px; t.cy = p.py;
+    if (P.kind) return;
     if (P.phase === "live" && P.ball.holder === "QB") {
       // pulling back from where you touched aims the throw the other way, mirrored on the screen
       const qb = P.ents.QB, [qx, qy] = cam.toScreen(qb.x, qb.y);
@@ -127,10 +134,12 @@ export class ArcadeGame {
   }
   onUp() {
     const t = this.touch, P = this.S; this.touch = null; if (!t || !P) return;
+    if (P.kind) { if (t.moved > 12 && P.phase === "presnap") { const cam = this.cam; kickFlick(P, (t.cx - t.px) / cam.s, (t.cy - t.py) / (cam.s * 0.42)); } return; }
     if (P.phase === "live" && P.ball.holder === "QB" && P.aim && t.moved > 6) throwTo(P, P.aim);
     P.aim = null; P.steer = null;
   }
 }
 
+export const kickNote = (P) => P.kind === "fg" && P.flick ? (P.flick.made ? "RIGHT DOWN THE MIDDLE" : P.flick.short ? "SHORT - FLICK HARDER" : P.flick.wide ? "WIDE - FLICK STRAIGHTER" : "PUSHED IT") : "";
 export const resultTitle = (ev) => !ev ? "" : ev.td ? "TOUCHDOWN!" : ev.type === "int" ? "INTERCEPTED" : ev.type === "sack" ? "SACKED" : ev.type === "fumble" ? "FUMBLE" : ev.type === "inc" ? "INCOMPLETE" : ev.type === "fg" ? "FIELD GOAL" : ev.type === "fg_miss" ? "NO GOOD" : ev.type === "punt" ? "PUNT" : ev.type === "penalty" ? "FLAG" : ev.firstDown ? "FIRST DOWN" : `${ev.yards >= 0 ? "+" : ""}${ev.yards} YARDS`;
 export const pickNote = (p) => p.why === "sacked" ? "THE RUSH GOT HOME" : p.target == null ? "" : `${p.open ? "OPEN" : "COVERED"}${p.def != null ? ` BY ${p.def} YD` : ""}${p.err != null ? ` - ${p.err <= 1 ? "ON THE MONEY" : p.err <= 2.2 ? "CATCHABLE" : "OFF TARGET"}` : ""}${p.why === "hurried" ? " - HURRIED" : p.why === "late" ? " - HELD IT TOO LONG" : ""}`;

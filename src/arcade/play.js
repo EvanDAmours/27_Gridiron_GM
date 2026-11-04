@@ -19,8 +19,8 @@ export const topSpeed = (p) => 6.3 + (clamp(p?.spd ?? 70, 40, 99) - 60) / 39 * 3
 const accelOf = (p) => 9 + (clamp(p?.acc ?? 70, 40, 99) - 60) / 39 * 9;
 
 // Pre-snap spots: [yards behind the line (-), lateral]. The offense's right is +y.
-const OFF_SPOTS = { LT: [-1, -6.4], LG: [-1, -3.2], C: [-1, 0], RG: [-1, 3.2], RT: [-1, 6.4], TE: [-1.2, 9.6], X: [-1, -21], Z: [-1, 21], SLOT: [-2.5, -14], QB: [-5, 0], RB: [-7, 1.5] };
-const DEF_SPOTS = { DL0: [1.6, -5.2], DL1: [1.6, -1.6], DL2: [1.6, 1.6], DL3: [1.6, 5.2], LB0: [5.5, 4.5], LB1: [5.5, -3.5], CB0: [6, -21], CB1: [6, 21], CB2: [5, -14], S0: [14, 0], S1: [10, 9] };
+const OFF_SPOTS = { LT: [-1, -7.2], LG: [-1, -3.6], C: [-1, 0], RG: [-1, 3.6], RT: [-1, 7.2], TE: [-1.2, 10.8], X: [-1, -21.5], Z: [-1, 21.5], SLOT: [-2.5, -15], QB: [-5, 0], RB: [-7, 1.8] };
+const DEF_SPOTS = { DL0: [1.6, -5.8], DL1: [1.6, -1.8], DL2: [1.6, 1.8], DL3: [1.6, 5.8], LB0: [5.5, 5], LB1: [5.5, -4], CB0: [6, -21.5], CB1: [6, 21.5], CB2: [5, -15], S0: [14, 0], S1: [10, 9] };
 const OL_VS = { DL0: "LT", DL1: "LG", DL2: "RG", DL3: "RT" };
 export const ELIGIBLE = ["X", "Z", "SLOT", "TE", "RB"];
 const LINE = ["LT", "LG", "C", "RG", "RT"];
@@ -82,12 +82,12 @@ export function snap(S) {
   for (const k of ["DL0", "DL1", "DL2", "DL3"]) {
     const d = ents[k], o = ents[OL_VS[k]]; if (!d) continue;
     const rush = isPass ? R(d.p, "passRush", d.p.ovr) : R(d.p, "runStop", d.p.ovr), blk = isPass ? R(o?.p, "passBlock", o?.p?.ovr) : R(o?.p, "runBlock", o?.p?.ovr);
-    S.shed[k] = clamp(1.5 + (blk - rush) * 0.045 + rnd(S) * 2.2, 0.9, 6);
+    S.shed[k] = clamp(2.0 + (blk - rush) * 0.045 + rnd(S) * 2.6, 1.2, 7);
     d.mode = "rush";
   }
   for (const k of ["LB0", "LB1", "CB0", "CB1", "CB2", "S0", "S1"]) if (ents[k]) ents[k].mode = "cover";
   ents.QB.mode = isPass ? "dropback" : "handoff";
-  if (!isPass) { S.handoffAt = 0.7; S.lane = call === "run_outside" ? (rnd(S) < 0.5 ? -13 : 13) : (rnd(S) < 0.5 ? -3.8 : 3.8); }
+  if (!isPass) { S.handoffAt = 0.7; S.lane = call === "run_outside" ? (rnd(S) < 0.5 ? -14 : 14) : (rnd(S) < 0.5 ? -4.2 : 4.2); }
 }
 
 // ---------- movement ----------
@@ -225,7 +225,10 @@ export function tick(S, dt) {
       const f = ball.flight, near = hyp(f.to.x - d.x, f.to.y - d.y), left = f.t0 + f.T - S.t;
       const behind = mine && ents[mine] && ents[mine].x > d.x + 0.3 && f.to.x > ents[mine].x; // trailing his man with the ball coming over his shoulder
       if (S.t - f.t0 < (behind ? 0.55 : 0.3)) { if (mine && ents[mine]) mirror(d, ents[mine], ents[mine].x - 0.8, ents[mine].y, dt, 0.95); else brake(d, dt); continue; } // seeing it
-      if (k === S.cover[f.target] || near < left * d.top * 0.95 + 1.5) steer(d, f.to.x, f.to.y, dt, 1); else brake(d, dt);
+      // he plays the man until the ball is nearly there (he can't know the spot), then the ball
+      const tgt = f.target && ents[f.target];
+      if (k === S.cover[f.target] || near < left * d.top * 0.95 + 1.5) { if (tgt && left > 0.35) steer(d, tgt.x + tgt.vx * 0.25, tgt.y + tgt.vy * 0.25, dt, 1); else steer(d, f.to.x, f.to.y, dt, 1); }
+      else brake(d, dt);
       continue;
     }
     if (carrier && carrier.key !== "QB") { steer(d, ...xy(intercept(d, carrier)), dt, 1.05); continue; }
@@ -358,7 +361,7 @@ export function throwTo(S, P, why = null) {
   const tgt = best ? ents[best] : null;
   if (tgt) { tgt.mode = "adjust"; tgt.tx = land.x; tgt.ty = land.y; }
   const [rusher, near] = nearestDef(S, qb.x, qb.y);
-  const hurried = why || (rusher && near < 1.9 ? "hurried" : null); // a man in his face as he lets it go
+  const hurried = why || (rusher && near < 1.5 ? "hurried" : null); // a man in his face as he lets it go
   S.ball.holder = null; S.thrownAt = S.t; qb.mode = "watch";
   S.ball.flight = { from: { x: qb.x, y: qb.y }, to: land, t0: S.t, T, arc: clamp(dist / 11, 0.7, 4), target: best, hurried };
   // a hurried or wild throw sails: the spot drifts
