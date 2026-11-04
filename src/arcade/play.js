@@ -206,7 +206,7 @@ export function tick(S, dt) {
     const d = ents[k]; if (!d || d.down > 0 || d === carrier || d.heldUntil > S.t) continue;
     const o = ents[OL_VS[k]];
     if (d.mode === "rush") { if (S.t < S.shed[k]) steer(d, o.x + (isPass ? 1.0 : 1.3), o.y + (d.y > o.y ? 0.5 : -0.5), dt, 0.7); else d.mode = "free"; }
-    if (d.mode === "free") { if (carrier && !over) steer(d, ...xy(intercept(d, carrier)), dt, 1.05); else brake(d, dt); }
+    if (d.mode === "free") { if (carrier && !over) steer(d, ...xy(intercept(d, carrier)), dt, 1.0); else brake(d, dt); }
   }
   // the pass rush gets home: a sack
   if (S.phase === "live" && isPass && ball.holder === "QB") {
@@ -223,15 +223,22 @@ export function tick(S, dt) {
     if (over) { brake(d, dt); continue; }
     if (ball.flight) {
       const f = ball.flight, near = hyp(f.to.x - d.x, f.to.y - d.y), left = f.t0 + f.T - S.t;
-      const behind = mine && ents[mine] && ents[mine].x > d.x + 0.3 && f.to.x > ents[mine].x; // trailing his man with the ball coming over his shoulder
-      if (S.t - f.t0 < (behind ? 0.55 : 0.3)) { if (mine && ents[mine]) mirror(d, ents[mine], ents[mine].x - 0.8, ents[mine].y, dt, 0.95); else brake(d, dt); continue; } // seeing it
-      // he plays the man until the ball is nearly there (he can't know the spot), then the ball
+      // a cover man stays in his coverage (same lag, same trail) until the ball is nearly down,
+      // then lunges for it; anyone else close enough breaks on the spot once he's seen it
       const tgt = f.target && ents[f.target];
-      if (k === S.cover[f.target] || near < left * d.top * 0.95 + 1.5) { if (tgt && left > 0.35) steer(d, tgt.x + tgt.vx * 0.25, tgt.y + tgt.vy * 0.25, dt, 1); else steer(d, f.to.x, f.to.y, dt, 1); }
+      if (mine && ents[mine] && left > 0.3) {
+        const r = ents[mine], cov = Math.max(R(d.p, "manCov", 0), R(d.p, "coverage", 0), d.p.ovr || 70), lag = 0.28 + Math.max(0, 90 - cov) * 0.025, kk = Math.min(1, dt / lag);
+        d.rv ||= { vx: 0, vy: 0 }; d.rv.vx += (r.vx - d.rv.vx) * kk; d.rv.vy += (r.vy - d.rv.vy) * kk;
+        // (a loose grip on him now: if he slows for the ball, his man is carried past him)
+        mirror(d, r, r.x - 0.8, r.y + (r.y > 0 ? -0.6 : 0.6), dt, 1, 0.45, d.rv); continue;
+      }
+      if (S.t - f.t0 < 0.45) { brake(d, dt); continue; } // seeing it
+      if (left <= 0.3 || near < left * d.top * 0.9 + 1.0) steer(d, f.to.x, f.to.y, dt, 1);
+      else if (tgt) steer(d, tgt.x + tgt.vx * 0.25, tgt.y + tgt.vy * 0.25, dt, 0.9);
       else brake(d, dt);
       continue;
     }
-    if (carrier && carrier.key !== "QB") { steer(d, ...xy(intercept(d, carrier)), dt, 1.05); continue; }
+    if (carrier && carrier.key !== "QB") { steer(d, ...xy(intercept(d, carrier)), dt, 1.02); continue; }
     if (!isPass) { // the run: linebackers read it, then fill; the secondary comes late
       const read = k.startsWith("LB") ? 0.7 : k.startsWith("S") ? 1.0 : 1.4;
       if (S.t < read) { brake(d, dt); continue; }
@@ -241,13 +248,13 @@ export function tick(S, dt) {
     if (mine && ents[mine]) {
       // man: on his hip, shaded inside; a better cover man stays tighter and reads the break sooner
       const r = ents[mine], cov = Math.max(R(d.p, "manCov", 0), R(d.p, "coverage", 0), d.p.ovr || 70);
-      const q = clamp(0.97 + (cov - 78) * 0.003, 0.88, 1.05), trail = (r.mode === "settle" ? 0.5 : 0.8) + Math.max(0, 85 - cov) * 0.02, in_ = r.y > 0 ? -0.7 : 0.7;
+      const q = clamp(0.97 + (cov - 78) * 0.003, 0.88, 1.04), trail = (r.mode === "settle" ? 0.6 : 1.0) + Math.max(0, 85 - cov) * 0.025, in_ = r.y > 0 ? -0.7 : 0.7;
       // he reads the receiver's moves a beat late (later for a lesser cover man): what he mirrors is
       // a smoothed copy of the receiver's velocity, so a sharp cut opens a window before he reacts
-      const lag = 0.2 + Math.max(0, 90 - cov) * 0.02, k = Math.min(1, dt / lag);
+      const lag = 0.28 + Math.max(0, 90 - cov) * 0.025, k = Math.min(1, dt / lag);
       d.rv ||= { vx: 0, vy: 0 }; d.rv.vx += (r.vx - d.rv.vx) * k; d.rv.vy += (r.vy - d.rv.vy) * k;
       const lx = r.x - r.vx * 0.05, ly = r.y - r.vy * 0.05;
-      mirror(d, r, lx - trail, ly + in_, dt, q, 1.25, d.rv);
+      mirror(d, r, lx - trail, ly + in_, dt, q, 0.9, d.rv);
     } else if (k === "S0") {
       // the free safety: deeper than the deepest route, drifting toward it
       let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.x > S.los + 4 && (!deep || e.x > deep.x)) deep = e; }
@@ -283,17 +290,17 @@ export function tick(S, dt) {
     // a loose runner leans away from a tackler in his path when you aren't steering
     const lean = S.steer == null && d && dd < 4 && d.x > carrier.x - 0.5 ? (carrier.y > d.y ? 2 : -2) : 0;
     // a receiver secures the catch before he's at full stride
-    const fresh = S.catchAt != null && S.t - S.catchAt < 0.5 ? 0.8 : 1, stagger = S.stagger > S.t ? 0.7 : 1, burst = S.burstUntil > S.t ? 1.12 : 1;
+    const fresh = S.catchAt != null && S.t - S.catchAt < 0.3 ? 0.88 : 1, stagger = S.stagger > S.t ? 0.7 : 1, burst = S.burstUntil > S.t ? 1.12 : 1;
     steer(carrier, carrier.x + 8, clamp(wantY + lean, -HALF + 0.3, HALF - 0.3), dt, fresh * stagger * burst);
     if (carrier.x >= 100) { score(S); return true; }
     if (Math.abs(carrier.y) >= HALF - 0.4) { outOfBounds(S); return true; }
     const closing = d ? ((d.vx - carrier.vx) * (carrier.x - d.x) + (d.vy - carrier.vy) * (carrier.y - d.y)) / Math.max(0.1, dd) : 0; // yards/s he's gaining
     const dSpeed = d ? hyp(d.vx, d.vy) : 0;
-    if (d && dd < 1.1 + clamp(closing, 0, 4) * 0.1 + (dSpeed > 5 ? 0.5 : 0)) { // a man at full stride can lay out for him
+    if (d && dd < 1.0 + clamp(closing, 0, 4) * 0.1 + (dSpeed > 5 ? 0.4 : 0)) { // a man at full stride can lay out for him
       // the tackle, or a broken one: elusiveness against his tackling, and a man can't be broken twice
       const el = Math.max(R(carrier.p, "elusiveness", 60), R(carrier.p, "breakTkl", 60), R(carrier.p, "yac", 60)), tk = R(d.p, "tackling", d.p.ovr || 70);
       // (a man who just caught it hasn't got his feet under him; a broken tackle still knocks him off stride)
-      const pBreak = d.missed ? 0 : clamp(0.06 + (el - tk) * 0.004 + (S.broke ? -0.05 : 0), 0.02, 0.25) * fresh;
+      const pBreak = d.missed ? 0 : clamp(0.09 + (el - tk) * 0.004 + (S.broke ? -0.05 : 0), 0.03, 0.3) * (fresh < 1 ? 0.6 : 1);
       if (rnd(S) < pBreak) { d.down = 0.7; d.missed = true; S.broke++; S.stagger = S.t + 0.45; carrier.vx *= 0.55; carrier.vy *= 0.55; S.log.push(`${d.p.name} misses`); }
       else { tackle(S, d); return true; }
     }
@@ -384,12 +391,12 @@ function arrive(S) {
   const catchR = tgt ? 1.9 + (R(tgt.p, "catching", R(tgt.p, "receiving", 70)) - 70) * 0.015 : 0;
   ball.flight = null; ball.h = 0;
   if (S.booked) { endAt(S, S.ev, "fall", 0.8); S.log.push("thrown away"); return; }
-  S.pick = { ...S.pick, err: +dR.toFixed(1), def: +dD.toFixed(1) };
+  S.pick = { ...S.pick, err: +dR.toFixed(1), def: +dD.toFixed(1), defKey: d?.key, defCover: d && tgt ? S.cover[f.target] === d.key : null };
   // a defender chasing from behind (short of the catch along the throw, with the ball going over
   // his head to the man in front of him) can't play it unless he's right on him
   const ux = ball.x - f.from.x, uy = ball.y - f.from.y, un = hyp(ux, uy) || 1;
-  const trailing = tgt && d && ((d.x - tgt.x) * ux + (d.y - tgt.y) * uy) / un < -1.0;
-  const open = dD > 1.8 || (trailing && dD > 1.4);
+  const trailing = tgt && d && ((d.x - tgt.x) * ux + (d.y - tgt.y) * uy) / un < -0.6;
+  const open = dD > 1.8 || (trailing && dD > 1.0);
   let want;
   if (tgt && dR <= catchR + 1.3) {
     // on his hands: an open man catches it (the odd drop); a covered one wins it on his hands

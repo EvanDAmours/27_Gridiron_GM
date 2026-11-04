@@ -38,7 +38,10 @@ export class ArcadeGame {
   advance() {
     const g = this.g; this.banner = null;
     if (g.done) { this.mode = "final"; this.refresh(); return; }
-    if (g.koNext || g.poss !== "h") { this.feed = { list: simOpponentDrive(g).filter((e) => e.text), shown: 0, at: performance.now() }; this.mode = "opp"; this.refresh(); return; }
+    if (g.koNext || g.poss !== "h") {
+      const evs = simOpponentDrive(g).filter((e) => e.text).flatMap((e) => (e.note ? [e, { text: `-- ${e.note} --`, note: true }] : [e]));
+      this.feed = { list: evs, shown: 0, at: performance.now() }; this.mode = "opp"; this.refresh(); return;
+    }
     this.S = null; this.mode = "pick"; this.refresh();
   }
   call(c) {
@@ -49,7 +52,8 @@ export class ArcadeGame {
 
   loop(now) {
     const dt = Math.min(0.05, (now - (this.last || now)) / 1000); this.last = now;
-    this.update(dt, now); this.draw();
+    const t0 = performance.now(); this.update(dt, now); this.draw();
+    (this.frameMs ||= []).push(performance.now() - t0); if (this.frameMs.length > 600) this.frameMs.shift();
     this.raf = requestAnimationFrame((t) => this.loop(t));
   }
   // one step of the game at a fixed dt (the browser loop and the playtest harness both use it)
@@ -63,7 +67,7 @@ export class ArcadeGame {
       cam.camX += (want - cam.camX) * Math.min(1, dt * (f ? 3.5 : 5));
       cam.camX = Math.max(-10 + (cam.W * 0.42) / cam.s, Math.min(112 - (cam.W * 0.58) / cam.s, cam.camX)); // never past the end zones
       if (!live && P.phase === "done" && m === "play") {
-        const ev = P.result || P.ev; this.banner = { title: resultTitle(ev), text: P.text || ev?.text || "", sub: P.kind ? kickNote(P) : P.pick ? pickNote(P.pick) : null };
+        const ev = P.result || P.ev; this.banner = { title: resultTitle(ev), text: P.text || ev?.text || "", sub: ev?.note ? String(ev.note).toUpperCase() : P.kind ? kickNote(P) : P.pick ? pickNote(P.pick) : null };
         this.mode = "result"; this.refresh();
       }
     }
@@ -94,7 +98,7 @@ export class ArcadeGame {
       const f = this.feed, px = Math.max(2, Math.round(cam.s * 0.08)), lines = f.list.slice(Math.max(0, f.shown - 5), f.shown);
       ctx.fillStyle = "rgba(8,10,16,.9)"; ctx.fillRect(0, cam.H - px * 8 * 6.5, cam.W, px * 8 * 6.5);
       pixText(ctx, `${teams.opp.name} ball`, px * 2, cam.H - px * 8 * 6.2, px, "#9aa7b2");
-      lines.forEach((e, i) => pixText(ctx, e.text.slice(0, Math.floor((cam.W - px * 4) / (6 * px))), px * 2, cam.H - px * 8 * 5 + i * px * 8, px, e.td || e.turnover ? "#ffd166" : "#fff"));
+      lines.forEach((e, i) => pixText(ctx, e.text.slice(0, Math.floor((cam.W - px * 4) / (6 * px))), px * 2, cam.H - px * 8 * 5 + i * px * 8, px, e.td || e.turnover || e.note ? "#ffd166" : "#fff"));
       pixText(ctx, "TAP TO SKIP", cam.W - px * 2, cam.H - px * 8 * 6.2, px, "rgba(255,255,255,.6)", "right");
     }
     if ((m === "result" || m === "kick" || m === "final") && this.banner) { const b = this.banner; drawBanner(ctx, cam, b.title, b.text, b.sub, teams.user.clr); }

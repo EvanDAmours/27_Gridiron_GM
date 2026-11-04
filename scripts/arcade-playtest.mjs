@@ -13,7 +13,7 @@ function human(S, call, state) {
   // throw once someone is open (or on a clock), to where he'll be when the ball lands
   if (call.startsWith("pass") && S.phase === "live" && S.ball.holder === "QB" && !state.thrown) {
     let best = null, bs = -1;
-    for (const r of ELIGIBLE) { const e = S.ents[r]; if (e.mode === "back" || e.mode === "block" || (e.delay && S.t < e.delay + 0.3) || Math.hypot(e.vx, e.vy) < 3) continue; const s = separation(S, r) - (e.x < S.los ? 2 : 0); if (s > bs) { bs = s; best = r; } }
+    for (const r of ELIGIBLE) { const e = S.ents[r]; if (e.mode === "back" || e.mode === "block" || (e.delay && S.t < e.delay + 0.3) || Math.hypot(e.vx, e.vy) < 3) continue; const s = separation(S, r) - (e.x < S.los ? 2 : 0) - (r === "RB" ? 2.5 : 0); if (s > bs) { bs = s; best = r; } }
     if (state.greedy) { const deepest = ELIGIBLE.filter((r) => S.ents[r].mode === "route" || S.ents[r].mode === "stride").sort((a, b) => S.ents[b].x - S.ents[a].x)[0]; if (deepest) { best = deepest; bs = separation(S, best); } } // forces one deep now and then
     const open = bs > 3.2, clock = S.t > skill.patience + 1.8 || (S.pressureAt && S.t - S.pressureAt > skill.react);
     if (best && S.t > Math.max(0.9, skill.patience) && (open || clock)) {
