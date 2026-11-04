@@ -3,7 +3,7 @@
 // the distance and straight enough for the uprights (and the engine agrees); a punt flies by the
 // engine's own distance and the flick picks the side. Units as in play.js.
 import { resolvePlay, bookPat } from "./bridge.js";
-import { HALF } from "./play.js";
+import { HALF, windNow, wxField } from "./play.js";
 import * as K from "./ratings.js";
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -36,18 +36,21 @@ export function kickFlick(S, dxYd, dyYd) {
   S.phase = "live"; S.t = 0;
   if (S.kind === "fg") {
     // the distance the flick is good for: full length (the whole pull) reaches his range
-    const range = 44 + (legStr - 85) * 1.1 + 6; const power = clamp(len / 11, 0, 1.15) * range;
+    const wd = windNow(S.g), W = wxField(S.g);
+    // a wind at his back adds yards, one in his face takes them; a bad day (rain, snow, cold) takes some too
+    const range = 44 + (legStr - 85) * 1.1 + 6 + wd.x * 0.6 - (W.kick || 0) * 0.5; const power = clamp(len / 11, 0, 1.15) * range;
     const need = S.dist, short = power < need - 1;
     // the uprights are 18.5 feet wide: six yards; a wobble from his own accuracy adds to the angle
     const wobble = (Math.random() - 0.5) * (0.05 + Math.max(0, 92 - acc) * 0.004) * (need / 35);
-    const off = Math.abs(Math.tan(angle + wobble) * need), wide = off > 4.2;
+    const drift = wd.y * clamp(need / 26, 1.2, 2.6) * 0.35; // a crosswind pushes it as it flies
+    const off = Math.abs(Math.tan(angle + wobble) * need + drift), wide = off > 4.2;
     const good = !short && !wide;
     // an extra point is all yours (the engine books what the flick did); a field goal the engine has to agree with
     const r = S.pat ? { ev: bookPat(S.g, false, good) } : resolvePlay(S.g, "fg", { types: [good ? "fg" : "fg_miss"], fallback: [good ? "fg_miss" : "fg"] }, null, 12);
     S.ev = S.result = r.ev; S.text = r.ev?.text || "";
     const made = S.pat ? good : r.ev?.type === "fg";
     S.flick = { angle: angle + wobble, power, need, short, wide, made };
-    const T = clamp(need / 26, 1.2, 2.6), endX = Math.min(110, S.los + (made ? need + 2 : short ? need - 6 - Math.random() * 6 : need)), endY = clamp(Math.tan(angle + wobble) * (endX - S.los) + S.ball.y, -HALF + 0.5, HALF - 0.5);
+    const T = clamp(need / 26, 1.2, 2.6), endX = Math.min(110, S.los + (made ? need + 2 : short ? need - 6 - Math.random() * 6 : need)), endY = clamp(Math.tan(angle + wobble) * (endX - S.los) + S.ball.y + drift * (endX - S.los) / need, -HALF + 0.5, HALF - 0.5);
     S.ball.flight = { from: { x: S.ball.x, y: S.ball.y }, to: { x: endX, y: endY }, t0: 0.7, T, arc: clamp(need / 10, 2.5, 5.5), target: null, kick: true };
     S.endAt = 0.7 + T + 1.3;
     return r.ev;

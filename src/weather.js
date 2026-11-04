@@ -27,6 +27,16 @@ export const WX = {
   heavySnow: { label: "Heavy snow", icon: "", snow: 2, run: 0.15, comp: -0.07, int: 0.008, fum: 2.0, fg: -0.12, runYds: -0.5, kick: 8, go: 1.4 },
 };
 export const wxOf = (key) => WX[key] || WX.clear;
+// A game day in a club's city at the height of the season (the arcade's "auto" weather): its own
+// rain and snow odds with the late-season snow weighting, a windy day now and then; a dome is dome.
+export function rollWeather(ab, rand = Math.random) {
+  if (!ab || ROOF.has(ab)) return "dome";
+  const r = rand(), heavy = rand() < HEAVY, snow = (SNOW[ab] || 0) * 1.25, rain = RAIN[ab] ?? 0.1;
+  if (r < snow) return heavy ? "heavySnow" : "lightSnow";
+  if (r < snow + rain) return heavy ? "heavyRain" : "lightRain";
+  if (r < snow + rain + 0.12) return "wind";
+  return "clear";
+}
 export const isWet = (key) => !!(WX[key]?.rain || WX[key]?.snow);
 
 // FNV-1a with a final mix: keys that differ only at the end (the weather roll and the heavy roll)

@@ -101,6 +101,7 @@ export function setupPlay(g, L, call) {
   // (near the goal line the secondary can't line up as deep: everyone fits in front of the end line)
   for (const [k, p] of Object.entries(defList)) { const [dx, dy] = DEF_SPOTS[k]; if (p) ents[k] = mk(k, p, "def", Math.min(los + dx, 106.5 - (k === "S0" ? 0 : 2)), dy); }
   for (const k of [...LINE, "DL0", "DL1", "DL2", "DL3"]) if (ents[k]) { ents[k].top *= 0.72; ents[k].acc *= 0.8; }
+  { const W = wxField(g), snow = W.snow || 0, rain = W.rain || 0; if (snow || rain) for (const e of Object.values(ents)) { e.top *= 1 - 0.035 * snow - 0.01 * rain; e.acc *= 1 - 0.12 * snow - 0.05 * rain; } } // bad footing
   // man assignments: the engine's cover man for each receiver, if he's out there
   const cover = {};
   for (const r of ELIGIBLE) { const cm = L.cover[r]; const k = cm && Object.keys(defList).find((d) => defList[d]?.id === cm.id); if (k) cover[r] = k; }
@@ -220,6 +221,15 @@ function intercept(d, c) {
   if (!(T > 0) || !Number.isFinite(T)) T = clamp(hyp(rx, ry) / v, 0, 2.5) + 0.4; // can't get there: aim ahead of him anyway
   T = Math.min(T, 3);
   return { x: c.x + c.vx * T, y: clamp(c.y + c.vy * T, -HALF, HALF) };
+}
+// The day's weather on the field (g.wxE from weather.js; g.wind set by the arcade): snow takes the
+// footing, rain the grip, and the wind carries the ball. The teams change ends every quarter, so
+// a wind at your back in the first quarter is in your face in the second.
+export const wxField = (g) => g?.wxE || {};
+export function windNow(g) {
+  const w = g?.wind; if (!w || !w.mph) return { x: 0, y: 0, mph: 0 };
+  const flip = g.qtr % 2 === 0 ? -1 : 1; // (overtime keeps the fourth quarter's ends)
+  return { x: w.x * flip, y: w.y * flip, mph: w.mph };
 }
 export const separation = (S, r) => { const e = S.ents[r], c = S.ents[S.cover[r]]; return c ? hyp(e.x - c.x, e.y - c.y) : 9; };
 // the nearest defender who could make a play (a lineman still tied up with his blocker can't)
@@ -541,6 +551,9 @@ export function passPlan(S, P, kind = "auto") {
   const vel = bullet ? 27 + (arm - 70) * 0.2 : 22 + (arm - 70) * 0.15 - (dist < 12 ? 3 : 0); // yards a second (a short lob floats)
   const T = clamp(dist / vel, 0.22, 2.0);
   const arc = bullet ? clamp(10.7 * T * T / 8, 0.15, 3) : clamp(dist / 12, 1.4, 4); // a bullet still has to climb over the middle (g*T^2/8, in yards)
+  // the wind carries it, a lob (up in it longer) far more than a rope; the aim shows where it'll come down
+  const wd = windNow(S.g), carry = (bullet ? 0.05 : 0.22) * T;
+  if (wd.mph) land = { x: clamp(land.x + wd.x * carry, S.los - 12, 109), y: clamp(land.y + wd.y * carry, -HALF + 0.3, HALF - 0.3) };
   return { land, dist, bullet, T, arc, short, reach, kind: bullet ? "bullet" : "lob", auto: kind === "auto" };
 }
 export function throwTo(S, P, why = null, kind = "auto") {
@@ -552,7 +565,7 @@ export function throwTo(S, P, why = null, kind = "auto") {
   // his accuracy (and touch, on a lofted ball): the ball drifts from the spot, more on a long throw
   // (a bullet fired a long way is hard to put on a man: past BULLET_MAX it sprays)
   const accu = K.qbAccuracy(qb.p, !bullet), wild = bullet && dist > BULLET_MAX ? 1 + (dist - BULLET_MAX) / 10 : 1;
-  const sig = (0.25 + Math.max(0, 95 - accu) * 0.05) * (0.5 + dist / 18) * wild * (bullet ? 1 : 1 + Math.max(0, dist - 22) / 30), /* a long lob is the hardest ball to drop in a bucket */ g1 = () => (rnd(S) + rnd(S) + rnd(S) - 1.5) * 1.6;
+  const sig = (0.25 + Math.max(0, 95 - accu) * 0.05) * (0.5 + dist / 18) * wild * (bullet ? 1 : 1 + Math.max(0, dist - 22) / 30) * (1 + 0.08 * ((wxField(S.g).rain || 0) + (wxField(S.g).snow || 0))), /* a long lob is the hardest ball to drop in a bucket */ g1 = () => (rnd(S) + rnd(S) + rnd(S) - 1.5) * 1.6;
   land = { x: clamp(land.x + g1() * sig, S.los - 12, 109), y: clamp(land.y + g1() * sig, -HALF + 0.3, HALF - 0.3) };
   let best = null, bestD = 99;
   for (const r of ELIGIBLE) {
@@ -604,7 +617,7 @@ function arrive(S) {
     const dive = dR > catchR ? 1 - (dR - catchR) / Math.max(0.5, reachR) : 1; // one just out of reach: a dive, less likely the further
     const first = tgt && d && dR < dD - 0.4 ? (deepLob ? 0.05 : 0.12) : 0; // he got to it first
     const pCatch = (open ? clamp(0.985 - (85 - hands) * 0.003, 0.9, 0.995) : clamp((deepLob ? 0.44 : 0.7) + first + (traffic - ballSk) * 0.007 + (dD - 0.8) * (deepLob ? 0.1 : 0.22) - (dR > 1.2 ? 0.08 : 0), 0.18, 0.9)) * clamp(dive, 0, 1);
-    if (rnd(S) < pCatch * (f.bullet && hyp(f.to.x - f.from.x, f.to.y - f.from.y) > 24 ? 0.85 : 1)) { // (a long rope is a hard ball to hang on to)
+    if (rnd(S) < pCatch * (f.bullet && hyp(f.to.x - f.from.x, f.to.y - f.from.y) > 24 ? 0.85 : 1) * (1 - 0.035 * (wxField(S.g).rain || 0) - 0.02 * (wxField(S.g).snow || 0))) { // (a wet ball is a slippery one) // (a long rope is a hard ball to hang on to)
       ball.x = tgt.x; ball.y = tgt.y; ball.holder = f.target; tgt.mode = "carry"; S.catchAt = S.t; S.phase = "carry";
       if (d && dD < 2.5) { d.down = Math.max(d.down, clamp(0.4 - (dD < 0.8 ? 0.2 : 0) - K.edge(K.tackling(d.p)) * 0.005, 0.15, 0.6)); d.vx *= 0.3; d.vy *= 0.3; } // he played the ball, not the man
       S.pick.open = open; S.log.push(`caught ${open ? "open" : "contested"}`);

@@ -11,17 +11,21 @@
 // Either way, the pass button (Q on a keyboard) switches AUTO / BULLET / LOB, and the arc you see
 // while aiming is the throw you'll get.
 import { TEAMS, newGame, lineups, runPlay, simOpponentDrive, situation, snapshot, restore, patWaiting, bookPat } from "./bridge.js";
-import { setupPlay, snap, tick, throwTo, juke, dive, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
+import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
 import { setupKick, kickFlick, tickKick } from "./kick.js";
 import { sfx, unlock, toggleMute, isMuted } from "./sfx.js";
 import { FX } from "./fx.js";
-import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawMenu, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
+import { rollWeather } from "../weather.js";
+import { teamKey } from "../teamUniforms.js";
+import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawMenu, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
 
 const PULL = 3.2; // touch: the throw goes this many times the pull-back, the other way, on the screen
 const spotOf = (yard) => (yard === 50 ? "MIDFIELD" : yard < 50 ? `OWN ${yard}` : `OPP ${100 - yard}`);
 const ordinal = (n) => ["1ST", "2ND", "3RD", "4TH"][n - 1] || `${n}TH`;
 // quarter lengths on offer (minutes): short like Retro Bowl by default, up to a full NFL quarter
 const QMINS = [3, 5, 8, 15];
+// the weather setting: AUTO rolls the home club's own city (a dome stays a dome)
+const WXPICKS = ["auto", "clear", "rain", "snow", "wind"];
 const CALLS = [["pass_quick", "QUICK"], ["pass_medium", "MEDIUM"], ["pass_deep", "DEEP"], ["run_inside", "INSIDE RUN"], ["run_outside", "OUTSIDE RUN"]];
 const KICK_CYCLE = 1.1; // seconds for the kick meter to fill (then it falls back)
 const inside = (p, b) => b && p.px >= b.x && p.px <= b.x + b.w && p.py >= b.y && p.py <= b.y + b.h;
@@ -33,7 +37,7 @@ export class ArcadeGame {
     this.cv = canvas; this.onQuit = onQuit; this.rand = rand;
     this.userTi = userTi; this.oppTi = oppTi; this.teams = teams || { user: TEAMS[userTi], opp: TEAMS[oppTi] };
     this.fx = new FX(); this.time = 0; this.hype = 0; this.fade = 1;
-    this.qMin = 5; try { const q = +localStorage.getItem("arcade_qmin"); if (QMINS.includes(q)) this.qMin = q; } catch { /* storage unavailable */ } this.passKind = "bullet"; try { const k = localStorage.getItem("arcade_pass"); if (k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
+    this.wxPick = "auto"; try { const w = localStorage.getItem("arcade_wx"); if (WXPICKS.includes(w)) this.wxPick = w; } catch { /* storage unavailable */ } this.qMin = 5; try { const q = +localStorage.getItem("arcade_qmin"); if (QMINS.includes(q)) this.qMin = q; } catch { /* storage unavailable */ } this.passKind = "bullet"; try { const k = localStorage.getItem("arcade_pass"); if (k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
     this.touch = null; this.mouse = null; this.keys = new Set(); this.buttons = []; this.chips = {}; this.menuFocus = "user"; this.paused = false;
     this.S = null; this.g = null; this.mode = "menu"; this.banner = null; this.feed = { list: [], shown: 0, at: 0 };
     for (const n of ["onDown", "onMove", "onUp", "onKey", "onKeyUp", "fit", "noMenu"]) this[n] = this[n].bind(this);
@@ -90,7 +94,12 @@ export class ArcadeGame {
   start() {
     this.teams = { user: TEAMS[this.userTi], opp: TEAMS[this.oppTi] };
     preload(this.teams.user); preload(this.teams.opp);
-    this.g = newGame(this.userTi, this.oppTi, { ...(this.rand ? { rand: this.rand } : {}), pat: true, qLen: this.qMin * 60 }).g; this.sit = situation(this.g);
+    const R = this.rand || Math.random, pick = this.wxPick;
+    const wx = pick === "auto" ? rollWeather(teamKey(this.teams.user), R) : pick === "rain" ? (R() < 0.5 ? "lightRain" : "heavyRain") : pick === "snow" ? (R() < 0.5 ? "lightSnow" : "heavySnow") : pick;
+    // the wind: a breeze most days, a real wind on a windy one (and rough with a storm); any direction
+    const mph = wx === "dome" ? 0 : Math.round(wx === "wind" ? 16 + R() * 10 : /heavy/i.test(wx) ? 8 + R() * 10 : R() * 9), ang = R() * Math.PI * 2;
+    const wind = mph ? { mph, x: Math.cos(ang) * mph * 0.49, y: Math.sin(ang) * mph * 0.49 } : null; // (1 mph = 0.49 yards a second)
+    this.g = newGame(this.userTi, this.oppTi, { ...(this.rand ? { rand: this.rand } : {}), pat: true, qLen: this.qMin * 60, wx, wind }).g; this.sit = situation(this.g);
     this.fade = 1; this.advance();
   }
   // what happens next: the other team's drive (and any kickoff), or your next call
@@ -211,15 +220,17 @@ export class ArcadeGame {
     const ctx = cv.getContext("2d"); ctx.setTransform(cv.width / cam.W, 0, 0, cv.height / cam.H, 0, 0); ctx.imageSmoothingEnabled = false;
     this.fx.k = uiPx(cam); // effects scale with the screen
     this.buttons = []; this.chips = {};
-    if (this.mode === "menu") { this.buttons = drawMenu(ctx, cam, { teams: TEAMS, user: this.userTi, opp: this.oppTi, time: this.time, focus: this.menuFocus, mobile: this.mobile, fs: this.fsState, qMin: this.qMin }); this.fx.draw(ctx, cam.W, cam.H, pixText); return; }
+    if (this.mode === "menu") { this.buttons = drawMenu(ctx, cam, { teams: TEAMS, user: this.userTi, opp: this.oppTi, time: this.time, focus: this.menuFocus, mobile: this.mobile, fs: this.fsState, qMin: this.qMin, wxPick: this.wxPick }); this.fx.draw(ctx, cam.W, cam.H, pixText); return; }
     const m = this.mode, P = this.S, st = this.sit, teams = this.teams;
     // the field, with the shake and the zoom punch
     const [ox, oy] = this.fx.offset(), z = this.fx.zoom;
     ctx.save(); ctx.translate(cam.W / 2 + ox, cam.H / 2 + oy); ctx.scale(z, z); ctx.translate(-cam.W / 2, -cam.H / 2);
-    drawRetro(ctx, cam, P, teams, this.g, { ring: true, time: this.time, hype: this.hype, passKind: this.passKind });
+    drawRetro(ctx, cam, P, teams, this.g, { ring: true, time: this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE });
     ctx.restore();
+    drawWeather(ctx, cam, { wx: this.g?.wxE, time: this.time, wind: windNow(this.g) });
     this.fx.draw(ctx, cam.W, cam.H, pixText);
     drawHud(ctx, cam, st, teams, { to: this.g?.to });
+    if (this.g && m !== "final") drawWxChip(ctx, cam, this.g.wxE, windNow(this.g));
     const px = uiPx(cam), hintY = cam.H - px * 9;
     if (m === "play" && P && P.kind) this.drawKick(ctx, P, hintY);
     else if (m === "play" && P) {
@@ -312,6 +323,7 @@ export class ArcadeGame {
   cycleKind() { this.setKind(this.passKind === "bullet" ? "lob" : "bullet"); }
   menuAction(k) {
     if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; }
+    if (k === "wx") { this.wxPick = WXPICKS[(WXPICKS.indexOf(this.wxPick) + 1) % WXPICKS.length]; try { localStorage.setItem("arcade_wx", this.wxPick); } catch { /* ignore */ } sfx.select?.(); return; }
     if (k === "len") { this.qMin = QMINS[(QMINS.indexOf(this.qMin) + 1) % QMINS.length]; try { localStorage.setItem("arcade_qmin", this.qMin); } catch { /* ignore */ } sfx.select?.(); return; }
     if (k === "go") { if (this.fsState === "off") this.fullscreen(true); this.start(); return; }
     if (k === "gm") { this.onQuit ? this.onQuit() : (location.href = import.meta.env?.BASE_URL ?? "/"); return; }

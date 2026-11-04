@@ -28,7 +28,7 @@ const GL = {
   A: "01110 10001 10001 11111 10001 10001 10001", B: "11110 10001 10001 11110 10001 10001 11110", C: "01110 10001 10000 10000 10000 10001 01110", D: "11100 10010 10001 10001 10001 10010 11100", E: "11111 10000 10000 11110 10000 10000 11111", F: "11111 10000 10000 11110 10000 10000 10000", G: "01110 10001 10000 10111 10001 10001 01111", H: "10001 10001 10001 11111 10001 10001 10001", I: "01110 00100 00100 00100 00100 00100 01110", J: "00111 00010 00010 00010 00010 10010 01100", K: "10001 10010 10100 11000 10100 10010 10001", L: "10000 10000 10000 10000 10000 10000 11111", M: "10001 11011 10101 10101 10001 10001 10001", N: "10001 10001 11001 10101 10011 10001 10001", O: "01110 10001 10001 10001 10001 10001 01110", P: "11110 10001 10001 11110 10000 10000 10000", Q: "01110 10001 10001 10001 10101 10010 01101", R: "11110 10001 10001 11110 10100 10010 10001", S: "01111 10000 10000 01110 00001 00001 11110", T: "11111 00100 00100 00100 00100 00100 00100", U: "10001 10001 10001 10001 10001 10001 01110", V: "10001 10001 10001 10001 10001 01010 00100", W: "10001 10001 10001 10101 10101 10101 01010", X: "10001 10001 01010 00100 01010 10001 10001", Y: "10001 10001 01010 00100 00100 00100 00100", Z: "11111 00001 00010 00100 01000 10000 11111",
   " ": "00000 00000 00000 00000 00000 00000 00000", ":": "00000 00100 00100 00000 00100 00100 00000", "&": "01100 10010 10100 01000 10101 10010 01101", "-": "00000 00000 00000 11111 00000 00000 00000", ".": "00000 00000 00000 00000 00000 01100 01100", "'": "00100 00100 00000 00000 00000 00000 00000", "+": "00000 00100 00100 11111 00100 00100 00000", ",": "00000 00000 00000 00000 00000 00100 01000", "!": "00100 00100 00100 00100 00100 00000 00100",
   "<": "00010 00100 01000 10000 01000 00100 00010", ">": "01000 00100 00010 00001 00010 00100 01000", "(": "00010 00100 01000 01000 01000 00100 00010", ")": "01000 00100 00010 00010 00010 00100 01000",
-  "/": "00001 00010 00010 00100 01000 01000 10000", "?": "01110 10001 00001 00010 00100 00000 00100", "%": "11001 11010 00010 00100 01000 01011 10011", "#": "01010 11111 01010 01010 01010 11111 01010",
+  "/": "00001 00010 00010 00100 01000 01000 10000", "?": "01110 10001 00001 00010 00100 00000 00100", "%": "11001 11010 00010 00100 01000 01011 10011", "#": "01010 11111 01010 01010 01010 11111 01010", "^": "00100 01110 10101 00100 00100 00100 00100",
 };
 export function pixText(ctx, text, x, y, px, color = "#fff", align = "left") {
   const t = String(text).toUpperCase(), w = t.length * 6 * px - px;
@@ -219,6 +219,33 @@ function standsTile(u, needH, teams, pose) {
   standsCache.set(key, cv); return cv;
 }
 
+// ---- the weather ----
+// Falling rain or snow over the whole picture (screen space, so no state: each drop's place is a
+// function of its index and the time), blown by the wind.
+export function drawWeather(ctx, cam, { wx, time = 0, wind } = {}) {
+  if (!wx || !(wx.rain || wx.snow)) return;
+  const { W, H } = cam, k = Math.max(1, Math.round(uiPx(cam) / 2)), wx_ = (wind?.x || 0) * 6, wy_ = (wind?.y || 0) * 2;
+  if (wx.rain) {
+    const n = 90 * wx.rain, len = 9 * k; ctx.strokeStyle = `rgba(190,215,240,${0.28 + 0.1 * wx.rain})`; ctx.lineWidth = k; ctx.beginPath();
+    for (let i = 0; i < n; i++) { const sp = 520 + hash(i, 1) * 260, x = ((hash(i, 2) * (W + 200) + (wx_ + 60) * time) % (W + 200) + W + 200) % (W + 200) - 100, y = ((hash(i, 3) * H + sp * time) % H); ctx.moveTo(x, y); ctx.lineTo(x - (wx_ + 60) * 0.03 * k, y + len); }
+    ctx.stroke();
+    ctx.fillStyle = `rgba(20,30,45,${0.08 * wx.rain})`; ctx.fillRect(0, 0, W, H); // a grey day
+  }
+  if (wx.snow) {
+    const n = 110 * wx.snow;
+    for (let i = 0; i < n; i++) { const sp = 30 + hash(i, 4) * 50, sz = k * (1 + Math.round(hash(i, 5) * 1.6)); const x = (((hash(i, 6) * W + (wx_ + Math.sin(time * 0.8 + i) * 12) * time) % W) + W) % W, y = (hash(i, 7) * H + sp * time) % H; ctx.fillStyle = "rgba(250,252,255,.85)"; ctx.fillRect(Math.round(x), Math.round(y), sz, sz); }
+  }
+}
+// The conditions under the scoreboard: the sky and the wind (its speed, and an arrow for which way
+// it blows relative to your drive: > at your back, < in your face).
+export function drawWxChip(ctx, cam, wx, wind) {
+  const px = Math.max(1, Math.round(uiPx(cam) * 0.75)), sky = wx?.label && wx.label !== "Clear" ? wx.label.toUpperCase() : "";
+  const arrow = !wind?.mph ? "" : Math.abs(wind.x) >= Math.abs(wind.y) ? (wind.x > 0 ? " >" : " <") : (wind.y < 0 ? " ^" : " V");
+  const text = [sky, wind?.mph ? `WIND ${wind.mph}${arrow}` : ""].filter(Boolean).join(" - "); if (!text) return;
+  const w = pixWidth(text, px) + px * 6, h = px * 10, x = px * 3, y = Math.round(uiPx(cam) * 13.5);
+  ctx.fillStyle = "rgba(8,10,16,.75)"; ctx.fillRect(x, y, w, h); pixText(ctx, text, x + px * 3, y + px * 2, px, "#cfe8ff");
+}
+
 export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   const { W, H, s, top, depth } = cam;
   ctx.imageSmoothingEnabled = false;
@@ -242,6 +269,14 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     const x0 = yardAt(yd), x1 = yardAt(yd + 5); if (x1 < 0 || x0 > W) continue;
     ctx.fillStyle = yd < 0 ? teams.user.clr : yd >= 100 ? teams.opp.clr : ((yd / 5) % 2 ? "#3f8f3a" : "#45993f");
     ctx.fillRect(Math.round(x0), Math.round(top), Math.round(x1 - x0) + 1, Math.round(depth));
+  }
+  // the weather on the turf: rain darkens and slicks it, snow lies on it (heavier snow, more of it)
+  const WX = opts.wx || {};
+  if (WX.rain) { ctx.fillStyle = `rgba(10,30,45,${0.12 * WX.rain})`; ctx.fillRect(0, Math.round(top), W, Math.round(depth)); }
+  if (WX.snow) {
+    ctx.fillStyle = `rgba(236,242,250,${0.22 + 0.2 * WX.snow})`; ctx.fillRect(0, Math.round(top), W, Math.round(depth));
+    // drifts: soft white patches that stay put on the field as it scrolls
+    for (let i = 0; i < 40 * WX.snow; i++) { const fx_ = hash(i, 3) * 120 - 10, fy = hash(i, 7) * 53.3 - HALF, [sx0, sy0] = cam.toScreen(fx_, fy); if (sx0 < -60 || sx0 > W + 60) continue; ctx.fillStyle = "rgba(248,250,255,.35)"; ctx.fillRect(Math.round(sx0), Math.round(sy0), Math.round(s * (1.5 + hash(i, 9) * 3)), Math.max(2, Math.round(s * 0.35))); }
   }
   // the near sideline and the strip below it
   ctx.fillStyle = "#e8e8e0"; ctx.fillRect(0, Math.round(top + depth), W, Math.max(2, s * 0.25));
@@ -505,7 +540,8 @@ export function drawMenu(ctx, cam, opts) {
   pixShadow(ctx, "KICK OFF", W / 2, ky + px * 3, Math.round(px * 1.4), "#fff", "center");
   boxes.push({ key: "go", x: kx, y: ky, w: kw, h: kh });
   // the game's length: tap to cycle the quarter length
-  if (opts.qMin) { const label = `QUARTERS: ${opts.qMin} MIN`, lw = pixWidth(label, px) + px * 8, lh = px * 11, lx = Math.round(W / 2 - lw / 2), ly = ky + kh + px * 4; ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(lx, ly, lw, lh); ctx.fillStyle = "#2c3744"; ctx.fillRect(lx, ly + lh - px, lw, px); pixText(ctx, label, W / 2, ly + px * 2, px, "#fff", "center"); boxes.push({ key: "len", x: lx, y: ly, w: lw, h: lh }); }
+  if (opts.qMin) { const label = `QUARTERS: ${opts.qMin} MIN`, lw = pixWidth(label, px) + px * 8, lh = px * 11, lx = Math.round(W / 2 - lw - px * 2), ly = ky + kh + px * 4; ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(lx, ly, lw, lh); ctx.fillStyle = "#2c3744"; ctx.fillRect(lx, ly + lh - px, lw, px); pixText(ctx, label, lx + lw / 2, ly + px * 2, px, "#fff", "center"); boxes.push({ key: "len", x: lx, y: ly, w: lw, h: lh });
+    if (opts.wxPick) { const wl = `WEATHER: ${opts.wxPick.toUpperCase()}`, ww = pixWidth(wl, px) + px * 8, wx0 = Math.round(W / 2 + px * 2); ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(wx0, ly, ww, lh); ctx.fillStyle = "#2c3744"; ctx.fillRect(wx0, ly + lh - px, ww, px); pixText(ctx, wl, wx0 + ww / 2, ly + px * 2, px, "#fff", "center"); boxes.push({ key: "wx", x: wx0, y: ly, w: ww, h: lh }); } }
   // full screen (or, on an iPhone, how to get it)
   if (opts.fs) { const label = opts.fs === "ios" ? "FULL SCREEN: SHARE > ADD TO HOME SCREEN" : opts.fs === "on" ? "EXIT FULL SCREEN" : mobile ? "FULL SCREEN" : "FULL SCREEN (F)"; const bw = pixWidth(label, px) + px * 6, bh = px * 11, bx = W - px * 3 - bw; ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(bx, px * 3, bw, bh); pixText(ctx, label, bx + bw / 2, px * 5, px, "#ffd166", "center"); if (opts.fs !== "ios") boxes.push({ key: "fs", x: bx, y: px * 3, w: bw, h: bh }); }
   // back to the GM game
