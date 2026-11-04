@@ -469,6 +469,19 @@ export function juke(S) {
   return false;
 }
 
+// A dive: the runner gives himself up for the last yard or two (Retro Bowl's swipe forward).
+// Up to ~2 yards, less with a tackler square in front of him; the play ends where he lands.
+export function dive(S) {
+  const c = S.ball.holder && S.ents[S.ball.holder];
+  if (!c || c.side !== "off" || c.key === "QB" && S.phase === "live" || S.phase !== "carry" || S.dived) return false;
+  S.dived = true;
+  let reach = 1.4 + clamp(hyp(c.vx, c.vy) / c.top, 0, 1) * 0.8; // a man at full speed goes further
+  for (const d of Object.values(S.ents)) if (d.side === "def" && d.down <= 0 && d.x > c.x && d.x - c.x < reach + 0.5 && Math.abs(d.y - c.y) < 1.0) reach = Math.max(0.4, d.x - c.x - 0.3); // stopped by the man in front
+  c.x = Math.min(101, c.x + reach); c.vx = Math.max(c.vx, 4); c.vy *= 0.3; S.log.push("dives");
+  if (c.x >= 100) score(S); else book(S, Math.round(c.x - S.los), "fall", 1.1);
+  return true;
+}
+
 // ---------- the throw ----------
 // Two kinds of throw. A BULLET is fired flat and fast: it beats the coverage to a man underneath
 // but can't get over a defender, and it gets wilder the further it goes. A LOB (touch pass) is

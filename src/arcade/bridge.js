@@ -1,7 +1,7 @@
 // The arcade mode's bridge to the real engine (playsim.js). Nothing here decides a play: the
 // engine does, through step(). This file builds the two sides from the shipped rosters, picks who's
 // on the field for the formation, and runs the engine for the drives you don't play.
-import { makeSide, createGame, step } from "../playsim.js";
+import { makeSide, createGame, step, playPat } from "../playsim.js";
 import { teamSnaps } from "../snaps.js";
 import M from "../data/madden27.json" with { type: "json" };
 import SP from "../data/special.json" with { type: "json" };
@@ -22,9 +22,10 @@ export function buildSide(ti) {
 }
 
 // A new game: you are always the home side ("h") so the field reads left to right for your drives.
-export function newGame(userTi, oppTi, { rand = Math.random } = {}) {
+export function newGame(userTi, oppTi, { rand = Math.random, pat = false } = {}) {
   const h = buildSide(userTi), a = buildSide(oppTi);
   const g = createGame(h.side, a.side, { rand, rec: true });
+  if (pat) g.patDefer = { h: true }; // you play your own extra points and two-point tries
   return { g, user: "h", home: h, away: a };
 }
 
@@ -97,3 +98,7 @@ export function simOpponentDrive(g, user = "h", max = 40) {
 }
 
 export const situation = (g) => ({ yard: g.yard, down: g.down, toGo: g.toGo, qtr: g.qtr, clock: g.clock, score: { ...g.score }, poss: g.poss, done: g.done, koNext: g.koNext, ot: g.ot });
+
+// After your touchdown: is the try waiting on you, and book it once the field has decided.
+export const patWaiting = (g) => !!g.patPending;
+export function bookPat(g, two, good) { return playPat(g, two, good); }

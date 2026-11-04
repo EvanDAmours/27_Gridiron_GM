@@ -5,7 +5,7 @@
 import SHEETS from "../pixel/teamSprites.json" with { type: "json" };
 import ACTS from "../pixel/actionSprites.json" with { type: "json" };
 import { teamKey } from "../teamUniforms.js";
-import { HALF, ELIGIBLE, passPlan, BULLET_RANGE, playDiagram } from "./play.js";
+import { HALF, ELIGIBLE, passPlan, BULLET_RANGE, BULLET_MAX, playDiagram } from "./play.js";
 
 const BASE = `${import.meta.env?.BASE_URL ?? "/"}sprites/`;
 const POSE = { QB: "qb", RB: "rb", WR: "wr", TE: "te", LT: "ol", LG: "ol", C: "ol", RG: "ol", RT: "ol", DL: "dl", LB: "lb", CB: "db", S: "db" };
@@ -99,6 +99,7 @@ function poseFor(S, e, t) {
     if (hasBall) return [moving ? (stride ? "a1" : "a2") : "qb", moving];
     return ["a3", true];
   }
+  if (S.dived && hasBall) return ["b2", true]; // laid out for the extra yard
   if ((S.phase === "tackle" || S.phase === "fall") && hasBall && t >= S.endAt - 0.55) return [S.result?.td ? "a7" : "b3", true];
   if (S.ball.flight && S.ball.flight.target === e.key && e.side === "off") return ["b1", true];
   if (e.down > 0) return ["b3", true];
@@ -109,23 +110,58 @@ function poseFor(S, e, t) {
   return [POSE[e.p.pos] || "db", false];
 }
 
+// ---- the crowd ----
+// One strip of stands, drawn once per size/colours/pose and cached: rows of fans on stepped
+// tiers (a dark step under each row), mostly in the home side's colours with a few empty
+// seats; rows further back are darker. pose 0 is seated; 1 and 2 are the two beats of a cheer.
+const standsCache = new Map();
+const hash = (a, b) => { const n = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return n - Math.floor(n); };
+function standsTile(u, needH, teams, pose) {
+  const rowH = u * 6, rows = Math.max(1, Math.ceil(needH / rowH)), seats = 40, sp = u * 4;
+  const key = `${u}|${rows}|${teams.user.clr}|${teams.opp.clr}|${pose}`;
+  if (standsCache.has(key)) return standsCache.get(key);
+  if (standsCache.size > 24) standsCache.clear();
+  if (typeof OffscreenCanvas === "undefined" && typeof document === "undefined") return null; // (no canvas: a headless test)
+  const cv = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(seats * sp, rows * rowH) : Object.assign(document.createElement("canvas"), { width: seats * sp, height: rows * rowH });
+  const c = cv.getContext("2d");
+  const shirts = [teams.user.clr, teams.user.clr, teams.user.clr, teams.user.ac || "#ddd", teams.opp.clr, teams.opp.clr, "#5b6478", "#7a6a58", "#3e4a5e", "#c9c2b0"];
+  const skin = ["#f1c9a5", "#d9a47c", "#a8754f", "#7a4f32", "#5c3a24"], hair = ["#2a1d14", "#4a3020", "#151515", "#8a6a3a", "#bbb"];
+  for (let r = 0; r < rows; r++) {
+    const y0 = r * rowH;
+    c.fillStyle = "#1a202c"; c.fillRect(0, y0, cv.width, rowH); // the seat back
+    c.fillStyle = "#262e3d"; c.fillRect(0, y0 + rowH - u, cv.width, u); // the step
+    for (let k = 0; k < seats; k++) {
+      const h = hash(k, r); if (h > 0.86) continue; // an empty seat
+      const x = k * sp + (r % 2 ? u * 2 : 0) % sp, up = pose && hash(k + 7, r + 3) < 0.7, jump = up && (pose === 2) === hash(k, r + 9) < 0.5 ? u : 0;
+      const shirt = shirts[Math.floor(hash(k + 1, r) * shirts.length)], sk = skin[Math.floor(hash(k + 2, r) * skin.length)];
+      const by = y0 + u * 3 - jump; // body, then head on top
+      c.fillStyle = shirt; c.fillRect(x, by, u * 3, u * 2);
+      c.fillStyle = sk; c.fillRect(x + u / 2, by - u * 2, u * 2, u * 2);
+      c.fillStyle = hair[Math.floor(hash(k + 3, r) * hair.length)]; c.fillRect(x + u / 2, by - u * 2, u * 2, Math.max(1, u / 2));
+      if (up) { c.fillStyle = sk; c.fillRect(x - u / 2, by - u * 2, u, u * 2); c.fillRect(x + u * 2.5, by - u * 2, u, u * 2); } // arms up
+    }
+  }
+  // depth: the back rows (the top of the strip) fall into shadow
+  const g = c.createLinearGradient(0, 0, 0, cv.height); g.addColorStop(0, "rgba(6,8,12,.6)"); g.addColorStop(1, "rgba(6,8,12,0)");
+  c.fillStyle = g; c.fillRect(0, 0, cv.width, cv.height);
+  standsCache.set(key, cv); return cv;
+}
+
 export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   const { W, H, s, top, depth } = cam;
   ctx.imageSmoothingEnabled = false;
-  // the stands: crowd pixels above the far sideline (and below the near one on a tall screen)
-  ctx.fillStyle = "#1a1f2b"; ctx.fillRect(0, 0, W, H);
-  const px = Math.max(2, Math.round(s * 0.18)), nearEdge = top + depth + s * 1.2;
-  // the crowd: fans in both clubs' colours; they sway, and jump when something happens (opts.hype)
-  const time = opts.time || 0, hype = opts.hype || 0, fanC = [teams.user.clr, teams.opp.clr, "#d9c3a5", "#3a4258", "#2b3346", teams.user.ac, "#1f2433"];
-  for (let yy = 0; yy < H; yy += px) {
-    if (yy > top - px && yy < nearEdge) continue;
-    const row = Math.floor(yy / px);
-    for (let xx = (row % 2) * px; xx < W; xx += px * 2) {
-      const n = Math.sin(xx * 12.9 + yy * 7.3) * 43758.5, f = n - Math.floor(n);
-      const jump = hype > 0 && Math.sin(time * 14 + f * 30) > 1 - hype * 1.4 ? -px : Math.sin(time * 2 + xx * 0.05 + f * 6) > 0.97 ? -px : 0;
-      ctx.fillStyle = fanC[Math.floor(f * fanC.length)]; ctx.fillRect(xx, yy + jump, px, px);
-    }
-  }
+  // the stands: tiers of fans above the far sideline (and below the near one on a tall screen)
+  ctx.fillStyle = "#121620"; ctx.fillRect(0, 0, W, H);
+  const px = Math.max(2, Math.round(s * 0.18)), nearEdge = top + depth + s * 1.2, wallTop = top - s * 0.9;
+  const time = opts.time || 0, hype = opts.hype || 0;
+  // calm until something happens; then the crowd is up, arms in the air, bouncing
+  const cheer = hype > 0.15 ? 1 + (Math.floor(time * 8) % 2) : 0;
+  const tile = standsTile(px, Math.max(wallTop, H - nearEdge), teams, cheer);
+  if (tile) { const ox = -(((cam.camX * s * 0.5) % tile.width) + tile.width) % tile.width; // the stands scroll at half the field's speed
+  for (let x = ox; x < W; x += tile.width) {
+    if (wallTop > 0) ctx.drawImage(tile, Math.round(x), Math.round(wallTop - tile.height));
+    if (H - nearEdge > px) ctx.drawImage(tile, Math.round(x), Math.round(nearEdge));
+  } }
   // the wall and the far sideline
   ctx.fillStyle = "#3b3f4a"; ctx.fillRect(0, top - s * 0.9, W, s * 0.9);
   // the grass, striped every five yards
@@ -220,7 +256,7 @@ function drawAim(ctx, cam, S, kind) {
   ctx.globalAlpha = 0.25; ctx.fillStyle = col; ctx.fill(); ctx.globalAlpha = 1;
   ctx.fillStyle = col; ctx.fillRect(Math.round(ax - 2), Math.round(ay - 2), 4, 4);
   // the label: BULLET or LOB (AUTO when the game picked it), and a warning when he can't reach it
-  const px = uiPx(cam), label = (plan.auto ? "AUTO " : "") + plan.kind.toUpperCase() + (plan.short ? " - TOO FAR" : "");
+  const px = uiPx(cam), label = (plan.auto ? "AUTO " : "") + plan.kind.toUpperCase() + (plan.short ? " - TOO FAR" : plan.bullet && plan.dist > BULLET_MAX ? " - WILD" : "");
   const w = pixWidth(label, px) + px * 4, flip = ax + r + px * 3 + w > cam.W, lx = Math.round(flip ? ax - r - px * 3 - w : ax + r + px * 3), ly = Math.round(ay - px * 4.5);
   ctx.fillStyle = "rgba(8,10,16,.85)"; ctx.fillRect(lx, ly, w, px * 9); ctx.fillStyle = col; ctx.fillRect(lx, ly + px * 9 - px, w, px);
   pixText(ctx, label, lx + w / 2, ly + px, px, plan.short ? "#ff8a7a" : col, "center");
@@ -296,7 +332,7 @@ export function drawPlayCards(ctx, cam, heading, items, color, { keys = false, h
   ctx.fillStyle = color; ctx.fillRect(0, top - px * 3, W, px);
   pixShadow(ctx, heading, W / 2, top, px, "#ffd166", "center");
   const boxes = [];
-  items.forEach(([key, label, kind], i) => {
+  items.forEach(([key, label, kind, shows], i) => {
     const c = i % cols, r = Math.floor(i / cols), x = Math.round(left + c * (cw + gap)), y = Math.round(top + px * 10 + r * (ch + gap));
     const on = hover === key;
     ctx.fillStyle = on ? "#2a3550" : "#161d2b"; ctx.fillRect(x, y, cw, ch);
@@ -308,7 +344,7 @@ export function drawPlayCards(ctx, cam, heading, items, color, { keys = false, h
     if (kind !== "kick") {
       const sx = dw / 34, sy = dh / 52, ox = dx + dw * 0.32, oy = dy + dh / 2, P = (q) => [ox + q.x * sx, oy + q.y * sy];
       ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(Math.round(ox), dy, 1, dh);
-      const D = playDiagram(key);
+      const D = playDiagram(shows || key);
       for (const [k, [sxp, syp]] of Object.entries(D.spots)) { const [a, b] = P({ x: sxp, y: syp }); ctx.fillStyle = k === "QB" ? "#ffd166" : "#fff"; ctx.fillRect(Math.round(a - 1), Math.round(b - 1), 3, 3); }
       ctx.lineWidth = Math.max(1, px * 0.6);
       for (const l of D.lines) {
@@ -335,8 +371,22 @@ export function drawChip(ctx, cam, x, y, label, { color = "#fff", active = false
   pixText(ctx, label, bx + w / 2, Math.round(y + (h - px * 7) / 2), px, color, "center");
   return { x: bx, y, w, h };
 }
+// A segmented switch (BULLET | LOB): each side is its own button, the chosen one lit in its
+// colour. Returns a box per side, keyed by item.
+export function drawSwitch(ctx, cam, x, y, items, pick, { big = false } = {}) {
+  const px = hudPx(cam), pad = big ? Math.max(px * 6, Math.round((48 - px * 7) / 2)) : px * 3, h = px * 7 + pad * (big ? 2 : 1.33);
+  const w = Math.max(...items.map((it) => pixWidth(it.label, px))) + pad * 2, boxes = {};
+  ctx.fillStyle = "rgba(8,10,16,.85)"; ctx.fillRect(x - px, y - px, w * items.length + px * 2, h + px * 2);
+  items.forEach((it, i) => {
+    const bx = x + i * w, on = it.key === pick;
+    ctx.fillStyle = on ? it.color : "rgba(26,34,52,.95)"; ctx.fillRect(bx, y, w - (i < items.length - 1 ? px : 0), h);
+    pixText(ctx, it.label, bx + w / 2, Math.round(y + (h - px * 7) / 2), px, on ? "#0b0e14" : it.color, "center");
+    boxes[it.key] = { x: bx, y, w, h };
+  });
+  return boxes;
+}
 export function drawHint(ctx, cam, text, y) {
-  const px = Math.max(2, Math.round(hudPx(cam) * 0.9)), w = pixWidth(text, px) + px * 6;
+  const px = Math.max(1, Math.min(Math.max(2, Math.round(hudPx(cam) * 0.9)), Math.floor((cam.W - 12) / (String(text).length * 6 + 6)))), w = pixWidth(text, px) + px * 6; // shrinks to fit a narrow screen
   ctx.fillStyle = "rgba(8,10,16,.7)"; ctx.fillRect(Math.round(cam.W / 2 - w / 2), Math.round(y - px * 2), Math.round(w), px * 11);
   pixText(ctx, text, cam.W / 2, y, px, "#fff", "center");
 }

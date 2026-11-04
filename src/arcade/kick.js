@@ -2,7 +2,7 @@
 // the direction and its length the power. A field goal is good when the flick is long enough for
 // the distance and straight enough for the uprights (and the engine agrees); a punt flies by the
 // engine's own distance and the flick picks the side. Units as in play.js.
-import { resolvePlay } from "./bridge.js";
+import { resolvePlay, bookPat } from "./bridge.js";
 import { HALF } from "./play.js";
 import * as K from "./ratings.js";
 
@@ -10,8 +10,8 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 // The kicking team: a line, two wings, the long snapper's man... kept to the eleven we have. The
 // holder kneels seven back, the kicker beside him; on a punt the punter stands fifteen back.
-export function setupKick(g, L, kind) {
-  const los = g.yard, ents = {}, mk = (key, p, side, x, y) => ({ key, p, side, x, y, vx: 0, vy: 0, face: side === "off" ? 1 : -1, top: 7, acc: 12, mode: "idle", down: 0 });
+export function setupKick(g, L, kind, { pat = false } = {}) {
+  const los = pat ? 85 : g.yard, /* the try: snapped from the 15 */ ents = {}, mk = (key, p, side, x, y) => ({ key, p, side, x, y, vx: 0, vy: 0, face: side === "off" ? 1 : -1, top: 7, acc: 12, mode: "idle", down: 0 });
   const line = [["LT", -7.2], ["LG", -3.6], ["C", 0], ["RG", 3.6], ["RT", 7.2]];
   for (const [k, y] of line) if (L.off[k]) ents[k] = mk(k, L.off[k], "off", los - 1, y);
   if (L.off.TE) ents.TE = mk("TE", L.off.TE, "off", los - 1.2, 10.8);
@@ -24,7 +24,7 @@ export function setupKick(g, L, kind) {
   for (const [i, p] of (L.def.CB || []).entries()) if (p) ents[`CB${i}`] = mk(`CB${i}`, p, "def", kind === "punt" ? los + 2 : los + 1.6, [-21, 21, -14][i]);
   for (const [i, p] of (L.def.S || []).entries()) if (p) ents[`S${i}`] = mk(`S${i}`, p, "def", kind === "punt" ? (i ? los + 8 : Math.min(106, los + 45)) : los + 1.6, [0, 14][i]);
   const dist = kind === "fg" ? 100 - los + 17 : null;
-  return { g, L, kind, los, firstDown: 100, t: 0, phase: "presnap", ents, cover: {}, ball: { x: ents.K.x + 0.5, y: kind === "fg" ? 0.6 : 0, h: 0, holder: "K", flight: null }, aim: null, steer: null, text: "", ev: null, result: null, pick: null, log: [], dist, kicker: k, flick: null, endAt: 0 };
+  return { g, L, kind, pat, los, firstDown: 100, t: 0, phase: "presnap", ents, cover: {}, ball: { x: ents.K.x + 0.5, y: kind === "fg" ? 0.6 : 0, h: 0, holder: "K", flight: null }, aim: null, steer: null, text: "", ev: null, result: null, pick: null, log: [], dist, kicker: k, flick: null, endAt: 0 };
 }
 
 // The flick: from where the touch started to where it ended (field yards). Power from its length,
@@ -42,9 +42,10 @@ export function kickFlick(S, dxYd, dyYd) {
     const wobble = (Math.random() - 0.5) * (0.05 + Math.max(0, 92 - acc) * 0.004) * (need / 35);
     const off = Math.abs(Math.tan(angle + wobble) * need), wide = off > 4.2;
     const good = !short && !wide;
-    const r = resolvePlay(S.g, "fg", { types: [good ? "fg" : "fg_miss"], fallback: [good ? "fg_miss" : "fg"] }, null, 12);
+    // an extra point is all yours (the engine books what the flick did); a field goal the engine has to agree with
+    const r = S.pat ? { ev: bookPat(S.g, false, good) } : resolvePlay(S.g, "fg", { types: [good ? "fg" : "fg_miss"], fallback: [good ? "fg_miss" : "fg"] }, null, 12);
     S.ev = S.result = r.ev; S.text = r.ev?.text || "";
-    const made = r.ev?.type === "fg";
+    const made = S.pat ? good : r.ev?.type === "fg";
     S.flick = { angle: angle + wobble, power, need, short, wide, made };
     const T = clamp(need / 26, 1.2, 2.6), endX = Math.min(110, S.los + (made ? need + 2 : short ? need - 6 - Math.random() * 6 : need)), endY = clamp(Math.tan(angle + wobble) * (endX - S.los) + S.ball.y, -HALF + 0.5, HALF - 0.5);
     S.ball.flight = { from: { x: S.ball.x, y: S.ball.y }, to: { x: endX, y: endY }, t0: 0.7, T, arc: clamp(need / 10, 2.5, 5.5), target: null, kick: true };

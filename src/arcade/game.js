@@ -10,12 +10,12 @@
 //    Space jukes; to kick, aim with the pointer and hold the button, let go at the top of the meter.
 // Either way, the pass button (Q on a keyboard) switches AUTO / BULLET / LOB, and the arc you see
 // while aiming is the throw you'll get.
-import { TEAMS, newGame, lineups, runPlay, simOpponentDrive, situation } from "./bridge.js";
-import { setupPlay, snap, tick, throwTo, juke, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
+import { TEAMS, newGame, lineups, runPlay, simOpponentDrive, situation, snapshot, restore, patWaiting, bookPat } from "./bridge.js";
+import { setupPlay, snap, tick, throwTo, juke, dive, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
 import { setupKick, kickFlick, tickKick } from "./kick.js";
 import { sfx, unlock, toggleMute, isMuted } from "./sfx.js";
 import { FX } from "./fx.js";
-import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawHint, drawMenu, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
+import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawMenu, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
 
 const PULL = 3.2; // touch: the throw goes this many times the pull-back, the other way, on the screen
 const spotOf = (yard) => (yard === 50 ? "MIDFIELD" : yard < 50 ? `OWN ${yard}` : `OPP ${100 - yard}`);
@@ -31,7 +31,7 @@ export class ArcadeGame {
     this.cv = canvas; this.onQuit = onQuit; this.rand = rand;
     this.userTi = userTi; this.oppTi = oppTi; this.teams = teams || { user: TEAMS[userTi], opp: TEAMS[oppTi] };
     this.fx = new FX(); this.time = 0; this.hype = 0; this.fade = 1;
-    this.passKind = "auto"; this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
+    this.passKind = "bullet"; try { const k = localStorage.getItem("arcade_pass"); if (k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
     this.touch = null; this.mouse = null; this.keys = new Set(); this.buttons = []; this.chips = {}; this.menuFocus = "user"; this.paused = false;
     this.S = null; this.g = null; this.mode = "menu"; this.banner = null; this.feed = { list: [], shown: 0, at: 0 };
     for (const n of ["onDown", "onMove", "onUp", "onKey", "onKeyUp", "fit", "noMenu"]) this[n] = this[n].bind(this);
@@ -79,12 +79,13 @@ export class ArcadeGame {
   start() {
     this.teams = { user: TEAMS[this.userTi], opp: TEAMS[this.oppTi] };
     preload(this.teams.user); preload(this.teams.opp);
-    this.g = newGame(this.userTi, this.oppTi, this.rand ? { rand: this.rand } : {}).g; this.sit = situation(this.g);
+    this.g = newGame(this.userTi, this.oppTi, this.rand ? { rand: this.rand, pat: true } : { pat: true }).g; this.sit = situation(this.g);
     this.fade = 1; this.advance();
   }
   // what happens next: the other team's drive (and any kickoff), or your next call
   advance() {
     const g = this.g; this.banner = null;
+    if (patWaiting(g)) { this.S = null; this.mode = "pat"; this.fade = Math.max(this.fade, 0.6); this.refresh(); return; } // your try after a touchdown
     if (g.done) { this.mode = "final"; this.refresh(); this.endBanner(); return; }
     if (g.koNext || g.poss !== "h") {
       const before = { ...g.score };
@@ -96,9 +97,16 @@ export class ArcadeGame {
   }
   call(c) {
     const g = this.g; this.fade = 0.5;
-    const P = c === "punt" || c === "fg" ? setupKick(g, lineups(g), c) : setupPlay(g, lineups(g), c);
+    const P = c === "xp" ? setupKick(g, lineups(g), "fg", { pat: true }) : c === "punt" || c === "fg" ? setupKick(g, lineups(g), c) : setupPlay(g, lineups(g), c);
     this.S = P; this.cam.camX = P.kind ? P.ball.x + this.cam.lead : holdX(this.cam, P); this.mode = "play"; this.kick = null; this.refresh();
     sfx.select?.();
+  }
+  // the try: kick it, or go for two (a real snap from the 2, played on a copy of the game)
+  patChoice(k) {
+    const g = this.g;
+    if (k === "xp") return this.call("xp");
+    this.two = { snap: snapshot(g) }; delete g.patPending; g.done = false; g.yard = 98; g.down = 1; g.toGo = 2;
+    this.S = null; this.mode = "pick"; this.refresh(); sfx.select?.();
   }
   endBanner() { const st = this.sit, lead = st.score.h - st.score.a; this.banner = { title: lead > 0 ? "YOU WIN!" : lead < 0 ? "YOU LOSE" : "TIE GAME", text: `${this.teams.user.name} ${st.score.h}, ${this.teams.opp.name} ${st.score.a}`, sub: null, at: performance.now(), hint: this.mobile ? "TAP FOR A NEW GAME" : "CLICK OR ENTER FOR A NEW GAME" }; if (lead > 0) { this.fx.confetti(this.cam.W, [this.teams.user.clr, this.teams.user.ac, "#ffd166", "#fff"]); sfx.touchdown(); } }
 
@@ -129,7 +137,9 @@ export class ArcadeGame {
       cam.camX += (want - cam.camX) * Math.min(1, dt * (f ? 3.5 : 5));
       cam.camX = Math.max(-10 + (cam.W * 0.42) / cam.s, Math.min(112 - (cam.W * 0.58) / cam.s, cam.camX)); // never past the end zones
       if (!going && P.phase === "done" && m === "play") {
-        const ev = P.result || P.ev;
+        let ev = P.result || P.ev;
+        // a two-point try was played on a scratch copy of the game from the 2: put the game back and book the try
+        if (this.two) { const good = !!ev?.td; restore(this.g, this.two.snap); this.two = null; ev = bookPat(this.g, true, good); P.text = ev?.text; P.pick = null; this.refresh(); }
         this.banner = { title: resultTitle(ev), text: P.text || ev?.text || "", sub: ev?.note ? String(ev.note).toUpperCase() : P.kind ? kickNote(P) : P.pick ? pickNote(P.pick) : null, at: now, accent: ev?.td || ev?.type === "fg" ? "#ffd166" : ev?.turnover || ev?.type === "int" || ev?.type === "fumble" ? "#ff8a7a" : ev?.firstDown ? "#ffd166" : "#fff" };
         this.mode = "result"; this.refresh();
       }
@@ -207,19 +217,23 @@ export class ArcadeGame {
       const throwing = P.phase === "live" && P.ball.holder === "QB", isPass = P.call.startsWith("pass");
       // the pass type button: always there on a pass play, until the ball is thrown
       if (isPass && (P.phase === "presnap" || throwing)) {
-        const k = this.passKind, label = `PASS: ${k.toUpperCase()}${this.mobile ? "" : " (Q)"}`;
         const big = this.mobile, ch = big ? Math.max(px * 19, 48) : px * 11;
-        this.chips.kind = drawChip(ctx, cam, px * 2, hintY - px * 4 - ch, label, { color: k === "auto" ? "#fff" : KIND_COLOR[k], active: true, big });
+        this.chips.kinds = drawSwitch(ctx, cam, px * 3, hintY - px * 4 - ch, [{ key: "bullet", label: "BULLET", color: KIND_COLOR.bullet }, { key: "lob", label: "LOB", color: KIND_COLOR.lob }], this.passKind, { big });
       }
       const hint = P.phase === "presnap" ? (this.mobile ? "TOUCH THE FIELD TO SNAP" : "CLICK OR SPACE TO SNAP")
-        : throwing ? (this.mobile ? "PULL BACK - LET GO TO THROW" : "AIM - CLICK TO THROW - RIGHT-CLICK TO LOB")
-        : P.phase === "carry" && P.ents[P.ball.holder]?.side === "off" ? (this.mobile ? "SWIPE TO STEER - FLICK TO JUKE" : "STEER WITH THE MOUSE OR W/S - SPACE TO JUKE") : null;
+        : throwing ? (this.mobile ? "PULL BACK - LET GO TO THROW" : "AIM - CLICK TO THROW - Q SWITCHES BULLET/LOB")
+        : P.phase === "carry" && P.ents[P.ball.holder]?.side === "off" ? (this.mobile ? "FLICK SIDEWAYS: JUKE - AHEAD: DIVE" : "STEER WITH MOUSE OR W/S - SPACE JUKES - E DIVES") : null;
       if (hint) drawHint(ctx, cam, hint, hintY);
     }
     if (m === "pick") {
       const items = CALLS.map(([k, l]) => [k, l, "play"]); if (st.down === 4) items.push(st.yard >= 58 ? ["fg", `FIELD GOAL ${100 - st.yard + 17}`, "kick"] : ["punt", "PUNT", "kick"]);
       const hover = this.input === "mouse" && this.mouse ? this.lastButtons?.find((b) => inside(this.mouse, b))?.key : null;
-      this.buttons = drawPlayCards(ctx, cam, `${ordinal(st.down)} & ${st.toGo >= 100 - st.yard ? "GOAL" : st.toGo} - ${spotOf(st.yard)} - PICK A PLAY`, items, teams.user.clr, { keys: !this.mobile, hover });
+      this.buttons = drawPlayCards(ctx, cam, this.two ? "TWO-POINT TRY - PICK A PLAY" : `${ordinal(st.down)} & ${st.toGo >= 100 - st.yard ? "GOAL" : st.toGo} - ${spotOf(st.yard)} - PICK A PLAY`, items, teams.user.clr, { keys: !this.mobile, hover });
+      this.lastButtons = this.buttons;
+    }
+    if (m === "pat") {
+      const hover = this.input === "mouse" && this.mouse ? this.lastButtons?.find((b) => inside(this.mouse, b))?.key : null;
+      this.buttons = drawPlayCards(ctx, cam, "TOUCHDOWN! - THE TRY", [["xp", "KICK THE PAT", "kick"], ["two", "GO FOR TWO", "play", "pass_quick"]], teams.user.clr, { keys: !this.mobile, hover });
       this.lastButtons = this.buttons;
     }
     if (m === "opp") this.drawDrive(ctx);
@@ -232,7 +246,7 @@ export class ArcadeGame {
   drawKick(ctx, P, hintY) {
     const cam = this.cam;
     if (P.phase !== "presnap") return;
-    drawDownBox(ctx, cam, P.kind === "fg" ? `${P.dist} YARD FIELD GOAL` : "PUNT", "#fff");
+    drawDownBox(ctx, cam, P.pat ? "EXTRA POINT" : P.kind === "fg" ? `${P.dist} YARD FIELD GOAL` : "PUNT", "#fff");
     const [bx, by] = cam.toScreen(P.ball.x, P.ball.y);
     // the aim: a dotted line from the ball (the touch flick's direction, or toward the pointer)
     let dir = null;
@@ -271,16 +285,18 @@ export class ArcadeGame {
   tapUI(p) {
     if (this.paused) { const b = this.buttons.find((b) => inside(p, b)); if (b) this.pauseAction(b.key); return true; }
     if (inside(p, this.chips.pause)) { this.paused = true; return true; }
-    if (inside(p, this.chips.kind)) { this.cycleKind(); return true; }
+    for (const [k, b] of Object.entries(this.chips.kinds || {})) if (inside(p, b)) { this.setKind(k); return true; }
     const m = this.mode;
     if (m === "menu") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.menuAction(b.key); return true; }
     if (m === "pick") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.call(b.key); return true; }
+    if (m === "pat") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.patChoice(b.key); return true; }
     if (m === "result") { this.advance(); return true; }
     if (m === "final") { this.mode = "menu"; this.S = null; return true; }
     if (m === "opp") { this.feed.shown = this.feed.list.length; this.feed.at = 0; return true; }
     return false;
   }
-  cycleKind() { this.passKind = PASS_KINDS[(PASS_KINDS.indexOf(this.passKind) + 1) % PASS_KINDS.length]; sfx.select?.(); }
+  setKind(k) { if (this.passKind !== k) sfx.select?.(); this.passKind = k; try { localStorage.setItem("arcade_pass", k); } catch { /* ignore */ } }
+  cycleKind() { this.setKind(this.passKind === "bullet" ? "lob" : "bullet"); }
   menuAction(k) {
     if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; }
     if (k === "go") { if (this.fsState === "off") this.fullscreen(true); this.start(); return; }
@@ -312,7 +328,7 @@ export class ArcadeGame {
     if (P.kind) { if (P.phase === "presnap") this.kick = { charging: true, t: 0 }; return; }
     if (P.phase === "presnap") { snap(P); return; }
     if (P.phase === "live" && P.ball.holder === "QB") { const f = this.cam.toField(p.px, p.py), qb = P.ents.QB; throwTo(P, { x: Math.max(qb.x - 1, f.x), y: f.y }, null, lob ? "lob" : this.passKind); P.aim = null; return; }
-    if (P.phase === "carry") juke(P);
+    if (P.phase === "carry") { if (lob) dive(P); else juke(P); } // right-click dives
   }
   onMove(e) {
     const p = this.pt(e);
@@ -327,9 +343,11 @@ export class ArcadeGame {
       P.aim = t.moved > 6 ? { x: Math.max(qb.x - 1, land.x), y: Math.max(-26, Math.min(26, land.y)) } : null;
     } else if (P.phase === "carry") {
       P.steer = cam.toField(p.px, p.py).y;
-      // a quick flick across the field is a juke
-      const now = performance.now(); t.hist = (t.hist || []).filter((h) => now - h.t < 140); t.hist.push({ t: now, py: p.py });
-      if (t.hist.length > 1 && Math.abs(p.py - t.hist[0].py) > 34) { if (juke(P) !== null) t.hist = []; }
+      // a quick flick across the field is a juke; a quick flick up the field (toward the goal) is a dive
+      const now = performance.now(); t.hist = (t.hist || []).filter((h) => now - h.t < 140); t.hist.push({ t: now, px: p.px, py: p.py });
+      const fx_ = p.px - t.hist[0].px, fy_ = p.py - t.hist[0].py;
+      if (t.hist.length > 1 && fx_ > 40 && fx_ > Math.abs(fy_) * 1.5) { if (dive(P)) t.hist = []; }
+      else if (t.hist.length > 1 && Math.abs(fy_) > 34) { if (juke(P) !== null) t.hist = []; }
     }
   }
   onUp(e) {
@@ -367,10 +385,12 @@ export class ArcadeGame {
       return;
     }
     if (m === "pick") { const n = +k; if (n >= 1 && n <= this.buttons.length) this.call(this.buttons[n - 1].key); return; }
+    if (m === "pat") { const n = +k; if (n >= 1 && n <= this.buttons.length) this.patChoice(this.buttons[n - 1].key); return; }
     if (m === "result" || m === "opp") { if (k === " " || k === "enter") this.tapUI({ px: -1, py: -1 }); return; }
     if (m === "final") { if (k === " " || k === "enter") { this.mode = "menu"; this.S = null; } return; }
     if (m !== "play" || !P) return;
     if (k === "q" && !P.kind) { this.cycleKind(); return; }
+    if (k === "e" && !P.kind && P.phase === "carry") { dive(P); return; }
     if (P.kind) { if (k === " " && P.phase === "presnap") this.kick = { charging: true, t: 0 }; return; }
     if (k === " " || k === "enter") {
       if (P.phase === "presnap") snap(P);
@@ -382,6 +402,6 @@ export class ArcadeGame {
 }
 
 export const kickNote = (P) => P.kind === "fg" && P.flick ? (P.flick.made ? "RIGHT DOWN THE MIDDLE" : P.flick.short ? "SHORT - KICK IT HARDER" : P.flick.wide ? "WIDE - AIM STRAIGHTER" : "PUSHED IT") : "";
-export const resultTitle = (ev) => !ev ? "" : ev.td ? "TOUCHDOWN!" : ev.type === "int" ? "INTERCEPTED" : ev.type === "sack" ? "SACKED" : ev.type === "fumble" ? "FUMBLE" : ev.type === "inc" ? "INCOMPLETE" : ev.type === "fg" ? "FIELD GOAL!" : ev.type === "fg_miss" ? "NO GOOD" : ev.type === "punt" ? "PUNT" : ev.type === "penalty" ? "FLAG" : ev.firstDown ? "FIRST DOWN" : `${ev.yards >= 0 ? "+" : ""}${ev.yards} YARDS`;
+export const resultTitle = (ev) => !ev ? "" : ev.type === "pat" ? (ev.pat?.good ? (ev.pat.two ? "TWO POINTS!" : "IT'S GOOD!") : "NO GOOD") : ev.td ? "TOUCHDOWN!" : ev.type === "int" ? "INTERCEPTED" : ev.type === "sack" ? "SACKED" : ev.type === "fumble" ? "FUMBLE" : ev.type === "inc" ? "INCOMPLETE" : ev.type === "fg" ? "FIELD GOAL!" : ev.type === "fg_miss" ? "NO GOOD" : ev.type === "punt" ? "PUNT" : ev.type === "penalty" ? "FLAG" : ev.firstDown ? "FIRST DOWN" : `${ev.yards >= 0 ? "+" : ""}${ev.yards} YARDS`;
 export const pickNote = (p) => p.why === "sacked" ? "THE RUSH GOT HOME" : p.target == null ? "" : `${p.open ? "OPEN" : "COVERED"}${p.def != null ? ` BY ${p.def} YD` : ""}${p.err != null ? ` - ${p.err <= 1 ? "ON THE MONEY" : p.err <= 2.2 ? "CATCHABLE" : "OFF TARGET"}` : ""}${p.why === "hurried" ? " - HURRIED" : p.why === "late" ? " - HELD IT TOO LONG" : ""}`;
 export { passPlan, BULLET_RANGE };
