@@ -37,6 +37,8 @@ export const SB_SITES = [
   ["NRG Stadium", "Houston"], ["U.S. Bank Stadium", "Minneapolis"], ["Lucas Oil Stadium", "Indianapolis"],
   ["Ford Field", "Detroit"], ["MetLife Stadium", "East Rutherford"], ["Nissan Stadium", "Nashville"],
 ];
+// the club whose stadium each site is (the drawing of the stands, Stadium.jsx)
+export const SB_SITE_CLUB = { "Levi's Stadium": "SF", "SoFi Stadium": "LAR", "Mercedes-Benz Stadium": "ATL", "Caesars Superdome": "NO", "Hard Rock Stadium": "MIA", "State Farm Stadium": "ARI", "Allegiant Stadium": "LV", "Raymond James Stadium": "TB", "AT&T Stadium": "DAL", "NRG Stadium": "HOU", "U.S. Bank Stadium": "MIN", "Lucas Oil Stadium": "IND", "Ford Field": "DET", "MetLife Stadium": "NYG", "Nissan Stadium": "TEN" };
 // the classic hosts come around more often
 const SB_WEIGHT = [2, 3, 2, 3, 3, 2, 3, 2, 2, 2, 1, 1, 1, 1, 1];
 const sbSiteMemo = { ...SB_HOSTS };

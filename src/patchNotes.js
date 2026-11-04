@@ -2345,4 +2345,7 @@ export const PATCH_NOTES = [
     "Snap locks: locking a player keeps his share at the number it shows. It's saved as his own share, so a depth change, a swap or a teammate coming back from injury can't hand him another spot's default.",
     "Box scores: a safety now goes to the defender who made it (the sacker on a sack, otherwise the tackler), with a SFTY column in the defense table whenever someone on that side has one.",
   ] },
+  { v: "5.64", date: "2026-10-23", title: "Super Bowl crowd", notes: [
+    "The Super Bowl has fans. The game is now played inside the host city's real stadium (Levi's, SoFi, the Superdome, MetLife and the rest), packed with both clubs' fans, half and half in their colors, with camera flashes after big plays. The host club's own words come off the ribbon boards for the night and the game's name goes up instead.",
+  ] },
 ];

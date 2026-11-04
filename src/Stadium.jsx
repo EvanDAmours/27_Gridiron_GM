@@ -357,8 +357,21 @@ function useRaster(url, box) {
 
 // The stadium around its children (the field). home: the home club's abbreviation; night: a night
 // game (the upper deck sits in the dark); flash: { key, size } changes for every burst of flashes.
-export default function Stadium({ home, night, flash, children }) {
-  const st = STADIUMS[home];
+// fans: a neutral-site game (the Super Bowl) fills the host's stands with both clubs' fans, half and
+// half, and its ribbon boards carry the game (ribbon) instead of the host club's words.
+export default function Stadium({ home, night, flash, fans, ribbon, children }) {
+  const fansKey = fans ? fans.join(",") : "";
+  const st = useMemo(() => {
+    const base = STADIUMS[home];
+    if (!base || !fans) return base;
+    const half = (ab) => { const c = STADIUMS[ab]?.crowd || base.crowd, tot = c.reduce((t, [, w]) => t + w, 0); return c.map(([k, w]) => [k, (w / tot) * 50]); };
+    const out = { ...base, crowd: [...half(fans[0]), ...half(fans[1])], empty: "#334155" };
+    // the host club's own dress comes off for the game: neutral boards, and no club tarps
+    Object.assign(out, { ribbon: "#0b1222", ribbonHi: "#d4af37", ribbonInk: "#fde68a", ribbonText: ribbon || base.ribbonText });
+    if (base.upper?.tarps) out.upper = { ...base.upper, tarps: null };
+    if (home === "NYG" || home === "NYJ") Object.assign(out, { skin: "#4b5563", skinHi: "#9ca3af" });
+    return out;
+  }, [home, fansKey, ribbon]); // eslint-disable-line react-hooks/exhaustive-deps
   const art = useMemo(() => (st ? drawStadium(st, night) : null), [st, night]);
   const box = useRef(null), cv = useRef(null);
   const src = useRaster(art?.url, box);
