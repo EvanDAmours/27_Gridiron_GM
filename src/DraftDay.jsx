@@ -204,7 +204,7 @@ export function PhoneClock({ pick, team, mine, paused, onPause, timer, nextMine,
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.4, color: mine ? "#86efac" : "#ffffffb3" }}>{paused ? "PAUSED" : mine ? "YOU'RE ON THE CLOCK" : "ON THE CLOCK"} · RD {pick.rd} · #{pick.overall}</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.2 }}>{mine ? "Your pick" : `${team.city} ${team.name}`}</div>
-          <div style={{ fontSize: 13, color: "#ffffffcc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>
+          <div style={mine ? { fontSize: 13, color: "#ffffffcc", lineHeight: 1.3 } : { fontSize: 13, color: "#ffffffcc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>
         </div>
         <div style={{ fontSize: 24, fontWeight: 900, color: paused ? "#94a3b8" : timer <= 10 ? C.rd : "#fff", fontVariantNumeric: "tabular-nums" }}>{clock}</div>
         {onPause && <button onClick={onPause} aria-label={paused ? "Resume the draft" : "Pause the draft"} style={{ width: 44, height: 44, borderRadius: 22, border: 0, flexShrink: 0, background: paused ? C.gn : "#ffffff22", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Icon k={paused ? "resume" : "pause"} size={20} w={2.6} /></button>}

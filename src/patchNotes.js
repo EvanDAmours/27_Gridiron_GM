@@ -2314,4 +2314,10 @@ export const PATCH_NOTES = [
     "Phone: the bottom bar labels are larger, and readable in light mode (they used to fade into the dark bar). Tabs like Offense, Defense, Special and Subs no longer cut off their names, and the playoff picture shows team nicknames so none get cut off.",
     "Phone live games: the play-result card and the play strip use larger text.",
   ] },
+  { v: "5.58", date: "2026-10-23", title: "Phone readability, part 2", notes: [
+    "Phone, player card back: the captions under Contract, Trade value, Snaps, Wants and Agent wrap instead of cutting off (\"easy to deal with\" read \"easy to deal ...\").",
+    "Phone, player card buttons: Extend, the practice-squad move and the amber actions use brighter text so they read on their dark fills.",
+    "Phone, live games: player name tags on the field are larger.",
+    "Phone, draft: on the clock, the line with your rookie wage and your team's needs wraps instead of being cut off.",
+  ] },
 ];

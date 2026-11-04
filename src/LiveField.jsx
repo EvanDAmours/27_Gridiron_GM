@@ -172,7 +172,7 @@ function Player({ p, pos, x, y, team, side, away }) {
       {/* names only where they help (the ball handlers and receivers, and on desktop the secondary
           covering them); linemen are just numbers so the fronts don't turn into a pile of text.
           Names hang away from the line of scrimmage so the two sides never overlap. */}
-      {SHOW_NAME[side].has(pos) && <text x={side === "off" ? 8 : -8} y="21" textAnchor={side === "off" ? "end" : "start"} fontSize="8.5" fontWeight="700" fill="#fff" stroke="#0009" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>}
+      {SHOW_NAME[side].has(pos) && <text x={side === "off" ? 8 : -8} y="21" textAnchor={side === "off" ? "end" : "start"} fontSize={MOBILE ? 11 : 8.5} fontWeight="700" fill="#fff" stroke="#0009" strokeWidth="2.5" paintOrder="stroke">{last.length > 10 ? `${last.slice(0, 9)}.` : last}</text>}
     </g>
   );
   // the club's own sprite sheet (every club has one)
