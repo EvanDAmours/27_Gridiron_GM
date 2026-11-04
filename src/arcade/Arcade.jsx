@@ -8,7 +8,7 @@ const PIX = { fontFamily: "'Courier New', ui-monospace, monospace", fontWeight: 
 const btn = (extra = {}) => ({ ...PIX, background: "#1b2230", color: TXT, border: "3px solid #3d4a56", boxShadow: "inset -3px -3px 0 #0b0e14, inset 3px 3px 0 #2c3744", borderRadius: 0, padding: "12px 10px", fontSize: 13, cursor: "pointer", touchAction: "manipulation", ...extra });
 
 export default function Arcade() {
-  const [userTi, setUser] = useState(0), [oppTi, setOpp] = useState(1);
+  const [userTi, setUser] = useState(17), [oppTi, setOpp] = useState(8); // Giants vs Texans
   const [game, setGame] = useState(null);
   if (!game) {
     const sel = (v, set) => (
