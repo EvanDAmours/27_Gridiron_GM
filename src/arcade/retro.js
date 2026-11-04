@@ -54,8 +54,8 @@ const BALL_C = { o: "#2a1206", b: "#8a4a22", h: "#b06a36", w: "#f4efe4" };
 // at the bottom of the canvas; the stands fill the strip above the far sideline.
 export function makeCamera(W, H) {
   // the whole width of the field fits under the scoreboard, and no more than ~40 yards show across
-  const hud = Math.max(2, Math.round(Math.min(W / 330, H / 185))) * 11;
-  const s = Math.min(H > W ? W / 38 : W / 56, (H - hud - 8) / (53.3 * SQUASH + 1.4)); // ~56 yards across a wide screen, ~38 upright
+  const hud = Math.max(2, Math.round(Math.min(W / 380, H / 215))) * 11;
+  const s = Math.min(H > W ? W / 44 : W / 66, (H - hud - 8) / (53.3 * SQUASH + 1.4)); // ~66 yards across a wide screen, ~44 upright
   // the field sits low on a wide screen (stands above it) and in the middle of a tall one
   const depth = 53.3 * SQUASH * s, room = H - hud - depth - s * 1.2, top = hud + (H > W ? room * 0.5 : Math.min(room, s * 4.5)) + s * 0.2;
   return { W, H, s, depth, top, camX: 50, lead: 5, toScreen(x, y) { return [W * 0.42 + (x - this.camX) * s, top + (y + HALF) * SQUASH * s]; }, toField(px, py) { return { x: this.camX + (px - W * 0.42) / s, y: (py - top) / (SQUASH * s) - HALF }; } };
@@ -339,7 +339,7 @@ function drawAim(ctx, cam, S, kind) {
 // middle, and under it the down and distance and where the ball is.
 // one scale for every piece of text and every button: a pixel of the 5x7 font is this many screen
 // pixels (2 on a phone, 3-4 on a laptop, 5-6 on a big monitor)
-export const uiPx = (cam) => Math.max(2, Math.round(Math.min(cam.W / 330, cam.H / 185)));
+export const uiPx = (cam) => Math.max(2, Math.round(Math.min(cam.W / 380, cam.H / 215)));
 const hudPx = uiPx;
 export function drawHud(ctx, cam, sit, teams, { ot, to } = {}) {
   const { W } = cam, px = hudPx(cam), h = px * 7, pad = px * 2;
@@ -398,7 +398,7 @@ const wrap = (text, n) => { const out = []; let line = ""; for (const w of Strin
 export function drawPlayCards(ctx, cam, heading, items, color, { keys = false, hover = null } = {}) {
   const { W, H } = cam, px = hudPx(cam), small = W < 560;
   const cols = small ? 3 : Math.min(6, items.length), rows = Math.ceil(items.length / cols), gap = px * 2;
-  const cw = Math.min(px * 70, (W - gap * (cols + 1)) / cols), ch = Math.round(cw * (small ? 0.78 : 0.62)), total = cols * cw + (cols - 1) * gap;
+  const cw = Math.min(px * 54, (W - gap * (cols + 1)) / cols), ch = Math.round(cw * (small ? 0.72 : 0.6)), total = cols * cw + (cols - 1) * gap;
   const top = H - rows * (ch + gap) - gap - px * 10, left = (W - total) / 2;
   ctx.fillStyle = "rgba(8,10,16,.9)"; ctx.fillRect(0, top - px * 3, W, H - top + px * 3);
   ctx.fillStyle = color; ctx.fillRect(0, top - px * 3, W, px);
@@ -414,6 +414,7 @@ export function drawPlayCards(ctx, cam, heading, items, color, { keys = false, h
     const dx = x + px * 3, dy = y + px * 3, dw = cw - px * 6, dh = ch - px * 13;
     ctx.fillStyle = kind === "kick" ? "#2a5a2a" : "#2f6b2c"; ctx.fillRect(dx, dy, dw, dh);
     if (kind !== "kick") {
+      ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip(); // long routes run off the card, not into the next one
       const sx = dw / 34, sy = dh / 52, ox = dx + dw * 0.32, oy = dy + dh / 2, P = (q) => [ox + q.x * sx, oy + q.y * sy];
       ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(Math.round(ox), dy, 1, dh);
       const D = playDiagram(shows || key);
@@ -423,6 +424,7 @@ export function drawPlayCards(ctx, cam, heading, items, color, { keys = false, h
         ctx.strokeStyle = l.run ? "#ffd166" : "#7fe3ff"; ctx.beginPath(); l.pts.forEach((q, j) => { const [a, b] = P(q); if (j) ctx.lineTo(a, b); else ctx.moveTo(a, b); }); ctx.stroke();
         const [ea, eb] = P(l.pts[l.pts.length - 1]); ctx.fillStyle = ctx.strokeStyle; ctx.fillRect(Math.round(ea - 1.5), Math.round(eb - 1.5), 3, 3);
       }
+      ctx.restore();
     } else { // the kick: uprights
       const gx = dx + dw * 0.7, gy = dy + dh * 0.75; ctx.fillStyle = "#ffd700"; ctx.fillRect(gx - 1, gy - dh * 0.5, 2, dh * 0.5); ctx.fillRect(gx - dw * 0.1, gy - dh * 0.5, dw * 0.2, 2); ctx.fillRect(gx - dw * 0.1, gy - dh * 0.75, 2, dh * 0.25); ctx.fillRect(gx + dw * 0.1 - 2, gy - dh * 0.75, 2, dh * 0.25);
     }

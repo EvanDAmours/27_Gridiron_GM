@@ -11,7 +11,7 @@
 // Either way, the pass button (Q on a keyboard) switches AUTO / BULLET / LOB, and the arc you see
 // while aiming is the throw you'll get.
 import { TEAMS, newGame, lineups, runPlay, simOpponentDrive, situation, snapshot, restore, patWaiting, bookPat } from "./bridge.js";
-import { setupPlay, snap, tick, throwTo, juke, dive, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
+import { setupPlay, snap, tick, throwTo, juke, dive, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
 import { setupKick, kickFlick, tickKick } from "./kick.js";
 import { sfx, unlock, toggleMute, isMuted } from "./sfx.js";
 import { FX } from "./fx.js";
@@ -213,7 +213,7 @@ export class ArcadeGame {
     if (m === "play" && P && P.kind) this.drawKick(ctx, P, hintY);
     else if (m === "play" && P) {
       const toGo = st.toGo >= 100 - st.yard ? "GOAL" : st.toGo;
-      drawDownBox(ctx, cam, P.phase === "presnap" ? `${ordinal(st.down)} & ${toGo} - ${PLAY_NAMES[P.call].toUpperCase()}` : `${ordinal(st.down)} & ${toGo}`, P.phase === "presnap" ? "#fff" : "#ffd166");
+      drawDownBox(ctx, cam, P.phase === "presnap" ? `${ordinal(st.down)} & ${toGo} - ${playName(P.concept || P.call)}` : `${ordinal(st.down)} & ${toGo}`, P.phase === "presnap" ? "#fff" : "#ffd166");
       const throwing = P.phase === "live" && P.ball.holder === "QB", isPass = P.call.startsWith("pass");
       // the pass type button: always there on a pass play, until the ball is thrown
       if (isPass && (P.phase === "presnap" || throwing)) {
@@ -226,14 +226,16 @@ export class ArcadeGame {
       if (hint) drawHint(ctx, cam, hint, hintY);
     }
     if (m === "pick") {
-      const items = CALLS.map(([k, l]) => [k, l, "play"]); if (st.down === 4) items.push(st.yard >= 58 ? ["fg", `FIELD GOAL ${100 - st.yard + 17}`, "kick"] : ["punt", "PUNT", "kick"]);
+      // four pass concepts, drawn fresh each down (one quick, two intermediate, one shot), and the two runs
+      const key = `${this.g.plays}|${this.two ? 2 : 0}`; if (this.choicesFor !== key) { this.choicesFor = key; this.choices = conceptChoices(); }
+      const items = [...this.choices.map((k) => [k, CONCEPTS[k].name, "play"]), ...CALLS.filter(([k]) => k.startsWith("run")).map(([k, l]) => [k, l, "play"])]; if (st.down === 4) items.push(st.yard >= 58 ? ["fg", `FIELD GOAL ${100 - st.yard + 17}`, "kick"] : ["punt", "PUNT", "kick"]);
       const hover = this.input === "mouse" && this.mouse ? this.lastButtons?.find((b) => inside(this.mouse, b))?.key : null;
       this.buttons = drawPlayCards(ctx, cam, this.two ? "TWO-POINT TRY - PICK A PLAY" : `${ordinal(st.down)} & ${st.toGo >= 100 - st.yard ? "GOAL" : st.toGo} - ${spotOf(st.yard)} - PICK A PLAY`, items, teams.user.clr, { keys: !this.mobile, hover });
       this.lastButtons = this.buttons;
     }
     if (m === "pat") {
       const hover = this.input === "mouse" && this.mouse ? this.lastButtons?.find((b) => inside(this.mouse, b))?.key : null;
-      this.buttons = drawPlayCards(ctx, cam, "TOUCHDOWN! - THE TRY", [["xp", "KICK THE PAT", "kick"], ["two", "GO FOR TWO", "play", "pass_quick"]], teams.user.clr, { keys: !this.mobile, hover });
+      this.buttons = drawPlayCards(ctx, cam, "TOUCHDOWN! - THE TRY", [["xp", "KICK THE PAT", "kick"], ["two", "GO FOR TWO", "play", "slant_flat"]], teams.user.clr, { keys: !this.mobile, hover });
       this.lastButtons = this.buttons;
     }
     if (m === "opp") this.drawDrive(ctx);
