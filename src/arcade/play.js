@@ -30,13 +30,13 @@ const LINE = ["LT", "LG", "C", "RG", "RT"];
 // `more`: how far he keeps running his last leg before he eases up and looks back for the ball
 const ROUTES = {
   slant: { legs: [[2, 0], [6, 5]], more: 4 }, hitch: { legs: [[5, 0], [-1, 0.5]], stop: true }, out: { legs: [[6, 0], [0.5, -7]], more: 3 },
-  dig: { legs: [[12, 0], [0, 10]], more: 6 }, comeback: { legs: [[14, 0], [-2.5, -2]], stop: true }, corner: { legs: [[10, 0], [12, -8]], more: 10 },
+  dig: { legs: [[10, 0], [0, 10]], more: 6 }, comeback: { legs: [[14, 0], [-2.5, -2]], stop: true }, corner: { legs: [[10, 0], [8, -7]], more: 8 },
   post: { legs: [[10, 0], [14, 8]], more: 12 }, go: { legs: [[45, 0]], more: 40 }, seam: { legs: [[4, 0], [30, 1.5]], more: 15 }, drag: { legs: [[2, 0], [2, 16]], more: 5 },
   flat: { legs: [[0.5, 0], [2, -9]], more: 3 }, swing: { legs: [[-1, -3], [3, -8]], more: 4 }, check: { legs: [[4, 0], [1, 0]], stop: true, delay: 0.9 },
 };
 const PLAYS = {
   pass_quick: { X: "slant", Z: "hitch", SLOT: "out", TE: "flat", RB: "check" },
-  pass_medium: { X: "dig", Z: "out", SLOT: "corner", TE: "drag", RB: "swing" },
+  pass_medium: { X: "dig", Z: "out", SLOT: "hitch", TE: "drag", RB: "swing" },
   pass_deep: { X: "go", Z: "post", SLOT: "corner", TE: "seam", RB: "check" },
 };
 export const PLAY_NAMES = { pass_quick: "Quick", pass_medium: "Medium", pass_deep: "Deep", run_inside: "Inside run", run_outside: "Outside run" };
@@ -82,7 +82,7 @@ export function snap(S) {
   for (const k of ["DL0", "DL1", "DL2", "DL3"]) {
     const d = ents[k], o = ents[OL_VS[k]]; if (!d) continue;
     const rush = isPass ? R(d.p, "passRush", d.p.ovr) : R(d.p, "runStop", d.p.ovr), blk = isPass ? R(o?.p, "passBlock", o?.p?.ovr) : R(o?.p, "runBlock", o?.p?.ovr);
-    S.shed[k] = clamp(2.0 + (blk - rush) * 0.045 + rnd(S) * 2.6, 1.2, 7);
+    S.shed[k] = clamp(1.45 + (blk - rush) * 0.045 + rnd(S) * 2.3, 0.9, 6.5);
     d.mode = "rush";
   }
   for (const k of ["LB0", "LB1", "CB0", "CB1", "CB2", "S0", "S1"]) if (ents[k]) ents[k].mode = "cover";
@@ -238,7 +238,7 @@ export function tick(S, dt) {
       else brake(d, dt);
       continue;
     }
-    if (carrier && carrier.key !== "QB") { const react = S.catchAt != null && S.t - S.catchAt < 0.35 && hyp(d.x - carrier.x, d.y - carrier.y) > 2 ? 0.85 : 1.0; steer(d, ...xy(intercept(d, carrier)), dt, react); continue; }
+    if (carrier && carrier.key !== "QB") { const react = S.catchAt != null && S.t - S.catchAt < 0.5 && hyp(d.x - carrier.x, d.y - carrier.y) > 1.6 ? 0.8 : 1.0; steer(d, ...xy(intercept(d, carrier)), dt, react); continue; }
     if (!isPass) { // the run: linebackers read it, then fill; the secondary comes late
       const read = k.startsWith("LB") ? 0.7 : k.startsWith("S") ? 1.0 : 1.4;
       if (S.t < read) { brake(d, dt); continue; }
@@ -258,7 +258,7 @@ export function tick(S, dt) {
     } else if (k === "S0") {
       // the free safety: deeper than the deepest route, drifting toward it
       let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.x > S.los + 4 && (!deep || e.x > deep.x)) deep = e; }
-      const dx = deep ? Math.max(deep.x + 3 + Math.max(0, deep.vx) * 0.35, S.los + 12) : S.los + 14, dy = deep ? deep.y * 0.75 : 0;
+      const dx = deep ? Math.max(deep.x + 4.5 + Math.max(0, deep.vx) * 0.4, S.los + 13) : S.los + 14, dy = deep ? deep.y * 0.75 : 0;
       steer(d, Math.min(106, dx), dy, dt, 1);
     } else if (k === "S1") {
       // the strong safety: with two men going deep he takes the second over the top; otherwise a
@@ -296,11 +296,11 @@ export function tick(S, dt) {
     if (Math.abs(carrier.y) >= HALF - 0.4) { outOfBounds(S); return true; }
     const closing = d ? ((d.vx - carrier.vx) * (carrier.x - d.x) + (d.vy - carrier.vy) * (carrier.y - d.y)) / Math.max(0.1, dd) : 0; // yards/s he's gaining
     const dSpeed = d ? hyp(d.vx, d.vy) : 0;
-    if (d && dd < 1.0 + clamp(closing, 0, 4) * 0.1 + (dSpeed > 5 ? 0.25 : 0)) { // a man at full stride can lay out for him
+    if (d && dd < 1.0 + clamp(closing, 0, 4) * 0.1 + (dSpeed > 5 ? 0.4 : 0)) { // a man at full stride can lay out for him
       // the tackle, or a broken one: elusiveness against his tackling, and a man can't be broken twice
       const el = Math.max(R(carrier.p, "elusiveness", 60), R(carrier.p, "breakTkl", 60), R(carrier.p, "yac", 60)), tk = R(d.p, "tackling", d.p.ovr || 70);
       // (a man who just caught it hasn't got his feet under him; a broken tackle still knocks him off stride)
-      const pBreak = d.missed ? 0 : clamp(0.09 + (el - tk) * 0.005 + (S.broke ? -0.05 : 0), 0.05, 0.35);
+      const pBreak = d.missed ? 0 : clamp(0.085 + (el - tk) * 0.005 + (S.broke ? -0.05 : 0), 0.05, 0.35);
       if (rnd(S) < pBreak) { d.down = 0.7; d.missed = true; S.broke++; S.stagger = S.t + 0.45; carrier.vx *= 0.55; carrier.vy *= 0.55; S.log.push(`${d.p.name} misses`); }
       else { tackle(S, d); return true; }
     }
@@ -398,7 +398,7 @@ function arrive(S) {
   // his head to the man in front of him) can't play it unless he's right on him
   const ux = ball.x - f.from.x, uy = ball.y - f.from.y, un = hyp(ux, uy) || 1;
   const trailing = tgt && d && ((d.x - tgt.x) * ux + (d.y - tgt.y) * uy) / un < -0.6;
-  const open = dD > 1.8 || (trailing && dD > 1.0);
+  const open = dD > 1.6 || (trailing && dD > 0.9);
   let want;
   if (tgt && dR <= catchR + 1.3) {
     // on his hands: an open man catches it (the odd drop); a covered one wins it on his hands
@@ -406,7 +406,7 @@ function arrive(S) {
     const hands = R(tgt.p, "catching", R(tgt.p, "receiving", 70)), ballSk = d ? Math.max(R(d.p, "ballSkills", 60), R(d.p, "ballHawk", 60), R(d.p, "coverage", 60)) : 50;
     const dive = dR > catchR ? 1 - (dR - catchR) : 1; // one just out of reach: a dive, less likely the further
     const first = tgt && d && dR < dD - 0.4 ? 0.12 : 0; // he got to it first
-    const pCatch = (open ? clamp(0.985 - (85 - hands) * 0.003, 0.9, 0.995) : clamp(0.32 + first + (hands - ballSk) * 0.006 + (dD - 0.8) * 0.15 - (dR > 1 ? 0.1 : 0), 0.1, 0.85)) * clamp(dive, 0, 1);
+    const pCatch = (open ? clamp(0.985 - (85 - hands) * 0.003, 0.9, 0.995) : clamp(0.6 + first + (hands - ballSk) * 0.006 + (dD - 0.8) * 0.22 - (dR > 1.2 ? 0.08 : 0), 0.18, 0.9)) * clamp(dive, 0, 1);
     if (rnd(S) < pCatch) {
       ball.x = tgt.x; ball.y = tgt.y; ball.holder = f.target; tgt.mode = "carry"; S.catchAt = S.t; S.phase = "carry";
       S.pick.open = open; S.log.push(`caught ${open ? "open" : "contested"}`);
@@ -414,11 +414,12 @@ function arrive(S) {
     }
     if (open) { S.log.push("dropped"); S.pick.drop = true; }
   }
-  if (d && dD < 1.2 && (!tgt || dD < dR || !open)) {
+  if (d && dD < 1.4 && (!tgt || dD < dR || !open)) {
     // the defender got there first: a pick if he makes the play on it (his ball skills) and the
     // engine agrees, a pass broken up if not
     const ballSk = Math.max(R(d.p, "ballSkills", 60), R(d.p, "ballHawk", 60), R(d.p, "coverage", 60));
-    const pInt = dD < 0.8 && dD < dR ? clamp(0.2 + (ballSk - 70) * 0.01, 0.08, 0.5) : 0.05;
+    // a lofted ball hangs for him; one he beat the receiver to is his to lose
+    const pInt = clamp(0.045 + (ballSk - 70) * 0.006 + (f.bullet ? 0 : 0.07) + (dD < dR ? 0.1 : 0) - (dD > 1 ? 0.04 : 0), 0.02, 0.4);
     want = { types: rnd(S) < pInt ? ["int"] : ["inc"], fallback: ["inc"] }; S.pick.open = false;
     const r = resolvePlay(S.g, S.call, want, { target: S.pick.target, open: false }, 10);
     S.ev = r.ev; S.mismatch = r.ev && !["int", "inc", "penalty"].includes(r.ev.type);
