@@ -633,12 +633,29 @@ function subBook(g, off, def, oPairs, dPairs) {
     s[side][u][on.id] = (s[side][u][on.id] || 0) + 1; s[side][u][offP.id] = (s[side][u][offP.id] || 0) - 1;
   }
 }
+// The try after an arcade touchdown (see g.patDefer): the field decided whether it was good.
+// Books the point(s) and the kicker's line, then kicks off.
+export function playPat(g, two, good) {
+  const P = g.patPending; if (!P) return null;
+  delete g.patPending;
+  const off = P.off, o = g.sides[off], ev = { type: "pat", off, text: "" };
+  if (two) { if (good) scored(g, off, 2); ev.text = good ? "Two-point try is good." : "Two-point try fails."; }
+  else {
+    const kl = line(g, off, o.k); add(kl, "xpA", 1);
+    if (good) { add(kl, "xpM", 1); add(kl, "pts", 1); scored(g, off, 1); }
+    ev.text = good ? "Extra point is good." : "Extra point is no good.";
+  }
+  ev.pat = { two, good };
+  if (!g.done) kickoff(g, ev);
+  return ev;
+}
 export function step(g, call, bonus = 1, pick = null) {
   const ev = stepPlay(g, call, bonus, pick);
   if (g.pl) recPlay(g, ev);
   return ev;
 }
 function stepPlay(g, call, bonus = 1, pick = null) {
+  if (g.patPending) playPat(g, false, true); // (a try left hanging: book it as made, then go on)
   if (g.done) return null;
   // The kickoff that opens the game, each half and overtime: a play of its own
   if (g.koNext) {
@@ -1083,6 +1100,15 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   }
 
   if (ev.td) {
+    // The arcade plays the try itself (g.patDefer: { h|a: true }): book the six, run the clock,
+    // and leave the try and the kickoff to playPat(). (Not in overtime: a touchdown there ends it.)
+    if (g.patDefer?.[off]) {
+      scored(g, off, 6); ev.score = 6;
+      if (!g.done) { g.patPending = { off }; ev.patPending = true; }
+      ev.note = tick(g, 6);
+      if (!g.patPending && !g.done) kickoff(g, ev);
+      return ev;
+    }
     // Extra point (or the occasional two-point try).
     const kl = line(g, off, o.k);
     let pts = 6;
