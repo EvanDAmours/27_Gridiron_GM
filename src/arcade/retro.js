@@ -475,7 +475,7 @@ export function drawMenu(ctx, cam, opts) {
   ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, W, H);
   for (let i = 0; i < 70; i++) { const n = Math.sin(i * 91.7) * 43758.5, f = n - Math.floor(n), g = Math.sin(i * 12.3) * 9999 % 1; ctx.fillStyle = `rgba(255,255,255,${0.2 + 0.5 * Math.abs(Math.sin(time * 1.5 + i))})`; ctx.fillRect(Math.round(f * W), Math.round(Math.abs(g) * H * 0.35), 2, 2); }
   const cy = H * 0.62;
-  for (let yy = cy; yy < H; yy += px * 2) for (let xx = ((yy / px / 2) % 2) * px * 2; xx < W; xx += px * 4) { const n = Math.sin(xx * 3.1 + yy * 7.7) * 43758.5, f = n - Math.floor(n); ctx.fillStyle = [u.clr, o.clr, "#3a4258", "#2b3346", "#d9c3a5"][Math.floor(f * 5)]; ctx.fillRect(xx, yy + (Math.sin(time * 3 + f * 20) > 0.9 ? -px : 0), px * 2, px * 2); }
+  { const tile = standsTile(px, H - cy, { user: u, opp: o }, 0); if (tile) for (let x = -((time * 6) % tile.width); x < W; x += tile.width) ctx.drawImage(tile, Math.round(x), Math.round(cy)); } // the same stands as the game, drifting slowly
   // the title
   const tp = px * 2.2;
   pixShadow(ctx, "GRIDIRON", W / 2, H * 0.07, Math.round(tp), "#ffd166", "center", "#7a3b00");
@@ -504,6 +504,8 @@ export function drawMenu(ctx, cam, opts) {
   ctx.fillStyle = u.clr; ctx.fillRect(kx, ky, kw, kh); ctx.fillStyle = `rgba(255,209,102,${0.5 + pulse * 0.5})`; ctx.fillRect(kx, ky + kh - px * 2, kw, px * 2);
   pixShadow(ctx, "KICK OFF", W / 2, ky + px * 3, Math.round(px * 1.4), "#fff", "center");
   boxes.push({ key: "go", x: kx, y: ky, w: kw, h: kh });
+  // the game's length: tap to cycle the quarter length
+  if (opts.qMin) { const label = `QUARTERS: ${opts.qMin} MIN`, lw = pixWidth(label, px) + px * 8, lh = px * 11, lx = Math.round(W / 2 - lw / 2), ly = ky + kh + px * 4; ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(lx, ly, lw, lh); ctx.fillStyle = "#2c3744"; ctx.fillRect(lx, ly + lh - px, lw, px); pixText(ctx, label, W / 2, ly + px * 2, px, "#fff", "center"); boxes.push({ key: "len", x: lx, y: ly, w: lw, h: lh }); }
   // full screen (or, on an iPhone, how to get it)
   if (opts.fs) { const label = opts.fs === "ios" ? "FULL SCREEN: SHARE > ADD TO HOME SCREEN" : opts.fs === "on" ? "EXIT FULL SCREEN" : mobile ? "FULL SCREEN" : "FULL SCREEN (F)"; const bw = pixWidth(label, px) + px * 6, bh = px * 11, bx = W - px * 3 - bw; ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(bx, px * 3, bw, bh); pixText(ctx, label, bx + bw / 2, px * 5, px, "#ffd166", "center"); if (opts.fs !== "ios") boxes.push({ key: "fs", x: bx, y: px * 3, w: bw, h: bh }); }
   // back to the GM game

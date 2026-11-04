@@ -20,6 +20,8 @@ import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawPlayCards,
 const PULL = 3.2; // touch: the throw goes this many times the pull-back, the other way, on the screen
 const spotOf = (yard) => (yard === 50 ? "MIDFIELD" : yard < 50 ? `OWN ${yard}` : `OPP ${100 - yard}`);
 const ordinal = (n) => ["1ST", "2ND", "3RD", "4TH"][n - 1] || `${n}TH`;
+// quarter lengths on offer (minutes): short like Retro Bowl by default, up to a full NFL quarter
+const QMINS = [3, 5, 8, 15];
 const CALLS = [["pass_quick", "QUICK"], ["pass_medium", "MEDIUM"], ["pass_deep", "DEEP"], ["run_inside", "INSIDE RUN"], ["run_outside", "OUTSIDE RUN"]];
 const KICK_CYCLE = 1.1; // seconds for the kick meter to fill (then it falls back)
 const inside = (p, b) => b && p.px >= b.x && p.px <= b.x + b.w && p.py >= b.y && p.py <= b.y + b.h;
@@ -31,7 +33,7 @@ export class ArcadeGame {
     this.cv = canvas; this.onQuit = onQuit; this.rand = rand;
     this.userTi = userTi; this.oppTi = oppTi; this.teams = teams || { user: TEAMS[userTi], opp: TEAMS[oppTi] };
     this.fx = new FX(); this.time = 0; this.hype = 0; this.fade = 1;
-    this.passKind = "bullet"; try { const k = localStorage.getItem("arcade_pass"); if (k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
+    this.qMin = 5; try { const q = +localStorage.getItem("arcade_qmin"); if (QMINS.includes(q)) this.qMin = q; } catch { /* storage unavailable */ } this.passKind = "bullet"; try { const k = localStorage.getItem("arcade_pass"); if (k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
     this.touch = null; this.mouse = null; this.keys = new Set(); this.buttons = []; this.chips = {}; this.menuFocus = "user"; this.paused = false;
     this.S = null; this.g = null; this.mode = "menu"; this.banner = null; this.feed = { list: [], shown: 0, at: 0 };
     for (const n of ["onDown", "onMove", "onUp", "onKey", "onKeyUp", "fit", "noMenu"]) this[n] = this[n].bind(this);
@@ -88,7 +90,7 @@ export class ArcadeGame {
   start() {
     this.teams = { user: TEAMS[this.userTi], opp: TEAMS[this.oppTi] };
     preload(this.teams.user); preload(this.teams.opp);
-    this.g = newGame(this.userTi, this.oppTi, this.rand ? { rand: this.rand, pat: true } : { pat: true }).g; this.sit = situation(this.g);
+    this.g = newGame(this.userTi, this.oppTi, { ...(this.rand ? { rand: this.rand } : {}), pat: true, qLen: this.qMin * 60 }).g; this.sit = situation(this.g);
     this.fade = 1; this.advance();
   }
   // what happens next: the other team's drive (and any kickoff), or your next call
@@ -209,7 +211,7 @@ export class ArcadeGame {
     const ctx = cv.getContext("2d"); ctx.setTransform(cv.width / cam.W, 0, 0, cv.height / cam.H, 0, 0); ctx.imageSmoothingEnabled = false;
     this.fx.k = uiPx(cam); // effects scale with the screen
     this.buttons = []; this.chips = {};
-    if (this.mode === "menu") { this.buttons = drawMenu(ctx, cam, { teams: TEAMS, user: this.userTi, opp: this.oppTi, time: this.time, focus: this.menuFocus, mobile: this.mobile, fs: this.fsState }); this.fx.draw(ctx, cam.W, cam.H, pixText); return; }
+    if (this.mode === "menu") { this.buttons = drawMenu(ctx, cam, { teams: TEAMS, user: this.userTi, opp: this.oppTi, time: this.time, focus: this.menuFocus, mobile: this.mobile, fs: this.fsState, qMin: this.qMin }); this.fx.draw(ctx, cam.W, cam.H, pixText); return; }
     const m = this.mode, P = this.S, st = this.sit, teams = this.teams;
     // the field, with the shake and the zoom punch
     const [ox, oy] = this.fx.offset(), z = this.fx.zoom;
@@ -310,6 +312,7 @@ export class ArcadeGame {
   cycleKind() { this.setKind(this.passKind === "bullet" ? "lob" : "bullet"); }
   menuAction(k) {
     if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; }
+    if (k === "len") { this.qMin = QMINS[(QMINS.indexOf(this.qMin) + 1) % QMINS.length]; try { localStorage.setItem("arcade_qmin", this.qMin); } catch { /* ignore */ } sfx.select?.(); return; }
     if (k === "go") { if (this.fsState === "off") this.fullscreen(true); this.start(); return; }
     if (k === "gm") { this.onQuit ? this.onQuit() : (location.href = import.meta.env?.BASE_URL ?? "/"); return; }
     const which = k.startsWith("user") ? "userTi" : "oppTi", d = k.endsWith("-1") ? -1 : 1;
