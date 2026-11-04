@@ -40,6 +40,10 @@ export function pixText(ctx, text, x, y, px, color = "#fff", align = "left") {
 }
 export const pixWidth = (text, px) => String(text).length * 6 * px - px;
 
+// the football, 13x7: o outline, b leather, h highlight, w stripes and laces
+const BALL = ["....ooooo....", "..oobhhhboo..", ".obwhwbwhwbo.", "obbwbbbbbwbbo", ".obwbbbbbwbo.", "..oobbbbboo..", "....ooooo...."];
+const BALL_C = { o: "#2a1206", b: "#8a4a22", h: "#b06a36", w: "#f4efe4" };
+
 // ---- the camera ----
 // The field runs left to right. s: pixels per yard along the field. The field's near sideline sits
 // at the bottom of the canvas; the stands fill the strip above the far sideline.
@@ -162,9 +166,13 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   if (b.flight || b.holder == null) {
     const [bx, by] = cam.toScreen(b.x, b.y), lift = b.flight ? (b.h || 0) * s * 1.1 + PLAYER_H * s * 0.55 : Math.max(0, (b.h || 0)) * s;
     shadow(ctx, cam, b.x, b.y, 0.4);
-    const bw = Math.max(5, s * 0.8), bh = Math.max(3, s * 0.5);
-    ctx.save(); ctx.translate(bx, by - lift); ctx.rotate(b.flight ? S.t * 9 : 0.4);
-    ctx.fillStyle = "#2b1405"; ctx.fillRect(-bw / 2 - 1, -bh / 2 - 1, bw + 2, bh + 2); ctx.fillStyle = "#a0552a"; ctx.fillRect(-bw / 2, -bh / 2, bw, bh); ctx.fillStyle = "#fff"; ctx.fillRect(-bw * 0.12, -bh / 2, bw * 0.24, bh); ctx.restore();
+    // a pixel football: pointed ends, two-tone leather, white stripes and laces, nose along its flight
+    const px = Math.max(1, Math.round(s * 0.07));
+    let ang = 0.35;
+    if (b.flight) { const f = b.flight, [fx, fy] = cam.toScreen(f.from.x, f.from.y), [tx, ty] = cam.toScreen(f.to.x, f.to.y); ang = Math.atan2(ty - fy, tx - fx); }
+    ctx.save(); ctx.translate(Math.round(bx), Math.round(by - lift)); ctx.rotate(ang);
+    for (let r = 0; r < BALL.length; r++) for (let c = 0; c < BALL[r].length; c++) { const k = BALL[r][c]; if (k === ".") continue; ctx.fillStyle = BALL_C[k]; ctx.fillRect((c - BALL[r].length / 2) * px, (r - BALL.length / 2) * px, px, px); }
+    ctx.restore();
   }
 }
 
