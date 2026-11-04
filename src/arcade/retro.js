@@ -50,7 +50,7 @@ const BALL_C = { o: "#2a1206", b: "#8a4a22", h: "#b06a36", w: "#f4efe4" };
 export function makeCamera(W, H) {
   // the whole width of the field fits under the scoreboard, and no more than ~40 yards show across
   const hud = Math.max(2, Math.round(Math.min(W / 40, H / 30) * 0.09)) * 11;
-  const s = Math.min(H > W ? W / 30 : W / 40, (H - hud - 8) / (53.3 * SQUASH + 1.4));
+  const s = Math.min(H > W ? W / 38 : W / 56, (H - hud - 8) / (53.3 * SQUASH + 1.4)); // ~56 yards across a wide screen, ~38 upright
   // the field sits low on a wide screen (stands above it) and in the middle of a tall one
   const depth = 53.3 * SQUASH * s, room = H - hud - depth - s * 1.2, top = hud + (H > W ? room * 0.5 : Math.min(room, s * 4.5)) + s * 0.2;
   return { W, H, s, depth, top, camX: 50, lead: 5, toScreen(x, y) { return [W * 0.42 + (x - this.camX) * s, top + (y + HALF) * SQUASH * s]; }, toField(px, py) { return { x: this.camX + (px - W * 0.42) / s, y: (py - top) / (SQUASH * s) - HALF }; } };
