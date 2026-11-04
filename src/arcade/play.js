@@ -61,10 +61,19 @@ export function setupPlay(g, L, call) {
   // picture matches the matchup
   for (const r of ["X", "Z", "SLOT"]) { const k = cover[r]; if (k && ents[k] && ents[r]) { ents[k].y = ents[r].y + (ents[r].y < 0 ? 1 : -1) * 0.8; } }
   if (ents[cover.TE] && ents.TE && cover.TE.startsWith("LB")) ents[cover.TE].y = ents.TE.y;
+  // the routes, laid out now so the field can show them before the snap
+  const routes = PLAYS[call];
+  if (routes) for (const r of ELIGIBLE) {
+    const e = ents[r]; if (!e) continue;
+    const R = ROUTES[routes[r]], inward = e.y < 0 ? 1 : -1;
+    let x = e.x, y = e.y; const pts = [];
+    for (const [up, side] of R.legs) { x += up; y = clamp(y + side * inward, -HALF + 1, HALF - 1); pts.push({ x, y }); }
+    e.path = pts; e.stop = !!R.stop; e.delay = R.delay || 0;
+  }
   return {
     g, L, call, los, firstDown: los + g.toGo, t: 0, phase: "presnap", ents, cover,
     ball: { x: ents.QB?.x ?? los - 5, y: 0, h: 0, holder: "QB", flight: null },
-    ev: null, text: "", aim: null, result: null, shed: {}, pressure: 0, holdAt: 0, thrownAt: 0, endAt: 0, handoffAt: 0, lane: 0,
+    ev: null, text: "", aim: null, steer: null, result: null, shed: {}, pressure: 0, holdAt: 0, thrownAt: 0, endAt: 0, handoffAt: 0, lane: 0,
   };
 }
 
@@ -73,15 +82,10 @@ export function snap(S) {
   const { ents, los, call } = S;
   S.phase = "live"; S.t = 0;
   const isPass = call.startsWith("pass");
-  const routes = PLAYS[call];
   for (const r of ELIGIBLE) {
     const e = ents[r]; if (!e) continue;
-    if (isPass) {
-      const R = ROUTES[routes[r]], inward = e.y < 0 ? 1 : -1;
-      let x = e.x, y = e.y; const pts = [];
-      for (const [up, side] of R.legs) { x += up; y = clamp(y + side * inward, -HALF + 1, HALF - 1); pts.push({ x, y }); }
-      e.path = pts; e.prev = { x: e.x, y: e.y }; e.stop = !!R.stop; e.delay = R.delay || 0; e.mode = "route";
-    } else { e.mode = r === "RB" ? "carry" : "block"; }
+    if (isPass) { e.prev = { x: e.x, y: e.y }; e.mode = "route"; }
+    else { e.path = null; e.mode = r === "RB" ? "carry" : "block"; }
   }
   // the line holds; each rusher sheds his man after a time set by the matchup (and some luck)
   for (const k of ["DL0", "DL1", "DL2", "DL3"]) {
@@ -210,7 +214,10 @@ export function tick(S, dt) {
     let nd = null, nb = 99;
     for (const k of Object.keys(ents)) { const d = ents[k]; if (d.side !== "def") continue; const dd = hyp(d.x - carrier.x, d.y - carrier.y); if (dd < nb) { nb = dd; nd = d; } }
     const dodge = nd && nb < 3 && carrier.x < T.x - 2 ? (carrier.y > nd.y ? 1.5 : -1.5) : 0;
-    const left = moveTo(carrier, T.x, clamp(T.y + dodge, -HALF + 1, HALF - 1), dt, 1);
+    // your finger steers him across the field (Retro Bowl's swipe); the engine's spot sets how far he gets
+    const ty = S.steer != null && carrier.x < T.x - 1.5 ? S.steer : T.y + dodge;
+    const left = moveTo(carrier, T.x, clamp(ty, -HALF + 1, HALF - 1), dt, 1);
+    if (S.steer != null && carrier.x < T.x - 1.5) T.y = clamp(S.steer, -HALF + 1, HALF - 1);
     if (left <= 0.05) finishRun(S);
   }
   if (S.phase === "tackle" || S.phase === "fall") { if (S.t >= S.endAt) S.phase = "done"; }

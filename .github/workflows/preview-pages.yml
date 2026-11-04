@@ -1,0 +1,37 @@
+# Branch previews: a push to any branch other than main asks deploy-pages.yml (run from main, the
+# only branch the Pages environment deploys from) to publish this branch under /preview/<branch>/.
+# Play it at https://evandamours.github.io/27_Gridiron_GM/preview/<branch>/ once that run finishes.
+name: Preview branch on Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore:
+      - main
+      - gh-pages
+    paths:
+      - ".github/workflows/preview-pages.yml"
+      - "package.json"
+      - "public/**"
+      - "scripts/**"
+      - "src/**"
+      - "index.html"
+      - "arcade.html"
+      - "vite.config.js"
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  request:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ask the main deploy to publish this branch as a preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          gh workflow run deploy-pages.yml --repo "$GITHUB_REPOSITORY" --ref main -f "preview=$BRANCH"
+          echo "Requested. When Deploy Pages finishes: https://evandamours.github.io/27_Gridiron_GM/preview/$BRANCH/"
