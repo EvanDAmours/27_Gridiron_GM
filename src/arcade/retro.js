@@ -4,6 +4,7 @@
 // stay crisp. Field units from play.js: x yards downfield (0-100), y lateral (-26.65..26.65).
 import SHEETS from "../pixel/teamSprites.json" with { type: "json" };
 import ACTS from "../pixel/actionSprites.json" with { type: "json" };
+import ACTS2 from "../pixel/actionSprites2.json" with { type: "json" };
 import { teamKey } from "../teamUniforms.js";
 import { HALF, ELIGIBLE, passPlan, BULLET_RANGE, BULLET_MAX, playDiagram } from "./play.js";
 
@@ -15,11 +16,11 @@ const SQUASH = 0.42; // the field's depth is foreshortened: a yard across is thi
 // ---- sprite sheets (loaded once per club) ----
 const imgs = {};
 const load = (k, act) => {
-  const key = (act ? "act/" : "") + k;
+  const key = (act === 2 ? "act2/" : act ? "act/" : "") + k;
   if (imgs[key]) return imgs[key];
   const im = new Image(); im.src = `${BASE}${key}.webp`; imgs[key] = im; return im;
 };
-export const preload = (team) => { const k = teamKey(team); if (k) { load(k); load(k, true); } };
+export const preload = (team) => { const k = teamKey(team); if (k) { load(k); load(k, true); if (ACTS2[k]) load(k, 2); } };
 
 // ---- a 5x7 bitmap font for the scoreboard and banners ----
 const GL = {
@@ -77,6 +78,77 @@ function sprite(ctx, cam, team, away, pose, x, y, facing, act = false, scale = 1
 const shadow = (ctx, cam, x, y, r = 0.9) => { const [sx, sy] = cam.toScreen(x, y); ctx.fillStyle = "rgba(0,0,0,.28)"; ctx.beginPath(); ctx.ellipse(sx, sy, r * cam.s, r * cam.s * 0.35, 0, 0, Math.PI * 2); ctx.fill(); };
 
 // Which frame a man is in: the club's stance art at the line, the action frames once he moves.
+// A frame from the second action sheet (clubs that have one): drawn with its foot point
+// [ax, ay] on the man's spot, at the same scale as the first sheet. False when the club or the
+// frame isn't there, so the caller falls back to the first sheet.
+function sprite2(ctx, cam, team, away, name, x, y, facing) {
+  const k = teamKey(team), sh = ACTS2[k], r = sh?.[away ? "away" : "home"]?.[name]; if (!r) return false;
+  const im = load(k, 2); if (!im.complete || !im.naturalWidth) return false;
+  const [cx, cy, cw, ch, ax = cw / 2, ay = ch] = r, ref = ACTS[k]?.home?.a8?.[3] || 160, sc = (PLAYER_H * cam.s) / ref;
+  const [sx, sy] = cam.toScreen(x, y);
+  ctx.save(); ctx.translate(Math.round(sx), Math.round(sy)); if (facing < 0) ctx.scale(-1, 1);
+  ctx.drawImage(im, cx, cy, cw, ch, Math.round(-ax * sc), Math.round(-ay * sc), Math.round(cw * sc), Math.round(ch * sc));
+  ctx.restore(); return true;
+}
+// Which second-sheet frame a man is in (null: use poseFor's). Run cycles step with the ground he
+// covers (six frames to two strides); a man running mostly across the field turns up or down the
+// screen; the throw, catch, tackle and fall play out as short sequences. {face} overrides facing.
+const BACKS = new Set(["CB0", "CB1", "CB2", "S0", "S1"]), OLINE = new Set(["LT", "LG", "C", "RG", "RT"]);
+function pose2(S, e, t) {
+  if (S.kind || S.phase === "presnap") return null;
+  const sp = Math.hypot(e.vx, e.vy), moving = sp > 1.2, g = e._gait || 0, hasBall = S.ball.holder === e.key;
+  const i6 = (Math.floor(g / 0.42) % 6) + 1, i4 = (Math.floor(g / 0.55) % 4) + 1, i2 = (Math.floor(g / 0.7) % 2) + 1;
+  const across = moving && Math.abs(e.vy) > Math.abs(e.vx) * 1.4 ? (e.vy < 0 ? "up" : "down") : null;
+  const run = (ball) => ({ n: ball ? (across ? `run_ball_${across}_${i4}` : `run_ball_${i6}`) : across ? `run_${across}_${i4}` : `run_${i6}` });
+  const over = S.phase === "tackle" || S.phase === "fall";
+  if (over && S._overAt == null) S._overAt = t;
+  const since = over ? t - S._overAt : 0, isPass = S.call?.startsWith("pass");
+  if (e.key === "QB" && !over) {
+    if (S.thrownAt != null && t - S.thrownAt < 0.1) return { n: "throw_release" };
+    if (hasBall && S.phase === "live") {
+      if (e.mode === "dropback") return { n: `drop_${i4}`, face: 1 };
+      return { n: S.aim ? "throw_windup" : "throw_set" };
+    }
+    if (e.mode === "handoff") return { n: "handoff_qb" };
+    if (hasBall) return run(true);
+    return null;
+  }
+  if (S.dived && hasBall) return null; // (the first sheet's diving carry)
+  if (over && hasBall) {
+    if (S.result?.td) return since < 0.35 ? run(true) : since < 0.9 ? { n: "td_spike" } : { n: `td_dance_${(Math.floor(t * 4) % 2) + 1}` };
+    if (S.phase === "tackle") return since < 0.12 ? { n: "hit_reel" } : since < 0.24 ? { n: "fall_1" } : since < 0.38 ? { n: "fall_2" } : null;
+    return null;
+  }
+  if (over && S.tackler === e) return { n: since < 0.18 ? "tackle_dive" : "tackle_wrap" };
+  if (e.down > 0) return e.missed && e.down > 0.3 ? { n: "whiff" } : e.down < 0.15 ? { n: "getup_2" } : e.down < 0.3 ? { n: "getup_1" } : null;
+  const f = S.ball.flight;
+  if (f && !f.kick && f.target === e.key && e.side === "off") {
+    const left = f.t0 + f.T - t;
+    return left < 0.22 ? { n: f.bullet ? "catch_chest" : "catch_high" } : { n: `look_back_${(Math.floor(g / 0.7) % 2) + 1}` };
+  }
+  if (f && !f.kick && e.side === "def" && f.target && S.cover?.[f.target] === e.key && f.t0 + f.T - t < 0.2 && Math.hypot(e.x - f.to.x, e.y - f.to.y) < 1.6) return { n: "swat" };
+  if (hasBall && S.phase === "carry") {
+    if (S.catchAt != null && t - S.catchAt < 0.3 && e.side === "off") return { n: "catch_secure" };
+    if (e.key === "RB" && S.call?.startsWith("run") && S.t < 1.3 && e.x < S.los) return { n: "handoff_rb" };
+    if (S.jukeAt != null && t - S.jukeAt < 0.32) return { n: t - S.jukeAt < 0.14 ? "juke_plant" : "juke_cut" };
+    if (S.stagger > t) return { n: "stumble" };
+    return run(true);
+  }
+  if (over) return null;
+  // the defensive backs give ground facing the quarterback until the ball's out
+  if (e.side === "def" && BACKS.has(e.key) && S.phase === "live" && S.ball.holder === "QB" && e.vx > 0.4 && sp < e.top * 0.8) return { n: `backpedal_${i4}`, face: -1 };
+  if (OLINE.has(e.key) && e.mode === "block") return isPass ? (moving ? { n: `pass_set_${i2}` } : { n: "block_engaged" }) : moving ? { n: `run_drive_${i2}` } : { n: "block_engaged" };
+  if (e.side === "def" && e.key.startsWith("DL") && e.mode === "rush") {
+    if (!isPass) return { n: "rush_bull" };
+    const shed = S.shed?.[e.key] ?? 9, mv = e.move || "";
+    if (/SPIN/.test(mv) && shed - t < 0.45) return { n: `spin_noball_${Math.min(3, Math.floor((0.45 - (shed - t)) / 0.15) + 1)}` };
+    if (/SWIM/.test(mv) && shed - t < 0.35) return { n: "rush_swim" };
+    return { n: "rush_bull" };
+  }
+  if (moving) return run(false);
+  return null;
+}
+
 function poseFor(S, e, t) {
   // the legs keep pace with the ground: one step every ~1.15 yards, so a sprinter's legs turn
   // over faster than a jogging lineman's and nobody "moonwalks"
@@ -204,8 +276,8 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     const t = e.side === "off" ? teams.user : teams.opp, away = e.side === "def";
     const facing = Math.abs(e.vx) > 0.5 ? Math.sign(e.vx) : e.side === "off" ? 1 : -1;
     shadow(ctx, cam, e.x, e.y);
-    const [pose, act] = poseFor(S, e, S.t);
-    const ok = sprite(ctx, cam, t, away, pose, e.x, e.y, facing, act) || sprite(ctx, cam, t, away, POSE[e.p.pos] || "db", e.x, e.y, facing, false);
+    const [pose, act] = poseFor(S, e, S.t), p2 = pose2(S, e, S.t);
+    const ok = (p2 && sprite2(ctx, cam, t, away, p2.n, e.x, e.y, p2.face ?? facing)) || sprite(ctx, cam, t, away, pose, e.x, e.y, facing, act) || sprite(ctx, cam, t, away, POSE[e.p.pos] || "db", e.x, e.y, facing, false);
     if (!ok) { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.fillStyle = t.clr; ctx.fillRect(sx - s * 0.5, sy - s * 2.2, s, s * 2.2); }
     if (opts.ring && S.ball.holder === e.key && S.phase !== "presnap") { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, s * 0.08); ctx.beginPath(); ctx.ellipse(sx, sy, s * 1.1, s * 1.1 * SQUASH, 0, 0, Math.PI * 2); ctx.stroke(); }
   }
