@@ -165,7 +165,7 @@ export function tick(S, dt) {
     if (e.mode === "route") {
       if (S.t < e.delay) { brake(e, dt); continue; }
       if (e.path.length) {
-        const burst = e.cutAt != null && S.t - e.cutAt < 0.4 ? 1 + (R(e.p, "routeRun", R(e.p, "receiving", 60)) - 50) * 0.012 : 1; // out of his break
+        const burst = e.cutAt != null && S.t - e.cutAt < 0.4 ? 1.3 + (R(e.p, "routeRun", R(e.p, "receiving", 60)) - 50) * 0.016 : 1; // out of his break
         const acc0 = e.acc; e.acc *= burst;
         const left = steer(e, e.path[0].x, e.path[0].y, dt); e.acc = acc0;
         if (left < 0.7) { e.last = e.path.shift(); e.cutAt = S.t; if (!e.path.length) { e.mode = e.stop ? "settle" : "stride"; e.strideFrom = { x: e.x, y: e.y }; } }
@@ -178,7 +178,7 @@ export function tick(S, dt) {
     else if (e.mode === "adjust") {
       // get to the spot as the ball does: flat out if it's far, otherwise pace it and run through it
       const far = hyp(e.tx - e.x, e.ty - e.y), left = ball.flight ? Math.max(0.05, ball.flight.t0 + ball.flight.T - S.t) : 0.05;
-      const need = far / left; steer(e, e.tx, e.ty, dt, clamp(need / e.top, 0.35, 1), true);
+      const need = far / left; steer(e, e.tx, e.ty, dt, clamp(need / e.top, 0.75, 1), true); // never pulls up: he catches it running
     }
     else if (e.mode === "block") { if (isPass) brake(e, dt); }
   }
@@ -227,7 +227,7 @@ export function tick(S, dt) {
       // then lunges for it; anyone else close enough breaks on the spot once he's seen it
       const tgt = f.target && ents[f.target];
       if (mine && ents[mine] && left > 0.3) {
-        const r = ents[mine], cov = Math.max(R(d.p, "manCov", 0), R(d.p, "coverage", 0), d.p.ovr || 70), lag = 0.28 + Math.max(0, 90 - cov) * 0.025, kk = Math.min(1, dt / lag);
+        const r = ents[mine], cov = Math.max(R(d.p, "manCov", 0), R(d.p, "coverage", 0), d.p.ovr || 70), lag = 0.23 + Math.max(0, 90 - cov) * 0.025, kk = Math.min(1, dt / lag);
         d.rv ||= { vx: 0, vy: 0 }; d.rv.vx += (r.vx - d.rv.vx) * kk; d.rv.vy += (r.vy - d.rv.vy) * kk;
         // (a loose grip on him now: if he slows for the ball, his man is carried past him)
         mirror(d, r, r.x - 0.8, r.y + (r.y > 0 ? -0.6 : 0.6), dt, 1, 0.45, d.rv); continue;
@@ -238,7 +238,7 @@ export function tick(S, dt) {
       else brake(d, dt);
       continue;
     }
-    if (carrier && carrier.key !== "QB") { steer(d, ...xy(intercept(d, carrier)), dt, 1.02); continue; }
+    if (carrier && carrier.key !== "QB") { const react = S.catchAt != null && S.t - S.catchAt < 0.35 && hyp(d.x - carrier.x, d.y - carrier.y) > 2 ? 0.85 : 1.0; steer(d, ...xy(intercept(d, carrier)), dt, react); continue; }
     if (!isPass) { // the run: linebackers read it, then fill; the secondary comes late
       const read = k.startsWith("LB") ? 0.7 : k.startsWith("S") ? 1.0 : 1.4;
       if (S.t < read) { brake(d, dt); continue; }
@@ -248,10 +248,10 @@ export function tick(S, dt) {
     if (mine && ents[mine]) {
       // man: on his hip, shaded inside; a better cover man stays tighter and reads the break sooner
       const r = ents[mine], cov = Math.max(R(d.p, "manCov", 0), R(d.p, "coverage", 0), d.p.ovr || 70);
-      const q = clamp(0.97 + (cov - 78) * 0.003, 0.88, 1.04), trail = (r.mode === "settle" ? 0.6 : 1.0) + Math.max(0, 85 - cov) * 0.025, in_ = r.y > 0 ? -0.7 : 0.7;
+      const q = clamp(0.96 + (cov - 78) * 0.003, 0.87, 1.02), trail = (r.mode === "settle" ? 0.8 : 1.25) + Math.max(0, 85 - cov) * 0.03, in_ = r.y > 0 ? -0.7 : 0.7;
       // he reads the receiver's moves a beat late (later for a lesser cover man): what he mirrors is
       // a smoothed copy of the receiver's velocity, so a sharp cut opens a window before he reacts
-      const lag = 0.28 + Math.max(0, 90 - cov) * 0.025, k = Math.min(1, dt / lag);
+      const lag = 0.23 + Math.max(0, 90 - cov) * 0.025, k = Math.min(1, dt / lag);
       d.rv ||= { vx: 0, vy: 0 }; d.rv.vx += (r.vx - d.rv.vx) * k; d.rv.vy += (r.vy - d.rv.vy) * k;
       const lx = r.x - r.vx * 0.05, ly = r.y - r.vy * 0.05;
       mirror(d, r, lx - trail, ly + in_, dt, q, 0.9, d.rv);
@@ -290,17 +290,17 @@ export function tick(S, dt) {
     // a loose runner leans away from a tackler in his path when you aren't steering
     const lean = S.steer == null && d && dd < 4 && d.x > carrier.x - 0.5 ? (carrier.y > d.y ? 2 : -2) : 0;
     // a receiver secures the catch before he's at full stride
-    const fresh = S.catchAt != null && S.t - S.catchAt < 0.3 ? 0.88 : 1, stagger = S.stagger > S.t ? 0.7 : 1, burst = S.burstUntil > S.t ? 1.12 : 1;
+    const fresh = 1, stagger = S.stagger > S.t ? 0.7 : 1, burst = S.burstUntil > S.t ? 1.12 : 1;
     steer(carrier, carrier.x + 8, clamp(wantY + lean, -HALF + 0.3, HALF - 0.3), dt, fresh * stagger * burst);
     if (carrier.x >= 100) { score(S); return true; }
     if (Math.abs(carrier.y) >= HALF - 0.4) { outOfBounds(S); return true; }
     const closing = d ? ((d.vx - carrier.vx) * (carrier.x - d.x) + (d.vy - carrier.vy) * (carrier.y - d.y)) / Math.max(0.1, dd) : 0; // yards/s he's gaining
     const dSpeed = d ? hyp(d.vx, d.vy) : 0;
-    if (d && dd < 1.0 + clamp(closing, 0, 4) * 0.1 + (dSpeed > 5 ? 0.4 : 0)) { // a man at full stride can lay out for him
+    if (d && dd < 1.0 + clamp(closing, 0, 4) * 0.1 + (dSpeed > 5 ? 0.25 : 0)) { // a man at full stride can lay out for him
       // the tackle, or a broken one: elusiveness against his tackling, and a man can't be broken twice
       const el = Math.max(R(carrier.p, "elusiveness", 60), R(carrier.p, "breakTkl", 60), R(carrier.p, "yac", 60)), tk = R(d.p, "tackling", d.p.ovr || 70);
       // (a man who just caught it hasn't got his feet under him; a broken tackle still knocks him off stride)
-      const pBreak = d.missed ? 0 : clamp(0.09 + (el - tk) * 0.004 + (S.broke ? -0.05 : 0), 0.03, 0.3) * (fresh < 1 ? 0.6 : 1);
+      const pBreak = d.missed ? 0 : clamp(0.09 + (el - tk) * 0.005 + (S.broke ? -0.05 : 0), 0.05, 0.35);
       if (rnd(S) < pBreak) { d.down = 0.7; d.missed = true; S.broke++; S.stagger = S.t + 0.45; carrier.vx *= 0.55; carrier.vy *= 0.55; S.log.push(`${d.p.name} misses`); }
       else { tackle(S, d); return true; }
     }
@@ -356,8 +356,10 @@ export function throwTo(S, P, why = null) {
   // his accuracy: the ball drifts from the spot, more on a long throw
   const sig = (0.3 + Math.max(0, 92 - accu) * 0.05) * (0.5 + dist / 18), g1 = () => (rnd(S) + rnd(S) + rnd(S) - 1.5) * 1.6;
   land = { x: clamp(land.x + g1() * sig, S.los - 12, 109), y: clamp(land.y + g1() * sig, -HALF + 0.3, HALF - 0.3) };
-  const vel = 17 + (arm - 70) * 0.12; // yards per second through the air
-  const T = clamp(dist / vel + 0.08, 0.5, 2.6); // a short one is floated, not fired
+  // underneath it's a bullet (flat and fast); downfield it's lofted over the coverage, still quicker than a moonball
+  const bullet = dist < 20;
+  const vel = bullet ? 27 + (arm - 70) * 0.2 : 22 + (arm - 70) * 0.15; // yards per second through the air
+  const T = clamp(dist / vel, 0.22, 2.0);
   let best = null, bestD = 99;
   for (const r of ELIGIBLE) {
     const e = ents[r]; if (!e || e.mode === "block" || e.mode === "back" || (e.delay && S.t < e.delay)) continue;
@@ -370,7 +372,7 @@ export function throwTo(S, P, why = null) {
   const [rusher, near] = nearestDef(S, qb.x, qb.y);
   const hurried = why || (rusher && near < 1.5 ? "hurried" : null); // a man in his face as he lets it go
   S.ball.holder = null; S.thrownAt = S.t; qb.mode = "watch";
-  S.ball.flight = { from: { x: qb.x, y: qb.y }, to: land, t0: S.t, T, arc: clamp(dist / 11, 0.7, 4), target: best, hurried };
+  S.ball.flight = { from: { x: qb.x, y: qb.y }, to: land, t0: S.t, T, arc: bullet ? clamp(dist / 40, 0.15, 0.45) : clamp(dist / 13, 1.2, 3.5), target: best, hurried, bullet };
   // a hurried or wild throw sails: the spot drifts
   if (hurried) { const k = why === "late" ? 3 : 2; S.ball.flight.to = { x: land.x + (rnd(S) - 0.5) * k, y: clamp(land.y + (rnd(S) - 0.5) * k * 2, -HALF + 0.3, HALF - 0.3) }; }
   S.pick = { target: tgt?.p.id, sep: tgt ? +separation(S, best).toFixed(1) : null, why: hurried };
