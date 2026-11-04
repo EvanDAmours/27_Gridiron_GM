@@ -35,6 +35,7 @@ const ROUTES = {
   post: { legs: [[10, 0], [14, 8]], more: 12 }, go: { legs: [[45, 0]], more: 40 }, seam: { legs: [[4, 0], [30, 1.5]], more: 15 }, drag: { legs: [[2, 0], [2, 16]], more: 5 },
   flat: { legs: [[0.5, 0], [2, -9]], more: 3 }, swing: { legs: [[-1, -3], [3, -8]], more: 4 }, check: { legs: [[4, 0], [1, 0]], stop: true, delay: 0.9 },
 };
+const ROUTES_OF = (call) => PLAYS[call] || {};
 const PLAYS = {
   pass_quick: { X: "slant", Z: "hitch", SLOT: "out", TE: "flat", RB: "check" },
   pass_medium: { X: "dig", Z: "out", SLOT: "hitch", TE: "drag", RB: "swing" },
@@ -86,13 +87,48 @@ export function snap(S) {
     e.deepTop = topSpeed({ ...e.p, spd: K.deepSpeed(e.p) }); // his speed once he's into his stride downfield
   }
   for (const k of LINE) ents[k].mode = "block";
+  // the defense's call, from its own tendencies (the coordinator's scheme and game plan, as the engine uses them)
+  const st = S.g.sides?.a?.dStyle || { blitz: 0.22, box: 0.2, cover: 0.2 }, u = rnd(S);
+  S.dcall = u < st.blitz ? "blitz" : u < st.blitz + st.box ? "box" : u < st.blitz + st.box + st.cover ? "cover" : "base";
+  S.drive = {}; S.flash = [];
   for (const k of ["DL0", "DL1", "DL2", "DL3"]) {
     const d = ents[k], o = ents[OL_VS[k]]; if (!d) continue;
-    const rush = isPass ? K.passRush(d.p) : K.runStop(d.p), blk = o ? (isPass ? K.passBlock(o.p) : K.runBlock(o.p)) : 50;
-    S.shed[k] = clamp(1.2 + (blk - rush) * 0.045 - K.edge(K.getOff(d.p)) * 0.008 + rnd(S) * 2.3, 0.8, 6.5);
+    if (isPass) {
+      // his best move against the part of the lineman's game that answers it: a swim against his hands,
+      // a spin against his feet, a bull rush against his anchor
+      const MOVES = [["swim", "handUse", "SWIM"], ["spin", "footwork", "SPIN"], ["bullRush", "anchor", "BULL RUSH"]];
+      const [move, counter, label] = MOVES.reduce((b, m) => ((d.p.posAttrs?.[m[0]] ?? 0) > (d.p.posAttrs?.[b[0]] ?? 0) ? m : b));
+      // half his pass-rush grade (and get-off), half his best move against the lineman's answer to it
+      const rush = K.skill(d.p, [["passRush", 0.75], ["getOff", 0.25], ["blitzing", 1]], 0.15) * 0.5 + K.skill(d.p, [[move, 1]], 0.1) * 0.5;
+      const blk = o ? K.passBlock(o.p) * 0.55 + K.skill(o.p, [[counter, 1]], 0.1) * 0.45 : 50;
+      // (a blitz brings games up front too: twists and slants free a rusher a beat sooner; dropping eight gives the line time)
+      S.shed[k] = clamp(1.95 + (blk - rush) * 0.1 - K.edge(K.getOff(d.p)) * 0.02 + rnd(S) * 1.8 + (S.dcall === "cover" ? 0.35 : S.dcall === "blitz" ? -0.3 : 0), 1.05, 6.5);
+      d.move = label;
+    } else {
+      // the run: who wins at the point of attack, and by how much: the line drives him back, or he walks it into the backfield
+      const rush = K.runStop(d.p), blk = o ? K.runBlock(o.p) : 50;
+      S.shed[k] = clamp(1.5 + (blk - rush) * 0.06 + rnd(S) * 1.8 - (S.dcall === "box" ? 0.25 : 0), 0.5, 5);
+      S.drive[k] = clamp((blk - rush) * 0.12 + (rnd(S) - 0.5) * 0.8 - 0.45, -2.5, 2.4); // yards a second the pile moves
+      d.penetrating = S.drive[k] < -0.7; // he's walking his man into the backfield: he can make the play from there
+    }
     d.mode = "rush";
   }
   for (const k of ["LB0", "LB1", "CB0", "CB1", "CB2", "S0", "S1"]) if (ents[k]) ents[k].mode = "cover";
+  if (S.dcall === "box" && !isPass && ents.S1) ents.S1.mode = "box"; // the eighth man down in the box
+  // run blocking assignments: the uncovered center climbs to the MIKE, the tight end takes the SAM;
+  // everyone else has the man over him, then climbs to whoever's next
+  if (!isPass) { if (ents.C) ents.C.assign = ents.LB1 ? "LB1" : "LB0"; if (ents.TE) ents.TE.assign = ents.LB0 ? "LB0" : "S1"; }
+  // the blitz: the MIKE (or SAM) comes; the safety takes his man; the back picks him up if he can
+  if (S.dcall === "blitz" && isPass) {
+    const bk = ents.LB1 ? "LB1" : ents.LB0 ? "LB0" : null;
+    if (bk) {
+      const bl = ents[bk]; bl.mode = "blitz"; bl.x = Math.min(bl.x, S.los + 2.5); // he walked up to the line
+      for (const r of Object.keys(S.cover)) if (S.cover[r] === bk) S.cover[r] = ents.S1 ? "S1" : bk;
+      const rb = ents.RB, staysIn = rb && ROUTES_OF(S.call).RB === "check";
+      if (staysIn && rnd(S) < clamp(0.65 + K.edge(K.passBlock(rb.p)) * 0.012, 0.3, 0.95)) { rb.mode = "protect"; rb.path = []; S.pickup = bk; }
+      S.flash.push({ key: bk, text: "BLITZ", until: 1.2 });
+    }
+  }
   ents.QB.mode = isPass ? "dropback" : "handoff";
   if (!isPass) { S.handoffAt = 0.7; S.lane = call === "run_outside" ? (rnd(S) < 0.5 ? -14 : 14) : (rnd(S) < 0.5 ? -4.2 : 4.2); }
 }
@@ -140,13 +176,13 @@ function intercept(d, c) {
 }
 export const separation = (S, r) => { const e = S.ents[r], c = S.ents[S.cover[r]]; return c ? hyp(e.x - c.x, e.y - c.y) : 9; };
 // the nearest defender who could make a play (a lineman still tied up with his blocker can't)
-const nearestDef = (S, x, y, skip = null) => { let best = null, bd = 99; for (const k of Object.keys(S.ents)) { const d = S.ents[k]; if (d.side !== "def" || d.down > 0 || k === skip || d.mode === "rush" || d.heldUntil > S.t) continue; const dd = hyp(d.x - x, d.y - y); if (dd < bd) { bd = dd; best = d; } } return [best, bd]; };
+const nearestDef = (S, x, y, skip = null) => { let best = null, bd = 99; for (const k of Object.keys(S.ents)) { const d = S.ents[k]; if (d.side !== "def" || d.down > 0 || k === skip || (d.mode === "rush" && !d.penetrating) || d.heldUntil > S.t) continue; const dd = hyp(d.x - x, d.y - y); if (dd < bd) { bd = dd; best = d; } } return [best, bd]; };
 
 // A blocker on a defender: he's tied up for a spell set by his run blocking against the
 // defender's shedding, then gets off and can't be caught by the same man again for a moment.
 function block(S, b, d) {
   const bl = K.runBlock(b.p), sh = K.runStop(d.p);
-  d.heldUntil = S.t + clamp(0.8 + (bl - sh) * 0.02 + rnd(S) * 0.7, 0.4, 2.2); d.heldBy = b.key; d.freeOf = { key: b.key, until: d.heldUntil + 1.0 };
+  d.heldUntil = S.t + clamp(0.9 + (bl - sh) * 0.05 + rnd(S) * 0.6, 0.25, 2.8); d.heldBy = b.key; d.freeOf = { key: b.key, until: d.heldUntil + 1.0 };
   b.blocking = d.key;
 }
 const canBlock = (S, b, d) => d.side === "def" && d.down <= 0 && d.mode !== "rush" && !(d.heldUntil > S.t) && !(d.freeOf && d.freeOf.key === b.key && d.freeOf.until > S.t);
@@ -198,8 +234,26 @@ export function tick(S, dt) {
   for (const k of LINE) {
     const o = ents[k]; if (o.mode !== "block") continue;
     const mine = ["DL0", "DL1", "DL2", "DL3"].find((d) => OL_VS[d] === k), dl = mine && ents[mine];
-    if (isPass) { steer(o, S.los - 2.6 + (k === "C" ? 0.3 : 0), OFF_SPOTS[k][1] * 1.15, dt, 0.6); continue; }
-    if (dl && dl.mode === "rush") { steer(o, S.los + 0.6, OFF_SPOTS[k][1] * 1.05, dt, 0.6); continue; }
+    if (isPass) {
+      // the center slides to the blitzer: his pass block against the linebacker's rush decides how long he holds him
+      // (only when the protection slid his way: half the time he's turned the other way and the blitzer is the back's, or nobody's)
+      if (k === "C" && S.slideC == null) S.slideC = rnd(S) < 0.5;
+      const bz = k === "C" && S.slideC && Object.values(ents).find((q) => q.mode === "blitz" && !q.pickedUp && !(q.heldUntil > S.t));
+      if (bz && hyp(bz.x - o.x, bz.y - o.y) < 1.6) { bz.pickedUp = true; bz.heldUntil = S.t + clamp(0.45 + (K.passBlock(o.p) - K.passRush(bz.p)) * 0.03 + rnd(S) * 0.6, 0.2, 1.6); bz.heldBy = "C"; }
+      else if (bz && S.t > 0.2) { steer(o, (bz.x + ents.QB.x) / 2, (bz.y + ents.QB.y) / 2, dt, 0.8); continue; }
+      steer(o, S.los - 2.6 + (k === "C" ? 0.3 : 0), OFF_SPOTS[k][1] * 1.15, dt, 0.6); continue;
+    }
+    if (o.assign && !mine) { seekBlock(S, o, dt, 14); continue; }
+    // winning at the point of attack: he washes his man out of the play and climbs to the next level
+    if (dl && dl.mode === "rush" && !o.climbed && (S.drive[mine] || 0) > 0 && S.t > 1.9 - (S.drive[mine] || 0) * 0.6) {
+      o.climbed = true; dl.mode = "free"; dl.heldUntil = S.t + 0.5 + (S.drive[mine] || 0) * 0.35; dl.heldBy = k;
+      // the most dangerous man still free: the one nearest the back's path
+      const rb = ents.RB, lane = { x: S.los + 3, y: S.lane };
+      const next = ["LB0", "S1", "LB1", "S0", "CB2"].map((q) => ents[q]).filter((q) => q && canBlock(S, o, q)).sort((p1, p2) => hyp(p1.x - lane.x, p1.y - lane.y) + hyp(p1.x - o.x, p1.y - o.y) * 0.5 - hyp(p2.x - lane.x, p2.y - lane.y) - hyp(p2.x - o.x, p2.y - o.y) * 0.5)[0];
+      if (next) o.assign = next.key;
+    }
+    if (o.climbed) { seekBlock(S, o, dt, 12); continue; }
+    if (dl && dl.mode === "rush") { const drv = S.drive[mine] || 0; steer(o, S.los + 0.6 + clamp(drv * S.t, -3.5, 4), OFF_SPOTS[k][1] * 1.05, dt, 0.7); continue; } // driving him (or being driven)
     seekBlock(S, o, dt, 10);
   }
   if (!isPass && !over) for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode === "block") seekBlock(S, e, dt, 9); }
@@ -209,19 +263,29 @@ export function tick(S, dt) {
   else if (qb.mode === "set" || qb.mode === "watch") brake(qb, dt);
   else if (qb.mode === "handoff") { brake(qb, dt); const rb = ents.RB; if (rb.mode === "back" && (hyp(rb.x - qb.x, rb.y - qb.y) < 1.4 || S.t >= 1.0)) handoff(S); }
   if (ents.RB.mode === "back") steer(ents.RB, S.los + 1, S.lane * 0.6, dt, 0.95);
+  if (ents.RB.mode === "protect") {
+    const rb = ents.RB, bl = ents[S.pickup];
+    if (bl && bl.mode === "blitz" && !(bl.heldUntil > S.t) && !bl.pickedUp) {
+      if (hyp(bl.x - rb.x, bl.y - rb.y) < 1.2) { bl.pickedUp = true; bl.heldUntil = S.t + clamp(0.9 + (K.passBlock(rb.p) - K.passRush(bl.p)) * 0.03 + rnd(S) * 0.6, 0.3, 2.4); bl.heldBy = "RB"; S.flash.push({ key: "RB", text: "PICKED UP", until: S.t + 0.9 }); }
+      else steer(rb, (bl.x + qb.x) / 2, (bl.y + qb.y) / 2, dt, 0.95);
+    } else brake(rb, dt);
+  }
 
   // the rush: engaged with his man until he sheds him, then after the ball
   for (const k of ["DL0", "DL1", "DL2", "DL3"]) {
     const d = ents[k]; if (!d || d.down > 0 || d === carrier || d.heldUntil > S.t) continue;
     const o = ents[OL_VS[k]];
-    if (d.mode === "rush") { if (S.t < S.shed[k]) steer(d, o.x + (isPass ? 1.0 : 1.3), o.y + (d.y > o.y ? 0.5 : -0.5), dt, 0.7); else d.mode = "free"; }
+    if (d.mode === "rush") {
+      if (S.t < S.shed[k]) steer(d, o.x + (isPass ? 1.0 : 1.1), o.y + (d.y > o.y ? 0.5 : -0.5), dt, 0.8);
+      else { d.mode = "free"; if (isPass && ball.holder === "QB" && d.move) S.flash.push({ key: k, text: d.move, until: S.t + 1.0 }); }
+    }
     if (d.mode === "free") { if (carrier && !over) steer(d, ...xy(intercept(d, carrier)), dt, clamp(1 + K.edge(K.pursuit(d.p)) * 0.002, 0.95, 1.04)); else brake(d, dt); }
   }
   // the pass rush gets home: a sack
   if (S.phase === "live" && isPass && ball.holder === "QB") {
     const [d, dd] = nearestDef(S, qb.x, qb.y);
     if (dd < 2.8 && !S.pressureAt) S.pressureAt = S.t;
-    if (dd < 1.25 && d && d.mode === "free") { sack(S, d); return true; }
+    if (dd < 1.25 && d && (d.mode === "free" || d.mode === "blitz")) { sack(S, d); return true; }
   }
 
   // coverage: man trails his receiver; the safeties sit deep and break on the ball; once the ball's
@@ -230,6 +294,8 @@ export function tick(S, dt) {
     const d = ents[k]; if (!d || d.down > 0 || d === carrier || d.heldUntil > S.t) continue;
     const mine = Object.keys(S.cover).find((r) => S.cover[r] === k);
     if (over) { brake(d, dt); continue; }
+    if (d.mode === "blitz") { if (S.t > 0.12) { const tgt = carrier || qb; steer(d, ...xy(intercept(d, tgt)), dt, 1); } continue; } // straight at the quarterback
+    if (d.mode === "box" && !ball.flight) { if (S.t > 0.45) { const tgt = carrier || ents.RB; steer(d, ...xy(intercept(d, tgt)), dt, 0.95); } else steer(d, S.los + 4, 5, dt, 0.8); continue; }
     if (ball.flight) {
       const f = ball.flight, near = hyp(f.to.x - d.x, f.to.y - d.y), left = f.t0 + f.T - S.t;
       // a cover man stays in his coverage (same lag, same trail) until the ball is nearly down,
@@ -270,6 +336,9 @@ export function tick(S, dt) {
       let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.x > S.los + 4 && (!deep || e.x > deep.x)) deep = e; }
       const dx = deep ? Math.max(deep.x + 4.5 + Math.max(0, deep.vx) * 0.4, S.los + 13) : S.los + 14, dy = deep ? deep.y * 0.75 : 0;
       steer(d, Math.min(106, dx), dy, dt, 1);
+    } else if (k === "S1" && S.dcall === "cover") { // two deep: he takes his half
+      let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.y > -4 && (!deep || e.x > deep.x)) deep = e; }
+      steer(d, Math.min(106, Math.max(S.los + 13, deep ? deep.x + 4 : 0)), deep ? Math.max(4, deep.y * 0.8) : 11, dt, 1);
     } else if (k === "S1") {
       // the strong safety: with two men going deep he takes the second over the top; otherwise a
       // robber in the middle, jumping anything that comes through his zone
@@ -336,16 +405,25 @@ export function tick(S, dt) {
   return true;
 }
 const xy = (p) => [p.x, p.y];
+// where a blocker meets a defender: a step in front of him, on his line to the ball carrier
+function cutOff(S, d) {
+  const c = (S.ball.holder && S.ents[S.ball.holder]) || S.ents.RB || S.ents.QB;
+  const dx = c.x - d.x, dy = c.y - d.y, n = hyp(dx, dy) || 1;
+  return [d.x + (dx / n) * 1.2 + d.vx * 0.15, d.y + (dy / n) * 1.2 + d.vy * 0.15];
+}
 // a blocker with nobody to block looks for the nearest free defender ahead of him and ties him up
 function seekBlock(S, b, dt, range) {
   const { ents } = S;
   const held = b.blocking && ents[b.blocking];
   if (held && held.heldUntil > S.t) { steer(b, held.x - 0.6, held.y, dt, 0.7); return; }
   b.blocking = null;
+  const a = b.assign && S.ents[b.assign];
+  if (a && canBlock(S, b, a) && a.down <= 0) { const ad = hyp(a.x - b.x, a.y - b.y); const c = (S.ball.holder && S.ents[S.ball.holder]) || S.ents.RB, between = c && hyp(c.x - b.x, c.y - b.y) < hyp(c.x - a.x, c.y - a.y);
+    if (ad < 2.2 || (ad < 3.2 && between && S.t > 0.5)) { block(S, b, a); b.assign = null; } else { const [px, py] = cutOff(S, a); steer(b, px, py, dt, 1); } return; }
   let best = null, bd = range;
   for (const d of Object.values(ents)) { if (!canBlock(S, b, d) || d.x < b.x - 1.5) continue; const dd = hyp(d.x - b.x, d.y - b.y); if (dd < bd) { bd = dd; best = d; } }
   if (!best) { brake(b, dt); return; }
-  if (bd < 1.2) block(S, b, best); else steer(b, best.x - 0.5 + best.vx * 0.3, best.y + best.vy * 0.3, dt, 0.9); // cut him off where he's going
+  if (bd < 1.8) block(S, b, best); else { const [px, py] = cutOff(S, best); steer(b, px, py, dt, 0.95); } // get in his path to the ball
 }
 
 // A juke (a quick flick while running): a burst, and the nearest tackler within reach may lunge
@@ -431,6 +509,7 @@ function arrive(S) {
     const pCatch = (open ? clamp(0.985 - (85 - hands) * 0.003, 0.9, 0.995) : clamp(0.67 + first + (traffic - ballSk) * 0.007 + (dD - 0.8) * 0.22 - (dR > 1.2 ? 0.08 : 0), 0.18, 0.9)) * clamp(dive, 0, 1);
     if (rnd(S) < pCatch) {
       ball.x = tgt.x; ball.y = tgt.y; ball.holder = f.target; tgt.mode = "carry"; S.catchAt = S.t; S.phase = "carry";
+      if (d && dD < 2.5) { d.down = Math.max(d.down, clamp(0.4 - (dD < 0.8 ? 0.2 : 0) - K.edge(K.tackling(d.p)) * 0.005, 0.15, 0.6)); d.vx *= 0.3; d.vy *= 0.3; } // he played the ball, not the man
       S.pick.open = open; S.log.push(`caught ${open ? "open" : "contested"}`);
       return;
     }

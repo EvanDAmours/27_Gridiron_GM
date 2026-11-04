@@ -6,7 +6,15 @@ import { setupPlay, snap, tick, throwTo, juke, separation, ELIGIBLE } from "../s
 
 const N = +process.argv[2] || 400;
 const scale = (p, v) => ({ ...p, ovr: v, spd: Math.min(99, (p.spd ?? 75) + (v - 75) * 0.4), acc: Math.min(99, (p.acc ?? 75) + (v - 75) * 0.4), agi: Math.min(99, (p.agi ?? 75) + (v - 75) * 0.4), posAttrs: Object.fromEntries(Object.entries(p.posAttrs || {}).map(([k]) => [k, v])) });
+// only some ratings: the rest of the player stays as on the roster
+const only = (p, keys, v) => ({ ...p, posAttrs: { ...p.posAttrs, ...Object.fromEntries(keys.map((k) => [k, v])) } });
+const OL = ["LT", "LG", "C", "RG", "RT"];
 const UNITS = {
+  "OL run block grades": (L, v) => ({ ...L, off: { ...L.off, ...Object.fromEntries(OL.map((k) => [k, only(L.off[k], ["runBlock", "drive", "strength", "pulling"], v)])) } }),
+  "OL pass block grades": (L, v) => ({ ...L, off: { ...L.off, ...Object.fromEntries(OL.map((k) => [k, only(L.off[k], ["passBlock", "footwork", "anchor", "handUse"], v)])) } }),
+  "DL pass rush grades": (L, v) => ({ ...L, def: { ...L.def, DL: L.def.DL.map((p) => only(p, ["passRush", "getOff"], v)) } }),
+  "DL pass rush moves": (L, v) => ({ ...L, def: { ...L.def, DL: L.def.DL.map((p) => only(p, ["swim", "spin", "bullRush"], v)) } }),
+  "blitz scheme (rate %)": (L, v, g) => { g.sides.a.dStyle = { blitz: v / 100, box: 0.15, cover: v > 50 ? 0.05 : 0.35 }; return L; },
   QB: (L, v) => ({ ...L, off: { ...L.off, QB: scale(L.off.QB, v) } }),
   receivers: (L, v) => ({ ...L, off: { ...L.off, X: scale(L.off.X, v), Z: scale(L.off.Z, v), SLOT: scale(L.off.SLOT, v), TE: scale(L.off.TE, v) } }),
   "running back": (L, v) => ({ ...L, off: { ...L.off, RB: scale(L.off.RB, v) } }),
@@ -23,7 +31,7 @@ function play(unit, v) {
       if (g.koNext || g.poss !== "h") { simOpponentDrive(g); continue; }
       if (g.down === 4) { runPlay(g, "punt"); continue; }
       const call = ["pass_quick", "pass_medium", "pass_deep", "run_inside", "pass_medium", "run_outside"][n % 6];
-      const L = UNITS[unit](lineups(g), v);
+      const L = UNITS[unit](lineups(g), v, g);
       const S = setupPlay(g, L, call); snap(S); let thrown = false, f = 0;
       while (tick(S, 1 / 60) && f++ < 1500) {
         if (call.startsWith("pass") && !thrown && S.ball.holder === "QB" && S.phase === "live" && S.t > 1.0) {
@@ -44,4 +52,4 @@ function play(unit, v) {
   return st;
 }
 const fmt = (s) => `comp ${(100 * s.comp / s.att).toFixed(0)}%  Y/A ${(s.pyds / s.att).toFixed(1)}  INT ${(100 * s.int / s.att).toFixed(1)}%  sack ${(100 * s.sack / s.att).toFixed(1)}%  sep@throw ${(s.sep / s.sepN).toFixed(2)}  miss ${(s.err / s.errN).toFixed(2)}yd  rush ${(s.ryds / s.ru).toFixed(1)}  broken ${(s.broke / s.ru).toFixed(2)}/run`;
-for (const unit of Object.keys(UNITS)) { console.log(`${unit}:`); const [hi, lo] = (process.argv[3] || "95,55").split(",").map(Number); console.log(`  good (${hi}):`, fmt(play(unit, hi))); console.log(`  poor (${lo}):`, fmt(play(unit, lo))); }
+for (const unit of Object.keys(UNITS).filter((u) => !process.argv[4] || u.includes(process.argv[4]))) { console.log(`${unit}:`); const [hi, lo] = (process.argv[3] || "95,55").split(",").map(Number); console.log(`  good (${hi}):`, fmt(play(unit, hi))); console.log(`  poor (${lo}):`, fmt(play(unit, lo))); }
