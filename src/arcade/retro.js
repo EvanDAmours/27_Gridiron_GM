@@ -161,6 +161,13 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     if (!ok) { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.fillStyle = t.clr; ctx.fillRect(sx - s * 0.5, sy - s * 2.2, s, s * 2.2); }
     if (opts.ring && S.ball.holder === e.key && S.phase !== "presnap") { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, s * 0.08); ctx.beginPath(); ctx.ellipse(sx, sy, s * 1.1, s * 1.1 * SQUASH, 0, 0, Math.PI * 2); ctx.stroke(); }
   }
+  // what just happened up front: BLITZ, the move that beat a blocker, PICKED UP
+  for (const f of S.flash || []) {
+    if (S.t > f.until) continue; const e = S.ents[f.key]; if (!e) continue;
+    const [fx, fy] = cam.toScreen(e.x, e.y), fp = Math.max(1, Math.round(s * 0.09)), w = pixWidth(f.text, fp) + fp * 4;
+    ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(Math.round(fx - w / 2), Math.round(fy - PLAYER_H * s - fp * 11), w, fp * 9);
+    pixText(ctx, f.text, fx, Math.round(fy - PLAYER_H * s - fp * 10), fp, f.text === "PICKED UP" ? "#7fd4ff" : "#ffd166", "center");
+  }
   // the ball in flight, or on the turf after an incompletion (the art holds it otherwise)
   const b = S.ball;
   if (b.flight || b.holder == null) {

@@ -31,15 +31,18 @@ export default function Arcade() {
 }
 
 function GameCanvas({ userTi, oppTi, onQuit }) {
-  const ref = useRef(null);
+  const ref = useRef(null), gameRef = useRef(null);
+  const [muted, setMuted] = useState(false);
   useEffect(() => {
     const game = new ArcadeGame(ref.current, { userTi, oppTi, teams: { user: TEAMS[userTi], opp: TEAMS[oppTi] }, onQuit });
+    gameRef.current = game; setMuted(game.muted);
     return () => game.destroy();
   }, [userTi, oppTi, onQuit]);
   return (
     <div style={{ height: "100dvh", background: BG, userSelect: "none", position: "relative" }}>
       <canvas ref={ref} style={{ display: "block", touchAction: "none", imageRendering: "pixelated" }} />
-      <button onClick={onQuit} style={{ ...btn({ padding: "4px 8px", fontSize: 10 }), position: "absolute", right: 6, top: 6, opacity: 0.6 }}>Quit</button>
+      <button onClick={() => setMuted(gameRef.current?.toggleMute())} style={{ ...btn({ padding: "4px 8px", fontSize: 10 }), position: "absolute", right: 58, top: 30, opacity: 0.6 }}>{muted ? "Sound off" : "Sound on"}</button>
+      <button onClick={onQuit} style={{ ...btn({ padding: "4px 8px", fontSize: 10 }), position: "absolute", right: 6, top: 30, opacity: 0.6 }}>Quit</button>
     </div>
   );
 }
