@@ -35,8 +35,15 @@ export function depthOrderFor(roster, depthOrder, pos, snaps) {
     const able = players.filter((p) => !out(p));
     return [...dlOrder(able, (depthOrder || {}).DL || [], ordered.filter((p) => !out(p)), snaps), ...players.filter(out)];
   }
-  // linebackers (SAM, MIKE, WILL), corners (CB1, CB2, nickel) and receivers (X, Z, slot) by role
-  return ROLE_SLOTS[pos] ? roleOrder(pos, players, (depthOrder || {})[pos] || [], ordered, snaps) : ordered;
+  // linebackers (SAM, MIKE, WILL), corners (CB1, CB2, nickel) and receivers (X, Z, slot) by role.
+  // Like the line, the roles are filled from the players who can play, the injured last: a man you
+  // put at MIKE while a teammate is hurt is saved at MIKE, and stays there when the teammate heals.
+  if (ROLE_SLOTS[pos]) {
+    const out = (p) => p.injured || p.holdout || p.suspended;
+    const able = players.filter((p) => !out(p));
+    return [...roleOrder(pos, able, (depthOrder || {})[pos] || [], ordered.filter((p) => !out(p)), snaps), ...ordered.filter(out)];
+  }
+  return ordered;
 }
 
 

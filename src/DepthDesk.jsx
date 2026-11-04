@@ -209,7 +209,13 @@ export default function DepthDesk({ api }) {
   // never a locked one (snapEdit.js linkedSet)
   const setShare = (pos, id, v) => setSnaps && setSnaps((o) => linkedSet(pos, order(pos), o || {}, shape, id, v, locks));
   const shareOf = (pos, id) => shares(pos)[id] ?? 0;
-  const toggleLock = (id) => setLocks((l) => { const n = new Set(l); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  // locking keeps his share as it is now: it's saved as his own number, so a depth change (a teammate
+  // coming back from injury, a swap) can't hand him a different spot's default share
+  const toggleLock = (id, pos) => {
+    const on = !locks.has(id);
+    if (on && pos && setSnaps) { const v = shareOf(pos, id); setSnaps((o) => (o?.[id] != null ? o : { ...(o || {}), [id]: v })); }
+    setLocks((l) => { const n = new Set(l); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  };
   // the starters play every snap of their spot; the bench only keeps what you locked. Spot by spot,
   // so a formation that takes a receiver off the field (two-TE sets) still does.
   const startersOnly = (pos) => setSnaps && setSnaps((o0) => { const o = o0 || {}; const n = { ...o };
@@ -285,7 +291,7 @@ export default function DepthDesk({ api }) {
                   <button type="button" aria-label={`5 fewer snaps for ${p.name}`} disabled={lk} onClick={() => setShare(pos, p.id, sv - 5)} style={{ ...mini, opacity: lk ? 0.35 : 1 }}>−</button>
                   <b style={{ width: 40, textAlign: "center", fontSize: 13, color: lk ? "#facc15" : mine ? "#fde68a" : "#e5e7eb" }}>{sv}%</b>
                   <button type="button" aria-label={`5 more snaps for ${p.name}`} disabled={lk} onClick={() => setShare(pos, p.id, sv + 5)} style={{ ...mini, opacity: lk ? 0.35 : 1 }}>+</button>
-                  <button type="button" aria-label={lk ? `Unlock ${p.name}'s snaps` : `Lock ${p.name}'s snaps`} aria-pressed={lk} title={lk ? "Locked: changing the others won't move him. Click to unlock." : "Lock his snaps so changing the others won't move him"} onClick={() => toggleLock(p.id)} style={{ ...mini, background: lk ? "#facc1526" : "transparent", display: "grid", placeItems: "center" }}><Lock on={lk} /></button>
+                  <button type="button" aria-label={lk ? `Unlock ${p.name}'s snaps` : `Lock ${p.name}'s snaps`} aria-pressed={lk} title={lk ? "Locked: changing the others won't move him. Click to unlock." : "Lock his snaps so changing the others won't move him"} onClick={() => toggleLock(p.id, pos)} style={{ ...mini, background: lk ? "#facc1526" : "transparent", display: "grid", placeItems: "center" }}><Lock on={lk} /></button>
                 </span>); })()}
               {(isOne || !setSnaps || at !== pos || p.injured) && !isOne && <span style={{ width: 120 }} />}
             </div>

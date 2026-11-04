@@ -31,7 +31,8 @@ export function replacementOptions(team, call, depthOrder, snaps) {
   const starters = STARTERS[call.pos] || 1;
   // the backups: everyone not already starting elsewhere at this position (with roles the
   // arrangement can put the next man anywhere in the starting group, so it's by who the others are)
-  const all = depthOrderFor((team.roster || []).filter((p) => healthy(p) || p.id === call.pid), depthOrder, call.pos, snaps);
+  // (the hurt man counted as healthy, so he sits in the spot he played)
+  const all = depthOrderFor((team.roster || []).filter((p) => healthy(p) || p.id === call.pid).map((p) => (p.id === call.pid ? { ...p, injured: false, holdout: false, suspended: false } : p)), depthOrder, call.pos, snaps);
   const others = new Set(all.slice(0, starters).filter((p) => p.id !== call.pid).map((p) => p.id));
   const bench = all.some((p) => p.id === call.pid) ? [...up.slice(0, starters).filter((p) => !others.has(p.id)), ...up.slice(starters).filter((p) => !others.has(p.id))] : up.slice(starters - 1);
   const ps = (team.ps || []).filter((p) => p.pos === call.pos && healthy(p));
@@ -48,7 +49,8 @@ export function replacementOptions(team, call, depthOrder, snaps) {
 // Put `inId` where `outId` was in the depth chart at `pos` and give him `outId`'s snap share.
 // roster: the whole 53 (the hurt player included). Returns { depthOrder, snaps }.
 export function chooseStarter(roster, depthOrder, snaps, pos, outId, inId) {
-  const ids = depthOrderFor(roster, depthOrder, pos, null).map((p) => p.id); // the depth chart itself (snaps reorder it at kickoff)
+  // the depth chart itself (snaps reorder it at kickoff), with the hurt man in the spot he played
+  const ids = depthOrderFor((roster || []).map((p) => (p.id === outId ? { ...p, injured: false, holdout: false, suspended: false } : p)), depthOrder, pos, null).map((p) => p.id);
   const i = ids.indexOf(outId), j = ids.indexOf(inId);
   if (i < 0) return { depthOrder, snaps };
   if (j >= 0) [ids[i], ids[j]] = [ids[j], ids[i]];

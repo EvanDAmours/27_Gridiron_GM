@@ -121,7 +121,12 @@ export function PhoneSnaps({ pos, players, overrides, shape, onChange, laneName,
   // "K. Thibodeaux": the row has room for an initial and the last name, not always the full name
   const short = (n) => { const w = (n || "").split(" "); const last = lastName(n); return w.length > 1 && w[0] !== last ? `${w[0][0]}. ${last}` : n; };
   const set = (id, v) => onChange(linkedSet(pos, players, overrides || {}, shape, id, v, pinned));
-  const lock = (id) => setLocks && setLocks((l) => { const n = new Set(l); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  // a lock keeps his share as it is now (saved as his own number, so a depth change can't move it)
+  const lock = (id) => {
+    if (!setLocks) return;
+    if (!pinned.has(id) && (overrides || {})[id] == null) onChange({ ...(overrides || {}), [id]: shares[id] ?? 0 });
+    setLocks((l) => { const n = new Set(l); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  };
   // the starters play every snap of their spots; the bench keeps only what you locked
   const startersOnly = () => {
     const n = { ...(overrides || {}) };

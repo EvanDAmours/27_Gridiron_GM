@@ -1115,6 +1115,9 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   if (tackOn && g.yard > 0) { g.yard += tackOn; yards += tackOn; ev.firstDown = true; }
   if (g.yard <= 0) { // safety
     ev.type = "safety"; ev.text += " SAFETY!"; ev.score = 0; scored(g, def, 2);
+    // the defender who made it gets the safety: the sacker on a sack, else the tackler
+    const by = ev.k === "sack" ? ev.rusher || ev.tkl : ev.tkl;
+    if (by) { add(line(g, def, by), "safety", 1); ev.tkl ||= by; }
     ev.note = tick(g, 6);
     if (!g.done) newPossession(g, 35); // free kick to the team that scored
     return ev;

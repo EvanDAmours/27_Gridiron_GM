@@ -2340,4 +2340,9 @@ export const PATCH_NOTES = [
     "Live games: every incompletion now says why in grey, like the tackler on a run or catch: (broken up by the defender), (dropped), or (off target). Drops are new: a receiver's hands decide how often, and they come out at about 3.5% of targets, close to the real league.",
     "A new check runs before every release: it opens the depth chart's spot menus and presses + and - on every player, again and again, and the release fails if a menu moves, changes its title or reorders its rows (desktop), or if the phone's snap rows reorder.",
   ] },
+  { v: "5.63", date: "2026-10-23", title: "Spots and locks hold", notes: [
+    "Depth chart: a player you put at a linebacker, corner or receiver spot while a teammate is hurt stays there when the teammate heals. Put Arvell Reese at MIKE during the linebacker injuries and he's still MIKE once Tremaine Edmunds is back. Before, the spot was saved one place over (the hurt man still held his place behind the scenes), so Reese slid to SAM or WILL when the injury cleared. If he already moved in your save, put him back at MIKE once and he'll stay.",
+    "Snap locks: locking a player keeps his share at the number it shows. It's saved as his own share, so a depth change, a swap or a teammate coming back from injury can't hand him another spot's default.",
+    "Box scores: a safety now goes to the defender who made it (the sacker on a sack, otherwise the tackler), with a SFTY column in the defense table whenever someone on that side has one.",
+  ] },
 ];
