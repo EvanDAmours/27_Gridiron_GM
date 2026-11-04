@@ -24,6 +24,8 @@ const CALLS = [["pass_quick", "QUICK"], ["pass_medium", "MEDIUM"], ["pass_deep",
 const KICK_CYCLE = 1.1; // seconds for the kick meter to fill (then it falls back)
 const inside = (p, b) => b && p.px >= b.x && p.px <= b.x + b.w && p.py >= b.y && p.py <= b.y + b.h;
 
+// where the camera sits while the quarterback has the ball: the line of scrimmage 25% in from the left
+const holdX = (cam, P) => (P.los ?? P.ball.x) + Math.max(cam.lead, 0.17 * cam.W / cam.s);
 export class ArcadeGame {
   constructor(canvas, { userTi = 17, oppTi = 8, teams, onQuit, rand, skipMenu = false } = {}) {
     this.cv = canvas; this.onQuit = onQuit; this.rand = rand;
@@ -95,7 +97,7 @@ export class ArcadeGame {
   call(c) {
     const g = this.g; this.fade = 0.5;
     const P = c === "punt" || c === "fg" ? setupKick(g, lineups(g), c) : setupPlay(g, lineups(g), c);
-    this.S = P; this.cam.camX = P.ball.x + this.cam.lead; this.mode = "play"; this.kick = null; this.refresh();
+    this.S = P; this.cam.camX = P.kind ? P.ball.x + this.cam.lead : holdX(this.cam, P); this.mode = "play"; this.kick = null; this.refresh();
     sfx.select?.();
   }
   endBanner() { const st = this.sit, lead = st.score.h - st.score.a; this.banner = { title: lead > 0 ? "YOU WIN!" : lead < 0 ? "YOU LOSE" : "TIE GAME", text: `${this.teams.user.name} ${st.score.h}, ${this.teams.opp.name} ${st.score.a}`, sub: null, at: performance.now(), hint: this.mobile ? "TAP FOR A NEW GAME" : "CLICK OR ENTER FOR A NEW GAME" }; if (lead > 0) { this.fx.confetti(this.cam.W, [this.teams.user.clr, this.teams.user.ac, "#ffd166", "#fff"]); sfx.touchdown(); } }
@@ -119,7 +121,11 @@ export class ArcadeGame {
       this.react(P);
       // the camera leads the ball a little; with a throw in the air it frames the ball and where it's going
       const f = P.ball.flight, over = P.phase === "tackle" || P.phase === "fall" || P.phase === "done";
-      const want = f ? (P.ball.x + f.to.x) / 2 + 2 : P.ball.x + (over ? 0 : cam.lead);
+      // until the ball leaves the quarterback's hands the camera holds still, with the line of
+      // scrimmage a quarter of the way in, so the routes stay on screen as they develop; after
+      // that it leads the runner, and with a throw in the air it frames the ball and its spot
+      const qbHas = !P.kind && !over && (P.ball.holder === "QB" || Math.max(P.ball.x + cam.lead, 0) < holdX(cam, P)); // (a back behind the line too)
+      const want = f ? (P.ball.x + f.to.x) / 2 + 2 : qbHas ? holdX(cam, P) : P.ball.x + (over ? 0 : cam.lead);
       cam.camX += (want - cam.camX) * Math.min(1, dt * (f ? 3.5 : 5));
       cam.camX = Math.max(-10 + (cam.W * 0.42) / cam.s, Math.min(112 - (cam.W * 0.58) / cam.s, cam.camX)); // never past the end zones
       if (!going && P.phase === "done" && m === "play") {
