@@ -36,6 +36,8 @@ export default defineConfig({
     sourcemap: false,
     chunkSizeWarningLimit: 1400,
     rollupOptions: {
+      // the GM game, and the arcade prototype on its own page (/arcade.html)
+      input: { main: "index.html", arcade: "arcade.html" },
       output: {
         // The roster/schedule/draft data rarely changes, so it gets its own long-cached file;
         // React too. Screens you don't need on first load are split off with React.lazy.
