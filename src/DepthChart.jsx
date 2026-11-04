@@ -208,21 +208,30 @@ export default function DepthChart({ roster, depthOrder, setDepthOrder, setSel, 
   };
   const rowLabel = (pos, i) => (isSpec(pos) ? SPEC_TAG[pos] : pos === "DL" && i < 4 ? DL_SLOTS[i] : ROLE_SLOTS[pos]?.[i] ? ROLE_SLOTS[pos][i] : i < STARTERS[pos] ? (STARTERS[pos] > 1 ? `${pos}${i + 1}` : `${pos}1`) : `${pos} #${i + 1}`);
   // Everyone who could line up here: for tackles and guards, both sides of the line.
-  // who's in the spot you opened (fixed when you open it, so dragging a slider doesn't move "Here")
-  const pickedRef = React.useRef(null);
-  if (!pick) pickedRef.current = null;
-  else if (!pickedRef.current || pickedRef.current.key !== pick.join(":")) pickedRef.current = { key: pick.join(":"), id: isSpec(pick[0]) ? specOn(pick[0])?.id : order(pick[0])[pick[1]]?.id };
-  const pickedId = pickedRef.current?.id;
   // who starts on game day (snap shares included), for the row labels
   const fieldOrder = (at) => order(at).filter((p) => !p.injured);
+  // The spot you opened stays the spot while the menu is open: its role (SLOT, LE...) is fixed when
+  // you open it, and so is the order of the rows, so changing snaps never retitles the menu or
+  // slides a row out from under the pointer. pick[2] marks one opening (a fresh one re-reads).
+  const pickedRef = React.useRef(null);
+  if (!pick) pickedRef.current = null;
+  else if (!pickedRef.current || pickedRef.current.key !== `${pick[0]}:${pick[2] ?? pick[1]}`) {
+    const id0 = isSpec(pick[0]) ? specOn(pick[0])?.id : order(pick[0])[pick[1]]?.id;
+    const i0 = fieldOrder(pick[0]).findIndex((p) => p.id === id0);
+    pickedRef.current = { key: `${pick[0]}:${pick[2] ?? pick[1]}`, id: id0, role: i0 >= 0 ? i0 : pick[1], rows: null };
+  }
+  // "Here": whoever plays the opened spot now
+  const pickedId = !pick ? undefined : isSpec(pick[0]) ? specOn(pick[0])?.id : single(pick[0]) ? pickedRef.current?.id : fieldOrder(pick[0])[pickedRef.current?.role]?.id ?? pickedRef.current?.id;
   const startsNow = (at) => new Set(isSpec(at) ? [specOn(at)?.id] : fieldOrder(at).slice(0, STARTERS[at] || 1).map((p) => p.id));
   // the spot you opened, by role (the injured are off the field, so it's counted among the healthy)
-  const pickRole = pick ? (() => { const i = fieldOrder(pick[0]).findIndex((p) => p.id === pickedId); return i >= 0 ? i : pick[1]; })() : 0;
-  const chosen = pick && [...(single(pick[0]) ? depthList(pick[0]) : [...fieldOrder(pick[0]), ...depthList(pick[0]).filter((p) => p.injured)]).map((p, i) => ({ p, at: pick[0], i })), ...(PARTNER[pick[0]] && setPositions ? order(PARTNER[pick[0]]).map((p, i) => ({ p, at: PARTNER[pick[0]], i })) : []),
+  const pickRole = pick ? pickedRef.current?.role ?? pick[1] : 0;
+  // the rows in the order they had when the menu opened (new ones go last); each keeps its own index
+  const freezeRows = (list) => { const r = pickedRef.current; if (!r) return list; const k = (c) => `${c.at}:${c.p.id}:${c.move ? "m" : c.wide ? "w" : c.back ? "b" : ""}`; if (!r.rows) r.rows = list.map(k); const n = new Map(r.rows.map((x, j) => [x, j])); return [...list].sort((a, b) => (n.get(k(a)) ?? 1e9) - (n.get(k(b)) ?? 1e9)); };
+  const chosen = pick && freezeRows([...(single(pick[0]) ? depthList(pick[0]) : [...fieldOrder(pick[0]), ...depthList(pick[0]).filter((p) => p.injured)]).map((p, i) => ({ p, at: pick[0], i })), ...(PARTNER[pick[0]] && setPositions ? order(PARTNER[pick[0]]).map((p, i) => ({ p, at: PARTNER[pick[0]], i })) : []),
     ...(CROSS[pick[0]] && onMovePos ? CROSS[pick[0]].flatMap((x) => order(x).map((p, i) => ({ p, at: x, i, move: true }))) : []),
     // tight ends can split out to receiver (and come back): a lineup choice, not a position change
     ...(pick[0] === "WR" ? order0("TE").map((p, i) => ({ p, at: "TE", i, wide: true })) : []),
-    ...(pick[0] === "TE" ? order0("WR").filter((p) => p.pos === "TE").map((p) => ({ p, at: "WR", i: order0("WR").indexOf(p), back: true })) : [])];
+    ...(pick[0] === "TE" ? order0("WR").filter((p) => p.pos === "TE").map((p) => ({ p, at: "WR", i: order0("WR").indexOf(p), back: true })) : [])]);
   // Split a tight end out to this receiver spot; the receiver there moves down one.
   const splitOut = (idx, player) => {
     const ids = order0("WR").map((p) => p.id);

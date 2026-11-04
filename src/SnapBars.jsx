@@ -129,7 +129,12 @@ export function PhoneSnaps({ pos, players, overrides, shape, onChange, laneName,
     lanes.forEach((ln, k) => { const who = healthy[k]; if (!who || pinned.has(who.id)) return; n[who.id] = Math.min(100, (n[who.id] || 0) + ln.segs.reduce((t, sg) => t + (pinned.has(sg.id) && sg.id !== who.id ? 0 : sg.v), 0)); });
     onChange(n);
   };
-  const playing = healthy.filter((p) => shares[p.id] > 0), bench = healthy.filter((p) => !shares[p.id]);
+  // the rows keep the order they had when the sheet opened, so a tap never lands on a row that just moved
+  const rowsRef = React.useRef(null);
+  if (!rowsRef.current) rowsRef.current = healthy.map((p) => p.id);
+  const rank = (p) => { const i = rowsRef.current.indexOf(p.id); return i < 0 ? 1e9 : i; };
+  const steady = [...healthy].sort((a, b) => rank(a) - rank(b));
+  const playing = steady.filter((p) => shares[p.id] > 0), bench = steady.filter((p) => !shares[p.id]);
   const big = { width: 44, height: 44, borderRadius: 12, border: 0, background: "#ffffff14", color: "#fff", fontSize: 24, fontWeight: 800, lineHeight: 1, cursor: "pointer", flexShrink: 0, touchAction: "manipulation" };
   const row = (p, onBench) => {
     const v = shares[p.id] || 0, mine = overrides?.[p.id] != null, locked = pinned.has(p.id), where = onBench ? "Bench" : spotOf(p.id);

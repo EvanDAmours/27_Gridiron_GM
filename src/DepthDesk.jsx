@@ -101,6 +101,10 @@ export default function DepthDesk({ api }) {
   const [fh, setFh] = useState(560); // the field fills the screen below the bar
   const [box, setBox] = useState({ w: 1200, h: 560 });
   const [popAt, setPopAt] = useState(null);
+  // The open menu belongs to the field spot you clicked (SLOT stays SLOT even when snap changes put
+  // someone else there), and it stays where it opened: anchor is that spot, placed is where the
+  // menu went, kept until you open another spot or the window resizes.
+  const anchorRef = useRef(null), placedRef = useRef(null);
   const [plan, setPlan] = useState(false);
   const [help, setHelp] = useState(false);
   const [edit, setEdit] = useState(false); // snap counts mode: - and + on every card and bench chip
@@ -149,15 +153,37 @@ export default function DepthDesk({ api }) {
   });
   // in nickel the SAM steps off the field: show him, dashed, where he'd be
   const ghosts = side === "defense" && pkg === "nickel" ? (() => { const s = order("LB").filter((q) => !q.injured)[0]; return s ? [{ pos: "LB", idx: 0, x: 15, y: 46, label: "SAM", p: { ...s, short: lastName(s.name) }, rating: spotOvr(s, "LB", 0), ghost: "Off the field in nickel" }] : []; })() : [];
-  const openSpot = (c) => { setPlan(false); setPick(c.pos === "FB" ? ["RB", Math.max(1, order0("RB").indexOf(order("FB")[0]))] : [c.pos, c.at]); };
+  const openSpot = (c) => { setPlan(false); anchorRef.current = { pos: c.pos, idx: c.idx, x: c.x, y: c.y, label: c.label, key: `${c.pos}:${c.idx}:${Date.now()}` }; setPick(c.pos === "FB" ? ["RB", Math.max(1, order0("RB").indexOf(order("FB")[0])), Date.now()] : [c.pos, c.at, Date.now()]); };
   const sel = pick && cards.find((c) => (c.pos === "FB" ? pick[0] === "RB" && c.p && order0("RB")[pick[1]]?.id === c.p.id : c.pos === pick[0] && c.at === pick[1])) || (pick && ghosts.find((g) => g.pos === pick[0] && pick[1] === order("LB").indexOf(order("LB").filter((q) => !q.injured)[0]))) || null;
 
-  // place the menu beside the card it belongs to: below or above if it fits, else to the side
+  // a menu opened some other way (the bench, a warning, a ghost): anchor it on its spot as it opens
+  if (pick && (!anchorRef.current || (anchorRef.current.pos !== pick[0] && !(anchorRef.current.pos === "FB" && pick[0] === "RB"))) && sel) anchorRef.current = { pos: sel.pos, idx: sel.idx, x: sel.x, y: sel.y, label: sel.label, key: `${sel.pos}:${sel.idx}:${Date.now()}` };
+  if (!pick && anchorRef.current) { anchorRef.current = null; placedRef.current = null; }
+  // snap changes can reorder who starts: keep the menu on the spot it was opened for
+  useEffect(() => {
+    const a = anchorRef.current;
+    if (!pick || !a || a.pos !== pick[0] || a.pos === "FB") return;
+    const c = cards.find((x) => x.pos === a.pos && x.idx === a.idx);
+    if (c && c.at !== pick[1]) setPick([a.pos, c.at, pick[2]]); // the same opening: role and rows stay
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- cards is rebuilt every render; the order (snaps, depth) is what moves it
+  }, [snaps, depthOrder, pick]);
+
+  // place the menu beside the spot it belongs to: below or above if it fits, else to the side. Once
+  // placed it stays put (same side, same spot) while you work in it; it only moves back onto the
+  // field if it grows past the edge
   useLayoutEffect(() => {
     const el = popRef.current;
-    if (!pick || !el) { setPopAt(null); return; }
+    if (!pick || !el) { setPopAt(null); placedRef.current = null; return; }
     const W = fieldRef.current.offsetWidth, FH = fieldRef.current.offsetHeight, Hh = FH - 8, pw = el.offsetWidth, ph = el.offsetHeight;
-    const c = sel || { x: 50, y: 40 };
+    const c = anchorRef.current || sel || { x: 50, y: 40 };
+    const prev = placedRef.current;
+    if (prev && prev.key === c.key && prev.W === W && prev.FH === FH) {
+      const top = prev.arrow === "left" || prev.arrow === "right" ? Math.max(10, Math.min(Hh - ph, prev.top)) : prev.arrow === "bottom" ? Math.max(8, prev.base - ph) : prev.top;
+      const at = { ...prev, top, ax: prev.arrow === "bottom" ? prev.ax : prev.arrow === "top" ? prev.ax : Math.max(18, Math.min(ph - 18, prev.cy - top)) };
+      placedRef.current = at;
+      setPopAt((o) => (o && o.left === at.left && o.top === at.top && o.arrow === at.arrow && o.ax === at.ax ? o : at));
+      return;
+    }
     const cx = (c.x / 100) * W, cy = (c.y / 100) * FH, cw = (c.label || "").length >= 8 ? Math.min(240, Math.max(200, 0.16 * W)) : (c.label || "").length >= 4 ? Math.min(190, Math.max(150, 0.126 * W)) : Math.min(176, Math.max(118, 0.113 * W)), chh = 64;
     const clampX = (v) => Math.max(10, Math.min(W - pw - 10, v)), clampY = (v) => Math.max(10, Math.min(Hh - ph, v));
     let at;
@@ -166,6 +192,8 @@ export default function DepthDesk({ api }) {
     else if (W - (cx + cw / 2) > cx - cw / 2) at = { left: cx + cw / 2 + 14, top: clampY(cy - ph / 2), arrow: "left" };
     else at = { left: cx - cw / 2 - 14 - pw, top: clampY(cy - ph / 2), arrow: "right" };
     at.ax = at.arrow === "top" || at.arrow === "bottom" ? Math.max(18, Math.min(pw - 18, cx - at.left)) : Math.max(18, Math.min(ph - 18, cy - at.top));
+    // remember it: an above-the-card menu keeps its bottom edge on the card as its height changes
+    placedRef.current = { ...at, key: c.key, W, FH, cy, base: at.top + ph };
     setPopAt((o) => (o && o.left === at.left && o.top === at.top && o.arrow === at.arrow && o.ax === at.ax ? o : at));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sel is rebuilt every render; its spot is what matters
   }, [pick, box.w, box.h, sel?.x, sel?.y, snaps, side, form, pkg, pickedId]);
@@ -201,8 +229,8 @@ export default function DepthDesk({ api }) {
   }, [benchKey, box.w, edit, benchAll, side]);
   // positions with no one behind the starters (or not enough to start), every side
   const gaps = depthGaps(roster);
-  const gapOpen = (g) => { setHelp(false); setPlan(false); if (g.side !== side) setSide(g.side); setPick([g.pos === "OL" ? "C" : g.pos, 0]); };
-  const benchOpen = (p) => { const i = order(p.pos).findIndex((q) => q.id === p.id); setPick([p.pos, Math.max(0, Math.min(i, (fieldOrder(p.pos).length || 1) - 1))]); };
+  const gapOpen = (g) => { setHelp(false); setPlan(false); if (g.side !== side) setSide(g.side); setPick([g.pos === "OL" ? "C" : g.pos, 0, Date.now()]); };
+  const benchOpen = (p) => { const i = order(p.pos).findIndex((q) => q.id === p.id); setPick([p.pos, Math.max(0, Math.min(i, (fieldOrder(p.pos).length || 1) - 1)), Date.now()]); };
 
   // ---- the menu for the spot you opened
   const pos = pick?.[0];

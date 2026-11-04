@@ -2330,4 +2330,9 @@ export const PATCH_NOTES = [
     "Real contract: the Giants' 3-year, $46 million extension for Greg Newsome II (signed November 3, $32 million guaranteed, through 2029). New franchises start with it signed: he finishes 2026 on his current deal, and the extension takes over at the new league year at about a $15M cap hit a year, with 2027 and 2028 fully guaranteed. Its signing bonus starts counting this season, like any extension.",
     "Existing 2026 saves get it once, while the 2026 regular season is still going, as long as Newsome is still a Giant on his original deal (not released, traded or already extended by you). It's noted in your log.",
   ] },
+  { v: "5.61", date: "2026-10-23", title: "Depth chart menu stays put", notes: [
+    "Depth chart (desktop): the spot menu stays put while you change snap counts. It used to jump around the field: changing snaps reorders who starts, and the menu followed the player list from card to card (SLOT to Z and back) and re-placed itself above, below or beside the card. Now it belongs to the spot you clicked, opens in one place and stays there, and only moves back onto the field if it would run off the edge.",
+    "The menu keeps its title (SLOT stays SLOT) and its rows stay in the order they had when it opened, so a - or + never slides out from under the pointer. 'Here' marks whoever is playing that spot right now. Reopen the menu to see the new order.",
+    "Phone: the snap-share rows also keep their order while the sheet is open.",
+  ] },
 ];
