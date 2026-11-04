@@ -384,11 +384,15 @@ export function tick(S, dt) {
       const q = clamp(0.96 + (cov - 78) * 0.003, 0.87, 1.02), trail = (r.mode === "settle" ? 0.8 : 1.25) + clamp(85 - cov, 0, 30) * 0.025, in_ = r.y > 0 ? -0.7 : 0.7;
       // he reads the receiver's moves a beat late (later for a lesser cover man): what he mirrors is
       // a smoothed copy of the receiver's velocity, so a sharp cut opens a window before he reacts
-      const lag = 0.36 + Math.max(0, 90 - cov) * 0.012, k = Math.min(1, dt / lag);
+      // leverage: shaded inside, he's already there for a break inside (a slant, a dig) and a step
+      // late on one outside (an out, a corner); that's what the outside routes are for
+      const lever = r.vy * in_ > 1 ? 0.55 : r.vy * in_ < -1 ? 1.25 : 1;
+      const lag = (0.36 + Math.max(0, 90 - cov) * 0.012) * lever, k = Math.min(1, dt / lag);
       d.rv ||= { vx: 0, vy: 0 }; d.rv.vx += (r.vx - d.rv.vx) * k; d.rv.vy += (r.vy - d.rv.vy) * k;
       const lx = r.x - r.vx * 0.05, ly = r.y - r.vy * 0.05;
       const beaten = r.x > d.x + 1 ? 1 + (K.recovery(d.p) - 75) * 0.003 : 1; // beaten: his recovery speed closes it back up
-      mirror(d, r, lx - trail, ly + in_, dt, q * beaten, 0.9, d.rv);
+      const sp_ = hyp(r.vx, r.vy), along = sp_ > 1 ? clamp(Math.abs(r.vx) / sp_, 0.35, 1) : 1; // (a man running across the field is played on his hip, not from behind)
+      mirror(d, r, lx - trail * along, ly + in_, dt, q * beaten, 0.9, d.rv);
     } else if (k === "S0" && S.dcall === "cover") { // two deep: he takes the other half
       let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.y < 4 && (!deep || e.x > deep.x)) deep = e; }
       steer(d, Math.min(106, Math.max(S.los + 13, deep ? deep.x + 4.5 + Math.max(0, deep.vx) * 0.7 : 0)), deep ? Math.min(-4, deep.y * 0.8) : -11, dt, 1);
