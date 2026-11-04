@@ -82,7 +82,7 @@ export function snap(S) {
   for (const k of ["DL0", "DL1", "DL2", "DL3"]) {
     const d = ents[k], o = ents[OL_VS[k]]; if (!d) continue;
     const rush = isPass ? R(d.p, "passRush", d.p.ovr) : R(d.p, "runStop", d.p.ovr), blk = isPass ? R(o?.p, "passBlock", o?.p?.ovr) : R(o?.p, "runBlock", o?.p?.ovr);
-    S.shed[k] = clamp(1.45 + (blk - rush) * 0.045 + rnd(S) * 2.3, 0.9, 6.5);
+    S.shed[k] = clamp(1.2 + (blk - rush) * 0.045 + rnd(S) * 2.3, 0.8, 6.5);
     d.mode = "rush";
   }
   for (const k of ["LB0", "LB1", "CB0", "CB1", "CB2", "S0", "S1"]) if (ents[k]) ents[k].mode = "cover";
@@ -306,7 +306,16 @@ export function tick(S, dt) {
     }
   }
   // a defender with the ball (a pick) heads the other way for a moment
-  if (carrier && carrier.side === "def" && !over) { steer(carrier, carrier.x - 8, carrier.y, dt, 1); const [o] = [Object.values(ents).filter((e) => e.side === "off").sort((a, b) => hyp(a.x - carrier.x, a.y - carrier.y) - hyp(b.x - carrier.x, b.y - carrier.y))[0]]; if (o && hyp(o.x - carrier.x, o.y - carrier.y) < 1.2) { endAt(S, S.ev, "tackle"); return true; } if (S.t - S.pickAt > 2.2) { endAt(S, S.ev, "tackle"); return true; } }
+  // an interception return: he runs it back to the engine's spot, weaving, with the offense chasing
+  if (carrier && carrier.side === "def" && !over) {
+    const goal = S.retTo ?? carrier.x - 6;
+    const [o, od] = Object.values(ents).filter((e) => e.side === "off" && e !== carrier).map((e) => [e, hyp(e.x - carrier.x, e.y - carrier.y)]).sort((a, b) => a[1] - b[1])[0] || [];
+    const weave = o && od < 4 ? (carrier.y > o.y ? 3 : -3) : 0;
+    steer(carrier, Math.max(goal - 3, -9), clamp(carrier.y + weave, -HALF + 1, HALF - 1), dt, 1);
+    for (const e of Object.values(ents)) if (e.side === "off" && e.down <= 0) steer(e, ...xy(intercept(e, carrier)), dt, 0.95);
+    if (carrier.x <= goal + 0.3) { S.tackler = o || null; if (o) { o.x = carrier.x + 0.7; o.y = carrier.y; } endAt(S, S.ev, carrier.x <= 0.5 ? "fall" : "tackle", 1.2); return true; }
+    if (S.t - S.pickAt > 8) { endAt(S, S.ev, "tackle"); return true; }
+  }
 
   // brought down: he slides to a stop (to the engine's spot when it differs by a yard or two)
   if (over && carrier) { brake(carrier, dt); if (S.slideTo != null) { const k = Math.min(1, dt * 3); carrier.x += (S.slideTo - carrier.x) * k; if (S.tackler) S.tackler.x += (carrier.x - 0.6 - S.tackler.x) * k; } }
@@ -423,7 +432,12 @@ function arrive(S) {
     want = { types: rnd(S) < pInt ? ["int"] : ["inc"], fallback: ["inc"] }; S.pick.open = false;
     const r = resolvePlay(S.g, S.call, want, { target: S.pick.target, open: false }, 10);
     S.ev = r.ev; S.mismatch = r.ev && !["int", "inc", "penalty"].includes(r.ev.type);
-    if (r.ev?.type === "int") { ball.x = d.x; ball.y = d.y; ball.holder = d.key; d.mode = "carry"; S.pickAt = S.t; S.phase = "carry"; S.log.push("picked"); return; }
+    if (r.ev?.type === "int") {
+      ball.x = d.x; ball.y = d.y; ball.holder = d.key; d.mode = "carry"; S.pickAt = S.t; S.phase = "carry"; S.log.push("picked");
+      // where the engine put the ball: the new offense's yard line, seen from ours
+      S.retTo = S.g.poss === "a" ? clamp(100 - S.g.yard, -5, d.x) : d.x - 5;
+      return;
+    }
     endAt(S, r.ev, "fall", 0.8); S.log.push("broken up"); return;
   }
   // it falls incomplete (the engine's call stays "inc"; a flag is accepted)

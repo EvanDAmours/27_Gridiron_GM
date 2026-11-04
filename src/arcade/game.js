@@ -4,6 +4,7 @@
 import { newGame, lineups, runPlay, simOpponentDrive, situation } from "./bridge.js";
 import { setupPlay, snap, tick, throwTo, juke, PLAY_NAMES } from "./play.js";
 import { setupKick, kickFlick, tickKick } from "./kick.js";
+import { sfx, unlock, toggleMute, isMuted } from "./sfx.js";
 import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawButtons, preload, pixText } from "./retro.js";
 
 const PULL = 3.2; // the throw goes this many times the pull-back, the other way, on the screen
@@ -56,11 +57,31 @@ export class ArcadeGame {
     (this.frameMs ||= []).push(performance.now() - t0); if (this.frameMs.length > 600) this.frameMs.shift();
     this.raf = requestAnimationFrame((t) => this.loop(t));
   }
+  // sounds on what just happened in the play (compared with last frame)
+  sounds(P) {
+    const was = this.heard || {}, now = { phase: P.phase, flight: !!P.ball.flight, holder: P.ball.holder, broke: P.broke || 0, landed: !!P.landed };
+    if (was.play !== P) { this.heard = { ...now, play: P }; return; }
+    if (was.phase === "presnap" && now.phase !== "presnap") P.kind ? null : sfx.snap();
+    if (!was.flight && now.flight) (P.kind ? sfx.kick : sfx.throw)();
+    if (now.phase === "carry" && was.phase !== "carry") (P.ents[now.holder]?.side === "def" ? sfx.turnover : P.call?.startsWith("pass") ? sfx.catch : null)?.();
+    if (now.broke > was.broke) sfx.juke();
+    if ((now.phase === "tackle" || now.phase === "fall") && was.phase !== now.phase) {
+      const ev = P.result;
+      if (ev?.td) sfx.touchdown(); else if (ev?.type === "fg") sfx.good(); else if (ev?.type === "fumble") sfx.turnover();
+      else if (now.phase === "tackle") { sfx.tackle(); if (ev?.firstDown) setTimeout(sfx.firstDown, 350); }
+      else if (ev?.type === "inc" || ev?.type === "fg_miss") sfx.incomplete();
+      setTimeout(sfx.whistle, 450);
+    }
+    this.heard = { ...now, play: P };
+  }
+  toggleMute() { return toggleMute(); }
+  get muted() { return isMuted(); }
   // one step of the game at a fixed dt (the browser loop and the playtest harness both use it)
   update(dt, now = performance.now()) {
     const P = this.S, cam = this.cam, m = this.mode;
     if (P && cam) {
       const live = P.kind ? tickKick(P, dt) : tick(P, dt);
+      this.sounds(P);
       // the camera leads the ball a little; with a throw in the air it frames the ball and where it's going
       const f = P.ball.flight, over = P.phase === "tackle" || P.phase === "fall" || P.phase === "done";
       const want = f ? (P.ball.x + f.to.x) / 2 + 2 : P.ball.x + (over ? 0 : cam.lead);
@@ -108,6 +129,7 @@ export class ArcadeGame {
   // ---- touch ----
   pt(e) { const r = this.cv.getBoundingClientRect(); return { px: e.clientX - r.left, py: e.clientY - r.top }; }
   onDown(e) {
+    unlock();
     const m = this.mode, P = this.S, p = this.pt(e);
     if (m === "pick") { const b = this.buttons.find((b) => p.px >= b.x && p.px <= b.x + b.w && p.py >= b.y && p.py <= b.y + b.h); if (b) this.call(b.key); return; }
     if (m === "result" || m === "kick") { this.advance(); return; }
