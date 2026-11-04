@@ -54,6 +54,37 @@ export function lineups(g) {
 // One engine play. call: pass_quick | pass_medium | pass_deep | run_inside | run_outside | punt | fg | kneel.
 export const runPlay = (g, call, bonus = 1, pick = null) => step(g, call, bonus, pick);
 
+// The game's data between plays (everything but the sides and the RNG), so a play can be
+// rolled again: the field plays out the physics first, then asks the engine for a play that
+// matches what happened (its stats, grades, clock and log all stay the engine's).
+const KEEP = ["sides", "rand"];
+export function snapshot(g) { const o = {}; for (const k of Object.keys(g)) if (!KEEP.includes(k)) o[k] = structuredClone(g[k]); return o; }
+export function restore(g, snap) { for (const k of Object.keys(g)) if (!KEEP.includes(k)) delete g[k]; Object.assign(g, snap); }
+
+// Ask the engine for a play of the kinds in `want.types` (e.g. ["pass", "td"]) gaining about
+// `want.yards`. Rolls up to `tries` times, steering the yardage bonus toward the mark, and keeps
+// the closest; a penalty is always accepted (the field shows the flag). Returns { ev, tries, exact }.
+export function resolvePlay(g, call, want, pick = null, tries = 12) {
+  const snap = snapshot(g);
+  let best = null, bestScore = Infinity, bonus = want.bonus ?? 1, n = 0;
+  for (; n < tries; n++) {
+    if (n) restore(g, structuredClone(snap));
+    const ev = step(g, call, bonus, pick);
+    if (!ev) return { ev, tries: n + 1, exact: false };
+    // a flag on the first roll is the engine's own rate; on a later roll it is just rolled again
+    if (ev.type === "penalty") { if (n === 0) return { ev, tries: 1, exact: true }; continue; }
+    const typeOk = want.types.includes(ev.type), fallbackOk = !typeOk && (want.fallback || []).includes(ev.type);
+    const dy = want.yards == null || !typeOk ? 0 : Math.abs((ev.yards || 0) - want.yards);
+    const score = (typeOk ? 0 : fallbackOk ? 500 : 1000) + dy;
+    if (score < bestScore) { bestScore = score; best = { ev, snapAfter: snapshot(g), bonus }; }
+    if (typeOk && (want.yards == null || dy <= (want.tol ?? 1))) break;
+    // steer the next roll's yards toward the mark (the bonus scales positive yardage)
+    if (typeOk && want.yards != null && ev.yards > 0 && want.yards > 0) bonus = Math.max(0.3, Math.min(6, bonus * want.yards / ev.yards));
+  }
+  if (best && n >= tries) restore(g, best.snapAfter); // the loop ran out: put the closest roll back
+  return { ev: best?.ev, tries: Math.min(n + 1, tries), exact: bestScore <= (want.tol ?? 1) };
+}
+
 // The other team's drive, played out by the engine until the ball comes back (or the game ends).
 export function simOpponentDrive(g, user = "h", max = 40) {
   const evs = [];

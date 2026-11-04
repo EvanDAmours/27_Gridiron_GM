@@ -9,8 +9,8 @@ import { HALF, ELIGIBLE } from "./play.js";
 
 const BASE = `${import.meta.env?.BASE_URL ?? "/"}sprites/`;
 const POSE = { QB: "qb", RB: "rb", WR: "wr", TE: "te", LT: "ol", LG: "ol", C: "ol", RG: "ol", RT: "ol", DL: "dl", LB: "lb", CB: "db", S: "db" };
-export const PLAYER_H = 3.9; // a standing quarterback, in yards (big, like Retro Bowl)
-const SQUASH = 0.62; // the field's depth is foreshortened: a yard across is this much of a yard along
+export const PLAYER_H = 3.3; // a standing quarterback, in yards (big, like Retro Bowl)
+const SQUASH = 0.42; // the field's depth is foreshortened: a yard across is this much of a yard along
 
 // ---- sprite sheets (loaded once per club) ----
 const imgs = {};
@@ -44,9 +44,12 @@ export const pixWidth = (text, px) => String(text).length * 6 * px - px;
 // The field runs left to right. s: pixels per yard along the field. The field's near sideline sits
 // at the bottom of the canvas; the stands fill the strip above the far sideline.
 export function makeCamera(W, H) {
-  const s = W / 44; // about 44 yards across the screen
-  const depth = 53.3 * SQUASH * s, top = H - depth - s * 1.2;
-  return { W, H, s, depth, top, camX: 50, lead: 10, toScreen(x, y) { return [W * 0.42 + (x - this.camX) * s, top + (y + HALF) * SQUASH * s]; }, toField(px, py) { return { x: this.camX + (px - W * 0.42) / s, y: (py - top) / (SQUASH * s) - HALF }; } };
+  // the whole width of the field fits under the scoreboard, and no more than ~40 yards show across
+  const hud = Math.max(2, Math.round(Math.min(W / 40, H / 30) * 0.09)) * 11;
+  const s = Math.min(H > W ? W / 30 : W / 40, (H - hud - 8) / (53.3 * SQUASH + 1.4));
+  // the field sits low on a wide screen (stands above it) and in the middle of a tall one
+  const depth = 53.3 * SQUASH * s, room = H - hud - depth - s * 1.2, top = hud + (H > W ? room * 0.5 : Math.min(room, s * 4.5)) + s * 0.2;
+  return { W, H, s, depth, top, camX: 50, lead: 5, toScreen(x, y) { return [W * 0.42 + (x - this.camX) * s, top + (y + HALF) * SQUASH * s]; }, toField(px, py) { return { x: this.camX + (px - W * 0.42) / s, y: (py - top) / (SQUASH * s) - HALF }; } };
 }
 
 // ---- drawing ----
@@ -71,15 +74,16 @@ function poseFor(S, e, t) {
   const hasBall = S.ball.holder === e.key;
   if (S.phase === "presnap") return [POSE[e.p.pos] || "db", false];
   if (e.key === "QB") {
-    if (S.phase === "ball" && t - S.thrownAt < 0.5) return ["a8", true];
+    if (S.thrownAt && t - S.thrownAt < 0.5) return ["a8", true];
     if (S.phase === "tackle" && S.result?.type === "sack" && t >= S.endAt - 0.6) return ["b3", true];
     if (hasBall) return [moving ? (stride ? "a1" : "a2") : "qb", moving];
     return ["a3", true];
   }
   if ((S.phase === "tackle" || S.phase === "fall") && hasBall && t >= S.endAt - 0.55) return [S.result?.td ? "a7" : "b3", true];
-  if (S.phase === "ball" && S.ball.flight?.target === e.key && e.side === "off") return ["b1", true];
+  if (S.ball.flight && S.ball.flight.target === e.key && e.side === "off") return ["b1", true];
+  if (e.down > 0) return ["b3", true];
   if (hasBall) return [stride ? "a1" : "a2", true];
-  if (e.side === "def" && (S.phase === "tackle") && t >= S.endAt - 0.55 && S.tackleAt && Math.hypot(e.x - S.tackleAt.x, e.y - S.tackleAt.y) < 2.2) return ["b4", true];
+  if (e.side === "def" && S.phase === "tackle" && S.tackler === e && t >= S.endAt - 0.55) return ["b4", true];
   if (moving) return [stride ? "a5" : "a6", true];
   if (e.side === "off" && ["LT", "LG", "C", "RG", "RT", "TE"].includes(e.key)) return [S.phase === "presnap" ? "ol" : "c5", S.phase !== "presnap"];
   return [POSE[e.p.pos] || "db", false];
@@ -88,10 +92,10 @@ function poseFor(S, e, t) {
 export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   const { W, H, s, top, depth } = cam;
   ctx.imageSmoothingEnabled = false;
-  // the stands: a dark band of crowd pixels above the far sideline
-  ctx.fillStyle = "#1a1f2b"; ctx.fillRect(0, 0, W, top);
-  const px = Math.max(2, Math.round(s * 0.18));
-  for (let yy = 0; yy < top - px; yy += px) for (let xx = ((yy / px) % 2) * px; xx < W; xx += px * 2) { const n = Math.sin(xx * 12.9 + yy * 7.3) * 43758.5; const f = n - Math.floor(n); ctx.fillStyle = f < 0.35 ? "#2b3346" : f < 0.6 ? "#3a4258" : f < 0.75 ? "#5a3a3a" : "#1f2433"; ctx.fillRect(xx, yy, px, px); }
+  // the stands: crowd pixels above the far sideline (and below the near one on a tall screen)
+  ctx.fillStyle = "#1a1f2b"; ctx.fillRect(0, 0, W, H);
+  const px = Math.max(2, Math.round(s * 0.18)), nearEdge = top + depth + s * 1.2;
+  for (let yy = 0; yy < H; yy += px) { if (yy > top - px && yy < nearEdge) continue; for (let xx = ((yy / px) % 2) * px; xx < W; xx += px * 2) { const n = Math.sin(xx * 12.9 + yy * 7.3) * 43758.5; const f = n - Math.floor(n); ctx.fillStyle = f < 0.35 ? "#2b3346" : f < 0.6 ? "#3a4258" : f < 0.75 ? "#5a3a3a" : "#1f2433"; ctx.fillRect(xx, yy, px, px); } }
   // the wall and the far sideline
   ctx.fillStyle = "#3b3f4a"; ctx.fillRect(0, top - s * 0.9, W, s * 0.9);
   // the grass, striped every five yards
@@ -103,7 +107,8 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   }
   // the near sideline and the strip below it
   ctx.fillStyle = "#e8e8e0"; ctx.fillRect(0, Math.round(top + depth), W, Math.max(2, s * 0.25));
-  ctx.fillStyle = "#2f6b2c"; ctx.fillRect(0, Math.round(top + depth + s * 0.25), W, H);
+  ctx.fillStyle = "#2f6b2c"; ctx.fillRect(0, Math.round(top + depth + s * 0.25), W, Math.round(s * 0.95));
+  ctx.fillStyle = "#3b3f4a"; ctx.fillRect(0, Math.round(nearEdge), W, Math.round(s * 0.5));
   // yard lines, hashes and numbers
   const lw = Math.max(1, Math.round(s * 0.12));
   for (let yd = 0; yd <= 100; yd += 5) { const x = Math.round(yardAt(yd)); if (x < -4 || x > W + 4) continue; ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.fillRect(x, Math.round(top), lw, Math.round(depth)); }
@@ -142,20 +147,22 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     if (!ok) { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.fillStyle = t.clr; ctx.fillRect(sx - s * 0.5, sy - s * 2.2, s, s * 2.2); }
     if (opts.ring && S.ball.holder === e.key && S.phase !== "presnap") { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, s * 0.08); ctx.beginPath(); ctx.ellipse(sx, sy, s * 1.1, s * 1.1 * SQUASH, 0, 0, Math.PI * 2); ctx.stroke(); }
   }
-  // the ball in flight (the art holds it otherwise)
+  // the ball in flight, or on the turf after an incompletion (the art holds it otherwise)
   const b = S.ball;
-  if (S.phase === "ball" && b.flight) {
-    const [bx, by] = cam.toScreen(b.x, b.y), lift = (b.h || 0) * s * 1.1 + PLAYER_H * s * 0.55;
+  if (b.flight || b.holder == null) {
+    const [bx, by] = cam.toScreen(b.x, b.y), lift = b.flight ? (b.h || 0) * s * 1.1 + PLAYER_H * s * 0.55 : Math.max(0, (b.h || 0)) * s;
     shadow(ctx, cam, b.x, b.y, 0.4);
-    ctx.fillStyle = "#8b4a1c"; const bw = Math.max(3, s * 0.5), bh = Math.max(2, s * 0.32);
-    ctx.save(); ctx.translate(bx, by - lift); ctx.rotate(S.t * 9); ctx.fillRect(-bw / 2, -bh / 2, bw, bh); ctx.fillStyle = "#fff"; ctx.fillRect(-bw * 0.1, -bh / 2, bw * 0.2, bh); ctx.restore();
+    const bw = Math.max(5, s * 0.8), bh = Math.max(3, s * 0.5);
+    ctx.save(); ctx.translate(bx, by - lift); ctx.rotate(b.flight ? S.t * 9 : 0.4);
+    ctx.fillStyle = "#2b1405"; ctx.fillRect(-bw / 2 - 1, -bh / 2 - 1, bw + 2, bh + 2); ctx.fillStyle = "#a0552a"; ctx.fillRect(-bw / 2, -bh / 2, bw, bh); ctx.fillStyle = "#fff"; ctx.fillRect(-bw * 0.12, -bh / 2, bw * 0.24, bh); ctx.restore();
   }
 }
 
 // The scoreboard strip, Retro Bowl style: both clubs with scores, the quarter and clock, and the
 // down and distance.
+const hudPx = (cam) => Math.max(2, Math.round(Math.min(cam.W / 40, cam.H / 30) * 0.09));
 export function drawHud(ctx, cam, sit, teams, { ot } = {}) {
-  const { W, s } = cam, px = Math.max(2, Math.round(s * 0.09)), h = px * 7, pad = px * 2;
+  const { W } = cam, px = hudPx(cam), h = px * 7, pad = px * 2;
   const bar = h + pad * 2;
   ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, W, bar);
   const box = (x, t, n, right) => {
@@ -170,7 +177,7 @@ export function drawHud(ctx, cam, sit, teams, { ot } = {}) {
   return bar;
 }
 export function drawDownBox(ctx, cam, text, color = "#fff") {
-  const { W, s } = cam, px = Math.max(2, Math.round(s * 0.09)), h = px * 7, pad = px * 2, bar = h + pad * 2;
+  const { W } = cam, px = hudPx(cam), h = px * 7, pad = px * 2, bar = h + pad * 2;
   const w = pixWidth(text, px) + pad * 2;
   ctx.fillStyle = "#0b0e14"; ctx.fillRect(W / 2 - w / 2, bar, w, h + pad);
   pixText(ctx, text, W / 2, bar + pad / 2, px, color, "center");
@@ -189,3 +196,23 @@ export function drawBanner(ctx, cam, title, text, sub, color) {
   pixText(ctx, "TAP TO CONTINUE", W / 2, y + h + px, px2, "rgba(255,255,255,.6)", "center");
 }
 const wrap = (text, n) => { const out = []; let line = ""; for (const w of String(text).split(" ")) { if ((line + " " + w).trim().length > n) { out.push(line.trim()); line = w; } else line += " " + w; } if (line.trim()) out.push(line.trim()); return out; };
+
+// The play call, Retro Bowl style: a strip of pixel buttons along the bottom. Returns the hit boxes.
+export function drawButtons(ctx, cam, heading, items, color) {
+  const { W, H, s } = cam, px = Math.max(2, Math.round(s * 0.09)), pad = px * 2, bh = px * 7 + pad * 2;
+  const cols = Math.min(3, items.length), rows = Math.ceil(items.length / cols), gap = px * 1.5;
+  const bw = (W - gap * (cols + 1)) / cols, top = H - rows * (bh + gap) - gap - px * 9;
+  ctx.fillStyle = "rgba(8,10,16,.94)"; ctx.fillRect(0, top - px * 2, W, H - top + px * 2);
+  ctx.fillStyle = color; ctx.fillRect(0, top - px * 2, W, px);
+  pixText(ctx, heading, W / 2, top + px, px, "#ffd166", "center");
+  const boxes = [];
+  items.forEach(([key, label], i) => {
+    const c = i % cols, r = Math.floor(i / cols), x = gap + c * (bw + gap), y = top + px * 9 + r * (bh + gap);
+    ctx.fillStyle = "#1b2230"; ctx.fillRect(x, y, bw, bh);
+    ctx.fillStyle = "#2c3744"; ctx.fillRect(x, y, bw, px); ctx.fillRect(x, y, px, bh);
+    ctx.fillStyle = "#0b0e14"; ctx.fillRect(x, y + bh - px, bw, px); ctx.fillRect(x + bw - px, y, px, bh);
+    pixText(ctx, label, x + bw / 2, y + pad, px, "#fff", "center");
+    boxes.push({ key, x, y, w: bw, h: bh });
+  });
+  return boxes;
+}
