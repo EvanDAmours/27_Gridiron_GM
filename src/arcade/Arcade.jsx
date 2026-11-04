@@ -40,6 +40,7 @@ function GameView({ game, teams, onQuit }) {
   const [sit, setSit] = useState(() => situation(g));
   const [feed, setFeed] = useState([]);
   const [shown, setShown] = useState(0);
+  const [phase, setPhase] = useState("presnap"), phaseRef = useRef("presnap");
   const refresh = useCallback(() => setSit(situation(g)), [g]);
 
   // what happens next: the other team's drive (and any kickoff), or your next call
@@ -71,7 +72,7 @@ function GameView({ game, teams, onQuit }) {
   }, [teams]);
   useEffect(() => {
     const cv = canvasRef.current, wrap = wrapRef.current;
-    const fit = () => { const W = wrap.clientWidth, H = wrap.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + "px"; cv.style.height = H + "px"; const cam = makeCamera(W, H); cam.camX = camRef.current?.camX ?? (S.current ? S.current.ball.x + 12 : g.yard + 12); camRef.current = cam; draw(); };
+    const fit = () => { const W = wrap.clientWidth, H = wrap.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + "px"; cv.style.height = H + "px"; const cam = makeCamera(W, H); cam.camX = camRef.current?.camX ?? (S.current ? S.current.ball.x + cam.lead : g.yard + cam.lead); camRef.current = cam; draw(); };
     fit(); window.addEventListener("resize", fit); return () => window.removeEventListener("resize", fit);
   }, [draw, g]);
   useEffect(() => {
@@ -80,8 +81,11 @@ function GameView({ game, teams, onQuit }) {
       const P = S.current, cam = camRef.current;
       if (P && cam) {
         const live = tick(P, dt);
-        const want = P.ball.x + 12; cam.camX += (want - cam.camX) * Math.min(1, dt * 4);
+        const want = P.ball.x + cam.lead; cam.camX += (want - cam.camX) * Math.min(1, dt * 4);
         if (!live && P.phase === "done" && mode === "play") { setMode("result"); refresh(); }
+        // the overlay (HIKE, the hint) follows the play's phase
+        const ph = P.phase === "presnap" ? "presnap" : P.ball.holder === "QB" && P.phase === "live" ? "throw" : "run";
+        if (ph !== phaseRef.current) { phaseRef.current = ph; setPhase(ph); }
       }
       draw(); raf.current = requestAnimationFrame(loop);
     };
@@ -90,7 +94,7 @@ function GameView({ game, teams, onQuit }) {
 
   const call = (c) => {
     if (c === "punt" || c === "fg") { const ev = runPlay(g, c); S.current = null; setFeed(ev ? [ev] : []); setShown(1); setMode("kick"); refresh(); return; }
-    const P = setupPlay(g, lineups(g), c); S.current = P; camRef.current.camX = P.ball.x + 12; setMode("play"); refresh();
+    const P = setupPlay(g, lineups(g), c); S.current = P; camRef.current.camX = P.ball.x + camRef.current.lead; setMode("play"); refresh();
   };
   const hike = () => { const P = S.current; if (P && P.phase === "presnap") snap(P); };
 
@@ -121,12 +125,12 @@ function GameView({ game, teams, onQuit }) {
       </div>
       <div ref={wrapRef} style={{ flex: 1, position: "relative", overflow: "hidden" }}>
         <canvas ref={canvasRef} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} style={{ display: "block", touchAction: "none" }} />
-        {mode === "play" && P?.phase === "presnap" && (
+        {mode === "play" && phase === "presnap" && (
           <button onClick={hike} style={{ ...btn({ background: teams.user.clr, borderColor: teams.user.ac, fontSize: 20, padding: "14px 30px" }), position: "absolute", left: "50%", bottom: 24, transform: "translateX(-50%)" }}>HIKE</button>
         )}
-        {mode === "play" && P && P.phase !== "presnap" && P.phase !== "done" && (
+        {mode === "play" && P && phase !== "presnap" && (
           <div style={{ position: "absolute", top: 8, left: 0, right: 0, textAlign: "center", color: "#fff", fontWeight: 800, fontSize: 13, textShadow: "0 1px 3px #000" }}>
-            {P.ball.holder === "QB" && P.phase === "live" ? "Drag to a spot and release to throw" : PLAY_NAMES[P.call]}
+            {phase === "throw" ? "Drag to a spot and release to throw" : PLAY_NAMES[P.call]}
           </div>
         )}
         {(mode === "result" || mode === "kick") && (

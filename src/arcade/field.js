@@ -3,8 +3,11 @@
 import { HALF } from "./play.js";
 
 export function makeCamera(W, H) {
-  const s = (W - 6) / 53.3;
-  return { W, H, s, cx: W / 2, camX: 50, toScreen(x, y) { return [this.cx + y * s, H * 0.62 - (x - this.camX) * s]; }, toField(px, py) { return { x: this.camX + (H * 0.62 - py) / s, y: (px - this.cx) / s }; } };
+  // the field fills the width; on a wide screen that makes the yards big, so the camera sits
+  // closer to the ball (the anchor: where the ball shows, as a share of the height from the top)
+  const s = (W - 6) / 53.3, anchor = H / s < 30 ? 0.8 : 0.62;
+  // lead: how far past the ball the camera centres, so the routes ahead of the quarterback show
+  return { W, H, s, anchor, lead: anchor > 0.7 ? 4 : 12, cx: W / 2, camX: 50, toScreen(x, y) { return [this.cx + y * s, H * anchor - (x - this.camX) * s]; }, toField(px, py) { return { x: this.camX + (H * anchor - py) / s, y: (px - this.cx) / s }; } };
 }
 
 const NUM = ["10", "20", "30", "40", "50", "40", "30", "20", "10"];
