@@ -1,8 +1,6 @@
-# Branch previews on the Pages site. A push to any branch other than main redeploys the site with
-# main at the root (unchanged) and that branch at /preview/<branch>/, so it can be played before it
-# is merged: https://evandamours.github.io/27_Gridiron_GM/preview/<branch>/
-# A later deploy of main (deploy-pages.yml) replaces the whole site, previews included; push the
-# branch again to bring its preview back.
+# Branch previews: a push to any branch other than main asks deploy-pages.yml (run from main, the
+# only branch the Pages environment deploys from) to publish this branch under /preview/<branch>/.
+# Play it at https://evandamours.github.io/27_Gridiron_GM/preview/<branch>/ once that run finishes.
 name: Preview branch on Pages
 
 on:
@@ -22,70 +20,18 @@ on:
       - "vite.config.js"
 
 permissions:
+  actions: write
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: github-pages
-  cancel-in-progress: true
 
 jobs:
-  build:
+  request:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
-    env:
-      VITE_GAME_SERVICE_ORIGIN: ${{ vars.GAME_SERVICE_ORIGIN }}
-      API_DOMAIN: ${{ vars.API_DOMAIN }}
+    timeout-minutes: 5
     steps:
-      - name: Check out the branch
-        uses: actions/checkout@v4
-        with:
-          path: branch
-
-      - name: Check out main
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          path: main
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - uses: actions/configure-pages@v5
-
-      - name: Build main for the root of the site
-        working-directory: main
+      - name: Ask the main deploy to publish this branch as a preview
         env:
-          VITE_APP_BASE_PATH: /27_Gridiron_GM/
-        run: |
-          npm ci
-          npm run build:pages:all
-
-      - name: Build this branch under /preview/<branch>/
-        working-directory: branch
-        env:
+          GH_TOKEN: ${{ github.token }}
           BRANCH: ${{ github.ref_name }}
         run: |
-          npm ci
-          VITE_APP_BASE_PATH="/27_Gridiron_GM/preview/$BRANCH/" npx vite build --outDir dist-preview
-          cp dist-preview/index.html dist-preview/404.html
-          mkdir -p "../main/dist/preview/$BRANCH"
-          cp -r dist-preview/. "../main/dist/preview/$BRANCH/"
-          echo "Preview: https://evandamours.github.io/27_Gridiron_GM/preview/$BRANCH/"
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: main/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          gh workflow run deploy-pages.yml --repo "$GITHUB_REPOSITORY" --ref main -f "preview=$BRANCH"
+          echo "Requested. When Deploy Pages finishes: https://evandamours.github.io/27_Gridiron_GM/preview/$BRANCH/"

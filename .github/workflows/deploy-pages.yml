@@ -1,7 +1,17 @@
 name: Deploy Pages
 
+# Builds main for the root of the site. Run by hand (or by preview-pages.yml on a branch push)
+# with a `preview` branch name, it also builds that branch under /preview/<branch>/, so it can be
+# played at https://evandamours.github.io/27_Gridiron_GM/preview/<branch>/ before it is merged.
+# The Pages environment only deploys from main, which is why the preview rides along with main's
+# own deploy. A later deploy of main without a preview replaces the whole site, previews included.
 on:
   workflow_dispatch:
+    inputs:
+      preview:
+        description: "Branch to publish under /preview/<branch>/ beside the main site"
+        required: false
+        default: ""
   push:
     branches:
       - main
@@ -12,6 +22,7 @@ on:
       - "scripts/**"
       - "src/**"
       - "index.html"
+      - "arcade.html"
       - "vite.config.js"
 
 permissions:
@@ -32,6 +43,7 @@ jobs:
       VITE_APP_BASE_PATH: /27_Gridiron_GM/
       VITE_GAME_SERVICE_ORIGIN: ${{ vars.GAME_SERVICE_ORIGIN }}
       API_DOMAIN: ${{ vars.API_DOMAIN }}
+      PREVIEW: ${{ github.event.inputs.preview }}
     steps:
       - uses: actions/checkout@v4
 
@@ -47,6 +59,24 @@ jobs:
 
       - name: Build Pages bundle
         run: npm run build:pages:all
+
+      - name: Check out the preview branch
+        if: env.PREVIEW != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PREVIEW }}
+          path: preview-src
+
+      - name: Build the preview under /preview/<branch>/
+        if: env.PREVIEW != ''
+        working-directory: preview-src
+        run: |
+          npm ci
+          VITE_APP_BASE_PATH="/27_Gridiron_GM/preview/$PREVIEW/" npx vite build --outDir dist-preview
+          cp dist-preview/index.html dist-preview/404.html
+          mkdir -p "../dist/preview/$PREVIEW"
+          cp -r dist-preview/. "../dist/preview/$PREVIEW/"
+          echo "Preview: https://evandamours.github.io/27_Gridiron_GM/preview/$PREVIEW/"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
