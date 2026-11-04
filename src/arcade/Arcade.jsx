@@ -26,6 +26,7 @@ export default function Arcade() {
         <label style={{ fontSize: 13, color: MUTED }}>Your team{sel(userTi, setUser)}</label>
         <label style={{ fontSize: 13, color: MUTED }}>Opponent{sel(oppTi, setOpp)}</label>
         <button style={btn({ background: TEAMS[userTi].clr, borderColor: TEAMS[userTi].ac, fontSize: 18 })} onClick={() => setGame(newGame(userTi, oppTi))}>Kick off</button>
+        <a href={import.meta.env.BASE_URL} style={{ color: MUTED, fontSize: 13, textAlign: "center", marginTop: 6 }}>← Back to Football GM</a>
       </div>
     );
   }
