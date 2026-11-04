@@ -59,3 +59,20 @@ test("the rush gets home when you hold the ball", () => {
   assert.equal(S.phase, "done");
   assert.ok(S.pick?.why === "hurried" || S.pick?.why === "late", `forced throw: ${S.pick?.why}`);
 });
+
+test("the retro renderer draws a play without throwing", async () => {
+  globalThis.Image = class { constructor() { this.complete = false; this.naturalWidth = 0; } };
+  const R = await import("../src/arcade/retro.js");
+  const calls = {}; const ctx = new Proxy({}, { get: (_, k) => (typeof k === "string" ? (...a) => { calls[k] = (calls[k] || 0) + 1; return k === "measureText" ? { width: 10 } : undefined; } : undefined), set: () => true });
+  const { g } = newGame(3, 4, { rand });
+  runPlay(g); toYourBall(g);
+  const cam = R.makeCamera(390, 700);
+  const S = setupPlay(g, lineups(g), "pass_deep");
+  const teams = { user: { ab: "NYJ", name: "Jets", clr: "#125740", ac: "#fff" }, opp: { ab: "BAL", name: "Ravens", clr: "#241773", ac: "#9e7c0c" } };
+  R.drawRetro(ctx, cam, S, teams, g, { ring: true }); R.drawHud(ctx, cam, { score: { h: 3, a: 7 }, qtr: 2, clock: 61 }, teams); R.drawDownBox(ctx, cam, "1ST & 10"); R.drawBanner(ctx, cam, "FIRST DOWN", "A long line of play by play text that needs wrapping across the banner", "OPEN BY 3 YD", "#fff");
+  snap(S); S.aim = { x: S.los + 20, y: 4 };
+  for (let i = 0; i < 90; i++) { tick(S, 1 / 60); R.drawRetro(ctx, cam, S, teams, g, { ring: true }); }
+  throwTo(S, S.aim); let n = 0; while (tick(S, 1 / 60) && n++ < 900) R.drawRetro(ctx, cam, S, teams, g, {});
+  assert.ok(calls.fillRect > 100 && calls.drawImage == null, "drew pixels (no sheets loaded here, so no images)");
+  const f = cam.toField(...cam.toScreen(42, -7)); assert.ok(Math.abs(f.x - 42) < 1e-6 && Math.abs(f.y + 7) < 1e-6, "camera round-trips");
+});
