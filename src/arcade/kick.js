@@ -4,9 +4,9 @@
 // engine's own distance and the flick picks the side. Units as in play.js.
 import { resolvePlay } from "./bridge.js";
 import { HALF } from "./play.js";
+import * as K from "./ratings.js";
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-const R = (p, k, d = 70) => p?.posAttrs?.[k] ?? d;
 
 // The kicking team: a line, two wings, the long snapper's man... kept to the eleven we have. The
 // holder kneels seven back, the kicker beside him; on a punt the punter stands fifteen back.
@@ -32,7 +32,7 @@ export function setupKick(g, L, kind) {
 export function kickFlick(S, dxYd, dyYd) {
   if (S.phase !== "presnap") return null;
   const len = Math.hypot(dxYd, dyYd), angle = Math.atan2(dyYd, Math.max(0.5, dxYd)) * 0.55; // radians off straight (he squares it up some)
-  const legStr = R(S.kicker, "legStr", R(S.kicker, "power", 90)), acc = R(S.kicker, "accuracy", 85);
+  const legStr = K.kickLeg(S.kicker), acc = K.kickAccuracy(S.kicker);
   S.phase = "live"; S.t = 0;
   if (S.kind === "fg") {
     // the distance the flick is good for: full length (the whole pull) reaches his range

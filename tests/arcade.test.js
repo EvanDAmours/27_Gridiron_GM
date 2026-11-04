@@ -120,3 +120,27 @@ test("a kick plays out and books one engine play", async () => {
   assert.ok(pev && (pev.type === "punt" || pev.type === "penalty"), `a punt: ${pev?.type}`);
   n = 0; while (tickKick(P, 1 / 60) && n++ < 1000); assert.equal(P.phase, "done");
 });
+
+test("ratings, form and injuries reach the field", async () => {
+  const K = await import("../src/arcade/ratings.js");
+  const qb = (v, form = 0) => ({ pos: "QB", ovr: v + form, form, spd: 70, posAttrs: { accuracy: v, touch: v, armStr: v, pocketAwr: v, decisions: v, readDef: v } });
+  assert.ok(K.qbAccuracy(qb(95)) > K.qbAccuracy(qb(60)) + 25, "accuracy follows the rating");
+  assert.ok(K.qbAccuracy(qb(80, 4)) > K.qbAccuracy(qb(80)) + 3, "a hot streak shows");
+  assert.ok(K.qbAccuracy(qb(80, -6)) < K.qbAccuracy(qb(80)) - 5, "playing hurt shows");
+  const cb = { pos: "CB", ovr: 80, posAttrs: { manCov: 80 } }, lb = { pos: "LB", ovr: 80, spd: 80, posAttrs: { coverage: 60, zoneAwr: 60 } };
+  assert.ok(K.coverMan(cb) > K.coverMan(lb), "a linebacker covers like the engine's lbCover");
+
+  // the same throw, many times: a poor passer misses his spot by more than a good one
+  const miss = (v) => {
+    let tot = 0;
+    for (let i = 0; i < 120; i++) {
+      const { g } = newGame(0, 1, { rand }); runPlay(g); toYourBall(g);
+      const L = lineups(g); L.off = { ...L.off, QB: { ...L.off.QB, ovr: v, form: 0, posAttrs: { ...L.off.QB.posAttrs, accuracy: v, touch: v } } };
+      const S = setupPlay(g, L, "pass_medium"); snap(S); for (let k = 0; k < 90; k++) tick(S, 1 / 60);
+      const aim = { x: S.los + 15, y: 5 }; const f = throwTo(S, aim); if (!f) continue;
+      tot += Math.hypot(f.to.x - aim.x, f.to.y - aim.y);
+    }
+    return tot / 120;
+  };
+  assert.ok(miss(60) > miss(95) * 2, "a 60 misses his spot by far more than a 95");
+});
