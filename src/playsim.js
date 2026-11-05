@@ -286,14 +286,15 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
 
 const emptyTeam = () => ({ blitz: 0, box: 0, cover: 0, dropbacks: 0, plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
 
-export function createGame(home, away, { playoff = false, neutral = false, rand = Math.random, rec = false, wx = "clear" } = {}) {
+export function createGame(home, away, { playoff = false, neutral = false, rand = Math.random, rec = false, wx = "clear", qLen = null } = {}) {
   const first = rand() < 0.5 ? "h" : "a";
   const g = {
     sides: { h: home, a: away }, playoff, neutral, rand,
     // the weather (weather.js): wx its key, wxE what it does to the game
     wx, wxE: wxOf(wx),
     // the game opens with a kickoff to the team that won the toss (koNext: the next snap is a kickoff)
-    poss: first === "h" ? "a" : "h", firstPoss: first, koNext: true, yard: 35, down: 1, toGo: 10, qtr: 1, clock: 900,
+    poss: first === "h" ? "a" : "h", firstPoss: first, koNext: true, yard: 35, down: 1, toGo: 10, qtr: 1, clock: qLen || 900, qLen: qLen || null, // (qLen: a shorter quarter, in seconds, for the arcade; the franchise game leaves it unset)
+   
     score: { h: 0, a: 0 }, done: false, ot: false, otScored: false, plays: 0, to: { h: 3, a: 3 },
     box: { h: {}, a: {} }, stats: { h: emptyTeam(), a: emptyTeam() },
     ...(rec ? { pl: [] } : {}),
@@ -559,19 +560,19 @@ function tick(g, secs) {
   g.clock -= secs;
   if (g.clock > 0) return null;
   if (g.ot) { // overtime period over
-    if (g.score.h === g.score.a && g.playoff) { g.clock = 900; g.to = { h: 2, a: 2 }; return "Another overtime period."; }
+    if (g.score.h === g.score.a && g.playoff) { g.clock = g.qLen || 900; g.to = { h: 2, a: 2 }; return "Another overtime period."; }
     g.done = true; return g.score.h === g.score.a ? "Overtime ends in a tie." : "Final.";
   }
   g.qtr++;
   // the second half opens with a kickoff, by the team that received the first one
-  if (g.qtr === 3) { g.to = { h: 3, a: 3 }; g.clock = 900; g.poss = g.firstPoss; g.yard = 35; g.down = 1; g.toGo = 10; g.koNext = true; return "Halftime."; }
+  if (g.qtr === 3) { g.to = { h: 3, a: 3 }; g.clock = g.qLen || 900; g.poss = g.firstPoss; g.yard = 35; g.down = 1; g.toGo = 10; g.koNext = true; return "Halftime."; }
   if (g.qtr === 5) {
     if (g.score.h !== g.score.a) { g.done = true; g.qtr = 4; g.clock = 0; return "Final."; }
     // the toss winner receives the overtime kickoff (g.poss: the side kicking it)
-    g.ot = true; g.otPoss = 1; g.to = { h: 2, a: 2 }; g.clock = g.playoff ? 900 : 600; g.poss = g.rand() < 0.5 ? "h" : "a"; g.yard = 35; g.down = 1; g.toGo = 10; g.koNext = true;
+    g.ot = true; g.otPoss = 1; g.to = { h: 2, a: 2 }; g.clock = g.qLen ? Math.min(g.qLen, 600) : g.playoff ? 900 : 600; g.poss = g.rand() < 0.5 ? "h" : "a"; g.yard = 35; g.down = 1; g.toGo = 10; g.koNext = true;
     return "Overtime!";
   }
-  g.clock = 900;
+  g.clock = g.qLen || 900;
   return `End of quarter ${g.qtr - 1}.`;
 }
 

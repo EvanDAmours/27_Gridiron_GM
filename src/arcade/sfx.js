@@ -12,7 +12,7 @@ function ac() {
 // browsers only start audio after a touch: call this from the first pointer event
 export function unlock() { const a = ac(); if (a && a.state === "suspended") a.resume(); }
 export const isMuted = () => muted;
-export function toggleMute() { muted = !muted; try { localStorage.setItem("arcade_muted", muted ? "1" : "0"); } catch { /* ignore */ } return muted; }
+export function toggleMute() { muted = !muted; if (amb) amb.g.gain.value = muted ? 0 : AMB; try { localStorage.setItem("arcade_muted", muted ? "1" : "0"); } catch { /* ignore */ } return muted; }
 
 function tone(freq, dur, { type = "square", vol = 0.08, at = 0, slide = 0 } = {}) {
   const a = ac(); if (!a || muted) return;
@@ -31,6 +31,20 @@ function noise(dur, { vol = 0.12, at = 0, lp = 1200 } = {}) {
   src.connect(f).connect(g).connect(a.destination); src.start(t);
 }
 
+// The crowd under it all: a soft, endless murmur (filtered noise, gently breathing), louder for a
+// moment when something happens (hype 0..1).
+let amb = null; const AMB = 0.018;
+export function ambient(on = true) {
+  const a = ac(); if (!a) return;
+  if (!on) { if (amb) { amb.src.stop(); amb = null; } return; }
+  if (amb) return;
+  const n = a.sampleRate * 4, buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
+  let b0 = 0, b1 = 0; for (let i = 0; i < n; i++) { const w = Math.random() * 2 - 1; b0 = 0.97 * b0 + w * 0.03; b1 = 0.6 * b1 + w * 0.4; d[i] = (b0 * 6 + b1 * 0.5) * (0.8 + 0.2 * Math.sin(i / a.sampleRate * 0.9)); }
+  const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  src.buffer = buf; src.loop = true; f.type = "bandpass"; f.frequency.value = 700; f.Q.value = 0.4; g.gain.value = muted ? 0 : AMB;
+  src.connect(f).connect(g).connect(a.destination); src.start(); amb = { src, g };
+}
+export function ambientHype(h) { if (amb && !muted) amb.g.gain.value = AMB * (1 + Math.min(1, h) * 2.5); }
 export const sfx = {
   snap: () => { noise(0.06, { vol: 0.15, lp: 600 }); tone(110, 0.08, { type: "triangle", vol: 0.12 }); },
   throw: () => tone(520, 0.18, { type: "triangle", vol: 0.07, slide: 500 }),

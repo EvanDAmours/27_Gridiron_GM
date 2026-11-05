@@ -22,9 +22,10 @@ export function buildSide(ti) {
 }
 
 // A new game: you are always the home side ("h") so the field reads left to right for your drives.
-export function newGame(userTi, oppTi, { rand = Math.random, pat = false } = {}) {
+export function newGame(userTi, oppTi, { rand = Math.random, pat = false, qLen = null, wx = "clear", wind = null } = {}) {
   const h = buildSide(userTi), a = buildSide(oppTi);
-  const g = createGame(h.side, a.side, { rand, rec: true });
+  const g = createGame(h.side, a.side, { rand, rec: true, qLen, wx });
+  if (wind) g.wind = wind; // { x, y, mph }: yards a second along and across the field, in the first quarter // qLen: quarter length in seconds (null: 15 minutes)
   if (pat) g.patDefer = { h: true }; // you play your own extra points and two-point tries
   return { g, user: "h", home: h, away: a };
 }
