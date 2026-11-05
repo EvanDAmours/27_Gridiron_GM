@@ -426,7 +426,8 @@ export function tick(S, dt) {
       for (const d of Object.values(ents)) {
         if (d.side !== "def" || d.down > 0 || d.heldUntil > S.t || d.mode === "rush") continue;
         // (in between, not on the man: a cover man on the catch point plays it there)
-        if (ball.h < 1.0 && S.t - f.t0 < f.T * 0.8 && hyp(d.x - f.to.x, d.y - f.to.y) > 1.8 && hyp(d.x - ball.x, d.y - ball.y) < 0.7 + (K.ballSkills(d.p) - 70) * 0.008) { f.tipped = true; f.to = { x: ball.x, y: ball.y }; f.T = S.t - f.t0; S.log.push("in the lane"); break; }
+        // (one chance each to get a hand on it: a rope gets by most of the time)
+        if (ball.h < 1.0 && S.t - f.t0 < f.T * 0.8 && hyp(d.x - f.to.x, d.y - f.to.y) > 1.8 && hyp(d.x - ball.x, d.y - ball.y) < 0.55 + (K.ballSkills(d.p) - 70) * 0.006 && !(f.tried ||= {})[d.key] && (f.tried[d.key] = true) && rnd(S) < clamp(0.3 + (K.ballSkills(d.p) - 70) * 0.01, 0.12, 0.55)) { f.tipped = true; f.to = { x: ball.x, y: ball.y }; f.T = S.t - f.t0; S.log.push("in the lane"); break; }
       }
     }
     const u = clamp((S.t - f.t0) / f.T, 0, 1);
