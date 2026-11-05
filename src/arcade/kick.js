@@ -27,31 +27,46 @@ export function setupKick(g, L, kind, { pat = false } = {}) {
   return { g, L, kind, pat, los, firstDown: 100, t: 0, phase: "presnap", ents, cover: {}, ball: { x: ents.K.x + 0.5, y: kind === "fg" ? 0.6 : 0, h: 0, holder: "K", flight: null }, aim: null, steer: null, text: "", ev: null, result: null, pick: null, log: [], dist, kicker: k, flick: null, endAt: 0 };
 }
 
-// The flick: from where the touch started to where it ended (field yards). Power from its length,
-// direction from its angle off straight up the field.
+// The kick you're lining up, without the luck: where it's headed and whether it's long enough.
+// dxYd/dyYd: the drag up the field and across it, in field yards; a drag of 11 yards is a full kick.
+// Used by the aim preview (so the arc you see is the kick you get) and by the kick itself.
+export const POSTS_X = 110, POST_HALF = 3.08; // the uprights stand on the end line, 18 ft 6 in apart
+export function kickPlan(S, dxYd, dyYd) {
+  const len = Math.hypot(dxYd, dyYd), angle = Math.atan2(dyYd, Math.max(0.5, dxYd)) * 0.55; // radians off straight (he squares it up some)
+  const legStr = K.kickLeg(S.kicker), wd = windNow(S.g), W = wxField(S.g), x0 = S.ball.x, y0 = S.ball.y;
+  const strength = clamp(len / 11, 0, 1.15);
+  if (S.kind !== "fg") return { angle, strength, wd, x0, y0, len };
+  // the distance this kick is good for: a full drag reaches his range (a wind at his back adds yards,
+  // one in his face takes them; a bad day takes some too)
+  const range = 44 + (legStr - 85) * 1.1 + 6 + wd.x * 0.6 - (W.kick || 0) * 0.5, power = strength * range, need = S.dist;
+  const toPosts = POSTS_X - x0, drift = wd.y * clamp(need / 26, 1.2, 2.6) * 0.35; // a crosswind pushes it as it flies
+  const yAtPosts = y0 + Math.tan(angle) * toPosts + drift;
+  return { angle, strength, power, need, range, wd, x0, y0, len, drift, yAtPosts, short: power < need - 1, wide: Math.abs(yAtPosts) > POST_HALF + 1.1 };
+}
+// The kick: the plan, plus his accuracy's wobble.
 export function kickFlick(S, dxYd, dyYd) {
   if (S.phase !== "presnap") return null;
-  const len = Math.hypot(dxYd, dyYd), angle = Math.atan2(dyYd, Math.max(0.5, dxYd)) * 0.55; // radians off straight (he squares it up some)
-  const legStr = K.kickLeg(S.kicker), acc = K.kickAccuracy(S.kicker);
+  const plan = kickPlan(S, dxYd, dyYd), acc = K.kickAccuracy(S.kicker), angle = plan.angle;
   S.phase = "live"; S.t = 0;
   if (S.kind === "fg") {
-    // the distance the flick is good for: full length (the whole pull) reaches his range
-    const wd = windNow(S.g), W = wxField(S.g);
-    // a wind at his back adds yards, one in his face takes them; a bad day (rain, snow, cold) takes some too
-    const range = 44 + (legStr - 85) * 1.1 + 6 + wd.x * 0.6 - (W.kick || 0) * 0.5; const power = clamp(len / 11, 0, 1.15) * range;
-    const need = S.dist, short = power < need - 1;
-    // the uprights are 18.5 feet wide: six yards; a wobble from his own accuracy adds to the angle
+    const { power, need, x0, y0, drift } = plan, toPosts = POSTS_X - x0;
     const wobble = (Math.random() - 0.5) * (0.05 + Math.max(0, 92 - acc) * 0.004) * (need / 35);
-    const drift = wd.y * clamp(need / 26, 1.2, 2.6) * 0.35; // a crosswind pushes it as it flies
-    const off = Math.abs(Math.tan(angle + wobble) * need + drift), wide = off > 4.2;
+    const yAtPosts = y0 + Math.tan(angle + wobble) * toPosts + drift, short = plan.short, wide = Math.abs(yAtPosts) > POST_HALF + 1.1;
     const good = !short && !wide;
-    // an extra point is all yours (the engine books what the flick did); a field goal the engine has to agree with
+    // an extra point is all yours (the engine books what the kick did); a field goal the engine has to agree with
     const r = S.pat ? { ev: bookPat(S.g, false, good) } : resolvePlay(S.g, "fg", { types: [good ? "fg" : "fg_miss"], fallback: [good ? "fg_miss" : "fg"] }, null, 12);
     S.ev = S.result = r.ev; S.text = r.ev?.text || "";
     const made = S.pat ? good : r.ev?.type === "fg";
-    S.flick = { angle: angle + wobble, power, need, short, wide, made };
-    const T = clamp(need / 26, 1.2, 2.6), endX = Math.min(110, S.los + (made ? need + 2 : short ? need - 6 - Math.random() * 6 : need)), endY = clamp(Math.tan(angle + wobble) * (endX - S.los) + S.ball.y + drift * (endX - S.los) / need, -HALF + 0.5, HALF - 0.5);
-    S.ball.flight = { from: { x: S.ball.x, y: S.ball.y }, to: { x: endX, y: endY }, t0: 0.7, T, arc: clamp(need / 10, 2.5, 5.5), target: null, kick: true };
+    S.flick = { angle: angle + wobble, power, need, short: !made && short, wide: !made && !short, made };
+    // the flight, honest about what happened: a good kick clears the bar between the uprights; a
+    // short one comes down in front of them; a wide one goes by outside an upright
+    let postY = made ? clamp(yAtPosts, -POST_HALF + 0.6, POST_HALF - 0.6) : !short ? (yAtPosts >= 0 ? 1 : -1) * Math.max(Math.abs(yAtPosts), POST_HALF + 1.4) : yAtPosts;
+    const endX = made || !short ? POSTS_X + 7 : Math.min(POSTS_X - 1, x0 + Math.max(10, power + 4)), u = (POSTS_X - x0) / Math.max(1, endX - x0);
+    const hPost = made ? 5.5 + Math.random() * 2 : 4.5 + Math.random() * 2;
+    const arc = !short || made ? hPost / Math.max(0.05, 4 * u * (1 - u)) : clamp(need / 8, 3, 7);
+    const endY = clamp(y0 + (postY - y0) * ((endX - x0) / toPosts), -HALF - 4, HALF + 4);
+    const T = clamp((endX - x0) / 24, 1.1, 2.8);
+    S.ball.flight = { from: { x: x0, y: y0 }, to: { x: endX, y: endY }, t0: 0.7, T, arc, target: null, kick: true, fg: true };
     S.endAt = 0.7 + T + 1.3;
     return r.ev;
   }
@@ -60,7 +75,7 @@ export function kickFlick(S, dxYd, dyYd) {
   S.ev = S.result = r.ev; S.text = r.ev?.text || "";
   const gross = r.ev?.gross ?? 42, land = Math.min(109, S.los + gross);
   const endY = clamp(S.ball.y + Math.tan(angle) * gross * 0.5, -HALF + 1, HALF - 1);
-  S.flick = { angle, power: len };
+  S.flick = { angle, power: plan.len };
   S.ball.flight = { from: { x: S.ball.x, y: S.ball.y }, to: { x: land, y: endY }, t0: 0.9, T: clamp(gross / 16, 2, 3.6), arc: 6, target: null, kick: true, ret: r.ev?.ret || 0, spot: r.ev?.spot };
   S.endAt = 0.9 + S.ball.flight.T + 1.6;
   return r.ev;
@@ -75,7 +90,7 @@ export function tickKick(S, dt) {
   if (f && S.t >= f.t0) {
     const u = clamp((S.t - f.t0) / f.T, 0, 1);
     ball.holder = null;
-    ball.x = f.from.x + (f.to.x - f.from.x) * u; ball.y = f.from.y + (f.to.y - f.from.y) * u; ball.h = f.arc * 4 * u * (1 - u) + (S.kind === "fg" ? u * 2.5 : 0);
+    ball.x = f.from.x + (f.to.x - f.from.x) * u; ball.y = f.from.y + (f.to.y - f.from.y) * u; ball.h = f.arc * 4 * u * (1 - u);
     if (S.kind === "punt" && ents.S0) { const ret = ents.S0; const tx = f.to.x, ty = f.to.y; const d = Math.hypot(tx - ret.x, ty - ret.y); if (d > 0.3) { ret.x += ((tx - ret.x) / d) * Math.min(d, 7 * dt); ret.y += ((ty - ret.y) / d) * Math.min(d, 7 * dt); } }
     if (u >= 1 && !S.landed) {
       S.landed = true;

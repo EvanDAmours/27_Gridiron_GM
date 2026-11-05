@@ -12,7 +12,7 @@
 // while aiming is the throw you'll get.
 import { TEAMS, newGame, lineups, runPlay, simOpponentDrive, situation, snapshot, restore, patWaiting, bookPat } from "./bridge.js";
 import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
-import { setupKick, kickFlick, tickKick } from "./kick.js";
+import { setupKick, kickFlick, tickKick, kickPlan, POSTS_X } from "./kick.js";
 import { sfx, unlock, toggleMute, isMuted, ambient, ambientHype } from "./sfx.js";
 import { FX } from "./fx.js";
 import { rollWeather, WX, wxOf } from "../weather.js";
@@ -23,6 +23,7 @@ const PULL = 3.2; // touch: the throw goes this many times the pull-back, the ot
 const spotOf = (yard) => (yard === 50 ? "MIDFIELD" : yard < 50 ? `OWN ${yard}` : `OPP ${100 - yard}`);
 const ordinal = (n) => ["1ST", "2ND", "3RD", "4TH"][n - 1] || `${n}TH`;
 // quarter lengths on offer (minutes): short like Retro Bowl by default, up to a full NFL quarter
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const QMINS = [3, 5, 8, 15];
 // the weather setting: AUTO rolls the home club's own city (a dome stays a dome)
 // the wind for a day like this: a breeze most days, a real wind on a windy one (rough in a storm),
@@ -184,9 +185,11 @@ export class ArcadeGame {
       // scrimmage a quarter of the way in, so the routes stay on screen as they develop; after
       // that it leads the runner, and with a throw in the air it frames the ball and its spot
       const qbHas = !P.kind && !over && (P.ball.holder === "QB" || Math.max(P.ball.x + cam.lead, 0) < holdX(cam, P)); // (a back behind the line too)
-      const want = f ? (P.ball.x + f.to.x) / 2 + 2 : qbHas ? holdX(cam, P) : P.ball.x + (over ? 0 : cam.lead);
+      // (before a field goal: the kicker and the posts both in the picture, if they fit)
+      const kickView = P.kind === "fg" && P.phase === "presnap" ? Math.min(P.ball.x - 4 + (cam.W * 0.42) / cam.s, Math.max(P.ball.x + cam.lead, POSTS_X + 5 - (cam.W * 0.58) / cam.s)) : null;
+      const want = kickView ?? (f ? (P.ball.x + f.to.x) / 2 + 2 : qbHas ? holdX(cam, P) : P.ball.x + (over ? 0 : cam.lead));
       cam.camX += (want - cam.camX) * Math.min(1, dt * (f ? 3.5 : 5));
-      cam.camX = Math.max(-10 + (cam.W * 0.42) / cam.s, Math.min(112 - (cam.W * 0.58) / cam.s, cam.camX)); // never past the end zones
+      cam.camX = Math.max(-15 + (cam.W * 0.42) / cam.s, Math.min(117 - (cam.W * 0.58) / cam.s, cam.camX)); // never far past the end zones (but the goalposts, on the end lines, stay in the picture)
       if (!going && P.phase === "done" && m === "play") {
         let ev = P.result || P.ev;
         // a two-point try was played on a scratch copy of the game from the 2: put the game back and book the try
@@ -300,28 +303,23 @@ export class ArcadeGame {
     if (this.paused) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ["wx", `WEATHER: ${wxName(this.wxPick)}`], ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), ["quit", "QUIT GAME"]], { mobile: this.mobile });
   }
   drawKick(ctx, P, hintY) {
-    const cam = this.cam;
+    const cam = this.cam, px = uiPx(cam);
     if (P.phase !== "presnap") return;
     drawDownBox(ctx, cam, P.pat ? "EXTRA POINT" : P.kind === "fg" ? `${P.dist} YARD FIELD GOAL` : "PUNT", "#fff");
-    const [bx, by] = cam.toScreen(P.ball.x, P.ball.y);
-    // the aim: a dotted line from the ball (the touch flick's direction, or toward the pointer)
-    let dir = null;
-    if (this.mobile && this.touch) dir = [this.touch.cx - this.touch.px, this.touch.cy - this.touch.py];
-    else if (!this.mobile && this.mouse) dir = [this.mouse.px - bx, this.mouse.py - by];
-    if (dir && Math.hypot(...dir) > 4) {
-      const n = Math.hypot(...dir), L = cam.s * 14; ctx.fillStyle = "#ffd166";
-      for (let i = 1; i < 12; i++) { const u = i / 12; ctx.fillRect(Math.round(bx + dir[0] / n * L * u) - 2, Math.round(by + dir[1] / n * L * u - cam.s * 1.5 * Math.sin(u * Math.PI)) - 2, 4, 4); }
-    }
-    // the power meter (mouse and keyboard): fills while you hold, then falls back; let go near the top
-    if (!this.mobile) {
-      const px = uiPx(cam), w = px * 60, h = px * 6, x = Math.round(cam.W / 2 - w / 2), y = Math.round(hintY - px * 16);
-      const pw = this.kickPower();
+    const d = this.kickDrag, v = d && this.kickVec(d);
+    if (v && v[0] > 0) {
+      // the kick you're about to make: its arc to where it comes down, and its strength against the distance
+      const plan = kickPlan(P, v[0], v[1]), dist = P.kind === "fg" ? Math.max(8, plan.power) : 30 + plan.strength * 25;
+      const x1 = plan.x0 + Math.cos(plan.angle) * dist, y1 = plan.y0 + Math.sin(plan.angle) * dist + (plan.drift || 0) * (dist / Math.max(1, POSTS_X - plan.x0)), apex = P.kind === "fg" ? clamp(dist / 7, 3, 8) : 9;
+      for (let i = 1; i <= 22; i++) { const u = i / 22, [sx, sy] = cam.toScreen(plan.x0 + (x1 - plan.x0) * u, plan.y0 + (y1 - plan.y0) * u), h = apex * 4 * u * (1 - u); const sz = Math.max(2, Math.round(px * (i === 22 ? 2 : 1.2))); ctx.fillStyle = "rgba(0,0,0,.4)"; ctx.fillRect(Math.round(sx - sz / 2) + 1, Math.round(sy - h * cam.s - sz / 2) + 1, sz, sz); ctx.fillStyle = "#ffd166"; ctx.fillRect(Math.round(sx - sz / 2), Math.round(sy - h * cam.s - sz / 2), sz, sz); }
+      const [lx, ly] = cam.toScreen(x1, y1); ctx.strokeStyle = "#ffd166"; ctx.lineWidth = Math.max(2, px); ctx.beginPath(); ctx.ellipse(lx, ly, cam.s * 0.9, cam.s * 0.9 * 0.42, 0, 0, Math.PI * 2); ctx.stroke();
+      // the strength bar: how far this kick goes, and (on a field goal) a tick at the distance it needs
+      const w = px * 70, h = px * 6, x = Math.round(cam.W / 2 - w / 2), y = Math.round(hintY - px * 16), frac = Math.min(1, plan.strength / 1.15);
       ctx.fillStyle = "rgba(8,10,16,.85)"; ctx.fillRect(x - px, y - px, w + px * 2, h + px * 2);
-      const grad = ctx.createLinearGradient(x, 0, x + w, 0); grad.addColorStop(0, "#4caf50"); grad.addColorStop(0.75, "#ffd166"); grad.addColorStop(1, "#ff5a4a");
-      ctx.fillStyle = grad; ctx.fillRect(x, y, Math.round(w * pw), h);
-      ctx.fillStyle = "#fff"; ctx.fillRect(Math.round(x + w * 0.9), y - px, px, h + px * 2);
+      const ok = P.kind !== "fg" || !plan.short; ctx.fillStyle = ok ? "#5fd35f" : "#ff8a5a"; ctx.fillRect(x, y, Math.round(w * frac), h);
+      if (P.kind === "fg") { const need = Math.min(1, (plan.need / plan.range) / 1.15); ctx.fillStyle = "#fff"; ctx.fillRect(Math.round(x + w * need), y - px * 2, px, h + px * 4); pixText(ctx, plan.short ? "TOO SHORT" : "LONG ENOUGH", x + w / 2, y - px * 9, px, plan.short ? "#ff8a5a" : "#5fd35f", "center"); }
     }
-    drawHint(ctx, cam, this.mobile ? "FLICK UP THE FIELD TO KICK" : "AIM WITH THE MOUSE - HOLD, LET GO AT THE TOP", hintY);
+    drawHint(ctx, cam, this.mobile ? "DRAG TOWARD THE POSTS, LET GO TO KICK" : "CLICK AND DRAG TOWARD THE POSTS, LET GO TO KICK", hintY);
   }
   kickPower() { if (!this.kick?.charging) return 0; const u = (this.kick.t / KICK_CYCLE) % 2; return u < 1 ? u : 2 - u; }
   // the other team's drive: a panel in their colours, the plays as they come in
@@ -376,20 +374,21 @@ export class ArcadeGame {
     if (this.input === "mouse") return this.mouseDown(P, e, p);
     // touch: one finger plays; a second finger only taps buttons
     if (this.touch && this.touch.id !== e.pointerId) return;
-    if (P.kind) { this.touch = { id: e.pointerId, ...p, cx: p.px, cy: p.py, moved: 0 }; return; } // a kick: the flick is read when you let go
+    if (P.kind) { this.kickDrag = { id: e.pointerId, ...p, cx: p.px, cy: p.py }; return; } // a kick: drag toward the posts, let go
     if (P.phase === "presnap") snap(P);
     this.touch = { id: e.pointerId, ...p, moved: 0 };
     if (P.phase === "carry") P.steer = this.cam.toField(p.px, p.py).y;
   }
   mouseDown(P, e, p) {
     const lob = e.button === 2 || e.shiftKey;
-    if (P.kind) { if (P.phase === "presnap") this.kick = { charging: true, t: 0 }; return; }
+    if (P.kind) { if (P.phase === "presnap") this.kickDrag = { id: e.pointerId, ...p, cx: p.px, cy: p.py }; return; }
     if (P.phase === "presnap") { snap(P); return; }
     if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass")) { const f = this.cam.toField(p.px, p.py), qb = P.ents.QB; throwTo(P, { x: Math.max(qb.x - 1, f.x), y: f.y }, null, lob ? "lob" : this.passKind); P.aim = null; return; }
     if (P.phase === "carry") { if (lob) dive(P); else juke(P); } // right-click dives
   }
   onMove(e) {
     const p = this.pt(e);
+    if (this.kickDrag && this.kickDrag.id === e.pointerId) { this.kickDrag.cx = p.px; this.kickDrag.cy = p.py; }
     if (e.pointerType === "mouse") { this.mouse = p; if (this.input !== "mouse" && !this.touch) this.input = "mouse"; return; }
     const t = this.touch, P = this.S, cam = this.cam; if (!t || !P || t.id !== e.pointerId) return;
     t.moved = Math.max(t.moved, Math.hypot(p.px - t.px, p.py - t.py)); t.cx = p.px; t.cy = p.py;
@@ -410,20 +409,25 @@ export class ArcadeGame {
   }
   onUp(e) {
     const P = this.S;
-    if (e.pointerType === "mouse") { if (P?.kind && this.kick?.charging) this.releaseKick(P); return; }
+    if (this.kickDrag && this.kickDrag.id === e.pointerId) { const d = this.kickDrag; this.kickDrag = null; if (P?.kind && P.phase === "presnap") this.releaseKick(P, d); return; }
+    if (e.pointerType === "mouse") return;
     const t = this.touch; if (!t || t.id !== e.pointerId) return; this.touch = null; if (!P) return;
-    if (P.kind) { if (t.moved > 12 && P.phase === "presnap") { const cam = this.cam; kickFlick(P, (t.cx - t.px) / cam.s, (t.cy - t.py) / (cam.s * 0.42)); } return; }
     if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass") && P.aim && t.moved > 6) throwTo(P, P.aim, null, this.passKind);
     P.aim = null; P.steer = null;
   }
   // the mouse kick: direction toward the pointer, length from the meter (a full meter is a long flick)
-  releaseKick(P) {
-    const pw = this.kickPower(); this.kick = null; if (P.phase !== "presnap") return;
-    const cam = this.cam, [bx, by] = cam.toScreen(P.ball.x, P.ball.y), m = this.mouse || { px: bx + 100, py: by };
-    let dx = (m.px - bx) / cam.s, dy = (m.py - by) / (cam.s * 0.42); const n = Math.hypot(dx, dy) || 1; if (dx < 0.5) { dx = 1; dy = 0; }
-    const len = 11 * Math.min(1.15, pw / 0.9); // the white line on the meter (90%) is a full-strength kick
-    kickFlick(P, (dx / n) * len, (dy / n) * len);
+  // the drag (screen pixels) as a kick: up the field and across it, scaled so a drag of about a
+  // third of the screen is a full-strength kick
+  kickVec(d) {
+    const cam = this.cam, full = Math.min(cam.W, cam.H) * 0.36, dx = d.cx - d.px, dy = d.cy - d.py, L = Math.hypot(dx, dy);
+    if (L < 10) return null;
+    // direction: the drag's true angle on the field (the field's depth is squashed on screen);
+    // strength: its length on the screen
+    const fx = dx, fy = dy / 0.42, fl = Math.hypot(fx, fy) || 1, len = 11 * Math.min(1.15, L / full);
+    return [(fx / fl) * len, (fy / fl) * len];
   }
+  releaseKick(P, d) { const v = this.kickVec(d); if (v && v[0] > 0) kickFlick(P, v[0], v[1]); }
+
   onKey(e) {
     const k = e.key.toLowerCase(); if (["input", "select", "textarea"].includes(document.activeElement?.tagName?.toLowerCase())) return;
     if ([" ", "arrowup", "arrowdown", "arrowleft", "arrowright", "tab"].includes(k)) e.preventDefault();
@@ -449,14 +453,14 @@ export class ArcadeGame {
     if (m !== "play" || !P) return;
     if (k === "q" && !P.kind) { this.cycleKind(); return; }
     if (k === "e" && !P.kind && P.phase === "carry") { dive(P); return; }
-    if (P.kind) { if (k === " " && P.phase === "presnap") this.kick = { charging: true, t: 0 }; return; }
+    if (P.kind) return; // (kicks are a drag toward the posts)
     if (k === " " || k === "enter") {
       if (P.phase === "presnap") snap(P);
       else if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass") && P.aim) { throwTo(P, P.aim, null, e.shiftKey ? "lob" : this.passKind); P.aim = null; }
       else if (P.phase === "carry") juke(P);
     }
   }
-  onKeyUp(e) { const k = e.key.toLowerCase(); this.keys.delete(k); if (k === " " && this.S?.kind && this.kick?.charging) this.releaseKick(this.S); }
+  onKeyUp(e) { const k = e.key.toLowerCase(); this.keys.delete(k); }
 }
 
 export const kickNote = (P) => P.kind === "fg" && P.flick ? (P.flick.made ? "RIGHT DOWN THE MIDDLE" : P.flick.short ? "SHORT - KICK IT HARDER" : P.flick.wide ? "WIDE - AIM STRAIGHTER" : "PUSHED IT") : "";
