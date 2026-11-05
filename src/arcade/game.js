@@ -29,7 +29,7 @@ const QMINS = [3, 5, 8, 15];
 // the weather setting: AUTO rolls the home club's own city (a dome stays a dome)
 // the wind for a day like this: a breeze most days, a real wind on a windy one (rough in a storm),
 // none indoors; from any direction (yards a second along and across the field; 1 mph = 0.49 yd/s)
-function windFor(wx, R = Math.random) {
+export function windFor(wx, R = Math.random) {
   const mph = wx === "dome" ? 0 : Math.round(wx === "wind" ? 16 + R() * 10 : /heavy/i.test(wx) ? 8 + R() * 10 : R() * 9), ang = R() * Math.PI * 2;
   return mph ? { mph, x: Math.cos(ang) * mph * 0.49, y: Math.sin(ang) * mph * 0.49 } : null;
 }
@@ -42,8 +42,14 @@ const inside = (p, b) => b && p.px >= b.x && p.px <= b.x + b.w && p.py >= b.y &&
 // where the camera sits while the quarterback has the ball: the line of scrimmage 25% in from the left
 const holdX = (cam, P) => (P.los ?? P.ball.x) + Math.max(cam.lead, 0.17 * cam.W / cam.s);
 export class ArcadeGame {
-  constructor(canvas, { userTi = 17, oppTi = 8, teams, onQuit, rand, skipMenu = false } = {}) {
+  // A franchise game (Play in Arcade): game is the prebuilt engine game (your club as "h"), teams
+  // the two clubs (user, opp, and userAway when you're the visitors); locked keeps its weather and
+  // length as they are (the real ones); onPlay(g) after every play (the app saves the game so a
+  // reload picks it up); onFinish(g) when you leave the final box score; onSimRest() from the
+  // pause menu (the rest of the game is played out by the engine and still counts).
+  constructor(canvas, { userTi = 17, oppTi = 8, teams, onQuit, rand, skipMenu = false, game = null, locked = false, onPlay = null, onFinish = null, onSimRest = null } = {}) {
     this.cv = canvas; this.onQuit = onQuit; this.rand = rand;
+    this.franchise = game; this.locked = locked || !!game; this.onPlay = onPlay; this.onFinish = onFinish; this.onSimRest = onSimRest;
     this.userTi = userTi; this.oppTi = oppTi; this.teams = teams || { user: TEAMS[userTi], opp: TEAMS[oppTi] };
     this.fx = new FX(); this.time = 0; this.hype = 0; this.fade = 1;
     this.wxPick = "auto"; try { const w = localStorage.getItem("arcade_wx"); if (WXPICKS.includes(w)) this.wxPick = w; } catch { /* storage unavailable */ } this.qMin = 5; try { const q = +localStorage.getItem("arcade_qmin"); if (QMINS.includes(q)) this.qMin = q; } catch { /* storage unavailable */ } this.passKind = "bullet"; try { const k = localStorage.getItem("arcade_pass"); if (k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
@@ -101,6 +107,7 @@ export class ArcadeGame {
 
   // ---- the flow ----
   start() {
+    if (this.franchise) { preload(this.teams.user); preload(this.teams.opp); this.g = this.franchise; this.sit = situation(this.g); this.fade = 1; this.advance(); ambient(true); return; }
     this.teams = { user: TEAMS[this.userTi], opp: TEAMS[this.oppTi] };
     preload(this.teams.user); preload(this.teams.opp);
     const R = this.rand || Math.random, pick = this.wxPick;
@@ -111,12 +118,14 @@ export class ArcadeGame {
   // what happens next: the other team's drive (and any kickoff), or your next call
   advance() {
     const g = this.g; this.banner = null;
+    if (this.onPlay && !this.two) try { this.onPlay(g); } catch { /* saving is best effort */ }
     if (patWaiting(g)) { this.S = null; this.mode = "pat"; this.fade = Math.max(this.fade, 0.6); this.refresh(); return; } // your try after a touchdown
     if (g.done) { this.mode = "final"; this.refresh(); this.endBanner(); return; }
     if (g.koNext || g.poss !== "h") {
       const before = { ...g.score };
-      const evs = simOpponentDrive(g).filter((e) => e.text).flatMap((e) => (e.note ? [e, { text: `-- ${e.note} --`, note: true }] : [e]));
-      this.feed = { list: evs, shown: 0, at: performance.now(), scored: g.score.a > before.a };
+      const evs = simOpponentDrive(g); if (this.onPlay) try { this.onPlay(g); } catch { /* best effort */ }
+      const shown = evs.filter((e) => e.text).flatMap((e) => (e.note ? [e, { text: `-- ${e.note} --`, note: true }] : [e]));
+      this.feed = { list: shown, shown: 0, at: performance.now(), scored: g.score.a > before.a };
       this.mode = "opp"; this.refresh(); return;
     }
     this.S = null; this.mode = "pick"; this.fade = Math.max(this.fade, 0.6); this.refresh();
@@ -161,7 +170,19 @@ export class ArcadeGame {
       leaders, pog: pog && val(pog) > 0 ? pog.name.toUpperCase() : null,
     };
   }
-  endBanner() { this.makeBox(); const st = this.sit, lead = st.score.h - st.score.a; this.banner = { title: lead > 0 ? "YOU WIN!" : lead < 0 ? "YOU LOSE" : "TIE GAME", text: `${this.teams.user.name} ${st.score.h}, ${this.teams.opp.name} ${st.score.a}`, sub: null, at: performance.now(), hint: this.mobile ? "TAP FOR A NEW GAME" : "CLICK OR ENTER FOR A NEW GAME" }; if (lead > 0) { this.fx.confetti(this.cam.W, [this.teams.user.clr, this.teams.user.ac, "#ffd166", "#fff"]); sfx.touchdown(); } }
+  endHint() { return this.franchise ? (this.mobile ? "TAP TO CONTINUE" : "CLICK OR ENTER TO CONTINUE") : this.mobile ? "TAP FOR A NEW GAME" : "CLICK OR ENTER FOR A NEW GAME"; }
+  // leaving the final box score: a franchise game goes back to the season; otherwise the title screen
+  leaveFinal() { if (this.franchise) { if (!this.left) { this.left = true; ambient(false); this.onFinish?.(this.g); } return; } this.mode = "menu"; this.S = null; }
+  // the pause menu's SIM TO THE END: the engine plays out the rest (it counts), then the box score
+  simRest() {
+    const g = this.g; if (!g) return;
+    if (this.two) { restore(g, this.two.snap); this.two = null; }
+    this.S = null; let n = 0;
+    while (!g.done && n++ < 900) runPlay(g);
+    this.onPlay?.(g); this.mode = "final"; this.refresh(); this.endBanner();
+    this.onSimRest?.(g);
+  }
+  endBanner() { this.makeBox(); const st = this.sit, lead = st.score.h - st.score.a; this.banner = { title: lead > 0 ? "YOU WIN!" : lead < 0 ? "YOU LOSE" : "TIE GAME", text: `${this.teams.user.name} ${st.score.h}, ${this.teams.opp.name} ${st.score.a}`, sub: null, at: performance.now(), hint: this.endHint() }; if (lead > 0) { this.fx.confetti(this.cam.W, [this.teams.user.clr, this.teams.user.ac, "#ffd166", "#fff"]); sfx.touchdown(); } }
 
   // ---- the loop ----
   loop(now) {
@@ -197,6 +218,8 @@ export class ArcadeGame {
         if (this.two) { const good = !!ev?.td; restore(this.g, this.two.snap); this.two = null; ev = bookPat(this.g, true, good); P.text = ev?.text; P.pick = null; this.refresh(); }
         this.banner = { title: resultTitle(ev), text: P.text || ev?.text || "", sub: ev?.note ? String(ev.note).toUpperCase() : P.kind ? kickNote(P) : P.pick ? pickNote(P.pick) : null, at: now, accent: ev?.td || ev?.type === "fg" ? "#ffd166" : ev?.turnover || ev?.type === "int" || ev?.type === "fumble" ? "#ff8a7a" : ev?.firstDown ? "#ffd166" : "#fff" };
         this.mode = "result"; this.refresh();
+        // saved the moment it's booked, so leaving now can't take the play back
+        if (this.onPlay && !this.two) try { this.onPlay(this.g); } catch { /* best effort */ }
       }
     }
     if (m === "opp") { const f = this.feed; if (now - f.at > 600 && f.shown < f.list.length) { f.shown++; f.at = now; if (f.list[f.shown - 1]?.td) { sfx.turnover(); this.fx.hit(0.6); } } else if (f.shown >= f.list.length && now - f.at > 1100) this.advance(); }
@@ -296,12 +319,12 @@ export class ArcadeGame {
       this.lastButtons = this.buttons;
     }
     if (m === "opp") this.drawDrive(ctx);
-    if (m === "final" && this.box) { drawBoxScore(ctx, cam, this.box, teams, { time: this.time, hint: this.mobile ? "TAP FOR A NEW GAME" : "CLICK OR ENTER FOR A NEW GAME" }); return; }
+    if (m === "final" && this.box) { drawBoxScore(ctx, cam, this.box, teams, { time: this.time, hint: this.endHint() }); return; }
     if ((m === "result" || m === "final") && this.banner) { const b = this.banner; drawBanner(ctx, cam, b.title, b.text, b.sub, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166", hint: b.hint || (this.mobile ? "TAP TO CONTINUE" : "CLICK OR SPACE TO CONTINUE") }); }
     // the pause button, and the menu
     if (!this.paused) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 13.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
     if (this.fade > 0) { ctx.globalAlpha = this.fade; ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, cam.W, cam.H); ctx.globalAlpha = 1; }
-    if (this.paused) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ["wx", `WEATHER: ${wxName(this.wxPick)}`], ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), ["quit", "QUIT GAME"]], { mobile: this.mobile });
+    if (this.paused) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ...(this.locked ? [] : [["wx", `WEATHER: ${wxName(this.wxPick)}`]]), ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), this.franchise ? ["sim", "SIM TO THE END"] : ["quit", "QUIT GAME"]], { mobile: this.mobile });
   }
   drawKick(ctx, P, hintY) {
     const cam = this.cam, px = uiPx(cam);
@@ -354,7 +377,7 @@ export class ArcadeGame {
     if (m === "pick") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.call(b.key); return true; }
     if (m === "pat") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.patChoice(b.key); return true; }
     if (m === "result") { this.advance(); return true; }
-    if (m === "final") { this.mode = "menu"; this.S = null; return true; }
+    if (m === "final") { this.leaveFinal(); return true; }
     if (m === "opp") { this.feed.shown = this.feed.list.length; this.feed.at = 0; return true; }
     return false;
   }
@@ -371,7 +394,7 @@ export class ArcadeGame {
     let v = (this[which] + d + TEAMS.length) % TEAMS.length; if (v === (which === "userTi" ? this.oppTi : this.userTi)) v = (v + d + TEAMS.length) % TEAMS.length;
     this[which] = v; preload(TEAMS[v]); sfx.select?.();
   }
-  pauseAction(k) { if (k === "wx") { this.cycleWx(true); return; } if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; } if (k === "resume") this.paused = false; else if (k === "mute") toggleMute(); else if (k === "quit") { this.paused = false; this.mode = "menu"; this.S = null; } }
+  pauseAction(k) { if (k === "sim") { this.paused = false; this.simRest(); return; } if (k === "wx") { this.cycleWx(true); return; } if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; } if (k === "resume") this.paused = false; else if (k === "mute") toggleMute(); else if (k === "quit") { this.paused = false; this.mode = "menu"; this.S = null; } }
 
   onDown(e) {
     unlock();
@@ -458,7 +481,7 @@ export class ArcadeGame {
     if (m === "pick") { const n = +k; if (n >= 1 && n <= this.buttons.length) this.call(this.buttons[n - 1].key); return; }
     if (m === "pat") { const n = +k; if (n >= 1 && n <= this.buttons.length) this.patChoice(this.buttons[n - 1].key); return; }
     if (m === "result" || m === "opp") { if (k === " " || k === "enter") this.tapUI({ px: -1, py: -1 }); return; }
-    if (m === "final") { if (k === " " || k === "enter") { this.mode = "menu"; this.S = null; } return; }
+    if (m === "final") { if (k === " " || k === "enter") this.leaveFinal(); return; }
     if (m !== "play" || !P) return;
     if (k === "q" && !P.kind) { this.cycleKind(); return; }
     if (k === "e" && !P.kind && P.phase === "carry") { dive(P); return; }

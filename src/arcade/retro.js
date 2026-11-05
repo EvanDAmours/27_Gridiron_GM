@@ -192,13 +192,15 @@ const standsCache = new Map();
 const hash = (a, b) => { const n = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return n - Math.floor(n); };
 function standsTile(u, needH, teams, pose) {
   const rowH = u * 6, rows = Math.max(1, Math.ceil(needH / rowH)), seats = 40, sp = u * 4;
-  const key = `${u}|${rows}|${teams.user.clr}|${teams.opp.clr}|${pose}`;
+  // (the home crowd fills most of the seats: on the road, that's theirs)
+  const home = teams.userAway ? teams.opp : teams.user, vis = teams.userAway ? teams.user : teams.opp;
+  const key = `${u}|${rows}|${home.clr}|${vis.clr}|${pose}`;
   if (standsCache.has(key)) return standsCache.get(key);
   if (standsCache.size > 24) standsCache.clear();
   if (typeof OffscreenCanvas === "undefined" && typeof document === "undefined") return null; // (no canvas: a headless test)
   const cv = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(seats * sp, rows * rowH) : Object.assign(document.createElement("canvas"), { width: seats * sp, height: rows * rowH });
   const c = cv.getContext("2d");
-  const shirts = [teams.user.clr, teams.user.clr, teams.user.clr, teams.user.ac || "#ddd", teams.opp.clr, teams.opp.clr, "#5b6478", "#7a6a58", "#3e4a5e", "#c9c2b0"];
+  const shirts = [home.clr, home.clr, home.clr, home.ac || "#ddd", vis.clr, vis.clr, "#5b6478", "#7a6a58", "#3e4a5e", "#c9c2b0"];
   const skin = ["#f1c9a5", "#d9a47c", "#a8754f", "#7a4f32", "#5c3a24"], hair = ["#2a1d14", "#4a3020", "#151515", "#8a6a3a", "#bbb"];
   for (let r = 0; r < rows; r++) {
     const y0 = r * rowH;
@@ -469,7 +471,8 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   // players, far to near so the near ones overlap the far ones; the man with the ball on top
   const ents = Object.values(S.ents).sort((a, b) => (a.key === S.ball.holder) - (b.key === S.ball.holder) || a.y - b.y);
   for (const e of ents) {
-    const t = e.side === "off" ? teams.user : teams.opp, away = e.side === "def";
+    // (in a franchise game on the road you wear your away uniform and they wear their home one)
+    const t = e.side === "off" ? teams.user : teams.opp, away = e.side === "def" ? !teams.userAway : !!teams.userAway;
     const facing = Math.abs(e.vx) > 0.5 ? Math.sign(e.vx) : e.side === "off" ? 1 : -1;
     shadow(ctx, cam, e.x, e.y);
     const [pose, act] = poseFor(S, e, S.t), p2 = pose2(S, e, S.t);

@@ -42,6 +42,8 @@ const last = (p) => (p?.name || "").split(" ").slice(-1)[0] || "Player";
 // weather...) count: both in "edge" units, where 1 unit is worth about 2.5 points a game.
 export const HOME_EDGE = 0.65; // home teams win ~54-55% in the real game, like the NFL (the in-game crowd and travel add a little on top; a 20-season playtest at 1.0 came out near 57%)
 let HOME = HOME_EDGE;
+// the home-field edge for the side with the ball: the real home team's (g.homeSide), none at a neutral site
+export const homeEdge = (g) => (g.poss === (g.homeSide || "h") && !g.neutral ? HOME : 0);
 export const POINTS_PER_EDGE = 2.5;
 
 // Who gets the ball: snap share x how often that spot is targeted per snap x talent. Each
@@ -286,10 +288,12 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
 
 const emptyTeam = () => ({ blitz: 0, box: 0, cover: 0, dropbacks: 0, plays: 0, passAtt: 0, comp: 0, passYds: 0, rushAtt: 0, rushYds: 0, sacks: 0, ints: 0, fumLost: 0, punts: 0, fgA: 0, fgM: 0, tds: 0, drives: 0, penalties: 0 });
 
-export function createGame(home, away, { playoff = false, neutral = false, rand = Math.random, rec = false, wx = "clear", qLen = null } = {}) {
+// homeSide: which side is the real home team ("h" unless set). The arcade plays your club as "h"
+// even when you're the away team, and passes homeSide: "a" so home field still goes to the hosts.
+export function createGame(home, away, { playoff = false, neutral = false, rand = Math.random, rec = false, wx = "clear", qLen = null, homeSide = "h" } = {}) {
   const first = rand() < 0.5 ? "h" : "a";
   const g = {
-    sides: { h: home, a: away }, playoff, neutral, rand,
+    sides: { h: home, a: away }, playoff, neutral, rand, homeSide,
     // the weather (weather.js): wx its key, wxE what it does to the game
     wx, wxE: wxOf(wx),
     // the game opens with a kickoff to the team that won the toss (koNext: the next snap is a kickoff)
@@ -473,7 +477,7 @@ function edges(g, pers = "11", pkg = "nickel") {
   // the day, and a stacked roster's diminishing returns (league.js talentBrake, in points), both after the cap
   const dd = (g.day ? g.day[g.poss].o - g.day[other(g.poss)].d : 0) + ((d.brake || 0) - (o.brake || 0)) / (2 * POINTS_PER_EDGE);
   // the day (a good or bad game) goes on after the cap: even a mismatch near the cap has off days
-  const extra = o.mod / POINTS_PER_EDGE + (g.poss === "h" && !g.neutral ? HOME : 0) + gameScript(g.ot ? 3 : g.qtr, g.score[g.poss] - g.score[other(g.poss)], g.clock);
+  const extra = o.mod / POINTS_PER_EDGE + homeEdge(g) + gameScript(g.ot ? 3 : g.qtr, g.score[g.poss] - g.score[other(g.poss)], g.clock);
   return { o, d, passE: soft((z(ou.pass, "pass") - z(du.passD, "passD")) * SENSITIVITY + extra) + dd, runE: soft((z(ou.run, "run") - z(du.runD, "runD")) * SENSITIVITY + extra) + dd, rushE: z(du.rush, "rush") - z(o.u.ol, "ol"),
     // for the grades: the same snap with one man swapped for an average one (gradeBook)
     gx: { passEWith: (dp) => soft((z(ou.pass + dp, "pass") - z(du.passD, "passD")) * SENSITIVITY + extra), runE0: soft(z(ou.run, "run") * SENSITIVITY + extra), rushE0: -z(o.u.ol, "ol") } };

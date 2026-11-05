@@ -2348,4 +2348,8 @@ export const PATCH_NOTES = [
   { v: "5.64", date: "2026-10-23", title: "Super Bowl crowd", notes: [
     "The Super Bowl has fans. The game is now played inside the host city's real stadium (Levi's, SoFi, the Superdome, MetLife and the rest), packed with both clubs' fans, half and half in their colors, with camera flashes after big plays. The host club's own words come off the ribbon boards for the night and the game's name goes up instead.",
   ] },
+  { v: "5.65", date: "2026-10-23", title: "Play in Arcade", notes: [
+    "Play in Arcade: play your own franchise games on the arcade field. It sits next to Play Week on Home (in the menu beside Play Week on a phone) and works for playoff games too. It's your real game of the week: your depth chart, game plan, injuries and the real weather, at full length so season stats stay comparable. You play every snap on offense, plus your own extra points and two-point tries; the other team's drives play out like the live sim. The engine still decides every play, so the result goes into the season exactly like a live game: standings, stats, injuries, snaps and the play-by-play.",
+    "On the road in the arcade you wear your away uniform and the home crowd fills the stands, and home field still goes to the real home team. Every play is saved the moment it's booked, so if the app closes mid-game, Home offers to pick it up right where it stopped. Want out early? Pause and pick Sim to the End: the rest plays out and still counts.",
+  ] },
 ];
