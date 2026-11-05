@@ -5,7 +5,7 @@ const types = { ".html": "text/html", ".js": "text/javascript", ".jsx": "text/ja
 createServer(async (req, res) => {
   let p = decodeURIComponent(new URL(req.url, "http://x").pathname);
   if (p === "/") p = "/scripts/arcade-dev/index.html";
-  if (p.startsWith("/sprites/") || p.startsWith("/logos/")) p = "/public" + p;
+  if (p.startsWith("/sprites/") || p.startsWith("/logos/") || p.startsWith("/weather/")) p = "/public" + p;
   try { const body = await readFile(join(root, p)); res.writeHead(200, { "content-type": types[extname(p)] || "application/octet-stream", "cache-control": "no-store" }); res.end(body); }
   catch { res.writeHead(404); res.end("not found " + p); }
 }).listen(port, () => console.log(`arcade dev: http://localhost:${port}/`));
