@@ -368,6 +368,30 @@ export function drawSidelines(ctx, cam, teams, opts = {}) {
   if (opts.side !== "far") sideTeam(ctx, cam, teams.user, false, true, opts); // yours, on the near sideline (in front of it)
 }
 
+// ---- the goalposts ----
+// An NFL goalpost in the game's perspective (x along the field, y across it, h up, all in yards):
+// a padded base two yards behind the end line, the gooseneck curving forward over the end line, the
+// crossbar 10 ft up and 18 ft 6 in wide (it runs across the field, so it's tilted up the screen),
+// and the uprights 30 ft above it. The far upright is drawn first, then the bar, then the near one.
+function goalPost(ctx, cam, ex, back, padClr) {
+  // (drawn with a slight oblique slant, the far side leaning back, so the two uprights read as an H)
+  const s = cam.s, P = (x, y, h) => { const [sx, sy] = cam.toScreen(x, y); return [sx - y * s * 0.45 * back, sy - h * s]; };
+  const [cx] = P(ex, 0, 0); if (cx < -s * 6 || cx > cam.W + s * 6) return;
+  const gold = "#f5c518", dark = "#b8900f", bar = 3.33, top = bar + 6.5, half = 3.08, t = Math.max(3, Math.round(s * 0.26));
+  const seg = (a, b, w, c) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.lineCap = "butt"; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); };
+  // its shadow on the turf, and the base pad in the home club's colour
+  const [bx, by] = P(ex + 2 * back, 0, 0); ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fillRect(Math.round(bx - s * 0.6), Math.round(by - s * 0.12), Math.round(s * 1.2), Math.round(s * 0.24));
+  // the gooseneck: up from the base, then forward over the end line to the middle of the bar
+  const g0 = P(ex + 2 * back, 0, 0), g1 = P(ex + 2 * back, 0, bar - 0.4), g2 = P(ex + 1.2 * back, 0, bar + 0.1), g3 = P(ex, 0, bar);
+  seg(g0, g1, Math.max(3, Math.round(s * 0.32)), dark); seg(g0, g1, Math.max(2, Math.round(s * 0.22)), gold);
+  seg(g1, g2, Math.max(2, Math.round(s * 0.24)), gold); seg(g2, g3, Math.max(2, Math.round(s * 0.24)), gold);
+  ctx.fillStyle = padClr; const pw = Math.round(s * 0.55), ph = Math.round(s * 1.6); ctx.fillRect(Math.round(g0[0] - pw / 2), Math.round(g0[1] - ph), pw, ph); ctx.fillStyle = "rgba(255,255,255,.25)"; ctx.fillRect(Math.round(g0[0] - pw / 2), Math.round(g0[1] - ph), Math.max(1, Math.round(pw / 4)), ph);
+  // the far upright, the crossbar, the near upright (with a little ribbon on top of each)
+  const far0 = P(ex, -half, bar), far1 = P(ex, -half, top), near0 = P(ex, half, bar), near1 = P(ex, half, top);
+  seg(far0, far1, t, dark); seg(far0, near0, t + 1, gold); seg(near0, near1, t, gold);
+  ctx.fillStyle = "#ff3b30"; for (const [x_, y_] of [far1, near1]) ctx.fillRect(Math.round(x_ + back * 1), Math.round(y_), Math.max(2, Math.round(s * 0.25)), Math.max(2, Math.round(s * 0.5)));
+}
+
 export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   const { W, H, s, top, depth } = cam;
   ctx.imageSmoothingEnabled = false;
@@ -424,8 +448,8 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   for (let i = 0; i < 9; i++) { const yd = 10 + i * 10, x = yardAt(yd); if (x < -40 || x > W + 40) continue; const n = String(yd > 50 ? 100 - yd : yd); const [, y1] = cam.toScreen(0, -HALF + 6), [, y2] = cam.toScreen(0, HALF - 9); pixText(ctx, n, x - s * 0.9, y1, Math.max(1, Math.round(s * 0.16)), "rgba(255,255,255,.75)"); pixText(ctx, n, x - s * 0.9, y2, Math.max(1, Math.round(s * 0.16)), "rgba(255,255,255,.75)"); }
   // end-zone names
   for (const [yd, t] of [[-10, teams.user], [100, teams.opp]]) { const x = yardAt(yd + 5); if (x < -200 || x > W + 200) continue; const [, y] = cam.toScreen(0, 0); ctx.save(); ctx.translate(x, y); ctx.rotate(-Math.PI / 2); pixText(ctx, t.name, 0, -s * 0.6, Math.max(1, Math.round(s * 0.2)), "rgba(255,255,255,.85)", "center"); ctx.restore(); }
-  // the uprights, on each goal line, seen side-on
-  for (const yd of [0, 100]) { const x = Math.round(yardAt(yd)); if (x < -20 || x > W + 20) continue; const [, gy] = cam.toScreen(0, 0); const h = s * 5.5; ctx.fillStyle = "#ffd700"; ctx.fillRect(x - 2, Math.round(gy - h), 4, Math.round(h)); ctx.fillRect(x - s * 1.1, Math.round(gy - h), Math.round(s * 2.2), 3); ctx.fillRect(x - s * 1.1, Math.round(gy - h - s * 2), 3, Math.round(s * 2)); ctx.fillRect(x + s * 1.1 - 3, Math.round(gy - h - s * 2), 3, Math.round(s * 2)); }
+  // the goalposts, on each end line
+  for (const [ex, back, pad] of [[110, 1, teams.opp], [-10, -1, teams.user]]) goalPost(ctx, cam, ex, back, pad.clr);
   if (!S) return;
   // the line of scrimmage and the line to gain
   const vline = (yd, color) => { const x = Math.round(yardAt(yd)); if (x < 0 || x > W) return; ctx.fillStyle = color; ctx.fillRect(x, Math.round(top), Math.max(2, lw * 2), Math.round(depth)); };
@@ -456,13 +480,13 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   drawSidelines(ctx, cam, teams, { ...sideOpts, side: "near" });
   // before the snap: who's who, the name under each receiver, the tight end and the back
   if (S.phase === "presnap" && !S.kind) {
-    const np = Math.max(1, Math.round(uiPx(cam) * 0.5));
+    const np = Math.max(1, Math.floor(uiPx(cam) * 0.34)); // small: a tag, not a headline
     for (const r of ELIGIBLE) {
       const e = S.ents[r]; if (!e?.p?.name) continue;
       const last = String(e.p.name).split(" ").filter((w) => !/^(jr\.?|sr\.?|ii|iii|iv)$/i.test(w)).pop().toUpperCase().replace(/[^A-Z0-9'.-]/g, "");
-      const label = `${r === "SLOT" ? "WR" : r === "X" || r === "Z" ? "WR" : r} ${last}`, [lx, ly] = cam.toScreen(e.x, e.y), w = pixWidth(label, np) + np * 4;
-      ctx.fillStyle = "rgba(8,10,16,.72)"; ctx.fillRect(Math.round(lx - w / 2), Math.round(ly + s * 0.25), w, np * 9);
-      pixText(ctx, label, lx, Math.round(ly + s * 0.25 + np * 1), np, r === "RB" ? "#ffd166" : r === "TE" ? "#9be29b" : "#7fe3ff", "center");
+      const label = last, [lx, ly] = cam.toScreen(e.x, e.y), w = pixWidth(label, np) + np * 4;
+      ctx.fillStyle = "rgba(8,10,16,.72)"; ctx.fillRect(Math.round(lx - w / 2), Math.round(ly + s * 0.2), w, np * 9);
+      pixText(ctx, label, lx, Math.round(ly + s * 0.2 + np * 1), np, r === "RB" ? "#ffd166" : r === "TE" ? "#9be29b" : "#7fe3ff", "center");
     }
   }
   // what just happened up front: BLITZ, the move that beat a blocker, PICKED UP

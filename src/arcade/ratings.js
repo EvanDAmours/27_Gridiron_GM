@@ -67,5 +67,7 @@ export const tackling = (p) => skill(p, [["tackling", 0.7], ["runStop", 0.4], ["
 export const pursuit = (p) => skill(p, [["pursuit", 0.6], ["range", 0.6], ["motor", 0.4], ["recovery", 0.2]], 0.15);
 
 // ---- kickers ----
-export const kickLeg = (p) => skill(p, [["legStr", 0.7], ["distance", 0.3], ["power", 1]], 0.15);
-export const kickAccuracy = (p) => skill(p, [["accuracy", 0.6], ["consistency", 0.2], ["clutch", 0.2]]);
+export const kickLeg = (p) => skill(p, [["legStr", 0.7], ["distance", 0.3], ["power", 1]], 0.3); // (his overall counts for a good share)
+export const kickAccuracy = (p) => skill(p, [["accuracy", 0.7], ["consistency", 0.3]], 0.35);
+export const kickConsistency = (p) => skill(p, [["consistency", 1], ["accuracy", 0.3]], 0.3);
+export const kickClutch = (p) => skill(p, [["clutch", 1]], 0.4);
