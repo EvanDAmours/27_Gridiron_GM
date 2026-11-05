@@ -272,6 +272,47 @@ export function drawBoxScore(ctx, cam, box, teams, { time = 0, hint = "" } = {})
   if (hint) pixText(ctx, hint, W / 2, y0 + ph - px * 9, Math.max(1, px - 1), "rgba(255,255,255,.6)", "center");
 }
 
+// ---- the sidelines ----
+// Each club's team area between the 30s: a bench, a cup table, a couple of orange water coolers and
+// a row of players standing, hands on hips, a few taking a knee; yours on the near sideline, theirs
+// across the field. They're placed on the field, so they scroll with it; your side jumps on a big play.
+const SIDE_POSES = ["c8", "c8", "c6", "a3", "c8", "c4", "c8", "c6", "c8"];
+function cooler(ctx, cam, x, y) {
+  const [sx, sy] = cam.toScreen(x, y), s = cam.s, w = Math.max(4, Math.round(s * 0.75)), h = Math.max(5, Math.round(s * 0.9));
+  ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fillRect(Math.round(sx - w / 2), Math.round(sy - 1), w, Math.max(2, Math.round(s * 0.15)));
+  ctx.fillStyle = "#f07a14"; ctx.fillRect(Math.round(sx - w / 2), Math.round(sy - h), w, h); // the orange barrel
+  ctx.fillStyle = "#c95f08"; ctx.fillRect(Math.round(sx + w / 2 - Math.max(1, w / 4)), Math.round(sy - h), Math.max(1, Math.round(w / 4)), h); // its shaded side
+  ctx.fillStyle = "#f4f4f0"; ctx.fillRect(Math.round(sx - w / 2 - 1), Math.round(sy - h - Math.max(2, s * 0.18)), w + 2, Math.max(2, Math.round(s * 0.18))); // the white lid
+  ctx.fillStyle = "#f4f4f0"; ctx.fillRect(Math.round(sx - w / 2), Math.round(sy - h * 0.55), w, Math.max(1, Math.round(s * 0.08))); // a white band
+  ctx.fillStyle = "#d8d8d0"; ctx.fillRect(Math.round(sx - w / 2 - Math.max(1, s * 0.12)), Math.round(sy - h * 0.3), Math.max(1, Math.round(s * 0.12)), Math.max(1, Math.round(s * 0.12))); // the spigot
+}
+function sideTeam(ctx, cam, team, away, near, opts) {
+  const s = cam.s, y0 = near ? HALF + 1.7 : -HALF - 1.2, back = near ? 1 : -1; // (the bench sits further from the field than the players)
+  // the bench: a long grey seat with legs
+  const [bx0, by] = cam.toScreen(36, y0 + back * 1.3), [bx1] = cam.toScreen(64, y0 + back * 1.3);
+  ctx.fillStyle = "#59606d"; ctx.fillRect(Math.round(bx0), Math.round(by - s * 0.55), Math.round(bx1 - bx0), Math.max(2, Math.round(s * 0.22)));
+  ctx.fillStyle = "#3d434e"; for (let x = bx0 + s; x < bx1; x += s * 4) ctx.fillRect(Math.round(x), Math.round(by - s * 0.35), Math.max(1, Math.round(s * 0.12)), Math.round(s * 0.35));
+  // the cup table and the coolers at one end of the bench
+  const [tx, ty] = cam.toScreen(65.5, y0 + back * 0.9); ctx.fillStyle = "#ececec"; ctx.fillRect(Math.round(tx - s * 0.9), Math.round(ty - s * 0.6), Math.round(s * 1.8), Math.max(2, Math.round(s * 0.18)));
+  ctx.fillStyle = "#3d434e"; ctx.fillRect(Math.round(tx - s * 0.8), Math.round(ty - s * 0.45), Math.max(1, Math.round(s * 0.1)), Math.round(s * 0.45)); ctx.fillRect(Math.round(tx + s * 0.7), Math.round(ty - s * 0.45), Math.max(1, Math.round(s * 0.1)), Math.round(s * 0.45));
+  for (let i = 0; i < 5; i++) { ctx.fillStyle = i % 2 ? "#ffffff" : "#e2e2e2"; ctx.fillRect(Math.round(tx - s * 0.75 + i * s * 0.32), Math.round(ty - s * 0.85), Math.max(1, Math.round(s * 0.18)), Math.max(2, Math.round(s * 0.25))); }
+  cooler(ctx, cam, 67.3, y0 + back * 0.9); cooler(ctx, cam, 68.4, y0 + back * 1.1); cooler(ctx, cam, 34.5, y0 + back * 1.0);
+  // the players: along the bench, facing the play
+  const hype = near ? opts.hype || 0 : 0, t = opts.time || 0;
+  for (let i = 0; i < SIDE_POSES.length; i++) {
+    const x = 37 + i * 3.1 + hash(i, near ? 1 : 2) * 1.2, y = y0 + (hash(i, 5) - 0.5) * 0.8, jump = hype > 0.3 && hash(i, 8) < 0.8;
+    const pose = jump ? (Math.floor(t * 6 + i) % 2 ? "b8" : "b7") : SIDE_POSES[i];
+    const facing = (opts.ballX ?? 50) >= x ? 1 : -1;
+    shadow(ctx, cam, x, y, 0.55);
+    sprite(ctx, cam, team, away, pose, x, y - (jump && Math.floor(t * 6 + i) % 2 ? 0.25 : 0), facing, true, 0.75);
+  }
+}
+export function drawSidelines(ctx, cam, teams, opts = {}) {
+  if (!teams?.user || !teams?.opp) return;
+  sideTeam(ctx, cam, teams.opp, true, false, opts); // theirs, across the field (behind the play)
+  sideTeam(ctx, cam, teams.user, false, true, opts); // yours, on the near sideline
+}
+
 export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   const { W, H, s, top, depth } = cam;
   ctx.imageSmoothingEnabled = false;
@@ -331,6 +372,8 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   // the throw you're lining up: its real path (a flat bullet or a high lob), where it comes down,
   // and how far off it might be; in AUTO, a faint ring shows where it changes from bullet to lob
   if (S.aim && S.phase === "live" && S.ball.holder === "QB") drawAim(ctx, cam, S, opts.passKind || "auto");
+  // the team areas along both sidelines: benches, coolers, the cup table and the players watching
+  drawSidelines(ctx, cam, teams, { ...opts, ballX: S.ball?.x });
   // players, far to near so the near ones overlap the far ones; the man with the ball on top
   const ents = Object.values(S.ents).sort((a, b) => (a.key === S.ball.holder) - (b.key === S.ball.holder) || a.y - b.y);
   for (const e of ents) {
@@ -580,12 +623,16 @@ export function drawMenu(ctx, cam, opts) {
 export function drawPause(ctx, cam, items, { mobile } = {}) {
   const { W, H } = cam, px = hudPx(cam) + 1;
   ctx.fillStyle = "rgba(4,6,10,.82)"; ctx.fillRect(0, 0, W, H);
-  pixShadow(ctx, "PAUSED", W / 2, H * 0.2, px * 2, "#ffd166", "center");
-  const bw = Math.max(px * 56, ...items.map(([, l]) => pixWidth(l, px) + px * 10)), bh = px * 12, boxes = [];
-  items.forEach(([key, label], i) => { const x = Math.round(W / 2 - bw / 2), y = Math.round(H * 0.36 + i * (bh + px * 3)); ctx.fillStyle = "#161d2b"; ctx.fillRect(x, y, bw, bh); ctx.fillStyle = "#2c3744"; ctx.fillRect(x, y + bh - px, bw, px); pixText(ctx, label, W / 2, y + px * 3, px, "#fff", "center"); boxes.push({ key, x, y, w: bw, h: bh }); });
-  const help = mobile ? ["TOUCH THE FIELD TO SNAP", "PULL BACK AND RELEASE TO THROW", "TAP THE PASS BUTTON: AUTO / BULLET / LOB", "SWIPE UP AND DOWN TO RUN, FLICK TO JUKE"]
-    : ["SPACE OR CLICK TO SNAP", "AIM WITH THE MOUSE - CLICK TO THROW", "RIGHT-CLICK OR SHIFT-CLICK TO LOB - Q CYCLES PASS TYPE", "RUN: MOUSE OR W/S - SPACE TO JUKE", "KICK: HOLD THE MOUSE, AIM, RELEASE", "1-6 PICK A PLAY - M MUTES - ESC PAUSES"];
-  const hp = Math.max(1, Math.min(px - 1, ...help.map((t) => Math.floor((W - px * 6) / (6 * t.length))))), hy = H * 0.36 + items.length * (bh + px * 3) + px * 4;
+  pixShadow(ctx, "PAUSED", W / 2, H * 0.08, px * 2, "#ffd166", "center");
+  const help = mobile ? ["TOUCH THE FIELD TO SNAP", "PULL BACK AND RELEASE TO THROW", "TAP BULLET OR LOB TO PICK THE THROW", "SWIPE TO STEER - FLICK SIDEWAYS TO JUKE, AHEAD TO DIVE"]
+    : ["SPACE OR CLICK TO SNAP", "AIM WITH THE MOUSE - CLICK TO THROW", "Q OR THE BUTTONS: BULLET OR LOB", "RUN: MOUSE OR W/S - SPACE JUKES - E DIVES", "KICK: HOLD THE MOUSE, AIM, RELEASE", "1-6 PICK A PLAY - M MUTES - ESC PAUSES"];
+  const hp = Math.max(1, Math.min(px - 1, Math.floor((H * 0.3) / (help.length * 9)), ...help.map((t) => Math.floor((W - px * 6) / (6 * t.length))))); // (fits across, and in the bottom third)
+  // the buttons get whatever room the title and the help leave (so it all fits on a short screen)
+  const top0 = H * 0.08 + px * 18, room = H - top0 - help.length * hp * 9 - px * 6, gap = px * 2;
+  const bh = Math.max(px * 8, Math.min(px * 12, Math.floor(room / items.length) - gap)), bw = Math.max(px * 56, ...items.map(([, l]) => pixWidth(l, px) + px * 10)), boxes = [];
+  const yAt = (i) => Math.round(top0 + i * (bh + gap));
+  items.forEach(([key, label], i) => { const x = Math.round(W / 2 - bw / 2), y = yAt(i); ctx.fillStyle = "#161d2b"; ctx.fillRect(x, y, bw, bh); ctx.fillStyle = "#2c3744"; ctx.fillRect(x, y + bh - px, bw, px); pixText(ctx, label, W / 2, y + px * 3, px, "#fff", "center"); boxes.push({ key, x, y, w: bw, h: bh }); });
+  const hy = yAt(items.length) + px * 3;
   help.forEach((t, i) => pixText(ctx, t, W / 2, hy + i * hp * 9, hp, "rgba(255,255,255,.7)", "center"));
   return boxes;
 }
