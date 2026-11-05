@@ -193,7 +193,8 @@ const hash = (a, b) => { const n = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
 function standsTile(u, needH, teams, pose) {
   const rowH = u * 6, rows = Math.max(1, Math.ceil(needH / rowH)), seats = 40, sp = u * 4;
   // (the home crowd fills most of the seats: on the road, that's theirs)
-  const home = teams.userAway ? teams.opp : teams.user, vis = teams.userAway ? teams.user : teams.opp;
+  const userVis = teams.user.isAway != null ? !!teams.user.isAway : !!teams.userAway;
+  const home = userVis ? teams.opp : teams.user, vis = userVis ? teams.user : teams.opp;
   const key = `${u}|${rows}|${home.clr}|${vis.clr}|${pose}`;
   if (standsCache.has(key)) return standsCache.get(key);
   if (standsCache.size > 24) standsCache.clear();
@@ -472,7 +473,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   const ents = Object.values(S.ents).sort((a, b) => (a.key === S.ball.holder) - (b.key === S.ball.holder) || a.y - b.y);
   for (const e of ents) {
     // (in a franchise game on the road you wear your away uniform and they wear their home one)
-    const t = e.side === "off" ? teams.user : teams.opp, away = e.side === "def" ? !teams.userAway : !!teams.userAway;
+    const t = e.side === "off" ? teams.user : teams.opp, away = t.isAway != null ? !!t.isAway : e.side === "def" ? !teams.userAway : !!teams.userAway; // (a live game: each club in its own uniform for the day)
     const facing = Math.abs(e.vx) > 0.5 ? Math.sign(e.vx) : e.side === "off" ? 1 : -1;
     shadow(ctx, cam, e.x, e.y);
     const [pose, act] = poseFor(S, e, S.t), p2 = pose2(S, e, S.t);

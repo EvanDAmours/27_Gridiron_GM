@@ -10,7 +10,8 @@
 //    Space jukes; to kick, aim with the pointer and hold the button, let go at the top of the meter.
 // Either way, the pass button (Q on a keyboard) switches AUTO / BULLET / LOB, and the arc you see
 // while aiming is the throw you'll get.
-import { TEAMS, newGame, lineups, runPlay, simOpponentDrive, situation, snapshot, restore, patWaiting, bookPat } from "./bridge.js";
+import { TEAMS, newGame, lineups, runPlay, simOpponentDrive, situation, snapshot, restore, patWaiting, bookPat, flipSides } from "./bridge.js";
+import { autoState, autoStep, autoCall } from "./autopilot.js";
 import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
 import { setupKick, kickFlick, tickKick, kickPlan, POSTS_X } from "./kick.js";
 import { sfx, unlock, toggleMute, isMuted, ambient, ambientHype } from "./sfx.js";
@@ -47,9 +48,12 @@ export class ArcadeGame {
   // length as they are (the real ones); onPlay(g) after every play (the app saves the game so a
   // reload picks it up); onFinish(g) when you leave the final box score; onSimRest() from the
   // pause menu (the rest of the game is played out by the engine and still counts).
-  constructor(canvas, { userTi = 17, oppTi = 8, teams, onQuit, rand, skipMenu = false, game = null, locked = false, onPlay = null, onFinish = null, onSimRest = null } = {}) {
+  constructor(canvas, { userTi = 17, oppTi = 8, teams, onQuit, rand, skipMenu = false, game = null, locked = false, onPlay = null, onFinish = null, onSimRest = null, live = null } = {}) {
     this.cv = canvas; this.onQuit = onQuit; this.rand = rand;
-    this.franchise = game; this.locked = locked || !!game; this.onPlay = onPlay; this.onFinish = onFinish; this.onSimRest = onSimRest;
+    // live: the franchise's live game shown on this field (App.jsx): { g, userSide, watch, teams: { h, a },
+    // onEvent(ev, offSide) } -- the engine game itself, the real way round between snaps
+    this.live = live; this.speed = 1;
+    this.franchise = game; this.locked = locked || !!game || !!live; this.onPlay = onPlay; this.onFinish = onFinish; this.onSimRest = onSimRest;
     this.userTi = userTi; this.oppTi = oppTi; this.teams = teams || { user: TEAMS[userTi], opp: TEAMS[oppTi] };
     this.fx = new FX(); this.time = 0; this.hype = 0; this.fade = 1;
     this.wxPick = "auto"; try { const w = localStorage.getItem("arcade_wx"); if (WXPICKS.includes(w)) this.wxPick = w; } catch { /* storage unavailable */ } this.qMin = 5; try { const q = +localStorage.getItem("arcade_qmin"); if (QMINS.includes(q)) this.qMin = q; } catch { /* storage unavailable */ } this.passKind = "bullet"; try { const k = localStorage.getItem("arcade_pass"); if (k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
@@ -95,7 +99,7 @@ export class ArcadeGame {
     // on a desktop window the game sits in a 16:9 frame (at most ~1000 px wide) in the middle of the
     // page, like a console game in a browser; on a phone, or in full screen, it fills the screen
     const full = !!(document.fullscreenElement || document.webkitFullscreenElement);
-    if (this.input === "mouse" && !full) {
+    if (this.input === "mouse" && !full && !this.live) { // (inside the live game screen it fills the box the app gives it)
       const fw = Math.min(1000, W * 0.9, (H * 0.9) * 16 / 9); W = Math.round(fw); H = Math.round(fw * 9 / 16);
       Object.assign(wrap.style, { display: "flex", alignItems: "center", justifyContent: "center" });
       cv.style.borderRadius = "6px"; cv.style.boxShadow = "0 0 0 2px #1d2433, 0 20px 60px rgba(0,0,0,.6)";
@@ -107,6 +111,7 @@ export class ArcadeGame {
 
   // ---- the flow ----
   start() {
+    if (this.live) { const L = this.live; preload(L.teams.h); preload(L.teams.a); this.g = L.g; this.flipped = false; this.teams = this.viewTeams(); this.sit = situation(this.g); this.fade = 1; this.advance(); ambient(true); return; }
     if (this.franchise) { preload(this.teams.user); preload(this.teams.opp); this.g = this.franchise; this.sit = situation(this.g); this.fade = 1; this.advance(); ambient(true); return; }
     this.teams = { user: TEAMS[this.userTi], opp: TEAMS[this.oppTi] };
     preload(this.teams.user); preload(this.teams.opp);
@@ -117,6 +122,7 @@ export class ArcadeGame {
   }
   // what happens next: the other team's drive (and any kickoff), or your next call
   advance() {
+    if (this.live) return this.liveNext();
     const g = this.g; this.banner = null;
     if (this.onPlay && !this.two) try { this.onPlay(g); } catch { /* saving is best effort */ }
     if (patWaiting(g)) { this.S = null; this.mode = "pat"; this.fade = Math.max(this.fade, 0.6); this.refresh(); return; } // your try after a touchdown
@@ -130,6 +136,41 @@ export class ArcadeGame {
     }
     this.S = null; this.mode = "pick"; this.fade = Math.max(this.fade, 0.6); this.refresh();
   }
+  // ---- the franchise's live game ----
+  // The team with the ball is always side h on this field (it drives left to right): for the other
+  // team's snaps the game is turned round (flipSides) and turned back the moment the play is booked,
+  // so between snaps it's always the real way round for the app.
+  viewTeams() { const t = this.live.teams; return this.flipped ? { user: t.a, opp: t.h } : { user: t.h, opp: t.a }; }
+  flip() { flipSides(this.g); this.flipped = !this.flipped; this.teams = this.viewTeams(); this.refresh(); }
+  unflip() { if (this.flipped) this.flip(); if (this.g) this.g.patDefer = null; }
+  emit(ev, off) { if (ev) try { this.live.onEvent?.(ev, off); } catch (e) { console.error(e); } }
+  liveNext() {
+    const g = this.g, L = this.live; this.banner = null; this.auto = null;
+    if (!g || this.held) return;
+    if (g.done) { this.unflip(); this.S = null; this.mode = "idle"; this.refresh(); return; }
+    if (patWaiting(g)) { this.offReal = g.patPending.off; if (g.patPending.off !== "h") this.flip(); this.S = null; this.mode = "pat"; this.fade = Math.max(this.fade, 0.6); this.refresh(); return; } // your try after your touchdown
+    this.unflip();
+    if (g.koNext) { const off = g.poss, ev = runPlay(g); this.emit(ev, off); this.showEngine(ev); return; } // the kickoff: the engine's
+    const off = g.poss; this.offReal = off;
+    if (off !== "h") this.flip();
+    const mine = off === L.userSide && !L.watch;
+    g.patDefer = mine ? { h: true } : null;
+    if (mine) { this.S = null; this.mode = "pick"; this.fade = Math.max(this.fade, 0.6); this.refresh(); return; }
+    // the computer's snap: the engine's coach makes the call (run or pass, or a kick, a kneel, a spike)
+    const snap = snapshot(g), ev = runPlay(g);
+    const k = ev?.k, scrim = ev && !ev.kneel && !ev.spike && ev.type !== "penalty" && ["run", "pass", "inc", "int", "sack"].includes(k);
+    if (!scrim) { const o = this.offReal; this.unflip(); this.emit(ev, o); this.showEngine(ev); return; } // a kick, a kneel, a flag: as the engine called it
+    restore(g, snap);
+    const c = autoCall(k === "run" ? "run" : "pass");
+    this.call(c); this.auto = { call: CONCEPTS[c]?.cat || c, state: autoState(), snapAt: this.time + 0.7 / this.speed };
+  }
+  // a play the engine ran without the field (a kickoff, a punt, a field goal, a kneel): its result
+  showEngine(ev) { this.S = null; this.banner = ev ? { title: resultTitle(ev), text: ev.text || "", sub: ev.note ? String(ev.note).toUpperCase() : null, at: performance.now(), accent: ev.td || ev.type === "fg" ? "#ffd166" : "#fff" } : null; this.mode = "result"; this.refresh(); }
+  // the app needs the game (Finish game, Sim to the end of the quarter): drop the play on the field
+  // (it hasn't been booked) and hand the game back the real way round; resume() picks it up again
+  release() { if (this.two) { restore(this.g, this.two.snap); this.two = null; } this.S = null; this.auto = null; this.unflip(); this.held = true; this.mode = "idle"; this.refresh(); }
+  resume() { this.held = false; if (this.live && (this.mode === "idle" || this.mode === "result")) this.liveNext(); }
+  setWatch(w) { if (this.live) this.live.watch = !!w; }
   call(c) {
     const g = this.g; this.fade = 0.5;
     const P = c === "xp" ? setupKick(g, lineups(g), "fg", { pat: true }) : c === "punt" || c === "fg" ? setupKick(g, lineups(g), c) : setupPlay(g, lineups(g), c);
@@ -187,9 +228,16 @@ export class ArcadeGame {
   // ---- the loop ----
   loop(now) {
     const dt = Math.min(0.05, (now - (this.last || now)) / 1000); this.last = now;
-    const t0 = performance.now(); this.update(dt, now); this.draw();
+    const t0 = performance.now(); this.advanceTime(dt, now); this.draw();
     (this.frameMs ||= []).push(performance.now() - t0); if (this.frameMs.length > 600) this.frameMs.shift();
     this.raf = requestAnimationFrame((t) => this.loop(t));
+  }
+  // the live game's speed: faster is more steps a frame (each the normal size, so a tackle is never
+  // stepped over), slower is shorter steps
+  advanceTime(dt, now = performance.now()) {
+    const sp = this.live ? this.speed || 1 : 1;
+    if (sp <= 1) return this.update(dt * sp, now);
+    for (let i = 0, n = Math.round(sp); i < n; i++) this.update(dt, now);
   }
   // one step of the game (the browser loop and the playtest harness both use it)
   update(dt, now = performance.now()) {
@@ -198,7 +246,7 @@ export class ArcadeGame {
     const live = this.fx.step(dt); // (hit-stop slows the field for a beat)
     const P = this.S, cam = this.cam, m = this.mode;
     if (P && cam) {
-      this.controls(P, dt);
+      if (this.auto && !P.kind) { if (P.phase === "presnap" && this.time >= this.auto.snapAt) snap(P); autoStep(P, this.auto.call, this.auto.state); } else this.controls(P, dt);
       const going = P.kind ? tickKick(P, live) : tick(P, live);
       this.react(P);
       // the camera leads the ball a little; with a throw in the air it frames the ball and where it's going
@@ -220,10 +268,11 @@ export class ArcadeGame {
         this.mode = "result"; this.refresh();
         // saved the moment it's booked, so leaving now can't take the play back
         if (this.onPlay && !this.two) try { this.onPlay(this.g); } catch { /* best effort */ }
+        if (this.live) { const o = this.offReal; this.unflip(); this.emit(ev, o); }
       }
     }
     if (m === "opp") { const f = this.feed; if (now - f.at > 600 && f.shown < f.list.length) { f.shown++; f.at = now; if (f.list[f.shown - 1]?.td) { sfx.turnover(); this.fx.hit(0.6); } } else if (f.shown >= f.list.length && now - f.at > 1100) this.advance(); }
-    if ((m === "result") && this.banner && now - this.banner.at > (/TOUCHDOWN/.test(this.banner.title) ? 3400 : 1700)) this.advance();
+    if ((m === "result") && this.banner && now - this.banner.at > (/TOUCHDOWN/.test(this.banner.title) ? 3400 : this.live ? 1300 / this.speed : 1700)) this.advance();
   }
 
   // held keys and the pointer, every frame: the runner's steering, the mouse aim, the kick meter
@@ -296,14 +345,14 @@ export class ArcadeGame {
       drawDownBox(ctx, cam, P.phase === "presnap" ? `${ordinal(st.down)} & ${toGo} - ${playName(P.concept || P.call)}` : `${ordinal(st.down)} & ${toGo}`, P.phase === "presnap" ? "#fff" : "#ffd166");
       const throwing = P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass"), isPass = P.call.startsWith("pass");
       // the pass type button: always there on a pass play, until the ball is thrown
-      if (isPass && (P.phase === "presnap" || throwing)) {
+      if (isPass && !this.auto && (P.phase === "presnap" || throwing)) { // (not on the computer's snaps)
         const big = this.mobile, ch = big ? Math.max(px * 19, 48) : px * 11;
         this.chips.kinds = drawSwitch(ctx, cam, px * 3, hintY - px * 4 - ch, [{ key: "bullet", label: "BULLET", color: KIND_COLOR.bullet }, { key: "lob", label: "LOB", color: KIND_COLOR.lob }], this.passKind, { big });
       }
       const hint = P.phase === "presnap" ? (this.mobile ? "TOUCH THE FIELD TO SNAP" : "CLICK OR SPACE TO SNAP")
         : throwing ? (this.mobile ? "PULL BACK - LET GO TO THROW" : "AIM - CLICK TO THROW - Q SWITCHES BULLET/LOB")
         : P.phase === "carry" && P.ents[P.ball.holder]?.side === "off" ? (this.mobile ? "FLICK SIDEWAYS: JUKE - AHEAD: DIVE" : "STEER WITH MOUSE OR W/S - SPACE JUKES - E DIVES") : null;
-      if (hint) drawHint(ctx, cam, hint, hintY);
+      if (hint && !this.auto) drawHint(ctx, cam, hint, hintY);
     }
     if (m === "pick") {
       // four pass concepts, drawn fresh each down (one quick, two intermediate, one shot), and the two runs
@@ -322,9 +371,9 @@ export class ArcadeGame {
     if (m === "final" && this.box) { drawBoxScore(ctx, cam, this.box, teams, { time: this.time, hint: this.endHint() }); return; }
     if ((m === "result" || m === "final") && this.banner) { const b = this.banner; drawBanner(ctx, cam, b.title, b.text, b.sub, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166", hint: b.hint || (this.mobile ? "TAP TO CONTINUE" : "CLICK OR SPACE TO CONTINUE") }); }
     // the pause button, and the menu
-    if (!this.paused) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 13.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
+    if (!this.paused && !this.live) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 13.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
     if (this.fade > 0) { ctx.globalAlpha = this.fade; ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, cam.W, cam.H); ctx.globalAlpha = 1; }
-    if (this.paused) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ...(this.locked ? [] : [["wx", `WEATHER: ${wxName(this.wxPick)}`]]), ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), this.franchise ? ["sim", "SIM TO THE END"] : ["quit", "QUIT GAME"]], { mobile: this.mobile });
+    if (this.paused && !this.live) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ...(this.locked ? [] : [["wx", `WEATHER: ${wxName(this.wxPick)}`]]), ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), this.franchise ? ["sim", "SIM TO THE END"] : ["quit", "QUIT GAME"]], { mobile: this.mobile });
   }
   drawKick(ctx, P, hintY) {
     const cam = this.cam, px = uiPx(cam);
@@ -466,10 +515,10 @@ export class ArcadeGame {
     if (e.repeat && k !== "w" && k !== "s" && k !== "arrowup" && k !== "arrowdown") return;
     this.keys.add(k); unlock();
     if (k !== "w" && k !== "s" && !k.startsWith("arrow")) this.input = this.input === "touch" && !e.repeat ? "mouse" : this.input;
-    if (k === "escape" || k === "p") { if (this.mode !== "menu") this.paused = !this.paused; return; }
+    if (k === "escape" || k === "p") { if (this.live) return; if (this.mode !== "menu") this.paused = !this.paused; return; } // (a live game: the app's own Pause)
     if (k === "m") { toggleMute(); return; }
     if (k === "f") { this.fullscreen(this.fsState !== "on"); return; }
-    if (this.paused) { if (k === "enter" || k === " ") this.paused = false; return; }
+    if (this.paused) { if (!this.live && (k === "enter" || k === " ")) this.paused = false; return; }
     const m = this.mode, P = this.S;
     if (m === "menu") {
       if (k === "tab") this.menuFocus = this.menuFocus === "user" ? "opp" : "user";

@@ -11,7 +11,7 @@ const src = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 // one-off modals, and a few unused leftovers. Fine to lose on a reload.
 const SESSION_ONLY = new Set([
   "outro", // the retirement send-off: the franchise is over by then
-  "arcade", // the arcade game being played (its progress is kept in the live game's own save, gm_live)
+  "fieldView", // the live game shown on the arcade field or the broadcast one (kept in localStorage: gm_field_view)
   "liveSetOpen selTop livePat cardBack dlOpen seasonOpen pickTeam newInj ownerReviewShow injuryCalls injuryPick hubOpen holIntro injReport simBatch simHold faStart",
   "advanceAsk autoSaveTs awardsShow beatReports boxView",
   "capOutlookOpen capRollover celebrate challengeSeason chemGraph coachExt coachNag",

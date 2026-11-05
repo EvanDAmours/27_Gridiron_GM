@@ -103,3 +103,22 @@ export const situation = (g) => ({ yard: g.yard, down: g.down, toGo: g.toGo, qtr
 // After your touchdown: is the try waiting on you, and book it once the field has decided.
 export const patWaiting = (g) => !!g.patPending;
 export function bookPat(g, two, good) { return playPat(g, two, good); }
+
+const flip = (s) => (s === "h" ? "a" : s === "a" ? "h" : s);
+const isSides = (v) => v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 2 && "h" in v && "a" in v;
+
+// Turn a game (or the saved fields of one) the other way round: everything kept per side (score,
+// box score, stats, timeouts, the day's form, the specialists' snaps, the two sides themselves),
+// whose ball it is, and the play log (whose ball, and the score as [home, away]).
+export function flipSides(g) {
+  if (!g) return g;
+  for (const k of Object.keys(g)) {
+    const v = g[k];
+    if (isSides(v)) g[k] = { h: v.a, a: v.h };
+    else if (typeof v === "string" && (v === "h" || v === "a") && k !== "wx") g[k] = flip(v);
+  }
+  if (g.patPending?.off) g.patPending = { ...g.patPending, off: flip(g.patPending.off) };
+  if (Array.isArray(g.pl)) g.pl = g.pl.map((e) => ({ ...e, p: flip(e.p), s: e.s ? [e.s[1], e.s[0]] : e.s }));
+  return g;
+}
+

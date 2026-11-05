@@ -6,23 +6,8 @@
 import { createGame, step } from "../playsim.js";
 import { windFor } from "./game.js";
 
-const flip = (s) => (s === "h" ? "a" : s === "a" ? "h" : s);
-const isSides = (v) => v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 2 && "h" in v && "a" in v;
-
-// Turn a game (or the saved fields of one) the other way round: everything kept per side (score,
-// box score, stats, timeouts, the day's form, the specialists' snaps, the two sides themselves),
-// whose ball it is, and the play log (whose ball, and the score as [home, away]).
-export function flipSides(g) {
-  if (!g) return g;
-  for (const k of Object.keys(g)) {
-    const v = g[k];
-    if (isSides(v)) g[k] = { h: v.a, a: v.h };
-    else if (typeof v === "string" && (v === "h" || v === "a") && k !== "wx") g[k] = flip(v);
-  }
-  if (g.patPending?.off) g.patPending = { ...g.patPending, off: flip(g.patPending.off) };
-  if (Array.isArray(g.pl)) g.pl = g.pl.map((e) => ({ ...e, p: flip(e.p), s: e.s ? [e.s[1], e.s[0]] : e.s }));
-  return g;
-}
+export { flipSides } from "./bridge.js";
+import { flipSides } from "./bridge.js";
 
 // The engine game for an arcade franchise game. su: gameSetup()'s result (the real rosters, depth
 // charts, week plans, injuries and weather); game: the schedule entry; userHome: are you the home

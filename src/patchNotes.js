@@ -2356,4 +2356,9 @@ export const PATCH_NOTES = [
     "Play in Arcade now keeps the engine's numbers. The arcade field was too easy: an average player completed 74% of passes for 9.1 yards a throw and scored about 30 points, against the engine's 67%, 7.0 and 26 for the same teams. The field is now tuned so an average game comes out where the engine's does (about 67% completions, 7.2 yards a throw, 6% sacks, 4.3 yards a carry, 26 points), so arcade games sit alongside simmed and live games in your season stats and records. Your throws, reads and runs still decide each snap, so good decisions still win you more.",
     "The engine itself hasn't changed: Play Week, Sim Week and every other game play out exactly as before.",
   ] },
+  { v: "5.67", date: "2026-10-23", title: "The arcade field in the live game", notes: [
+    "The arcade field is now part of the live game. Start any game with Play Week and switch between Arcade field and Broadcast under the game controls, at any snap. On the arcade field, Watch has the computer play both offenses out on the field, and Play your snaps hands you the ball whenever your team has it, so you can take over and hand it back mid-game. The drives, the box score, Pause, Sim to end of quarter and Finish game all work the same, and every play counts in the season like any live game.",
+    "The arcade field sits inside the real stadium, like the broadcast: the home club's stands and crowd, both fan bases at the Super Bowl, the lights at night. Each club wears its real home or road uniform. On a phone the Arcade button in the game's toolbar opens it full screen.",
+    "Play in Arcade on Home now starts this week's live game on the arcade field with your snaps yours.",
+  ] },
 ];
