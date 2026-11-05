@@ -15,9 +15,10 @@ import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, pl
 import { setupKick, kickFlick, tickKick, kickPlan, POSTS_X } from "./kick.js";
 import { sfx, unlock, toggleMute, isMuted, ambient, ambientHype } from "./sfx.js";
 import { FX } from "./fx.js";
+import * as K from "./ratings.js";
 import { rollWeather, WX, wxOf } from "../weather.js";
 import { teamKey } from "../teamUniforms.js";
-import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, drawMenu, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
+import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, pixWidth, drawMenu, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
 
 const PULL = 3.2; // touch: the throw goes this many times the pull-back, the other way, on the screen
 const spotOf = (yard) => (yard === 50 ? "MIDFIELD" : yard < 50 ? `OWN ${yard}` : `OPP ${100 - yard}`);
@@ -312,6 +313,12 @@ export class ArcadeGame {
       const plan = kickPlan(P, v[0], v[1]), dist = P.kind === "fg" ? Math.max(8, plan.power) : 30 + plan.strength * 25;
       const x1 = plan.x0 + Math.cos(plan.angle) * dist, y1 = plan.y0 + Math.sin(plan.angle) * dist + (plan.drift || 0) * (dist / Math.max(1, POSTS_X - plan.x0)), apex = P.kind === "fg" ? clamp(dist / 7, 3, 8) : 9;
       for (let i = 1; i <= 22; i++) { const u = i / 22, [sx, sy] = cam.toScreen(plan.x0 + (x1 - plan.x0) * u, plan.y0 + (y1 - plan.y0) * u), h = apex * 4 * u * (1 - u); const sz = Math.max(2, Math.round(px * (i === 22 ? 2 : 1.2))); ctx.fillStyle = "rgba(0,0,0,.4)"; ctx.fillRect(Math.round(sx - sz / 2) + 1, Math.round(sy - h * cam.s - sz / 2) + 1, sz, sz); ctx.fillStyle = "#ffd166"; ctx.fillRect(Math.round(sx - sz / 2), Math.round(sy - h * cam.s - sz / 2), sz, sz); }
+      // his spread: the band where his accuracy might put it (an elite kicker's is tight)
+      if (P.kind === "fg" && plan.spread) {
+        ctx.fillStyle = plan.late ? "rgba(255,138,90,.18)" : "rgba(255,209,102,.16)"; ctx.beginPath();
+        const edge = (sg) => { const a = plan.angle + sg * plan.spread * 1.6; return cam.toScreen(plan.x0 + Math.cos(a) * dist, plan.y0 + Math.sin(a) * dist + (plan.drift || 0) * (dist / Math.max(1, POSTS_X - plan.x0))); };
+        const [ax, ay] = cam.toScreen(plan.x0, plan.y0), [e1x, e1y] = edge(-1), [e2x, e2y] = edge(1); ctx.moveTo(ax, ay); ctx.lineTo(e1x, e1y); ctx.lineTo(e2x, e2y); ctx.closePath(); ctx.fill();
+      }
       const [lx, ly] = cam.toScreen(x1, y1); ctx.strokeStyle = "#ffd166"; ctx.lineWidth = Math.max(2, px); ctx.beginPath(); ctx.ellipse(lx, ly, cam.s * 0.9, cam.s * 0.9 * 0.42, 0, 0, Math.PI * 2); ctx.stroke();
       // the strength bar: how far this kick goes, and (on a field goal) a tick at the distance it needs
       const w = px * 70, h = px * 6, x = Math.round(cam.W / 2 - w / 2), y = Math.round(hintY - px * 16), frac = Math.min(1, plan.strength / 1.15);
@@ -319,6 +326,8 @@ export class ArcadeGame {
       const ok = P.kind !== "fg" || !plan.short; ctx.fillStyle = ok ? "#5fd35f" : "#ff8a5a"; ctx.fillRect(x, y, Math.round(w * frac), h);
       if (P.kind === "fg") { const need = Math.min(1, (plan.need / plan.range) / 1.15); ctx.fillStyle = "#fff"; ctx.fillRect(Math.round(x + w * need), y - px * 2, px, h + px * 4); pixText(ctx, plan.short ? "TOO SHORT" : "LONG ENOUGH", x + w / 2, y - px * 9, px, plan.short ? "#ff8a5a" : "#5fd35f", "center"); }
     }
+    // who's kicking: his name, overall, leg and accuracy (what decides how far and how true)
+    { const kp = P.kicker, cp = Math.max(1, Math.round(px * 0.8)); if (kp) { const lines = [`${String(kp.name || "").toUpperCase()}  ${kp.ovr ?? ""} OVR`, `LEG ${Math.round(K.kickLeg(kp))}  ACC ${Math.round(K.kickAccuracy(kp))}${P.kind === "fg" ? `  RANGE ${Math.round(50 + (K.kickLeg(kp) - 70) * 0.6)} YD` : ""}`]; const w = Math.max(...lines.map((l) => pixWidth(l, cp))) + cp * 8, h = cp * 22, x = Math.round(cam.W - w - px * 3), y = Math.round(px * 24); ctx.fillStyle = "rgba(8,10,16,.82)"; ctx.fillRect(x, y, w, h); ctx.fillStyle = this.teams.user.clr; ctx.fillRect(x, y, cp, h); pixText(ctx, lines[0], x + cp * 4, y + cp * 3, cp, "#fff"); pixText(ctx, lines[1], x + cp * 4, y + cp * 12, cp, "#ffd166"); } }
     drawHint(ctx, cam, this.mobile ? "DRAG TOWARD THE POSTS, LET GO TO KICK" : "CLICK AND DRAG TOWARD THE POSTS, LET GO TO KICK", hintY);
   }
   kickPower() { if (!this.kick?.charging) return 0; const u = (this.kick.t / KICK_CYCLE) % 2; return u < 1 ? u : 2 - u; }

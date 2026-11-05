@@ -38,20 +38,26 @@ export function kickPlan(S, dxYd, dyYd) {
   if (S.kind !== "fg") return { angle, strength, wd, x0, y0, len };
   // the distance this kick is good for: a full drag reaches his range (a wind at his back adds yards,
   // one in his face takes them; a bad day takes some too)
-  const range = 44 + (legStr - 85) * 1.1 + 6 + wd.x * 0.6 - (W.kick || 0) * 0.5, power = strength * range, need = S.dist;
+  const range = 50 + (legStr - 70) * 0.6 + wd.x * 0.6 - (W.kick || 0) * 0.5, power = strength * range, need = S.dist;
   const toPosts = POSTS_X - x0, drift = wd.y * clamp(need / 26, 1.2, 2.6) * 0.35; // a crosswind pushes it as it flies
   const yAtPosts = y0 + Math.tan(angle) * toPosts + drift;
-  return { angle, strength, power, need, range, wd, x0, y0, len, drift, yAtPosts, short: power < need - 1, wide: Math.abs(yAtPosts) > POST_HALF + 1.1 };
+  // his spread (one standard deviation, in radians): his accuracy, worse from long range and, for a
+  // shaky kicker, with the game on the line late
+  const acc = K.kickAccuracy(S.kicker), g = S.g, late = g && g.qtr >= 4 && g.clock <= 120 && Math.abs((g.score?.h ?? 0) - (g.score?.a ?? 0)) <= 3;
+  const spread = (0.028 + Math.max(0, 95 - acc) * 0.0014) * (0.6 + need / 45) * (late ? 1 + Math.max(0, 80 - K.kickClutch(S.kicker)) * 0.012 : 1);
+  return { angle, strength, power, need, range, wd, x0, y0, len, drift, yAtPosts, spread, late, short: power < need - 1, wide: Math.abs(yAtPosts) > POST_HALF + 0.4 };
 }
 // The kick: the plan, plus his accuracy's wobble.
 export function kickFlick(S, dxYd, dyYd) {
   if (S.phase !== "presnap") return null;
-  const plan = kickPlan(S, dxYd, dyYd), acc = K.kickAccuracy(S.kicker), angle = plan.angle;
+  const plan = kickPlan(S, dxYd, dyYd), angle = plan.angle;
   S.phase = "live"; S.t = 0;
   if (S.kind === "fg") {
-    const { power, need, x0, y0, drift } = plan, toPosts = POSTS_X - x0;
-    const wobble = (Math.random() - 0.5) * (0.05 + Math.max(0, 92 - acc) * 0.004) * (need / 35);
-    const yAtPosts = y0 + Math.tan(angle + wobble) * toPosts + drift, short = plan.short, wide = Math.abs(yAtPosts) > POST_HALF + 1.1;
+    const { need, x0, y0, drift, spread } = plan, toPosts = POSTS_X - x0, gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) * 1.41;
+    const wobble = gauss() * spread; // where his accuracy puts it, around where you aimed
+    // and how well he struck it: an inconsistent kicker comes up a few yards light now and then
+    const power = plan.power * (1 + gauss() * (0.012 + Math.max(0, 90 - K.kickConsistency(S.kicker)) * 0.0011) - (Math.random() < Math.max(0, 85 - K.kickConsistency(S.kicker)) * 0.004 ? 0.06 : 0));
+    const yAtPosts = y0 + Math.tan(angle + wobble) * toPosts + drift, short = power < need - 1, wide = Math.abs(yAtPosts) > POST_HALF + 0.4;
     const good = !short && !wide;
     // an extra point is all yours (the engine books what the kick did); a field goal the engine has to agree with
     const r = S.pat ? { ev: bookPat(S.g, false, good) } : resolvePlay(S.g, "fg", { types: [good ? "fg" : "fg_miss"], fallback: [good ? "fg_miss" : "fg"] }, null, 12);
