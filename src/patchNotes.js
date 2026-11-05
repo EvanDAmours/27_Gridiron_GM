@@ -2361,4 +2361,8 @@ export const PATCH_NOTES = [
     "The arcade field sits inside the real stadium, like the broadcast: the home club's stands and crowd, both fan bases at the Super Bowl, the lights at night. Each club wears its real home or road uniform. On a phone the Arcade button in the game's toolbar opens it full screen.",
     "Play in Arcade on Home now starts this week's live game on the arcade field with your snaps yours.",
   ] },
+  { v: "5.68", date: "2026-10-23", title: "Painted end zones and a videoboard", notes: [
+    "Arcade field: the end zones are painted like a real stadium's again. Each club's name runs huge across its end zone in its own color with a white outline, its logo sits faded at both ends, and the home club's logo is at midfield. The grass runs past the end lines to the wall instead of ending in a dark edge.",
+    "Arcade field: a stadium videoboard hangs over the far stands in place of the old score strip. It shows the visitors on the left and the home club on the right in their colors with their logos, big scores, the quarter and the clock in amber, the down and distance, timeouts, and who has the ball. When you're watching, the result banners carry on by themselves without asking you to click.",
+  ] },
 ];

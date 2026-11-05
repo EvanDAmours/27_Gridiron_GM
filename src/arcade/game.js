@@ -369,7 +369,7 @@ export class ArcadeGame {
     }
     if (m === "opp") this.drawDrive(ctx);
     if (m === "final" && this.box) { drawBoxScore(ctx, cam, this.box, teams, { time: this.time, hint: this.endHint() }); return; }
-    if ((m === "result" || m === "final") && this.banner) { const b = this.banner; drawBanner(ctx, cam, b.title, b.text, b.sub, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166", hint: b.hint || (this.mobile ? "TAP TO CONTINUE" : "CLICK OR SPACE TO CONTINUE") }); }
+    if ((m === "result" || m === "final") && this.banner) { const b = this.banner; drawBanner(ctx, cam, b.title, b.text, b.sub, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166", hint: b.hint || (this.live && (this.live.watch || this.auto) ? "" : this.mobile ? "TAP TO CONTINUE" : "CLICK OR SPACE TO CONTINUE") }); }
     // the pause button, and the menu
     if (!this.paused && !this.live) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 13.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
     if (this.fade > 0) { ctx.globalAlpha = this.fade; ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, cam.W, cam.H); ctx.globalAlpha = 1; }
