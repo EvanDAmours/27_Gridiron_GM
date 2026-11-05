@@ -269,7 +269,7 @@ export class ArcadeGame {
       const kickView = P.kind === "fg" && P.phase === "presnap" ? Math.min(P.ball.x - 4 + (cam.W * 0.42) / cam.s, Math.max(P.ball.x + cam.lead, POSTS_X + 5 - (cam.W * 0.58) / cam.s)) : null;
       const want = kickView ?? (f ? (P.ball.x + f.to.x) / 2 + 2 : qbHas ? holdX(cam, P) : P.ball.x + (over ? 0 : cam.lead));
       cam.camX += (want - cam.camX) * Math.min(1, dt * (f ? 3.5 : 5));
-      cam.camX = Math.max(-15 + (cam.W * 0.42) / cam.s, Math.min(117 - (cam.W * 0.58) / cam.s, cam.camX)); // never far past the end zones (but the goalposts, on the end lines, stay in the picture)
+      cam.camX = Math.max(-21 + (cam.W * 0.42) / cam.s, Math.min(121 - (cam.W * 0.58) / cam.s, cam.camX)); // never far past the end zones: the goalposts and the crowd behind them stay in the picture
       if (!going && P.phase === "done" && m === "play") {
         let ev = P.result || P.ev;
         // a two-point try was played on a scratch copy of the game from the 2: put the game back and book the try

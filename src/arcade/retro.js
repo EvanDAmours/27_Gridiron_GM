@@ -538,10 +538,37 @@ function drawCrews(ctx, cam, near, opts) {
   const los = opts.los ?? 50, ease = (k, to) => { const v = crewAt[k]; crewAt[k] = v == null || Math.abs(v - to) > 40 ? to : v + (to - v) * 0.06; return crewAt[k]; };
   if (near) {
     cameraman(ctx, cam, ease("near", Math.min(108, Math.max(-8, los + 3))), HALF + 1.35, -1, { live: true });
-    for (const [x, f] of [[-13, 1], [113, -1]]) cameraman(ctx, cam, x, 12, f, { cable: false, skin: "#a8754f" }); // behind each end zone
+    for (const [x, f] of [[-12.6, 1], [112.6, -1]]) cameraman(ctx, cam, x, 12, f, { cable: false, skin: "#a8754f" }); // behind each end zone
   } else {
     cameraCart(ctx, cam, ease("far", Math.min(106, Math.max(-6, los - 6))), -HALF - 1.7, 1, true);
-    for (const [x, f] of [[-13, 1], [113, -1]]) cameraman(ctx, cam, x, -14, f, { cable: false });
+    for (const [x, f] of [[-12.6, 1], [112.6, -1]]) cameraman(ctx, cam, x, -14, f, { cable: false });
+  }
+}
+
+// The crowd behind each end zone, close to the field the way Lambeau's is: a short strip of turf past
+// the end line (the goalpost and a cameraman stand on it), a low padded wall in the home club's colour,
+// then the seats packed to the top, fans who jump with the rest of the stadium when something happens.
+// The rows run away from the field, so the far ones fall into shadow toward the screen's edge.
+export const END_WALL = 13.5; // yards past the goal line (3.5 past the end line)
+function endStands(ctx, cam, teams, yardAt, { px, wallTop, nearEdge, cheer, night }) {
+  const { W, s } = cam, home = HOME_OF(teams), y0 = Math.max(0, Math.round(wallTop)), y1 = Math.round(nearEdge + s * 0.5), hgt = y1 - y0;
+  for (const side of [-1, 1]) {
+    const wx = Math.round(yardAt(side < 0 ? -END_WALL : 100 + END_WALL)), x0 = side < 0 ? 0 : wx, x1 = side < 0 ? wx : W;
+    if (x1 - x0 < 1 || hgt < 4) continue;
+    const tile = standsTile(px, hgt, teams, cheer);
+    ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, hgt); ctx.clip();
+    ctx.fillStyle = "#121620"; ctx.fillRect(x0, y0, x1 - x0, hgt);
+    if (tile) { const ox = -(((cam.camX * s * 0.5) % tile.width) + tile.width) % tile.width; for (let x = ox; x < W; x += tile.width) ctx.drawImage(tile, Math.round(x), y0); }
+    // the rows climbing away from the field: darker toward the edge of the screen
+    const far = side < 0 ? x0 : x1, g = ctx.createLinearGradient?.(wx, 0, far, 0);
+    if (g) { g.addColorStop(0, "rgba(6,8,12,0)"); g.addColorStop(1, night ? "rgba(2,4,12,.7)" : "rgba(6,8,12,.5)"); ctx.fillStyle = g; ctx.fillRect(x0, y0, x1 - x0, hgt); }
+    if (night) { ctx.fillStyle = "rgba(2,4,14,.45)"; ctx.fillRect(x0, y0, x1 - x0, hgt); }
+    ctx.restore();
+    // the wall: padded in the home club's colour, a lighter cap along its top, its shadow on the turf
+    const ww = Math.max(3, Math.round(s * 0.45)), wl = side < 0 ? wx - ww : wx;
+    ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.fillRect(side < 0 ? wx : wx - Math.round(s * 0.35), y0, Math.round(s * 0.35), hgt);
+    ctx.fillStyle = home?.clr && home.clr !== "#000000" ? shade(home.clr, -0.25) : "#2b3140"; ctx.fillRect(wl, y0, ww, hgt);
+    ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.fillRect(side < 0 ? wx - Math.max(1, Math.round(ww * 0.25)) : wx, y0, Math.max(1, Math.round(ww * 0.25)), hgt);
   }
 }
 
@@ -603,6 +630,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   ctx.fillStyle = "#e8e8e0"; ctx.fillRect(0, Math.round(top + depth), W, Math.max(2, s * 0.25)); ctx.fillRect(0, Math.round(top - Math.max(2, s * 0.25)), W, Math.max(2, s * 0.25));
   ctx.fillStyle = "#3b3f4a"; ctx.fillRect(0, Math.round(nearEdge), W, Math.round(s * 0.5));
   for (const yy of [-HALF - 1.1, HALF + 1.1]) { const [a0, ya] = cam.toScreen(30, yy), [a1] = cam.toScreen(70, yy); ctx.fillStyle = "rgba(255,255,255,.55)"; for (let x = a0; x < a1; x += s * 1.2) ctx.fillRect(Math.round(x), Math.round(ya), Math.round(s * 0.6), Math.max(1, Math.round(s * 0.1))); }
+  endStands(ctx, cam, teams, yardAt, { px, wallTop, nearEdge, cheer, night: opts.night });
   // yard lines, hashes and numbers
   const lw = Math.max(1, Math.round(s * 0.12));
   for (let yd = 0; yd <= 100; yd += 5) { const x = Math.round(yardAt(yd)); if (x < -4 || x > W + 4) continue; ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.fillRect(x, Math.round(top), lw, Math.round(depth)); }
