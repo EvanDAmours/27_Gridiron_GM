@@ -2387,4 +2387,7 @@ export const PATCH_NOTES = [
   { v: "5.73", date: "2026-10-23", title: "End zone crowds", notes: [
     "Arcade field: fans behind both end zones, close to the field the way Lambeau's are. Past each end line there's a short strip of turf with the goalpost and a cameraman, a low padded wall in the home club's colour, then the seats packed with fans who jump with the rest of the stadium after a touchdown. The camera now shows a few more yards past the end lines, so a score runs into a crowd instead of empty grass.",
   ] },
+  { v: "5.74", date: "2026-10-23", title: "NFC North sprites", notes: [
+    "Arcade field: the whole NFC North now has its own animated players, home and road: the Bears, Lions, Packers and Vikings run, throw, catch, juke, spin, tackle and celebrate in their own uniforms like the Giants, Texans, Eagles and Commanders already do. A few of the Packers' and Lions' home frames had come out with the wrong jersey colour (gold for the Packers, silver for the Lions) on the run with the ball, the tackle, the stumble, the swim move and the spike; those are repainted in the right colour.",
+  ] },
 ];
