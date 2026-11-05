@@ -2380,4 +2380,8 @@ export const PATCH_NOTES = [
     "Fixes: a club missing linemen to injury, or every quarterback, could freeze the arcade field on the snap; the line now fills from the backups and every spot always has a man, and the field recovers from any hiccup instead of stopping. With every quarterback hurt, the engine now puts an emergency quarterback under center (in the broadcast and every simmed game too) instead of a nameless QB.",
     "Settings follow the field you're watching: the arcade field shows Field, Your snaps (Watch / Play my snaps) and Speed; the broadcast's own options (which plays it acts out, its camera, its size) only show with the broadcast. The phone's game toolbar does the same.",
   ] },
+  { v: "5.72", date: "2026-10-23", title: "Smaller scoreboard, full screen field", notes: [
+    "Arcade field: the stadium scoreboard at the 50 is smaller, about a third of its old size, and laid out to read at that size: the clubs and the quarter on top, the scores and the clock in the middle, the down and the ball along the bottom. It's for the look; the score itself is above the field.",
+    "Arcade field in a live game: a Full screen button in the field's corner (or press F) fills the screen with the field and its stands; Esc or the button brings you back. On an iPhone, Safari can't do this for a page, so the button doesn't show there.",
+  ] },
 ];

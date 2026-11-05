@@ -85,7 +85,7 @@ export class ArcadeGame {
     return navigator.standalone ? null : "ios";
   }
   async fullscreen(want = true) {
-    const d = document, el = d.documentElement;
+    const d = document, el = this.live ? this.cv.parentElement : d.documentElement; // (a live game: just the field, not the whole app)
     try {
       if (want && !(d.fullscreenElement || d.webkitFullscreenElement)) { await (el.requestFullscreen?.({ navigationUI: "hide" }) ?? el.webkitRequestFullscreen?.()); await screen.orientation?.lock?.("landscape").catch(() => {}); }
       else if (!want) await (d.exitFullscreen?.() ?? d.webkitExitFullscreen?.());

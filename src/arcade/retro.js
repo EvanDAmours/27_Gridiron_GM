@@ -88,41 +88,43 @@ function seg7(ctx, x, y, w, h, ch, color) {
 function digits(ctx, x, y, w, h, str, color, gap) { [...str].forEach((c, i) => seg7(ctx, x + i * (w + gap), y, w, h, c, color)); return str.length * (w + gap) - gap; }
 function stadiumBoard(ctx, cam, g, teams, yardAt, wallTop) {
   if (!g?.score) return;
-  const { s } = cam, cx = yardAt(50), bw = Math.round(Math.min(s * 32, cam.W * 0.7)), bh = Math.round(Math.min(wallTop - 4, bw * 0.2));
-  if (bh < 30 || cx + bw / 2 < 0 || cx - bw / 2 > cam.W) return;
+  const { s } = cam, cx = yardAt(50), bw = Math.round(Math.min(s * 15, cam.W * 0.36)), bh = Math.round(Math.min(wallTop - 6, bw * 0.27));
+  if (bh < 22 || cx + bw / 2 < 0 || cx - bw / 2 > cam.W) return;
   const x = Math.round(cx - bw / 2), y = Math.round(wallTop - bh - 1);
   const home = HOME_OF(teams), userHome = home === teams.user, side = (t) => (t === teams.user ? "h" : "a");
   const G = userHome ? teams.opp : teams.user, Hm = home, hasBall = (t) => !g.done && !g.koNext && g.poss === side(t);
   const red = "#ff3b1f", amber = "#ffb627", lab = "#e8e2c8";
-  // sizes from the board's height (the pixel letters are seven rows tall)
-  const row = Math.round(bh * 0.68), pa = Math.max(1, Math.floor(row / 18)), pl = Math.max(1, Math.floor(bh / 50)), pb = Math.max(1, Math.floor((bh - row) / 12));
+  // three rows, every size from the board's height: the clubs and the quarter on top, the scores and
+  // the clock in the middle, the down and the ball along the bottom (the pixel letters are 7 rows tall)
+  const pl = Math.max(1, Math.floor((bh * 0.2) / 7)), pb = Math.max(1, Math.floor((bh * 0.16) / 7));
+  const topH = 7 * pl + 6, stripH = 7 * pb + 6, midY = y + topH, midH = bh - topH - stripH;
   // the frame and the black face, with its grid of bulbs
   ctx.fillStyle = "#3a4050"; ctx.fillRect(x - 3, y - 3, bw + 6, bh + 5);
   ctx.fillStyle = "#06070a"; ctx.fillRect(x, y, bw, bh);
   ctx.fillStyle = "rgba(255,255,255,.03)"; for (let gy = y + 2; gy < y + bh; gy += 3) ctx.fillRect(x + 1, gy, bw - 2, 1);
-  const dh = Math.round(row * 0.78), dw = Math.round(dh * 0.55), gap = Math.max(2, Math.round(dw * 0.22)), dy = y + Math.round((row - dh) / 2);
-  // each club: its letters, GUEST / HOME under them, its timeouts; then its score in big red digits
-  const lineH = 7 * pa + 3, labY = y + 3 + lineH, toY = labY + 7 * pl + 3;
+  const dh = Math.max(8, midH - 4), dw = Math.min(Math.round(dh * 0.52), Math.round(bw * 0.075)), gap = Math.max(2, Math.round(dw * 0.22)), dy = midY + Math.round((midH - dh) / 2);
   for (const [t, left] of [[G, true], [Hm, false]]) {
-    const edge = left ? x + 6 : x + bw - 6, align = left ? "left" : "right";
-    pixText(ctx, String(t?.ab || ""), edge, y + 3, pa, t?.clr && t.clr !== "#000000" ? lighten(t.clr) : lab, align);
-    pixText(ctx, left ? "GUEST" : "HOME", edge, labY, pl, lab, align);
-    const tos = g.to?.[side(t)] ?? 3, tw = Math.max(3, pl * 4); for (let i = 0; i < 3; i++) { ctx.fillStyle = i < tos ? amber : "rgba(255,255,255,.1)"; const tx = left ? edge + i * (tw + 2) : edge - (i + 1) * (tw + 2) + 2; ctx.fillRect(tx, toY, tw, Math.max(2, pl * 2)); }
-    const sw = 2 * dw + gap, sc = left ? x + bw * 0.29 : x + bw * 0.71, sx = Math.round(sc - sw / 2);
-    digits(ctx, sx, dy, dw, dh, String(g.score[side(t)] ?? 0).padStart(2, " ").slice(-2), red, gap);
-    if (hasBall(t)) { const a = Math.max(3, Math.round(dh * 0.14)), ax = left ? sx + sw + a + 3 : sx - a - 3, ay = dy + Math.round(dh / 2), d = left ? 1 : -1; ctx.fillStyle = amber; ctx.beginPath(); ctx.moveTo(ax + d * a, ay - a); ctx.lineTo(ax - d * a, ay); ctx.lineTo(ax + d * a, ay + a); ctx.closePath(); ctx.fill(); }
+    const fx = left ? 0.17 : 0.83, cxT = x + bw * fx;
+    // the club (in its colour), a ball beside the one with it, its timeouts underneath the score
+    const ab = String(t?.ab || ""), abW = pixWidth(ab, pl);
+    pixText(ctx, ab, cxT, y + 3, pl, t?.clr && t.clr !== "#000000" ? lighten(t.clr) : lab, "center");
+    if (hasBall(t)) { const a = Math.max(2, Math.round(pl * 2.5)), ax = left ? cxT + abW / 2 + a + 3 : cxT - abW / 2 - a - 3, ay = y + 3 + Math.round(3.5 * pl), d = left ? -1 : 1; ctx.fillStyle = amber; ctx.beginPath(); ctx.moveTo(ax - d * a, ay - a); ctx.lineTo(ax + d * a, ay); ctx.lineTo(ax - d * a, ay + a); ctx.closePath(); ctx.fill(); }
+    const sw = 2 * dw + gap; digits(ctx, Math.round(cxT - sw / 2), dy, dw, dh, String(g.score[side(t)] ?? 0).padStart(2, " ").slice(-2), red, gap);
+    const tos = g.to?.[side(t)] ?? 3, tw = Math.max(3, Math.round(dw * 0.45)), th = Math.max(1, Math.round(pl)), tx0 = Math.round(cxT - (3 * tw + 4) / 2);
+    for (let i = 0; i < 3; i++) { ctx.fillStyle = i < tos ? amber : "rgba(255,255,255,.1)"; ctx.fillRect(tx0 + i * (tw + 2), y + bh - stripH - th - 1, tw, th); }
   }
   // the middle: the quarter over the clock
   pixText(ctx, g.done ? "FINAL" : g.ot ? "OT" : `QTR ${Math.min(4, g.qtr || 1)}`, x + bw / 2, y + 3, pl, lab, "center");
-  const ch = Math.max(8, row - 7 * pl - 8), cw = Math.round(ch * 0.55), cg = Math.max(2, Math.round(cw * 0.22)), m = Math.floor((g.clock || 0) / 60), sec = String((g.clock || 0) % 60).padStart(2, "0");
-  const colW = Math.max(2, Math.round(cw * 0.5)), total = 4 * cw + 2 * cg + colW * 2, cx0 = Math.round(x + bw / 2 - total / 2), cy0 = y + 3 + 7 * pl + 4;
+  const ch = Math.max(8, Math.round(dh * 0.8)), cw = Math.min(Math.round(ch * 0.52), Math.round(bw * 0.06)), cg = Math.max(2, Math.round(cw * 0.22)), m = Math.floor((g.clock || 0) / 60), sec = String((g.clock || 0) % 60).padStart(2, "0");
+  const colW = Math.max(2, Math.round(cw * 0.5)), total = 4 * cw + 2 * cg + colW * 2, cx0 = Math.round(x + bw / 2 - total / 2), cy0 = midY + Math.round((midH - ch) / 2);
   digits(ctx, cx0, cy0, cw, ch, String(m).padStart(2, " "), amber, cg);
   const colx = cx0 + 2 * cw + cg + Math.round(colW / 2); ctx.fillStyle = amber; const dot = Math.max(2, Math.round(cw * 0.18)); for (const fy of [0.3, 0.7]) ctx.fillRect(colx, Math.round(cy0 + ch * fy - dot / 2), dot, dot);
   digits(ctx, cx0 + 2 * cw + cg + colW * 2, cy0, cw, ch, sec, amber, cg);
-  // the bottom strip: DOWN, TO GO, BALL ON
-  ctx.fillStyle = "#2a2f3a"; ctx.fillRect(x, y + row, bw, 1);
+  // the bottom strip: the down and distance, and where the ball is
+  ctx.fillStyle = "#2a2f3a"; ctx.fillRect(x, y + bh - stripH, bw, 1);
   const live = !g.done && !g.koNext && g.down, ball = g.yard > 50 ? 100 - g.yard : g.yard, togo = g.toGo >= 100 - g.yard ? "GOAL" : String(g.toGo);
-  pixText(ctx, `DOWN ${live ? g.down : "-"}    TO GO ${live ? togo : "-"}    BALL ON ${live ? ball : "-"}`, x + bw / 2, y + row + Math.round((bh - row - 7 * pb) / 2), pb, amber, "center");
+  const strip = live ? `${["1ST", "2ND", "3RD", "4TH"][g.down - 1] || g.down} & ${togo}   BALL ON ${ball}` : g.done ? "FINAL" : "";
+  if (strip) pixText(ctx, strip, x + bw / 2, y + bh - stripH + 3, pb, amber, "center");
 }
 const lighten = (hex) => shade(hex, 0.45);
 
