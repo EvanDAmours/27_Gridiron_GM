@@ -460,7 +460,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     for (const r of ELIGIBLE) {
       const e = S.ents[r]; if (!e?.p?.name) continue;
       const last = String(e.p.name).split(" ").filter((w) => !/^(jr\.?|sr\.?|ii|iii|iv)$/i.test(w)).pop().toUpperCase().replace(/[^A-Z0-9'.-]/g, "");
-      const label = `${r === "SLOT" ? "WR" : r === "X" || r === "Z" ? "WR" : r} ${last}`, [lx, ly] = cam.toScreen(e.x, e.y), w = pixWidth(label, np) + np * 4;
+      const label = last, [lx, ly] = cam.toScreen(e.x, e.y), w = pixWidth(label, np) + np * 4;
       ctx.fillStyle = "rgba(8,10,16,.72)"; ctx.fillRect(Math.round(lx - w / 2), Math.round(ly + s * 0.2), w, np * 9);
       pixText(ctx, label, lx, Math.round(ly + s * 0.2 + np * 1), np, r === "RB" ? "#ffd166" : r === "TE" ? "#9be29b" : "#7fe3ff", "center");
     }
