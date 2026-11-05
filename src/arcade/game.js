@@ -207,7 +207,7 @@ export class ArcadeGame {
       if (up || down) { this.keySteer = (this.keySteer ?? c.y) + (down ? 1 : -1) * 22 * dt; this.keySteer = Math.max(-26, Math.min(26, this.keySteer)); P.steer = this.keySteer; }
       else if (this.input === "mouse" && this.mouse) { this.keySteer = null; P.steer = this.cam.toField(this.mouse.px, this.mouse.py).y; }
     } else this.keySteer = null;
-    if (!P.kind && P.phase === "live" && P.ball.holder === "QB" && this.input === "mouse" && this.mouse) {
+    if (!P.kind && P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass") && this.input === "mouse" && this.mouse) {
       const f = this.cam.toField(this.mouse.px, this.mouse.py), qb = P.ents.QB;
       P.aim = { x: Math.max(qb.x - 1, f.x), y: Math.max(-26, Math.min(26, f.y)) };
     }
@@ -267,7 +267,7 @@ export class ArcadeGame {
     else if (m === "play" && P) {
       const toGo = st.toGo >= 100 - st.yard ? "GOAL" : st.toGo;
       drawDownBox(ctx, cam, P.phase === "presnap" ? `${ordinal(st.down)} & ${toGo} - ${playName(P.concept || P.call)}` : `${ordinal(st.down)} & ${toGo}`, P.phase === "presnap" ? "#fff" : "#ffd166");
-      const throwing = P.phase === "live" && P.ball.holder === "QB", isPass = P.call.startsWith("pass");
+      const throwing = P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass"), isPass = P.call.startsWith("pass");
       // the pass type button: always there on a pass play, until the ball is thrown
       if (isPass && (P.phase === "presnap" || throwing)) {
         const big = this.mobile, ch = big ? Math.max(px * 19, 48) : px * 11;
@@ -385,7 +385,7 @@ export class ArcadeGame {
     const lob = e.button === 2 || e.shiftKey;
     if (P.kind) { if (P.phase === "presnap") this.kick = { charging: true, t: 0 }; return; }
     if (P.phase === "presnap") { snap(P); return; }
-    if (P.phase === "live" && P.ball.holder === "QB") { const f = this.cam.toField(p.px, p.py), qb = P.ents.QB; throwTo(P, { x: Math.max(qb.x - 1, f.x), y: f.y }, null, lob ? "lob" : this.passKind); P.aim = null; return; }
+    if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass")) { const f = this.cam.toField(p.px, p.py), qb = P.ents.QB; throwTo(P, { x: Math.max(qb.x - 1, f.x), y: f.y }, null, lob ? "lob" : this.passKind); P.aim = null; return; }
     if (P.phase === "carry") { if (lob) dive(P); else juke(P); } // right-click dives
   }
   onMove(e) {
@@ -394,7 +394,7 @@ export class ArcadeGame {
     const t = this.touch, P = this.S, cam = this.cam; if (!t || !P || t.id !== e.pointerId) return;
     t.moved = Math.max(t.moved, Math.hypot(p.px - t.px, p.py - t.py)); t.cx = p.px; t.cy = p.py;
     if (P.kind) return;
-    if (P.phase === "live" && P.ball.holder === "QB") {
+    if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass")) {
       // pulling back from where you touched aims the throw the other way, mirrored on the screen
       const qb = P.ents.QB, [qx, qy] = cam.toScreen(qb.x, qb.y);
       const land = cam.toField(qx + (t.px - p.px) * PULL, qy + (t.py - p.py) * PULL);
@@ -413,7 +413,7 @@ export class ArcadeGame {
     if (e.pointerType === "mouse") { if (P?.kind && this.kick?.charging) this.releaseKick(P); return; }
     const t = this.touch; if (!t || t.id !== e.pointerId) return; this.touch = null; if (!P) return;
     if (P.kind) { if (t.moved > 12 && P.phase === "presnap") { const cam = this.cam; kickFlick(P, (t.cx - t.px) / cam.s, (t.cy - t.py) / (cam.s * 0.42)); } return; }
-    if (P.phase === "live" && P.ball.holder === "QB" && P.aim && t.moved > 6) throwTo(P, P.aim, null, this.passKind);
+    if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass") && P.aim && t.moved > 6) throwTo(P, P.aim, null, this.passKind);
     P.aim = null; P.steer = null;
   }
   // the mouse kick: direction toward the pointer, length from the meter (a full meter is a long flick)
@@ -452,7 +452,7 @@ export class ArcadeGame {
     if (P.kind) { if (k === " " && P.phase === "presnap") this.kick = { charging: true, t: 0 }; return; }
     if (k === " " || k === "enter") {
       if (P.phase === "presnap") snap(P);
-      else if (P.phase === "live" && P.ball.holder === "QB" && P.aim) { throwTo(P, P.aim, null, e.shiftKey ? "lob" : this.passKind); P.aim = null; }
+      else if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass") && P.aim) { throwTo(P, P.aim, null, e.shiftKey ? "lob" : this.passKind); P.aim = null; }
       else if (P.phase === "carry") juke(P);
     }
   }

@@ -20,6 +20,8 @@ const load = (k, act) => {
   if (imgs[key]) return imgs[key];
   const im = new Image(); im.src = `${BASE}${key}.webp`; imgs[key] = im; return im;
 };
+const grounds = {};
+const groundImg = (k) => grounds[k] || (grounds[k] = Object.assign(new Image(), { src: `${import.meta.env?.BASE_URL ?? "/"}weather/${k}.webp` }));
 export const preload = (team) => { const k = teamKey(team); if (k) { load(k); load(k, true); if (ACTS2[k]) load(k, 2); } };
 
 // ---- a 5x7 bitmap font for the scoreboard and banners ----
@@ -232,9 +234,21 @@ export function drawWeather(ctx, cam, { wx, time = 0, wind } = {}) {
     ctx.fillStyle = `rgba(20,30,45,${0.08 * wx.rain})`; ctx.fillRect(0, 0, W, H); // a grey day
   }
   if (wx.snow) {
-    const n = 110 * wx.snow;
-    for (let i = 0; i < n; i++) { const sp = 30 + hash(i, 4) * 50, sz = k * (1 + Math.round(hash(i, 5) * 1.6)); const x = (((hash(i, 6) * W + (wx_ + Math.sin(time * 0.8 + i) * 12) * time) % W) + W) % W, y = (hash(i, 7) * H + sp * time) % H; ctx.fillStyle = "rgba(250,252,255,.85)"; ctx.fillRect(Math.round(x), Math.round(y), sz, sz); }
+    // like the sim's field: light snow is gentle flurries; heavy snow a thick blizzard driven by the
+    // wind, with big soft flakes close to the camera
+    const heavy = wx.snow === 2, n = heavy ? 260 : 70, drift = heavy ? -70 + wx_ * 0.6 : wx_ * 0.6;
+    for (let i = 0; i < n; i++) {
+      const big = i % 7 === 0, sz = Math.max(1, Math.round(k * (big ? (heavy ? 4 : 3) : 1 + hash(i, 5) * (heavy ? 1.6 : 1.2))));
+      const fall = (big ? 90 : 45) + hash(i, 4) * (heavy ? 70 : 35), sway = Math.sin(time * (0.7 + hash(i, 9)) + i) * (heavy ? 10 : 16);
+      const x = (((hash(i, 6) * (W + 200) + drift * time + sway) % (W + 200)) + W + 200) % (W + 200) - 100, y = (hash(i, 7) * (H + 20) + fall * time) % (H + 20) - 10;
+      ctx.globalAlpha = big ? 0.55 : 0.75 + hash(i, 15) * 0.25; ctx.fillStyle = "#fff";
+      ctx.fillRect(Math.round(x - sz / 2), Math.round(y - sz / 2), sz, sz);
+      if (sz >= 3) { ctx.fillRect(Math.round(x - sz / 2 - 1), Math.round(y - sz / 2 + 1), sz + 2, Math.max(1, sz - 2)); ctx.fillRect(Math.round(x - sz / 2 + 1), Math.round(y - sz / 2 - 1), Math.max(1, sz - 2), sz + 2); } // (rounded)
+    }
+    ctx.globalAlpha = 1;
+    if (heavy) { ctx.fillStyle = "rgba(226,232,240,.07)"; ctx.fillRect(0, 0, W, H); } // the white-out haze
   }
+
 }
 // The conditions under the scoreboard: the sky and the wind (its speed, and an arrow for which way
 // it blows relative to your drive: > at your back, < in your face).
@@ -273,44 +287,85 @@ export function drawBoxScore(ctx, cam, box, teams, { time = 0, hint = "" } = {})
 }
 
 // ---- the sidelines ----
-// Each club's team area between the 30s: a bench, a cup table, a couple of orange water coolers and
-// a row of players standing, hands on hips, a few taking a knee; yours on the near sideline, theirs
-// across the field. They're placed on the field, so they scroll with it; your side jumps on a big play.
-const SIDE_POSES = ["c8", "c8", "c6", "a3", "c8", "c4", "c8", "c6", "c8"];
-function cooler(ctx, cam, x, y) {
-  const [sx, sy] = cam.toScreen(x, y), s = cam.s, w = Math.max(4, Math.round(s * 0.75)), h = Math.max(5, Math.round(s * 0.9));
-  ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fillRect(Math.round(sx - w / 2), Math.round(sy - 1), w, Math.max(2, Math.round(s * 0.15)));
-  ctx.fillStyle = "#f07a14"; ctx.fillRect(Math.round(sx - w / 2), Math.round(sy - h), w, h); // the orange barrel
-  ctx.fillStyle = "#c95f08"; ctx.fillRect(Math.round(sx + w / 2 - Math.max(1, w / 4)), Math.round(sy - h), Math.max(1, Math.round(w / 4)), h); // its shaded side
-  ctx.fillStyle = "#f4f4f0"; ctx.fillRect(Math.round(sx - w / 2 - 1), Math.round(sy - h - Math.max(2, s * 0.18)), w + 2, Math.max(2, Math.round(s * 0.18))); // the white lid
-  ctx.fillStyle = "#f4f4f0"; ctx.fillRect(Math.round(sx - w / 2), Math.round(sy - h * 0.55), w, Math.max(1, Math.round(s * 0.08))); // a white band
-  ctx.fillStyle = "#d8d8d0"; ctx.fillRect(Math.round(sx - w / 2 - Math.max(1, s * 0.12)), Math.round(sy - h * 0.3), Math.max(1, Math.round(s * 0.12)), Math.max(1, Math.round(s * 0.12))); // the spigot
-}
-function sideTeam(ctx, cam, team, away, near, opts) {
-  const s = cam.s, y0 = near ? HALF + 1.7 : -HALF - 1.2, back = near ? 1 : -1; // (the bench sits further from the field than the players)
-  // the bench: a long grey seat with legs
-  const [bx0, by] = cam.toScreen(36, y0 + back * 1.3), [bx1] = cam.toScreen(64, y0 + back * 1.3);
-  ctx.fillStyle = "#59606d"; ctx.fillRect(Math.round(bx0), Math.round(by - s * 0.55), Math.round(bx1 - bx0), Math.max(2, Math.round(s * 0.22)));
-  ctx.fillStyle = "#3d434e"; for (let x = bx0 + s; x < bx1; x += s * 4) ctx.fillRect(Math.round(x), Math.round(by - s * 0.35), Math.max(1, Math.round(s * 0.12)), Math.round(s * 0.35));
-  // the cup table and the coolers at one end of the bench
-  const [tx, ty] = cam.toScreen(65.5, y0 + back * 0.9); ctx.fillStyle = "#ececec"; ctx.fillRect(Math.round(tx - s * 0.9), Math.round(ty - s * 0.6), Math.round(s * 1.8), Math.max(2, Math.round(s * 0.18)));
-  ctx.fillStyle = "#3d434e"; ctx.fillRect(Math.round(tx - s * 0.8), Math.round(ty - s * 0.45), Math.max(1, Math.round(s * 0.1)), Math.round(s * 0.45)); ctx.fillRect(Math.round(tx + s * 0.7), Math.round(ty - s * 0.45), Math.max(1, Math.round(s * 0.1)), Math.round(s * 0.45));
-  for (let i = 0; i < 5; i++) { ctx.fillStyle = i % 2 ? "#ffffff" : "#e2e2e2"; ctx.fillRect(Math.round(tx - s * 0.75 + i * s * 0.32), Math.round(ty - s * 0.85), Math.max(1, Math.round(s * 0.18)), Math.max(2, Math.round(s * 0.25))); }
-  cooler(ctx, cam, 67.3, y0 + back * 0.9); cooler(ctx, cam, 68.4, y0 + back * 1.1); cooler(ctx, cam, 34.5, y0 + back * 1.0);
-  // the players: along the bench, facing the play
-  const hype = near ? opts.hype || 0 : 0, t = opts.time || 0;
-  for (let i = 0; i < SIDE_POSES.length; i++) {
-    const x = 37 + i * 3.1 + hash(i, near ? 1 : 2) * 1.2, y = y0 + (hash(i, 5) - 0.5) * 0.8, jump = hype > 0.3 && hash(i, 8) < 0.8;
-    const pose = jump ? (Math.floor(t * 6 + i) % 2 ? "b8" : "b7") : SIDE_POSES[i];
-    const facing = (opts.ballX ?? 50) >= x ? 1 : -1;
-    shadow(ctx, cam, x, y, 0.55);
-    sprite(ctx, cam, team, away, pose, x, y - (jump && Math.floor(t * 6 + i) % 2 ? 0.25 : 0), facing, true, 0.75);
+// Each club's team area between the 30s, on a strip of turf behind its sideline: a team-coloured
+// bench with the club's name, a cooler cart with cups and towels, heaters on a cold day, players
+// standing and taking a knee, assistant coaches, and the head coach in a headset with his play
+// sheet, walking the line with the ball. On the far side, the chain crew: the down marker at the
+// line of scrimmage and the chains out to the line to gain. Yours is the near side and jumps on a
+// big play. Everything's placed on the field, so it scrolls with it.
+const SIDE_POSES = ["c8", "c6", "c8", "a3", "c8", "c6", "c8", "c8", "c6", "c8", "a3", "c8"];
+// a person who isn't in pads (a coach, a chain-crew man), as pixel art: c cap, k skin, h headset,
+// p shirt, w white (collar, play sheet), t trousers, s shoes
+const COACH = ["...ccc...", "..ccccc..", "..cccccc.", "..kkkkk..", ".hkkkkkh.", "..kkkkhh.", "...kkk...", "..pwwwp..", ".ppppppp.", "kppppppk.", "kppppppk.", "kppppppkw", "kppppppkw", ".pppppp.w", ".ppppppp.", ".ttttttt.", ".ttttttt.", ".ttt.ttt.", ".ttt.ttt.", ".ttt.ttt.", ".ttt.ttt.", ".tt...tt.", ".ss...ss.", "sss...sss"];
+function person(ctx, cam, x, y, facing, pal, scale = 0.72, { headset = true, sheet = true, cap = true } = {}) {
+  const [sx, sy] = cam.toScreen(x, y), u = (PLAYER_H * cam.s * scale) / COACH.length, w = COACH[0].length;
+  for (let r = 0; r < COACH.length; r++) for (let c = 0; c < w; c++) {
+    let k = COACH[r][c]; if (k === ".") continue;
+    if (k === "h" && !headset) k = r < 5 ? "k" : "."; if (k === "w" && c === 8 && !sheet) continue; if (k === "c" && !cap) k = r < 2 ? "." : "k";
+    if (k === ".") continue;
+    ctx.fillStyle = pal[k]; const cx = facing < 0 ? w - 1 - c : c;
+    ctx.fillRect(Math.round(sx + (cx - w / 2) * u), Math.round(sy - (COACH.length - r) * u), Math.ceil(u), Math.ceil(u));
   }
+}
+const SKIN = ["#f1c9a5", "#c98e62", "#8d5a3b", "#e0ac84"];
+function cooler(ctx, cam, x, y, k = 1) {
+  const [sx, sy] = cam.toScreen(x, y), s = cam.s * k, w = Math.max(4, Math.round(s * 0.8)), h = Math.max(5, Math.round(s * 0.95));
+  ctx.fillStyle = "#f07a14"; ctx.fillRect(Math.round(sx - w / 2), Math.round(sy - h), w, h);
+  ctx.fillStyle = "#c95f08"; ctx.fillRect(Math.round(sx + w / 2 - Math.max(1, w / 4)), Math.round(sy - h), Math.max(1, Math.round(w / 4)), h);
+  ctx.fillStyle = "#f4f4f0"; ctx.fillRect(Math.round(sx - w / 2 - 1), Math.round(sy - h - Math.max(2, s * 0.2)), w + 2, Math.max(2, Math.round(s * 0.2)));
+  ctx.fillRect(Math.round(sx - w / 2), Math.round(sy - h * 0.55), w, Math.max(1, Math.round(s * 0.1)));
+  ctx.fillStyle = "#d8d8d0"; ctx.fillRect(Math.round(sx - w / 2 - Math.max(1, s * 0.14)), Math.round(sy - h * 0.3), Math.max(1, Math.round(s * 0.14)), Math.max(1, Math.round(s * 0.14)));
+}
+function rect(ctx, cam, x, y, wYd, hPx, color) { const [a, b] = cam.toScreen(x, y), [c] = cam.toScreen(x + wYd, y); ctx.fillStyle = color; ctx.fillRect(Math.round(a), Math.round(b - hPx), Math.max(1, Math.round(c - a)), Math.max(1, Math.round(hPx))); }
+function sideTeam(ctx, cam, team, away, near, opts) {
+  const s = cam.s, dir = near ? 1 : -1, at = (d) => (near ? HALF + d : -HALF - d), t = opts.time || 0, cold = opts.wx?.snow || opts.wx?.cold;
+  // the bench: a long team-coloured back with the club's name on it, a grey seat in front of it. On
+  // the far side it's behind the players; on the near side it's between them and the camera
+  const bench = () => {
+    const hb = near ? s * 0.7 : s * 1.0;
+    rect(ctx, cam, 33, at(2.75), 34, hb, team.clr); rect(ctx, cam, 33, at(2.75), 34, Math.max(1, s * 0.12), team.ac || "#fff"); rect(ctx, cam, 33, at(2.75) - (near ? 0 : 0), 34, Math.max(1, s * 0.08), "rgba(0,0,0,.35)");
+    for (let x = 37; x < 66; x += 9) { const [lx, ly] = cam.toScreen(x, at(2.75)); pixText(ctx, team.ab, lx, Math.round(ly - hb + s * 0.13), Math.max(1, Math.round(s * 0.09)), team.ac || "#fff", "center"); }
+  };
+  if (!near) bench();
+  // the cooler cart (two coolers on a grey cart), the cup table, a stack of towels
+  rect(ctx, cam, 68, at(2.0), 2.6, s * 0.35, "#6b717d"); for (const wx_ of [68.4, 70.2]) { const [cx, cy] = cam.toScreen(wx_, at(2.0)); ctx.fillStyle = "#222"; ctx.fillRect(Math.round(cx - s * 0.15), Math.round(cy - s * 0.12), Math.round(s * 0.3), Math.round(s * 0.24)); }
+  cooler(ctx, cam, 68.8, at(2.0) - 0 * dir, 0.95); { const [cx, cy] = cam.toScreen(70.1, at(2.0)); ctx.save(); ctx.translate(0, -s * 0.35); cooler(ctx, { ...cam, toScreen: () => [cx, cy] }, 0, 0, 0.95); ctx.restore(); }
+  rect(ctx, cam, 64.2, at(1.75), 2.2, s * 0.6, "#ececec"); for (let i = 0; i < 6; i++) rect(ctx, cam, 64.4 + i * 0.33, at(1.75) - dir * 0, 0.18, s * 0.85, i % 2 ? "#ffffff" : "#e2e2e2");
+  for (let i = 0; i < 4; i++) rect(ctx, cam, 31.2, at(2.2), 1.3, s * (0.18 + i * 0.16), i % 2 ? team.clr : "#f4f4f0");
+  // heaters on a cold day: grey boxes with a glowing grille
+  if (cold) for (const hx of [40.5, 55.5]) { rect(ctx, cam, hx, at(2.1), 1.4, s * 1.1, "#4b515c"); const glow = 0.65 + 0.35 * Math.sin(t * 3 + hx); rect(ctx, cam, hx + 0.25, at(2.1) - dir * 0, 0.9, s * 0.6, `rgba(255,${Math.round(120 + 60 * glow)},40,${glow})`); }
+  // the players: standing along the bench, the front row taking a knee
+  const hype = near ? opts.hype || 0 : 0, ballX = opts.ballX ?? 50;
+  const pal = (shirt) => ({ c: shirt, k: SKIN[0], h: "#111", p: shirt, w: "#f4f4f0", t: "#c8b48a", s: "#1b1b1b" });
+  for (let i = 0; i < SIDE_POSES.length; i++) {
+    const x = 34.5 + i * 2.65 + hash(i, near ? 1 : 2) * 1.0, kneel = false, front = i % 3 === 1, y = at(front ? 0.95 : 1.5 + hash(i, 5) * 0.45), jump = hype > 0.3 && !kneel && hash(i, 8) < 0.85;
+    const pose = jump ? (Math.floor(t * 6 + i) % 2 ? "b8" : "b7") : SIDE_POSES[i];
+    sprite(ctx, cam, team, away, pose, x, y - (jump && Math.floor(t * 6 + i) % 2 ? 0.3 * dir : 0), ballX >= x ? 1 : -1, true, 0.72);
+  }
+  // the coaches: two assistants with play sheets near the bench, and the head coach (headset, play
+  // sheet) walking the team area to stay level with the ball
+  person(ctx, cam, 41.2, at(1.35), 1, { ...pal(team.clr), k: SKIN[1] }, 0.68, { headset: true, sheet: true, cap: false });
+  person(ctx, cam, 58.8, at(1.4), -1, { ...pal(team.ac && team.ac !== "#fff" && team.ac !== "#ffffff" ? team.ac : "#2b3346"), k: SKIN[3] }, 0.68, { headset: false, sheet: true, cap: true });
+  const hc = Math.max(32, Math.min(68, ballX + (near ? -2 : 2)));
+  person(ctx, cam, hc, at(0.7), ballX >= hc ? 1 : -1, { ...pal(team.clr), k: SKIN[2] }, 0.74, { headset: true, sheet: true, cap: true });
+  if (near) bench();
+}
+// the chain crew on the far sideline: the down marker at the line of scrimmage (its number on top),
+// the two chain poles ten yards apart with the chain between, three men in orange vests
+function chains(ctx, cam, los, toGain, down) {
+  if (los == null || toGain == null || toGain > 100) return;
+  const s = cam.s, y = -HALF - 0.45, start = toGain - 10, vest = { c: "#1b1b1b", k: SKIN[1], h: "#111", p: "#f07a14", w: "#f4f4f0", t: "#2b2f3a", s: "#111" };
+  const pole = (x, top) => { const [px_, py] = cam.toScreen(x, y); ctx.fillStyle = "#e9e3d4"; ctx.fillRect(Math.round(px_ - s * 0.07), Math.round(py - s * 2.4), Math.max(1, Math.round(s * 0.14)), Math.round(s * 2.4)); top(px_, py - s * 2.4); };
+  // the chain, sagging a little between the poles
+  const [c0x, c0y] = cam.toScreen(start, y), [c1x] = cam.toScreen(toGain, y); ctx.fillStyle = "#c9c3b0"; for (let x = c0x; x < c1x; x += Math.max(2, s * 0.25)) { const u = (x - c0x) / Math.max(1, c1x - c0x); ctx.fillRect(Math.round(x), Math.round(c0y - s * 1.2 + Math.sin(u * Math.PI) * s * 0.35), Math.max(1, Math.round(s * 0.12)), Math.max(1, Math.round(s * 0.12))); }
+  for (const x of [start, toGain]) pole(x, (tx, ty) => { ctx.fillStyle = "#f07a14"; ctx.fillRect(Math.round(tx - s * 0.32), Math.round(ty - s * 0.25), Math.round(s * 0.64), Math.round(s * 0.35)); });
+  pole(los, (tx, ty) => { const b = Math.round(s * 0.8); ctx.fillStyle = "#f07a14"; ctx.fillRect(Math.round(tx - b / 2), Math.round(ty - b), b, b); pixText(ctx, String(down || 1), Math.round(tx), Math.round(ty - b + b * 0.18), Math.max(1, Math.round(b / 9)), "#111", "center"); });
+  for (const [x, f] of [[start, 1], [toGain, -1], [los, 1]]) person(ctx, cam, x + f * 0.45, y - 0.15, f, vest, 0.62, { headset: false, sheet: false, cap: true });
 }
 export function drawSidelines(ctx, cam, teams, opts = {}) {
   if (!teams?.user || !teams?.opp) return;
-  sideTeam(ctx, cam, teams.opp, true, false, opts); // theirs, across the field (behind the play)
-  sideTeam(ctx, cam, teams.user, false, true, opts); // yours, on the near sideline
+  if (opts.side !== "near") { sideTeam(ctx, cam, teams.opp, true, false, opts); chains(ctx, cam, opts.los, opts.toGain, opts.down); } // theirs, across the field (behind the play)
+  if (opts.side !== "far") sideTeam(ctx, cam, teams.user, false, true, opts); // yours, on the near sideline (in front of it)
 }
 
 export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
@@ -318,7 +373,8 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   ctx.imageSmoothingEnabled = false;
   // the stands: tiers of fans above the far sideline (and below the near one on a tall screen)
   ctx.fillStyle = "#121620"; ctx.fillRect(0, 0, W, H);
-  const px = Math.max(2, Math.round(s * 0.18)), nearEdge = top + depth + s * 1.2, wallTop = top - s * 0.9;
+  // the team areas: a strip of turf along each sideline (about three yards), then the wall, then the stands
+  const apron = 3 * SQUASH * s, apronTop = top - apron, px = Math.max(2, Math.round(s * 0.18)), nearEdge = top + depth + apron + s * 0.1, wallTop = apronTop - s * 0.45;
   const time = opts.time || 0, hype = opts.hype || 0;
   // calm until something happens; then the crowd is up, arms in the air, bouncing
   const cheer = hype > 0.15 ? 1 + (Math.floor(time * 8) % 2) : 0;
@@ -328,8 +384,11 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     if (wallTop > 0) ctx.drawImage(tile, Math.round(x), Math.round(wallTop - tile.height));
     if (H - nearEdge > px) ctx.drawImage(tile, Math.round(x), Math.round(nearEdge));
   } }
-  // the wall and the far sideline
-  ctx.fillStyle = "#3b3f4a"; ctx.fillRect(0, top - s * 0.9, W, s * 0.9);
+  // the wall, and the turf of the team areas along both sidelines
+  ctx.fillStyle = "#3b3f4a"; ctx.fillRect(0, Math.round(wallTop), W, Math.round(apronTop - wallTop));
+  ctx.fillStyle = "#2a2e38"; ctx.fillRect(0, Math.round(apronTop - s * 0.1), W, Math.round(s * 0.1));
+  ctx.fillStyle = "#357a31"; ctx.fillRect(0, Math.round(apronTop), W, Math.round(apron));
+  ctx.fillRect(0, Math.round(top + depth), W, Math.round(nearEdge - top - depth));
   // the grass, striped every five yards
   const yardAt = (x) => W * 0.42 + (x - cam.camX) * s;
   for (let yd = -10; yd < 110; yd += 5) {
@@ -337,18 +396,26 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     ctx.fillStyle = yd < 0 ? teams.user.clr : yd >= 100 ? teams.opp.clr : ((yd / 5) % 2 ? "#3f8f3a" : "#45993f");
     ctx.fillRect(Math.round(x0), Math.round(top), Math.round(x1 - x0) + 1, Math.round(depth));
   }
-  // the weather on the turf: rain darkens and slicks it, snow lies on it (heavier snow, more of it)
+  // the weather on the turf: the same illustrated ground as the sim's live field (snow lying deep with
+  // cleared lanes, or in drifts; puddles and mud in the rain), laid on the field under the paint
   const WX = opts.wx || {};
-  if (WX.rain) { ctx.fillStyle = `rgba(10,30,45,${0.12 * WX.rain})`; ctx.fillRect(0, Math.round(top), W, Math.round(depth)); }
-  if (WX.snow) {
-    ctx.fillStyle = `rgba(236,242,250,${0.22 + 0.2 * WX.snow})`; ctx.fillRect(0, Math.round(top), W, Math.round(depth));
-    // drifts: soft white patches that stay put on the field as it scrolls
-    for (let i = 0; i < 40 * WX.snow; i++) { const fx_ = hash(i, 3) * 120 - 10, fy = hash(i, 7) * 53.3 - HALF, [sx0, sy0] = cam.toScreen(fx_, fy); if (sx0 < -60 || sx0 > W + 60) continue; ctx.fillStyle = "rgba(248,250,255,.35)"; ctx.fillRect(Math.round(sx0), Math.round(sy0), Math.round(s * (1.5 + hash(i, 9) * 3)), Math.max(2, Math.round(s * 0.35))); }
+  if (WX.rain) { ctx.fillStyle = `rgba(4,16,8,${WX.rain === 2 ? 0.24 : 0.14})`; ctx.fillRect(0, Math.round(top), W, Math.round(depth)); }
+  if (WX.rain || WX.snow) {
+    const kind = WX.snow ? (WX.snow === 2 ? "heavySnow" : "lightSnow") : WX.rain === 2 ? "heavyRain" : "lightRain", im = groundImg(kind);
+    if (im.complete && im.naturalWidth) {
+      // (the art is drawn for a 120 x 53.3-yard field; heavy snow's on a slightly bigger canvas)
+      const [gx, gy, gw, gh] = kind === "heavySnow" ? [-11.9, -HALF, 123.75, HALF * 2] : [-10, -HALF, 120, HALF * 2];
+      const [sx0, sy0] = cam.toScreen(gx, gy), [sx1, sy1] = cam.toScreen(gx + gw, gy + gh);
+      ctx.save(); ctx.beginPath(); ctx.rect(0, Math.round(top), W, Math.round(depth)); ctx.clip(); ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(im, Math.round(sx0), Math.round(sy0), Math.round(sx1 - sx0), Math.round(sy1 - sy0)); ctx.restore(); ctx.imageSmoothingEnabled = false;
+    }
+    if (WX.snow) { ctx.fillStyle = "rgba(235,242,250,.35)"; ctx.fillRect(0, Math.round(apronTop), W, Math.round(apron)); ctx.fillRect(0, Math.round(top + depth), W, Math.round(nearEdge - top - depth)); } // snow on the team areas too
   }
   // the near sideline and the strip below it
-  ctx.fillStyle = "#e8e8e0"; ctx.fillRect(0, Math.round(top + depth), W, Math.max(2, s * 0.25));
-  ctx.fillStyle = "#2f6b2c"; ctx.fillRect(0, Math.round(top + depth + s * 0.25), W, Math.round(s * 0.95));
+  // both sidelines: the white boundary, and the dashed line of each team area
+  ctx.fillStyle = "#e8e8e0"; ctx.fillRect(0, Math.round(top + depth), W, Math.max(2, s * 0.25)); ctx.fillRect(0, Math.round(top - Math.max(2, s * 0.25)), W, Math.max(2, s * 0.25));
   ctx.fillStyle = "#3b3f4a"; ctx.fillRect(0, Math.round(nearEdge), W, Math.round(s * 0.5));
+  for (const yy of [-HALF - 1.1, HALF + 1.1]) { const [a0, ya] = cam.toScreen(30, yy), [a1] = cam.toScreen(70, yy); ctx.fillStyle = "rgba(255,255,255,.55)"; for (let x = a0; x < a1; x += s * 1.2) ctx.fillRect(Math.round(x), Math.round(ya), Math.round(s * 0.6), Math.max(1, Math.round(s * 0.1))); }
   // yard lines, hashes and numbers
   const lw = Math.max(1, Math.round(s * 0.12));
   for (let yd = 0; yd <= 100; yd += 5) { const x = Math.round(yardAt(yd)); if (x < -4 || x > W + 4) continue; ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.fillRect(x, Math.round(top), lw, Math.round(depth)); }
@@ -373,7 +440,8 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   // and how far off it might be; in AUTO, a faint ring shows where it changes from bullet to lob
   if (S.aim && S.phase === "live" && S.ball.holder === "QB") drawAim(ctx, cam, S, opts.passKind || "auto");
   // the team areas along both sidelines: benches, coolers, the cup table and the players watching
-  drawSidelines(ctx, cam, teams, { ...opts, ballX: S.ball?.x });
+  const sideOpts = { ...opts, ballX: S.ball?.x, los: S.kind ? null : S.los, toGain: S.kind ? null : S.firstDown, down: g?.down };
+  drawSidelines(ctx, cam, teams, { ...sideOpts, side: "far" });
   // players, far to near so the near ones overlap the far ones; the man with the ball on top
   const ents = Object.values(S.ents).sort((a, b) => (a.key === S.ball.holder) - (b.key === S.ball.holder) || a.y - b.y);
   for (const e of ents) {
@@ -384,6 +452,18 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     const ok = (p2 && sprite2(ctx, cam, t, away, p2.n, e.x, e.y, p2.face ?? facing)) || sprite(ctx, cam, t, away, pose, e.x, e.y, facing, act) || sprite(ctx, cam, t, away, POSE[e.p.pos] || "db", e.x, e.y, facing, false);
     if (!ok) { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.fillStyle = t.clr; ctx.fillRect(sx - s * 0.5, sy - s * 2.2, s, s * 2.2); }
     if (opts.ring && S.ball.holder === e.key && S.phase !== "presnap") { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, s * 0.08); ctx.beginPath(); ctx.ellipse(sx, sy, s * 1.1, s * 1.1 * SQUASH, 0, 0, Math.PI * 2); ctx.stroke(); }
+  }
+  drawSidelines(ctx, cam, teams, { ...sideOpts, side: "near" });
+  // before the snap: who's who, the name under each receiver, the tight end and the back
+  if (S.phase === "presnap" && !S.kind) {
+    const np = Math.max(1, Math.round(uiPx(cam) * 0.5));
+    for (const r of ELIGIBLE) {
+      const e = S.ents[r]; if (!e?.p?.name) continue;
+      const last = String(e.p.name).split(" ").filter((w) => !/^(jr\.?|sr\.?|ii|iii|iv)$/i.test(w)).pop().toUpperCase().replace(/[^A-Z0-9'.-]/g, "");
+      const label = `${r === "SLOT" ? "WR" : r === "X" || r === "Z" ? "WR" : r} ${last}`, [lx, ly] = cam.toScreen(e.x, e.y), w = pixWidth(label, np) + np * 4;
+      ctx.fillStyle = "rgba(8,10,16,.72)"; ctx.fillRect(Math.round(lx - w / 2), Math.round(ly + s * 0.25), w, np * 9);
+      pixText(ctx, label, lx, Math.round(ly + s * 0.25 + np * 1), np, r === "RB" ? "#ffd166" : r === "TE" ? "#9be29b" : "#7fe3ff", "center");
+    }
   }
   // what just happened up front: BLITZ, the move that beat a blocker, PICKED UP
   for (const f of S.flash || []) {

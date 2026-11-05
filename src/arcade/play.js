@@ -561,7 +561,7 @@ export function passPlan(S, P, kind = "auto") {
   return { land, dist, bullet, T, arc, short, reach, kind: bullet ? "bullet" : "lob", auto: kind === "auto" };
 }
 export function throwTo(S, P, why = null, kind = "auto") {
-  if (S.phase !== "live" || S.ball.holder !== "QB") return null;
+  if (S.phase !== "live" || S.ball.holder !== "QB" || !S.call?.startsWith("pass")) return null; // (on a run he's handing it off: a tap or a flick then isn't a throw)
   const { ents } = S, qb = ents.QB;
   const plan = passPlan(S, P, kind);
   let { land } = plan; const { dist, bullet, T } = plan;
@@ -681,7 +681,7 @@ function book(S, yards, how, hold = 1.0) {
   const isPass = S.call.startsWith("pass"), td = S.los + yards >= 100;
   const types = isPass ? ["pass", "td"] : ["run", "td"];
   const tol = td ? 0 : Math.max(1, Math.round(Math.abs(yards) * 0.1));
-  const r = resolvePlay(S.g, S.call, { types, yards, tol, fallback: isPass ? ["inc"] : [] }, isPass ? { target: S.pick?.target, open: !!S.pick?.open } : null, 12);
+  const r = resolvePlay(S.g, S.call, { types, yards, tol, fallback: isPass && S.catchAt == null ? ["inc"] : [] }, isPass ? { target: S.pick?.target, open: !!S.pick?.open } : null, isPass && S.catchAt != null ? 40 : 12); // (a ball that was caught gets the rolls it needs to be booked a catch)
   S.ev = r.ev; S.exact = r.exact; S.mismatch = r.ev && !types.includes(r.ev.type) && r.ev.type !== "penalty";
   // the field follows the engine's number when it differs (a yard or two): the spot moves with it
   if (r.ev && (r.ev.type === "pass" || r.ev.type === "run" || r.ev.type === "td") && r.ev.yards !== yards && Math.abs(r.ev.yards - yards) <= 3) S.slideTo = S.los + r.ev.yards;
