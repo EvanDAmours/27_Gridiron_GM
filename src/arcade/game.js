@@ -20,7 +20,7 @@ import { FX } from "./fx.js";
 import * as K from "./ratings.js";
 import { rollWeather, WX, wxOf } from "../weather.js";
 import { teamKey } from "../teamUniforms.js";
-import { makeCamera, drawRetro, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, pixWidth, drawMenu, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
+import { makeCamera, drawRetro, drawLowerThird, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, pixWidth, drawMenu, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
 
 const PULL = 3.2; // touch: the throw goes this many times the pull-back, the other way, on the screen
 const spotOf = (yard) => (yard === 50 ? "MIDFIELD" : yard < 50 ? `OWN ${yard}` : `OPP ${100 - yard}`);
@@ -137,6 +137,13 @@ export class ArcadeGame {
     }
     this.S = null; this.mode = "pick"; this.snapRB = backForSnap(g); this.fade = Math.max(this.fade, 0.6); this.refresh();
   }
+  // Something went wrong mid-play: drop the play on the field (it hasn't been booked, so the game is as
+  // it was before the snap) and carry on with the next one.
+  recover(e) {
+    console.error("arcade: recovered from", e);
+    this.errors = (this.errors || 0) + 1;
+    try { if (this.two) { restore(this.g, this.two.snap); this.two = null; } this.S = null; this.auto = null; if (this.live) { this.unflip(); this.mode = "idle"; this.liveNext(); } else { this.advance(); } } catch (e2) { console.error("arcade: recovery failed", e2); }
+  }
   // ---- the franchise's live game ----
   // The team with the ball is always side h on this field (it drives left to right): for the other
   // team's snaps the game is turned round (flipSides) and turned back the moment the play is booked,
@@ -167,14 +174,14 @@ export class ArcadeGame {
     this.call(c); this.auto = { call: CONCEPTS[c]?.cat || c, state: autoState(), snapAt: this.time + 0.7 / this.speed };
   }
   // a play the engine ran without the field (a kickoff, a punt, a field goal, a kneel): its result
-  showEngine(ev) { this.S = null; this.banner = ev ? { title: resultTitle(ev), text: ev.text || "", sub: ev.note ? String(ev.note).toUpperCase() : null, at: performance.now(), accent: ev.td || ev.type === "fg" ? "#ffd166" : "#fff" } : null; this.mode = "result"; this.refresh(); }
+  showEngine(ev) { this.S = null; this.banner = ev ? { engine: true, title: resultTitle(ev), text: ev.text || "", sub: ev.note ? String(ev.note).toUpperCase() : null, at: performance.now(), accent: ev.td || ev.type === "fg" ? "#ffd166" : "#fff" } : null; this.mode = "result"; this.refresh(); }
   // the app needs the game (Finish game, Sim to the end of the quarter): drop the play on the field
   // (it hasn't been booked) and hand the game back the real way round; resume() picks it up again
   release() { if (this.two) { restore(this.g, this.two.snap); this.two = null; } this.S = null; this.auto = null; this.unflip(); this.held = true; this.mode = "idle"; this.refresh(); }
   resume() { this.held = false; if (this.live && (this.mode === "idle" || this.mode === "result")) this.liveNext(); }
   setWatch(w) { if (this.live) this.live.watch = !!w; }
   call(c) {
-    const g = this.g; this.fade = 0.5;
+    const g = this.g; this.fade = this.live ? 0.22 : 0.5; // (a live game: just a soft cut between snaps)
     const P = c === "xp" ? setupKick(g, lineups(g), "fg", { pat: true }) : c === "punt" || c === "fg" ? setupKick(g, lineups(g), c) : setupPlay(g, lineups(g, { rb: this.snapRB }), c);
     this.S = P; this.cam.camX = P.kind ? P.ball.x + this.cam.lead : holdX(this.cam, P); this.mode = "play"; this.kick = null; this.refresh();
     sfx.select?.();
@@ -230,7 +237,8 @@ export class ArcadeGame {
   // ---- the loop ----
   loop(now) {
     const dt = Math.min(0.05, (now - (this.last || now)) / 1000); this.last = now;
-    const t0 = performance.now(); this.advanceTime(dt, now); this.draw();
+    const t0 = performance.now();
+    try { this.advanceTime(dt, now); this.draw(); } catch (e) { this.recover(e); } // (one bad frame never freezes the field)
     (this.frameMs ||= []).push(performance.now() - t0); if (this.frameMs.length > 600) this.frameMs.shift();
     this.raf = requestAnimationFrame((t) => this.loop(t));
   }
@@ -334,15 +342,15 @@ export class ArcadeGame {
     // the field, with the shake and the zoom punch
     const [ox, oy] = this.fx.offset(), z = this.fx.zoom;
     ctx.save(); ctx.translate(cam.W / 2 + ox, cam.H / 2 + oy); ctx.scale(z, z); ctx.translate(-cam.W / 2, -cam.H / 2);
-    drawRetro(ctx, cam, P, teams, this.g, { ring: true, time: this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE });
+    drawRetro(ctx, cam, P, teams, this.g, { ring: true, time: this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
     ctx.restore();
     drawWeather(ctx, cam, { wx: this.g?.wxE, time: this.time, wind: windNow(this.g) });
     this.fx.draw(ctx, cam.W, cam.H, pixText);
     if (!this.live) drawHud(ctx, cam, st, teams, { to: this.g?.to }); // (a live game: the app's scoreboard, and the stadium's at the 50)
     if (this.g && m !== "final") drawWxChip(ctx, cam, this.g.wxE, windNow(this.g));
     const px = uiPx(cam), hintY = cam.H - px * 9;
-    if (m === "play" && P && P.kind) this.drawKick(ctx, P, hintY);
-    else if (m === "play" && P) {
+    if (m === "play" && P && P.kind && !this.auto) this.drawKick(ctx, P, hintY);
+    else if (m === "play" && P && !this.auto) {
       const toGo = st.toGo >= 100 - st.yard ? "GOAL" : st.toGo;
       drawDownBox(ctx, cam, P.phase === "presnap" ? `${ordinal(st.down)} & ${toGo} - ${playName(P.concept || P.call)}` : `${ordinal(st.down)} & ${toGo}`, P.phase === "presnap" ? "#fff" : "#ffd166", { left: !!this.live });
       const throwing = P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass"), isPass = P.call.startsWith("pass");
@@ -371,7 +379,8 @@ export class ArcadeGame {
     }
     if (m === "opp") this.drawDrive(ctx);
     if (m === "final" && this.box) { drawBoxScore(ctx, cam, this.box, teams, { time: this.time, hint: this.endHint() }); return; }
-    if ((m === "result" || m === "final") && this.banner) { const b = this.banner; drawBanner(ctx, cam, b.title, b.text, b.sub, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166", hint: b.hint || (this.live && (this.live.watch || this.auto) ? "" : this.mobile ? "TAP TO CONTINUE" : "CLICK OR SPACE TO CONTINUE") }); }
+    if ((m === "result" || m === "final") && this.banner && this.live) { const b = this.banner, big = /TOUCHDOWN|INTERCEPT|FUMBLE|FIELD GOAL|NO GOOD|SAFETY|SACK|TWO POINTS|IT'S GOOD|FLAG|TURNOVER/.test(b.title || ""); if (big || b.engine || !(this.live.watch || this.auto)) drawLowerThird(ctx, cam, b.title, b.text, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166" }); }
+    else if ((m === "result" || m === "final") && this.banner) { const b = this.banner; drawBanner(ctx, cam, b.title, b.text, b.sub, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166", hint: b.hint || (this.live && (this.live.watch || this.auto) ? "" : this.mobile ? "TAP TO CONTINUE" : "CLICK OR SPACE TO CONTINUE") }); }
     // the pause button, and the menu
     if (!this.paused && !this.live) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 13.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
     if (this.fade > 0) { ctx.globalAlpha = this.fade; ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, cam.W, cam.H); ctx.globalAlpha = 1; }
@@ -547,6 +556,6 @@ export class ArcadeGame {
 }
 
 export const kickNote = (P) => P.kind === "fg" && P.flick ? (P.flick.made ? "RIGHT DOWN THE MIDDLE" : P.flick.short ? "SHORT - KICK IT HARDER" : P.flick.wide ? "WIDE - AIM STRAIGHTER" : "PUSHED IT") : "";
-export const resultTitle = (ev) => !ev ? "" : ev.type === "pat" ? (ev.pat?.good ? (ev.pat.two ? "TWO POINTS!" : "IT'S GOOD!") : "NO GOOD") : ev.td ? "TOUCHDOWN!" : ev.type === "int" ? "INTERCEPTED" : ev.type === "sack" ? "SACKED" : ev.type === "fumble" ? "FUMBLE" : ev.type === "inc" ? "INCOMPLETE" : ev.type === "fg" ? "FIELD GOAL!" : ev.type === "fg_miss" ? "NO GOOD" : ev.type === "punt" ? "PUNT" : ev.type === "penalty" ? "FLAG" : ev.firstDown ? "FIRST DOWN" : `${ev.yards >= 0 ? "+" : ""}${ev.yards} YARDS`;
+export const resultTitle = (ev) => !ev ? "" : ev.type === "kickoff" ? (ev.onside ? "ONSIDE KICK" : "KICKOFF") : ev.kneel ? "KNEEL" : ev.spike ? "SPIKE" : ev.type === "pat" ? (ev.pat?.good ? (ev.pat.two ? "TWO POINTS!" : "IT'S GOOD!") : "NO GOOD") : ev.td ? "TOUCHDOWN!" : ev.type === "int" ? "INTERCEPTED" : ev.type === "sack" ? "SACKED" : ev.type === "fumble" ? "FUMBLE" : ev.type === "inc" ? "INCOMPLETE" : ev.type === "fg" ? "FIELD GOAL!" : ev.type === "fg_miss" ? "NO GOOD" : ev.type === "punt" ? "PUNT" : ev.type === "penalty" ? "FLAG" : ev.firstDown ? "FIRST DOWN" : `${ev.yards >= 0 ? "+" : ""}${ev.yards} YARDS`;
 export const pickNote = (p) => p.why === "sacked" ? "THE RUSH GOT HOME" : p.target == null ? "" : `${p.open ? "OPEN" : "COVERED"}${p.def != null ? ` BY ${p.def} YD` : ""}${p.err != null ? ` - ${p.err <= 1 ? "ON THE MONEY" : p.err <= 2.2 ? "CATCHABLE" : "OFF TARGET"}` : ""}${p.why === "hurried" ? " - HURRIED" : p.why === "late" ? " - HELD IT TOO LONG" : ""}`;
 export { passPlan, BULLET_RANGE };

@@ -9,11 +9,11 @@ import { ArcadeGame } from "./game.js";
 const SPEED = { Slow: 0.75, Normal: 1, Fast: 2, Condensed: 3 };
 
 // aspect: the box on the page (inside a stadium it takes the field's shape, so the stands fit round it)
-export default function LiveArcade({ g, userSide, watch, speed, paused, teams, onEvent, apiRef, fill = false, aspect = "16 / 9" }) {
+export default function LiveArcade({ g, userSide, watch, speed, paused, teams, onEvent, apiRef, fill = false, aspect = "16 / 9", night = false }) {
   const ref = useRef(null), game = useRef(null);
   const cb = useRef(onEvent); cb.current = onEvent;
   useEffect(() => {
-    const a = new ArcadeGame(ref.current, { skipMenu: true, live: { g, userSide, watch, teams, onEvent: (ev, off) => cb.current?.(ev, off) } });
+    const a = new ArcadeGame(ref.current, { skipMenu: true, live: { g, userSide, watch, teams, night, onEvent: (ev, off) => cb.current?.(ev, off) } });
     a.speed = SPEED[speed] || 1; a.paused = !!paused;
     game.current = a; if (apiRef) apiRef.current = a;
     if (typeof window !== "undefined") window.arcadeGame = a; // (for playtesting)

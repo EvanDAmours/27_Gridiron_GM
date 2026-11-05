@@ -42,22 +42,28 @@ function Setting({ title, why, children }) {
     </div>
   );
 }
-export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, speeds, onSpeed, cam, onCam, field, onField }) {
+// view: "arcade" or "broadcast" (onView switches it). The broadcast field's own options (which plays it
+// acts out, its camera, its size) only show with it; the arcade field plays every snap itself.
+export function LiveSettings({ callMode, onCall, livePlays, onLivePlays, speed, speeds, onSpeed, cam, onCam, field, onField, view, onView }) {
+  const arcade = view === "arcade";
   return (
     <div style={{ display: "grid", gap: "16px 22px", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))" }}>
-      <Setting title="Play calling" why={WHY.call[callMode]}>
-        <Seg full value={callMode} onChange={onCall} options={[[false, "Coaches"], [true, "Me"]]} />
+      {onView && <Setting title="Field" why={arcade ? "The arcade field: every snap played out on the field, in the home club's stadium." : "The broadcast: the TV view, with the key plays acted out."}>
+        <Seg full value={view} onChange={onView} options={[["arcade", "Arcade"], ["broadcast", "Broadcast"]]} />
+      </Setting>}
+      <Setting title={arcade ? "Your snaps" : "Play calling"} why={arcade ? (callMode ? "You play your offense's snaps on the field; the other team's are played for you." : "Both offenses are played for you on the field. Switch any time.") : WHY.call[callMode]}>
+        <Seg full value={callMode} onChange={onCall} options={arcade ? [[false, "Watch"], [true, "Play my snaps"]] : [[false, "Coaches"], [true, "Me"]]} />
       </Setting>
-      <Setting title="Live plays" why={WHY.live[livePlays]}>
+      {!arcade && <Setting title="Live plays" why={WHY.live[livePlays]}>
         <Seg full value={livePlays} onChange={onLivePlays} options={[["Key", "Key"], ["All", "Every"], ["Off", "Off"]]} />
-      </Setting>
-      <Setting title="Speed" why={speed === "Condensed" ? (livePlays === "Off" ? "Routine plays flash by. Turn Live plays on to watch the key ones." : "Routine plays flash by; only the key plays take time.") : "How long the game waits between plays."}>
+      </Setting>}
+      <Setting title="Speed" why={arcade ? "How fast the plays run on the field, and how long it waits between them." : speed === "Condensed" ? (livePlays === "Off" ? "Routine plays flash by. Turn Live plays on to watch the key ones." : "Routine plays flash by; only the key plays take time.") : "How long the game waits between plays."}>
         <Seg full value={speed} onChange={onSpeed} options={speeds.map((k) => [k, k])} />
       </Setting>
-      {onCam && <Setting title="Camera" why={WHY.cam[cam]}>
+      {onCam && !arcade && <Setting title="Camera" why={WHY.cam[cam]}>
         <Seg full value={cam} onChange={onCam} options={[["Field", "Field view"], ["Action", "Action cam"]]} />
       </Setting>}
-      {onField && <Setting title="Field size" why={WHY.field[field]}>
+      {onField && !arcade && <Setting title="Field size" why={WHY.field[field]}>
         <Seg full value={field} onChange={onField} options={[["Big", "Big"], ["Standard", "Standard"]]} />
       </Setting>}
     </div>

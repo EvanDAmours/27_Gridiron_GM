@@ -10,7 +10,7 @@ import { HALF, ELIGIBLE, passPlan, BULLET_RANGE, BULLET_MAX, playDiagram } from 
 
 const BASE = `${import.meta.env?.BASE_URL ?? "/"}sprites/`;
 const POSE = { QB: "qb", RB: "rb", WR: "wr", TE: "te", LT: "ol", LG: "ol", C: "ol", RG: "ol", RT: "ol", DL: "dl", LB: "lb", CB: "db", S: "db" };
-export const PLAYER_H = 2.9; // a standing quarterback, in yards (big, like Retro Bowl)
+export const PLAYER_H = 3.3; // a standing quarterback, in yards (big, like Retro Bowl, so a player reads at a glance)
 const SQUASH = 0.42; // the field's depth is foreshortened: a yard across is this much of a yard along
 
 // ---- sprite sheets (loaded once per club) ----
@@ -57,13 +57,23 @@ const BALL_C = { o: "#2a1206", b: "#8a4a22", h: "#b06a36", w: "#f4efe4" };
 export function makeCamera(W, H) {
   // the whole width of the field fits under the scoreboard, and no more than ~40 yards show across
   const hud = Math.max(2, Math.round(Math.min(W / 380, H / 215))) * 11;
-  const s = Math.min(H > W ? W / 44 : W / 66, (H - hud - 8) / (53.3 * SQUASH + 1.4)); // ~66 yards across a wide screen, ~44 upright
+  const s = Math.min(H > W ? W / 34 : W / 66, (H - hud - 8) / (53.3 * SQUASH + 1.4)); // ~66 yards across a wide screen, ~34 upright (a phone held upright: closer in, so the players fill it)
   // the field sits low on a wide screen (stands above it) and in the middle of a tall one
   const depth = 53.3 * SQUASH * s, room = H - hud - depth - s * 1.2, top = hud + (H > W ? room * 0.5 : Math.min(room, s * 4.5)) + s * 0.2;
   return { W, H, s, depth, top, camX: 50, lead: 5, toScreen(x, y) { return [W * 0.42 + (x - this.camX) * s, top + (y + HALF) * SQUASH * s]; }, toField(px, py) { return { x: this.camX + (px - W * 0.42) / s, y: (py - top) / (SQUASH * s) - HALF }; } };
 }
 
 // ---- drawing ----
+// The stadium's lights on the turf: brighter down the middle, falling off toward the sidelines and the
+// corners; at night the falloff is deeper and the light warmer, so the field glows under the lights.
+function stadiumLight(ctx, cam, night) {
+  const { W, top, depth } = cam;
+  if (!ctx.createRadialGradient) return;
+  const cx = W / 2, cy = top + depth * 0.45, r = Math.max(W, depth) * 0.75;
+  const g = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r); if (!g) return;
+  g.addColorStop(0, night ? "rgba(255,244,214,.10)" : "rgba(255,255,240,.06)"); g.addColorStop(0.55, "rgba(0,0,0,0)"); g.addColorStop(1, night ? "rgba(0,6,16,.42)" : "rgba(0,10,0,.22)");
+  ctx.fillStyle = g; ctx.fillRect(0, Math.round(top), W, Math.round(depth));
+}
 
 // The stadium scoreboard, standing in the far stands at the 50: an old-school board of light bulbs.
 // GUEST on the left, HOME on the right (they keep their sides when the field turns round for the
@@ -494,6 +504,7 @@ function goalPost(ctx, cam, ex, back, padClr) {
 // A handheld cameraman on the near sideline and a camera cart on the far one, both tracking the line
 // of scrimmage (they glide to the new spot between plays), and one behind each end zone.
 const crewAt = { near: null, far: null };
+let lastLos = 50; // (the last snap's line, for when there's no play on the field)
 function cameraman(ctx, cam, x, y, facing, opts = {}) {
   const s = cam.s, [fx, fy] = cam.toScreen(x, y), u = s * 0.1, R = (dx, dy, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(fx + dx * u * facing - (facing < 0 ? w * u : 0)), Math.round(fy - dy * u), Math.max(1, Math.round(w * u)), Math.max(1, Math.round(h * u))); };
   // shadow
@@ -548,6 +559,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     if (wallTop > 0) ctx.drawImage(tile, Math.round(x), Math.round(wallTop - tile.height));
     if (H - nearEdge > px) ctx.drawImage(tile, Math.round(x), Math.round(nearEdge));
   } }
+  if (opts.night) { ctx.fillStyle = "rgba(2,4,14,.45)"; ctx.fillRect(0, 0, W, Math.max(0, Math.round(wallTop))); if (H > nearEdge) ctx.fillRect(0, Math.round(nearEdge), W, Math.round(H - nearEdge)); } // (a night game: the crowd in the dark beyond the lights)
 
   // the wall, and the turf of the team areas along both sidelines
   ctx.fillStyle = "#3b3f4a"; ctx.fillRect(0, Math.round(wallTop), W, Math.round(apronTop - wallTop));
@@ -563,7 +575,10 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   }
   for (let yd = -10; yd < 110; yd += 5) {
     const x0 = yardAt(yd), x1 = yardAt(yd + 5); if (x1 < 0 || x0 > W) continue;
-    ctx.fillStyle = (yd / 5) % 2 ? "#3f8f3a" : "#45993f"; // (the end zones are grass too: the club's name is painted on it)
+    // (each stripe shaded from the far side to the near one, like mowed grass under the lights; the end
+    // zones are grass too, with the club's name painted on)
+    const light = (yd / 5) % 2 === 0, gr = ctx.createLinearGradient?.(0, top, 0, top + depth);
+    if (gr) { gr.addColorStop(0, light ? "#4fa447" : "#469a40"); gr.addColorStop(0.55, light ? "#3f9139" : "#378532"); gr.addColorStop(1, light ? "#35822f" : "#2e7529"); ctx.fillStyle = gr; } else ctx.fillStyle = light ? "#45993f" : "#3f8f3a";
     ctx.fillRect(Math.round(x0), Math.round(top), Math.round(x1 - x0) + 1, Math.round(depth));
   }
   // the weather on the turf: the same illustrated ground as the sim's live field (snow lying deep with
@@ -591,11 +606,24 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   for (let yd = 0; yd <= 100; yd += 5) { const x = Math.round(yardAt(yd)); if (x < -4 || x > W + 4) continue; ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.fillRect(x, Math.round(top), lw, Math.round(depth)); }
   ctx.fillStyle = "rgba(255,255,255,.55)";
   for (let yd = 1; yd < 100; yd++) { if (yd % 5 === 0) continue; const x = Math.round(yardAt(yd)); if (x < 0 || x > W) continue; for (const h of [-8, 8]) { const [, y] = cam.toScreen(0, h); ctx.fillRect(x, Math.round(y), lw, Math.max(2, s * 0.25)); } }
-  for (let i = 0; i < 9; i++) { const yd = 10 + i * 10, x = yardAt(yd); if (x < -40 || x > W + 40) continue; const n = String(yd > 50 ? 100 - yd : yd); const [, y1] = cam.toScreen(0, -HALF + 6), [, y2] = cam.toScreen(0, HALF - 9); pixText(ctx, n, x - s * 0.9, y1, Math.max(1, Math.round(s * 0.16)), "rgba(255,255,255,.75)"); pixText(ctx, n, x - s * 0.9, y2, Math.max(1, Math.round(s * 0.16)), "rgba(255,255,255,.75)"); }
+  // the numbers, painted: bold and white, the far ones upside down (they face the far sideline), with
+  // the little arrow pointing to the nearer goal
+  { const fs = Math.max(10, Math.round(s * 2.2)); ctx.save(); ctx.font = `900 ${fs}px "Arial Black", "Arial", sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (let i = 0; i < 9; i++) { const yd = 10 + i * 10, x = yardAt(yd); if (x < -60 || x > W + 60) continue; const n = String(yd > 50 ? 100 - yd : yd), dir = yd < 50 ? -1 : yd > 50 ? 1 : 0;
+      for (const [yy, flip] of [[-HALF + 7.5, true], [HALF - 7.5, false]]) { const [, y] = cam.toScreen(0, yy);
+        ctx.save(); ctx.translate(x, y); ctx.scale(1, SQUASH * 1.35); if (flip) ctx.rotate(Math.PI);
+        ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.fillText(n, 1.5, 1.5); ctx.fillStyle = "rgba(255,255,255,.88)"; ctx.fillText(n, 0, 0);
+        if (dir) { const ax = ((flip ? -dir : dir) * (ctx.measureText(n).width / 2 + fs * 0.32)), a = fs * 0.2; ctx.beginPath(); ctx.moveTo(ax + Math.sign(ax) * a, 0); ctx.lineTo(ax, -a * 0.8); ctx.lineTo(ax, a * 0.8); ctx.closePath(); ctx.fill(); }
+        ctx.restore(); } }
+    ctx.restore(); }
   paintField(ctx, cam, teams, yardAt);
+  stadiumLight(ctx, cam, opts.night);
   // the goalposts, on each end line
   for (const [ex, back, pad] of [[110, 1, teams.opp], [-10, -1, teams.user]]) goalPost(ctx, cam, ex, back, pad.clr);
-  if (!S) return;
+  // no play on the field (between plays, a kick the engine ran): the sidelines, the crews and the
+  // scoreboard are still there, the crews where the last snap was
+  if (!S) { const so = { ...opts, los: lastLos, toGain: null, down: g?.down }; drawSidelines(ctx, cam, teams, { ...so, side: "far" }); stadiumBoard(ctx, cam, g, teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); drawSidelines(ctx, cam, teams, { ...so, side: "near" }); return; }
+  if (!S.kind) lastLos = S.los;
   // the line of scrimmage and the line to gain
   const vline = (yd, color) => { const x = Math.round(yardAt(yd)); if (x < 0 || x > W) return; ctx.fillStyle = color; ctx.fillRect(x, Math.round(top), Math.max(2, lw * 2), Math.round(depth)); };
   vline(S.los, "rgba(60,120,255,.8)"); if (S.firstDown < 100 && !S.kind) vline(S.firstDown, "rgba(255,220,0,.9)");
@@ -732,6 +760,18 @@ export function drawDownBox(ctx, cam, text, color = "#fff", { left = false } = {
 // ---- the result banner ----
 // It slides in across the field: the result big in the club's colours, the play-by-play under it.
 // `age` is how long it has been up, for the slide and the pulse.
+// A live game's result, TV style: a slim lower third over the bottom of the field (the app has the full
+// play-by-play beside it), rising in, the club's colour down its edge.
+export function drawLowerThird(ctx, cam, title, text, color, { age = 1, accent = "#ffd166" } = {}) {
+  const { W, H } = cam, u = uiPx(cam), px = Math.max(2, Math.round(u * 1.4)), px2 = Math.max(1, Math.round(u * 0.9));
+  const line = wrap(text || "", Math.floor((W * 0.7) / (6 * px2)))[0] || "", h = px * 7 + px2 * 7 + u * 6;
+  const k = 1 - Math.pow(1 - Math.min(1, age / 0.22), 3), y = Math.round(H - u * 4 - h + (1 - k) * (h + u * 4)), w = Math.round(Math.min(W - u * 8, Math.max(pixWidth(title, px), pixWidth(line, px2)) + u * 14)), x = Math.round(W / 2 - w / 2);
+  ctx.save(); ctx.globalAlpha = Math.min(1, age / 0.15);
+  ctx.fillStyle = "rgba(6,8,14,.9)"; ctx.fillRect(x, y, w, h); ctx.fillStyle = color || "#334155"; ctx.fillRect(x, y, Math.max(3, u), h); ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fillRect(x, y, w, 1);
+  pixShadow(ctx, title, x + u * 6, y + u * 2, px, accent, "left");
+  if (line) pixText(ctx, line, x + u * 6, y + u * 3 + px * 7 + u, px2, "#e5e7eb", "left");
+  ctx.restore();
+}
 export function drawBanner(ctx, cam, title, text, sub, color, { age = 1, accent = "#ffd166", hint = "TAP TO CONTINUE" } = {}) {
   const { W, H, s } = cam, big = /TOUCHDOWN|WIN|INTERCEPT|FIELD GOAL|SAFETY/.test(title);
   const u = uiPx(cam), px = big ? u * 2 : Math.round(u * 1.5), px2 = u; void s;

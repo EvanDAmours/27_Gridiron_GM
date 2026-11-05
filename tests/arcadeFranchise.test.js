@@ -89,3 +89,43 @@ test("a saved game turns round and back unchanged", () => {
   flipSides(r);
   assert.deepEqual(r, orig);
 });
+
+test("a club with linemen hurt still lines up five, and the snap doesn't trip on it", () => {
+  const teams = league(), kc = teams.find((t) => t.ab === "KC"), nyj = teams.find((t) => t.ab === "NYJ");
+  // three starting linemen out
+  const ol = kc.roster.filter((p) => ["LT", "LG", "C", "RG", "RT", "OL", "G", "T"].includes(p.pos)).sort((a, b) => b.ovr - a.ovr).slice(0, 3);
+  for (const p of ol) { p.injured = true; p.injWk = 3; }
+  const su = gameSetup(kc, nyj, null, null, "clear");
+  const g = franchiseGame(su, { wk: 9, h: teams.indexOf(kc), a: teams.indexOf(nyj) }, true, { rand: seeded(19) });
+  g.koNext = false; g.poss = "h"; g.yard = 30;
+  const L = lineups(g);
+  assert.equal(["LT", "LG", "C", "RG", "RT"].filter((k) => L.off[k]).length, 5, "five on the line");
+  assert.ok(!["LT", "LG", "C", "RG", "RT"].some((k) => ol.some((p) => p.id === L.off[k].id)), "nobody hurt plays");
+  const P = setupPlay(g, L, "pass_medium"); snap(P);
+  for (let i = 0; i < 1800 && P.phase !== "done"; i++) tick(P, 1 / 60);
+  assert.equal(P.phase, "done");
+});
+
+test("with every quarterback out, someone still takes the snap", () => {
+  const teams = league(), bal = teams.find((t) => t.ab === "BAL"), cin = teams.find((t) => t.ab === "CIN");
+  for (const p of bal.roster.filter((x) => x.pos === "QB")) { p.injured = true; p.injWk = 2; }
+  const su = gameSetup(bal, cin, null, null, "clear");
+  const g = franchiseGame(su, { wk: 9, h: teams.indexOf(bal), a: teams.indexOf(cin) }, true, { rand: seeded(23) });
+  g.koNext = false; g.poss = "h"; g.yard = 30;
+  const L = lineups(g);
+  for (const k of ["QB", "RB", "X", "Z", "SLOT", "TE", "LT", "LG", "C", "RG", "RT"]) assert.ok(L.off[k], `${k} filled`);
+  const P = setupPlay(g, L, "run_inside"); snap(P);
+  for (let i = 0; i < 1800 && P.phase !== "done"; i++) tick(P, 1 / 60);
+  assert.equal(P.phase, "done");
+});
+
+test("the engine puts an emergency quarterback under center when every QB is hurt", () => {
+  const teams = league(), bal = teams.find((t) => t.ab === "BAL"), cin = teams.find((t) => t.ab === "CIN");
+  for (const p of bal.roster.filter((x) => x.pos === "QB")) { p.injured = true; p.injWk = 2; }
+  const su = gameSetup(bal, cin, null, null, "clear");
+  assert.ok(su.home.qb && su.home.qb.emergencyQB && su.home.qb.ovr <= 52, "an emergency QB, rated like one");
+  const g = createGame(su.home, su.away, { rand: seeded(29) });
+  while (!g.done) step(g);
+  const passer = Object.values(g.box.h).find((l) => (l.att || 0) > 0);
+  assert.ok(passer && passer.name && passer.name !== "QB", "his passes are his");
+});

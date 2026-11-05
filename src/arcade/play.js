@@ -142,7 +142,7 @@ export function snap(S) {
     if (c && c.p.pos === "CB") e.delay = Math.max(e.delay || 0, clamp(0.12 + (K.press(c.p) - K.release(e.p)) * 0.012, 0, 0.45));
     e.deepTop = topSpeed({ ...e.p, spd: K.deepSpeed(e.p) }); // his speed once he's into his stride downfield
   }
-  for (const k of LINE) ents[k].mode = "block";
+  for (const k of LINE) if (ents[k]) ents[k].mode = "block";
   // the defense's call, from its own tendencies (the coordinator's scheme and game plan, as the engine uses them)
   const st = S.g.sides?.a?.dStyle || { blitz: 0.22, box: 0.2, cover: 0.2 }, u = rnd(S);
   S.dcall = u < st.blitz ? "blitz" : u < st.blitz + st.box ? "box" : u < st.blitz + st.box + st.cover ? "cover" : "base";
@@ -297,7 +297,7 @@ export function tick(S, dt) {
   for (const d of Object.values(ents)) if (d.side === "def" && d.heldUntil > S.t && !over) { const b = ents[d.heldBy]; if (b) { steer(d, b.x + 0.9 * (d.x > b.x ? 1 : -1), b.y + (d.y > b.y ? 0.4 : -0.4), dt, 0.5); } }
   // blockers: the line keeps its pocket on a pass; on a run it drives, then climbs to the next man
   for (const k of LINE) {
-    const o = ents[k]; if (o.mode !== "block") continue;
+    const o = ents[k]; if (!o || o.mode !== "block") continue;
     const mine = ["DL0", "DL1", "DL2", "DL3"].find((d) => OL_VS[d] === k), dl = mine && ents[mine];
     if (isPass) {
       // the center slides to the blitzer: his pass block against the linebacker's rush decides how long he holds him
@@ -340,6 +340,7 @@ export function tick(S, dt) {
   for (const k of ["DL0", "DL1", "DL2", "DL3"]) {
     const d = ents[k]; if (!d || d.down > 0 || d === carrier || d.heldUntil > S.t) continue;
     const o = ents[OL_VS[k]];
+    if (d.mode === "rush" && !o) d.mode = "free"; // (nobody across from him: he's through)
     if (d.mode === "rush") {
       if (S.t < S.shed[k]) steer(d, o.x + (isPass ? 1.0 : 1.1), o.y + (d.y > o.y ? 0.5 : -0.5), dt, 0.8);
       else { d.mode = "free"; if (isPass && ball.holder === "QB" && d.move) S.flash.push({ key: k, text: d.move, until: S.t + 1.0 }); }

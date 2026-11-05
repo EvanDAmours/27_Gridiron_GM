@@ -35,13 +35,24 @@ export function newGame(userTi, oppTi, { rand = Math.random, pat = false, qLen =
 export function lineups(g, { rb = null } = {}) {
   const o = g.sides.h, d = g.sides.a;
   const recv = o.recvBy?.["11"] || [];
+  // always five on the line: a club with linemen hurt fills from its other linemen (and, at a pinch,
+  // anyone big enough), so the formation is never a man short
+  const ol = (o.ol || []).filter(Boolean);
+  for (const pos of ["OL", "LT", "LG", "C", "RG", "RT", "G", "T", "OT", "OG", "DL", "TE"]) { if (ol.length >= 5) break; for (const p of o.order?.(pos) || []) { if (ol.length >= 5) break; if (p && !ol.includes(p)) ol.push(p); } }
   const byRole = (r) => recv.find(([, , role]) => role === r)?.[0];
   const wrs = o.oU?.["11"]?.on?.wr || o.order("WR").slice(0, 3);
   const off = {
     QB: o.qb, RB: rb || o.rushers[0]?.[0] || o.order("RB")[0], // (rb: the back the engine will give it to this snap, backForSnap)
     X: byRole("X") || wrs[0], Z: byRole("Z") || wrs[1], SLOT: byRole("SLOT") || wrs[2], TE: byRole("TE1") || o.order("TE")[0],
-    LT: o.ol[0], LG: o.ol[1], C: o.ol[2], RG: o.ol[3], RT: o.ol[4],
+    LT: ol[0], LG: ol[1], C: ol[2], RG: ol[3], RT: ol[4],
   };
+  // every spot filled: with the starter out (and no backup listed) the next man who can play it steps
+  // in, at a pinch from another position, so the formation is never a man short
+  const used = new Set(Object.values(off).filter(Boolean).map((p) => p.id));
+  const fill = (key, poss) => { if (off[key]) return; for (const pos of poss) for (const p of o.order?.(pos) || []) if (p && !used.has(p.id)) { off[key] = p; used.add(p.id); return; } };
+  fill("QB", ["QB", "RB", "WR", "TE"]); fill("RB", ["RB", "FB", "WR", "TE"]);
+  for (const k of ["X", "Z", "SLOT"]) fill(k, ["WR", "TE", "RB"]);
+  fill("TE", ["TE", "WR", "RB", "OL"]);
   const dOn = d.defBy?.nickel?.on || {};
   const DL = d.order("DL").slice(0, 4), LB = dOn.lbs || d.order("LB").slice(0, 2), CB = dOn.cbs || d.order("CB").slice(0, 3), S = d.order("S").slice(0, 2);
   const onWR = [off.X, off.Z, off.SLOT].filter(Boolean);

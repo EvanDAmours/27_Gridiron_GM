@@ -219,7 +219,10 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
   const relief = order("RB").find((p) => !rushers.some(([r]) => r === p));
   const yourCall = rushers[0] && fixed?.[rushers[0][0].id] != null;
   if (relief && rushers.length < 2 && !yourCall) rushers.push([relief, 0.2 * q(relief, TALENT)]);
-  const qb = on("QB")[0] || order("QB")[0];
+  // no quarterback fit to play (all hurt): an emergency one, the way a real club does it, a skill player
+  // under center who throws like the emergency he is
+  const emergency = () => { const p = order("WR")[2] || order("RB")[1] || order("TE")[1] || order("WR")[0] || order("RB")[0]; return p ? { ...p, ovr: Math.min(p.ovr || 60, 52), emergencyQB: true } : null; };
+  const qb = on("QB")[0] || order("QB")[0] || emergency();
   const defs = [];
   for (const pos of ["DL", "LB", "CB", "S"]) on(pos).forEach((p, i) => defs.push([p, (TK[pos][i] ?? 0.01) * share(p) * q(p, 0.01)]));
   // [p, weight, an average player's weight in his role and snaps (the grades' bar)]
