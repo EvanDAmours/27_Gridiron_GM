@@ -32,13 +32,13 @@ export function newGame(userTi, oppTi, { rand = Math.random, pat = false, qLen =
 
 // Who lines up for an 11-personnel snap on each side (nickel defense), with the engine's roles so
 // the cover assignments match what step() will use.
-export function lineups(g) {
+export function lineups(g, { rb = null } = {}) {
   const o = g.sides.h, d = g.sides.a;
   const recv = o.recvBy?.["11"] || [];
   const byRole = (r) => recv.find(([, , role]) => role === r)?.[0];
   const wrs = o.oU?.["11"]?.on?.wr || o.order("WR").slice(0, 3);
   const off = {
-    QB: o.qb, RB: o.rushers[0]?.[0] || o.order("RB")[0],
+    QB: o.qb, RB: rb || o.rushers[0]?.[0] || o.order("RB")[0], // (rb: the back the engine will give it to this snap, backForSnap)
     X: byRole("X") || wrs[0], Z: byRole("Z") || wrs[1], SLOT: byRole("SLOT") || wrs[2], TE: byRole("TE1") || o.order("TE")[0],
     LT: o.ol[0], LG: o.ol[1], C: o.ol[2], RG: o.ol[3], RT: o.ol[4],
   };

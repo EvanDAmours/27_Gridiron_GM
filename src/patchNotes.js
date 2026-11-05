@@ -2369,4 +2369,9 @@ export const PATCH_NOTES = [
     "Arcade field: new goalposts. They used to lean off the end line at an odd slant. Now each one stands right on its end line, turned a little toward the camera so it reads as a proper H: two straight gold uprights with flags on top, the crossbar running back between them, and a curved gooseneck down to a base padded in the home club's colors.",
     "Arcade field: camera crews, like a real broadcast. A cameraman with a shoulder camera works the near sideline and a camera cart rolls along the far one, both following the line of scrimmage from play to play, and there's a cameraman behind each end zone.",
   ] },
+  { v: "5.70", date: "2026-10-23", title: "Scoreboard at the 50, the right back", notes: [
+    "Arcade field: a retro stadium scoreboard at the 50-yard line in place of the floating videoboard. It's an old-school board of lights: GUEST and HOME with each club's letters and timeouts, the scores in big red seven-segment digits, the quarter over an amber clock, an arrow at the team with the ball, and DOWN, TO GO and BALL ON along the bottom. It stands at midfield, so it scrolls with the field.",
+    "Arcade field: no more confetti after touchdowns.",
+    "Arcade field: the back you see is the back who runs it. The field used to always line up the top back while the engine handed off to whoever it picked, so Skattebo could be in the backfield and Singletary would get the carry. Now the back for each snap is chosen before it, from the same depth, snaps and fatigue the engine uses, including the power back in short yardage and the third-down back. The play call shows him (IN THE BACKFIELD: CAM SKATTEBO RB 80), so you can choose run or pass knowing who's back there.",
+  ] },
 ];

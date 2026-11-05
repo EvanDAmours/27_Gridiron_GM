@@ -80,6 +80,21 @@ function matchupNote(cm, role, mm, yards, pkg) {
 // linebacker, a great nickel on a so-so slot) moves the needle.
 const MM0 = 4.3;
 
+// The back in the backfield for the next snap, chosen the way stepPlay chooses its ball carrier
+// (the power back in short yardage, the third-down back on passing downs, otherwise by depth, snap
+// share and talent, tapering as his carries pile up). The arcade lines him up before the snap and
+// hands him back as pick.carrier, so the man you see is the man who runs it. R: its own dice, so
+// the engine's own rolls are untouched.
+export function backForSnap(g, R = Math.random) {
+  const off = g.poss, def = off === "h" ? "a" : "h", o = g.sides[off];
+  if (!o) return null;
+  const sitn = situationOf({ down: g.down, toGo: g.toGo, yard: g.yard, qtr: g.qtr, clock: g.clock, lead: g.score[off] - g.score[def] });
+  const oShort = sitn.short || (g.down === 4 && g.toGo <= 2), passDown = (g.down >= 3 && g.toGo >= 6) || sitn.twoMin;
+  const oSub = oShort ? o.spec?.PWHB : passDown ? o.spec?.RB3D : null;
+  if (oSub) return oSub;
+  const tired = ([p, w]) => { const n = g.box[off][p.id]?.rushAtt || 0, s0 = 12 + Math.max(0, p.form || 0) * 0.5; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 4)]; };
+  return pickW(R, o.rushers.map(tired)) || o.rushers[0]?.[0] || null;
+}
 function pickW(rand, list) {
   const sum = list.reduce((s, [, w]) => s + Math.max(0, w), 0);
   if (!sum) return list[0]?.[0];
@@ -988,7 +1003,10 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     // A back in the form of his life gets fed a few more before the staff spells him.
     const tired = ([p, w]) => { const n = g.box[off][p.id]?.rushAtt || 0, s0 = 12 + Math.max(0, p.form || 0) * 0.5; return [p, n <= s0 ? w : w * Math.exp(-(n - s0) / 4)]; };
     // a specialist back on the field carries it
-    carrier = keeper ? qb : oSub || pickW(rand, o.rushers.map(tired)) || qb;
+    // (pick.carrier: the back already shown lined up for this snap, drawn by backForSnap from these
+    // same weights, so the man in the backfield is the man who carries it)
+    const shown = pick?.carrier != null ? [...o.rushers.map(([p]) => p), o.spec?.PWHB, o.spec?.RB3D].find((p) => p?.id === pick.carrier) : null;
+    carrier = keeper ? qb : shown || oSub || pickW(rand, o.rushers.map(tired)) || qb;
     ev.qb = qb; ev.keeper = keeper;
     const outside = call === "run_outside";
     // Heavy workloads wear a back down: past ~18 carries in a game he averages a little less.

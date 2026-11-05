@@ -65,6 +65,58 @@ export function makeCamera(W, H) {
 
 // ---- drawing ----
 
+// The stadium scoreboard, standing in the far stands at the 50: an old-school board of light bulbs.
+// GUEST on the left, HOME on the right (they keep their sides when the field turns round for the
+// other team's ball), the scores in big red seven-segment digits, the clock in amber, the quarter,
+// and DOWN / TO GO / BALL ON along the bottom with each side's timeouts and an arrow for the ball.
+const SEG = { 0: "abcdef", 1: "bc", 2: "abdeg", 3: "abcdg", 4: "bcfg", 5: "acdfg", 6: "acdefg", 7: "abc", 8: "abcdefg", 9: "abcdfg", "-": "g", " ": "" };
+function seg7(ctx, x, y, w, h, ch, color) {
+  const t = Math.max(2, Math.round(w * 0.2)), on = SEG[ch] ?? "", hh = Math.round(h / 2);
+  const bars = { a: [x + t, y, w - 2 * t, t], b: [x + w - t, y + t, t, hh - t], c: [x + w - t, y + hh, t, hh - t], d: [x + t, y + h - t, w - 2 * t, t], e: [x, y + hh, t, hh - t], f: [x, y + t, t, hh - t], g: [x + t, y + hh - Math.round(t / 2), w - 2 * t, t] };
+  for (const k of "abcdefg") { const [bx, by, bw, bh] = bars[k]; ctx.fillStyle = on.includes(k) ? color : "rgba(255,255,255,.05)"; ctx.fillRect(Math.round(bx), Math.round(by), Math.max(1, Math.round(bw)), Math.max(1, Math.round(bh))); }
+}
+function digits(ctx, x, y, w, h, str, color, gap) { [...str].forEach((c, i) => seg7(ctx, x + i * (w + gap), y, w, h, c, color)); return str.length * (w + gap) - gap; }
+function stadiumBoard(ctx, cam, g, teams, yardAt, wallTop) {
+  if (!g?.score) return;
+  const { s } = cam, cx = yardAt(50), bw = Math.round(Math.min(s * 32, cam.W * 0.7)), bh = Math.round(Math.min(wallTop - 4, bw * 0.2));
+  if (bh < 30 || cx + bw / 2 < 0 || cx - bw / 2 > cam.W) return;
+  const x = Math.round(cx - bw / 2), y = Math.round(wallTop - bh - 1);
+  const home = HOME_OF(teams), userHome = home === teams.user, side = (t) => (t === teams.user ? "h" : "a");
+  const G = userHome ? teams.opp : teams.user, Hm = home, hasBall = (t) => !g.done && !g.koNext && g.poss === side(t);
+  const red = "#ff3b1f", amber = "#ffb627", lab = "#e8e2c8";
+  // sizes from the board's height (the pixel letters are seven rows tall)
+  const row = Math.round(bh * 0.68), pa = Math.max(1, Math.floor(row / 18)), pl = Math.max(1, Math.floor(bh / 50)), pb = Math.max(1, Math.floor((bh - row) / 12));
+  // the frame and the black face, with its grid of bulbs
+  ctx.fillStyle = "#3a4050"; ctx.fillRect(x - 3, y - 3, bw + 6, bh + 5);
+  ctx.fillStyle = "#06070a"; ctx.fillRect(x, y, bw, bh);
+  ctx.fillStyle = "rgba(255,255,255,.03)"; for (let gy = y + 2; gy < y + bh; gy += 3) ctx.fillRect(x + 1, gy, bw - 2, 1);
+  const dh = Math.round(row * 0.78), dw = Math.round(dh * 0.55), gap = Math.max(2, Math.round(dw * 0.22)), dy = y + Math.round((row - dh) / 2);
+  // each club: its letters, GUEST / HOME under them, its timeouts; then its score in big red digits
+  const lineH = 7 * pa + 3, labY = y + 3 + lineH, toY = labY + 7 * pl + 3;
+  for (const [t, left] of [[G, true], [Hm, false]]) {
+    const edge = left ? x + 6 : x + bw - 6, align = left ? "left" : "right";
+    pixText(ctx, String(t?.ab || ""), edge, y + 3, pa, t?.clr && t.clr !== "#000000" ? lighten(t.clr) : lab, align);
+    pixText(ctx, left ? "GUEST" : "HOME", edge, labY, pl, lab, align);
+    const tos = g.to?.[side(t)] ?? 3, tw = Math.max(3, pl * 4); for (let i = 0; i < 3; i++) { ctx.fillStyle = i < tos ? amber : "rgba(255,255,255,.1)"; const tx = left ? edge + i * (tw + 2) : edge - (i + 1) * (tw + 2) + 2; ctx.fillRect(tx, toY, tw, Math.max(2, pl * 2)); }
+    const sw = 2 * dw + gap, sc = left ? x + bw * 0.29 : x + bw * 0.71, sx = Math.round(sc - sw / 2);
+    digits(ctx, sx, dy, dw, dh, String(g.score[side(t)] ?? 0).padStart(2, " ").slice(-2), red, gap);
+    if (hasBall(t)) { const a = Math.max(3, Math.round(dh * 0.14)), ax = left ? sx + sw + a + 3 : sx - a - 3, ay = dy + Math.round(dh / 2), d = left ? 1 : -1; ctx.fillStyle = amber; ctx.beginPath(); ctx.moveTo(ax + d * a, ay - a); ctx.lineTo(ax - d * a, ay); ctx.lineTo(ax + d * a, ay + a); ctx.closePath(); ctx.fill(); }
+  }
+  // the middle: the quarter over the clock
+  pixText(ctx, g.done ? "FINAL" : g.ot ? "OT" : `QTR ${Math.min(4, g.qtr || 1)}`, x + bw / 2, y + 3, pl, lab, "center");
+  const ch = Math.max(8, row - 7 * pl - 8), cw = Math.round(ch * 0.55), cg = Math.max(2, Math.round(cw * 0.22)), m = Math.floor((g.clock || 0) / 60), sec = String((g.clock || 0) % 60).padStart(2, "0");
+  const colW = Math.max(2, Math.round(cw * 0.5)), total = 4 * cw + 2 * cg + colW * 2, cx0 = Math.round(x + bw / 2 - total / 2), cy0 = y + 3 + 7 * pl + 4;
+  digits(ctx, cx0, cy0, cw, ch, String(m).padStart(2, " "), amber, cg);
+  const colx = cx0 + 2 * cw + cg + Math.round(colW / 2); ctx.fillStyle = amber; const dot = Math.max(2, Math.round(cw * 0.18)); for (const fy of [0.3, 0.7]) ctx.fillRect(colx, Math.round(cy0 + ch * fy - dot / 2), dot, dot);
+  digits(ctx, cx0 + 2 * cw + cg + colW * 2, cy0, cw, ch, sec, amber, cg);
+  // the bottom strip: DOWN, TO GO, BALL ON
+  ctx.fillStyle = "#2a2f3a"; ctx.fillRect(x, y + row, bw, 1);
+  const live = !g.done && !g.koNext && g.down, ball = g.yard > 50 ? 100 - g.yard : g.yard, togo = g.toGo >= 100 - g.yard ? "GOAL" : String(g.toGo);
+  pixText(ctx, `DOWN ${live ? g.down : "-"}    TO GO ${live ? togo : "-"}    BALL ON ${live ? ball : "-"}`, x + bw / 2, y + row + Math.round((bh - row - 7 * pb) / 2), pb, amber, "center");
+}
+const lighten = (hex) => shade(hex, 0.45);
+
+
 // The paint on the grass, like a real stadium's (and the broadcast field's): each end zone carries its
 // club's name huge in its color with a white outline, reading toward the field, with its logo
 // faded at both ends; the home club's logo sits at midfield. All of it lies flat on the turf, so it
@@ -496,6 +548,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     if (wallTop > 0) ctx.drawImage(tile, Math.round(x), Math.round(wallTop - tile.height));
     if (H - nearEdge > px) ctx.drawImage(tile, Math.round(x), Math.round(nearEdge));
   } }
+
   // the wall, and the turf of the team areas along both sidelines
   ctx.fillStyle = "#3b3f4a"; ctx.fillRect(0, Math.round(wallTop), W, Math.round(apronTop - wallTop));
   ctx.fillStyle = "#2a2e38"; ctx.fillRect(0, Math.round(apronTop - s * 0.1), W, Math.round(s * 0.1));
@@ -558,6 +611,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   // the team areas along both sidelines: benches, coolers, the cup table and the players watching
   const sideOpts = { ...opts, ballX: S.ball?.x, los: S.kind ? null : S.los, toGain: S.kind ? null : S.firstDown, down: g?.down };
   drawSidelines(ctx, cam, teams, { ...sideOpts, side: "far" });
+  stadiumBoard(ctx, cam, g, teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); // (at the 50, in front of the far bench)
   // players, far to near so the near ones overlap the far ones; the man with the ball on top
   const ents = Object.values(S.ents).sort((a, b) => (a.key === S.ball.holder) - (b.key === S.ball.holder) || a.y - b.y);
   for (const e of ents) {
@@ -642,64 +696,34 @@ function drawAim(ctx, cam, S, kind) {
 // pixels (2 on a phone, 3-4 on a laptop, 5-6 on a big monitor)
 export const uiPx = (cam) => Math.max(2, Math.round(Math.min(cam.W / 380, cam.H / 215)));
 const hudPx = uiPx;
-// The stadium's videoboard, hung over the far stands: the visitors on the left and the home club
-// on the right (they stay put when the field turns round for the other team's ball), each in its
-// colors with its logo and its timeouts; the quarter and the clock in the middle in amber, and the
-// down under them. Returns where the board ends.
+// The score strip across the top (the standalone arcade; in a live game the app shows the score and
+// the stadium scoreboard at the 50 does the rest).
 export function drawHud(ctx, cam, sit, teams, { ot, to } = {}) {
-  const { W, s } = cam, u = hudPx(cam);
-  const userHome = teams.user?.isAway != null ? !teams.user.isAway : true;
-  const side = (who) => (who === "user" ? { t: teams.user, n: sit.score.h, poss: sit.poss === "h", tos: to?.h } : { t: teams.opp, n: sit.score.a, poss: sit.poss === "a", tos: to?.a });
-  const L = side(userHome ? "opp" : "user"), R = side(userHome ? "user" : "opp");
-  const y = Math.round(u * 1.2), bw = Math.round(Math.min(W - u * 30, Math.max(u * 150, W * 0.5)));
-  const bh = Math.round(Math.max(u * 14, Math.min(u * 24, (cam.top - s * 2.2) - y))), x = Math.round(W / 2 - bw / 2);
-  const font = (px, it = false) => `${it ? "italic " : ""}900 ${Math.round(px)}px "Arial Black", "Arial", sans-serif`;
-  ctx.save(); ctx.imageSmoothingEnabled = true;
-  // the struts it hangs from, and its frame
-  ctx.fillStyle = "#1a1f2b"; for (const fx of [0.18, 0.82]) ctx.fillRect(Math.round(x + bw * fx - u), 0, u * 2, y + u);
-  // (a gradient where the canvas has them, a plain color where it doesn't)
-  const linear = (x0, y0, x1, y1, stops) => { const g = ctx.createLinearGradient?.(x0, y0, x1, y1); if (!g) return stops[0][1]; for (const [o, c] of stops) g.addColorStop(o, c); return g; };
-  ctx.fillStyle = linear(0, y, 0, y + bh, [[0, "#5b6478"], [0.5, "#2a3140"], [1, "#4a5266"]]); roundRect(ctx, x - u, y - u, bw + u * 2, bh + u * 2, u * 2); ctx.fill();
-  ctx.fillStyle = "#06080d"; roundRect(ctx, x, y, bw, bh, u * 1.5); ctx.fill();
-  // the LED grain
-  ctx.fillStyle = "rgba(255,255,255,.035)"; for (let yy = y + 1; yy < y + bh; yy += 2) ctx.fillRect(x + 1, yy, bw - 2, 1);
-  const pw = Math.round(bw * 0.37), mid = x + bw / 2;
-  const panel = (S, px0, right) => {
-    const t = S.t || {};
-    ctx.fillStyle = linear(px0, 0, px0 + pw, 0, right ? [[1, t.clr || "#334155"], [0, shade(t.clr || "#334155", -0.45)]] : [[0, t.clr || "#334155"], [1, shade(t.clr || "#334155", -0.45)]]); roundRect(ctx, px0 + u, y + u, pw - u * 2, bh - u * 2, u); ctx.fill();
-    ctx.fillStyle = t.ac || "#fff"; ctx.fillRect(px0 + u, y + bh - u * 2.2, pw - u * 2, Math.max(1, Math.round(u * 0.5)));
-    // logo, club, score
-    const ls = bh * 0.62, lx = right ? px0 + pw - u * 2.5 - ls : px0 + u * 2.5, im = logo(t.ab);
-    if (im.complete && im.naturalWidth) { const r = im.naturalWidth / im.naturalHeight, w = r >= 1 ? ls : ls * r, h = r >= 1 ? ls / r : ls; ctx.shadowColor = "rgba(255,255,255,.95)"; ctx.shadowBlur = u * 1.2; ctx.drawImage(im, lx + (ls - w) / 2, y + (bh - h) / 2 - u * 0.4, w, h); ctx.drawImage(im, lx + (ls - w) / 2, y + (bh - h) / 2 - u * 0.4, w, h); ctx.shadowBlur = 0; } // (a white edge, so a logo in its own club color still shows)
-    ctx.textBaseline = "middle"; ctx.fillStyle = "#fff";
-    ctx.font = font(bh * 0.3, true); ctx.textAlign = right ? "right" : "left";
-    const ax = right ? lx - u * 1.5 : lx + ls + u * 1.5; ctx.fillText(t.ab || "", ax, y + bh * 0.38);
-    // timeouts under the club
-    for (let i = 0; i < 3; i++) { ctx.fillStyle = i < (S.tos ?? 3) ? "#ffd166" : "rgba(255,255,255,.18)"; const tw = u * 2.6, tx = right ? ax - (i + 1) * (tw + u * 0.8) + u * 0.8 : ax + i * (tw + u * 0.8); ctx.fillRect(Math.round(tx), Math.round(y + bh * 0.66), Math.round(tw), Math.max(2, Math.round(u * 0.7))); }
-    // the score, big, toward the middle
-    ctx.font = font(bh * 0.62); ctx.textAlign = right ? "left" : "right"; ctx.fillStyle = "#fff";
-    const sx = right ? px0 + u * 3 : px0 + pw - u * 3; ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = u * 1.5; ctx.fillText(String(S.n ?? 0), sx, y + bh / 2 + u * 0.3); ctx.shadowBlur = 0;
-    // the ball beside the club that has it
-    if (S.poss && !sit.done) { const bx = right ? sx + ctx.measureText(String(S.n ?? 0)).width + u * 2.2 : sx - ctx.measureText(String(S.n ?? 0)).width - u * 2.2; ctx.fillStyle = "#c26a2c"; ctx.beginPath(); ctx.ellipse(bx, y + bh / 2, u * 1.5, u * 0.95, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#fff"; ctx.fillRect(Math.round(bx - u * 0.6), Math.round(y + bh / 2 - u * 0.12), Math.round(u * 1.2), Math.max(1, Math.round(u * 0.25))); }
+  const { W } = cam, px = hudPx(cam), h = px * 7, pad = px * 2;
+  const bar = h + pad * 2;
+  ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, W, bar); ctx.fillStyle = "#1c2433"; ctx.fillRect(0, bar - px, W, px);
+  const box = (x, t, n, right, poss, tos) => {
+    const w = px * 6 * 3 + pad * 2, bx = right ? x - w : x;
+    ctx.fillStyle = t.clr; ctx.fillRect(bx, px, w, bar - px * 3); ctx.fillStyle = t.ac; ctx.fillRect(bx, bar - px * 2, w, px);
+    pixShadow(ctx, t.ab, bx + w / 2, pad, px, "#fff", "center");
+    const sx = right ? bx - pad : bx + w + pad;
+    pixShadow(ctx, n, sx, pad, px, "#fff", right ? "right" : "left");
+    // possession: a little football beside the score
+    const nw = pixWidth(n, px), fx = right ? sx - nw - pad * 2.5 : sx + nw + pad;
+    if (poss) { ctx.fillStyle = "#a0552a"; ctx.fillRect(fx, pad + px * 2, px * 3, px * 3); ctx.fillStyle = "#fff"; ctx.fillRect(fx + px, pad + px * 2, px, px * 3); }
+    // timeouts: three pips under the club
+    for (let i = 0; i < 3; i++) { ctx.fillStyle = i < (tos ?? 3) ? "#ffd166" : "#3a4258"; ctx.fillRect(bx + pad + i * px * 3, bar - px * 2, px * 2, px); }
   };
-  panel(L, x, false); panel(R, x + bw - pw, true);
-  // the middle: the quarter and the clock in amber, the down under them
+  box(pad, teams.user, sit.score.h, false, sit.poss === "h" && !sit.done, to?.h); box(W - pad, teams.opp, sit.score.a, true, sit.poss === "a" && !sit.done, to?.a);
   const clock = `${Math.floor(sit.clock / 60)}:${String(sit.clock % 60).padStart(2, "0")}`;
-  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.shadowColor = "rgba(255,190,60,.55)"; ctx.shadowBlur = u * 2;
-  ctx.fillStyle = "#ffcf5a"; ctx.font = font(bh * 0.4); ctx.fillText(clock, mid, y + bh * 0.42);
-  ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.font = font(bh * 0.17);
-  const q = sit.done ? "FINAL" : sit.ot || ot ? "OT" : ["1ST", "2ND", "3RD", "4TH"][sit.qtr - 1] || `Q${sit.qtr}`;
-  ctx.fillText(q, mid, y + bh * 0.13 + u);
-  if (!sit.done && !sit.koNext && sit.down) { const tg = sit.toGo >= 100 - sit.yard ? "GOAL" : sit.toGo; ctx.fillStyle = "#e5e7eb"; ctx.font = font(bh * 0.16); ctx.fillText(`${["1ST", "2ND", "3RD", "4TH"][sit.down - 1] || sit.down} & ${tg}`, mid, y + bh * 0.8); }
-  ctx.restore();
-  cam.hudBottom = y + bh + u;
-  return y + bh + u;
+  pixShadow(ctx, `${sit.ot || ot ? "OT" : "Q" + sit.qtr}  ${clock}`, W / 2, pad, px, "#ffd166", "center");
+  return bar;
 }
 const shade = (hex, k) => { const n = parseInt(String(hex).replace("#", "").padEnd(6, "0").slice(0, 6), 16); const f = (c) => Math.max(0, Math.min(255, Math.round(c + (k < 0 ? c * k : (255 - c) * k)))); return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`; };
-function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-export function drawDownBox(ctx, cam, text, color = "#fff") {
-  const { W } = cam, px = hudPx(cam), h = px * 7, pad = px * 2, bar = cam.hudBottom ?? h + pad * 2;
-  const w = pixWidth(text, px) + pad * 3;
+
+export function drawDownBox(ctx, cam, text, color = "#fff", { left = false } = {}) {
+  const px = hudPx(cam), h = px * 7, pad = px * 2, bar = left ? pad : h + pad * 2;
+  const w = pixWidth(text, px) + pad * 3, W = left ? w + pad * 4 : cam.W; // (at the left: its box starts a little in from the edge)
   ctx.fillStyle = "#0b0e14"; ctx.fillRect(Math.round(W / 2 - w / 2), bar - px, Math.round(w), h + pad + px);
   ctx.fillStyle = "#1c2433"; ctx.fillRect(Math.round(W / 2 - w / 2), bar + h + pad - px, Math.round(w), px);
   pixShadow(ctx, text, W / 2, bar + pad / 2, px, color, "center");
@@ -730,7 +754,7 @@ const wrap = (text, n) => { const out = []; let line = ""; for (const w of Strin
 // ---- the play call ----
 // Play cards along the bottom, each with the play's routes drawn on it, Retro Bowl style. A key
 // number on each for the keyboard. Returns the hit boxes.
-export function drawPlayCards(ctx, cam, heading, items, color, { keys = false, hover = null } = {}) {
+export function drawPlayCards(ctx, cam, heading, items, color, { keys = false, hover = null, sub = null } = {}) {
   const { W, H } = cam, px = hudPx(cam), small = W < 560;
   const cols = small ? 3 : Math.min(6, items.length), rows = Math.ceil(items.length / cols), gap = px * 2;
   const cw = Math.min(px * 54, (W - gap * (cols + 1)) / cols), ch = Math.round(cw * (small ? 0.72 : 0.6)), total = cols * cw + (cols - 1) * gap;
@@ -738,6 +762,8 @@ export function drawPlayCards(ctx, cam, heading, items, color, { keys = false, h
   ctx.fillStyle = "rgba(8,10,16,.9)"; ctx.fillRect(0, top - px * 3, W, H - top + px * 3);
   ctx.fillStyle = color; ctx.fillRect(0, top - px * 3, W, px);
   pixShadow(ctx, heading, W / 2, top, px, "#ffd166", "center");
+  // who's on the field for this snap (the back in the backfield), so the call can fit the man
+  if (sub) { const sw = pixWidth(sub, px) + px * 6; ctx.fillStyle = "rgba(8,10,16,.9)"; ctx.fillRect(Math.round(W / 2 - sw / 2), top - px * 13, Math.round(sw), px * 10); ctx.fillStyle = color; ctx.fillRect(Math.round(W / 2 - sw / 2), top - px * 13, Math.round(sw), Math.max(1, Math.round(px * 0.5))); pixShadow(ctx, sub, W / 2, top - px * 11, px, "#fff", "center"); }
   const boxes = [];
   items.forEach(([key, label, kind, shows], i) => {
     const c = i % cols, r = Math.floor(i / cols), x = Math.round(left + c * (cw + gap)), y = Math.round(top + px * 10 + r * (ch + gap));
