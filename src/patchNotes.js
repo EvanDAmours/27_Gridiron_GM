@@ -2365,4 +2365,8 @@ export const PATCH_NOTES = [
     "Arcade field: the end zones are painted like a real stadium's again. Each club's name runs huge across its end zone in its own color with a white outline, its logo sits faded at both ends, and the home club's logo is at midfield. The grass runs past the end lines to the wall instead of ending in a dark edge.",
     "Arcade field: a stadium videoboard hangs over the far stands in place of the old score strip. It shows the visitors on the left and the home club on the right in their colors with their logos, big scores, the quarter and the clock in amber, the down and distance, timeouts, and who has the ball. When you're watching, the result banners carry on by themselves without asking you to click.",
   ] },
+  { v: "5.69", date: "2026-10-23", title: "Goalposts and camera crews", notes: [
+    "Arcade field: new goalposts. They used to lean off the end line at an odd slant. Now each one stands right on its end line, turned a little toward the camera so it reads as a proper H: two straight gold uprights with flags on top, the crossbar running back between them, and a curved gooseneck down to a base padded in the home club's colors.",
+    "Arcade field: camera crews, like a real broadcast. A cameraman with a shoulder camera works the near sideline and a camera cart rolls along the far one, both following the line of scrimmage from play to play, and there's a cameraman behind each end zone.",
+  ] },
 ];
