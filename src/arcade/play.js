@@ -6,6 +6,14 @@
 // asks it for a play of that kind gaining about those yards, so the box score, grades, clock and
 // log are the engine's, and the field never shows something the box score contradicts.
 import { resolvePlay } from "./bridge.js";
+
+// Calibration: the knobs that set how hard the field is, tuned so an average player's numbers come
+// out where the engine's own do for the same matchup (scripts/arcade-playtest.mjs against
+// scripts/arcade-baseline.mjs). Better play beats them; worse play falls short. rush: seconds added
+// to how long the line holds; lag/trail: how far a cover man plays off his receiver (1 = as built);
+// open: yards of separation that count as open at the catch; yac: the chance a carrier breaks or
+// jukes a tackle on a run (1 = as built), yacCatch after a catch; hands: the catch chance (1 = as built).
+export const CAL = { rush: 1.1, lag: 0.8, trail: 1, open: 0, yac: 1.15, yacCatch: 0.35, hands: 0.87 };
 import * as K from "./ratings.js";
 
 export const FIELD_W = 53.3, HALF = FIELD_W / 2;
@@ -150,7 +158,7 @@ export function snap(S) {
       const rush = K.skill(d.p, [["passRush", 0.75], ["getOff", 0.25], ["blitzing", 1]], 0.15) * 0.5 + K.skill(d.p, [[move, 1]], 0.1) * 0.5;
       const blk = o ? K.passBlock(o.p) * 0.55 + K.skill(o.p, [[counter, 1]], 0.1) * 0.45 : 50;
       // (a blitz brings games up front too: twists and slants free a rusher a beat sooner; dropping eight gives the line time)
-      S.shed[k] = clamp(1.95 + (blk - rush) * 0.1 - K.edge(K.getOff(d.p)) * 0.02 + rnd(S) * 1.8 + (S.dcall === "cover" ? 0.35 : S.dcall === "blitz" ? -0.3 : 0), 1.05, 6.5);
+      S.shed[k] = clamp(1.95 + CAL.rush + (blk - rush) * 0.1 - K.edge(K.getOff(d.p)) * 0.02 + rnd(S) * 1.8 + (S.dcall === "cover" ? 0.35 : S.dcall === "blitz" ? -0.3 : 0), 1.05, 6.5);
       d.move = label;
     } else {
       // the run: who wins at the point of attack, and by how much: the line drives him back, or he walks it into the backfield
@@ -359,7 +367,7 @@ export function tick(S, dt) {
       // then lunges for it; anyone else close enough breaks on the spot once he's seen it
       const tgt = f.target && ents[f.target];
       if (mine && ents[mine] && left > clamp(0.3 + K.edge(K.ballRead(d.p)) * 0.006 + (f.bullet ? 0 : 0.35), 0.12, 0.85)) { // (a lob he can read and play sooner) // a sharp reader breaks on it sooner
-        const r = ents[mine], cov = K.coverMan(d.p), lag = 0.36 + Math.max(0, 90 - cov) * 0.012, kk = Math.min(1, dt / lag);
+        const r = ents[mine], cov = K.coverMan(d.p), lag = (0.36 + Math.max(0, 90 - cov) * 0.012) * CAL.lag, kk = Math.min(1, dt / lag);
         d.rv ||= { vx: 0, vy: 0 }; d.rv.vx += (r.vx - d.rv.vx) * kk; d.rv.vy += (r.vy - d.rv.vy) * kk;
         // (a loose grip on him now: if he slows for the ball, his man is carried past him)
         mirror(d, r, r.x - 0.8, r.y + (r.y > 0 ? -0.6 : 0.6), dt, 1, 0.45, d.rv); continue;
@@ -381,13 +389,13 @@ export function tick(S, dt) {
     if (mine && ents[mine] && ents[mine].mode !== "protect" && ents[mine].mode !== "block") {
       // man: on his hip, shaded inside; a better cover man stays tighter and reads the break sooner
       const r = ents[mine], cov = K.coverMan(d.p);
-      const q = clamp(0.96 + (cov - 78) * 0.003, 0.87, 1.02), trail = (r.mode === "settle" ? 0.8 : 1.25) + clamp(85 - cov, 0, 30) * 0.025, in_ = r.y > 0 ? -0.7 : 0.7;
+      const q = clamp(0.96 + (cov - 78) * 0.003, 0.87, 1.02), trail = ((r.mode === "settle" ? 0.8 : 1.25) + clamp(85 - cov, 0, 30) * 0.025) * CAL.trail, in_ = r.y > 0 ? -0.7 : 0.7;
       // he reads the receiver's moves a beat late (later for a lesser cover man): what he mirrors is
       // a smoothed copy of the receiver's velocity, so a sharp cut opens a window before he reacts
       // leverage: shaded inside, he's already there for a break inside (a slant, a dig) and a step
       // late on one outside (an out, a corner); that's what the outside routes are for
       const lever = r.vy * in_ > 1 ? 0.55 : r.vy * in_ < -1 ? 1.25 : 1;
-      const lag = (0.36 + Math.max(0, 90 - cov) * 0.012) * lever, k = Math.min(1, dt / lag);
+      const lag = (0.36 + Math.max(0, 90 - cov) * 0.012) * lever * CAL.lag, k = Math.min(1, dt / lag);
       d.rv ||= { vx: 0, vy: 0 }; d.rv.vx += (r.vx - d.rv.vx) * k; d.rv.vy += (r.vy - d.rv.vy) * k;
       const lx = r.x - r.vx * 0.05, ly = r.y - r.vy * 0.05;
       const beaten = r.x > d.x + 1 ? 1 + (K.recovery(d.p) - 75) * 0.003 : 1; // beaten: his recovery speed closes it back up
@@ -455,7 +463,7 @@ export function tick(S, dt) {
       // the tackle, or a broken one: elusiveness against his tackling, and a man can't be broken twice
       const el = Math.max(K.power(carrier.p), K.afterCatch(carrier.p)), tk = K.tackling(d.p);
       // (a man who just caught it hasn't got his feet under him; a broken tackle still knocks him off stride)
-      const pBreak = d.missed ? 0 : clamp(0.085 + (el - tk) * 0.005 + (S.broke ? -0.05 : 0), 0.05, 0.35);
+      const pBreak = d.missed ? 0 : clamp((0.085 + (el - tk) * 0.005 + (S.broke ? -0.05 : 0)) * (S.catchAt != null ? CAL.yacCatch : CAL.yac), 0.03, 0.35);
       if (rnd(S) < pBreak) { d.down = 0.7; d.missed = true; S.broke++; const bal = clamp(1 - K.edge(K.balance(carrier.p)) * 0.012, 0.5, 1.4); S.stagger = S.t + 0.45 * bal; carrier.vx *= 1 - 0.45 * bal; carrier.vy *= 1 - 0.45 * bal; S.log.push(`${d.p.name} misses`); }
       else { tackle(S, d); return true; }
     } else if (d && dd < 2.3 && dSpeed > 6 && closing < 0.4 && !d.dove && !d.missed && /* (only when he isn't running him down anyway) */ (d.x - carrier.x) * Math.sign(carrier.vx || 1) < 0.3) { // (from behind or alongside: a man in front just tackles him)
@@ -518,7 +526,7 @@ export function juke(S) {
     const el = K.elusive(c.p), tk = K.tackling(d.p);
     // a well-timed one works; each one after that on the same run is easier to read
     S.jukes = (S.jukes || 0) + 1;
-    if (rnd(S) < clamp(0.3 + (el - tk) * 0.006 - (S.jukes - 1) * 0.08, 0.08, 0.5)) { d.down = 0.6; d.missed = true; S.broke++; S.log.push(`${d.p.name} juked`); return true; }
+    if (rnd(S) < clamp((0.3 + (el - tk) * 0.006 - (S.jukes - 1) * 0.08) * (S.catchAt != null ? CAL.yacCatch : CAL.yac), 0.05, 0.5)) { d.down = 0.6; d.missed = true; S.broke++; S.log.push(`${d.p.name} juked`); return true; }
     S.stagger = S.t + 0.3; // he bit on nothing: the cut costs the runner a step
   }
   return false;
@@ -613,7 +621,7 @@ function arrive(S) {
   const trailing = tgt && d && ((d.x - tgt.x) * ux + (d.y - tgt.y) * uy) / un < -0.6;
   // a deep lob hangs: a cover man in phase (even a step behind) gets to play it
   const deepLob = !f.bullet && hyp(f.to.x - f.from.x, f.to.y - f.from.y) > 18;
-  const open = dD > (deepLob ? 2.5 : 1.6) || (trailing && !deepLob && dD > 0.9);
+  const open = dD > (deepLob ? 2.5 : 1.6) + CAL.open || (trailing && !deepLob && dD > 0.9 + CAL.open);
   let want;
   if (tgt && dR <= catchR + reachR) {
     // on his hands: an open man catches it (the odd drop); a covered one wins it on his hands
@@ -622,7 +630,7 @@ function arrive(S) {
     const dive = dR > catchR ? 1 - (dR - catchR) / Math.max(0.5, reachR) : 1; // one just out of reach: a dive, less likely the further
     const first = tgt && d && dR < dD - 0.4 ? (deepLob ? 0.05 : 0.12) : 0; // he got to it first
     const pCatch = (open ? clamp(0.985 - (85 - hands) * 0.003, 0.9, 0.995) : clamp((deepLob ? 0.44 : 0.7) + first + (traffic - ballSk) * 0.007 + (dD - 0.8) * (deepLob ? 0.1 : 0.22) - (dR > 1.2 ? 0.08 : 0), 0.18, 0.9)) * clamp(dive, 0, 1);
-    if (rnd(S) < pCatch * (f.bullet && hyp(f.to.x - f.from.x, f.to.y - f.from.y) > 24 ? 0.85 : 1) * (1 - 0.035 * (wxField(S.g).rain || 0) - 0.02 * (wxField(S.g).snow || 0))) { // (a wet ball is a slippery one) // (a long rope is a hard ball to hang on to)
+    if (rnd(S) < pCatch * CAL.hands * (f.bullet && hyp(f.to.x - f.from.x, f.to.y - f.from.y) > 24 ? 0.85 : 1) * (1 - 0.035 * (wxField(S.g).rain || 0) - 0.02 * (wxField(S.g).snow || 0))) { // (a wet ball is a slippery one) // (a long rope is a hard ball to hang on to)
       ball.x = tgt.x; ball.y = tgt.y; ball.holder = f.target; tgt.mode = "carry"; S.catchAt = S.t; S.phase = "carry";
       if (d && dD < 2.5) { d.down = Math.max(d.down, clamp(0.4 - (dD < 0.8 ? 0.2 : 0) - K.edge(K.tackling(d.p)) * 0.005, 0.15, 0.6)); d.vx *= 0.3; d.vy *= 0.3; } // he played the ball, not the man
       S.pick.open = open; S.log.push(`caught ${open ? "open" : "contested"}`);

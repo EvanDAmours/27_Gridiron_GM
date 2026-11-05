@@ -2,13 +2,15 @@
 // throws to where he'll be (with some human error), steers runners away from tacklers; the other
 // team is the engine. Prints what a session feels like in numbers. Run: node scripts/arcade-playtest.mjs [games]
 import { newGame, lineups, runPlay, simOpponentDrive } from "../src/arcade/bridge.js";
-import { setupPlay, snap, tick, throwTo, juke, separation, ELIGIBLE, CONCEPTS, passPlan } from "../src/arcade/play.js";
+import { setupPlay, snap, tick, throwTo, juke, separation, ELIGIBLE, CONCEPTS, passPlan, CAL } from "../src/arcade/play.js";
+if (process.env.CAL) Object.assign(CAL, JSON.parse(process.env.CAL)); // try other calibrations: CAL='{"lag":0.8}'
 
 const N = +process.argv[2] || 4, DT = 1 / 60;
 const SEED0 = +(process.env.SEED0 || 100);
 const seedOf = (s) => () => ((s = (s * 16807) % 2147483647) / 2147483647);
 const stat = { plays: 0, pass: { att: 0, comp: 0, yds: 0, td: 0, int: 0, sack: 0, drop: 0, late: 0, hurried: 0, openAtRelease: 0, contested: 0, ttt: [] }, run: { att: 0, yds: 0, td: 0, broke: 0 }, dur: [], tries: [], off: 0, inexact: 0, fumble: 0, pen: 0, oob: 0, types: {}, catchErr: [], longest: 0, retries: 0, maxSpeed: 0, jump: 0, jumpBy: {}, outcomes: {}, comps: {} };
 const skill = { react: 0.4, aimErr: 1.2, patience: 1.2 };
+if (process.env.SKILL) Object.assign(skill, JSON.parse(process.env.SKILL)); // a sloppier or sharper player: SKILL='{"aimErr":2.4}'
 
 function human(S, call, state) {
   // throw once someone is open (or on a clock), to where he'll be when the ball lands
@@ -102,6 +104,10 @@ for (const [k, v] of Object.entries(stat.comps)) { const by = {}; for (const r o
 console.log(`time to throw ${avg(p.ttt)}s, ball-to-receiver at arrival ${avg(stat.catchErr)} yd`);
 console.log(`run: ${r.att} att, ${(r.yds / Math.max(1, r.att)).toFixed(1)} yds/att, ${r.td} td, ${r.broke} broken tackles (${(r.broke / Math.max(1, r.att)).toFixed(2)}/run), jukes that worked ${stat.jukes || 0}`);
 if (stat.deepCatch) { const a = stat.deepCatch, m = (i) => (a.map((r) => r[i]).sort((x, y) => x - y)[a.length >> 1]).toFixed(1); console.log(`deep catches n${a.length}: nearest defender ${m(0)} yd, nearest safety ${m(1)} yd, past the deepest defender ${m(2)} yd (median); behind everyone ${Math.round(a.filter((r) => r[2] > 0).length / a.length * 100)}%`); }
+// the same numbers, the same way the engine baseline counts them (scripts/arcade-baseline.mjs):
+// sacks aren't pass attempts; the target for an average player is the engine's own line
+{ const all = Object.values(stat.comps).flat(), att = p.att - p.sack, big = all.filter((r) => r.yds >= 20).length;
+  console.log(`ENGINE-COMPARABLE: comp ${(100 * p.comp / att).toFixed(1)}%, Y/A ${(p.yds / att).toFixed(2)}, 20+ completions ${(100 * big / Math.max(1, all.length)).toFixed(1)}%, sack% ${(100 * p.sack / p.att).toFixed(1)}%, INT% ${(100 * p.int / att).toFixed(1)}%, pass TD% ${(100 * p.td / att).toFixed(1)}%, rush Y/C ${(r.yds / Math.max(1, r.att)).toFixed(2)}, pts/team ${(stat.scores.reduce((a, b) => a + b, 0) / stat.scores.length).toFixed(1)}`); }
 if (stat.byConcept) console.log("by concept:\n" + Object.entries(stat.byConcept).map(([k, c]) => `  ${k.padEnd(11)} n${String(c.n).padStart(4)} comp ${Math.round(c.comp / c.n * 100)}% Y/play ${(c.yds / c.n).toFixed(1)} sack ${Math.round(c.sack / c.n * 100)}% int ${c.int} | ${Object.entries(c.why).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([w, n]) => w + " " + n).join(", ")}`).join("\n"));
 if (stat.byCall) console.log("throws by call:", Object.entries(stat.byCall).map(([k, b]) => `${k} n${b.n} t${(b.t / b.n).toFixed(2)} depth${(b.d / b.n).toFixed(1)} open${Math.round(b.open / b.n * 100)}%`).join(" | "));
 if (stat.jump) console.log("teleports by man:", Object.entries(stat.jumpBy).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([k, v]) => `${k} ${v}`).join(", "));
