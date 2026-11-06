@@ -2425,4 +2425,7 @@ export const PATCH_NOTES = [
   { v: "5.83", date: "2026-10-23", title: "NFC West sprites", notes: [
     "Arcade field: the whole NFC West now has its own animated players, home and road: the Cardinals, Rams, 49ers and Seahawks run, throw, catch, juke, tackle and celebrate in their own uniforms. A few of each club's home frames had come out with a grey or white jersey (the run with the ball, the tackle, the stumble, the dives and falls, the swim move and the spike); those are repainted in the right colour.",
   ] },
+  { v: "5.84", date: "2026-10-23", title: "AFC South sprites", notes: [
+    "Arcade field: the whole AFC South now has its own animated players, home and road: the Colts, Jaguars and Titans join the Texans. In this pack the players' arms and faces had picked up the uniform colours (a Titans quarterback with powder-blue arms, a Colt with white ones); the skin is painted back on every frame.",
+  ] },
 ];
