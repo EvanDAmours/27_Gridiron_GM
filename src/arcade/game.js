@@ -144,6 +144,10 @@ export class ArcadeGame {
     const c = this.ceremony, t = this.time - c.t0, cam = this.cam; this.hype = 1;
     const colors = [c.team.clr || "#1e3a8a", c.team.ac || "#ffffff", "#fbbf24", "#fde68a", "#ffffff"];
     const beat = Math.floor(t / 0.7); if (beat !== c.last && this.fx.parts.length < 1400) { c.last = beat; this.fx.confetti(cam.W, colors); }
+    // the stage's cannons fire gold and white streamers every couple of seconds (screen space: through the
+    // same close-in on the stage the picture has)
+    const shot = Math.floor((t - 1) / 1.7); if (t > 1 && shot !== c.shot) { c.shot = shot; const k = 1 + 0.22 * Math.min(1, t / 3), [fx, fy] = cam.toScreen(50, -6);
+      for (const x of [42.6, 57.4]) { const [px, py] = cam.toScreen(x, -6.3), sx = fx + (px - fx) * k, sy = fy + (py - cam.s * 1.1 - cam.s * 1.2 - fy) * k; this.fx.burst(sx, sy, { n: 26, colors: ["#fde68a", "#fbbf24", "#ffffff", c.team.clr || "#fff"], speed: 220, up: 260, size: 4, life: 1.4, grav: 260 }); } }
     if (t >= 8.2 && !c.handed) { c.handed = true; sfx.touchdown(); this.fx.flashScreen("#fff8dc", 0.45); this.fx.punch(1.05, 0.8); }
     cam.camX += (50 - (cam.W * 0.08) / cam.s - cam.camX) * Math.min(1, dt * 3); // (midfield in the middle of the screen)
   }
