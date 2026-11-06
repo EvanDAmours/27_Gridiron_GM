@@ -10,7 +10,7 @@
 //    Space jukes; to kick, aim with the pointer and hold the button, let go at the top of the meter.
 // Either way, the pass button (Q on a keyboard) switches AUTO / BULLET / LOB, and the arc you see
 // while aiming is the throw you'll get.
-import { TEAMS, newGame, lineups, runPlay, simOpponentDrive, situation, snapshot, restore, patWaiting, bookPat, flipSides } from "./bridge.js";
+import { TEAMS, newGame, franchiseGame, lineups, runPlay, simOpponentDrive, situation, snapshot, restore, patWaiting, bookPat, flipSides } from "./bridge.js";
 import { autoState, autoStep, autoCall } from "./autopilot.js";
 import { backForSnap } from "../playsim.js";
 import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
@@ -87,7 +87,7 @@ export class ArcadeGame {
     return navigator.standalone ? null : "ios";
   }
   async fullscreen(want = true) {
-    const d = document, el = this.live ? this.cv.parentElement : d.documentElement; // (a live game: just the field, not the whole app)
+    const d = document, el = this.live && !this.live.solo ? this.cv.parentElement : d.documentElement; // (a live game: just the field, not the whole app)
     try {
       if (want && !(d.fullscreenElement || d.webkitFullscreenElement)) { await (el.requestFullscreen?.({ navigationUI: "hide" }) ?? el.webkitRequestFullscreen?.()); await screen.orientation?.lock?.("landscape").catch(() => {}); }
       else if (!want) await (d.exitFullscreen?.() ?? d.webkitExitFullscreen?.());
@@ -102,7 +102,7 @@ export class ArcadeGame {
     // on a desktop window the game sits in a 16:9 frame (at most ~1000 px wide) in the middle of the
     // page, like a console game in a browser; on a phone, or in full screen, it fills the screen
     const full = !!(document.fullscreenElement || document.webkitFullscreenElement);
-    if (this.input === "mouse" && !full && !this.live) { // (inside the live game screen it fills the box the app gives it)
+    if (this.input === "mouse" && !full && (!this.live || this.live.solo)) { // (inside the live game screen it fills the box the app gives it)
       const fw = Math.min(1000, W * 0.9, (H * 0.9) * 16 / 9); W = Math.round(fw); H = Math.round(fw * 9 / 16);
       Object.assign(wrap.style, { display: "flex", alignItems: "center", justifyContent: "center" });
       cv.style.borderRadius = "6px"; cv.style.boxShadow = "0 0 0 2px #1d2433, 0 20px 60px rgba(0,0,0,.6)";
@@ -157,9 +157,14 @@ export class ArcadeGame {
     preload(this.teams.user); preload(this.teams.opp);
     const R = this.rand || Math.random, pick = this.wxPick;
     const wx = pick === "auto" ? rollWeather(teamKey(this.teams.user), R) : pick;
-    this.sb = this.sbMode && !this.live && !this.franchise ? sbTitle() : null; if (this.sb) this.sbCardAt = this.time;
-    this.g = newGame(this.userTi, this.oppTi, { ...(this.rand ? { rand: this.rand } : {}), pat: true, qLen: this.qMin * 60, wx, wind: windFor(wx, R) }).g; this.sit = situation(this.g);
-    this.fade = 1; this.advance(); ambient(true);
+    this.sb = this.sbMode && !this.franchise ? sbTitle() : null; if (this.sb) this.sbCardAt = this.time;
+    this.mode = "loading"; this.S = null; this.ceremony = null; this.cerNext = null; this.box = null; this.banner = null;
+    const opts = { ...(this.rand ? { rand: this.rand } : {}), qLen: this.qMin * 60, wx, wind: windFor(wx, R) }, seq = (this.startSeq = (this.startSeq || 0) + 1);
+    franchiseGame(this.userTi, this.oppTi, opts).catch((e) => { console.error("arcade: franchise setup failed, using the plain rosters", e); return newGame(this.userTi, this.oppTi, opts).g; }).then((g) => {
+      if (seq !== this.startSeq) return; // (started again meanwhile)
+      this.live = { solo: true, g, userSide: "h", watch: false, night: false, teams: { h: { ...TEAMS[this.userTi], isAway: false }, a: { ...TEAMS[this.oppTi], isAway: true } }, onEvent: null };
+      this.g = g; this.flipped = false; this.teams = this.viewTeams(); this.sit = situation(g); this.refresh(); this.fade = 1; this.advance(); ambient(true);
+    });
   }
   // what happens next: the other team's drive (and any kickoff), or your next call
   advance() {
@@ -196,7 +201,7 @@ export class ArcadeGame {
     if (this.mode === "ceremony" || this.cerNext) { if (this.cerNext && this.g?.done) { this.S = null; this.mode = "idle"; } return; }
     const g = this.g, L = this.live; this.banner = null; this.auto = null;
     if (!g || this.held) return;
-    if (g.done) { this.unflip(); this.S = null; this.mode = "idle"; this.refresh(); return; }
+    if (g.done) { this.unflip(); this.S = null; this.mode = "idle"; this.refresh(); if (L.solo) this.finishSolo(); return; }
     if (patWaiting(g)) { this.offReal = g.patPending.off; if (g.patPending.off !== "h") this.flip(); this.S = null; this.mode = "pat"; this.fade = Math.max(this.fade, 0.6); this.refresh(); return; } // your try after your touchdown
     this.unflip();
     if (g.koNext) { const off = g.poss, ev = runPlay(g); this.emit(ev, off); this.showEngine(ev); return; } // the kickoff: the engine's
@@ -263,19 +268,24 @@ export class ArcadeGame {
   }
   endHint() { return this.franchise ? (this.mobile ? "TAP TO CONTINUE" : "CLICK OR ENTER TO CONTINUE") : this.mobile ? "TAP FOR A NEW GAME" : "CLICK OR ENTER FOR A NEW GAME"; }
   // leaving the final box score: a franchise game goes back to the season; otherwise the title screen
-  leaveFinal() { if (this.franchise) { if (!this.left) { this.left = true; ambient(false); this.onFinish?.(this.g); } return; } this.mode = "menu"; this.S = null; }
+  leaveFinal() { if (this.franchise) { if (!this.left) { this.left = true; ambient(false); this.onFinish?.(this.g); } return; } this.mode = "menu"; this.S = null; if (this.live?.solo) this.live = null; }
   // the pause menu's SIM TO THE END: the engine plays out the rest (it counts), then the box score
   simRest() {
     const g = this.g; if (!g) return;
     if (this.two) { restore(g, this.two.snap); this.two = null; }
+    if (this.live) this.unflip(); this.auto = null; this.replay = null; this.pendingReplay = null;
     this.S = null; let n = 0;
     while (!g.done && n++ < 900) runPlay(g);
     this.onPlay?.(g); this.refresh();
     if (this.sb && this.sit.score.h > this.sit.score.a && !this.ceremony) { this.cerNext = { winner: "h", name: this.sb, team: this.teams.user, away: false }; this.beginCeremony(); } else { this.mode = "final"; this.endBanner(); }
     this.onSimRest?.(g);
   }
+  finishSolo() {
+    if (this.sb && this.sit.score.h > this.sit.score.a && !this.ceremony) { this.cerNext = { winner: "h", name: this.sb, team: this.live.teams.h, away: false }; this.beginCeremony(); return; }
+    this.mode = "final"; this.endBanner();
+  }
   // out of the ceremony (the standalone arcade): the box score, as after any game
-  leaveCeremony() { if (this.live || this.mode !== "ceremony") return; this.mode = "final"; this.refresh(); this.endBanner(); this.banner.title = "WORLD CHAMPIONS!"; }
+  leaveCeremony() { if ((this.live && !this.live.solo) || this.mode !== "ceremony") return; this.mode = "final"; this.refresh(); this.endBanner(); this.banner.title = "WORLD CHAMPIONS!"; }
   endBanner() { this.makeBox(); const st = this.sit, lead = st.score.h - st.score.a; this.banner = { title: lead > 0 ? "YOU WIN!" : lead < 0 ? "YOU LOSE" : "TIE GAME", text: `${this.teams.user.name} ${st.score.h}, ${this.teams.opp.name} ${st.score.a}`, sub: null, at: performance.now(), hint: this.endHint() }; if (lead > 0) { this.fx.confetti(this.cam.W, [this.teams.user.clr, this.teams.user.ac, "#ffd166", "#fff"]); sfx.touchdown(); } }
 
   // ---- the loop ----
@@ -296,7 +306,7 @@ export class ArcadeGame {
   // one step of the game (the browser loop and the playtest harness both use it)
   update(dt, now = performance.now()) {
     this.time += dt; this.fade = Math.max(0, this.fade - dt * 2.5); this.hype = Math.max(0, this.hype - dt * 0.5); ambientHype(this.hype);
-    if (this.paused || this.mode === "menu") { this.fx.step(dt); return; }
+    if (this.paused || this.mode === "menu" || this.mode === "loading") { this.fx.step(dt); return; }
     if (this.mode === "replay") { this.fx.step(dt); this.stepReplay(dt); return; }
     if (this.cerNext && this.time >= this.cerAt) this.beginCeremony();
     if (this.mode === "ceremony") { this.fx.step(dt); this.stepCeremony(dt); return; }
@@ -387,10 +397,12 @@ export class ArcadeGame {
     this.fx.k = uiPx(cam); // effects scale with the screen
     this.buttons = []; this.chips = {};
     if (this.mode === "menu") { this.buttons = drawMenu(ctx, cam, { teams: TEAMS, user: this.userTi, opp: this.oppTi, time: this.time, focus: this.menuFocus, mobile: this.mobile, fs: this.fsState, qMin: this.qMin, wxPick: wxName(this.wxPick), sb: this.sbMode ? sbTitle() : null }); this.fx.draw(ctx, cam.W, cam.H, pixText); return; }
+    if (this.mode === "loading") { ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, cam.W, cam.H); const px = uiPx(cam); pixText(ctx, "SETTING UP THE GAME...", cam.W / 2, cam.H / 2 - px * 3, px, "rgba(255,255,255,.75)", "center"); return; }
     const m = this.mode, P = this.S, st = this.sit, teams = this.teams;
     // the field, with the shake and the zoom punch
     const [ox, oy] = this.fx.offset(), z = this.fx.zoom;
     ctx.save(); ctx.translate(cam.W / 2 + ox, cam.H / 2 + oy); ctx.scale(z, z); ctx.translate(-cam.W / 2, -cam.H / 2);
+    const full = !!(typeof document !== "undefined" && (document.fullscreenElement || document.webkitFullscreenElement)) || !!this.live?.fill || !!this.live?.solo; // (full screen, or a phone's full-screen field: the page's scoreboard is out of sight)
     const rp = m === "replay" ? this.replay : null, fr = rp?.frames[rp.i];
     if (fr) cam.camX = fr.camX;
     const PP = fr ? { ...fr.top, ents: fr.ents, ball: fr.ball, g: this.g } : P, cer = m === "ceremony" ? this.ceremony : null;
@@ -399,17 +411,16 @@ export class ArcadeGame {
       const want = this.live && open ? 1.14 : 1; this.push = (this.push ?? 1) + (want - (this.push ?? 1)) * (want > (this.push ?? 1) ? 0.03 : 0.06);
       if (cer) { const k = 1 + 0.22 * Math.min(1, (this.time - cer.t0) / 3), [fx, fy] = cam.toScreen(50, -6); ctx.translate(fx, fy); ctx.scale(k, k); ctx.translate(-fx, -fy); }
       else if (this.push > 1.002 && c) { const [bx, by] = cam.toScreen(c.x, c.y); const fx = Math.max(cam.W * 0.2, Math.min(cam.W * 0.8, bx)), fy = Math.max(cam.H * 0.3, Math.min(cam.H * 0.75, by)); ctx.translate(fx, fy); ctx.scale(this.push, this.push); ctx.translate(-fx, -fy); } }
-    drawRetro(ctx, cam, cer ? null : PP, fr ? rp.teams : teams, this.g, { sb: this.sb, board: fr ? rp.board : this.board, ring: true, time: fr ? fr.time : this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
+    drawRetro(ctx, cam, cer ? null : PP, fr ? rp.teams : teams, this.g, { noBoard: (!this.live || full) && !cer, sb: this.sb, board: fr ? rp.board : this.board, ring: true, time: fr ? fr.time : this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
     if (this.live && P && !P.kind && !fr && P.phase === "presnap" && m === "play") drawNameTags(ctx, cam, P);
     if (cer) drawCeremony(ctx, cam, cer.team, cer.away, this.time - cer.t0, { sb: cer.name });
     ctx.restore();
     if (fr) drawReplayTag(ctx, cam, this.time);
     if (this.sb && this.sbCardAt != null && m !== "ceremony") { const a = this.time - this.sbCardAt; if (a < 3.6) drawSbCard(ctx, cam, this.sb, teams, a); }
-    if (cer && !this.live && this.time - cer.t0 > 9) drawHint(ctx, cam, this.mobile ? "TAP TO CONTINUE" : "CLICK OR ENTER TO CONTINUE", cam.H * 0.72);
+    if (cer && (!this.live || this.live.solo) && this.time - cer.t0 > 9) drawHint(ctx, cam, this.mobile ? "TAP TO CONTINUE" : "CLICK OR ENTER TO CONTINUE", cam.H * 0.72);
     if (cer) { const t = this.time - cer.t0; drawLowerThird(ctx, cam, `${String(cer.name || "SUPER BOWL").toUpperCase()} CHAMPIONS`, t < 8.2 ? "HERE COMES THE LOMBARDI TROPHY" : `THE ${String(cer.team.name || "").toUpperCase()} ARE WORLD CHAMPIONS`, cer.team.clr, { age: t, accent: "#ffd166" }); }
     drawWeather(ctx, cam, { wx: this.g?.wxE, time: this.time, wind: windNow(this.g) });
     this.fx.draw(ctx, cam.W, cam.H, pixText);
-    const full = !!(typeof document !== "undefined" && (document.fullscreenElement || document.webkitFullscreenElement)) || !!this.live?.fill; // (full screen, or a phone's full-screen field: the page's scoreboard is out of sight)
     if (!this.live || (full && !fr)) drawHud(ctx, cam, st, teams, { to: this.g?.to }); // (a live game: the app's scoreboard, and the stadium's at the 50; in full screen, this strip) // (a live game: the app's scoreboard, and the stadium's at the 50)
     if (this.g && m !== "final") drawWxChip(ctx, cam, this.g.wxE, windNow(this.g));
     const px = uiPx(cam), hintY = cam.H - px * 9;
@@ -443,12 +454,12 @@ export class ArcadeGame {
     }
     if (m === "opp") this.drawDrive(ctx);
     if (m === "final" && this.box) { drawBoxScore(ctx, cam, this.box, teams, { time: this.time, hint: this.endHint() }); return; }
-    if ((m === "result" || m === "final") && this.banner && this.live) { const b = this.banner, big = /TOUCHDOWN|INTERCEPT|FUMBLE|FIELD GOAL|NO GOOD|SAFETY|SACK|TWO POINTS|IT'S GOOD|FLAG|TURNOVER/.test(b.title || ""); if (big || b.engine || !(this.live.watch || this.auto)) drawLowerThird(ctx, cam, b.title, b.text, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166" }); }
+    if ((m === "result" || (m === "final" && !this.live?.solo)) && this.banner && this.live) { const b = this.banner, big = /TOUCHDOWN|INTERCEPT|FUMBLE|FIELD GOAL|NO GOOD|SAFETY|SACK|TWO POINTS|IT'S GOOD|FLAG|TURNOVER/.test(b.title || ""); if (big || b.engine || !(this.live.watch || this.auto)) drawLowerThird(ctx, cam, b.title, b.text, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166" }); }
     else if ((m === "result" || m === "final") && this.banner) { const b = this.banner; drawBanner(ctx, cam, b.title, b.text, b.sub, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166", hint: b.hint || (this.live && (this.live.watch || this.auto) ? "" : this.mobile ? "TAP TO CONTINUE" : "CLICK OR SPACE TO CONTINUE") }); }
     // the pause button, and the menu
-    if (!this.paused && !this.live) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 13.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
+    if (!this.paused && (!this.live || this.live.solo)) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 13.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
     if (this.fade > 0) { ctx.globalAlpha = this.fade; ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, cam.W, cam.H); ctx.globalAlpha = 1; }
-    if (this.paused && !this.live) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ...(this.locked ? [] : [["wx", `WEATHER: ${wxName(this.wxPick)}`]]), ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), this.franchise ? ["sim", "SIM TO THE END"] : ["quit", "QUIT GAME"]], { mobile: this.mobile });
+    if (this.paused && (!this.live || this.live.solo)) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ...(this.locked ? [] : [["wx", `WEATHER: ${wxName(this.wxPick)}`]]), ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), this.franchise ? ["sim", "SIM TO THE END"] : ["quit", "QUIT GAME"]], { mobile: this.mobile });
   }
   drawKick(ctx, P, hintY) {
     const cam = this.cam, px = uiPx(cam);
@@ -498,7 +509,7 @@ export class ArcadeGame {
     for (const [k, b] of Object.entries(this.chips.kinds || {})) if (inside(p, b)) { this.setKind(k); return true; }
     const m = this.mode;
     if (m === "menu") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.menuAction(b.key); return true; }
-    if (m === "ceremony" && !this.live) { if (this.time - this.ceremony.t0 > 2) this.leaveCeremony(); return true; }
+    if (m === "ceremony" && (!this.live || this.live.solo)) { if (this.time - this.ceremony.t0 > 2) this.leaveCeremony(); return true; }
     if (m === "pick") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.call(b.key); return true; }
     if (m === "pat") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.patChoice(b.key); return true; }
     if (m === "result") { this.pendingReplay = null; this.advance(); return true; }
@@ -521,7 +532,7 @@ export class ArcadeGame {
     let v = (this[which] + d + TEAMS.length) % TEAMS.length; if (v === (which === "userTi" ? this.oppTi : this.userTi)) v = (v + d + TEAMS.length) % TEAMS.length;
     this[which] = v; preload(TEAMS[v]); sfx.select?.();
   }
-  pauseAction(k) { if (k === "sim") { this.paused = false; this.simRest(); return; } if (k === "wx") { this.cycleWx(true); return; } if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; } if (k === "resume") this.paused = false; else if (k === "mute") toggleMute(); else if (k === "quit") { this.paused = false; this.mode = "menu"; this.S = null; } }
+  pauseAction(k) { if (k === "sim") { this.paused = false; this.simRest(); return; } if (k === "wx") { this.cycleWx(true); return; } if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; } if (k === "resume") this.paused = false; else if (k === "mute") toggleMute(); else if (k === "quit") { this.paused = false; this.mode = "menu"; this.S = null; this.replay = null; this.pendingReplay = null; if (this.live?.solo) { this.live = null; this.flipped = false; } } }
 
   onDown(e) {
     unlock();
@@ -593,10 +604,10 @@ export class ArcadeGame {
     if (e.repeat && k !== "w" && k !== "s" && k !== "arrowup" && k !== "arrowdown") return;
     this.keys.add(k); unlock();
     if (k !== "w" && k !== "s" && !k.startsWith("arrow")) this.input = this.input === "touch" && !e.repeat ? "mouse" : this.input;
-    if (k === "escape" || k === "p") { if (this.live) return; if (this.mode !== "menu") this.paused = !this.paused; return; } // (a live game: the app's own Pause)
+    if (k === "escape" || k === "p") { if (this.live && !this.live.solo) return; if (this.mode !== "menu") this.paused = !this.paused; return; } // (a live game: the app's own Pause)
     if (k === "m") { toggleMute(); return; }
     if (k === "f") { this.fullscreen(this.fsState !== "on"); return; }
-    if (this.paused) { if (!this.live && (k === "enter" || k === " ")) this.paused = false; return; }
+    if (this.paused) { if ((!this.live || this.live.solo) && (k === "enter" || k === " ")) this.paused = false; return; }
     const m = this.mode, P = this.S;
     if (m === "menu") {
       if (k === "tab") this.menuFocus = this.menuFocus === "user" ? "opp" : "user";

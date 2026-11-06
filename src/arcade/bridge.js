@@ -21,6 +21,20 @@ export function buildSide(ti) {
   return { side, team, roster, order };
 }
 
+// The standalone arcade's game, set up exactly as the franchise sets up a game (league.js gameSetup on
+// the franchise's own league: its depth charts, calibrated ratings, injury replacements, the emergency
+// quarterback), so the arcade plays the same football as the franchise and picks up every fix to it.
+let LEAGUE = null;
+export async function franchiseGame(userTi, oppTi, { rand = Math.random, qLen = null, wx = "clear", wind = null } = {}) {
+  const L = await import("../league.js"), { createGame: mk } = await import("../playsim.js");
+  if (!LEAGUE) { LEAGUE = L.initTeams(-1); L.calibrateLeague(LEAGUE); }
+  const pick = (ti) => LEAGUE.find((t) => t.ab === M.teams[ti].ab) || LEAGUE[ti];
+  const su = L.gameSetup(pick(userTi), pick(oppTi), null, null, wx);
+  const g = mk(su.home, su.away, { rand, rec: true, qLen, wx: su.wx || wx });
+  if (wind) g.wind = wind;
+  return g;
+}
+
 // A new game: you are always the home side ("h") so the field reads left to right for your drives.
 export function newGame(userTi, oppTi, { rand = Math.random, pat = false, qLen = null, wx = "clear", wind = null } = {}) {
   const h = buildSide(userTi), a = buildSide(oppTi);
