@@ -9,7 +9,7 @@ import { ArcadeGame } from "./game.js";
 const SPEED = { Slow: 0.75, Normal: 1, Fast: 2, Condensed: 3 };
 
 // aspect: the box on the page (inside a stadium it takes the field's shape, so the stands fit round it)
-export default function LiveArcade({ g, userSide, watch, speed, paused, teams, onEvent, apiRef, fill = false, aspect = "16 / 9", maxH = null, night = false }) {
+export default function LiveArcade({ g, userSide, watch, speed, paused, teams, onEvent, apiRef, fill = false, aspect = "16 / 9", maxH = null, night = false, ceremony = null }) {
   const ref = useRef(null), game = useRef(null);
   const cb = useRef(onEvent); cb.current = onEvent;
   useEffect(() => {
@@ -22,6 +22,8 @@ export default function LiveArcade({ g, userSide, watch, speed, paused, teams, o
   useEffect(() => { game.current?.setWatch(watch); }, [watch]);
   useEffect(() => { if (game.current) game.current.speed = SPEED[speed] || 1; }, [speed]);
   useEffect(() => { if (game.current) game.current.paused = !!paused; }, [paused]);
+  // you won the Super Bowl: the trophy ceremony on the field
+  useEffect(() => { if (ceremony && game.current) { game.current.paused = false; game.current.startCeremony(ceremony); } }, [ceremony?.winner]); // eslint-disable-line react-hooks/exhaustive-deps
   // full screen: the field alone fills the screen (F on a keyboard, or the button in its corner);
   // where the browser can't (an iPhone), there's no button
   const canFs = typeof document !== "undefined" && !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);

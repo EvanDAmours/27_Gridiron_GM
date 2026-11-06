@@ -992,3 +992,77 @@ export function drawReplayTag(ctx, cam, time) {
   // letterbox bars: the picture reads as a replay at a glance
   ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(0, 0, cam.W, Math.round(px * 1.5)); ctx.fillRect(0, cam.H - Math.round(px * 1.5), cam.W, Math.round(px * 1.5));
 }
+
+// ---- the trophy ceremony (you won the Super Bowl) ----
+// The Lombardi Trophy in pixels: a silver football on a tapered stand, standing on (x, y) bottom-centre.
+export function drawLombardi(ctx, x, y, u) {
+  const R = (dx, dy, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x + dx * u), Math.round(y - dy * u), Math.max(1, Math.round(w * u)), Math.max(1, Math.round(h * u))); };
+  R(-3, 2, 6, 2, "#2b2f36"); R(-3, 2, 6, 0.5, "#9aa3ad"); // the base
+  for (let i = 0; i < 6; i++) { const w = 3.2 - i * 0.35; R(-w / 2, 3 + i, w, 1.05, i % 2 ? "#cfd5dc" : "#e5e9ee"); } // the stand, tapering up
+  R(-0.3, 8.6, 0.6, 1.2, "#f8fafc");
+  // the ball, tipped back, with its laces
+  ctx.save(); ctx.translate(Math.round(x + 0.4 * u), Math.round(y - 10.6 * u)); ctx.rotate(-0.55);
+  ctx.fillStyle = "#c7cdd4"; ctx.beginPath(); ctx.ellipse(0, 0, 2.6 * u, 1.6 * u, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#eef2f6"; ctx.beginPath(); ctx.ellipse(-0.5 * u, -0.5 * u, 1.6 * u, 0.7 * u, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#8a939e"; ctx.fillRect(Math.round(-1.2 * u), Math.round(-0.15 * u), Math.round(2.4 * u), Math.max(1, Math.round(0.3 * u)));
+  for (let i = -1; i <= 1; i++) ctx.fillRect(Math.round(i * 0.7 * u - 0.1 * u), Math.round(-0.45 * u), Math.max(1, Math.round(0.25 * u)), Math.max(1, Math.round(0.9 * u)));
+  ctx.restore();
+  // a glint that comes and goes
+  const g = (performance.now() / 600) % 3; if (g < 0.5) { ctx.fillStyle = "rgba(255,255,255,.9)"; const a = g * 2; ctx.fillRect(Math.round(x - 1.2 * u), Math.round(y - (11.5 + a) * u), Math.max(1, Math.round(0.5 * u)), Math.max(1, Math.round(0.5 * u))); }
+}
+
+// The scene at midfield: a stage with a backdrop in the champions' colours, the commissioner walking
+// the trophy out from the near sideline and up onto the stage, handing it over, and the team on and
+// around the stage, jumping, the quarterback lifting the trophy over his head. t: seconds since it began.
+export function drawCeremony(ctx, cam, team, away, t, { sb = "SUPER BOWL" } = {}) {
+  const s = cam.s, sx = (x) => cam.toScreen(x, 0)[0], sy = (y) => cam.toScreen(0, y)[1], hS = Math.round(s * 1.1), u = s * 0.21;
+  const clr = team?.clr && team.clr !== "#000000" ? team.clr : "#1e293b", ac = team?.ac || "#e5e7eb";
+  // the backdrop behind the stage, rising over the far sideline: the words across its top, clear of
+  // the players standing in front of it
+  { const x0 = sx(40), x1 = sx(60), yb = sy(-12.5) - hS, h = Math.round(s * 8.4), px = Math.max(1, Math.round(uiPx(cam) * 0.85));
+    ctx.fillStyle = "#0b0f19"; ctx.fillRect(Math.round(x0 - 3), Math.round(yb - h - 3), Math.round(x1 - x0 + 6), h + 3);
+    const g = ctx.createLinearGradient?.(0, yb - h, 0, yb); if (g) { g.addColorStop(0, clr); g.addColorStop(0.55, clr); g.addColorStop(1, "#0b0f19"); ctx.fillStyle = g; } else ctx.fillStyle = clr;
+    ctx.fillRect(Math.round(x0), Math.round(yb - h), Math.round(x1 - x0), h);
+    ctx.fillStyle = "#e8c45a"; const gb = Math.max(2, px); ctx.fillRect(Math.round(x0), Math.round(yb - h), Math.round(x1 - x0), gb); ctx.fillRect(Math.round(x0), Math.round(yb - gb), Math.round(x1 - x0), gb);
+    const mid = (x0 + x1) / 2, big = Math.max(px, Math.round(px * 1.5)), top = Math.round(yb - h + px * 4);
+    pixShadow(ctx, `${String(sb).toUpperCase()} CHAMPIONS`, mid, top, px, "#fde68a", "center");
+    pixShadow(ctx, String(team?.name || "").toUpperCase(), mid, top + px * 10, big, "#fff", "center"); }
+  // the stage: its top, then its front with the champions' colours and gold trim
+  { const x0 = sx(42), x1 = sx(58), yt = sy(-12) - hS, yf = sy(-6) - hS;
+    ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.fillRect(Math.round(x0 + s * 0.4), Math.round(sy(-6) - s * 0.1), Math.round(x1 - x0), Math.round(s * 0.5));
+    ctx.fillStyle = "#1f2430"; ctx.fillRect(Math.round(x0), Math.round(yt), Math.round(x1 - x0), Math.round(yf - yt));
+    ctx.fillStyle = "rgba(255,255,255,.05)"; for (let i = 1; i < 4; i++) ctx.fillRect(Math.round(x0), Math.round(yt + ((yf - yt) * i) / 4), Math.round(x1 - x0), 1);
+    ctx.fillStyle = clr; ctx.fillRect(Math.round(x0), Math.round(yf), Math.round(x1 - x0), hS);
+    ctx.fillStyle = "#e8c45a"; ctx.fillRect(Math.round(x0), Math.round(yf), Math.round(x1 - x0), Math.max(2, Math.round(s * 0.12)));
+    // the steps up the front, in the middle
+    for (let i = 0; i < 3; i++) { ctx.fillStyle = i % 2 ? "#2a303d" : "#343b4a"; const w = s * (3.2 - i * 0.4); ctx.fillRect(Math.round(sx(50) - w / 2), Math.round(sy(-6) - (hS * (i + 1)) / 3), Math.round(w), Math.round(hS / 3) + 1); } }
+  // who's where: the team on the stage and in front of it, and the commissioner
+  const jump = (i, k = 1) => Math.round(Math.abs(Math.sin(t * 5.5 + i * 1.7)) * s * 0.45 * k);
+  const handed = t >= 8.2, people = [];
+  const onStage = [[45, -9.5], [47.5, -10.5], [52.5, -10.5], [55, -9.5], [50, -8.4]];
+  onStage.forEach(([x, y], i) => people.push({ x, y, up: hS, kind: "player", i, qb: i === 4 }));
+  // the rest of the team in two loose rows in front of the stage, leaving the middle open for the steps
+  const front = [[36, -3], [39, -1], [42, -4], [45, -1.5], [55, -1.5], [58, -4], [61, -1], [64, -3], [37.5, 4], [41.5, 6], [45.5, 4.5], [54.5, 4.5], [58.5, 6], [62.5, 4]];
+  front.forEach(([x, y], i) => people.push({ x, y, up: 0, kind: "player", i: i + 5 }));
+  // the commissioner: walks up from the near sideline to the steps, climbs, stands centre stage,
+  // then steps to the side once the trophy is handed over
+  const ease = (a) => a * a * (3 - 2 * a), cl = (a) => Math.max(0, Math.min(1, a));
+  let cx = 50, cy, cup = 0;
+  if (t < 4.6) { cy = 30 - ease(cl(t / 4.6)) * 25.5; } else if (t < 5.6) { const k = ease(cl((t - 4.6) / 1)); cy = -4.5 - k * 3.5; cup = Math.round(hS * k); } else { cy = -8; cup = hS; if (handed) cx = 50 + ease(cl((t - 8.2) / 1)) * 1.8; }
+  people.push({ x: cx, y: cy, up: cup, kind: "commish" });
+  people.sort((a, b) => a.y - b.y);
+  for (const p of people) {
+    ctx.save(); ctx.translate(0, -p.up);
+    if (p.kind === "commish") {
+      person(ctx, cam, p.x, p.y, cy > -5 ? 1 : -1, { c: "#111827", k: SKIN[0], h: "#111827", p: "#1f2937", w: "#f8fafc", t: "#111827", s: "#0b0b0b" }, 0.92, { headset: false, sheet: false, cap: false });
+      if (!handed) { const [tx, ty] = cam.toScreen(p.x + 0.9, p.y); drawLombardi(ctx, tx, Math.round(ty - PLAYER_H * s * 0.42), u); }
+    } else {
+      const lift = p.qb && handed, up = lift ? Math.round(Math.abs(Math.sin(t * 3)) * s * 0.2) : jump(p.i, p.y > -6 ? 1 : 0.6), facing = p.x < 50 ? 1 : -1;
+      ctx.translate(0, -up);
+      const name = lift ? "catch_high" : (Math.floor(t * 3 + p.i) % 4 === 0 ? "catch_high" : `td_dance_${(Math.floor(t * 4 + p.i) % 2) + 1}`);
+      if (!sprite2(ctx, cam, team, away, name, p.x, p.y, facing)) sprite(ctx, cam, team, away, "c8", p.x, p.y, facing, true);
+      if (lift) { const [tx, ty] = cam.toScreen(p.x, p.y); drawLombardi(ctx, tx, Math.round(ty - PLAYER_H * s * 1.08), u * 1.05); }
+    }
+    ctx.restore();
+  }
+}

@@ -20,7 +20,7 @@ import { FX } from "./fx.js";
 import * as K from "./ratings.js";
 import { rollWeather, WX, wxOf } from "../weather.js";
 import { teamKey } from "../teamUniforms.js";
-import { makeCamera, drawRetro, drawLowerThird, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, pixWidth, drawMenu, drawNameTags, drawReplayTag, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
+import { makeCamera, drawRetro, drawLowerThird, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, pixWidth, drawMenu, drawNameTags, drawReplayTag, drawCeremony, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
 
 const PULL = 3.2; // touch: the throw goes this many times the pull-back, the other way, on the screen
 const spotOf = (yard) => (yard === 50 ? "MIDFIELD" : yard < 50 ? `OWN ${yard}` : `OPP ${100 - yard}`);
@@ -129,6 +129,22 @@ export class ArcadeGame {
     if (rp.i >= fr.length - 1 && rp.clock > fr[fr.length - 1].time - rp.t0 + 0.7) this.endReplay();
   }
   endReplay() { this.replay = null; this.pendingReplay = null; if (this.mode === "replay") { this.mode = "result"; this.fade = Math.max(this.fade, 0.5); this.advance(); } }
+  // ---- the trophy ceremony (the app asks for it when you win the Super Bowl) ----
+  startCeremony(c) { if (this.ceremony || this.cerNext) return; this.cerNext = c; this.cerAt = this.time + 2.4; }
+  beginCeremony() {
+    const c = this.cerNext; this.cerNext = null; this.held = false;
+    this.S = null; this.auto = null; this.replay = null; this.pendingReplay = null; this.rec = null; this.banner = null; this.unflip();
+    this.ceremony = { ...c, t0: this.time, team: this.live.teams[c.winner], away: c.winner === "a", last: -1, handed: false };
+    this.mode = "ceremony"; this.fade = 1; this.cam.camX = 50 - (this.cam.W * 0.08) / this.cam.s; this.push = 1;
+    sfx.touchdown(); this.fx.flashScreen("#fff", 0.5);
+  }
+  stepCeremony(dt) {
+    const c = this.ceremony, t = this.time - c.t0, cam = this.cam; this.hype = 1;
+    const colors = [c.team.clr || "#1e3a8a", c.team.ac || "#ffffff", "#fbbf24", "#fde68a", "#ffffff"];
+    const beat = Math.floor(t / 0.7); if (beat !== c.last && this.fx.parts.length < 1400) { c.last = beat; this.fx.confetti(cam.W, colors); }
+    if (t >= 8.2 && !c.handed) { c.handed = true; sfx.touchdown(); this.fx.flashScreen("#fff8dc", 0.45); this.fx.punch(1.05, 0.8); }
+    cam.camX += (50 - (cam.W * 0.08) / cam.s - cam.camX) * Math.min(1, dt * 3); // (midfield in the middle of the screen)
+  }
   refresh() { this.sit = situation(this.g); const g = this.g; this.board = g ? { score: { ...g.score }, to: g.to ? { ...g.to } : null, clock: g.clock, qtr: g.qtr, ot: g.ot, done: g.done, koNext: g.koNext, poss: g.poss, down: g.down, toGo: g.toGo, yard: g.yard } : null; }
 
   // ---- the flow ----
@@ -174,6 +190,7 @@ export class ArcadeGame {
   unflip() { if (this.flipped) this.flip(); if (this.g) this.g.patDefer = null; }
   emit(ev, off) { if (ev) try { this.live.onEvent?.(ev, off); } catch (e) { console.error(e); } }
   liveNext() {
+    if (this.mode === "ceremony" || this.cerNext) { if (this.cerNext && this.g?.done) { this.S = null; this.mode = "idle"; } return; }
     const g = this.g, L = this.live; this.banner = null; this.auto = null;
     if (!g || this.held) return;
     if (g.done) { this.unflip(); this.S = null; this.mode = "idle"; this.refresh(); return; }
@@ -275,6 +292,8 @@ export class ArcadeGame {
     this.time += dt; this.fade = Math.max(0, this.fade - dt * 2.5); this.hype = Math.max(0, this.hype - dt * 0.5); ambientHype(this.hype);
     if (this.paused || this.mode === "menu") { this.fx.step(dt); return; }
     if (this.mode === "replay") { this.fx.step(dt); this.stepReplay(dt); return; }
+    if (this.cerNext && this.time >= this.cerAt) this.beginCeremony();
+    if (this.mode === "ceremony") { this.fx.step(dt); this.stepCeremony(dt); return; }
     const live = this.fx.step(dt); // (hit-stop slows the field for a beat)
     const P = this.S, cam = this.cam, m = this.mode;
     if (P && cam) {
@@ -368,15 +387,18 @@ export class ArcadeGame {
     ctx.save(); ctx.translate(cam.W / 2 + ox, cam.H / 2 + oy); ctx.scale(z, z); ctx.translate(-cam.W / 2, -cam.H / 2);
     const rp = m === "replay" ? this.replay : null, fr = rp?.frames[rp.i];
     if (fr) cam.camX = fr.camX;
-    const PP = fr ? { ...fr.top, ents: fr.ents, ball: fr.ball, g: this.g } : P;
+    const PP = fr ? { ...fr.top, ents: fr.ents, ball: fr.ball, g: this.g } : P, cer = m === "ceremony" ? this.ceremony : null;
     // the camera pushes in on a ball carrier in the open field and at the goal line (a live game)
     { const c = PP && !PP.kind && PP.ball?.holder && PP.ents?.[PP.ball.holder], open = c && ["carry", "tackle", "fall"].includes(PP.phase) && (PP.ball.x > 88 || !Object.values(PP.ents).some((d) => d.side !== c.side && !d.down && Math.hypot(d.x - c.x, d.y - c.y) < 6));
       const want = this.live && open ? 1.14 : 1; this.push = (this.push ?? 1) + (want - (this.push ?? 1)) * (want > (this.push ?? 1) ? 0.03 : 0.06);
-      if (this.push > 1.002 && c) { const [bx, by] = cam.toScreen(c.x, c.y); const fx = Math.max(cam.W * 0.2, Math.min(cam.W * 0.8, bx)), fy = Math.max(cam.H * 0.3, Math.min(cam.H * 0.75, by)); ctx.translate(fx, fy); ctx.scale(this.push, this.push); ctx.translate(-fx, -fy); } }
-    drawRetro(ctx, cam, PP, fr ? rp.teams : teams, this.g, { board: fr ? rp.board : this.board, ring: true, time: fr ? fr.time : this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
+      if (cer) { const k = 1 + 0.22 * Math.min(1, (this.time - cer.t0) / 3), [fx, fy] = cam.toScreen(50, -6); ctx.translate(fx, fy); ctx.scale(k, k); ctx.translate(-fx, -fy); }
+      else if (this.push > 1.002 && c) { const [bx, by] = cam.toScreen(c.x, c.y); const fx = Math.max(cam.W * 0.2, Math.min(cam.W * 0.8, bx)), fy = Math.max(cam.H * 0.3, Math.min(cam.H * 0.75, by)); ctx.translate(fx, fy); ctx.scale(this.push, this.push); ctx.translate(-fx, -fy); } }
+    drawRetro(ctx, cam, cer ? null : PP, fr ? rp.teams : teams, this.g, { board: fr ? rp.board : this.board, ring: true, time: fr ? fr.time : this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
     if (this.live && P && !P.kind && !fr && P.phase === "presnap" && m === "play") drawNameTags(ctx, cam, P);
+    if (cer) drawCeremony(ctx, cam, cer.team, cer.away, this.time - cer.t0, { sb: cer.name });
     ctx.restore();
     if (fr) drawReplayTag(ctx, cam, this.time);
+    if (cer) { const t = this.time - cer.t0; drawLowerThird(ctx, cam, `${String(cer.name || "SUPER BOWL").toUpperCase()} CHAMPIONS`, t < 8.2 ? "HERE COMES THE LOMBARDI TROPHY" : `THE ${String(cer.team.name || "").toUpperCase()} ARE WORLD CHAMPIONS`, cer.team.clr, { age: t, accent: "#ffd166" }); }
     drawWeather(ctx, cam, { wx: this.g?.wxE, time: this.time, wind: windNow(this.g) });
     this.fx.draw(ctx, cam.W, cam.H, pixText);
     const full = !!(typeof document !== "undefined" && (document.fullscreenElement || document.webkitFullscreenElement)) || !!this.live?.fill; // (full screen, or a phone's full-screen field: the page's scoreboard is out of sight)

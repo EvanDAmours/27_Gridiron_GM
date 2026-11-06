@@ -12,6 +12,7 @@ const src = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 const SESSION_ONLY = new Set([
   "outro", // the retirement send-off: the franchise is over by then
   "fieldView", // the live game shown on the arcade field or the broadcast one (kept in localStorage: gm_field_view)
+  "cerSeen", // the Super Bowl trophy ceremony on the arcade field was moved on from (this game only)
   "liveSetOpen selTop livePat cardBack dlOpen seasonOpen pickTeam newInj ownerReviewShow injuryCalls injuryPick hubOpen holIntro injReport simBatch simHold faStart",
   "advanceAsk autoSaveTs awardsShow beatReports boxView",
   "capOutlookOpen capRollover celebrate challengeSeason chemGraph coachExt coachNag",

@@ -2397,4 +2397,7 @@ export const PATCH_NOTES = [
     "Instant replays: after a touchdown, a turnover or a gain of 30 or more, the end of the play runs again in slow motion with a REPLAY tag (click to skip; not at Fast or Condensed speed). The camera pushes in on a runner in the open field and at the goal line. Before each snap, tags show the quarterback, the back and the top target.",
     "The stadium scoreboard no longer moves on to the next down while the runner is still going down: it changes when the play is over, with the score at the top. Full screen, and a phone's full-screen field, show a score strip across the top.",
   ] },
+  { v: "5.76", date: "2026-10-23", title: "Super Bowl trophy ceremony", notes: [
+    "Win the Super Bowl on the arcade field and the field stays up for the trophy ceremony. Confetti in your colours and gold pours down, the crowd is on its feet, and a stage goes up at midfield with your club's champions backdrop. The commissioner walks the Lombardi Trophy out from the sideline and up onto the stage, hands it over, and your quarterback lifts it over his head while the rest of the team jumps around them. Continue takes you on to the celebration and the morning paper, as before.",
+  ] },
 ];
