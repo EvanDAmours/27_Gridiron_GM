@@ -2390,4 +2390,11 @@ export const PATCH_NOTES = [
   { v: "5.74", date: "2026-10-23", title: "NFC North sprites", notes: [
     "Arcade field: the whole NFC North now has its own animated players, home and road: the Bears, Lions, Packers and Vikings run, throw, catch, juke, spin, tackle and celebrate in their own uniforms like the Giants, Texans, Eagles and Commanders already do. A few of the Packers' and Lions' home frames had come out with the wrong jersey colour (gold for the Packers, silver for the Lions) on the run with the ball, the tackle, the stumble, the swim move and the spike; those are repainted in the right colour.",
   ] },
+  { v: "5.75", date: "2026-10-23", title: "Live game redesign", notes: [
+    "Live games on the arcade field, redesigned around the field. On a computer the field takes the whole left side, in a slim rim in the home stadium's colours with its name on a tab, and the camera sits a little closer so the players are bigger. The scoreboard at the top is the only one with the down and distance (the extra line under it is gone), and the play result card is gone too: the field shows the big ones itself.",
+    "One control bar beside the field: Pause, Speed, Sim to the end of the quarter, Box score and Settings, with Watch / Play your snaps under it (Finish game stays in the top bar).",
+    "A drive chart, like TV's: the field from end zone to end zone with every play of the drive as an arrow (runs gold, passes blue, losses red, scores green; an incompletion a ring, a flag a square), the line of scrimmage and the line to gain, and your team's momentum.",
+    "Instant replays: after a touchdown, a turnover or a gain of 30 or more, the end of the play runs again in slow motion with a REPLAY tag (click to skip; not at Fast or Condensed speed). The camera pushes in on a runner in the open field and at the goal line. Before each snap, tags show the quarterback, the back and the top target.",
+    "The stadium scoreboard no longer moves on to the next down while the runner is still going down: it changes when the play is over, with the score at the top. Full screen, and a phone's full-screen field, show a score strip across the top.",
+  ] },
 ];

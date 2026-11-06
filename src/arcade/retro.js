@@ -54,10 +54,10 @@ const BALL_C = { o: "#2a1206", b: "#8a4a22", h: "#b06a36", w: "#f4efe4" };
 // ---- the camera ----
 // The field runs left to right. s: pixels per yard along the field. The field's near sideline sits
 // at the bottom of the canvas; the stands fill the strip above the far sideline.
-export function makeCamera(W, H) {
+export function makeCamera(W, H, { span = 66 } = {}) {
   // the whole width of the field fits under the scoreboard, and no more than ~40 yards show across
   const hud = Math.max(2, Math.round(Math.min(W / 380, H / 215))) * 11;
-  const s = Math.min(H > W ? W / 34 : W / 66, (H - hud - 8) / (53.3 * SQUASH + 1.4)); // ~66 yards across a wide screen, ~34 upright (a phone held upright: closer in, so the players fill it)
+  const s = Math.min(H > W ? W / 34 : W / span, (H - hud - 8) / (53.3 * SQUASH + 1.4)); // ~66 yards across a wide screen, ~34 upright (a phone held upright: closer in, so the players fill it)
   // the field sits low on a wide screen (stands above it) and in the middle of a tall one
   const depth = 53.3 * SQUASH * s, room = H - hud - depth - s * 1.2, top = hud + (H > W ? room * 0.5 : Math.min(room, s * 4.5)) + s * 0.2;
   return { W, H, s, depth, top, camX: 50, lead: 5, toScreen(x, y) { return [W * 0.42 + (x - this.camX) * s, top + (y + HALF) * SQUASH * s]; }, toField(px, py) { return { x: this.camX + (px - W * 0.42) / s, y: (py - top) / (SQUASH * s) - HALF }; } };
@@ -88,8 +88,8 @@ function seg7(ctx, x, y, w, h, ch, color) {
 function digits(ctx, x, y, w, h, str, color, gap) { [...str].forEach((c, i) => seg7(ctx, x + i * (w + gap), y, w, h, c, color)); return str.length * (w + gap) - gap; }
 function stadiumBoard(ctx, cam, g, teams, yardAt, wallTop) {
   if (!g?.score) return;
-  const { s } = cam, cx = yardAt(50), bw = Math.round(Math.min(s * 15, cam.W * 0.36)), bh = Math.round(Math.min(wallTop - 6, bw * 0.27));
-  if (bh < 22 || cx + bw / 2 < 0 || cx - bw / 2 > cam.W) return;
+  const { s } = cam, cx = yardAt(50), bw = Math.round(Math.min(s * 12.5, cam.W * 0.24)), bh = Math.round(Math.min(wallTop - 6, bw * 0.27));
+  if (bh < 44 || cx + bw / 2 < 0 || cx - bw / 2 > cam.W) return; // (too small for its digits to read: a phone held upright has the score strip instead)
   const x = Math.round(cx - bw / 2), y = Math.round(wallTop - bh - 1);
   const home = HOME_OF(teams), userHome = home === teams.user, side = (t) => (t === teams.user ? "h" : "a");
   const G = userHome ? teams.opp : teams.user, Hm = home, hasBall = (t) => !g.done && !g.koNext && g.poss === side(t);
@@ -652,7 +652,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   for (const [ex, back, pad] of [[110, 1, teams.opp], [-10, -1, teams.user]]) goalPost(ctx, cam, ex, back, pad.clr);
   // no play on the field (between plays, a kick the engine ran): the sidelines, the crews and the
   // scoreboard are still there, the crews where the last snap was
-  if (!S) { const so = { ...opts, los: lastLos, toGain: null, down: g?.down }; drawSidelines(ctx, cam, teams, { ...so, side: "far" }); stadiumBoard(ctx, cam, g, teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); drawSidelines(ctx, cam, teams, { ...so, side: "near" }); return; }
+  if (!S) { const so = { ...opts, los: lastLos, toGain: null, down: g?.down }; drawSidelines(ctx, cam, teams, { ...so, side: "far" }); stadiumBoard(ctx, cam, opts.board || g, teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); drawSidelines(ctx, cam, teams, { ...so, side: "near" }); return; }
   if (!S.kind) lastLos = S.los;
   // the line of scrimmage and the line to gain
   const vline = (yd, color) => { const x = Math.round(yardAt(yd)); if (x < 0 || x > W) return; ctx.fillStyle = color; ctx.fillRect(x, Math.round(top), Math.max(2, lw * 2), Math.round(depth)); };
@@ -669,7 +669,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   // the team areas along both sidelines: benches, coolers, the cup table and the players watching
   const sideOpts = { ...opts, ballX: S.ball?.x, los: S.kind ? null : S.los, toGain: S.kind ? null : S.firstDown, down: g?.down };
   drawSidelines(ctx, cam, teams, { ...sideOpts, side: "far" });
-  stadiumBoard(ctx, cam, g, teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); // (at the 50, in front of the far bench)
+  stadiumBoard(ctx, cam, opts.board || g, teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); // (at the 50, in front of the far bench)
   // players, far to near so the near ones overlap the far ones; the man with the ball on top
   const ents = Object.values(S.ents).sort((a, b) => (a.key === S.ball.holder) - (b.key === S.ball.holder) || a.y - b.y);
   for (const e of ents) {
@@ -962,4 +962,33 @@ export function drawPause(ctx, cam, items, { mobile } = {}) {
   const hy = yAt(items.length) + px * 3;
   help.forEach((t, i) => pixText(ctx, t, W / 2, hy + i * hp * 9, hp, "rgba(255,255,255,.7)", "center"));
   return boxes;
+}
+
+// ---- the broadcast touches in a live game ----
+// Before the snap: who's out there, in small tags over the quarterback, the back and the top target
+// (the receiver or tight end with the best rating), so you can read the matchup before the play.
+export function drawNameTags(ctx, cam, S) {
+  const px = Math.max(1, Math.round(uiPx(cam) * 0.75)), last = (p) => String(p?.name || "").split(" ").slice(-1)[0].toUpperCase();
+  const recv = ["X", "Z", "SLOT", "TE"].map((k) => S.ents[k]).filter(Boolean).sort((a, b) => (b.p?.ovr || 0) - (a.p?.ovr || 0))[0];
+  const tags = [[S.ents.QB, "QB"], [S.ents.RB, S.ents.RB?.p?.pos === "FB" ? "FB" : "RB"], [recv, recv?.key === "TE" ? "TE" : "WR"]];
+  const placed = [];
+  for (const [e, role] of tags) {
+    if (!e?.p) continue;
+    const [sx, sy] = cam.toScreen(e.x, e.y), num = e.p.num != null ? `#${e.p.num} ` : "", text = `${role} ${num}${last(e.p)}`;
+    const w = pixWidth(text, px) + px * 6, h = px * 11, x = Math.round(sx - w / 2); let y = Math.round(sy - PLAYER_H * cam.s - h - px * 3);
+    // (two players close together: the later tag stacks above the earlier one instead of covering it)
+    for (let k = 0; k < 4; k++) { const hit = placed.find((b) => x < b.x + b.w && x + w > b.x && y < b.y + b.h + px && y + h + px > b.y); if (!hit) break; y = hit.y - h - px * 2; }
+    placed.push({ x, y, w, h });
+    ctx.fillStyle = "rgba(8,10,16,.82)"; ctx.fillRect(x, y, w, h); ctx.fillStyle = "#ffd166"; ctx.fillRect(x, y + h - px, w, px);
+    pixText(ctx, text, x + w / 2, y + px * 2, px, "#fff", "center");
+  }
+}
+// The instant replay's tag, top left, with a red light that blinks
+export function drawReplayTag(ctx, cam, time) {
+  const px = uiPx(cam), text = "REPLAY", w = pixWidth(text, px) + px * 14, h = px * 11, x = px * 3, y = px * 3;
+  ctx.fillStyle = "rgba(8,10,16,.85)"; ctx.fillRect(x, y, w, h); ctx.fillStyle = "#e11d48"; ctx.fillRect(x, y, px, h);
+  if (Math.floor(time * 2) % 2 === 0) { ctx.fillStyle = "#ef4444"; ctx.fillRect(x + px * 4, y + px * 4, px * 3, px * 3); }
+  pixText(ctx, text, x + px * 10, y + px * 2, px, "#fff");
+  // letterbox bars: the picture reads as a replay at a glance
+  ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(0, 0, cam.W, Math.round(px * 1.5)); ctx.fillRect(0, cam.H - Math.round(px * 1.5), cam.W, Math.round(px * 1.5));
 }

@@ -20,7 +20,7 @@ import { FX } from "./fx.js";
 import * as K from "./ratings.js";
 import { rollWeather, WX, wxOf } from "../weather.js";
 import { teamKey } from "../teamUniforms.js";
-import { makeCamera, drawRetro, drawLowerThird, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, pixWidth, drawMenu, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
+import { makeCamera, drawRetro, drawLowerThird, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, pixWidth, drawMenu, drawNameTags, drawReplayTag, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
 
 const PULL = 3.2; // touch: the throw goes this many times the pull-back, the other way, on the screen
 const spotOf = (yard) => (yard === 50 ? "MIDFIELD" : yard < 50 ? `OWN ${yard}` : `OPP ${100 - yard}`);
@@ -106,9 +106,30 @@ export class ArcadeGame {
       cv.style.borderRadius = "6px"; cv.style.boxShadow = "0 0 0 2px #1d2433, 0 20px 60px rgba(0,0,0,.6)";
     } else { cv.style.borderRadius = ""; cv.style.boxShadow = ""; }
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + "px"; cv.style.height = H + "px";
-    const cam = makeCamera(W, H); cam.camX = this.cam?.camX ?? (this.S ? this.S.ball.x : this.g?.yard ?? 25) + cam.lead; this.cam = cam;
+    const cam = makeCamera(W, H, { span: this.live ? 54 : 66 }); cam.camX = this.cam?.camX ?? (this.S ? this.S.ball.x : this.g?.yard ?? 25) + cam.lead; this.cam = cam;
   }
-  refresh() { this.sit = situation(this.g); }
+  // the scoreboard at the 50 shows the game as of the last booked play the app has (taken here, when
+  // the play is handed over): the engine books a play at the tackle, before the runner is down, and the
+  // board mustn't move on ahead of the app's
+  // ---- the instant replay (a live game): every frame of a scrimmage play is kept (the players and the
+  // ball as they were, and the camera); after a score, a turnover or a long gain the play runs again in
+  // slow motion with a REPLAY tag. A click skips it.
+  recFrame(P) {
+    let r = this.rec; if (!r || r.S !== P) r = this.rec = { S: P, teams: this.teams, board: this.board, frames: [] };
+    if (r.frames.length > 1200 || P.phase === "presnap") return;
+    const ents = {}; for (const k in P.ents) ents[k] = { ...P.ents[k] };
+    const top = {}; for (const k in P) { if (k === "ents" || k === "ball" || k === "g" || k === "L") continue; const v = P[k]; top[k] = Array.isArray(v) ? v.slice() : v; }
+    r.frames.push({ top, ents, ball: { ...P.ball, flight: P.ball.flight ? { ...P.ball.flight } : null }, camX: this.cam.camX, time: this.time });
+  }
+  startReplay() { const r = this.pendingReplay; this.pendingReplay = null; if (!r) return this.advance(); const end = r.frames[r.frames.length - 1].time, frames = r.frames.filter((f) => f.time >= end - 3.6); this.replay = { ...r, frames, i: 0, clock: 0, t0: frames[0].time }; /* (the end of the play: the catch and the run, the score) */ this.banner = null; this.mode = "replay"; this.fade = Math.max(this.fade, 0.5); }
+  stepReplay(dt) {
+    const rp = this.replay; if (!rp) return this.endReplay();
+    rp.clock += dt * 0.6; const fr = rp.frames;
+    while (rp.i < fr.length - 1 && fr[rp.i + 1].time - rp.t0 <= rp.clock) rp.i++;
+    if (rp.i >= fr.length - 1 && rp.clock > fr[fr.length - 1].time - rp.t0 + 0.7) this.endReplay();
+  }
+  endReplay() { this.replay = null; this.pendingReplay = null; if (this.mode === "replay") { this.mode = "result"; this.fade = Math.max(this.fade, 0.5); this.advance(); } }
+  refresh() { this.sit = situation(this.g); const g = this.g; this.board = g ? { score: { ...g.score }, to: g.to ? { ...g.to } : null, clock: g.clock, qtr: g.qtr, ot: g.ot, done: g.done, koNext: g.koNext, poss: g.poss, down: g.down, toGo: g.toGo, yard: g.yard } : null; }
 
   // ---- the flow ----
   start() {
@@ -171,13 +192,13 @@ export class ArcadeGame {
     restore(g, snap);
     this.snapRB = backForSnap(g);
     const c = autoCall(k === "run" ? "run" : "pass");
-    this.call(c); this.auto = { call: CONCEPTS[c]?.cat || c, state: autoState(), snapAt: this.time + 0.7 / this.speed };
+    this.call(c); this.auto = { call: CONCEPTS[c]?.cat || c, state: autoState(), snapAt: this.time + 1.5 / this.speed };
   }
   // a play the engine ran without the field (a kickoff, a punt, a field goal, a kneel): its result
   showEngine(ev) { this.S = null; this.banner = ev ? { engine: true, title: resultTitle(ev), text: ev.text || "", sub: ev.note ? String(ev.note).toUpperCase() : null, at: performance.now(), accent: ev.td || ev.type === "fg" ? "#ffd166" : "#fff" } : null; this.mode = "result"; this.refresh(); }
   // the app needs the game (Finish game, Sim to the end of the quarter): drop the play on the field
   // (it hasn't been booked) and hand the game back the real way round; resume() picks it up again
-  release() { if (this.two) { restore(this.g, this.two.snap); this.two = null; } this.S = null; this.auto = null; this.unflip(); this.held = true; this.mode = "idle"; this.refresh(); }
+  release() { if (this.two) { restore(this.g, this.two.snap); this.two = null; } this.S = null; this.auto = null; this.replay = null; this.pendingReplay = null; this.rec = null; this.unflip(); this.held = true; this.mode = "idle"; this.refresh(); }
   resume() { this.held = false; if (this.live && (this.mode === "idle" || this.mode === "result")) this.liveNext(); }
   setWatch(w) { if (this.live) this.live.watch = !!w; }
   call(c) {
@@ -253,12 +274,14 @@ export class ArcadeGame {
   update(dt, now = performance.now()) {
     this.time += dt; this.fade = Math.max(0, this.fade - dt * 2.5); this.hype = Math.max(0, this.hype - dt * 0.5); ambientHype(this.hype);
     if (this.paused || this.mode === "menu") { this.fx.step(dt); return; }
+    if (this.mode === "replay") { this.fx.step(dt); this.stepReplay(dt); return; }
     const live = this.fx.step(dt); // (hit-stop slows the field for a beat)
     const P = this.S, cam = this.cam, m = this.mode;
     if (P && cam) {
       if (this.auto && !P.kind) { if (P.phase === "presnap" && this.time >= this.auto.snapAt) snap(P); autoStep(P, this.auto.call, this.auto.state); } else this.controls(P, dt);
       const going = P.kind ? tickKick(P, live) : tick(P, live);
       this.react(P);
+      if (this.live && !P.kind && m === "play") this.recFrame(P);
       // the camera leads the ball a little; with a throw in the air it frames the ball and where it's going
       const f = P.ball.flight, over = P.phase === "tackle" || P.phase === "fall" || P.phase === "done";
       // until the ball leaves the quarterback's hands the camera holds still, with the line of
@@ -278,11 +301,12 @@ export class ArcadeGame {
         this.mode = "result"; this.refresh();
         // saved the moment it's booked, so leaving now can't take the play back
         if (this.onPlay && !this.two) try { this.onPlay(this.g); } catch { /* best effort */ }
+        this.pendingReplay = this.live && this.rec?.S === P && (this.speed || 1) < 2 && this.rec.frames.length > 30 && (ev?.td || ev?.turnover || ev?.type === "int" || ev?.type === "fumble" || (Number.isFinite(ev?.yards) && ev.yards >= 30)) ? this.rec : null;
         if (this.live) { const o = this.offReal; this.unflip(); this.emit(ev, o); }
       }
     }
     if (m === "opp") { const f = this.feed; if (now - f.at > 600 && f.shown < f.list.length) { f.shown++; f.at = now; if (f.list[f.shown - 1]?.td) { sfx.turnover(); this.fx.hit(0.6); } } else if (f.shown >= f.list.length && now - f.at > 1100) this.advance(); }
-    if ((m === "result") && this.banner && now - this.banner.at > (/TOUCHDOWN/.test(this.banner.title) ? 3400 : this.live ? 1300 / this.speed : 1700)) this.advance();
+    if ((m === "result") && this.banner && now - this.banner.at > (/TOUCHDOWN/.test(this.banner.title) ? 3400 : this.live ? 1300 / this.speed : 1700)) { if (this.pendingReplay) this.startReplay(); else this.advance(); }
   }
 
   // held keys and the pointer, every frame: the runner's steering, the mouse aim, the kick meter
@@ -342,17 +366,27 @@ export class ArcadeGame {
     // the field, with the shake and the zoom punch
     const [ox, oy] = this.fx.offset(), z = this.fx.zoom;
     ctx.save(); ctx.translate(cam.W / 2 + ox, cam.H / 2 + oy); ctx.scale(z, z); ctx.translate(-cam.W / 2, -cam.H / 2);
-    drawRetro(ctx, cam, P, teams, this.g, { ring: true, time: this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
+    const rp = m === "replay" ? this.replay : null, fr = rp?.frames[rp.i];
+    if (fr) cam.camX = fr.camX;
+    const PP = fr ? { ...fr.top, ents: fr.ents, ball: fr.ball, g: this.g } : P;
+    // the camera pushes in on a ball carrier in the open field and at the goal line (a live game)
+    { const c = PP && !PP.kind && PP.ball?.holder && PP.ents?.[PP.ball.holder], open = c && ["carry", "tackle", "fall"].includes(PP.phase) && (PP.ball.x > 88 || !Object.values(PP.ents).some((d) => d.side !== c.side && !d.down && Math.hypot(d.x - c.x, d.y - c.y) < 6));
+      const want = this.live && open ? 1.14 : 1; this.push = (this.push ?? 1) + (want - (this.push ?? 1)) * (want > (this.push ?? 1) ? 0.03 : 0.06);
+      if (this.push > 1.002 && c) { const [bx, by] = cam.toScreen(c.x, c.y); const fx = Math.max(cam.W * 0.2, Math.min(cam.W * 0.8, bx)), fy = Math.max(cam.H * 0.3, Math.min(cam.H * 0.75, by)); ctx.translate(fx, fy); ctx.scale(this.push, this.push); ctx.translate(-fx, -fy); } }
+    drawRetro(ctx, cam, PP, fr ? rp.teams : teams, this.g, { board: fr ? rp.board : this.board, ring: true, time: fr ? fr.time : this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
+    if (this.live && P && !P.kind && !fr && P.phase === "presnap" && m === "play") drawNameTags(ctx, cam, P);
     ctx.restore();
+    if (fr) drawReplayTag(ctx, cam, this.time);
     drawWeather(ctx, cam, { wx: this.g?.wxE, time: this.time, wind: windNow(this.g) });
     this.fx.draw(ctx, cam.W, cam.H, pixText);
-    if (!this.live) drawHud(ctx, cam, st, teams, { to: this.g?.to }); // (a live game: the app's scoreboard, and the stadium's at the 50)
+    const full = !!(typeof document !== "undefined" && (document.fullscreenElement || document.webkitFullscreenElement)) || !!this.live?.fill; // (full screen, or a phone's full-screen field: the page's scoreboard is out of sight)
+    if (!this.live || (full && !fr)) drawHud(ctx, cam, st, teams, { to: this.g?.to }); // (a live game: the app's scoreboard, and the stadium's at the 50; in full screen, this strip) // (a live game: the app's scoreboard, and the stadium's at the 50)
     if (this.g && m !== "final") drawWxChip(ctx, cam, this.g.wxE, windNow(this.g));
     const px = uiPx(cam), hintY = cam.H - px * 9;
     if (m === "play" && P && P.kind && !this.auto) this.drawKick(ctx, P, hintY);
     else if (m === "play" && P && !this.auto) {
       const toGo = st.toGo >= 100 - st.yard ? "GOAL" : st.toGo;
-      drawDownBox(ctx, cam, P.phase === "presnap" ? `${ordinal(st.down)} & ${toGo} - ${playName(P.concept || P.call)}` : `${ordinal(st.down)} & ${toGo}`, P.phase === "presnap" ? "#fff" : "#ffd166", { left: !!this.live });
+      drawDownBox(ctx, cam, P.phase === "presnap" ? `${ordinal(st.down)} & ${toGo} - ${playName(P.concept || P.call)}` : `${ordinal(st.down)} & ${toGo}`, P.phase === "presnap" ? "#fff" : "#ffd166", { left: !!this.live && !full });
       const throwing = P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass"), isPass = P.call.startsWith("pass");
       // the pass type button: always there on a pass play, until the ball is thrown
       if (isPass && !this.auto && (P.phase === "presnap" || throwing)) { // (not on the computer's snaps)
@@ -389,7 +423,7 @@ export class ArcadeGame {
   drawKick(ctx, P, hintY) {
     const cam = this.cam, px = uiPx(cam);
     if (P.phase !== "presnap") return;
-    drawDownBox(ctx, cam, P.pat ? "EXTRA POINT" : P.kind === "fg" ? `${P.dist} YARD FIELD GOAL` : "PUNT", "#fff", { left: !!this.live });
+    drawDownBox(ctx, cam, P.pat ? "EXTRA POINT" : P.kind === "fg" ? `${P.dist} YARD FIELD GOAL` : "PUNT", "#fff", { left: !!this.live && !(document.fullscreenElement || document.webkitFullscreenElement || this.live.fill) });
     const d = this.kickDrag, v = d && this.kickVec(d);
     if (v && v[0] > 0) {
       // the kick you're about to make: its arc to where it comes down, and its strength against the distance
@@ -436,7 +470,8 @@ export class ArcadeGame {
     if (m === "menu") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.menuAction(b.key); return true; }
     if (m === "pick") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.call(b.key); return true; }
     if (m === "pat") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.patChoice(b.key); return true; }
-    if (m === "result") { this.advance(); return true; }
+    if (m === "result") { this.pendingReplay = null; this.advance(); return true; }
+    if (m === "replay") { this.endReplay(); return true; }
     if (m === "final") { this.leaveFinal(); return true; }
     if (m === "opp") { this.feed.shown = this.feed.list.length; this.feed.at = 0; return true; }
     return false;

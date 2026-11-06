@@ -413,3 +413,16 @@ export default function Stadium({ home, night, flash, fans, ribbon, children }) 
     </div>
   );
 }
+
+// The arcade field draws its own stands, so around it the stadium is just a thin rim in the home
+// club's colours with the stadium's name on a tab at the bottom (the scoreboard is at the top) (the Super Bowl: its name and city).
+export function StadiumRim({ home, team, label, children }) {
+  const st = STADIUMS[home], c1 = st?.ribbon || team?.clr || "#1e293b", c2 = st?.ribbonHi || team?.ac || "#475569";
+  const name = label || st?.name || (team?.city ? `${team.city}` : "");
+  return (
+    <div style={{ position: "relative", padding: 5, borderRadius: 14, background: `linear-gradient(180deg, ${c2}, ${c1} 40%, ${c1})`, boxShadow: "0 10px 30px #0009, inset 0 0 0 1px #ffffff22" }}>
+      {children}
+      {name && <div style={{ position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", zIndex: 2, maxWidth: "60%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: "3px 14px 1px", borderRadius: "8px 8px 0 0", background: c1, boxShadow: `inset 0 1px 0 ${c2}`, color: "#fff", fontSize: 10, fontWeight: 800, letterSpacing: 2.4, textTransform: "uppercase", pointerEvents: "none" }}>{name}</div>}
+    </div>
+  );
+}
