@@ -2419,4 +2419,7 @@ export const PATCH_NOTES = [
     "Arcade: the camera crews are where they'd really be. A TV camera stands at each end of both team areas, clear of the benches, turned toward the ball, and a photographer works each corner behind the end zones (kneeling on the near side, standing on the far side).",
     "The Super Bowl ceremony is bigger: the whole team floods midfield, packed in front of the stage, the stage's cannons fire gold and white streamers every couple of seconds, and the commissioner walks the Lombardi in from the left along the front of the stage before climbing up to hand it over.",
   ] },
+  { v: "5.82", date: "2026-10-23", title: "Calmer ceremony", notes: [
+    "The Super Bowl ceremony is calmer: the team bounces in one jump until the trophy goes up, then everyone holds a single pose (pointing to the sky, a helmet raised, catching confetti, waving) while the quarterback holds the Lombardi overhead and the commissioner applauds, and the confetti keeps falling.",
+  ] },
 ];

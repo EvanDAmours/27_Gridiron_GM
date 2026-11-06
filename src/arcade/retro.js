@@ -1179,24 +1179,20 @@ export function drawCeremony(ctx, cam, team, away, t, { sb = "SUPER BOWL" } = {}
   people.sort((a, b) => a.y - b.y);
   // what each player is doing: the quarterback takes the trophy and lifts it; the others celebrate,
   // and after a while some are in the champions' caps and t-shirts
+  // two beats, no more: until the trophy's up everyone bounces in one jump; once the quarterback lifts
+  // it, they all hold one pose (each his own) while the confetti falls
+  const hold = handed && t >= 9;
   const own2 = (p) => {
-    if (p.qb) {
-      if (!handed) return t < 5.6 ? "point_up" : "wave_crowd";
-      const k = t - 8.2; if (k < 0.7) return "trophy_receive";
-      const c = (k - 0.7) % 7; return c < 3.5 ? (Math.floor(k * 2.6) % 2 ? "trophy_lift_2" : "trophy_lift_1") : c < 4.6 ? "trophy_kiss" : c < 5.8 ? "trophy_shout" : "trophy_cradle";
-    }
-    const gear = t > 13 && hash(p.i, 41) < 0.45, b = Math.floor(t * 0.8 + p.i * 0.7);
-    if (gear) return ["gear_cheer", "gear_cap_wave", "gear_phone", "gear_point", "gear_hug", "gear_idle"][(b + p.i) % 6];
-    if (p.i === 9 && t < 7) return "kneel";
-    if (p.up && p.y > -9) return ["helmet_raise", "wave_crowd", "point_up", "cheer_1"][(b + p.i) % 4]; // (on the stage)
-    const pick = (b + p.i * 3) % 6, ph = (t * 1.6 + p.i * 0.31) % 1;
-    return pick < 2 ? (ph < 0.45 ? "jump_crouch" : "jump_air") : pick === 2 ? "dance" : pick === 3 ? "confetti_catch" : pick === 4 ? "wave_crowd" : "helmet_raise";
+    if (p.qb) return !handed ? "point_up" : t < 8.9 ? "trophy_receive" : "trophy_lift_1";
+    if (!hold) return (t * 1.5 + hash(p.i, 61)) % 1 < 0.5 ? "jump_crouch" : "jump_air";
+    return ["point_up", "helmet_raise", "confetti_catch", "wave_crowd"][Math.floor(hash(p.i, 62) * 4)];
   };
+
   for (const p of people) {
     ctx.save(); ctx.translate(0, -p.up);
     if (p.kind === "prop") sceneSprite(ctx, cam, null, false, p.name, p.x, p.y, p.face || 1, 0.9);
     else if (p.kind === "commish") {
-      const walking = t < 5.6, name = walking ? `comm_walk_${(Math.floor(t * 5) % 4) + 1}` : !handed ? "comm_present" : t < 12 ? (Math.floor(t * 4) % 2 ? "comm_clap_2" : "comm_clap_1") : "comm_speak";
+      const walking = t < 5.6, name = walking ? `comm_walk_${(Math.floor(t * 5) % 4) + 1}` : !handed ? "comm_present" : "comm_clap_2";
       if (!sceneSprite(ctx, cam, null, false, name, p.x, p.y, 1, 1)) {
         person(ctx, cam, p.x, p.y, 1, { c: "#111827", k: SKIN[0], h: "#111827", p: "#1f2937", w: "#f8fafc", t: "#111827", s: "#0b0b0b" }, 0.92, { headset: false, sheet: false, cap: false });
         if (!handed) { const [tx, ty] = cam.toScreen(p.x + 0.9, p.y); drawLombardi(ctx, tx, Math.round(ty - PLAYER_H * s * 0.42), u); }
@@ -1205,9 +1201,9 @@ export function drawCeremony(ctx, cam, team, away, t, { sb = "SUPER BOWL" } = {}
       const facing = p.x < 50 ? 1 : -1;
       if (own) { sceneSprite(ctx, cam, team, away, own2(p), p.x, p.y, p.qb ? -1 : facing, 1); }
       else {
-        const lift = p.qb && handed, up = lift ? Math.round(Math.abs(Math.sin(t * 3)) * s * 0.2) : jump(p.i, p.y > -6 ? 1 : 0.6);
+        const lift = p.qb && handed, up = lift || hold ? 0 : jump(p.i, p.y > -6 ? 1 : 0.6);
         ctx.translate(0, -up);
-        const name = lift ? "catch_high" : (Math.floor(t * 3 + p.i) % 4 === 0 ? "catch_high" : `td_dance_${(Math.floor(t * 4 + p.i) % 2) + 1}`);
+        const name = lift ? "catch_high" : hold ? (hash(p.i, 62) < 0.5 ? "catch_high" : "td_dance_1") : "td_dance_1";
         if (!sprite2(ctx, cam, team, away, name, p.x, p.y, facing)) sprite(ctx, cam, team, away, "c8", p.x, p.y, facing, true);
         if (lift) { const [tx, ty] = cam.toScreen(p.x, p.y); drawLombardi(ctx, tx, Math.round(ty - PLAYER_H * s * 1.08), u * 1.05); }
       }
