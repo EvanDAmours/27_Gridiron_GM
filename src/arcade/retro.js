@@ -681,24 +681,12 @@ function endStands(ctx, cam, teams, yardAt, { px, wallTop, nearEdge, cheer, nigh
   }
 }
 
-export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
-  const { W, H, s, top, depth } = cam;
-  ctx.imageSmoothingEnabled = false;
-  // the stands: tiers of fans above the far sideline (and below the near one on a tall screen)
-  ctx.fillStyle = "#121620"; ctx.fillRect(0, 0, W, H);
-  // the team areas: a strip of turf along each sideline (about three yards), then the wall, then the stands
-  const apron = 3 * SQUASH * s, apronTop = top - apron, px = Math.max(2, Math.round(s * 0.18)), nearEdge = top + depth + apron + s * 0.1, wallTop = apronTop - s * 0.45;
-  const time = opts.time || 0, hype = opts.hype || 0;
-  // calm until something happens; then the crowd is up, arms in the air, bouncing
-  const cheer = hype > 0.15 ? 1 + (Math.floor(time * 8) % 2) : 0;
-  const tile = standsTile(px, Math.max(wallTop, H - nearEdge), teams, cheer);
-  if (tile) { const ox = -(((cam.camX * s * 0.5) % tile.width) + tile.width) % tile.width; // the stands scroll at half the field's speed
-  for (let x = ox; x < W; x += tile.width) {
-    if (wallTop > 0) ctx.drawImage(tile, Math.round(x), Math.round(wallTop - tile.height));
-    if (H - nearEdge > px) ctx.drawImage(tile, Math.round(x), Math.round(nearEdge));
-  } }
-  if (opts.night) { ctx.fillStyle = "rgba(2,4,14,.45)"; ctx.fillRect(0, 0, W, Math.max(0, Math.round(wallTop))); if (H > nearEdge) ctx.fillRect(0, Math.round(nearEdge), W, Math.round(H - nearEdge)); } // (a night game: the crowd in the dark beyond the lights)
-
+// ---- the ground, cached ----
+const GROUND_X0 = -25, GROUND_YDS = 150;
+export const perfStats = { groundBuilds: 0 }; // (playtesting)
+const groundCache = new Map(); // (a few: the field flips for the other side's snaps, and each way round is its own picture)
+function paintGround(ctx, cam, teams, opts, { apron, apronTop, nearEdge, wallTop, px }) {
+  const { W, s, top, depth } = cam;
   // the wall, and the turf of the team areas along both sidelines
   ctx.fillStyle = "#3b3f4a"; ctx.fillRect(0, Math.round(wallTop), W, Math.round(apronTop - wallTop));
   ctx.fillStyle = "#2a2e38"; ctx.fillRect(0, Math.round(apronTop - s * 0.1), W, Math.round(s * 0.1));
@@ -745,7 +733,6 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   ctx.fillStyle = "#e8e8e0"; ctx.fillRect(0, Math.round(top + depth), W, Math.max(2, s * 0.25)); ctx.fillRect(0, Math.round(top - Math.max(2, s * 0.25)), W, Math.max(2, s * 0.25));
   ctx.fillStyle = "#3b3f4a"; ctx.fillRect(0, Math.round(nearEdge), W, Math.round(s * 0.5));
   for (const yy of [-HALF - 1.1, HALF + 1.1]) { const [a0, ya] = cam.toScreen(30, yy), [a1] = cam.toScreen(70, yy); ctx.fillStyle = "rgba(255,255,255,.55)"; for (let x = a0; x < a1; x += s * 1.2) ctx.fillRect(Math.round(x), Math.round(ya), Math.round(s * 0.6), Math.max(1, Math.round(s * 0.1))); }
-  endStands(ctx, cam, teams, yardAt, { px, wallTop, nearEdge, cheer, night: opts.night });
   // yard lines, hashes and numbers
   const lw = Math.max(1, Math.round(s * 0.12));
   for (let yd = 0; yd <= 100; yd += 5) { const x = Math.round(yardAt(yd)); if (x < -4 || x > W + 4) continue; ctx.fillStyle = yd % 10 === 0 ? "rgba(236,238,220,.86)" : "rgba(236,238,220,.7)"; ctx.fillRect(x, Math.round(top), lw, Math.round(depth)); }
@@ -765,6 +752,50 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
         if (dir) { const d = flip ? -dir : dir, ax = Math.round(d * (w / 2 + pn * 2.2)); ctx.fillStyle = col; for (let c = 0; c < 3; c++) { const h = (3 - c) * 2 - 1; ctx.fillRect(ax + d * c * pn - (d < 0 ? 0 : 0), Math.round(-h * pn / 2), pn, h * pn); } }
         ctx.restore(); } } }
   paintField(ctx, cam, teams, yardAt, opts.sb);
+}
+function groundLayer(ctx, cam, teams, opts, geo, yardAt) {
+  const { s, top, H } = cam, WX = opts.wx || {}, dpr = opts.dpr || 1; // (the canvas's pixels to the camera's: not the transform, which carries the zoom)
+  const y0 = Math.floor(geo.wallTop - 2), y1 = Math.ceil(geo.nearEdge + s * 0.5 + 2), Wc = Math.ceil(GROUND_YDS * s);
+  const ready = (ab) => { const im = ab && logo(ab); return im && im.complete && im.naturalWidth ? 1 : 0; };
+  const gk = WX.snow ? (WX.snow === 2 ? "heavySnow" : "lightSnow") : WX.rain ? (WX.rain === 2 ? "heavyRain" : "lightRain") : null, gimg = gk && groundImg(gk);
+  const key = [cam.W, H, s, top, dpr, teams.user?.ab, teams.user?.clr, teams.opp?.ab, teams.opp?.clr, HOME_OF(teams)?.ab, opts.sb || "", WX.rain || 0, WX.snow || 0, ready(teams.user?.ab), ready(teams.opp?.ab), ready(HOME_OF(teams)?.ab), gimg ? (gimg.complete && gimg.naturalWidth ? 1 : 0) : 2].join("|");
+  const mk = (w, h) => (typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(w, h) : typeof document !== "undefined" && document.createElement ? Object.assign(document.createElement("canvas"), { width: w, height: h }) : null);
+  let gc = groundCache.get(key);
+  if (!gc) {
+    const cv = mk(Math.ceil(Wc * dpr), Math.ceil((y1 - y0) * dpr)), c = cv?.getContext?.("2d");
+    if (!c || !c.setTransform) { paintGround(ctx, cam, teams, opts, geo); return; } // (no offscreen canvas: paint it straight on)
+    c.setTransform(dpr, 0, 0, dpr, 0, -y0 * dpr); c.imageSmoothingEnabled = false;
+    const c0 = GROUND_X0 + (Wc * 0.42) / s;
+    const fc = { ...cam, W: Wc, camX: c0, toScreen(x, y) { return [Wc * 0.42 + (x - c0) * s, top + (y + HALF) * SQUASH * s]; } };
+    paintGround(c, fc, teams, opts, geo); perfStats.groundBuilds++;
+    gc = { cv, y0, y1, Wc }; groundCache.set(key, gc); if (groundCache.size > 4) groundCache.delete(groundCache.keys().next().value);
+  }
+  const g = gc, dx = Math.round(yardAt(GROUND_X0) * dpr) / dpr;
+  ctx.drawImage(g.cv, dx, g.y0, g.Wc, g.y1 - g.y0);
+}
+export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
+  const { W, H, s, top, depth } = cam;
+  ctx.imageSmoothingEnabled = false;
+  // the stands: tiers of fans above the far sideline (and below the near one on a tall screen)
+  ctx.fillStyle = "#121620"; ctx.fillRect(0, 0, W, H);
+  // the team areas: a strip of turf along each sideline (about three yards), then the wall, then the stands
+  const apron = 3 * SQUASH * s, apronTop = top - apron, px = Math.max(2, Math.round(s * 0.18)), nearEdge = top + depth + apron + s * 0.1, wallTop = apronTop - s * 0.45;
+  const time = opts.time || 0, hype = opts.hype || 0;
+  // calm until something happens; then the crowd is up, arms in the air, bouncing
+  const cheer = hype > 0.15 ? 1 + (Math.floor(time * 8) % 2) : 0;
+  const tile = standsTile(px, Math.max(wallTop, H - nearEdge), teams, cheer);
+  if (tile) { const ox = -(((cam.camX * s * 0.5) % tile.width) + tile.width) % tile.width; // the stands scroll at half the field's speed
+  for (let x = ox; x < W; x += tile.width) {
+    if (wallTop > 0) ctx.drawImage(tile, Math.round(x), Math.round(wallTop - tile.height));
+    if (H - nearEdge > px) ctx.drawImage(tile, Math.round(x), Math.round(nearEdge));
+  } }
+  if (opts.night) { ctx.fillStyle = "rgba(2,4,14,.45)"; ctx.fillRect(0, 0, W, Math.max(0, Math.round(wallTop))); if (H > nearEdge) ctx.fillRect(0, Math.round(nearEdge), W, Math.round(H - nearEdge)); } // (a night game: the crowd in the dark beyond the lights)
+
+  // the ground (turf, weather on it, lines, numbers, the painted end zones): painted once into a strip
+  // covering the whole field and slid under the camera, so a frame copies it instead of repainting it
+  const yardAt = (x) => W * 0.42 + (x - cam.camX) * s;
+  groundLayer(ctx, cam, teams, opts, { apron, apronTop, nearEdge, wallTop, px }, yardAt);
+  endStands(ctx, cam, teams, yardAt, { px, wallTop, nearEdge, cheer, night: opts.night });
   stadiumLight(ctx, cam, opts.night);
   // the goalposts, on each end line
   for (const [ex, back, pad] of [[110, 1, teams.opp], [-10, -1, teams.user]]) goalPost(ctx, cam, ex, back, pad.clr);
@@ -773,7 +804,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   if (!S) { const so = { ...opts, los: lastLos, toGain: null, down: g?.down }; drawSidelines(ctx, cam, teams, { ...so, side: "far" }); if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, opts.boardTeams || teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); drawSidelines(ctx, cam, teams, { ...so, side: "near" }); return; }
   if (!S.kind) lastLos = S.los;
   // the line of scrimmage and the line to gain
-  const vline = (yd, color) => { const x = Math.round(yardAt(yd)); if (x < 0 || x > W) return; ctx.fillStyle = color; ctx.fillRect(x, Math.round(top), Math.max(2, lw * 2), Math.round(depth)); };
+  const lw = Math.max(1, Math.round(s * 0.12)), vline = (yd, color) => { const x = Math.round(yardAt(yd)); if (x < 0 || x > W) return; ctx.fillStyle = color; ctx.fillRect(x, Math.round(top), Math.max(2, lw * 2), Math.round(depth)); };
   vline(S.los, "rgba(60,120,255,.8)"); if (S.firstDown < 100 && !S.kind) vline(S.firstDown, "rgba(255,220,0,.9)");
   // routes, shown faintly before the snap and while the quarterback holds it (Retro Bowl shows them)
   if (S.phase === "presnap" || (S.phase === "live" && S.ball.holder === "QB")) {

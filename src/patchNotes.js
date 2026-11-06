@@ -2431,4 +2431,7 @@ export const PATCH_NOTES = [
   { v: "5.85", date: "2026-10-23", title: "No team swap after the whistle", notes: [
     "Fix: on the arcade field, after the other team's play was over, the two clubs' uniforms and sidelines swapped for a moment (the offense suddenly in your colours) before the next snap. The finished play now keeps its own colours and sidelines until the next snap.",
   ] },
+  { v: "5.86", date: "2026-10-23", title: "Smoother arcade field", notes: [
+    "The arcade field runs smoother, most of all in snow and rain: the ground (the turf, the snow or puddles on it, the lines, numbers and painted end zones) is now painted once and slid under the camera instead of being repainted every frame, which roughly halves the work per frame and removes the stutter on big plays.",
+  ] },
 ];
