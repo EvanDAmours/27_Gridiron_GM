@@ -2400,4 +2400,7 @@ export const PATCH_NOTES = [
   { v: "5.76", date: "2026-10-23", title: "Super Bowl trophy ceremony", notes: [
     "Win the Super Bowl on the arcade field and the field stays up for the trophy ceremony. Confetti in your colours and gold pours down, the crowd is on its feet, and a stage goes up at midfield with your club's champions backdrop. The commissioner walks the Lombardi Trophy out from the sideline and up onto the stage, hands it over, and your quarterback lifts it over his head while the rest of the team jumps around them. Continue takes you on to the celebration and the morning paper, as before.",
   ] },
+  { v: "5.77", date: "2026-10-23", title: "Pixel-art field", notes: [
+    "Arcade field: the turf is pixel art now, to match the players. Flat, mown stripes in a softer green with a fine grass speckle, a little worn turf along the hash rows, thin off-white lines, a tick at every yard along both sidelines and both hash rows, and the yard numbers in chunky pixel lettering (round zeros, small pixel arrows to the nearer goal; the far ones upside down, as they're painted). The clubs' names in the end zones come out in big chunky pixels too, and the stadium lighting is gentler so the field reads cleanly.",
+  ] },
 ];

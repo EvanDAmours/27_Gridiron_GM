@@ -32,12 +32,14 @@ const GL = {
   "<": "00010 00100 01000 10000 01000 00100 00010", ">": "01000 00100 00010 00001 00010 00100 01000", "(": "00010 00100 01000 01000 01000 00100 00010", ")": "01000 00100 00010 00010 00010 00100 01000",
   "/": "00001 00010 00010 00100 01000 01000 10000", "?": "01110 10001 00001 00010 00100 00000 00100", "%": "11001 11010 00010 00100 01000 01011 10011", "#": "01010 11111 01010 01010 01010 11111 01010", "^": "00100 01110 10101 00100 00100 00100 00100",
 };
-export function pixText(ctx, text, x, y, px, color = "#fff", align = "left") {
+// (the yard numbers' zero is round, the way it's painted on a field, not slashed like a scoreboard's)
+const FIELD_GL = { "0": "01110 10001 10001 10001 10001 10001 01110" };
+export function pixText(ctx, text, x, y, px, color = "#fff", align = "left", font = null) {
   const t = String(text).toUpperCase(), w = t.length * 6 * px - px;
   let cx = align === "center" ? x - w / 2 : align === "right" ? x - w : x;
   ctx.fillStyle = color;
   for (const ch of t) {
-    const rows = (GL[ch] || GL[" "]).split(" ");
+    const rows = ((font && font[ch]) || GL[ch] || GL[" "]).split(" ");
     rows.forEach((r, ry) => { for (let rx = 0; rx < 5; rx++) if (r[rx] === "1") ctx.fillRect(Math.round(cx + rx * px), Math.round(y + ry * px), px, px); });
     cx += 6 * px;
   }
@@ -71,7 +73,7 @@ function stadiumLight(ctx, cam, night) {
   if (!ctx.createRadialGradient) return;
   const cx = W / 2, cy = top + depth * 0.45, r = Math.max(W, depth) * 0.75;
   const g = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r); if (!g) return;
-  g.addColorStop(0, night ? "rgba(255,244,214,.10)" : "rgba(255,255,240,.06)"); g.addColorStop(0.55, "rgba(0,0,0,0)"); g.addColorStop(1, night ? "rgba(0,6,16,.42)" : "rgba(0,10,0,.22)");
+  g.addColorStop(0, night ? "rgba(255,244,214,.08)" : "rgba(255,255,240,.03)"); g.addColorStop(0.6, "rgba(0,0,0,0)"); g.addColorStop(1, night ? "rgba(0,6,16,.38)" : "rgba(0,10,0,.1)");
   ctx.fillStyle = g; ctx.fillRect(0, Math.round(top), W, Math.round(depth));
 }
 
@@ -134,6 +136,21 @@ const lighten = (hex) => shade(hex, 0.45);
 // faded at both ends; the home club's logo sits at midfield. All of it lies flat on the turf, so it
 // takes the field's foreshortening.
 const HOME_OF = (teams) => (teams.user?.isAway != null ? (teams.user.isAway ? teams.opp : teams.user) : teams.user);
+// A club's end zone wordmark, rendered once at a small size (so it pixelates when it's drawn large)
+const WM_SIZE = 24, wmCache = new Map();
+function wordmark(name, clr, ac) {
+  const key = `${name}|${clr}|${ac}`; if (wmCache.has(key)) return wmCache.get(key);
+  if (typeof document === "undefined" && typeof OffscreenCanvas === "undefined") return null;
+  const mk = (w, h) => (typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(w, h) : Object.assign(document.createElement("canvas"), { width: w, height: h }));
+  const font = `italic 900 ${WM_SIZE}px "Arial Black", "Arial", sans-serif`, probe = mk(4, 4).getContext("2d"); if (!probe) return null;
+  probe.font = font; const w = Math.ceil(probe.measureText(name).width || name.length * WM_SIZE * 0.8), pad = Math.ceil(WM_SIZE * 0.3);
+  const cv = mk(w + pad * 2, Math.ceil(WM_SIZE * 1.5)), c = cv.getContext("2d");
+  c.font = font; c.textAlign = "center"; c.textBaseline = "middle"; const cx = cv.width / 2, cy = cv.height / 2;
+  c.lineJoin = "round"; c.lineWidth = WM_SIZE * 0.16; c.strokeStyle = "rgba(244,244,236,.95)"; c.strokeText(name, cx, cy);
+  c.lineWidth = WM_SIZE * 0.06; c.strokeStyle = ac && ac !== clr ? ac : "rgba(0,0,0,.35)"; c.strokeText(name, cx, cy);
+  c.fillStyle = clr || "#334155"; c.fillText(name, cx, cy);
+  const out = { cv, w: w + pad * 2 }; wmCache.set(key, out); return out;
+}
 function paintField(ctx, cam, teams, yardAt) {
   const { W, s, top, depth } = cam, cy = top + depth / 2;
   const flat = (x, y, fn) => { ctx.save(); ctx.translate(x, y); ctx.scale(1, SQUASH); fn(); ctx.restore(); };
@@ -143,16 +160,13 @@ function paintField(ctx, cam, teams, yardAt) {
   if (home?.ab && mx > -s * 12 && mx < W + s * 12) logoAt(home.ab, mx, cy, s * 11, 0.28);
   for (const [yd, t, rot] of [[-5, teams.user, -Math.PI / 2], [105, teams.opp, Math.PI / 2]]) {
     const x = yardAt(yd); if (x < -s * 8 || x > W + s * 8 || !t) continue;
-    // the wordmark: across the width of the field, about seven yards tall, italic and heavy
-    const name = String(t.name || t.ab || "").toUpperCase(), len = 53.3 * 0.7 * s, fs = s * 4.6;
-    flat(x, cy / SQUASH * SQUASH, () => {
-      ctx.rotate(rot);
-      ctx.font = `italic 900 ${Math.round(fs)}px "Arial Black", "Arial", sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      const m = ctx.measureText(name).width || 1, k = Math.min(1.6, len / m);
-      ctx.scale(k, 1);
-      ctx.lineJoin = "round"; ctx.lineWidth = fs * 0.13; ctx.strokeStyle = "rgba(255,255,255,.92)"; ctx.strokeText(name, 0, 0);
-      ctx.lineWidth = fs * 0.045; ctx.strokeStyle = t.ac && t.ac !== t.clr ? t.ac : "rgba(0,0,0,.35)"; ctx.strokeText(name, 0, 0);
-      ctx.fillStyle = t.clr || "#334155"; ctx.fillText(name, 0, 0);
+    // the wordmark: the club's name across the width of the field, heavy italic in its colour with a
+    // white outline, drawn small and blown up so it comes out in chunky pixels like the rest of the field
+    const name = String(t.name || t.ab || "").toUpperCase(), len = 53.3 * 0.7 * s, fs = s * 4.6, wm = wordmark(name, t.clr, t.ac);
+    if (wm) flat(x, cy / SQUASH * SQUASH, () => {
+      ctx.rotate(rot); const sc = fs / WM_SIZE, k = Math.min(1.6, len / (wm.w * sc));
+      ctx.scale(k * sc, sc); const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(wm.cv, -wm.cv.width / 2, -wm.cv.height / 2); ctx.imageSmoothingEnabled = sm;
     });
     // the club's logo at each end of its end zone, faded into the grass
     for (const yy of [-HALF + 4.5, HALF - 4.5]) { const [, ly] = cam.toScreen(0, yy); logoAt(t.ab, x, ly, s * 4.2, 0.5); } // (upright, lying flat)
@@ -283,6 +297,21 @@ function poseFor(S, e, t) {
 // One strip of stands, drawn once per size/colours/pose and cached: rows of fans on stepped
 // tiers (a dark step under each row), mostly in the home side's colours with a few empty
 // seats; rows further back are darker. pose 0 is seated; 1 and 2 are the two beats of a cheer.
+// The grass texture, in pixels of the stands' size: short blades and specks, a few lighter, most darker,
+// laid over the mown stripes as a repeating tile (deterministic, so it never shimmers as it scrolls).
+const turfCache = new Map();
+function turfTile(u) {
+  if (turfCache.has(u)) return turfCache.get(u);
+  if (typeof OffscreenCanvas === "undefined" && typeof document === "undefined") return null;
+  const N = 48, cv = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(N * u, N * u) : Object.assign(document.createElement("canvas"), { width: N * u, height: N * u }), c = cv.getContext("2d");
+  if (!c) return null;
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    const h = hash(i * 1.37 + 3, j * 2.11 + 7); if (h > 0.14) continue;
+    c.fillStyle = h < 0.02 ? "rgba(214,232,170,.16)" : h < 0.08 ? "rgba(24,52,18,.13)" : "rgba(34,64,24,.08)";
+    c.fillRect(i * u, j * u, u, u);
+  }
+  turfCache.set(u, cv); return cv;
+}
 const standsCache = new Map();
 const hash = (a, b) => { const n = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return n - Math.floor(n); };
 function standsTile(u, needH, teams, pose) {
@@ -593,12 +622,12 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   // the wall, and the turf of the team areas along both sidelines
   ctx.fillStyle = "#3b3f4a"; ctx.fillRect(0, Math.round(wallTop), W, Math.round(apronTop - wallTop));
   ctx.fillStyle = "#2a2e38"; ctx.fillRect(0, Math.round(apronTop - s * 0.1), W, Math.round(s * 0.1));
-  ctx.fillStyle = "#357a31"; ctx.fillRect(0, Math.round(apronTop), W, Math.round(apron));
+  ctx.fillStyle = "#4f8139"; ctx.fillRect(0, Math.round(apronTop), W, Math.round(apron));
   ctx.fillRect(0, Math.round(top + depth), W, Math.round(nearEdge - top - depth));
   // the grass, striped every five yards
   const yardAt = (x) => W * 0.42 + (x - cam.camX) * s;
   { // past the end lines: the apron to the wall, like the sidelines
-    ctx.fillStyle = "#357a31"; const l = yardAt(-10), r = yardAt(110);
+    ctx.fillStyle = "#4f8139"; const l = yardAt(-10), r = yardAt(110);
     if (l > 0) ctx.fillRect(0, Math.round(top), Math.ceil(l), Math.round(depth));
     if (r < W) ctx.fillRect(Math.floor(r), Math.round(top), Math.ceil(W - r), Math.round(depth));
   }
@@ -607,9 +636,15 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     // (each stripe shaded from the far side to the near one, like mowed grass under the lights; the end
     // zones are grass too, with the club's name painted on)
     const light = (yd / 5) % 2 === 0, gr = ctx.createLinearGradient?.(0, top, 0, top + depth);
-    if (gr) { gr.addColorStop(0, light ? "#4fa447" : "#469a40"); gr.addColorStop(0.55, light ? "#3f9139" : "#378532"); gr.addColorStop(1, light ? "#35822f" : "#2e7529"); ctx.fillStyle = gr; } else ctx.fillStyle = light ? "#45993f" : "#3f8f3a";
+    if (gr) { gr.addColorStop(0, light ? "#699d4d" : "#609345"); gr.addColorStop(1, light ? "#62964a" : "#598c42"); ctx.fillStyle = gr; } else ctx.fillStyle = light ? "#669a4b" : "#5d9044";
     ctx.fillRect(Math.round(x0), Math.round(top), Math.round(x1 - x0) + 1, Math.round(depth));
   }
+  // the turf itself, in pixels: blades and specks, light and dark, over all the grass (it scrolls with
+  // the field), and the wear along the hash rows where the plays start
+  { const tex = turfTile(px); if (tex) { const pat = ctx.createPattern?.(tex, "repeat"); if (pat) { const ox = ((yardAt(0) % tex.width) + tex.width) % tex.width; ctx.save(); ctx.translate(ox, Math.round(apronTop)); ctx.fillStyle = pat; ctx.fillRect(-ox, 0, W, Math.round(nearEdge - apronTop)); ctx.restore(); } }
+    for (let yd = 1; yd < 100; yd++) { const x = yardAt(yd); if (x < -s || x > W + s) continue; const near = Math.max(0, 1 - Math.abs(yd - 50) / 45);
+      for (const hy of [-8, 8]) for (let k = 0; k < 3; k++) { const h1 = hash(yd * 3 + k, hy), h2 = hash(k + 11, yd + hy); if (h1 > 0.35 + near * 0.5) continue;
+        const [, y] = cam.toScreen(0, hy + (h2 - 0.5) * 3.2); ctx.fillStyle = h2 > 0.5 ? "rgba(112,92,54,.32)" : "rgba(96,80,46,.26)"; ctx.fillRect(Math.round(x + (h1 - 0.5) * s * 0.9), Math.round(y), px * (h1 < 0.15 ? 2 : 1), px); } } }
   // the weather on the turf: the same illustrated ground as the sim's live field (snow lying deep with
   // cleared lanes, or in drifts; puddles and mud in the rain), laid on the field under the paint
   const WX = opts.wx || {};
@@ -633,19 +668,22 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   endStands(ctx, cam, teams, yardAt, { px, wallTop, nearEdge, cheer, night: opts.night });
   // yard lines, hashes and numbers
   const lw = Math.max(1, Math.round(s * 0.12));
-  for (let yd = 0; yd <= 100; yd += 5) { const x = Math.round(yardAt(yd)); if (x < -4 || x > W + 4) continue; ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.fillRect(x, Math.round(top), lw, Math.round(depth)); }
-  ctx.fillStyle = "rgba(255,255,255,.55)";
-  for (let yd = 1; yd < 100; yd++) { if (yd % 5 === 0) continue; const x = Math.round(yardAt(yd)); if (x < 0 || x > W) continue; for (const h of [-8, 8]) { const [, y] = cam.toScreen(0, h); ctx.fillRect(x, Math.round(y), lw, Math.max(2, s * 0.25)); } }
-  // the numbers, painted: bold and white, the far ones upside down (they face the far sideline), with
-  // the little arrow pointing to the nearer goal
-  { const fs = Math.max(10, Math.round(s * 2.2)); ctx.save(); ctx.font = `900 ${fs}px "Arial Black", "Arial", sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    for (let i = 0; i < 9; i++) { const yd = 10 + i * 10, x = yardAt(yd); if (x < -60 || x > W + 60) continue; const n = String(yd > 50 ? 100 - yd : yd), dir = yd < 50 ? -1 : yd > 50 ? 1 : 0;
+  for (let yd = 0; yd <= 100; yd += 5) { const x = Math.round(yardAt(yd)); if (x < -4 || x > W + 4) continue; ctx.fillStyle = yd % 10 === 0 ? "rgba(236,238,220,.86)" : "rgba(236,238,220,.7)"; ctx.fillRect(x, Math.round(top), lw, Math.round(depth)); }
+  ctx.fillStyle = "rgba(236,238,220,.72)";
+  { const tk = Math.max(px * 2, Math.round(s * 0.32));
+    for (let yd = 1; yd < 100; yd++) { if (yd % 5 === 0) continue; const x = Math.round(yardAt(yd)); if (x < 0 || x > W) continue;
+      for (const h of [-8, 8]) { const [, y] = cam.toScreen(0, h); ctx.fillRect(x, Math.round(y - tk / 2), lw, tk); }
+      ctx.fillRect(x, Math.round(top), lw, tk); ctx.fillRect(x, Math.round(top + depth - tk), lw, tk); } }
+  // the numbers, painted in the same pixel letters as everything else: chunky and off-white, lying
+  // flat on the grass, the far ones upside down (they face the far sideline), each with a little pixel
+  // arrow pointing to the nearer goal
+  { const pn = Math.max(2, Math.round(s * 0.34)), col = "rgba(236,238,220,.9)";
+    for (let i = 0; i < 9; i++) { const yd = 10 + i * 10, x = yardAt(yd); if (x < -60 || x > W + 60) continue; const n = String(yd > 50 ? 100 - yd : yd), dir = yd < 50 ? -1 : yd > 50 ? 1 : 0, w = pixWidth(n, pn);
       for (const [yy, flip] of [[-HALF + 7.5, true], [HALF - 7.5, false]]) { const [, y] = cam.toScreen(0, yy);
-        ctx.save(); ctx.translate(x, y); ctx.scale(1, SQUASH * 1.35); if (flip) ctx.rotate(Math.PI);
-        ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.fillText(n, 1.5, 1.5); ctx.fillStyle = "rgba(255,255,255,.88)"; ctx.fillText(n, 0, 0);
-        if (dir) { const ax = ((flip ? -dir : dir) * (ctx.measureText(n).width / 2 + fs * 0.32)), a = fs * 0.2; ctx.beginPath(); ctx.moveTo(ax + Math.sign(ax) * a, 0); ctx.lineTo(ax, -a * 0.8); ctx.lineTo(ax, a * 0.8); ctx.closePath(); ctx.fill(); }
-        ctx.restore(); } }
-    ctx.restore(); }
+        ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(1, SQUASH * 1.5); if (flip) ctx.rotate(Math.PI);
+        pixText(ctx, n, 0, -Math.round(3.5 * pn), pn, col, "center", FIELD_GL);
+        if (dir) { const d = flip ? -dir : dir, ax = Math.round(d * (w / 2 + pn * 2.2)); ctx.fillStyle = col; for (let c = 0; c < 3; c++) { const h = (3 - c) * 2 - 1; ctx.fillRect(ax + d * c * pn - (d < 0 ? 0 : 0), Math.round(-h * pn / 2), pn, h * pn); } }
+        ctx.restore(); } } }
   paintField(ctx, cam, teams, yardAt);
   stadiumLight(ctx, cam, opts.night);
   // the goalposts, on each end line
