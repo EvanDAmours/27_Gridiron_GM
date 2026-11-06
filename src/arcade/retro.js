@@ -5,6 +5,7 @@
 import SHEETS from "../pixel/teamSprites.json" with { type: "json" };
 import ACTS from "../pixel/actionSprites.json" with { type: "json" };
 import ACTS2 from "../pixel/actionSprites2.json" with { type: "json" };
+import SCENE from "../pixel/sceneSprites.json" with { type: "json" };
 import { teamKey } from "../teamUniforms.js";
 import { HALF, ELIGIBLE, passPlan, BULLET_RANGE, BULLET_MAX, playDiagram } from "./play.js";
 
@@ -24,7 +25,24 @@ const load = (k, act) => {
 };
 const grounds = {};
 const groundImg = (k) => grounds[k] || (grounds[k] = Object.assign(new Image(), { src: `${import.meta.env?.BASE_URL ?? "/"}weather/${k}.webp` }));
-export const preload = (team) => { const k = teamKey(team); if (k) { load(k); load(k, true); if (ACTS2[k]) load(k, 2); } };
+export const preload = (team) => { const k = teamKey(team); if (k) { load(k); load(k, true); if (ACTS2[k]) load(k, 2); if (SCENE.teams[k]) { sceneImg(`${k}_home`); sceneImg(`${k}_away`); } } sceneImg("common"); };
+// ---- the scene sheets: the ceremony and sideline people and props (sceneSprites.json) ----
+const sceneImgs = {};
+const sceneImg = (key) => sceneImgs[key] || (sceneImgs[key] = Object.assign(new Image(), { src: `${BASE}scene/${key}.webp` }));
+// does this club have its own sideline and ceremony people (in this uniform)?
+const hasScene = (team, away) => { const k = teamKey(team); return !!SCENE.teams[k]?.[away ? "away" : "home"]; };
+// one frame, its feet on (x, y): from the club's sheet (team given) or the shared one (team null).
+// The sheets are drawn at the action sheets' scale: a standing man is about one player tall.
+function sceneSprite(ctx, cam, team, away, name, x, y, facing = 1, scale = 1) {
+  let r, im;
+  if (team) { const k = teamKey(team), kit = away ? "away" : "home"; r = SCENE.teams[k]?.[kit]?.f[name]; if (!r) return false; im = sceneImg(`${k}_${kit}`); }
+  else { r = SCENE.common.f[name]; if (!r) return false; im = sceneImg("common"); }
+  if (!im.complete || !im.naturalWidth) return false;
+  const [cx, cy, cw, ch, ax, ay] = r, sc = ((PLAYER_H * cam.s) / 160) * scale, [sx, sy] = cam.toScreen(x, y);
+  ctx.save(); ctx.translate(Math.round(sx), Math.round(sy)); if (facing < 0) ctx.scale(-1, 1);
+  ctx.drawImage(im, cx, cy, cw, ch, Math.round(-ax * sc), Math.round(-ay * sc), Math.round(cw * sc), Math.round(ch * sc));
+  ctx.restore(); return true;
+}
 
 // ---- a 5x7 bitmap font for the scoreboard and banners ----
 const GL = {
@@ -460,7 +478,49 @@ function cooler(ctx, cam, x, y, k = 1) {
   ctx.fillStyle = "#d8d8d0"; ctx.fillRect(Math.round(sx - w / 2 - Math.max(1, s * 0.14)), Math.round(sy - h * 0.3), Math.max(1, Math.round(s * 0.14)), Math.max(1, Math.round(s * 0.14)));
 }
 function rect(ctx, cam, x, y, wYd, hPx, color) { const [a, b] = cam.toScreen(x, y), [c] = cam.toScreen(x + wYd, y); ctx.fillStyle = color; ctx.fillRect(Math.round(a), Math.round(b - hPx), Math.max(1, Math.round(c - a)), Math.max(1, Math.round(hPx))); }
+// A club's team area drawn with its own sideline sheet: benches with players sitting on them, the drinks
+// table, the helmet rack and the kicking net, players standing along the restraining line who cheer when
+// something big happens, the staff (a coordinator on his tablet, a position coach, the trainer, a man
+// carrying water up and down), the head coach walking with the ball (calling the play behind his sheet
+// before the snap, a fist pump on the big moments), and the club's cheerleaders when it has a squad
+// and it's at home. Everything is sorted far to near so it overlaps the right way.
+function sideScene(ctx, cam, team, away, near, opts) {
+  const at = (d) => (near ? HALF + d : -HALF - d), t = opts.time || 0, cold = opts.wx?.snow || opts.wx?.cold, hype = opts.hype || 0, ballX = opts.ballX ?? 50, SC = 0.86, items = [];
+  const put = (x, d, name, face = 1, scale = SC, shared = false) => items.push({ x, y: at(d), name, face, scale, shared });
+  const two = (a, b, rate, i) => (Math.floor(t * rate + i * 0.37) % 2 ? b : a); // (an idle pair, each man on his own beat)
+  // the back row: benches, and the players sitting on them
+  const sit = cold ? ["sit_parka", "sit_1", "sit_parka", "sit_2", "sit_towel", "sit_parka"] : ["sit_1", "sit_2", "sit_1", "sit_towel", "sit_2", "sit_1"];
+  [37, 42.2, 47.4, 52.6, 57.8, 63].forEach((x, i) => { put(x, 2.95, "bench", 1); if (hash(i, 31) < 0.7) put(x + (hash(i, 5) - 0.5) * 0.8, 2.9, sit[i], hash(i, 7) < 0.5 ? 1 : -1); });
+  put(67.6, 2.6, "drinks_table"); put(70.4, 2.2, "cup_bin"); put(32.4, 2.6, "helmet_rack"); put(50, 2.95, "tablet_cart"); put(29.2, 2.8, "kicking_net");
+  if (cold) { put(44, 2.1, "heater"); put(56, 2.1, "heater"); }
+  // the players along the line, standing or cheering
+  for (let i = 0; i < 9; i++) {
+    const x = 35.2 + i * 3.6 + (hash(i, near ? 11 : 12) - 0.5) * 1.2, d = 1.2 + hash(i, 13) * 0.5, up = hype > 0.3 && hash(i, 14) < 0.85;
+    put(x, d, up ? two("cheer_1", "cheer_2", 5, i) : two("stand_helmet_1", "stand_helmet_2", 0.7, i), ballX >= x ? 1 : -1);
+  }
+  // the staff
+  put(44.6, 1.0, two("coordinator_idle", "coordinator_point", 0.45, 1), 1);
+  put(57.2, 0.95, hype > 0.3 ? "position_coach_clap" : "position_coach_idle", -1);
+  put(61.4, 1.05, "trainer_stand", -1);
+  { const span = 6, u = (t * 0.35) % 2, w = u < 1 ? u : 2 - u, wx = 63 + w * span; put(wx, 2.2, "water_carry", u < 1 ? 1 : -1); }
+  // the head coach, staying level with the ball
+  { const want = Math.max(33, Math.min(67, ballX + (near ? -2.5 : 2.5))), key = near ? "near" : "far", prev = coachAt[key] ?? want;
+    const x = (coachAt[key] = Math.abs(want - prev) > 15 ? want : prev + (want - prev) * 0.04), walking = Math.abs(want - x) > 0.4;
+    const name = hype > 0.3 ? "coach_fistpump" : walking ? two("coach_walk_1", "coach_walk_2", 3.2, 0) : opts.phase === "presnap" ? "coach_call" : opts.phase === "live" || opts.phase === "carry" ? "coach_signal" : two("coach_idle_1", "coach_idle_2", 0.6, 0);
+    put(x, 0.6, name, walking ? Math.sign(want - x) : ballX >= x ? 1 : -1); }
+  // cheerleaders, outside the team area toward the end zone, at a home game
+  if (!away && SCENE.teams[teamKey(team)]?.home?.f.cl_idle_1) for (let i = 0; i < 4; i++) {
+    const x = 19 + i * 2.6, beat = (t * 1.1 + i * 0.25) % 6, name = hype > 0.3 ? two("cl_poms_up_1", "cl_poms_up_2", 6, i) : beat < 3 ? two("cl_idle_1", "cl_idle_2", 1.2, i) : beat < 4.5 ? two("cl_kick_1", "cl_kick_2", 3, i) : two("cl_poms_up_1", "cl_poms_up_2", 4, i);
+    put(x, 0.9, name, 1, SC * 0.95);
+  }
+  items.sort((a, b) => a.y - b.y);
+  // (the near sideline is seen from in front: its back row sits below the field edge on the screen, so
+  // it's squeezed into the strip of turf there; the far side's back row is up against the wall)
+  for (const it of items) sceneSprite(ctx, cam, it.shared ? null : team, away, it.name, it.x, it.y, it.face, it.scale);
+}
+const coachAt = { near: null, far: null };
 function sideTeam(ctx, cam, team, away, near, opts) {
+  if (hasScene(team, away) && sceneImg(`${teamKey(team)}_${away ? "away" : "home"}`).complete) return sideScene(ctx, cam, team, away, near, opts);
   const s = cam.s, dir = near ? 1 : -1, at = (d) => (near ? HALF + d : -HALF - d), t = opts.time || 0, cold = opts.wx?.snow || opts.wx?.cold;
   // the bench: a long team-coloured back with the club's name on it, a grey seat in front of it. On
   // the far side it's behind the players; on the near side it's between them and the camera
@@ -508,7 +568,10 @@ function chains(ctx, cam, los, toGain, down) {
 export function drawSidelines(ctx, cam, teams, opts = {}) {
   if (!teams?.user || !teams?.opp) return;
   if (opts.side !== "near") { sideTeam(ctx, cam, teams.opp, true, false, opts); drawCrews(ctx, cam, false, opts); chains(ctx, cam, opts.los, opts.toGain, opts.down); } // theirs, across the field (behind the play)
-  if (opts.side !== "far") { sideTeam(ctx, cam, teams.user, false, true, opts); drawCrews(ctx, cam, true, opts); } // yours, on the near sideline (in front of it)
+  if (opts.side !== "far") { sideTeam(ctx, cam, teams.user, false, true, opts);
+    // the line judge, on the sideline at the line of scrimmage: arms up for a touchdown
+    if (opts.los != null) { const lj = (crewAt.judge = crewAt.judge == null || Math.abs(crewAt.judge - opts.los) > 30 ? opts.los : crewAt.judge + (opts.los - crewAt.judge) * 0.05); sceneSprite(ctx, cam, null, false, opts.td && opts.phase !== "live" ? "referee_td" : "referee_idle", lj, HALF + 0.35, -1, 0.86); }
+    drawCrews(ctx, cam, true, opts); } // yours, on the near sideline (in front of it)
 }
 
 // ---- the goalposts ----
@@ -582,11 +645,12 @@ function cameraCart(ctx, cam, x, y, facing, live) {
 function drawCrews(ctx, cam, near, opts) {
   const los = opts.los ?? 50, ease = (k, to) => { const v = crewAt[k]; crewAt[k] = v == null || Math.abs(v - to) > 40 ? to : v + (to - v) * 0.06; return crewAt[k]; };
   if (near) {
-    cameraman(ctx, cam, ease("near", Math.min(108, Math.max(-8, los + 3))), HALF + 1.35, -1, { live: true });
-    for (const [x, f] of [[-12.6, 1], [112.6, -1]]) cameraman(ctx, cam, x, 12, f, { cable: false, skin: "#a8754f" }); // behind each end zone
+    { const prev = crewAt.near, x = ease("near", Math.min(108, Math.max(-8, los + 3))), moving = prev != null && Math.abs(x - prev) > 0.02;
+      if (!sceneSprite(ctx, cam, null, false, moving && Math.floor((opts.time || 0) * 3) % 2 ? "tv_camera_2" : "tv_camera_1", x, HALF + 1.35, -1, 0.86)) cameraman(ctx, cam, x, HALF + 1.35, -1, { live: true }); }
+    for (const [x, f] of [[-12.6, 1], [112.6, -1]]) if (!sceneSprite(ctx, cam, null, false, "photographer_kneel", x, 12, f, 0.86)) cameraman(ctx, cam, x, 12, f, { cable: false, skin: "#a8754f" }); // behind each end zone
   } else {
     cameraCart(ctx, cam, ease("far", Math.min(106, Math.max(-6, los - 6))), -HALF - 1.7, 1, true);
-    for (const [x, f] of [[-12.6, 1], [112.6, -1]]) cameraman(ctx, cam, x, -14, f, { cable: false });
+    for (const [x, f] of [[-12.6, 1], [112.6, -1]]) if (!sceneSprite(ctx, cam, null, false, "photographer_stand", x, -14, f, 0.86)) cameraman(ctx, cam, x, -14, f, { cable: false });
   }
 }
 
@@ -721,7 +785,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   // and how far off it might be; in AUTO, a faint ring shows where it changes from bullet to lob
   if (S.aim && S.phase === "live" && S.ball.holder === "QB") drawAim(ctx, cam, S, opts.passKind || "auto");
   // the team areas along both sidelines: benches, coolers, the cup table and the players watching
-  const sideOpts = { ...opts, ballX: S.ball?.x, los: S.kind ? null : S.los, toGain: S.kind ? null : S.firstDown, down: g?.down };
+  const sideOpts = { ...opts, ballX: S.ball?.x, los: S.kind ? null : S.los, toGain: S.kind ? null : S.firstDown, down: g?.down, phase: S.phase, td: !!S.result?.td };
   drawSidelines(ctx, cam, teams, { ...sideOpts, side: "far" });
   if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); // (at the 50, in front of the far bench)
   // players, far to near so the near ones overlap the far ones; the man with the ball on top
@@ -1094,31 +1158,57 @@ export function drawCeremony(ctx, cam, team, away, t, { sb = "SUPER BOWL" } = {}
     // the steps up the front, in the middle
     for (let i = 0; i < 3; i++) { ctx.fillStyle = i % 2 ? "#2a303d" : "#343b4a"; const w = s * (3.2 - i * 0.4); ctx.fillRect(Math.round(sx(50) - w / 2), Math.round(sy(-6) - (hS * (i + 1)) / 3), Math.round(w), Math.round(hS / 3) + 1); } }
   // who's where: the team on the stage and in front of it, and the commissioner
+  const own = hasScene(team, away), common = !!SCENE.common?.f?.comm_walk_1;
   const jump = (i, k = 1) => Math.round(Math.abs(Math.sin(t * 5.5 + i * 1.7)) * s * 0.45 * k);
   const handed = t >= 8.2, people = [];
-  const onStage = [[45, -9.5], [47.5, -10.5], [52.5, -10.5], [55, -9.5], [50, -8.4]];
+  const qbX = common ? 51.4 : 50;
+  const onStage = [[45, -9.5], [47.5, -10.5], [52.8, -10.5], [55.2, -9.5], [qbX, -8.4]];
   onStage.forEach(([x, y], i) => people.push({ x, y, up: hS, kind: "player", i, qb: i === 4 }));
-  // the rest of the team in two loose rows in front of the stage, leaving the middle open for the steps
   const front = [[36, -3], [39, -1], [42, -4], [45, -1.5], [55, -1.5], [58, -4], [61, -1], [64, -3], [37.5, 4], [41.5, 6], [45.5, 4.5], [54.5, 4.5], [58.5, 6], [62.5, 4]];
   front.forEach(([x, y], i) => people.push({ x, y, up: 0, kind: "player", i: i + 5 }));
-  // the commissioner: walks up from the near sideline to the steps, climbs, stands centre stage,
-  // then steps to the side once the trophy is handed over
+  // the stage's furniture: a lectern at one side, a confetti cannon on each front corner
+  if (common) { people.push({ x: 43.4, y: -10.8, up: hS, kind: "prop", name: "lectern" }); for (const cx of [42.6, 57.4]) people.push({ x: cx, y: -6.3, up: hS, kind: "prop", name: "confetti_cannon", face: cx < 50 ? 1 : -1 }); }
+  // the commissioner: walks up from the near sideline to the steps, climbs, holds the trophy out to the
+  // quarterback, then steps back and applauds
   const ease = (a) => a * a * (3 - 2 * a), cl = (a) => Math.max(0, Math.min(1, a));
-  let cx = 50, cy, cup = 0;
-  if (t < 4.6) { cy = 30 - ease(cl(t / 4.6)) * 25.5; } else if (t < 5.6) { const k = ease(cl((t - 4.6) / 1)); cy = -4.5 - k * 3.5; cup = Math.round(hS * k); } else { cy = -8; cup = hS; if (handed) cx = 50 + ease(cl((t - 8.2) / 1)) * 1.8; }
+  let cx = common ? 48.6 : 50, cy, cup = 0;
+  if (t < 4.6) { cy = 30 - ease(cl(t / 4.6)) * 25.5; } else if (t < 5.6) { const k = ease(cl((t - 4.6) / 1)); cy = -4.5 - k * 3.5; cup = Math.round(hS * k); } else { cy = -8; cup = hS; if (handed) cx = (common ? 48.6 : 50) - ease(cl((t - 8.2) / 1)) * 1.6 * (common ? 1 : -1); }
   people.push({ x: cx, y: cy, up: cup, kind: "commish" });
   people.sort((a, b) => a.y - b.y);
+  // what each player is doing: the quarterback takes the trophy and lifts it; the others celebrate,
+  // and after a while some are in the champions' caps and t-shirts
+  const own2 = (p) => {
+    if (p.qb) {
+      if (!handed) return t < 5.6 ? "point_up" : "wave_crowd";
+      const k = t - 8.2; if (k < 0.7) return "trophy_receive";
+      const c = (k - 0.7) % 7; return c < 3.5 ? (Math.floor(k * 2.6) % 2 ? "trophy_lift_2" : "trophy_lift_1") : c < 4.6 ? "trophy_kiss" : c < 5.8 ? "trophy_shout" : "trophy_cradle";
+    }
+    const gear = t > 13 && hash(p.i, 41) < 0.45, b = Math.floor(t * 0.8 + p.i * 0.7);
+    if (gear) return ["gear_cheer", "gear_cap_wave", "gear_phone", "gear_point", "gear_hug", "gear_idle"][(b + p.i) % 6];
+    if (p.i === 9 && t < 7) return "kneel";
+    if (p.up && p.y > -9) return ["helmet_raise", "wave_crowd", "point_up", "cheer_1"][(b + p.i) % 4]; // (on the stage)
+    const pick = (b + p.i * 3) % 6, ph = (t * 1.6 + p.i * 0.31) % 1;
+    return pick < 2 ? (ph < 0.45 ? "jump_crouch" : "jump_air") : pick === 2 ? "dance" : pick === 3 ? "confetti_catch" : pick === 4 ? "wave_crowd" : "helmet_raise";
+  };
   for (const p of people) {
     ctx.save(); ctx.translate(0, -p.up);
-    if (p.kind === "commish") {
-      person(ctx, cam, p.x, p.y, cy > -5 ? 1 : -1, { c: "#111827", k: SKIN[0], h: "#111827", p: "#1f2937", w: "#f8fafc", t: "#111827", s: "#0b0b0b" }, 0.92, { headset: false, sheet: false, cap: false });
-      if (!handed) { const [tx, ty] = cam.toScreen(p.x + 0.9, p.y); drawLombardi(ctx, tx, Math.round(ty - PLAYER_H * s * 0.42), u); }
+    if (p.kind === "prop") sceneSprite(ctx, cam, null, false, p.name, p.x, p.y, p.face || 1, 0.9);
+    else if (p.kind === "commish") {
+      const walking = t < 5.6, name = walking ? `comm_walk_${(Math.floor(t * 5) % 4) + 1}` : !handed ? "comm_present" : t < 12 ? (Math.floor(t * 4) % 2 ? "comm_clap_2" : "comm_clap_1") : "comm_speak";
+      if (!sceneSprite(ctx, cam, null, false, name, p.x, p.y, 1, 1)) {
+        person(ctx, cam, p.x, p.y, cy > -5 ? 1 : -1, { c: "#111827", k: SKIN[0], h: "#111827", p: "#1f2937", w: "#f8fafc", t: "#111827", s: "#0b0b0b" }, 0.92, { headset: false, sheet: false, cap: false });
+        if (!handed) { const [tx, ty] = cam.toScreen(p.x + 0.9, p.y); drawLombardi(ctx, tx, Math.round(ty - PLAYER_H * s * 0.42), u); }
+      }
     } else {
-      const lift = p.qb && handed, up = lift ? Math.round(Math.abs(Math.sin(t * 3)) * s * 0.2) : jump(p.i, p.y > -6 ? 1 : 0.6), facing = p.x < 50 ? 1 : -1;
-      ctx.translate(0, -up);
-      const name = lift ? "catch_high" : (Math.floor(t * 3 + p.i) % 4 === 0 ? "catch_high" : `td_dance_${(Math.floor(t * 4 + p.i) % 2) + 1}`);
-      if (!sprite2(ctx, cam, team, away, name, p.x, p.y, facing)) sprite(ctx, cam, team, away, "c8", p.x, p.y, facing, true);
-      if (lift) { const [tx, ty] = cam.toScreen(p.x, p.y); drawLombardi(ctx, tx, Math.round(ty - PLAYER_H * s * 1.08), u * 1.05); }
+      const facing = p.x < 50 ? 1 : -1;
+      if (own) { sceneSprite(ctx, cam, team, away, own2(p), p.x, p.y, p.qb ? -1 : facing, 1); }
+      else {
+        const lift = p.qb && handed, up = lift ? Math.round(Math.abs(Math.sin(t * 3)) * s * 0.2) : jump(p.i, p.y > -6 ? 1 : 0.6);
+        ctx.translate(0, -up);
+        const name = lift ? "catch_high" : (Math.floor(t * 3 + p.i) % 4 === 0 ? "catch_high" : `td_dance_${(Math.floor(t * 4 + p.i) % 2) + 1}`);
+        if (!sprite2(ctx, cam, team, away, name, p.x, p.y, facing)) sprite(ctx, cam, team, away, "c8", p.x, p.y, facing, true);
+        if (lift) { const [tx, ty] = cam.toScreen(p.x, p.y); drawLombardi(ctx, tx, Math.round(ty - PLAYER_H * s * 1.08), u * 1.05); }
+      }
     }
     ctx.restore();
   }
