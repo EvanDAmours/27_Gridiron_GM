@@ -770,7 +770,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   for (const [ex, back, pad] of [[110, 1, teams.opp], [-10, -1, teams.user]]) goalPost(ctx, cam, ex, back, pad.clr);
   // no play on the field (between plays, a kick the engine ran): the sidelines, the crews and the
   // scoreboard are still there, the crews where the last snap was
-  if (!S) { const so = { ...opts, los: lastLos, toGain: null, down: g?.down }; drawSidelines(ctx, cam, teams, { ...so, side: "far" }); if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); drawSidelines(ctx, cam, teams, { ...so, side: "near" }); return; }
+  if (!S) { const so = { ...opts, los: lastLos, toGain: null, down: g?.down }; drawSidelines(ctx, cam, teams, { ...so, side: "far" }); if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, opts.boardTeams || teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); drawSidelines(ctx, cam, teams, { ...so, side: "near" }); return; }
   if (!S.kind) lastLos = S.los;
   // the line of scrimmage and the line to gain
   const vline = (yd, color) => { const x = Math.round(yardAt(yd)); if (x < 0 || x > W) return; ctx.fillStyle = color; ctx.fillRect(x, Math.round(top), Math.max(2, lw * 2), Math.round(depth)); };
@@ -787,7 +787,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   // the team areas along both sidelines: benches, coolers, the cup table and the players watching
   const sideOpts = { ...opts, ballX: S.ball?.x, los: S.kind ? null : S.los, toGain: S.kind ? null : S.firstDown, down: g?.down, phase: S.phase, td: !!S.result?.td };
   drawSidelines(ctx, cam, teams, { ...sideOpts, side: "far" });
-  if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); // (at the 50, in front of the far bench)
+  if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, opts.boardTeams || teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); // (at the 50, in front of the far bench)
   // players, far to near so the near ones overlap the far ones; the man with the ball on top
   const ents = Object.values(S.ents).sort((a, b) => (a.key === S.ball.holder) - (b.key === S.ball.holder) || a.y - b.y);
   for (const e of ents) {

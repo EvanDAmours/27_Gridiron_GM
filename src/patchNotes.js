@@ -2428,4 +2428,7 @@ export const PATCH_NOTES = [
   { v: "5.84", date: "2026-10-23", title: "AFC South sprites", notes: [
     "Arcade field: the whole AFC South now has its own animated players, home and road: the Colts, Jaguars and Titans join the Texans. In this pack the players' arms and faces had picked up the uniform colours (a Titans quarterback with powder-blue arms, a Colt with white ones); the skin is painted back on every frame.",
   ] },
+  { v: "5.85", date: "2026-10-23", title: "No team swap after the whistle", notes: [
+    "Fix: on the arcade field, after the other team's play was over, the two clubs' uniforms and sidelines swapped for a moment (the offense suddenly in your colours) before the next snap. The finished play now keeps its own colours and sidelines until the next snap.",
+  ] },
 ];

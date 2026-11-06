@@ -233,6 +233,7 @@ export class ArcadeGame {
   call(c) {
     const g = this.g; this.fade = this.live ? 0.22 : 0.5; // (a live game: just a soft cut between snaps)
     const P = c === "xp" ? setupKick(g, lineups(g), "fg", { pat: true }) : c === "punt" || c === "fg" ? setupKick(g, lineups(g), c) : setupPlay(g, lineups(g, { rb: this.snapRB }), c);
+    P.view = this.teams; // (the field keeps this play's way round, uniforms and sidelines, until the next snap: the tackle hands the game back the real way round, and the picture mustn't flip with it)
     this.S = P; this.cam.camX = P.kind ? P.ball.x + this.cam.lead : holdX(this.cam, P); this.mode = "play"; this.kick = null; this.refresh();
     sfx.select?.();
   }
@@ -415,7 +416,7 @@ export class ArcadeGame {
       const want = this.live && open ? 1.14 : 1; this.push = (this.push ?? 1) + (want - (this.push ?? 1)) * (want > (this.push ?? 1) ? 0.03 : 0.06);
       if (cer) { const k = 1 + 0.22 * Math.min(1, (this.time - cer.t0) / 3), [fx, fy] = cam.toScreen(50, -6); ctx.translate(fx, fy); ctx.scale(k, k); ctx.translate(-fx, -fy); }
       else if (this.push > 1.002 && c) { const [bx, by] = cam.toScreen(c.x, c.y); const fx = Math.max(cam.W * 0.2, Math.min(cam.W * 0.8, bx)), fy = Math.max(cam.H * 0.3, Math.min(cam.H * 0.75, by)); ctx.translate(fx, fy); ctx.scale(this.push, this.push); ctx.translate(-fx, -fy); } }
-    drawRetro(ctx, cam, cer ? null : PP, fr ? rp.teams : teams, this.g, { noBoard: (!this.live || full) && !cer, sb: this.sb, board: fr ? rp.board : this.board, ring: true, time: fr ? fr.time : this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
+    drawRetro(ctx, cam, cer ? null : PP, fr ? rp.teams : cer ? teams : P?.view || teams, this.g, { boardTeams: fr ? rp.teams : teams, noBoard: (!this.live || full) && !cer, sb: this.sb, board: fr ? rp.board : this.board, ring: true, time: fr ? fr.time : this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
     if (this.live && P && !P.kind && !fr && P.phase === "presnap" && m === "play") drawNameTags(ctx, cam, P);
     if (cer) drawCeremony(ctx, cam, cer.team, cer.away, this.time - cer.t0, { sb: cer.name });
     ctx.restore();
