@@ -151,13 +151,14 @@ function wordmark(name, clr, ac) {
   c.fillStyle = clr || "#334155"; c.fillText(name, cx, cy);
   const out = { cv, w: w + pad * 2 }; wmCache.set(key, out); return out;
 }
-function paintField(ctx, cam, teams, yardAt) {
+function paintField(ctx, cam, teams, yardAt, sb = null) {
   const { W, s, top, depth } = cam, cy = top + depth / 2;
   const flat = (x, y, fn) => { ctx.save(); ctx.translate(x, y); ctx.scale(1, SQUASH); fn(); ctx.restore(); };
   const logoAt = (ab, x, y, size, alpha, rot = 0) => { const im = logo(ab); if (!im.complete || !im.naturalWidth) return; flat(x, y, () => { ctx.rotate(rot); ctx.globalAlpha = alpha; const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = true; const r = im.naturalWidth / im.naturalHeight, w = r >= 1 ? size : size * r, h = r >= 1 ? size / r : size; ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.imageSmoothingEnabled = sm; ctx.globalAlpha = 1; }); };
   // midfield: the home club's logo
   const home = HOME_OF(teams), mx = yardAt(50);
-  if (home?.ab && mx > -s * 12 && mx < W + s * 12) logoAt(home.ab, mx, cy, s * 11, 0.28);
+  if (sb && mx > -s * 14 && mx < W + s * 14) { const num = String(sb).replace(/^SUPER BOWL\s*/i, "") || "SB", wm = wordmark(num, "#d4a72c", "#7a5a10"); if (wm) { ctx.save(); ctx.translate(mx, cy); ctx.scale(1, SQUASH); const sc = (s * 6) / WM_SIZE; ctx.scale(sc, sc); ctx.globalAlpha = 0.85; const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; ctx.drawImage(wm.cv, -wm.cv.width / 2, -wm.cv.height / 2); ctx.imageSmoothingEnabled = sm; ctx.restore(); } }
+  else if (home?.ab && mx > -s * 12 && mx < W + s * 12) logoAt(home.ab, mx, cy, s * 11, 0.28);
   for (const [yd, t, rot] of [[-5, teams.user, -Math.PI / 2], [105, teams.opp, Math.PI / 2]]) {
     const x = yardAt(yd); if (x < -s * 8 || x > W + s * 8 || !t) continue;
     // the wordmark: the club's name across the width of the field, heavy italic in its colour with a
@@ -684,7 +685,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
         pixText(ctx, n, 0, -Math.round(3.5 * pn), pn, col, "center", FIELD_GL);
         if (dir) { const d = flip ? -dir : dir, ax = Math.round(d * (w / 2 + pn * 2.2)); ctx.fillStyle = col; for (let c = 0; c < 3; c++) { const h = (3 - c) * 2 - 1; ctx.fillRect(ax + d * c * pn - (d < 0 ? 0 : 0), Math.round(-h * pn / 2), pn, h * pn); } }
         ctx.restore(); } } }
-  paintField(ctx, cam, teams, yardAt);
+  paintField(ctx, cam, teams, yardAt, opts.sb);
   stadiumLight(ctx, cam, opts.night);
   // the goalposts, on each end line
   for (const [ex, back, pad] of [[110, 1, teams.opp], [-10, -1, teams.user]]) goalPost(ctx, cam, ex, back, pad.clr);
@@ -948,7 +949,7 @@ export function drawMenu(ctx, cam, opts) {
   // the title
   const tp = px * 2.2;
   pixShadow(ctx, "GRIDIRON", W / 2, H * 0.07, Math.round(tp), "#ffd166", "center", "#7a3b00");
-  pixShadow(ctx, "ARCADE", W / 2, H * 0.07 + tp * 9, Math.round(tp * 0.8), "#fff", "center", "#30405a");
+  pixShadow(ctx, opts.sb ? String(opts.sb).toUpperCase() : "ARCADE", W / 2, H * 0.07 + tp * 9, Math.round(tp * 0.8), opts.sb ? "#fde68a" : "#fff", "center", opts.sb ? "#5a3d00" : "#30405a");
   // the two clubs, each with a logo and arrows to change it
   const boxes = [], cardW = Math.min(W * 0.36, px * 90), cardH = Math.min(H * 0.34, px * 66), gy = H * 0.3;
   const card = (t, cx, label, which) => {
@@ -970,11 +971,12 @@ export function drawMenu(ctx, cam, opts) {
   pixShadow(ctx, "VS", W / 2, gy + cardH / 2 - px * 4, Math.round(px * 1.6), "#ffd166", "center");
   // kick off
   const kw = px * 60, kh = px * 14, kx = Math.round(W / 2 - kw / 2), ky = Math.round(gy + cardH + px * 10), pulse = 0.5 + 0.5 * Math.sin(time * 4);
-  ctx.fillStyle = u.clr; ctx.fillRect(kx, ky, kw, kh); ctx.fillStyle = `rgba(255,209,102,${0.5 + pulse * 0.5})`; ctx.fillRect(kx, ky + kh - px * 2, kw, px * 2);
+  ctx.fillStyle = opts.sb ? "#8a6a16" : u.clr; ctx.fillRect(kx, ky, kw, kh); ctx.fillStyle = `rgba(255,209,102,${0.5 + pulse * 0.5})`; ctx.fillRect(kx, ky + kh - px * 2, kw, px * 2);
   pixShadow(ctx, "KICK OFF", W / 2, ky + px * 3, Math.round(px * 1.4), "#fff", "center");
   boxes.push({ key: "go", x: kx, y: ky, w: kw, h: kh });
   // the game's length: tap to cycle the quarter length
   if (opts.qMin) { const label = `QUARTERS: ${opts.qMin} MIN`, lw = pixWidth(label, px) + px * 8, lh = px * 11, lx = Math.round(W / 2 - lw - px * 2), ly = ky + kh + px * 4; ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(lx, ly, lw, lh); ctx.fillStyle = "#2c3744"; ctx.fillRect(lx, ly + lh - px, lw, px); pixText(ctx, label, lx + lw / 2, ly + px * 2, px, "#fff", "center"); boxes.push({ key: "len", x: lx, y: ly, w: lw, h: lh });
+    { const sl = opts.sb ? "SUPER BOWL: ON" : "SUPER BOWL: OFF", sw = pixWidth(sl, px) + px * 8, sx0 = Math.round(W / 2 - sw / 2), sy0 = ly + lh + px * 3; ctx.fillStyle = opts.sb ? "rgba(70,52,10,.92)" : "rgba(8,10,16,.8)"; ctx.fillRect(sx0, sy0, sw, lh); ctx.fillStyle = opts.sb ? "#e8c45a" : "#2c3744"; ctx.fillRect(sx0, sy0 + lh - px, sw, px); pixText(ctx, sl, sx0 + sw / 2, sy0 + px * 2, px, opts.sb ? "#fde68a" : "#fff", "center"); boxes.push({ key: "sb", x: sx0, y: sy0, w: sw, h: lh }); }
     if (opts.wxPick) { const wl = `WEATHER: ${opts.wxPick.toUpperCase()}`, ww = pixWidth(wl, px) + px * 8, wx0 = Math.round(W / 2 + px * 2); ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(wx0, ly, ww, lh); ctx.fillStyle = "#2c3744"; ctx.fillRect(wx0, ly + lh - px, ww, px); pixText(ctx, wl, wx0 + ww / 2, ly + px * 2, px, "#fff", "center"); boxes.push({ key: "wx", x: wx0, y: ly, w: ww, h: lh }); } }
   // full screen (or, on an iPhone, how to get it)
   if (opts.fs) { const label = opts.fs === "ios" ? "FULL SCREEN: SHARE > ADD TO HOME SCREEN" : opts.fs === "on" ? "EXIT FULL SCREEN" : mobile ? "FULL SCREEN" : "FULL SCREEN (F)"; const bw = pixWidth(label, px) + px * 6, bh = px * 11, bx = W - px * 3 - bw; ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(bx, px * 3, bw, bh); pixText(ctx, label, bx + bw / 2, px * 5, px, "#ffd166", "center"); if (opts.fs !== "ios") boxes.push({ key: "fs", x: bx, y: px * 3, w: bw, h: bh }); }
@@ -1103,4 +1105,15 @@ export function drawCeremony(ctx, cam, team, away, t, { sb = "SUPER BOWL" } = {}
     }
     ctx.restore();
   }
+}
+
+// The Super Bowl's title card at kickoff (the arcade's Super Bowl mode): the game's name in gold over
+// the two clubs, fading in and out over the field.
+export function drawSbCard(ctx, cam, name, teams, age) {
+  const { W, H } = cam, px = uiPx(cam), a = Math.min(1, age / 0.4, (3.6 - age) / 0.6); if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  const h = px * 40, y = Math.round(H * 0.3 - h / 2); ctx.fillStyle = "rgba(6,8,14,.86)"; ctx.fillRect(0, y, W, h); ctx.fillStyle = "#e8c45a"; ctx.fillRect(0, y, W, px); ctx.fillRect(0, y + h - px, W, px);
+  pixShadow(ctx, String(name).toUpperCase(), W / 2, y + px * 6, Math.round(px * 2.2), "#fde68a", "center", "#5a3d00");
+  pixShadow(ctx, `${teams.user?.name || ""}  VS  ${teams.opp?.name || ""}`.toUpperCase(), W / 2, y + px * 26, px, "#fff", "center");
+  ctx.restore();
 }

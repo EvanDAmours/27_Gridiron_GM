@@ -15,12 +15,14 @@ import { autoState, autoStep, autoCall } from "./autopilot.js";
 import { backForSnap } from "../playsim.js";
 import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
 import { setupKick, kickFlick, tickKick, kickPlan, POSTS_X } from "./kick.js";
+import { sbName, sbNumber } from "../data/superbowls.js";
+const sbTitle = () => { const d = new Date(), season = d.getMonth() < 2 ? d.getFullYear() - 1 : d.getFullYear(); return sbName(sbNumber(season)); };
 import { sfx, unlock, toggleMute, isMuted, ambient, ambientHype } from "./sfx.js";
 import { FX } from "./fx.js";
 import * as K from "./ratings.js";
 import { rollWeather, WX, wxOf } from "../weather.js";
 import { teamKey } from "../teamUniforms.js";
-import { makeCamera, drawRetro, drawLowerThird, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, pixWidth, drawMenu, drawNameTags, drawReplayTag, drawCeremony, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
+import { makeCamera, drawRetro, drawLowerThird, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, pixWidth, drawMenu, drawNameTags, drawReplayTag, drawCeremony, drawSbCard, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
 
 const PULL = 3.2; // touch: the throw goes this many times the pull-back, the other way, on the screen
 const spotOf = (yard) => (yard === 50 ? "MIDFIELD" : yard < 50 ? `OWN ${yard}` : `OPP ${100 - yard}`);
@@ -57,7 +59,7 @@ export class ArcadeGame {
     this.franchise = game; this.locked = locked || !!game || !!live; this.onPlay = onPlay; this.onFinish = onFinish; this.onSimRest = onSimRest;
     this.userTi = userTi; this.oppTi = oppTi; this.teams = teams || { user: TEAMS[userTi], opp: TEAMS[oppTi] };
     this.fx = new FX(); this.time = 0; this.hype = 0; this.fade = 1;
-    this.wxPick = "auto"; try { const w = localStorage.getItem("arcade_wx"); if (WXPICKS.includes(w)) this.wxPick = w; } catch { /* storage unavailable */ } this.qMin = 5; try { const q = +localStorage.getItem("arcade_qmin"); if (QMINS.includes(q)) this.qMin = q; } catch { /* storage unavailable */ } this.passKind = "bullet"; try { const k = localStorage.getItem("arcade_pass"); if (k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
+    this.sbMode = false; try { this.sbMode = localStorage.getItem("arcade_sb") === "1"; } catch { /* storage unavailable */ } this.wxPick = "auto"; try { const w = localStorage.getItem("arcade_wx"); if (WXPICKS.includes(w)) this.wxPick = w; } catch { /* storage unavailable */ } this.qMin = 5; try { const q = +localStorage.getItem("arcade_qmin"); if (QMINS.includes(q)) this.qMin = q; } catch { /* storage unavailable */ } this.passKind = "bullet"; try { const k = localStorage.getItem("arcade_pass"); if (k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
     this.touch = null; this.mouse = null; this.keys = new Set(); this.buttons = []; this.chips = {}; this.menuFocus = "user"; this.paused = false;
     this.S = null; this.g = null; this.mode = "menu"; this.banner = null; this.feed = { list: [], shown: 0, at: 0 };
     for (const n of ["onDown", "onMove", "onUp", "onKey", "onKeyUp", "fit", "noMenu"]) this[n] = this[n].bind(this);
@@ -134,7 +136,7 @@ export class ArcadeGame {
   beginCeremony() {
     const c = this.cerNext; this.cerNext = null; this.held = false;
     this.S = null; this.auto = null; this.replay = null; this.pendingReplay = null; this.rec = null; this.banner = null; this.unflip();
-    this.ceremony = { ...c, t0: this.time, team: this.live.teams[c.winner], away: c.winner === "a", last: -1, handed: false };
+    this.ceremony = { ...c, t0: this.time, team: c.team || this.live.teams[c.winner], away: c.away ?? c.winner === "a", last: -1, handed: false };
     this.mode = "ceremony"; this.fade = 1; this.cam.camX = 50 - (this.cam.W * 0.08) / this.cam.s; this.push = 1;
     sfx.touchdown(); this.fx.flashScreen("#fff", 0.5);
   }
@@ -155,6 +157,7 @@ export class ArcadeGame {
     preload(this.teams.user); preload(this.teams.opp);
     const R = this.rand || Math.random, pick = this.wxPick;
     const wx = pick === "auto" ? rollWeather(teamKey(this.teams.user), R) : pick;
+    this.sb = this.sbMode && !this.live && !this.franchise ? sbTitle() : null; if (this.sb) this.sbCardAt = this.time;
     this.g = newGame(this.userTi, this.oppTi, { ...(this.rand ? { rand: this.rand } : {}), pat: true, qLen: this.qMin * 60, wx, wind: windFor(wx, R) }).g; this.sit = situation(this.g);
     this.fade = 1; this.advance(); ambient(true);
   }
@@ -164,7 +167,7 @@ export class ArcadeGame {
     const g = this.g; this.banner = null;
     if (this.onPlay && !this.two) try { this.onPlay(g); } catch { /* saving is best effort */ }
     if (patWaiting(g)) { this.S = null; this.mode = "pat"; this.fade = Math.max(this.fade, 0.6); this.refresh(); return; } // your try after a touchdown
-    if (g.done) { this.mode = "final"; this.refresh(); this.endBanner(); return; }
+    if (g.done) { this.refresh(); if (this.sb && this.sit.score.h > this.sit.score.a && !this.ceremony) { this.cerNext = { winner: "h", name: this.sb, team: this.teams.user, away: false }; this.beginCeremony(); return; } this.mode = "final"; this.endBanner(); return; }
     if (g.koNext || g.poss !== "h") {
       const before = { ...g.score };
       const evs = simOpponentDrive(g); if (this.onPlay) try { this.onPlay(g); } catch { /* best effort */ }
@@ -267,9 +270,12 @@ export class ArcadeGame {
     if (this.two) { restore(g, this.two.snap); this.two = null; }
     this.S = null; let n = 0;
     while (!g.done && n++ < 900) runPlay(g);
-    this.onPlay?.(g); this.mode = "final"; this.refresh(); this.endBanner();
+    this.onPlay?.(g); this.refresh();
+    if (this.sb && this.sit.score.h > this.sit.score.a && !this.ceremony) { this.cerNext = { winner: "h", name: this.sb, team: this.teams.user, away: false }; this.beginCeremony(); } else { this.mode = "final"; this.endBanner(); }
     this.onSimRest?.(g);
   }
+  // out of the ceremony (the standalone arcade): the box score, as after any game
+  leaveCeremony() { if (this.live || this.mode !== "ceremony") return; this.mode = "final"; this.refresh(); this.endBanner(); this.banner.title = "WORLD CHAMPIONS!"; }
   endBanner() { this.makeBox(); const st = this.sit, lead = st.score.h - st.score.a; this.banner = { title: lead > 0 ? "YOU WIN!" : lead < 0 ? "YOU LOSE" : "TIE GAME", text: `${this.teams.user.name} ${st.score.h}, ${this.teams.opp.name} ${st.score.a}`, sub: null, at: performance.now(), hint: this.endHint() }; if (lead > 0) { this.fx.confetti(this.cam.W, [this.teams.user.clr, this.teams.user.ac, "#ffd166", "#fff"]); sfx.touchdown(); } }
 
   // ---- the loop ----
@@ -380,7 +386,7 @@ export class ArcadeGame {
     const ctx = cv.getContext("2d"); ctx.setTransform(cv.width / cam.W, 0, 0, cv.height / cam.H, 0, 0); ctx.imageSmoothingEnabled = false;
     this.fx.k = uiPx(cam); // effects scale with the screen
     this.buttons = []; this.chips = {};
-    if (this.mode === "menu") { this.buttons = drawMenu(ctx, cam, { teams: TEAMS, user: this.userTi, opp: this.oppTi, time: this.time, focus: this.menuFocus, mobile: this.mobile, fs: this.fsState, qMin: this.qMin, wxPick: wxName(this.wxPick) }); this.fx.draw(ctx, cam.W, cam.H, pixText); return; }
+    if (this.mode === "menu") { this.buttons = drawMenu(ctx, cam, { teams: TEAMS, user: this.userTi, opp: this.oppTi, time: this.time, focus: this.menuFocus, mobile: this.mobile, fs: this.fsState, qMin: this.qMin, wxPick: wxName(this.wxPick), sb: this.sbMode ? sbTitle() : null }); this.fx.draw(ctx, cam.W, cam.H, pixText); return; }
     const m = this.mode, P = this.S, st = this.sit, teams = this.teams;
     // the field, with the shake and the zoom punch
     const [ox, oy] = this.fx.offset(), z = this.fx.zoom;
@@ -393,11 +399,13 @@ export class ArcadeGame {
       const want = this.live && open ? 1.14 : 1; this.push = (this.push ?? 1) + (want - (this.push ?? 1)) * (want > (this.push ?? 1) ? 0.03 : 0.06);
       if (cer) { const k = 1 + 0.22 * Math.min(1, (this.time - cer.t0) / 3), [fx, fy] = cam.toScreen(50, -6); ctx.translate(fx, fy); ctx.scale(k, k); ctx.translate(-fx, -fy); }
       else if (this.push > 1.002 && c) { const [bx, by] = cam.toScreen(c.x, c.y); const fx = Math.max(cam.W * 0.2, Math.min(cam.W * 0.8, bx)), fy = Math.max(cam.H * 0.3, Math.min(cam.H * 0.75, by)); ctx.translate(fx, fy); ctx.scale(this.push, this.push); ctx.translate(-fx, -fy); } }
-    drawRetro(ctx, cam, cer ? null : PP, fr ? rp.teams : teams, this.g, { board: fr ? rp.board : this.board, ring: true, time: fr ? fr.time : this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
+    drawRetro(ctx, cam, cer ? null : PP, fr ? rp.teams : teams, this.g, { sb: this.sb, board: fr ? rp.board : this.board, ring: true, time: fr ? fr.time : this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
     if (this.live && P && !P.kind && !fr && P.phase === "presnap" && m === "play") drawNameTags(ctx, cam, P);
     if (cer) drawCeremony(ctx, cam, cer.team, cer.away, this.time - cer.t0, { sb: cer.name });
     ctx.restore();
     if (fr) drawReplayTag(ctx, cam, this.time);
+    if (this.sb && this.sbCardAt != null && m !== "ceremony") { const a = this.time - this.sbCardAt; if (a < 3.6) drawSbCard(ctx, cam, this.sb, teams, a); }
+    if (cer && !this.live && this.time - cer.t0 > 9) drawHint(ctx, cam, this.mobile ? "TAP TO CONTINUE" : "CLICK OR ENTER TO CONTINUE", cam.H * 0.72);
     if (cer) { const t = this.time - cer.t0; drawLowerThird(ctx, cam, `${String(cer.name || "SUPER BOWL").toUpperCase()} CHAMPIONS`, t < 8.2 ? "HERE COMES THE LOMBARDI TROPHY" : `THE ${String(cer.team.name || "").toUpperCase()} ARE WORLD CHAMPIONS`, cer.team.clr, { age: t, accent: "#ffd166" }); }
     drawWeather(ctx, cam, { wx: this.g?.wxE, time: this.time, wind: windNow(this.g) });
     this.fx.draw(ctx, cam.W, cam.H, pixText);
@@ -490,6 +498,7 @@ export class ArcadeGame {
     for (const [k, b] of Object.entries(this.chips.kinds || {})) if (inside(p, b)) { this.setKind(k); return true; }
     const m = this.mode;
     if (m === "menu") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.menuAction(b.key); return true; }
+    if (m === "ceremony" && !this.live) { if (this.time - this.ceremony.t0 > 2) this.leaveCeremony(); return true; }
     if (m === "pick") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.call(b.key); return true; }
     if (m === "pat") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.patChoice(b.key); return true; }
     if (m === "result") { this.pendingReplay = null; this.advance(); return true; }
@@ -503,6 +512,7 @@ export class ArcadeGame {
   menuAction(k) {
     if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; }
     if (k === "wx") { this.cycleWx(); return; }
+    if (k === "sb") { this.sbMode = !this.sbMode; try { localStorage.setItem("arcade_sb", this.sbMode ? "1" : "0"); } catch { /* ignore */ } sfx.select?.(); return; }
     if (k === "len") { this.qMin = QMINS[(QMINS.indexOf(this.qMin) + 1) % QMINS.length]; try { localStorage.setItem("arcade_qmin", this.qMin); } catch { /* ignore */ } sfx.select?.(); return; }
     if (k === "go") { if (this.fsState === "off") this.fullscreen(true); this.start(); return; }
     if (k === "gm") { this.onQuit ? this.onQuit() : (location.href = import.meta.env?.BASE_URL ?? "/"); return; }
@@ -597,7 +607,7 @@ export class ArcadeGame {
     }
     if (m === "pick") { const n = +k; if (n >= 1 && n <= this.buttons.length) this.call(this.buttons[n - 1].key); return; }
     if (m === "pat") { const n = +k; if (n >= 1 && n <= this.buttons.length) this.patChoice(this.buttons[n - 1].key); return; }
-    if (m === "result" || m === "opp") { if (k === " " || k === "enter") this.tapUI({ px: -1, py: -1 }); return; }
+    if (m === "result" || m === "opp" || m === "ceremony") { if (k === " " || k === "enter") this.tapUI({ px: -1, py: -1 }); return; }
     if (m === "final") { if (k === " " || k === "enter") this.leaveFinal(); return; }
     if (m !== "play" || !P) return;
     if (k === "q" && !P.kind) { this.cycleKind(); return; }

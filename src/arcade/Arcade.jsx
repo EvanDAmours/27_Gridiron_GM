@@ -7,6 +7,7 @@ export default function Arcade() {
   const ref = useRef(null);
   useEffect(() => {
     const game = new ArcadeGame(ref.current, { userTi: 17, oppTi: 8, onQuit: () => { location.href = import.meta.env.BASE_URL; } }); // Giants vs Texans to start
+    if (typeof window !== "undefined") window.arcadeGame = game; // (for playtesting)
     return () => game.destroy();
   }, []);
   return (

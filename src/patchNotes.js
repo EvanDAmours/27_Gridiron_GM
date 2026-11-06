@@ -2403,4 +2403,7 @@ export const PATCH_NOTES = [
   { v: "5.77", date: "2026-10-23", title: "Pixel-art field", notes: [
     "Arcade field: the turf is pixel art now, to match the players. Flat, mown stripes in a softer green with a fine grass speckle, a little worn turf along the hash rows, thin off-white lines, a tick at every yard along both sidelines and both hash rows, and the yard numbers in chunky pixel lettering (round zeros, small pixel arrows to the nearer goal; the far ones upside down, as they're painted). The clubs' names in the end zones come out in big chunky pixels too, and the stadium lighting is gentler so the field reads cleanly.",
   ] },
+  { v: "5.78", date: "2026-10-23", title: "Arcade Super Bowl mode", notes: [
+    "Arcade: a Super Bowl mode. Turn on SUPER BOWL in the arcade menu and every game you start is this season's Super Bowl: the title on the menu, a title card at kickoff, the game's numeral painted in gold at midfield, and when you win, the trophy ceremony on the field (confetti, the stage, the commissioner and the Lombardi) before the box score. The setting is remembered until you turn it off.",
+  ] },
 ];
