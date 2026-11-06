@@ -2422,4 +2422,7 @@ export const PATCH_NOTES = [
   { v: "5.82", date: "2026-10-23", title: "Calmer ceremony", notes: [
     "The Super Bowl ceremony is calmer: the team bounces in one jump until the trophy goes up, then everyone holds a single pose (pointing to the sky, a helmet raised, catching confetti, waving) while the quarterback holds the Lombardi overhead and the commissioner applauds, and the confetti keeps falling.",
   ] },
+  { v: "5.83", date: "2026-10-23", title: "NFC West sprites", notes: [
+    "Arcade field: the whole NFC West now has its own animated players, home and road: the Cardinals, Rams, 49ers and Seahawks run, throw, catch, juke, tackle and celebrate in their own uniforms. A few of each club's home frames had come out with a grey or white jersey (the run with the ball, the tackle, the stumble, the dives and falls, the swim move and the spike); those are repainted in the right colour.",
+  ] },
 ];
