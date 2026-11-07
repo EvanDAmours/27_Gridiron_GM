@@ -331,13 +331,18 @@ function poseFor(S, e, t) {
     if (e.key === "K") return [S.phase === "presnap" || t < t0 - 0.45 ? "c1" : t < t0 + 0.4 ? "c2" : "c3", true];
     if (e.key === "H") return ["c4", true]; // the holder down on one knee, the ball on the spot
     if (e.key === "C" && (S.phase === "presnap" || t < 0.3)) return ["c5", true]; // the long snapper over the ball
-    if (e.key === "S0" && S.kind === "punt") {
+    if (S.tackler === e && S.arrived != null) return ["b4", true]; // the man who got there first, wrapping him up
+    if (e.key === "S0" && S.arrived != null && e.down > 0) return ["b3", true]; // brought down at the end of the return
+    if (e.key === "S0" && S.arrived != null && S.koTD) return ["a7", true]; // all the way back: the celebration
+    if (e.key === "S0" && (S.kind === "punt" || S.kind === "ko")) {
       // the returner: hands up under it as it comes down, the catch, the ball tucked, then off he goes
       const f = S.ball.flight;
       if (!hasBall && f && t >= f.t0 && f.t0 + f.T - t < 0.55) return ["b1", true];
       if (hasBall && S.caughtAt != null && t - S.caughtAt < 0.35) return ["a4", true];
       return [hasBall ? (stride ? "a1" : "a2") : moving ? (stride ? "a5" : "a6") : "db", hasBall || moving];
     }
+    if (moving && (S.kind === "punt" || S.kind === "ko")) return [stride ? "a5" : "a6", true]; // the coverage running down, the return team getting back
+    if (S.kind === "ko" && e.key !== "S0") return ["db", false]; // (lined up for the kick: on their feet, not in a stance)
     if (e.side === "off") return [POSE[e.p.pos] === "qb" ? "ol" : POSE[e.p.pos] || "ol", false];
     return [POSE[e.p.pos] || "db", false];
   }

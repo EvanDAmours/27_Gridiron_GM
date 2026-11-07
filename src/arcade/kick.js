@@ -128,20 +128,67 @@ export function kickFlick(S, dxYd, dyYd, opt = {}) {
 export function tickKick(S, dt) {
   if (S.phase === "presnap" || S.phase === "done") return false;
   S.t += dt;
-  const { ball, ents } = S, f = ball.flight;
-  // the snap and the rush: the line holds, the edge men come, the returner waits
-  for (const e of Object.values(ents)) if (e.side === "def" && e.key !== "S0" && S.t > 0.25 && S.t < (f?.t0 ?? 1)) { e.x += (e.key.startsWith("CB") || e.key.startsWith("LB") ? 5 : 1.5) * dt * -1; }
+  const { ball, ents } = S, f = ball.flight, ret = ents.S0, returning = S.kind === "punt" || S.kind === "ko";
+  // the snap and the rush: the line holds, the edge men come, the returner waits (a kickoff has no snap)
+  if (S.kind !== "ko") for (const e of Object.values(ents)) if (e.side === "def" && e.key !== "S0" && S.t > 0.25 && S.t < (f?.t0 ?? 1)) { e.x += (e.key.startsWith("CB") || e.key.startsWith("LB") ? 5 : 1.5) * dt * -1; }
+  const move = (e, tx, ty, v) => { const d = Math.hypot(tx - e.x, ty - e.y); if (d > 0.15) { const k = Math.min(d, v * dt) / d; e.vx = ((tx - e.x) * k) / dt; e.vy = ((ty - e.y) * k) / dt; e.x += (tx - e.x) * k; e.y += (ty - e.y) * k; } else { e.vx = 0; e.vy = 0; } };
+  // a kickoff: the kicker's run-up to the tee, the coverage starting with him
+  if (S.kind === "ko" && f && S.t < f.t0) { const K = ents.K; if (K) move(K, f.from.x - 0.6, 0, Math.max(0.5, (f.from.x - 0.6 - K.x) / Math.max(0.05, f.t0 - S.t))); for (const e of Object.values(ents)) if (e.side === "off" && e.key !== "K" && S.t > f.t0 - 0.35) move(e, e.x + 3, e.y, 5); }
   if (f && S.t >= f.t0) {
     const u = clamp((S.t - f.t0) / f.T, 0, 1);
-    ball.holder = null;
-    ball.x = f.from.x + (f.to.x - f.from.x) * u; ball.y = f.from.y + (f.to.y - f.from.y) * u; ball.h = f.arc * 4 * u * (1 - u);
-    if (S.kind === "punt" && ents.S0) { const ret = ents.S0; const tx = f.to.x, ty = f.to.y; const d = Math.hypot(tx - ret.x, ty - ret.y); if (d > 0.3) { ret.x += ((tx - ret.x) / d) * Math.min(d, 7 * dt); ret.y += ((ty - ret.y) / d) * Math.min(d, 7 * dt); } }
+    if (ball.holder !== "S0") { ball.holder = null; ball.x = f.from.x + (f.to.x - f.from.x) * u; ball.y = f.from.y + (f.to.y - f.from.y) * u; ball.h = f.arc * 4 * u * (1 - u); }
+    if (returning && ret && !S.landed) move(ret, f.to.x, f.to.y, 7);
     if (u >= 1 && !S.landed) {
       S.landed = true;
-      if (S.kind === "punt") { const ret = ents.S0; S.caughtAt = S.t; if (ret) { ball.holder = "S0"; ret.mode = "carry"; S.retTo = f.spot != null ? 100 - f.spot : f.to.x - (f.ret || 0); } }
+      if (returning && ret) { S.caughtAt = S.t; ball.holder = "S0"; ret.mode = "carry"; S.retTo = S.kind === "ko" ? S.koTo : !S.ev?.returned ? null : S.ev?.retTD ? -2 : (f.spot ?? f.to.x) - (f.ret || 0); if (S.kind === "punt") S.koTD = !!S.ev?.retTD; } // (a punt: a fair catch, or downed, has no return)
+    }
+    // and the return team: on a kickoff the front men drop back into a wall, then once he has it each
+    // picks up a man in coverage and gets in his way
+    if (S.kind === "ko") for (const e of Object.values(ents)) {
+      if (e.side !== "def" || e.key === "S0") continue;
+      e.wy ??= e.y * 0.8;
+      const m = ball.holder === "S0" && ents[`C${e.key.slice(1)}`];
+      if (m && m.down <= 0) { const dx = m.x - e.x; move(e, m.x + 0.9, m.y, Math.abs(dx) < 3 ? 4 : 7.5); if (Math.hypot(m.x - e.x, m.y - e.y) < 1.4) m.held = S.t + 0.25; }
+      else move(e, Math.max(f.to.x - 16, e.x - 1), e.wy, 6);
     }
   }
-  if (S.kind === "punt" && ball.holder === "S0" && S.retTo != null) { const ret = ents.S0; const d = S.retTo - ret.x; if (Math.abs(d) > 0.2) ret.x += Math.sign(d) * Math.min(Math.abs(d), 8 * dt); ball.x = ret.x; ball.y = ret.y; ball.h = 0; }
+  // the coverage: everyone on the kicking team runs down the field at the ball, then at the man with it
+  // (slowed while a blocker has hold of him)
+  if (returning && f && S.t > (S.kind === "ko" ? f.t0 : 0.35)) for (const e of Object.values(ents)) {
+    if (e.side !== "off" || e.key === "K" || e.key === "H" || e.down > 0) continue;
+    const tx = ball.holder === "S0" ? ret.x : f.to.x, ty = ball.holder === "S0" ? ret.y + ((e.y > ret.y ? 1 : -1) * 0.6) : f.to.y + (e.y - f.to.y) * 0.35;
+    move(e, tx + (S.arrived == null ? 0.6 : 0), ty, (e.top || 7) * (S.kind === "ko" ? 0.92 : 1.15) * (e.held > S.t ? 0.3 : 1));
+  }
+  // the return itself: he carries it back up the field, weaving, until the coverage gets to him where the engine says it ended
+  if (returning && ret && ball.holder === "S0" && S.retTo != null) {
+    const d = S.retTo - ret.x;
+    if (Math.abs(d) > 0.3) { ret.vx = Math.sign(d) * 8.6; ret.vy = Math.sin(S.t * 3.2) * 2.4; ret.x += Math.sign(d) * Math.min(Math.abs(d), 8.6 * dt); ret.y = clamp(ret.y + ret.vy * dt, -HALF + 1, HALF - 1); S.endAt = Math.max(S.endAt, S.t + 0.9); }
+    else if (S.arrived == null && (S.koTD || (S.waitTk ??= S.t) + 1.4 < S.t || Object.values(ents).some((e) => e.side === "off" && e.key !== "K" && Math.hypot(e.x - ret.x, e.y - ret.y) < 2.2))) { S.arrived = S.t; ret.vx = 0; ret.vy = 0; S.endAt = S.t + (S.koTD ? 1.6 : 1.0);
+      // brought down: the nearest man in coverage makes the tackle (unless he went all the way)
+      if (!S.koTD) { let best = null, bd = 99; for (const e of Object.values(ents)) { if (e.side !== "off" || e.key === "K") continue; const dd = Math.hypot(e.x - ret.x, e.y - ret.y); if (dd < bd) { bd = dd; best = e; } } if (best) { best.x = ret.x + 0.7; best.y = ret.y; best.down = 0.6; S.tackler = best; ret.down = 0.9; } } }
+    if (S.arrived == null && S.waitTk != null) { ret.vx = 0; ret.vy = 0; S.endAt = Math.max(S.endAt, S.t + 0.9); } // (he's stopped where the engine says: the coverage closes on him)
+    ball.x = ret.x; ball.y = ret.y; ball.h = 0;
+  }
   if (S.t >= S.endAt) { S.phase = "done"; return false; }
   return true;
+}
+
+// A kickoff, played out on the field after the engine has booked it (ev.ko: the touchback, where it was
+// caught and where the return ended). The kicking team lines up across its 35 and runs it down the field
+// left to right; the return team waits with its front line near midfield and the returner deep.
+export function setupKickoff(g, L, ev) {
+  const ko = ev.ko || {}, los = 35, ents = {}, mk = (key, p, side, x, y) => ({ key, p, side, x, y, vx: 0, vy: 0, face: side === "off" ? 1 : -1, top: p ? 6.3 + (Math.max(40, Math.min(99, p.spd ?? 75)) - 60) / 39 * 3.5 : 7, acc: 12, mode: "idle", down: 0 });
+  const offs = [...new Set(Object.values(L.off).filter(Boolean))].slice(0, 10), ys = [-22, -17.5, -13, -8.5, -4, 4, 8.5, 13, 17.5, 22];
+  offs.forEach((p, i) => { ents[`C${i}`] = mk(`C${i}`, p, "off", los - 1, ys[i]); });
+  const kicker = ko.kicker || g.sides.h?.k || offs[0]; ents.K = mk("K", kicker, "off", los - 7, 0);
+  const defs = [...(L.def.DL || []), ...(L.def.LB || []), ...(L.def.CB || []), ...(L.def.S || [])].filter(Boolean).slice(0, 10);
+  const spots = [[47, -16], [47, -6], [47, 6], [47, 16], [58, -11], [58, 0], [58, 11], [70, -8], [70, 8], [80, 0]];
+  defs.forEach((p, i) => { const [x, y] = spots[i] || [60, 0]; ents[`R${i}`] = mk(`R${i}`, p, "def", x, y); });
+  const land = ko.tb ? 104 : 100 - (ko.catchAt ?? 3), ly = ((ev.clock || 0) % 7) - 3;
+  ents.S0 = mk("S0", ko.kr || defs[defs.length - 1] || offs[0], "def", Math.min(land, 99), ly);
+  const S = { g, L, kind: "ko", pat: false, los, firstDown: 100, t: 0, phase: "live", ents, cover: {}, ball: { x: los - 0.5, y: 0, h: 0, holder: null, flight: null }, aim: null, steer: null, text: ev.text || "", ev, result: ev, pick: null, log: [], dist: null, kicker, flick: null };
+  S.ball.flight = { from: { x: los, y: 0 }, to: { x: land, y: ly }, t0: 0.9, T: 2.5, arc: 11, target: null, kick: true };
+  S.koTo = ko.tb ? null : ko.td ? -2 : 100 - (ko.spot ?? 25); S.koTD = !!ko.td;
+  S.endAt = 0.9 + 2.5 + (ko.tb ? 1.4 : 1.0);
+  return S;
 }

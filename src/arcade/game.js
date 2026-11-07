@@ -14,7 +14,7 @@ import { TEAMS, newGame, franchiseGame, lineups, runPlay, simOpponentDrive, situ
 import { autoState, autoStep, autoCall } from "./autopilot.js";
 import { backForSnap } from "../playsim.js";
 import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
-import { setupKick, kickFlick, tickKick, kickPlan, POSTS_X, kickMeter, kickAuto, meterZones, outOfRange } from "./kick.js";
+import { setupKick, setupKickoff, kickFlick, tickKick, kickPlan, POSTS_X, kickMeter, kickAuto, meterZones, outOfRange } from "./kick.js";
 import { sbName, sbNumber } from "../data/superbowls.js";
 const sbTitle = () => { const d = new Date(), season = d.getMonth() < 2 ? d.getFullYear() - 1 : d.getFullYear(); return sbName(sbNumber(season)); };
 import { sfx, unlock, toggleMute, isMuted, ambient, ambientHype } from "./sfx.js";
@@ -210,7 +210,11 @@ export class ArcadeGame {
     if (g.done) { this.unflip(); this.S = null; this.mode = "idle"; this.refresh(); if (L.solo) this.finishSolo(); return; }
     if (patWaiting(g)) { this.offReal = g.patPending.off; if (g.patPending.off !== "h") this.flip(); this.S = null; this.mode = "pat"; this.fade = Math.max(this.fade, 0.6); this.refresh(); return; } // your try after your touchdown
     this.unflip();
-    if (g.koNext) { const off = g.poss, ev = runPlay(g); this.emit(ev, off); this.showEngine(ev); return; } // the kickoff: the engine's
+    if (g.koNext) { // the kickoff: the engine kicks it, the field plays it out (the kick, the catch, the return and the tackle)
+      const off = g.poss; this.offReal = off; if (off !== "h") this.flip();
+      const L0 = lineups(g), ev = runPlay(g);
+      if (ev && ev.type === "kickoff" && !ev.onside && ev.ko && !ev.ko.muff && !ev.ko.onside) { const P = setupKickoff(g, L0, ev); P.view = this.teams; P.cpu = true; this.fade = 0.22; this.S = P; this.mode = "play"; this.meter = null; this.autoKick = null; this.cam.camX = P.ball.x + (this.cam.W * 0.2) / this.cam.s; this.refresh(); return; }
+      this.unflip(); this.emit(ev, off); this.showEngine(ev); return; }
     const off = g.poss; this.offReal = off;
     if (off !== "h") this.flip();
     const mine = off === L.userSide && !L.watch;
@@ -336,7 +340,7 @@ export class ArcadeGame {
       // that it leads the runner, and with a throw in the air it frames the ball and its spot
       const qbHas = !P.kind && !over && (P.ball.holder === "QB" || Math.max(P.ball.x + cam.lead, 0) < holdX(cam, P)); // (a back behind the line too)
       // (before a field goal: the kicker and the posts both in the picture, if they fit)
-      const kickView = P.kind === "fg" && P.phase === "presnap" ? Math.min(P.ball.x - 4 + (cam.W * 0.42) / cam.s, Math.max(P.ball.x + cam.lead, POSTS_X + 5 - (cam.W * 0.58) / cam.s)) : null;
+      const kickView = P.kind === "ko" && P.ball.flight && P.t < P.ball.flight.t0 ? P.ball.x + (cam.W * 0.2) / cam.s : P.kind === "fg" && P.phase === "presnap" ? Math.min(P.ball.x - 4 + (cam.W * 0.42) / cam.s, Math.max(P.ball.x + cam.lead, POSTS_X + 5 - (cam.W * 0.58) / cam.s)) : null;
       const want = kickView ?? (f ? (P.ball.x + f.to.x) / 2 + 2 : qbHas ? holdX(cam, P) : P.ball.x + (over ? 0 : cam.lead));
       cam.camX += (want - cam.camX) * Math.min(1, dt * (f ? 3.5 : 5));
       cam.camX = Math.max(-21 + (cam.W * 0.42) / cam.s, Math.min(121 - (cam.W * 0.58) / cam.s, cam.camX)); // never far past the end zones: the goalposts and the crowd behind them stay in the picture

@@ -2489,4 +2489,8 @@ export const PATCH_NOTES = [
   { v: "5.97", date: "2026-10-23", title: "Touchdowns Where They Happen", notes: [
     "Arcade fix: a play only counts as a touchdown when the ball actually crosses the goal line on the field. A runner brought down at the 5 used to be booked as a touchdown now and then (the engine's 47-yard score was taken as close enough to a 42-yard catch-and-run). And a run or catch that does reach the end zone is always the touchdown it looked like.",
   ] },
+  { v: "5.98", date: "2026-10-23", title: "Watch every return", notes: [
+    "Arcade: kickoffs are played out on the field now, not just announced. The kicker runs up and boots it, the coverage team sprints down, the return team drops back into a wall and blocks, and the returner catches it and runs it back until someone tackles him (or he goes all the way). Touchbacks are shown too.",
+    "Arcade: punt returns are watchable. The coverage runs down the field and makes the tackle, a fair catch is just a catch with no tackle, and a return now ends where the result says. It used to sometimes run the returner to the wrong yard line.",
+  ] },
 ];
