@@ -17,6 +17,7 @@ export function franchiseGame(su, game, userHome, { rand = Math.random } = {}) {
   const user = userHome ? su.home : su.away, opp = userHome ? su.away : su.home;
   const g = createGame(user, opp, { playoff: !!game.playoff, neutral, rec: true, wx: su.wx, rand, homeSide: userHome ? "h" : "a" });
   g.patDefer = { h: true }; // you play your own extra points and two-point tries
+  g.arcade = true; // (punts returned more often on the arcade field)
   const wind = windFor(su.wx, rand); if (wind) g.wind = wind;
   return g;
 }

@@ -814,7 +814,8 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const r = d.prR ?? 80, p = d.pr, rl = line(g, def, p);
     // Hang time: a high punt gets the coverage there first (more fair catches, shorter returns).
     const hang = (o.pHang ?? 86) - 86;
-    if (rand() < (spot >= 88 ? 0.12 : clamp(0.55 - hang * 0.012, 0.3, 0.75))) {
+    // (the arcade: the returner takes his chances more often, fewer fair catches)
+    if (rand() < (spot >= 88 ? (g.arcade ? 0.3 : 0.12) : g.arcade ? clamp(0.8 - hang * 0.008, 0.6, 0.92) : clamp(0.55 - hang * 0.012, 0.3, 0.75))) {
       ret = Math.round(Math.max(0, 8 + (r - 85) * 0.22 - ((o.stCov ?? 70) - 70) * 0.05 - hang * 0.12 + gauss(rand) * 5.5));
       if (rand() < 0.024 * Math.exp((r - 85) / 8)) ret += 15 + Math.round(rand() * 60); // breaks one
       add(rl, "pr", 1);

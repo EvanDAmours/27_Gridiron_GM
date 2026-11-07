@@ -326,7 +326,7 @@ export function tick(S, dt) {
   // the quarterback: drops, sets, throws; on a run he hands off and watches
   if (qb.mode === "dropback") { if (steer(qb, S.los - (S.call === "pass_quick" ? 5.5 : 7.5), 0, dt, 0.85) < 0.3) qb.mode = "set"; }
   else if (qb.mode === "set" || qb.mode === "watch") brake(qb, dt);
-  else if (qb.mode === "handoff") { brake(qb, dt); const rb = ents.RB; if (rb.mode === "back" && (hyp(rb.x - qb.x, rb.y - qb.y) < 1.4 || S.t >= 1.0)) handoff(S); }
+  else if (qb.mode === "handoff") { brake(qb, dt); const rb = ents.RB; if (rb.mode === "back" && (hyp(rb.x - qb.x, rb.y - qb.y) < 2.0 || S.t >= 0.65)) handoff(S); } // (an early, clean exchange: the ball is the back's before he hits the line)
   if (ents.RB.mode === "back") steer(ents.RB, S.los + 1, S.lane * 0.6, dt, 0.95);
   if (ents.RB.mode === "protect") {
     const rb = ents.RB, bl = ents[S.pickup];
@@ -664,7 +664,7 @@ function arrive(S) {
 }
 
 // ---------- runs, tackles, the end of the play ----------
-function handoff(S) { const rb = S.ents.RB; rb.acc *= clamp(1 + K.edge(K.burst(rb.p)) * 0.008, 0.8, 1.25); S.ball.holder = "RB"; rb.mode = "carry"; S.ents.QB.mode = "watch"; S.phase = "carry"; S.steer = S.steer ?? null; }
+function handoff(S) { S.handAt = S.t; const rb = S.ents.RB; rb.acc *= clamp(1 + K.edge(K.burst(rb.p)) * 0.008, 0.8, 1.25); S.ball.holder = "RB"; rb.mode = "carry"; S.ents.QB.mode = "watch"; S.phase = "carry"; S.steer = S.steer ?? null; }
 function sack(S, d) {
   const { ents } = S, qb = ents.QB, loss = Math.round(S.los - qb.x);
   const r = resolvePlay(S.g, S.call, { types: ["sack", "fumble"], fallback: ["inc"], yards: -loss, tol: 3 }, null, 16);

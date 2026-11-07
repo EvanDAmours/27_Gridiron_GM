@@ -169,15 +169,35 @@ function wordmark(name, clr, ac) {
   c.lineJoin = "round"; c.lineWidth = WM_SIZE * 0.16; c.strokeStyle = "rgba(244,244,236,.95)"; c.strokeText(name, cx, cy);
   c.lineWidth = WM_SIZE * 0.06; c.strokeStyle = ac && ac !== clr ? ac : "rgba(0,0,0,.35)"; c.strokeText(name, cx, cy);
   c.fillStyle = clr || "#334155"; c.fillText(name, cx, cy);
+  wear(c, cv.width, cv.height);
   const out = { cv, w: w + pad * 2 }; wmCache.set(key, out); return out;
+}
+// Paint on grass is never solid: blades poke through it and it wears thin in spots. A fixed scatter of
+// pixels, some faded and some gone, so the paint reads as painted onto the turf (not a sticker on it).
+function wear(c, w, h) {
+  try { const d = c.getImageData(0, 0, w, h), a = d.data; for (let i = 0; i < w * h; i++) { const o = i * 4 + 3; if (!a[o]) continue; const r = hash(i % w, Math.floor(i / w)); if (r < 0.07) a[o] = 0; else if (r < 0.2) a[o] = Math.round(a[o] * 0.45); else if (r < 0.32) a[o] = Math.round(a[o] * 0.75); } c.putImageData(d, 0, 0); } catch { /* a canvas we can't read: leave it whole */ }
+}
+// A club's logo for the turf: shrunk to a few dozen pixels with hard edges (it comes out in chunky
+// pixels like the rest of the field), then worn like the paint. Made once per club, when its logo has loaded.
+const pixLogos = new Map();
+function pixLogo(ab, res = 30) {
+  const key = `${ab}|${res}`; if (pixLogos.has(key)) return pixLogos.get(key);
+  const im = logo(ab); if (!im.complete || !im.naturalWidth) return null;
+  if (typeof document === "undefined") return null;
+  const cv = document.createElement("canvas"); cv.width = cv.height = res; const c = cv.getContext("2d"); if (!c) return null;
+  const r = im.naturalWidth / im.naturalHeight, w = r >= 1 ? res : res * r, h = r >= 1 ? res / r : res;
+  c.imageSmoothingEnabled = true; c.drawImage(im, (res - w) / 2, (res - h) / 2, w, h);
+  try { const d = c.getImageData(0, 0, res, res); for (let i = 3; i < d.data.length; i += 4) d.data[i] = d.data[i] > 110 ? 255 : 0; c.putImageData(d, 0, 0); } catch { /* tainted: keep it smooth */ }
+  wear(c, res, res); pixLogos.set(key, cv); return cv;
 }
 function paintField(ctx, cam, teams, yardAt, sb = null) {
   const { W, s, top, depth } = cam, cy = top + depth / 2;
   const flat = (x, y, fn) => { ctx.save(); ctx.translate(x, y); ctx.scale(1, SQUASH); fn(); ctx.restore(); };
-  const logoAt = (ab, x, y, size, alpha, rot = 0) => { const im = logo(ab); if (!im.complete || !im.naturalWidth) return; flat(x, y, () => { ctx.rotate(rot); ctx.globalAlpha = alpha; const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = true; const r = im.naturalWidth / im.naturalHeight, w = r >= 1 ? size : size * r, h = r >= 1 ? size / r : size; ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.imageSmoothingEnabled = sm; ctx.globalAlpha = 1; }); };
+  const A = ctx.globalAlpha; // (a second, faint coat over the snow comes through here at a lower alpha)
+  const logoAt = (ab, x, y, size, alpha, rot = 0) => { const pl = pixLogo(ab); if (!pl) return; flat(x, y, () => { ctx.rotate(rot); ctx.globalAlpha = A * alpha; const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; ctx.drawImage(pl, -size / 2, -size / 2, size, size); ctx.imageSmoothingEnabled = sm; ctx.globalAlpha = A; }); };
   // midfield: the home club's logo
   const home = HOME_OF(teams), mx = yardAt(50);
-  if (sb && mx > -s * 14 && mx < W + s * 14) { const num = String(sb).replace(/^SUPER BOWL\s*/i, "") || "SB", wm = wordmark(num, "#d4a72c", "#7a5a10"); if (wm) { ctx.save(); ctx.translate(mx, cy); ctx.scale(1, SQUASH); const sc = (s * 6) / WM_SIZE; ctx.scale(sc, sc); ctx.globalAlpha = 0.85; const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; ctx.drawImage(wm.cv, -wm.cv.width / 2, -wm.cv.height / 2); ctx.imageSmoothingEnabled = sm; ctx.restore(); } }
+  if (sb && mx > -s * 14 && mx < W + s * 14) { const num = String(sb).replace(/^SUPER BOWL\s*/i, "") || "SB", wm = wordmark(num, "#d4a72c", "#7a5a10"); if (wm) { ctx.save(); ctx.translate(mx, cy); ctx.scale(1, SQUASH); const sc = (s * 6) / WM_SIZE; ctx.scale(sc, sc); ctx.globalAlpha = A * 0.85; const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; ctx.drawImage(wm.cv, -wm.cv.width / 2, -wm.cv.height / 2); ctx.imageSmoothingEnabled = sm; ctx.restore(); } }
   else if (home?.ab && mx > -s * 12 && mx < W + s * 12) logoAt(home.ab, mx, cy, s * 11, 0.28);
   for (const [yd, t, rot] of [[-5, teams.user, -Math.PI / 2], [105, teams.opp, Math.PI / 2]]) {
     const x = yardAt(yd); if (x < -s * 8 || x > W + s * 8 || !t) continue;
@@ -186,11 +206,11 @@ function paintField(ctx, cam, teams, yardAt, sb = null) {
     const name = String(t.name || t.ab || "").toUpperCase(), len = 53.3 * 0.7 * s, fs = s * 4.6, wm = wordmark(name, t.clr, t.ac);
     if (wm) flat(x, cy / SQUASH * SQUASH, () => {
       ctx.rotate(rot); const sc = fs / WM_SIZE, k = Math.min(1.6, len / (wm.w * sc));
-      ctx.scale(k * sc, sc); const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(wm.cv, -wm.cv.width / 2, -wm.cv.height / 2); ctx.imageSmoothingEnabled = sm;
+      ctx.scale(k * sc, sc); const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; ctx.globalAlpha = A * 0.9;
+      ctx.drawImage(wm.cv, -wm.cv.width / 2, -wm.cv.height / 2); ctx.imageSmoothingEnabled = sm; ctx.globalAlpha = A;
     });
     // the club's logo at each end of its end zone, faded into the grass
-    for (const yy of [-HALF + 4.5, HALF - 4.5]) { const [, ly] = cam.toScreen(0, yy); logoAt(t.ab, x, ly, s * 4.2, 0.5); } // (upright, lying flat)
+    for (const yy of [-HALF + 4.5, HALF - 4.5]) { const [, ly] = cam.toScreen(0, yy); logoAt(t.ab, x, ly, s * 4.6, 0.62); } // (upright, lying flat)
   }
 }
 
@@ -233,6 +253,7 @@ const BACKS = new Set(["CB0", "CB1", "CB2", "S0", "S1"]), OLINE = new Set(["LT",
 function pose2(S, e, t) {
   const r = pose2raw(S, e, t);
   if (r) { if (STEADY.test(r.n)) e._last2 = r; return r; } // (only a steady frame is held: never a catch, a throw or a juke frozen in place)
+  if (S.dived && S.ball.holder === e.key) { e._last2 = null; return null; } // (the dive: the first sheet's laid-out frame, never a held running one)
   return S.kind || S.phase === "presnap" ? null : e._last2 || null;
 }
 const STEADY = /^(run|run_ball|run_up|run_down|run_ball_up|run_ball_down|block_engaged|pass_set|run_drive|rush_bull|backpedal|fall)_?\d*$|^(block_engaged|rush_bull|fall_2)$/;
@@ -249,14 +270,17 @@ function pose2raw(S, e, t) {
   if (over && S._overAt == null) S._overAt = t;
   const since = over ? t - S._overAt : 0, isPass = S.call?.startsWith("pass");
   if (e.key === "QB" && !over) {
-    if (S.thrownAt != null && t - S.thrownAt < 0.1) return { n: "throw_release" };
+    if (e.mode === "handoff") return { n: "handoff_qb" }; // (a run: the exchange from the snap, never a throwing frame)
+    if (S.thrownAt && t - S.thrownAt < 0.1) return { n: "throw_release" };
     if (hasBall && S.phase === "live") {
       if (e.mode === "dropback") return { n: `drop_${i4}`, face: 1 };
       return { n: S.aim ? "throw_windup" : "throw_set", face: 1 }; // (set in the pocket, he faces downfield whichever way his feet last moved)
     }
     if (e.mode === "handoff") return { n: "handoff_qb" };
     if (hasBall) return run(true);
-    return moving ? run(false) : null;
+    // the ball's gone: he turns away carrying out the fake, empty-handed (never the first sheet's ball-in-hand frame)
+    if (S.handAt != null && t - S.handAt < 0.6) return { n: "hip_turn" };
+    return moving ? run(false) : { n: "hip_turn" };
   }
   if (S.dived && hasBall) return null; // (the first sheet's diving carry)
   if (over && hasBall) {
@@ -274,12 +298,12 @@ function pose2raw(S, e, t) {
   if (f && !f.kick && e.side === "def" && f.target && S.cover?.[f.target] === e.key && f.t0 + f.T - t < 0.2 && Math.hypot(e.x - f.to.x, e.y - f.to.y) < 1.6) return { n: "swat" };
   if (hasBall && S.phase === "carry") {
     if (S.catchAt != null && t - S.catchAt < 0.3 && e.side === "off") return { n: "catch_secure" };
-    if (e.key === "RB" && S.call?.startsWith("run") && S.t < 1.3 && e.x < S.los) return { n: "handoff_rb" };
+    if (e.key === "RB" && S.call?.startsWith("run") && S.handAt != null && t - S.handAt < 0.3) return { n: "handoff_rb" };
     if (S.jukeAt != null && t - S.jukeAt < 0.32) return { n: t - S.jukeAt < 0.14 ? "juke_plant" : "juke_cut" };
     if (S.stagger > t) return { n: "stumble" };
     return run(true);
   }
-  if (over) return moving ? run(false) : null;
+  if (over) return moving ? run(false) : e.key === "QB" && !hasBall && !isPass ? { n: "hip_turn" } : null;
   // the defensive backs give ground facing the quarterback until the ball's out
   if (e.side === "def" && BACKS.has(e.key) && S.phase === "live" && S.ball.holder === "QB") { e._bp = e._bp ? e.vx > 0.1 && sp < e.top * 0.9 : e.vx > 0.4 && sp < e.top * 0.8; if (e._bp) return { n: `backpedal_${i4}`, face: -1 }; } else e._bp = false;
   if (OLINE.has(e.key) && e.mode === "block") return isPass ? (moving ? { n: `pass_set_${i2}` } : { n: "block_engaged" }) : moving ? { n: `run_drive_${i2}` } : { n: "block_engaged" };
@@ -303,8 +327,10 @@ function poseFor(S, e, t) {
   const hasBall = S.ball.holder === e.key;
   if (S.kind) { // a kick: the kicker swings through, the holder kneels, the line holds
     const t0 = S.ball.flight?.t0 ?? 9;
+    if (e.key === "K" && S.kind === "punt") return [S.phase === "presnap" || t < 0.35 ? "c8" : t < t0 - 0.12 ? "c6" : "c7", true]; // hands up for the snap, the ball held out for the drop, the leg through it
     if (e.key === "K") return [S.phase === "presnap" || t < t0 - 0.45 ? "c1" : t < t0 + 0.4 ? "c2" : "c3", true];
-    if (e.key === "H") return ["c5", true];
+    if (e.key === "H") return ["c4", true]; // the holder down on one knee, the ball on the spot
+    if (e.key === "C" && (S.phase === "presnap" || t < 0.3)) return ["c5", true]; // the long snapper over the ball
     if (e.key === "S0" && S.kind === "punt") return [hasBall ? (stride ? "a1" : "a2") : moving ? (stride ? "a5" : "a6") : "db", hasBall || moving];
     if (e.side === "off") return [POSE[e.p.pos] === "qb" ? "ol" : POSE[e.p.pos] || "ol", false];
     return [POSE[e.p.pos] || "db", false];
@@ -314,7 +340,7 @@ function poseFor(S, e, t) {
     if (S.thrownAt && t - S.thrownAt < 0.5) return ["a8", true];
     if (S.phase === "tackle" && S.result?.type === "sack" && t >= S.endAt - 0.6) return ["b3", true];
     if (hasBall) return [moving ? (stride ? "a1" : "a2") : "qb", moving];
-    return ["a3", true];
+    return [stride ? "a5" : "a6", moving]; // (no ball: never the ball-in-hand frame)
   }
   if (S.dived && hasBall) return ["b2", true]; // laid out for the extra yard
   if ((S.phase === "tackle" || S.phase === "fall") && hasBall && t >= S.endAt - 0.55) return [S.result?.td ? "a7" : "b3", true];
@@ -417,7 +443,7 @@ export function drawWxChip(ctx, cam, wx, wind) {
   const px = Math.max(1, Math.round(uiPx(cam) * 0.75)), sky = wx?.label && wx.label !== "Clear" ? wx.label.toUpperCase() : "";
   const arrow = !wind?.mph ? "" : Math.abs(wind.x) >= Math.abs(wind.y) ? (wind.x > 0 ? " >" : " <") : (wind.y < 0 ? " ^" : " V");
   const text = [sky, wind?.mph ? `WIND ${wind.mph}${arrow}` : ""].filter(Boolean).join(" - "); if (!text) return;
-  const w = pixWidth(text, px) + px * 6, h = px * 10, x = px * 3, y = Math.round(uiPx(cam) * 13.5);
+  const w = pixWidth(text, px) + px * 6, h = px * 10, x = px * 3, y = Math.round(uiPx(cam) * 20.5); // (under the scorebug's two rows)
   ctx.fillStyle = "rgba(8,10,16,.75)"; ctx.fillRect(x, y, w, h); pixText(ctx, text, x + px * 3, y + px * 2, px, "#cfe8ff");
 }
 
@@ -567,8 +593,12 @@ function chains(ctx, cam, los, toGain, down) {
 }
 export function drawSidelines(ctx, cam, teams, opts = {}) {
   if (!teams?.user || !teams?.opp) return;
-  if (opts.side !== "near") { sideTeam(ctx, cam, teams.opp, true, false, opts); drawCrews(ctx, cam, false, opts); chains(ctx, cam, opts.los, opts.toGain, opts.down); } // theirs, across the field (behind the play)
-  if (opts.side !== "far") { sideTeam(ctx, cam, teams.user, false, true, opts);
+  // the benches stay put all game: your club on the near sideline, theirs across the field, each in
+  // its own uniform for the day (opts.bench: the real clubs, not the field's way round for this snap,
+  // which turns with every change of possession)
+  const B = opts.bench || { near: teams.user, far: teams.opp }, awayOf = (t, d) => (t?.isAway != null ? !!t.isAway : d);
+  if (opts.side !== "near") { sideTeam(ctx, cam, B.far, awayOf(B.far, true), false, opts); drawCrews(ctx, cam, false, opts); chains(ctx, cam, opts.los, opts.toGain, opts.down); } // theirs, across the field (behind the play)
+  if (opts.side !== "far") { sideTeam(ctx, cam, B.near, awayOf(B.near, false), true, opts);
     // the line judge, on the sideline at the line of scrimmage: arms up for a touchdown
     if (opts.los != null) { const lj = (crewAt.judge = crewAt.judge == null || Math.abs(crewAt.judge - opts.los) > 30 ? opts.los : crewAt.judge + (opts.los - crewAt.judge) * 0.05); sceneSprite(ctx, cam, null, false, opts.td && opts.phase !== "live" ? "referee_td" : "referee_idle", lj, HALF + 0.35, -1, 0.86); }
     drawCrews(ctx, cam, true, opts); } // yours, on the near sideline (in front of it)
@@ -713,6 +743,8 @@ function paintGround(ctx, cam, teams, opts, { apron, apronTop, nearEdge, wallTop
     for (let yd = 1; yd < 100; yd++) { const x = yardAt(yd); if (x < -s || x > W + s) continue; const near = Math.max(0, 1 - Math.abs(yd - 50) / 45);
       for (const hy of [-8, 8]) for (let k = 0; k < 3; k++) { const h1 = hash(yd * 3 + k, hy), h2 = hash(k + 11, yd + hy); if (h1 > 0.35 + near * 0.5) continue;
         const [, y] = cam.toScreen(0, hy + (h2 - 0.5) * 3.2); ctx.fillStyle = h2 > 0.5 ? "rgba(112,92,54,.32)" : "rgba(96,80,46,.26)"; ctx.fillRect(Math.round(x + (h1 - 0.5) * s * 0.9), Math.round(y), px * (h1 < 0.15 ? 2 : 1), px); } } }
+  // the paint goes down first, so the snow lies over it and the rain pools on it
+  paintField(ctx, cam, teams, yardAt, opts.sb);
   // the weather on the turf: the same illustrated ground as the sim's live field (snow lying deep with
   // cleared lanes, or in drifts; puddles and mud in the rain), laid on the field under the paint
   const WX = opts.wx || {};
@@ -727,6 +759,8 @@ function paintGround(ctx, cam, teams, opts, { apron, apronTop, nearEdge, wallTop
       ctx.drawImage(im, Math.round(sx0), Math.round(sy0), Math.round(sx1 - sx0), Math.round(sy1 - sy0)); ctx.restore(); ctx.imageSmoothingEnabled = false;
     }
     if (WX.snow) { ctx.fillStyle = "rgba(235,242,250,.35)"; ctx.fillRect(0, Math.round(apronTop), W, Math.round(apron)); ctx.fillRect(0, Math.round(top + depth), W, Math.round(nearEdge - top - depth)); } // snow on the team areas too
+    // the paint still shows through the drifts here and there: a faint second coat over the weather
+    ctx.save(); ctx.globalAlpha = WX.snow ? (WX.snow === 2 ? 0.32 : 0.45) : 0.55; paintField(ctx, cam, teams, yardAt, opts.sb); ctx.restore();
   }
   // the near sideline and the strip below it
   // both sidelines: the white boundary, and the dashed line of each team area
@@ -751,7 +785,6 @@ function paintGround(ctx, cam, teams, opts, { apron, apronTop, nearEdge, wallTop
         pixText(ctx, n, 0, -Math.round(3.5 * pn), pn, col, "center", FIELD_GL);
         if (dir) { const d = flip ? -dir : dir, ax = Math.round(d * (w / 2 + pn * 2.2)); ctx.fillStyle = col; for (let c = 0; c < 3; c++) { const h = (3 - c) * 2 - 1; ctx.fillRect(ax + d * c * pn - (d < 0 ? 0 : 0), Math.round(-h * pn / 2), pn, h * pn); } }
         ctx.restore(); } } }
-  paintField(ctx, cam, teams, yardAt, opts.sb);
 }
 function groundLayer(ctx, cam, teams, opts, geo, yardAt) {
   const { s, top, H } = cam, WX = opts.wx || {}, dpr = opts.dpr || 1; // (the canvas's pixels to the camera's: not the transform, which carries the zoom)
@@ -908,11 +941,12 @@ const hudPx = uiPx;
 // The score strip across the top (the standalone arcade; in a live game the app shows the score and
 // the stadium scoreboard at the 50 does the rest).
 export function drawHud(ctx, cam, sit, teams, { ot, to } = {}) {
-  const { W } = cam, px = hudPx(cam), h = px * 7, pad = px * 2;
-  const bar = h + pad * 2;
+  const { W } = cam, px = hudPx(cam), h = px * 7, pad = px * 2, px2 = Math.max(1, Math.round(px * 0.7)), tip = px * 4;
+  // two rows: the clubs, scores and clock; under the clock the down and distance (whoever has the ball)
+  const bar = h + pad * 2 + px2 * 7 + px * 2;
   ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, W, bar); ctx.fillStyle = "#1c2433"; ctx.fillRect(0, bar - px, W, px);
   const box = (x, t, n, right, poss, tos) => {
-    const w = px * 6 * 3 + pad * 2, bx = right ? x - w : x;
+    const w = Math.max(px * 6 * 3 + pad * 2, tip * 3 + px * 2 * 2 + pad * 2), bx = right ? x - w : x;
     ctx.fillStyle = t.clr; ctx.fillRect(bx, px, w, bar - px * 3); ctx.fillStyle = t.ac; ctx.fillRect(bx, bar - px * 2, w, px);
     pixShadow(ctx, t.ab, bx + w / 2, pad, px, "#fff", "center");
     const sx = right ? bx - pad : bx + w + pad;
@@ -920,18 +954,28 @@ export function drawHud(ctx, cam, sit, teams, { ot, to } = {}) {
     // possession: a little football beside the score
     const nw = pixWidth(n, px), fx = right ? sx - nw - pad * 2.5 : sx + nw + pad;
     if (poss) { ctx.fillStyle = "#a0552a"; ctx.fillRect(fx, pad + px * 2, px * 3, px * 3); ctx.fillStyle = "#fff"; ctx.fillRect(fx + px, pad + px * 2, px, px * 3); }
-    // timeouts: three pips under the club
-    for (let i = 0; i < 3; i++) { ctx.fillStyle = i < (tos ?? 3) ? "#ffd166" : "#3a4258"; ctx.fillRect(bx + pad + i * px * 3, bar - px * 2, px * 2, px); }
+    // timeouts: three bars under the club's name, on a dark strip so they read on any colour (gold: left, dark: used)
+    const ty = pad + h + px, tw = tip * 3 + px * 2 * 2, tx = Math.round(bx + w / 2 - tw / 2);
+    ctx.fillStyle = "rgba(8,10,16,.75)"; ctx.fillRect(tx - px, ty - px, tw + px * 2, px * 2 + px * 2);
+    for (let i = 0; i < 3; i++) { const on = i < (tos ?? 3); ctx.fillStyle = on ? "#ffd166" : "#39415a"; ctx.fillRect(tx + i * (tip + px * 2), ty, tip, px * 2); if (on) { ctx.fillStyle = "#fff6c8"; ctx.fillRect(tx + i * (tip + px * 2), ty, tip, Math.max(1, Math.round(px / 2))); } }
   };
   box(pad, teams.user, sit.score.h, false, sit.poss === "h" && !sit.done, to?.h); box(W - pad, teams.opp, sit.score.a, true, sit.poss === "a" && !sit.done, to?.a);
   const clock = `${Math.floor(sit.clock / 60)}:${String(sit.clock % 60).padStart(2, "0")}`;
   pixShadow(ctx, `${sit.ot || ot ? "OT" : "Q" + sit.qtr}  ${clock}`, W / 2, pad, px, "#ffd166", "center");
+  // the down and distance, and where the ball is
+  if (!sit.done) {
+    const off = sit.poss === "h" ? teams.user : teams.opp, def = sit.poss === "h" ? teams.opp : teams.user, yd = sit.yard;
+    const ORD = ["", "1ST", "2ND", "3RD", "4TH"], toGo = sit.toGo >= 100 - yd ? "GOAL" : sit.toGo;
+    const spot = yd === 50 ? "THE 50" : yd > 50 ? `${def.ab} ${100 - yd}` : `${off.ab} ${yd}`;
+    const txt = sit.koNext ? `${off.ab} KICKOFF` : `${off.ab}  ${ORD[sit.down] || sit.down} & ${toGo}  ON ${spot}`;
+    pixShadow(ctx, txt, W / 2, pad + h + px, px2, "#fff", "center");
+  }
   return bar;
 }
 const shade = (hex, k) => { const n = parseInt(String(hex).replace("#", "").padEnd(6, "0").slice(0, 6), 16); const f = (c) => Math.max(0, Math.min(255, Math.round(c + (k < 0 ? c * k : (255 - c) * k)))); return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`; };
 
 export function drawDownBox(ctx, cam, text, color = "#fff", { left = false } = {}) {
-  const px = hudPx(cam), h = px * 7, pad = px * 2, bar = left ? pad : h + pad * 2;
+  const px = hudPx(cam), h = px * 7, pad = px * 2, bar = left ? pad : h + pad * 2 + Math.max(1, Math.round(px * 0.7)) * 7 + px * 2; // (under the scorebug)
   const w = pixWidth(text, px) + pad * 3, W = left ? w + pad * 4 : cam.W; // (at the left: its box starts a little in from the edge)
   ctx.fillStyle = "#0b0e14"; ctx.fillRect(Math.round(W / 2 - w / 2), bar - px, Math.round(w), h + pad + px);
   ctx.fillStyle = "#1c2433"; ctx.fillRect(Math.round(W / 2 - w / 2), bar + h + pad - px, Math.round(w), px);
@@ -943,20 +987,25 @@ export function drawDownBox(ctx, cam, text, color = "#fff", { left = false } = {
 // `age` is how long it has been up, for the slide and the pulse.
 // A live game's result, TV style: a slim lower third over the bottom of the field (the app has the full
 // play-by-play beside it), rising in, the club's colour down its edge.
-export function drawLowerThird(ctx, cam, title, text, color, { age = 1, accent = "#ffd166" } = {}) {
-  const { W, H } = cam, u = uiPx(cam), px = Math.max(2, Math.round(u * 1.4)), px2 = Math.max(1, Math.round(u * 0.9));
-  const line = wrap(text || "", Math.floor((W * 0.7) / (6 * px2)))[0] || "", h = px * 7 + px2 * 7 + u * 6;
-  const k = 1 - Math.pow(1 - Math.min(1, age / 0.22), 3), y = Math.round(H - u * 4 - h + (1 - k) * (h + u * 4)), w = Math.round(Math.min(W - u * 8, Math.max(pixWidth(title, px), pixWidth(line, px2)) + u * 14)), x = Math.round(W / 2 - w / 2);
+export function drawLowerThird(ctx, cam, title, text, color, { age = 1, accent = "#ffd166", sub = null } = {}) {
+  const { W, H } = cam, u = uiPx(cam), px = Math.max(2, Math.round(u * 1.25)), px2 = Math.max(1, Math.round(u * 0.8));
+  // up to three lines of the play, and a grey line under them saying why (never cut off: the box grows up from the bottom)
+  const maxW = Math.min(W - u * 8, Math.max(u * 160, W * 0.86)), chars = Math.max(12, Math.floor((maxW - u * 14) / (6 * px2)));
+  const lines = wrap(text || "", chars).slice(0, 3), subL = sub ? wrap(sub, chars).slice(0, 1) : [];
+  const h = px * 7 + u * 4 + (lines.length + subL.length) * px2 * 8 + u * 3;
+  const k = 1 - Math.pow(1 - Math.min(1, age / 0.22), 3), y = Math.round(H - u * 4 - h + (1 - k) * (h + u * 4));
+  const w = Math.round(Math.min(maxW, Math.max(pixWidth(title, px), ...lines.map((l) => pixWidth(l, px2)), ...subL.map((l) => pixWidth(l, px2))) + u * 14)), x = Math.round(W / 2 - w / 2);
   ctx.save(); ctx.globalAlpha = Math.min(1, age / 0.15);
   ctx.fillStyle = "rgba(6,8,14,.9)"; ctx.fillRect(x, y, w, h); ctx.fillStyle = color || "#334155"; ctx.fillRect(x, y, Math.max(3, u), h); ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fillRect(x, y, w, 1);
   pixShadow(ctx, title, x + u * 6, y + u * 2, px, accent, "left");
-  if (line) pixText(ctx, line, x + u * 6, y + u * 3 + px * 7 + u, px2, "#e5e7eb", "left");
+  lines.forEach((l, i) => pixText(ctx, l, x + u * 6, y + u * 3 + px * 7 + u + i * px2 * 8, px2, "#e5e7eb", "left"));
+  subL.forEach((l) => pixText(ctx, l, x + u * 6, y + u * 3 + px * 7 + u + lines.length * px2 * 8, px2, "#9aa7b2", "left"));
   ctx.restore();
 }
 export function drawBanner(ctx, cam, title, text, sub, color, { age = 1, accent = "#ffd166", hint = "TAP TO CONTINUE" } = {}) {
   const { W, H, s } = cam, big = /TOUCHDOWN|WIN|INTERCEPT|FIELD GOAL|SAFETY/.test(title);
-  const u = uiPx(cam), px = big ? u * 2 : Math.round(u * 1.5), px2 = u; void s;
-  const lines = wrap(text, Math.floor((W - s * 2) / (6 * px2))).slice(0, 3);
+  const u = uiPx(cam), px = big ? u * 2 : Math.round(u * 1.5), px2 = Math.max(1, Math.round(u * 0.85)); void s;
+  const lines = wrap(text, Math.floor((W * 0.92) / (6 * px2))).slice(0, 4);
   const h = px * 7 + px * 4 + px2 * 8 * lines.length + (sub ? px2 * 9 : 0) + px * 3;
   const ease = (u) => 1 - Math.pow(1 - Math.min(1, u), 3);
   const slide = ease(age / 0.28), y = Math.round(H * 0.5 - h / 2), x0 = Math.round((1 - slide) * -W);
@@ -966,7 +1015,7 @@ export function drawBanner(ctx, cam, title, text, sub, color, { age = 1, accent 
   const pulse = big ? 1 + Math.max(0, 0.25 - age) * 1.2 : 1, tpx = Math.max(2, Math.round(px * pulse));
   pixShadow(ctx, title, W / 2, y + px * 2.5, tpx, accent, "center", color);
   lines.forEach((l, i) => pixShadow(ctx, l, W / 2, y + px * 2.5 + tpx * 7 + px * 1.5 + i * px2 * 8, px2, "#fff", "center"));
-  if (sub) pixText(ctx, sub, W / 2, y + h - px2 * 7 - px * 1.8, px2, "#9aa7b2", "center");
+  if (sub) pixText(ctx, wrap(sub, Math.floor((W * 0.92) / (6 * px2)))[0] || "", W / 2, y + h - px2 * 7 - px * 1.8, px2, "#9aa7b2", "center");
   ctx.restore();
   if (hint && age > 0.6) { ctx.globalAlpha = 0.5 + 0.3 * Math.sin(age * 5); pixText(ctx, hint, W / 2, y + h + px2 * 2, px2, "#fff", "center"); ctx.globalAlpha = 1; }
 }

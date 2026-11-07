@@ -2452,4 +2452,12 @@ export const PATCH_NOTES = [
     "Punts and field goals by the computer (and by your team when you watch) now play out on the arcade field instead of showing just the result.",
     "Arcade mode plays every club's best players, all healthy: the highest overall starts at each position (Jaxson Dart starts for the Giants), and there are no injuries.",
   ] },
+  { v: "5.90", date: "2026-10-23", title: "Arcade: Clearer Scorebug, Flags, Runs, Punts and End Zones", notes: [
+    "Playoff games can't end in a tie anymore: the arcade's Super Bowl mode now plays overtime periods until someone wins, the same as the season's playoff games.",
+    "The arcade scorebug has a second line with the down, the distance and the ball's spot, for whichever team has the ball, and timeouts shown as bright gold bars on a dark strip under each club. The scorebug and the benches now stay put all game: your club on the left of the scorebug and on the near sideline, in its own uniform, whoever has the ball.",
+    "Play results in the arcade use smaller text that always fits, with a grey line saying why: an incompletion is BROKEN UP BY (the defender), DROPPED (a catchable ball) or OFF TARGET. A play with a flag on it shows two cards: first what the play did, then a FLAG card naming the penalty and what it costs, so the yards that come off make sense.",
+    "Runs look right: the handoff happens earlier and cleanly, and the quarterback turns away empty-handed instead of still holding a ball. Pressing E to dive now shows the dive.",
+    "Punts use the real punting animation (hands up for the snap, the ball held out, the leg through it), the field goal holder kneels, and the long snapper is over the ball. Arcade punt returners field more punts and try to return them.",
+    "End zones look painted onto the grass: the team name and pixelated logos are worn into the turf, and snow lies over them, with the paint still showing through.",
+  ] },
 ];

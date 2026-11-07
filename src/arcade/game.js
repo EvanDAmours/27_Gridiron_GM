@@ -163,7 +163,7 @@ export class ArcadeGame {
     const wx = pick === "auto" ? rollWeather(teamKey(this.teams.user), R) : pick;
     this.sb = this.sbMode && !this.franchise ? sbTitle() : null; if (this.sb) this.sbCardAt = this.time;
     this.mode = "loading"; this.S = null; this.ceremony = null; this.cerNext = null; this.box = null; this.banner = null;
-    const opts = { ...(this.rand ? { rand: this.rand } : {}), qLen: this.qMin * 60, wx, wind: windFor(wx, R) }, seq = (this.startSeq = (this.startSeq || 0) + 1);
+    const opts = { ...(this.rand ? { rand: this.rand } : {}), qLen: this.qMin * 60, wx, wind: windFor(wx, R), playoff: !!this.sb }, seq = (this.startSeq = (this.startSeq || 0) + 1);
     franchiseGame(this.userTi, this.oppTi, opts).catch((e) => { console.error("arcade: franchise setup failed, using the plain rosters", e); return newGame(this.userTi, this.oppTi, opts).g; }).then((g) => {
       if (seq !== this.startSeq) return; // (started again meanwhile)
       this.live = { solo: true, g, userSide: "h", watch: false, night: false, teams: { h: { ...TEAMS[this.userTi], isAway: false }, a: { ...TEAMS[this.oppTi], isAway: true } }, onEvent: null };
@@ -197,6 +197,8 @@ export class ArcadeGame {
   // The team with the ball is always side h on this field (it drives left to right): for the other
   // team's snaps the game is turned round (flipSides) and turned back the moment the play is booked,
   // so between snaps it's always the real way round for the app.
+  // the benches: your club near, theirs far, the whole game (never the field's way round for a snap)
+  benchTeams() { const L = this.live; if (L?.teams) { const me = L.userSide || "h"; return { near: L.teams[me], far: L.teams[me === "h" ? "a" : "h"] }; } return this.teams ? { near: this.teams.user, far: this.teams.opp } : null; }
   viewTeams() { const t = this.live.teams; return this.flipped ? { user: t.a, opp: t.h } : { user: t.h, opp: t.a }; }
   flip() { flipSides(this.g); this.flipped = !this.flipped; this.teams = this.viewTeams(); this.refresh(); }
   unflip() { if (this.flipped) this.flip(); if (this.g) this.g.patDefer = null; }
@@ -226,7 +228,7 @@ export class ArcadeGame {
     this.call(c); this.auto = { call: CONCEPTS[c]?.cat || c, state: autoState(), snapAt: this.time + 1.5 / this.speed };
   }
   // a play the engine ran without the field (a kickoff, a punt, a field goal, a kneel): its result
-  showEngine(ev) { this.S = null; this.banner = ev ? { engine: true, title: resultTitle(ev), text: ev.text || "", sub: ev.note ? String(ev.note).toUpperCase() : null, at: performance.now(), accent: ev.td || ev.type === "fg" ? "#ffd166" : "#fff" } : null; this.mode = "result"; this.refresh(); }
+  showEngine(ev) { this.S = null; this.banner = ev ? withFlag({ engine: true, title: resultTitle(ev), text: ev.text || "", sub: [whyNote(ev), ev.note ? String(ev.note).toUpperCase() : null].filter(Boolean).join(" - ") || null, at: performance.now(), accent: ev.td || ev.type === "fg" ? "#ffd166" : "#fff" }, ev) : null; this.mode = "result"; this.refresh(); }
   // the app needs the game (Finish game, Sim to the end of the quarter): drop the play on the field
   // (it hasn't been booked) and hand the game back the real way round; resume() picks it up again
   release() { if (this.two) { restore(this.g, this.two.snap); this.two = null; } this.S = null; this.auto = null; this.replay = null; this.pendingReplay = null; this.rec = null; this.unflip(); this.held = true; this.mode = "idle"; this.refresh(); }
@@ -342,7 +344,7 @@ export class ArcadeGame {
         let ev = P.result || P.ev;
         // a two-point try was played on a scratch copy of the game from the 2: put the game back and book the try
         if (this.two) { const good = !!ev?.td; restore(this.g, this.two.snap); this.two = null; ev = bookPat(this.g, true, good); P.text = ev?.text; P.pick = null; this.refresh(); }
-        this.banner = { title: resultTitle(ev), text: P.text || ev?.text || "", sub: ev?.note ? String(ev.note).toUpperCase() : P.kind ? kickNote(P) : P.pick ? pickNote(P.pick) : null, at: now, accent: ev?.td || ev?.type === "fg" ? "#ffd166" : ev?.turnover || ev?.type === "int" || ev?.type === "fumble" ? "#ff8a7a" : ev?.firstDown ? "#ffd166" : "#fff" };
+        this.banner = withFlag({ title: resultTitle(ev), text: P.text || ev?.text || "", sub: [whyNote(ev), ev?.note ? String(ev.note).toUpperCase() : P.kind ? kickNote(P) : P.pick ? pickNote(P.pick) : null].filter(Boolean).join(" - ") || null, at: now, accent: ev?.td || ev?.type === "fg" ? "#ffd166" : ev?.turnover || ev?.type === "int" || ev?.type === "fumble" ? "#ff8a7a" : ev?.firstDown ? "#ffd166" : "#fff" }, ev);
         this.mode = "result"; this.refresh();
         // saved the moment it's booked, so leaving now can't take the play back
         if (this.onPlay && !this.two) try { this.onPlay(this.g); } catch { /* best effort */ }
@@ -351,7 +353,7 @@ export class ArcadeGame {
       }
     }
     if (m === "opp") { const f = this.feed; if (now - f.at > 600 && f.shown < f.list.length) { f.shown++; f.at = now; if (f.list[f.shown - 1]?.td) { sfx.turnover(); this.fx.hit(0.6); } } else if (f.shown >= f.list.length && now - f.at > 1100) this.advance(); }
-    if ((m === "result") && this.banner && now - this.banner.at > (/TOUCHDOWN/.test(this.banner.title) ? 3400 : this.live ? 1300 / this.speed : 1700)) { if (this.pendingReplay) this.startReplay(); else this.advance(); }
+    if ((m === "result") && this.banner && now - this.banner.at > (this.banner.stages ? this.banner.stages[0].dur * 1000 + 2600 : /TOUCHDOWN/.test(this.banner.title) ? 3400 : this.live ? 1300 / this.speed : 1700)) { if (this.pendingReplay) this.startReplay(); else this.advance(); }
   }
 
   // held keys and the pointer, every frame: the runner's steering, the mouse aim, the kick meter
@@ -422,7 +424,7 @@ export class ArcadeGame {
       const want = this.live && open ? 1.14 : 1; this.push = (this.push ?? 1) + (want - (this.push ?? 1)) * (want > (this.push ?? 1) ? 0.03 : 0.06);
       if (cer) { const k = 1 + 0.22 * Math.min(1, (this.time - cer.t0) / 3), [fx, fy] = cam.toScreen(50, -6); ctx.translate(fx, fy); ctx.scale(k, k); ctx.translate(-fx, -fy); }
       else if (this.push > 1.002 && c) { const [bx, by] = cam.toScreen(c.x, c.y); const fx = Math.max(cam.W * 0.2, Math.min(cam.W * 0.8, bx)), fy = Math.max(cam.H * 0.3, Math.min(cam.H * 0.75, by)); ctx.translate(fx, fy); ctx.scale(this.push, this.push); ctx.translate(-fx, -fy); } }
-    drawRetro(ctx, cam, cer ? null : PP, fr ? rp.teams : cer ? teams : P?.view || teams, this.g, { dpr: cv.width / cam.W, boardTeams: fr ? rp.teams : teams, noBoard: (!this.live || full) && !cer, sb: this.sb, board: fr ? rp.board : this.board, ring: true, time: fr ? fr.time : this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
+    drawRetro(ctx, cam, cer ? null : PP, fr ? rp.teams : cer ? teams : P?.view || teams, this.g, { dpr: cv.width / cam.W, bench: this.benchTeams(), boardTeams: fr ? rp.teams : teams, noBoard: (!this.live || full) && !cer, sb: this.sb, board: fr ? rp.board : this.board, ring: true, time: fr ? fr.time : this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
     if (this.live && P && !P.kind && !fr && P.phase === "presnap" && m === "play") drawNameTags(ctx, cam, P);
     if (cer) drawCeremony(ctx, cam, cer.team, cer.away, this.time - cer.t0, { sb: cer.name });
     ctx.restore();
@@ -432,7 +434,10 @@ export class ArcadeGame {
     if (cer) { const t = this.time - cer.t0; drawLowerThird(ctx, cam, `${String(cer.name || "SUPER BOWL").toUpperCase()} CHAMPIONS`, t < 8.2 ? "HERE COMES THE LOMBARDI TROPHY" : `THE ${String(cer.team.name || "").toUpperCase()} ARE WORLD CHAMPIONS`, cer.team.clr, { age: t, accent: "#ffd166" }); }
     drawWeather(ctx, cam, { wx: this.g?.wxE, time: this.time, wind: windNow(this.g) });
     this.fx.draw(ctx, cam.W, cam.H, pixText);
-    if (!this.live || (full && !fr)) drawHud(ctx, cam, st, teams, { to: this.g?.to }); // (a live game: the app's scoreboard, and the stadium's at the 50; in full screen, this strip) // (a live game: the app's scoreboard, and the stadium's at the 50)
+    if (!this.live || (full && !fr)) { // (the scorebug stays put too: your club on the left all game, whoever has the ball)
+      const F = this.flipped && st, fl = (v) => (v === "h" ? "a" : v === "a" ? "h" : v), to = this.g?.to;
+      drawHud(ctx, cam, F ? { ...st, score: { h: st.score.a, a: st.score.h }, poss: fl(st.poss), yard: st.yard } : st, F ? { user: teams.opp, opp: teams.user } : teams, { to: F && to ? { h: to.a, a: to.h } : to });
+    } // (a live game: the app's scoreboard, and the stadium's at the 50; in full screen, this strip) // (a live game: the app's scoreboard, and the stadium's at the 50)
     if (this.g && m !== "final") drawWxChip(ctx, cam, this.g.wxE, windNow(this.g));
     const px = uiPx(cam), hintY = cam.H - px * 9;
     if (m === "play" && P && P.kind && !this.auto) this.drawKick(ctx, P, hintY);
@@ -465,10 +470,10 @@ export class ArcadeGame {
     }
     if (m === "opp") this.drawDrive(ctx);
     if (m === "final" && this.box) { drawBoxScore(ctx, cam, this.box, teams, { time: this.time, hint: this.endHint() }); return; }
-    if ((m === "result" || (m === "final" && !this.live?.solo)) && this.banner && this.live) { const b = this.banner, big = /TOUCHDOWN|INTERCEPT|FUMBLE|FIELD GOAL|NO GOOD|SAFETY|SACK|TWO POINTS|IT'S GOOD|FLAG|TURNOVER/.test(b.title || ""); if (big || b.engine || !(this.live.watch || this.auto)) drawLowerThird(ctx, cam, b.title, b.text, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166" }); }
-    else if ((m === "result" || m === "final") && this.banner) { const b = this.banner; drawBanner(ctx, cam, b.title, b.text, b.sub, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166", hint: b.hint || (this.live && (this.live.watch || this.auto) ? "" : this.mobile ? "TAP TO CONTINUE" : "CLICK OR SPACE TO CONTINUE") }); }
+    if ((m === "result" || (m === "final" && !this.live?.solo)) && this.banner && this.live) { const b = stageOf(this.banner), big = /TOUCHDOWN|INTERCEPT|FUMBLE|FIELD GOAL|NO GOOD|SAFETY|SACK|TWO POINTS|IT'S GOOD|FLAG|TURNOVER/.test(b.title || ""); if (big || b.engine || !(this.live.watch || this.auto)) drawLowerThird(ctx, cam, b.title, b.text, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166", sub: b.sub }); }
+    else if ((m === "result" || m === "final") && this.banner) { const b = stageOf(this.banner); drawBanner(ctx, cam, b.title, b.text, b.sub, teams.user.clr, { age: (performance.now() - b.at) / 1000, accent: b.accent || "#ffd166", hint: b.hint || (this.live && (this.live.watch || this.auto) ? "" : this.mobile ? "TAP TO CONTINUE" : "CLICK OR SPACE TO CONTINUE") }); }
     // the pause button, and the menu
-    if (!this.paused && (!this.live || this.live.solo)) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 13.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
+    if (!this.paused && (!this.live || this.live.solo)) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 20.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
     if (this.fade > 0) { ctx.globalAlpha = this.fade; ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, cam.W, cam.H); ctx.globalAlpha = 1; }
     if (this.paused && (!this.live || this.live.solo)) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ...(this.locked ? [] : [["wx", `WEATHER: ${wxName(this.wxPick)}`]]), ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), this.franchise ? ["sim", "SIM TO THE END"] : ["quit", "QUIT GAME"]], { mobile: this.mobile });
   }
@@ -515,7 +520,7 @@ export class ArcadeGame {
     if (m === "ceremony" && (!this.live || this.live.solo)) { if (this.time - this.ceremony.t0 > 2) this.leaveCeremony(); return true; }
     if (m === "pick") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.call(b.key); return true; }
     if (m === "pat") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.patChoice(b.key); return true; }
-    if (m === "result") { this.pendingReplay = null; this.advance(); return true; }
+    if (m === "result") { const b = this.banner; if (b?.stages && performance.now() - b.at < b.stages[0].dur * 1000) { b.at = performance.now() - b.stages[0].dur * 1000; return true; } this.pendingReplay = null; this.advance(); return true; }
     if (m === "replay") { this.endReplay(); return true; }
     if (m === "final") { this.leaveFinal(); return true; }
     if (m === "opp") { this.feed.shown = this.feed.list.length; this.feed.at = 0; return true; }
@@ -675,5 +680,24 @@ function drawKickMeter(ctx, cam, px, zones, pos, stopped, hintY, game) {
     const x = Math.round(cx + Math.sin(ang) * r - cell / 2), y = Math.round(cy - Math.cos(ang) * r - cell / 2);
     ctx.fillStyle = "#fff"; ctx.fillRect(x, y, cell, cell);
   }
+}
+
+// Why a pass didn't connect, from the engine's own book of the play
+export const whyNote = (ev) => !ev ? "" : ev.type === "inc" ? (ev.db ? `BROKEN UP BY ${String(ev.db.name || "").toUpperCase()}` : ev.drop ? `DROPPED - A CATCHABLE BALL` : ev.offTarget ? "OFF TARGET - NOT CATCHABLE" : "") : ev.type === "int" ? "PICKED OFF" : "";
+// A play with a flag on it, in two cards: first what the play did, then the flag and what it costs,
+// so the yards that come off the board make sense. (A flag before the snap has just the one card.)
+export function withFlag(b, ev) {
+  const pen = ev?.pen;
+  if (!b || !pen || !pen.accepted || pen.pre || !pen.play || !pen.label) return b;
+  const t = ev.text || "", i = t.indexOf(pen.label), pl = pen.play;
+  const playTitle = pl.td ? "TOUCHDOWN!" : pl.type === "inc" ? "INCOMPLETE" : pl.type === "sack" ? "SACKED" : pl.type === "int" ? "INTERCEPTED" : `${pl.yards >= 0 ? "+" : ""}${pl.yards} YARDS`;
+  const flagSub = `ON THE ${pen.side === "off" ? "OFFENSE" : "DEFENSE"}${ev.type === "penalty" ? (pen.side === "off" ? (pl.td ? " - THE TOUCHDOWN IS WIPED OUT" : " - THE PLAY COMES BACK") : " - AUTOMATIC FIRST DOWN") : pen.tack ? " - 15 YARDS ADDED ON" : ""}`;
+  return { ...b, stages: [{ title: playTitle, text: i > 0 ? t.slice(0, i).trim().replace(/,$/, ".") : "", sub: b.sub, dur: 1.7 }, { title: `FLAG - ${pen.label.toUpperCase()}`, text: i >= 0 ? t.slice(i) : t, sub: flagSub, accent: "#ffd23a" }] };
+}
+// the card on screen now (a flag's two cards one after the other; each slides in when it starts)
+export function stageOf(b) {
+  if (!b?.stages) return b;
+  const age = (performance.now() - b.at) / 1000, first = age < b.stages[0].dur, st = b.stages[first ? 0 : 1];
+  return { ...b, ...st, accent: st.accent || b.accent, at: first ? b.at : b.at + b.stages[0].dur * 1000 };
 }
 

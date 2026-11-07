@@ -25,7 +25,7 @@ export function buildSide(ti) {
 // the franchise's own league: its depth charts, calibrated ratings, injury replacements, the emergency
 // quarterback), so the arcade plays the same football as the franchise and picks up every fix to it.
 let LEAGUE = null;
-export async function franchiseGame(userTi, oppTi, { rand = Math.random, qLen = null, wx = "clear", wind = null } = {}) {
+export async function franchiseGame(userTi, oppTi, { rand = Math.random, qLen = null, wx = "clear", wind = null, playoff = false } = {}) {
   const L = await import("../league.js"), { createGame: mk } = await import("../playsim.js");
   if (!LEAGUE) {
     LEAGUE = L.initTeams(-1); L.calibrateLeague(LEAGUE);
@@ -36,15 +36,17 @@ export async function franchiseGame(userTi, oppTi, { rand = Math.random, qLen = 
   L.setInjuries?.(false);
   const pick = (ti) => LEAGUE.find((t) => t.ab === M.teams[ti].ab) || LEAGUE[ti];
   const su = L.gameSetup(pick(userTi), pick(oppTi), null, null, wx);
-  const g = mk(su.home, su.away, { rand, rec: true, qLen, wx: su.wx || wx });
+  const g = mk(su.home, su.away, { rand, rec: true, qLen, wx: su.wx || wx, playoff }); // playoff: a Super Bowl is never a tie (overtime periods until someone wins)
+  g.arcade = true;
   if (wind) g.wind = wind;
   return g;
 }
 
 // A new game: you are always the home side ("h") so the field reads left to right for your drives.
-export function newGame(userTi, oppTi, { rand = Math.random, pat = false, qLen = null, wx = "clear", wind = null } = {}) {
+export function newGame(userTi, oppTi, { rand = Math.random, pat = false, qLen = null, wx = "clear", wind = null, playoff = false } = {}) {
   const h = buildSide(userTi), a = buildSide(oppTi);
-  const g = createGame(h.side, a.side, { rand, rec: true, qLen, wx });
+  const g = createGame(h.side, a.side, { rand, rec: true, qLen, wx, playoff });
+  g.arcade = true;
   if (wind) g.wind = wind; // { x, y, mph }: yards a second along and across the field, in the first quarter // qLen: quarter length in seconds (null: 15 minutes)
   if (pat) g.patDefer = { h: true }; // you play your own extra points and two-point tries
   return { g, user: "h", home: h, away: a };
