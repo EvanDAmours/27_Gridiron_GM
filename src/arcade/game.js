@@ -373,6 +373,7 @@ export class ArcadeGame {
       const f = this.cam.toField(this.mouse.px, this.mouse.py), qb = P.ents.QB;
       P.aim = { x: Math.max(qb.x - 1, f.x), y: Math.max(-26, Math.min(26, f.y)) };
     }
+    if (!P.kind && this.touch && this.touch.moved > 12 && P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass")) this.slingAim(P, this.touch, dt);
     if (P.kind && this.kick?.charging) this.kick.t += dt;
     if (P.kind && this.meter && this.meter.stop == null && P.phase === "presnap") this.meter.t += dt;
   }
@@ -433,6 +434,7 @@ export class ArcadeGame {
     if (this.live && P && !P.kind && !fr && P.phase === "presnap" && m === "play") drawNameTags(ctx, cam, P);
     if (cer) drawCeremony(ctx, cam, cer.team, cer.away, this.time - cer.t0, { sb: cer.name });
     ctx.restore();
+    if (m === "play" && P && P.aim && this.touch?.moved > 12 && P.phase === "live") this.drawSling(ctx, this.touch);
     if (fr) drawReplayTag(ctx, cam, this.time);
     if (this.sb && this.sbCardAt != null && m !== "ceremony") { const a = this.time - this.sbCardAt; if (a < 3.6) drawSbCard(ctx, cam, this.sb, teams, a); }
     if (cer && (!this.live || this.live.solo) && this.time - cer.t0 > 9) drawHint(ctx, cam, this.mobile ? "TAP TO CONTINUE" : "CLICK OR ENTER TO CONTINUE", cam.H * 0.72);
@@ -579,10 +581,9 @@ export class ArcadeGame {
     t.moved = Math.max(t.moved, Math.hypot(p.px - t.px, p.py - t.py)); t.cx = p.px; t.cy = p.py;
     if (P.kind) return;
     if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass")) {
-      // pulling back from where you touched aims the throw the other way, mirrored on the screen
-      const qb = P.ents.QB, [qx, qy] = cam.toScreen(qb.x, qb.y);
-      const land = cam.toField(qx + (t.px - p.px) * PULL, qy + (t.py - p.py) * PULL);
-      P.aim = t.moved > 6 ? { x: Math.max(qb.x - 1, land.x), y: Math.max(-26, Math.min(26, land.y)) } : null;
+      // pulling back from where you touched aims the throw the other way (the aim itself is worked
+      // out every frame in slingAim, smoothed, and locked on to a receiver when it's near one)
+      t.pull = { x: t.px - p.px, y: t.py - p.py };
     } else if (P.phase === "carry") {
       P.steer = cam.toField(p.px, p.py).y;
       // a quick flick across the field is a juke; a quick flick up the field (toward the goal) is a dive
@@ -598,9 +599,12 @@ export class ArcadeGame {
     if (e.pointerType === "mouse") return;
     const t = this.touch; if (!t || t.id !== e.pointerId) return; this.touch = null; if (!P) return;
     const passing = P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass");
-    if (passing && P.aim && t.moved > 6) throwTo(P, P.aim, null, this.passKind);
-    else if (passing && !t.snapped && t.moved <= 12) this.tapThrow(P, t); // a tap: to the man you touched
-    P.aim = null; P.steer = null;
+    if (passing && t.moved > 12) { // the slingshot: let go to throw (pulled back to where you started: cancelled)
+      // (the aim from a moment before the finger lifted: lifting it nudges the pull)
+      const now = performance.now(), h = (t.aims || []).filter((a) => now - a.t >= 70).pop() || (t.aims || []).at(-1);
+      if (h?.aim) { const aim = h.lock && P.ents[h.lock] ? this.leadSpot(P, P.ents[h.lock]) : h.aim; throwTo(P, aim, null, this.passKind, h.lock || null); }
+    } else if (passing && !t.snapped) this.tapThrow(P, t); // a tap: to the man you touched
+    P.aim = null; P.aimLock = null; P.steer = null;
   }
   // touch: a tap on (or near) a receiver throws to him, led to where he'll be when it gets there; a tap
   // on open grass throws to that spot. (Fingers are wide and phones are small: "near" is generous.)
@@ -613,11 +617,43 @@ export class ArcadeGame {
       if (d < bd) { bd = d; best = e; }
     }
     if (best && bd <= reach) {
-      // lead him: where he'll be when a ball thrown now arrives (two passes to settle the flight time)
-      let spot = { x: best.x, y: best.y };
-      for (let i = 0; i < 2; i++) { const T = passPlan(P, spot, this.passKind).T; spot = { x: best.x + (best.vx || 0) * T, y: best.y + (best.vy || 0) * T }; }
-      throwTo(P, spot, null, this.passKind, best.key);
+      throwTo(P, this.leadSpot(P, best), null, this.passKind, best.key);
     } else { const f = cam.toField(t.px, t.py), qb = P.ents.QB; throwTo(P, { x: Math.max(qb.x - 1, f.x), y: f.y }, null, this.passKind); }
+  }
+  // where a receiver will be when a ball thrown now gets to him (two passes to settle the flight time)
+  leadSpot(P, e) {
+    let spot = { x: e.x, y: e.y };
+    for (let i = 0; i < 2; i++) { const T = passPlan(P, spot, this.passKind).T; spot = { x: e.x + (e.vx || 0) * T, y: e.y + (e.vy || 0) * T }; }
+    return { x: spot.x, y: Math.max(-26, Math.min(26, spot.y)) };
+  }
+  // the slingshot's aim, every frame while the finger is down: the pull smoothed (no jitter), turned
+  // into a spot the other way from the quarterback, and locked on to a receiver whose catch point it's near
+  slingAim(P, t, dt) {
+    const cam = this.cam, qb = P.ents.QB, raw = t.pull || { x: 0, y: 0 };
+    t.sp = t.sp || { ...raw }; const k = Math.min(1, dt * 18); t.sp.x += (raw.x - t.sp.x) * k; t.sp.y += (raw.y - t.sp.y) * k;
+    const L = Math.hypot(t.sp.x, t.sp.y), dead = Math.max(14, Math.min(cam.W, cam.H) * 0.035);
+    let aim = null, lock = null;
+    if (L > dead) {
+      const [qx, qy] = cam.toScreen(qb.x, qb.y), f = cam.toField(qx + t.sp.x * PULL, qy + t.sp.y * PULL);
+      aim = { x: Math.max(qb.x - 1, f.x), y: Math.max(-26, Math.min(26, f.y)) };
+      let bd = 1e9;
+      for (const key of ELIGIBLE) {
+        const e = P.ents[key]; if (!e || e.mode === "block" || e.mode === "back") continue;
+        const lead = this.leadSpot(P, e), d = Math.hypot(lead.x - aim.x, lead.y - aim.y), grab = 4 + Math.hypot(lead.x - qb.x, lead.y - qb.y) * 0.1; // (a little more help on a long one)
+        if (d < grab && d < bd) { bd = d; lock = key; }
+      }
+      if (lock) aim = this.leadSpot(P, P.ents[lock]);
+    }
+    P.aim = aim; P.aimLock = lock;
+    const now = performance.now(); t.aims = (t.aims || []).filter((a) => now - a.t < 250); t.aims.push({ t: now, aim, lock });
+  }
+  // the slingshot itself: a band from where you touched to your finger, thicker the harder you pull
+  drawSling(ctx, t) {
+    const px = uiPx(this.cam), sp = t.sp || t.pull; if (!sp) return;
+    const x0 = t.px, y0 = t.py, x1 = t.px - sp.x, y1 = t.py - sp.y, L = Math.hypot(sp.x, sp.y), n = Math.max(2, Math.round(L / (px * 4))), col = KIND_COLOR[this.passKind] || "#fff";
+    for (let i = 0; i <= n; i++) { const u = i / n, x = x0 + (x1 - x0) * u, y = y0 + (y1 - y0) * u, d = Math.round(px * (1 + 0.8 * (1 - u))); ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.fillRect(Math.round(x - d / 2) + 1, Math.round(y - d / 2) + 1, d, d); ctx.fillStyle = col; ctx.globalAlpha = 0.5 + 0.5 * (1 - u); ctx.fillRect(Math.round(x - d / 2), Math.round(y - d / 2), d, d); ctx.globalAlpha = 1; }
+    // the anchor where you first touched: a small ring (let go back on it to cancel)
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(2, px); ctx.beginPath(); ctx.arc(x0, y0, px * 4, 0, Math.PI * 2); ctx.stroke();
   }
   // the mouse kick: direction toward the pointer, length from the meter (a full meter is a long flick)
   // the drag (screen pixels) as a kick: up the field and across it, scaled so a drag of about a

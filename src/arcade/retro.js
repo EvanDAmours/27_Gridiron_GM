@@ -7,6 +7,7 @@ import ACTS from "../pixel/actionSprites.json" with { type: "json" };
 import ACTS2 from "../pixel/actionSprites2.json" with { type: "json" };
 import SCENE from "../pixel/sceneSprites.json" with { type: "json" };
 import { teamKey } from "../teamUniforms.js";
+import { lastName } from "../lastName.js";
 import { HALF, ELIGIBLE, passPlan, BULLET_RANGE, BULLET_MAX, playDiagram } from "./play.js";
 
 const BASE = `${import.meta.env?.BASE_URL ?? "/"}sprites/`;
@@ -995,8 +996,11 @@ function drawAim(ctx, cam, S, kind) {
   ctx.strokeStyle = col; ctx.lineWidth = Math.max(2, s * 0.12); ctx.beginPath(); ctx.ellipse(ax, ay, r, r * 0.42, 0, 0, Math.PI * 2); ctx.stroke();
   ctx.globalAlpha = 0.25; ctx.fillStyle = col; ctx.fill(); ctx.globalAlpha = 1;
   ctx.fillStyle = col; ctx.fillRect(Math.round(ax - 2), Math.round(ay - 2), 4, 4);
+  // locked on to a receiver (the slingshot near his catch point): a bracket round him and his name on the label
+  const lk = S.aimLock && S.ents[S.aimLock];
+  if (lk) { const [rx, ry] = cam.toScreen(lk.x, lk.y), rr = s * 1.5; ctx.strokeStyle = col; ctx.lineWidth = Math.max(2, s * 0.14); ctx.beginPath(); ctx.ellipse(rx, ry, rr, rr * 0.45, 0, 0, Math.PI * 2); ctx.stroke(); }
   // the label: BULLET or LOB (AUTO when the game picked it), and a warning when he can't reach it
-  const px = uiPx(cam), label = (plan.auto ? "AUTO " : "") + plan.kind.toUpperCase() + (plan.short ? " - TOO FAR" : plan.bullet && plan.dist > BULLET_MAX ? " - WILD" : "");
+  const px = uiPx(cam), label = (lk ? `${lastName(lk.p?.name || "").toUpperCase()} - ` : "") + (plan.auto ? "AUTO " : "") + plan.kind.toUpperCase() + (plan.short ? " - TOO FAR" : plan.bullet && plan.dist > BULLET_MAX ? " - WILD" : "");
   const w = pixWidth(label, px) + px * 4, flip = ax + r + px * 3 + w > cam.W, lx = Math.round(flip ? ax - r - px * 3 - w : ax + r + px * 3), ly = Math.round(ay - px * 4.5);
   ctx.fillStyle = "rgba(8,10,16,.85)"; ctx.fillRect(lx, ly, w, px * 9); ctx.fillStyle = col; ctx.fillRect(lx, ly + px * 9 - px, w, px);
   pixText(ctx, label, lx + w / 2, ly + px, px, plan.short ? "#ff8a7a" : col, "center");

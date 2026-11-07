@@ -2508,4 +2508,7 @@ export const PATCH_NOTES = [
   { v: "6.03", date: "2026-10-23", title: "Tap to throw", notes: [
     "Arcade on phones: passing is much easier. After the snap, tap a receiver and the quarterback throws to him, leading him to where he'll be when the ball arrives. Tap open grass to throw to that spot. Your finger doesn't have to be exactly on him. The slingshot (pull back and let go) still works if you prefer it, and Bullet or Lob still sets the kind of throw.",
   ] },
+  { v: "6.04", date: "2026-10-23", title: "A cleaner slingshot", notes: [
+    "Arcade on phones: the slingshot pass is smoother and more accurate. The aim follows your finger without jitter, and lifting your finger no longer knocks the throw off. Pull toward where a receiver is heading and the aim locks onto him: he gets a ring, his name shows on the label, and the throw leads him to the catch. You can now see the slingshot itself, a band from where you touched to your finger. Let go back near where you started to cancel. Tap-to-throw still works too.",
+  ] },
 ];
