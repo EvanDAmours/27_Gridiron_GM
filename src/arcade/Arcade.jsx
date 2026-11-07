@@ -15,13 +15,13 @@ export default function Arcade() {
     if (typeof window !== "undefined") { window.arcadeGame = game; window.arcadePoseProbe = poseProbe; } // (for playtesting)
     // a new game starting (the title screen gives way to the loading one): the flyover, for the home club
     let last = game.mode, n = 0;
-    const iv = setInterval(() => { const m = game.mode; if (m === "loading" && last !== "loading") setFly({ home: TEAMS[game.userTi], away: TEAMS[game.oppTi], key: ++n }); last = m; }, 60);
+    const iv = setInterval(() => { const m = game.mode; if (m === "loading" && last !== "loading") setFly({ home: TEAMS[game.userTi], away: TEAMS[game.oppTi], wx: game.wxNow, key: ++n }); last = m; }, 60);
     return () => { clearInterval(iv); game.destroy(); };
   }, []);
   return (
     <div style={{ height: "100dvh", width: "100vw", background: "#0b0e14", userSelect: "none", overflow: "hidden" }}>
       <canvas ref={ref} style={{ display: "block", touchAction: "none", imageRendering: "pixelated", outline: "none" }} />
-      {fly && <StadiumFlyover key={fly.key} home={fly.home} away={fly.away} onDone={() => setFly(null)} />}
+      {fly && <StadiumFlyover key={fly.key} home={fly.home} away={fly.away} wx={fly.wx} onDone={() => setFly(null)} />}
     </div>
   );
 }

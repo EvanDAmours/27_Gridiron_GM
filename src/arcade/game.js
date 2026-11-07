@@ -161,6 +161,7 @@ export class ArcadeGame {
     preload(this.teams.user); preload(this.teams.opp);
     const R = this.rand || Math.random, pick = this.wxPick;
     const wx = pick === "auto" ? rollWeather(teamKey(this.teams.user), R) : pick;
+    this.wxNow = wx; // (the drone shot before kickoff shows the day's weather)
     this.sb = this.sbMode && !this.franchise ? sbTitle() : null; if (this.sb) this.sbCardAt = this.time;
     this.mode = "loading"; this.S = null; this.ceremony = null; this.cerNext = null; this.box = null; this.banner = null;
     const opts = { ...(this.rand ? { rand: this.rand } : {}), qLen: this.qMin * 60, wx, wind: windFor(wx, R), playoff: !!this.sb }, seq = (this.startSeq = (this.startSeq || 0) + 1);

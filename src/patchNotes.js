@@ -2499,4 +2499,7 @@ export const PATCH_NOTES = [
   { v: "6.00", date: "2026-10-23", title: "Manhattan on the horizon", notes: [
     "Stadium flyover: the Manhattan skyline behind MetLife Stadium is new painted pixel art, with the Empire State Building, One World Trade Center and the Midtown towers. Day games get the daytime skyline; primetime games get it lit up at night, the Empire State Building glowing gold. The Meadowlands now runs to the edges of the picture.",
   ] },
+  { v: "6.01", date: "2026-10-23", title: "MetLife, rain or shine", notes: [
+    "Stadium flyover: Giants and Jets home games now open with a filmed pixel-art drone shot of MetLife Stadium, one painted scene with the Meadowlands, American Dream and the Manhattan skyline behind it. The camera holds on the wide view, then pushes in to the field. It matches the game's weather: a sunny day, a rainy one, or the stadium buried in snow. Tap or press any key to skip.",
+  ] },
 ];
