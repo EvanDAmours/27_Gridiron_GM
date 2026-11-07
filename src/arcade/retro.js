@@ -618,34 +618,33 @@ export function drawSidelines(ctx, cam, teams, opts = {}) {
 // crossbar 10 ft up and 18 ft 6 in wide (it runs across the field, so it's tilted up the screen),
 // and the uprights 30 ft above it. The far upright is drawn first, then the bar, then the near one.
 function goalPost(ctx, cam, ex, back, padClr) {
-  // Seen from the sideline the two uprights would stand one behind the other, so the post is turned a
-  // little toward the camera: the near upright stands right on the end line, the crossbar runs back
-  // from it to the far upright, set back behind the line (back: +1 at the right end, -1 at the
-  // left). Uprights straight up, like everyone on the field; nothing of it stands in the end zone.
-  const s = cam.s, TURN = 0.5;
-  const Q = (x, y, h) => { const [sx, sy] = cam.toScreen(x, y); return [sx + back * (3.08 - y) * s * TURN, sy - h * s * 0.95]; };
-  const [cx] = Q(ex, 0, 0); if (cx < -s * 12 || cx > cam.W + s * 12) return;
-  const gold = "#f5c518", lite = "#ffe37a", dark = "#a5800d", bar = 3.33, top = bar + 6, half = 3.08, base = ex + 1.2 * back;
-  const w = Math.max(3, Math.round(s * 0.3));
-  const line = (a, b, wd, c, cap = "round") => { ctx.strokeStyle = c; ctx.lineWidth = wd; ctx.lineCap = cap; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); };
-  // the shadow on the turf: under the base, and the crossbar's line on the grass
-  { const [bx, by] = Q(base, 0, 0); ctx.fillStyle = "rgba(0,0,0,.28)"; ctx.beginPath(); ctx.ellipse(bx, by, s * 0.9, s * 0.3, 0, 0, Math.PI * 2); ctx.fill();
-    line(Q(ex + back * 0.8, -half, 0), Q(ex + back * 0.8, half, 0), Math.max(2, s * 0.18), "rgba(0,0,0,.16)"); }
-  // the far upright first (it's behind the rest)
-  const f0 = Q(ex, -half, bar), f1 = Q(ex, -half, top), n0 = Q(ex, half, bar), n1 = Q(ex, half, top);
-  line(f0, f1, w, dark); line(f0, f1, Math.max(1, w * 0.35), gold);
-  // the base, padded in the home club's colour, and the gooseneck curving out over the end line
-  const b0 = Q(base, 0, 0), b1 = Q(base, 0, bar - 0.6), g3 = Q(ex, 0, bar), gc = Q(base, 0, bar + 0.35);
-  line(b0, b1, w + 2, dark, "butt"); line(b0, b1, w, gold, "butt");
-  ctx.strokeStyle = dark; ctx.lineWidth = w + 2; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(...b1); ctx.quadraticCurveTo(...gc, ...g3); ctx.stroke();
-  ctx.strokeStyle = gold; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(...b1); ctx.quadraticCurveTo(...gc, ...g3); ctx.stroke();
-  line(b0, Q(base, 0, 1.9), Math.max(5, s * 0.7), padClr || "#334155", "butt");
-  line(Q(base, 0, 1.7), Q(base, 0, 1.9), Math.max(5, s * 0.7), "rgba(255,255,255,.35)", "butt");
-  // the crossbar, then the near upright (in front of everything)
-  line(f0, n0, w + 2, dark); line(f0, n0, w, gold); line(f0, n0, Math.max(1, w * 0.3), lite);
-  line(n0, n1, w + 2, dark); line(n0, n1, w, gold); line(n0, n1, Math.max(1, w * 0.3), lite);
-  // the little flags on top, blowing back
-  for (const [tx, ty] of [f1, n1]) { ctx.fillStyle = "#ff3b30"; ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx + back * s * 0.9, ty + s * 0.2); ctx.lineTo(tx, ty + s * 0.45); ctx.closePath(); ctx.fill(); }
+  // Side on, the classic way: the padded base stands behind the end line in the middle of the field,
+  // the gooseneck curves forward up over the line, and the uprights rise from the crossbar (from the
+  // side the two of them line up as one). back: +1 at the right end, -1 at the left.
+  const s = cam.s, P = (x, h) => { const [sx, sy] = cam.toScreen(x, 0); return [sx, sy - h * s * 0.95]; };
+  const [cx] = P(ex, 0); if (cx < -s * 12 || cx > cam.W + s * 12) return;
+  const gold = "#f5c518", lite = "#ffe680", dark = "#7a5f08", bar = 3.33, top = bar + 6.4, base = ex + 2.0 * back;
+  const w = Math.max(3, Math.round(s * 0.34)), pw = Math.max(5, Math.round(s * 0.7)), padH = 2.2;
+  const line = (a, b, wd, c, cap = "butt") => { ctx.strokeStyle = c; ctx.lineWidth = wd; ctx.lineCap = cap; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); };
+  // its shadow on the turf, off to the side
+  { const [bx, by] = P(base, 0); ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(bx + back * s * 0.2, by, s * 0.9, s * 0.28, 0, 0, Math.PI * 2); ctx.fill(); }
+  // the post up out of the pad, then the gooseneck curving forward to the crossbar over the end line
+  const p0 = P(base, padH - 0.1), p1 = P(base, bar - 0.9), g = P(ex, bar), gc = P(base, bar + 0.25);
+  ctx.lineCap = "butt"; ctx.lineJoin = "round";
+  for (const [wd, c] of [[w + 3, dark], [w, gold]]) { ctx.strokeStyle = c; ctx.lineWidth = wd; ctx.beginPath(); ctx.moveTo(...p0); ctx.lineTo(...p1); ctx.quadraticCurveTo(...gc, ...g); ctx.stroke(); }
+  // the upright (the far one just peeking out behind the near), and the crossbar end-on
+  const u0 = P(ex, bar), u1 = P(ex, top);
+  line([u0[0] + back * 2, u0[1]], [u1[0] + back * 2, u1[1]], Math.max(2, w - 1), dark);
+  line(u0, u1, w + 2, dark); line(u0, u1, w, gold); line([u0[0] - w * 0.25, u0[1]], [u1[0] - w * 0.25, u1[1]], Math.max(1, Math.round(w * 0.3)), lite);
+  { const k = Math.max(4, Math.round(s * 0.55)); ctx.fillStyle = dark; ctx.fillRect(Math.round(g[0] - k / 2) - 1, Math.round(g[1] - k / 2) - 1, k + 2, k + 2); ctx.fillStyle = gold; ctx.fillRect(Math.round(g[0] - k / 2), Math.round(g[1] - k / 2), k, k); }
+  // the wind ribbon on top
+  { const [fx, fy] = u1; ctx.fillStyle = "#e23b3b"; ctx.fillRect(Math.round(fx), Math.round(fy - s * 0.1), Math.round(s * 0.7 * -back + (back > 0 ? 0 : 0)), Math.max(2, Math.round(s * 0.28))); }
+  // the pad round the base, in the home club's colour with a dark outline
+  { const [bx, by] = P(base, 0), [, ty] = P(base, padH), x0 = Math.round(bx - pw / 2), y0 = Math.round(ty), h = Math.round(by - ty);
+    ctx.fillStyle = "#0b0e14"; ctx.fillRect(x0 - 1, y0 - 1, pw + 2, h + 2);
+    ctx.fillStyle = padClr || "#1d4ed8"; ctx.fillRect(x0, y0, pw, h);
+    ctx.fillStyle = "rgba(255,255,255,.22)"; ctx.fillRect(x0 + 1, y0 + 1, Math.max(1, Math.round(pw * 0.25)), h - 2);
+    ctx.fillStyle = "rgba(0,0,0,.18)"; for (let k = 1; k < 4; k++) ctx.fillRect(x0, y0 + Math.round((h * k) / 4), pw, 1); }
 }
 
 // ---- the camera crews: real broadcasts have them all along the field ----
@@ -684,12 +683,31 @@ function cameraCart(ctx, cam, x, y, facing, live) {
 // team area (clear of the bench), turned toward the ball; in each corner of every end zone, behind the
 // end line, a photographer (kneeling on the near side, standing on the far side).
 function drawCrews(ctx, cam, near, opts) {
+  // one camera on each sideline (turned toward the ball), and the people who work a sideline: security,
+  // a marshal, a cable runner; each facing the play (the branded art has its own left-facing version)
   const ball = opts.ballX ?? opts.los ?? 50, y = near ? HALF + 1.4 : -HALF - 1.5;
-  for (const x of [27.4, 73.2]) { const f = ball >= x ? 1 : -1;
-    if (near) { if (!sceneSprite(ctx, cam, null, false, "tv_camera_1", x, y, f, 0.86)) cameraman(ctx, cam, x, y, f, { live: true }); }
-    else if (!sceneSprite(ctx, cam, null, false, "tv_camera_1", x, y, f, 0.86)) cameraCart(ctx, cam, x, y, f, true); }
-  const cy = near ? HALF - 1.2 : -HALF + 1.2, shot = near ? "photographer_kneel" : "photographer_stand";
-  for (const [x, f] of [[-11.6, 1], [111.6, -1]]) if (!sceneSprite(ctx, cam, null, false, shot, x, cy, f, 0.86)) cameraman(ctx, cam, x, cy, f, { cable: false, skin: near ? "#a8754f" : undefined });
+  const put = (n, x, yy = y) => { const right = ball >= x; if (!sceneSprite(ctx, cam, null, false, right ? n : `${n}_l`, x, yy, 1, 0.9)) sceneSprite(ctx, cam, null, false, n, x, yy, right ? 1 : -1, 0.9); };
+  if (near) { put("cam_stand", 27.4); put("cable_tech", 31.2); put("marshal", 73.2); }
+  else { put("cam_kneel", 73.2); put("sec_jacket", 27.4); }
+}
+
+// The referee: on the field every snap, standing behind the offense with his hands on his hips; when
+// the ball's snapped he trails the play, and if there's a flag on it he reaches for it and throws it.
+const refSt = { S: null, x: 0, y: -6.5, t: 0, flagAt: null };
+function refOnField(S, opts) {
+  if (!S || S.kind) return null;
+  const now = opts.time || 0;
+  if (S !== refSt.S) { refSt.S = S; refSt.x = S.los - 11; refSt.y = -6.5; refSt.t = now; refSt.flagAt = null; }
+  const dt = Math.max(0, Math.min(0.1, now - refSt.t)); refSt.t = now;
+  let pose = "ref_hips", face = 1;
+  if (S.phase !== "presnap") {
+    const want = Math.max(S.los - 11, (S.ball?.x ?? S.los) - 9), dx = want - refSt.x, step = Math.sign(dx) * Math.min(Math.abs(dx), 6.5 * dt);
+    refSt.x += step; face = dx >= 0 ? 1 : -1;
+    if (Math.abs(dx) > 0.25) pose = `ref_run_${(Math.floor(now * 7) % 3) + 1}`;
+  }
+  const ev = S.result || S.ev, flag = ev && ev.pen && ev.pen.accepted !== false;
+  if (flag && S.phase !== "presnap" && S.phase !== "live") { if (refSt.flagAt == null) refSt.flagAt = now; pose = now - refSt.flagAt < 0.4 ? "ref_reach_flag" : "ref_flag_throw"; face = 1; }
+  return { x: refSt.x, y: refSt.y, pose, face };
 }
 
 // Around each end zone, as at a real game: the orange pylons at its four corners; the photographers
@@ -712,18 +730,18 @@ function endZoneLife(ctx, cam, S, teams, opts) {
     { const [rx, ry] = up(back(5.2), -1.5, 0), rw = Math.round(s * 2.6), rh = Math.round(s * 1.5);
       ctx.fillStyle = "#1e2430"; ctx.fillRect(rx - rw / 2, ry - rh, rw, rh); ctx.fillStyle = "#2c3446"; ctx.fillRect(rx - rw / 2, ry - rh, rw, Math.max(1, Math.round(s * 0.2)));
       ctx.fillStyle = "rgba(255,255,255,.12)"; for (let i = 1; i < 4; i++) ctx.fillRect(rx - rw / 2 + Math.round((rw * i) / 4), ry - rh, 1, rh);
-      ctx.save(); ctx.translate(0, -rh); sceneSprite(ctx, cam, null, false, "tv_camera_2", back(5.2), -1.5, face, 0.82) || sceneSprite(ctx, cam, null, false, "tv_camera_1", back(5.2), -1.5, face, 0.82); ctx.restore(); }
+      ctx.save(); ctx.translate(0, -rh); sceneSprite(ctx, cam, null, false, dir > 0 ? "cam_stand_l" : "cam_stand", back(5.2), -1.5, 1, 0.86) || sceneSprite(ctx, cam, null, false, "tv_camera_1", back(5.2), -1.5, face, 0.82); ctx.restore(); }
     // the kicking net: two tall poles behind the uprights with the net strung between; up for a kick at this end
     { const raised = kicking && dir > 0, h = raised ? 9.5 : 2.2, x = back(2.6), [ax, ay] = up(x, -4.4, 0), [bx, by] = up(x, 4.4, 0), [, aT] = up(x, -4.4, h), [, bT] = up(x, 4.4, h);
       ctx.fillStyle = "rgba(20,24,30,.28)"; const cols = 10; for (let i = 0; i <= cols; i++) { const u = i / cols, xx = Math.round(ax + (bx - ax) * u), yb = ay + (by - ay) * u, yt = aT + (bT - aT) * u; ctx.fillRect(xx, Math.round(yt), 1, Math.round(yb - yt)); }
       const rows = raised ? 8 : 2; for (let j = 0; j <= rows; j++) { const v = j / rows; ctx.beginPath(); ctx.strokeStyle = "rgba(20,24,30,.3)"; ctx.lineWidth = 1; ctx.moveTo(ax, ay + (aT - ay) * v); ctx.lineTo(bx, by + (bT - by) * v); ctx.stroke(); }
       ctx.fillStyle = "#3a404c"; const pw = Math.max(2, Math.round(s * 0.18)); ctx.fillRect(ax - pw / 2, aT, pw, ay - aT); ctx.fillRect(bx - pw / 2, bT, pw, by - bT); }
-    // photographers all along the end line: kneeling in front, a standing row behind them
-    [[-19, 1.4, "photographer_kneel"], [-15.5, 2.6, "photographer_stand"], [-11, 1.4, "photographer_kneel"], [-7.5, 2.7, "photographer_stand"], [8, 1.4, "photographer_kneel"], [11.5, 2.6, "photographer_stand"], [15, 1.4, "photographer_kneel"], [19, 2.7, "photographer_stand"]]
-      .forEach(([y, d, n], i) => { if (!sceneSprite(ctx, cam, null, false, n, back(d), y, face, 0.8)) cameraman(ctx, cam, back(d), y, face, { cable: false, skin: i % 2 ? "#a8754f" : undefined }); });
-    // a ball attendant by the post, security in the far corners
-    sceneSprite(ctx, cam, null, false, "ballboy", back(3.6), 6.2, face, 0.8);
-    for (const y of [-HALF + 0.8, HALF - 0.6]) sceneSprite(ctx, cam, null, false, "security", back(5.6), y, face, 0.82);
+    // a few photographers back toward the wall (kneeling either side of the post, one standing), a ball
+    // attendant, security in the corners: all turned toward the field, well clear of the end line
+    const L = dir > 0 ? "_l" : "", at = (n, d, y) => sceneSprite(ctx, cam, null, false, n + L, back(d), y, 1, 0.86) || sceneSprite(ctx, cam, null, false, n, back(d), y, face, 0.86);
+    at("cam_kneel", 3.4, -11); at("cam_kneel", 3.4, 11.5); at("cam_stand", 4.4, -18.5);
+    sceneSprite(ctx, cam, null, false, "ballboy", back(3.8), 6.2, face, 0.8);
+    at("sec_vest", 5.0, HALF - 1.6); at("sec_jacket", 5.0, -HALF + 1.6);
     void t; void home;
   }
 }
@@ -879,7 +897,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   for (const [ex, back, pad] of [[110, 1, teams.opp], [-10, -1, teams.user]]) goalPost(ctx, cam, ex, back, pad.clr);
   // no play on the field (between plays, a kick the engine ran): the sidelines, the crews and the
   // scoreboard are still there, the crews where the last snap was
-  if (!S) { const so = { ...opts, los: lastLos, toGain: null, down: g?.down }; drawSidelines(ctx, cam, teams, { ...so, side: "far" }); if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, opts.boardTeams || teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); drawSidelines(ctx, cam, teams, { ...so, side: "near" }); return; }
+  if (!S) { const so = { ...opts, los: lastLos, toGain: null, down: g?.down }; drawSidelines(ctx, cam, teams, { ...so, side: "far" }); if (lastLos != null) sceneSprite(ctx, cam, null, false, "ref_hips", lastLos - 11, -6.5, 1, 0.95); if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, opts.boardTeams || teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); drawSidelines(ctx, cam, teams, { ...so, side: "near" }); return; }
   if (!S.kind) lastLos = S.los;
   // the line of scrimmage and the line to gain
   const lw = Math.max(1, Math.round(s * 0.12)), vline = (yd, color) => { const x = Math.round(yardAt(yd)); if (x < 0 || x > W) return; ctx.fillStyle = color; ctx.fillRect(x, Math.round(top), Math.max(2, lw * 2), Math.round(depth)); };
@@ -899,7 +917,9 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, opts.boardTeams || teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); // (at the 50, in front of the far bench)
   // players, far to near so the near ones overlap the far ones; the man with the ball on top
   const ents = Object.values(S.ents).sort((a, b) => (a.key === S.ball.holder) - (b.key === S.ball.holder) || a.y - b.y);
+  const ref = refOnField(S, opts); let refDrawn = !ref;
   for (const e of ents) {
+    if (!refDrawn && e.y > ref.y) { refDrawn = true; sceneSprite(ctx, cam, null, false, ref.pose, ref.x, ref.y, ref.face, 0.95); }
     // (in a franchise game on the road you wear your away uniform and they wear their home one)
     const t = e.side === "off" ? teams.user : teams.opp, away = t.isAway != null ? !!t.isAway : e.side === "def" ? !teams.userAway : !!teams.userAway; // (a live game: each club in its own uniform for the day)
     if (Math.abs(e.vx) > 1.0 || e._face == null) e._face = Math.abs(e.vx) > 0.5 ? Math.sign(e.vx) : e._face ?? (e.side === "off" ? 1 : -1); // (a blocker rocking back and forth doesn't spin)
@@ -911,6 +931,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     if (!ok) { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.fillStyle = t.clr; ctx.fillRect(sx - s * 0.5, sy - s * 2.2, s, s * 2.2); }
     if (opts.ring && S.ball.holder === e.key && S.phase !== "presnap") { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, s * 0.08); ctx.beginPath(); ctx.ellipse(sx, sy, s * 1.1, s * 1.1 * SQUASH, 0, 0, Math.PI * 2); ctx.stroke(); }
   }
+  if (!refDrawn) sceneSprite(ctx, cam, null, false, ref.pose, ref.x, ref.y, ref.face, 0.95);
   drawSidelines(ctx, cam, teams, { ...sideOpts, side: "near" });
   // before the snap: who's who, the name under each receiver, the tight end and the back
   if (S.phase === "presnap" && !S.kind) {

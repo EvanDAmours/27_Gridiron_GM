@@ -2475,4 +2475,9 @@ export const PATCH_NOTES = [
   { v: "5.93", date: "2026-10-23", title: "Stadium Flyover Before Kickoff", notes: [
     "Every game now opens with a drone shot of the home stadium: the camera sweeps round the club's real bowl from high above and drops down onto the field, with LIVE FROM and the stadium's name, before kickoff. It plays before arcade games and before live games in your season (full and Easy Mode); neutral-site games like the Super Bowl skip it. Tap or press any key to skip.",
   ] },
+  { v: "5.94", date: "2026-10-23", title: "Referee on the Field, New Staff, Side-On Goalposts", notes: [
+    "A referee is on the arcade field for every snap: hands on his hips behind the offense before the snap, running to follow the play, and when there's a flag he reaches into his pocket and throws it.",
+    "New sideline and end-zone staff: camera operators, security, an event marshal and a cable runner, each facing the play. There are far fewer camera people than before, and the ones in the end zones stand back by the wall, well clear of the field.",
+    "The goalposts are drawn side-on, the classic way: the padded base, the gooseneck curving out over the end line, and one upright rising from the crossbar.",
+  ] },
 ];
