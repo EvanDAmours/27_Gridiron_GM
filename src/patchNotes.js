@@ -2439,4 +2439,12 @@ export const PATCH_NOTES = [
     "Easy Mode looks like a 16-bit sports broadcast: royal blue, chunky pixel lettering, pixel club logos, green and red arrows for wins and losses, and the standings drawn as a broadcast table. There are four pages: Home, Roster, Schedule and Standings.",
     "You can still watch any of your games on the field (Watch the game), or sim the rest of the season in one go. Switch to full mode is at the bottom of every page, and Easy Mode is saved with your franchise.",
   ] },
+  { v: "5.88", date: "2026-10-23", title: "Easy Mode: Lineup, Re-sign, Draft and Player Cards", notes: [
+    "Easy Mode, round two. A Lineup page: pick your quarterback, running back, top two receivers and tight end, and on defense your two ends, middle linebacker, top two corners and a safety. The staff set the offensive line, the tackles and everyone else by rating.",
+    "Re-sign week in Easy Mode: every player whose contract is ending is listed with the deal he'll sign (priced the same way as the full game's negotiations). Tap Re-sign or Let walk, and keep an eye on your cap space.",
+    "The Easy Mode draft: three rounds are yours, with each prospect shown as stars for now and stars for his potential. The staff make your later picks.",
+    "Tap any player for his card: a pixel portrait made from his real photo, his rating and potential as stars, his contract, this season's stats and his awards. A Stats page lists your leaders and the league's awards.",
+    "Watching a game in Easy Mode keeps the Easy look: the field up top, a broadcast score bug, and the plays on the page beside it. The week button now says Sim week.",
+    "Easy Mode has no injuries, and its pages use a crisper typeface.",
+  ] },
 ];
