@@ -6,6 +6,9 @@ import Stadium, { STADIUMS } from "./Stadium.jsx";
 import { CITY_SCENES, drawSkyline, drawGround } from "./cityScenes.js";
 
 const LEN = 5600; // ms, start to finish
+// painted aerial art (the stadium in its surroundings, one picture centred on the field): the game's own
+// field is laid over the picture's, so the last frame of the shot is the field the game is played on
+const ART = { meadowlands: { src: "sprites/stadium/metlife.webp", w: 1349, h: 1121, fieldW: 0.3017, fieldH: 0.1316 } };
 const CSS = `
 @keyframes flyCam {
   0%   { transform: perspective(1300px) rotateX(58deg) rotateZ(-28deg) scale(0.62) translateY(-4%); }
@@ -37,6 +40,7 @@ export default function StadiumFlyover({ home, away, night = false, label, onDon
   const finish = () => { if (!done.current) { done.current = true; onDone?.(); } };
   // the stands are drawn into a picture when the stadium mounts: hold the shot (up to a beat) until they're there
   const root = useRef(null), [ready, setReady] = useState(false);
+  const art = ART[CITY_SCENES[home?.ab]];
   useEffect(() => {
     if (ready) return;
     const t0 = performance.now(), iv = setInterval(() => { const im = root.current?.querySelector("img"); if ((im && im.complete && im.naturalWidth) || performance.now() - t0 > 1400) { clearInterval(iv); setReady(true); } }, 40);
@@ -58,10 +62,18 @@ export default function StadiumFlyover({ home, away, night = false, label, onDon
     <div ref={root} className={ready ? "" : "fly-wait"} onClick={finish} role="presentation" style={{ position: "fixed", inset: 0, zIndex: 9600, background: sky, overflow: "hidden", cursor: "pointer", animation: `flyFade ${LEN}ms ease-in-out forwards` }}>
       <style>{CSS}</style>
       {/* the stadium, the camera sweeping in */}
-      <div style={{ position: "absolute", left: "50%", top: city ? "60%" : "52%", width: "min(1200px, 120vw)", transform: "translate(-50%, -50%)" }}>
-        <div style={{ position: "relative", transformOrigin: "50% 50%", animation: `flyCam ${LEN}ms cubic-bezier(.45,.05,.35,1) forwards`, filter: night ? "brightness(.9)" : "none" }}>
-          {city && <canvas ref={groundRef} aria-hidden style={{ position: "absolute", left: "-100%", width: "300%", top: "50%", transform: "translateY(-50%)", aspectRatio: "360 / 288", imageRendering: "pixelated" }} />}
-          <Stadium home={home?.ab} night={night}><Field home={home} away={away} /></Stadium>
+      <div style={{ position: "absolute", left: "50%", top: art ? "50%" : city ? "60%" : "52%", width: "min(1200px, 120vw)", transform: "translate(-50%, -50%)" }}>
+        <div style={{ position: "relative", transformOrigin: "50% 50%", animation: `flyCam ${LEN}ms cubic-bezier(.45,.05,.35,1) forwards`, filter: night ? (art ? "brightness(.62) saturate(.8)" : "brightness(.9)") : "none" }}>
+          {art ? (() => { const fw = 0.37, sw = fw / ((art.fieldH * art.h) / art.w / 0.45); // (the field ends up filling the screen at the closest zoom)
+            return <div style={{ position: "relative", width: `${fw * 100}%`, margin: "0 auto" }}>
+              <img src={import.meta.env.BASE_URL + art.src} alt="" draggable={false} style={{ position: "absolute", left: "50%", top: "50%", width: `${(sw / fw) * 100}%`, transform: "translate(-50%, -50%)", imageRendering: "pixelated", maxWidth: "none" }} />
+              {/* (the picture's own field is a little longer than ours: plain grass over the rest of it) */}
+              <div style={{ position: "absolute", left: `${-(art.fieldW / ((art.fieldH * art.h) / art.w / 0.45) - 1) * 50}%`, right: `${-(art.fieldW / ((art.fieldH * art.h) / art.w / 0.45) - 1) * 50}%`, top: "-3%", bottom: "-3%", background: "#5a9442" }} />
+              <div style={{ position: "relative" }}><Field home={home} away={away} /></div>
+            </div>; })() : <>
+            {city && <canvas ref={groundRef} aria-hidden style={{ position: "absolute", left: "-100%", width: "300%", top: "50%", transform: "translateY(-50%)", aspectRatio: "360 / 288", imageRendering: "pixelated" }} />}
+            <Stadium home={home?.ab} night={night}><Field home={home} away={away} /></Stadium>
+          </>}
         </div>
       </div>
       {/* the skyline across the top, until the camera tips down onto the stadium */}

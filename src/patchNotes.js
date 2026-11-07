@@ -2493,4 +2493,7 @@ export const PATCH_NOTES = [
     "Arcade: kickoffs are played out on the field now, not just announced. The kicker runs up and boots it, the coverage team sprints down, the return team drops back into a wall and blocks, and the returner catches it and runs it back until someone tackles him (or he goes all the way). Touchbacks are shown too.",
     "Arcade: punt returns are watchable. The coverage runs down the field and makes the tackle, a fair catch is just a catch with no tackle, and a return now ends where the result says. It used to sometimes run the returner to the wrong yard line.",
   ] },
+  { v: "5.99", date: "2026-10-23", title: "MetLife from the air", notes: [
+    "Stadium flyover: the Giants and Jets drone shot now uses painted pixel art of MetLife Stadium in the Meadowlands, with the racetrack, the American Dream mall and its Ferris wheel, the marsh and river, the Turnpike and full parking lots. The camera still dives down onto the game's own field, with each club's end zone.",
+  ] },
 ];
