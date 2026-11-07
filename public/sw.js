@@ -67,6 +67,7 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (url.origin !== self.location.origin || !url.pathname.startsWith(BASE)) return;
   if (!BASE.endsWith('/mobile/') && url.pathname.startsWith(`${BASE}mobile/`)) return; // the phone build's own worker handles it
+  if (e.request.destination === 'video' || e.request.headers.has('range')) return; // (video: straight from the network, ranges and all)
   const isPage = e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === BASE;
   if (isPage || url.pathname.endsWith('offline.json') || url.pathname.endsWith('manifest.json')) e.respondWith(networkFirst(e.request));
   else e.respondWith(cacheFirst(e.request));

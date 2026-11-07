@@ -2502,4 +2502,7 @@ export const PATCH_NOTES = [
   { v: "6.01", date: "2026-10-23", title: "MetLife, rain or shine", notes: [
     "Stadium flyover: Giants and Jets home games now open with a filmed pixel-art drone shot of MetLife Stadium, one painted scene with the Meadowlands, American Dream and the Manhattan skyline behind it. The camera holds on the wide view, then pushes in to the field. It matches the game's weather: a sunny day, a rainy one, or the stadium buried in snow. Tap or press any key to skip.",
   ] },
+  { v: "6.02", date: "2026-10-23", title: "Flyover every time", notes: [
+    "Arcade fix: the stadium flyover now plays before every game. With the league already loaded (any game after your first, or a fast device), the game started so quickly that the flyover was skipped. The flyover videos also now always load straight from the network, which keeps them playing reliably in Safari.",
+  ] },
 ];

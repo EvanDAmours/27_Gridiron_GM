@@ -13,9 +13,10 @@ export default function Arcade() {
   useEffect(() => {
     const game = new ArcadeGame(ref.current, { userTi: 17, oppTi: 8, onQuit: () => { location.href = import.meta.env.BASE_URL; } }); // Giants vs Texans to start
     if (typeof window !== "undefined") { window.arcadeGame = game; window.arcadePoseProbe = poseProbe; } // (for playtesting)
-    // a new game starting (the title screen gives way to the loading one): the flyover, for the home club
-    let last = game.mode, n = 0;
-    const iv = setInterval(() => { const m = game.mode; if (m === "loading" && last !== "loading") setFly({ home: TEAMS[game.userTi], away: TEAMS[game.oppTi], wx: game.wxNow, key: ++n }); last = m; }, 60);
+    // a new game starting: the flyover, for the home club. (Keyed on the game's start count, not on seeing the
+    // loading screen: with the league already loaded that screen lasts a few milliseconds and a poll can miss it.)
+    let last = game.startSeq || 0, n = 0;
+    const iv = setInterval(() => { const s = game.startSeq || 0; if (s !== last) { last = s; setFly({ home: TEAMS[game.userTi], away: TEAMS[game.oppTi], wx: game.wxNow, key: ++n }); } }, 60);
     return () => { clearInterval(iv); game.destroy(); };
   }, []);
   return (
