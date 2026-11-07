@@ -2472,4 +2472,7 @@ export const PATCH_NOTES = [
   { v: "5.92", date: "2026-10-23", title: "Calmer Trophy Ceremony", notes: [
     "The Super Bowl trophy ceremony is calmer: no more jumping. Everyone holds one celebration pose from the start while the commissioner walks the trophy out and the confetti falls. The champions' name on the stage's backdrop now sits low enough to read under the scorebug, and the line under SUPER BOWL ... CHAMPIONS at the bottom of the screen is centred.",
   ] },
+  { v: "5.93", date: "2026-10-23", title: "Stadium Flyover Before Kickoff", notes: [
+    "Every game now opens with a drone shot of the home stadium: the camera sweeps round the club's real bowl from high above and drops down onto the field, with LIVE FROM and the stadium's name, before kickoff. It plays before arcade games and before live games in your season (full and Easy Mode); neutral-site games like the Super Bowl skip it. Tap or press any key to skip.",
+  ] },
 ];

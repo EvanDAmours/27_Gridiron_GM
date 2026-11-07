@@ -10,6 +10,7 @@ const src = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
 // Screen and moment-to-moment state: open popups, tabs, the live game in progress, draft timers,
 // one-off modals, and a few unused leftovers. Fine to lose on a reload.
 const SESSION_ONLY = new Set([
+  "flyIntro", // the stadium flyover before a live game (only while it plays)
   "newEasy", // the new-career screen's Easy Mode pick (copied into easy, which is saved, when the career starts)
   "easyBusy", // Easy Mode's Continue button while a step runs
   "outro", // the retirement send-off: the franchise is over by then
