@@ -1,8 +1,9 @@
 // The drone shot before kickoff: the home club's stadium (Stadium.jsx, its real bowl and crowd) seen
 // from high up and off to one side, the camera sweeping round and dropping in until the field fills
 // the screen, then a fade into the game. A few seconds; a tap (or any key) skips it.
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Stadium, { STADIUMS } from "./Stadium.jsx";
+import { CITY_SCENES, drawSkyline, drawGround } from "./cityScenes.js";
 
 const LEN = 5600; // ms, start to finish
 const CSS = `
@@ -12,8 +13,10 @@ const CSS = `
   78%  { transform: perspective(1300px) rotateX(24deg) rotateZ(-3deg) scale(1.55) translateY(0); }
   100% { transform: perspective(1300px) rotateX(0deg) rotateZ(0deg) scale(2.7) translateY(0); }
 }
+.fly-wait, .fly-wait * { animation-play-state: paused !important; }
 @keyframes flyFade { 0% { opacity: 0 } 8% { opacity: 1 } 86% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes flyText { 0% { opacity: 0; transform: translateY(14px) } 14% { opacity: 1; transform: none } 70% { opacity: 1 } 84% { opacity: 0 } 100% { opacity: 0 } }
+@keyframes flySky { 0% { transform: translateY(0); opacity: 1 } 42% { transform: translateY(0); opacity: 1 } 80% { transform: translateY(-105%); opacity: .2 } 100% { transform: translateY(-110%); opacity: 0 } }
 @keyframes flyClouds { from { transform: translateX(0) } to { transform: translateX(-18%) } }
 `;
 
@@ -32,23 +35,39 @@ function Field({ home, away }) {
 export default function StadiumFlyover({ home, away, night = false, label, onDone }) {
   const done = useRef(false);
   const finish = () => { if (!done.current) { done.current = true; onDone?.(); } };
+  // the stands are drawn into a picture when the stadium mounts: hold the shot (up to a beat) until they're there
+  const root = useRef(null), [ready, setReady] = useState(false);
   useEffect(() => {
+    if (ready) return;
+    const t0 = performance.now(), iv = setInterval(() => { const im = root.current?.querySelector("img"); if ((im && im.complete && im.naturalWidth) || performance.now() - t0 > 1400) { clearInterval(iv); setReady(true); } }, 40);
+    return () => clearInterval(iv);
+  }, [ready]);
+  useEffect(() => {
+    if (!ready) return;
     const t = setTimeout(finish, LEN);
     const key = () => finish();
     window.addEventListener("keydown", key);
     return () => { clearTimeout(t); window.removeEventListener("keydown", key); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const st = STADIUMS[home?.ab];
-  const sky = night ? "radial-gradient(ellipse at 50% 20%, #1b2a4a, #05070d 70%)" : "radial-gradient(ellipse at 50% 15%, #8fb8e8, #3b5f8f 55%, #1a2a40)";
+  }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
+  const st = STADIUMS[home?.ab], city = CITY_SCENES[home?.ab];
+  // the city around it (cityScenes.js): the skyline on the horizon, the ground under the stadium
+  const skyRef = useRef(null), groundRef = useRef(null);
+  useEffect(() => { if (!city) return; if (skyRef.current) drawSkyline(skyRef.current, city, night); if (groundRef.current) drawGround(groundRef.current, city, night); }, [city, night]);
+  const sky = city ? (night ? "linear-gradient(180deg, #141b4a 0%, #c4628c 26%, #3a3550 30%, #2b2c24 34%, #2b2c24)" : "linear-gradient(180deg, #5f8fd6 0%, #d2dbe2 26%, #9aa29a 30%, #7d7a4b 34%, #7d7a4b)") : night ? "radial-gradient(ellipse at 50% 20%, #1b2a4a, #05070d 70%)" : "radial-gradient(ellipse at 50% 15%, #8fb8e8, #3b5f8f 55%, #1a2a40)";
   return (
-    <div onClick={finish} role="presentation" style={{ position: "fixed", inset: 0, zIndex: 9600, background: sky, overflow: "hidden", cursor: "pointer", animation: `flyFade ${LEN}ms ease-in-out forwards` }}>
+    <div ref={root} className={ready ? "" : "fly-wait"} onClick={finish} role="presentation" style={{ position: "fixed", inset: 0, zIndex: 9600, background: sky, overflow: "hidden", cursor: "pointer", animation: `flyFade ${LEN}ms ease-in-out forwards` }}>
       <style>{CSS}</style>
       {/* the stadium, the camera sweeping in */}
-      <div style={{ position: "absolute", left: "50%", top: "52%", width: "min(1200px, 120vw)", transform: "translate(-50%, -50%)" }}>
-        <div style={{ transformOrigin: "50% 50%", animation: `flyCam ${LEN}ms cubic-bezier(.45,.05,.35,1) forwards`, filter: night ? "brightness(.9)" : "none" }}>
+      <div style={{ position: "absolute", left: "50%", top: city ? "60%" : "52%", width: "min(1200px, 120vw)", transform: "translate(-50%, -50%)" }}>
+        <div style={{ position: "relative", transformOrigin: "50% 50%", animation: `flyCam ${LEN}ms cubic-bezier(.45,.05,.35,1) forwards`, filter: night ? "brightness(.9)" : "none" }}>
+          {city && <canvas ref={groundRef} aria-hidden style={{ position: "absolute", left: "-100%", width: "300%", top: "50%", transform: "translateY(-50%)", aspectRatio: "360 / 288", imageRendering: "pixelated" }} />}
           <Stadium home={home?.ab} night={night}><Field home={home} away={away} /></Stadium>
         </div>
       </div>
+      {/* the skyline across the top, until the camera tips down onto the stadium */}
+      {city && <div aria-hidden style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "34%", overflow: "hidden", animation: `flySky ${LEN}ms ease-in-out forwards`, pointerEvents: "none" }}>
+        <canvas ref={skyRef} style={{ position: "absolute", left: 0, bottom: 0, width: "100%", imageRendering: "pixelated" }} />
+      </div>}
       {/* a little haze drifting past the lens */}
       {!night && <div aria-hidden style={{ position: "absolute", inset: "-10% -30% auto -10%", height: "45%", background: "radial-gradient(ellipse at 30% 50%, #ffffff55, transparent 60%), radial-gradient(ellipse at 75% 40%, #ffffff33, transparent 55%)", animation: `flyClouds ${LEN}ms linear forwards`, pointerEvents: "none" }} />}
       {/* the lower third: where we are and who's playing */}

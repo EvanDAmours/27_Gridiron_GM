@@ -2480,4 +2480,7 @@ export const PATCH_NOTES = [
     "New sideline and end-zone staff: camera operators, security, an event marshal and a cable runner, each facing the play. There are far fewer camera people than before, and the ones in the end zones stand back by the wall, well clear of the field.",
     "The goalposts are drawn side-on, the classic way: the padded base, the gooseneck curving out over the end line, and one upright rising from the crossbar.",
   ] },
+  { v: "5.95", date: "2026-10-23", title: "The Meadowlands Flyover", notes: [
+    "The stadium flyover at MetLife Stadium (Giants and Jets home games) now shows the Meadowlands around it in pixel art: the Manhattan skyline across the river (the Empire State Building, One World Trade Center, the lights in the windows at night), and on the ground the marshes, the Turnpike and Route 3, the racetrack and its pond, the big white mall next door and parking lots full of cars around the stadium. The skyline slides away as the camera drops in. The shot also waits a beat for the stadium's stands to be drawn before it starts.",
+  ] },
 ];
