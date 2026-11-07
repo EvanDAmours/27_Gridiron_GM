@@ -1,6 +1,6 @@
 import Select from "./Select.jsx";
 import { lazyScreen } from "./lazyScreen.js";
-import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useLayoutEffect, useRef } from "react";
 import LeagueView from "./LeagueView.jsx";
 import { SectionHero } from "./DeskHome.jsx";
 import { C, oC, pC, PA_LABELS, Bdg, Btn, PN, Face, TeamLogo , CloseX , sheetWrap, sheetBox, SheetGrip, OverflowMenu, kickoff, Segments, Chips, Hero, Icon, Dialog, DBtn, softBox, Pills, card, cardTitle, field, actBtn } from "./ui.jsx";
@@ -658,7 +658,7 @@ const _wireLog=useRef(null);
 
   // A live game starting: the drone shot of the home stadium first (a neutral site has none); the game waits under it
   const _flyKey=liveSim?`${yr}-${liveSim.wk}-${liveSim.h}-${liveSim.a}`:null;
-  useEffect(()=>{if(!_flyKey||liveDone||liveSim.neutral||liveSim.intl||liveSim.wk==="P4"||phase!=="main")return;setFlyIntro({key:_flyKey,home:TEAMS[liveSim.h],away:TEAMS[liveSim.a],night:!!primeSlot(liveSim),wx:liveGameRef.current?.g?.wx});setLivePaused(true);},[_flyKey]);// eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(()=>{if(!_flyKey||liveDone||liveSim.neutral||liveSim.intl||liveSim.wk==="P4"||phase!=="main")return;setFlyIntro({key:_flyKey,home:TEAMS[liveSim.h],away:TEAMS[liveSim.a],night:!!primeSlot(liveSim),wx:liveGameRef.current?.g?.wx});setLivePaused(true);},[_flyKey]);// eslint-disable-line react-hooks/exhaustive-deps
   const endFly=()=>{setFlyIntro(null);setLivePaused(false);};
   // Live sim ticker
   useEffect(()=>{
@@ -1560,7 +1560,7 @@ const _def=defaultSaveState();Object.keys(_def).forEach(k=>{if(d[k]===undefined)
   if(liveSim)TABS.push("livesim");if(dlShown)TABS.unshift("deadline");
   if(godMode)TABS.push("god","dev");
 
-  return(<div style={{minHeight:"var(--vh, 100vh)",background:C.bg,fontFamily:C.f,color:C.tx,display:"flex",flexDirection:"column",fontSize:'clamp(12px,1.6vw,14px)'}}>{flyIntro&&<React.Suspense fallback={null}><StadiumFlyover key={flyIntro.key} home={flyIntro.home} away={flyIntro.away} night={flyIntro.night} wx={flyIntro.wx} onDone={endFly}/></React.Suspense>}
+  return(<div style={{minHeight:"var(--vh, 100vh)",background:C.bg,fontFamily:C.f,color:C.tx,display:"flex",flexDirection:"column",fontSize:'clamp(12px,1.6vw,14px)'}}>{flyIntro&&<React.Suspense fallback={<div style={{position:"fixed",inset:0,zIndex:9600,background:"#0b0e14"}}/>}><StadiumFlyover key={flyIntro.key} home={flyIntro.home} away={flyIntro.away} night={flyIntro.night} wx={flyIntro.wx} onDone={endFly}/></React.Suspense>}
     {/* INNO I75: injury toasts */}
     {/* injury news: the same toast style as everything else, stacked above the main toast so neither hides the other */}{injToasts.length>0&&<div role="status" onClick={()=>setInjToasts([])} style={{position:'fixed',...(MOBILE?{top:msg?'calc(64px + env(safe-area-inset-top))':'calc(8px + env(safe-area-inset-top))',left:12,right:12}:{bottom:msg?104:20,right:20,maxWidth:'min(92vw,420px)'}),zIndex:4400,background:'#0b1220f2',border:'1px solid #ef444466',borderLeft:'4px solid #ef4444',borderRadius:10,padding:MOBILE?'7px 12px':'10px 14px',fontSize:MOBILE?13:14,color:'#e2e8f0',fontWeight:600,boxShadow:'0 8px 28px #000a',cursor:'pointer',lineHeight:1.4}}>{injToasts.map((t,i)=><div key={i}>{t}</div>)}</div>}
     {extTalk&&ut&&(()=>{const p=ut.roster.find(x=>x.id===extTalk.id);if(!p)return null;const k=`ext:${yr}:${p.id}`;const loyalty=0.25+((ut?.w||0)>(ut?.l||0)?0.5:0);const t=talks[k]?.t||talkTerms(p,{yr,mode:"extend",loyalty,culture:hcCulture(ut?.coach?.hc)+(p.rookieAsk===yr&&sp==="combine"?0.08:0)/* signing early, before a breakout year, he takes less */});const startYr=yr+p.contract;return<Negotiate team={ut} cy={capYearFor(yr,sp)} p={p} mode="extend" cap={extRoom(ut,p,yr)} nowRoom={capSpace(ut)} t={t} talk={talks[k]||{}} note={`The new deal starts in ${startYr}, when his current contract runs out, so it has to fit under next season's cap. Walk away and he'll wait for re-sign week.`} onResult={(r,o)=>{setTalks(m=>({...m,[k]:{t,tries:r.tries,last:r,log:talkLog(m[k],o,r),walked:r.result==="walk",signed:r.result==="accept"}}));if(r.result==="accept"){setTeams(ts=>ts.map((tm,i)=>i!==ui?tm:{...tm,roster:tm.roster.map(x=>x.id===p.id?{...x,...(o.pr?(x.sched?.length?syncSalary({...x,sb:+((x.sb||0)+o.pr).toFixed(1),sched:x.sched.map(y=>y.pr!=null?{...y,pr:+(y.pr+o.pr).toFixed(1)}:y)}):{salary:+((x.salary||0)+o.pr).toFixed(1),sb:+(proration(x)+o.pr).toFixed(1)}):{}),ext:{sal:o.hit??o.sal,apy:o.sal,yrs:o.yrs,yr,...(o.pr?{sb:o.pr}:{}),...(o.extSched?{sched:o.extSched,gtd:o.gtd,total:o.total,...(o.voidYrs?{voidYrs:o.voidYrs,voidDead:o.voidDead}:{})}:{})},holdout:false,holdoutStone:false,holdoutWks:0}:x)}));setLog(l=>[`EXTENDED: ${p.name} (${posTag(p)} ${p.ovr}) — ${o.yrs} yr${o.yrs>1?"s":""}, $${o.sal}M/yr starting ${startYr}${o.bonus?` ($${o.bonus}M signing bonus; cap hit $${o.hit}M a year)`:""}`,...l.slice(0,149)]);sm(`${p.name} extended: $${o.sal}M x ${o.yrs} from ${startYr}`);}}} onClose={()=>setExtTalk(null)}/>;})()}

@@ -15,7 +15,7 @@ const CSS = `
   100% { transform: perspective(1300px) rotateX(0deg) rotateZ(0deg) scale(2.7) translateY(0); }
 }
 .fly-wait, .fly-wait * { animation-play-state: paused !important; }
-@keyframes flyFade { 0% { opacity: 0 } 8% { opacity: 1 } 86% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes flyFade { 0% { opacity: 1 } 86% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes flyText { 0% { opacity: 0; transform: translateY(14px) } 14% { opacity: 1; transform: none } 70% { opacity: 1 } 84% { opacity: 0 } 100% { opacity: 0 } }
 @keyframes flySky { 0% { transform: translateY(0); opacity: 1 } 42% { transform: translateY(0); opacity: 1 } 80% { transform: translateY(-105%); opacity: .2 } 100% { transform: translateY(-110%); opacity: 0 } }
 @keyframes flyClouds { from { transform: translateX(0) } to { transform: translateX(-18%) } }
@@ -57,10 +57,10 @@ function FilmedFlyover({ home, away, night = false, label, onDone, src }) {
   }, [go]); // eslint-disable-line react-hooks/exhaustive-deps
   const st = STADIUMS[home?.ab];
   return (
-    <div onClick={finish} role="presentation" style={{ position: "fixed", inset: 0, zIndex: 9600, background: "#0b0e14", overflow: "hidden", cursor: "pointer", opacity: go ? 1 : 0, animation: go ? `flyFade ${VLEN}ms ease-in-out forwards` : "none" }}>
+    <div onClick={finish} role="presentation" style={{ position: "fixed", inset: 0, zIndex: 9600, background: "#0b0e14", overflow: "hidden", cursor: "pointer", animation: go ? `flyFade ${VLEN}ms ease-in-out forwards` : "none" }}>
       <style>{CSS}</style>
-      <video ref={vid} muted playsInline preload="auto" onCanPlay={() => setGo(true)} onError={() => setGo(true)}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", imageRendering: "pixelated", filter: night ? "brightness(.5) saturate(.85) contrast(1.08)" : "none" }}>
+      <video ref={vid} muted playsInline preload="auto" /* (dark until it can play: the field never shows first) */ onCanPlay={() => setGo(true)} onError={() => setGo(true)}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", imageRendering: "pixelated", opacity: go ? 1 : 0, transition: "opacity .3s", filter: night ? "brightness(.5) saturate(.85) contrast(1.08)" : "none" }}>
         <source src={import.meta.env.BASE_URL + src + ".webm"} type="video/webm" /><source src={import.meta.env.BASE_URL + src + ".mp4"} type="video/mp4" />
       </video>
       {night && <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #0a1240aa, #0a124033 45%, #0a124055)", pointerEvents: "none" }} />}

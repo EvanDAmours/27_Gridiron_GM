@@ -2514,4 +2514,8 @@ export const PATCH_NOTES = [
   { v: "6.05", date: "2026-10-23", title: "Aim either way", notes: [
     "Arcade on phones: fixed the second throwing line. Dragging toward a receiver used to aim the throw backward, behind the quarterback, because every drag was treated as a slingshot pull. Now it works both ways and the throw always goes forward: drag toward the spot to aim straight at it, or pull back away from it like a slingshot. Only the throw's path is shown when you point at the spot. Lock-on to receivers, tap-to-throw and cancel all work as before.",
   ] },
+  { v: "6.06", date: "2026-10-23", title: "Flyover first, eyes on the return", notes: [
+    "The stadium flyover now plays before you see anything else. The field used to flash on screen for a moment before the drone shot started; now the screen stays dark until the flyover begins, and the game waits underneath it.",
+    "Arcade: the camera follows punt and kickoff returns properly. It used to hang back halfway between the returner and where the ball landed, so the tackle often happened off screen. Now it runs with the returner, looking ahead in the direction he's going, and centers on him for the tackle.",
+  ] },
 ];

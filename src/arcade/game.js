@@ -164,6 +164,7 @@ export class ArcadeGame {
     const wx = pick === "auto" ? rollWeather(teamKey(this.teams.user), R) : pick;
     this.wxNow = wx; // (the drone shot before kickoff shows the day's weather)
     this.sb = this.sbMode && !this.franchise ? sbTitle() : null; if (this.sb) this.sbCardAt = this.time;
+    if (this.wantsIntro) this.intro = performance.now() + 9000; // (the drone shot plays first: the field waits, dark, until it's done; a cap in case it never reports back)
     this.mode = "loading"; this.S = null; this.ceremony = null; this.cerNext = null; this.box = null; this.banner = null;
     const opts = { ...(this.rand ? { rand: this.rand } : {}), qLen: this.qMin * 60, wx, wind: windFor(wx, R), playoff: !!this.sb }, seq = (this.startSeq = (this.startSeq || 0) + 1);
     franchiseGame(this.userTi, this.oppTi, opts).catch((e) => { console.error("arcade: franchise setup failed, using the plain rosters", e); return newGame(this.userTi, this.oppTi, opts).g; }).then((g) => {
@@ -309,7 +310,8 @@ export class ArcadeGame {
   loop(now) {
     const dt = Math.min(0.05, (now - (this.last || now)) / 1000); this.last = now;
     const t0 = performance.now();
-    try { this.advanceTime(dt, now); this.draw(); } catch (e) { this.recover(e); } // (one bad frame never freezes the field)
+    const held = this.intro && performance.now() < this.intro; // (under the drone shot: nothing moves, nothing shows)
+    try { if (!held) this.advanceTime(dt, now); this.draw(); } catch (e) { this.recover(e); } // (one bad frame never freezes the field)
     (this.frameMs ||= []).push(performance.now() - t0); if (this.frameMs.length > 600) this.frameMs.shift();
     this.raf = requestAnimationFrame((t) => this.loop(t));
   }
@@ -343,8 +345,11 @@ export class ArcadeGame {
       const qbHas = !P.kind && !over && (P.ball.holder === "QB" || Math.max(P.ball.x + cam.lead, 0) < holdX(cam, P)); // (a back behind the line too)
       // (before a field goal: the kicker and the posts both in the picture, if they fit)
       const kickView = P.kind === "ko" && P.ball.flight && P.t < P.ball.flight.t0 ? P.ball.x + (cam.W * 0.2) / cam.s : P.kind === "fg" && P.phase === "presnap" ? Math.min(P.ball.x - 4 + (cam.W * 0.42) / cam.s, Math.max(P.ball.x + cam.lead, POSTS_X + 5 - (cam.W * 0.58) / cam.s)) : null;
-      const want = kickView ?? (f ? (P.ball.x + f.to.x) / 2 + 2 : qbHas ? holdX(cam, P) : P.ball.x + (over ? 0 : cam.lead));
-      cam.camX += (want - cam.camX) * Math.min(1, dt * (f ? 3.5 : 5));
+      // a punt or kickoff return: once he has it, the camera runs with the returner, looking ahead the way
+      // HE's going (back up the field), all the way to the tackle (the kick's flight is over by then)
+      const ret = (P.kind === "punt" || P.kind === "ko") && P.ball.holder === "S0";
+      const want = kickView ?? (ret ? P.ball.x - (P.arrived != null ? 0 : (cam.W * 0.16) / cam.s) : f ? (P.ball.x + f.to.x) / 2 + 2 : qbHas ? holdX(cam, P) : P.ball.x + (over ? 0 : cam.lead));
+      cam.camX += (want - cam.camX) * Math.min(1, dt * (ret ? 6 : f ? 3.5 : 5));
       cam.camX = Math.max(-21 + (cam.W * 0.42) / cam.s, Math.min(121 - (cam.W * 0.58) / cam.s, cam.camX)); // never far past the end zones: the goalposts and the crowd behind them stay in the picture
       if (!going && P.phase === "done" && m === "play") {
         let ev = P.result || P.ev;
@@ -416,6 +421,7 @@ export class ArcadeGame {
     const ctx = cv.getContext("2d"); ctx.setTransform(cv.width / cam.W, 0, 0, cv.height / cam.H, 0, 0); ctx.imageSmoothingEnabled = false;
     this.fx.k = uiPx(cam); // effects scale with the screen
     this.buttons = []; this.chips = {};
+    if (this.intro && performance.now() < this.intro) { ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, cam.W, cam.H); return; }
     if (this.mode === "menu") { this.buttons = drawMenu(ctx, cam, { teams: TEAMS, user: this.userTi, opp: this.oppTi, time: this.time, focus: this.menuFocus, mobile: this.mobile, fs: this.fsState, qMin: this.qMin, wxPick: wxName(this.wxPick), sb: this.sbMode ? sbTitle() : null }); this.fx.draw(ctx, cam.W, cam.H, pixText); return; }
     if (this.mode === "loading") { ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, cam.W, cam.H); const px = uiPx(cam); pixText(ctx, "SETTING UP THE GAME...", cam.W / 2, cam.H / 2 - px * 3, px, "rgba(255,255,255,.75)", "center"); return; }
     const m = this.mode, P = this.S, st = this.sit, teams = this.teams;
