@@ -2447,4 +2447,9 @@ export const PATCH_NOTES = [
     "Watching a game in Easy Mode keeps the Easy look: the field up top, a broadcast score bug, and the plays on the page beside it. The week button now says Sim week.",
     "Easy Mode has no injuries, and its pages use a crisper typeface.",
   ] },
+  { v: "5.89", date: "2026-10-23", title: "Arcade: Kick Meter and Played-Out Kicks", notes: [
+    "Arcade kicks have a new meter: a pixel arc, red at the ends, orange, then green in the middle. A needle sweeps across it; tap (or click, or press Space) to stop it. A better kicker gets a wider green band, and it narrows on long kicks and, for a shaky kicker, late in a close game. The power is set for you by your kicker's leg; the timing is yours. Stop it in the green and it's straight through, in the orange it squeaks inside an upright, in the red it misses.",
+    "Punts and field goals by the computer (and by your team when you watch) now play out on the arcade field instead of showing just the result.",
+    "Arcade mode plays every club's best players, all healthy: the highest overall starts at each position (Jaxson Dart starts for the Giants), and there are no injuries.",
+  ] },
 ];

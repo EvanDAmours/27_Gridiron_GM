@@ -16,7 +16,7 @@ const rosterOf = (ti) => {
 
 export function buildSide(ti) {
   const team = M.teams[ti], roster = rosterOf(ti);
-  const order = (pos) => roster.filter((p) => p.pos === pos).sort((a, b) => (a.dk ?? 99) - (b.dk ?? 99) || b.ovr - a.ovr);
+  const order = (pos) => roster.filter((p) => p.pos === pos).sort((a, b) => b.ovr - a.ovr); // the arcade: the best man starts
   const side = makeSide({ team, order, snaps: teamSnaps(order, {}) });
   return { side, team, roster, order };
 }
@@ -27,7 +27,13 @@ export function buildSide(ti) {
 let LEAGUE = null;
 export async function franchiseGame(userTi, oppTi, { rand = Math.random, qLen = null, wx = "clear", wind = null } = {}) {
   const L = await import("../league.js"), { createGame: mk } = await import("../playsim.js");
-  if (!LEAGUE) { LEAGUE = L.initTeams(-1); L.calibrateLeague(LEAGUE); }
+  if (!LEAGUE) {
+    LEAGUE = L.initTeams(-1); L.calibrateLeague(LEAGUE);
+    // the arcade plays every club's best men, all healthy: the highest overall starts at each spot
+    // (no real-life depth chart order, no injuries)
+    for (const t of LEAGUE) { t.roster = [...t.roster, ...(t.ir || [])]; t.ir = []; for (const p of t.roster) { delete p.dk; p.injured = false; p.injWk = 0; p.hurt = undefined; p.holdout = false; p.suspended = false; } }
+  }
+  L.setInjuries?.(false);
   const pick = (ti) => LEAGUE.find((t) => t.ab === M.teams[ti].ab) || LEAGUE[ti];
   const su = L.gameSetup(pick(userTi), pick(oppTi), null, null, wx);
   const g = mk(su.home, su.away, { rand, rec: true, qLen, wx: su.wx || wx });

@@ -14,7 +14,7 @@ import { TEAMS, newGame, franchiseGame, lineups, runPlay, simOpponentDrive, situ
 import { autoState, autoStep, autoCall } from "./autopilot.js";
 import { backForSnap } from "../playsim.js";
 import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
-import { setupKick, kickFlick, tickKick, kickPlan, POSTS_X } from "./kick.js";
+import { setupKick, kickFlick, tickKick, kickPlan, POSTS_X, kickMeter, kickAuto, meterZones, outOfRange } from "./kick.js";
 import { sbName, sbNumber } from "../data/superbowls.js";
 const sbTitle = () => { const d = new Date(), season = d.getMonth() < 2 ? d.getFullYear() - 1 : d.getFullYear(); return sbName(sbNumber(season)); };
 import { sfx, unlock, toggleMute, isMuted, ambient, ambientHype } from "./sfx.js";
@@ -217,7 +217,9 @@ export class ArcadeGame {
     // the computer's snap: the engine's coach makes the call (run or pass, or a kick, a kneel, a spike)
     const snap = snapshot(g), ev = runPlay(g);
     const k = ev?.k, scrim = ev && !ev.kneel && !ev.spike && ev.type !== "penalty" && ["run", "pass", "inc", "int", "sack"].includes(k);
-    if (!scrim) { const o = this.offReal; this.unflip(); this.emit(ev, o); this.showEngine(ev); return; } // a kick, a kneel, a flag: as the engine called it
+    // a punt or a field goal: played out on the field (the engine kicks it again from the same spot)
+    if (ev && !ev.kneel && !ev.spike && ["punt", "fg", "fg_miss"].includes(ev.type)) { restore(g, snap); this.call(ev.type === "punt" ? "punt" : "fg"); this.meter = null; this.autoKick = { at: this.time + 1.3 / (this.speed || 1) }; return; }
+    if (!scrim) { const o = this.offReal; this.unflip(); this.emit(ev, o); this.showEngine(ev); return; } // a kneel, a flag: as the engine called it
     restore(g, snap);
     this.snapRB = backForSnap(g);
     const c = autoCall(k === "run" ? "run" : "pass");
@@ -235,6 +237,7 @@ export class ArcadeGame {
     const P = c === "xp" ? setupKick(g, lineups(g), "fg", { pat: true }) : c === "punt" || c === "fg" ? setupKick(g, lineups(g), c) : setupPlay(g, lineups(g, { rb: this.snapRB }), c);
     P.view = this.teams; // (the field keeps this play's way round, uniforms and sidelines, until the next snap: the tackle hands the game back the real way round, and the picture mustn't flip with it)
     this.S = P; this.cam.camX = P.kind ? P.ball.x + this.cam.lead : holdX(this.cam, P); this.mode = "play"; this.kick = null; this.refresh();
+    this.meter = P.kind ? { t: 0, stop: null } : null; this.autoKick = null; // (your kick: the meter starts sweeping)
     sfx.select?.();
   }
   // the weather setting: on the title screen it's for the next game; in the pause menu it changes
@@ -320,6 +323,7 @@ export class ArcadeGame {
     const P = this.S, cam = this.cam, m = this.mode;
     if (P && cam) {
       if (this.auto && !P.kind) { if (P.phase === "presnap" && this.time >= this.auto.snapAt) snap(P); autoStep(P, this.auto.call, this.auto.state); } else this.controls(P, dt);
+      if (P.kind && this.autoKick && P.phase === "presnap" && this.time >= this.autoKick.at) { this.autoKick = null; try { kickAuto(P); } catch (e) { console.error(e); } }
       const going = P.kind ? tickKick(P, live) : tick(P, live);
       this.react(P);
       if (this.live && !P.kind && m === "play") this.recFrame(P);
@@ -363,6 +367,7 @@ export class ArcadeGame {
       P.aim = { x: Math.max(qb.x - 1, f.x), y: Math.max(-26, Math.min(26, f.y)) };
     }
     if (P.kind && this.kick?.charging) this.kick.t += dt;
+    if (P.kind && this.meter && this.meter.stop == null && P.phase === "presnap") this.meter.t += dt;
   }
 
   // sound and effects on what just happened on the field (compared with last frame)
@@ -469,30 +474,22 @@ export class ArcadeGame {
   }
   drawKick(ctx, P, hintY) {
     const cam = this.cam, px = uiPx(cam);
-    if (P.phase !== "presnap") return;
+    // just after the kick, the meter stays up a moment where you stopped it
+    if (P.phase !== "presnap") { if (this.meter?.stop != null && this.time - (this.meter.at || 0) < 0.9) drawKickMeter(ctx, cam, px, this.meter.zones, this.meter.stop, true, hintY, this); return; }
     drawDownBox(ctx, cam, P.pat ? "EXTRA POINT" : P.kind === "fg" ? `${P.dist} YARD FIELD GOAL` : "PUNT", "#fff", { left: !!this.live && !(document.fullscreenElement || document.webkitFullscreenElement || this.live.fill) });
-    const d = this.kickDrag, v = d && this.kickVec(d);
-    if (v && v[0] > 0) {
-      // the kick you're about to make: its arc to where it comes down, and its strength against the distance
-      const plan = kickPlan(P, v[0], v[1]), dist = P.kind === "fg" ? Math.max(8, plan.power) : 30 + plan.strength * 25;
-      const x1 = plan.x0 + Math.cos(plan.angle) * dist, y1 = plan.y0 + Math.sin(plan.angle) * dist + (plan.drift || 0) * (dist / Math.max(1, POSTS_X - plan.x0)), apex = P.kind === "fg" ? clamp(dist / 7, 3, 8) : 9;
-      for (let i = 1; i <= 22; i++) { const u = i / 22, [sx, sy] = cam.toScreen(plan.x0 + (x1 - plan.x0) * u, plan.y0 + (y1 - plan.y0) * u), h = apex * 4 * u * (1 - u); const sz = Math.max(2, Math.round(px * (i === 22 ? 2 : 1.2))); ctx.fillStyle = "rgba(0,0,0,.4)"; ctx.fillRect(Math.round(sx - sz / 2) + 1, Math.round(sy - h * cam.s - sz / 2) + 1, sz, sz); ctx.fillStyle = "#ffd166"; ctx.fillRect(Math.round(sx - sz / 2), Math.round(sy - h * cam.s - sz / 2), sz, sz); }
-      // his spread: the band where his accuracy might put it (an elite kicker's is tight)
-      if (P.kind === "fg" && plan.spread) {
-        ctx.fillStyle = plan.late ? "rgba(255,138,90,.18)" : "rgba(255,209,102,.16)"; ctx.beginPath();
-        const edge = (sg) => { const a = plan.angle + sg * plan.spread * 1.6; return cam.toScreen(plan.x0 + Math.cos(a) * dist, plan.y0 + Math.sin(a) * dist + (plan.drift || 0) * (dist / Math.max(1, POSTS_X - plan.x0))); };
-        const [ax, ay] = cam.toScreen(plan.x0, plan.y0), [e1x, e1y] = edge(-1), [e2x, e2y] = edge(1); ctx.moveTo(ax, ay); ctx.lineTo(e1x, e1y); ctx.lineTo(e2x, e2y); ctx.closePath(); ctx.fill();
-      }
-      const [lx, ly] = cam.toScreen(x1, y1); ctx.strokeStyle = "#ffd166"; ctx.lineWidth = Math.max(2, px); ctx.beginPath(); ctx.ellipse(lx, ly, cam.s * 0.9, cam.s * 0.9 * 0.42, 0, 0, Math.PI * 2); ctx.stroke();
-      // the strength bar: how far this kick goes, and (on a field goal) a tick at the distance it needs
-      const w = px * 70, h = px * 6, x = Math.round(cam.W / 2 - w / 2), y = Math.round(hintY - px * 16), frac = Math.min(1, plan.strength / 1.15);
-      ctx.fillStyle = "rgba(8,10,16,.85)"; ctx.fillRect(x - px, y - px, w + px * 2, h + px * 2);
-      const ok = P.kind !== "fg" || !plan.short; ctx.fillStyle = ok ? "#5fd35f" : "#ff8a5a"; ctx.fillRect(x, y, Math.round(w * frac), h);
-      if (P.kind === "fg") { const need = Math.min(1, (plan.need / plan.range) / 1.15); ctx.fillStyle = "#fff"; ctx.fillRect(Math.round(x + w * need), y - px * 2, px, h + px * 4); pixText(ctx, plan.short ? "TOO SHORT" : "LONG ENOUGH", x + w / 2, y - px * 9, px, plan.short ? "#ff8a5a" : "#5fd35f", "center"); }
-    }
+    // the kick meter (yours): a pixel arc, red at the ends, orange, then green in the middle as wide as his accuracy
+    if (this.meter) drawKickMeter(ctx, cam, px, this.meter.zones || meterZones(P), this.meter.stop ?? this.meterPos(P), this.meter.stop != null, hintY, this);
+    if (this.meter && outOfRange(P)) pixText(ctx, "OUT OF HIS RANGE", cam.W / 2, Math.round(hintY - px * 76), px, "#ff8a5a", "center");
     // who's kicking: his name, overall, leg and accuracy (what decides how far and how true)
     { const kp = P.kicker, cp = Math.max(1, Math.round(px * 0.8)); if (kp) { const lines = [`${String(kp.name || "").toUpperCase()}  ${kp.ovr ?? ""} OVR`, `LEG ${Math.round(K.kickLeg(kp))}  ACC ${Math.round(K.kickAccuracy(kp))}${P.kind === "fg" ? `  RANGE ${Math.round(50 + (K.kickLeg(kp) - 70) * 0.6)} YD` : ""}`]; const w = Math.max(...lines.map((l) => pixWidth(l, cp))) + cp * 8, h = cp * 22, x = Math.round(cam.W - w - px * 3), y = Math.round(px * 24); ctx.fillStyle = "rgba(8,10,16,.82)"; ctx.fillRect(x, y, w, h); ctx.fillStyle = this.teams.user.clr; ctx.fillRect(x, y, cp, h); pixText(ctx, lines[0], x + cp * 4, y + cp * 3, cp, "#fff"); pixText(ctx, lines[1], x + cp * 4, y + cp * 12, cp, "#ffd166"); } }
-    drawHint(ctx, cam, this.mobile ? "DRAG TOWARD THE POSTS, LET GO TO KICK" : "CLICK AND DRAG TOWARD THE POSTS, LET GO TO KICK", hintY);
+    if (this.meter) drawHint(ctx, cam, this.mobile ? "TAP WHEN THE NEEDLE IS IN THE GREEN" : "CLICK OR SPACE WHEN THE NEEDLE IS IN THE GREEN", hintY);
+  }
+  // the needle: from the left end to the right and back; a long field goal sweeps faster
+  meterPos(P) { const T = P.kind === "fg" ? 1.45 - Math.min(0.5, (P.dist || 30) / 110) : 1.4, u = ((this.meter?.t || 0) / (T / 2)) % 2; return u < 1 ? -1 + 2 * u : 3 - 2 * u; }
+  fireKick(P) {
+    const M = this.meter; if (!M || this.autoKick || P.phase !== "presnap" || M.stop != null) return;
+    M.stop = this.meterPos(P); M.zones = meterZones(P); M.at = this.time; sfx.select?.();
+    try { kickMeter(P, M.stop); } catch (e) { console.error(e); }
   }
   kickPower() { if (!this.kick?.charging) return 0; const u = (this.kick.t / KICK_CYCLE) % 2; return u < 1 ? u : 2 - u; }
   // the other team's drive: a panel in their colours, the plays as they come in
@@ -550,14 +547,14 @@ export class ArcadeGame {
     if (this.input === "mouse") return this.mouseDown(P, e, p);
     // touch: one finger plays; a second finger only taps buttons
     if (this.touch && this.touch.id !== e.pointerId) return;
-    if (P.kind) { this.kickDrag = { id: e.pointerId, ...p, cx: p.px, cy: p.py }; return; } // a kick: drag toward the posts, let go
+    if (P.kind) { this.fireKick(P); return; } // a kick: tap to stop the meter
     if (P.phase === "presnap") snap(P);
     this.touch = { id: e.pointerId, ...p, moved: 0 };
     if (P.phase === "carry") P.steer = this.cam.toField(p.px, p.py).y;
   }
   mouseDown(P, e, p) {
     const lob = e.button === 2 || e.shiftKey;
-    if (P.kind) { if (P.phase === "presnap") this.kickDrag = { id: e.pointerId, ...p, cx: p.px, cy: p.py }; return; }
+    if (P.kind) { this.fireKick(P); return; }
     if (P.phase === "presnap") { snap(P); return; }
     if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass")) { const f = this.cam.toField(p.px, p.py), qb = P.ents.QB; throwTo(P, { x: Math.max(qb.x - 1, f.x), y: f.y }, null, lob ? "lob" : this.passKind); P.aim = null; return; }
     if (P.phase === "carry") { if (lob) dive(P); else juke(P); } // right-click dives
@@ -629,7 +626,7 @@ export class ArcadeGame {
     if (m !== "play" || !P) return;
     if (k === "q" && !P.kind) { this.cycleKind(); return; }
     if (k === "e" && !P.kind && P.phase === "carry") { dive(P); return; }
-    if (P.kind) return; // (kicks are a drag toward the posts)
+    if (P.kind) { if (k === " " || k === "enter") this.fireKick(P); return; } // (a kick: stop the meter)
     if (k === " " || k === "enter") {
       if (P.phase === "presnap") snap(P);
       else if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass") && P.aim) { throwTo(P, P.aim, null, e.shiftKey ? "lob" : this.passKind); P.aim = null; }
@@ -643,3 +640,40 @@ export const kickNote = (P) => P.kind === "fg" && P.flick ? (P.flick.made ? "RIG
 export const resultTitle = (ev) => !ev ? "" : ev.type === "kickoff" ? (ev.onside ? "ONSIDE KICK" : "KICKOFF") : ev.kneel ? "KNEEL" : ev.spike ? "SPIKE" : ev.type === "pat" ? (ev.pat?.good ? (ev.pat.two ? "TWO POINTS!" : "IT'S GOOD!") : "NO GOOD") : ev.td ? "TOUCHDOWN!" : ev.type === "int" ? "INTERCEPTED" : ev.type === "sack" ? "SACKED" : ev.type === "fumble" ? "FUMBLE" : ev.type === "inc" ? "INCOMPLETE" : ev.type === "fg" ? "FIELD GOAL!" : ev.type === "fg_miss" ? "NO GOOD" : ev.type === "punt" ? "PUNT" : ev.type === "penalty" ? "FLAG" : ev.firstDown ? "FIRST DOWN" : `${ev.yards >= 0 ? "+" : ""}${ev.yards} YARDS`;
 export const pickNote = (p) => p.why === "sacked" ? "THE RUSH GOT HOME" : p.target == null ? "" : `${p.open ? "OPEN" : "COVERED"}${p.def != null ? ` BY ${p.def} YD` : ""}${p.err != null ? ` - ${p.err <= 1 ? "ON THE MONEY" : p.err <= 2.2 ? "CATCHABLE" : "OFF TARGET"}` : ""}${p.why === "hurried" ? " - HURRIED" : p.why === "late" ? " - HELD IT TOO LONG" : ""}`;
 export { passPlan, BULLET_RANGE };
+
+// The kick meter: an arc of chunky pixels (cached; it only changes with the kicker and the distance),
+// green in the middle, orange where it still squeezes inside an upright, red where it misses; a white
+// needle with a dark outline. stopped: the needle where you stopped it, blinking.
+const meterCache = { key: "", cv: null };
+function drawKickMeter(ctx, cam, px, zones, pos, stopped, hintY, game) {
+  const cell = Math.max(2, Math.round(px * 1.6)), R = Math.round(px * 52), T = Math.round(px * 10), A = 1.05;
+  const W = (R + cell * 3) * 2, H = R + cell * 4, key = `${cell}|${R}|${zones.green.toFixed(3)}|${zones.good.toFixed(3)}`;
+  if (meterCache.key !== key) {
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const c = cv.getContext("2d"), cx = W / 2, cy = H - cell;
+    const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+    const G0 = [70, 230, 110], G1 = [160, 235, 70], Y = [255, 214, 60], O = [255, 140, 40], RD = [214, 38, 38];
+    const col = (a) => (a <= zones.green ? mix(G0, G1, a / zones.green) : a <= zones.good ? mix(Y, O, (a - zones.green) / Math.max(0.01, zones.good - zones.green)) : mix(O, RD, Math.min(1, (a - zones.good) / Math.max(0.05, 1 - zones.good) * 1.6)));
+    for (let y = 0; y < H; y += cell) for (let x = 0; x < W; x += cell) {
+      const dx = x + cell / 2 - cx, dy = cy - (y + cell / 2), r = Math.hypot(dx, dy), ang = Math.atan2(dx, dy);
+      if (dy < -cell) continue;
+      const inBand = r >= R - T && r <= R && Math.abs(ang) <= A, edge = !inBand && r >= R - T - cell && r <= R + cell && Math.abs(ang) <= A + cell / R;
+      if (inBand) { const u = Math.abs(ang) / A, [r0, g0, b0] = col(u), lit = r > R - T * 0.38 ? 1.18 : r < R - T * 0.8 ? 0.82 : 1; c.fillStyle = `rgb(${Math.min(255, r0 * lit)},${Math.min(255, g0 * lit)},${Math.min(255, b0 * lit)})`; c.fillRect(x, y, cell, cell); }
+      else if (edge) { c.fillStyle = "#0b0e14"; c.fillRect(x, y, cell, cell); }
+    }
+    meterCache.key = key; meterCache.cv = cv;
+  }
+  const ox = Math.round(cam.W / 2 - W / 2), oy = Math.round(hintY - px * 12 - H), cx = cam.W / 2, cy = oy + H - cell;
+  ctx.drawImage(meterCache.cv, ox, oy);
+  // the needle: pixel steps out along its angle, white with a dark rim
+  if (stopped && Math.floor((game.time || 0) * 8) % 2) return;
+  const ang = pos * A;
+  for (let r = R - T - cell * 2; r <= R + cell * 3; r += cell * 0.7) {
+    const x = Math.round(cx + Math.sin(ang) * r - cell / 2), y = Math.round(cy - Math.cos(ang) * r - cell / 2);
+    ctx.fillStyle = "#0b0e14"; ctx.fillRect(x - cell, y - cell, cell * 3, cell * 3);
+  }
+  for (let r = R - T - cell * 2; r <= R + cell * 3; r += cell * 0.7) {
+    const x = Math.round(cx + Math.sin(ang) * r - cell / 2), y = Math.round(cy - Math.cos(ang) * r - cell / 2);
+    ctx.fillStyle = "#fff"; ctx.fillRect(x, y, cell, cell);
+  }
+}
+

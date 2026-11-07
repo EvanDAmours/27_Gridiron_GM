@@ -47,20 +47,58 @@ export function kickPlan(S, dxYd, dyYd) {
   const spread = (0.028 + Math.max(0, 95 - acc) * 0.0014) * (0.6 + need / 45) * (late ? 1 + Math.max(0, 80 - K.kickClutch(S.kicker)) * 0.012 : 1);
   return { angle, strength, power, need, range, wd, x0, y0, len, drift, yAtPosts, spread, late, short: power < need - 1, wide: Math.abs(yAtPosts) > POST_HALF + 0.4 };
 }
-// The kick: the plan, plus his accuracy's wobble.
-export function kickFlick(S, dxYd, dyYd) {
+// The kick meter: a needle sweeps an arc and you stop it. The green band in the middle (straight
+// through) is as wide as his accuracy allows, narrower from long range and, for a shaky kicker, late
+// in a close game; the orange beside it still sneaks inside an upright; red misses. good: the
+// needle's reach (0..1 from the middle) that's still good.
+export function meterZones(S) {
+  const acc = K.kickAccuracy(S.kicker), need = S.kind === "fg" ? S.dist : 40, g = S.g;
+  const late = g && g.qtr >= 4 && g.clock <= 120 && Math.abs((g.score?.h ?? 0) - (g.score?.a ?? 0)) <= 3;
+  const clutch = late ? Math.max(0.7, 1 - Math.max(0, 80 - K.kickClutch(S.kicker)) * 0.012) : 1;
+  const green = clamp((0.06 + Math.max(0, acc - 55) * 0.0055) * (1.3 - Math.min(0.8, need / 75)) * clutch, 0.03, 0.34);
+  return { green, good: Math.min(0.85, green * 1.6) };
+}
+// The leg is his, not yours: a field goal gets what the distance needs (if he has it), a punt all of it.
+export function meterStrength(S) {
+  if (S.kind !== "fg") return 1;
+  const p = kickPlan(S, 11, 0);
+  return clamp((p.need + 2.5) / Math.max(1, p.range), 0.25, 1.15);
+}
+export const outOfRange = (S) => S.kind === "fg" && kickPlan(S, 11 * 1.15, 0).power < S.dist - 1;
+// Where the needle stopped (m: -1 left .. 1 right) as a kick: the angle that puts it there at the posts.
+export function kickMeter(S, m, ev = null) {
+  if (S.phase !== "presnap") return null;
+  const strength = meterStrength(S), len = 11 * strength;
+  if (S.kind !== "fg") { const a = m * 0.32 / 0.55; return kickFlick(S, len * Math.cos(a), len * Math.sin(a), { exact: true, ev }); }
+  const base = kickPlan(S, len, 0), { good } = meterZones(S), a = Math.abs(m), sg = m < 0 ? -1 : 1;
+  const yAt = a <= good ? sg * (a / good) * (POST_HALF - 0.45) : sg * (POST_HALF + 0.9 + (a - good) * 11);
+  const angle = Math.atan((yAt - base.y0 - base.drift) / Math.max(1, POSTS_X - base.x0)), raw = angle / 0.55;
+  return kickFlick(S, len * Math.cos(raw), len * Math.sin(raw), { exact: true, ev });
+}
+// The computer's kick: the engine kicks it (its own make rate), and the field shows that kick.
+export function kickAuto(S) {
+  if (S.phase !== "presnap") return null;
+  if (S.kind !== "fg") return kickMeter(S, (Math.random() - 0.5) * 0.6);
+  const r = resolvePlay(S.g, "fg", { types: ["fg", "fg_miss"] }, null, 1), made = r.ev?.type === "fg", { good } = meterZones(S);
+  const m = made ? (Math.random() * 2 - 1) * good * 0.8 : (Math.random() < 0.5 ? -1 : 1) * Math.min(1, good + 0.08 + Math.random() * 0.3);
+  return kickMeter(S, m, r.ev);
+}
+
+// The kick: the plan, plus his accuracy's wobble (opt.exact: no wobble, the meter was the accuracy;
+// opt.ev: the engine already booked it, the field just shows it).
+export function kickFlick(S, dxYd, dyYd, opt = {}) {
   if (S.phase !== "presnap") return null;
   const plan = kickPlan(S, dxYd, dyYd), angle = plan.angle;
   S.phase = "live"; S.t = 0;
   if (S.kind === "fg") {
     const { need, x0, y0, drift, spread } = plan, toPosts = POSTS_X - x0, gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) * 1.41;
-    const wobble = gauss() * spread; // where his accuracy puts it, around where you aimed
+    const wobble = opt.exact ? 0 : gauss() * spread; // where his accuracy puts it, around where you aimed
     // and how well he struck it: an inconsistent kicker comes up a few yards light now and then
-    const power = plan.power * (1 + gauss() * (0.012 + Math.max(0, 90 - K.kickConsistency(S.kicker)) * 0.0011) - (Math.random() < Math.max(0, 85 - K.kickConsistency(S.kicker)) * 0.004 ? 0.06 : 0));
+    const power = opt.exact ? plan.power : plan.power * (1 + gauss() * (0.012 + Math.max(0, 90 - K.kickConsistency(S.kicker)) * 0.0011) - (Math.random() < Math.max(0, 85 - K.kickConsistency(S.kicker)) * 0.004 ? 0.06 : 0));
     const yAtPosts = y0 + Math.tan(angle + wobble) * toPosts + drift, short = power < need - 1, wide = Math.abs(yAtPosts) > POST_HALF + 0.4;
     const good = !short && !wide;
     // an extra point is all yours (the engine books what the kick did); a field goal the engine has to agree with
-    const r = S.pat ? { ev: bookPat(S.g, false, good) } : resolvePlay(S.g, "fg", { types: [good ? "fg" : "fg_miss"], fallback: [good ? "fg_miss" : "fg"] }, null, 12);
+    const r = opt.ev ? { ev: opt.ev } : S.pat ? { ev: bookPat(S.g, false, good) } : resolvePlay(S.g, "fg", { types: [good ? "fg" : "fg_miss"], fallback: [good ? "fg_miss" : "fg"] }, null, 12);
     S.ev = S.result = r.ev; S.text = r.ev?.text || "";
     const made = S.pat ? good : r.ev?.type === "fg";
     S.flick = { angle: angle + wobble, power, need, short: !made && short, wide: !made && !short, made };
