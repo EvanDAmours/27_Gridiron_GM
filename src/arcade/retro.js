@@ -1226,7 +1226,7 @@ export function drawPause(ctx, cam, items, { mobile } = {}) {
   const { W, H } = cam, px = hudPx(cam) + 1;
   ctx.fillStyle = "rgba(4,6,10,.82)"; ctx.fillRect(0, 0, W, H);
   pixShadow(ctx, "PAUSED", W / 2, H * 0.08, px * 2, "#ffd166", "center");
-  const help = mobile ? ["TOUCH THE FIELD TO SNAP", "PULL BACK AND RELEASE TO THROW", "TAP BULLET OR LOB TO PICK THE THROW", "SWIPE TO STEER - FLICK SIDEWAYS TO JUKE, AHEAD TO DIVE"]
+  const help = mobile ? ["TOUCH THE FIELD TO SNAP", "TAP A RECEIVER TO THROW HIM THE BALL", "TAP BULLET OR LOB TO PICK THE THROW", "SWIPE TO STEER - FLICK SIDEWAYS TO JUKE, AHEAD TO DIVE"]
     : ["SPACE OR CLICK TO SNAP", "AIM WITH THE MOUSE - CLICK TO THROW", "Q OR THE BUTTONS: BULLET OR LOB", "RUN: MOUSE OR W/S - SPACE JUKES - E DIVES", "KICK: HOLD THE MOUSE, AIM, RELEASE", "1-6 PICK A PLAY - M MUTES - ESC PAUSES"];
   const hp = Math.max(1, Math.min(px - 1, Math.floor((H * 0.3) / (help.length * 9)), ...help.map((t) => Math.floor((W - px * 6) / (6 * t.length))))); // (fits across, and in the bottom third)
   // the buttons get whatever room the title and the help leave (so it all fits on a short screen)

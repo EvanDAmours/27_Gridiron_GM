@@ -3,8 +3,8 @@
 // loads it straight into a browser for playtesting.
 //
 // Two ways to play, picked by what you last touched it with:
-//  - TOUCH (phones, tablets): touch the field to snap, pull back like a slingshot and let go to
-//    throw; swipe up and down to steer a runner, flick to juke; flick up the field to kick.
+//  - TOUCH (phones, tablets): touch the field to snap; tap a receiver to throw to him (or open
+//    grass to throw there), or pull back like a slingshot and let go to throw; swipe up and down to steer a runner, flick to juke; flick up the field to kick.
 //  - MOUSE + KEYBOARD (computers): click or Space to snap; the throw goes where the pointer is;
 //    click to throw, right-click (or Shift-click) to lob; the runner follows the pointer (or W/S),
 //    Space jukes; to kick, aim with the pointer and hold the button, let go at the top of the meter.
@@ -13,7 +13,7 @@
 import { TEAMS, newGame, franchiseGame, lineups, runPlay, simOpponentDrive, situation, snapshot, restore, patWaiting, bookPat, flipSides } from "./bridge.js";
 import { autoState, autoStep, autoCall } from "./autopilot.js";
 import { backForSnap } from "../playsim.js";
-import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE } from "./play.js";
+import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE, ELIGIBLE } from "./play.js";
 import { setupKick, setupKickoff, kickFlick, tickKick, kickPlan, POSTS_X, kickMeter, kickAuto, meterZones, outOfRange } from "./kick.js";
 import { sbName, sbNumber } from "../data/superbowls.js";
 const sbTitle = () => { const d = new Date(), season = d.getMonth() < 2 ? d.getFullYear() - 1 : d.getFullYear(); return sbName(sbNumber(season)); };
@@ -456,7 +456,7 @@ export class ArcadeGame {
         this.chips.kinds = drawSwitch(ctx, cam, px * 3, hintY - px * 4 - ch, [{ key: "bullet", label: "BULLET", color: KIND_COLOR.bullet }, { key: "lob", label: "LOB", color: KIND_COLOR.lob }], this.passKind, { big });
       }
       const hint = P.phase === "presnap" ? (this.mobile ? "TOUCH THE FIELD TO SNAP" : "CLICK OR SPACE TO SNAP")
-        : throwing ? (this.mobile ? "PULL BACK - LET GO TO THROW" : "AIM - CLICK TO THROW - Q SWITCHES BULLET/LOB")
+        : throwing ? (this.mobile ? "TAP A RECEIVER TO THROW - OR PULL BACK" : "AIM - CLICK TO THROW - Q SWITCHES BULLET/LOB")
         : P.phase === "carry" && P.ents[P.ball.holder]?.side === "off" ? (this.mobile ? "FLICK SIDEWAYS: JUKE - AHEAD: DIVE" : "STEER WITH MOUSE OR W/S - SPACE JUKES - E DIVES") : null;
       if (hint && !this.auto) drawHint(ctx, cam, hint, hintY);
     }
@@ -560,8 +560,8 @@ export class ArcadeGame {
     // touch: one finger plays; a second finger only taps buttons
     if (this.touch && this.touch.id !== e.pointerId) return;
     if (P.kind) { this.fireKick(P); return; } // a kick: tap to stop the meter
-    if (P.phase === "presnap") snap(P);
-    this.touch = { id: e.pointerId, ...p, moved: 0 };
+    const snapped = P.phase === "presnap"; if (snapped) snap(P);
+    this.touch = { id: e.pointerId, ...p, moved: 0, snapped }; // (the touch that snapped it isn't also a throw)
     if (P.phase === "carry") P.steer = this.cam.toField(p.px, p.py).y;
   }
   mouseDown(P, e, p) {
@@ -597,8 +597,27 @@ export class ArcadeGame {
     if (this.kickDrag && this.kickDrag.id === e.pointerId) { const d = this.kickDrag; this.kickDrag = null; if (P?.kind && P.phase === "presnap") this.releaseKick(P, d); return; }
     if (e.pointerType === "mouse") return;
     const t = this.touch; if (!t || t.id !== e.pointerId) return; this.touch = null; if (!P) return;
-    if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass") && P.aim && t.moved > 6) throwTo(P, P.aim, null, this.passKind);
+    const passing = P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass");
+    if (passing && P.aim && t.moved > 6) throwTo(P, P.aim, null, this.passKind);
+    else if (passing && !t.snapped && t.moved <= 12) this.tapThrow(P, t); // a tap: to the man you touched
     P.aim = null; P.steer = null;
+  }
+  // touch: a tap on (or near) a receiver throws to him, led to where he'll be when it gets there; a tap
+  // on open grass throws to that spot. (Fingers are wide and phones are small: "near" is generous.)
+  tapThrow(P, t) {
+    const cam = this.cam, reach = Math.max(34, Math.min(cam.W, cam.H) * 0.09);
+    let best = null, bd = 1e9;
+    for (const k of ELIGIBLE) {
+      const e = P.ents[k]; if (!e || e.mode === "block" || e.mode === "back") continue;
+      const [sx, sy] = cam.toScreen(e.x, e.y), d = Math.hypot(sx - t.px, sy - t.py);
+      if (d < bd) { bd = d; best = e; }
+    }
+    if (best && bd <= reach) {
+      // lead him: where he'll be when a ball thrown now arrives (two passes to settle the flight time)
+      let spot = { x: best.x, y: best.y };
+      for (let i = 0; i < 2; i++) { const T = passPlan(P, spot, this.passKind).T; spot = { x: best.x + (best.vx || 0) * T, y: best.y + (best.vy || 0) * T }; }
+      throwTo(P, spot, null, this.passKind, best.key);
+    } else { const f = cam.toField(t.px, t.py), qb = P.ents.QB; throwTo(P, { x: Math.max(qb.x - 1, f.x), y: f.y }, null, this.passKind); }
   }
   // the mouse kick: direction toward the pointer, length from the meter (a full meter is a long flick)
   // the drag (screen pixels) as a kick: up the field and across it, scaled so a drag of about a

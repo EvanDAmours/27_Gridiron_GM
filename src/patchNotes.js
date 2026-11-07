@@ -2505,4 +2505,7 @@ export const PATCH_NOTES = [
   { v: "6.02", date: "2026-10-23", title: "Flyover every time", notes: [
     "Arcade fix: the stadium flyover now plays before every game. With the league already loaded (any game after your first, or a fast device), the game started so quickly that the flyover was skipped. The flyover videos also now always load straight from the network, which keeps them playing reliably in Safari.",
   ] },
+  { v: "6.03", date: "2026-10-23", title: "Tap to throw", notes: [
+    "Arcade on phones: passing is much easier. After the snap, tap a receiver and the quarterback throws to him, leading him to where he'll be when the ball arrives. Tap open grass to throw to that spot. Your finger doesn't have to be exactly on him. The slingshot (pull back and let go) still works if you prefer it, and Bullet or Lob still sets the kind of throw.",
+  ] },
 ];

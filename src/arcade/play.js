@@ -574,7 +574,7 @@ export function passPlan(S, P, kind = "auto") {
   if (wd.mph) land = { x: clamp(land.x + wd.x * carry, S.los - 12, 109), y: clamp(land.y + wd.y * carry, -HALF - 3, HALF + 3) };
   return { land, dist, bullet, T, arc, short, reach, kind: bullet ? "bullet" : "lob", auto: kind === "auto" };
 }
-export function throwTo(S, P, why = null, kind = "auto") {
+export function throwTo(S, P, why = null, kind = "auto", want = null) { // want: the man you meant it for (a tap on him)
   if (S.phase !== "live" || S.ball.holder !== "QB" || !S.call?.startsWith("pass")) return null; // (on a run he's handing it off: a tap or a flick then isn't a throw)
   const { ents } = S, qb = ents.QB;
   const plan = passPlan(S, P, kind);
@@ -591,6 +591,7 @@ export function throwTo(S, P, why = null, kind = "auto") {
     const reach = e.top * T * 0.9, a = aheadOf(e, T * 0.6), d = Math.max(0, hyp(a.x - land.x, a.y - land.y) - reach * 0.5);
     if (d < bestD) { bestD = d; best = r; }
   }
+  if (want && want !== best && ents[want]) { const e = ents[want], reach = e.top * T * 0.9, a = aheadOf(e, T * 0.6), d = Math.max(0, hyp(a.x - land.x, a.y - land.y) - reach * 0.5); if (d <= 5) { best = want; bestD = d; } } // (still his ball if he can get to it)
   if (bestD > 5) best = null; // nobody can get there: a throwaway, nobody chases it
   const tgt = best ? ents[best] : null;
   if (tgt) { tgt.mode = "adjust"; tgt.tx = aimed.x; tgt.ty = aimed.y; }
