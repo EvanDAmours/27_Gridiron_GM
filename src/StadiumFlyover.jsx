@@ -8,7 +8,7 @@ import { CITY_SCENES, drawSkyline, drawGround } from "./cityScenes.js";
 const LEN = 5600; // ms, start to finish
 // painted aerial art (the stadium in its surroundings, one picture centred on the field): the game's own
 // field is laid over the picture's, so the last frame of the shot is the field the game is played on
-const ART = { meadowlands: { src: "sprites/stadium/metlife.webp", w: 1349, h: 1121, fieldW: 0.3017, fieldH: 0.1316 } };
+const ART = { meadowlands: { src: "sprites/stadium/metlife.webp", w: 2029, h: 1681, fieldW: 0.2006, fieldH: 0.0878, sky: ["sprites/stadium/manhattan_day.webp", "sprites/stadium/manhattan_night.webp"] } };
 const CSS = `
 @keyframes flyCam {
   0%   { transform: perspective(1300px) rotateX(58deg) rotateZ(-28deg) scale(0.62) translateY(-4%); }
@@ -57,7 +57,7 @@ export default function StadiumFlyover({ home, away, night = false, label, onDon
   // the city around it (cityScenes.js): the skyline on the horizon, the ground under the stadium
   const skyRef = useRef(null), groundRef = useRef(null);
   useEffect(() => { if (!city) return; if (skyRef.current) drawSkyline(skyRef.current, city, night); if (groundRef.current) drawGround(groundRef.current, city, night); }, [city, night]);
-  const sky = city ? (night ? "linear-gradient(180deg, #141b4a 0%, #c4628c 26%, #3a3550 30%, #2b2c24 34%, #2b2c24)" : "linear-gradient(180deg, #5f8fd6 0%, #d2dbe2 26%, #9aa29a 30%, #7d7a4b 34%, #7d7a4b)") : night ? "radial-gradient(ellipse at 50% 20%, #1b2a4a, #05070d 70%)" : "radial-gradient(ellipse at 50% 15%, #8fb8e8, #3b5f8f 55%, #1a2a40)";
+  const sky = art ? (night ? "linear-gradient(180deg, #0c1230 0%, #2b2a4a 30%, #1f2a1a 34%, #1f2a1a)" : "linear-gradient(180deg, #5f8fd6 0%, #cfdbe6 30%, #6f8c3f 34%, #6f8c3f)") : city ? (night ? "linear-gradient(180deg, #141b4a 0%, #c4628c 26%, #3a3550 30%, #2b2c24 34%, #2b2c24)" : "linear-gradient(180deg, #5f8fd6 0%, #d2dbe2 26%, #9aa29a 30%, #7d7a4b 34%, #7d7a4b)") : night ? "radial-gradient(ellipse at 50% 20%, #1b2a4a, #05070d 70%)" : "radial-gradient(ellipse at 50% 15%, #8fb8e8, #3b5f8f 55%, #1a2a40)";
   return (
     <div ref={root} className={ready ? "" : "fly-wait"} onClick={finish} role="presentation" style={{ position: "fixed", inset: 0, zIndex: 9600, background: sky, overflow: "hidden", cursor: "pointer", animation: `flyFade ${LEN}ms ease-in-out forwards` }}>
       <style>{CSS}</style>
@@ -77,8 +77,9 @@ export default function StadiumFlyover({ home, away, night = false, label, onDon
         </div>
       </div>
       {/* the skyline across the top, until the camera tips down onto the stadium */}
-      {city && <div aria-hidden style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "34%", overflow: "hidden", animation: `flySky ${LEN}ms ease-in-out forwards`, pointerEvents: "none" }}>
-        <canvas ref={skyRef} style={{ position: "absolute", left: 0, bottom: 0, width: "100%", imageRendering: "pixelated" }} />
+      {city && <div aria-hidden style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "34%", overflow: "hidden", animation: `flySky ${LEN}ms ease-in-out forwards`, pointerEvents: "none", background: art ? (night ? "linear-gradient(180deg, #0c1230, #2b2a4a)" : "linear-gradient(180deg, #5f8fd6, #cfdbe6)") : "none" }}>
+        {art?.sky ? <img src={import.meta.env.BASE_URL + art.sky[night ? 1 : 0]} alt="" draggable={false} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% 0%", imageRendering: "pixelated" }} />
+          : <canvas ref={skyRef} style={{ position: "absolute", left: 0, bottom: 0, width: "100%", imageRendering: "pixelated" }} />}
       </div>}
       {/* a little haze drifting past the lens */}
       {!night && <div aria-hidden style={{ position: "absolute", inset: "-10% -30% auto -10%", height: "45%", background: "radial-gradient(ellipse at 30% 50%, #ffffff55, transparent 60%), radial-gradient(ellipse at 75% 40%, #ffffff33, transparent 55%)", animation: `flyClouds ${LEN}ms linear forwards`, pointerEvents: "none" }} />}
