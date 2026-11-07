@@ -1,0 +1,2 @@
+Silkscreen (Jason Kottke) and Pixelify Sans (Stefie Justprince), both under the SIL Open Font License 1.1: https://openfontlicense.org
+Used by Easy Mode (src/EasyShell.jsx).

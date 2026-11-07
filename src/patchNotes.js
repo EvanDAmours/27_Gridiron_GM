@@ -2434,4 +2434,9 @@ export const PATCH_NOTES = [
   { v: "5.86", date: "2026-10-23", title: "Smoother arcade field", notes: [
     "The arcade field runs smoother, most of all in snow and rain: the ground (the turf, the snow or puddles on it, the lines, numbers and painted end zones) is now painted once and slid under the camera instead of being repainted every frame, which roughly halves the work per frame and removes the stutter on big plays.",
   ] },
+  { v: "5.87", date: "2026-10-23", title: "Easy Mode", notes: [
+    "New: Easy Mode. Pick it when you start a career (3 · How you play) or turn it on any time from the menu. The whole season runs from one button: start the season, play each week, the playoffs, then re-signing, free agency and the draft. Your staff makes the calls: they set the depth chart, re-sign the players worth keeping, sign free agents, make your draft picks and keep you under the cap. It is the same league and the same game engine.",
+    "Easy Mode looks like a 16-bit sports broadcast: royal blue, chunky pixel lettering, pixel club logos, green and red arrows for wins and losses, and the standings drawn as a broadcast table. There are four pages: Home, Roster, Schedule and Standings.",
+    "You can still watch any of your games on the field (Watch the game), or sim the rest of the season in one go. Switch to full mode is at the bottom of every page, and Easy Mode is saved with your franchise.",
+  ] },
 ];
