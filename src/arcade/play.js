@@ -698,12 +698,18 @@ function score(S) { book(S, 100 - S.los, "fall", 1.5); }
 function book(S, yards, how, hold = 1.0) {
   // (a catch or run into the end zone is a completion or run of `room` yards: the engine caps it there and calls it the touchdown)
   const isPass = S.call.startsWith("pass"), td = S.los + yards >= 100;
-  const types = isPass ? ["pass", "td"] : ["run", "td"];
+  // the field decides whether it's a touchdown: into the end zone, the engine must call it one; down short
+  // of the goal line, never (a 47-yard score is not "close enough" to a 42-yard catch-and-run)
+  const types = td ? ["td"] : isPass ? ["pass"] : ["run"];
+  if (!td) yards = Math.min(yards, 99 - S.los);
   const tol = td ? 0 : Math.max(1, Math.round(Math.abs(yards) * 0.1));
-  const r = resolvePlay(S.g, S.call, { types, yards, tol, fallback: isPass && S.catchAt == null ? ["inc"] : [] }, { ...(isPass ? { target: S.pick?.target, open: !!S.pick?.open } : { carrier: S.ents.RB?.p?.id }), oob: !!S.oob, inBounds: !S.oob }, isPass && S.catchAt != null ? 40 : 12); // (out of bounds or down in the field of play: as it happened here, so the clock does what it should) // (a ball that was caught gets the rolls it needs to be booked a catch)
+  const r = resolvePlay(S.g, S.call, { types, yards, tol, fallback: isPass && S.catchAt == null ? ["inc"] : [] }, { ...(isPass ? { target: S.pick?.target, open: !!S.pick?.open } : { carrier: S.ents.RB?.p?.id }), oob: !!S.oob, inBounds: !S.oob }, isPass && S.catchAt != null ? 40 : td ? 30 : 12); // (out of bounds or down in the field of play: as it happened here, so the clock does what it should) // (a ball that was caught gets the rolls it needs to be booked a catch)
   S.ev = r.ev; S.exact = r.exact; S.mismatch = r.ev && !types.includes(r.ev.type) && r.ev.type !== "penalty";
   // the field follows the engine's number when it differs (a yard or two): the spot moves with it
   if (r.ev && (r.ev.type === "pass" || r.ev.type === "run" || r.ev.type === "td") && r.ev.yards !== yards && Math.abs(r.ev.yards - yards) <= 3) S.slideTo = S.los + r.ev.yards;
   endAt(S, r.ev, how, hold);
 }
 function endAt(S, ev, how, hold = 1.0) { S.result = ev; S.text = ev?.text || ""; S.phase = how; S.endAt = S.t + hold; const c = S.ball.holder && S.ents[S.ball.holder]; if (c) { c.vx *= 0.25; c.vy *= 0.25; } }
+
+// (tests: book a play as if it ended here on the field)
+export const __bookForTest = (S, yards, how = "tackle") => book(S, yards, how);

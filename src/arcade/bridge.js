@@ -116,7 +116,8 @@ export function resolvePlay(g, call, want, pick = null, tries = 12) {
     if (score < bestScore) { bestScore = score; best = { ev, snapAfter: snapshot(g), bonus }; }
     if (typeOk && (want.yards == null || dy <= (want.tol ?? 1))) break;
     // steer the next roll's yards toward the mark (the bonus scales positive yardage)
-    if (typeOk && want.yards != null && ev.yards > 0 && want.yards > 0) bonus = Math.max(0.3, Math.min(6, bonus * want.yards / ev.yards));
+    // (and for a touchdown the field already scored, steer the yards up to the goal line even while the rolls fall short)
+    if ((typeOk || want.types[0] === "td") && want.yards != null && ev.yards > 0 && want.yards > 0) bonus = Math.max(0.3, Math.min(want.types[0] === "td" ? 12 : 6, bonus * want.yards / ev.yards * (typeOk ? 1 : 1.3)));
   }
   if (best && n >= tries) restore(g, best.snapAfter); // the loop ran out: put the closest roll back
   return { ev: best?.ev, tries: Math.min(n + 1, tries), exact: bestScore <= (want.tol ?? 1) };

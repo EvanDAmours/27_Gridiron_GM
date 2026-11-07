@@ -2486,4 +2486,7 @@ export const PATCH_NOTES = [
   { v: "5.96", date: "2026-10-23", title: "Easy Mode: No Injuries, For Real", notes: [
     "Easy Mode really has no injuries now. Starting a new Easy career from today's real season no longer brings in the real injury report, and any Easy franchise with players hurt or on injured reserve (an older save, say) has them healed and back on the roster.",
   ] },
+  { v: "5.97", date: "2026-10-23", title: "Touchdowns Where They Happen", notes: [
+    "Arcade fix: a play only counts as a touchdown when the ball actually crosses the goal line on the field. A runner brought down at the 5 used to be booked as a touchdown now and then (the engine's 47-yard score was taken as close enough to a 42-yard catch-and-run). And a run or catch that does reach the end zone is always the touchdown it looked like.",
+  ] },
 ];
