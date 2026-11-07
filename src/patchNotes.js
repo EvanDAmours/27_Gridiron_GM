@@ -2483,4 +2483,7 @@ export const PATCH_NOTES = [
   { v: "5.95", date: "2026-10-23", title: "The Meadowlands Flyover", notes: [
     "The stadium flyover at MetLife Stadium (Giants and Jets home games) now shows the Meadowlands around it in pixel art: the Manhattan skyline across the river (the Empire State Building, One World Trade Center, the lights in the windows at night), and on the ground the marshes, the Turnpike and Route 3, the racetrack and its pond, the big white mall next door and parking lots full of cars around the stadium. The skyline slides away as the camera drops in. The shot also waits a beat for the stadium's stands to be drawn before it starts.",
   ] },
+  { v: "5.96", date: "2026-10-23", title: "Easy Mode: No Injuries, For Real", notes: [
+    "Easy Mode really has no injuries now. Starting a new Easy career from today's real season no longer brings in the real injury report, and any Easy franchise with players hurt or on injured reserve (an older save, say) has them healed and back on the roster.",
+  ] },
 ];
