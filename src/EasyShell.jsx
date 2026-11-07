@@ -119,6 +119,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
   const [card, setCard] = useState(null);       // the player card open
   const [slot, setSlot] = useState(null);       // the lineup spot being chosen
   const [walked, setWalked] = useState(() => new Set());
+  const [gameBox, setGameBox] = useState(null); // a played game's box score, opened from its row
   const ut = teams[ui], T = TEAMS[ui];
   const narrow = MOBILE;
   const games = (sched || []).filter((g) => g.played && (g.h === ui || g.a === ui)).sort((a, b) => (+b.wk || 0) - (+a.wk || 0));
@@ -141,7 +142,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
   const roster = ut?.roster || [];
 
   const gameRow = (g, i) => { const r = res(g); return (
-    <Row key={i}>
+    <Row key={i} onClick={g.boxH || g.boxA ? () => setGameBox(g) : undefined}>
       {r.tie ? <span style={{ width: 16 }} /> : <Arrow up={r.win} />}
       <span style={{ ...PH, fontSize: 13, width: narrow ? 50 : 70, color: "#555" }}>{/^P/.test(String(g.wk)) ? "Playoff" : `Week ${g.wk}`}</span>
       <Logo ab={T.ab} size={narrow ? 28 : 32} />
@@ -410,6 +411,12 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
         <Btn kind="dark" onClick={onFull}>Switch to full mode</Btn>
       </footer>
       {card && cardView()}
+      {gameBox && <div onClick={() => setGameBox(null)} style={{ position: "absolute", inset: 0, zIndex: 10, background: "#0a1f6bb3", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ width: "min(980px, 100%)", maxHeight: "100%", overflowY: "auto", background: "#fbfbf8", border: "4px solid #111", boxShadow: "8px 8px 0 #0a1f6b", padding: narrow ? 12 : 20 }}>
+          <EasyBox home={TEAMS[gameBox.h]} away={TEAMS[gameBox.a]} hs={gameBox.hs} as={gameBox.as} boxH={gameBox.boxH} boxA={gameBox.boxA} title={`Week ${gameBox.wk} box score`} />
+          <div style={{ marginTop: 14, textAlign: "right" }}><Btn kind="blue" onClick={() => setGameBox(null)}>Close</Btn></div>
+        </div>
+      </div>}
     </div>
   );
 }
@@ -418,8 +425,8 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
 // cells, each club's logo on its colour), and the plays on a white page beside it.
 const clockOf = (s) => `${Math.floor((s || 0) / 60)}:${String((s || 0) % 60).padStart(2, "0")}`;
 const ORD = ["", "1st", "2nd", "3rd", "4th"];
-export function EasyLive({ TEAMS, ui, live, log, field, paused, onPause, speed, onSpeed, onFinish, onBack, onDone }) {
-  const [tab, setTab] = useState("plays");
+export function EasyLive({ TEAMS, ui, live, log, field, paused, onPause, speed, onSpeed, onFinish, onBack, onDone, callMode = false, onCallMode, onSimQuarter, box = null, fullLog = null }) {
+  const [tab, setTab] = useState("plays"), [boxOpen, setBoxOpen] = useState(false);
   const narrow = MOBILE, INK = "#151515";
   const H2 = { h: TEAMS[live.h], a: TEAMS[live.a] };
   const off = H2[live.poss], def = H2[live.poss === "h" ? "a" : "h"];
@@ -429,8 +436,8 @@ export function EasyLive({ TEAMS, ui, live, log, field, paused, onPause, speed, 
   const score = (side) => <div style={{ ...cell, flex: 1, gap: narrow ? 8 : 14, background: "#fbfbf8", padding: "0 10px", flexDirection: side === "a" ? "row-reverse" : "row", justifyContent: "space-between" }}>
     <span style={{ fontFamily: SANS, fontWeight: 800, fontSize: narrow ? 17 : 24, color: INK }}>{H2[side]?.ab}{!live.done && live.poss === side && <span style={{ color: "#e6a100" }}> ●</span>}</span>
     <span style={{ fontFamily: SANS, fontWeight: 800, fontSize: narrow ? 30 : 44, color: INK, fontVariantNumeric: "tabular-nums" }}>{side === "h" ? live.hs : live.as}</span></div>;
-  const plays = [...(log || [])].reverse();
-  const scoring = plays.filter((e) => /td|fg|safety|xp|2pt/i.test(e.type || "") || /touchdown|field goal is good|safety/i.test(e.text || ""));
+  const plays = [...(fullLog || log || [])].reverse();
+  const scoring = plays.filter((e) => /^(td|fg|safety)$/i.test(e.type || "") || /touchdown|field goal is good|safety/i.test(e.text || ""));
   const list = tab === "plays" ? plays.slice(0, 60) : scoring;
   const B = (label, on, k = "dark", st) => <Btn kind={k} onClick={on} style={{ fontSize: narrow ? 14 : 15, padding: narrow ? "9px 10px" : "10px 14px", ...st }}>{label}</Btn>;
   const speeds = ["Slow", "Normal", "Fast"];
@@ -453,7 +460,7 @@ export function EasyLive({ TEAMS, ui, live, log, field, paused, onPause, speed, 
         </div>
         <div style={{ display: narrow ? "flex" : "grid", flexDirection: "column", gridTemplateColumns: "minmax(0,2.3fr) minmax(300px,1fr)", gap: narrow ? 8 : 14, flex: 1, minHeight: 0 }}>
           {/* the field */}
-          <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 10, ...(narrow ? {} : { overflowY: "auto", minHeight: 0 }) }}>
             {live.done || !field ? (() => { const won = (live.h === ui ? live.hs > live.as : live.as > live.hs), tie = live.hs === live.as; return (
               <div style={{ background: "#fbfbf8", border: "3px solid #111", boxShadow: "6px 6px 0 #0a1f6b", padding: narrow ? "18px 12px" : "34px 24px", textAlign: "center" }}>
                 <div style={{ fontFamily: SANS, fontWeight: 800, fontSize: narrow ? 15 : 18, color: "#555" }}>{live.done ? "Final" : "Loading the field…"}</div>
@@ -464,11 +471,16 @@ export function EasyLive({ TEAMS, ui, live, log, field, paused, onPause, speed, 
               </div>); })() : <div style={{ border: "3px solid #111", boxShadow: "6px 6px 0 #0a1f6b", background: "#0b0e14", lineHeight: 0, ...(narrow ? { aspectRatio: "16 / 10", position: "relative" } : {}) }}>{field}</div>}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {live.done ? <Btn big onClick={onDone} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>▶ Continue</Btn> : <>
+                {/* watch it, or call and play your own snaps on the field */}
+                <div style={{ display: "flex", border: "3px solid #111", background: "#0b2a8f" }}>{[[false, "Watch"], [true, "Play your snaps"]].map(([k, l]) => <button key={String(k)} className="ez-btn" onClick={() => onCallMode?.(k)} aria-pressed={callMode === k} style={{ fontSize: narrow ? 14 : 15, padding: narrow ? "8px 10px" : "9px 14px", background: callMode === k ? "#ffb300" : "transparent", color: callMode === k ? "#1a1000" : "#dbe6ff" }}>{l}</button>)}</div>
                 {B(paused ? "Resume" : "Pause", onPause, "gold")}
                 {B(`Speed: ${speed}`, () => onSpeed(speeds[(speeds.indexOf(speed) + 1) % speeds.length] || "Normal"), "blue")}
+                {live.q < 4 && onSimQuarter && B(`Sim to end of Q${live.q}`, onSimQuarter)}
+                {box && B("Box score", () => setBoxOpen(true))}
                 {B("Finish game", onFinish)}
                 {B("Back to home", onBack)}</>}
             </div>
+            {live.done && box && <div style={{ background: "#fbfbf8", border: "3px solid #111", boxShadow: "6px 6px 0 #0a1f6b", padding: narrow ? "12px 10px" : "18px 22px" }}><EasyBox home={H2.h} away={H2.a} hs={live.hs} as={live.as} boxH={box.h} boxA={box.a} scoring={[...scoring].reverse()} title="Final box score" /></div>}
           </div>
           {/* the plays */}
           <div style={{ minWidth: 0, minHeight: narrow ? 260 : 0, display: "flex", flexDirection: "column" }}>
@@ -485,6 +497,54 @@ export function EasyLive({ TEAMS, ui, live, log, field, paused, onPause, speed, 
           </div>
         </div>
       </div>
+      {boxOpen && box && <div onClick={() => setBoxOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 10, background: "#0a1f6bb3", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ width: "min(980px, 100%)", maxHeight: "100%", overflowY: "auto", background: "#fbfbf8", border: "4px solid #111", boxShadow: "8px 8px 0 #0a1f6b", padding: narrow ? 12 : 20 }}>
+          <EasyBox home={H2.h} away={H2.a} hs={live.hs} as={live.as} boxH={box.h} boxA={box.a} scoring={[...scoring].reverse()} />
+          <div style={{ marginTop: 14, textAlign: "right" }}><Btn kind="blue" onClick={() => setBoxOpen(false)}>Close</Btn></div>
+        </div>
+      </div>}
     </div>
   );
+}
+
+// A big box score in the Easy look: each club's passing, rushing, receiving and defense, the
+// score up top, and (from a game you watched) every scoring play.
+const BOX_CATS = [
+  ["Passing", (s) => s.att, (s) => s.passYds || 0, [["C/A", (s) => `${s.comp || 0}/${s.att || 0}`], ["Yds", (s) => s.passYds || 0], ["TD", (s) => s.passTD || 0], ["Int", (s) => s.passInt || 0]], 2],
+  ["Rushing", (s) => s.rushAtt, (s) => s.rushYds || 0, [["Car", (s) => s.rushAtt || 0], ["Yds", (s) => s.rushYds || 0], ["TD", (s) => s.rushTD || 0]], 3],
+  ["Receiving", (s) => s.rec, (s) => s.recYds || 0, [["Rec", (s) => s.rec || 0], ["Yds", (s) => s.recYds || 0], ["TD", (s) => s.recTD || 0]], 4],
+  ["Defense", (s) => s.tkl || s.sacks || s.ints || s.pd, (s) => (s.tkl || 0) + (s.ast || 0) + (s.sacks || 0) * 3 + (s.ints || 0) * 5, [["Tkl", (s) => (s.tkl || 0) + (s.ast || 0)], ["Sk", (s) => s.sacks || 0], ["Int", (s) => s.ints || 0]], 4],
+  ["Kicking", (s) => s.fgA || s.xpA, (s) => (s.fgM || 0) * 3, [["FG", (s) => `${s.fgM || 0}/${s.fgA || 0}`], ["XP", (s) => `${s.xpM || 0}/${s.xpA || 0}`]], 1],
+];
+export function EasyBox({ home, away, hs, as, boxH, boxA, scoring = null, title = "Box score" }) {
+  const INK = "#151515", narrow = MOBILE;
+  const Mark = ({ children }) => <span style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontWeight: 700, background: "#fff23a", padding: "1px 5px" }}>{children}</span>;
+  const team = (t, box, pts) => (
+    <div style={{ minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, background: BLUE, padding: 4, boxShadow: "3px 3px 0 #0a1f6b" }}>
+        <span style={{ background: t?.clr || "#222", padding: "4px 6px", lineHeight: 0 }}><PixelLogo ab={t?.ab} size={narrow ? 30 : 38} style={{ filter: "drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff)" }} /></span>
+        <span style={{ ...H, fontSize: narrow ? 16 : 19, flex: 1 }}>{t?.city} {t?.name}</span>
+        <span style={{ ...GOLD, fontSize: narrow ? 24 : 30, padding: "0 8px", textShadow: "2px 2px 0 #0a1f6b" }}>{pts}</span>
+      </div>
+      {BOX_CATS.map(([cat, has, key, cols, n]) => {
+        const rows = Object.values(box || {}).filter((s) => has(s)).sort((a, b) => key(b) - key(a)).slice(0, n);
+        if (!rows.length) return null;
+        return (<div key={cat} style={{ marginTop: 10 }}>
+          <div style={{ display: "flex", alignItems: "baseline", fontSize: 15 }}><span style={{ flex: 1 }}><Mark>{cat}</Mark></span>{cols.map(([l]) => <span key={l} style={{ width: narrow ? 40 : 52, textAlign: "right", fontFamily: SANS, fontWeight: 700, fontSize: 12, color: "#666" }}>{l}</span>)}</div>
+          {rows.map((s, i) => <div key={i} style={{ display: "flex", alignItems: "center", padding: "4px 2px", borderBottom: "2px solid #e4e4dc" }}>
+            <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: SANS, fontWeight: 700, fontSize: 15, color: "#1a3fc4" }}>{s.name}<span style={{ color: "#777", fontWeight: 600, fontSize: 12 }}> {s.pos}</span></span>
+            {cols.map(([l, f]) => <span key={l} style={{ width: narrow ? 40 : 52, textAlign: "right", fontFamily: SANS, fontWeight: 800, fontSize: 15, color: INK, fontVariantNumeric: "tabular-nums" }}>{f(s)}</span>)}
+          </div>)}
+        </div>);
+      })}
+    </div>);
+  return (
+    <div>
+      <div style={{ fontSize: 17, marginBottom: 10 }}><Mark>{title}</Mark></div>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gap: narrow ? 18 : 28 }}>{team(away, boxA, as)}{team(home, boxH, hs)}</div>
+      {scoring?.length > 0 && <div style={{ marginTop: 16 }}>
+        <Mark>Scoring</Mark>
+        {scoring.map((e, i) => <div key={i} style={{ padding: "6px 2px", borderBottom: "2px solid #e4e4dc", fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 15, lineHeight: 1.4 }}><b style={{ fontFamily: SANS, fontSize: 12, color: "#666", marginRight: 6 }}>Q{e.qtr}</b>{e.text}</div>)}
+      </div>}
+    </div>);
 }

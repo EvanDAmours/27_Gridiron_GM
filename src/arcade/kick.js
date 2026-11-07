@@ -55,8 +55,8 @@ export function meterZones(S) {
   const acc = K.kickAccuracy(S.kicker), need = S.kind === "fg" ? S.dist : 40, g = S.g;
   const late = g && g.qtr >= 4 && g.clock <= 120 && Math.abs((g.score?.h ?? 0) - (g.score?.a ?? 0)) <= 3;
   const clutch = late ? Math.max(0.7, 1 - Math.max(0, 80 - K.kickClutch(S.kicker)) * 0.012) : 1;
-  const green = clamp((0.06 + Math.max(0, acc - 55) * 0.0055) * (1.3 - Math.min(0.8, need / 75)) * clutch, 0.03, 0.34);
-  return { green, good: Math.min(0.85, green * 1.6) };
+  const green = clamp((0.035 + Math.max(0, acc - 55) * 0.0045) * (1.3 - Math.min(0.85, need / 70)) * clutch, 0.025, 0.26);
+  return { green, good: Math.min(0.7, green * 1.45) };
 }
 // The leg is his, not yours: a field goal gets what the distance needs (if he has it), a punt all of it.
 export function meterStrength(S) {
@@ -138,7 +138,7 @@ export function tickKick(S, dt) {
     if (S.kind === "punt" && ents.S0) { const ret = ents.S0; const tx = f.to.x, ty = f.to.y; const d = Math.hypot(tx - ret.x, ty - ret.y); if (d > 0.3) { ret.x += ((tx - ret.x) / d) * Math.min(d, 7 * dt); ret.y += ((ty - ret.y) / d) * Math.min(d, 7 * dt); } }
     if (u >= 1 && !S.landed) {
       S.landed = true;
-      if (S.kind === "punt") { const ret = ents.S0; if (ret) { ball.holder = "S0"; ret.mode = "carry"; S.retTo = f.spot != null ? 100 - f.spot : f.to.x - (f.ret || 0); } }
+      if (S.kind === "punt") { const ret = ents.S0; S.caughtAt = S.t; if (ret) { ball.holder = "S0"; ret.mode = "carry"; S.retTo = f.spot != null ? 100 - f.spot : f.to.x - (f.ret || 0); } }
     }
   }
   if (S.kind === "punt" && ball.holder === "S0" && S.retTo != null) { const ret = ents.S0; const d = S.retTo - ret.x; if (Math.abs(d) > 0.2) ret.x += Math.sign(d) * Math.min(Math.abs(d), 8 * dt); ball.x = ret.x; ball.y = ret.y; ball.h = 0; }

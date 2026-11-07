@@ -1,10 +1,11 @@
 import React from "react";
+import { lastName } from "./lastName.js";
 
 // A club jersey: club colors, the name across the back and the number. Held up on draft night,
 // raised to the rafters when a number is retired.
 export { rookieNum } from "./rookieNum.js";
 export function Jersey({ team, name, num, size = 96 }) {
-  const last = String(name || "").split(" ").slice(-1)[0].toUpperCase();
+  const last = lastName(name).toUpperCase();
   return (
     <svg viewBox="0 0 100 100" width={size} height={size} style={{ filter: "drop-shadow(0 8px 14px #000a)" }}>
       <path d="M30 8 L42 4 Q50 12 58 4 L70 8 L92 22 L84 42 L74 36 L74 94 L26 94 L26 36 L16 42 L8 22 Z" fill={team.clr || "#1e3a8a"} stroke={team.ac || "#fff"} strokeWidth="2.5" />

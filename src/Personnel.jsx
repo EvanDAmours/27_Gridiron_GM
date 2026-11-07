@@ -9,11 +9,12 @@ import { unitRatings, offUnits, defUnits, pickFB, teBlock } from "./gamesim.js";
 import { roleOvr } from "./roles.js";
 import { depthOrderFor } from "./depth.js";
 import { teamPersonnel } from "./playsim.js";
+import { lastName } from "./lastName.js";
 
 const card = { background: "#ffffff0d", borderRadius: 18, padding: "14px 16px" };
 const head = { fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 8, alignItems: "baseline" };
 const PCLR = { 10: "#38bdf8", 11: "#60a5fa", 12: "#a78bfa", 13: "#f472b6", 21: "#f59e0b" };
-const last = (n) => String(n || "").split(" ").slice(-1)[0];
+const last = (n) => lastName(n);
 const r0 = (v) => (Math.round(v * 10) / 10).toFixed(1); // identities differ by fractions of a point
 
 // team: your club; depthOrder / snaps: your depth chart and snap settings;

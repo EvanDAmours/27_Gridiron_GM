@@ -331,7 +331,13 @@ function poseFor(S, e, t) {
     if (e.key === "K") return [S.phase === "presnap" || t < t0 - 0.45 ? "c1" : t < t0 + 0.4 ? "c2" : "c3", true];
     if (e.key === "H") return ["c4", true]; // the holder down on one knee, the ball on the spot
     if (e.key === "C" && (S.phase === "presnap" || t < 0.3)) return ["c5", true]; // the long snapper over the ball
-    if (e.key === "S0" && S.kind === "punt") return [hasBall ? (stride ? "a1" : "a2") : moving ? (stride ? "a5" : "a6") : "db", hasBall || moving];
+    if (e.key === "S0" && S.kind === "punt") {
+      // the returner: hands up under it as it comes down, the catch, the ball tucked, then off he goes
+      const f = S.ball.flight;
+      if (!hasBall && f && t >= f.t0 && f.t0 + f.T - t < 0.55) return ["b1", true];
+      if (hasBall && S.caughtAt != null && t - S.caughtAt < 0.35) return ["a4", true];
+      return [hasBall ? (stride ? "a1" : "a2") : moving ? (stride ? "a5" : "a6") : "db", hasBall || moving];
+    }
     if (e.side === "off") return [POSE[e.p.pos] === "qb" ? "ol" : POSE[e.p.pos] || "ol", false];
     return [POSE[e.p.pos] || "db", false];
   }
@@ -441,7 +447,9 @@ export function drawWeather(ctx, cam, { wx, time = 0, wind } = {}) {
 // it blows relative to your drive: > at your back, < in your face).
 export function drawWxChip(ctx, cam, wx, wind) {
   const px = Math.max(1, Math.round(uiPx(cam) * 0.75)), sky = wx?.label && wx.label !== "Clear" ? wx.label.toUpperCase() : "";
-  const arrow = !wind?.mph ? "" : Math.abs(wind.x) >= Math.abs(wind.y) ? (wind.x > 0 ? " >" : " <") : (wind.y < 0 ? " ^" : " V");
+  // which way it blows, in eight directions (up the screen is toward the far sideline): a diagonal shows both
+  const ax = Math.abs(wind?.x || 0), ay = Math.abs(wind?.y || 0), wh = wind?.x > 0 ? ">" : "<", wv = wind?.y < 0 ? "^" : "V";
+  const arrow = !wind?.mph ? "" : ax > ay * 2.2 ? ` ${wh}` : ay > ax * 2.2 ? ` ${wv}` : ` ${wv}${wh}`;
   const text = [sky, wind?.mph ? `WIND ${wind.mph}${arrow}` : ""].filter(Boolean).join(" - "); if (!text) return;
   const w = pixWidth(text, px) + px * 6, h = px * 10, x = px * 3, y = Math.round(uiPx(cam) * 20.5); // (under the scorebug's two rows)
   ctx.fillStyle = "rgba(8,10,16,.75)"; ctx.fillRect(x, y, w, h); pixText(ctx, text, x + px * 3, y + px * 2, px, "#cfe8ff");
@@ -684,11 +692,47 @@ function drawCrews(ctx, cam, near, opts) {
   for (const [x, f] of [[-11.6, 1], [111.6, -1]]) if (!sceneSprite(ctx, cam, null, false, shot, x, cy, f, 0.86)) cameraman(ctx, cam, x, cy, f, { cable: false, skin: near ? "#a8754f" : undefined });
 }
 
+// Around each end zone, as at a real game: the orange pylons at its four corners; the photographers
+// along the end line (kneeling in front, standing behind), security in the corners and a ball attendant
+// by the post; the end-zone camera up on its riser; and the kicking net behind the uprights, raised for
+// a field goal or an extra point at that end and lowered the rest of the time.
+function endZoneLife(ctx, cam, S, teams, opts) {
+  const s = cam.s, t = opts.time || 0, home = HOME_OF(teams);
+  const on = (x) => { const [sx] = cam.toScreen(x, 0); return sx > -s * 10 && sx < cam.W + s * 10; };
+  const up = (x, y, h) => { const [sx, sy] = cam.toScreen(x, y); return [Math.round(sx), Math.round(sy - h * s * 0.95)]; };
+  // pylons: the goal line and the end line, both sidelines, both ends
+  for (const x of [0, -10, 100, 110]) { if (!on(x)) continue; for (const y of [-HALF, HALF]) { const [px, py] = up(x, y, 0), w = Math.max(2, Math.round(s * 0.32)), h = Math.max(3, Math.round(s * 0.75));
+    ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fillRect(px - w / 2 + 1, py - 1, w + 2, Math.max(1, Math.round(s * 0.15)));
+    ctx.fillStyle = "#ff6a00"; ctx.fillRect(px - w / 2, py - h, w, h); ctx.fillStyle = "#ffa64d"; ctx.fillRect(px - w / 2, py - h, Math.max(1, Math.round(w / 3)), h); ctx.fillStyle = "#b84a00"; ctx.fillRect(px - w / 2, py - Math.round(h * 0.25), w, Math.max(1, Math.round(h * 0.12))); } }
+  const kicking = S?.kind === "fg" && S.phase !== "done"; // (every kick on this field goes toward the right-hand posts)
+  for (const [ex, dir] of [[110, 1], [-10, -1]]) {
+    if (!on(ex + dir * 3)) continue;
+    const back = (d) => ex + dir * d, face = -dir;
+    // the end-zone camera on its riser, dead centre behind the post
+    { const [rx, ry] = up(back(5.2), -1.5, 0), rw = Math.round(s * 2.6), rh = Math.round(s * 1.5);
+      ctx.fillStyle = "#1e2430"; ctx.fillRect(rx - rw / 2, ry - rh, rw, rh); ctx.fillStyle = "#2c3446"; ctx.fillRect(rx - rw / 2, ry - rh, rw, Math.max(1, Math.round(s * 0.2)));
+      ctx.fillStyle = "rgba(255,255,255,.12)"; for (let i = 1; i < 4; i++) ctx.fillRect(rx - rw / 2 + Math.round((rw * i) / 4), ry - rh, 1, rh);
+      ctx.save(); ctx.translate(0, -rh); sceneSprite(ctx, cam, null, false, "tv_camera_2", back(5.2), -1.5, face, 0.82) || sceneSprite(ctx, cam, null, false, "tv_camera_1", back(5.2), -1.5, face, 0.82); ctx.restore(); }
+    // the kicking net: two tall poles behind the uprights with the net strung between; up for a kick at this end
+    { const raised = kicking && dir > 0, h = raised ? 9.5 : 2.2, x = back(2.6), [ax, ay] = up(x, -4.4, 0), [bx, by] = up(x, 4.4, 0), [, aT] = up(x, -4.4, h), [, bT] = up(x, 4.4, h);
+      ctx.fillStyle = "rgba(20,24,30,.28)"; const cols = 10; for (let i = 0; i <= cols; i++) { const u = i / cols, xx = Math.round(ax + (bx - ax) * u), yb = ay + (by - ay) * u, yt = aT + (bT - aT) * u; ctx.fillRect(xx, Math.round(yt), 1, Math.round(yb - yt)); }
+      const rows = raised ? 8 : 2; for (let j = 0; j <= rows; j++) { const v = j / rows; ctx.beginPath(); ctx.strokeStyle = "rgba(20,24,30,.3)"; ctx.lineWidth = 1; ctx.moveTo(ax, ay + (aT - ay) * v); ctx.lineTo(bx, by + (bT - by) * v); ctx.stroke(); }
+      ctx.fillStyle = "#3a404c"; const pw = Math.max(2, Math.round(s * 0.18)); ctx.fillRect(ax - pw / 2, aT, pw, ay - aT); ctx.fillRect(bx - pw / 2, bT, pw, by - bT); }
+    // photographers all along the end line: kneeling in front, a standing row behind them
+    [[-19, 1.4, "photographer_kneel"], [-15.5, 2.6, "photographer_stand"], [-11, 1.4, "photographer_kneel"], [-7.5, 2.7, "photographer_stand"], [8, 1.4, "photographer_kneel"], [11.5, 2.6, "photographer_stand"], [15, 1.4, "photographer_kneel"], [19, 2.7, "photographer_stand"]]
+      .forEach(([y, d, n], i) => { if (!sceneSprite(ctx, cam, null, false, n, back(d), y, face, 0.8)) cameraman(ctx, cam, back(d), y, face, { cable: false, skin: i % 2 ? "#a8754f" : undefined }); });
+    // a ball attendant by the post, security in the far corners
+    sceneSprite(ctx, cam, null, false, "ballboy", back(3.6), 6.2, face, 0.8);
+    for (const y of [-HALF + 0.8, HALF - 0.6]) sceneSprite(ctx, cam, null, false, "security", back(5.6), y, face, 0.82);
+    void t; void home;
+  }
+}
+
 // The crowd behind each end zone, close to the field the way Lambeau's is: a short strip of turf past
 // the end line (the goalpost and a cameraman stand on it), a low padded wall in the home club's colour,
 // then the seats packed to the top, fans who jump with the rest of the stadium when something happens.
 // The rows run away from the field, so the far ones fall into shadow toward the screen's edge.
-export const END_WALL = 13.5; // yards past the goal line (3.5 past the end line)
+export const END_WALL = 16.5; // yards past the goal line (6.5 past the end line: room for the photographers, the net and the camera)
 function endStands(ctx, cam, teams, yardAt, { px, wallTop, nearEdge, cheer, night }) {
   const { W, s } = cam, home = HOME_OF(teams), y0 = Math.max(0, Math.round(wallTop)), y1 = Math.round(nearEdge + s * 0.5), hgt = y1 - y0;
   for (const side of [-1, 1]) {
@@ -830,7 +874,8 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   groundLayer(ctx, cam, teams, opts, { apron, apronTop, nearEdge, wallTop, px }, yardAt);
   endStands(ctx, cam, teams, yardAt, { px, wallTop, nearEdge, cheer, night: opts.night });
   stadiumLight(ctx, cam, opts.night);
-  // the goalposts, on each end line
+  // what's around each end zone (pylons, photographers, the net, the camera riser), then the goalposts on each end line
+  endZoneLife(ctx, cam, S, teams, opts);
   for (const [ex, back, pad] of [[110, 1, teams.opp], [-10, -1, teams.user]]) goalPost(ctx, cam, ex, back, pad.clr);
   // no play on the field (between plays, a kick the engine ran): the sidelines, the crews and the
   // scoreboard are still there, the crews where the last snap was
@@ -987,19 +1032,21 @@ export function drawDownBox(ctx, cam, text, color = "#fff", { left = false } = {
 // `age` is how long it has been up, for the slide and the pulse.
 // A live game's result, TV style: a slim lower third over the bottom of the field (the app has the full
 // play-by-play beside it), rising in, the club's colour down its edge.
-export function drawLowerThird(ctx, cam, title, text, color, { age = 1, accent = "#ffd166", sub = null } = {}) {
+export function drawLowerThird(ctx, cam, title, text, color, { age = 1, accent = "#ffd166", sub = null, hint = null } = {}) {
   const { W, H } = cam, u = uiPx(cam), px = Math.max(2, Math.round(u * 1.25)), px2 = Math.max(1, Math.round(u * 0.8));
   // up to three lines of the play, and a grey line under them saying why (never cut off: the box grows up from the bottom)
   const maxW = Math.min(W - u * 8, Math.max(u * 160, W * 0.86)), chars = Math.max(12, Math.floor((maxW - u * 14) / (6 * px2)));
   const lines = wrap(text || "", chars).slice(0, 3), subL = sub ? wrap(sub, chars).slice(0, 1) : [];
   const h = px * 7 + u * 4 + (lines.length + subL.length) * px2 * 8 + u * 3;
   const k = 1 - Math.pow(1 - Math.min(1, age / 0.22), 3), y = Math.round(H - u * 4 - h + (1 - k) * (h + u * 4));
-  const w = Math.round(Math.min(maxW, Math.max(pixWidth(title, px), ...lines.map((l) => pixWidth(l, px2)), ...subL.map((l) => pixWidth(l, px2))) + u * 14)), x = Math.round(W / 2 - w / 2);
+  const w = Math.round(Math.min(maxW, Math.max(pixWidth(title, px) + (hint ? pixWidth(hint, px2) + u * 10 : 0), ...lines.map((l) => pixWidth(l, px2)), ...subL.map((l) => pixWidth(l, px2))) + u * 14)), x = Math.round(W / 2 - w / 2);
   ctx.save(); ctx.globalAlpha = Math.min(1, age / 0.15);
   ctx.fillStyle = "rgba(6,8,14,.9)"; ctx.fillRect(x, y, w, h); ctx.fillStyle = color || "#334155"; ctx.fillRect(x, y, Math.max(3, u), h); ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fillRect(x, y, w, 1);
   pixShadow(ctx, title, x + u * 6, y + u * 2, px, accent, "left");
   lines.forEach((l, i) => pixText(ctx, l, x + u * 6, y + u * 3 + px * 7 + u + i * px2 * 8, px2, "#e5e7eb", "left"));
   subL.forEach((l) => pixText(ctx, l, x + u * 6, y + u * 3 + px * 7 + u + lines.length * px2 * 8, px2, "#9aa7b2", "left"));
+  // waiting on you: a blinking prompt in the box's top right corner
+  if (hint && age > 0.5 && Math.floor(age * 2) % 2 === 0) pixText(ctx, hint, x + w - u * 4, y + u * 2.5, px2, "#ffd166", "right");
   ctx.restore();
 }
 export function drawBanner(ctx, cam, title, text, sub, color, { age = 1, accent = "#ffd166", hint = "TAP TO CONTINUE" } = {}) {

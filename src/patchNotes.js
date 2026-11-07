@@ -2460,4 +2460,13 @@ export const PATCH_NOTES = [
     "Punts use the real punting animation (hands up for the snap, the ball held out, the leg through it), the field goal holder kneels, and the long snapper is over the ball. Arcade punt returners field more punts and try to return them.",
     "End zones look painted onto the grass: the team name and pixelated logos are worn into the turf, and snow lies over them, with the paint still showing through.",
   ] },
+  { v: "5.91", date: "2026-10-23", title: "Easy Box Scores, Play Your Snaps, Arcade Fixes", notes: [
+    "Easy Mode's live game: switch between Watch and Play your snaps, sim to the end of the quarter, and open a box score at any time. When a game you watched or played ends, a full box score shows under the final score (both teams' passing, rushing, receiving, defense and kicking) with every scoring play, and the Plays tab has the whole game. Tap any played game on Home or the Schedule for its box score.",
+    "Choosing Easy Mode on the new-career screen now starts you from the real 2026 season as it stands, with real results (you can still pick Week 1).",
+    "Arcade: every play's result card, yours and the computer's, stays up until you tap, click or press Space (when watching, it moves on by itself). It says who made the tackle, who broke up the pass or who got beat, and a flag only appears on the play you actually saw.",
+    "Arcade: step out of bounds to stop the clock: steer the runner over the sideline and the play ends there with the clock stopped. The wind now really carries passes: a crosswind can blow a lob out of bounds, and the wind arrow shows diagonals.",
+    "Arcade fixes: the defense no longer leaves the X receiver uncovered (two receivers rated the same both drew the top corner). Tapping during the computer's snap no longer makes its quarterback throw. Names read right: Stingley, not Jr.",
+    "The kick meter is tougher: a shakier kicker's needle sweeps faster and every kicker's green band is narrower, so misses are a real possibility, especially from long range.",
+    "The punt returner reaches up and catches the punt. The end zones have life around them: photographers along the end line, the end-zone camera on its riser, a ball attendant, security, pylons at the corners, and the kicking net behind the uprights rising for field goals.",
+  ] },
 ];

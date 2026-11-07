@@ -15,6 +15,7 @@ import dpoyArt from "./assets/dpoy.webp";
 import oroyArt from "./assets/oroy.webp";
 import droyArt from "./assets/droy.webp";
 import lombardiArt from "./assets/lombardi.webp";
+import { lastName } from "./lastName.js";
 
 // The Super Bowl MVP: the best line on the winning side of the box score.
 // "three touchdowns", "a touchdown", "12 tackles": numbers the way a newspaper writes them
@@ -93,7 +94,7 @@ function YourWinner({ yr, k, label, w, teams, onNext, last }) {
       side={TROPHY[k] && <img src={TROPHY[k]} alt="" style={{ height: MOBILE ? 110 : "min(40vh, 360px)", maxWidth: "100%", objectFit: "contain", filter: "drop-shadow(0 16px 24px #000c)" }} />}
       cta={last ? "The league's awards →" : "Next award →"} onNext={onNext}>
       <div>{posTag(p)} · {t.city} {t.name}</div>
-      {(w.prose || w.stat) && <div style={{ color: "#fcd34d", marginTop: 2 }}>{w.prose ? `${w.name.split(" ").slice(-1)[0]} was the difference, ${w.prose}.` : w.stat}</div>}
+      {(w.prose || w.stat) && <div style={{ color: "#fcd34d", marginTop: 2 }}>{w.prose ? `${lastName(w.name)} was the difference, ${w.prose}.` : w.stat}</div>}
     </Spotlight>
   );
 }

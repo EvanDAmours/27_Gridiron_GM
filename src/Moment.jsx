@@ -17,6 +17,7 @@ import { Jersey } from "./Jersey.jsx";
 import ChampionRing from "./ChampionRing.jsx";
 import Spotlight, { BLOCK } from "./Spotlight.jsx";
 import { jerseyNum } from "./playerArt.js";
+import { lastName } from "./lastName.js";
 
 const CONFETTI = Array.from({ length: 42 }, (_, i) => ({ left: (i * 37) % 100, delay: (i * 0.13) % 2.4, dur: 2.6 + ((i * 7) % 10) / 10, rot: (i * 47) % 360, size: 6 + (i % 4) * 2 }));
 const CSS = `
@@ -235,7 +236,7 @@ export default function Moment({ m, onClose }) {
     : m.kind === "record" ? m.p.name
     : m.kind === "signing" ? `Welcome to ${t.city}`
     : m.kind === "legend" ? m.p.name
-    : m.kind === "trade" ? (m.got ? `The ${t.name} land ${m.p.name.split(" ").slice(-1)[0]}` : `${m.p.name.split(" ").slice(-1)[0]} traded`)
+    : m.kind === "trade" ? (m.got ? `The ${t.name} land ${lastName(m.p.name)}` : `${lastName(m.p.name)} traded`)
     : `${t.city} ${t.name}`;
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 2600, background: `radial-gradient(ellipse at 50% 20%, ${clr}cc, #030712f2 70%)`, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>

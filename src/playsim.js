@@ -36,7 +36,8 @@ import { resolveSpecs, passRushOf, powerOf, passBlockOf } from "./specialists.js
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const gauss = (rand) => { let u = 0, v = 0; while (!u) u = rand(); while (!v) v = rand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const expo = (rand, mean) => -Math.log(1 - rand() * 0.9999) * mean;
-const last = (p) => (p?.name || "").split(" ").slice(-1)[0] || "Player";
+// a man's last name for the play-by-play: "Stingley", never "Jr." (suffixes skipped)
+const last = (p) => (p?.name || "").split(" ").filter((w, i, a) => !(i > 0 && /^(jr|sr|ii|iii|iv|v)\.?$/i.test(w))).slice(-1)[0] || "Player";
 
 // Home-field advantage and how much the game-day modifiers (game plan, coaches,
 // weather...) count: both in "edge" units, where 1 unit is worth about 2.5 points a game.
@@ -260,7 +261,9 @@ export function makeSide({ team, order: depth, snaps, mod = 0, lean = 0, plan = 
   const cover = (pkg, role, target, onWR) => {
     if (role === "X" || role === "Z") {
       const other = onWR.find((p, i) => i < 2 && p !== target);
-      return (!other || (target.ovr || 0) >= (other.ovr || 0)) ? CBs[0] : CBs[1];
+      // (two receivers rated the same: the X gets CB1, so the corners never both take one man)
+      const tv = target?.ovr || 0, ov = other?.ovr || 0;
+      return (!other || tv > ov || (tv === ov && role === "X")) ? CBs[0] : CBs[1];
     }
     if (role === "SLOT") return pkg === "base" ? L[2] || L[1] : CBs[2];
     if (role === "WR4") return pkg === "dime" ? CBs[3] || Ss[1] : Ss[1];
@@ -1067,7 +1070,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     } else {
       const t = pickW(rand, dP.tackleW);
       if (t) { ev.tkl ||= t; add(line(g, def, t), "tkl", 1); if (rand() < 0.3) { const t2 = pickW(rand, dP.tackleW); if (t2 && t2 !== t) { add(line(g, def, t2), "ast", 1); if (ev.tkl === t) ev.ast = t2; } } }
-      if (rand() < 0.14) clockStops = true; // out of bounds
+      if (pick?.oob || (!pick?.inBounds && rand() < 0.14)) { clockStops = true; ev.oob = true; } // out of bounds (the arcade's runner: where he really went down)
     }
   }
 

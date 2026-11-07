@@ -113,6 +113,9 @@ export function setupPlay(g, L, call) {
   // man assignments: the engine's cover man for each receiver, if he's out there
   const cover = {};
   for (const r of ELIGIBLE) { const cm = L.cover[r]; const k = cm && Object.keys(defList).find((d) => defList[d]?.id === cm.id); if (k) cover[r] = k; }
+  // one man, one receiver: nobody covers two, and a wideout left without a man gets the next free defensive back
+  { const used = new Set(); for (const r of ["X", "Z", "SLOT", "TE", "RB"]) { const k = cover[r]; if (!k) continue; if (used.has(k)) delete cover[r]; else used.add(k); }
+    for (const r of ["X", "Z", "SLOT"]) if (ents[r] && !cover[r]) { const free = ["CB0", "CB1", "CB2", "S1", "LB1", "LB0"].find((k) => ents[k] && !used.has(k)); if (free) { cover[r] = free; used.add(free); } } }
   for (const r of ["X", "Z", "SLOT"]) { const k = cover[r]; if (k && ents[k] && ents[r]) ents[k].y = ents[r].y + (ents[r].y < 0 ? 1 : -1) * 0.8; }
   if (ents[cover.TE] && ents.TE && cover.TE.startsWith("LB")) ents[cover.TE].y = ents.TE.y;
   // the routes, laid out now so the field can show them before the snap
@@ -455,9 +458,9 @@ export function tick(S, dt) {
     const lean = S.steer == null && d && dd < 4 && d.x > carrier.x - 0.5 ? (carrier.y > d.y ? 2 : -2) * clamp((K.vision(carrier.p) - 45) / 40, 0.3, 1.3) : 0;
     // a receiver secures the catch before he's at full stride
     const fresh = S.catchAt != null && S.t - S.catchAt < 0.45 ? 0.7 : 1, stagger = S.stagger > S.t ? 0.7 : 1, burst = S.burstUntil > S.t ? 1.12 : 1;
-    steer(carrier, carrier.x + 8, clamp(wantY + lean, -HALF + 0.3, HALF - 0.3), dt, 0.94 * fresh * stagger * burst); // (a man with the ball tucked is a step slower than running free)
+    steer(carrier, carrier.x + 8, clamp(wantY + lean, -HALF - 1.5, HALF + 1.5), dt, 0.94 * fresh * stagger * burst); // (steer him over the sideline and he goes out: the clock stops) // (a man with the ball tucked is a step slower than running free)
     if (carrier.x >= 100) { score(S); return true; }
-    if (Math.abs(carrier.y) >= HALF - 0.4) { outOfBounds(S); return true; }
+    if (Math.abs(carrier.y) >= HALF) { outOfBounds(S); return true; }
     const closing = d ? ((d.vx - carrier.vx) * (carrier.x - d.x) + (d.vy - carrier.vy) * (carrier.y - d.y)) / Math.max(0.1, dd) : 0; // yards/s he's gaining
     const dSpeed = d ? hyp(d.vx, d.vy) : 0;
     if (d && dd < 1.1 + clamp(closing, 0, 4) * 0.1 + (dSpeed > 5 ? 0.45 : 0)) { // a man at full stride can lay out for him
@@ -566,8 +569,9 @@ export function passPlan(S, P, kind = "auto") {
   const T = clamp(dist / vel, 0.22, 2.0);
   const arc = bullet ? clamp(10.7 * T * T / 8, 0.15, 3) : clamp(dist / 12, 1.4, 4); // a bullet still has to climb over the middle (g*T^2/8, in yards)
   // the wind carries it, a lob (up in it longer) far more than a rope; the aim shows where it'll come down
-  const wd = windNow(S.g), carry = (bullet ? 0.05 : 0.22) * T;
-  if (wd.mph) land = { x: clamp(land.x + wd.x * carry, S.los - 12, 109), y: clamp(land.y + wd.y * carry, -HALF + 0.3, HALF - 0.3) };
+  // (a crosswind can carry it right over the sideline: out of bounds, incomplete)
+  const wd = windNow(S.g), carry = (bullet ? 0.07 : 0.3) * T;
+  if (wd.mph) land = { x: clamp(land.x + wd.x * carry, S.los - 12, 109), y: clamp(land.y + wd.y * carry, -HALF - 3, HALF + 3) };
   return { land, dist, bullet, T, arc, short, reach, kind: bullet ? "bullet" : "lob", auto: kind === "auto" };
 }
 export function throwTo(S, P, why = null, kind = "auto") {
@@ -580,7 +584,7 @@ export function throwTo(S, P, why = null, kind = "auto") {
   // (a bullet fired a long way is hard to put on a man: past BULLET_MAX it sprays)
   const accu = K.qbAccuracy(qb.p, !bullet), wild = bullet && dist > BULLET_MAX ? 1 + (dist - BULLET_MAX) / 10 : 1;
   const sig = (0.25 + Math.max(0, 95 - accu) * 0.05) * (0.5 + dist / 18) * wild * (bullet ? 1 : 1 + Math.max(0, dist - 22) / 30) * (1 + 0.08 * ((wxField(S.g).rain || 0) + (wxField(S.g).snow || 0))), /* a long lob is the hardest ball to drop in a bucket */ g1 = () => (rnd(S) + rnd(S) + rnd(S) - 1.5) * 1.6;
-  land = { x: clamp(land.x + g1() * sig, S.los - 12, 109), y: clamp(land.y + g1() * sig, -HALF + 0.3, HALF - 0.3) };
+  land = { x: clamp(land.x + g1() * sig, S.los - 12, 109), y: clamp(land.y + g1() * sig, -HALF - 3, HALF + 3) };
   let best = null, bestD = 99;
   for (const r of ELIGIBLE) {
     const e = ents[r]; if (!e || e.mode === "block" || e.mode === "back" || (e.delay && S.t < e.delay)) continue;
@@ -615,6 +619,11 @@ function arrive(S) {
   const catchR = tgt ? 1.9 + (K.hands(tgt.p) - 70) * 0.015 : 0, reachR = tgt ? 1.0 + (K.bodyCtrl(tgt.p) - 70) * 0.012 : 0; // a dive reaches further with body control
   ball.flight = null; ball.h = 0;
   if (S.booked) { endAt(S, S.ev, "fall", 0.8); S.log.push("thrown away"); return; }
+  // it came down past the sideline (the wind took it, or it sailed): nobody can catch it in bounds
+  if (Math.abs(ball.y) > HALF + 0.2) {
+    const r = resolvePlay(S.g, S.call, { types: ["inc"], fallback: [] }, { target: S.pick?.target, open: false }, 10);
+    S.ev = r.ev; S.pick.oob = true; endAt(S, r.ev, "fall", 0.8); S.log.push("out of bounds"); return;
+  }
   S.pick = { ...S.pick, err: +dR.toFixed(1), def: +dD.toFixed(1), defKey: d?.key, defCover: d && tgt ? S.cover[f.target] === d.key : null };
   // a defender chasing from behind (short of the catch along the throw, with the ball going over
   // his head to the man in front of him) can't play it unless he's right on him
@@ -684,14 +693,14 @@ function tackle(S, d) {
   const yards = Math.round(c.x - S.los);
   book(S, yards, "tackle");
 }
-function outOfBounds(S) { const c = S.ents[S.ball.holder]; book(S, Math.round(c.x - S.los), "fall"); }
+function outOfBounds(S) { const c = S.ents[S.ball.holder]; S.oob = true; S.log.push("out of bounds"); book(S, Math.round(c.x - S.los), "fall"); }
 function score(S) { book(S, 100 - S.los, "fall", 1.5); }
 function book(S, yards, how, hold = 1.0) {
   // (a catch or run into the end zone is a completion or run of `room` yards: the engine caps it there and calls it the touchdown)
   const isPass = S.call.startsWith("pass"), td = S.los + yards >= 100;
   const types = isPass ? ["pass", "td"] : ["run", "td"];
   const tol = td ? 0 : Math.max(1, Math.round(Math.abs(yards) * 0.1));
-  const r = resolvePlay(S.g, S.call, { types, yards, tol, fallback: isPass && S.catchAt == null ? ["inc"] : [] }, isPass ? { target: S.pick?.target, open: !!S.pick?.open } : { carrier: S.ents.RB?.p?.id }, isPass && S.catchAt != null ? 40 : 12); // (a ball that was caught gets the rolls it needs to be booked a catch)
+  const r = resolvePlay(S.g, S.call, { types, yards, tol, fallback: isPass && S.catchAt == null ? ["inc"] : [] }, { ...(isPass ? { target: S.pick?.target, open: !!S.pick?.open } : { carrier: S.ents.RB?.p?.id }), oob: !!S.oob, inBounds: !S.oob }, isPass && S.catchAt != null ? 40 : 12); // (out of bounds or down in the field of play: as it happened here, so the clock does what it should) // (a ball that was caught gets the rolls it needs to be booked a catch)
   S.ev = r.ev; S.exact = r.exact; S.mismatch = r.ev && !types.includes(r.ev.type) && r.ev.type !== "penalty";
   // the field follows the engine's number when it differs (a yard or two): the spot moves with it
   if (r.ev && (r.ev.type === "pass" || r.ev.type === "run" || r.ev.type === "td") && r.ev.yards !== yards && Math.abs(r.ev.yards - yards) <= 3) S.slideTo = S.los + r.ev.yards;
