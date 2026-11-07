@@ -431,7 +431,7 @@ export class ArcadeGame {
     if (fr) drawReplayTag(ctx, cam, this.time);
     if (this.sb && this.sbCardAt != null && m !== "ceremony") { const a = this.time - this.sbCardAt; if (a < 3.6) drawSbCard(ctx, cam, this.sb, teams, a); }
     if (cer && (!this.live || this.live.solo) && this.time - cer.t0 > 9) drawHint(ctx, cam, this.mobile ? "TAP TO CONTINUE" : "CLICK OR ENTER TO CONTINUE", cam.H * 0.72);
-    if (cer) { const t = this.time - cer.t0; drawLowerThird(ctx, cam, `${String(cer.name || "SUPER BOWL").toUpperCase()} CHAMPIONS`, t < 8.2 ? "HERE COMES THE LOMBARDI TROPHY" : `THE ${String(cer.team.name || "").toUpperCase()} ARE WORLD CHAMPIONS`, cer.team.clr, { age: t, accent: "#ffd166" }); }
+    if (cer) { const t = this.time - cer.t0; drawLowerThird(ctx, cam, `${String(cer.name || "SUPER BOWL").toUpperCase()} CHAMPIONS`, t < 8.2 ? "HERE COMES THE LOMBARDI TROPHY" : `THE ${String(cer.team.name || "").toUpperCase()} ARE WORLD CHAMPIONS`, cer.team.clr, { age: t, accent: "#ffd166", center: true }); }
     drawWeather(ctx, cam, { wx: this.g?.wxE, time: this.time, wind: windNow(this.g) });
     this.fx.draw(ctx, cam.W, cam.H, pixText);
     if (!this.live || (full && !fr)) { // (the scorebug stays put too: your club on the left all game, whoever has the ball)

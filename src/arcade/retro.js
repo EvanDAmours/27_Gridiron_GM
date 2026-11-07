@@ -1032,7 +1032,7 @@ export function drawDownBox(ctx, cam, text, color = "#fff", { left = false } = {
 // `age` is how long it has been up, for the slide and the pulse.
 // A live game's result, TV style: a slim lower third over the bottom of the field (the app has the full
 // play-by-play beside it), rising in, the club's colour down its edge.
-export function drawLowerThird(ctx, cam, title, text, color, { age = 1, accent = "#ffd166", sub = null, hint = null } = {}) {
+export function drawLowerThird(ctx, cam, title, text, color, { age = 1, accent = "#ffd166", sub = null, hint = null, center = false } = {}) {
   const { W, H } = cam, u = uiPx(cam), px = Math.max(2, Math.round(u * 1.25)), px2 = Math.max(1, Math.round(u * 0.8));
   // up to three lines of the play, and a grey line under them saying why (never cut off: the box grows up from the bottom)
   const maxW = Math.min(W - u * 8, Math.max(u * 160, W * 0.86)), chars = Math.max(12, Math.floor((maxW - u * 14) / (6 * px2)));
@@ -1042,8 +1042,9 @@ export function drawLowerThird(ctx, cam, title, text, color, { age = 1, accent =
   const w = Math.round(Math.min(maxW, Math.max(pixWidth(title, px) + (hint ? pixWidth(hint, px2) + u * 10 : 0), ...lines.map((l) => pixWidth(l, px2)), ...subL.map((l) => pixWidth(l, px2))) + u * 14)), x = Math.round(W / 2 - w / 2);
   ctx.save(); ctx.globalAlpha = Math.min(1, age / 0.15);
   ctx.fillStyle = "rgba(6,8,14,.9)"; ctx.fillRect(x, y, w, h); ctx.fillStyle = color || "#334155"; ctx.fillRect(x, y, Math.max(3, u), h); ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fillRect(x, y, w, 1);
-  pixShadow(ctx, title, x + u * 6, y + u * 2, px, accent, "left");
-  lines.forEach((l, i) => pixText(ctx, l, x + u * 6, y + u * 3 + px * 7 + u + i * px2 * 8, px2, "#e5e7eb", "left"));
+  const tx = center ? Math.round(x + w / 2) : x + u * 6, al = center ? "center" : "left";
+  pixShadow(ctx, title, tx, y + u * 2, px, accent, al);
+  lines.forEach((l, i) => pixText(ctx, l, tx, y + u * 3 + px * 7 + u + i * px2 * 8, px2, "#e5e7eb", al));
   subL.forEach((l) => pixText(ctx, l, x + u * 6, y + u * 3 + px * 7 + u + lines.length * px2 * 8, px2, "#9aa7b2", "left"));
   // waiting on you: a blinking prompt in the box's top right corner
   if (hint && age > 0.5 && Math.floor(age * 2) % 2 === 0) pixText(ctx, hint, x + w - u * 4, y + u * 2.5, px2, "#ffd166", "right");
@@ -1272,9 +1273,12 @@ export function drawCeremony(ctx, cam, team, away, t, { sb = "SUPER BOWL" } = {}
     const g = ctx.createLinearGradient?.(0, yb - h, 0, yb); if (g) { g.addColorStop(0, clr); g.addColorStop(0.55, clr); g.addColorStop(1, "#0b0f19"); ctx.fillStyle = g; } else ctx.fillStyle = clr;
     ctx.fillRect(Math.round(x0), Math.round(yb - h), Math.round(x1 - x0), h);
     ctx.fillStyle = "#e8c45a"; const gb = Math.max(2, px); ctx.fillRect(Math.round(x0), Math.round(yb - h), Math.round(x1 - x0), gb); ctx.fillRect(Math.round(x0), Math.round(yb - gb), Math.round(x1 - x0), gb);
-    const mid = (x0 + x1) / 2, big = Math.max(px, Math.round(px * 1.5)), top = Math.round(yb - h + px * 4);
-    pixShadow(ctx, `${String(sb).toUpperCase()} CHAMPIONS`, mid, top, px, "#fde68a", "center");
-    pixShadow(ctx, String(team?.name || "").toUpperCase(), mid, top + px * 10, big, "#fff", "center"); }
+    // the words sit low on it, just over the heads of the players on the stage, so the scorebug
+    // across the top of the screen never covers them
+    const mid = (x0 + x1) / 2, big = Math.max(px, Math.round(px * 1.5)), heads = Math.round(sy(-10.5) - hS - PLAYER_H * s * 1.08);
+    // (the title itself is the banner along the bottom of the screen: SUPER BOWL ... CHAMPIONS)
+    const nameY = Math.max(Math.round(yb - h + px * 4), heads - big * 7 - px * 3); void sb;
+    pixShadow(ctx, String(team?.name || "").toUpperCase(), mid, nameY, big, "#fff", "center"); }
   // the stage: its top, then its front with the champions' colours and gold trim
   { const x0 = sx(42), x1 = sx(58), yt = sy(-12) - hS, yf = sy(-6) - hS;
     ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.fillRect(Math.round(x0 + s * 0.4), Math.round(sy(-6) - s * 0.1), Math.round(x1 - x0), Math.round(s * 0.5));
@@ -1311,8 +1315,7 @@ export function drawCeremony(ctx, cam, team, away, t, { sb = "SUPER BOWL" } = {}
   const hold = handed && t >= 9;
   const own2 = (p) => {
     if (p.qb) return !handed ? "point_up" : t < 8.9 ? "trophy_receive" : "trophy_lift_1";
-    if (!hold) return (t * 1.5 + hash(p.i, 61)) % 1 < 0.5 ? "jump_crouch" : "jump_air";
-    return ["point_up", "helmet_raise", "confetti_catch", "wave_crowd"][Math.floor(hash(p.i, 62) * 4)];
+    return ["point_up", "helmet_raise", "confetti_catch", "wave_crowd"][Math.floor(hash(p.i, 62) * 4)]; // (one pose each, held: no bouncing)
   };
 
   for (const p of people) {
@@ -1328,9 +1331,9 @@ export function drawCeremony(ctx, cam, team, away, t, { sb = "SUPER BOWL" } = {}
       const facing = p.x < 50 ? 1 : -1;
       if (own) { sceneSprite(ctx, cam, team, away, own2(p), p.x, p.y, p.qb ? -1 : facing, 1); }
       else {
-        const lift = p.qb && handed, up = lift || hold ? 0 : jump(p.i, p.y > -6 ? 1 : 0.6);
+        const lift = p.qb && handed, up = 0; void jump; void hold;
         ctx.translate(0, -up);
-        const name = lift ? "catch_high" : hold ? (hash(p.i, 62) < 0.5 ? "catch_high" : "td_dance_1") : "td_dance_1";
+        const name = lift ? "catch_high" : hash(p.i, 62) < 0.5 ? "catch_high" : "td_dance_1";
         if (!sprite2(ctx, cam, team, away, name, p.x, p.y, facing)) sprite(ctx, cam, team, away, "c8", p.x, p.y, facing, true);
         if (lift) { const [tx, ty] = cam.toScreen(p.x, p.y); drawLombardi(ctx, tx, Math.round(ty - PLAYER_H * s * 1.08), u * 1.05); }
       }

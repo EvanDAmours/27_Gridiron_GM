@@ -2469,4 +2469,7 @@ export const PATCH_NOTES = [
     "The kick meter is tougher: a shakier kicker's needle sweeps faster and every kicker's green band is narrower, so misses are a real possibility, especially from long range.",
     "The punt returner reaches up and catches the punt. The end zones have life around them: photographers along the end line, the end-zone camera on its riser, a ball attendant, security, pylons at the corners, and the kicking net behind the uprights rising for field goals.",
   ] },
+  { v: "5.92", date: "2026-10-23", title: "Calmer Trophy Ceremony", notes: [
+    "The Super Bowl trophy ceremony is calmer: no more jumping. Everyone holds one celebration pose from the start while the commissioner walks the trophy out and the confetti falls. The champions' name on the stage's backdrop now sits low enough to read under the scorebug, and the line under SUPER BOWL ... CHAMPIONS at the bottom of the screen is centred.",
+  ] },
 ];
