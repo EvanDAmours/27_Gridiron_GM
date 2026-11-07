@@ -2511,4 +2511,7 @@ export const PATCH_NOTES = [
   { v: "6.04", date: "2026-10-23", title: "A cleaner slingshot", notes: [
     "Arcade on phones: the slingshot pass is smoother and more accurate. The aim follows your finger without jitter, and lifting your finger no longer knocks the throw off. Pull toward where a receiver is heading and the aim locks onto him: he gets a ring, his name shows on the label, and the throw leads him to the catch. You can now see the slingshot itself, a band from where you touched to your finger. Let go back near where you started to cancel. Tap-to-throw still works too.",
   ] },
+  { v: "6.05", date: "2026-10-23", title: "Aim either way", notes: [
+    "Arcade on phones: fixed the second throwing line. Dragging toward a receiver used to aim the throw backward, behind the quarterback, because every drag was treated as a slingshot pull. Now it works both ways and the throw always goes forward: drag toward the spot to aim straight at it, or pull back away from it like a slingshot. Only the throw's path is shown when you point at the spot. Lock-on to receivers, tap-to-throw and cancel all work as before.",
+  ] },
 ];

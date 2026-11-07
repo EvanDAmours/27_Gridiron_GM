@@ -4,7 +4,8 @@
 //
 // Two ways to play, picked by what you last touched it with:
 //  - TOUCH (phones, tablets): touch the field to snap; tap a receiver to throw to him (or open
-//    grass to throw there), or pull back like a slingshot and let go to throw; swipe up and down to steer a runner, flick to juke; flick up the field to kick.
+//    grass to throw there), or drag toward the spot (or pull back from it, like a slingshot) and
+//    let go to throw; swipe up and down to steer a runner, flick to juke; flick up the field to kick.
 //  - MOUSE + KEYBOARD (computers): click or Space to snap; the throw goes where the pointer is;
 //    click to throw, right-click (or Shift-click) to lob; the runner follows the pointer (or W/S),
 //    Space jukes; to kick, aim with the pointer and hold the button, let go at the top of the meter.
@@ -458,7 +459,7 @@ export class ArcadeGame {
         this.chips.kinds = drawSwitch(ctx, cam, px * 3, hintY - px * 4 - ch, [{ key: "bullet", label: "BULLET", color: KIND_COLOR.bullet }, { key: "lob", label: "LOB", color: KIND_COLOR.lob }], this.passKind, { big });
       }
       const hint = P.phase === "presnap" ? (this.mobile ? "TOUCH THE FIELD TO SNAP" : "CLICK OR SPACE TO SNAP")
-        : throwing ? (this.mobile ? "TAP A RECEIVER TO THROW - OR PULL BACK" : "AIM - CLICK TO THROW - Q SWITCHES BULLET/LOB")
+        : throwing ? (this.mobile ? "TAP A RECEIVER - OR DRAG TO AIM" : "AIM - CLICK TO THROW - Q SWITCHES BULLET/LOB")
         : P.phase === "carry" && P.ents[P.ball.holder]?.side === "off" ? (this.mobile ? "FLICK SIDEWAYS: JUKE - AHEAD: DIVE" : "STEER WITH MOUSE OR W/S - SPACE JUKES - E DIVES") : null;
       if (hint && !this.auto) drawHint(ctx, cam, hint, hintY);
     }
@@ -634,7 +635,12 @@ export class ArcadeGame {
     const L = Math.hypot(t.sp.x, t.sp.y), dead = Math.max(14, Math.min(cam.W, cam.H) * 0.035);
     let aim = null, lock = null;
     if (L > dead) {
-      const [qx, qy] = cam.toScreen(qb.x, qb.y), f = cam.toField(qx + t.sp.x * PULL, qy + t.sp.y * PULL);
+      // either way works, and a throw only ever goes forward: drag toward the spot (it aims where you
+      // point) or pull back away from it (the slingshot, the other way). Which one is decided by
+      // whether the drag heads up the field, and held unless the finger clearly turns round.
+      const [qx, qy] = cam.toScreen(qb.x, qb.y), [fx0] = cam.toScreen(qb.x + 10, qb.y), up = Math.sign(fx0 - qx) || 1, ahead = -t.sp.x * up; // (the drag is -pull)
+      if (!t.mode || (t.mode === "aim" && ahead < -dead * 2) || (t.mode === "sling" && ahead > dead * 2)) t.mode = ahead > 0 ? "aim" : "sling";
+      const sgn = t.mode === "aim" ? -1 : 1, f = cam.toField(qx + sgn * t.sp.x * PULL, qy + sgn * t.sp.y * PULL);
       aim = { x: Math.max(qb.x - 1, f.x), y: Math.max(-26, Math.min(26, f.y)) };
       let bd = 1e9;
       for (const key of ELIGIBLE) {
@@ -650,6 +656,7 @@ export class ArcadeGame {
   // the slingshot itself: a band from where you touched to your finger, thicker the harder you pull
   drawSling(ctx, t) {
     const px = uiPx(this.cam), sp = t.sp || t.pull; if (!sp) return;
+    if (t.mode === "aim") { ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(2, px); ctx.beginPath(); ctx.arc(t.px, t.py, px * 4, 0, Math.PI * 2); ctx.stroke(); return; } // (pointing at the spot: the throw's own path is the only line)
     const x0 = t.px, y0 = t.py, x1 = t.px - sp.x, y1 = t.py - sp.y, L = Math.hypot(sp.x, sp.y), n = Math.max(2, Math.round(L / (px * 4))), col = KIND_COLOR[this.passKind] || "#fff";
     for (let i = 0; i <= n; i++) { const u = i / n, x = x0 + (x1 - x0) * u, y = y0 + (y1 - y0) * u, d = Math.round(px * (1 + 0.8 * (1 - u))); ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.fillRect(Math.round(x - d / 2) + 1, Math.round(y - d / 2) + 1, d, d); ctx.fillStyle = col; ctx.globalAlpha = 0.5 + 0.5 * (1 - u); ctx.fillRect(Math.round(x - d / 2), Math.round(y - d / 2), d, d); ctx.globalAlpha = 1; }
     // the anchor where you first touched: a small ring (let go back on it to cancel)
