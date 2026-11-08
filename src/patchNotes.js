@@ -2523,4 +2523,7 @@ export const PATCH_NOTES = [
     "Flyovers now play only at stadiums that have a filmed one: MetLife Stadium (Giants and Jets) and NRG Stadium (Texans). Every other game starts straight away, with no flyover, until more stadiums are filmed.",
     "The flyover's LIVE FROM banner is drawn in the arcade's pixel font, to match the game, and the shot cuts into the game sooner instead of lingering on a close-up of the field.",
   ] },
+  { v: "6.08", date: "2026-10-23", title: "Quiet crowd", notes: [
+    "Arcade: the crowd noise is gone. It was made from filtered static and sounded like a vacuum cleaner, under every play and in a whoosh after scores. The 8-bit sound effects (the snap, the tackle, the whistle, the touchdown jingle) all stay.",
+  ] },
 ];

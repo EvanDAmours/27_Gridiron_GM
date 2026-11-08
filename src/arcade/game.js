@@ -18,7 +18,7 @@ import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, pl
 import { setupKick, setupKickoff, kickFlick, tickKick, kickPlan, POSTS_X, kickMeter, kickAuto, meterZones, outOfRange } from "./kick.js";
 import { sbName, sbNumber } from "../data/superbowls.js";
 const sbTitle = () => { const d = new Date(), season = d.getMonth() < 2 ? d.getFullYear() - 1 : d.getFullYear(); return sbName(sbNumber(season)); };
-import { sfx, unlock, toggleMute, isMuted, ambient, ambientHype } from "./sfx.js";
+import { sfx, unlock, toggleMute, isMuted } from "./sfx.js";
 import { FX } from "./fx.js";
 import * as K from "./ratings.js";
 import { rollWeather, WX, wxOf } from "../weather.js";
@@ -72,7 +72,7 @@ export class ArcadeGame {
     if (skipMenu) this.start();
     this.last = 0; this.raf = requestAnimationFrame((t) => this.loop(t));
   }
-  destroy() { ambient(false);
+  destroy() {
     cancelAnimationFrame(this.raf);
     window.removeEventListener("resize", this.fit); document.removeEventListener("fullscreenchange", this.fit); document.removeEventListener("webkitfullscreenchange", this.fit); window.removeEventListener("keydown", this.onKey); window.removeEventListener("keyup", this.onKeyUp);
     for (const [n, f] of [["pointerdown", this.onDown], ["pointermove", this.onMove], ["pointerup", this.onUp], ["pointercancel", this.onUp], ["contextmenu", this.noMenu]]) this.cv.removeEventListener(n, f);
@@ -156,8 +156,8 @@ export class ArcadeGame {
 
   // ---- the flow ----
   start() {
-    if (this.live) { const L = this.live; preload(L.teams.h); preload(L.teams.a); this.g = L.g; this.flipped = false; this.teams = this.viewTeams(); this.sit = situation(this.g); this.fade = 1; this.advance(); ambient(true); return; }
-    if (this.franchise) { preload(this.teams.user); preload(this.teams.opp); this.g = this.franchise; this.sit = situation(this.g); this.fade = 1; this.advance(); ambient(true); return; }
+    if (this.live) { const L = this.live; preload(L.teams.h); preload(L.teams.a); this.g = L.g; this.flipped = false; this.teams = this.viewTeams(); this.sit = situation(this.g); this.fade = 1; this.advance(); return; }
+    if (this.franchise) { preload(this.teams.user); preload(this.teams.opp); this.g = this.franchise; this.sit = situation(this.g); this.fade = 1; this.advance(); return; }
     this.teams = { user: TEAMS[this.userTi], opp: TEAMS[this.oppTi] };
     preload(this.teams.user); preload(this.teams.opp);
     const R = this.rand || Math.random, pick = this.wxPick;
@@ -170,7 +170,7 @@ export class ArcadeGame {
     franchiseGame(this.userTi, this.oppTi, opts).catch((e) => { console.error("arcade: franchise setup failed, using the plain rosters", e); return newGame(this.userTi, this.oppTi, opts).g; }).then((g) => {
       if (seq !== this.startSeq) return; // (started again meanwhile)
       this.live = { solo: true, g, userSide: "h", watch: false, night: false, teams: { h: { ...TEAMS[this.userTi], isAway: false }, a: { ...TEAMS[this.oppTi], isAway: true } }, onEvent: null };
-      this.g = g; this.flipped = false; this.teams = this.viewTeams(); this.sit = situation(g); this.refresh(); this.fade = 1; this.advance(); ambient(true);
+      this.g = g; this.flipped = false; this.teams = this.viewTeams(); this.sit = situation(g); this.refresh(); this.fade = 1; this.advance();
     });
   }
   // what happens next: the other team's drive (and any kickoff), or your next call
@@ -285,7 +285,7 @@ export class ArcadeGame {
   }
   endHint() { return this.franchise ? (this.mobile ? "TAP TO CONTINUE" : "CLICK OR ENTER TO CONTINUE") : this.mobile ? "TAP FOR A NEW GAME" : "CLICK OR ENTER FOR A NEW GAME"; }
   // leaving the final box score: a franchise game goes back to the season; otherwise the title screen
-  leaveFinal() { if (this.franchise) { if (!this.left) { this.left = true; ambient(false); this.onFinish?.(this.g); } return; } this.mode = "menu"; this.S = null; if (this.live?.solo) this.live = null; }
+  leaveFinal() { if (this.franchise) { if (!this.left) { this.left = true; this.onFinish?.(this.g); } return; } this.mode = "menu"; this.S = null; if (this.live?.solo) this.live = null; }
   // the pause menu's SIM TO THE END: the engine plays out the rest (it counts), then the box score
   simRest() {
     const g = this.g; if (!g) return;
@@ -324,7 +324,7 @@ export class ArcadeGame {
   }
   // one step of the game (the browser loop and the playtest harness both use it)
   update(dt, now = performance.now()) {
-    this.time += dt; this.fade = Math.max(0, this.fade - dt * 2.5); this.hype = Math.max(0, this.hype - dt * 0.5); ambientHype(this.hype);
+    this.time += dt; this.fade = Math.max(0, this.fade - dt * 2.5); this.hype = Math.max(0, this.hype - dt * 0.5);
     if (this.paused || this.mode === "menu" || this.mode === "loading") { this.fx.step(dt); return; }
     if (this.mode === "replay") { this.fx.step(dt); this.stepReplay(dt); return; }
     if (this.cerNext && this.time >= this.cerAt) this.beginCeremony();
@@ -399,8 +399,8 @@ export class ArcadeGame {
     if (now.broke > was.broke) { const h = P.ents[now.holder]; if (h) { const [x, y] = at(h); fx.burst(x, y, { n: 10, colors: ["#6aa84f", "#c9b79c", "#3f7f2f"], speed: 90 }); fx.float(P.log[P.log.length - 1]?.includes("juked") ? "JUKE!" : "BROKEN TACKLE!", x, y - cam.s * 4, "#7fe3ff", 1); } sfx.juke(); this.hype = Math.max(this.hype, 0.4); }
     if ((now.phase === "tackle" || now.phase === "fall") && was.phase !== now.phase) {
       const ev = P.result, h = P.ents[P.ball.holder] || P.ents.QB, [x, y] = at(h), gain = ev?.yards;
-      if (ev?.td) { sfx.touchdown(); sfx.crowd?.(); fx.punch(1.07, 1.2); fx.flashScreen("#fff", 0.3); this.hype = 1; }
-      else if (ev?.type === "fg") { sfx.good(); sfx.crowd?.(); fx.sparkle(x, y, "#ffd166"); this.hype = 0.7; }
+      if (ev?.td) { sfx.touchdown(); fx.punch(1.07, 1.2); fx.flashScreen("#fff", 0.3); this.hype = 1; }
+      else if (ev?.type === "fg") { sfx.good(); fx.sparkle(x, y, "#ffd166"); this.hype = 0.7; }
       else if (ev?.type === "fumble") { sfx.turnover(); fx.hit(1); }
       else if (now.phase === "tackle") {
         const big = ev?.type === "sack" ? 1.3 : 0.8; sfx.tackle(); fx.hit(big); fx.burst(x, y, { n: ev?.type === "sack" ? 18 : 12 });
