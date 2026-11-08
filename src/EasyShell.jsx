@@ -113,7 +113,7 @@ const SLOTS = { offense: [["QB", "QB", 0], ["RB", "RB", 0], ["WR1", "WR", 0], ["
 const rec = (t) => `${t.w || 0}-${t.l || 0}${t.t ? `-${t.t}` : ""}`;
 const pct = (t) => ((t.w || 0) + (t.t || 0) * 0.5) / Math.max(1, (t.w || 0) + (t.l || 0) + (t.t || 0));
 
-export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log, msg, step, busy, onFull, onSave, phaseLabel, depthOrder, setDepthOrder, awards, onResign, draft, onPick }) {
+export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log, msg, step, busy, onFull, onSave, phaseLabel, depthOrder, setDepthOrder, awards, onResign, draft, onPick, trades }) {
   const [view, setView] = useState("home");
   const [sub, setSub] = useState({ season: "schedule", stats: "pass", lineup: "offense", draft: "All" });
   const [card, setCard] = useState(null);       // the player card open
@@ -186,6 +186,27 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
       {kept.length > 0 && <div style={{ ...SERIF, fontSize: 14, marginTop: 8, color: "#444" }}>Re-signed: {kept.map((p) => p.name).join(", ")}</div>}
     </div>);
 
+  // trade deadline day: a few clubs call with offers (a player, draft picks or both, for one of yours);
+  // yes makes the trade, no turns it down. Anything left unanswered lapses when the day ends.
+  const tradePanel = () => (
+    <div style={{ marginTop: 18 }}>
+      <div style={{ marginBottom: 6 }}><Mark>Trade offers</Mark> <span style={{ ...SERIF, fontSize: 15 }}>Say yes or no to each. Offers left open expire when the day ends.</span></div>
+      {!trades.offers.length && <div style={{ ...SERIF, fontSize: 16, padding: "6px 2px" }}>No offers left on the table.</div>}
+      {trades.offers.map((o) => { const t = TEAMS[o.fromTm] || {}; return (
+        <div key={o.id} style={{ background: "#fff", boxShadow: "inset 0 0 0 3px #c9d6f5", padding: narrow ? "10px 8px" : "12px 14px", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}><Logo ab={t.ab} size={30} /><span style={{ ...CLUB, fontSize: 17 }}>The {t.city} {t.name} offer</span></div>
+          <div style={{ ...SERIF, fontSize: 14, color: "#555", margin: "2px 0" }}>They get</div>
+          {playerRow(o.want, <><Stars v={o.want.ovr} size={narrow ? 12 : 14} />{!narrow && <span style={{ ...NUM, fontSize: 16, width: 30, textAlign: "right" }}>{o.want.ovr}</span>}</>)}
+          <div style={{ ...SERIF, fontSize: 14, color: "#555", margin: "8px 0 2px" }}>You get</div>
+          {o.give && playerRow(o.give, <><Stars v={o.give.ovr} size={narrow ? 12 : 14} />{!narrow && <span style={{ ...NUM, fontSize: 16, width: 30, textAlign: "right" }}>{o.give.ovr}</span>}</>, () => {})}
+          {(o.givePicks || []).map((pk) => <div key={pk.id} style={{ ...CLUB, fontSize: 15, padding: "5px 4px" }}>{pk.yr ? `${pk.yr} ` : ""}round {pk.rd} draft pick{pk.overall ? ` (#${pk.overall})` : ""}</div>)}
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <button className="ez-btn" onClick={() => trades.yes(o)} style={{ fontSize: 15, padding: "8px 18px", background: "#22a447", color: "#fff", boxShadow: "0 3px 0 #157a32" }}>Yes, trade</button>
+            <button className="ez-btn" onClick={() => trades.no(o)} style={{ fontSize: 15, padding: "8px 18px", background: "#e8ecf5", color: INK, boxShadow: "0 3px 0 #c5ccdc" }}>No thanks</button>
+          </div>
+        </div>); })}
+    </div>);
+
   const cur = draft?.picks?.[draft.idx];
   const myCall = sp === "draft" && cur && cur.owner === ui && cur.rd <= 3;
   const draftPanel = () => {
@@ -213,7 +234,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
     const opp = next ? TEAMS[next.h === ui ? next.a : next.h] : null, oppT = next ? teams[next.h === ui ? next.a : next.h] : null;
     const offseason = sp === "resign" || sp === "draft";
     return (
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : offseason ? "minmax(0,1.7fr) minmax(0,1fr)" : "minmax(0,1.1fr) minmax(0,1fr)", gap: narrow ? 18 : 32, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : offseason ? "minmax(0,1.7fr) minmax(0,1fr)" : "minmax(0,1.1fr) minmax(0,1fr)", gap: narrow ? 18 : 32, alignItems: "start" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Logo ab={T.ab} size={narrow ? 34 : 40} />
@@ -233,6 +254,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
             {step.simAll && <Btn kind="dark" onClick={step.simAll} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>Sim the season</Btn>}
           </div>}
           {msg && <div style={{ ...SERIF, fontSize: 16, marginTop: 12, fontStyle: "italic" }}>{msg}</div>}
+          {trades && tradePanel()}
           {sp === "resign" && resignPanel()}
           {sp === "draft" && draftPanel()}
           {!narrow && !offseason && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22, marginTop: 20 }}>

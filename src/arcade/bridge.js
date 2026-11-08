@@ -107,9 +107,9 @@ export function resolvePlay(g, call, want, pick = null, tries = 12) {
     const ev = step(g, call, bonus, pick);
     if (!ev) return { ev, tries: n + 1, exact: false };
     // a flag on the first roll is the engine's own rate; on a later roll it is just rolled again
-    // (and only a flag on the play you saw: one before the snap, or one whose play underneath is the
+    // (and only a flag on the play you saw: one whose play underneath is the
     // play that happened on the field; never a flag on a catch when the ball fell incomplete)
-    if (ev.type === "penalty") { const pl = ev.pen?.play, same = ev.pen?.pre || !pl || (want.types.includes(pl.td ? "td" : pl.type) && (want.yards == null || Math.abs((pl.yards || 0) - want.yards) <= Math.max(2, (want.tol ?? 1) * 2))); if (n === 0 && same) return { ev, tries: 1, exact: true }; continue; }
+    if (ev.type === "penalty") { if (ev.pen?.pre) continue; /* a foul before the snap means no play: never the result of one that was played */ const pl = ev.pen?.play, same = !pl || (want.types.includes(pl.td ? "td" : pl.type) && (want.yards == null || Math.abs((pl.yards || 0) - want.yards) <= Math.max(2, (want.tol ?? 1) * 2))); if (n === 0 && same) return { ev, tries: 1, exact: true }; continue; }
     const typeOk = want.types.includes(ev.type), fallbackOk = !typeOk && (want.fallback || []).includes(ev.type);
     const dy = want.yards == null || !typeOk ? 0 : Math.abs((ev.yards || 0) - want.yards);
     const score = (typeOk ? 0 : fallbackOk ? 500 : 1000) + dy;

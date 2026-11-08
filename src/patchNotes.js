@@ -2532,4 +2532,11 @@ export const PATCH_NOTES = [
   { v: "6.10", date: "2026-10-23", title: "Aim where you want", notes: [
     "Arcade on phones: the aim no longer locks onto receivers. It felt like chasing the receiver instead of throwing; now the ball goes exactly where you drag (or pull back), still smoothed so it doesn't jitter. Tap-to-throw still throws to the receiver you tap.",
   ] },
+  { v: "6.11", date: "2026-10-23", title: "Deadline calls and the rulebook", notes: [
+    "Easy Mode: trade deadline day now matters. Three to five clubs call with an offer for one of your players (a player of theirs, draft picks, or both), and you say yes or no to each. Offers you leave open lapse when you finish the day.",
+    "Arcade: a play you watched happen is never booked as a false start (or any foul before the snap). A team could gain a first down on the field and then be flagged for a false start on top of it; a false start means the play never happened, so it can't follow one that did.",
+    "Penalties follow the NFL's enforcement rules more closely: a defensive foul near the goal line moves the ball half the distance to the goal (not to the 1), a 15-yard foul after a play also stops at half the distance, and roughing the passer on a sack or an incomplete pass is walked off from the line of scrimmage, not from where the sack happened.",
+    "Arcade: the computer's quarterback no longer turns his back to the field as he throws. The release, and the moment after it as he watches the ball, now face where the ball is going.",
+    "Easy Mode on phones: the home screen no longer runs off the right edge of the screen.",
+  ] },
 ];

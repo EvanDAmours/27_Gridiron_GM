@@ -250,7 +250,9 @@ function pose2raw(S, e, t) {
   const since = over ? t - S._overAt : 0, isPass = S.call?.startsWith("pass");
   if (e.key === "QB" && !over) {
     if (e.mode === "handoff") return { n: "handoff_qb" }; // (a run: the exchange from the snap, never a throwing frame)
-    if (S.thrownAt && t - S.thrownAt < 0.1) return { n: "throw_release" };
+    // the throw: he faces where the ball's going (not the way his feet last moved, which on a dropback is backwards)
+    const bx = S.ball.flight && !S.ball.holder ? S.ball.flight.to.x : S.ball.x, toward = Math.sign(bx - e.x) || 1; // (the ball in the air: where it's coming down; caught: the man with it)
+    if (S.thrownAt && t - S.thrownAt < 0.1) return { n: "throw_release", face: toward };
     if (hasBall && S.phase === "live") {
       if (e.mode === "dropback") return { n: `drop_${i4}`, face: 1 };
       return { n: S.aim ? "throw_windup" : "throw_set", face: 1 }; // (set in the pocket, he faces downfield whichever way his feet last moved)
@@ -259,6 +261,7 @@ function pose2raw(S, e, t) {
     if (hasBall) return run(true);
     // the ball's gone: he turns away carrying out the fake, empty-handed (never the first sheet's ball-in-hand frame)
     if (S.handAt != null && t - S.handAt < 0.6) return { n: "hip_turn" };
+    if (S.thrownAt && !moving) return { n: "hip_turn", face: toward }; // (standing there after the throw: watching the ball)
     return moving ? run(false) : { n: "hip_turn" };
   }
   if (S.dived && hasBall) return null; // (the first sheet's diving carry)

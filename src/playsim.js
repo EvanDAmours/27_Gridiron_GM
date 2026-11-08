@@ -854,12 +854,12 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const side = offF ? off : def;
     g.stats[side].penalties++; g.stats[side].penYds = (g.stats[side].penYds || 0) + 5;
     if (who) add(line(g, side, who), "pen", 1);
-    const yds = offF ? -halfDist(g.yard, 5) : Math.min(5, 99 - g.yard);
+    const yds = offF ? -halfDist(g.yard, 5) : halfDist(100 - g.yard, 5); // (half the distance to the goal, either way)
     g.yard = clamp(g.yard + yds, 1, 99);
     if (!offF && yds >= g.toGo) { g.down = 1; g.toGo = Math.min(10, 100 - g.yard); } else g.toGo = Math.max(1, g.toGo - yds);
     ev.type = "penalty"; ev.yards = yds;
     ev.pen = { side: offF ? "off" : "def", kind, label: PEN_LABEL[kind], yds: 5, player: who, accepted: true, pre: true };
-    ev.text = `${PEN_LABEL[kind]}${who ? `, ${who.name}` : ""}, ${offF ? "offense" : "defense"}. 5-yard penalty${!offF && g.down === 1 && ev.down !== 1 ? ", automatic first down" : ""}.`;
+    ev.text = `${PEN_LABEL[kind]}${who ? `, ${who.name}` : ""}, ${offF ? "offense" : "defense"}. ${Math.abs(yds) === 5 ? "5-yard penalty" : `Half the distance to the goal, ${Math.abs(yds)} ${Math.abs(yds) === 1 ? "yard" : "yards"}`}${!offF && g.down === 1 && ev.down !== 1 ? ", automatic first down" : ""}.`;
     ev.note = tick(g, 3);
     return ev;
   }
@@ -1100,7 +1100,9 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const air = kind === "dpi" ? clamp(Math.round(ev.deep ? 22 + flag.r2 * 18 : ev.quick ? 4 + flag.r2 * 5 : 8 + flag.r2 * 12), 1, room - 1) : 0;
     let accepted, tack = false;
     if (offF) accepted = !inc ? got > -Y * 0.6 : g.down < 3; // the defense takes it unless the play already cost them less
-    else if (Y === 15) { accepted = true; tack = !ev.td; } // a personal foul: on top of the play
+    // a personal foul: on top of the play when it gained ground; on an incompletion, a sack or a loss
+    // (roughing the passer, say) the play is wiped out and it's walked off from the previous spot
+    else if (Y === 15) { accepted = true; tack = !ev.td && !inc && !sack && yards > 0; }
     // pass interference is an automatic first down: the offense takes it unless the play already moved the chains farther
     else if (kind === "dpi") accepted = inc || sack || !first || got < air;
     else accepted = inc || sack || !first || got < Y;
@@ -1110,7 +1112,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const tag = `${label}${who ? `, ${who.name}` : ""}, ${offF ? "offense" : "defense"}.`;
     if (!accepted) ev.text += ` ${tag} Declined.`;
     else if (Y === 15 && ev.td) { ev.pen.onKick = true; ev.text += ` ${tag} Enforced on the kickoff.`; g.stats[side].penYds = (g.stats[side].penYds || 0) + 15; if (who) add(line(g, side, who), "pen", 1); }
-    else if (tack) { tackOn = Math.min(15, Math.max(0, 99 - (g.yard + yards))); ev.text += ` ${tag} 15 yards tacked on, automatic first down.`; g.stats[side].penYds = (g.stats[side].penYds || 0) + tackOn; if (who) add(line(g, side, who), "pen", 1); }
+    else if (tack) { tackOn = Math.max(0, halfDist(100 - (g.yard + yards), 15)); /* (half the distance to the goal from where the play ended) */ ev.text += ` ${tag} ${tackOn === 15 ? "15 yards" : `Half the distance to the goal (${tackOn} ${tackOn === 1 ? "yard" : "yards"})`} tacked on, automatic first down.`; g.stats[side].penYds = (g.stats[side].penYds || 0) + tackOn; if (who) add(line(g, side, who), "pen", 1); }
     else {
       // the play comes back: undo it, then walk it off from the line of scrimmage
       g.box = flag.snap.box; g.stats = flag.snap.stats;
@@ -1118,7 +1120,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       if (who) add(line(g, side, who), "pen", 1);
       let mv;
       if (offF) { mv = -halfDist(g.yard, Y); g.toGo = Math.min(g.toGo - mv, 99); }
-      else { mv = kind === "dpi" ? Math.min(air, 99 - g.yard) : Math.min(Y, 99 - g.yard); }
+      else { mv = kind === "dpi" ? Math.min(air, 99 - g.yard) : halfDist(100 - g.yard, Y); } // (interference: the spot of the foul, the 1 at most; the rest: half the distance to the goal)
       st2.penYds = (st2.penYds || 0) + Math.abs(mv);
       g.yard = clamp(g.yard + mv, 1, 99);
       if (!offF) { g.down = 1; g.toGo = Math.min(10, 100 - g.yard); }
