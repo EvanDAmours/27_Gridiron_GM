@@ -2543,4 +2543,8 @@ export const PATCH_NOTES = [
     "Arcade: the end zones are busier. A full crew now works the whole width behind each end line: photographers kneeling and standing either side of the posts, a sideline reporter, the cable tech feeding the end-zone camera, the league coordinator, a field marshal, the ball attendant and security at the corners.",
     "Fixed: after an update, some devices kept showing old saved copies of the game's art (so the newer end-zone and sideline people never appeared). Saved art is now refreshed in the background, and the old saved copies are cleared once.",
   ] },
+  { v: "6.13", date: "2026-10-23", title: "Sideways on a phone", notes: [
+    "Arcade on iPhone: turning the phone sideways now resizes the game to fill the landscape screen. iPhones report a rotation before the new screen size is ready, so the game kept its old size and part of the screen was cut off; it now watches its own frame and checks again just after a turn.",
+    "Arcade on iPhone in landscape: the game stays clear of the notch (the Dynamic Island) and the rounded corners, so the scoreboard and the buttons at the edges aren't hidden under them.",
+  ] },
 ];

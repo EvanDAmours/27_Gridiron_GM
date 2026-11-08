@@ -68,12 +68,18 @@ export class ArcadeGame {
     canvas.addEventListener("pointerup", this.onUp); canvas.addEventListener("pointercancel", this.onUp);
     canvas.addEventListener("contextmenu", this.noMenu);
     window.addEventListener("keydown", this.onKey); window.addEventListener("keyup", this.onKeyUp); window.addEventListener("resize", this.fit); document.addEventListener("fullscreenchange", this.fit); document.addEventListener("webkitfullscreenchange", this.fit);
+    // a phone turned on its side: iOS fires its resize before the new size has landed, so the game
+    // also watches its own box (and looks again a few beats after a rotation) rather than trusting it
+    this.ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => this.fit()) : null; this.ro?.observe(canvas.parentElement);
+    this.onTurn = () => { for (const ms of [60, 250, 600]) setTimeout(this.fit, ms); };
+    window.addEventListener("orientationchange", this.onTurn); window.visualViewport?.addEventListener("resize", this.fit);
     this.fit();
     if (skipMenu) this.start();
     this.last = 0; this.raf = requestAnimationFrame((t) => this.loop(t));
   }
   destroy() {
     cancelAnimationFrame(this.raf);
+    this.ro?.disconnect(); window.removeEventListener("orientationchange", this.onTurn); window.visualViewport?.removeEventListener("resize", this.fit);
     window.removeEventListener("resize", this.fit); document.removeEventListener("fullscreenchange", this.fit); document.removeEventListener("webkitfullscreenchange", this.fit); window.removeEventListener("keydown", this.onKey); window.removeEventListener("keyup", this.onKeyUp);
     for (const [n, f] of [["pointerdown", this.onDown], ["pointermove", this.onMove], ["pointerup", this.onUp], ["pointercancel", this.onUp], ["contextmenu", this.noMenu]]) this.cv.removeEventListener(n, f);
   }
@@ -99,7 +105,11 @@ export class ArcadeGame {
 
   fit() {
     const cv = this.cv, wrap = cv.parentElement, dpr = Math.min(2, window.devicePixelRatio || 1);
-    let W = wrap.clientWidth, H = wrap.clientHeight;
+    // the box the game may use: its parent, less any padding (the arcade page pads round the iPhone's
+    // notch and rounded corners in landscape, so nothing the game draws ends up under them)
+    const cs = getComputedStyle(wrap), px = (k) => parseFloat(cs[k]) || 0;
+    let W = Math.floor(wrap.clientWidth - px("paddingLeft") - px("paddingRight")), H = Math.floor(wrap.clientHeight - px("paddingTop") - px("paddingBottom"));
+    if (!(W > 0 && H > 0)) return;
     // on a desktop window the game sits in a 16:9 frame (at most ~1000 px wide) in the middle of the
     // page, like a console game in a browser; on a phone, or in full screen, it fills the screen
     const full = !!(document.fullscreenElement || document.webkitFullscreenElement);
@@ -108,6 +118,7 @@ export class ArcadeGame {
       Object.assign(wrap.style, { display: "flex", alignItems: "center", justifyContent: "center" });
       cv.style.borderRadius = "6px"; cv.style.boxShadow = "0 0 0 2px #1d2433, 0 20px 60px rgba(0,0,0,.6)";
     } else { cv.style.borderRadius = ""; cv.style.boxShadow = ""; }
+    const key = `${W}x${H}@${dpr}`; if (key === this.fitKey && this.cam) return; this.fitKey = key; // (nothing changed: the canvas keeps its picture)
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + "px"; cv.style.height = H + "px";
     const cam = makeCamera(W, H, { span: this.live ? 54 : 66 }); cam.camX = this.cam?.camX ?? (this.S ? this.S.ball.x : this.g?.yard ?? 25) + cam.lead; this.cam = cam;
   }

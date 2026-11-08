@@ -22,7 +22,7 @@ export default function Arcade() {
     return () => { clearInterval(iv); game.destroy(); };
   }, []);
   return (
-    <div style={{ height: "100dvh", width: "100vw", background: "#0b0e14", userSelect: "none", overflow: "hidden" }}>
+    <div style={{ height: "100dvh", width: "100vw", boxSizing: "border-box", padding: "env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)", background: "#0b0e14", userSelect: "none", overflow: "hidden" }}>
       <canvas ref={ref} style={{ display: "block", touchAction: "none", imageRendering: "pixelated", outline: "none" }} />
       {fly && <StadiumFlyover key={fly.key} home={fly.home} away={fly.away} wx={fly.wx} onDone={() => { setFly(null); if (gameRef.current) gameRef.current.intro = 0; }} />}
     </div>
