@@ -160,15 +160,15 @@ function wear(c, w, h) {
 // A club's logo for the turf: shrunk to a few dozen pixels with hard edges (it comes out in chunky
 // pixels like the rest of the field), then worn like the paint. Made once per club, when its logo has loaded.
 const pixLogos = new Map();
-function pixLogo(ab, res = 30) {
-  const key = `${ab}|${res}`; if (pixLogos.has(key)) return pixLogos.get(key);
+function pixLogo(ab, res = 30, worn = true) { // (worn: scuffed like paint on grass; off for a clean sign)
+  const key = `${ab}|${res}|${worn ? 1 : 0}`; if (pixLogos.has(key)) return pixLogos.get(key);
   const im = logo(ab); if (!im.complete || !im.naturalWidth) return null;
   if (typeof document === "undefined") return null;
   const cv = document.createElement("canvas"); cv.width = cv.height = res; const c = cv.getContext("2d"); if (!c) return null;
   const r = im.naturalWidth / im.naturalHeight, w = r >= 1 ? res : res * r, h = r >= 1 ? res / r : res;
   c.imageSmoothingEnabled = true; c.drawImage(im, (res - w) / 2, (res - h) / 2, w, h);
   try { const d = c.getImageData(0, 0, res, res); for (let i = 3; i < d.data.length; i += 4) d.data[i] = d.data[i] > 110 ? 255 : 0; c.putImageData(d, 0, 0); } catch { /* tainted: keep it smooth */ }
-  wear(c, res, res); pixLogos.set(key, cv); return cv;
+  if (worn) wear(c, res, res); pixLogos.set(key, cv); return cv;
 }
 function paintField(ctx, cam, teams, yardAt, sb = null) {
   const { W, s, top, depth } = cam, cy = top + depth / 2;
@@ -1287,7 +1287,17 @@ export function drawCeremony(ctx, cam, team, away, t, { sb = "SUPER BOWL" } = {}
     const mid = (x0 + x1) / 2, big = Math.max(px, Math.round(px * 1.5)), heads = Math.round(sy(-10.5) - hS - PLAYER_H * s * 1.08);
     // (the title itself is the banner along the bottom of the screen: SUPER BOWL ... CHAMPIONS)
     const nameY = Math.max(Math.round(yb - h + px * 4), heads - big * 7 - px * 3); void sb;
-    pixShadow(ctx, String(team?.name || "").toUpperCase(), mid, nameY, big, "#fff", "center"); }
+    // the champions' logo on it, low-res like the rest of the game (22 pixels across, blown up with no
+    // smoothing, a hard shadow under it); their name instead until the logo has loaded
+    // (sized to the strip of backdrop that shows between the score strip across the top and the heads)
+    const up = uiPx(cam), hudB = up * 13 + Math.max(1, Math.round(up * 0.7)) * 7 + up, room = heads - px - Math.max(yb - h + gb + px, hudB);
+    const lg = team?.ab && pixLogo(team.ab, 22, false), k = Math.max(2, Math.min(Math.round((big * 13) / 22), Math.floor(room / 26))), size = 22 * k; // (a whole number of screen pixels per logo pixel)
+    if (lg) { const pad = k * 2, bw = size + pad * 2, bx = Math.round(mid - bw / 2), by = Math.round(Math.max(Math.min(heads - bw - px, yb - bw - px), hudB + px)); // (a small screen: it can tuck behind the heads on the stage rather than under the score)
+      // a light badge with a gold rim behind it, corners cut like a pixel sprite, so a dark logo shows on a dark backdrop
+      const cut = k * 2, plate = (x, y, w, hh, c) => { ctx.fillStyle = c; ctx.fillRect(x + cut, y, w - cut * 2, hh); ctx.fillRect(x, y + cut, w, hh - cut * 2); ctx.fillRect(x + k, y + k, w - k * 2, hh - k * 2); };
+      plate(bx + k, by + k, bw, bw, "rgba(5,8,20,.7)"); plate(bx, by, bw, bw, "#e8c45a"); plate(bx + k, by + k, bw - k * 2, bw - k * 2, "#f1f3f7");
+      ctx.save(); ctx.imageSmoothingEnabled = false; ctx.drawImage(lg, bx + pad, by + pad, size, size); ctx.restore(); }
+    else pixShadow(ctx, String(team?.name || "").toUpperCase(), mid, nameY, big, "#fff", "center"); }
   // the stage: its top, then its front with the champions' colours and gold trim
   { const x0 = sx(42), x1 = sx(58), yt = sy(-12) - hS, yf = sy(-6) - hS;
     ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.fillRect(Math.round(x0 + s * 0.4), Math.round(sy(-6) - s * 0.1), Math.round(x1 - x0), Math.round(s * 0.5));

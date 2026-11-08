@@ -2526,4 +2526,7 @@ export const PATCH_NOTES = [
   { v: "6.08", date: "2026-10-23", title: "Quiet crowd", notes: [
     "Arcade: the crowd noise is gone. It was made from filtered static and sounded like a vacuum cleaner, under every play and in a whoosh after scores. The 8-bit sound effects (the snap, the tackle, the whistle, the touchdown jingle) all stay.",
   ] },
+  { v: "6.09", date: "2026-10-23", title: "Champions' colours", notes: [
+    "Arcade trophy ceremony: the backdrop behind the stage now shows the champions' logo in the game's low-res pixel style, on a light badge with a gold rim, in place of the club's name in plain letters. It's sized to show in full between the scoreboard and the players on the stage, on a computer or a phone.",
+  ] },
 ];
