@@ -27,6 +27,7 @@ const AI_TRADE_OFFERS = false;
 const TradeScreen = lazyScreen(() => import("./TradeScreen.jsx")); // loaded when first opened
 const LiveArcade = lazyScreen(() => import("./arcade/LiveArcade.jsx")); // the arcade field in the live game: loaded when first shown
 const GmRetire = lazyScreen(() => import("./GmRetire.jsx")); // loaded when first opened
+import { hasFlyover } from "./flyovers.js"; // (only the stadiums with a filmed flyover get one)
 const StadiumFlyover = lazyScreen(() => import("./StadiumFlyover.jsx")); // the drone shot of the home stadium before a live game
 const EasyShell = lazyScreen(() => import("./EasyShell.jsx")); // Easy Mode: loaded when first turned on
 const EasyLive = lazyScreen(() => import("./EasyShell.jsx").then((m) => ({ default: m.EasyLive }))); // Easy Mode's live game
@@ -658,7 +659,7 @@ const _wireLog=useRef(null);
 
   // A live game starting: the drone shot of the home stadium first (a neutral site has none); the game waits under it
   const _flyKey=liveSim?`${yr}-${liveSim.wk}-${liveSim.h}-${liveSim.a}`:null;
-  useLayoutEffect(()=>{if(!_flyKey||liveDone||liveSim.neutral||liveSim.intl||liveSim.wk==="P4"||phase!=="main")return;setFlyIntro({key:_flyKey,home:TEAMS[liveSim.h],away:TEAMS[liveSim.a],night:!!primeSlot(liveSim),wx:liveGameRef.current?.g?.wx});setLivePaused(true);},[_flyKey]);// eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(()=>{if(!_flyKey||liveDone||!hasFlyover(TEAMS[liveSim.h]?.ab)||liveSim.neutral||liveSim.intl||liveSim.wk==="P4"||phase!=="main")return;setFlyIntro({key:_flyKey,home:TEAMS[liveSim.h],away:TEAMS[liveSim.a],night:!!primeSlot(liveSim),wx:liveGameRef.current?.g?.wx});setLivePaused(true);},[_flyKey]);// eslint-disable-line react-hooks/exhaustive-deps
   const endFly=()=>{setFlyIntro(null);setLivePaused(false);};
   // Live sim ticker
   useEffect(()=>{

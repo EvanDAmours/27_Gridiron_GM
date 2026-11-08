@@ -2518,4 +2518,9 @@ export const PATCH_NOTES = [
     "The stadium flyover now plays before you see anything else. The field used to flash on screen for a moment before the drone shot started; now the screen stays dark until the flyover begins, and the game waits underneath it.",
     "Arcade: the camera follows punt and kickoff returns properly. It used to hang back halfway between the returner and where the ball landed, so the tackle often happened off screen. Now it runs with the returner, looking ahead in the direction he's going, and centers on him for the tackle.",
   ] },
+  { v: "6.07", date: "2026-10-23", title: "Houston from the air", notes: [
+    "Stadium flyovers: Texans home games now open with a filmed pixel-art drone shot of NRG Stadium, with the Houston skyline and the Astrodome behind it, in clear, rain or snow to match the day's weather (a closed-roof day plays the clear shot).",
+    "Flyovers now play only at stadiums that have a filmed one: MetLife Stadium (Giants and Jets) and NRG Stadium (Texans). Every other game starts straight away, with no flyover, until more stadiums are filmed.",
+    "The flyover's LIVE FROM banner is drawn in the arcade's pixel font, to match the game, and the shot cuts into the game sooner instead of lingering on a close-up of the field.",
+  ] },
 ];

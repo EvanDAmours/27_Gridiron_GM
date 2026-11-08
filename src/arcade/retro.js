@@ -8,6 +8,7 @@ import ACTS2 from "../pixel/actionSprites2.json" with { type: "json" };
 import SCENE from "../pixel/sceneSprites.json" with { type: "json" };
 import { teamKey } from "../teamUniforms.js";
 import { lastName } from "../lastName.js";
+import { pixText, pixWidth, pixShadow, FIELD_GL } from "./pixfont.js";
 import { HALF, ELIGIBLE, passPlan, BULLET_RANGE, BULLET_MAX, playDiagram } from "./play.js";
 
 const BASE = `${import.meta.env?.BASE_URL ?? "/"}sprites/`;
@@ -45,30 +46,8 @@ function sceneSprite(ctx, cam, team, away, name, x, y, facing = 1, scale = 1) {
   ctx.restore(); return true;
 }
 
-// ---- a 5x7 bitmap font for the scoreboard and banners ----
-const GL = {
-  "0": "01110 10001 10011 10101 11001 10001 01110", "1": "00100 01100 00100 00100 00100 00100 01110", "2": "01110 10001 00001 00010 00100 01000 11111", "3": "11111 00010 00100 00010 00001 10001 01110", "4": "00010 00110 01010 10010 11111 00010 00010", "5": "11111 10000 11110 00001 00001 10001 01110", "6": "00110 01000 10000 11110 10001 10001 01110", "7": "11111 00001 00010 00100 01000 01000 01000", "8": "01110 10001 10001 01110 10001 10001 01110", "9": "01110 10001 10001 01111 00001 00010 01100",
-  A: "01110 10001 10001 11111 10001 10001 10001", B: "11110 10001 10001 11110 10001 10001 11110", C: "01110 10001 10000 10000 10000 10001 01110", D: "11100 10010 10001 10001 10001 10010 11100", E: "11111 10000 10000 11110 10000 10000 11111", F: "11111 10000 10000 11110 10000 10000 10000", G: "01110 10001 10000 10111 10001 10001 01111", H: "10001 10001 10001 11111 10001 10001 10001", I: "01110 00100 00100 00100 00100 00100 01110", J: "00111 00010 00010 00010 00010 10010 01100", K: "10001 10010 10100 11000 10100 10010 10001", L: "10000 10000 10000 10000 10000 10000 11111", M: "10001 11011 10101 10101 10001 10001 10001", N: "10001 10001 11001 10101 10011 10001 10001", O: "01110 10001 10001 10001 10001 10001 01110", P: "11110 10001 10001 11110 10000 10000 10000", Q: "01110 10001 10001 10001 10101 10010 01101", R: "11110 10001 10001 11110 10100 10010 10001", S: "01111 10000 10000 01110 00001 00001 11110", T: "11111 00100 00100 00100 00100 00100 00100", U: "10001 10001 10001 10001 10001 10001 01110", V: "10001 10001 10001 10001 10001 01010 00100", W: "10001 10001 10001 10101 10101 10101 01010", X: "10001 10001 01010 00100 01010 10001 10001", Y: "10001 10001 01010 00100 00100 00100 00100", Z: "11111 00001 00010 00100 01000 10000 11111",
-  " ": "00000 00000 00000 00000 00000 00000 00000", ":": "00000 00100 00100 00000 00100 00100 00000", "&": "01100 10010 10100 01000 10101 10010 01101", "-": "00000 00000 00000 11111 00000 00000 00000", ".": "00000 00000 00000 00000 00000 01100 01100", "'": "00100 00100 00000 00000 00000 00000 00000", "+": "00000 00100 00100 11111 00100 00100 00000", ",": "00000 00000 00000 00000 00000 00100 01000", "!": "00100 00100 00100 00100 00100 00000 00100",
-  "<": "00010 00100 01000 10000 01000 00100 00010", ">": "01000 00100 00010 00001 00010 00100 01000", "(": "00010 00100 01000 01000 01000 00100 00010", ")": "01000 00100 00010 00010 00010 00100 01000",
-  "/": "00001 00010 00010 00100 01000 01000 10000", "?": "01110 10001 00001 00010 00100 00000 00100", "%": "11001 11010 00010 00100 01000 01011 10011", "#": "01010 11111 01010 01010 01010 11111 01010", "^": "00100 01110 10101 00100 00100 00100 00100",
-};
-// (the yard numbers' zero is round, the way it's painted on a field, not slashed like a scoreboard's)
-const FIELD_GL = { "0": "01110 10001 10001 10001 10001 10001 01110" };
-export function pixText(ctx, text, x, y, px, color = "#fff", align = "left", font = null) {
-  const t = String(text).toUpperCase(), w = t.length * 6 * px - px;
-  let cx = align === "center" ? x - w / 2 : align === "right" ? x - w : x;
-  ctx.fillStyle = color;
-  for (const ch of t) {
-    const rows = ((font && font[ch]) || GL[ch] || GL[" "]).split(" ");
-    rows.forEach((r, ry) => { for (let rx = 0; rx < 5; rx++) if (r[rx] === "1") ctx.fillRect(Math.round(cx + rx * px), Math.round(y + ry * px), px, px); });
-    cx += 6 * px;
-  }
-  return w;
-}
-export const pixWidth = (text, px) => String(text).length * 6 * px - px;
-// with a drop shadow, the way every label in Retro Bowl sits on the field
-export function pixShadow(ctx, text, x, y, px, color = "#fff", align = "left", shadow = "rgba(0,0,0,.7)") { pixText(ctx, text, x + px, y + px, px, shadow, align); return pixText(ctx, text, x, y, px, color, align); }
+// ---- the 5x7 bitmap font: pixfont.js (shared with the screens outside the field) ----
+export { pixText, pixWidth, pixShadow };
 
 // the football, 13x7: o outline, b leather, h highlight, w stripes and laces
 const BALL = ["....ooooo....", "..oobhhhboo..", ".obwhwbwhwbo.", "obbwbbbbbwbbo", ".obwbbbbbwbo.", "..oobbbbboo..", "....ooooo...."];

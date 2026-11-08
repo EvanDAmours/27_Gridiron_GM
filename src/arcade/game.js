@@ -164,7 +164,7 @@ export class ArcadeGame {
     const wx = pick === "auto" ? rollWeather(teamKey(this.teams.user), R) : pick;
     this.wxNow = wx; // (the drone shot before kickoff shows the day's weather)
     this.sb = this.sbMode && !this.franchise ? sbTitle() : null; if (this.sb) this.sbCardAt = this.time;
-    if (this.wantsIntro) this.intro = performance.now() + 9000; // (the drone shot plays first: the field waits, dark, until it's done; a cap in case it never reports back)
+    if (typeof this.wantsIntro === "function" ? this.wantsIntro() : this.wantsIntro) this.intro = performance.now() + 9000; // (the drone shot plays first: the field waits, dark, until it's done; a cap in case it never reports back)
     this.mode = "loading"; this.S = null; this.ceremony = null; this.cerNext = null; this.box = null; this.banner = null;
     const opts = { ...(this.rand ? { rand: this.rand } : {}), qLen: this.qMin * 60, wx, wind: windFor(wx, R), playoff: !!this.sb }, seq = (this.startSeq = (this.startSeq || 0) + 1);
     franchiseGame(this.userTi, this.oppTi, opts).catch((e) => { console.error("arcade: franchise setup failed, using the plain rosters", e); return newGame(this.userTi, this.oppTi, opts).g; }).then((g) => {
