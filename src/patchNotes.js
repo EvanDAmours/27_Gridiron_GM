@@ -2539,4 +2539,8 @@ export const PATCH_NOTES = [
     "Arcade: the computer's quarterback no longer turns his back to the field as he throws. The release, and the moment after it as he watches the ball, now face where the ball is going.",
     "Easy Mode on phones: the home screen no longer runs off the right edge of the screen.",
   ] },
+  { v: "6.12", date: "2026-10-23", title: "A crowded end line", notes: [
+    "Arcade: the end zones are busier. A full crew now works the whole width behind each end line: photographers kneeling and standing either side of the posts, a sideline reporter, the cable tech feeding the end-zone camera, the league coordinator, a field marshal, the ball attendant and security at the corners.",
+    "Fixed: after an update, some devices kept showing old saved copies of the game's art (so the newer end-zone and sideline people never appeared). Saved art is now refreshed in the background, and the old saved copies are cleared once.",
+  ] },
 ];

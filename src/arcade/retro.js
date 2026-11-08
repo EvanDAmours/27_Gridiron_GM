@@ -726,9 +726,16 @@ function endZoneLife(ctx, cam, S, teams, opts) {
     // a few photographers back toward the wall (kneeling either side of the post, one standing), a ball
     // attendant, security in the corners: all turned toward the field, well clear of the end line
     const L = dir > 0 ? "_l" : "", at = (n, d, y) => sceneSprite(ctx, cam, null, false, n + L, back(d), y, 1, 0.86) || sceneSprite(ctx, cam, null, false, n, back(d), y, face, 0.86);
-    at("cam_kneel", 3.4, -11); at("cam_kneel", 3.4, 11.5); at("cam_stand", 4.4, -18.5);
-    sceneSprite(ctx, cam, null, false, "ballboy", back(3.8), 6.2, face, 0.8);
-    at("sec_vest", 5.0, HALF - 1.6); at("sec_jacket", 5.0, -HALF + 1.6);
+    // the whole width of it is busy, the way an NFL end line is: photographers in a loose row either
+    // side of the posts, a reporter, the cable man feeding the camera, the league's coordinator, a field
+    // marshal, the ball attendant, security at the corners (drawn back to front, so nearer ones overlap)
+    const crew = [
+      ["sec_jacket", 5.2, -HALF + 1.6], ["cam_stand", 4.6, -20.5], ["photographer_kneel", 2.3, -17.5], ["reporter", 5.4, -14.5],
+      ["cam_kneel", 3.2, -11.5], ["cable_tech", 5.6, -7.6], ["photographer_stand", 3.6, -5.4], ["coordinator", 5.4, 6.8],
+      ["ballboy", 3.8, 5.6, 0.8], ["cam_kneel", 3.2, 10.4], ["photographer_kneel", 2.3, 13.6], ["cam_stand", 4.6, 16.8],
+      ["marshal", 5.4, 20.2], ["sec_vest", 5.2, HALF - 1.6],
+    ].sort((a, b) => a[2] - b[2]);
+    for (const [n, d, y, sc] of crew) { if (sc) sceneSprite(ctx, cam, null, false, n, back(d), y, face, sc); else at(n, d, y); }
     void t; void home;
   }
 }

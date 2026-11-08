@@ -5,7 +5,7 @@
 // used straight away. Matchup portraits are saved as they're shown.
 const BASE = new URL('./', self.registration.scope).pathname;
 // one store per build (the phone build lives under /mobile/ on the same site)
-const CACHE = `gridiron-gm-v3 ${BASE}`;
+const CACHE = `gridiron-gm-v4 ${BASE}`; // (v4: drops copies of art saved before it was updated)
 
 // Save everything in offline.json. Reports progress to open pages: { type: 'offline', done, total }.
 async function saveAll() {
@@ -57,6 +57,12 @@ self.addEventListener('message', (e) => {
 const networkFirst = (req) => fetch(req)
   .then((r) => { if (r.ok) { const rc = r.clone(); caches.open(CACHE).then((c) => c.put(req, rc)); } return r; })
   .catch(() => caches.match(req, { ignoreSearch: true }).then((r) => r || caches.match(BASE)));
+// a file whose name doesn't change when it does (sprite sheets, logos, the game's data): the saved copy
+// at once, and a fresh one fetched behind it for next time, so new art always arrives
+const staleRevalidate = (req) => caches.match(req, { ignoreSearch: true }).then((hit) => {
+  const net = fetch(req).then((r) => { if (r.ok) { const rc = r.clone(); caches.open(CACHE).then((c) => c.put(req, rc)); } return r; }).catch(() => hit);
+  return hit || net;
+});
 const cacheFirst = (req) => caches.match(req, { ignoreSearch: true }).then((hit) => hit || fetch(req).then((r) => {
   if (r.ok) { const rc = r.clone(); caches.open(CACHE).then((c) => c.put(req, rc)); }
   return r;
@@ -70,5 +76,5 @@ self.addEventListener('fetch', (e) => {
   if (e.request.destination === 'video' || e.request.headers.has('range')) return; // (video: straight from the network, ranges and all)
   const isPage = e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === BASE;
   if (isPage || url.pathname.endsWith('offline.json') || url.pathname.endsWith('manifest.json')) e.respondWith(networkFirst(e.request));
-  else e.respondWith(cacheFirst(e.request));
+  else e.respondWith(url.pathname.includes('/assets/') ? cacheFirst(e.request) : staleRevalidate(e.request)); // (built files carry their version in the name)
 });
