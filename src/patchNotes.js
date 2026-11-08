@@ -2529,4 +2529,7 @@ export const PATCH_NOTES = [
   { v: "6.09", date: "2026-10-23", title: "Champions' colours", notes: [
     "Arcade trophy ceremony: the backdrop behind the stage now shows the champions' logo in the game's low-res pixel style, on a light badge with a gold rim, in place of the club's name in plain letters. It's sized to show in full between the scoreboard and the players on the stage, on a computer or a phone.",
   ] },
+  { v: "6.10", date: "2026-10-23", title: "Aim where you want", notes: [
+    "Arcade on phones: the aim no longer locks onto receivers. It felt like chasing the receiver instead of throwing; now the ball goes exactly where you drag (or pull back), still smoothed so it doesn't jitter. Tap-to-throw still throws to the receiver you tap.",
+  ] },
 ];

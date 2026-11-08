@@ -609,9 +609,9 @@ export class ArcadeGame {
     if (passing && t.moved > 12) { // the slingshot: let go to throw (pulled back to where you started: cancelled)
       // (the aim from a moment before the finger lifted: lifting it nudges the pull)
       const now = performance.now(), h = (t.aims || []).filter((a) => now - a.t >= 70).pop() || (t.aims || []).at(-1);
-      if (h?.aim) { const aim = h.lock && P.ents[h.lock] ? this.leadSpot(P, P.ents[h.lock]) : h.aim; throwTo(P, aim, null, this.passKind, h.lock || null); }
+      if (h?.aim) throwTo(P, h.aim, null, this.passKind);
     } else if (passing && !t.snapped) this.tapThrow(P, t); // a tap: to the man you touched
-    P.aim = null; P.aimLock = null; P.steer = null;
+    P.aim = null; P.steer = null;
   }
   // touch: a tap on (or near) a receiver throws to him, led to where he'll be when it gets there; a tap
   // on open grass throws to that spot. (Fingers are wide and phones are small: "near" is generous.)
@@ -633,13 +633,13 @@ export class ArcadeGame {
     for (let i = 0; i < 2; i++) { const T = passPlan(P, spot, this.passKind).T; spot = { x: e.x + (e.vx || 0) * T, y: e.y + (e.vy || 0) * T }; }
     return { x: spot.x, y: Math.max(-26, Math.min(26, spot.y)) };
   }
-  // the slingshot's aim, every frame while the finger is down: the pull smoothed (no jitter), turned
-  // into a spot the other way from the quarterback, and locked on to a receiver whose catch point it's near
+  // the slingshot's aim, every frame while the finger is down: the pull smoothed (no jitter) and turned
+  // into a spot on the field (no lock-on: the ball goes where you put it)
   slingAim(P, t, dt) {
     const cam = this.cam, qb = P.ents.QB, raw = t.pull || { x: 0, y: 0 };
     t.sp = t.sp || { ...raw }; const k = Math.min(1, dt * 18); t.sp.x += (raw.x - t.sp.x) * k; t.sp.y += (raw.y - t.sp.y) * k;
     const L = Math.hypot(t.sp.x, t.sp.y), dead = Math.max(14, Math.min(cam.W, cam.H) * 0.035);
-    let aim = null, lock = null;
+    let aim = null;
     if (L > dead) {
       // either way works, and a throw only ever goes forward: drag toward the spot (it aims where you
       // point) or pull back away from it (the slingshot, the other way). Which one is decided by
@@ -648,16 +648,9 @@ export class ArcadeGame {
       if (!t.mode || (t.mode === "aim" && ahead < -dead * 2) || (t.mode === "sling" && ahead > dead * 2)) t.mode = ahead > 0 ? "aim" : "sling";
       const sgn = t.mode === "aim" ? -1 : 1, f = cam.toField(qx + sgn * t.sp.x * PULL, qy + sgn * t.sp.y * PULL);
       aim = { x: Math.max(qb.x - 1, f.x), y: Math.max(-26, Math.min(26, f.y)) };
-      let bd = 1e9;
-      for (const key of ELIGIBLE) {
-        const e = P.ents[key]; if (!e || e.mode === "block" || e.mode === "back") continue;
-        const lead = this.leadSpot(P, e), d = Math.hypot(lead.x - aim.x, lead.y - aim.y), grab = 4 + Math.hypot(lead.x - qb.x, lead.y - qb.y) * 0.1; // (a little more help on a long one)
-        if (d < grab && d < bd) { bd = d; lock = key; }
-      }
-      if (lock) aim = this.leadSpot(P, P.ents[lock]);
     }
-    P.aim = aim; P.aimLock = lock;
-    const now = performance.now(); t.aims = (t.aims || []).filter((a) => now - a.t < 250); t.aims.push({ t: now, aim, lock });
+    P.aim = aim;
+    const now = performance.now(); t.aims = (t.aims || []).filter((a) => now - a.t < 250); t.aims.push({ t: now, aim });
   }
   // the slingshot itself: a band from where you touched to your finger, thicker the harder you pull
   drawSling(ctx, t) {
