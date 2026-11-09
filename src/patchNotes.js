@@ -2554,4 +2554,7 @@ export const PATCH_NOTES = [
     "Retro mode: a Sim to end button sits in the corner of the field, next to Full screen, in every live game you watch or play in retro view (it's there in full screen too). Tap it, then tap again to confirm, and the rest of the game is played out and you go straight to the final and the box score.",
     "Retro arcade: the pause menu now has Sim to the End for every game, not just franchise games.",
   ] },
+  { v: "6.16", date: "2026-10-23", title: "Retro on the front page", notes: [
+    "The home screen's Arcade button is now RETRO ARCADE: a big blue-and-gold button that opens the 8-bit football game straight away, on a computer or a phone.",
+  ] },
 ];
