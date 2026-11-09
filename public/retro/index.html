@@ -3,6 +3,24 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>
+// Diagnostics log (mod menu > NFL > SHOW DIAGNOSTICS): page errors and mod messages, so problems
+// that only happen on a real phone can be read off the screen. Kept from the very start of the page.
+(function () {
+  var log = window.__rbLog = [], t0 = Date.now();
+  function add(s) { s = ((Date.now() - t0) / 1000).toFixed(1) + "s " + String(s).slice(0, 220); if (log.length && log[log.length - 1].slice(log[log.length - 1].indexOf(" ")) === s.slice(s.indexOf(" "))) return; log.push(s); if (log.length > 40) log.shift(); }
+  window.__rbLogAdd = add;
+  window.addEventListener("error", function (e) { add("ERR " + (e.message || e) + (e.filename ? " @" + String(e.filename).split("/").pop() + ":" + e.lineno : "")); });
+  window.addEventListener("unhandledrejection", function (e) { add("REJ " + (e.reason && (e.reason.message || e.reason))); });
+  ["error", "warn", "log"].forEach(function (k) {
+    var orig = console[k];
+    console[k] = function () {
+      try { var m = Array.prototype.join.call(arguments, " "); if (k !== "log" || /NFLMOD|error|exception|fail/i.test(m)) add(k.toUpperCase() + " " + m); } catch (e) {}
+      return orig.apply(console, arguments);
+    };
+  });
+})();
+</script>
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">

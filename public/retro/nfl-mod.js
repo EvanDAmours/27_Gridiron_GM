@@ -276,19 +276,41 @@
   };
 
   // mod menu: device / graphics report (see mobile-fix.js)
+  // for diagnostics: the most players seen on the field during the current game
+  var fieldWatch = { match: null, most: 0, secs: 0, started: 0 };
+  setInterval(function () {
+    try {
+      var m = currentMatch();
+      if (!m) { fieldWatch.match = null; return; }
+      if (m !== fieldWatch.match) { fieldWatch.match = m; fieldWatch.most = 0; fieldWatch.started = Date.now(); }
+      var n = 0, all = _si(72);
+      for (var k in all) if (Object.prototype.hasOwnProperty.call(all, k)) n++;
+      if (n > fieldWatch.most) fieldWatch.most = n;
+      fieldWatch.secs = Math.round((Date.now() - fieldWatch.started) / 1000);
+    } catch (e) {}
+  }, 1000);
+
   var diagBtn = document.getElementById("a-nfl-diag");
   if (diagBtn) diagBtn.onclick = function () {
     var d = window.__rbDiagnostics || {}, match = null;
     try { match = currentMatch(); } catch (e) {}
     var players = 0;
     try { var all = _si(72); for (var k in all) if (Object.prototype.hasOwnProperty.call(all, k)) players++; } catch (e) {}
-    var c = document.getElementById("canvas");
+    var c = document.getElementById("canvas"), g = null, roster = "?";
+    try { g = globalObj(); roster = g && g._Ln !== undefined ? _wi(g._Ln) : "?"; } catch (e) {}
+    var room = "?";
+    try { room = window._Sc2._sN2; } catch (e) {}
+    var nav = "?";
+    try { nav = performance.getEntriesByType("navigation")[0].type; } catch (e) {}
+    var log = (window.__rbLog || []).slice(-12);
     alert([
       "GPU: " + (d.renderer || "?"),
       "WebGL: " + (d.version || "?") + "  highp: " + (d.fragHighp || 0),
       "Screen: " + innerWidth + "x" + innerHeight + " @" + (window.devicePixelRatio || 1) + "x  canvas " + (c ? c.width + "x" + c.height : "?"),
-      "In a game: " + (match ? "yes" : "no") + "  players on field: " + players,
+      "In a game: " + (match ? "yes" : "no") + "  players on field: " + players + "  most this game: " + fieldWatch.most + "  (" + fieldWatch.secs + "s in game)",
+      "Room: " + room + "  roster: " + roster + "  team: " + (g ? g._Ip : "?") + "  page: " + nav + (window.__retroWarmed ? " (warm-up done)" : ""),
       "Shader errors: " + (d.errors && d.errors.length ? d.errors.join(" || ") : "none"),
+      "Log: " + (log.length ? "\n" + log.join("\n") : "empty"),
       navigator.userAgent
     ].join("\n"));
   };

@@ -14,6 +14,7 @@
   var warm = false;
   try { warm = sessionStorage.getItem(KEY) === "1"; } catch (e) { return; } // no session storage: leave it alone
   if (isReload || warm) {
+    window.__retroWarmed = warm;
     try { sessionStorage.setItem(KEY, "1"); } catch (e) {}
     return;
   }
