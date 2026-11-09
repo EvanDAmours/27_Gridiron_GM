@@ -61,6 +61,9 @@ export class ArcadeGame {
     this.userTi = userTi; this.oppTi = oppTi; this.teams = teams || { user: TEAMS[userTi], opp: TEAMS[oppTi] };
     this.fx = new FX(); this.time = 0; this.hype = 0; this.fade = 1;
     this.sbMode = false; try { this.sbMode = localStorage.getItem("arcade_sb") === "1"; } catch { /* storage unavailable */ } this.wxPick = "auto"; try { const w = localStorage.getItem("arcade_wx"); if (WXPICKS.includes(w)) this.wxPick = w; } catch { /* storage unavailable */ } this.qMin = 5; try { const q = +localStorage.getItem("arcade_qmin"); if (QMINS.includes(q)) this.qMin = q; } catch { /* storage unavailable */ } this.passKind = "bullet"; try { const k = localStorage.getItem("arcade_pass"); if (k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
+    // which way your offense drives across the screen: right to left on a phone (an easy swipe for a right
+    // thumb), left to right with a mouse; the pause menu turns it round, and it's remembered
+    this.mirror = this.input === "touch"; try { const d = localStorage.getItem("arcade_dir"); if (d === "rtl" || d === "ltr") this.mirror = d === "rtl"; } catch { /* storage unavailable */ }
     this.touch = null; this.mouse = null; this.keys = new Set(); this.buttons = []; this.chips = {}; this.menuFocus = "user"; this.paused = false;
     this.S = null; this.g = null; this.mode = "menu"; this.banner = null; this.feed = { list: [], shown: 0, at: 0 };
     for (const n of ["onDown", "onMove", "onUp", "onKey", "onKeyUp", "fit", "noMenu"]) this[n] = this[n].bind(this);
@@ -118,9 +121,9 @@ export class ArcadeGame {
       Object.assign(wrap.style, { display: "flex", alignItems: "center", justifyContent: "center" });
       cv.style.borderRadius = "6px"; cv.style.boxShadow = "0 0 0 2px #1d2433, 0 20px 60px rgba(0,0,0,.6)";
     } else { cv.style.borderRadius = ""; cv.style.boxShadow = ""; }
-    const key = `${W}x${H}@${dpr}`; if (key === this.fitKey && this.cam) return; this.fitKey = key; // (nothing changed: the canvas keeps its picture)
+    const key = `${W}x${H}@${dpr}${this.mirror ? "r" : ""}`; if (key === this.fitKey && this.cam) return; this.fitKey = key; // (nothing changed: the canvas keeps its picture)
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + "px"; cv.style.height = H + "px";
-    const cam = makeCamera(W, H, { span: this.live ? 54 : 66 }); cam.camX = this.cam?.camX ?? (this.S ? this.S.ball.x : this.g?.yard ?? 25) + cam.lead; this.cam = cam;
+    const cam = makeCamera(W, H, { span: this.live ? 54 : 66, mirror: !!this.mirror }); cam.camX = this.cam?.camX ?? (this.S ? this.S.ball.x : this.g?.yard ?? 25) + cam.lead; this.cam = cam;
   }
   // the scoreboard at the 50 shows the game as of the last booked play the app has (taken here, when
   // the play is handed over): the engine books a play at the tackle, before the runner is down, and the
@@ -500,7 +503,7 @@ export class ArcadeGame {
     // the pause button, and the menu
     if (!this.paused && (!this.live || this.live.solo)) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 20.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
     if (this.fade > 0) { ctx.globalAlpha = this.fade; ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, cam.W, cam.H); ctx.globalAlpha = 1; }
-    if (this.paused && (!this.live || this.live.solo)) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ...(this.locked ? [] : [["wx", `WEATHER: ${wxName(this.wxPick)}`]]), ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), ...(this.franchise || this.live?.solo ? [["sim", "SIM TO THE END"]] : []), ...(this.franchise ? [] : [["quit", "QUIT GAME"]])], { mobile: this.mobile });
+    if (this.paused && (!this.live || this.live.solo)) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ...(this.locked ? [] : [["wx", `WEATHER: ${wxName(this.wxPick)}`]]), ["dir", this.mirror ? "DRIVE: RIGHT TO LEFT" : "DRIVE: LEFT TO RIGHT"], ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), ...(this.franchise || this.live?.solo ? [["sim", "SIM TO THE END"]] : []), ...(this.franchise ? [] : [["quit", "QUIT GAME"]])], { mobile: this.mobile });
   }
   drawKick(ctx, P, hintY) {
     const cam = this.cam, px = uiPx(cam);
@@ -566,7 +569,7 @@ export class ArcadeGame {
     let v = (this[which] + d + TEAMS.length) % TEAMS.length; if (v === (which === "userTi" ? this.oppTi : this.userTi)) v = (v + d + TEAMS.length) % TEAMS.length;
     this[which] = v; preload(TEAMS[v]); sfx.select?.();
   }
-  pauseAction(k) { if (k === "sim") { this.paused = false; this.simRest(); return; } if (k === "wx") { this.cycleWx(true); return; } if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; } if (k === "resume") this.paused = false; else if (k === "mute") toggleMute(); else if (k === "quit") { this.paused = false; this.mode = "menu"; this.S = null; this.replay = null; this.pendingReplay = null; if (this.live?.solo) { this.live = null; this.flipped = false; } } }
+  pauseAction(k) { if (k === "dir") { this.mirror = !this.mirror; try { localStorage.setItem("arcade_dir", this.mirror ? "rtl" : "ltr"); } catch { /* ignore */ } this.fit(); return; } if (k === "sim") { this.paused = false; this.simRest(); return; } if (k === "wx") { this.cycleWx(true); return; } if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; } if (k === "resume") this.paused = false; else if (k === "mute") toggleMute(); else if (k === "quit") { this.paused = false; this.mode = "menu"; this.S = null; this.replay = null; this.pendingReplay = null; if (this.live?.solo) { this.live = null; this.flipped = false; } } }
 
   onDown(e) {
     unlock();
@@ -606,7 +609,7 @@ export class ArcadeGame {
       P.steer = cam.toField(p.px, p.py).y;
       // a quick flick across the field is a juke; a quick flick up the field (toward the goal) is a dive
       const now = performance.now(); t.hist = (t.hist || []).filter((h) => now - h.t < 140); t.hist.push({ t: now, px: p.px, py: p.py });
-      const fx_ = p.px - t.hist[0].px, fy_ = p.py - t.hist[0].py;
+      const fx_ = (p.px - t.hist[0].px) * (cam.fx || 1), fy_ = p.py - t.hist[0].py; // (along the field: up it is forward, whichever way it runs on screen)
       if (t.hist.length > 1 && fx_ > 40 && fx_ > Math.abs(fy_) * 1.5) { if (dive(P)) t.hist = []; }
       else if (t.hist.length > 1 && Math.abs(fy_) > 34) { if (juke(P) !== null) t.hist = []; }
     }
@@ -676,7 +679,7 @@ export class ArcadeGame {
   // the drag (screen pixels) as a kick: up the field and across it, scaled so a drag of about a
   // third of the screen is a full-strength kick
   kickVec(d) {
-    const cam = this.cam, full = Math.min(cam.W, cam.H) * 0.36, dx = d.cx - d.px, dy = d.cy - d.py, L = Math.hypot(dx, dy);
+    const cam = this.cam, full = Math.min(cam.W, cam.H) * 0.36, dx = (d.cx - d.px) * (cam.fx || 1), dy = d.cy - d.py, L = Math.hypot(dx, dy);
     if (L < 10) return null;
     // direction: the drag's true angle on the field (the field's depth is squashed on screen);
     // strength: its length on the screen

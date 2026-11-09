@@ -2557,4 +2557,8 @@ export const PATCH_NOTES = [
   { v: "6.16", date: "2026-10-23", title: "Retro on the front page", notes: [
     "The home screen's Arcade button is now RETRO ARCADE: a big blue-and-gold button that opens the 8-bit football game straight away, on a computer or a phone.",
   ] },
+  { v: "6.17", date: "2026-10-23", title: "Right to left", notes: [
+    "Arcade on phones: your offense now drives from right to left, so swiping and dragging passes is easier with your right thumb. Everything turns with it (the players, the yard-line arrows, the goalposts, the wind and the swipes), while the words and logos still read normally. On a computer it still goes left to right. Change it either way under DRIVE in the pause menu; it's remembered.",
+    "The home screen's arcade button is back to how it was (ARCADE, Take the field).",
+  ] },
 ];

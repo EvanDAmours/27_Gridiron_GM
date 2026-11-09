@@ -40,7 +40,7 @@ function sceneSprite(ctx, cam, team, away, name, x, y, facing = 1, scale = 1) {
   else { r = SCENE.common.f[name]; if (!r) return false; im = sceneImg("common"); }
   if (!im.complete || !im.naturalWidth) return false;
   const [cx, cy, cw, ch, ax, ay] = r, sc = ((PLAYER_H * cam.s) / 160) * scale, [sx, sy] = cam.toScreen(x, y);
-  ctx.save(); ctx.translate(Math.round(sx), Math.round(sy)); if (facing < 0) ctx.scale(-1, 1);
+  ctx.save(); ctx.translate(Math.round(sx), Math.round(sy)); if (facing * (cam.fx || 1) < 0) ctx.scale(-1, 1);
   ctx.drawImage(im, cx, cy, cw, ch, Math.round(-ax * sc), Math.round(-ay * sc), Math.round(cw * sc), Math.round(ch * sc));
   ctx.restore(); return true;
 }
@@ -55,13 +55,17 @@ const BALL_C = { o: "#2a1206", b: "#8a4a22", h: "#b06a36", w: "#f4efe4" };
 // ---- the camera ----
 // The field runs left to right. s: pixels per yard along the field. The field's near sideline sits
 // at the bottom of the canvas; the stands fill the strip above the far sideline.
-export function makeCamera(W, H, { span = 66 } = {}) {
+// mirror: the field the other way round on screen (the offense drives right to left, easier to swipe
+// with a right thumb). The yards are the same; only the screen's x is turned round, and fx (+1 / -1)
+// tells anything drawn with a direction (a man's facing, an arrow, the wind) which way is "forward".
+export function makeCamera(W, H, { span = 66, mirror = false } = {}) {
   // the whole width of the field fits under the scoreboard, and no more than ~40 yards show across
   const hud = Math.max(2, Math.round(Math.min(W / 380, H / 215))) * 11;
   const s = Math.min(H > W ? W / 34 : W / span, (H - hud - 8) / (53.3 * SQUASH + 1.4)); // ~66 yards across a wide screen, ~34 upright (a phone held upright: closer in, so the players fill it)
   // the field sits low on a wide screen (stands above it) and in the middle of a tall one
   const depth = 53.3 * SQUASH * s, room = H - hud - depth - s * 1.2, top = hud + (H > W ? room * 0.5 : Math.min(room, s * 4.5)) + s * 0.2;
-  return { W, H, s, depth, top, camX: 50, lead: 5, toScreen(x, y) { return [W * 0.42 + (x - this.camX) * s, top + (y + HALF) * SQUASH * s]; }, toField(px, py) { return { x: this.camX + (px - W * 0.42) / s, y: (py - top) / (SQUASH * s) - HALF }; } };
+  const fx = mirror ? -1 : 1;
+  return { W, H, s, depth, top, camX: 50, lead: 5, fx, toScreen(x, y) { const u = W * 0.42 + (x - this.camX) * s; return [fx > 0 ? u : W - u, top + (y + HALF) * SQUASH * s]; }, toField(px, py) { const u = fx > 0 ? px : W - px; return { x: this.camX + (u - W * 0.42) / s, y: (py - top) / (SQUASH * s) - HALF }; } };
 }
 
 // ---- drawing ----
@@ -201,7 +205,7 @@ function sprite(ctx, cam, team, away, pose, x, y, facing, act = false, scale = 1
   const h = (ch / ref) * PLAYER_H * cam.s * scale, w = h * (cw / ch);
   const [sx, sy] = cam.toScreen(x, y);
   ctx.save(); ctx.translate(Math.round(sx), Math.round(sy));
-  if (facing < 0) ctx.scale(-1, 1);
+  if (facing * (cam.fx || 1) < 0) ctx.scale(-1, 1);
   ctx.drawImage(im, cx, cy, cw, ch, Math.round(-w / 2), Math.round(-h), Math.round(w), Math.round(h));
   ctx.restore();
   return true;
@@ -217,7 +221,7 @@ function sprite2(ctx, cam, team, away, name, x, y, facing) {
   const im = load(k, 2); if (!im.complete || !im.naturalWidth) return false;
   const [cx, cy, cw, ch, ax = cw / 2, ay = ch] = r, ref = ACTS[k]?.home?.a8?.[3] || 160, sc = (PLAYER_H * cam.s) / ref;
   const [sx, sy] = cam.toScreen(x, y);
-  ctx.save(); ctx.translate(Math.round(sx), Math.round(sy)); if (facing < 0) ctx.scale(-1, 1);
+  ctx.save(); ctx.translate(Math.round(sx), Math.round(sy)); if (facing * (cam.fx || 1) < 0) ctx.scale(-1, 1);
   ctx.drawImage(im, cx, cy, cw, ch, Math.round(-ax * sc), Math.round(-ay * sc), Math.round(cw * sc), Math.round(ch * sc));
   ctx.restore(); return true;
 }
@@ -406,7 +410,7 @@ function standsTile(u, needH, teams, pose) {
 // function of its index and the time), blown by the wind.
 export function drawWeather(ctx, cam, { wx, time = 0, wind } = {}) {
   if (!wx || !(wx.rain || wx.snow)) return;
-  const { W, H } = cam, k = Math.max(1, Math.round(uiPx(cam) / 2)), wx_ = (wind?.x || 0) * 6, wy_ = (wind?.y || 0) * 2;
+  const { W, H } = cam, k = Math.max(1, Math.round(uiPx(cam) / 2)), wx_ = (wind?.x || 0) * 6 * (cam.fx || 1), wy_ = (wind?.y || 0) * 2;
   if (wx.rain) {
     const n = 90 * wx.rain, len = 9 * k; ctx.strokeStyle = `rgba(190,215,240,${0.28 + 0.1 * wx.rain})`; ctx.lineWidth = k; ctx.beginPath();
     for (let i = 0; i < n; i++) { const sp = 520 + hash(i, 1) * 260, x = ((hash(i, 2) * (W + 200) + (wx_ + 60) * time) % (W + 200) + W + 200) % (W + 200) - 100, y = ((hash(i, 3) * H + sp * time) % H); ctx.moveTo(x, y); ctx.lineTo(x - (wx_ + 60) * 0.03 * k, y + len); }
@@ -435,7 +439,7 @@ export function drawWeather(ctx, cam, { wx, time = 0, wind } = {}) {
 export function drawWxChip(ctx, cam, wx, wind) {
   const px = Math.max(1, Math.round(uiPx(cam) * 0.75)), sky = wx?.label && wx.label !== "Clear" ? wx.label.toUpperCase() : "";
   // which way it blows, in eight directions (up the screen is toward the far sideline): a diagonal shows both
-  const ax = Math.abs(wind?.x || 0), ay = Math.abs(wind?.y || 0), wh = wind?.x > 0 ? ">" : "<", wv = wind?.y < 0 ? "^" : "V";
+  const ax = Math.abs(wind?.x || 0), ay = Math.abs(wind?.y || 0), wh = (wind?.x || 0) * (cam.fx || 1) > 0 ? ">" : "<", wv = wind?.y < 0 ? "^" : "V";
   const arrow = !wind?.mph ? "" : ax > ay * 2.2 ? ` ${wh}` : ay > ax * 2.2 ? ` ${wv}` : ` ${wv}${wh}`;
   const text = [sky, wind?.mph ? `WIND ${wind.mph}${arrow}` : ""].filter(Boolean).join(" - "); if (!text) return;
   const w = pixWidth(text, px) + px * 6, h = px * 10, x = px * 3, y = Math.round(uiPx(cam) * 20.5); // (under the scorebug's two rows)
@@ -485,7 +489,7 @@ function person(ctx, cam, x, y, facing, pal, scale = 0.72, { headset = true, she
     let k = COACH[r][c]; if (k === ".") continue;
     if (k === "h" && !headset) k = r < 5 ? "k" : "."; if (k === "w" && c === 8 && !sheet) continue; if (k === "c" && !cap) k = r < 2 ? "." : "k";
     if (k === ".") continue;
-    ctx.fillStyle = pal[k]; const cx = facing < 0 ? w - 1 - c : c;
+    ctx.fillStyle = pal[k]; const cx = facing * (cam.fx || 1) < 0 ? w - 1 - c : c;
     ctx.fillRect(Math.round(sx + (cx - w / 2) * u), Math.round(sy - (COACH.length - r) * u), Math.ceil(u), Math.ceil(u));
   }
 }
@@ -614,7 +618,7 @@ function goalPost(ctx, cam, ex, back, padClr) {
   const w = Math.max(3, Math.round(s * 0.34)), pw = Math.max(5, Math.round(s * 0.7)), padH = 2.2;
   const line = (a, b, wd, c, cap = "butt") => { ctx.strokeStyle = c; ctx.lineWidth = wd; ctx.lineCap = cap; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); };
   // its shadow on the turf, off to the side
-  { const [bx, by] = P(base, 0); ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(bx + back * s * 0.2, by, s * 0.9, s * 0.28, 0, 0, Math.PI * 2); ctx.fill(); }
+  { const [bx, by] = P(base, 0); ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(bx + back * (cam.fx || 1) * s * 0.2, by, s * 0.9, s * 0.28, 0, 0, Math.PI * 2); ctx.fill(); }
   // the post up out of the pad, then the gooseneck curving forward to the crossbar over the end line
   const p0 = P(base, padH - 0.1), p1 = P(base, bar - 0.9), g = P(ex, bar), gc = P(base, bar + 0.25);
   ctx.lineCap = "butt"; ctx.lineJoin = "round";
@@ -625,7 +629,7 @@ function goalPost(ctx, cam, ex, back, padClr) {
   line(u0, u1, w + 2, dark); line(u0, u1, w, gold); line([u0[0] - w * 0.25, u0[1]], [u1[0] - w * 0.25, u1[1]], Math.max(1, Math.round(w * 0.3)), lite);
   { const k = Math.max(4, Math.round(s * 0.55)); ctx.fillStyle = dark; ctx.fillRect(Math.round(g[0] - k / 2) - 1, Math.round(g[1] - k / 2) - 1, k + 2, k + 2); ctx.fillStyle = gold; ctx.fillRect(Math.round(g[0] - k / 2), Math.round(g[1] - k / 2), k, k); }
   // the wind ribbon on top
-  { const [fx, fy] = u1; ctx.fillStyle = "#e23b3b"; ctx.fillRect(Math.round(fx), Math.round(fy - s * 0.1), Math.round(s * 0.7 * -back + (back > 0 ? 0 : 0)), Math.max(2, Math.round(s * 0.28))); }
+  { const [fx, fy] = u1; ctx.fillStyle = "#e23b3b"; ctx.fillRect(Math.round(fx), Math.round(fy - s * 0.1), Math.round(s * 0.7 * -back * (cam.fx || 1)), Math.max(2, Math.round(s * 0.28))); }
   // the pad round the base, in the home club's colour with a dark outline
   { const [bx, by] = P(base, 0), [, ty] = P(base, padH), x0 = Math.round(bx - pw / 2), y0 = Math.round(ty), h = Math.round(by - ty);
     ctx.fillStyle = "#0b0e14"; ctx.fillRect(x0 - 1, y0 - 1, pw + 2, h + 2);
@@ -748,14 +752,14 @@ export const END_WALL = 16.5; // yards past the goal line (6.5 past the end line
 function endStands(ctx, cam, teams, yardAt, { px, wallTop, nearEdge, cheer, night }) {
   const { W, s } = cam, home = HOME_OF(teams), y0 = Math.max(0, Math.round(wallTop)), y1 = Math.round(nearEdge + s * 0.5), hgt = y1 - y0;
   for (const side of [-1, 1]) {
-    const wx = Math.round(yardAt(side < 0 ? -END_WALL : 100 + END_WALL)), x0 = side < 0 ? 0 : wx, x1 = side < 0 ? wx : W;
+    const left = side * (cam.fx || 1) < 0, wx = Math.round(yardAt(side < 0 ? -END_WALL : 100 + END_WALL)), x0 = left ? 0 : wx, x1 = left ? wx : W;
     if (x1 - x0 < 1 || hgt < 4) continue;
     const tile = standsTile(px, hgt, teams, cheer);
     ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, hgt); ctx.clip();
     ctx.fillStyle = "#121620"; ctx.fillRect(x0, y0, x1 - x0, hgt);
-    if (tile) { const ox = -(((cam.camX * s * 0.5) % tile.width) + tile.width) % tile.width; for (let x = ox; x < W; x += tile.width) ctx.drawImage(tile, Math.round(x), y0); }
+    if (tile) { const ox = -(((cam.camX * s * 0.5 * (cam.fx || 1)) % tile.width) + tile.width) % tile.width; for (let x = ox; x < W; x += tile.width) ctx.drawImage(tile, Math.round(x), y0); }
     // the rows climbing away from the field: darker toward the edge of the screen
-    const far = side < 0 ? x0 : x1, g = ctx.createLinearGradient?.(wx, 0, far, 0);
+    const far = left ? x0 : x1, g = ctx.createLinearGradient?.(wx, 0, far, 0);
     if (g) { g.addColorStop(0, "rgba(6,8,12,0)"); g.addColorStop(1, night ? "rgba(2,4,12,.7)" : "rgba(6,8,12,.5)"); ctx.fillStyle = g; ctx.fillRect(x0, y0, x1 - x0, hgt); }
     if (night) { ctx.fillStyle = "rgba(2,4,14,.45)"; ctx.fillRect(x0, y0, x1 - x0, hgt); }
     ctx.restore();
@@ -779,7 +783,7 @@ function paintGround(ctx, cam, teams, opts, { apron, apronTop, nearEdge, wallTop
   ctx.fillStyle = "#4f8139"; ctx.fillRect(0, Math.round(apronTop), W, Math.round(apron));
   ctx.fillRect(0, Math.round(top + depth), W, Math.round(nearEdge - top - depth));
   // the grass, striped every five yards
-  const yardAt = (x) => W * 0.42 + (x - cam.camX) * s;
+  const yardAt = (x) => cam.toScreen(x, 0)[0]; // (the screen x of a yard line, either way round)
   { // past the end lines: the apron to the wall, like the sidelines
     ctx.fillStyle = "#4f8139"; const l = yardAt(-10), r = yardAt(110);
     if (l > 0) ctx.fillRect(0, Math.round(top), Math.ceil(l), Math.round(depth));
@@ -839,7 +843,7 @@ function paintGround(ctx, cam, teams, opts, { apron, apronTop, nearEdge, wallTop
       for (const [yy, flip] of [[-HALF + 7.5, true], [HALF - 7.5, false]]) { const [, y] = cam.toScreen(0, yy);
         ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(1, SQUASH * 1.5); if (flip) ctx.rotate(Math.PI);
         pixText(ctx, n, 0, -Math.round(3.5 * pn), pn, col, "center", FIELD_GL);
-        if (dir) { const d = flip ? -dir : dir, ax = Math.round(d * (w / 2 + pn * 2.2)); ctx.fillStyle = col; for (let c = 0; c < 3; c++) { const h = (3 - c) * 2 - 1; ctx.fillRect(ax + d * c * pn - (d < 0 ? 0 : 0), Math.round(-h * pn / 2), pn, h * pn); } }
+        if (dir) { const d = (flip ? -dir : dir) * (cam.fx || 1), ax = Math.round(d * (w / 2 + pn * 2.2)); ctx.fillStyle = col; for (let c = 0; c < 3; c++) { const h = (3 - c) * 2 - 1; ctx.fillRect(ax + d * c * pn - (d < 0 ? 0 : 0), Math.round(-h * pn / 2), pn, h * pn); } }
         ctx.restore(); } } }
 }
 function groundLayer(ctx, cam, teams, opts, geo, yardAt) {
@@ -847,7 +851,7 @@ function groundLayer(ctx, cam, teams, opts, geo, yardAt) {
   const y0 = Math.floor(geo.wallTop - 2), y1 = Math.ceil(geo.nearEdge + s * 0.5 + 2), Wc = Math.ceil(GROUND_YDS * s);
   const ready = (ab) => { const im = ab && logo(ab); return im && im.complete && im.naturalWidth ? 1 : 0; };
   const gk = WX.snow ? (WX.snow === 2 ? "heavySnow" : "lightSnow") : WX.rain ? (WX.rain === 2 ? "heavyRain" : "lightRain") : null, gimg = gk && groundImg(gk);
-  const key = [cam.W, H, s, top, dpr, teams.user?.ab, teams.user?.clr, teams.opp?.ab, teams.opp?.clr, HOME_OF(teams)?.ab, opts.sb || "", WX.rain || 0, WX.snow || 0, ready(teams.user?.ab), ready(teams.opp?.ab), ready(HOME_OF(teams)?.ab), gimg ? (gimg.complete && gimg.naturalWidth ? 1 : 0) : 2].join("|");
+  const key = [cam.W, H, s, top, dpr, cam.fx || 1, teams.user?.ab, teams.user?.clr, teams.opp?.ab, teams.opp?.clr, HOME_OF(teams)?.ab, opts.sb || "", WX.rain || 0, WX.snow || 0, ready(teams.user?.ab), ready(teams.opp?.ab), ready(HOME_OF(teams)?.ab), gimg ? (gimg.complete && gimg.naturalWidth ? 1 : 0) : 2].join("|");
   const mk = (w, h) => (typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(w, h) : typeof document !== "undefined" && document.createElement ? Object.assign(document.createElement("canvas"), { width: w, height: h }) : null);
   let gc = groundCache.get(key);
   if (!gc) {
@@ -855,11 +859,12 @@ function groundLayer(ctx, cam, teams, opts, geo, yardAt) {
     if (!c || !c.setTransform) { paintGround(ctx, cam, teams, opts, geo); return; } // (no offscreen canvas: paint it straight on)
     c.setTransform(dpr, 0, 0, dpr, 0, -y0 * dpr); c.imageSmoothingEnabled = false;
     const c0 = GROUND_X0 + (Wc * 0.42) / s;
-    const fc = { ...cam, W: Wc, camX: c0, toScreen(x, y) { return [Wc * 0.42 + (x - c0) * s, top + (y + HALF) * SQUASH * s]; } };
+    // (painted the same way round as the field it's laid on, so its words and logos still read the right way)
+    const fc = { ...cam, W: Wc, camX: c0, toScreen(x, y) { const u = Wc * 0.42 + (x - c0) * s; return [(cam.fx || 1) > 0 ? u : Wc - u, top + (y + HALF) * SQUASH * s]; } };
     paintGround(c, fc, teams, opts, geo); perfStats.groundBuilds++;
     gc = { cv, y0, y1, Wc }; groundCache.set(key, gc); if (groundCache.size > 4) groundCache.delete(groundCache.keys().next().value);
   }
-  const g = gc, dx = Math.round(yardAt(GROUND_X0) * dpr) / dpr;
+  const g = gc, dx = Math.round(yardAt((cam.fx || 1) > 0 ? GROUND_X0 : GROUND_X0 + Wc / s) * dpr) / dpr; // (its left edge on screen: the far end of it when the field runs right to left)
   ctx.drawImage(g.cv, dx, g.y0, g.Wc, g.y1 - g.y0);
 }
 export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
@@ -873,7 +878,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   // calm until something happens; then the crowd is up, arms in the air, bouncing
   const cheer = hype > 0.15 ? 1 + (Math.floor(time * 8) % 2) : 0;
   const tile = standsTile(px, Math.max(wallTop, H - nearEdge), teams, cheer);
-  if (tile) { const ox = -(((cam.camX * s * 0.5) % tile.width) + tile.width) % tile.width; // the stands scroll at half the field's speed
+  if (tile) { const ox = -(((cam.camX * s * 0.5 * (cam.fx || 1)) % tile.width) + tile.width) % tile.width; // the stands scroll at half the field's speed
   for (let x = ox; x < W; x += tile.width) {
     if (wallTop > 0) ctx.drawImage(tile, Math.round(x), Math.round(wallTop - tile.height));
     if (H - nearEdge > px) ctx.drawImage(tile, Math.round(x), Math.round(nearEdge));
@@ -882,7 +887,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
 
   // the ground (turf, weather on it, lines, numbers, the painted end zones): painted once into a strip
   // covering the whole field and slid under the camera, so a frame copies it instead of repainting it
-  const yardAt = (x) => W * 0.42 + (x - cam.camX) * s;
+  const yardAt = (x) => cam.toScreen(x, 0)[0]; // (the screen x of a yard line, either way round)
   groundLayer(ctx, cam, teams, opts, { apron, apronTop, nearEdge, wallTop, px }, yardAt);
   endStands(ctx, cam, teams, yardAt, { px, wallTop, nearEdge, cheer, night: opts.night });
   stadiumLight(ctx, cam, opts.night);
@@ -891,7 +896,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   for (const [ex, back, pad] of [[110, 1, teams.opp], [-10, -1, teams.user]]) goalPost(ctx, cam, ex, back, pad.clr);
   // no play on the field (between plays, a kick the engine ran): the sidelines, the crews and the
   // scoreboard are still there, the crews where the last snap was
-  if (!S) { const so = { ...opts, los: lastLos, toGain: null, down: g?.down }; drawSidelines(ctx, cam, teams, { ...so, side: "far" }); if (lastLos != null) sceneSprite(ctx, cam, null, false, "ref_hips", lastLos - 11, -6.5, 1, 0.95); if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, opts.boardTeams || teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); drawSidelines(ctx, cam, teams, { ...so, side: "near" }); return; }
+  if (!S) { const so = { ...opts, los: lastLos, toGain: null, down: g?.down }; drawSidelines(ctx, cam, teams, { ...so, side: "far" }); if (lastLos != null) sceneSprite(ctx, cam, null, false, "ref_hips", lastLos - 11, -6.5, 1, 0.95); if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, opts.boardTeams || teams, (x) => cam.toScreen(x, 0)[0], wallTop); drawSidelines(ctx, cam, teams, { ...so, side: "near" }); return; }
   if (!S.kind) lastLos = S.los;
   // the line of scrimmage and the line to gain
   const lw = Math.max(1, Math.round(s * 0.12)), vline = (yd, color) => { const x = Math.round(yardAt(yd)); if (x < 0 || x > W) return; ctx.fillStyle = color; ctx.fillRect(x, Math.round(top), Math.max(2, lw * 2), Math.round(depth)); };
@@ -908,7 +913,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   // the team areas along both sidelines: benches, coolers, the cup table and the players watching
   const sideOpts = { ...opts, ballX: S.ball?.x, los: S.kind ? null : S.los, toGain: S.kind ? null : S.firstDown, down: g?.down, phase: S.phase, td: !!S.result?.td };
   drawSidelines(ctx, cam, teams, { ...sideOpts, side: "far" });
-  if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, opts.boardTeams || teams, (x) => W * 0.42 + (x - cam.camX) * s, wallTop); // (at the 50, in front of the far bench)
+  if (!opts.noBoard) stadiumBoard(ctx, cam, opts.board || g, opts.boardTeams || teams, (x) => cam.toScreen(x, 0)[0], wallTop); // (at the 50, in front of the far bench)
   // players, far to near so the near ones overlap the far ones; the man with the ball on top
   const ents = Object.values(S.ents).sort((a, b) => (a.key === S.ball.holder) - (b.key === S.ball.holder) || a.y - b.y);
   const ref = refOnField(S, opts); let refDrawn = !ref;
