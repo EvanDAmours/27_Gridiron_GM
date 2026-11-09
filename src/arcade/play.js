@@ -25,7 +25,7 @@ const rnd = (S) => (S.g?.rand || Math.random)(); // the game's own RNG, so a see
 // hard he accelerates (yd/s²) from his acceleration rating. Linemen are capped: they don't sprint.
 // (a player's form this season and any playing-hurt penalty shift these too, at a third of the rate)
 export const topSpeed = (p) => 6.3 + (clamp((p?.spd ?? 70) + (p?.form || 0) / 3, 40, 99) - 60) / 39 * 3.5;
-const accelOf = (p) => 9 + (clamp((p?.acc ?? 70) + (p?.form || 0) / 3, 40, 99) - 60) / 39 * 9;
+const accelOf = (p) => (9 + (clamp((p?.acc ?? 70) + (p?.form || 0) / 3, 40, 99) - 60) / 39 * 9) * 1.2; // (a touch quicker than real life: arcade cuts)
 
 // Pre-snap spots: [yards behind the line (-), lateral]. The offense's right is +y.
 const OFF_SPOTS = { LT: [-1, -7.2], LG: [-1, -3.6], C: [-1, 0], RG: [-1, 3.6], RT: [-1, 7.2], TE: [-1.2, 10.8], X: [-1, -18], Z: [-1, 18], SLOT: [-2.5, -11.5], QB: [-5, 0], RB: [-7, 1.8] };
@@ -452,13 +452,16 @@ export function tick(S, dt) {
 
   // the man with the ball: a back or a receiver runs with your steering, and gets tackled
   if (carrier && carrier.key !== "QB" && carrier.side === "off" && !over) {
-    const wantY = S.steer != null ? S.steer : S.lane != null && !isPass ? S.lane : carrier.y;
+    const cutting = S.jukeUntil > S.t;
+    if (S.jukeTo != null && !cutting) { if (S.steer != null) S.steer += S.jukeTo - (S.jukeFrom ?? S.jukeTo); S.jukeTo = null; }
+    const wantY = cutting ? S.jukeTo : S.steer != null ? S.steer : S.lane != null && !isPass ? S.lane : carrier.y;
     const [d, dd] = nearestDef(S, carrier.x, carrier.y);
     // a loose runner leans away from a tackler in his path when you aren't steering
     const lean = S.steer == null && d && dd < 4 && d.x > carrier.x - 0.5 ? (carrier.y > d.y ? 2 : -2) * clamp((K.vision(carrier.p) - 45) / 40, 0.3, 1.3) : 0;
     // a receiver secures the catch before he's at full stride
     const fresh = S.catchAt != null && S.t - S.catchAt < 0.45 ? 0.7 : 1, stagger = S.stagger > S.t ? 0.7 : 1, burst = S.burstUntil > S.t ? 1.12 : 1;
-    steer(carrier, carrier.x + 8, clamp(wantY + lean, -HALF - 1.5, HALF + 1.5), dt, 0.94 * fresh * stagger * burst); // (steer him over the sideline and he goes out: the clock stops) // (a man with the ball tucked is a step slower than running free)
+    { const a0 = carrier.acc; carrier.acc *= cutting ? 3 : 1.35; // (the man with the ball cuts sharper than anyone chasing him)
+      steer(carrier, carrier.x + 8, clamp(wantY + lean, -HALF - 1.5, HALF + 1.5), dt, 0.94 * fresh * stagger * burst); carrier.acc = a0; } // (steer him over the sideline and he goes out: the clock stops) // (a man with the ball tucked is a step slower than running free)
     if (carrier.x >= 100) { score(S); return true; }
     if (Math.abs(carrier.y) >= HALF) { outOfBounds(S); return true; }
     const closing = d ? ((d.vx - carrier.vx) * (carrier.x - d.x) + (d.vy - carrier.vy) * (carrier.y - d.y)) / Math.max(0.1, dd) : 0; // yards/s he's gaining
@@ -521,10 +524,14 @@ function seekBlock(S, b, dt, range) {
 
 // A juke (a quick flick while running): a burst, and the nearest tackler within reach may lunge
 // at nothing, his tackling against the runner's elusiveness. One every so often.
-export function juke(S) {
+// dir: +1 / -1 across the field (the way you swiped); 0 picks the side away from the nearest tackler
+export function juke(S, dir = 0) {
   const c = S.ball.holder && S.ents[S.ball.holder]; if (!c || c.side !== "off" || S.phase !== "carry") return false;
-  if (S.jukeAt != null && S.t - S.jukeAt < 0.9) return false;
+  if (S.jukeAt != null && S.t - S.jukeAt < 0.5) return false;
   S.jukeAt = S.t; S.burstUntil = S.t + 0.35;
+  // the cut itself: a hard plant and a quick step sideways (about two and a half yards), keeping his speed up the field
+  { const [n] = nearestDef(S, c.x, c.y), side = dir || (n ? (c.y > n.y ? 1 : -1) : 1), q = clamp((K.elusive(c.p) - 40) / 50, 0.4, 1.2);
+    c.vy = side * (7 + 3 * q); S.jukeFrom = c.y; S.jukeTo = clamp(c.y + side * (2 + 1.2 * q), -HALF - 1, HALF + 1); S.jukeUntil = S.t + 0.28; }
   const [d, dd] = nearestDef(S, c.x, c.y);
   if (d && dd < 2.6 && !d.missed) {
     const el = K.elusive(c.p), tk = K.tackling(d.p);

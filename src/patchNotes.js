@@ -2561,4 +2561,9 @@ export const PATCH_NOTES = [
     "Arcade on phones: your offense now drives from right to left, so swiping and dragging passes is easier with your right thumb. Everything turns with it (the players, the yard-line arrows, the goalposts, the wind and the swipes), while the words and logos still read normally. On a computer it still goes left to right. Change it either way under DRIVE in the pause menu; it's remembered.",
     "The home screen's arcade button is back to how it was (ARCADE, Take the field).",
   ] },
+  { v: "6.18", date: "2026-10-23", title: "Juke and swipe", notes: [
+    "Arcade on phones: steering the ball carrier works like a thumbstick now. Put your finger down anywhere and drag up or down; he moves up or down the field as far as your finger moves, and keeps running forward on his own. He used to run toward wherever your finger was on the field, so your thumb had to chase him. Let go and he holds the line you put him on.",
+    "Jukes are real cuts: a quick flick up or down plants his foot and sidesteps him about two yards that way at full speed, and it can leave the nearest tackler grasping at air. You can juke again after half a second (it used to be almost a full second).",
+    "Everyone on the field gets going and changes direction a little quicker, and the man with the ball cuts the sharpest of all.",
+  ] },
 ];

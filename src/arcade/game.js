@@ -25,7 +25,7 @@ import { rollWeather, WX, wxOf } from "../weather.js";
 import { teamKey } from "../teamUniforms.js";
 import { makeCamera, drawRetro, drawLowerThird, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, pixWidth, drawMenu, drawNameTags, drawReplayTag, drawCeremony, drawSbCard, perfStats, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
 
-const PULL = 3.2; // touch: the throw goes this many times the pull-back, the other way, on the screen
+const PULL = 3.2, SQUASH_ = 0.42; // (the field's depth on screen, as retro.js draws it) // touch: the throw goes this many times the pull-back, the other way, on the screen
 const spotOf = (yard) => (yard === 50 ? "MIDFIELD" : yard < 50 ? `OWN ${yard}` : `OPP ${100 - yard}`);
 const ordinal = (n) => ["1ST", "2ND", "3RD", "4TH"][n - 1] || `${n}TH`;
 // quarter lengths on offer (minutes): short like Retro Bowl by default, up to a full NFL quarter
@@ -585,8 +585,10 @@ export class ArcadeGame {
     if (P.kind) { this.fireKick(P); return; } // a kick: tap to stop the meter
     const snapped = P.phase === "presnap"; if (snapped) snap(P);
     this.touch = { id: e.pointerId, ...p, moved: 0, snapped }; // (the touch that snapped it isn't also a throw)
-    if (P.phase === "carry") P.steer = this.cam.toField(p.px, p.py).y;
+    if (P.phase === "carry") this.grabRunner(P);
   }
+  // the runner's line when a finger goes down: drags move him from there
+  grabRunner(P) { const c = P.ents[P.ball.holder], t = this.touch; if (!c || !t) return; t.ry = P.steer ?? c.y; t.ay = t.cy ?? t.py; }
   mouseDown(P, e, p) {
     const lob = e.button === 2 || e.shiftKey;
     if (P.kind) { this.fireKick(P); return; }
@@ -603,15 +605,18 @@ export class ArcadeGame {
     if (P.kind) return;
     if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass")) {
       // pulling back from where you touched aims the throw the other way (the aim itself is worked
-      // out every frame in slingAim, smoothed, and locked on to a receiver when it's near one)
+      // out every frame in slingAim, smoothed)
       t.pull = { x: t.px - p.px, y: t.py - p.py };
     } else if (P.phase === "carry") {
-      P.steer = cam.toField(p.px, p.py).y;
+      // drag up or down anywhere to move him up or down the field from his line, as far as the finger
+      // moves; he runs forward on his own
+      if (t.ry == null) this.grabRunner(P);
+      const yd = (p.py - t.ay) / (SQUASH_ * cam.s); /* (one for one with the finger, on the screen) */ P.steer = Math.max(-28.5, Math.min(28.5, t.ry + yd));
       // a quick flick across the field is a juke; a quick flick up the field (toward the goal) is a dive
       const now = performance.now(); t.hist = (t.hist || []).filter((h) => now - h.t < 140); t.hist.push({ t: now, px: p.px, py: p.py });
       const fx_ = (p.px - t.hist[0].px) * (cam.fx || 1), fy_ = p.py - t.hist[0].py; // (along the field: up it is forward, whichever way it runs on screen)
       if (t.hist.length > 1 && fx_ > 40 && fx_ > Math.abs(fy_) * 1.5) { if (dive(P)) t.hist = []; }
-      else if (t.hist.length > 1 && Math.abs(fy_) > 34) { if (juke(P) !== null) t.hist = []; }
+      else if (t.hist.length > 1 && Math.abs(fy_) > 30) { if (juke(P, Math.sign(cam.toField(p.px, p.py).y - cam.toField(t.hist[0].px, t.hist[0].py).y))) { t.hist = []; this.grabRunner(P); t.ay = p.py; } } // (a quick flick up or down: a juke that way)
     }
   }
   onUp(e) {
@@ -625,7 +630,7 @@ export class ArcadeGame {
       const now = performance.now(), h = (t.aims || []).filter((a) => now - a.t >= 70).pop() || (t.aims || []).at(-1);
       if (h?.aim) throwTo(P, h.aim, null, this.passKind);
     } else if (passing && !t.snapped) this.tapThrow(P, t); // a tap: to the man you touched
-    P.aim = null; P.steer = null;
+    P.aim = null; if (P.phase !== "carry") P.steer = null; // (let go while running: he holds the line you put him on)
   }
   // touch: a tap on (or near) a receiver throws to him, led to where he'll be when it gets there; a tap
   // on open grass throws to that spot. (Fingers are wide and phones are small: "near" is generous.)
