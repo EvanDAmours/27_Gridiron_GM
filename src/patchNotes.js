@@ -2547,4 +2547,7 @@ export const PATCH_NOTES = [
     "Arcade on iPhone: turning the phone sideways now resizes the game to fill the landscape screen. iPhones report a rotation before the new screen size is ready, so the game kept its old size and part of the screen was cut off; it now watches its own frame and checks again just after a turn.",
     "Arcade on iPhone in landscape: the game stays clear of the notch (the Dynamic Island) and the rounded corners, so the scoreboard and the buttons at the edges aren't hidden under them.",
   ] },
+  { v: "6.14", date: "2026-10-23", title: "Full screen on iPhone", notes: [
+    "Live games on iPhone: the Full screen button is now there too. iPhones don't let a web page go truly full screen, so the button pins the field over the whole screen instead, clear of the notch and the home bar, and the game resizes to fill it. Turn the phone sideways for the full landscape field, with the scoreboard and the play results all on screen. Tap Exit full screen in the corner (or press Esc) to go back.",
+  ] },
 ];

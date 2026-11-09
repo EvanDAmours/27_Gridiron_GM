@@ -24,19 +24,26 @@ export default function LiveArcade({ g, userSide, watch, speed, paused, teams, o
   useEffect(() => { if (game.current) game.current.paused = !!paused; }, [paused]);
   // you won the Super Bowl: the trophy ceremony on the field
   useEffect(() => { if (ceremony && game.current) { game.current.paused = false; game.current.startCeremony(ceremony); } }, [ceremony?.winner]); // eslint-disable-line react-hooks/exhaustive-deps
-  // full screen: the field alone fills the screen (F on a keyboard, or the button in its corner);
-  // where the browser can't (an iPhone), there's no button
+  // full screen: the field alone fills the screen (F on a keyboard, or the button in its corner).
+  // Where the browser has no full screen for a page (an iPhone), the same button pins the field over
+  // the whole screen instead, clear of the notch and the home bar, and the game resizes to fill it.
   const canFs = typeof document !== "undefined" && !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
-  const [fs, setFs] = useState(false);
+  const [natFs, setFs] = useState(false), [pinned, setPinned] = useState(false), fs = natFs || pinned;
+  useEffect(() => {
+    if (!pinned) return;
+    const key = (e) => { if (e.key === "Escape") setPinned(false); }, prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden"; window.addEventListener("keydown", key);
+    return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", key); };
+  }, [pinned]);
   useEffect(() => {
     const on = () => setFs(!!(document.fullscreenElement || document.webkitFullscreenElement));
     document.addEventListener("fullscreenchange", on); document.addEventListener("webkitfullscreenchange", on);
     return () => { document.removeEventListener("fullscreenchange", on); document.removeEventListener("webkitfullscreenchange", on); };
   }, []);
   return (
-    <div role="application" aria-label="Arcade field" style={fill ? { position: "absolute", inset: 0, background: "#0b0e14", overflow: "hidden" } : { position: "relative", width: "100%", aspectRatio: aspect, ...(maxH ? { maxHeight: maxH } : {}), background: "#0b0e14", borderRadius: 10, overflow: "hidden" }}>
+    <div role="application" aria-label="Arcade field" style={pinned ? { position: "fixed", inset: 0, zIndex: 9500, boxSizing: "border-box", padding: "env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)", background: "#0b0e14", overflow: "hidden" } : fill ? { position: "absolute", inset: 0, background: "#0b0e14", overflow: "hidden" } : { position: "relative", width: "100%", aspectRatio: aspect, ...(maxH ? { maxHeight: maxH } : {}), background: "#0b0e14", borderRadius: 10, overflow: "hidden" }}>
       <canvas ref={ref} tabIndex={0} style={{ display: "block", touchAction: "none", imageRendering: "pixelated", outline: "none" }} />
-      {canFs && <button type="button" onClick={() => { game.current?.fullscreen(!fs); ref.current?.focus(); }} aria-label={fs ? "Exit full screen" : "Full screen"} title={fs ? "Exit full screen (F or Esc)" : "Full screen (F)"} style={{ position: "absolute", ...(fill ? { bottom: "calc(env(safe-area-inset-bottom) + 8px)" } : { top: 8 }), right: 8, zIndex: 2, display: "flex", alignItems: "center", gap: 6, minHeight: 32, padding: "0 11px", borderRadius: 8, border: "1px solid #ffffff33", background: "#0b0e14b3", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+      {<button type="button" onClick={() => { if (canFs) game.current?.fullscreen(!natFs); else setPinned((v) => !v); ref.current?.focus(); }} aria-label={fs ? "Exit full screen" : "Full screen"} title={fs ? "Exit full screen (F or Esc)" : "Full screen (F)"} style={{ position: "absolute", ...(fill && !pinned ? { bottom: "calc(env(safe-area-inset-bottom) + 8px)" } : pinned ? { bottom: "calc(env(safe-area-inset-bottom) + 8px)", opacity: 0.85 } /* (clear of the score strip along the top) */ : { top: 8 }), right: pinned ? "calc(env(safe-area-inset-right) + 8px)" : 8, zIndex: 2, display: "flex", alignItems: "center", gap: 6, minHeight: 32, padding: "0 11px", borderRadius: 8, border: "1px solid #ffffff33", background: "#0b0e14b3", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">{fs ? <path d="M5 1v4H1M9 1v4h4M5 13V9H1M9 13V9h4" /> : <path d="M1 5V1h4M13 5V1H9M1 9v4h4M13 9v4H9" />}</svg>{fs ? "Exit full screen" : "Full screen"}
       </button>}
     </div>
