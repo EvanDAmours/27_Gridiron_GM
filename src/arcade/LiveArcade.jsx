@@ -7,9 +7,10 @@ import { useEffect, useRef, useState } from "react";
 import { ArcadeGame } from "./game.js";
 
 const SPEED = { Slow: 0.75, Normal: 1, Fast: 2, Condensed: 3 };
+const cornerBtn = { display: "flex", alignItems: "center", gap: 6, minHeight: 32, padding: "0 11px", borderRadius: 8, border: "1px solid #ffffff33", background: "#0b0e14b3", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" };
 
 // aspect: the box on the page (inside a stadium it takes the field's shape, so the stands fit round it)
-export default function LiveArcade({ g, userSide, watch, speed, paused, teams, onEvent, apiRef, fill = false, aspect = "16 / 9", maxH = null, night = false, ceremony = null }) {
+export default function LiveArcade({ g, userSide, watch, speed, paused, teams, onEvent, apiRef, fill = false, aspect = "16 / 9", maxH = null, night = false, ceremony = null, onSim = null }) {
   const ref = useRef(null), game = useRef(null);
   const cb = useRef(onEvent); cb.current = onEvent;
   useEffect(() => {
@@ -29,6 +30,9 @@ export default function LiveArcade({ g, userSide, watch, speed, paused, teams, o
   // the whole screen instead, clear of the notch and the home bar, and the game resizes to fill it.
   const canFs = typeof document !== "undefined" && !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
   const [natFs, setFs] = useState(false), [pinned, setPinned] = useState(false), fs = natFs || pinned;
+  // the sim button asks once more before it ends the game (a stray tap shouldn't); the ask lapses after a few seconds
+  const [simArm, setSimArm] = useState(false);
+  useEffect(() => { if (!simArm) return; const t = setTimeout(() => setSimArm(false), 3500); return () => clearTimeout(t); }, [simArm]);
   useEffect(() => {
     if (!pinned) return;
     const key = (e) => { if (e.key === "Escape") setPinned(false); }, prev = document.body.style.overflow;
@@ -43,9 +47,15 @@ export default function LiveArcade({ g, userSide, watch, speed, paused, teams, o
   return (
     <div role="application" aria-label="Arcade field" style={pinned ? { position: "fixed", inset: 0, zIndex: 9500, boxSizing: "border-box", padding: "env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)", background: "#0b0e14", overflow: "hidden" } : fill ? { position: "absolute", inset: 0, background: "#0b0e14", overflow: "hidden" } : { position: "relative", width: "100%", aspectRatio: aspect, ...(maxH ? { maxHeight: maxH } : {}), background: "#0b0e14", borderRadius: 10, overflow: "hidden" }}>
       <canvas ref={ref} tabIndex={0} style={{ display: "block", touchAction: "none", imageRendering: "pixelated", outline: "none" }} />
-      {<button type="button" onClick={() => { if (canFs) game.current?.fullscreen(!natFs); else setPinned((v) => !v); ref.current?.focus(); }} aria-label={fs ? "Exit full screen" : "Full screen"} title={fs ? "Exit full screen (F or Esc)" : "Full screen (F)"} style={{ position: "absolute", ...(fill && !pinned ? { bottom: "calc(env(safe-area-inset-bottom) + 8px)" } : pinned ? { bottom: "calc(env(safe-area-inset-bottom) + 8px)", opacity: 0.85 } /* (clear of the score strip along the top) */ : { top: 8 }), right: pinned ? "calc(env(safe-area-inset-right) + 8px)" : 8, zIndex: 2, display: "flex", alignItems: "center", gap: 6, minHeight: 32, padding: "0 11px", borderRadius: 8, border: "1px solid #ffffff33", background: "#0b0e14b3", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">{fs ? <path d="M5 1v4H1M9 1v4h4M5 13V9H1M9 13V9h4" /> : <path d="M1 5V1h4M13 5V1H9M1 9v4h4M13 9v4H9" />}</svg>{fs ? "Exit full screen" : "Full screen"}
-      </button>}
+      {/* the corner buttons: sim the rest of the game out (a second tap to be sure), and full screen */}
+      <div style={{ position: "absolute", ...(fill || pinned ? { bottom: "calc(env(safe-area-inset-bottom) + 8px)" } : { top: 8 }), right: pinned ? "calc(env(safe-area-inset-right) + 8px)" : 8, zIndex: 2, display: "flex", gap: 6, opacity: pinned ? 0.85 : 1 }}>
+        {onSim && !ceremony && <button type="button" onClick={() => { if (simArm) { setSimArm(false); setPinned(false); if (natFs) game.current?.fullscreen(false); onSim(); } else setSimArm(true); }} aria-label="Sim to the end of the game" title="Sim the rest of the game" style={{ ...cornerBtn, ...(simArm ? { background: "#b45309", borderColor: "#fbbf24" } : {}) }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M1 2l6 5-6 5zM7 2l6 5-6 5z" /></svg>{simArm ? "Tap again to sim" : "Sim to end"}
+        </button>}
+        <button type="button" onClick={() => { if (canFs) game.current?.fullscreen(!natFs); else setPinned((v) => !v); ref.current?.focus(); }} aria-label={fs ? "Exit full screen" : "Full screen"} title={fs ? "Exit full screen (F or Esc)" : "Full screen (F)"} style={cornerBtn}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">{fs ? <path d="M5 1v4H1M9 1v4h4M5 13V9H1M9 13V9h4" /> : <path d="M1 5V1h4M13 5V1H9M1 9v4h4M13 9v4H9" />}</svg>{fs ? "Exit full screen" : "Full screen"}
+        </button>
+      </div>
     </div>
   );
 }

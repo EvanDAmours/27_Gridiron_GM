@@ -2550,4 +2550,8 @@ export const PATCH_NOTES = [
   { v: "6.14", date: "2026-10-23", title: "Full screen on iPhone", notes: [
     "Live games on iPhone: the Full screen button is now there too. iPhones don't let a web page go truly full screen, so the button pins the field over the whole screen instead, clear of the notch and the home bar, and the game resizes to fill it. Turn the phone sideways for the full landscape field, with the scoreboard and the play results all on screen. Tap Exit full screen in the corner (or press Esc) to go back.",
   ] },
+  { v: "6.15", date: "2026-10-23", title: "Sim it out", notes: [
+    "Retro mode: a Sim to end button sits in the corner of the field, next to Full screen, in every live game you watch or play in retro view (it's there in full screen too). Tap it, then tap again to confirm, and the rest of the game is played out and you go straight to the final and the box score.",
+    "Retro arcade: the pause menu now has Sim to the End for every game, not just franchise games.",
+  ] },
 ];
