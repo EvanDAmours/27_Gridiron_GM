@@ -2569,4 +2569,8 @@ export const PATCH_NOTES = [
   { v: "6.19", date: "2026-10-23", title: "Names at their feet", notes: [
     "Arcade: the big name boxes over the quarterback, the back and the top receiver before the snap are gone. Every skill player (now including the quarterback) has just a small name under his feet, and two players standing side by side get their names stacked instead of overlapping.",
   ] },
+  { v: "6.20", date: "2026-10-23", title: "Full screen in the franchise", notes: [
+    "Franchise games on a phone: the arcade field now has its Full screen button (and Sim to end) along the top, where you can see them. They were hidden behind the game controls at the bottom. Tap Full screen and the field fills the whole screen with nothing else to tap by mistake; turn the phone sideways for the landscape field.",
+    "The Broadcast button that sat right next to Playing on the arcade field is gone (it was easy to hit by accident), and switching to the broadcast view from the controls while you're calling plays now asks first.",
+  ] },
 ];
