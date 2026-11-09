@@ -2566,4 +2566,7 @@ export const PATCH_NOTES = [
     "Jukes are real cuts: a quick flick up or down plants his foot and sidesteps him about two yards that way at full speed, and it can leave the nearest tackler grasping at air. You can juke again after half a second (it used to be almost a full second).",
     "Everyone on the field gets going and changes direction a little quicker, and the man with the ball cuts the sharpest of all.",
   ] },
+  { v: "6.19", date: "2026-10-23", title: "Names at their feet", notes: [
+    "Arcade: the big name boxes over the quarterback, the back and the top receiver before the snap are gone. Every skill player (now including the quarterback) has just a small name under his feet, and two players standing side by side get their names stacked instead of overlapping.",
+  ] },
 ];

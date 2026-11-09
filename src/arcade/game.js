@@ -23,7 +23,7 @@ import { FX } from "./fx.js";
 import * as K from "./ratings.js";
 import { rollWeather, WX, wxOf } from "../weather.js";
 import { teamKey } from "../teamUniforms.js";
-import { makeCamera, drawRetro, drawLowerThird, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, pixWidth, drawMenu, drawNameTags, drawReplayTag, drawCeremony, drawSbCard, perfStats, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
+import { makeCamera, drawRetro, drawLowerThird, drawHud, drawDownBox, drawBanner, drawPlayCards, drawChip, drawSwitch, drawHint, drawWeather, drawWxChip, drawBoxScore, pixWidth, drawMenu, drawReplayTag, drawCeremony, drawSbCard, perfStats, drawPause, preload, pixText, KIND_COLOR, uiPx } from "./retro.js";
 
 const PULL = 3.2, SQUASH_ = 0.42; // (the field's depth on screen, as retro.js draws it) // touch: the throw goes this many times the pull-back, the other way, on the screen
 const spotOf = (yard) => (yard === 50 ? "MIDFIELD" : yard < 50 ? `OWN ${yard}` : `OPP ${100 - yard}`);
@@ -452,7 +452,6 @@ export class ArcadeGame {
       if (cer) { const k = 1 + 0.22 * Math.min(1, (this.time - cer.t0) / 3), [fx, fy] = cam.toScreen(50, -6); ctx.translate(fx, fy); ctx.scale(k, k); ctx.translate(-fx, -fy); }
       else if (this.push > 1.002 && c) { const [bx, by] = cam.toScreen(c.x, c.y); const fx = Math.max(cam.W * 0.2, Math.min(cam.W * 0.8, bx)), fy = Math.max(cam.H * 0.3, Math.min(cam.H * 0.75, by)); ctx.translate(fx, fy); ctx.scale(this.push, this.push); ctx.translate(-fx, -fy); } }
     drawRetro(ctx, cam, cer ? null : PP, fr ? rp.teams : cer ? teams : P?.view || teams, this.g, { dpr: cv.width / cam.W, bench: this.benchTeams(), boardTeams: fr ? rp.teams : teams, noBoard: (!this.live || full) && !cer, sb: this.sb, board: fr ? rp.board : this.board, ring: true, time: fr ? fr.time : this.time, hype: this.hype, passKind: this.passKind, wx: this.g?.wxE, night: !!this.live?.night });
-    if (this.live && P && !P.kind && !fr && P.phase === "presnap" && m === "play") drawNameTags(ctx, cam, P);
     if (cer) drawCeremony(ctx, cam, cer.team, cer.away, this.time - cer.t0, { sb: cer.name });
     ctx.restore();
     if (m === "play" && P && P.aim && this.touch?.moved > 12 && P.phase === "live") this.drawSling(ctx, this.touch);

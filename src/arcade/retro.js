@@ -932,15 +932,19 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   }
   if (!refDrawn) sceneSprite(ctx, cam, null, false, ref.pose, ref.x, ref.y, ref.face, 0.95);
   drawSidelines(ctx, cam, teams, { ...sideOpts, side: "near" });
-  // before the snap: who's who, the name under each receiver, the tight end and the back
+  // before the snap: who's who, a small name under the feet of the quarterback, each receiver, the tight end and the back
   if (S.phase === "presnap" && !S.kind) {
     const np = Math.max(1, Math.floor(uiPx(cam) * 0.34)); // small: a tag, not a headline
-    for (const r of ELIGIBLE) {
+    const tagBoxes = [];
+    for (const r of ["QB", ...ELIGIBLE]) {
       const e = S.ents[r]; if (!e?.p?.name) continue;
       const last = String(e.p.name).split(" ").filter((w) => !/^(jr\.?|sr\.?|ii|iii|iv)$/i.test(w)).pop().toUpperCase().replace(/[^A-Z0-9'.-]/g, "");
-      const label = last, [lx, ly] = cam.toScreen(e.x, e.y), w = pixWidth(label, np) + np * 4;
-      ctx.fillStyle = "rgba(8,10,16,.72)"; ctx.fillRect(Math.round(lx - w / 2), Math.round(ly + s * 0.2), w, np * 9);
-      pixText(ctx, label, lx, Math.round(ly + s * 0.2 + np * 1), np, r === "RB" ? "#ffd166" : r === "TE" ? "#9be29b" : "#7fe3ff", "center");
+      const label = last, [lx, ly0] = cam.toScreen(e.x, e.y), w = pixWidth(label, np) + np * 4, h = np * 9;
+      // (two men side by side: the second name drops just below the first instead of sitting on it)
+      let ly = ly0; for (let k = 0; k < 3; k++) { const hit = tagBoxes.find((b) => lx - w / 2 < b.x + b.w && lx + w / 2 > b.x && ly + s * 0.2 < b.y + b.h && ly + s * 0.2 + h > b.y); if (!hit) break; ly = hit.y + hit.h + np - s * 0.2; }
+      tagBoxes.push({ x: lx - w / 2, y: ly + s * 0.2, w, h });
+      ctx.fillStyle = "rgba(8,10,16,.72)"; ctx.fillRect(Math.round(lx - w / 2), Math.round(ly + s * 0.2), w, h);
+      pixText(ctx, label, lx, Math.round(ly + s * 0.2 + np * 1), np, r === "QB" ? "#ffffff" : r === "RB" ? "#ffd166" : r === "TE" ? "#9be29b" : "#7fe3ff", "center");
     }
   }
   // what just happened up front: BLITZ, the move that beat a blocker, PICKED UP
@@ -1233,25 +1237,6 @@ export function drawPause(ctx, cam, items, { mobile } = {}) {
   return boxes;
 }
 
-// ---- the broadcast touches in a live game ----
-// Before the snap: who's out there, in small tags over the quarterback, the back and the top target
-// (the receiver or tight end with the best rating), so you can read the matchup before the play.
-export function drawNameTags(ctx, cam, S) {
-  const px = Math.max(1, Math.round(uiPx(cam) * 0.75)), last = (p) => String(p?.name || "").split(" ").slice(-1)[0].toUpperCase();
-  const recv = ["X", "Z", "SLOT", "TE"].map((k) => S.ents[k]).filter(Boolean).sort((a, b) => (b.p?.ovr || 0) - (a.p?.ovr || 0))[0];
-  const tags = [[S.ents.QB, "QB"], [S.ents.RB, S.ents.RB?.p?.pos === "FB" ? "FB" : "RB"], [recv, recv?.key === "TE" ? "TE" : "WR"]];
-  const placed = [];
-  for (const [e, role] of tags) {
-    if (!e?.p) continue;
-    const [sx, sy] = cam.toScreen(e.x, e.y), num = e.p.num != null ? `#${e.p.num} ` : "", text = `${role} ${num}${last(e.p)}`;
-    const w = pixWidth(text, px) + px * 6, h = px * 11, x = Math.round(sx - w / 2); let y = Math.round(sy - PLAYER_H * cam.s - h - px * 3);
-    // (two players close together: the later tag stacks above the earlier one instead of covering it)
-    for (let k = 0; k < 4; k++) { const hit = placed.find((b) => x < b.x + b.w && x + w > b.x && y < b.y + b.h + px && y + h + px > b.y); if (!hit) break; y = hit.y - h - px * 2; }
-    placed.push({ x, y, w, h });
-    ctx.fillStyle = "rgba(8,10,16,.82)"; ctx.fillRect(x, y, w, h); ctx.fillStyle = "#ffd166"; ctx.fillRect(x, y + h - px, w, px);
-    pixText(ctx, text, x + w / 2, y + px * 2, px, "#fff", "center");
-  }
-}
 // The instant replay's tag, top left, with a red light that blinks
 export function drawReplayTag(ctx, cam, time) {
   const px = uiPx(cam), text = "REPLAY", w = pixWidth(text, px) + px * 14, h = px * 11, x = px * 3, y = px * 3;
