@@ -65,6 +65,8 @@ export class ArcadeGame {
     // which way your offense drives across the screen: right to left on a phone (an easy swipe for a right
     // thumb), left to right with a mouse; the pause menu turns it round, and it's remembered
     this.defCall = "balanced"; try { const d = localStorage.getItem("arcade_def"); if (DEF_CALLS.includes(d)) this.defCall = d; } catch { /* storage unavailable */ }
+    // the defender you play on their snaps: kept from snap to snap (and game to game) until you let him go ("none")
+    this.defPick = "LB1"; try { const d = localStorage.getItem("arcade_defpick"); if (d) this.defPick = d; } catch { /* storage unavailable */ }
     this.mirror = this.input === "touch"; try { const d = localStorage.getItem("arcade_dir"); if (d === "rtl" || d === "ltr") this.mirror = d === "rtl"; } catch { /* storage unavailable */ }
     this.touch = null; this.mouse = null; this.keys = new Set(); this.buttons = []; this.chips = {}; this.menuFocus = "user"; this.paused = false;
     this.S = null; this.g = null; this.mode = "menu"; this.banner = null; this.feed = { list: [], shown: 0, at: 0 };
@@ -232,6 +234,7 @@ export class ArcadeGame {
     // the side you're playing calls its own timeouts (the engine's coach still calls the other side's), and
     // runs the hurry-up when you've switched it on
     g.userClock = L.watch ? null : L.userSide || "h"; g.hurryUp = this.hurry && !L.watch ? L.userSide || "h" : null;
+    if (this.simAfter) { this.simAfter = false; if (this.runOppDrive()) return; } // (SIM DRIVE, asked for during their last play)
     if (g.koNext) { // the kickoff: the engine kicks it, the field plays it out (the kick, the catch, the return and the tackle)
       const off = g.poss; this.offReal = off; if (off !== "h") this.flip();
       const L0 = lineups(g), ev = runPlay(g);
@@ -253,7 +256,7 @@ export class ArcadeGame {
     const c = autoCall(k === "run" ? "run" : "pass");
     this.call(c); if (Math.random() < 0.5) flipPlay(this.S); // (their strength, either side)
     const P = this.S, userD = !L.watch; P.cpuOff = true; // (their routes aren't drawn for you)
-    if (userD) P.userDef = [this.defPick, "LB1", "LB0", "S0"].find((k_) => k_ && P.ents[k_]) || null; // the man you play on defense (yours to change before the snap)
+    if (userD) P.userDef = this.defPick === "none" ? null : [this.defPick, "LB1", "LB0", "S0"].find((k_) => k_ && P.ents[k_]) || null; // the man you play on defense: the one you picked, every snap, until you let him go
     this.auto = { call: CONCEPTS[c]?.cat || c, state: autoState(), snapAt: this.time + (userD ? 2.4 : 1.5) / this.speed, userD };
   }
   // a play the engine ran without the field (a kickoff, a punt, a field goal, a kneel): its result
@@ -273,6 +276,27 @@ export class ArcadeGame {
   }
   // which side you are in the game as it stands on the field right now (it's turned round for their snaps)
   mySide() { const real = this.live?.userSide || "h"; return this.flipped ? (real === "h" ? "a" : "h") : real; }
+  // SIM DRIVE: the engine plays out the rest of their possession (and any kick to you) until your offense is
+  // back on the field. Mid-play it waits for the play to end; the drive then reads out play by play.
+  simDrive() {
+    if (!this.auto?.userD || this.simAfter) return;
+    const P = this.S; if (P && this.mode === "play" && P.phase !== "presnap") { this.simAfter = true; sfx.select?.(); return; }
+    sfx.select?.(); this.runOppDrive();
+  }
+  runOppDrive() {
+    const g = this.g, L = this.live; if (!g || !L || L.watch || g.done) return false;
+    const me = L.userSide || "h"; this.unflip(); this.S = null; this.auto = null; this.autoKick = null; this.meter = null; this.banner = null;
+    const evs = []; let n = 0;
+    while (!g.done && n++ < 90) {
+      if (g.patPending?.off === me) break; // (your own try: yours to play)
+      if (g.poss === me && !g.koNext) break; // your ball: your drive
+      const off = g.poss, ev = runPlay(g); if (!ev) break; evs.push(ev); this.emit(ev, off);
+    }
+    if (!evs.length) return false;
+    const shown = evs.filter((e) => e.text).flatMap((e) => (e.note ? [e, { text: `-- ${e.note} --`, note: true }] : [e]));
+    this.feed = { list: shown, shown: 0, at: performance.now(), team: L.teams[me === "h" ? "a" : "h"] };
+    this.mode = "opp"; this.refresh(); return true;
+  }
   // a timeout: yours to call, on offense between plays or on defense before their snap
   timeout() {
     const g = this.g; if (!g || !callTimeout(g, this.mySide())) return false;
@@ -432,7 +456,7 @@ export class ArcadeGame {
       }
     }
     if (m === "opp") { const f = this.feed; if (now - f.at > 600 && f.shown < f.list.length) { f.shown++; f.at = now; if (f.list[f.shown - 1]?.td) { sfx.turnover(); this.fx.hit(0.6); } } else if (f.shown >= f.list.length && now - f.at > 1100) this.advance(); }
-    if ((m === "result") && this.banner && (!this.banner.wait || this.live?.watch) && now - this.banner.at > (this.banner.stages ? this.banner.stages[0].dur * 1000 + 2600 : /TOUCHDOWN/.test(this.banner.title) ? 3400 : this.live ? 1300 / this.speed : 1700)) { if (this.pendingReplay) this.startReplay(); else this.advance(); }
+    if ((m === "result") && this.banner && (!this.banner.wait || this.live?.watch || this.simAfter) && now - this.banner.at > (this.banner.stages ? this.banner.stages[0].dur * 1000 + 2600 : /TOUCHDOWN/.test(this.banner.title) ? 3400 : this.live ? 1300 / this.speed : 1700)) { if (this.pendingReplay) this.startReplay(); else this.advance(); }
   }
 
   // held keys and the pointer, every frame: the runner's steering, the mouse aim, the kick meter
@@ -524,9 +548,10 @@ export class ArcadeGame {
     const px = uiPx(cam), hintY = cam.H - px * 9;
     if (m === "play" && P && P.kind && !this.auto) this.drawKick(ctx, P, hintY);
     else if (m === "play" && P && this.auto?.userD) { // their snap, your defense
-      if (P.phase === "presnap" && (this.g?.to?.[this.mySide()] ?? 0) > 0) this.chips.timeout = drawChip(ctx, cam, cam.W - px * 3, hintY - px * 4 - (this.mobile ? Math.max(px * 19, 48) : px * 11), `TIMEOUT (${this.g.to[this.mySide()]})`, { align: "right", big: this.mobile, color: "#ffd166" });
-      const d = P.userDef && P.ents[P.userDef], who = d ? ` - YOU: ${String(d.p?.name || "").split(" ").pop().toUpperCase()} ${d.p?.pos || ""}` : "";
-      drawHint(ctx, cam, P.phase === "presnap" ? (this.mobile ? `TAP A DEFENDER TO PLAY HIM${who}` : `CLICK A DEFENDER (OR TAB) TO PLAY HIM${who}`) : this.mobile ? "DRAG TO MOVE HIM - TAP TO DIVE OR LEAP - LET GO: HE PLAYS HIS SPOT" : "HOLD THE MOUSE OR WASD TO MOVE HIM - SPACE DIVES OR LEAPS", hintY);
+      const cy_ = hintY - px * 4 - (this.mobile ? Math.max(px * 19, 48) : px * 11), sim = (this.chips.simDrive = drawChip(ctx, cam, cam.W - px * 3, cy_, this.simAfter ? "SIMMING..." : this.mobile ? "SIM DRIVE" : "SIM DRIVE (N)", { align: "right", big: this.mobile, color: "#7fe3ff", active: !!this.simAfter }));
+      if (P.phase === "presnap" && (this.g?.to?.[this.mySide()] ?? 0) > 0) this.chips.timeout = drawChip(ctx, cam, sim.x - px * 2, cy_, `TIMEOUT (${this.g.to[this.mySide()]})`, { align: "right", big: this.mobile, color: "#ffd166" });
+      const d = P.userDef && P.ents[P.userDef], nm = d ? `${String(d.p?.name || "").split(" ").pop().toUpperCase()} ${d.p?.pos || ""}` : "";
+      drawHint(ctx, cam, P.phase === "presnap" ? (d ? (this.mobile ? `YOU: ${nm} - TAP HIM TO LET GO, ANOTHER TO SWITCH` : `YOU: ${nm} - CLICK HIM TO LET GO, ANOTHER (OR TAB) TO SWITCH`) : this.mobile ? "TAP A DEFENDER TO PLAY HIM" : "CLICK A DEFENDER (OR TAB) TO PLAY HIM") : !d ? "" : this.mobile ? "DRAG TO MOVE HIM - TAP TO DIVE OR LEAP - LET GO: HE PLAYS HIS SPOT" : "HOLD THE MOUSE OR WASD TO MOVE HIM - SPACE DIVES OR LEAPS", hintY);
     }
     else if (m === "play" && P && !this.auto) {
       const toGo = st.toGo >= 100 - st.yard ? "GOAL" : st.toGo;
@@ -593,7 +618,7 @@ export class ArcadeGame {
   kickPower() { if (!this.kick?.charging) return 0; const u = (this.kick.t / KICK_CYCLE) % 2; return u < 1 ? u : 2 - u; }
   // the other team's drive: a panel in their colours, the plays as they come in
   drawDrive(ctx) {
-    const cam = this.cam, f = this.feed, t = this.teams.opp, px = uiPx(cam), rows = 5, rh = px * 9;
+    const cam = this.cam, f = this.feed, t = f.team || this.teams.opp, px = uiPx(cam), rows = 5, rh = px * 9;
     const h = rows * rh + px * 16, y = cam.H - h;
     ctx.fillStyle = "rgba(8,10,16,.92)"; ctx.fillRect(0, y, cam.W, h); ctx.fillStyle = t.clr; ctx.fillRect(0, y, cam.W, px * 11); ctx.fillStyle = t.ac; ctx.fillRect(0, y + px * 11, cam.W, px);
     pixText(ctx, `${t.city} ${t.name} - ON OFFENSE`, px * 3, y + px * 2.5, px, "#fff");
@@ -611,6 +636,7 @@ export class ArcadeGame {
     for (const [k, b] of Object.entries(this.chips.kinds || {})) if (inside(p, b)) { this.setKind(k); return true; }
     if (inside(p, this.chips.flip) && this.S?.phase === "presnap") { if (flipPlay(this.S)) sfx.select?.(); return true; }
     if (inside(p, this.chips.timeout)) { this.timeout(); return true; }
+    if (inside(p, this.chips.simDrive)) { this.simDrive(); return true; }
     const m = this.mode;
     if (m === "menu") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.menuAction(b.key); return true; }
     if (m === "ceremony" && (!this.live || this.live.solo)) { if (this.time - this.ceremony.t0 > 2) this.leaveCeremony(); return true; }
@@ -710,7 +736,7 @@ export class ArcadeGame {
   // the nearest of a side's men to a point on the screen, if one is within a finger's reach
   manAt(P, p, side, keys = null) {
     const cam = this.cam, reach = Math.max(30, Math.min(cam.W, cam.H) * 0.075); let best = null, bd = reach;
-    for (const k of keys || Object.keys(P.ents)) { const e = P.ents[k]; if (!e || e.side !== side) continue; const [sx, sy] = cam.toScreen(e.x, e.y); const d = Math.hypot(sx - p.px, sy - (p.py - cam.s * 1.2)); if (d < bd) { bd = d; best = k; } } // (aimed at his body, a little above his feet)
+    for (const k of keys || Object.keys(P.ents)) { const e = P.ents[k]; if (!e || e.side !== side) continue; const [sx, sy] = cam.toScreen(e.x, e.y); const d = Math.hypot(sx - p.px, sy - cam.s * 1.2 - p.py); if (d < bd) { bd = d; best = k; } } // (measured to his body, a little above his feet, where a finger lands on him)
     return best;
   }
   // before your snap: a tap on a receiver changes his route (a pass play)
@@ -723,12 +749,15 @@ export class ArcadeGame {
   }
   // their snap, your defense: a tap (click) on one of your men makes him yours; with the play on, a drag
   // steers him (held mouse button: he runs at the pointer) and a quick tap dives (Space on a keyboard)
+  // before the snap a tap on one of your men makes him yours (and he stays yours, snap after snap); a tap on
+  // the man you already have lets him go. Once it's snapped a touch never changes who you are: it steers him.
+  setDefPick(P, k) { this.defPick = k || "none"; P.userDef = k || null; P.uIn = null; try { localStorage.setItem("arcade_defpick", this.defPick); } catch { /* ignore */ } sfx.select?.(); }
   defDown(P, e, p) {
-    const k = this.manAt(P, p, "def"), picked = !!k && k !== P.userDef;
-    if (k) { P.userDef = this.defPick = k; P.uIn = null; if (picked) sfx.select?.(); }
-    if (this.input === "mouse") { if (e.button === 2) { lunge(P); return; } if (!picked) this.mouseHeld = true; return; }
+    if (P.phase === "presnap") { const k = this.manAt(P, p, "def"); if (k) this.setDefPick(P, k === P.userDef ? null : k); return; }
+    if (!P.userDef) return;
+    if (this.input === "mouse") { if (e.button === 2) { lunge(P); return; } this.mouseHeld = true; return; }
     if (this.touch && this.touch.id !== e.pointerId) return;
-    this.touch = { id: e.pointerId, ...p, moved: 0, def: true, picked: !!k, at: performance.now() };
+    this.touch = { id: e.pointerId, ...p, moved: 0, def: true, picked: false, at: performance.now() };
   }
   // every frame of their snap: where your man is going (null: he plays his assignment)
   defControls(P) {
@@ -827,8 +856,9 @@ export class ArcadeGame {
     if (m === "final") { if (k === " " || k === "enter") this.leaveFinal(); return; }
     if (m !== "play" || !P) return;
     if (k === "q" && !P.kind) { this.cycleKind(); return; }
+    if (k === "n" && this.auto?.userD) { this.simDrive(); return; }
     if (this.auto?.userD && !P.kind) { // your defense: Tab picks the next man before the snap; Space (or E) dives or leaps
-      if (k === "tab" && P.phase === "presnap") { const ks = Object.keys(P.ents).filter((q) => P.ents[q].side === "def"), i = ks.indexOf(P.userDef); P.userDef = this.defPick = ks[(i + 1) % ks.length]; sfx.select?.(); }
+      if (k === "tab" && P.phase === "presnap") { const ks = [...Object.keys(P.ents).filter((q) => P.ents[q].side === "def"), null], i = ks.indexOf(P.userDef ?? null); this.setDefPick(P, ks[(i + 1) % ks.length]); } // (Tab: the next man, and round to nobody)
       else if (k === "t" && P.phase === "presnap") this.timeout();
       else if ((k === " " || k === "e") && P.phase !== "presnap") lunge(P);
       return;

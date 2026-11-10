@@ -50,7 +50,12 @@ export function autoStep(S, call, state, R = Math.random) {
       const end = e.stop && e.path?.length ? e.path[e.path.length - 1] : null, settled = e.mode === "settle";
       const tx = settled ? e.x : end ? end.x : e.x + e.vx * T, ty = settled ? e.y : end ? end.y : e.y + e.vy * T;
       // (never led out of bounds or out the back of the end zone: he puts it where his man can catch it)
-      throwTo(S, { x: Math.min(108, tx + SKILL.aimErr * (R() - 0.5)), y: Math.max(-HALF + 3.2, Math.min(HALF - 3.2, ty + SKILL.aimErr * (R() - 0.5))) }); // (on a man by the sideline he throws it to the inside, where it can't drift out)
+      // he misses some, more the lower his overall: an overthrow, one behind his man or short of him, one
+      // wide; an elite passer misses about one throw in eight, a backup one in three or four
+      const ovr = qbp?.ovr ?? 75, err = SKILL.aimErr * (1 + Math.max(0, 85 - ovr) * 0.025), miss = R() < Math.max(0.11, Math.min(0.3, 0.19 + (88 - ovr) * 0.009));
+      let mx = 0, my = 0;
+      if (miss) { const u = R(), dir = Math.sign(e.vy || 0) || (R() < 0.5 ? -1 : 1); if (u < 0.4) mx = 4.5 + R() * 3.5; else if (u < 0.7) mx = -(3.8 + R() * 2.2); else my = dir * (3.8 + R() * 2.4) * (R() < 0.5 ? 1 : -1); /* (far enough off that he can't get to it, or only just) */ state.missed = true; }
+      throwTo(S, { x: Math.min(108, tx + err * (R() - 0.5) + mx), y: Math.max(-HALF + 1.5, Math.min(HALF - 1.5, ty + err * (R() - 0.5) + my)) }); // (on a man by the sideline he throws it to the inside, where it can't drift out)
       state.thrown = true;
     }
   }

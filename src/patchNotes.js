@@ -2627,4 +2627,10 @@ export const PATCH_NOTES = [
     "Players whose feet shuffle back and forth (a corner mirroring his man, a rusher bouncing off a block) hold one steady frame, and the picture keeps up with them better.",
     "Kick coverage: men closing on the returner keep a body's width apart instead of piling onto the same spot.",
   ] },
+  { v: "6.31", date: "2026-11-10", title: "Quarterbacks miss, sim a drive, keep your defender", notes: [
+    "Computer quarterbacks miss throws, more often the lower their overall: overthrows, throws behind or short of the receiver, and throws wide of him. An elite passer misses about one in eight, a backup one in three or four. In testing, completions now average about 66% (the NFL is about 65%): roughly 56% for a quarterback under 74 overall, 61% from 74 to 79, 69% from 80 to 87, and 73% from 88 up. Interceptions are about 3% of throws.",
+    "SIM DRIVE (N on a keyboard): on the other team's possession, skip to your next offensive drive. The rest of their drive (and any kickoff to you) is played out by the engine and reads out play by play, and then you're back calling plays. Tapped during one of their plays, it waits for that play to end first. It counts like any other play, in a franchise game too.",
+    "Your defender stays yours: the man you pick before the snap is the man you play on every snap after, until you tap him again to let him go (or tap another man to switch). After the snap, a tap or drag never switches you to someone else. It's remembered from game to game too.",
+    "Tapping a player picks the player you tapped. A tap used to be measured to a spot a body-length below your finger, so it often picked the man next to the one you meant (a defender, or a receiver for a hot route).",
+  ] },
 ];
