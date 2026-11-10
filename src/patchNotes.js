@@ -2633,4 +2633,7 @@ export const PATCH_NOTES = [
     "Your defender stays yours: the man you pick before the snap is the man you play on every snap after, until you tap him again to let him go (or tap another man to switch). After the snap, a tap or drag never switches you to someone else. It's remembered from game to game too.",
     "Tapping a player picks the player you tapped. A tap used to be measured to a spot a body-length below your finger, so it often picked the man next to the one you meant (a defender, or a receiver for a hot route).",
   ] },
+  { v: "6.32", date: "2026-11-10", title: "AFC East animation", notes: [
+    "The Bills, Dolphins, Patriots and Jets get the full animation set in the arcade, home and away. That's 23 clubs now.",
+  ] },
 ];
