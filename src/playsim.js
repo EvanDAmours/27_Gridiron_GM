@@ -723,7 +723,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   let gk = null; // what the grades need to know about this snap (gradeBook)
   const st = g.stats[off];
   const lead = g.score[off] - g.score[def];
-  const hurry = ((g.qtr === 2 || g.qtr === 4) && g.clock < 120) || (g.qtr === 4 && g.clock < 300 && lead < 0) || (g.qtr === 4 && lead <= -9) || (g.ot && g.clock < 150 && lead <= 0);
+  const hurry = g.hurryUp === off || ((g.qtr === 2 || g.qtr === 4) && g.clock < 120) || (g.qtr === 4 && g.clock < 300 && lead < 0) || (g.qtr === 4 && lead <= -9) || (g.ot && g.clock < 150 && lead <= 0);
   const fgDist = 100 - g.yard + 17;
   const before = { yard: g.yard, down: g.down, toGo: g.toGo, qtr: g.qtr, clock: g.clock, poss: off };
   const ev = { ...before, yards: 0, type: "", text: "", td: false, turnover: false, score: 0, pers, pkg };
@@ -731,17 +731,17 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   // whether the clock was still running after the last snap (only an ordinary play in bounds with
   // no timeout leaves it running; set again at the bottom)
   const running = !!g.running;
-  g.running = false;
+  g.running = false; g.lastRun = null;
 
   // Victory formation: ahead in the 4th with few enough seconds left that kneeling runs it out.
   // A defense that's out of reach (down more than two scores) doesn't bother with its timeouts.
-  const defTO = lead <= 16 ? g.to?.[def] ?? 0 : 0, kneels = 4 - g.down;
+  const defTO = lead <= 16 && g.userClock !== def ? g.to?.[def] ?? 0 : 0, kneels = 4 - g.down; // (a side you're playing calls its own timeouts: the arcade's TIMEOUT)
   if (call === "kneel" || !call && g.qtr === 4 && !g.ot && lead > 0 && g.down < 4 && g.clock <= 40 * Math.max(0, kneels - defTO) + 2 * kneels) {
     const ql = line(g, off, o.qb); add(ql, "rushAtt", 1); add(ql, "rushYds", -1); st.rushAtt++; st.rushYds -= 1;
     g.yard = Math.max(1, g.yard - 1); g.down++; g.toGo += 1;
     ev.type = "run"; ev.k = "kneel"; ev.kneel = true; ev.yards = -1; ev.player = o.qb; ev.qb = o.qb; ev.text = `${o.qb?.name || "The QB"} takes a knee.`;
     if (defTO > 0 && g.clock > 2 && lead > 0 && g.qtr === 4) { g.to[def]--; ev.text += ` Timeout, ${sideName(g, def)}.`; ev.note = tick(g, 2); }
-    else ev.note = tick(g, 40);
+    else { const before = g.clock; ev.note = tick(g, 40); if (!ev.note) g.lastRun = { before, secs: 40 }; }
     return ev;
   }
 
@@ -749,7 +749,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   // for the field goal, or a drive still to finish): the quarterback throws it into the ground. It
   // costs a down and a second; on fourth down there's no down to spare.
   const needStop = g.qtr === 2 ? g.yard >= 45 : (g.qtr === 4 || g.ot) && lead <= 0;
-  if (!call && running && needStop && (g.to?.[off] ?? 0) === 0 && g.down <= 3 && g.clock >= 3 && g.clock <= 40) {
+  if ((call === "spike" && g.down <= 3) || (!call && running && needStop && (g.to?.[off] ?? 0) === 0 && g.down <= 3 && g.clock >= 3 && g.clock <= 40)) { // (the arcade's SPIKE: yours to call)
     const ql = line(g, off, o.qb); add(ql, "att", 1); st.passAtt++;
     g.down++;
     ev.type = "inc"; ev.k = "spike"; ev.spike = true; ev.qb = o.qb; ev.player = o.qb; ev.text = `${o.qb?.name || "The QB"} spikes it to stop the clock.`;
@@ -1070,6 +1070,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   // Ball carrier: yardage, touchdowns, fumbles, tackles.
   if (type === "run" || type === "pass") {
     const room = 100 - g.yard;
+    if (pick?.fumble && Number.isFinite(pick.fumYards)) yards = Math.min(room - 1, pick.fumYards); // (the arcade: the ball came out on the field, here)
     if (yards >= room) yards = room;
     const cl = line(g, off, carrier);
     if (type === "run") { add(cl, "rushYds", yards); st.rushYds += yards; }
@@ -1078,7 +1079,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       ev.td = true; st.tds++;
       if (type === "run") add(cl, "rushTD", 1); else { add(cl, "recTD", 1); add(line(g, off, qb), "passTD", 1); }
       desc = type === "run" ? `${carrier?.name || "Runner"} runs it in from ${room} — TOUCHDOWN!` : `${qb?.name || "QB"} hits ${carrier?.name || "his receiver"} for a ${room}-yard TOUCHDOWN!`;
-    } else if (rand() < ((type === "run" ? 0.0055 : 0.004) - Math.max(-0.002, Math.min(0.002, (type === "run" ? runE : passE) * 0.0006))) * (g.wxE?.fum || 1)) {
+    } else if (pick?.fumble || rand() < ((type === "run" ? 0.0055 : 0.004) - Math.max(-0.002, Math.min(0.002, (type === "run" ? runE : passE) * 0.0006))) * (g.wxE?.fum || 1)) {
       add(cl, "fum", 1); st.fumLost++;
       const t = pickW(rand, dP.tackleW); if (t) add(line(g, def, t), "ff", 1); ev.tkl = t;
       if (gk) gk.fum = true;
@@ -1212,11 +1213,13 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const endHalf = (g.qtr === 2 || g.qtr === 4 || g.ot) && g.clock <= 120;
     const offWants = endHalf && (g.qtr === 2 ? g.yard >= 50 : lead <= 0) && g.clock - secs > 0;
     const defWants = (g.qtr === 4 || g.ot) && g.clock <= 180 && lead > 0 && lead <= 16 && g.clock - secs > 0;
-    const who = offWants && (g.to?.[off] ?? 0) > 0 ? off : defWants && (g.to?.[def] ?? 0) > 0 ? def : null;
+    const who = offWants && (g.to?.[off] ?? 0) > 0 && g.userClock !== off ? off : defWants && (g.to?.[def] ?? 0) > 0 && g.userClock !== def ? def : null; // (a side you're playing: your timeouts are yours to call)
     if (who) { g.to[who]--; secs = 4; ev.text += ` Timeout, ${sideName(g, who)}.`; ev.timeout = who; }
   }
+  const clk0 = g.clock;
   ev.note = tick(g, secs);
   g.running = !clockStops && !ev.timeout && !ev.note;
+  if (g.running) g.lastRun = { before: clk0, secs }; // (the clock ran on after the play: a timeout called now gets most of it back)
   return ev;
 }
 const late = (g) => g.qtr === 4 && g.clock < 300;
@@ -1237,3 +1240,14 @@ export function playGame(g) {
 
 // Season stats lines keyed by player id for each side, with QB ratings left to the caller.
 export const boxOf = (g) => g.box;
+
+// A timeout called between plays (the arcade's TIMEOUT button, for the side you're playing): one of the
+// half's three (two in overtime) is gone, and if the clock was running on after the last play, it stops
+// there: all but the few seconds the play itself took come back. Returns false with none left.
+export function callTimeout(g, side) {
+  if (!g || g.done || !((g.to?.[side] ?? 0) > 0)) return false;
+  g.to[side]--;
+  if (g.lastRun) { g.clock = Math.max(g.clock, g.lastRun.before - Math.min(g.lastRun.secs, 6)); g.lastRun = null; }
+  g.running = false;
+  return true;
+}

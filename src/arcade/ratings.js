@@ -44,6 +44,9 @@ export const power = (p) => skill(p, [["breakTkl", 0.5], ["stiffArm", 0.25], ["b
 export const balance = (p) => skill(p, [["balance", 0.7], ["str", 0.3], ["toughness", 0.2]]);
 export const burst = (p) => skill(p, [["burst", 0.6], ["acc", 0.4]], 0.1);
 export const vision = (p) => skill(p, [["vision", 1]]);
+// holding on to it through a hit (there's no carrying rating: balance, strength, toughness and, for a
+// receiver, hands in traffic stand in)
+export const ballSecure = (p) => skill(p, [["balance", 0.5], ["str", 0.3], ["toughness", 0.2], ["catchTraffic", 0.3], ["breakTkl", 0.2]], 0.3);
 
 // ---- blockers ----
 export const passBlock = (p) => skill(p, [["passBlock", 0.6], ["footwork", 0.2], ["anchor", 0.2], ["handUse", 0.1]]);
@@ -64,6 +67,8 @@ export const recovery = (p) => skill(p, [["recovery", 0.6], ["range", 0.6], ["sp
 export const ballRead = (p) => skill(p, [["playRec", 0.6], ["instincts", 0.6], ["zoneAwr", 0.3], ["comms", 0.2], ["range", 0.2], ["zoneCov", 0.2]]);
 export const ballSkills = (p) => skill(p, [["ballSkills", 0.7], ["ballHawk", 0.7], ["coverage", 0.3], ["zoneCov", 0.1]]);
 export const tackling = (p) => skill(p, [["tackling", 0.7], ["runStop", 0.4], ["runSupport", 0.2], ["str", 0.1]]);
+// how hard he hits: a big, sure tackler knocks the ball loose more often
+export const hitPower = (p) => skill(p, [["tackling", 0.5], ["str", 0.5], ["runStop", 0.2], ["shedBlock", 0.1]], 0.2);
 export const pursuit = (p) => skill(p, [["pursuit", 0.6], ["range", 0.6], ["motor", 0.4], ["recovery", 0.2]], 0.15);
 
 // ---- kickers ----

@@ -150,20 +150,54 @@ export function setupPlay(g, L, call) {
   if (ents[cover.TE] && ents.TE && cover.TE.startsWith("LB")) ents[cover.TE].y = ents.TE.y;
   // the routes, laid out now so the field can show them before the snap
   const routes = concept ? CONCEPTS[concept].routes : PLAYS[call];
-  if (routes) for (const r of ELIGIBLE) {
-    const e = ents[r]; if (!e) continue;
-    const Rt = ROUTES[routes[r]], inward = e.y < 0 ? 1 : -1;
-    let x = e.x, y = e.y; const pts = [];
-    for (const [up, side] of Rt.legs) { x = Math.min(107, x + up); y = clamp(y + side * inward, -HALF + 2.5, HALF - 2.5); pts.push({ x, y }); }
-    e.path = pts; e.stop = !!Rt.stop; e.delay = Rt.delay || 0; e.more = Rt.more || 0;
-  }
+  if (routes) for (const r of ELIGIBLE) if (ents[r]) layRoute(ents[r], routes[r]);
   const S = {
     g, L, call, concept, routes: concept ? CONCEPTS[concept].routes : PLAYS[call], los, firstDown: Math.min(100, los + g.toGo), t: 0, phase: "presnap", ents, cover,
     ball: { x: ents.QB.x, y: 0, h: 0, holder: "QB", flight: null },
+    runSide: 1, // (a run goes to the strong side, the tight end's, unless the play is flipped)
     aim: null, steer: null, slideTo: null, text: "", ev: null, result: null, pick: null, shed: {}, pressureAt: 0, thrownAt: 0, endAt: 0, lane: 0, handoffAt: 0, tackler: null, broke: 0, log: [],
   };
   presnapLook(S);
   return S;
+}
+
+// a receiver's route from where he stands (sideways legs mirror toward the middle from either side)
+function layRoute(e, name) {
+  const Rt = ROUTES[name]; if (!Rt) return;
+  const inward = e.y < 0 ? 1 : -1; let x = e.x, y = e.y; const pts = [];
+  for (const [up, side] of Rt.legs) { x = Math.min(107, x + up); y = clamp(y + side * inward, -HALF + 2.5, HALF - 2.5); pts.push({ x, y }); }
+  e.path = pts; e.stop = !!Rt.stop; e.delay = Rt.delay || 0; e.more = Rt.more || 0;
+}
+
+// ---------- at the line: hot routes and flipping the play ----------
+// A hot route: tap a receiver before the snap and his route changes to the next one on his list
+// (a pass play only). The back's and the tight end's lists end with staying in to block.
+export const HOT = {
+  X: ["go", "slant", "out", "curl", "dig", "post", "comeback"], Z: ["go", "slant", "out", "curl", "dig", "post", "comeback"],
+  SLOT: ["seam", "slant", "out", "drag", "corner", "curl", "whip"], TE: ["seam", "stick", "flat", "drag", "corner", "check"], RB: ["check", "flat", "swing", "angle", "wheel"],
+};
+export const ROUTE_LABEL = { go: "GO", slant: "SLANT", out: "OUT", curl: "CURL", dig: "DIG", post: "POST", comeback: "COMEBACK", seam: "SEAM", drag: "DRAG", corner: "CORNER", whip: "WHIP", stick: "STICK", flat: "FLAT", check: "BLOCK", swing: "SWING", angle: "ANGLE", wheel: "WHEEL", hitch: "HITCH", spot: "SPOT", qin: "IN", arrow: "ARROW", fade: "FADE", xing: "CROSS", deepout: "DEEP OUT", sluggo: "SLUGGO", outup: "OUT-UP", bench: "BENCH" };
+export function hotRoute(S, key) {
+  if (S.phase !== "presnap" || !S.call?.startsWith("pass") || !HOT[key]) return null;
+  const e = S.ents[key]; if (!e) return null;
+  const list = HOT[key], cur = S.routes?.[key], next = list[(list.indexOf(cur) + 1) % list.length];
+  S.routes = { ...S.routes, [key]: next }; layRoute(e, next); S.hot = { ...S.hot, [key]: next };
+  return next;
+}
+// Flip the play: the formation and every route the other way round (and a run to the other side). The
+// defense lines up to the new strength, though now and then the safety walked down into the box
+// doesn't rotate over with it.
+export function flipPlay(S) {
+  if (S.phase !== "presnap" || S.kind) return false;
+  const s1 = S.ents.S1 && { y: S.ents.S1.y };
+  for (const e of Object.values(S.ents)) { e.y = -e.y; if (e.path) for (const q of e.path) q.y = -q.y; } // (the defense lines up to the new strength)
+  S.runSide = -(S.runSide || 1); S.flipped = !S.flipped;
+  const { ents, cover } = S;
+  for (const r of ["X", "Z", "SLOT"]) { const k = cover[r]; if (k && ents[k] && ents[r]) ents[k].y = ents[r].y + (ents[r].y < 0 ? 1 : -1) * 0.8; }
+  if (ents[cover.TE] && ents.TE && cover.TE.startsWith("LB")) ents[cover.TE].y = ents.TE.y;
+  if (S.dcall === "box" && s1 && rnd(S) < 0.35) ents.S1.y = s1.y; // (now and then the safety walked down doesn't rotate over: run away from him)
+  S.box = boxCount(S);
+  return true;
 }
 
 // The defense's call shows before the snap: eight in the box (the strong safety walks down), two deep
@@ -241,7 +275,7 @@ export function snap(S) {
   }
   ents.QB.mode = isPass ? "dropback" : "handoff";
   if (!isPass) {
-    const R = CONCEPTS[S.concept]?.run, side = rnd(S) < 0.5 ? -1 : 1;
+    const R = CONCEPTS[S.concept]?.run, side = S.runSide || 1;
     S.handoffAt = R?.hand ?? 0.7; S.lane = R ? side * R.lane : call === "run_outside" ? side * 14 : side * 4.2;
     if (R) {
       // the box: a light box (five) helps the run, a loaded one (six, seven) hurts it (more for runs between the
@@ -338,6 +372,8 @@ export function tick(S, dt) {
     if (e.y > HALF - 0.2 && e.key !== ball.holder) { e.y = HALF - 0.2; e.vy = Math.min(0, e.vy); } if (e.y < -HALF + 0.2 && e.key !== ball.holder) { e.y = -HALF + 0.2; e.vy = Math.max(0, e.vy); }
   }
 
+  if (S.phase === "loose") return looseBall(S, dt);
+
   // receivers run their routes, then keep going; a settled man waits for the ball
   for (const r of ELIGIBLE) {
     const e = ents[r]; if (!e || e.down > 0) continue;
@@ -416,13 +452,14 @@ export function tick(S, dt) {
       if (S.t < S.shed[k]) steer(d, o.x + (isPass ? 1.0 : 1.1), o.y + (d.y > o.y ? 0.5 : -0.5), dt, 0.8);
       else { d.mode = "free"; if (isPass && ball.holder === "QB" && d.move) S.flash.push({ key: k, text: d.move, until: S.t + 1.0 }); }
     }
+    if (d.mode === "free" && k === S.userDef && S.uIn && !over) { steer(d, S.uIn.x, S.uIn.y, dt, 1); continue; } // (the man you're playing: where you send him)
     if (d.mode === "free") { if (carrier && !over) steer(d, ...xy(intercept(d, carrier)), dt, clamp(1 + K.edge(K.pursuit(d.p)) * 0.002, 0.95, 1.04)); else brake(d, dt); }
   }
   // the pass rush gets home: a sack
   if (S.phase === "live" && isPass && ball.holder === "QB") {
     const [d, dd] = nearestDef(S, qb.x, qb.y);
     if (dd < 2.8 && !S.pressureAt) S.pressureAt = S.t;
-    if (dd < 1.25 && d && (d.mode === "free" || d.mode === "blitz")) { sack(S, d); return true; }
+    if (dd < 1.25 && d && (d.mode === "free" || d.mode === "blitz" || d.key === S.userDef)) { sack(S, d); return true; }
   }
 
   // coverage: man trails his receiver; the safeties sit deep and break on the ball; once the ball's
@@ -431,6 +468,7 @@ export function tick(S, dt) {
     const d = ents[k]; if (!d || d.down > 0 || d === carrier || d.heldUntil > S.t) continue;
     const mine = Object.keys(S.cover).find((r) => S.cover[r] === k);
     if (over) { brake(d, dt); continue; }
+    if (k === S.userDef && S.uIn) { steer(d, S.uIn.x, S.uIn.y, dt, 1); continue; } // (the man you're playing: where you send him; let go and he plays his assignment)
     if (d.mode === "blitz") { if (S.t > 0.12) { const tgt = carrier || qb; steer(d, ...xy(intercept(d, tgt)), dt, 1); } continue; } // straight at the quarterback
     if (d.mode === "box" && !ball.flight) { if (S.t > 0.45) { const tgt = carrier || ents.RB; steer(d, ...xy(intercept(d, tgt)), dt, 0.95); } else steer(d, S.los + 4, 5, dt, 0.8); continue; }
     if (ball.flight) {
@@ -695,7 +733,9 @@ function forcedThrow(S) {
 function arrive(S) {
   const { ents, ball } = S, f = ball.flight, tgt = f.target ? ents[f.target] : null;
   const dR = tgt ? hyp(tgt.x - ball.x, tgt.y - ball.y) : 99;
-  const [d, dD] = nearestDef(S, ball.x, ball.y);
+  let [d, dD] = nearestDef(S, ball.x, ball.y);
+  // your man leapt for it just as it got there: he's in on it
+  { const u = S.userDef && ents[S.userDef]; if (u && u.lungeAt != null && S.t - u.lungeAt < 0.6 && u.down <= 0 && hyp(u.x - ball.x, u.y - ball.y) < 2.3) { d = u; dD = Math.min(hyp(u.x - ball.x, u.y - ball.y), 1.0); } }
   const catchR = tgt ? 1.9 + (K.hands(tgt.p) - 70) * 0.015 : 0, reachR = tgt ? 1.0 + (K.bodyCtrl(tgt.p) - 70) * 0.012 : 0; // a dive reaches further with body control
   ball.flight = null; ball.h = 0;
   if (S.booked) { endAt(S, S.ev, "fall", 0.8); S.log.push("thrown away"); return; }
@@ -769,9 +809,95 @@ function sack(S, d) {
   endAt(S, r.ev, "tackle", 1.1);
 }
 function tackle(S, d) {
-  const c = S.ents[S.ball.holder]; S.tackler = d; d.vx = d.vy = 0;
+  const c = S.ents[S.ball.holder], hitSp = hyp(d.vx, d.vy); S.tackler = d; d.vx = d.vy = 0;
+  if (fumbles(S, c, d, hitSp)) return;
   const yards = Math.round(c.x - S.los);
   book(S, yards, "tackle");
+}
+// The ball comes out: a hard hit on a man who doesn't hold it tight (his balance, strength, toughness,
+// hands in traffic against the tackler's power), more on a big shot at full speed, on a man still
+// securing a catch, on one already off balance from a broken tackle, and in the wet. About one tackle
+// in a hundred; the defense comes up with it a little over half the time.
+function fumbles(S, c, d, hitSp) {
+  if (!c || c.side !== "off" || S.booked || c.x >= 100) return false;
+  const sec = K.ballSecure(c.p), hit = K.hitPower(d.p);
+  let p = 0.0095 + (hit - sec) * 0.00035;
+  if (hitSp > 6) p *= 1.5; // a big shot
+  if (S.catchAt != null && S.t - S.catchAt < 0.6) p *= 1.7; // hit as he catches it
+  if (S.stagger > S.t || S.broke) p *= 1.25; // off balance, or a second man in on him
+  p *= (S.g?.wxE?.fum || 1) * (1 + 0.15 * ((wxField(S.g).rain || 0) + (wxField(S.g).snow || 0)));
+  if (rnd(S) >= clamp(p, 0.003, 0.045)) return false;
+  // it squirts out the way he was going, bouncing
+  const sp = Math.max(1, hyp(c.vx, c.vy)), a = Math.atan2(c.vy, c.vx) + (rnd(S) - 0.5) * 2.2, v = 3 + rnd(S) * 4;
+  S.ball.holder = null; S.ball.flight = null; S.ball.h = 0.6; S.ball.vh = 3; S.ball.vx = Math.cos(a) * v * Math.min(1, sp / 4 + 0.4); S.ball.vy = Math.sin(a) * v;
+  S.fumbler = c.key; S.fumAt = S.t; S.phase = "loose"; c.mode = "pursue"; c.down = 0.5; d.down = 0.45;
+  S.log.push(`${c.p.name} fumbles`); S.flash.push({ key: d.key, text: "FORCED FUMBLE", until: S.t + 1.4 });
+  return true;
+}
+// A loose ball: it bounces and rolls; everybody near it goes after it, and the first man on it has it
+// (two at once: the one with the stronger hands and body wins the scrum)
+function looseBall(S, dt) {
+  const { ents, ball } = S;
+  ball.vh = (ball.vh ?? 3) - 30 * dt; ball.h = Math.max(0, ball.h + ball.vh * dt); if (ball.h === 0 && ball.vh < 0) { ball.vh = ball.vh < -2 ? -ball.vh * 0.45 : 0; ball.vx *= 0.7; ball.vy *= 0.7; }
+  const fr = Math.max(0, 1 - 1.6 * dt); ball.vx *= fr; ball.vy *= fr; ball.x += ball.vx * dt; ball.y += ball.vy * dt;
+  const cands = [];
+  for (const e of Object.values(ents)) {
+    if (e.down > 0) { brake(e, dt); continue; }
+    if (e.heldUntil > S.t) { const b = ents[e.heldBy]; if (b) steer(e, b.x, b.y, dt, 0.4); continue; }
+    const dd = hyp(e.x - ball.x, e.y - ball.y);
+    if (e.key === S.userDef && S.uIn) steer(e, S.uIn.x, S.uIn.y, dt, 1);
+    else if (dd < 16 || S.t - S.fumAt > 0.9) steer(e, ball.x + ball.vx * 0.2, ball.y + ball.vy * 0.2, dt, LINE.includes(e.key) || e.key.startsWith("DL") ? 0.85 : 1, true);
+    else brake(e, dt);
+    if (dd < 0.9 && ball.h < 1.2 && S.t - S.fumAt > 0.25) cands.push([e, dd]);
+  }
+  // out of bounds: it's the offense's, where it went out
+  if (Math.abs(ball.y) >= HALF || ball.x >= 110 || ball.x <= -10) { recover(S, ents[S.fumbler] || ents.QB, true); return true; }
+  if (!cands.length && S.t - S.fumAt < 3.5) return true;
+  if (!cands.length) { const near = Object.values(ents).filter((e) => e.down <= 0).sort((p, q) => hyp(p.x - ball.x, p.y - ball.y) - hyp(q.x - ball.x, q.y - ball.y))[0]; cands.push([near, 0]); }
+  const grip = (e) => K.skill(e.p, [["str", 0.5], ["ballSkills", 0.4], ["ballHawk", 0.4], ["catching", 0.4], ["catchTraffic", 0.4]], 0.3) + rnd(S) * 30;
+  const [w] = cands.sort((p, q) => grip(q[0]) - grip(p[0]))[0];
+  recover(S, w);
+  return true;
+}
+function recover(S, e, oob = false) {
+  const { ball } = S, spot = clamp(Math.round((oob ? clamp(ball.x, 1, 99) : ball.x) - S.los), -S.los + 1, 99 - S.los);
+  ball.holder = e.key; ball.x = e.x; ball.y = e.y; ball.h = 0; ball.vx = ball.vy = 0; e.vx *= 0.2; e.vy *= 0.2; e.down = 0.6;
+  if (e.side === "def" && !oob) {
+    // the defense has it: the engine books the fumble, lost where it was recovered
+    S.log.push(`${e.p.name} recovers`); S.fumNote = `RECOVERED BY ${String(e.p.name || "").toUpperCase()}`;
+    const r = resolvePlay(S.g, S.call, { types: ["fumble"], fallback: [] }, { fumble: true, fumYards: spot, ...(S.call.startsWith("pass") ? { target: S.pick?.target, open: true } : { carrier: S.ents.RB?.p?.id }), inBounds: true }, 60);
+    S.ev = r.ev; S.mismatch = r.ev && r.ev.type !== "fumble";
+    S.tackler = null; endAt(S, r.ev, "fall", 1.6); return;
+  }
+  // the offense falls on it: the play stands where he did
+  S.log.push(oob ? "out of bounds" : `${e.p.name} recovers`); S.fumNote = oob ? "FUMBLE - OUT OF BOUNDS, OFFENSE KEEPS IT" : "FUMBLE - THE OFFENSE RECOVERS";
+  if (oob) S.oob = true;
+  S.tackler = null; book(S, spot, "fall", 1.3);
+}
+
+// The man you're playing on defense makes a play: he dives at the ball carrier (a tackle if he's
+// close enough and wraps him up: his tackling against the runner's elusiveness and power), or, with
+// the ball in the air, he leaps for it. A miss puts him on the turf for a beat.
+export function lunge(S) {
+  const d = S.userDef && S.ents[S.userDef];
+  if (!d || d.down > 0 || d.heldUntil > S.t || !["live", "carry"].includes(S.phase)) return false;
+  if (d.lungeAt != null && S.t - d.lungeAt < 0.9) return false;
+  d.lungeAt = S.t;
+  const c = S.ball.holder && S.ents[S.ball.holder];
+  if (S.ball.flight) { const sp = hyp(d.vx, d.vy) || 1, k = Math.min(1.8, 1.2 / sp + 0.25); d.vx *= 1 + k * 0.3; d.vy *= 1 + k * 0.3; S.flash.push({ key: d.key, text: "LEAP", until: S.t + 0.6 }); return true; }
+  if (!c || c.side !== "off") return false;
+  const dd = hyp(c.x - d.x, c.y - d.y);
+  if (dd < 2.8) {
+    if (c.key === "QB" && S.phase === "live") { if (rnd(S) < clamp(0.6 + K.edge(K.passRush(d.p)) * 0.008 - (dd > 1.8 ? 0.2 : 0), 0.25, 0.9)) { sack(S, d); return true; } }
+    else {
+      const el = Math.max(K.elusive(c.p), K.power(c.p)), tk = K.tackling(d.p);
+      if (!d.missed && rnd(S) < clamp(0.66 + (tk - el) * 0.008 - (dd > 1.8 ? 0.18 : 0) - (S.broke ? 0.05 : 0), 0.3, 0.92)) { S.diveTackle = true; d.x += (c.x - d.x) * 0.6; d.y += (c.y - d.y) * 0.6; tackle(S, d); return true; }
+    }
+  }
+  // the dive comes up empty: he's on the ground
+  const n = dd || 1, reach = Math.min(dd, 2); d.x += ((c.x - d.x) / n) * reach; d.y += ((c.y - d.y) / n) * reach; d.vx = d.vy = 0; d.down = 0.9; d.missed = true;
+  S.flash.push({ key: d.key, text: "MISSED", until: S.t + 0.7 });
+  return true;
 }
 function outOfBounds(S) { const c = S.ents[S.ball.holder]; S.oob = true; S.log.push("out of bounds"); book(S, Math.round(c.x - S.los), "fall"); }
 function score(S) { book(S, 100 - S.los, "fall", 1.5); }

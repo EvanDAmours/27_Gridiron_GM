@@ -902,7 +902,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   const lw = Math.max(1, Math.round(s * 0.12)), vline = (yd, color) => { const x = Math.round(yardAt(yd)); if (x < 0 || x > W) return; ctx.fillStyle = color; ctx.fillRect(x, Math.round(top), Math.max(2, lw * 2), Math.round(depth)); };
   vline(S.los, "rgba(60,120,255,.8)"); if (S.firstDown < 100 && !S.kind) vline(S.firstDown, "rgba(255,220,0,.9)");
   // routes, shown faintly before the snap and while the quarterback holds it (Retro Bowl shows them)
-  if (S.phase === "presnap" || (S.phase === "live" && S.ball.holder === "QB")) {
+  if (!S.cpuOff && (S.phase === "presnap" || (S.phase === "live" && S.ball.holder === "QB"))) { // (not the other team's: you're on defense)
     ctx.setLineDash([Math.max(2, s * 0.25), Math.max(2, s * 0.25)]); ctx.lineWidth = Math.max(1, s * 0.08); ctx.strokeStyle = "rgba(255,255,255,.45)";
     for (const r of ELIGIBLE) { const e = S.ents[r]; if (!e || !e.path?.length) continue; ctx.beginPath(); let [x0, y0] = cam.toScreen(e.x, e.y); ctx.moveTo(x0, y0); for (const p of e.path) { const [x, y] = cam.toScreen(p.x, p.y); ctx.lineTo(x, y); } ctx.stroke(); }
     ctx.setLineDash([]);
@@ -928,6 +928,8 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     const ok = (p2 && sprite2(ctx, cam, t, away, p2.n, e.x, e.y, p2.face ?? facing)) || sprite(ctx, cam, t, away, pose, e.x, e.y, facing, act) || sprite(ctx, cam, t, away, POSE[e.p.pos] || "db", e.x, e.y, facing, false);
     if (poseProbe.cb) poseProbe.cb(S, e, { pose, act, p2: p2?.n || null, facing: p2?.face ?? facing, team: t });
     if (!ok) { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.fillStyle = t.clr; ctx.fillRect(sx - s * 0.5, sy - s * 2.2, s, s * 2.2); }
+    if (S.userDef === e.key && S.phase !== "done") { const [sx, sy] = cam.toScreen(e.x, e.y), lw = Math.max(2, Math.round(s * 0.14)); ctx.strokeStyle = "#ffd166"; ctx.lineWidth = lw; ctx.beginPath(); ctx.ellipse(sx, sy, s * 1.25, s * 1.25 * SQUASH, 0, 0, Math.PI * 2); ctx.stroke(); // the man you're playing on defense: a gold ring, and a marker over his head
+      const ay = Math.round(sy - PLAYER_H * s * 0.95 - s * 0.6), u = Math.max(2, Math.round(s * 0.22)); ctx.fillStyle = "#ffd166"; ctx.fillRect(Math.round(sx - u * 1.5), ay, u * 3, u); ctx.fillRect(Math.round(sx - u / 2), ay + u, u, u); }
     if (opts.ring && S.ball.holder === e.key && S.phase !== "presnap") { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, s * 0.08); ctx.beginPath(); ctx.ellipse(sx, sy, s * 1.1, s * 1.1 * SQUASH, 0, 0, Math.PI * 2); ctx.stroke(); }
   }
   if (!refDrawn) sceneSprite(ctx, cam, null, false, ref.pose, ref.x, ref.y, ref.face, 0.95);
