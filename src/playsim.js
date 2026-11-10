@@ -580,6 +580,22 @@ function returnTD(g, ev, recv, p, l, ydsKey, tdKey, yds, what, depth) {
   if (!g.done && depth < 3) kickoff(g, ev, depth + 1);
 }
 
+// A punt the arcade returned by hand: the engine booked the kick (and its own guess at the return);
+// this sets the return to what happened on the field (ret yards from the catch, or a fair catch),
+// fixing the returner's line, the spot and the text. A return all the way scores.
+export function rebookPunt(g, ev, ret, { fair = false } = {}) {
+  if (!ev || ev.type !== "punt" || ev.tb || ev.muff || ev.retTD || g.done || ev.spot == null) return ev;
+  const kick = ev.poss, recv = kick === "h" ? "a" : "h", p = ev.pr, rl = line(g, recv, p);
+  if (ev.returned) { add(rl, "pr", -1); add(rl, "prYds", -(ev.ret || 0)); }
+  ret = fair ? 0 : Math.round(ret); ev.ret = ret; ev.returned = !fair; ev.downed = false; ev.fair = fair;
+  const gross = ev.gross ?? (ev.spot - ev.yard);
+  if (!fair && 100 - ev.spot + ret >= 100) { add(rl, "pr", 1); g.yard = 99; g.poss = recv; ev.text = `Punt, ${gross} yards.`; returnTD(g, ev, recv, p, rl, "prYds", "prTD", ev.spot, "punt", 0); return ev; }
+  if (!fair) { add(rl, "pr", 1); add(rl, "prYds", ret); }
+  g.yard = clamp(100 - ev.spot + ret, 1, 99); g.down = 1; g.toGo = Math.min(10, 100 - g.yard);
+  ev.text = fair ? `Punt, ${gross} yards, fair catch by ${p?.name || "the returner"}.` : ret >= 20 ? `Punt, ${gross} yards. ${p?.name || "The returner"} brings it back ${ret} yards!` : ret > 0 ? `Punt, ${gross} yards, returned ${ret} by ${p?.name || "the returner"}.` : `Punt, ${gross} yards. ${p?.name || "The returner"} is hit right where he caught it${ret < 0 ? `, a loss of ${-ret}` : ""}.`;
+  return ev;
+}
+
 // Spend time on the clock and roll the quarter / half / game when it runs out.
 function tick(g, secs) {
   g.clock -= secs;

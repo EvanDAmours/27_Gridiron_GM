@@ -3,7 +3,8 @@
 // the distance and straight enough for the uprights (and the engine agrees); a punt flies by the
 // engine's own distance and the flick picks the side. Units as in play.js.
 import { resolvePlay, bookPat } from "./bridge.js";
-import { HALF, windNow, wxField } from "./play.js";
+import { HALF, windNow, wxField, topSpeed } from "./play.js";
+import { rebookPunt } from "../playsim.js";
 import * as K from "./ratings.js";
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -11,11 +12,12 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 // The kicking team: a line, two wings, the long snapper's man... kept to the eleven we have. The
 // holder kneels seven back, the kicker beside him; on a punt the punter stands fifteen back.
 export function setupKick(g, L, kind, { pat = false } = {}) {
-  const los = pat ? 85 : g.yard, /* the try: snapped from the 15 */ ents = {}, mk = (key, p, side, x, y) => ({ key, p, side, x, y, vx: 0, vy: 0, face: side === "off" ? 1 : -1, top: 7, acc: 12, mode: "idle", down: 0 });
+  const los = pat ? 85 : g.yard, /* the try: snapped from the 15 */ ents = {}, mk = (key, p, side, x, y) => ({ key, p, side, x, y, vx: 0, vy: 0, face: side === "off" ? 1 : -1, top: p ? topSpeed(p) : 7, acc: 12, mode: "idle", down: 0 });
   const line = [["LT", -7.2], ["LG", -3.6], ["C", 0], ["RG", 3.6], ["RT", 7.2]];
   for (const [k, y] of line) if (L.off[k]) ents[k] = mk(k, L.off[k], "off", los - 1, y);
-  if (L.off.TE) ents.TE = mk("TE", L.off.TE, "off", los - 1.2, 10.8);
-  if (L.off.RB) ents.RB = mk("RB", L.off.RB, "off", los - 1.2, -10.8);
+  // (a punt: the tight end and the back are the gunners, split out wide to get down the field first)
+  if (L.off.TE) ents.TE = mk("TE", L.off.TE, "off", los - 1.2, kind === "punt" ? 21 : 10.8);
+  if (L.off.RB) ents.RB = mk("RB", L.off.RB, "off", los - 1.2, kind === "punt" ? -21 : -10.8);
   const side = g.sides.h, k = kind === "fg" ? side.k : side.p || side.k, holder = kind === "fg" ? (side.p || side.qb) : null;
   if (kind === "fg") { ents.H = mk("H", holder, "off", los - 7, 0.6); ents.K = mk("K", k, "off", los - 9.5, -3); }
   else ents.K = mk("K", k, "off", los - 15, 0);
@@ -120,7 +122,7 @@ export function kickFlick(S, dxYd, dyYd, opt = {}) {
   const gross = r.ev?.gross ?? 42, land = Math.min(109, S.los + gross);
   const endY = clamp(S.ball.y + Math.tan(angle) * gross * 0.5, -HALF + 1, HALF - 1);
   S.flick = { angle, power: plan.len };
-  S.ball.flight = { from: { x: S.ball.x, y: S.ball.y }, to: { x: land, y: endY }, t0: 0.9, T: clamp(gross / 16, 2, 3.6), arc: 6, target: null, kick: true, ret: r.ev?.ret || 0, spot: r.ev?.spot };
+  S.ball.flight = { from: { x: S.ball.x, y: S.ball.y }, to: { x: land, y: endY }, t0: 0.9, T: clamp(gross / 12.5, 2.4, 4.6) /* (NFL hang time: about four and a half seconds on a good one) */, arc: 6, target: null, kick: true, ret: r.ev?.ret || 0, spot: r.ev?.spot };
   S.endAt = 0.9 + S.ball.flight.T + 1.6;
   return r.ev;
 }
@@ -140,10 +142,11 @@ export function tickKick(S, dt) {
     if (returning && ret && !S.landed) move(ret, f.to.x, f.to.y, 7);
     if (u >= 1 && !S.landed) {
       S.landed = true;
-      if (returning && ret) { S.caughtAt = S.t; ball.holder = "S0"; ret.mode = "carry"; S.retTo = S.kind === "ko" ? S.koTo : !S.ev?.returned ? null : S.ev?.retTD ? -2 : (f.spot ?? f.to.x) - (f.ret || 0); if (S.kind === "punt") S.koTD = !!S.ev?.retTD; } // (a punt: a fair catch, or downed, has no return)
+      if (returning && ret) { S.caughtAt = S.t; ball.holder = "S0"; ret.mode = "carry"; S.retTo = S.kind === "ko" ? S.koTo : !S.ev?.returned ? null : S.ev?.retTD ? -2 : (f.spot ?? f.to.x) - (f.ret || 0); if (S.kind === "punt") S.koTD = !!S.ev?.retTD; if (S.userRet) { S.retTo = null; S.koTD = false; } } // (a punt: a fair catch, or downed, has no return)
     }
     // and the return team: on a kickoff the front men drop back into a wall, then once he has it each
     // picks up a man in coverage and gets in his way
+    if (S.kind === "punt") puntBlocks(S, dt, move);
     if (S.kind === "ko") for (const e of Object.values(ents)) {
       if (e.side !== "def" || e.key === "S0") continue;
       e.wy ??= e.y * 0.8;
@@ -156,11 +159,16 @@ export function tickKick(S, dt) {
   // (slowed while a blocker has hold of him)
   if (returning && f && S.t > (S.kind === "ko" ? f.t0 : 0.35)) for (const e of Object.values(ents)) {
     if (e.side !== "off" || e.key === "K" || e.key === "H" || e.down > 0) continue;
-    const tx = ball.holder === "S0" ? ret.x : f.to.x, ty = ball.holder === "S0" ? ret.y + ((e.y > ret.y ? 1 : -1) * 0.6) : f.to.y + (e.y - f.to.y) * 0.35;
+    if (S.kind === "punt" && !GUNNERS.has(e.key) && S.t < 0.6) continue; // (the line blocks for the punter first, then releases)
+    // lanes: each man stays in his own lane on the way down, squeezing in only as he gets close
+    const lane = S.kind === "punt" && ball.holder !== "S0" ? clamp((e.y0 ??= e.y) * 0.45, -14, 14) : 0;
+    const tx = ball.holder === "S0" ? ret.x - (ret.vx || 0) * 0.25 : f.to.x, ty = ball.holder === "S0" ? ret.y + (ret.vy || 0) * 0.25 + ((e.y > ret.y ? 1 : -1) * 0.6) : f.to.y + lane + (e.y - f.to.y - lane) * 0.35;
     move(e, tx + (S.arrived == null ? 0.6 : 0), ty, (e.top || 7) * (S.kind === "ko" ? 0.92 : 1.15) * (e.held > S.t ? 0.3 : 1));
   }
+  if (S.userRet && S.kind === "punt" && ret && (S.ev?.tb || S.ev?.muff || S.ev?.retTD)) S.userRet = false; // (nothing to field: a touchback, or the engine's own big moment)
+  if (S.userRet && S.kind === "punt" && ret) userReturn(S, dt);
   // the return itself: he carries it back up the field, weaving, until the coverage gets to him where the engine says it ended
-  if (returning && ret && ball.holder === "S0" && S.retTo != null) {
+  else if (returning && ret && ball.holder === "S0" && S.retTo != null) {
     const d = S.retTo - ret.x;
     if (Math.abs(d) > 0.3) { ret.vx = Math.sign(d) * 8.6; ret.vy = Math.sin(S.t * 3.2) * 2.4; ret.x += Math.sign(d) * Math.min(Math.abs(d), 8.6 * dt); ret.y = clamp(ret.y + ret.vy * dt, -HALF + 1, HALF - 1); S.endAt = Math.max(S.endAt, S.t + 0.9); }
     else if (S.arrived == null && (S.koTD || (S.waitTk ??= S.t) + 1.4 < S.t || Object.values(ents).some((e) => e.side === "off" && e.key !== "K" && Math.hypot(e.x - ret.x, e.y - ret.y) < 2.2))) { S.arrived = S.t; ret.vx = 0; ret.vy = 0; S.endAt = S.t + (S.koTD ? 1.6 : 1.0);
@@ -170,6 +178,50 @@ export function tickKick(S, dt) {
     ball.x = ret.x; ball.y = ret.y; ball.h = 0;
   }
   if (S.t >= S.endAt) { S.phase = "done"; return false; }
+  return true;
+}
+
+const GUNNERS = new Set(["TE", "RB"]);
+// The punt return team: the front rushes the punt, then turns and finds a man; the corners jam the
+// gunners from the snap. Each blocker gets between his man and the returner and rides him (a better
+// blocker holds him longer), so the coverage has to beat blocks to get there.
+function puntBlocks(S, dt, move) {
+  const { ents, ball } = S, ret = ents.S0, cov = Object.values(ents).filter((e) => e.side === "off" && e.key !== "K" && e.down <= 0), used = new Set();
+  const blockers = Object.values(ents).filter((e) => e.side === "def" && e.key !== "S0").sort((a, b) => (a.key.startsWith("CB") ? 0 : 1) - (b.key.startsWith("CB") ? 0 : 1));
+  for (const b of blockers) {
+    if (S.t < 0.9 && !b.key.startsWith("CB")) continue; // (the front is rushing the punt)
+    let m = b.mark && ents[b.mark]; if (!m || m.down > 0 || used.has(m.key) || (b.done?.has(m.key) && !(m.held > S.t))) { m = null; let bd = 1e9; for (const c of cov) { if (used.has(c.key) || b.done?.has(c.key)) continue; const d = Math.hypot(c.x - b.x, c.y - b.y) + (b.key.startsWith("CB") && !GUNNERS.has(c.key) ? 20 : 0); if (d < bd) { bd = d; m = c; } } b.mark = m?.key; }
+    if (!m) continue; used.add(m.key);
+    // between him and the returner (or the ball, before the catch), a yard off him
+    const tx0 = ball.holder === "S0" ? ret.x : ball.flight?.to.x ?? m.x, ty0 = ball.holder === "S0" ? ret.y : ball.flight?.to.y ?? m.y, dx = tx0 - m.x, dy = ty0 - m.y, dd = Math.hypot(dx, dy) || 1;
+    move(b, m.x + (dx / dd) * 0.9, m.y + (dy / dd) * 0.9, b.top || 7);
+    // one block per pair: once his man gets off it, that blocker has lost him (he finds another)
+    if (Math.hypot(m.x - b.x, m.y - b.y) < 1.3 && !(m.held > S.t) && !(b.done ||= new Set()).has(m.key)) { const win = K.skill(b.p, [["runBlock", 0.6], ["str", 0.3], ["tackling", 0.2]], 0.3) - K.skill(m.p, [["shedBlock", 0.5], ["spd", 0.3], ["tackling", 0.3]], 0.3); m.held = S.t + clamp(0.3 + win * 0.015, 0.12, 0.6); b.done.add(m.key); }
+  }
+}
+// Your punt return: call a fair catch (a tap while the ball's up) or catch it and run. You steer him
+// up and down the field; he runs back up it on his own. The coverage has to get off its blocks and
+// make the tackle (a shifty returner breaks the odd one). Where he's brought down is the spot.
+function userReturn(S, dt) {
+  const { ents, ball } = S, ret = ents.S0, f = S.flightRef || (S.flightRef = ball.flight);
+  if (S.retDone) return false;
+  if (S.fair && S.landed && !S.retDone) { S.retDone = true; ret.vx = 0; ret.vy = 0; rebookPunt(S.g, S.ev, 0, { fair: true }); S.result = S.ev; S.text = S.ev?.text || ""; S.endAt = S.t + 0.9; return true; }
+  if (ball.holder !== "S0") return false;
+  S.catchX ??= ret.x;
+  const top = topSpeed(ret.p) * (S.t - (S.caughtAt ?? S.t) < 0.35 ? 0.6 : 1), wantY = S.steer ?? ret.y;
+  const vx = -top, vy = clamp((wantY - ret.y) * 3, -top * 0.8, top * 0.8), k = Math.min(1, dt * 9);
+  ret.vx += (vx - ret.vx) * k; ret.vy += (vy - ret.vy) * k; ret.x += ret.vx * dt; ret.y += ret.vy * dt;
+  ball.x = ret.x; ball.y = ret.y; ball.h = 0; S.endAt = Math.max(S.endAt, S.t + 0.9);
+  const end = (why) => { S.retDone = true; ret.vx = 0; ret.vy = 0; rebookPunt(S.g, S.ev, S.catchX - Math.max(ret.x, -1), {}); S.result = S.ev; S.text = S.ev?.text || ""; S.endAt = S.t + (why === "td" ? 1.6 : 1.0); if (why === "td") S.koTD = true; };
+  if (ret.x <= 0) { end("td"); return true; }
+  if (Math.abs(ret.y) >= HALF) { ret.y = clamp(ret.y, -HALF, HALF); end("oob"); return true; }
+  for (const e of Object.values(ents)) {
+    if (e.side !== "off" || e.down > 0 || e.held > S.t) continue;
+    if (Math.hypot(e.x - ret.x, e.y - ret.y) > 1.05) continue;
+    const pBreak = clamp(0.07 + (K.elusive(ret.p) - K.tackling(e.p)) * 0.004 - (S.broke || 0) * 0.04, 0.02, 0.22);
+    if (Math.random() < pBreak) { e.down = 0.8; S.broke = (S.broke || 0) + 1; ret.vx *= 0.6; continue; }
+    e.x = ret.x + 0.7; e.y = ret.y; e.down = 0.6; S.tackler = e; ret.down = 0.9; S.arrived = S.t; end("tackle"); return true;
+  }
   return true;
 }
 

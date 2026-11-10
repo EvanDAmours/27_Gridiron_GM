@@ -244,7 +244,7 @@ export class ArcadeGame {
     const snap = snapshot(g), ev = runPlay(g);
     const k = ev?.k, scrim = ev && !ev.kneel && !ev.spike && ev.type !== "penalty" && ["run", "pass", "inc", "int", "sack"].includes(k);
     // a punt or a field goal: played out on the field (the engine kicks it again from the same spot)
-    if (ev && !ev.kneel && !ev.spike && ["punt", "fg", "fg_miss"].includes(ev.type)) { restore(g, snap); this.call(ev.type === "punt" ? "punt" : "fg"); this.S.cpu = true; this.meter = null; this.autoKick = { at: this.time + 1.3 / (this.speed || 1) }; return; }
+    if (ev && !ev.kneel && !ev.spike && ["punt", "fg", "fg_miss"].includes(ev.type)) { restore(g, snap); this.call(ev.type === "punt" ? "punt" : "fg"); this.S.cpu = true; if (ev.type === "punt" && off !== L.userSide && !L.watch) this.S.userRet = true; /* (their punt, your return: field it or fair catch) */ this.meter = null; this.autoKick = { at: this.time + 1.3 / (this.speed || 1) }; return; }
     if (!scrim) { const o = this.offReal; this.unflip(); this.emit(ev, o); this.showEngine(ev); return; } // a kneel, a flag: as the engine called it
     restore(g, snap);
     this.snapRB = backForSnap(g);
@@ -396,7 +396,7 @@ export class ArcadeGame {
   // held keys and the pointer, every frame: the runner's steering, the mouse aim, the kick meter
   controls(P, dt) {
     const up = this.keys.has("w") || this.keys.has("arrowup"), down = this.keys.has("s") || this.keys.has("arrowdown");
-    if (P.phase === "carry" && P.ents[P.ball.holder]?.side === "off") {
+    if ((P.phase === "carry" && P.ents[P.ball.holder]?.side === "off") || (P.kind === "punt" && P.userRet && P.ball.holder === "S0")) {
       const c = P.ents[P.ball.holder];
       if (up || down) { this.keySteer = (this.keySteer ?? c.y) + (down ? 1 : -1) * 22 * dt; this.keySteer = Math.max(-28.5, Math.min(28.5, this.keySteer)); /* (far enough to step out of bounds) */ P.steer = this.keySteer; }
       else if (this.input === "mouse" && this.mouse) { this.keySteer = null; P.steer = this.cam.toField(this.mouse.px, this.mouse.py).y; }
@@ -519,6 +519,7 @@ export class ArcadeGame {
   drawKick(ctx, P, hintY) {
     const cam = this.cam, px = uiPx(cam);
     // just after the kick, the meter stays up a moment where you stopped it
+    if (P.userRet && P.phase === "live") { drawHint(ctx, cam, P.fair ? "FAIR CATCH" : P.ball.holder === "S0" ? (this.mobile ? "SWIPE UP OR DOWN TO STEER THE RETURN" : "W / S OR THE MOUSE TO STEER") : (this.mobile ? "TAP FOR A FAIR CATCH - OR LET HIM FIELD IT" : "SPACE OR CLICK FOR A FAIR CATCH"), hintY); return; }
     if (P.phase !== "presnap") { if (this.meter?.stop != null && this.time - (this.meter.at || 0) < 0.9) drawKickMeter(ctx, cam, px, this.meter.zones, this.meter.stop, true, hintY, this); return; }
     drawDownBox(ctx, cam, P.pat ? "EXTRA POINT" : P.kind === "fg" ? `${P.dist} YARD FIELD GOAL` : "PUNT", "#fff", { left: !!this.live && !(document.fullscreenElement || document.webkitFullscreenElement || this.live.fill) });
     // the kick meter (yours): a pixel arc, red at the ends, orange, then green in the middle as wide as his accuracy
@@ -593,15 +594,19 @@ export class ArcadeGame {
     if (this.input === "mouse") return this.mouseDown(P, e, p);
     // touch: one finger plays; a second finger only taps buttons
     if (this.touch && this.touch.id !== e.pointerId) return;
+    if (P.kind === "punt" && P.userRet) { if (this.fairCatch(P)) return; this.touch = { id: e.pointerId, ...p, moved: 0 }; if (P.ball.holder === "S0") this.grabRunner(P); return; } // your return
     if (P.kind) { this.fireKick(P); return; } // a kick: tap to stop the meter
     const snapped = P.phase === "presnap"; if (snapped) snap(P);
     this.touch = { id: e.pointerId, ...p, moved: 0, snapped }; // (the touch that snapped it isn't also a throw)
     if (P.phase === "carry") this.grabRunner(P);
   }
+  // your punt return: a tap (Space, a click) while the ball's in the air calls the fair catch
+  fairCatch(P) { if (P.fair || P.landed || P.ball.holder === "S0" || !P.ball.flight || P.t < P.ball.flight.t0) return false; P.fair = true; sfx.select?.(); return true; }
   // the runner's line when a finger goes down: drags move him from there
   grabRunner(P) { const c = P.ents[P.ball.holder], t = this.touch; if (!c || !t) return; t.ry = P.steer ?? c.y; t.ay = t.cy ?? t.py; }
   mouseDown(P, e, p) {
     const lob = e.button === 2 || e.shiftKey;
+    if (P.kind === "punt" && P.userRet) { this.fairCatch(P); return; }
     if (P.kind) { this.fireKick(P); return; }
     if (P.phase === "presnap") { snap(P); return; }
     if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass")) { const f = this.cam.toField(p.px, p.py), qb = P.ents.QB; throwTo(P, { x: Math.max(qb.x - 1, f.x), y: f.y }, null, lob ? "lob" : this.passKind); P.aim = null; return; }
@@ -613,12 +618,12 @@ export class ArcadeGame {
     if (e.pointerType === "mouse") { this.mouse = p; if (this.input !== "mouse" && !this.touch) this.input = "mouse"; return; }
     const t = this.touch, P = this.S, cam = this.cam; if (!t || !P || t.id !== e.pointerId) return;
     t.moved = Math.max(t.moved, Math.hypot(p.px - t.px, p.py - t.py)); t.cx = p.px; t.cy = p.py;
-    if (P.kind) return;
+    if (P.kind && !(P.kind === "punt" && P.userRet && P.ball.holder === "S0")) return;
     if (P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass")) {
       // pulling back from where you touched aims the throw the other way (the aim itself is worked
       // out every frame in slingAim, smoothed)
       t.pull = { x: t.px - p.px, y: t.py - p.py };
-    } else if (P.phase === "carry") {
+    } else if (P.phase === "carry" || (P.kind === "punt" && P.userRet && P.ball.holder === "S0")) {
       // drag up or down anywhere to move him up or down the field from his line, as far as the finger
       // moves; he runs forward on his own
       if (t.ry == null) this.grabRunner(P);
@@ -661,7 +666,7 @@ export class ArcadeGame {
   leadSpot(P, e) {
     let spot = { x: e.x, y: e.y };
     for (let i = 0; i < 2; i++) { const T = passPlan(P, spot, this.passKind).T; spot = { x: e.x + (e.vx || 0) * T, y: e.y + (e.vy || 0) * T }; }
-    return { x: spot.x, y: Math.max(-26, Math.min(26, spot.y)) };
+    return { x: Math.min(108, spot.x), y: Math.max(-24.4, Math.min(24.4, spot.y)) }; // (inside the sideline: a man running to it catches it in bounds)
   }
   // the slingshot's aim, every frame while the finger is down: the pull smoothed (no jitter) and turned
   // into a spot on the field (no lock-on: the ball goes where you put it)
@@ -730,6 +735,7 @@ export class ArcadeGame {
     if (k === "q" && !P.kind) { this.cycleKind(); return; }
     if (this.auto || this.autoKick) return; // (not your snap: the keys don't play it)
     if (k === "e" && !P.kind && P.phase === "carry") { dive(P); return; }
+    if (P.kind === "punt" && P.userRet) { if (k === " " || k === "enter" || k === "f") this.fairCatch(P); return; }
     if (P.kind) { if (k === " " || k === "enter") this.fireKick(P); return; } // (a kick: stop the meter)
     if (k === " " || k === "enter") {
       if (P.phase === "presnap") snap(P);

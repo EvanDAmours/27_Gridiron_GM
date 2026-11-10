@@ -88,7 +88,7 @@ export function playDiagram(call) {
     const R = ROUTES[plan[r]], [dx, dy] = OFF_SPOTS[r], inward = dy < 0 ? 1 : -1;
     let x = dx, y = dy; const pts = [{ x, y }];
     for (const [up, side] of R.legs) { x += up; y = clamp(y + side * inward, -25, 25); pts.push({ x, y }); }
-    if (!R.stop && R.more) { const a = pts[pts.length - 2], b = pts[pts.length - 1], d = hyp(b.x - a.x, b.y - a.y) || 1; pts.push({ x: b.x + (b.x - a.x) / d * R.more * 0.5, y: b.y + (b.y - a.y) / d * R.more * 0.5 }); }
+    if (!R.stop && R.more) { const a = pts[pts.length - 2], b = pts[pts.length - 1], d = hyp(b.x - a.x, b.y - a.y) || 1; pts.push({ x: b.x + (b.x - a.x) / d * R.more * 0.5, y: clamp(b.y + (b.y - a.y) / d * R.more * 0.5, -HALF + 2, HALF - 2) }); } // (a flat or an out keeps going, but stays in bounds)
     lines.push({ who: r, pts, stop: !!R.stop });
   } else if (call === "run_inside") lines.push({ who: "RB", pts: [{ x: -7, y: 1.8 }, { x: -1, y: 3.5 }, { x: 8, y: 3.5 }], run: true });
   else if (call === "run_outside") lines.push({ who: "RB", pts: [{ x: -7, y: 1.8 }, { x: -4, y: 9 }, { x: 0, y: 14 }, { x: 8, y: 15 }], run: true });

@@ -2,38 +2,55 @@
 // ball carrier would. It runs the other team's offense, and yours when you're watching instead of
 // playing. It's the same player the field is calibrated against (scripts/arcade-playtest.mjs), so
 // a game it plays comes out where the engine's numbers do.
-import { throwTo, juke, separation, ELIGIBLE, CONCEPTS, passPlan } from "./play.js";
+import { throwTo, juke, separation, ELIGIBLE, CONCEPTS, passPlan, HALF } from "./play.js";
+import * as K from "./ratings.js";
 
 const SKILL = { react: 0.4, aimErr: 1.2 };
 const READS0 = { pass_quick: ["X", "Z", "SLOT", "TE", "RB"], pass_medium: ["Z", "SLOT", "X", "TE", "RB"], pass_deep: ["X", "Z", "SLOT", "TE", "RB"] };
 
 // A fresh snap's plan: how patient he is, and now and then a forced throw or a shot deep.
-export const autoState = (R = Math.random) => ({ thrown: false, patience: 0.8 + R() * 2.4, greedy: R() < 0.06, forced: R() < 0.12 });
+export const autoState = (R = Math.random) => ({ thrown: false, patience: 0.8 + R() * 2.4, greedy: R() < 0.04, forced: R() < 0.06 });
 
 // One frame of decisions on play S (call: the play's family, e.g. pass_medium or run_inside).
 export function autoStep(S, call, state, R = Math.random) {
   if (call.startsWith("pass") && S.phase === "live" && S.ball.holder === "QB" && !state.thrown) {
     // a progression: the first read who's open once his route has developed, then the next; late, the check-down
     const READS = S.concept ? [...CONCEPTS[S.concept].reads, ...ELIGIBLE.filter((r) => !CONCEPTS[S.concept].reads.includes(r))] : READS0[call] || READS0.pass_medium;
+    // a smarter quarterback (reading the defense, decisions) gets through his reads quicker
+    const qbp = S.ents.QB?.p, iq = K.qbPoise(qbp), step = Math.max(0.28, 0.45 + (75 - iq) * 0.006);
     let best = null, bs = -1;
     for (const [i, r] of READS.entries()) {
       const e = S.ents[r]; if (!e || e.mode === "block" || e.mode === "back" || (Math.hypot(e.vx, e.vy) < 2.5 && e.mode !== "settle")) continue;
-      if (S.t < 1.0 + i * 0.45) continue; // his turn in the progression
+      if (S.t < 1.0 + i * step) continue; // his turn in the progression
       const broke = e.mode !== "route" || (e.path?.length ?? 0) <= 1, hot = S.pressureAt && S.t - S.pressureAt > 0.3, late = S.t > 1.6 + state.patience;
       if (!broke && !hot && !late && call !== "pass_quick") continue; // wait for him to make his break
       const sp = separation(S, r); if (sp > 2.6) { best = r; bs = sp; break; }
       if (sp > bs) { bs = sp; best = r; }
     }
-    if (state.forced && S.t > 1.4 && !state.greedy) { const r = READS[0], e = S.ents[r]; if (e && e.mode !== "block" && e.mode !== "back") { best = r; bs = 9; } }
+    if (state.forced && S.t > 1.4 && !state.greedy) { const r = READS[0], e = S.ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && separation(S, r) > 0.6) { best = r; bs = 9; } }
     if (state.greedy) { const deepest = ELIGIBLE.filter((r) => S.ents[r]?.mode === "route" || S.ents[r]?.mode === "stride").sort((a, b) => S.ents[b].x - S.ents[a].x)[0]; if (deepest) { best = deepest; bs = separation(S, best); } }
-    const open = bs > 2.6, clock = S.t > (call === "pass_quick" ? 1.25 : 1.6 + state.patience) || (S.pressureAt && S.t - S.pressureAt > SKILL.react);
+    // about to be hit: a rusher a step or two away (a poised quarterback feels it and gets it out)
+    let rd = 99; for (const d of Object.values(S.ents)) if (d.side === "def" && d.down <= 0 && (d.mode === "free" || d.mode === "blitz" || d.penetrating)) rd = Math.min(rd, Math.hypot(d.x - S.ents.QB.x, d.y - S.ents.QB.y));
+    // he has to feel it first: a rusher close for a beat (shorter for a poised one) before he reacts
+    if (rd < 2.6) state.feltAt ??= S.t; else state.feltAt = null;
+    const imminent = state.feltAt != null && S.t - state.feltAt > Math.max(0.15, Math.min(0.75, 0.42 - (iq - 70) * 0.012));
+    const open = bs > 2.6, pressed = (S.pressureAt && S.t - S.pressureAt > SKILL.react) || imminent, clock = S.t > (call === "pass_quick" ? 1.25 : 1.6 + state.patience) || pressed;
+    // nobody open and time's up: a smart one finds the check-down, or throws it away rather than
+    // forcing it into coverage or eating the sack (a poor decision-maker forces it more often)
+    state.wise ??= R() < Math.max(0.2, Math.min(0.8, 0.45 + (iq - 70) * 0.02)); // (this snap, does he make the smart play? a sharper one does more often)
+    if (clock && S.t > 1.0 && bs < 1.0 && !state.forced && !state.greedy && state.wise) {
+      let cd = null, cs = 1.6; for (const r of ELIGIBLE) { const e = S.ents[r]; if (!e || e.mode === "block" || e.mode === "back") continue; const sp = separation(S, r); if (e.x < S.los + 7 && sp > cs) { cs = sp; cd = r; } }
+      if (cd) { best = cd; bs = cs; }
+      else if ((pressed || S.t > 3.2 + state.patience * 0.5) && R() < 0.55 + (iq - 70) * 0.015) { const side = S.ents.QB.y >= 0 ? 1 : -1; throwTo(S, { x: S.los + 4, y: side * (HALF + 4) }, null, "lob"); state.thrown = true; S.threwAway = true; return; }
+    }
     if (best && S.t > 1.0 && (open || clock)) {
       const e = S.ents[best];
       // lead him: where he'll be when the ball gets there (the flight time depends on the spot)
       let T = passPlan(S, e, "auto").T; for (let k = 0; k < 2; k++) T = passPlan(S, { x: e.x + e.vx * T, y: e.y + e.vy * T }, "auto").T;
       const end = e.stop && e.path?.length ? e.path[e.path.length - 1] : null, settled = e.mode === "settle";
       const tx = settled ? e.x : end ? end.x : e.x + e.vx * T, ty = settled ? e.y : end ? end.y : e.y + e.vy * T;
-      throwTo(S, { x: tx + SKILL.aimErr * (R() - 0.5), y: ty + SKILL.aimErr * (R() - 0.5) });
+      // (never led out of bounds or out the back of the end zone: he puts it where his man can catch it)
+      throwTo(S, { x: Math.min(108, tx + SKILL.aimErr * (R() - 0.5)), y: Math.max(-HALF + 3.2, Math.min(HALF - 3.2, ty + SKILL.aimErr * (R() - 0.5))) }); // (on a man by the sideline he throws it to the inside, where it can't drift out)
       state.thrown = true;
     }
   }
