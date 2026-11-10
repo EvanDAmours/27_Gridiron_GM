@@ -44,6 +44,8 @@ const ROUTES = {
   stick: { legs: [[6, 0], [0, 1]], stop: true }, spot: { legs: [[6, 0], [-1, 2.5]], stop: true }, qin: { legs: [[6, 0], [0, 8]], more: 4 },
   arrow: { legs: [[1, 0], [4, -8]], more: 3 }, fade: { legs: [[30, -2]], more: 15 }, xing: { legs: [[8, 0], [12, 16]], more: 8 },
   wheel: { legs: [[-1, -4], [3, -3], [25, 0]], more: 10 }, angle: { legs: [[2, -3], [4, 5]], more: 4 },
+  sluggo: { legs: [[1.5, 0], [2.5, 2.5], [26, -1.5]], more: 15 }, outup: { legs: [[6, 0], [0.5, -3.5], [24, 0]], more: 12 },
+  whip: { legs: [[4, 0], [0.5, 3], [0, -6]], more: 2 }, bench: { legs: [[10, 0], [0.5, -8]], more: 2 },
   flat: { legs: [[0.5, 0], [2, -9]], more: 3 }, swing: { legs: [[-1, -3], [3, -8]], more: 4 }, check: { legs: [[4, 0], [1, 0]], stop: true, delay: 0.9 },
 };
 // NFL pass concepts (X wide left, SLOT inside left, TE inline right, Z wide right, RB behind
@@ -66,12 +68,39 @@ export const CONCEPTS = {
   yankee: { cat: "pass_deep", name: "YANKEE", routes: { X: "xing", SLOT: "flat", TE: "check", Z: "post", RB: "check" }, reads: ["Z", "X", "SLOT"] },
   post_wheel: { cat: "pass_deep", name: "POST-WHEEL", routes: { X: "fade", SLOT: "post", TE: "corner", Z: "fade", RB: "wheel" }, reads: ["SLOT", "RB", "TE", "X"] },
   shot: { cat: "pass_deep", name: "GO-POST", routes: { X: "go", SLOT: "corner", TE: "seam", Z: "post", RB: "check" }, reads: ["X", "Z", "TE", "SLOT"] },
+  // more from the NFL playbook
+  spacing: { cat: "pass_quick", name: "SPACING", routes: { X: "hitch", SLOT: "spot", TE: "stick", Z: "out", RB: "swing" }, reads: ["SLOT", "TE", "X", "RB", "Z"] },
+  dbl_slants: { cat: "pass_quick", name: "DOUBLE SLANTS", routes: { X: "slant", SLOT: "slant", TE: "flat", Z: "slant", RB: "check" }, reads: ["SLOT", "X", "Z", "TE"] },
+  texas: { cat: "pass_quick", name: "TEXAS", routes: { X: "go", SLOT: "hitch", TE: "seam", Z: "hitch", RB: "angle" }, reads: ["RB", "SLOT", "Z", "TE"] },
+  whip: { cat: "pass_quick", name: "WHIP", routes: { X: "slant", SLOT: "whip", TE: "stick", Z: "go", RB: "check" }, reads: ["SLOT", "TE", "X", "Z"] },
+  drive: { cat: "pass_medium", name: "DRIVE", routes: { X: "go", SLOT: "drag", TE: "check", Z: "dig", RB: "swing" }, reads: ["SLOT", "Z", "RB", "X"] },
+  shallow: { cat: "pass_medium", name: "SHALLOW CROSS", routes: { X: "dig", SLOT: "drag", TE: "seam", Z: "go", RB: "check" }, reads: ["SLOT", "X", "TE", "Z"] },
+  sail: { cat: "pass_medium", name: "SAIL", routes: { X: "go", SLOT: "deepout", TE: "flat", Z: "post", RB: "check" }, reads: ["SLOT", "TE", "X", "Z"] },
+  curls: { cat: "pass_medium", name: "ALL CURLS", routes: { X: "curl", SLOT: "curl", TE: "curl", Z: "curl", RB: "flat" }, reads: ["SLOT", "TE", "X", "Z", "RB"] },
+  bench: { cat: "pass_medium", name: "BENCH", routes: { X: "bench", SLOT: "qin", TE: "drag", Z: "bench", RB: "check" }, reads: ["X", "Z", "SLOT", "TE"] },
+  y_cross: { cat: "pass_deep", name: "Y-CROSS", routes: { X: "post", SLOT: "flat", TE: "xing", Z: "go", RB: "check" }, reads: ["TE", "X", "SLOT", "Z"] },
+  scissors: { cat: "pass_deep", name: "SCISSORS", routes: { X: "post", SLOT: "corner", TE: "drag", Z: "comeback", RB: "check" }, reads: ["SLOT", "X", "Z", "TE"] },
+  sluggo: { cat: "pass_deep", name: "SLUGGO", routes: { X: "sluggo", SLOT: "seam", TE: "flat", Z: "sluggo", RB: "check" }, reads: ["X", "Z", "SLOT", "TE"] },
+  out_up: { cat: "pass_deep", name: "OUT-AND-UP", routes: { X: "outup", SLOT: "dig", TE: "flat", Z: "outup", RB: "check" }, reads: ["X", "Z", "SLOT", "TE"] },
+  // the runs, each its own scheme on the field: where the hole is, when the handoff comes, who pulls,
+  // and how much the number of men in the box matters (box) and what each front does to it (vs)
+  iz: { cat: "run_inside", name: "INSIDE ZONE", run: { lane: 4.2, hand: 0.7, box: 0.3, vs: { cover: 0.15 } } },
+  duo: { cat: "run_inside", name: "DUO", run: { lane: 2.5, hand: 0.7, box: 0.3, base: 0.6, vs: { blitz: 0.1, cover: 0.4 } } },
+  dive: { cat: "run_inside", name: "DIVE", run: { lane: 1.6, hand: 0.45, box: 0.35, base: 0.6, vs: { blitz: 0.3, cover: 0.5 } } },
+  power: { cat: "run_inside", name: "POWER", run: { lane: 5.5, hand: 0.8, box: 0.25, pull: true, vs: { box: 0.3 } } },
+  counter: { cat: "run_inside", name: "COUNTER", run: { lane: 5.5, hand: 0.95, box: 0.25, pull: true, vs: { blitz: 0.3 } } },
+  draw: { cat: "run_inside", name: "DRAW", run: { lane: 2.5, hand: 1.2, box: 0.3, base: 0.5, vs: { blitz: 0.7, cover: 0.45, box: -0.4 } } },
+  stretch: { cat: "run_outside", name: "OUTSIDE ZONE", run: { lane: 13, hand: 0.65, box: 0.1, vs: { box: 0.5, cover: -0.15 } } },
+  toss: { cat: "run_outside", name: "TOSS", run: { lane: 17, hand: 0.4, box: 0.05, base: 0.3, vs: { box: 1.0, blitz: 0.2, cover: -0.25 } } },
 };
+export const RUN_PLAYS = Object.keys(CONCEPTS).filter((k) => CONCEPTS[k].run);
 // a few concepts from each family, picked fresh for the play card screen
 export function conceptChoices(rand = Math.random) {
   const by = (cat) => Object.keys(CONCEPTS).filter((k) => CONCEPTS[k].cat === cat).sort(() => rand() - 0.5);
-  const q = by("pass_quick"), m = by("pass_medium"), d = by("pass_deep");
-  return [q[0], m[0], m[1], d[0]];
+  const q = by("pass_quick"), m = by("pass_medium"), d = by("pass_deep"), r = RUN_PLAYS.slice().sort(() => rand() - 0.5);
+  // four passes (a quick one, two intermediate, a shot) and two runs, an inside one and an outside one when the deal allows
+  const inside = r.find((k) => CONCEPTS[k].cat === "run_inside"), other = r.find((k) => k !== inside && (CONCEPTS[k].cat === "run_outside" || rand() < 0.4)) || r.find((k) => k !== inside);
+  return [q[0], m[0], m[1], d[0], inside, other];
 }
 const ROUTES_OF = (call) => PLAYS[call] || {};
 const PLAYS = {
@@ -90,7 +119,8 @@ export function playDiagram(call) {
     for (const [up, side] of R.legs) { x += up; y = clamp(y + side * inward, -25, 25); pts.push({ x, y }); }
     if (!R.stop && R.more) { const a = pts[pts.length - 2], b = pts[pts.length - 1], d = hyp(b.x - a.x, b.y - a.y) || 1; pts.push({ x: b.x + (b.x - a.x) / d * R.more * 0.5, y: clamp(b.y + (b.y - a.y) / d * R.more * 0.5, -HALF + 2, HALF - 2) }); } // (a flat or an out keeps going, but stays in bounds)
     lines.push({ who: r, pts, stop: !!R.stop });
-  } else if (call === "run_inside") lines.push({ who: "RB", pts: [{ x: -7, y: 1.8 }, { x: -1, y: 3.5 }, { x: 8, y: 3.5 }], run: true });
+  } else if (CONCEPTS[call]?.run) { const R = CONCEPTS[call].run, L_ = R.lane; lines.push({ who: "RB", pts: L_ > 10 ? [{ x: -7, y: 1.8 }, { x: -4, y: L_ * 0.6 }, { x: 0, y: L_ }, { x: 8, y: L_ + 1 }] : [{ x: -7, y: 1.8 }, { x: -1, y: L_ }, { x: 8, y: L_ }], run: true }); }
+  else if (call === "run_inside") lines.push({ who: "RB", pts: [{ x: -7, y: 1.8 }, { x: -1, y: 3.5 }, { x: 8, y: 3.5 }], run: true });
   else if (call === "run_outside") lines.push({ who: "RB", pts: [{ x: -7, y: 1.8 }, { x: -4, y: 9 }, { x: 0, y: 14 }, { x: 8, y: 15 }], run: true });
   return { lines, spots: OFF_SPOTS };
 }
@@ -127,12 +157,29 @@ export function setupPlay(g, L, call) {
     for (const [up, side] of Rt.legs) { x = Math.min(107, x + up); y = clamp(y + side * inward, -HALF + 2.5, HALF - 2.5); pts.push({ x, y }); }
     e.path = pts; e.stop = !!Rt.stop; e.delay = Rt.delay || 0; e.more = Rt.more || 0;
   }
-  return {
+  const S = {
     g, L, call, concept, routes: concept ? CONCEPTS[concept].routes : PLAYS[call], los, firstDown: Math.min(100, los + g.toGo), t: 0, phase: "presnap", ents, cover,
     ball: { x: ents.QB.x, y: 0, h: 0, holder: "QB", flight: null },
     aim: null, steer: null, slideTo: null, text: "", ev: null, result: null, pick: null, shed: {}, pressureAt: 0, thrownAt: 0, endAt: 0, lane: 0, handoffAt: 0, tackler: null, broke: 0, log: [],
   };
+  presnapLook(S);
+  return S;
 }
+
+// The defense's call shows before the snap: eight in the box (the strong safety walks down), two deep
+// (both safeties back and wide), or a linebacker creeping up to blitz. Read it and pick the play that beats it.
+function presnapLook(S) {
+  const { ents, los } = S, st = S.g.sides?.a?.dStyle || { blitz: 0.22, box: 0.2, cover: 0.2 }, u = rnd(S);
+  S.allOut = !!st.allOut;
+  S.dcall = u < st.blitz ? "blitz" : u < st.blitz + st.box ? "box" : u < st.blitz + st.box + st.cover ? "cover" : "base";
+  const near = Math.min(106, los + 4.5);
+  if (S.dcall === "box" && ents.S1) { ents.S1.x = near; ents.S1.y = 4.5; }
+  if (S.dcall === "cover") { if (ents.S0) { ents.S0.x = Math.min(106.5, los + 14); ents.S0.y = -11; } if (ents.S1) { ents.S1.x = Math.min(106.5, los + 14); ents.S1.y = 11; } }
+  if (S.dcall === "blitz") { const b = ents.LB1 || ents.LB0; if (b) b.x = Math.min(b.x, los + 2.8); }
+  S.box = boxCount(S);
+}
+// men in the box: inside the tight ends and within seven yards of the line
+export const boxCount = (S) => Object.values(S.ents).filter((e) => e.side === "def" && e.x - S.los < 7.5 && Math.abs(e.y) < 9.5).length;
 
 export function snap(S) {
   const { ents, call } = S;
@@ -148,8 +195,8 @@ export function snap(S) {
   for (const k of LINE) if (ents[k]) ents[k].mode = "block";
   // the defense's call, from its own tendencies (the coordinator's scheme and game plan, as the engine uses them)
   const st = S.g.sides?.a?.dStyle || { blitz: 0.22, box: 0.2, cover: 0.2 }, u = rnd(S);
-  S.allOut = !!st.allOut;
-  S.dcall = u < st.blitz ? "blitz" : u < st.blitz + st.box ? "box" : u < st.blitz + st.box + st.cover ? "cover" : "base";
+  if (S.dcall == null) S.allOut = !!st.allOut;
+  if (S.dcall == null) S.dcall = u < st.blitz ? "blitz" : u < st.blitz + st.box ? "box" : u < st.blitz + st.box + st.cover ? "cover" : "base";
   S.drive = {}; S.flash = [];
   for (const k of ["DL0", "DL1", "DL2", "DL3"]) {
     const d = ents[k], o = ents[OL_VS[k]]; if (!d) continue;
@@ -193,7 +240,19 @@ export function snap(S) {
     }
   }
   ents.QB.mode = isPass ? "dropback" : "handoff";
-  if (!isPass) { S.handoffAt = 0.7; S.lane = call === "run_outside" ? (rnd(S) < 0.5 ? -14 : 14) : (rnd(S) < 0.5 ? -4.2 : 4.2); }
+  if (!isPass) {
+    const R = CONCEPTS[S.concept]?.run, side = rnd(S) < 0.5 ? -1 : 1;
+    S.handoffAt = R?.hand ?? 0.7; S.lane = R ? side * R.lane : call === "run_outside" ? side * 14 : side * 4.2;
+    if (R) {
+      // the box: a light box (five) helps the run, a loaded one (six, seven) hurts it (more for runs between the
+      // tackles); then the scheme against the front it sees (a counter against a blitz, a toss against eight in the box...)
+      const adj = (5.5 - (S.box ?? 5.5)) * R.box + (R.base || 0) + (R.vs?.[S.dcall] || 0);
+      for (const k of ["DL0", "DL1", "DL2", "DL3"]) { if (S.shed[k] != null) S.shed[k] = clamp(S.shed[k] + adj, 0.4, 5.5); if (S.drive[k] != null) S.drive[k] = clamp(S.drive[k] + adj * 0.6, -2.5, 2.6); }
+      S.runAdj = adj;
+      // a power or counter: the backside guard pulls across and leads through the hole on the linebacker
+      if (R.pull) { const g_ = side > 0 ? ents.LG : ents.RG, lb = side > 0 ? (ents.LB0 ? "LB0" : "LB1") : (ents.LB1 ? "LB1" : "LB0"); if (g_) { g_.assign = lb; g_.pull = true; } }
+    }
+  }
 }
 
 // zone coverage (a linebacker with no man): zone coverage, awareness, play recognition, instincts

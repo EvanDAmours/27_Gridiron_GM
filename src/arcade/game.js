@@ -42,7 +42,6 @@ const wxName = (k) => (k === "auto" ? "AUTO" : (WX[k]?.label || k).toUpperCase()
 const DEF_CALLS = ["balanced", "blitz", "coverage", "run"], DEF_NAME = { balanced: "BALANCED", blitz: "BLITZ HEAVY", coverage: "COVERAGE", run: "STOP THE RUN" };
 export { DEF_CALLS, DEF_NAME };
 const WXPICKS = ["auto", "clear", "lightRain", "heavyRain", "lightSnow", "heavySnow", "wind", "frigid", "dome"];
-const CALLS = [["pass_quick", "QUICK"], ["pass_medium", "MEDIUM"], ["pass_deep", "DEEP"], ["run_inside", "INSIDE RUN"], ["run_outside", "OUTSIDE RUN"]];
 const KICK_CYCLE = 1.1; // seconds for the kick meter to fill (then it falls back)
 const inside = (p, b) => b && p.px >= b.x && p.px <= b.x + b.w && p.py >= b.y && p.py <= b.y + b.h;
 
@@ -258,7 +257,16 @@ export class ArcadeGame {
   release() { if (this.two) { restore(this.g, this.two.snap); this.two = null; } this.S = null; this.auto = null; this.replay = null; this.pendingReplay = null; this.rec = null; this.unflip(); this.held = true; this.mode = "idle"; this.refresh(); }
   resume() { this.held = false; if (this.live && (this.mode === "idle" || this.mode === "result")) this.liveNext(); }
   setWatch(w) { if (this.live) this.live.watch = !!w; }
+  // audibles this half: 1 to 5 by the quarterback's overall (a franchise passer reads more and gets more);
+  // each one deals a fresh set of plays
+  audibles() {
+    const g = this.g; if (!g) return 0;
+    const half = g.ot ? 3 : g.qtr <= 2 ? 1 : 2, qb = g.sides?.h?.qb, ovr = qb?.ovr ?? 70, n = ovr >= 90 ? 5 : ovr >= 85 ? 4 : ovr >= 79 ? 3 : ovr >= 72 ? 2 : 1;
+    if (!this.aud || this.aud.half !== half || this.aud.qb !== qb?.id) this.aud = { half, qb: qb?.id, left: this.aud?.half === half ? this.aud.left : n };
+    return this.aud.left;
+  }
   call(c) {
+    if (c === "audible") { if (this.audibles() > 0) { this.aud.left--; this.choices = conceptChoices(); sfx.select?.(); } return; }
     const g = this.g; this.fade = this.live ? 0.22 : 0.5; // (a live game: just a soft cut between snaps)
     const P = c === "xp" ? setupKick(g, lineups(g), "fg", { pat: true }) : c === "punt" || c === "fg" ? setupKick(g, lineups(g), c) : setupPlay(g, lineups(g, { rb: this.snapRB }), c);
     P.view = this.teams; // (the field keeps this play's way round, uniforms and sidelines, until the next snap: the tackle hands the game back the real way round, and the picture mustn't flip with it)
@@ -482,7 +490,7 @@ export class ArcadeGame {
     if (m === "play" && P && P.kind && !this.auto) this.drawKick(ctx, P, hintY);
     else if (m === "play" && P && !this.auto) {
       const toGo = st.toGo >= 100 - st.yard ? "GOAL" : st.toGo;
-      drawDownBox(ctx, cam, P.phase === "presnap" ? `${ordinal(st.down)} & ${toGo} - ${playName(P.concept || P.call)}` : `${ordinal(st.down)} & ${toGo}`, P.phase === "presnap" ? "#fff" : "#ffd166", { left: !!this.live && !full });
+      drawDownBox(ctx, cam, P.phase === "presnap" ? `${ordinal(st.down)} & ${toGo} - ${playName(P.concept || P.call)}${P.box != null ? ` - ${P.box} IN THE BOX${P.dcall === "cover" ? ", 2 DEEP" : ""}` : ""}` : `${ordinal(st.down)} & ${toGo}`, P.phase === "presnap" ? "#fff" : "#ffd166", { left: !!this.live && !full });
       const throwing = P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass"), isPass = P.call.startsWith("pass");
       // the pass type button: always there on a pass play, until the ball is thrown
       if (isPass && !this.auto && (P.phase === "presnap" || throwing)) { // (not on the computer's snaps)
@@ -497,7 +505,7 @@ export class ArcadeGame {
     if (m === "pick") {
       // four pass concepts, drawn fresh each down (one quick, two intermediate, one shot), and the two runs
       const key = `${this.g.plays}|${this.two ? 2 : 0}`; if (this.choicesFor !== key) { this.choicesFor = key; this.choices = conceptChoices(); }
-      const items = [...this.choices.map((k) => [k, CONCEPTS[k].name, "play"]), ...CALLS.filter(([k]) => k.startsWith("run")).map(([k, l]) => [k, l, "play"])]; if (st.down === 4) items.push(st.yard >= 58 ? ["fg", `FIELD GOAL ${100 - st.yard + 17}`, "kick"] : ["punt", "PUNT", "kick"]);
+      const aud = this.audibles(), items = [...this.choices.map((k) => [k, CONCEPTS[k].name, "play"]), ...(aud > 0 && !this.two ? [["audible", `AUDIBLE x${aud}`, "audible"]] : [])]; if (st.down === 4) items.push(st.yard >= 58 ? ["fg", `FIELD GOAL ${100 - st.yard + 17}`, "kick"] : ["punt", "PUNT", "kick"]);
       const hover = this.input === "mouse" && this.mouse ? this.lastButtons?.find((b) => inside(this.mouse, b))?.key : null;
       this.buttons = drawPlayCards(ctx, cam, this.two ? "TWO-POINT TRY - PICK A PLAY" : `${ordinal(st.down)} & ${st.toGo >= 100 - st.yard ? "GOAL" : st.toGo} - ${spotOf(st.yard)} - PICK A PLAY`, items, teams.user.clr, { keys: !this.mobile, hover, sub: this.snapRB ? `IN THE BACKFIELD: ${String(this.snapRB.name || "").toUpperCase()}  ${this.snapRB.pos || "RB"} ${this.snapRB.ovr ?? ""}` : null });
       this.lastButtons = this.buttons;

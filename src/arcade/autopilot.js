@@ -68,7 +68,7 @@ export function autoStep(S, call, state, R = Math.random) {
 // The call for a snap the computer runs: the family the engine's coach chose (run or pass), and a
 // concept from that family for a pass.
 export function autoCall(kind, R = Math.random) {
-  if (kind === "run") return R() < 0.4 ? "run_outside" : "run_inside";
+  if (kind === "run") { const rs = Object.keys(CONCEPTS).filter((k) => CONCEPTS[k].run); return rs[Math.floor(R() * rs.length)]; } // (one of the named runs: zone, power, counter, toss...)
   const u = R(), fam = u < 0.35 ? "pass_quick" : u < 0.8 ? "pass_medium" : "pass_deep";
   const ks = Object.keys(CONCEPTS).filter((k) => CONCEPTS[k].cat === fam);
   return ks.length ? ks[Math.floor(R() * ks.length)] : fam;

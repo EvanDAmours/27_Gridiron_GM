@@ -1098,7 +1098,7 @@ const wrap = (text, n) => { const out = []; let line = ""; for (const w of Strin
 // number on each for the keyboard. Returns the hit boxes.
 export function drawPlayCards(ctx, cam, heading, items, color, { keys = false, hover = null, sub = null } = {}) {
   const { W, H } = cam, px = hudPx(cam), small = W < 560;
-  const cols = small ? 3 : Math.min(6, items.length), rows = Math.ceil(items.length / cols), gap = px * 2;
+  const cols = small ? (items.length > 6 ? 4 : 3) : Math.min(8, items.length) /* (seven or eight cards: one row on a wide screen, narrower) */, rows = Math.ceil(items.length / cols), gap = px * 2;
   const cw = Math.min(px * 54, (W - gap * (cols + 1)) / cols), ch = Math.round(cw * (small ? 0.72 : 0.6)), total = cols * cw + (cols - 1) * gap;
   const top = H - rows * (ch + gap) - gap - px * 10, left = (W - total) / 2;
   ctx.fillStyle = "rgba(8,10,16,.9)"; ctx.fillRect(0, top - px * 3, W, H - top + px * 3);
@@ -1115,8 +1115,10 @@ export function drawPlayCards(ctx, cam, heading, items, color, { keys = false, h
     ctx.fillStyle = "#06080d"; ctx.fillRect(x, y + ch - px, cw, px); ctx.fillRect(x + cw - px, y, px, ch);
     // the diagram: a strip of turf with the line of scrimmage, the formation and the routes
     const dx = x + px * 3, dy = y + px * 3, dw = cw - px * 6, dh = ch - px * 13;
-    ctx.fillStyle = kind === "kick" ? "#2a5a2a" : "#2f6b2c"; ctx.fillRect(dx, dy, dw, dh);
-    if (kind !== "kick") {
+    ctx.fillStyle = kind === "audible" ? "#3b2a12" : kind === "kick" ? "#2a5a2a" : "#2f6b2c"; ctx.fillRect(dx, dy, dw, dh);
+    // the audible: a fresh deal, two cards fanned with a turn arrow
+    if (kind === "audible") { const cx = dx + dw / 2, cy = dy + dh / 2, u = Math.max(1, Math.round(dh / 14)); ctx.fillStyle = "#ffd166"; ctx.fillRect(Math.round(cx - u * 5), Math.round(cy - u * 4), u * 5, u * 7); ctx.fillStyle = "#e8eef8"; ctx.fillRect(Math.round(cx), Math.round(cy - u * 3), u * 5, u * 7); ctx.fillStyle = "#3b2a12"; ctx.fillRect(Math.round(cx + u), Math.round(cy - u), u * 3, u); ctx.fillRect(Math.round(cx + u * 3), Math.round(cy - u * 2), u, u * 3); }
+    else if (kind !== "kick") {
       ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip(); // long routes run off the card, not into the next one
       const sx = dw / 34, sy = dh / 52, ox = dx + dw * 0.32, oy = dy + dh / 2, P = (q) => [ox + q.x * sx, oy + q.y * sy];
       ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(Math.round(ox), dy, 1, dh);
