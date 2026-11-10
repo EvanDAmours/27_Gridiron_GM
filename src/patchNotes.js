@@ -2643,4 +2643,7 @@ export const PATCH_NOTES = [
     "The camera keeps the man you're playing on screen along with the ball, even a safety 15 yards deep.",
     "In testing, a player chasing the ball with a linebacker gives up about a yard less a play than before and makes the tackle twice as often; with a defensive lineman who fights off his blocks, about two yards less a play.",
   ] },
+  { v: "6.34", date: "2026-11-10", title: "Let the computer play your defense", notes: [
+    "A PLAY D button on the other team's snaps, beside SIM DRIVE (and in the pause menu): turn it off and the computer plays your whole defense, the way it does on every other snap. Taps on the field do nothing then; TIMEOUT and SIM DRIVE still work. Turn it back on to play a defender again (the man you picked last). It's remembered from game to game.",
+  ] },
 ];

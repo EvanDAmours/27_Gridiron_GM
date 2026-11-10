@@ -67,6 +67,8 @@ export class ArcadeGame {
     this.defCall = "balanced"; try { const d = localStorage.getItem("arcade_def"); if (DEF_CALLS.includes(d)) this.defCall = d; } catch { /* storage unavailable */ }
     // the defender you play on their snaps: kept from snap to snap (and game to game) until you let him go ("none")
     this.defPick = "LB1"; try { const d = localStorage.getItem("arcade_defpick"); if (d) this.defPick = d; } catch { /* storage unavailable */ }
+    // PLAY D: on, you play a defender on their snaps; off, the computer plays your whole defense (remembered)
+    this.playD = true; try { this.playD = localStorage.getItem("arcade_playd") !== "0"; } catch { /* storage unavailable */ }
     this.mirror = this.input === "touch"; try { const d = localStorage.getItem("arcade_dir"); if (d === "rtl" || d === "ltr") this.mirror = d === "rtl"; } catch { /* storage unavailable */ }
     this.touch = null; this.mouse = null; this.keys = new Set(); this.buttons = []; this.chips = {}; this.menuFocus = "user"; this.paused = false;
     this.S = null; this.g = null; this.mode = "menu"; this.banner = null; this.feed = { list: [], shown: 0, at: 0 };
@@ -256,7 +258,7 @@ export class ArcadeGame {
     const c = autoCall(k === "run" ? "run" : "pass");
     this.call(c); if (Math.random() < 0.5) flipPlay(this.S); // (their strength, either side)
     const P = this.S, userD = !L.watch; P.cpuOff = true; // (their routes aren't drawn for you)
-    if (userD) P.userDef = this.defPick === "none" ? null : [this.defPick, "LB1", "LB0", "S0"].find((k_) => k_ && P.ents[k_]) || null; // the man you play on defense: the one you picked, every snap, until you let him go
+    if (userD) P.userDef = !this.playD || this.defPick === "none" ? null : [this.defPick, "LB1", "LB0", "S0"].find((k_) => k_ && P.ents[k_]) || null; // the man you play on defense: the one you picked, every snap, until you let him go
     this.auto = { call: CONCEPTS[c]?.cat || c, state: autoState(), snapAt: this.time + (userD ? 2.4 : 1.5) / this.speed, userD };
   }
   // a play the engine ran without the field (a kickoff, a punt, a field goal, a kneel): its result
@@ -551,9 +553,11 @@ export class ArcadeGame {
     if (m === "play" && P && P.kind && !this.auto) this.drawKick(ctx, P, hintY);
     else if (m === "play" && P && this.auto?.userD) { // their snap, your defense
       const cy_ = hintY - px * 4 - (this.mobile ? Math.max(px * 19, 48) : px * 11), sim = (this.chips.simDrive = drawChip(ctx, cam, cam.W - px * 3, cy_, this.simAfter ? "SIMMING..." : this.mobile ? "SIM DRIVE" : "SIM DRIVE (N)", { align: "right", big: this.mobile, color: "#7fe3ff", active: !!this.simAfter }));
-      if (P.phase === "presnap" && (this.g?.to?.[this.mySide()] ?? 0) > 0) this.chips.timeout = drawChip(ctx, cam, sim.x - px * 2, cy_, `TIMEOUT (${this.g.to[this.mySide()]})`, { align: "right", big: this.mobile, color: "#ffd166" });
+      const pd = (this.chips.playD = drawChip(ctx, cam, sim.x - px * 2, cy_, this.playD ? "PLAY D: ON" : "PLAY D: OFF", { align: "right", big: this.mobile, color: this.playD ? "#9be29b" : "#cbd5e1", active: this.playD }));
+      if (P.phase === "presnap" && (this.g?.to?.[this.mySide()] ?? 0) > 0) this.chips.timeout = drawChip(ctx, cam, pd.x - px * 2, cy_, `TIMEOUT (${this.g.to[this.mySide()]})`, { align: "right", big: this.mobile, color: "#ffd166" });
       const d = P.userDef && P.ents[P.userDef], nm = d ? `${String(d.p?.name || "").split(" ").pop().toUpperCase()} ${d.p?.pos || ""}` : "";
-      drawHint(ctx, cam, P.phase === "presnap" ? (d ? (this.mobile ? `YOU: ${nm} - TAP HIM TO LET GO, ANOTHER TO SWITCH` : `YOU: ${nm} - CLICK HIM TO LET GO, ANOTHER (OR TAB) TO SWITCH`) : this.mobile ? "TAP A DEFENDER TO PLAY HIM" : "CLICK A DEFENDER (OR TAB) TO PLAY HIM") : !d ? "" : this.mobile ? "DRAG TO MOVE HIM (FURTHER: FASTER) - TAP: TACKLE, LEAP OR SHED A BLOCK" : "HOLD THE MOUSE OR WASD TO MOVE HIM - SPACE: TACKLE, LEAP OR SHED A BLOCK", hintY);
+      if (!this.playD) drawHint(ctx, cam, "THE COMPUTER IS PLAYING YOUR DEFENSE", hintY);
+      else drawHint(ctx, cam, P.phase === "presnap" ? (d ? (this.mobile ? `YOU: ${nm} - TAP HIM TO LET GO, ANOTHER TO SWITCH` : `YOU: ${nm} - CLICK HIM TO LET GO, ANOTHER (OR TAB) TO SWITCH`) : this.mobile ? "TAP A DEFENDER TO PLAY HIM" : "CLICK A DEFENDER (OR TAB) TO PLAY HIM") : !d ? "" : this.mobile ? "DRAG TO MOVE HIM (FURTHER: FASTER) - TAP: TACKLE, LEAP OR SHED A BLOCK" : "HOLD THE MOUSE OR WASD TO MOVE HIM - SPACE: TACKLE, LEAP OR SHED A BLOCK", hintY);
     }
     else if (m === "play" && P && !this.auto) {
       const toGo = st.toGo >= 100 - st.yard ? "GOAL" : st.toGo;
@@ -594,7 +598,7 @@ export class ArcadeGame {
     // the pause button, and the menu
     if (!this.paused && (!this.live || this.live.solo)) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 20.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
     if (this.fade > 0) { ctx.globalAlpha = this.fade; ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, cam.W, cam.H); ctx.globalAlpha = 1; }
-    if (this.paused && (!this.live || this.live.solo)) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ...(this.locked ? [] : [["wx", `WEATHER: ${wxName(this.wxPick)}`]]), ["def", `DEFENSE: ${DEF_NAME[this.defCall]}`], ["dir", this.mirror ? "DRIVE: RIGHT TO LEFT" : "DRIVE: LEFT TO RIGHT"], ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), ...(this.franchise || this.live?.solo ? [["sim", "SIM TO THE END"]] : []), ...(this.franchise ? [] : [["quit", "QUIT GAME"]])], { mobile: this.mobile });
+    if (this.paused && (!this.live || this.live.solo)) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ...(this.locked ? [] : [["wx", `WEATHER: ${wxName(this.wxPick)}`]]), ["def", `DEFENSE: ${DEF_NAME[this.defCall]}`], ["playd", this.playD ? "PLAY D: ON" : "PLAY D: OFF (COMPUTER)"], ["dir", this.mirror ? "DRIVE: RIGHT TO LEFT" : "DRIVE: LEFT TO RIGHT"], ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), ...(this.franchise || this.live?.solo ? [["sim", "SIM TO THE END"]] : []), ...(this.franchise ? [] : [["quit", "QUIT GAME"]])], { mobile: this.mobile });
   }
   drawKick(ctx, P, hintY) {
     const cam = this.cam, px = uiPx(cam);
@@ -639,6 +643,7 @@ export class ArcadeGame {
     if (inside(p, this.chips.flip) && this.S?.phase === "presnap") { if (flipPlay(this.S)) sfx.select?.(); return true; }
     if (inside(p, this.chips.timeout)) { this.timeout(); return true; }
     if (inside(p, this.chips.simDrive)) { this.simDrive(); return true; }
+    if (inside(p, this.chips.playD)) { this.togglePlayD(); return true; }
     const m = this.mode;
     if (m === "menu") { const b = this.buttons.find((b) => inside(p, b)); if (b) this.menuAction(b.key); return true; }
     if (m === "ceremony" && (!this.live || this.live.solo)) { if (this.time - this.ceremony.t0 > 2) this.leaveCeremony(); return true; }
@@ -664,7 +669,7 @@ export class ArcadeGame {
     let v = (this[which] + d + TEAMS.length) % TEAMS.length; if (v === (which === "userTi" ? this.oppTi : this.userTi)) v = (v + d + TEAMS.length) % TEAMS.length;
     this[which] = v; preload(TEAMS[v]); sfx.select?.();
   }
-  pauseAction(k) { if (k === "def") { this.cycleDef(); return; } if (k === "dir") { this.mirror = !this.mirror; try { localStorage.setItem("arcade_dir", this.mirror ? "rtl" : "ltr"); } catch { /* ignore */ } this.fit(); return; } if (k === "sim") { this.paused = false; this.simRest(); return; } if (k === "wx") { this.cycleWx(true); return; } if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; } if (k === "resume") this.paused = false; else if (k === "mute") toggleMute(); else if (k === "quit") { this.paused = false; this.mode = "menu"; this.S = null; this.replay = null; this.pendingReplay = null; if (this.live?.solo) { this.live = null; this.flipped = false; } } }
+  pauseAction(k) { if (k === "playd") { this.togglePlayD(); return; } if (k === "def") { this.cycleDef(); return; } if (k === "dir") { this.mirror = !this.mirror; try { localStorage.setItem("arcade_dir", this.mirror ? "rtl" : "ltr"); } catch { /* ignore */ } this.fit(); return; } if (k === "sim") { this.paused = false; this.simRest(); return; } if (k === "wx") { this.cycleWx(true); return; } if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; } if (k === "resume") this.paused = false; else if (k === "mute") toggleMute(); else if (k === "quit") { this.paused = false; this.mode = "menu"; this.S = null; this.replay = null; this.pendingReplay = null; if (this.live?.solo) { this.live = null; this.flipped = false; } } }
 
   onDown(e) {
     unlock();
@@ -753,8 +758,15 @@ export class ArcadeGame {
   // steers him (held mouse button: he runs at the pointer) and a quick tap dives (Space on a keyboard)
   // before the snap a tap on one of your men makes him yours (and he stays yours, snap after snap); a tap on
   // the man you already have lets him go. Once it's snapped a touch never changes who you are: it steers him.
+  // PLAY D on or off; at once, on this snap too (off: the computer has him from here)
+  togglePlayD() {
+    this.playD = !this.playD; try { localStorage.setItem("arcade_playd", this.playD ? "1" : "0"); } catch { /* ignore */ }
+    const P = this.S; if (P && this.auto?.userD) { P.userDef = this.playD && this.defPick !== "none" ? [this.defPick, "LB1", "LB0", "S0"].find((k_) => k_ && P.ents[k_]) || null : null; P.uIn = null; }
+    this.touch = null; this.mouseHeld = false; sfx.select?.(); return this.playD;
+  }
   setDefPick(P, k) { this.defPick = k || "none"; P.userDef = k || null; P.uIn = null; try { localStorage.setItem("arcade_defpick", this.defPick); } catch { /* ignore */ } sfx.select?.(); }
   defDown(P, e, p) {
+    if (!this.playD) return; // (the computer's playing your defense: the field is just to watch)
     if (P.phase === "presnap") { const k = this.manAt(P, p, "def"); if (k) this.setDefPick(P, k === P.userDef ? null : k); return; }
     if (!P.userDef) return;
     if (this.input === "mouse") { if (e.button === 2) { lunge(P); return; } this.mouseHeld = true; return; }
@@ -860,6 +872,7 @@ export class ArcadeGame {
     if (m !== "play" || !P) return;
     if (k === "q" && !P.kind) { this.cycleKind(); return; }
     if (k === "n" && this.auto?.userD) { this.simDrive(); return; }
+    if (this.auto?.userD && !P.kind && !this.playD) return; // (PLAY D off: nothing to steer)
     if (this.auto?.userD && !P.kind) { // your defense: Tab picks the next man before the snap; Space (or E) dives or leaps
       if (k === "tab" && P.phase === "presnap") { const ks = [...Object.keys(P.ents).filter((q) => P.ents[q].side === "def"), null], i = ks.indexOf(P.userDef ?? null); this.setDefPick(P, ks[(i + 1) % ks.length]); } // (Tab: the next man, and round to nobody)
       else if (k === "t" && P.phase === "presnap") this.timeout();
