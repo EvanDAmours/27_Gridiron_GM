@@ -148,6 +148,7 @@ export function snap(S) {
   for (const k of LINE) if (ents[k]) ents[k].mode = "block";
   // the defense's call, from its own tendencies (the coordinator's scheme and game plan, as the engine uses them)
   const st = S.g.sides?.a?.dStyle || { blitz: 0.22, box: 0.2, cover: 0.2 }, u = rnd(S);
+  S.allOut = !!st.allOut;
   S.dcall = u < st.blitz ? "blitz" : u < st.blitz + st.box ? "box" : u < st.blitz + st.box + st.cover ? "cover" : "base";
   S.drive = {}; S.flash = [];
   for (const k of ["DL0", "DL1", "DL2", "DL3"]) {
@@ -161,7 +162,7 @@ export function snap(S) {
       const rush = K.skill(d.p, [["passRush", 0.75], ["getOff", 0.25], ["blitzing", 1]], 0.15) * 0.5 + K.skill(d.p, [[move, 1]], 0.1) * 0.5;
       const blk = o ? K.passBlock(o.p) * 0.55 + K.skill(o.p, [[counter, 1]], 0.1) * 0.45 : 50;
       // (a blitz brings games up front too: twists and slants free a rusher a beat sooner; dropping eight gives the line time)
-      S.shed[k] = clamp(1.95 + CAL.rush + (blk - rush) * 0.1 - K.edge(K.getOff(d.p)) * 0.02 + rnd(S) * 1.8 + (S.dcall === "cover" ? 0.35 : S.dcall === "blitz" ? -0.3 : 0), 1.05, 6.5);
+      S.shed[k] = clamp(1.95 + CAL.rush + (blk - rush) * 0.1 - K.edge(K.getOff(d.p)) * 0.02 + rnd(S) * 1.8 + (S.dcall === "cover" ? 0.35 : S.dcall === "blitz" ? -0.15 - Math.max(0, rush - 60) * 0.035 : 0), 0.85, 6.5); // (on a blitz a great rusher is on the quarterback much sooner)
       d.move = label;
     } else {
       // the run: who wins at the point of attack, and by how much: the line drives him back, or he walks it into the backfield
@@ -186,6 +187,9 @@ export function snap(S) {
       const rb = ents.RB, staysIn = rb && (S.routes || ROUTES_OF(S.call)).RB === "check";
       if (staysIn && rnd(S) < clamp(0.65 + K.edge(K.passBlock(rb.p)) * 0.012, 0.3, 0.95)) { rb.mode = "protect"; rb.path = []; S.pickup = bk; }
       S.flash.push({ key: bk, text: "BLITZ", until: 1.2 });
+      // an all-out call: the other linebacker comes too (the corners are on an island)
+      const bk2 = bk === "LB1" ? "LB0" : null, b2 = bk2 && ents[bk2];
+      if (S.allOut && b2) { b2.mode = "blitz"; b2.x = Math.min(b2.x, S.los + 2.5); for (const r of Object.keys(S.cover)) if (S.cover[r] === bk2) S.cover[r] = ents.S0 && S.cover[r] !== "S1" ? "S0" : bk2; S.flash.push({ key: bk2, text: "BLITZ", until: 1.2 }); }
     }
   }
   ents.QB.mode = isPass ? "dropback" : "handoff";

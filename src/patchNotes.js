@@ -2577,4 +2577,9 @@ export const PATCH_NOTES = [
     "Franchise games in the arcade on a phone: the play cards (and the hints along the bottom of the field) were hidden behind the game controls, so you couldn't pick a play. The field now ends where the controls begin, so everything it shows is on screen.",
     "Full screen on iPhone now really covers the screen: the game controls and the tab bar step out of the way until you exit, and the Sim to end and Exit full screen buttons sit up top, clear of the play cards.",
   ] },
+  { v: "6.22", date: "2026-10-23", title: "Call your defense", notes: [
+    "Arcade: pick your defense's approach for the other team's snaps: Balanced, Blitz Heavy, Coverage or Stop the Run. In franchise games tap the D: button on the field; in the arcade it's under DEFENSE in the pause menu. It's remembered.",
+    "Blitz Heavy sends linebackers on most passing downs (often both of them), and your pass rushers come off the ball faster, much faster if they're good: a defense with Micah Parsons, T.J. Watt or Maxx Crosby gets home in a second or two. You'll get more sacks and hurried throws, but the corners are on their own, so completions that do get out go for more.",
+    "Coverage drops more men and gives the passer fewer yards per throw, but almost no pressure, and runs gain more. Stop the Run loads the box: fewer yards on the ground, more through the air.",
+  ] },
 ];

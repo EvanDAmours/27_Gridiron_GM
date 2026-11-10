@@ -4,7 +4,7 @@
 // handed to the app as it's booked, so the score, the drives, the box score and the season are the
 // live game's own. Loaded lazily: none of the arcade is in the GM app's first load.
 import { useEffect, useRef, useState } from "react";
-import { ArcadeGame } from "./game.js";
+import { ArcadeGame, DEF_NAME } from "./game.js";
 
 const SPEED = { Slow: 0.75, Normal: 1, Fast: 2, Condensed: 3 };
 const cornerBtn = { display: "flex", alignItems: "center", gap: 6, minHeight: 32, padding: "0 11px", borderRadius: 8, border: "1px solid #ffffff33", background: "#0b0e14b3", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" };
@@ -31,7 +31,8 @@ export default function LiveArcade({ g, userSide, watch, speed, paused, teams, o
   const canFs = typeof document !== "undefined" && !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
   const [natFs, setFs] = useState(false), [pinned, setPinned] = useState(false), fs = natFs || pinned;
   // the sim button asks once more before it ends the game (a stray tap shouldn't); the ask lapses after a few seconds
-  const [simArm, setSimArm] = useState(false);
+  const [simArm, setSimArm] = useState(false), [defCall, setDefCall] = useState("balanced");
+  useEffect(() => { if (game.current?.defCall) setDefCall(game.current.defCall); }, [g]);
   useEffect(() => { if (!simArm) return; const t = setTimeout(() => setSimArm(false), 3500); return () => clearTimeout(t); }, [simArm]);
   useEffect(() => {
     if (!pinned) return;
@@ -53,6 +54,7 @@ export default function LiveArcade({ g, userSide, watch, speed, paused, teams, o
       <canvas ref={ref} tabIndex={0} style={{ display: "block", touchAction: "none", imageRendering: "pixelated", outline: "none" }} />
       {/* the corner buttons: sim the rest of the game out (a second tap to be sure), and full screen */}
       <div style={{ position: "absolute", ...(fs ? { top: "calc(env(safe-area-inset-top) + 74px)", left: "calc(env(safe-area-inset-left) + 8px)" } /* (under the score strip and the weather, clear of the play cards along the bottom) */ : fill ? { top: "calc(env(safe-area-inset-top) + 46px)", left: 8 } /* (a phone: up top, clear of the app's controls along the bottom) */ : { top: 8, right: 8 }), zIndex: 2, display: "flex", gap: 6, opacity: fs ? 0.85 : 1 }}>
+        {!ceremony && <button type="button" onClick={() => { const c = game.current?.cycleDef(); if (c) setDefCall(c); ref.current?.focus(); }} aria-label="Your defense's call" title="Your defense: balanced, blitz heavy, coverage or stop the run" style={cornerBtn}>D: {DEF_NAME[defCall] || "BALANCED"}</button>}
         {onSim && !ceremony && <button type="button" onClick={() => { if (simArm) { setSimArm(false); setPinned(false); if (natFs) game.current?.fullscreen(false); onSim(); } else setSimArm(true); }} aria-label="Sim to the end of the game" title="Sim the rest of the game" style={{ ...cornerBtn, ...(simArm ? { background: "#b45309", borderColor: "#fbbf24" } : {}) }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M1 2l6 5-6 5zM7 2l6 5-6 5z" /></svg>{simArm ? "Tap again to sim" : "Sim to end"}
         </button>}

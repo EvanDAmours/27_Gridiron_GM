@@ -901,7 +901,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const deep = call === "pass_deep", quick = call === "pass_quick" || call === "pass_rpo", screen = style === "screen";
     // who did what, for the field to act the play out (LivePlay.jsx)
     ev.qb = qb; ev.deep = deep; ev.quick = quick; ev.screen = screen;
-    const sackAt = (rE) => clamp(0.055 + rE * 0.008 - passE * 0.004 + (deep ? 0.025 : quick || screen ? -0.035 : 0) + (B ? (quick || screen ? 0.02 : 0.06) : V ? -0.015 : 0), 0.02, 0.2);
+    const sackAt = (rE) => clamp(0.055 + rE * 0.008 - passE * 0.004 + (deep ? 0.025 : quick || screen ? -0.035 : 0) + (B ? (quick || screen ? 0.02 : 0.06) + Math.max(0, rE) * 0.006 : V ? -0.015 : 0), 0.02, 0.22); // (a blitz pays off most with real rushers: good edge men get home)
     // his IQ: seeing the blitz and getting rid of it in time (qbiq.js)
     const iq = iqEdge(qb);
     // the rush package on passing downs, and the back picking up the blitz (a 3rd-down back who can block)

@@ -13,7 +13,7 @@
 // while aiming is the throw you'll get.
 import { TEAMS, newGame, franchiseGame, lineups, runPlay, simOpponentDrive, situation, snapshot, restore, patWaiting, bookPat, flipSides } from "./bridge.js";
 import { autoState, autoStep, autoCall } from "./autopilot.js";
-import { backForSnap } from "../playsim.js";
+import { backForSnap, defStyle } from "../playsim.js";
 import { setupPlay, snap, tick, throwTo, juke, dive, windNow, conceptChoices, playName, CONCEPTS, PLAY_NAMES, PASS_KINDS, passPlan, BULLET_RANGE, ELIGIBLE } from "./play.js";
 import { setupKick, setupKickoff, kickFlick, tickKick, kickPlan, POSTS_X, kickMeter, kickAuto, meterZones, outOfRange } from "./kick.js";
 import { sbName, sbNumber } from "../data/superbowls.js";
@@ -39,6 +39,8 @@ export function windFor(wx, R = Math.random) {
   return mph ? { mph, x: Math.cos(ang) * mph * 0.49, y: Math.sin(ang) * mph * 0.49 } : null;
 }
 const wxName = (k) => (k === "auto" ? "AUTO" : (WX[k]?.label || k).toUpperCase());
+const DEF_CALLS = ["balanced", "blitz", "coverage", "run"], DEF_NAME = { balanced: "BALANCED", blitz: "BLITZ HEAVY", coverage: "COVERAGE", run: "STOP THE RUN" };
+export { DEF_CALLS, DEF_NAME };
 const WXPICKS = ["auto", "clear", "lightRain", "heavyRain", "lightSnow", "heavySnow", "wind", "frigid", "dome"];
 const CALLS = [["pass_quick", "QUICK"], ["pass_medium", "MEDIUM"], ["pass_deep", "DEEP"], ["run_inside", "INSIDE RUN"], ["run_outside", "OUTSIDE RUN"]];
 const KICK_CYCLE = 1.1; // seconds for the kick meter to fill (then it falls back)
@@ -63,6 +65,7 @@ export class ArcadeGame {
     this.sbMode = false; try { this.sbMode = localStorage.getItem("arcade_sb") === "1"; } catch { /* storage unavailable */ } this.wxPick = "auto"; try { const w = localStorage.getItem("arcade_wx"); if (WXPICKS.includes(w)) this.wxPick = w; } catch { /* storage unavailable */ } this.qMin = 5; try { const q = +localStorage.getItem("arcade_qmin"); if (QMINS.includes(q)) this.qMin = q; } catch { /* storage unavailable */ } this.passKind = "bullet"; try { const k = localStorage.getItem("arcade_pass"); if (k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
     // which way your offense drives across the screen: right to left on a phone (an easy swipe for a right
     // thumb), left to right with a mouse; the pause menu turns it round, and it's remembered
+    this.defCall = "balanced"; try { const d = localStorage.getItem("arcade_def"); if (DEF_CALLS.includes(d)) this.defCall = d; } catch { /* storage unavailable */ }
     this.mirror = this.input === "touch"; try { const d = localStorage.getItem("arcade_dir"); if (d === "rtl" || d === "ltr") this.mirror = d === "rtl"; } catch { /* storage unavailable */ }
     this.touch = null; this.mouse = null; this.keys = new Set(); this.buttons = []; this.chips = {}; this.menuFocus = "user"; this.paused = false;
     this.S = null; this.g = null; this.mode = "menu"; this.banner = null; this.feed = { list: [], shown: 0, at: 0 };
@@ -226,7 +229,7 @@ export class ArcadeGame {
     if (!g || this.held) return;
     if (g.done) { this.unflip(); this.S = null; this.mode = "idle"; this.refresh(); if (L.solo) this.finishSolo(); return; }
     if (patWaiting(g)) { this.offReal = g.patPending.off; if (g.patPending.off !== "h") this.flip(); this.S = null; this.mode = "pat"; this.fade = Math.max(this.fade, 0.6); this.refresh(); return; } // your try after your touchdown
-    this.unflip();
+    this.unflip(); this.applyDef();
     if (g.koNext) { // the kickoff: the engine kicks it, the field plays it out (the kick, the catch, the return and the tackle)
       const off = g.poss; this.offReal = off; if (off !== "h") this.flip();
       const L0 = lineups(g), ev = runPlay(g);
@@ -265,6 +268,15 @@ export class ArcadeGame {
   }
   // the weather setting: on the title screen it's for the next game; in the pause menu it changes
   // the game in progress on the spot (AUTO there rolls the home city again)
+  // your defense's call (the computer's snaps): how often it blitzes, loads the box or drops into
+  // coverage. It sets your side's tendencies, which the engine and the field both play from.
+  cycleDef() { this.defCall = DEF_CALLS[(DEF_CALLS.indexOf(this.defCall) + 1) % DEF_CALLS.length]; try { localStorage.setItem("arcade_def", this.defCall); } catch { /* ignore */ } this.applyDef(); return this.defCall; }
+  applyDef() {
+    const g = this.g, L = this.live; if (!g?.sides || !L) return;
+    const real = L.userSide || "h", side = g.sides[this.flipped ? (real === "h" ? "a" : "h") : real]; if (!side) return;
+    side.dStyle0 ??= side.dStyle || defStyle(side.team, null);
+    side.dStyle = this.defCall === "blitz" ? { blitz: 0.55, box: 0.12, cover: 0.06, allOut: true } : this.defCall === "coverage" ? { blitz: 0.05, box: 0.06, cover: 0.62 } : this.defCall === "run" ? { blitz: 0.12, box: 0.55, cover: 0.06 } : side.dStyle0;
+  }
   cycleWx(now = false) {
     this.wxPick = WXPICKS[(WXPICKS.indexOf(this.wxPick) + 1) % WXPICKS.length];
     try { localStorage.setItem("arcade_wx", this.wxPick); } catch { /* ignore */ }
@@ -502,7 +514,7 @@ export class ArcadeGame {
     // the pause button, and the menu
     if (!this.paused && (!this.live || this.live.solo)) this.chips.pause = drawChip(ctx, cam, cam.W - px * 2, Math.round(px * 20.5), this.mobile ? "II" : "II  ESC", { align: "right", big: this.mobile });
     if (this.fade > 0) { ctx.globalAlpha = this.fade; ctx.fillStyle = "#0b0e14"; ctx.fillRect(0, 0, cam.W, cam.H); ctx.globalAlpha = 1; }
-    if (this.paused && (!this.live || this.live.solo)) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ...(this.locked ? [] : [["wx", `WEATHER: ${wxName(this.wxPick)}`]]), ["dir", this.mirror ? "DRIVE: RIGHT TO LEFT" : "DRIVE: LEFT TO RIGHT"], ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), ...(this.franchise || this.live?.solo ? [["sim", "SIM TO THE END"]] : []), ...(this.franchise ? [] : [["quit", "QUIT GAME"]])], { mobile: this.mobile });
+    if (this.paused && (!this.live || this.live.solo)) this.buttons = drawPause(ctx, cam, [["resume", "RESUME"], ["mute", isMuted() ? "SOUND: OFF" : "SOUND: ON"], ...(this.locked ? [] : [["wx", `WEATHER: ${wxName(this.wxPick)}`]]), ["def", `DEFENSE: ${DEF_NAME[this.defCall]}`], ["dir", this.mirror ? "DRIVE: RIGHT TO LEFT" : "DRIVE: LEFT TO RIGHT"], ...(this.fsState && this.fsState !== "ios" ? [["fs", this.fsState === "on" ? "EXIT FULL SCREEN" : "FULL SCREEN"]] : []), ...(this.franchise || this.live?.solo ? [["sim", "SIM TO THE END"]] : []), ...(this.franchise ? [] : [["quit", "QUIT GAME"]])], { mobile: this.mobile });
   }
   drawKick(ctx, P, hintY) {
     const cam = this.cam, px = uiPx(cam);
@@ -568,7 +580,7 @@ export class ArcadeGame {
     let v = (this[which] + d + TEAMS.length) % TEAMS.length; if (v === (which === "userTi" ? this.oppTi : this.userTi)) v = (v + d + TEAMS.length) % TEAMS.length;
     this[which] = v; preload(TEAMS[v]); sfx.select?.();
   }
-  pauseAction(k) { if (k === "dir") { this.mirror = !this.mirror; try { localStorage.setItem("arcade_dir", this.mirror ? "rtl" : "ltr"); } catch { /* ignore */ } this.fit(); return; } if (k === "sim") { this.paused = false; this.simRest(); return; } if (k === "wx") { this.cycleWx(true); return; } if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; } if (k === "resume") this.paused = false; else if (k === "mute") toggleMute(); else if (k === "quit") { this.paused = false; this.mode = "menu"; this.S = null; this.replay = null; this.pendingReplay = null; if (this.live?.solo) { this.live = null; this.flipped = false; } } }
+  pauseAction(k) { if (k === "def") { this.cycleDef(); return; } if (k === "dir") { this.mirror = !this.mirror; try { localStorage.setItem("arcade_dir", this.mirror ? "rtl" : "ltr"); } catch { /* ignore */ } this.fit(); return; } if (k === "sim") { this.paused = false; this.simRest(); return; } if (k === "wx") { this.cycleWx(true); return; } if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; } if (k === "resume") this.paused = false; else if (k === "mute") toggleMute(); else if (k === "quit") { this.paused = false; this.mode = "menu"; this.S = null; this.replay = null; this.pendingReplay = null; if (this.live?.solo) { this.live = null; this.flipped = false; } } }
 
   onDown(e) {
     unlock();
