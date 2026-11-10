@@ -2582,4 +2582,9 @@ export const PATCH_NOTES = [
     "Blitz Heavy sends linebackers on most passing downs (often both of them), and your pass rushers come off the ball faster, much faster if they're good: a defense with Micah Parsons, T.J. Watt or Maxx Crosby gets home in a second or two. You'll get more sacks and hurried throws, but the corners are on their own, so completions that do get out go for more.",
     "Coverage drops more men and gives the passer fewer yards per throw, but almost no pressure, and runs gain more. Stop the Run loads the box: fewer yards on the ground, more through the air.",
   ] },
+  { v: "6.23", date: "2026-10-23", title: "Clean catches, real coverage", notes: [
+    "Arcade passing: on-target throws to open receivers are caught. Digs, deep outs and other throws to a wide receiver were being dropped about one time in seven even when they hit him in the hands, because any bullet over 24 yards counted as a hard-to-hold rope, and a 12-yard dig to the outside man is about 28 yards from the quarterback. Now only true long ropes (35 yards and more) carry that risk, and a clean ball to an open man is dropped 1 to 7 times in 100 depending on his hands. Overall passing now lands right on NFL numbers: about 65% completions and 7 yards an attempt.",
+    "Zone coverage follows ratings: a linebacker playing a zone reads routes sooner, covers more ground and sits in the throwing lane according to his zone coverage, awareness, play recognition and instincts. An elite one stays within about a yard of a receiver in his zone; a poor one is five yards off.",
+    "Safeties follow ratings: range, instincts and play recognition decide how well a deep safety stays over the top of the deepest route and how fast he gets there. An elite free safety keeps about three and a half yards of cushion on a go route; a poor one barely one.",
+  ] },
 ];

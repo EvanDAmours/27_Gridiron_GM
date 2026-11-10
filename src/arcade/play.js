@@ -196,6 +196,11 @@ export function snap(S) {
   if (!isPass) { S.handoffAt = 0.7; S.lane = call === "run_outside" ? (rnd(S) < 0.5 ? -14 : 14) : (rnd(S) < 0.5 ? -4.2 : 4.2); }
 }
 
+// zone coverage (a linebacker with no man): zone coverage, awareness, play recognition, instincts
+const zoneSkill = (p) => K.skill(p, [["zoneCov", 0.6], ["zoneAwr", 0.5], ["playRec", 0.4], ["instincts", 0.3], ["coverage", 0.3]], 0.2);
+// a deep safety: range and instincts keep him on top of the deep man; a poor one gives up the cushion
+const safetyRange = (p) => { const r = K.skill(p, [["range", 0.7], ["zoneCov", 0.4], ["instincts", 0.3], ["playRec", 0.3], ["spd", 0.3]], 0.2), u = clamp((r - 55) / 40, 0, 1.1); return { cushion: 0.5 + u * 2.5, anticip: 0.3 + u * 0.6, pace: clamp(0.88 + u * 0.13, 0.86, 1.02), read: u }; };
+
 // ---------- movement ----------
 // Accelerate toward a point: velocity bends toward the target at his acceleration, capped at his
 // top speed (`mult` scales it). Returns the distance still to go.
@@ -411,16 +416,16 @@ export function tick(S, dt) {
       mirror(d, r, lx - trail * along, ly + in_, dt, q * beaten, 0.9, d.rv);
     } else if (k === "S0" && S.dcall === "cover") { // two deep: he takes the other half
       let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.y < 4 && (!deep || e.x > deep.x)) deep = e; }
-      steer(d, Math.min(106, Math.max(S.los + 13, deep ? deep.x + 4.5 + Math.max(0, deep.vx) * 0.7 : 0)), deep ? Math.min(-4, deep.y * 0.8) : -11, dt, 1);
+      const sr = safetyRange(d.p); steer(d, Math.min(106, Math.max(S.los + 13, deep ? deep.x + 2.5 + sr.cushion + Math.max(0, deep.vx) * sr.anticip : 0)), deep ? Math.min(-4, deep.y * 0.8) : -11, dt, sr.pace);
     } else if (k === "S0") {
       // the single-high free safety: deeper than the deepest route, but he stays in the middle of
       // the field so he can get to either sideline once the ball's in the air
       let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.x > S.los + 4 && (!deep || e.x > deep.x)) deep = e; }
-      const dx = deep ? Math.max(deep.x + 5.5 + Math.max(0, deep.vx) * 0.9, S.los + 13) : S.los + 14, dy = deep ? clamp(deep.y * 0.5, -10, 10) : 0;
-      steer(d, Math.min(106, dx), dy, dt, 1);
+      const sr = safetyRange(d.p), dx = deep ? Math.max(deep.x + 3.5 + sr.cushion + Math.max(0, deep.vx) * (sr.anticip + 0.2), S.los + 13) : S.los + 14, dy = deep ? clamp(deep.y * (0.3 + sr.read * 0.4), -12, 12) : 0; // (a sharp one leans toward the deep threat's side sooner)
+      steer(d, Math.min(106, dx), dy, dt, sr.pace);
     } else if (k === "S1" && S.dcall === "cover") { // two deep: he takes his half
       let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.y > -4 && (!deep || e.x > deep.x)) deep = e; }
-      steer(d, Math.min(106, Math.max(S.los + 13, deep ? deep.x + 4.5 + Math.max(0, deep.vx) * 0.7 : 0)), deep ? Math.max(4, deep.y * 0.8) : 11, dt, 1);
+      const sr = safetyRange(d.p); steer(d, Math.min(106, Math.max(S.los + 13, deep ? deep.x + 2.5 + sr.cushion + Math.max(0, deep.vx) * sr.anticip : 0)), deep ? Math.max(4, deep.y * 0.8) : 11, dt, sr.pace);
     } else if (k === "S1") {
       // the strong safety: with two men going deep he takes the second over the top; otherwise a
       // robber in the middle, jumping anything that comes through his zone
@@ -429,8 +434,12 @@ export function tick(S, dt) {
       let near = null, nb = 7; for (const r of ELIGIBLE) { const e = ents[r]; if (!e) continue; const dd = hyp(e.x - d.x, e.y - d.y); if (dd < nb) { nb = dd; near = e; } }
       if (near) steer(d, near.x - 0.6, near.y, dt, 0.95); else steer(d, Math.min(105, S.los + 10), 6, dt, 0.75);
     } else { // an unassigned linebacker: a short zone, driving on anyone who crosses it
-      let near = null, nb = 7; for (const r of ELIGIBLE) { const e = ents[r]; if (!e || e.mode === "protect" || e.mode === "block") continue; const dd = hyp(e.x - d.x, e.y - d.y); if (dd < nb) { nb = dd; near = e; } }
-      if (near) steer(d, near.x + near.vx * 0.3 - 0.6, near.y + near.vy * 0.3, dt, 0.95); else steer(d, S.los + 6.5, DEF_SPOTS[k][1] * 0.8, dt, 0.8);
+      // a good zone player sees routes coming sooner, covers more ground and sits in the throwing lane;
+      // a poor one is slow to react and chases a step behind
+      const zs = zoneSkill(d.p), reach = clamp(5 + (zs - 60) * 0.09, 3.5, 9), lead = clamp(0.1 + (zs - 55) * 0.009, 0, 0.55), pace = clamp(0.84 + (zs - 60) * 0.004, 0.8, 1.02);
+      if (S.t < 0.22 + clamp((80 - zs) * 0.012, 0, 0.45)) { brake(d, dt); continue; } // the read: dropping into the zone
+      let near = null, nb = reach; for (const r of ELIGIBLE) { const e = ents[r]; if (!e || e.mode === "protect" || e.mode === "block") continue; const dd = hyp(e.x - d.x, e.y - d.y); if (dd < nb) { nb = dd; near = e; } }
+      if (near) steer(d, near.x + near.vx * lead - 0.6, near.y + near.vy * lead, dt, pace); else steer(d, S.los + 5.5 + (zs - 60) * 0.03, DEF_SPOTS[k][1] * 0.8, dt, 0.8);
     }
   }
 
@@ -651,8 +660,8 @@ function arrive(S) {
     const hands = K.hands(tgt.p), traffic = K.contested(tgt.p), ballSk = d ? K.ballSkills(d.p) : 50;
     const dive = dR > catchR ? 1 - (dR - catchR) / Math.max(0.5, reachR) : 1; // one just out of reach: a dive, less likely the further
     const first = tgt && d && dR < dD - 0.4 ? (deepLob ? 0.05 : 0.12) : 0; // he got to it first
-    const pCatch = (open ? clamp(0.985 - (85 - hands) * 0.003, 0.9, 0.995) : clamp((deepLob ? 0.44 : 0.7) + first + (traffic - ballSk) * 0.007 + (dD - 0.8) * (deepLob ? 0.1 : 0.22) - (dR > 1.2 ? 0.08 : 0), 0.18, 0.9)) * clamp(dive, 0, 1);
-    if (rnd(S) < pCatch * CAL.hands * (f.bullet && hyp(f.to.x - f.from.x, f.to.y - f.from.y) > 24 ? 0.85 : 1) * (1 - 0.035 * (wxField(S.g).rain || 0) - 0.02 * (wxField(S.g).snow || 0))) { // (a wet ball is a slippery one) // (a long rope is a hard ball to hang on to)
+    const pCatch = (open ? clamp(0.995 - (85 - hands) * 0.0025, 0.93, 0.997) / CAL.hands /* (an open, on-target ball: a drop is rare, 1 to 7 in 100 by his hands) */ : clamp((deepLob ? 0.44 : 0.7) + first + (traffic - ballSk) * 0.007 + (dD - 0.8) * (deepLob ? 0.1 : 0.22) - (dR > 1.2 ? 0.08 : 0), 0.18, 0.9)) * clamp(dive, 0, 1);
+    if (rnd(S) < pCatch * CAL.hands * (f.bullet ? 1 - clamp((hyp(f.to.x - f.from.x, f.to.y - f.from.y) - 34) * 0.01, 0, 0.12) : 1) * (1 - 0.035 * (wxField(S.g).rain || 0) - 0.02 * (wxField(S.g).snow || 0))) { // (a wet ball is a slippery one) // (a really long rope, 35 yards and up, is a harder ball to hang on to; a dig or an out to a wide man is not that)
       ball.x = tgt.x; ball.y = tgt.y; ball.holder = f.target; tgt.mode = "carry"; S.catchAt = S.t; S.phase = "carry";
       if (d && dD < 2.5) { d.down = Math.max(d.down, clamp(0.4 - (dD < 0.8 ? 0.2 : 0) - K.edge(K.tackling(d.p)) * 0.005, 0.15, 0.6)); d.vx *= 0.3; d.vy *= 0.3; } // he played the ball, not the man
       S.pick.open = open; S.log.push(`caught ${open ? "open" : "contested"}`);
