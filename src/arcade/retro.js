@@ -249,6 +249,8 @@ function pose2(S, e, t) {
   if (S.dived && S.ball.holder === e.key) { e._last2 = null; return null; } // (the dive: the first sheet's laid-out frame, never a held running one)
   return S.phase === "presnap" ? null : e._last2 || null;
 }
+// a man on the offense blocking on this snap (not a kick: the punt team's line releases into coverage)
+const isBlocker = (S, e) => !S.kind && e.side === "off" && S.phase !== "presnap" && (e.mode === "block" || e.mode === "protect") && S.ball.holder !== e.key;
 const STEADY = /^(run|run_ball|run_up|run_down|run_ball_up|run_ball_down|block_engaged|pass_set|run_drive|rush_bull|backpedal|fall)_?\d*$|^(block_engaged|rush_bull|fall_2)$/;
 function pose2raw(S, e, t) {
   if (S.phase === "presnap") return null;
@@ -304,7 +306,13 @@ function pose2raw(S, e, t) {
   if (over) return moving ? run(false) : e.key === "QB" && !hasBall && !isPass ? { n: "hip_turn" } : null;
   // the defensive backs give ground facing the quarterback until the ball's out
   if (e.side === "def" && BACKS.has(e.key) && S.phase === "live" && S.ball.holder === "QB") { e._bp = e._bp ? e.vx > 0.1 && sp < e.top * 0.9 : e.vx > 0.4 && sp < e.top * 0.8; if (e._bp) return { n: `backpedal_${i4}`, face: -1 }; } else e._bp = false;
-  if (OLINE.has(e.key) && e.mode === "block") return isPass ? (moving ? { n: `pass_set_${i2}` } : { n: "block_engaged" }) : moving ? { n: `run_drive_${i2}` } : { n: "block_engaged" };
+  // a blocker (the line, a tight end or back staying in, a receiver blocking on a run) faces up the field, at
+  // the defense: setting back into the pocket or being driven back he shuffles, squared up, never turned round;
+  // only a man really running up the field to his block (a pulling guard, a receiver going to his man) runs
+  if (isBlocker(S, e)) {
+    if (sp > 3.2 && e.vx > -0.5) return { ...run(false), face: 1 };
+    return isPass ? (moving ? { n: `pass_set_${i2}`, face: 1 } : { n: "block_engaged", face: 1 }) : moving ? { n: `run_drive_${i2}`, face: 1 } : { n: "block_engaged", face: 1 };
+  }
   if (e.side === "def" && e.key.startsWith("DL") && e.mode === "rush") {
     if (!isPass) return { n: "rush_bull" };
     const shed = S.shed?.[e.key] ?? 9, mv = e.move || "";
@@ -416,6 +424,7 @@ function poseFor0(S, e, t) {
   if (e.side === "def" && S.phase === "tackle" && S.tackler === e && t >= S.endAt - 0.75) return [S.diveTackle || t < S.endAt - 0.5 ? "b3" : "b6", true]; // the hit: laid out (a shoestring dive stays down), then wrapped up
   // a cover man playing the ball as it gets there: a hand up to knock it away
   { const f = S.ball.flight; if (f && !f.kick && e.side === "def" && f.target && S.cover?.[f.target] === e.key && f.t0 + f.T - t < 0.2 && Math.hypot(e.x - f.to.x, e.y - f.to.y) < 1.6) return ["b8", true]; }
+  if (isBlocker(S, e)) return sp > 3.2 && e.vx > -0.5 ? [stride ? "a5" : "a6", true, 1] : ["b6", true, 1]; // (blocking: squared up the field, driving into his man; only running when he's going up the field to his block)
   if (moving) return [stride ? "a5" : "a6", true];
   if (e.side === "off" && ["LT", "LG", "C", "RG", "RT", "TE"].includes(e.key)) return [S.phase === "presnap" ? "ol" : "b6", S.phase !== "presnap"]; // (blocking: driving into his man; c5 is the long snapper's frame, with the ball)
   return [POSE[e.p.pos] || "db", false];

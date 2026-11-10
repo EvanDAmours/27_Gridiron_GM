@@ -2616,4 +2616,7 @@ export const PATCH_NOTES = [
   { v: "6.28", date: "2026-11-10", title: "NFC South animation", notes: [
     "The Falcons, Panthers, Saints and Buccaneers get the full animation set in the arcade, home and away: the running, catching, throwing, blocking, tackling and celebrating frames the other clubs with it have. That's 19 clubs now.",
   ] },
+  { v: "6.29", date: "2026-11-10", title: "Blockers face the defense", notes: [
+    "Offensive linemen always face up the field into their man. Setting back into the pocket, or being driven back on a run, they give ground squared up instead of turning round to face their own end zone (they used to, about half the time). The same goes for a tight end or back staying in to block, and a receiver blocking on a run. A man running up the field to his block, like a pulling guard or a receiver going after a defensive back, still runs.",
+  ] },
 ];
