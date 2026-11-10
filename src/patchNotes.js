@@ -2613,4 +2613,7 @@ export const PATCH_NOTES = [
     "Quarterbacks on every club face downfield in the pocket and throw toward their target, never back over their own shoulder. After a handoff the quarterback no longer stands there holding a ball.",
     "The fumble shows FUMBLE! once, without a second label on top of it.",
   ] },
+  { v: "6.28", date: "2026-11-10", title: "NFC South animation", notes: [
+    "The Falcons, Panthers, Saints and Buccaneers get the full animation set in the arcade, home and away: the running, catching, throwing, blocking, tackling and celebrating frames the other clubs with it have. That's 19 clubs now.",
+  ] },
 ];
