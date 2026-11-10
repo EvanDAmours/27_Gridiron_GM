@@ -2573,4 +2573,8 @@ export const PATCH_NOTES = [
     "Franchise games on a phone: the arcade field now has its Full screen button (and Sim to end) along the top, where you can see them. They were hidden behind the game controls at the bottom. Tap Full screen and the field fills the whole screen with nothing else to tap by mistake; turn the phone sideways for the landscape field.",
     "The Broadcast button that sat right next to Playing on the arcade field is gone (it was easy to hit by accident), and switching to the broadcast view from the controls while you're calling plays now asks first.",
   ] },
+  { v: "6.21", date: "2026-10-23", title: "See your plays", notes: [
+    "Franchise games in the arcade on a phone: the play cards (and the hints along the bottom of the field) were hidden behind the game controls, so you couldn't pick a play. The field now ends where the controls begin, so everything it shows is on screen.",
+    "Full screen on iPhone now really covers the screen: the game controls and the tab bar step out of the way until you exit, and the Sim to end and Exit full screen buttons sit up top, clear of the play cards.",
+  ] },
 ];

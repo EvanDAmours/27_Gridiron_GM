@@ -37,7 +37,11 @@ export default function LiveArcade({ g, userSide, watch, speed, paused, teams, o
     if (!pinned) return;
     const key = (e) => { if (e.key === "Escape") setPinned(false); }, prev = document.body.style.overflow;
     document.body.style.overflow = "hidden"; window.addEventListener("keydown", key);
-    return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", key); };
+    // anything else pinned to the screen (the app's controls, its tab bar) steps out of the way, so
+    // nothing can sit over the field however the page above it is stacked
+    const mine = ref.current?.parentElement, hid = [];
+    for (const n of document.body.querySelectorAll("*")) { if (n === mine || n.contains(mine) || mine?.contains(n)) continue; const cs = getComputedStyle(n); if (cs.position === "fixed" && cs.visibility !== "hidden") { hid.push([n, n.style.visibility]); n.style.visibility = "hidden"; } }
+    return () => { document.body.style.overflow = prev; window.removeEventListener("keydown", key); for (const [n, v] of hid) n.style.visibility = v; };
   }, [pinned]);
   useEffect(() => {
     const on = () => setFs(!!(document.fullscreenElement || document.webkitFullscreenElement));
@@ -48,7 +52,7 @@ export default function LiveArcade({ g, userSide, watch, speed, paused, teams, o
     <div role="application" aria-label="Arcade field" style={pinned ? { position: "fixed", inset: 0, zIndex: 9500, boxSizing: "border-box", padding: "env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)", background: "#0b0e14", overflow: "hidden" } : fill ? { position: "absolute", inset: 0, background: "#0b0e14", overflow: "hidden" } : { position: "relative", width: "100%", aspectRatio: aspect, ...(maxH ? { maxHeight: maxH } : {}), background: "#0b0e14", borderRadius: 10, overflow: "hidden" }}>
       <canvas ref={ref} tabIndex={0} style={{ display: "block", touchAction: "none", imageRendering: "pixelated", outline: "none" }} />
       {/* the corner buttons: sim the rest of the game out (a second tap to be sure), and full screen */}
-      <div style={{ position: "absolute", ...(fs ? { bottom: "calc(env(safe-area-inset-bottom) + 8px)", right: "calc(env(safe-area-inset-right) + 8px)" } : fill ? { top: "calc(env(safe-area-inset-top) + 46px)", left: 8 } /* (a phone: up top, clear of the app's controls along the bottom) */ : { top: 8, right: 8 }), zIndex: 2, display: "flex", gap: 6, opacity: fs ? 0.85 : 1 }}>
+      <div style={{ position: "absolute", ...(fs ? { top: "calc(env(safe-area-inset-top) + 74px)", left: "calc(env(safe-area-inset-left) + 8px)" } /* (under the score strip and the weather, clear of the play cards along the bottom) */ : fill ? { top: "calc(env(safe-area-inset-top) + 46px)", left: 8 } /* (a phone: up top, clear of the app's controls along the bottom) */ : { top: 8, right: 8 }), zIndex: 2, display: "flex", gap: 6, opacity: fs ? 0.85 : 1 }}>
         {onSim && !ceremony && <button type="button" onClick={() => { if (simArm) { setSimArm(false); setPinned(false); if (natFs) game.current?.fullscreen(false); onSim(); } else setSimArm(true); }} aria-label="Sim to the end of the game" title="Sim the rest of the game" style={{ ...cornerBtn, ...(simArm ? { background: "#b45309", borderColor: "#fbbf24" } : {}) }}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M1 2l6 5-6 5zM7 2l6 5-6 5z" /></svg>{simArm ? "Tap again to sim" : "Sim to end"}
         </button>}
