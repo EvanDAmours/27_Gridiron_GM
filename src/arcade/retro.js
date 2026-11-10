@@ -241,7 +241,7 @@ function pose2(S, e, t) {
     // set to block, engaged...) has to last a beat before it shows; until then he keeps the one he had
     const fam = r.n.replace(/_\d+$/, ""), last = e._last2, lastFam = last && STEADY.test(last.n) ? last.n.replace(/_\d+$/, "") : null;
     // (going down is never held back)
-    if (lastFam && fam !== lastFam && fam !== "fall" && lastFam !== "fall") { if (e._pend !== fam) { e._pend = fam; e._pendAt = t; } if (t - e._pendAt < 0.14 && t >= e._pendAt) r = { ...last, face: r.face ?? last.face }; else e._pend = null; }
+    if (lastFam && fam !== lastFam && fam !== "fall" && lastFam !== "fall" && !(/^run/.test(fam) && Math.hypot(e.vx, e.vy) > 4) && fam !== "backpedal") { /* (a backpedal starts at once: it has its own hold) */ if (e._pend !== fam) { e._pend = fam; e._pendAt = t; } if (t - e._pendAt < 0.1 && t >= e._pendAt) r = last; /* (the frame he had, facing the way it faced) */ else e._pend = null; }
     else e._pend = null;
     e._last2 = r; return r;
   }
@@ -254,8 +254,8 @@ const isBlocker = (S, e) => !S.kind && e.side === "off" && S.phase !== "presnap"
 const STEADY = /^(run|run_ball|run_up|run_down|run_ball_up|run_ball_down|block_engaged|pass_set|run_drive|rush_bull|backpedal|fall)_?\d*$|^(block_engaged|rush_bull|fall_2)$/;
 function pose2raw(S, e, t) {
   if (S.phase === "presnap") return null;
-  const sp = Math.hypot(e.vx, e.vy), g = e._gait || 0, hasBall = S.ball.holder === e.key;
-  const moving = (e._mv = e._mv ? sp > 0.6 : sp > 1.2);
+  const sp = Math.hypot(e.vx, e.vy), g = e._gait || 0, hasBall = S.ball.holder === e.key, spS = e._spS ?? sp; // (the smoothed speed: poseFor keeps it)
+  const moving = (e._mv = e._mv ? spS > 0.6 : spS > 1.2);
   const i6 = (Math.floor(g / 0.42) % 6) + 1, i4 = (Math.floor(g / 0.55) % 4) + 1, i2 = (Math.floor(g / 0.7) % 2) + 1;
   const ax = Math.abs(e.vx), ay = Math.abs(e.vy);
   // running across the field (up or down the screen): only when he's clearly going that way, at a real clip
@@ -273,6 +273,7 @@ function pose2raw(S, e, t) {
     if (S.thrownAt && t - S.thrownAt < 0.1) return { n: "throw_release", face: toward };
     if (hasBall && S.phase === "live") {
       if (e.mode === "dropback") return { n: `drop_${i4}`, face: 1 };
+      if (sp > 3) return run(true); // (on the move with it: running, not sliding in a throwing stance)
       return { n: S.aim ? "throw_windup" : "throw_set", face: 1 }; // (set in the pocket, he faces downfield whichever way his feet last moved)
     }
     if (e.mode === "handoff") return { n: "handoff_qb" };
@@ -310,7 +311,7 @@ function pose2raw(S, e, t) {
   // the defense: setting back into the pocket or being driven back he shuffles, squared up, never turned round;
   // only a man really running up the field to his block (a pulling guard, a receiver going to his man) runs
   if (isBlocker(S, e)) {
-    if (sp > 3.2 && e.vx > -0.5) return { ...run(false), face: 1 };
+    if (sp > 3.2) return { ...run(false), face: e.vx > -0.5 ? 1 : -1 }; // (running to a block: up the field facing it, otherwise the way he's going)
     return isPass ? (moving ? { n: `pass_set_${i2}`, face: 1 } : { n: "block_engaged", face: 1 }) : moving ? { n: `run_drive_${i2}`, face: 1 } : { n: "block_engaged", face: 1 };
   }
   if (e.side === "def" && e.key.startsWith("DL") && e.mode === "rush") {
@@ -343,12 +344,12 @@ function kickPose2(S, e, t, { moving, hasBall, run, i4 }) {
   // a return-team blocker on his man (a punt: his mark; a kickoff: the man across from him), or a cover man held up
   const m = e.side === "def" ? (S.kind === "punt" ? e.mark && S.ents[e.mark] : S.ball.holder === "S0" && S.ents[`C${e.key.slice(1)}`]) : null;
   const near = m && Math.hypot(m.x - e.x, m.y - e.y);
-  e._eng = m ? (e._eng ? near < 3.0 : near < 1.5) : false;
+  e._eng = m && Math.hypot(e.vx, e.vy) < (e._eng ? 5 : 3.5) ? (e._eng ? near < 3.0 : near < 1.5) : false; // (racing down the field beside his man is running, not blocking)
   if (e._eng) { // on him: squared up to him, giving ground in a backpedal when he's driving him back (never turning his back on him)
     const dx = m.x - e.x, dy = m.y - e.y, fc = e._engFace = Math.abs(dx) > 0.4 ? Math.sign(dx) : e._engFace || -1;
     return moving && (e.vx * dx + e.vy * dy) / (near || 1) < -1.2 ? { n: `backpedal_${i4}`, face: fc } : { n: "block_engaged", face: fc };
   }
-  if (e.side === "off" && e.held > S.t) return { n: "block_engaged", face: 1 };
+  if (e.side === "off" && e.held > S.t && Math.hypot(e.vx, e.vy) < 3) return { n: "block_engaged", face: 1 };
   if (moving) return run(false);
   // the return team waiting for the coverage once it's kicked: set, hands up, facing up the field (not a stride frozen mid-step)
   if (e.side === "def" && e.key !== "S0" && f && t >= f.t0) return { n: "block_engaged", face: -1 };
@@ -363,9 +364,10 @@ function poseFor(S, e, t) {
   const r = poseFor0(S, e, t), f = fam1(r[0]), last = e._last1;
   if (S.phase === "presnap" || !f || !last || !fam1(last[0])) { e._last1 = r; e._pend1 = null; return r; }
   const lf = fam1(last[0]);
-  if (f !== lf && (f === "stand" || lf === "stand")) {
+  const sp_ = Math.hypot(e.vx, e.vy);
+  if (f !== lf && (f === "stand" || lf === "stand") && !(f !== "stand" && sp_ > 4) && !(f === "stand" && sp_ < 0.3)) { // (off and running, or stopped dead: at once)
     if (e._pend1 !== f || t < e._pend1At) { e._pend1 = f; e._pend1At = t; }
-    if (t - e._pend1At < 0.2) return lf === "stand" ? last : [lf === "runball" ? (r[0] === "a1" || r[0] === "a2" ? r[0] : last[0]) : Math.floor((e._gait || 0) / 1.15) % 2 === 0 ? "a5" : "a6", true]; // (still striding: his legs keep turning)
+    if (t - e._pend1At < 0.1) return lf === "stand" ? last : [lf === "runball" ? (r[0] === "a1" || r[0] === "a2" ? r[0] : last[0]) : Math.floor((e._gait || 0) / 1.15) % 2 === 0 ? "a5" : "a6", true]; // (still striding: his legs keep turning)
   }
   e._pend1 = null; e._last1 = r; return r;
 }
@@ -374,8 +376,12 @@ function poseFor0(S, e, t) {
   // over faster than a jogging lineman's and nobody "moonwalks"
   // (once he's moving he's moving until he's nearly stopped: no flicking between a stride and a stance; a
   // lineman locked up with his man, or a rusher on his blocker, is only "running" once he's really going)
-  const sp = Math.hypot(e.vx, e.vy), locked = ((OLINE.has(e.key) || e.key === "TE") && e.mode === "block") || (e.key.startsWith("DL") && e.mode === "rush" && !S.kind), moving = (e._mv1 = e._mv1 ? sp > (locked ? 1.6 : 0.5) : sp > (locked ? 2.6 : 1.3));
-  if (e._gt == null || t < e._gt) e._gt = t; e._gait = (e._gait || 0) + sp * Math.min(0.1, t - e._gt); e._gt = t;
+  // (his speed as the picture reads it is smoothed over about a sixth of a second, so a man whose feet jitter
+  // back and forth, a corner mirroring, a rusher bouncing off a block, reads as one steady pace)
+  const sp = Math.hypot(e.vx, e.vy), locked = ((OLINE.has(e.key) || e.key === "TE") && e.mode === "block") || (e.key.startsWith("DL") && e.mode === "rush" && !S.kind);
+  if (e._gt == null || t < e._gt) { e._gt = t; e._spS = sp; } const dtp = Math.min(0.1, t - e._gt); e._gait = (e._gait || 0) + sp * dtp; e._gt = t;
+  e._spS = (e._spS ?? sp) + (sp - (e._spS ?? sp)) * Math.min(1, dtp / 0.16); const spS = e._spS;
+  const moving = (e._mv1 = e._mv1 ? spS > (locked ? 1.6 : 0.5) : spS > (locked ? 2.6 : 1.3));
   const stride = Math.floor(e._gait / 1.15) % 2 === 0;
   const hasBall = S.ball.holder === e.key;
   if (S.kind) { // a kick: the kicker swings through, the holder kneels, the line holds
@@ -398,10 +404,10 @@ function poseFor0(S, e, t) {
     }
     // a return blocker on his man (a punt: his mark; a kickoff: the man across from him), or a cover man held up: driving into him, facing him
     { const m = e.side === "def" && e.key !== "S0" ? (S.kind === "punt" ? e.mark && S.ents[e.mark] : S.ball.holder === "S0" && S.ents[`C${e.key.slice(1)}`]) : null, near = m && Math.hypot(m.x - e.x, m.y - e.y);
-      e._eng1 = m ? (e._eng1 ? near < 3.0 : near < 1.5) : false;
+      e._eng1 = m && sp < (e._eng1 ? 5 : 3.5) ? (e._eng1 ? near < 3.0 : near < 1.5) : false;
       if (e._eng1) { const fc = e._engFace1 = Math.abs(m.x - e.x) > 0.4 ? Math.sign(m.x - e.x) : e._engFace1 || -1; return ["b6", true, fc]; }
-      if (e.side === "off" && e.held > S.t) return ["b6", true, 1]; }
-    if (moving && (S.kind === "punt" || S.kind === "ko")) return [stride ? "a5" : "a6", true]; // the coverage running down, the return team getting back
+      if (e.side === "off" && e.held > S.t && sp < 3) return ["b6", true, 1]; }
+    if (moving) return [stride ? "a5" : "a6", true]; // the coverage running down, the return team getting back, the rush on a field goal
     if (S.kind === "ko" && e.key !== "S0") return ["db", false]; // (lined up for the kick: on their feet, not in a stance)
     if (e.side === "off") return [POSE[e.p.pos] === "qb" ? "ol" : POSE[e.p.pos] || "ol", false];
     return [POSE[e.p.pos] || "db", false];
@@ -412,7 +418,8 @@ function poseFor0(S, e, t) {
     const f = S.ball.flight, toward = f && !f.kick ? Math.sign(f.to.x - e.x) || 1 : 1;
     if (S.thrownAt && t - S.thrownAt < 0.5) return ["a8", true, toward];
     if (S.phase === "tackle" && S.result?.type === "sack" && S.tackler) return [t >= S.endAt - 0.75 ? "b5" : "b4", true]; // sacked: down with the ball
-    if (hasBall && S.phase === "live" && (e.mode === "dropback" || e.mode === "set")) return ["qb", false, 1]; // dropping back and set in the pocket: facing downfield
+    if (hasBall && S.phase === "live" && e.mode === "dropback" && moving) return [stride ? "a1" : "a2", true, Math.sign(e.vx) || -1]; // the drop: he turns and runs back (no sliding back in his stance)
+    if (hasBall && S.phase === "live" && (e.mode === "dropback" || e.mode === "set") && sp < 3) return ["qb", false, 1]; // set in the pocket: facing downfield
     if (hasBall) return [moving ? (stride ? "a1" : "a2") : "qb", moving];
     return moving ? [stride ? "a5" : "a6", true] : ["a8", true, toward]; // (no ball: never the ball-in-hand frame; after a handoff or a throw he stands, arm out, watching)
   }
@@ -424,7 +431,7 @@ function poseFor0(S, e, t) {
   if (e.side === "def" && S.phase === "tackle" && S.tackler === e && t >= S.endAt - 0.75) return [S.diveTackle || t < S.endAt - 0.5 ? "b3" : "b6", true]; // the hit: laid out (a shoestring dive stays down), then wrapped up
   // a cover man playing the ball as it gets there: a hand up to knock it away
   { const f = S.ball.flight; if (f && !f.kick && e.side === "def" && f.target && S.cover?.[f.target] === e.key && f.t0 + f.T - t < 0.2 && Math.hypot(e.x - f.to.x, e.y - f.to.y) < 1.6) return ["b8", true]; }
-  if (isBlocker(S, e)) return sp > 3.2 && e.vx > -0.5 ? [stride ? "a5" : "a6", true, 1] : ["b6", true, 1]; // (blocking: squared up the field, driving into his man; only running when he's going up the field to his block)
+  if (isBlocker(S, e)) return sp > 3.2 ? [stride ? "a5" : "a6", true, e.vx > -0.5 ? 1 : -1] : ["b6", true, 1]; // (blocking: squared up the field, driving into his man; only running when he's going up the field to his block)
   if (moving) return [stride ? "a5" : "a6", true];
   if (e.side === "off" && ["LT", "LG", "C", "RG", "RT", "TE"].includes(e.key)) return [S.phase === "presnap" ? "ol" : "b6", S.phase !== "presnap"]; // (blocking: driving into his man; c5 is the long snapper's frame, with the ball)
   return [POSE[e.p.pos] || "db", false];
@@ -1005,13 +1012,13 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     // at once), so a blocker rocking back and forth or a man drifting across the field never spins
     if (e._face == null) e._face = Math.abs(e.vx) > 0.5 ? Math.sign(e.vx) : e.side === "off" ? 1 : -1;
     // (a man running across the field doesn't turn on a small drift)
-    else if (Math.abs(e.vx) > Math.max(1.0, Math.abs(e.vy) * 0.5) && Math.sign(e.vx) !== e._face) { e._turn = (e._turn || 0) + 1; if (e._turn >= 6 || Math.abs(e.vx) > 4.5) { e._face = Math.sign(e.vx); e._turn = 0; } } else e._turn = 0;
+    else if (Math.abs(e.vx) > Math.max(1.0, Math.abs(e.vy) * 0.5) && Math.sign(e.vx) !== e._face) { e._turn = (e._turn || 0) + 1; if (e._turn >= (Math.abs(e.vx) > 2.4 ? 2 : 6) || Math.abs(e.vx) > 4.5) { e._face = Math.sign(e.vx); e._turn = 0; } } else e._turn = 0; // (a real run the other way turns him at once: no running backwards)
     const facing = e._face;
     shadow(ctx, cam, e.x, e.y);
     const [pose, act, face1] = poseFor(S, e, S.t), p2 = pose2(S, e, S.t), f1 = face1 ?? facing;
     const on2 = !!(p2 && sprite2(ctx, cam, t, away, p2.n, e.x, e.y, p2.face ?? facing)), ok = on2 || sprite(ctx, cam, t, away, pose, e.x, e.y, f1, act) || sprite(ctx, cam, t, away, POSE[e.p.pos] || "db", e.x, e.y, f1, false);
     { const fx_ = on2 ? p2.face : face1; if (fx_ != null && fx_ !== e._face) { e._face = fx_; e._turn = 0; } } // (a frame drawn with its own facing, a backpedal or a throw, is the way he's facing from then on)
-    if (poseProbe.cb) poseProbe.cb(S, e, { pose, act, p2: on2 ? p2.n : null, facing: on2 ? p2.face ?? facing : f1, team: t });
+    if (poseProbe.cb) poseProbe.cb(S, e, { pose, act, p2: on2 ? p2.n : null, facing: on2 ? p2.face ?? facing : f1, team: t, ok });
     if (!ok) { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.fillStyle = t.clr; ctx.fillRect(sx - s * 0.5, sy - s * 2.2, s, s * 2.2); }
     if (S.userDef === e.key && S.phase !== "done") { const [sx, sy] = cam.toScreen(e.x, e.y), lw = Math.max(2, Math.round(s * 0.14)); ctx.strokeStyle = "#ffd166"; ctx.lineWidth = lw; ctx.beginPath(); ctx.ellipse(sx, sy, s * 1.25, s * 1.25 * SQUASH, 0, 0, Math.PI * 2); ctx.stroke(); // the man you're playing on defense: a gold ring, and a marker over his head
       const ay = Math.round(sy - PLAYER_H * s * 0.95 - s * 0.6), u = Math.max(2, Math.round(s * 0.22)); ctx.fillStyle = "#ffd166"; ctx.fillRect(Math.round(sx - u * 1.5), ay, u * 3, u); ctx.fillRect(Math.round(sx - u / 2), ay + u, u, u); }

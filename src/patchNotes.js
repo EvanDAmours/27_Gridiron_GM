@@ -2619,4 +2619,12 @@ export const PATCH_NOTES = [
   { v: "6.29", date: "2026-11-10", title: "Blockers face the defense", notes: [
     "Offensive linemen always face up the field into their man. Setting back into the pocket, or being driven back on a run, they give ground squared up instead of turning round to face their own end zone (they used to, about half the time). The same goes for a tight end or back staying in to block, and a receiver blocking on a run. A man running up the field to his block, like a pulling guard or a receiver going after a defensive back, still runs.",
   ] },
+  { v: "6.30", date: "2026-11-10", title: "Smoother movement on the field", notes: [
+    "No more sliding: players no longer glide across the field in a standing or blocking frame. A lineman releasing on a punt, a rusher who's beaten his blocker and a receiver hustling to his block all break into a run when they start running. Return blockers racing down the field beside their man run with him instead of holding a blocking pose at full speed.",
+    "No more running backwards: a player who turns round turns at once. Cornerbacks coming out of a backpedal, coverage men chasing a return back up the field and receivers turning up the field all face the way they run.",
+    "Field goals: the rush on a kick runs in, instead of sliding forward in a stance.",
+    "Quarterbacks on clubs with the classic sprite set turn and run back on their drop, then set up facing downfield, instead of sliding back in their stance. On every club, a quarterback on the move with the ball runs with it.",
+    "Players whose feet shuffle back and forth (a corner mirroring his man, a rusher bouncing off a block) hold one steady frame, and the picture keeps up with them better.",
+    "Kick coverage: men closing on the returner keep a body's width apart instead of piling onto the same spot.",
+  ] },
 ];

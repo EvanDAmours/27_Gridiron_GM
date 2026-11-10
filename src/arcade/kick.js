@@ -167,6 +167,8 @@ export function tickKick(S, dt) {
     const tx = ball.holder === "S0" ? ret.x - (ret.vx || 0) * 0.25 : f.to.x, ty = ball.holder === "S0" ? ret.y + (ret.vy || 0) * 0.25 + ((e.y > ret.y ? 1 : -1) * 0.6) : f.to.y + lane + (e.y - f.to.y - lane) * 0.35;
     move(e, tx + (S.arrived == null ? 0.6 : 0), ty, (e.top || 7) * (S.kind === "ko" ? 0.92 : 1.15) * (e.held > S.t ? 0.3 : 1));
   }
+  // nobody runs through a team-mate: men converging on the returner keep a body's width apart
+  if (returning) { const L = Object.values(ents).filter((e) => e.key !== "S0" && e.down <= 0); for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j]; if (a.side !== b.side) continue; const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy); if (d < 0.85 && d > 1e-6) { const k = (0.85 - d) * 0.5; a.x -= (dx / d) * k; a.y -= (dy / d) * k; b.x += (dx / d) * k; b.y += (dy / d) * k; } else if (d <= 1e-6) { a.y -= 0.4; b.y += 0.4; } } }
   if (S.userRet && S.kind === "punt" && ret && (S.ev?.tb || S.ev?.muff || S.ev?.retTD)) S.userRet = false; // (nothing to field: a touchback, or the engine's own big moment)
   if (S.userRet && S.kind === "punt" && ret) userReturn(S, dt);
   // the return itself: he carries it back up the field, weaving, until the coverage gets to him where the engine says it ended
