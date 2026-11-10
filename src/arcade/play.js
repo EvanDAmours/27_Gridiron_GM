@@ -831,7 +831,7 @@ function fumbles(S, c, d, hitSp) {
   const sp = Math.max(1, hyp(c.vx, c.vy)), a = Math.atan2(c.vy, c.vx) + (rnd(S) - 0.5) * 2.2, v = 3 + rnd(S) * 4;
   S.ball.holder = null; S.ball.flight = null; S.ball.h = 0.6; S.ball.vh = 3; S.ball.vx = Math.cos(a) * v * Math.min(1, sp / 4 + 0.4); S.ball.vy = Math.sin(a) * v;
   S.fumbler = c.key; S.fumAt = S.t; S.phase = "loose"; c.mode = "pursue"; c.down = 0.5; d.down = 0.45;
-  S.log.push(`${c.p.name} fumbles`); S.flash.push({ key: d.key, text: "FORCED FUMBLE", until: S.t + 1.4 });
+  S.log.push(`${c.p.name} fumbles`); // (the field shows FUMBLE! over it: no second label on the tackler)
   return true;
 }
 // A loose ball: it bounces and rolls; everybody near it goes after it, and the first man on it has it

@@ -132,8 +132,10 @@ export function tickKick(S, dt) {
   S.t += dt;
   const { ball, ents } = S, f = ball.flight, ret = ents.S0, returning = S.kind === "punt" || S.kind === "ko";
   // the snap and the rush: the line holds, the edge men come, the returner waits (a kickoff has no snap)
-  if (S.kind !== "ko") for (const e of Object.values(ents)) if (e.side === "def" && e.key !== "S0" && S.t > 0.25 && S.t < (f?.t0 ?? 1)) { e.x += (e.key.startsWith("CB") || e.key.startsWith("LB") ? 5 : 1.5) * dt * -1; }
-  const move = (e, tx, ty, v) => { const d = Math.hypot(tx - e.x, ty - e.y); if (d > 0.15) { const k = Math.min(d, v * dt) / d; e.vx = ((tx - e.x) * k) / dt; e.vy = ((ty - e.y) * k) / dt; e.x += (tx - e.x) * k; e.y += (ty - e.y) * k; } else { e.vx = 0; e.vy = 0; } };
+  if (S.kind !== "ko") for (const e of Object.values(ents)) if (e.side === "def" && e.key !== "S0" && S.t > 0.25 && S.t < (f?.t0 ?? 1)) { const v = e.key.startsWith("CB") || e.key.startsWith("LB") ? 5 : 1.5; e.x -= v * dt; e.vx += (-v - e.vx) * Math.min(1, dt * 9); e.vy *= 0.8; } // (with his speed, so he's drawn coming, not sliding in a stance)
+  // (his speed, as the picture reads it, is smoothed over about a tenth of a second: a blocker riding a man
+  // who moves in fits and starts is a man shuffling, not one flicking between a sprint and a standstill)
+  const move = (e, tx, ty, v) => { const d = Math.hypot(tx - e.x, ty - e.y); let vx = 0, vy = 0; if (d > 0.15) { const k = Math.min(d, v * dt) / d; vx = ((tx - e.x) * k) / dt; vy = ((ty - e.y) * k) / dt; e.x += (tx - e.x) * k; e.y += (ty - e.y) * k; } const a = Math.min(1, dt * 9); e.vx += (vx - e.vx) * a; e.vy += (vy - e.vy) * a; };
   // a kickoff: the kicker's run-up to the tee, the coverage starting with him
   if (S.kind === "ko" && f && S.t < f.t0) { const K = ents.K; if (K) move(K, f.from.x - 0.6, 0, Math.max(0.5, (f.from.x - 0.6 - K.x) / Math.max(0.05, f.t0 - S.t))); for (const e of Object.values(ents)) if (e.side === "off" && e.key !== "K" && S.t > f.t0 - 0.35) move(e, e.x + 3, e.y, 5); }
   if (f && S.t >= f.t0) {
