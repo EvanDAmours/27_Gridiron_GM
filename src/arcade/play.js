@@ -452,7 +452,7 @@ export function tick(S, dt) {
       if (S.t < S.shed[k]) steer(d, o.x + (isPass ? 1.0 : 1.1), o.y + (d.y > o.y ? 0.5 : -0.5), dt, 0.8);
       else { d.mode = "free"; if (isPass && ball.holder === "QB" && d.move) S.flash.push({ key: k, text: d.move, until: S.t + 1.0 }); }
     }
-    if (d.mode === "free" && k === S.userDef && S.uIn && !over) { steer(d, S.uIn.x, S.uIn.y, dt, 1); continue; } // (the man you're playing: where you send him)
+    if (d.mode === "free" && k === S.userDef && S.uIn && !over) { userSteer(S, d, dt); continue; } // (the man you're playing: where you send him)
     if (d.mode === "free") { if (carrier && !over) steer(d, ...xy(intercept(d, carrier)), dt, clamp(1 + K.edge(K.pursuit(d.p)) * 0.002, 0.95, 1.04)); else brake(d, dt); }
   }
   // the pass rush gets home: a sack
@@ -468,7 +468,7 @@ export function tick(S, dt) {
     const d = ents[k]; if (!d || d.down > 0 || d === carrier || d.heldUntil > S.t) continue;
     const mine = Object.keys(S.cover).find((r) => S.cover[r] === k);
     if (over) { brake(d, dt); continue; }
-    if (k === S.userDef && S.uIn) { steer(d, S.uIn.x, S.uIn.y, dt, 1); continue; } // (the man you're playing: where you send him; let go and he plays his assignment)
+    if (k === S.userDef && S.uIn) { userSteer(S, d, dt); continue; } // (the man you're playing: where you send him; let go and he plays his assignment)
     if (d.mode === "blitz") { if (S.t > 0.12) { const tgt = carrier || qb; steer(d, ...xy(intercept(d, tgt)), dt, 1); } continue; } // straight at the quarterback
     if (d.mode === "box" && !ball.flight) { if (S.t > 0.45) { const tgt = carrier || ents.RB; steer(d, ...xy(intercept(d, tgt)), dt, 0.95); } else steer(d, S.los + 4, 5, dt, 0.8); continue; }
     if (ball.flight) {
@@ -565,6 +565,12 @@ export function tick(S, dt) {
     const cutting = S.jukeUntil > S.t;
     if (S.jukeTo != null && !cutting) { if (S.steer != null) S.steer += S.jukeTo - (S.jukeFrom ?? S.jukeTo); S.jukeTo = null; }
     const wantY = cutting ? S.jukeTo : S.steer != null ? S.steer : S.lane != null && !isPass ? S.lane : carrier.y;
+    // the man you're playing: get to him and he's down (a wider reach than the computer's men, and only the
+    // odd broken tackle, the runner's elusiveness and power against his tackling)
+    { const u = S.userDef && ents[S.userDef]; if (u && u.down <= 0 && !(u.heldUntil > S.t)) { const du = hyp(u.x - carrier.x, u.y - carrier.y);
+      if (du < 1.55) { const el = Math.max(K.power(carrier.p), K.afterCatch(carrier.p)), tk = K.tackling(u.p);
+        if (!u.brokenBy && rnd(S) < clamp((0.05 + (el - tk) * 0.004) * (S.catchAt != null ? CAL.yacCatch * 1.6 : CAL.yac), 0.02, 0.18)) { u.brokenBy = true; u.down = 0.45; S.broke++; S.stagger = S.t + 0.35; S.log.push(`${u.p.name} misses`); S.flash.push({ key: u.key, text: "BROKEN TACKLE", until: S.t + 0.8 }); }
+        else { S.diveTackle = du > 1.1; tackle(S, u); return true; } } } }
     const [d, dd] = nearestDef(S, carrier.x, carrier.y);
     // a loose runner leans away from a tackler in his path when you aren't steering
     const lean = S.steer == null && d && dd < 4 && d.x > carrier.x - 0.5 ? (carrier.y > d.y ? 2 : -2) * clamp((K.vision(carrier.p) - 45) / 40, 0.3, 1.3) : 0;
@@ -845,7 +851,7 @@ function looseBall(S, dt) {
     if (e.down > 0) { brake(e, dt); continue; }
     if (e.heldUntil > S.t) { const b = ents[e.heldBy]; if (b) steer(e, b.x, b.y, dt, 0.4); continue; }
     const dd = hyp(e.x - ball.x, e.y - ball.y);
-    if (e.key === S.userDef && S.uIn) steer(e, S.uIn.x, S.uIn.y, dt, 1);
+    if (e.key === S.userDef && S.uIn) userSteer(S, e, dt);
     else if (dd < 16 || S.t - S.fumAt > 0.9) steer(e, ball.x + ball.vx * 0.2, ball.y + ball.vy * 0.2, dt, LINE.includes(e.key) || e.key.startsWith("DL") ? 0.85 : 1, true);
     else brake(e, dt);
     if (dd < 0.9 && ball.h < 1.2 && S.t - S.fumAt > 0.25) cands.push([e, dd]);
@@ -875,28 +881,57 @@ function recover(S, e, oob = false) {
   S.tackler = null; book(S, spot, "fall", 1.3);
 }
 
-// The man you're playing on defense makes a play: he dives at the ball carrier (a tackle if he's
-// close enough and wraps him up: his tackling against the runner's elusiveness and power), or, with
-// the ball in the air, he leaps for it. A miss puts him on the turf for a beat.
+// The man you're playing, where you send him (S.uIn: a spot, and k, how hard: a short drag jogs, a long
+// one sprints). He answers the stick quicker than the computer's men turn, and steered at the ball carrier
+// from close in he takes the angle that cuts him off rather than running at where he was.
+function userSteer(S, d, dt) {
+  const u = S.uIn, c = S.ball.holder && S.ents[S.ball.holder];
+  let tx = u.x, ty = u.y;
+  if (c && c.side === "off" && !S.ball.flight) {
+    const dd = hyp(c.x - d.x, c.y - d.y);
+    if (dd < 6 && dd > 0.01) {
+      const ix = tx - d.x, iy = ty - d.y, il = hyp(ix, iy) || 1;
+      if ((ix * (c.x - d.x) + iy * (c.y - d.y)) / (il * dd) > 0.3) { const I = intercept(d, c), w = clamp((6 - dd) / 3.5, 0, 1); tx += (I.x - tx) * w; ty += (I.y - ty) * w; }
+    }
+  }
+  const a0 = d.acc; d.acc *= 1.7; steer(d, tx, ty, dt, clamp(u.k ?? 1, 0.3, 1)); d.acc = a0;
+}
+
+// The man you're playing makes a play (a tap):
+// - locked up with a blocker (or a rusher still on his man): he fights to get off it, his shed (or pass
+//   rush) against the blocker, and comes free sooner if he wins;
+// - the ball in the air: he leaps for it (he's in on the catch if he's near where it comes down);
+// - the ball carrier within about four yards: he dives at him, homing in, and wraps him up more often the
+//   closer he is (his tackling against the runner's moves and power); a miss puts him down for a moment.
 export function lunge(S) {
   const d = S.userDef && S.ents[S.userDef];
-  if (!d || d.down > 0 || d.heldUntil > S.t || !["live", "carry"].includes(S.phase)) return false;
-  if (d.lungeAt != null && S.t - d.lungeAt < 0.9) return false;
+  if (!d || d.down > 0 || !["live", "carry"].includes(S.phase)) return false;
+  if (d.lungeAt != null && S.t - d.lungeAt < 0.55) return false;
   d.lungeAt = S.t;
+  const held = d.heldUntil > S.t, rushing = d.mode === "rush" && (S.shed?.[d.key] ?? 0) > S.t;
+  if (held || rushing) {
+    const b = held ? S.ents[d.heldBy] : S.ents[OL_VS[d.key]];
+    const mine = rushing && S.call.startsWith("pass") ? K.passRush(d.p) : K.skill(d.p, [["shedBlock", 0.6], ["runStop", 0.4], ["passRush", 0.3], ["str", 0.3]], 0.25);
+    const theirs = b ? (rushing && S.call.startsWith("pass") ? K.passBlock(b.p) : K.runBlock(b.p)) : 50;
+    const won = rnd(S) < clamp(0.42 + (mine - theirs) * 0.012, 0.15, 0.8);
+    if (held) d.heldUntil = won ? S.t : d.heldUntil - 0.1; else S.shed[d.key] = won ? S.t : S.shed[d.key] - 0.15;
+    S.flash.push({ key: d.key, text: won ? "SHED!" : "HELD UP", until: S.t + 0.6 });
+    return true;
+  }
   const c = S.ball.holder && S.ents[S.ball.holder];
   if (S.ball.flight) { const sp = hyp(d.vx, d.vy) || 1, k = Math.min(1.8, 1.2 / sp + 0.25); d.vx *= 1 + k * 0.3; d.vy *= 1 + k * 0.3; S.flash.push({ key: d.key, text: "LEAP", until: S.t + 0.6 }); return true; }
   if (!c || c.side !== "off") return false;
-  const dd = hyp(c.x - d.x, c.y - d.y);
-  if (dd < 2.8) {
-    if (c.key === "QB" && S.phase === "live") { if (rnd(S) < clamp(0.6 + K.edge(K.passRush(d.p)) * 0.008 - (dd > 1.8 ? 0.2 : 0), 0.25, 0.9)) { sack(S, d); return true; } }
+  const lead = { x: c.x + c.vx * 0.15, y: c.y + c.vy * 0.15 }, dd = hyp(lead.x - d.x, lead.y - d.y);
+  if (dd < 3.9) {
+    if (c.key === "QB" && S.phase === "live") { if (rnd(S) < clamp(0.7 + K.edge(K.passRush(d.p)) * 0.008 - Math.max(0, dd - 2) * 0.15, 0.3, 0.92)) { sack(S, d); return true; } }
     else {
       const el = Math.max(K.elusive(c.p), K.power(c.p)), tk = K.tackling(d.p);
-      if (!d.missed && rnd(S) < clamp(0.66 + (tk - el) * 0.008 - (dd > 1.8 ? 0.18 : 0) - (S.broke ? 0.05 : 0), 0.3, 0.92)) { S.diveTackle = true; d.x += (c.x - d.x) * 0.6; d.y += (c.y - d.y) * 0.6; tackle(S, d); return true; }
+      if (rnd(S) < clamp(0.87 + (tk - el) * 0.005 - Math.max(0, dd - 2.2) * 0.12 - (S.broke ? 0.03 : 0), 0.4, 0.96)) { S.diveTackle = true; d.x += (c.x - d.x) * 0.7; d.y += (c.y - d.y) * 0.7; tackle(S, d); return true; }
     }
   }
-  // the dive comes up empty: he's on the ground
-  const n = dd || 1, reach = Math.min(dd, 2); d.x += ((c.x - d.x) / n) * reach; d.y += ((c.y - d.y) / n) * reach; d.vx = d.vy = 0; d.down = 0.9; d.missed = true;
-  S.flash.push({ key: d.key, text: "MISSED", until: S.t + 0.7 });
+  // the dive comes up empty: he lays out toward him and is on the turf for a moment
+  const n = dd || 1, reach = Math.min(dd, 2.5); d.x += ((lead.x - d.x) / n) * reach; d.y += ((lead.y - d.y) / n) * reach; d.vx = d.vy = 0; d.down = 0.45; d.missed = true;
+  S.flash.push({ key: d.key, text: "MISSED", until: S.t + 0.6 });
   return true;
 }
 function outOfBounds(S) { const c = S.ents[S.ball.holder]; S.oob = true; S.log.push("out of bounds"); book(S, Math.round(c.x - S.los), "fall"); }

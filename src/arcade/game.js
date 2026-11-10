@@ -441,7 +441,9 @@ export class ArcadeGame {
       // HE's going (back up the field), all the way to the tackle (the kick's flight is over by then)
       const ret = (P.kind === "punt" || P.kind === "ko") && P.ball.holder === "S0";
       const want = kickView ?? (ret ? P.ball.x - (P.arrived != null ? 0 : (cam.W * 0.16) / cam.s) : f ? (P.ball.x + f.to.x) / 2 + 2 : qbHas ? holdX(cam, P) : P.ball.x + (over ? 0 : cam.lead));
-      cam.camX += (want - cam.camX) * Math.min(1, dt * (ret ? 6 : f ? 3.5 : 5));
+      // (your defense: the picture keeps the man you're playing in it, along with the ball)
+      let want_ = want; { const u = this.auto?.userD && !P.kind && P.userDef && P.ents[P.userDef]; if (u) { const lo = u.x - (cam.W * 0.58) / cam.s + 4, hi = u.x + (cam.W * 0.42) / cam.s - 4; if (lo < hi) want_ = Math.max(lo, Math.min(hi, want)); } }
+      cam.camX += (want_ - cam.camX) * Math.min(1, dt * (ret ? 6 : f ? 3.5 : 5));
       cam.camX = Math.max(-21 + (cam.W * 0.42) / cam.s, Math.min(121 - (cam.W * 0.58) / cam.s, cam.camX)); // never far past the end zones: the goalposts and the crowd behind them stay in the picture
       if (!going && P.phase === "done" && m === "play") {
         let ev = P.result || P.ev;
@@ -551,7 +553,7 @@ export class ArcadeGame {
       const cy_ = hintY - px * 4 - (this.mobile ? Math.max(px * 19, 48) : px * 11), sim = (this.chips.simDrive = drawChip(ctx, cam, cam.W - px * 3, cy_, this.simAfter ? "SIMMING..." : this.mobile ? "SIM DRIVE" : "SIM DRIVE (N)", { align: "right", big: this.mobile, color: "#7fe3ff", active: !!this.simAfter }));
       if (P.phase === "presnap" && (this.g?.to?.[this.mySide()] ?? 0) > 0) this.chips.timeout = drawChip(ctx, cam, sim.x - px * 2, cy_, `TIMEOUT (${this.g.to[this.mySide()]})`, { align: "right", big: this.mobile, color: "#ffd166" });
       const d = P.userDef && P.ents[P.userDef], nm = d ? `${String(d.p?.name || "").split(" ").pop().toUpperCase()} ${d.p?.pos || ""}` : "";
-      drawHint(ctx, cam, P.phase === "presnap" ? (d ? (this.mobile ? `YOU: ${nm} - TAP HIM TO LET GO, ANOTHER TO SWITCH` : `YOU: ${nm} - CLICK HIM TO LET GO, ANOTHER (OR TAB) TO SWITCH`) : this.mobile ? "TAP A DEFENDER TO PLAY HIM" : "CLICK A DEFENDER (OR TAB) TO PLAY HIM") : !d ? "" : this.mobile ? "DRAG TO MOVE HIM - TAP TO DIVE OR LEAP - LET GO: HE PLAYS HIS SPOT" : "HOLD THE MOUSE OR WASD TO MOVE HIM - SPACE DIVES OR LEAPS", hintY);
+      drawHint(ctx, cam, P.phase === "presnap" ? (d ? (this.mobile ? `YOU: ${nm} - TAP HIM TO LET GO, ANOTHER TO SWITCH` : `YOU: ${nm} - CLICK HIM TO LET GO, ANOTHER (OR TAB) TO SWITCH`) : this.mobile ? "TAP A DEFENDER TO PLAY HIM" : "CLICK A DEFENDER (OR TAB) TO PLAY HIM") : !d ? "" : this.mobile ? "DRAG TO MOVE HIM (FURTHER: FASTER) - TAP: TACKLE, LEAP OR SHED A BLOCK" : "HOLD THE MOUSE OR WASD TO MOVE HIM - SPACE: TACKLE, LEAP OR SHED A BLOCK", hintY);
     }
     else if (m === "play" && P && !this.auto) {
       const toGo = st.toGo >= 100 - st.yard ? "GOAL" : st.toGo;
@@ -724,7 +726,7 @@ export class ArcadeGame {
     if (this.kickDrag && this.kickDrag.id === e.pointerId) { const d = this.kickDrag; this.kickDrag = null; if (P?.kind && P.phase === "presnap") this.releaseKick(P, d); return; }
     if (e.pointerType === "mouse") { this.mouseHeld = false; return; }
     const t = this.touch; if (!t || t.id !== e.pointerId) return; this.touch = null; if (!P) return;
-    if (t.def) { if (!t.picked && t.moved < 14 && performance.now() - t.at < 320 && P.phase !== "presnap") lunge(P); P.uIn = null; return; } // (a quick tap: dive at him, or leap for the ball)
+    if (t.def) { if (!t.picked && t.moved < 18 && performance.now() - t.at < 380 && P.phase !== "presnap") lunge(P); P.uIn = null; return; } // (a quick tap: dive at him, or leap for the ball)
     const passing = P.phase === "live" && P.ball.holder === "QB" && P.call?.startsWith("pass");
     if (passing && t.moved > 12) { // the slingshot: let go to throw (pulled back to where you started: cancelled)
       // (the aim from a moment before the finger lifted: lifting it nudges the pull)
@@ -764,12 +766,13 @@ export class ArcadeGame {
     const d = P.userDef && P.ents[P.userDef]; P.uIn = null;
     if (!d || P.phase === "presnap" || d.down > 0) return;
     const cam = this.cam, K_ = this.keys, [sx, sy] = cam.toScreen(d.x, d.y);
-    const dirTo = (dx, dy) => { const a = cam.toField(sx, sy), b = cam.toField(sx + dx, sy + dy), fx = b.x - a.x, fy = b.y - a.y, n = Math.hypot(fx, fy) || 1; return { x: d.x + (fx / n) * 10, y: clamp(d.y + (fy / n) * 10, -27, 27) }; };
+    // (k: how hard he goes; a thumbstick: a short drag jogs, a longer one sprints)
+    const dirTo = (dx, dy, k = 1) => { const a = cam.toField(sx, sy), b = cam.toField(sx + dx, sy + dy), fx = b.x - a.x, fy = b.y - a.y, n = Math.hypot(fx, fy) || 1; return { x: d.x + (fx / n) * 10, y: clamp(d.y + (fy / n) * 10, -27, 27), k }; };
     const kx = (K_.has("d") || K_.has("arrowright") ? 1 : 0) - (K_.has("a") || K_.has("arrowleft") ? 1 : 0), ky = (K_.has("s") || K_.has("arrowdown") ? 1 : 0) - (K_.has("w") || K_.has("arrowup") ? 1 : 0);
     if (kx || ky) { P.uIn = dirTo(kx * 40, ky * 40 * SQUASH_); return; }
     const t = this.touch;
-    if (t?.def && t.cx != null) { const dx = t.cx - t.px, dy = t.cy - t.py; if (Math.hypot(dx, dy) > 12) P.uIn = dirTo(dx, dy); else P.uIn = { x: d.x, y: d.y }; return; } // (finger down but still: he stands)
-    if (this.mouseHeld && this.mouse) { const f = cam.toField(this.mouse.px, this.mouse.py); P.uIn = { x: f.x, y: clamp(f.y, -27, 27) }; }
+    if (t?.def && t.cx != null) { const dx = t.cx - t.px, dy = t.cy - t.py, L = Math.hypot(dx, dy), dead = Math.max(9, Math.min(cam.W, cam.H) * 0.02); if (L > dead) P.uIn = dirTo(dx, dy, clamp((L - dead) / Math.max(30, Math.min(cam.W, cam.H) * 0.12), 0.35, 1)); else P.uIn = { x: d.x, y: d.y, k: 1 }; return; } // (finger down but still: he stands)
+    if (this.mouseHeld && this.mouse) { const f = cam.toField(this.mouse.px, this.mouse.py); P.uIn = { x: f.x, y: clamp(f.y, -27, 27), k: 1 }; }
   }
   // touch: a tap on (or near) a receiver throws to him, led to where he'll be when it gets there; a tap
   // on open grass throws to that spot. (Fingers are wide and phones are small: "near" is generous.)

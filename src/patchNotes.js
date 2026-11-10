@@ -2636,4 +2636,11 @@ export const PATCH_NOTES = [
   { v: "6.32", date: "2026-11-10", title: "AFC East animation", notes: [
     "The Bills, Dolphins, Patriots and Jets get the full animation set in the arcade, home and away. That's 23 clubs now.",
   ] },
+  { v: "6.33", date: "2026-11-10", title: "Playing defense, reworked", notes: [
+    "Steering your defender: the drag is a thumbstick. A short drag jogs and a longer one sprints, so you can shade a receiver or close at full speed. He also turns and changes direction much quicker than before. Steering him at the ball carrier from close in, he takes the angle to cut him off instead of running at where the carrier was.",
+    "Tackling: reach the ball carrier and he goes down. Your man tackles from a little further than the computer's men and only now and then misses a tackle. A tap dives at him from up to about four yards, homing in on where he's going, and wraps him up most of the time (more often the closer you are, and the better your man tackles). A missed dive costs half as long on the turf, and you can dive again on the same play.",
+    "Blocks: tap while a blocker has your man to fight off the block. If his skill at getting off blocks beats the blocker's, he's free at once. As a pass rusher, tap to beat your man sooner with your pass rush against his pass blocking.",
+    "The camera keeps the man you're playing on screen along with the ball, even a safety 15 yards deep.",
+    "In testing, a player chasing the ball with a linebacker gives up about a yard less a play than before and makes the tackle twice as often; with a defensive lineman who fights off his blocks, about two yards less a play.",
+  ] },
 ];
