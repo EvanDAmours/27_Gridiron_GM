@@ -632,13 +632,16 @@ function scored(g, side, pts) {
 export const fgRange = (leg = 93, stretch = false) => Math.round(clamp(44 + (leg - 85) * 1.1, 48, 60) + (stretch ? 5 : 0));
 
 // Late with the game tied (or down 3 or less) and in comfortable range: play for the field goal.
-const forTheKick = (g, lead) => ((g.qtr === 4 && g.clock < 150) || (g.ot && g.down >= 2)) && lead <= 0 && lead >= -3 && 100 - g.yard + 17 <= 45;
+// The late-game windows (the two-minute drill, the last five minutes...) are a real game's; in a game with
+// short quarters they shrink with the quarter (to half at the least), so a five-minute quarter isn't mostly "late"
+const W = (g, secs) => secs * Math.max(0.5, Math.min(1, (g.qLen || 900) / 900));
+const forTheKick = (g, lead) => ((g.qtr === 4 && g.clock < W(g, 150)) || (g.ot && g.down >= 2)) && lead <= 0 && lead >= -3 && 100 - g.yard + 17 <= 45;
 // Play style from the situation (or the user's call).
 function chooseCall(g, o, pers = "11") {
   const rand = g.rand, lead = g.score[g.poss] - g.score[other(g.poss)];
-  const late = g.qtr >= 4 && g.clock < 300, twoMin = (g.qtr === 2 || g.qtr === 4) && g.clock < 120;
+  const late = g.qtr >= 4 && g.clock < W(g, 300), twoMin = (g.qtr === 2 || g.qtr === 4) && g.clock < W(g, 120);
   let pass = o.passLean;
-  if (g.down === 3) pass = g.toGo >= 7 ? 0.86 : g.toGo <= 2 ? 0.42 : 0.68;
+  if (g.down >= 3) pass = g.toGo >= 11 ? 0.96 : g.toGo >= 7 ? 0.92 : g.toGo <= 2 ? 0.42 : 0.7;
   else if (g.down === 2 && g.toGo >= 8) pass += 0.08;
   else if (g.down === 1) pass -= 0.08;
   // the grouping tips it: two tight ends and a fullback run more, four wide throws more
@@ -653,9 +656,12 @@ function chooseCall(g, o, pers = "11") {
   // Tied or down three or less late, already in field-goal range: run, centre it, kick at the end.
   if (forTheKick(g, lead)) return "run";
   if ((late && lead < 0) || twoMin) pass = Math.max(pass, 0.8);
-  if ((late && lead > 0) || (g.qtr >= 4 && lead >= 17)) pass = Math.min(pass, 0.3);
+  // Protecting a lead late, a team leans on the run, but it still throws to convert a long third down
+  if ((late && lead > 0) || (g.qtr >= 4 && lead >= 17)) pass = g.down >= 3 && g.toGo >= 7 ? Math.max(Math.min(pass, 0.75), 0.6) : Math.min(pass, 0.3);
   // Ahead in the last two minutes: run the clock (only a long third down is worth a throw).
-  if (g.qtr === 4 && !g.ot && g.clock <= 120 && lead > 0) pass = g.down === 3 && g.toGo >= 5 ? 0.45 : 0.08;
+  if (g.qtr === 4 && !g.ot && g.clock <= W(g, 120) && lead > 0) pass = g.down === 3 && g.toGo >= 5 ? 0.45 : 0.08;
+  // Third (or fourth) and long otherwise: nobody runs it into a wall; the odd draw at most
+  else if (g.down >= 3 && g.toGo >= 7 && !(g.qtr >= 4 && lead >= 17)) pass = Math.max(pass, g.toGo >= 11 ? 0.95 : 0.9);
   return rand() < pass ? "pass" : "run";
 }
 
@@ -723,7 +729,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   let gk = null; // what the grades need to know about this snap (gradeBook)
   const st = g.stats[off];
   const lead = g.score[off] - g.score[def];
-  const hurry = g.hurryUp === off || ((g.qtr === 2 || g.qtr === 4) && g.clock < 120) || (g.qtr === 4 && g.clock < 300 && lead < 0) || (g.qtr === 4 && lead <= -9) || (g.ot && g.clock < 150 && lead <= 0);
+  const hurry = g.hurryUp === off || ((g.qtr === 2 || g.qtr === 4) && g.clock < W(g, 120)) || (g.qtr === 4 && g.clock < W(g, 300) && lead < 0) || (g.qtr === 4 && lead <= -9) || (g.ot && g.clock < W(g, 150) && lead <= 0);
   const fgDist = 100 - g.yard + 17;
   const before = { yard: g.yard, down: g.down, toGo: g.toGo, qtr: g.qtr, clock: g.clock, poss: off };
   const ev = { ...before, yards: 0, type: "", text: "", td: false, turnover: false, score: 0, pers, pkg };
@@ -776,7 +782,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       // (rated under ~72) ever gambles there, and rarely.
       const kickToLead = lateGame && lead <= 0 && lead >= -3 && fgDist <= longFG;
       const gamble = Math.max(0, 72 - (o.hcR ?? 70)) * 0.01;
-      const protecting = g.qtr >= 4 && !g.ot && g.clock < 300 && lead > 0 && g.yard < 50;
+      const protecting = g.qtr >= 4 && !g.ot && g.clock < W(g, 300) && lead > 0 && g.yard < 50;
       if (call) decision = null; // the user chose to go for it
       else if (needTD || (g.qtr === 4 && g.clock < 240 && lead < 0 && fgDist > longFG)) decision = null;
       else if (kickToLead) decision = rand() < gamble ? null : "fg";
@@ -1210,9 +1216,9 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   if (!clockStops) {
     // Timeouts: a team chasing points late stops the clock on its own drive; a defense that's behind
     // late stops it to get the ball back. (Three a half, two in overtime.)
-    const endHalf = (g.qtr === 2 || g.qtr === 4 || g.ot) && g.clock <= 120;
+    const endHalf = (g.qtr === 2 || g.qtr === 4 || g.ot) && g.clock <= W(g, 120);
     const offWants = endHalf && (g.qtr === 2 ? g.yard >= 50 : lead <= 0) && g.clock - secs > 0;
-    const defWants = (g.qtr === 4 || g.ot) && g.clock <= 180 && lead > 0 && lead <= 16 && g.clock - secs > 0;
+    const defWants = (g.qtr === 4 || g.ot) && g.clock <= W(g, 180) && lead > 0 && lead <= 16 && g.clock - secs > 0;
     const who = offWants && (g.to?.[off] ?? 0) > 0 && g.userClock !== off ? off : defWants && (g.to?.[def] ?? 0) > 0 && g.userClock !== def ? def : null; // (a side you're playing: your timeouts are yours to call)
     if (who) { g.to[who]--; secs = 4; ev.text += ` Timeout, ${sideName(g, who)}.`; ev.timeout = who; }
   }
@@ -1222,7 +1228,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   if (g.running) g.lastRun = { before: clk0, secs }; // (the clock ran on after the play: a timeout called now gets most of it back)
   return ev;
 }
-const late = (g) => g.qtr === 4 && g.clock < 300;
+const late = (g) => g.qtr === 4 && g.clock < W(g, 300);
 // Penalty names for the play-by-play, and half the distance to the goal when a full walk-off
 // would go past it (yard: the offense's yard line; returns the yards moved back).
 const PEN_LABEL = { false_start: "False start", formation: "Illegal formation", delay: "Delay of game", offside: "Offside", holding: "Holding", opi: "Offensive pass interference", block_back: "Illegal block in the back", def_holding: "Defensive holding", dpi: "Pass interference", illegal_contact: "Illegal contact", roughing: "Roughing the passer", unr: "Unnecessary roughness", facemask: "Face mask" };

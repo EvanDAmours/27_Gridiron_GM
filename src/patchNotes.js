@@ -2646,4 +2646,10 @@ export const PATCH_NOTES = [
   { v: "6.34", date: "2026-11-10", title: "Let the computer play your defense", notes: [
     "A PLAY D button on the other team's snaps, beside SIM DRIVE (and in the pause menu): turn it off and the computer plays your whole defense, the way it does on every other snap. Taps on the field do nothing then; TIMEOUT and SIM DRIVE still work. Turn it back on to play a defender again (the man you picked last). It's remembered from game to game.",
   ] },
+  { v: "6.35", date: "2026-11-11", title: "Smarter play calling, faster games, tighter coverage", notes: [
+    "Computer play calling: no more running on third and long for no reason. Third and 7 or more is a pass about 90% of the time, and third and 11 or more about 95% (it was about 80%). The odd draw remains, and a team protecting a lead late still leans on the run. In testing, runs on third and long dropped from about 20% to 9%, and the overall run/pass mix stays NFL-like (about 42% runs).",
+    "Late-game play calling fits the quarter length: the two-minute drill, the last five minutes and the end-of-half timeouts shrink with shorter quarters (to half their length at most). A 5-minute quarter is no longer mostly 'two-minute drill', so teams don't throw nearly every down.",
+    "Games keep moving: the result card after a play goes away by itself after about a second (a little longer for big plays, touchdowns and flags), with no tap needed. A tap still skips it.",
+    "Tighter short coverage: underneath, defenders react quicker to the receiver they're covering. On a crossing route the defender takes the angle that cuts the receiver off. A defender drives on a receiver who has stopped (a hitch, a stick, a curl), and on a short throw the man covering breaks on the ball as soon as he reads it. A short throw now counts as contested with a defender within two yards. In testing, hitches went from about 90% completed to 76%, sticks from 87% to 76%, spot routes from 84% to 71%, and passing overall from about 70% to 66%.",
+  ] },
 ];

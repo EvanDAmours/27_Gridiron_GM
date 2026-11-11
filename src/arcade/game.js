@@ -262,7 +262,7 @@ export class ArcadeGame {
     this.auto = { call: CONCEPTS[c]?.cat || c, state: autoState(), snapAt: this.time + (userD ? 2.4 : 1.5) / this.speed, userD };
   }
   // a play the engine ran without the field (a kickoff, a punt, a field goal, a kneel): its result
-  showEngine(ev) { this.S = null; this.banner = ev ? withFlag({ engine: true, wait: !this.live?.watch, title: resultTitle(ev), text: ev.text || "", sub: [whyNote(ev), ev.note ? String(ev.note).toUpperCase() : null].filter(Boolean).join(" - ") || null, at: performance.now(), accent: ev.td || ev.type === "fg" ? "#ffd166" : "#fff" }, ev) : null; this.mode = "result"; this.refresh(); }
+  showEngine(ev) { this.S = null; this.banner = ev ? withFlag({ engine: true, wait: false, title: resultTitle(ev), text: ev.text || "", sub: [whyNote(ev), ev.note ? String(ev.note).toUpperCase() : null].filter(Boolean).join(" - ") || null, at: performance.now(), accent: ev.td || ev.type === "fg" ? "#ffd166" : "#fff" }, ev) : null; this.mode = "result"; this.refresh(); }
   // the app needs the game (Finish game, Sim to the end of the quarter): drop the play on the field
   // (it hasn't been booked) and hand the game back the real way round; resume() picks it up again
   release() { if (this.two) { restore(this.g, this.two.snap); this.two = null; } this.S = null; this.auto = null; this.replay = null; this.pendingReplay = null; this.rec = null; this.unflip(); if (this.g) { this.g.userClock = null; this.g.hurryUp = null; } this.held = true; this.mode = "idle"; this.refresh(); }
@@ -451,7 +451,7 @@ export class ArcadeGame {
         let ev = P.result || P.ev;
         // a two-point try was played on a scratch copy of the game from the 2: put the game back and book the try
         if (this.two) { const good = !!ev?.td; restore(this.g, this.two.snap); this.two = null; ev = bookPat(this.g, true, good); P.text = ev?.text; P.pick = null; this.refresh(); }
-        this.banner = withFlag({ wait: !this.live?.watch, title: resultTitle(ev), text: P.text || ev?.text || "", sub: [P.fumNote || whyNote(ev), ev?.note ? String(ev.note).toUpperCase() : P.kind ? kickNote(P) : P.fumNote ? null : P.pick ? pickNote(P.pick) : null].filter(Boolean).join(" - ") || null, at: now, accent: ev?.td || ev?.type === "fg" ? "#ffd166" : ev?.turnover || ev?.type === "int" || ev?.type === "fumble" ? "#ff8a7a" : ev?.firstDown ? "#ffd166" : "#fff" }, ev);
+        this.banner = withFlag({ wait: false, title: resultTitle(ev), text: P.text || ev?.text || "", sub: [P.fumNote || whyNote(ev), ev?.note ? String(ev.note).toUpperCase() : P.kind ? kickNote(P) : P.fumNote ? null : P.pick ? pickNote(P.pick) : null].filter(Boolean).join(" - ") || null, at: now, accent: ev?.td || ev?.type === "fg" ? "#ffd166" : ev?.turnover || ev?.type === "int" || ev?.type === "fumble" ? "#ff8a7a" : ev?.firstDown ? "#ffd166" : "#fff" }, ev);
         this.mode = "result"; this.refresh();
         // saved the moment it's booked, so leaving now can't take the play back
         if (this.onPlay && !this.two) try { this.onPlay(this.g); } catch { /* best effort */ }
@@ -460,7 +460,7 @@ export class ArcadeGame {
       }
     }
     if (m === "opp") { const f = this.feed; if (now - f.at > 600 && f.shown < f.list.length) { f.shown++; f.at = now; if (f.list[f.shown - 1]?.td) { sfx.turnover(); this.fx.hit(0.6); } } else if (f.shown >= f.list.length && now - f.at > 1100) this.advance(); }
-    if ((m === "result") && this.banner && (!this.banner.wait || this.live?.watch || this.simAfter) && now - this.banner.at > (this.banner.stages ? this.banner.stages[0].dur * 1000 + 2600 : /TOUCHDOWN/.test(this.banner.title) ? 3400 : this.live ? 1300 / this.speed : 1700)) { if (this.pendingReplay) this.startReplay(); else this.advance(); }
+    if ((m === "result") && this.banner && (!this.banner.wait || this.live?.watch || this.simAfter) && now - this.banner.at > (this.banner.stages ? this.banner.stages[0].dur * 1000 + 2600 : /TOUCHDOWN/.test(this.banner.title) ? 3400 : /INTERCEPT|FUMBLE|SACK|FIELD GOAL|NO GOOD|TWO POINTS|SAFETY/.test(this.banner.title || "") ? 2200 / (this.speed || 1) : 1300 / (this.speed || 1))) { if (this.pendingReplay) this.startReplay(); else this.advance(); }
   }
 
   // held keys and the pointer, every frame: the runner's steering, the mouse aim, the kick meter

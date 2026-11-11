@@ -476,6 +476,8 @@ export function tick(S, dt) {
       // a cover man stays in his coverage (same lag, same trail) until the ball is nearly down,
       // then lunges for it; anyone else close enough breaks on the spot once he's seen it
       const tgt = f.target && ents[f.target];
+      // a short throw to his man: once he's read it (his ball skills and instincts) he drives on the catch point
+      if (mine && mine === f.target && f.T < 0.95 && S.t - f.t0 > clamp(0.16 - K.edge(K.ballRead(d.p)) * 0.004, 0.04, 0.32)) { const a0 = d.acc; d.acc *= 1.4; steer(d, f.to.x, f.to.y, dt, 1.04, true); d.acc = a0; continue; }
       if (mine && ents[mine] && left > clamp(0.3 + K.edge(K.ballRead(d.p)) * 0.006 + (f.bullet ? 0 : 0.35), 0.12, 0.85)) { // (a lob he can read and play sooner) // a sharp reader breaks on it sooner
         const r = ents[mine], cov = K.coverMan(d.p), lag = (0.36 + Math.max(0, 90 - cov) * 0.012) * CAL.lag, kk = Math.min(1, dt / lag);
         d.rv ||= { vx: 0, vy: 0 }; d.rv.vx += (r.vx - d.rv.vx) * kk; d.rv.vy += (r.vy - d.rv.vy) * kk;
@@ -505,12 +507,17 @@ export function tick(S, dt) {
       // leverage: shaded inside, he's already there for a break inside (a slant, a dig) and a step
       // late on one outside (an out, a corner); that's what the outside routes are for
       const lever = r.vy * in_ > 1 ? 0.55 : r.vy * in_ < -1 ? 1.25 : 1;
-      const lag = (0.36 + Math.max(0, 90 - cov) * 0.012) * lever * CAL.lag, k = Math.min(1, dt / lag);
+      // underneath (inside nine yards of the line) he's squatting on the short stuff: he reacts quicker
+      const under = r.x - S.los < 9 ? 0.75 : 1;
+      const lag = (0.36 + Math.max(0, 90 - cov) * 0.012) * lever * CAL.lag * under, k = Math.min(1, dt / lag);
       d.rv ||= { vx: 0, vy: 0 }; d.rv.vx += (r.vx - d.rv.vx) * k; d.rv.vy += (r.vy - d.rv.vy) * k;
-      const lx = r.x - r.vx * 0.05, ly = r.y - r.vy * 0.05;
+      // a man running across the field (a drag, a swing, a shallow cross): he takes the angle that cuts him off,
+      // a step ahead of him, rather than chasing from behind
+      const crossing = Math.abs(r.vy) > Math.abs(r.vx) * 1.3 && Math.abs(r.vy) > 3;
+      const lx = r.x - r.vx * 0.05, ly = crossing ? r.y + r.vy * clamp(0.12 + (cov - 60) * 0.004, 0.06, 0.26) : r.y - r.vy * 0.05;
       const beaten = r.x > d.x + 1 ? 1 + (K.recovery(d.p) - 75) * 0.003 : 1; // beaten: his recovery speed closes it back up
       const sp_ = hyp(r.vx, r.vy), along = sp_ > 1 ? clamp(Math.abs(r.vx) / sp_, 0.35, 1) : 1; // (a man running across the field is played on his hip, not from behind)
-      mirror(d, r, lx - trail * along, ly + in_, dt, q * beaten, 0.9, d.rv);
+      mirror(d, r, lx - trail * along, ly + (crossing ? 0 : in_), dt, q * beaten, crossing ? 1.2 : r.mode === "settle" ? 1.8 : 0.9, d.rv); // (a man who's stopped: he drives on him)
     } else if (k === "S0" && S.dcall === "cover") { // two deep: he takes the other half
       let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.y < 4 && (!deep || e.x > deep.x)) deep = e; }
       const sr = safetyRange(d.p); steer(d, Math.min(106, Math.max(S.los + 13, deep ? deep.x + 2.5 + sr.cushion + Math.max(0, deep.vx) * sr.anticip : 0)), deep ? Math.min(-4, deep.y * 0.8) : -11, dt, sr.pace);
@@ -757,7 +764,8 @@ function arrive(S) {
   const trailing = tgt && d && ((d.x - tgt.x) * ux + (d.y - tgt.y) * uy) / un < -0.6;
   // a deep lob hangs: a cover man in phase (even a step behind) gets to play it
   const deepLob = !f.bullet && hyp(f.to.x - f.from.x, f.to.y - f.from.y) > 18;
-  const open = dD > (deepLob ? 2.5 : 1.6) + CAL.open || (trailing && !deepLob && dD > 0.9 + CAL.open);
+  const short = hyp(f.to.x - f.from.x, f.to.y - f.from.y) < 13; // (a short throw: a man within two yards is on him)
+  const open = dD > (deepLob ? 2.5 : short ? 1.9 : 1.6) + CAL.open || (trailing && !deepLob && dD > 0.9 + CAL.open);
   let want;
   if (tgt && dR <= catchR + reachR) {
     // on his hands: an open man catches it (the odd drop); a covered one wins it on his hands
