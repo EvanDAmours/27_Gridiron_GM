@@ -8,7 +8,7 @@ import ACTS2 from "../pixel/actionSprites2.json" with { type: "json" };
 import SCENE from "../pixel/sceneSprites.json" with { type: "json" };
 import { teamKey } from "../teamUniforms.js";
 import { pixText, pixWidth, pixShadow, FIELD_GL } from "./pixfont.js";
-import { HALF, ELIGIBLE, passPlan, BULLET_RANGE, BULLET_MAX, playDiagram } from "./play.js";
+import { HALF, ELIGIBLE, passPlan, BULLET_RANGE, BULLET_MAX, playDiagram, defDiagram } from "./play.js";
 
 const BASE = `${import.meta.env?.BASE_URL ?? "/"}sprites/`;
 const POSE = { QB: "qb", RB: "rb", WR: "wr", TE: "te", LT: "ol", LG: "ol", C: "ol", RG: "ol", RT: "ol", DL: "dl", LB: "lb", CB: "db", S: "db" };
@@ -1209,9 +1209,24 @@ export function drawPlayCards(ctx, cam, heading, items, color, { keys = false, h
     ctx.fillStyle = "#06080d"; ctx.fillRect(x, y + ch - px, cw, px); ctx.fillRect(x + cw - px, y, px, ch);
     // the diagram: a strip of turf with the line of scrimmage, the formation and the routes
     const dx = x + px * 3, dy = y + px * 3, dw = cw - px * 6, dh = ch - px * 13;
-    ctx.fillStyle = kind === "audible" ? "#3b2a12" : kind === "kick" ? "#2a5a2a" : "#2f6b2c"; ctx.fillRect(dx, dy, dw, dh);
+    ctx.fillStyle = kind === "audible" ? "#3b2a12" : kind === "kick" ? "#2a5a2a" : kind === "def" ? "#2a5a3a" : "#2f6b2c"; ctx.fillRect(dx, dy, dw, dh);
     // the audible: a fresh deal, two cards fanned with a turn arrow
-    if (kind === "audible") { const cx = dx + dw / 2, cy = dy + dh / 2, u = Math.max(1, Math.round(dh / 14)); ctx.fillStyle = "#ffd166"; ctx.fillRect(Math.round(cx - u * 5), Math.round(cy - u * 4), u * 5, u * 7); ctx.fillStyle = "#e8eef8"; ctx.fillRect(Math.round(cx), Math.round(cy - u * 3), u * 5, u * 7); ctx.fillStyle = "#3b2a12"; ctx.fillRect(Math.round(cx + u), Math.round(cy - u), u * 3, u); ctx.fillRect(Math.round(cx + u * 3), Math.round(cy - u * 2), u, u * 3); }
+    // a defensive call: the offense in faint dots, the line of scrimmage, the defense in red; zones (deep ones blue,
+    // underneath ones gold), blitzers with an arrow at the line, and a man line from each cover man in man coverage
+    if (kind === "def") {
+      ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip();
+      const D = defDiagram(key), sx = dw / 34, sy = dh / 54, ox = dx + dw * 0.3, oy = dy + dh / 2, P = (x, y) => [ox + x * sx, oy + y * sy];
+      ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(Math.round(ox), dy, 1, dh);
+      for (const [, [x0, y0]] of Object.entries(playDiagram("pass_quick").spots)) { const [a, b] = P(x0, y0); ctx.fillStyle = "rgba(255,255,255,.45)"; ctx.fillRect(Math.round(a - 1), Math.round(b - 1), 2, 2); }
+      if (D) {
+        for (const z of D.zones) { const [a, b] = P(z.x, z.y); ctx.fillStyle = z.deep ? "rgba(96,165,250,.32)" : "rgba(255,209,102,.3)"; ctx.beginPath(); ctx.ellipse(a, b, Math.max(3, (z.deep ? 4 : 2.6) * sx), Math.max(3, z.w * sy), 0, 0, Math.PI * 2); ctx.fill(); }
+        if (D.man) { ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 1; const sp = playDiagram("pass_quick").spots; for (const [r, k] of [["X", "CB0"], ["Z", "CB1"], ["SLOT", "CB2"], ["TE", "LB0"]]) { if (D.blitz.includes(k)) continue; const p0 = D.pos[k], q = sp[r]; if (!p0 || !q) continue; const [a, b] = P(p0.x, p0.y), [c, d_] = P(q[0], q[1]); ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d_); ctx.stroke(); } }
+        for (const [k, p0] of Object.entries(D.pos)) { const [a, b] = P(p0.x, p0.y); ctx.fillStyle = D.blitz.includes(k) ? "#ff8a5a" : "#ef4444"; ctx.fillRect(Math.round(a - 1.5), Math.round(b - 1.5), 3, 3); }
+        ctx.strokeStyle = "#ff8a5a"; ctx.lineWidth = Math.max(1, px * 0.6); for (const k of D.blitz) { const p0 = D.pos[k]; const [a, b] = P(p0.x, p0.y), [c, d_] = P(-2, p0.y * 0.4); ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d_); ctx.stroke(); }
+      } else { pixText(ctx, "?", dx + dw / 2, dy + dh / 2 - px * 3.5, px, "#ffd166", "center"); } // (the coordinator's call)
+      ctx.restore();
+    }
+    else if (kind === "audible") { const cx = dx + dw / 2, cy = dy + dh / 2, u = Math.max(1, Math.round(dh / 14)); ctx.fillStyle = "#ffd166"; ctx.fillRect(Math.round(cx - u * 5), Math.round(cy - u * 4), u * 5, u * 7); ctx.fillStyle = "#e8eef8"; ctx.fillRect(Math.round(cx), Math.round(cy - u * 3), u * 5, u * 7); ctx.fillStyle = "#3b2a12"; ctx.fillRect(Math.round(cx + u), Math.round(cy - u), u * 3, u); ctx.fillRect(Math.round(cx + u * 3), Math.round(cy - u * 2), u, u * 3); }
     else if (kind !== "kick") {
       ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip(); // long routes run off the card, not into the next one
       const sx = dw / 34, sy = dh / 52, ox = dx + dw * 0.32, oy = dy + dh / 2, P = (q) => [ox + q.x * sx, oy + q.y * sy];

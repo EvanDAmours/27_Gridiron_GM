@@ -157,6 +157,7 @@ export function setupPlay(g, L, call) {
     runSide: 1, // (a run goes to the strong side, the tight end's, unless the play is flipped)
     aim: null, steer: null, slideTo: null, text: "", ev: null, result: null, pick: null, shed: {}, pressureAt: 0, thrownAt: 0, endAt: 0, lane: 0, handoffAt: 0, tackler: null, broke: 0, log: [],
   };
+  S.base0 = Object.fromEntries(Object.entries(ents).filter(([, e]) => e.side === "def").map(([k, e]) => [k, [e.x, e.y]])); S.cover0 = { ...cover };
   presnapLook(S);
   return S;
 }
@@ -200,18 +201,75 @@ export function flipPlay(S) {
   return true;
 }
 
-// The defense's call shows before the snap: eight in the box (the strong safety walks down), two deep
-// (both safeties back and wide), or a linebacker creeping up to blitz. Read it and pick the play that beats it.
-function presnapLook(S) {
-  const { ents, los } = S, st = S.g.sides?.a?.dStyle || { blitz: 0.22, box: 0.2, cover: 0.2 }, u = rnd(S);
-  S.allOut = !!st.allOut;
-  S.dcall = u < st.blitz ? "blitz" : u < st.blitz + st.box ? "box" : u < st.blitz + st.box + st.cover ? "cover" : "base";
-  const near = Math.min(106, los + 4.5);
-  if (S.dcall === "box" && ents.S1) { ents.S1.x = near; ents.S1.y = 4.5; }
-  if (S.dcall === "cover") { if (ents.S0) { ents.S0.x = Math.min(106.5, los + 14); ents.S0.y = -11; } if (ents.S1) { ents.S1.x = Math.min(106.5, los + 14); ents.S1.y = 11; } }
-  if (S.dcall === "blitz") { const b = ents.LB1 || ents.LB0; if (b) b.x = Math.min(b.x, los + 2.8); }
+// ---------- the defense's call ----------
+// The schemes: man or zone, how many deep, who comes. dcall is the family the rest of the field reads (the
+// rush, the run fits); zones: each zone player's area (y across the field toward the offense's right, d
+// yards off the ball, w half its width; deep ones play over the top of the deepest man in it).
+export const DEF_SCHEMES = {
+  cover1: { name: "COVER 1", dcall: "base", desc: "MAN, ONE DEEP" },
+  cover2: { name: "COVER 2", dcall: "cover", desc: "ZONE, TWO DEEP", zone: { S0: { y: -11, d: 15, w: 13, deep: true }, S1: { y: 11, d: 15, w: 13, deep: true }, CB0: { y: -19, d: 3, w: 6 }, CB1: { y: 19, d: 3, w: 6 }, CB2: { y: -11, d: 9, w: 5 }, LB1: { y: -4, d: 9, w: 5 }, LB0: { y: 5, d: 9, w: 5 } } },
+  cover3: { name: "COVER 3", dcall: "base", desc: "ZONE, THREE DEEP", zone: { CB0: { y: -17, d: 13, w: 9, deep: true }, CB1: { y: 17, d: 13, w: 9, deep: true }, S0: { y: 0, d: 14, w: 8, deep: true }, CB2: { y: -15, d: 6, w: 7 }, S1: { y: 14, d: 6, w: 7 }, LB1: { y: -5, d: 9, w: 6 }, LB0: { y: 5, d: 9, w: 6 } } },
+  man2: { name: "2-MAN", dcall: "cover", desc: "MAN UNDER, TWO DEEP" },
+  blitz: { name: "BLITZ", dcall: "blitz", desc: "A LINEBACKER COMES" },
+  allout: { name: "ALL-OUT BLITZ", dcall: "blitz", allOut: true, desc: "BOTH LINEBACKERS COME" },
+  runstop: { name: "RUN STOP", dcall: "box", desc: "EIGHT IN THE BOX" },
+};
+export const SCHEME_KEYS = Object.keys(DEF_SCHEMES);
+// A defensive coordinator's call for the down and distance, leaning the way his team does (dStyle: how
+// often it blitzes, loads the box, sits back in coverage)
+export function pickScheme(S) {
+  const g = S.g, st = S.g.sides?.a?.dStyle || { blitz: 0.22, box: 0.2, cover: 0.2 }, toGo = g.toGo ?? 10, down = g.down ?? 1, goal = (g.yard ?? 50) >= 92;
+  let w = down >= 3 && toGo >= 7 ? { cover3: 30, cover2: 25, man2: 20, blitz: 13, allout: 7, cover1: 5 }
+    : toGo <= 2 || goal ? { runstop: 40, cover1: 25, blitz: 20, allout: 10, cover3: 5 }
+    : down === 1 ? { cover3: 30, cover1: 28, runstop: 15, cover2: 14, blitz: 10, man2: 3 }
+    : { cover1: 28, cover3: 25, blitz: 18, cover2: 14, runstop: 10, man2: 5 };
+  const lean = { blitz: st.blitz / 0.22, allout: (st.blitz / 0.22) * (st.allOut ? 2 : 1), runstop: st.box / 0.2, cover2: st.cover / 0.2, cover3: st.cover / 0.2, man2: st.cover / 0.2 };
+  w = Object.fromEntries(Object.entries(w).map(([k, v]) => [k, v * (lean[k] ?? 1)]));
+  let u = rnd(S) * Object.values(w).reduce((a, b) => a + b, 0);
+  for (const [k, v] of Object.entries(w)) { u -= v; if (u <= 0) return k; }
+  return "cover1";
+}
+// A defensive call's diagram for its play card: where the eleven line up (yards off the ball, across), its
+// zones (deep ones and the ones underneath), its blitzers, and whether the rest play man
+export function defDiagram(scheme) {
+  const sc = DEF_SCHEMES[scheme]; if (!sc) return null;
+  const pos = Object.fromEntries(Object.entries(DEF_SPOTS).map(([k, [x, y]]) => [k, { x, y }]));
+  const at = (k, x, y) => { if (pos[k]) { pos[k].x = x; if (y != null) pos[k].y = y; } };
+  if (scheme === "cover2") { at("CB0", 2.2, -18); at("CB1", 2.2, 18); at("S0", 14, -11); at("S1", 14, 11); }
+  if (scheme === "cover3") { at("CB0", 9, -17.2); at("CB1", 9, 17.2); at("S0", 14, 0); at("S1", 6, 9); }
+  if (scheme === "man2") { at("S0", 14, -11); at("S1", 14, 11); }
+  if (scheme === "runstop") at("S1", 4.5, 4.5);
+  const blitz = scheme === "allout" ? ["LB1", "LB0"] : scheme === "blitz" ? ["LB1"] : [];
+  for (const k of blitz) pos[k].x = 2.8;
+  const zones = Object.entries(sc.zone || {}).map(([k, z]) => ({ k, x: z.d, y: z.y, w: z.w, deep: !!z.deep }));
+  return { pos, zones, blitz, man: !sc.zone, name: sc.name, desc: sc.desc };
+}
+// Line the defense up in a scheme (from its base alignment, so a call can be changed before the snap)
+export function applyScheme(S, scheme) {
+  const sc = DEF_SCHEMES[scheme] || DEF_SCHEMES.cover1, { ents, los } = S, sg = S.flipped ? -1 : 1;
+  for (const [k, [x, y]] of Object.entries(S.base0 || {})) if (ents[k]) { ents[k].x = x; ents[k].y = y * sg; }
+  S.cover = { ...(S.cover0 || S.cover) };
+  for (const r of ["X", "Z", "SLOT"]) { const k = S.cover[r]; if (k && ents[k] && ents[r]) ents[k].y = ents[r].y + (ents[r].y < 0 ? 1 : -1) * 0.8; }
+  if (ents[S.cover.TE] && ents.TE && S.cover.TE.startsWith("LB")) ents[S.cover.TE].y = ents.TE.y;
+  S.scheme = scheme; S.dcall = sc.dcall; S.allOut = !!sc.allOut; S.zone = null;
+  const at = (k, x, y) => { const e = ents[k]; if (e) { e.x = Math.min(106.5, x); if (y != null) e.y = y * sg; } };
+  if (sc.zone) {
+    // zone: nobody has a man; everyone in the scheme drops to an area
+    S.zone = sc.zone;
+    for (const r of Object.keys(S.cover)) if (sc.zone[S.cover[r]]) delete S.cover[r];
+    if (scheme === "cover2") { for (const k of ["CB0", "CB1"]) { const e = ents[k]; if (e) e.x = los + 2.2; } at("S0", los + 14, -11); at("S1", los + 14, 11); } // (the corners up, rolled to the flats; two deep)
+    if (scheme === "cover3") { for (const k of ["CB0", "CB1"]) { const e = ents[k]; if (e) e.x = los + 9; } at("S0", los + 14, 0); at("S1", los + 6, 9); } // (the corners off, bailing to the deep thirds; the strong safety down)
+  }
+  if (scheme === "man2") { at("S0", los + 14, -11); at("S1", los + 14, 11); }
+  if (scheme === "runstop" && ents.S1) at("S1", los + 4.5, 4.5);
+  if (scheme === "blitz") { const b = ents.LB1 || ents.LB0; if (b) b.x = Math.min(b.x, los + 2.8); }
+  if (scheme === "allout") for (const k of ["LB1", "LB0"]) { const b = ents[k]; if (b) b.x = Math.min(b.x, los + 2.8); }
   S.box = boxCount(S);
 }
+// The defense's call shows before the snap: eight in the box (the strong safety walks down), two deep
+// (both safeties back and wide), corners off in a three-deep shell, or linebackers creeping up to blitz.
+// Read it and pick the play that beats it.
+function presnapLook(S) { applyScheme(S, pickScheme(S)); }
 // men in the box: inside the tight ends and within seven yards of the line
 export const boxCount = (S) => Object.values(S.ents).filter((e) => e.side === "def" && e.x - S.los < 7.5 && Math.abs(e.y) < 9.5).length;
 
@@ -289,6 +347,58 @@ export function snap(S) {
   }
 }
 
+// Man coverage on one receiver: on his hip, shaded inside; a better cover man stays tighter and reads the break
+// sooner (a zone defender with a man in his area plays him the same way)
+function manCover(S, d, r, dt) {
+  const cov = K.coverMan(d.p);
+  const q = clamp(0.96 + (cov - 78) * 0.003, 0.87, 1.02), trail = ((r.mode === "settle" ? 0.8 : 1.25) + clamp(85 - cov, 0, 30) * 0.025) * CAL.trail, in_ = r.y > 0 ? -0.7 : 0.7;
+  // he reads the receiver's moves a beat late (later for a lesser cover man): what he mirrors is a smoothed
+  // copy of the receiver's velocity, so a sharp cut opens a window before he reacts. Leverage: shaded inside,
+  // he's already there for a break inside (a slant, a dig) and a step late on one outside (an out, a corner)
+  const lever = r.vy * in_ > 1 ? 0.55 : r.vy * in_ < -1 ? 1.25 : 1;
+  const under = r.x - S.los < 9 ? 0.75 : 1; // (underneath he's squatting on the short stuff: he reacts quicker)
+  const lag = (0.36 + Math.max(0, 90 - cov) * 0.012) * lever * CAL.lag * under, k = Math.min(1, dt / lag);
+  if (d.rvFor !== r.key) { d.rv = { vx: d.vx, vy: d.vy }; d.rvFor = r.key; } // (a new man: he starts from his own feet)
+  d.rv.vx += (r.vx - d.rv.vx) * k; d.rv.vy += (r.vy - d.rv.vy) * k;
+  // a man running across the field: he takes the angle that cuts him off, a step ahead, rather than chasing
+  const crossing = Math.abs(r.vy) > Math.abs(r.vx) * 1.3 && Math.abs(r.vy) > 3;
+  const lx = r.x - r.vx * 0.05, ly = crossing ? r.y + r.vy * clamp(0.12 + (cov - 60) * 0.004, 0.06, 0.26) : r.y - r.vy * 0.05;
+  const beaten = r.x > d.x + 1 ? 1 + (K.recovery(d.p) - 75) * 0.003 : 1; // beaten: his recovery speed closes it back up
+  const sp_ = hyp(r.vx, r.vy), along = sp_ > 1 ? clamp(Math.abs(r.vx) / sp_, 0.35, 1) : 1;
+  mirror(d, r, lx - trail * along, ly + (crossing ? 0 : in_), dt, q * beaten, crossing ? 1.2 : r.mode === "settle" ? 1.8 : 0.9, d.rv); // (a man who's stopped: he drives on him)
+}
+// A zone defender: a deep one stays over the top of the deepest receiver in his area (his range and
+// instincts give him his cushion); one underneath drops to his spot and walls off the man who comes into it,
+// sitting in his throwing lane (his zone coverage, awareness, play recognition and instincts set how far he
+// reaches and how soon he sees it)
+function zoneDrop(S, d, z, dt) {
+  const { ents } = S, sg = S.flipped ? -1 : 1, zy = z.y * sg, zx = Math.min(106, S.los + z.d);
+  const recv = ELIGIBLE.map((r) => ents[r]).filter((e) => e && e.mode !== "block" && e.mode !== "protect" && e.mode !== "back" && !(e.delay && S.t < e.delay));
+  if (z.deep) {
+    // over the top of the deepest man in his area; with nobody deep he comes down on what's in front of him
+    let deep = null; for (const e of recv) if (Math.abs(e.y - zy) < z.w && e.x > S.los + 3 && (!deep || e.x > deep.x)) deep = e; // (his third, his half: the man in it, not one in the next)
+    // a man past the underneath zones in his area: he's his, played over the top (man coverage, from depth)
+    if (deep && deep.x > S.los + 9 && Math.abs(deep.x - d.x) < 9) { const cov = K.coverMan(d.p), q = clamp(0.96 + (cov - 78) * 0.003, 0.88, 1.02); if (d.rvFor !== deep.key) { d.rv = { vx: d.vx, vy: d.vy }; d.rvFor = deep.key; } const k_ = Math.min(1, dt / (0.4 + Math.max(0, 90 - cov) * 0.01)); d.rv.vx += (deep.vx - d.rv.vx) * k_; d.rv.vy += (deep.vy - d.rv.vy) * k_; mirror(d, deep, deep.x + 3.2 + clamp(cov - 70, 0, 25) * 0.03 + Math.max(0, deep.vx) * 0.18, deep.y + (deep.y > zy ? -0.4 : 0.4), dt, q, 1.1, d.rv); return; } // (with a cushion: on top of him, not level)
+    const sr = safetyRange(d.p), floor = deep ? Math.max(S.los + 8, Math.min(zx, deep.x + 3.5)) : zx;
+    const tx = Math.min(106, Math.max(floor, deep ? deep.x + 1.2 + sr.cushion * 0.6 + Math.max(0, deep.vx) * sr.anticip * 0.3 : zx)), ty = deep ? zy + clamp(deep.y - zy, -z.w, z.w) * 0.8 : zy;
+    steer(d, tx, ty, dt, Math.min(1, sr.pace + 0.03)); return;
+  }
+  // underneath: a match zone. He drops; a man who comes into his area he picks up and stays on (in his throwing
+  // lane, a step inside and underneath) until he leaves it; then back to his spot
+  const zs = zoneSkill(d.p), reach = z.w + 2.5 + (zs - 60) * 0.05, lead = clamp(0.2 + (zs - 55) * 0.01, 0.1, 0.6), pace = clamp(0.92 + (zs - 60) * 0.004, 0.88, 1.04);
+  if (S.t < 0.1 + clamp((80 - zs) * 0.008, 0, 0.3)) { steer(d, zx, zy, dt, 0.9); return; } // (his drop, while he reads it)
+  let m = d.zm && ents[d.zm];
+  const sink = z.d <= 6 ? 7.5 : 5; // (a curl/flat man sinks under the out and the corner; a hook man hands off sooner)
+  if (m && (Math.abs(m.y - zy) > z.w + 2.5 || m.x - zx > sink || m.mode === "block")) m = d.zm = null; // (a crosser who's left his area is the next man's) // (he's run out of the area, or up the field into a deep zone: hand him off)
+  // the man to take: the most urgent one in his area (the shorter threat first: a man in the flat before one going
+  // deep), checked all the time; he switches only to a clearly more urgent man
+  // (a curl/flat man plays inside-out: a man breaking inside, away from his sideline, is the hook man's; he widens to the flat)
+  { const flatZone = z.d <= 6, out = Math.sign(zy) || 1, score = (e) => Math.abs(e.y - zy) + Math.max(0, e.x - zx) * 1.2 + Math.max(0, zx - e.x) * 0.4 + (flatZone && e.vy * out < -1.5 ? 6 : 0);
+    let best = null, bs = 1e9; for (const e of recv) { const dy = Math.abs(e.y - zy), dx = e.x - zx; if (dy > reach || dx > sink || dx < -8) continue; if (Object.values(ents).some((o) => o !== d && o.zm === e.key)) continue; const sc = score(e); if (sc < bs) { bs = sc; best = e; } }
+    if (best && (!m || score(best) < score(m) - 5)) m = best; d.zm = m?.key || null; }
+  if (m) manCover(S, d, m, dt);
+  else steer(d, zx, zy, dt, 0.9);
+}
 // zone coverage (a linebacker with no man): zone coverage, awareness, play recognition, instincts
 const zoneSkill = (p) => K.skill(p, [["zoneCov", 0.6], ["zoneAwr", 0.5], ["playRec", 0.4], ["instincts", 0.3], ["coverage", 0.3]], 0.2);
 // a deep safety: range and instincts keep him on top of the deep man; a poor one gives up the cushion
@@ -344,7 +454,7 @@ export function windNow(g) {
   const flip = g.qtr % 2 === 0 ? -1 : 1; // (overtime keeps the fourth quarter's ends)
   return { x: w.x * flip, y: w.y * flip, mph: w.mph };
 }
-export const separation = (S, r) => { const e = S.ents[r], c = S.ents[S.cover[r]]; return c ? hyp(e.x - c.x, e.y - c.y) : 9; };
+export const separation = (S, r) => { const e = S.ents[r], c = S.ents[S.cover[r]]; if (c) return hyp(e.x - c.x, e.y - c.y); let best = 9; for (const d of Object.values(S.ents)) if (d.side === "def" && d.mode !== "rush" && d.down <= 0) best = Math.min(best, hyp(e.x - d.x, e.y - d.y) - hyp(d.vx, d.vy) * 0.25); return Math.max(0, best * 0.6); }; // (zone: the nearest man who could make a play, and he closes on the throw: a window is tighter than it looks)
 // the nearest defender who could make a play (a lineman still tied up with his blocker can't)
 const nearestDef = (S, x, y, skip = null) => { let best = null, bd = 99; for (const k of Object.keys(S.ents)) { const d = S.ents[k]; if (d.side !== "def" || d.down > 0 || k === skip || (d.mode === "rush" && !d.penetrating) || d.heldUntil > S.t) continue; const dd = hyp(d.x - x, d.y - y); if (dd < bd) { bd = dd; best = d; } } return [best, bd]; };
 
@@ -484,7 +594,7 @@ export function tick(S, dt) {
         // (a loose grip on him now: if he slows for the ball, his man is carried past him)
         mirror(d, r, r.x - 0.8, r.y + (r.y > 0 ? -0.6 : 0.6), dt, 1, 0.45, d.rv); continue;
       }
-      if (S.t - f.t0 < clamp(0.6 - K.edge(K.ballRead(d.p)) * 0.01, 0.2, 0.85)) { brake(d, dt); continue; } // seeing it (his play recognition / instincts)
+      if (S.t - f.t0 < clamp(0.6 - K.edge(K.ballRead(d.p)) * 0.01, 0.2, 0.85) * (S.zone?.[k] ? 0.6 : 1)) { if (S.zone?.[k]) zoneDrop(S, d, S.zone[k], dt); else brake(d, dt); continue; } // seeing it (his play recognition / instincts; a zone man keeps working his area while he does)
       if (left <= 0.3 || near < left * d.top * 0.9 + 1.0) steer(d, f.to.x, f.to.y, dt, 1);
       else if (tgt) steer(d, tgt.x + tgt.vx * 0.25, tgt.y + tgt.vy * 0.25, dt, 0.9);
       else brake(d, dt);
@@ -496,28 +606,11 @@ export function tick(S, dt) {
       if (S.t < read) { brake(d, dt); continue; }
       const tgt = carrier || ents.RB; const T = intercept(d, tgt); steer(d, T.x, T.y, dt, k.startsWith("LB") ? 0.95 : 0.9); continue;
     }
+    if (S.zone?.[k] && d.mode === "cover") { zoneDrop(S, d, S.zone[k], dt); continue; } // (zone: his area, from the snap)
     if (S.t < 0.22) { brake(d, dt); continue; } // the read
     // (a man whose receiver stays in to block has nobody to cover: he drops into the hook zone and rallies)
     if (mine && ents[mine] && ents[mine].mode !== "protect" && ents[mine].mode !== "block") {
-      // man: on his hip, shaded inside; a better cover man stays tighter and reads the break sooner
-      const r = ents[mine], cov = K.coverMan(d.p);
-      const q = clamp(0.96 + (cov - 78) * 0.003, 0.87, 1.02), trail = ((r.mode === "settle" ? 0.8 : 1.25) + clamp(85 - cov, 0, 30) * 0.025) * CAL.trail, in_ = r.y > 0 ? -0.7 : 0.7;
-      // he reads the receiver's moves a beat late (later for a lesser cover man): what he mirrors is
-      // a smoothed copy of the receiver's velocity, so a sharp cut opens a window before he reacts
-      // leverage: shaded inside, he's already there for a break inside (a slant, a dig) and a step
-      // late on one outside (an out, a corner); that's what the outside routes are for
-      const lever = r.vy * in_ > 1 ? 0.55 : r.vy * in_ < -1 ? 1.25 : 1;
-      // underneath (inside nine yards of the line) he's squatting on the short stuff: he reacts quicker
-      const under = r.x - S.los < 9 ? 0.75 : 1;
-      const lag = (0.36 + Math.max(0, 90 - cov) * 0.012) * lever * CAL.lag * under, k = Math.min(1, dt / lag);
-      d.rv ||= { vx: 0, vy: 0 }; d.rv.vx += (r.vx - d.rv.vx) * k; d.rv.vy += (r.vy - d.rv.vy) * k;
-      // a man running across the field (a drag, a swing, a shallow cross): he takes the angle that cuts him off,
-      // a step ahead of him, rather than chasing from behind
-      const crossing = Math.abs(r.vy) > Math.abs(r.vx) * 1.3 && Math.abs(r.vy) > 3;
-      const lx = r.x - r.vx * 0.05, ly = crossing ? r.y + r.vy * clamp(0.12 + (cov - 60) * 0.004, 0.06, 0.26) : r.y - r.vy * 0.05;
-      const beaten = r.x > d.x + 1 ? 1 + (K.recovery(d.p) - 75) * 0.003 : 1; // beaten: his recovery speed closes it back up
-      const sp_ = hyp(r.vx, r.vy), along = sp_ > 1 ? clamp(Math.abs(r.vx) / sp_, 0.35, 1) : 1; // (a man running across the field is played on his hip, not from behind)
-      mirror(d, r, lx - trail * along, ly + (crossing ? 0 : in_), dt, q * beaten, crossing ? 1.2 : r.mode === "settle" ? 1.8 : 0.9, d.rv); // (a man who's stopped: he drives on him)
+      manCover(S, d, ents[mine], dt);
     } else if (k === "S0" && S.dcall === "cover") { // two deep: he takes the other half
       let deep = null; for (const r of ELIGIBLE) { const e = ents[r]; if (e && e.mode !== "block" && e.mode !== "back" && e.y < 4 && (!deep || e.x > deep.x)) deep = e; }
       const sr = safetyRange(d.p); steer(d, Math.min(106, Math.max(S.los + 13, deep ? deep.x + 2.5 + sr.cushion + Math.max(0, deep.vx) * sr.anticip : 0)), deep ? Math.min(-4, deep.y * 0.8) : -11, dt, sr.pace);
