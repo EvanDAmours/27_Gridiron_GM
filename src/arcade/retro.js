@@ -1324,7 +1324,8 @@ export function drawMenu(ctx, cam, opts) {
   boxes.push({ key: "go", x: kx, y: ky, w: kw, h: kh });
   // the game's length: tap to cycle the quarter length
   if (opts.qMin) { const label = `QUARTERS: ${opts.qMin} MIN`, lw = pixWidth(label, px) + px * 8, lh = px * 11, lx = Math.round(W / 2 - lw - px * 2), ly = ky + kh + px * 4; ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(lx, ly, lw, lh); ctx.fillStyle = "#2c3744"; ctx.fillRect(lx, ly + lh - px, lw, px); pixText(ctx, label, lx + lw / 2, ly + px * 2, px, "#fff", "center"); boxes.push({ key: "len", x: lx, y: ly, w: lw, h: lh });
-    { const sl = opts.sb ? "SUPER BOWL: ON" : "SUPER BOWL: OFF", sw = pixWidth(sl, px) + px * 8, sx0 = Math.round(W / 2 - sw / 2), sy0 = ly + lh + px * 3; ctx.fillStyle = opts.sb ? "rgba(70,52,10,.92)" : "rgba(8,10,16,.8)"; ctx.fillRect(sx0, sy0, sw, lh); ctx.fillStyle = opts.sb ? "#e8c45a" : "#2c3744"; ctx.fillRect(sx0, sy0 + lh - px, sw, px); pixText(ctx, sl, sx0 + sw / 2, sy0 + px * 2, px, opts.sb ? "#fde68a" : "#fff", "center"); boxes.push({ key: "sb", x: sx0, y: sy0, w: sw, h: lh }); }
+    { const sl = opts.sb ? "SUPER BOWL: ON" : "SUPER BOWL: OFF", sw = pixWidth(sl, px) + px * 8, dwMax = opts.diff ? pixWidth("DIFFICULTY: ALL-PRO", px) + px * 8 : 0, row = opts.diff && W > H /* (wide: side by side with the difficulty; tall: stacked) */, sx0 = Math.round(row ? W / 2 - (sw + px * 4 + dwMax) / 2 : W / 2 - sw / 2), sy0 = ly + lh + px * 3; ctx.fillStyle = opts.sb ? "rgba(70,52,10,.92)" : "rgba(8,10,16,.8)"; ctx.fillRect(sx0, sy0, sw, lh); ctx.fillStyle = opts.sb ? "#e8c45a" : "#2c3744"; ctx.fillRect(sx0, sy0 + lh - px, sw, px); pixText(ctx, sl, sx0 + sw / 2, sy0 + px * 2, px, opts.sb ? "#fde68a" : "#fff", "center"); boxes.push({ key: "sb", x: sx0, y: sy0, w: sw, h: lh });
+      if (opts.diff) { const dl = `DIFFICULTY: ${opts.diff}`, dw = row ? dwMax : pixWidth(dl, px) + px * 8, dx0 = row ? sx0 + sw + px * 4 : Math.round(W / 2 - dw / 2), dy0 = row ? sy0 : sy0 + lh + px * 3; ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(dx0, dy0, dw, lh); ctx.fillStyle = "#2c3744"; ctx.fillRect(dx0, dy0 + lh - px, dw, px); pixText(ctx, dl, dx0 + dw / 2, dy0 + px * 2, px, "#fff", "center"); boxes.push({ key: "diff", x: dx0, y: dy0, w: dw, h: lh }); } }
     if (opts.wxPick) { const wl = `WEATHER: ${opts.wxPick.toUpperCase()}`, ww = pixWidth(wl, px) + px * 8, wx0 = Math.round(W / 2 + px * 2); ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(wx0, ly, ww, lh); ctx.fillStyle = "#2c3744"; ctx.fillRect(wx0, ly + lh - px, ww, px); pixText(ctx, wl, wx0 + ww / 2, ly + px * 2, px, "#fff", "center"); boxes.push({ key: "wx", x: wx0, y: ly, w: ww, h: lh }); } }
   // full screen (or, on an iPhone, how to get it)
   if (opts.fs) { const label = opts.fs === "ios" ? "FULL SCREEN: SHARE > ADD TO HOME SCREEN" : opts.fs === "on" ? "EXIT FULL SCREEN" : mobile ? "FULL SCREEN" : "FULL SCREEN (F)"; const bw = pixWidth(label, px) + px * 6, bh = px * 11, bx = W - px * 3 - bw; ctx.fillStyle = "rgba(8,10,16,.8)"; ctx.fillRect(bx, px * 3, bw, bh); pixText(ctx, label, bx + bw / 2, px * 5, px, "#ffd166", "center"); if (opts.fs !== "ios") boxes.push({ key: "fs", x: bx, y: px * 3, w: bw, h: bh }); }
@@ -1344,10 +1345,15 @@ export function drawPause(ctx, cam, items, { mobile } = {}) {
   const hp = Math.max(1, Math.min(px - 1, Math.floor((H * 0.3) / (help.length * 9)), ...help.map((t) => Math.floor((W - px * 6) / (6 * t.length))))); // (fits across, and in the bottom third)
   // the buttons get whatever room the title and the help leave (so it all fits on a short screen)
   const top0 = H * 0.08 + px * 18, room = H - top0 - help.length * hp * 9 - px * 6, gap = px * 2;
-  const bh = Math.max(px * 8, Math.min(px * 12, Math.floor(room / items.length) - gap)), bw = Math.max(px * 56, ...items.map(([, l]) => pixWidth(l, px) + px * 10)), boxes = [];
+  // a short, wide screen (a phone on its side): two columns when one won't fit down the screen, in a
+  // smaller hand if two won't fit across at full size
+  const bwAt = (q) => Math.max(q * 56, ...items.map(([, l]) => pixWidth(l, q) + q * 10)), tall = items.length * (px * 8 + gap) > room;
+  const bp = tall && bwAt(px) * 2 + gap * 2 > W - px * 4 && px > 2 ? px - 1 : px, bw = bwAt(bp), boxes = [];
+  const cols = tall && bw * 2 + gap * 2 <= W - px * 4 ? 2 : 1, rows = Math.ceil(items.length / cols);
+  const bh = Math.max(bp * 8, Math.min(px * 12, Math.floor(room / rows) - gap));
   const yAt = (i) => Math.round(top0 + i * (bh + gap));
-  items.forEach(([key, label], i) => { const x = Math.round(W / 2 - bw / 2), y = yAt(i); ctx.fillStyle = "#161d2b"; ctx.fillRect(x, y, bw, bh); ctx.fillStyle = "#2c3744"; ctx.fillRect(x, y + bh - px, bw, px); pixText(ctx, label, W / 2, y + px * 3, px, "#fff", "center"); boxes.push({ key, x, y, w: bw, h: bh }); });
-  const hy = yAt(items.length) + px * 3;
+  items.forEach(([key, label], i) => { const c = cols === 2 ? Math.floor(i / rows) : 0, x = Math.round(W / 2 - (cols * bw + (cols - 1) * gap * 2) / 2 + c * (bw + gap * 2)), y = yAt(cols === 2 ? i % rows : i); ctx.fillStyle = "#161d2b"; ctx.fillRect(x, y, bw, bh); ctx.fillStyle = "#2c3744"; ctx.fillRect(x, y + bh - px, bw, px); pixText(ctx, label, x + bw / 2, y + Math.max(bp, Math.round((bh - bp * 7) / 2)), bp, "#fff", "center"); boxes.push({ key, x, y, w: bw, h: bh }); });
+  const hy = yAt(rows) + px * 3;
   help.forEach((t, i) => pixText(ctx, t, W / 2, hy + i * hp * 9, hp, "rgba(255,255,255,.7)", "center"));
   return boxes;
 }

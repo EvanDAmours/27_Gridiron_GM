@@ -580,6 +580,21 @@ function returnTD(g, ev, recv, p, l, ydsKey, tdKey, yds, what, depth) {
   if (!g.done && depth < 3) kickoff(g, ev, depth + 1);
 }
 
+// A kickoff the arcade returned by hand: the engine booked the kick and its own return; this sets the return to
+// where the returner was brought down on the field (spot: the receiving team's yard line), fixing his line, the
+// spot and the text. All the way back scores (and the scoring team kicks off).
+export function rebookKickoff(g, ev, spot) {
+  const ko = ev?.ko; if (!ko || ev.type !== "kickoff" || ko.tb || ko.onside || ko.muff || ko.td || ko.squib || g.done || ko.spot == null) return ev;
+  const kick = ko.side, recv = other(kick), p = ko.kr, l = line(g, recv, p);
+  add(l, "krYds", -(ko.spot - ko.catchAt)); // (the engine's own return, taken back)
+  spot = Math.round(spot); ev.text = `${sideName(g, kick)} kick off.`;
+  if (spot >= 100) { ko.td = true; ko.spot = 100; returnTD(g, ev, recv, p, l, "krYds", "krTD", 100 - ko.catchAt, "kickoff", 0); return ev; }
+  spot = clamp(spot, 1, 99); add(l, "krYds", spot - ko.catchAt); ko.spot = spot;
+  g.yard = spot; g.down = 1; g.toGo = 10;
+  ev.text += ` ${p?.name || "The returner"} brings it back ${spot - ko.catchAt} yards to the ${spot > 50 ? `opponents' ${100 - spot}` : spot}.`;
+  return ev;
+}
+
 // A punt the arcade returned by hand: the engine booked the kick (and its own guess at the return);
 // this sets the return to what happened on the field (ret yards from the catch, or a fair catch),
 // fixing the returner's line, the spot and the text. A return all the way scores.

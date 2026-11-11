@@ -4,7 +4,7 @@
 // engine's own distance and the flick picks the side. Units as in play.js.
 import { resolvePlay, bookPat } from "./bridge.js";
 import { HALF, windNow, wxField, topSpeed } from "./play.js";
-import { rebookPunt } from "../playsim.js";
+import { rebookPunt, rebookKickoff } from "../playsim.js";
 import * as K from "./ratings.js";
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -153,7 +153,9 @@ export function tickKick(S, dt) {
       if (e.side !== "def" || e.key === "S0") continue;
       e.wy ??= e.y * 0.8;
       const m = ball.holder === "S0" && ents[`C${e.key.slice(1)}`];
-      if (m && m.down <= 0) { const dx = m.x - e.x; move(e, m.x + 0.9, m.y, Math.abs(dx) < 3 ? 4 : 7.5); if (Math.hypot(m.x - e.x, m.y - e.y) < 1.4) m.held = S.t + 0.25; }
+      // (one block each: the blocker's run blocking against the cover man's shedding sets how long he holds him; then
+      // the cover man is off it and after the ball, as on a punt)
+      if (m && m.down <= 0) { const dx = m.x - e.x; move(e, m.x + 0.9, m.y, Math.abs(dx) < 3 ? 4 : 7.5); if (Math.hypot(m.x - e.x, m.y - e.y) < 1.4 && !e.blocked) { e.blocked = true; const win = K.skill(e.p, [["runBlock", 0.6], ["str", 0.3], ["tackling", 0.2]], 0.3) - K.skill(m.p, [["shedBlock", 0.5], ["spd", 0.3], ["tackling", 0.3]], 0.3); m.held = S.t + clamp(0.45 + win * 0.02, 0.15, 0.9); } }
       else move(e, Math.max(f.to.x - 16, e.x - 1), e.wy, 6);
     }
   }
@@ -164,13 +166,16 @@ export function tickKick(S, dt) {
     if (S.kind === "punt" && !GUNNERS.has(e.key) && S.t < 0.6) continue; // (the line blocks for the punter first, then releases)
     // lanes: each man stays in his own lane on the way down, squeezing in only as he gets close
     const lane = S.kind === "punt" && ball.holder !== "S0" ? clamp((e.y0 ??= e.y) * 0.45, -14, 14) : 0;
-    const tx = ball.holder === "S0" ? ret.x - (ret.vx || 0) * 0.25 : f.to.x, ty = ball.holder === "S0" ? ret.y + (ret.vy || 0) * 0.25 + ((e.y > ret.y ? 1 : -1) * 0.6) : f.to.y + lane + (e.y - f.to.y - lane) * 0.35;
+    // (on him: where he'll be a beat from now, so they meet him rather than run to where he was)
+    const lead = ball.holder === "S0" ? clamp(Math.hypot(ret.x - e.x, ret.y - e.y) / 14, 0.1, 0.6) : 0;
+    const tx = ball.holder === "S0" ? ret.x + (ret.vx || 0) * lead : f.to.x, ty = ball.holder === "S0" ? ret.y + (ret.vy || 0) * lead + ((e.y > ret.y ? 1 : -1) * 0.3) : f.to.y + lane + (e.y - f.to.y - lane) * 0.35;
     move(e, tx + (S.arrived == null ? 0.6 : 0), ty, (e.top || 7) * (S.kind === "ko" ? 0.92 : 1.15) * (e.held > S.t ? 0.3 : 1));
   }
   // nobody runs through a team-mate: men converging on the returner keep a body's width apart
   if (returning) { const L = Object.values(ents).filter((e) => e.key !== "S0" && e.down <= 0); for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) { const a = L[i], b = L[j]; if (a.side !== b.side) continue; const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy); if (d < 0.85 && d > 1e-6) { const k = (0.85 - d) * 0.5; a.x -= (dx / d) * k; a.y -= (dy / d) * k; b.x += (dx / d) * k; b.y += (dy / d) * k; } else if (d <= 1e-6) { a.y -= 0.4; b.y += 0.4; } } }
   if (S.userRet && S.kind === "punt" && ret && (S.ev?.tb || S.ev?.muff || S.ev?.retTD)) S.userRet = false; // (nothing to field: a touchback, or the engine's own big moment)
-  if (S.userRet && S.kind === "punt" && ret) userReturn(S, dt);
+  if (S.userRet && S.kind === "ko" && (S.ev?.ko?.tb || S.ev?.ko?.td || S.ev?.ko?.muff || S.ev?.ko?.squib)) S.userRet = false; // (a kickoff: the same)
+  if (S.userRet && (S.kind === "punt" || S.kind === "ko") && ret) userReturn(S, dt);
   // the return itself: he carries it back up the field, weaving, until the coverage gets to him where the engine says it ended
   else if (returning && ret && ball.holder === "S0" && S.retTo != null) {
     const d = S.retTo - ret.x;
@@ -216,12 +221,12 @@ function userReturn(S, dt) {
   const vx = -top, vy = clamp((wantY - ret.y) * 3, -top * 0.8, top * 0.8), k = Math.min(1, dt * 9);
   ret.vx += (vx - ret.vx) * k; ret.vy += (vy - ret.vy) * k; ret.x += ret.vx * dt; ret.y += ret.vy * dt;
   ball.x = ret.x; ball.y = ret.y; ball.h = 0; S.endAt = Math.max(S.endAt, S.t + 0.9);
-  const end = (why) => { S.retDone = true; ret.vx = 0; ret.vy = 0; rebookPunt(S.g, S.ev, S.catchX - Math.max(ret.x, -1), {}); S.result = S.ev; S.text = S.ev?.text || ""; S.endAt = S.t + (why === "td" ? 1.6 : 1.0); if (why === "td") S.koTD = true; };
+  const end = (why) => { S.retDone = true; ret.vx = 0; ret.vy = 0; if (S.kind === "ko") rebookKickoff(S.g, S.ev, 100 - Math.max(ret.x, 0)); else rebookPunt(S.g, S.ev, S.catchX - Math.max(ret.x, -1), {}); S.result = S.ev; S.text = S.ev?.text || ""; S.endAt = S.t + (why === "td" ? 1.6 : 1.0); if (why === "td") S.koTD = true; };
   if (ret.x <= 0) { end("td"); return true; }
   if (Math.abs(ret.y) >= HALF) { ret.y = clamp(ret.y, -HALF, HALF); end("oob"); return true; }
   for (const e of Object.values(ents)) {
     if (e.side !== "off" || e.down > 0 || e.held > S.t) continue;
-    if (Math.hypot(e.x - ret.x, e.y - ret.y) > 1.05) continue;
+    if (Math.hypot(e.x - ret.x, e.y - ret.y) > 1.35) continue;
     const pBreak = clamp(0.07 + (K.elusive(ret.p) - K.tackling(e.p)) * 0.004 - (S.broke || 0) * 0.04, 0.02, 0.22);
     if (Math.random() < pBreak) { e.down = 0.8; S.broke = (S.broke || 0) + 1; ret.vx *= 0.6; continue; }
     e.x = ret.x + 0.7; e.y = ret.y; e.down = 0.6; S.tackler = e; ret.down = 0.9; S.arrived = S.t; end("tackle"); return true;

@@ -14,6 +14,19 @@ import { resolvePlay } from "./bridge.js";
 // open: yards of separation that count as open at the catch; yac: the chance a carrier breaks or
 // jukes a tackle on a run (1 = as built), yacCatch after a catch; hands: the catch chance (1 = as built).
 export const CAL = { rush: 1.1, lag: 0.8, trail: 1, open: 0, yac: 1.15, yacCatch: 0.35, hands: 0.87 };
+// Difficulty (the arcade's ROOKIE / PRO / ALL-PRO): on your snaps, how loose the computer's coverage is (lag), how
+// much room counts as open (open) and how long your line holds (rush, seconds); on theirs, how often their
+// quarterback misses (miss) and how much help your defender gets tackling (tackle: reach in yards; lunge: chance)
+export const DIFF = {
+  rookie: { lag: 1.35, open: 0.5, rush: 0.5, catch: 0.1, miss: 0.1, tackle: 0.25, lunge: 0.08 },
+  pro: { lag: 1, open: 0, rush: 0, catch: 0, miss: 0, tackle: 0, lunge: 0 },
+  allpro: { lag: 0.82, open: -0.25, rush: -0.35, catch: -0.07, miss: -0.05, tackle: -0.1, lunge: -0.05 },
+};
+// (on your snaps the coverage and line levers work for you; on theirs they flip round: a ROOKIE's computer
+// teammates cover tighter and rush faster, an ALL-PRO's give their quarterback more time and room)
+const dLv = (S) => DIFF[S.dlv] || DIFF.pro;
+const dOff = (S, k) => (S.userOff ? dLv(S)[k] : S.userOff === false ? (k === "lag" ? 1 / dLv(S).lag : -dLv(S)[k]) : DIFF.pro[k]), dDef = (S, k) => (S.userOff === false ? dLv(S)[k] : DIFF.pro[k]);
+export const diffDef = dDef;
 import * as K from "./ratings.js";
 
 export const FIELD_W = 53.3, HALF = FIELD_W / 2;
@@ -301,7 +314,7 @@ export function snap(S) {
       const rush = K.skill(d.p, [["passRush", 0.75], ["getOff", 0.25], ["blitzing", 1]], 0.15) * 0.5 + K.skill(d.p, [[move, 1]], 0.1) * 0.5;
       const blk = o ? K.passBlock(o.p) * 0.55 + K.skill(o.p, [[counter, 1]], 0.1) * 0.45 : 50;
       // (a blitz brings games up front too: twists and slants free a rusher a beat sooner; dropping eight gives the line time)
-      S.shed[k] = clamp(1.95 + CAL.rush + (blk - rush) * 0.1 - K.edge(K.getOff(d.p)) * 0.02 + rnd(S) * 1.8 + (S.dcall === "cover" ? 0.35 : S.dcall === "blitz" ? -0.15 - Math.max(0, rush - 60) * 0.035 : 0), 0.85, 6.5); // (on a blitz a great rusher is on the quarterback much sooner)
+      S.shed[k] = clamp(1.95 + CAL.rush + dOff(S, "rush") + (blk - rush) * 0.1 - K.edge(K.getOff(d.p)) * 0.02 + rnd(S) * 1.8 + (S.dcall === "cover" ? 0.35 : S.dcall === "blitz" ? -0.15 - Math.max(0, rush - 60) * 0.035 : 0), 0.85, 6.5); // (on a blitz a great rusher is on the quarterback much sooner)
       d.move = label;
     } else {
       // the run: who wins at the point of attack, and by how much: the line drives him back, or he walks it into the backfield
@@ -357,7 +370,7 @@ function manCover(S, d, r, dt) {
   // he's already there for a break inside (a slant, a dig) and a step late on one outside (an out, a corner)
   const lever = r.vy * in_ > 1 ? 0.55 : r.vy * in_ < -1 ? 1.25 : 1;
   const under = r.x - S.los < 9 ? 0.75 : 1; // (underneath he's squatting on the short stuff: he reacts quicker)
-  const lag = (0.36 + Math.max(0, 90 - cov) * 0.012) * lever * CAL.lag * under, k = Math.min(1, dt / lag);
+  const lag = (0.36 + Math.max(0, 90 - cov) * 0.012) * lever * CAL.lag * under * dOff(S, "lag"), k = Math.min(1, dt / lag);
   if (d.rvFor !== r.key) { d.rv = { vx: d.vx, vy: d.vy }; d.rvFor = r.key; } // (a new man: he starts from his own feet)
   d.rv.vx += (r.vx - d.rv.vx) * k; d.rv.vy += (r.vy - d.rv.vy) * k;
   // a man running across the field: he takes the angle that cuts him off, a step ahead, rather than chasing
@@ -669,7 +682,7 @@ export function tick(S, dt) {
     // the man you're playing: get to him and he's down (a wider reach than the computer's men, and only the
     // odd broken tackle, the runner's elusiveness and power against his tackling)
     { const u = S.userDef && ents[S.userDef]; if (u && u.down <= 0 && !(u.heldUntil > S.t)) { const du = hyp(u.x - carrier.x, u.y - carrier.y);
-      if (du < 1.55) { const el = Math.max(K.power(carrier.p), K.afterCatch(carrier.p)), tk = K.tackling(u.p);
+      if (du < 1.55 + dDef(S, "tackle")) { const el = Math.max(K.power(carrier.p), K.afterCatch(carrier.p)), tk = K.tackling(u.p);
         if (!u.brokenBy && rnd(S) < clamp((0.05 + (el - tk) * 0.004) * (S.catchAt != null ? CAL.yacCatch * 1.6 : CAL.yac), 0.02, 0.18)) { u.brokenBy = true; u.down = 0.45; S.broke++; breakMove(S, carrier, u); }
         else { S.diveTackle = du > 1.1; tackle(S, u); return true; } } } }
     const [d, dd] = nearestDef(S, carrier.x, carrier.y);
@@ -871,7 +884,7 @@ function arrive(S) {
   // a deep lob hangs: a cover man in phase (even a step behind) gets to play it
   const deepLob = !f.bullet && hyp(f.to.x - f.from.x, f.to.y - f.from.y) > 18;
   const short = hyp(f.to.x - f.from.x, f.to.y - f.from.y) < 13; // (a short throw: a man within two yards is on him)
-  const open = dD > (deepLob ? 2.5 : short ? 1.9 : 1.6) + CAL.open || (trailing && !deepLob && dD > 0.9 + CAL.open);
+  const open = dD > (deepLob ? 2.5 : short ? 1.9 : 1.6) + CAL.open - dOff(S, "open") || (trailing && !deepLob && dD > 0.9 + CAL.open);
   let want;
   if (tgt && dR <= catchR + reachR) {
     // on his hands: an open man catches it (the odd drop); a covered one wins it on his hands
@@ -879,7 +892,7 @@ function arrive(S) {
     const hands = K.hands(tgt.p), traffic = K.contested(tgt.p), ballSk = d ? K.ballSkills(d.p) : 50;
     const dive = dR > catchR ? 1 - (dR - catchR) / Math.max(0.5, reachR) : 1; // one just out of reach: a dive, less likely the further
     const first = tgt && d && dR < dD - 0.4 ? (deepLob ? 0.05 : 0.12) : 0; // he got to it first
-    const pCatch = (open ? clamp(0.995 - (85 - hands) * 0.0025, 0.93, 0.997) / CAL.hands /* (an open, on-target ball: a drop is rare, 1 to 7 in 100 by his hands) */ : clamp((deepLob ? 0.44 : 0.7) + first + (traffic - ballSk) * 0.007 + (dD - 0.8) * (deepLob ? 0.1 : 0.22) - (dR > 1.2 ? 0.08 : 0), 0.18, 0.9)) * clamp(dive, 0, 1);
+    const pCatch = (open ? clamp(0.995 - (85 - hands) * 0.0025, 0.93, 0.997) / CAL.hands /* (an open, on-target ball: a drop is rare, 1 to 7 in 100 by his hands) */ : clamp((deepLob ? 0.44 : 0.7) + first + dOff(S, "catch") + (traffic - ballSk) * 0.007 + (dD - 0.8) * (deepLob ? 0.1 : 0.22) - (dR > 1.2 ? 0.08 : 0), 0.18, 0.9)) * clamp(dive, 0, 1);
     if (rnd(S) < pCatch * CAL.hands * (f.bullet ? 1 - clamp((hyp(f.to.x - f.from.x, f.to.y - f.from.y) - 34) * 0.01, 0, 0.12) : 1) * (1 - 0.035 * (wxField(S.g).rain || 0) - 0.02 * (wxField(S.g).snow || 0))) { // (a wet ball is a slippery one) // (a really long rope, 35 yards and up, is a harder ball to hang on to; a dig or an out to a wide man is not that)
       ball.x = tgt.x; ball.y = tgt.y; ball.holder = f.target; tgt.mode = "carry"; S.catchAt = S.t; S.phase = "carry";
       if (d && dD < 2.5) { d.down = Math.max(d.down, clamp(0.4 - (dD < 0.8 ? 0.2 : 0) - K.edge(K.tackling(d.p)) * 0.005, 0.15, 0.6)); d.vx *= 0.3; d.vy *= 0.3; } // he played the ball, not the man
@@ -893,7 +906,7 @@ function arrive(S) {
     // engine agrees, a pass broken up if not
     const ballSk = K.ballSkills(d.p);
     // a lofted ball hangs for him; one he beat the receiver to is his to lose
-    const pInt = clamp(0.03 + (ballSk - 70) * 0.006 + (f.bullet ? 0 : 0.07) + (deepLob ? 0.07 : 0) + (f.tipped ? 0.08 : 0) + (dD < dR ? 0.07 : 0) - (dD > 1 ? 0.04 : 0), 0.02, 0.55);
+    const pInt = clamp(0.03 + (ballSk - 70) * 0.006 + (f.bullet ? 0 : 0.07) + (deepLob ? 0.07 : 0) + (f.tipped ? 0.08 : 0) + (dD < dR ? 0.07 : 0) - (dD > 1 ? 0.04 : 0) - dOff(S, "catch") * 0.4, 0.02, 0.55);
     want = { types: rnd(S) < pInt ? ["int"] : ["inc"], fallback: ["inc"] }; S.pick.open = false;
     const r = resolvePlay(S.g, S.call, want, { target: S.pick.target, open: false }, want.types[0] === "int" ? 60 : 10); // a pick is rare in the engine: give it the rolls to find one
     S.ev = r.ev; S.mismatch = r.ev && !["int", "inc", "penalty"].includes(r.ev.type);
@@ -1065,7 +1078,7 @@ export function lunge(S) {
     if (c.key === "QB" && S.phase === "live") { if (rnd(S) < clamp(0.7 + K.edge(K.passRush(d.p)) * 0.008 - Math.max(0, dd - 2) * 0.15, 0.3, 0.92)) { sack(S, d); return true; } }
     else {
       const el = Math.max(K.elusive(c.p), K.power(c.p)), tk = K.tackling(d.p);
-      if (rnd(S) < clamp(0.87 + (tk - el) * 0.005 - Math.max(0, dd - 2.2) * 0.12 - (S.broke ? 0.03 : 0), 0.4, 0.96)) { S.diveTackle = true; d.x += (c.x - d.x) * 0.7; d.y += (c.y - d.y) * 0.7; tackle(S, d); return true; }
+      if (rnd(S) < clamp(0.87 + dDef(S, "lunge") + (tk - el) * 0.005 - Math.max(0, dd - 2.2) * 0.12 - (S.broke ? 0.03 : 0), 0.4, 0.97)) { S.diveTackle = true; d.x += (c.x - d.x) * 0.7; d.y += (c.y - d.y) * 0.7; tackle(S, d); return true; }
     }
   }
   // the dive comes up empty: he lays out toward him and is on the turf for a moment
