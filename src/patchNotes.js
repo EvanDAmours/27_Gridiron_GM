@@ -2674,4 +2674,7 @@ export const PATCH_NOTES = [
     "Fixed: a score in the last few seconds of the first half (or the end of regulation) also kicked off right away, before half-time. That could hand the second-half kickoff to the wrong team. Now the second half (or overtime) opens with the kickoff it should.",
     "Punt returns name the returner every time (some read just 'returned 12').",
   ] },
+  { v: "6.40", date: "2026-11-11", title: "Kickoff scoreboard", notes: [
+    "During a kickoff the scoreboard reads KICKOFF (with the kicking team) until the return is over. Before, it already showed the down and the spot where the computer expected the return to end, before you'd run it back.",
+  ] },
 ];

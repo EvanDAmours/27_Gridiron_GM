@@ -552,8 +552,10 @@ export class ArcadeGame {
     drawWeather(ctx, cam, { wx: this.g?.wxE, time: this.time, wind: windNow(this.g) });
     this.fx.draw(ctx, cam.W, cam.H, pixText);
     if (!this.live || (full && !fr)) { // (the scorebug stays put too: your club on the left all game, whoever has the ball)
-      const F = this.flipped && st, fl = (v) => (v === "h" ? "a" : v === "a" ? "h" : v), to = this.g?.to;
-      drawHud(ctx, cam, F ? { ...st, score: { h: st.score.a, a: st.score.h }, poss: fl(st.poss), yard: st.yard } : st, F ? { user: teams.opp, opp: teams.user } : teams, { to: F && to ? { h: to.a, a: to.h } : to });
+      // (a kickoff in the air or being run back: the board says KICKOFF, not where the engine has it ending up)
+      const sb = P?.kind === "ko" && m === "play" && P.arrived == null && st ? { ...st, koNext: true, poss: P.ev?.ko?.side || "h" } : st;
+      const F = this.flipped && sb, fl = (v) => (v === "h" ? "a" : v === "a" ? "h" : v), to = this.g?.to;
+      drawHud(ctx, cam, F ? { ...sb, score: { h: sb.score.a, a: sb.score.h }, poss: fl(sb.poss), yard: sb.yard } : sb, F ? { user: teams.opp, opp: teams.user } : teams, { to: F && to ? { h: to.a, a: to.h } : to });
     } // (a live game: the app's scoreboard, and the stadium's at the 50; in full screen, this strip) // (a live game: the app's scoreboard, and the stadium's at the 50)
     if (this.g && m !== "final") drawWxChip(ctx, cam, this.g.wxE, windNow(this.g));
     const px = uiPx(cam), hintY = cam.H - px * 9;
