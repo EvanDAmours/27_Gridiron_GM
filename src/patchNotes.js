@@ -2658,4 +2658,8 @@ export const PATCH_NOTES = [
     "With PLAY D on, you call it: before each of the other team's snaps, play cards with a diagram of each call (zones, man coverage and blitzers). Pick one, or COORDINATOR to let your coordinator call it. Your last call is shown, and SIM DRIVE, PLAY D and TIMEOUT sit over the cards. On a keyboard, 1 to 8 pick a card.",
     "The computer's defenses call them too, by down and distance (two-deep and three-deep shells on third and long, Run Stop and blitzes in short yardage and at the goal line), leaning the way their coordinator does. The look shows before the snap: corners off and three deep, two safeties high, or linebackers walked up.",
   ] },
+  { v: "6.37", date: "2026-11-11", title: "Spin moves, stiff arms and real tackling", notes: [
+    "Spin and stiff arm: when a ball carrier breaks a tackle, he does it with the move his game has. A shifty back spins off the tackler (a quick step away, keeping most of his speed); a powerful one stiff-arms him to the ground and barely slows down. They happen on their own, only when the tackle is actually broken, with their own frames on the clubs with the full animation set and SPIN! or STIFF ARM! on the field.",
+    "Fuller tackling: a powerful back running downhill can drag the first tackler forward until help arrives, and a second defender in on it ends it as a gang tackle. A runner going forward falls forward for the extra yard. A big hit square on from a stronger tackler stops him dead or drives him back. Diving while you're being dragged gets you the extra yard. In testing, about a quarter of runs end with the runner dragging a man, and runs average about 4.3 yards a carry, as in the NFL.",
+  ] },
 ];

@@ -495,7 +495,7 @@ export class ArcadeGame {
       if (h.side === "def") { sfx.turnover(); fx.flashScreen("#ff5a4a", 0.25); fx.hit(0.8); this.hype = 0.6; }
       else if (P.call?.startsWith("pass")) { sfx.catch(); fx.sparkle(x, y - cam.s * 2, "#fff"); }
     }
-    if (now.broke > was.broke) { const h = P.ents[now.holder]; if (h) { const [x, y] = at(h); fx.burst(x, y, { n: 10, colors: ["#6aa84f", "#c9b79c", "#3f7f2f"], speed: 90 }); fx.float(P.log[P.log.length - 1]?.includes("juked") ? "JUKE!" : "BROKEN TACKLE!", x, y - cam.s * 4, "#7fe3ff", 1); } sfx.juke(); this.hype = Math.max(this.hype, 0.4); }
+    if (now.broke > was.broke) { const h = P.ents[now.holder]; if (h) { const [x, y] = at(h); fx.burst(x, y, { n: 10, colors: ["#6aa84f", "#c9b79c", "#3f7f2f"], speed: 90 }); fx.float(P.log[P.log.length - 1]?.includes("juked") ? "JUKE!" : P.log[P.log.length - 1]?.includes("spins") ? "SPIN!" : P.log[P.log.length - 1]?.includes("stiff-arms") ? "STIFF ARM!" : "BROKEN TACKLE!", x, y - cam.s * 4, "#7fe3ff", 1); } sfx.juke(); this.hype = Math.max(this.hype, 0.4); }
     if ((now.phase === "tackle" || now.phase === "fall") && was.phase !== now.phase) {
       const ev = P.result, h = P.ents[P.ball.holder] || P.ents.QB, [x, y] = at(h), gain = ev?.yards;
       if (ev?.td) { sfx.touchdown(); fx.punch(1.07, 1.2); fx.flashScreen("#fff", 0.3); this.hype = 1; }

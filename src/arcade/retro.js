@@ -290,6 +290,8 @@ function pose2raw(S, e, t) {
     return moving ? run(true) : null;
   }
   if (over && S.tackler === e) return { n: since < 0.18 ? "tackle_dive" : "tackle_wrap" };
+  if (S.wrap && S.wrap.d === e) return { n: "tackle_wrap", face: Math.sign((S.ents[S.ball.holder]?.x ?? e.x) - e.x) || -1 }; // (hanging on while he drags him)
+  if (S.wrap && hasBall) return { n: "stumble" }; // (churning forward with a man on him)
   if (e.down > 0) return e.missed && e.down > 0.3 ? { n: "whiff" } : e.down < 0.15 ? { n: "getup_2" } : e.down < 0.3 ? { n: "getup_1" } : { n: "fall_2" };
   const f = S.ball.flight;
   if (f && !f.kick && f.target === e.key && e.side === "off") {
@@ -300,6 +302,7 @@ function pose2raw(S, e, t) {
   if (hasBall && S.phase === "carry") {
     if (S.catchAt != null && t - S.catchAt < 0.3 && e.side === "off") return { n: "catch_secure" };
     if (e.key === "RB" && S.call?.startsWith("run") && S.handAt != null && t - S.handAt < 0.3) return { n: "handoff_rb" };
+    if (S.move && t - S.move.at < 0.4) return S.move.kind === "spin" ? { n: `spin_${Math.min(3, Math.floor((t - S.move.at) / 0.13) + 1)}` } : { n: "stiff_arm" }; // (the move he broke it with)
     if (S.jukeAt != null && t - S.jukeAt < 0.32) return { n: t - S.jukeAt < 0.14 ? "juke_plant" : "juke_cut" };
     if (S.stagger > t) return { n: "stumble" };
     return run(true);
@@ -424,6 +427,7 @@ function poseFor0(S, e, t) {
     return moving ? [stride ? "a5" : "a6", true] : ["a8", true, toward]; // (no ball: never the ball-in-hand frame; after a handoff or a throw he stands, arm out, watching)
   }
   if (S.dived && hasBall) return ["b2", true]; // laid out for the extra yard
+  if (S.wrap && S.wrap.d === e) return ["b6", true, Math.sign((S.ents[S.ball.holder]?.x ?? e.x) - e.x) || -1]; // (hanging on while he drags him)
   if ((S.phase === "tackle" || S.phase === "fall") && hasBall && t >= S.endAt - 0.75) return [S.result?.td ? "b7" : t >= S.endAt - 0.4 ? "b5" : "b4", true]; // a score: the ball held up; brought down: going down with it, then on the ground
   if (S.ball.flight && S.ball.flight.target === e.key && e.side === "off") return ["b1", true];
   if (e.down > 0) return ["b3", true];

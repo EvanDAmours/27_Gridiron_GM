@@ -661,7 +661,8 @@ export function tick(S, dt) {
   if (!ball.holder && !ball.flight && ball.h > -1) { ball.vh = (ball.vh ?? 4) - 30 * dt; ball.h += ball.vh * dt; if (ball.h < 0) { ball.h = 0; ball.vh = ball.vh < -2 ? -ball.vh * 0.35 : 0; } ball.x += 1.5 * dt; }
 
   // the man with the ball: a back or a receiver runs with your steering, and gets tackled
-  if (carrier && carrier.key !== "QB" && carrier.side === "off" && !over) {
+  if (carrier && S.wrap && !over) wrapTick(S, carrier, dt);
+  else if (carrier && carrier.key !== "QB" && carrier.side === "off" && !over) {
     const cutting = S.jukeUntil > S.t;
     if (S.jukeTo != null && !cutting) { if (S.steer != null) S.steer += S.jukeTo - (S.jukeFrom ?? S.jukeTo); S.jukeTo = null; }
     const wantY = cutting ? S.jukeTo : S.steer != null ? S.steer : S.lane != null && !isPass ? S.lane : carrier.y;
@@ -669,7 +670,7 @@ export function tick(S, dt) {
     // odd broken tackle, the runner's elusiveness and power against his tackling)
     { const u = S.userDef && ents[S.userDef]; if (u && u.down <= 0 && !(u.heldUntil > S.t)) { const du = hyp(u.x - carrier.x, u.y - carrier.y);
       if (du < 1.55) { const el = Math.max(K.power(carrier.p), K.afterCatch(carrier.p)), tk = K.tackling(u.p);
-        if (!u.brokenBy && rnd(S) < clamp((0.05 + (el - tk) * 0.004) * (S.catchAt != null ? CAL.yacCatch * 1.6 : CAL.yac), 0.02, 0.18)) { u.brokenBy = true; u.down = 0.45; S.broke++; S.stagger = S.t + 0.35; S.log.push(`${u.p.name} misses`); S.flash.push({ key: u.key, text: "BROKEN TACKLE", until: S.t + 0.8 }); }
+        if (!u.brokenBy && rnd(S) < clamp((0.05 + (el - tk) * 0.004) * (S.catchAt != null ? CAL.yacCatch * 1.6 : CAL.yac), 0.02, 0.18)) { u.brokenBy = true; u.down = 0.45; S.broke++; breakMove(S, carrier, u); }
         else { S.diveTackle = du > 1.1; tackle(S, u); return true; } } } }
     const [d, dd] = nearestDef(S, carrier.x, carrier.y);
     // a loose runner leans away from a tackler in his path when you aren't steering
@@ -687,7 +688,7 @@ export function tick(S, dt) {
       const el = Math.max(K.power(carrier.p), K.afterCatch(carrier.p)), tk = K.tackling(d.p);
       // (a man who just caught it hasn't got his feet under him; a broken tackle still knocks him off stride)
       const pBreak = d.missed ? 0 : clamp((0.085 + (el - tk) * 0.005 + (S.broke ? -0.05 : 0)) * (S.catchAt != null ? CAL.yacCatch : CAL.yac), 0.03, 0.35);
-      if (rnd(S) < pBreak) { d.down = 0.7; d.missed = true; S.broke++; const bal = clamp(1 - K.edge(K.balance(carrier.p)) * 0.012, 0.5, 1.4); S.stagger = S.t + 0.45 * bal; carrier.vx *= 1 - 0.45 * bal; carrier.vy *= 1 - 0.45 * bal; S.log.push(`${d.p.name} misses`); }
+      if (rnd(S) < pBreak) { d.down = 0.7; d.missed = true; S.broke++; breakMove(S, carrier, d); }
       else { tackle(S, d); return true; }
     } else if (d && dd < 2.3 && dSpeed > 6 && closing < 0.4 && !d.dove && !d.missed && /* (only when he isn't running him down anyway) */ (d.x - carrier.x) * Math.sign(carrier.vx || 1) < 0.3) { // (from behind or alongside: a man in front just tackles him)
       // a man closing from behind at full speed lays out for him: a shoestring tackle, or he's on the turf
@@ -738,11 +739,22 @@ function seekBlock(S, b, dt, range) {
   if (bd < 1.8) block(S, b, best); else { const [px, py] = cutOff(S, best); steer(b, px, py, dt, 0.95); } // get in his path to the ball
 }
 
+// A broken tackle is a move, the one his game has: a shifty back spins off the tackler (a quick step away,
+// keeping most of his speed), a powerful one stiff-arms him to the turf (barely slowed). Either way his
+// balance decides how long it knocks him off stride. Only a tackle he actually breaks shows a move.
+function breakMove(S, c, d) {
+  const el = K.elusive(c.p), pw = K.power(c.p), bal = clamp(1 - K.edge(K.balance(c.p)) * 0.012, 0.5, 1.4);
+  const spin = el > pw, side = Math.sign(c.y - d.y) || (rnd(S) < 0.5 ? -1 : 1);
+  S.move = { kind: spin ? "spin" : "stiff", at: S.t };
+  if (spin) { S.stagger = S.t + 0.22 * bal; c.vx *= 1 - 0.25 * bal; c.vy = side * Math.max(Math.abs(c.vy), 2.5); c.y += side * 0.5; S.log.push(`${c.p.name} spins away from ${d.p.name}`); }
+  else { S.stagger = S.t + 0.18 * bal; c.vx *= 1 - 0.15 * bal; c.vy *= 0.8; d.down = Math.max(d.down, 0.9); d.vx = (d.x - c.x) * 2; d.vy = (d.y - c.y) * 2; S.log.push(`${c.p.name} stiff-arms ${d.p.name}`); }
+}
+
 // A juke (a quick flick while running): a burst, and the nearest tackler within reach may lunge
 // at nothing, his tackling against the runner's elusiveness. One every so often.
 // dir: +1 / -1 across the field (the way you swiped); 0 picks the side away from the nearest tackler
 export function juke(S, dir = 0) {
-  const c = S.ball.holder && S.ents[S.ball.holder]; if (!c || c.side !== "off" || S.phase !== "carry") return false;
+  const c = S.ball.holder && S.ents[S.ball.holder]; if (!c || c.side !== "off" || S.phase !== "carry" || S.wrap) return false;
   if (S.jukeAt != null && S.t - S.jukeAt < 0.5) return false;
   S.jukeAt = S.t; S.burstUntil = S.t + 0.35;
   // the cut itself: a hard plant and a quick step sideways (about two and a half yards), keeping his speed up the field
@@ -763,6 +775,7 @@ export function juke(S, dir = 0) {
 // Up to ~2 yards, less with a tackler square in front of him; the play ends where he lands.
 export function dive(S) {
   const c = S.ball.holder && S.ents[S.ball.holder];
+  if (S.wrap && c && !S.dived) { S.dived = true; S.log.push("dives"); endTackle(S, c, S.wrap.d, { ...S.wrap, mom: 0 }, 1.0); return true; } // (lunging forward out of the drag: the extra yard)
   if (!c || c.side !== "off" || c.key === "QB" && S.phase === "live" || S.phase !== "carry" || S.dived) return false;
   S.dived = true;
   let reach = 1.4 + clamp(hyp(c.vx, c.vy) / c.top, 0, 1) * 0.8; // a man at full speed goes further
@@ -915,11 +928,36 @@ function sack(S, d) {
   S.tackler = d; d.vx = d.vy = 0; qb.vx = qb.vy = 0; S.pick = { why: "sacked" };
   endAt(S, r.ev, "tackle", 1.1);
 }
+// The tackle, the way it really goes: the ball can come out; a powerful back running downhill drags the first man
+// forward until help arrives (or he wins the fight and goes down), and he falls forward for the extra yard; a
+// big hit square on by a strong tackler stops him dead, or drives him back
 function tackle(S, d) {
-  const c = S.ents[S.ball.holder], hitSp = hyp(d.vx, d.vy); S.tackler = d; d.vx = d.vy = 0;
+  const c = S.ents[S.ball.holder], hitSp = hyp(d.vx, d.vy); S.tackler = d;
+  const head = (d.x - c.x) * Math.sign(c.vx || 1) > 0.2, mom = Math.max(0, c.vx), edge = K.power(c.p) - K.hitPower(d.p);
+  d.vx = d.vy = 0;
   if (fumbles(S, c, d, hitSp)) return;
-  const yards = Math.round(c.x - S.los);
-  book(S, yards, "tackle");
+  // the drag: he's still going forward, with the power to keep his legs churning
+  const pDrag = !S.diveTackle && c.side === "off" && mom > 3.5 ? clamp(0.06 + edge * 0.012 + (mom - 4) * 0.03, 0, 0.45) : 0;
+  const drag = rnd(S) < pDrag ? clamp(0.3 + edge * 0.015 + mom * 0.04, 0.3, 1.0) : 0;
+  if (drag > 0) { S.wrap = { d, until: S.t + drag, push: clamp(1.4 + edge * 0.05 + mom * 0.2, 1, 3.6), head, hitSp, edge, mom }; S.log.push(`${c.p.name} drags ${d.p.name}`); return; }
+  endTackle(S, c, d, { head, hitSp, edge, mom });
+}
+// down: where he lands (falling forward with his momentum, or stopped and driven back by a big hit)
+function endTackle(S, c, d, { head, hitSp, edge, mom }, extra = 0) {
+  S.wrap = null;
+  const lean = head && hitSp > 5 && edge < -6 ? -0.5 : clamp((mom - 3) * 0.08 + edge * 0.01 + (head ? -0.2 : 0.1), 0, 0.8); // (hit square at speed by a stronger man: driven back; otherwise he falls forward)
+  c.x = Math.min(99.4, c.x + lean + extra);
+  if (c.x >= 100) { score(S); return; }
+  book(S, Math.round(c.x - S.los), "tackle");
+}
+// the drag, every frame: he churns forward with the tackler on him; a second man in on it ends it (a gang tackle)
+function wrapTick(S, c, dt) {
+  const w = S.wrap, d = w.d;
+  c.vx = w.push; c.vy *= 0.8; c.x += c.vx * dt; c.y += c.vy * dt; d.x = c.x - 0.7 * Math.sign(c.x - d.x || -1); d.y += (c.y - d.y) * Math.min(1, dt * 6); d.vx = c.vx; d.vy = 0;
+  if (c.x >= 100) { S.wrap = null; score(S); return; }
+  let help = null; for (const o of Object.values(S.ents)) if (o.side === "def" && o !== d && o.down <= 0 && !(o.heldUntil > S.t) && hyp(o.x - c.x, o.y - c.y) < 1.6) { help = o; break; }
+  if (help) { S.assist = help; S.log.push(`${help.p.name} helps bring him down`); endTackle(S, c, d, { ...w, mom: w.mom * 0.4 }); return; }
+  if (S.t >= w.until) endTackle(S, c, d, { ...w, mom: w.mom * 0.6 });
 }
 // The ball comes out: a hard hit on a man who doesn't hold it tight (his balance, strength, toughness,
 // hands in traffic against the tackler's power), more on a big shot at full speed, on a man still
