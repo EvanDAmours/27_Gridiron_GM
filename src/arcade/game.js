@@ -227,7 +227,7 @@ export class ArcadeGame {
   benchTeams() { const L = this.live; if (L?.teams) { const me = L.userSide || "h"; return { near: L.teams[me], far: L.teams[me === "h" ? "a" : "h"] }; } return this.teams ? { near: this.teams.user, far: this.teams.opp } : null; }
   viewTeams() { const t = this.live.teams; return this.flipped ? { user: t.a, opp: t.h } : { user: t.h, opp: t.a }; }
   flip() { flipSides(this.g); this.flipped = !this.flipped; this.teams = this.viewTeams(); this.refresh(); }
-  unflip() { if (this.flipped) this.flip(); if (this.g) this.g.patDefer = null; }
+  unflip() { if (this.flipped) this.flip(); if (this.g) { this.g.patDefer = null; this.g.koDefer = null; } }
   emit(ev, off) { if (ev) try { this.live.onEvent?.(ev, off); } catch (e) { console.error(e); } }
   liveNext() {
     if (this.mode === "ceremony" || this.cerNext) { if (this.cerNext && this.g?.done) { this.S = null; this.mode = "idle"; } return; }
@@ -249,6 +249,7 @@ export class ArcadeGame {
     if (off !== "h") this.flip();
     const mine = off === L.userSide && !L.watch;
     g.patDefer = mine ? { h: true } : null;
+    g.koDefer = L.watch ? null : mine ? { a: true } : { h: true }; // (their kickoff after a score: played on the field, your return)
     if (mine) { this.S = null; this.mode = "pick"; this.snapRB = backForSnap(g); this.fade = Math.max(this.fade, 0.6); this.refresh(); return; }
     // the computer's snap: the engine's coach makes the call (run or pass, or a kick, a kneel, a spike)
     const snap = snapshot(g), ev = runPlay(g);

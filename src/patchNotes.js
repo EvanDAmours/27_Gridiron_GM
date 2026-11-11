@@ -2669,4 +2669,9 @@ export const PATCH_NOTES = [
     "In testing, with the computer playing quarterback for you: about 70% completions and 7.6 yards a throw on ROOKIE, 67% and 7.0 on PRO, 65% and 6.2 on ALL-PRO, with more sacks on ALL-PRO. Against you: 61% and 6.1 yards on ROOKIE, 69% and 7.2 on PRO, 73% and 7.7 on ALL-PRO.",
     "The pause menu splits into two columns on a short, wide screen (a phone on its side), so every item fits.",
   ] },
+  { v: "6.39", date: "2026-11-11", title: "Return every kickoff", notes: [
+    "Kickoff returns after a score: when the other team scores a touchdown or a field goal, its kickoff to you is now played on the field and you steer the return. Before, only the kickoffs that open each half and overtime were played out; the rest were decided off screen.",
+    "Fixed: a score in the last few seconds of the first half (or the end of regulation) also kicked off right away, before half-time. That could hand the second-half kickoff to the wrong team. Now the second half (or overtime) opens with the kickoff it should.",
+    "Punt returns name the returner every time (some read just 'returned 12').",
+  ] },
 ];

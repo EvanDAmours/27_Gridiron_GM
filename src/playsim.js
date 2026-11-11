@@ -521,6 +521,10 @@ function newPossession(g, yard) {
 // long one now and then, and once in a while takes it all the way. ev: the scoring play, which
 // gets the return added to its text when it's worth telling.
 function kickoff(g, ev, depth = 0) {
+  // the score ran out the half (or sent the game to overtime): the new period opens with its own kickoff
+  if (g.koNext) return;
+  // the arcade plays this kick on the field (g.koDefer: { h|a: true }, the kicking side): it's the next play
+  if (g.koDefer?.[g.poss] && ev?.type !== "kickoff" && !g.done) { g.koNext = true; g.yard = 35; g.down = 1; g.toGo = 10; return; }
   const rand = g.rand, kick = g.poss, recv = other(kick);
   const R = g.sides[recv], K = g.sides[kick];
   // the play's kickoff, for the field to act out (LivePlay.jsx): only the first one a play leads to
@@ -877,7 +881,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const recvYard = 100 - spot + ret;
     if (pinned && !ret) ev.downed = true;
     if (pl && recvYard <= 20) add(pl, "in20", 1);
-    ev.text = ret >= 20 ? `Punt, ${gross} yards. ${p?.name || "The returner"} brings it back ${ret} yards!` : ret > 0 ? `Punt, ${gross} yards, returned ${ret}.` : `Punt, ${gross} yards${pinned || recvYard <= 10 ? `, downed at the ${recvYard}` : ", fair catch"}.`;
+    ev.text = ret >= 20 ? `Punt, ${gross} yards. ${p?.name || "The returner"} brings it back ${ret} yards!` : ret > 0 ? `Punt, ${gross} yards, returned ${ret}${p?.name ? ` by ${p.name}` : ""}.` : `Punt, ${gross} yards${pinned || recvYard <= 10 ? `, downed at the ${recvYard}` : ", fair catch"}.`;
     if (!g.done) newPossession(g, recvYard);
     return ev;
   }
