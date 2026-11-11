@@ -2,7 +2,7 @@
 // make the calls (contracts, free agency, the draft, the depth chart, trades are left alone) and you
 // press CONTINUE. Drawn like a 16-bit sports broadcast: royal blue, chunky pixel lettering, gold
 // numbers, pixelated club logos, green and red arrows for wins and losses.
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { logoUrl } from "./ui.jsx";
 import { MOBILE } from "./mobile.js";
 import { headshotUrl } from "./headshots.js";
@@ -10,6 +10,8 @@ import { portraitSrc } from "./portraits.js";
 import { depthOrderFor } from "./depth.js";
 import { capSpace } from "./league.js";
 import { yearlyAsk, maxYears } from "./negotiation.js";
+import { nflSeeds, ROUND_NAMES } from "./playoffs.js";
+import { awardRaces } from "./awards.js";
 
 const BASE = import.meta.env?.BASE_URL ?? "/";
 const FONTS = `
@@ -113,10 +115,10 @@ const SLOTS = { offense: [["QB", "QB", 0], ["RB", "RB", 0], ["WR1", "WR", 0], ["
 const rec = (t) => `${t.w || 0}-${t.l || 0}${t.t ? `-${t.t}` : ""}`;
 const pct = (t) => ((t.w || 0) + (t.t || 0) * 0.5) / Math.max(1, (t.w || 0) + (t.l || 0) + (t.t || 0));
 
-export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log, msg, step, busy, onFull, onSave, phaseLabel, depthOrder, setDepthOrder, awards, onResign, draft, onPick, trades }) {
+export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log, msg, step, busy, onFull, onSave, phaseLabel, depthOrder, setDepthOrder, awards, onResign, draft, onPick, trades, champs = [], seasonHistory = [], fa = [], faOpen = false, onSignFA, shop = null }) {
   const [view, setView] = useState("home");
-  const [sub, setSub] = useState({ season: "schedule", stats: "pass", lineup: "offense", draft: "All" });
-  const [card, setCard] = useState(null);       // the player card open
+  const [sub, setSub] = useState(() => ({ team: "roster", stats: "pass", lineup: "offense", draft: "All", league: "leaders", lead: "pass", scope: "league", conf: teams[ui]?.c || "AFC", moves: sp === "draft" ? "draft" : sp === "freeagency" ? "fa" : "trade", fa: "All", scoreWk: null, board: "All" }));
+  const [card, setCard] = useState(null);       // the player card open: { id, ti, p }
   const [slot, setSlot] = useState(null);       // the lineup spot being chosen
   const [walked, setWalked] = useState(() => new Set());
   const [gameBox, setGameBox] = useState(null); // a played game's box score, opened from its row
@@ -125,7 +127,8 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
   const games = (sched || []).filter((g) => g.played && (g.h === ui || g.a === ui)).sort((a, b) => (+b.wk || 0) - (+a.wk || 0));
   const next = sp === "regular" ? (sched || []).find((g) => g.wk === wk + 1 && !g.played && (g.h === ui || g.a === ui)) : null;
   const res = (g) => { const home = g.h === ui, us = home ? g.hs : g.as, them = home ? g.as : g.hs; return { opp: home ? g.a : g.h, home, us, them, win: us > them, tie: us === them }; };
-  const tabs = [["home", "Home"], ["roster", "Roster"], ["lineup", "Lineup"], ["stats", "Stats"], ["season", "Season"]];
+  const tabs = [["home", "Home"], ["team", "Team"], ["schedule", "Schedule"], ["league", "League"], ["moves", "Moves"]];
+  const openCard = (p, ti = ui) => setCard({ id: p.id, ti, p });
   const setS = (k, v) => setSub((x) => ({ ...x, [k]: v }));
 
   // inside the white page: crisp sans headings, newspaper serif, blue names, a yellow highlighter
@@ -136,7 +139,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
   const CLUB = { fontFamily: SANS, fontWeight: 700, color: LINK };
   const Mark = ({ children }) => <span style={{ ...SERIF, fontWeight: 700, background: "#fff23a", padding: "1px 5px", boxDecorationBreak: "clone", WebkitBoxDecorationBreak: "clone" }}>{children}</span>;
   const Logo = (p) => <PixelLogo {...p} style={{ filter: "drop-shadow(2px 2px 0 #0002)", ...p.style }} />;
-  const Face = ({ p, size = 36, res: r = 28 }) => <PixelFace p={p} ab={T.ab} clr={T.clr} size={size} res={r} />;
+  const Face = ({ p, size = 36, res: r = 28, ti = ui }) => <PixelFace p={p} ab={TEAMS[ti]?.ab || T.ab} clr={ti < 0 ? "#6b7280" : TEAMS[ti]?.clr || T.clr} size={size} res={r} />;
   const Row = ({ children, style, onClick }) => <div className={onClick ? "ez-row ez-click" : "ez-row"} onClick={onClick} style={{ display: "flex", alignItems: "center", gap: narrow ? 10 : 14, padding: narrow ? "6px 4px" : "6px 10px", borderBottom: "2px solid #e4e4dc", ...style }}>{children}</div>;
   const Chips = ({ items, on, set }) => <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>{items.map(([k, l]) => <button key={k} className="ez-btn" onClick={() => set(k)} style={{ fontSize: 14, padding: "6px 12px", background: on === k ? "#1d4ed8" : "#e8ecf5", color: on === k ? "#fff" : INK, boxShadow: on === k ? "0 3px 0 #0b2a8f" : "0 3px 0 #c5ccdc" }}>{l}</button>)}</div>;
   const roster = ut?.roster || [];
@@ -157,10 +160,10 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
       <span style={{ ...CLUB, fontSize: 15, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{TEAMS[x.i].name}</span>
       <span style={{ ...NUM, fontSize: 16 }}>{rec(x.t)}</span>
     </Row>));
-  const playerRow = (p, extra, onClick = () => setCard(p)) => (
+  const playerRow = (p, extra, onClick = () => openCard(p), ti = ui) => (
     <Row key={p.id} onClick={onClick} style={{ gap: 12 }}>
       <span style={{ ...PH, fontSize: 13, width: 36, color: "#555" }}>{p.pos}</span>
-      <Face p={p} size={narrow ? 34 : 36} />
+      <Face p={p} size={narrow ? 34 : 36} ti={ti} />
       <span style={{ ...CLUB, fontSize: 16, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
       {extra}
     </Row>);
@@ -186,25 +189,27 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
       {kept.length > 0 && <div style={{ ...SERIF, fontSize: 14, marginTop: 8, color: "#444" }}>Re-signed: {kept.map((p) => p.name).join(", ")}</div>}
     </div>);
 
+  // one club's offer: what they get, what you get, yes or no
+  const offerCard = (o, yes, no) => { const t = TEAMS[o.fromTm] || {}; return (
+    <div key={o.id} style={{ background: "#fff", boxShadow: "inset 0 0 0 3px #c9d6f5", padding: narrow ? "10px 8px" : "12px 14px", marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}><Logo ab={t.ab} size={30} /><span style={{ ...CLUB, fontSize: 17 }}>The {t.city} {t.name} offer</span></div>
+      <div style={{ ...SERIF, fontSize: 14, color: "#555", margin: "2px 0" }}>They get</div>
+      {playerRow(o.want, <><Stars v={o.want.ovr} size={narrow ? 12 : 14} />{!narrow && <span style={{ ...NUM, fontSize: 16, width: 30, textAlign: "right" }}>{o.want.ovr}</span>}</>)}
+      <div style={{ ...SERIF, fontSize: 14, color: "#555", margin: "8px 0 2px" }}>You get</div>
+      {o.give && playerRow(o.give, <><Stars v={o.give.ovr} size={narrow ? 12 : 14} />{!narrow && <span style={{ ...NUM, fontSize: 16, width: 30, textAlign: "right" }}>{o.give.ovr}</span>}</>, () => openCard(o.give, o.fromTm), o.fromTm)}
+      {(o.givePicks || []).map((pk) => <div key={pk.id} style={{ ...CLUB, fontSize: 15, padding: "5px 4px" }}>{pk.yr ? `${pk.yr} ` : ""}round {pk.rd} draft pick{pk.overall ? ` (#${pk.overall})` : ""}</div>)}
+      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+        <button className="ez-btn" onClick={() => yes(o)} style={{ fontSize: 15, padding: "8px 18px", background: "#22a447", color: "#fff", boxShadow: "0 3px 0 #157a32" }}>Yes, trade</button>
+        <button className="ez-btn" onClick={() => no(o)} style={{ fontSize: 15, padding: "8px 18px", background: "#e8ecf5", color: INK, boxShadow: "0 3px 0 #c5ccdc" }}>No thanks</button>
+      </div>
+    </div>); };
   // trade deadline day: a few clubs call with offers (a player, draft picks or both, for one of yours);
   // yes makes the trade, no turns it down. Anything left unanswered lapses when the day ends.
   const tradePanel = () => (
     <div style={{ marginTop: 18 }}>
       <div style={{ marginBottom: 6 }}><Mark>Trade offers</Mark> <span style={{ ...SERIF, fontSize: 15 }}>Say yes or no to each. Offers left open expire when the day ends.</span></div>
       {!trades.offers.length && <div style={{ ...SERIF, fontSize: 16, padding: "6px 2px" }}>No offers left on the table.</div>}
-      {trades.offers.map((o) => { const t = TEAMS[o.fromTm] || {}; return (
-        <div key={o.id} style={{ background: "#fff", boxShadow: "inset 0 0 0 3px #c9d6f5", padding: narrow ? "10px 8px" : "12px 14px", marginBottom: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}><Logo ab={t.ab} size={30} /><span style={{ ...CLUB, fontSize: 17 }}>The {t.city} {t.name} offer</span></div>
-          <div style={{ ...SERIF, fontSize: 14, color: "#555", margin: "2px 0" }}>They get</div>
-          {playerRow(o.want, <><Stars v={o.want.ovr} size={narrow ? 12 : 14} />{!narrow && <span style={{ ...NUM, fontSize: 16, width: 30, textAlign: "right" }}>{o.want.ovr}</span>}</>)}
-          <div style={{ ...SERIF, fontSize: 14, color: "#555", margin: "8px 0 2px" }}>You get</div>
-          {o.give && playerRow(o.give, <><Stars v={o.give.ovr} size={narrow ? 12 : 14} />{!narrow && <span style={{ ...NUM, fontSize: 16, width: 30, textAlign: "right" }}>{o.give.ovr}</span>}</>, () => {})}
-          {(o.givePicks || []).map((pk) => <div key={pk.id} style={{ ...CLUB, fontSize: 15, padding: "5px 4px" }}>{pk.yr ? `${pk.yr} ` : ""}round {pk.rd} draft pick{pk.overall ? ` (#${pk.overall})` : ""}</div>)}
-          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-            <button className="ez-btn" onClick={() => trades.yes(o)} style={{ fontSize: 15, padding: "8px 18px", background: "#22a447", color: "#fff", boxShadow: "0 3px 0 #157a32" }}>Yes, trade</button>
-            <button className="ez-btn" onClick={() => trades.no(o)} style={{ fontSize: 15, padding: "8px 18px", background: "#e8ecf5", color: INK, boxShadow: "0 3px 0 #c5ccdc" }}>No thanks</button>
-          </div>
-        </div>); })}
+      {trades.offers.map((o) => offerCard(o, trades.yes, trades.no))}
     </div>);
 
   const cur = draft?.picks?.[draft.idx];
@@ -248,6 +253,13 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
               <div style={{ textAlign: "center" }}><Logo ab={opp.ab} size={narrow ? 52 : 62} /><div style={{ ...NUM, fontSize: 16, marginTop: 4 }}>{oppT ? rec(oppT) : ""}</div></div>
             </div>
           )}
+          {(() => { // the playoff picture, in a line
+            if (sp !== "regular" || !playedAny) return null;
+            const seeds = seedsOf(ut.c), at = seeds.indexOf(ui), s7 = teams[seeds[6]];
+            const back = s7 ? ((s7.w || 0) - (ut.w || 0) + (ut.l || 0) - (s7.l || 0)) / 2 : 0;
+            const txt = at >= 0 ? `If the season ended today, you'd be the ${ut.c}'s #${at + 1} seed${at === 0 ? " (and the bye)" : ""}.` : back > 0 ? `${back} game${back === 1 ? "" : "s"} out of the last playoff spot in the ${ut.c}.` : `Tied for the last playoff spot in the ${ut.c}.`;
+            return <div className="ez-click" onClick={() => { setView("league"); setS("league", "playoffs"); setS("conf", ut.c); }} style={{ ...SERIF, fontSize: 15, marginTop: 12, padding: "6px 8px", background: at >= 0 ? "#e7f6ea" : "#f3f4f6", boxShadow: `inset 3px 0 0 ${at >= 0 ? "#22a447" : "#9ca3af"}` }}>{txt} <span style={{ ...PH, fontSize: 13, color: LINK }}>Playoff picture</span></div>;
+          })()}
           {step && !myCall && <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
             <Btn big onClick={step.run} disabled={busy} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>{busy ? <span style={{ animation: "ezBlink .6s steps(2) infinite" }}>Working…</span> : <>▶ {step.label}</>}</Btn>
             {step.watch && <Btn kind="blue" onClick={step.watch} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>Watch the game</Btn>}
@@ -260,7 +272,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
           {!narrow && !offseason && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22, marginTop: 20 }}>
             <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>{ut.c} {ut.d}</Mark></div>{divRows(ut.c, ut.d)}</div>
             <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>Best players</Mark></div>
-              {[...roster].sort((a, b) => b.ovr - a.ovr).slice(0, 4).map((p) => <Row key={p.id} onClick={() => setCard(p)} style={{ gap: 10, padding: "4px 4px" }}><Face p={p} size={34} /><span style={{ ...PH, fontSize: 13, width: 30, color: "#555" }}>{p.pos}</span><span style={{ ...CLUB, fontSize: 15, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><span style={{ ...NUM, fontSize: 16 }}>{p.ovr}</span></Row>)}</div>
+              {[...roster].sort((a, b) => b.ovr - a.ovr).slice(0, 4).map((p) => <Row key={p.id} onClick={() => openCard(p)} style={{ gap: 10, padding: "4px 4px" }}><Face p={p} size={34} /><span style={{ ...PH, fontSize: 13, width: 30, color: "#555" }}>{p.pos}</span><span style={{ ...CLUB, fontSize: 15, flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span><span style={{ ...NUM, fontSize: 16 }}>{p.ovr}</span></Row>)}</div>
           </div>}
         </div>
         <div>
@@ -320,29 +332,6 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
     </>);
   };
 
-  // ---- Stats: your players this season, and the league's awards ----
-  const statsView = () => {
-    const g = sub.stats;
-    const cols = { pass: [["Att", (s) => s.att], ["Cmp", (s) => s.comp], ["Yds", (s) => s.passYds], ["TD", (s) => s.passTD], ["INT", (s) => s.passInt]], rush: [["Car", (s) => s.rushAtt], ["Yds", (s) => s.rushYds], ["TD", (s) => s.rushTD]], rec: [["Rec", (s) => s.rec], ["Yds", (s) => s.recYds], ["TD", (s) => s.recTD]], def: [["Tkl", (s) => (s.tkl || 0) + (s.ast || 0)], ["Sacks", (s) => s.sacks], ["INT", (s) => s.ints], ["PD", (s) => s.pd]] }[g];
-    const key = { pass: (s) => s.passYds || 0, rush: (s) => s.rushYds || 0, rec: (s) => s.recYds || 0, def: (s) => (s.tkl || 0) + (s.ast || 0) + (s.sacks || 0) * 4 + (s.ints || 0) * 6 }[g];
-    const list = roster.filter((p) => key(p.ss || {}) > 0).sort((a, b) => key(b.ss || {}) - key(a.ss || {})).slice(0, 12);
-    const aw = [...(awards || [])].sort((a, b) => b.yr - a.yr);
-    const last = aw[0];
-    const mine = aw.flatMap((a) => AWARD.filter(([k]) => a[k]?.ti === ui).map(([k, l]) => ({ yr: a.yr, l, w: a[k] })));
-    return (<div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "minmax(0,1.3fr) minmax(0,1fr)", gap: narrow ? 18 : 30, alignItems: "start" }}>
-      <div>
-        <Chips items={[["pass", "Passing"], ["rush", "Rushing"], ["rec", "Receiving"], ["def", "Defense"]]} on={g} set={(v) => setS("stats", v)} />
-        <div style={{ display: "flex", ...PH, fontSize: 12, color: "#666", padding: "0 10px 4px", gap: 12 }}><span style={{ width: 36 }}>Pos</span><span style={{ width: 36 }} /><span style={{ flex: 1 }}>Player</span>{cols.map(([l]) => <span key={l} style={{ width: narrow ? 34 : 46, textAlign: "right" }}>{l}</span>)}</div>
-        {list.length ? list.map((p) => playerRow(p, cols.map(([l, f]) => <span key={l} style={{ ...NUM, fontSize: 15, width: narrow ? 34 : 46, textAlign: "right" }}>{f(p.ss || {}) || 0}</span>))) : <div style={{ ...SERIF, fontSize: 16, padding: 6 }}>No stats yet this season.</div>}
-      </div>
-      <div>
-        <div style={{ marginBottom: 6, fontSize: 16 }}><Mark>{last ? `${last.yr} awards` : "Awards"}</Mark></div>
-        {last ? AWARD.filter(([k]) => last[k]).map(([k, l]) => { const w = last[k]; return <Row key={k} style={{ gap: 10, padding: "6px 4px", background: w.ti === ui ? "#fff9c4" : undefined }}><Logo ab={TEAMS[w.ti]?.ab} size={28} /><span style={{ flex: 1, minWidth: 0 }}><span style={{ ...PH, fontSize: 13, color: "#555", display: "block" }}>{l}</span><span style={{ ...CLUB, fontSize: 15 }}>{w.name}</span><span style={{ ...SERIF, fontSize: 13, color: "#666" }}> {w.pos}, {w.team}</span></span></Row>; }) : <div style={{ ...SERIF, fontSize: 16, padding: 6 }}>Awards are handed out when the regular season ends.</div>}
-        {mine.length > 0 && <><div style={{ margin: "16px 0 6px", fontSize: 16 }}><Mark>Your trophies</Mark></div>{mine.map((m, i) => <div key={i} style={{ ...SERIF, fontSize: 15, padding: "5px 4px", borderBottom: "2px solid #e4e4dc" }}><b>{m.yr}</b> {m.l}: {m.w.name}</div>)}</>}
-      </div>
-    </div>);
-  };
-
   // ---- Season: the schedule, and the standings as a broadcast table ----
   const schedule = () => {
     const mine = (sched || []).filter((g) => g.h === ui || g.a === ui).sort((a, b) => (+a.wk || 0) - (+b.wk || 0));
@@ -350,43 +339,20 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
     return mine.map((g, i) => g.played ? gameRow(g, i) : (
       <Row key={i}><span style={{ width: 16 }} /><span style={{ ...PH, fontSize: 13, width: narrow ? 50 : 70, color: "#555" }}>Week {g.wk}</span><Logo ab={T.ab} size={narrow ? 28 : 32} /><span style={{ flex: 1, textAlign: "center" }}>{g.wk === wk + 1 ? <Mark>Next</Mark> : <span style={{ ...NUM, color: "#aaa" }}>-</span>}</span><span style={{ ...PH, fontSize: 13, color: "#555" }}>{g.h === ui ? "vs" : "at"}</span><Logo ab={TEAMS[g.h === ui ? g.a : g.h]?.ab} size={narrow ? 28 : 32} /></Row>));
   };
-  const standings = () => {
-    const divs = [...new Set(teams.filter((t) => t.c === ut.c).map((t) => t.d))].sort((a, b) => (a === ut.d ? -1 : b === ut.d ? 1 : String(a).localeCompare(String(b))));
-    const cols = narrow ? ["W", "L", "PF", "PA"] : ["W", "L", "T", "PF", "PA", "Diff"];
-    const cell = { display: "flex", alignItems: "center", justifyContent: "center" };
-    const grid = { display: "grid", gridTemplateColumns: `${narrow ? 30 : 40}px ${narrow ? 46 : 60}px minmax(0,1fr)`, gap: 4 };
-    const hd = { ...cell, background: "#ffb300", fontFamily: SANS, fontWeight: 800, fontSize: narrow ? 13 : 14, color: INK, padding: "6px 2px", lineHeight: 1.05, textAlign: "center" };
-    return (<div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gap: narrow ? 14 : 22 }}>
-      {divs.map((d) => <div key={d} style={{ background: BLUE, padding: 4, boxShadow: "4px 4px 0 #0a1f6b" }}>
-        <div style={{ ...GOLD, fontSize: narrow ? 16 : 18, padding: "4px 6px 6px", textShadow: "2px 2px 0 #0a1f6b" }}>{ut.c} {d}</div>
-        <div style={grid}><div style={hd}>Rk</div><div style={hd}>Team</div><div style={{ display: "grid", gridTemplateColumns: `repeat(${cols.length},1fr)`, gap: 4 }}>{cols.map((c) => <div key={c} style={hd}>{c}</div>)}</div></div>
-        {teams.map((t, i) => ({ t, i })).filter((x) => x.t.c === ut.c && x.t.d === d).sort((a, b) => pct(b.t) - pct(a.t) || (b.t.pf - b.t.pa) - (a.t.pf - a.t.pa)).map((x, k) => {
-          const v = { W: x.t.w || 0, L: x.t.l || 0, T: x.t.t || 0, PF: x.t.pf || 0, PA: x.t.pa || 0, Diff: (x.t.pf || 0) - (x.t.pa || 0) };
-          const me = x.i === ui;
-          return <div key={x.i} style={{ ...grid, marginTop: 4 }}>
-            <div style={{ ...cell, background: "#ffb300", fontFamily: SANS, fontWeight: 800, fontSize: narrow ? 19 : 22, color: INK }}>{k + 1}</div>
-            <div title={TEAMS[x.i].name} style={{ ...cell, background: TEAMS[x.i].clr || "#222", padding: "4px 0" }}><PixelLogo ab={TEAMS[x.i].ab} size={narrow ? 32 : 40} style={{ filter: "drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff)" }} /></div>
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols.length},1fr)`, background: me ? "#fff6c2" : "#fbfbf8", boxShadow: me ? "inset 0 0 0 3px #ffb300" : "none" }}>
-              {cols.map((c) => <div key={c} style={{ ...cell, fontFamily: SANS, fontWeight: 600, fontSize: narrow ? 16 : 19, color: INK, fontVariantNumeric: "tabular-nums" }}>{c === "Diff" && v[c] > 0 ? `+${v[c]}` : v[c]}</div>)}
-            </div>
-          </div>; })}
-      </div>)}
-    </div>);
-  };
-  const seasonView = () => <><Chips items={[["schedule", "Schedule"], ["standings", "Standings"]]} on={sub.season} set={(v) => setS("season", v)} />{sub.season === "schedule" ? schedule() : standings()}</>;
-
   // ---- the player card ----
-  const cardView = () => { const p = roster.find((x) => x.id === card.id) || card; const bits = statBits(p);
+  const cardView = () => { const cti = card.ti ?? ui, Tc = cti >= 0 ? TEAMS[cti] || T : { name: "Free agent", clr: "#4b5563", ab: T.ab }, p = (cti >= 0 ? teams[cti]?.roster : fa)?.find((x) => x.id === card.id) || card.p; const bits = statBits(p);
+    // his career: the seasons before this one, plus this one
+    const career = (() => { const cs = { ...(p.cs || {}) }; for (const [k, v] of Object.entries(p.ss || {})) if (typeof v === "number") cs[k] = (cs[k] || 0) + v; return statBits({ ...p, ss: cs }); })();
     const won = (awards || []).flatMap((a) => AWARD.filter(([k]) => a[k]?.pid === p.id).map(([, l]) => `${a.yr} ${l}`));
     const row = (l, v) => <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "6px 0", borderBottom: "2px solid #e4e4dc" }}><span style={{ ...PH, fontSize: 14, color: "#555" }}>{l}</span><span style={{ ...SERIF, fontSize: 15, textAlign: "right" }}>{v}</span></div>;
     return (
       <div onClick={() => setCard(null)} style={{ position: "absolute", inset: 0, zIndex: 10, background: "#0a1f6bb3", display: "flex", alignItems: "center", justifyContent: "center", padding: 12 }}>
         <div onClick={(e) => e.stopPropagation()} style={{ width: "min(560px, 100%)", maxHeight: "100%", overflowY: "auto", background: "#fbfbf8", border: "4px solid #111", boxShadow: "8px 8px 0 #0a1f6b" }}>
-          <div style={{ display: "flex", gap: 16, alignItems: "center", padding: 16, background: `linear-gradient(135deg, ${T.clr}, #0b2a8f)` }}>
-            <span style={{ border: "4px solid #fff", lineHeight: 0 }}><Face p={p} size={narrow ? 96 : 120} res={40} /></span>
+          <div style={{ display: "flex", gap: 16, alignItems: "center", padding: 16, background: `linear-gradient(135deg, ${Tc.clr}, #0b2a8f)` }}>
+            <span style={{ border: "4px solid #fff", lineHeight: 0 }}><Face p={p} size={narrow ? 96 : 120} res={40} ti={cti} /></span>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ ...H, fontSize: narrow ? 21 : 26, lineHeight: 1.1 }}>{p.name}</div>
-              <div style={{ ...H, fontSize: 15, fontWeight: 600, marginTop: 4, textShadow: "none", color: "#dbe6ff" }}>{p.pos} · age {p.age}{p.num != null ? ` · #${p.num}` : ""} · {T.name}</div>
+              <div style={{ ...H, fontSize: 15, fontWeight: 600, marginTop: 4, textShadow: "none", color: "#dbe6ff" }}>{p.pos} · age {p.age}{p.num != null ? ` · #${p.num}` : ""} · {Tc.name}</div>
               <div style={{ display: "flex", gap: 16, marginTop: 10, alignItems: "flex-end" }}>
                 <div><div style={{ ...GOLD, fontSize: narrow ? 30 : 36, lineHeight: 1 }}>{p.ovr}</div><div style={{ ...H, fontSize: 12, textShadow: "none" }}>Overall</div></div>
                 <div><Stars v={p.ovr} size={16} color="#ffb300" /><div style={{ ...H, fontSize: 12, textShadow: "none", marginTop: 4 }}>Now</div></div>
@@ -399,6 +365,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
             {p.dev && row("Development", String(p.dev).replace(/^\w/, (c) => c.toUpperCase()))}
             {row(`${yr} season`, bits.length ? bits.join(" · ") : (p.ss?.gp ? `${p.ss.gp} games` : "Hasn't played yet"))}
             {p.ss?.gp ? row("Games", `${p.ss.gp} played, ${p.ss.gs || 0} started`) : null}
+            {p.cs && Object.keys(p.cs).length > 0 && career.length > 0 && row("Career", career.join(" · "))}
             {row("Awards", won.length ? won.join(", ") : "None yet")}
             {p.college && row("College", p.college)}
             <div style={{ marginTop: 14, textAlign: "right" }}><Btn kind="blue" onClick={() => setCard(null)}>Close</Btn></div>
@@ -406,7 +373,295 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
         </div>
       </div>); };
 
-  const views = { home, roster: rosterView, lineup: lineupView, stats: statsView, season: seasonView };
+  // ======== the whole league (League tab), and the moves you make (Moves tab) ========
+  const ordinal = (n) => { const v = n % 100; return n + (v >= 11 && v <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"); };
+  const allPlayers = useMemo(() => teams.flatMap((t, ti) => (t.roster || []).map((p) => ({ p, ti }))), [teams]);
+  const withIds = useMemo(() => teams.map((t, i) => ({ ...t, id: i })), [teams]);
+  const seedsOf = (c) => nflSeeds(withIds, c);
+  const races = useMemo(() => (view === "league" ? awardRaces(teams, yr, 5) : null), [teams, yr, view]);
+  const playedAny = teams.some((t) => (t.w || 0) + (t.l || 0) + (t.t || 0) > 0);
+  const Name = ({ children, size = 16, me }) => <span style={{ ...CLUB, fontSize: size, color: me ? INK : LINK, display: "block", lineHeight: 1.2, overflowWrap: "anywhere" }}>{children}</span>;
+  const Head = ({ cols, lead = 0, gap = narrow ? 8 : 12 }) => <div style={{ display: "flex", ...PH, fontSize: 12, color: "#666", padding: narrow ? "0 4px 4px" : "0 10px 4px", gap }}><span style={{ flex: 1, paddingLeft: lead }}>Player</span>{cols.map(([l, , w]) => <span key={l} style={{ width: w ? (narrow ? w - 10 : w) : narrow ? 38 : 50, textAlign: "right" }}>{l}</span>)}</div>;
+  const statCells = (s, cols) => cols.map(([l, f, w]) => <span key={l} style={{ ...NUM, fontSize: narrow ? 14 : 16, width: w ? (narrow ? w - 10 : w) : narrow ? 38 : 50, textAlign: "right", flexShrink: 0 }}>{f(s)}</span>);
+
+  // ---- League > Leaders: the top players in the league (or your team) at each stat ----
+  const LEAD = {
+    pass: ["Passing", (s) => s.passYds || 0, [["Cmp/Att", (s) => `${s.comp || 0}/${s.att || 0}`, 74], ["Yds", (s) => s.passYds || 0], ["TD", (s) => s.passTD || 0, 40], ["INT", (s) => s.passInt || 0, 40]]],
+    rush: ["Rushing", (s) => s.rushYds || 0, [["Car", (s) => s.rushAtt || 0, 44], ["Yds", (s) => s.rushYds || 0], ["Avg", (s) => (s.rushAtt ? (s.rushYds / s.rushAtt).toFixed(1) : "0.0"), 44], ["TD", (s) => s.rushTD || 0, 40]]],
+    rec: ["Receiving", (s) => s.recYds || 0, [["Rec", (s) => s.rec || 0, 44], ["Yds", (s) => s.recYds || 0], ["TD", (s) => s.recTD || 0, 40]]],
+    tkl: ["Tackles", (s) => (s.tkl || 0) + (s.ast || 0), [["Tkl", (s) => (s.tkl || 0) + (s.ast || 0)], ["Sacks", (s) => s.sacks || 0], ["INT", (s) => s.ints || 0, 40]]],
+    sack: ["Sacks", (s) => s.sacks || 0, [["Sacks", (s) => s.sacks || 0], ["Tkl", (s) => (s.tkl || 0) + (s.ast || 0)]]],
+    int: ["INTs", (s) => (s.ints || 0) * 100 + (s.pd || 0), [["INT", (s) => s.ints || 0, 40], ["PD", (s) => s.pd || 0, 40], ["Tkl", (s) => (s.tkl || 0) + (s.ast || 0)]]],
+    kick: ["Kicking", (s) => (s.fgM || 0) * 3 + (s.xpM || 0), [["FG", (s) => `${s.fgM || 0}/${s.fgA || 0}`, 60], ["XP", (s) => `${s.xpM || 0}/${s.xpA || 0}`, 60], ["Pts", (s) => (s.fgM || 0) * 3 + (s.xpM || 0), 44]]],
+  };
+  const leaderRow = ({ p, ti }, k, cols) => (
+    <Row key={`${ti}-${p.id}`} onClick={() => openCard(p, ti)} style={{ gap: narrow ? 8 : 12, background: ti === ui ? "#fff9c4" : undefined }}>
+      <span style={{ ...NUM, fontSize: 14, width: 22, color: "#666", textAlign: "right", flexShrink: 0 }}>{k + 1}</span>
+      <Face p={p} ti={ti} size={narrow ? 32 : 36} />
+      <span style={{ flex: 1, minWidth: 0 }}><Name size={narrow ? 15 : 16} me={ti === ui}>{p.name}</Name><span style={{ ...PH, fontSize: 12, color: "#666" }}>{p.pos} · {TEAMS[ti]?.ab}</span></span>
+      {statCells(p.ss || {}, cols)}
+    </Row>);
+  const raceBox = (title, list) => list?.length ? <div style={{ marginBottom: 16 }}><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>{title}</Mark></div>
+    {list.slice(0, 5).map((x, k) => <Row key={x.pid} style={{ gap: 10, padding: "5px 4px", background: x.ti === ui ? "#fff9c4" : undefined }}><span style={{ ...NUM, fontSize: 14, width: 16, color: "#666" }}>{k + 1}</span><Logo ab={TEAMS[x.ti]?.ab} size={26} /><span style={{ flex: 1, minWidth: 0 }}><Name size={15} me={x.ti === ui}>{x.name}</Name><span style={{ ...SERIF, fontSize: 13, color: "#666" }}>{x.pos}, {x.team}{x.stat ? ` · ${x.stat}` : ""}</span></span></Row>)}</div> : null;
+  const leadersView = () => {
+    const [, key, cols] = LEAD[sub.lead], mine = sub.scope === "team";
+    const list = allPlayers.filter((x) => (!mine || x.ti === ui) && key(x.p.ss || {}) > 0).sort((a, b) => key(b.p.ss || {}) - key(a.p.ss || {})).slice(0, mine ? 15 : 25);
+    const aw = [...(awards || [])].sort((a, b) => b.yr - a.yr)[0];
+    return (<div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,1.6fr) minmax(0,1fr)", gap: narrow ? 18 : 30, alignItems: "start" }}>
+      <div>
+        <Chips items={[["league", "Whole league"], ["team", `${T.name} only`]]} on={sub.scope} set={(v) => setS("scope", v)} />
+        <Chips items={Object.entries(LEAD).map(([k, v]) => [k, v[0]])} on={sub.lead} set={(v) => setS("lead", v)} />
+        <Head cols={cols} lead={narrow ? 70 : 84} />
+        {list.length ? list.map((x, k) => leaderRow(x, k, cols)) : <div style={{ ...SERIF, fontSize: 16, padding: 6 }}>No stats yet this season.</div>}
+      </div>
+      <div>
+        {races && sp === "regular" && playedAny && <>{raceBox("MVP race", races.mvp)}{raceBox("Defensive Player of the Year race", races.dpoy)}{raceBox("Offensive Rookie of the Year race", races.oroy)}</>}
+        <div style={{ marginBottom: 6, fontSize: 16 }}><Mark>{aw ? `${aw.yr} awards` : "Awards"}</Mark></div>
+        {aw ? AWARD.filter(([k]) => aw[k]).map(([k, l]) => { const w = aw[k]; return <Row key={k} style={{ gap: 10, padding: "6px 4px", background: w.ti === ui ? "#fff9c4" : undefined }}><Logo ab={TEAMS[w.ti]?.ab} size={28} /><span style={{ flex: 1, minWidth: 0 }}><span style={{ ...PH, fontSize: 13, color: "#555", display: "block" }}>{l}</span><Name size={15} me={w.ti === ui}>{w.name}</Name><span style={{ ...SERIF, fontSize: 13, color: "#666" }}>{w.pos}, {w.team}</span></span></Row>; }) : <div style={{ ...SERIF, fontSize: 16, padding: 6 }}>Awards are handed out when the regular season ends.</div>}
+      </div>
+    </div>);
+  };
+
+  // ---- League > Standings: every division, a conference at a time, with the playoff seeds ----
+  const standingsView = () => {
+    const conf = sub.conf, seeds = playedAny ? seedsOf(conf) : [];
+    const divs = [...new Set(teams.filter((t) => t.c === conf).map((t) => t.d))].sort((a, b) => (conf === ut.c && a === ut.d ? -1 : conf === ut.c && b === ut.d ? 1 : String(a).localeCompare(String(b))));
+    const cols = narrow ? ["W", "L", "Diff", "Seed"] : ["W", "L", "T", "PF", "PA", "Diff", "Seed"];
+    const cell = { display: "flex", alignItems: "center", justifyContent: "center" };
+    const grid = { display: "grid", gridTemplateColumns: `${narrow ? 30 : 40}px ${narrow ? 46 : 60}px minmax(0,1fr)`, gap: 4 };
+    const hd = { ...cell, background: "#ffb300", fontFamily: SANS, fontWeight: 800, fontSize: narrow ? 13 : 14, color: INK, padding: "6px 2px", lineHeight: 1.05, textAlign: "center" };
+    return (<>
+      <Chips items={[["AFC", "AFC"], ["NFC", "NFC"]]} on={conf} set={(v) => setS("conf", v)} />
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gap: narrow ? 14 : 22 }}>
+        {divs.map((d) => <div key={d} style={{ background: BLUE, padding: 4, boxShadow: "4px 4px 0 #0a1f6b" }}>
+          <div style={{ ...GOLD, fontSize: narrow ? 16 : 18, padding: "4px 6px 6px", textShadow: "2px 2px 0 #0a1f6b" }}>{conf} {d}</div>
+          <div style={grid}><div style={hd}>Rk</div><div style={hd}>Team</div><div style={{ display: "grid", gridTemplateColumns: `repeat(${cols.length},1fr)`, gap: 4 }}>{cols.map((c) => <div key={c} style={hd}>{c}</div>)}</div></div>
+          {teams.map((t, i) => ({ t, i })).filter((x) => x.t.c === conf && x.t.d === d).sort((a, b) => pct(b.t) - pct(a.t) || (b.t.pf - b.t.pa) - (a.t.pf - a.t.pa)).map((x, k) => {
+            const sd = seeds.indexOf(x.i);
+            const v = { W: x.t.w || 0, L: x.t.l || 0, T: x.t.t || 0, PF: x.t.pf || 0, PA: x.t.pa || 0, Diff: (x.t.pf || 0) - (x.t.pa || 0), Seed: sd >= 0 ? `#${sd + 1}` : "-" };
+            const me = x.i === ui;
+            return <div key={x.i} style={{ ...grid, marginTop: 4 }}>
+              <div style={{ ...cell, background: "#ffb300", fontFamily: SANS, fontWeight: 800, fontSize: narrow ? 19 : 22, color: INK }}>{k + 1}</div>
+              <div title={TEAMS[x.i].name} style={{ ...cell, background: TEAMS[x.i].clr || "#222", padding: "4px 0" }}><PixelLogo ab={TEAMS[x.i].ab} size={narrow ? 32 : 40} style={{ filter: "drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff)" }} /></div>
+              <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols.length},1fr)`, background: me ? "#fff6c2" : "#fbfbf8", boxShadow: me ? "inset 0 0 0 3px #ffb300" : "none" }}>
+                {cols.map((c) => <div key={c} style={{ ...cell, fontFamily: SANS, fontWeight: c === "Seed" ? 800 : 600, fontSize: narrow ? 16 : 19, color: c === "Seed" && sd >= 0 ? "#1d4ed8" : INK, fontVariantNumeric: "tabular-nums" }}>{c === "Diff" && v[c] > 0 ? `+${v[c]}` : v[c]}</div>)}
+              </div>
+            </div>; })}
+        </div>)}
+      </div>
+      <div style={{ ...SERIF, fontSize: 14, color: "#555", marginTop: 12 }}>Seed: where a club would be in the playoffs if the season ended today (seven from each conference; the top seed gets a bye).</div>
+    </>);
+  };
+
+  // ---- a game in a list: away at home, the winner in bold, yours on yellow ----
+  const scoreRow = (g, key, onClick) => {
+    const done = g.hs != null && g.as != null && (g.played || g.w != null), aw = done && g.as > g.hs, hw = done && g.hs > g.as, mine = g.h === ui || g.a === ui;
+    const side = (ti, won, right) => <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: narrow ? 6 : 10, flexDirection: right ? "row-reverse" : "row", textAlign: right ? "right" : "left" }}>
+      <Logo ab={TEAMS[ti]?.ab} size={narrow ? 26 : 30} />
+      <span style={{ ...CLUB, fontSize: narrow ? 14 : 15, color: ti === ui ? INK : LINK, fontWeight: won ? 800 : 600, lineHeight: 1.15 }}>{narrow ? TEAMS[ti]?.ab : TEAMS[ti]?.name}</span></span>;
+    return (<Row key={key} onClick={onClick} style={{ gap: narrow ? 6 : 10, background: mine ? "#fff9c4" : undefined }}>
+      {side(g.a, aw)}
+      <span style={{ ...NUM, fontSize: narrow ? 17 : 19, width: 34, textAlign: "right", color: done && !aw ? "#888" : INK }}>{done ? g.as : ""}</span>
+      <span style={{ ...PH, fontSize: 13, color: "#999", width: 22, textAlign: "center" }}>{done ? "-" : "at"}</span>
+      <span style={{ ...NUM, fontSize: narrow ? 17 : 19, width: 34, color: done && !hw ? "#888" : INK }}>{done ? g.hs : ""}</span>
+      {side(g.h, hw, true)}
+    </Row>);
+  };
+
+  // ---- League > Playoffs: the picture during the season, the bracket once it starts ----
+  const playoffsView = () => {
+    const bracket = pb && (sp === "playoffs" || (sp !== "regular" && sp !== "preseason"));
+    if (bracket) {
+      const champ = pb.ch;
+      return (<div>
+        {champ != null && <div style={{ display: "flex", alignItems: "center", gap: 14, padding: narrow ? "10px 8px" : "14px 18px", background: "#fff6c2", boxShadow: "inset 0 0 0 3px #ffb300", marginBottom: 16 }}><Logo ab={TEAMS[champ]?.ab} size={narrow ? 48 : 60} /><div><div style={{ ...PH, fontSize: 14, color: "#7a5600" }}>Super Bowl champions</div><div style={{ ...CLUB, fontSize: narrow ? 20 : 24, color: INK }}>{TEAMS[champ]?.city} {TEAMS[champ]?.name}</div></div></div>}
+        {[1, 2, 3, 4].map((rd) => {
+          const done = (pb.res || []).filter((r) => r.rd === rd), next = rd === pb.rd && champ == null ? pb.m || [] : [];
+          if (!done.length && !next.length) return null;
+          return (<div key={rd} style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 4, fontSize: 16 }}><Mark>{ROUND_NAMES[rd]}</Mark>{rd === 1 && pb.seeds && <span style={{ ...SERIF, fontSize: 14, color: "#555" }}> Byes: the {TEAMS[pb.seeds.AFC?.[0]]?.name} and the {TEAMS[pb.seeds.NFC?.[0]]?.name}</span>}</div>
+            {done.map((r, i) => scoreRow({ ...r, played: true }, `d${i}`, r.boxH || r.boxA ? () => setGameBox({ ...r, wk: ROUND_NAMES[rd] }) : undefined))}
+            {next.map(([h, a], i) => scoreRow({ h, a }, `n${i}`))}
+          </div>);
+        })}
+      </div>);
+    }
+    const conf = sub.conf, seeds = playedAny ? seedsOf(conf) : [];
+    if (!seeds.length) return <div style={{ ...SERIF, fontSize: 17 }}>The playoff picture fills in once the season's first games are played.</div>;
+    const s7 = teams[seeds[6]], gb = (t) => ((s7.w || 0) - (t.w || 0) + (t.l || 0) - (s7.l || 0)) / 2;
+    const hunt = teams.map((t, i) => ({ t, i })).filter((x) => x.t.c === conf && !seeds.includes(x.i)).sort((a, b) => pct(b.t) - pct(a.t)).slice(0, 5);
+    const line = (i, label, extra) => <Row key={i} style={{ gap: 10, padding: "6px 4px", background: i === ui ? "#fff9c4" : undefined }}>
+      <span style={{ ...NUM, fontSize: 15, width: 34, textAlign: "center", background: label ? "#ffb300" : "#e8ecf5", padding: "3px 0" }}>{label || "-"}</span>
+      <Logo ab={TEAMS[i]?.ab} size={narrow ? 28 : 30} /><span style={{ flex: 1, minWidth: 0 }}><Name size={15} me={i === ui}>{TEAMS[i]?.city} {TEAMS[i]?.name}</Name></span>
+      <span style={{ ...SERIF, fontSize: 13, color: "#555", textAlign: "right" }}>{extra}</span><span style={{ ...NUM, fontSize: 16, width: 54, textAlign: "right" }}>{rec(teams[i])}</span></Row>;
+    return (<>
+      <Chips items={[["AFC", "AFC"], ["NFC", "NFC"]]} on={conf} set={(v) => setS("conf", v)} />
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "minmax(0,1fr) minmax(0,1fr)", gap: narrow ? 16 : 30, alignItems: "start" }}>
+        <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>If the season ended today</Mark></div>{seeds.map((i, k) => line(i, `#${k + 1}`, k < 4 ? "Division leader" : "Wild card"))}</div>
+        <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>In the hunt</Mark></div>{hunt.map((x) => line(x.i, null, gb(x.t) > 0 ? `${gb(x.t)} back` : "tied"))}</div>
+      </div>
+    </>);
+  };
+
+  // ---- League > Scores: every game, a week at a time ----
+  const scoresView = () => {
+    const weeks = [...new Set((sched || []).filter((g) => g.played && !/^P/.test(String(g.wk))).map((g) => +g.wk))].sort((a, b) => a - b);
+    if (!weeks.length) return <div style={{ ...SERIF, fontSize: 17 }}>Scores show up here once the season's first games are played.</div>;
+    const cur = weeks.includes(sub.scoreWk) ? sub.scoreWk : weeks[weeks.length - 1], at = weeks.indexOf(cur);
+    const games = (sched || []).filter((g) => +g.wk === cur && g.played);
+    const nav = (lbl, to) => <button className="ez-btn" disabled={to == null} onClick={() => setS("scoreWk", to)} style={{ fontSize: 14, padding: "6px 14px", background: "#e8ecf5", color: INK, boxShadow: "0 3px 0 #c5ccdc", opacity: to == null ? 0.4 : 1 }}>{lbl}</button>;
+    return (<>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>{nav("◀ Earlier", at > 0 ? weeks[at - 1] : null)}<span style={{ ...PH, fontSize: 18, flex: 1, textAlign: "center" }}>Week {cur}</span>{nav("Later ▶", at < weeks.length - 1 ? weeks[at + 1] : null)}</div>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,1fr) minmax(0,1fr)", columnGap: 30 }}>
+        {games.map((g, i) => scoreRow(g, i, g.boxH || g.boxA ? () => setGameBox(g) : undefined))}
+      </div>
+      <div style={{ ...SERIF, fontSize: 14, color: "#555", marginTop: 10 }}>Tap a game for its box score.</div>
+    </>);
+  };
+
+  // ---- League > History: every champion and MVP ----
+  const leagueHistoryView = () => {
+    const list = [...(champs || [])].sort((a, b) => b.yr - a.yr);
+    if (!list.length) return <div style={{ ...SERIF, fontSize: 17 }}>The first champion of your league is crowned at this season's Super Bowl.</div>;
+    return (<>
+      <div style={{ display: "flex", ...PH, fontSize: 12, color: "#666", padding: "0 6px 4px", gap: 12 }}><span style={{ width: 44 }}>Year</span><span style={{ flex: 1 }}>Champion</span>{!narrow && <span style={{ flex: 1 }}>MVP</span>}</div>
+      {list.map((c) => { const mvp = (awards || []).find((a) => a.yr === c.yr)?.mvp; return (
+        <Row key={c.yr} style={{ gap: 12, background: c.ti === ui ? "#fff9c4" : undefined, alignItems: "flex-start" }}>
+          <span style={{ ...NUM, fontSize: 16, width: 44 }}>{c.yr}</span>
+          <span style={{ flex: 1, minWidth: 0, display: "flex", gap: 10, alignItems: "center" }}><Logo ab={TEAMS[c.ti]?.ab} size={30} /><span style={{ minWidth: 0 }}><Name size={15} me={c.ti === ui}>{c.t}</Name>{c.score && <span style={{ ...SERIF, fontSize: 13, color: "#666" }}>beat the {TEAMS[c.opp]?.name || "opponent"} {c.score}</span>}{narrow && mvp && <span style={{ ...SERIF, fontSize: 13, color: "#666", display: "block" }}>MVP: {mvp.name}, {mvp.team}</span>}</span></span>
+          {!narrow && <span style={{ flex: 1, minWidth: 0 }}>{mvp ? <><Name size={15} me={mvp.ti === ui}>{mvp.name}</Name><span style={{ ...SERIF, fontSize: 13, color: "#666" }}>{mvp.pos}, {mvp.team}</span></> : <span style={{ ...SERIF, color: "#999" }}>-</span>}</span>}
+        </Row>); })}
+    </>);
+  };
+  const leagueView = () => (<>
+    <Chips items={[["leaders", "Leaders"], ["standings", "Standings"], ["playoffs", "Playoffs"], ["scores", "Scores"], ["history", "History"]]} on={sub.league} set={(v) => setS("league", v)} />
+    {{ leaders: leadersView, standings: standingsView, playoffs: playoffsView, scores: scoresView, history: leagueHistoryView }[sub.league]()}
+  </>);
+
+  // ---- Team > Stats: your players, and where your club ranks ----
+  const ranks = useMemo(() => {
+    const rows = teams.map((t, i) => { const gp = Math.max(1, (t.w || 0) + (t.l || 0) + (t.t || 0)), sum = (k) => (t.roster || []).reduce((a, p) => a + (p.ss?.[k] || 0), 0);
+      return { i, pts: (t.pf || 0) / gp, ptsA: (t.pa || 0) / gp, pass: sum("passYds") / gp, rush: sum("rushYds") / gp, sacks: sum("sacks"), take: sum("ints") }; });
+    const rankOf = (k, low) => { const sorted = [...rows].sort((a, b) => (low ? a[k] - b[k] : b[k] - a[k])); return sorted.findIndex((r) => r.i === ui) + 1; };
+    const me = rows[ui] || {};
+    return [["Points a game", me.pts?.toFixed(1), rankOf("pts")], ["Points allowed a game", me.ptsA?.toFixed(1), rankOf("ptsA", true)], ["Passing yards a game", Math.round(me.pass || 0), rankOf("pass")], ["Rushing yards a game", Math.round(me.rush || 0), rankOf("rush")], ["Sacks", me.sacks || 0, rankOf("sacks")], ["Interceptions", me.take || 0, rankOf("take")]];
+  }, [teams, ui]);
+  const teamStatsView = () => {
+    const [, key, cols] = LEAD[sub.lead];
+    const list = roster.filter((p) => key(p.ss || {}) > 0).sort((a, b) => key(b.ss || {}) - key(a.ss || {})).slice(0, 15);
+    return (<>
+      {(ut.w || 0) + (ut.l || 0) + (ut.t || 0) > 0 && <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(6, 1fr)", gap: 8, marginBottom: 16 }}>
+        {ranks.map(([l, v, r]) => <div key={l} style={{ background: "#eef3ff", boxShadow: "inset 0 0 0 3px #c9d6f5", padding: "8px 10px" }}><div style={{ ...PH, fontSize: 12, color: "#555" }}>{l}</div><div style={{ ...NUM, fontSize: 22 }}>{v}</div><div style={{ ...SERIF, fontSize: 13, color: r <= 8 ? "#146b2c" : r >= 25 ? "#b42318" : "#555" }}>{ordinal(r)} of 32</div></div>)}
+      </div>}
+      <Chips items={Object.entries(LEAD).map(([k, v]) => [k, v[0]])} on={sub.lead} set={(v) => setS("lead", v)} />
+      <Head cols={cols} lead={narrow ? 70 : 84} />
+      {list.length ? list.map((p, k) => leaderRow({ p, ti: ui }, k, cols)) : <div style={{ ...SERIF, fontSize: 16, padding: 6 }}>No stats yet this season.</div>}
+    </>);
+  };
+
+  // ---- Team > Contracts: what you pay, what's left, who's up ----
+  const contractsView = () => {
+    const payroll = roster.reduce((a, p) => a + (+p.salary || 0), 0), ending = roster.filter((p) => (p.contract || 0) <= 1).sort((a, b) => b.ovr - a.ovr), big = [...roster].sort((a, b) => (+b.salary || 0) - (+a.salary || 0)).slice(0, 10);
+    const tile = (l, v) => <div style={{ background: "#eef3ff", boxShadow: "inset 0 0 0 3px #c9d6f5", padding: "8px 12px" }}><div style={{ ...PH, fontSize: 12, color: "#555" }}>{l}</div><div style={{ ...NUM, fontSize: 22 }}>{v}</div></div>;
+    const money = (p) => <span style={{ ...SERIF, fontSize: 14, textAlign: "right", flexShrink: 0 }}>{p.contract || 0} yr · ${(+p.salary || 0).toFixed(1)}M</span>;
+    return (<>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr 1fr 1fr" : "repeat(3, minmax(0, 220px))", gap: 8, marginBottom: 16 }}>{tile("Payroll", `$${payroll.toFixed(1)}M`)}{tile("Cap space", `$${room.toFixed(1)}M`)}{tile("Players", roster.length)}</div>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,1fr) minmax(0,1fr)", gap: narrow ? 16 : 30, alignItems: "start" }}>
+        <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>Biggest contracts</Mark></div>{big.map((p) => playerRow(p, money(p)))}</div>
+        <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>Contracts ending this year</Mark></div>
+          <div style={{ ...SERIF, fontSize: 14, color: "#555", margin: "2px 0 6px" }}>You choose who stays in re-sign week, after the season.</div>
+          {ending.length ? ending.map((p) => playerRow(p, <><span style={{ ...NUM, fontSize: 16, width: 30, textAlign: "right" }}>{p.ovr}</span>{money(p)}</>)) : <div style={{ ...SERIF, fontSize: 16, padding: 6 }}>Nobody's contract is up this year.</div>}</div>
+      </div>
+    </>);
+  };
+
+  // ---- Team > History: your seasons and your trophies ----
+  const franchiseView = () => {
+    const full = `${T.city} ${T.name}`, titles = (champs || []).filter((c) => c.ti === ui);
+    const mine = (awards || []).flatMap((a) => AWARD.filter(([k]) => a[k]?.ti === ui).map(([k, l]) => ({ yr: a.yr, l, w: a[k] }))).sort((a, b) => b.yr - a.yr);
+    const seasons = [...(seasonHistory || [])].sort((a, b) => b.yr - a.yr);
+    const tile = (l, v) => <div style={{ background: "#eef3ff", boxShadow: "inset 0 0 0 3px #c9d6f5", padding: "8px 12px" }}><div style={{ ...PH, fontSize: 12, color: "#555" }}>{l}</div><div style={{ ...NUM, fontSize: 22 }}>{v}</div></div>;
+    const wins = seasons.reduce((a, h) => a + (h.w || 0), 0) + (ut.w || 0), losses = seasons.reduce((a, h) => a + (h.l || 0), 0) + (ut.l || 0);
+    return (<>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr 1fr 1fr" : "repeat(3, minmax(0, 220px))", gap: 8, marginBottom: 16 }}>{tile("Seasons", seasons.length + 1)}{tile("Record", `${wins}-${losses}`)}{tile("Super Bowls", titles.length)}</div>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,1fr) minmax(0,1fr)", gap: narrow ? 16 : 30, alignItems: "start" }}>
+        <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>Season by season</Mark></div>
+          <Row style={{ gap: 12 }}><span style={{ ...NUM, fontSize: 16, width: 44 }}>{yr}</span><span style={{ ...NUM, fontSize: 16, width: 56 }}>{rec(ut)}</span><span style={{ ...SERIF, fontSize: 14, color: "#555", flex: 1 }}>{phaseLabel || "This season"}</span></Row>
+          {seasons.map((h) => { const won = h.champion === full; return <Row key={h.yr} style={{ gap: 12, background: won ? "#fff6c2" : undefined }}><span style={{ ...NUM, fontSize: 16, width: 44 }}>{h.yr}</span><span style={{ ...NUM, fontSize: 16, width: 56 }}>{h.w}-{h.l}</span><span style={{ ...SERIF, fontSize: 14, flex: 1 }}>{won ? <b>Won the Super Bowl</b> : h.div ? "Division champions" : ""}</span></Row>; })}
+        </div>
+        <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>Your award winners</Mark></div>
+          {mine.length ? mine.map((m, i) => <div key={i} style={{ ...SERIF, fontSize: 15, padding: "6px 4px", borderBottom: "2px solid #e4e4dc" }}><b>{m.yr}</b> {m.l}: {m.w.name}</div>) : <div style={{ ...SERIF, fontSize: 16, padding: 6 }}>None yet. Awards are handed out when each regular season ends.</div>}
+          {titles.length > 0 && <><div style={{ margin: "16px 0 4px", fontSize: 16 }}><Mark>Super Bowl wins</Mark></div>{titles.map((c) => <div key={c.yr} style={{ ...SERIF, fontSize: 15, padding: "6px 4px", borderBottom: "2px solid #e4e4dc" }}><b>{c.yr}</b>{c.score ? ` beat the ${TEAMS[c.opp]?.name || "opponent"} ${c.score}` : ""}</div>)}</>}
+        </div>
+      </div>
+    </>);
+  };
+  const teamView = () => (<>
+    <Chips items={[["roster", "Roster"], ["lineup", "Lineup"], ["stats", "Stats"], ["money", "Contracts"], ["history", "History"]]} on={sub.team} set={(v) => { setS("team", v); setSlot(null); }} />
+    {{ roster: rosterView, lineup: lineupView, stats: teamStatsView, money: contractsView, history: franchiseView }[sub.team]()}
+  </>);
+
+  // ---- Moves > Trade block: shop a player, answer the offers ----
+  const tradeBlockView = () => {
+    if (!shop) return null;
+    if (!shop.open) return (<div style={{ ...SERIF, fontSize: 17, lineHeight: 1.5 }}>
+      {trades ? "It's trade deadline day: the offers are on the Home page." : sp === "regular" ? `The trade deadline (week ${shop.deadlineWk}) has passed. Trades open again after the season, in re-sign week.` : sp === "playoffs" ? "No trades during the playoffs. They open again in re-sign week." : "Trades are closed right now. They open in re-sign week, free agency, the preseason and the regular season up to the trade deadline."}
+    </div>);
+    if (shop.cur) return (<div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 10 }}><Mark>Offers for {shop.cur.name}</Mark><button className="ez-btn" onClick={shop.clear} style={{ fontSize: 14, padding: "6px 12px", background: "#e8ecf5", color: INK, boxShadow: "0 3px 0 #c5ccdc" }}>Shop someone else</button></div>
+      {shop.cur.list.length ? shop.cur.list.map((o) => offerCard(o, shop.yes, shop.no)) : <div style={{ ...SERIF, fontSize: 16, padding: "6px 2px" }}>No club made an offer for him. Try someone else.</div>}
+    </div>);
+    const ps = [...roster].sort((a, b) => b.ovr - a.ovr);
+    return (<div>
+      <div style={{ ...SERIF, fontSize: 16, lineHeight: 1.5, marginBottom: 10 }}><Mark>Trade block:</Mark> pick a player to shop. Up to three clubs that need him will make an offer (a player, draft picks or both), and you say yes or no.</div>
+      {ps.map((p) => playerRow(p, <><span style={{ ...NUM, fontSize: 16, width: 30, textAlign: "right" }}>{p.ovr}</span>{!narrow && <span style={{ ...SERIF, fontSize: 14, width: 110, textAlign: "right" }}>${(+p.salary || 0).toFixed(1)}M</span>}<button className="ez-btn" onClick={(e) => { e.stopPropagation(); shop.shop(p); }} style={{ fontSize: 13, padding: "6px 12px", background: "#ffb300", color: "#1a1000", boxShadow: "0 3px 0 #8a5a00" }}>Shop</button></>))}
+    </div>);
+  };
+
+  // ---- Moves > Free agents: sign anyone at his asking price ----
+  const faDeal = (p) => { const yrs = Math.max(1, Math.min(maxYears(p), p.age <= 27 ? 3 : p.age <= 31 ? 2 : 1)); return { yrs, sal: yearlyAsk(p, yrs, "fa") }; };
+  const faView = () => {
+    const f = sub.fa, list = (fa || []).filter((p) => f === "All" || grp(p.pos) === f).sort((a, b) => b.ovr - a.ovr).slice(0, 40), full = sp === "regular" && roster.length >= 53;
+    const note = !faOpen ? (sp === "resign" ? "Free agency opens after re-sign week. Here's who's out there so far." : "Free agency is closed until the off-season.") : full ? "Your roster is full (53 players): signing someone releases your lowest-rated player at his position (shown on each row)." : "Sign anyone you like at his asking price, if you have the cap space. The staff fill the rest of the roster.";
+    return (<div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 8 }}><Mark>Free agents</Mark><span style={{ ...SERIF, fontSize: 15 }}>Cap space: <b style={NUM}>${room.toFixed(1)}M</b></span></div>
+      <div style={{ ...SERIF, fontSize: 15, color: "#444", marginBottom: 10 }}>{note}</div>
+      <Chips items={["All", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S", "K", "P"].map((k) => [k, k])} on={f} set={(v) => setS("fa", v)} />
+      {list.length ? list.map((p) => {
+        const d = faDeal(p), cut = full ? roster.filter((x) => grp(x.pos) === grp(p.pos) && x.ovr < p.ovr).sort((a, b) => a.ovr - b.ovr)[0] : null;
+        const can = faOpen && (!full || cut) && d.sal <= room + (cut ? +cut.salary || 0 : 0);
+        return <Row key={p.id} onClick={() => openCard(p, -1)} style={{ gap: narrow ? 8 : 12 }}>
+          <span style={{ ...PH, fontSize: 13, width: 30, color: "#555", flexShrink: 0 }}>{p.pos}</span>
+          <Face p={p} size={narrow ? 34 : 36} ti={-1} />
+          <span style={{ flex: 1, minWidth: 0 }}><Name size={narrow ? 15 : 16}>{p.name}</Name><span style={{ ...SERIF, fontSize: 13, color: "#666" }}>age {p.age} · {d.yrs} yr, ${d.sal}M{cut ? ` · cuts ${cut.name} (${cut.ovr})` : ""}</span></span>
+          <span style={{ ...NUM, fontSize: 16, width: 30, textAlign: "right", flexShrink: 0 }}>{p.ovr}</span>
+          <button className="ez-btn" disabled={!can} title={can ? "" : !faOpen ? "Free agency is closed" : full && !cut ? "Roster full: nobody at his position rated below him" : "Not enough cap space"} onClick={(e) => { e.stopPropagation(); onSignFA?.(p, d.sal, d.yrs, cut?.id); }} style={{ flexShrink: 0, fontSize: 13, padding: "6px 12px", background: can ? "#22a447" : "#b9c2b9", color: "#fff", boxShadow: "0 3px 0 #146b2c" }}>Sign</button>
+        </Row>; }) : <div style={{ ...SERIF, fontSize: 16, padding: 6 }}>Nobody available{f !== "All" ? ` at ${f}` : ""}.</div>}
+    </div>);
+  };
+
+  // ---- Moves > Draft: the class before draft day, the picks on it ----
+  const draftBoardView = () => {
+    if (sp === "draft") return draftPanel();
+    const f = sub.board, cls = (draft?.cls || []).filter((b) => f === "All" || grp(b.pos) === f).sort((a, b) => (b.pot * 0.6 + b.ovr * 0.4) - (a.pot * 0.6 + a.ovr * 0.4)).slice(0, 40);
+    return (<div>
+      <div style={{ ...SERIF, fontSize: 16, lineHeight: 1.5, marginBottom: 10 }}><Mark>The {yr} draft class:</Mark> the best prospects, as your scouts see them. On draft day you make your picks in the first three rounds; the staff take the rest.</div>
+      <Chips items={["All", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S"].map((k) => [k, k])} on={f} set={(v) => setS("board", v)} />
+      <div style={{ display: "flex", ...PH, fontSize: 12, color: "#666", padding: "0 10px 4px", gap: 12 }}><span style={{ width: 36 }}>Pos</span><span style={{ flex: 1 }}>Prospect</span><span style={{ width: narrow ? 70 : 84 }}>Now</span><span style={{ width: narrow ? 70 : 84 }}>Potential</span></div>
+      {cls.length ? cls.map((b) => <Row key={b.id} style={{ gap: 12 }}>
+        <span style={{ ...PH, fontSize: 13, width: 36, color: "#555" }}>{b.pos}</span>
+        <span style={{ flex: 1, minWidth: 0 }}><Name size={15}>{b.name}</Name><span style={{ ...SERIF, fontSize: 13, color: "#666" }}>{b.college || b.school || ""}{b.age ? `${b.college || b.school ? ", " : ""}age ${b.age}` : ""}</span></span>
+        <span style={{ width: narrow ? 70 : 84 }}><Stars v={b.ovr} size={narrow ? 12 : 15} /></span>
+        <span style={{ width: narrow ? 70 : 84 }}><Stars v={b.pot} size={narrow ? 12 : 15} color="#1d4ed8" /></span>
+      </Row>) : <div style={{ ...SERIF, fontSize: 16, padding: 6 }}>The scouts are still putting this class together.</div>}
+    </div>);
+  };
+  const movesView = () => (<>
+    <Chips items={[["trade", "Trade block"], ["fa", "Free agents"], ["draft", "Draft"]]} on={sub.moves} set={(v) => setS("moves", v)} />
+    {{ trade: tradeBlockView, fa: faView, draft: draftBoardView }[sub.moves]()}
+  </>);
+
+  const views = { home, team: teamView, schedule: () => schedule(), league: leagueView, moves: movesView };
   return (
     <div className="ez" style={{ position: "fixed", inset: 0, overflow: "hidden", display: "flex", flexDirection: "column", background: `linear-gradient(180deg, #2457e6, ${BLUE} 40%, #1a44c4)` }}>
       <style>{FONTS}</style>
@@ -422,7 +677,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
       </div>
       <div style={{ position: "relative", zIndex: 3, flex: 1, minHeight: 0, width: "100%", maxWidth: 1120, margin: "0 auto", padding: narrow ? "0 8px" : "0 24px", display: "flex", flexDirection: "column" }}>
         <nav style={{ display: "flex", alignItems: "flex-end" }}>
-          {tabs.map(([k, l], i) => { const on = view === k; return <button key={k} onClick={() => { setView(k); setCard(null); }} aria-current={on ? "page" : undefined} style={{ flex: narrow ? "1 1 0" : "0 0 auto", minWidth: 0, cursor: "pointer", fontFamily: SANS, fontWeight: 800, fontSize: narrow ? 13 : 18, color: INK, padding: narrow ? "9px 2px 7px" : "10px 26px 8px", background: on ? "#fbfbf8" : "linear-gradient(180deg,#6fa0cf,#4a7fb0)", border: "3px solid #111", borderBottom: on ? "3px solid #fbfbf8" : "3px solid #111", marginLeft: i ? -3 : 0, marginBottom: -3, position: "relative", zIndex: on ? 2 : 1, boxShadow: on ? "none" : "inset 0 2px 0 #ffffff55, inset 0 -3px 0 #0000002a" }}>{l}</button>; })}
+          {tabs.map(([k, l], i) => { const on = view === k, dot = k === "moves" && (sp === "freeagency" || myCall || (shop?.cur?.list?.length > 0)); return <button key={k} onClick={() => { setView(k); setCard(null); if (k === "moves") setS("moves", sp === "draft" ? "draft" : sp === "freeagency" ? "fa" : sub.moves); }} aria-current={on ? "page" : undefined} style={{ flex: narrow ? "1 1 0" : "0 0 auto", minWidth: 0, cursor: "pointer", fontFamily: SANS, fontWeight: 800, fontSize: narrow ? 13 : 18, color: INK, padding: narrow ? "9px 2px 7px" : "10px 26px 8px", background: on ? "#fbfbf8" : "linear-gradient(180deg,#6fa0cf,#4a7fb0)", border: "3px solid #111", borderBottom: on ? "3px solid #fbfbf8" : "3px solid #111", marginLeft: i ? -3 : 0, marginBottom: -3, position: "relative", zIndex: on ? 2 : 1, boxShadow: on ? "none" : "inset 0 2px 0 #ffffff55, inset 0 -3px 0 #0000002a" }}>{l}{dot && <span aria-label="needs you" style={{ display: "inline-block", width: 9, height: 9, background: "#ffb300", boxShadow: "0 0 0 2px #111", marginLeft: 6, verticalAlign: "middle" }} />}</button>; })}
         </nav>
         <main style={{ flex: 1, minHeight: 0, overflowY: "auto", background: "#fbfbf8", border: "3px solid #111", boxShadow: "6px 6px 0 #0a1f6b, inset 0 0 40px #0000000d", padding: narrow ? "14px 12px 16px" : "20px 28px 20px" }}>
           {views[view]()}

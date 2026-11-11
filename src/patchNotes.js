@@ -2677,4 +2677,12 @@ export const PATCH_NOTES = [
   { v: "6.40", date: "2026-11-11", title: "Kickoff scoreboard", notes: [
     "During a kickoff the scoreboard reads KICKOFF (with the kicking team) until the return is over. Before, it already showed the down and the spot where the computer expected the return to end, before you'd run it back.",
   ] },
+  { v: "6.41", date: "2026-11-11", title: "Easy Mode: the whole league, and your moves", notes: [
+    "Easy Mode has five tabs now: Home, Team, Schedule, League and Moves. Each has a row of buttons along the top for its pages.",
+    "League: Leaders are the whole league's best at passing, rushing, receiving, tackles, sacks, interceptions and kicking, with your players on yellow (a button switches to your team only). Beside them, the MVP, Defensive Player of the Year and Offensive Rookie of the Year races, and last season's awards. Standings show both conferences with each club's playoff seed. Playoffs shows the seven seeds and the teams in the hunt during the season, then the bracket round by round with every score once the playoffs start. Scores has every game, a week at a time (tap one for its box score). History lists every champion and MVP of your league.",
+    "Team: your Roster and Lineup, plus Stats (your players, and where your club ranks in the league in points, yards, sacks and interceptions), Contracts (payroll, cap space, the biggest deals and the contracts ending this year) and History (your seasons, record, Super Bowls and award winners).",
+    "Moves: a Trade block (pick a player to shop and up to three clubs that need him make an offer, yes or no; open in the off-season, the preseason and the regular season up to the trade deadline), Free agents (sign anyone at his asking price if you have the cap space; with a full roster in season, the staff release your lowest-rated player at his position to make room, and each row says who) and Draft (the coming draft class on stars all year, and your picks on draft day). A gold square on Moves means something there needs you.",
+    "Home: a line under this week's game says where you stand in the playoff race (your seed, or how many games out you are). Tap it for the full picture.",
+    "Player cards open for any player in the league, in his club's colours, and show his career totals.",
+  ] },
 ];

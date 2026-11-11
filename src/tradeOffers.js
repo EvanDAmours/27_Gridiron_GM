@@ -136,3 +136,19 @@ export function genTradeOffer(teams, ui, picks, pkV, rand = Math.random) {
   }
   return null;
 }
+
+// Easy Mode's trade block: you shop one of your players and up to n clubs that want him (thin at
+// his spot or chasing a title, with the cap room) each make one offer for him. Fewer, or none, if
+// the market isn't there.
+export function shopOffers(teams, ui, want, picks, pkV, n = 3, rand = Math.random) {
+  const ri = (a, b) => a + Math.floor(rand() * (b - a + 1));
+  const fits = teams.map((t, i) => i).filter((i) => i !== ui && wantsPlayer(teams[i], want) && fitsTeam(teams[i], want));
+  for (let k = fits.length - 1; k > 0; k--) { const j = ri(0, k); [fits[k], fits[j]] = [fits[j], fits[k]]; }
+  const out = [];
+  for (const fromTm of fits) {
+    if (out.length >= n) break;
+    const o = buildOffer(teams, fromTm, want, picks, pkV, rand) || buildOffer(teams, fromTm, want, picks, pkV, rand);
+    if (o) out.push(o);
+  }
+  return out;
+}
