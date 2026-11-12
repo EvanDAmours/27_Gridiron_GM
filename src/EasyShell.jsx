@@ -274,9 +274,12 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
             </div>
           )}
           {step && !myCall && <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <Btn big onClick={step.run} disabled={busy} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>{busy ? <span style={{ animation: "ezBlink .6s steps(2) infinite" }}>Working…</span> : <>▶ {step.label}</>}</Btn>
-            {step.watch && <Btn kind="blue" onClick={step.watch} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>Watch the game</Btn>}
-            {step.moments && <Btn kind="blue" onClick={step.moments} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>Play the moments</Btn>}
+            {/* a game this week: PLAY it (on the field, every snap yours), or play the moments, or sim it */}
+            {step.play ? <>
+              <Btn big onClick={step.play} disabled={busy} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>▶ {step.playLabel || "Play"}</Btn>
+              {step.moments && <Btn kind="blue" onClick={step.moments} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>Play the moments</Btn>}
+              <Btn kind="blue" onClick={step.run} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>{busy ? <span style={{ animation: "ezBlink .6s steps(2) infinite" }}>Working…</span> : "Sim"}</Btn>
+            </> : <Btn big onClick={step.run} disabled={busy} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>{busy ? <span style={{ animation: "ezBlink .6s steps(2) infinite" }}>Working…</span> : <>▶ {step.label}</>}</Btn>}
             {step.simAll && <Btn kind="dark" onClick={step.simAll} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>Sim the season</Btn>}
           </div>}
           {msg && <div style={{ ...SERIF, fontSize: 16, marginTop: 12, fontStyle: "italic" }}>{msg}</div>}

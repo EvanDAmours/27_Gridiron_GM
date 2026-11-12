@@ -2712,4 +2712,8 @@ export const PATCH_NOTES = [
     "Fixed: in Cover 2 and Cover 3 a linebacker could be sent to the hook zone on the far side of the formation, leaving the middle open while he crossed the field. Each now takes the hook on his own side.",
     "The title page shows the game's version and the day it was updated, so you can tell you're on the latest.",
   ] },
+  { v: "6.47", date: "2026-11-12", title: "Easy Mode: Play, Play the moments, Sim", notes: [
+    "Easy Mode's Home: when there's a game this week, the big yellow button is Play (the game on the field, every snap yours), with two smaller ones beside it: Play the moments and Sim. The Watch the game button is gone; you can still switch to watching during a game, with the Watch button under the field. Sim the season is still there for the regular season.",
+    "In the playoffs the buttons read the same way: Play the Wild Card (or whichever round), Play the moments, Sim.",
+  ] },
 ];
