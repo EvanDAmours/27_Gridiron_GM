@@ -42,7 +42,7 @@ test("a one-score fourth quarter late is always yours; a blowout's fourth gets o
   assert.equal(close.play, true); assert.match(close.why, /answer/);
   const hold = pickMoment({ qtr: 4, clock: 100, qLen: 900, me: 24, them: 20, mine: false }, [{ q: 4, play: true, mine: true }]);
   assert.equal(hold.play, true); assert.match(hold.why, /lead/i);
-  const blow = pickMoment({ qtr: 4, clock: 500, qLen: 900, me: 38, them: 7, mine: true }, [{ q: 4, play: true, mine: false }]);
+  const blow = pickMoment({ qtr: 4, clock: 500, qLen: 900, me: 38, them: 7, mine: true }, [{ q: 4, play: true, mine: false }, { q: 4, play: true, mine: true }]);
   assert.equal(blow.play, false);
   assert.equal(pickMoment({ qtr: 5, ot: true, clock: 500, qLen: 900, me: 20, them: 20, mine: false }, [{ q: 4, play: true }]).play, true);
 });

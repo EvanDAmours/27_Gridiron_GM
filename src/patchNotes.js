@@ -2716,4 +2716,11 @@ export const PATCH_NOTES = [
     "Easy Mode's Home: when there's a game this week, the big yellow button is Play (the game on the field, every snap yours), with two smaller ones beside it: Play the moments and Sim. The Watch the game button is gone; you can still switch to watching during a game, with the Watch button under the field. Sim the season is still there for the regular season.",
     "In the playoffs the buttons read the same way: Play the Wild Card (or whichever round), Play the moments, Sim.",
   ] },
+  { v: "6.48", date: "2026-11-12", title: "Field goals on any down, and timeouts that work like real ones", notes: [
+    "Field goals on any down: in the last two minutes of either half, and anytime in overtime, a FIELD GOAL card joins the play cards when you're in range (first, second and third down too, not only fourth). Down one with seconds left, you can kick it.",
+    "The clock between plays runs like a real one now. When a play ends in bounds with the clock running, only the play's own few seconds come off at once; the rest runs down on the scoreboard while you see the result and pick your next play. A timeout stops it right where it is, so the sooner you call it, the more time you save. Snap before it has run down and the rest comes off at the snap, as before.",
+    "Timeout at the whistle: in the last three minutes of a half, a TIMEOUT button shows in the score strip during the play. Tap it and your timeout is taken the moment the play ends, so the clock stops with only the play's time gone. If the play stops the clock anyway (an incomplete pass, out of bounds), you keep the timeout.",
+    "A spike stops the clock where it is too.",
+    "The scoreboard above the field in a franchise game follows the clock as it runs between plays.",
+  ] },
 ];

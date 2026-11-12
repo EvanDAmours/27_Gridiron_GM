@@ -289,6 +289,7 @@ export class ArcadeGame {
   // one line each. True when it played any (the read-out is up, and the moment follows it).
   simToMoment() {
     const g = this.g, L = this.live, me = L.userSide || "h", them = me === "h" ? "a" : "h";
+    this.finishRunoff();
     this.unflip(); this.S = null; this.auto = null; this.autoKick = null; this.meter = null; this.banner = null;
     this.momLog ||= [];
     const drives = []; let cur = null, n = 0, simmed = 0;
@@ -322,7 +323,7 @@ export class ArcadeGame {
   showEngine(ev) { this.S = null; this.banner = ev ? withFlag({ engine: true, wait: false, title: resultTitle(ev), text: ev.text || "", sub: [whyNote(ev), ev.note ? String(ev.note).toUpperCase() : null].filter(Boolean).join(" - ") || null, at: performance.now(), accent: ev.td || ev.type === "fg" ? "#ffd166" : "#fff" }, ev) : null; this.mode = "result"; this.refresh(); }
   // the app needs the game (Finish game, Sim to the end of the quarter): drop the play on the field
   // (it hasn't been booked) and hand the game back the real way round; resume() picks it up again
-  release() { if (this.two) { restore(this.g, this.two.snap); this.two = null; } this.S = null; this.auto = null; this.replay = null; this.pendingReplay = null; this.rec = null; this.unflip(); if (this.g) { this.g.userClock = null; this.g.hurryUp = null; } this.held = true; this.mode = "idle"; this.refresh(); }
+  release() { this.finishRunoff(); this.toQueued = false; if (this.two) { restore(this.g, this.two.snap); this.two = null; } this.S = null; this.auto = null; this.replay = null; this.pendingReplay = null; this.rec = null; this.unflip(); if (this.g) { this.g.userClock = null; this.g.hurryUp = null; } this.held = true; this.mode = "idle"; this.refresh(); }
   resume() { this.held = false; if (this.live && (this.mode === "idle" || this.mode === "result")) this.liveNext(); }
   setWatch(w) { if (this.live) this.live.watch = !!w; }
   // audibles this half: 1 to 5 by the quarterback's overall (a franchise passer reads more and gets more);
@@ -345,6 +346,7 @@ export class ArcadeGame {
   }
   runOppDrive() {
     const g = this.g, L = this.live; if (!g || !L || L.watch || g.done) return false;
+    this.finishRunoff();
     const me = L.userSide || "h"; this.unflip(); this.S = null; this.auto = null; this.autoKick = null; this.meter = null; this.banner = null;
     const evs = []; let n = 0;
     while (!g.done && n++ < 90) {
@@ -358,8 +360,30 @@ export class ArcadeGame {
     this.mode = "opp"; this.refresh(); return true;
   }
   // a timeout: yours to call, on offense between plays or on defense before their snap
+  // The clock between plays: when a play ends in bounds with the clock running, only the play's own few
+  // seconds come off at once; the rest runs off before your eyes (the result, the huddle, the call) until
+  // the snap, and a timeout stops it where it is. Snap before it's done and the rest comes off then (the
+  // game runs as long as it always has); a spike stops it where it is too.
+  startRunoff() {
+    const g = this.g, lr = g?.lastRun; this.runoff = null;
+    if (!lr || !g.running) { if (this.toQueued) { this.toQueued = false; this.fx.float("CLOCK STOPPED: TIMEOUT SAVED", this.cam.W / 2, this.cam.H * 0.32, "#9be29b", 1.2); } return; } // (it stopped anyway: you keep the timeout)
+    const from = Math.max(g.clock, lr.before - Math.min(lr.secs, 6));
+    if (this.toQueued) { this.toQueued = false; if (callTimeout(g, this.mySide())) { sfx.whistle?.(); this.fx.float("TIMEOUT", this.cam.W / 2, this.cam.H * 0.32, "#ffd166", 1.3); return; } }
+    this.runoff = { to: g.clock, cur: from }; g.clock = from;
+  }
+  stepRunoff(dt) {
+    const r = this.runoff, g = this.g; if (!r || !g || r.cur <= r.to) return;
+    r.cur = Math.max(r.to, r.cur - dt * 8 * (this.speed || 1));
+    const c = Math.ceil(r.cur); if (c !== g.clock) { g.clock = c; this.refresh(); this.live?.onClock?.(c); }
+  }
+  // the snap (or the engine taking over): whatever's left of the runoff comes off now; spike: where it is
+  finishRunoff(where = false) { const r = this.runoff, g = this.g; this.runoff = null; if (!r || !g) return; g.clock = where ? Math.ceil(r.cur) : r.to; if (g.lastRun) g.lastRun = null; this.refresh(); this.live?.onClock?.(g.clock); }
   timeout() {
-    const g = this.g; if (!g || !callTimeout(g, this.mySide())) return false;
+    const g = this.g; if (!g) return false;
+    const r = this.runoff, at = r ? Math.ceil(r.cur) : null;
+    if (!callTimeout(g, this.mySide())) return false;
+    if (r) { g.clock = at; this.runoff = null; } // (stopped where it is: the sooner you call it, the more it saves)
+    this.live?.onClock?.(g.clock);
     sfx.whistle?.(); this.fx.float("TIMEOUT", this.cam.W / 2, this.cam.H * 0.32, "#ffd166", 1.3); this.refresh();
     if (this.auto) this.auto.snapAt = Math.max(this.auto.snapAt, this.time + 1.6 / (this.speed || 1)); // (their snap waits a beat)
     return true;
@@ -378,6 +402,7 @@ export class ArcadeGame {
     if (c === "timeout") { this.timeout(); return; }
     if (c === "hurry") { this.hurry = !this.hurry; const g = this.g; if (g) g.hurryUp = this.hurry ? "h" : null; sfx.select?.(); return; }
     if (c === "kneel" || c === "spike") { // the engine runs it (no play on the field to see): a knee, or the ball into the turf
+      this.finishRunoff(c === "spike");
       const g = this.g; g.hurryUp = this.hurry ? "h" : null; const ev = runPlay(g, c), o = this.offReal; sfx.select?.();
       if (this.live) { this.unflip(); this.emit(ev, o); }
       this.showEngine(ev); return;
@@ -484,6 +509,7 @@ export class ArcadeGame {
     if (this.mode === "ceremony") { this.fx.step(dt); this.stepCeremony(dt); return; }
     const live = this.fx.step(dt); // (hit-stop slows the field for a beat)
     const P = this.S, cam = this.cam, m = this.mode;
+    if (this.runoff) { if (m === "play" && P && P.phase !== "presnap") this.finishRunoff(); else if (!this.paused) this.stepRunoff(dt); }
     if (P && cam) {
       if (this.auto && !P.kind) { if (P.phase === "presnap" && this.time >= this.auto.snapAt) snap(P); autoStep(P, this.auto.call, this.auto.state); if (this.auto.userD) this.defControls(P); } else this.controls(P, dt);
       if (P.kind && this.autoKick && P.phase === "presnap" && this.time >= this.autoKick.at) { this.autoKick = null; try { kickAuto(P); } catch (e) { console.error(e); } }
@@ -511,6 +537,7 @@ export class ArcadeGame {
         // a two-point try was played on a scratch copy of the game from the 2: put the game back and book the try
         if (this.two) { const good = !!ev?.td; restore(this.g, this.two.snap); this.two = null; ev = bookPat(this.g, true, good); P.text = ev?.text; P.pick = null; this.refresh(); }
         this.banner = withFlag({ wait: false, title: resultTitle(ev), text: P.text || ev?.text || "", sub: [P.fumNote || whyNote(ev), ev?.note ? String(ev.note).toUpperCase() : P.kind ? kickNote(P) : P.fumNote ? null : P.pick ? pickNote(P.pick) : null].filter(Boolean).join(" - ") || null, at: now, accent: ev?.td || ev?.type === "fg" ? "#ffd166" : ev?.turnover || ev?.type === "int" || ev?.type === "fumble" ? "#ff8a7a" : ev?.firstDown ? "#ffd166" : "#fff" }, ev);
+        this.startRunoff(); // (the clock: only the play's own seconds now; the rest runs off till the snap, or stops on a timeout)
         this.mode = "result"; this.refresh();
         // saved the moment it's booked, so leaving now can't take the play back
         if (this.onPlay && !this.two) try { this.onPlay(this.g); } catch { /* best effort */ }
@@ -626,7 +653,25 @@ export class ArcadeGame {
       ctx.fillStyle = "#ffd166"; ctx.fillRect(x, y + h - px2, w, px2);
       pixText(ctx, label, x + w / 2, Math.round(y + (h - px2 * 7) / 2), px2, "#fff", "center");
       this.chips.menu = { x, y, w, h };
-    } // (a live game: the app's scoreboard, and the stadium's at the 50; in full screen, this strip) // (a live game: the app's scoreboard, and the stadium's at the 50)
+    }
+    // a timeout during the play, late in a half: it's taken the moment the play ends (the clock stops at the whistle)
+    this.chips.toLive = null;
+    { const g = this.g, side = this.mySide(), n = g?.to?.[side] ?? 0, lateHalf = g && (g.ot || ((g.qtr === 2 || g.qtr === 4) && g.clock <= 180));
+      if (m === "play" && P && !P.kind && P.phase !== "presnap" && P.phase !== "done" && n > 0 && lateHalf && !this.two) {
+        const px3 = uiPx(cam), label = this.toQueued ? "TIMEOUT CALLED" : `TIMEOUT AT WHISTLE (${n})`, short = this.toQueued ? "TO CALLED" : `TIMEOUT (${n})`;
+        // in the score strip's other gap (between your score and the clock) when it fits, off the field; else under the strip
+        const lg = hudOut?.bar ? [hudOut.l + px3 * 2, hudOut.c0 - px3 * 2] : null, fit = (t) => pixWidth(t, px3) + px3 * 6;
+        const lab = lg && lg[1] - lg[0] >= fit(label) ? label : lg && lg[1] - lg[0] >= fit(short) ? short : null;
+        if (lab) {
+          const w = fit(lab), x = Math.round(lg[0]), y = hudOut.top, h = hudOut.h;
+          ctx.fillStyle = this.toQueued ? "rgba(90,70,10,.95)" : "rgba(8,10,16,.82)"; ctx.fillRect(x, y, w, h); ctx.fillStyle = "#ffd166"; ctx.fillRect(x, y + h - px3, w, px3);
+          pixText(ctx, lab, x + w / 2, Math.round(y + (h - px3 * 7) / 2), px3, this.toQueued ? "#ffd166" : "#fff", "center");
+          this.chips.toLive = { x, y, w, h };
+        } else {
+          const y = (this.chips.menu ? this.chips.menu.y + this.chips.menu.h : hudOut?.bar || px3 * 2) + px3 * 2;
+          this.chips.toLive = drawChip(ctx, cam, cam.W - px3 * 3, y, label, { align: "right", big: this.mobile, color: "#ffd166", active: !!this.toQueued });
+        }
+      } } // (a live game: the app's scoreboard, and the stadium's at the 50; in full screen, this strip) // (a live game: the app's scoreboard, and the stadium's at the 50)
     if (this.g && m !== "final") drawWxChip(ctx, cam, this.g.wxE, windNow(this.g));
     const px = uiPx(cam), hintY = cam.H - px * 9;
     if (m === "play" && P && P.kind && !this.auto) this.drawKick(ctx, P, hintY);
@@ -658,6 +703,7 @@ export class ArcadeGame {
       // four pass concepts, drawn fresh each down (one quick, two intermediate, one shot), and the two runs
       const key = `${this.g.plays}|${this.two ? 2 : 0}`; if (this.choicesFor !== key) { this.choicesFor = key; this.choices = conceptChoices(); }
       const aud = this.audibles(), items = [...this.choices.map((k) => [k, CONCEPTS[k].name, "play"]), ...(aud > 0 && !this.two ? [["audible", `AUDIBLE x${aud}`, "audible"]] : [])]; if (st.down === 4) items.push(st.yard >= 58 ? ["fg", `FIELD GOAL ${100 - st.yard + 17}`, "kick"] : ["punt", "PUNT", "kick"]);
+      else if (!this.two && st.yard >= 55 && (st.ot || ((st.qtr === 2 || st.qtr === 4) && st.clock <= 120))) items.push(["fg", `FIELD GOAL ${100 - st.yard + 17}`, "kick"]); // (late in a half, or overtime: kick it on any down)
       const hover = this.input === "mouse" && this.mouse ? this.lastButtons?.find((b) => inside(this.mouse, b))?.key : null;
       this.buttons = drawPlayCards(ctx, cam, this.two ? "TWO-POINT TRY - PICK A PLAY" : `${ordinal(st.down)} & ${st.toGo >= 100 - st.yard ? "GOAL" : st.toGo} - ${spotOf(st.yard)} - PICK A PLAY`, items, teams.user.clr, { keys: !this.mobile, hover, sub: this.snapRB ? `IN THE BACKFIELD: ${String(this.snapRB.name || "").toUpperCase()}  ${this.snapRB.pos || "RB"} ${this.snapRB.ovr ?? ""}` : null });
       // the clock: timeouts, spike, kneel, hurry-up (over the cards, on the right)
@@ -732,6 +778,7 @@ export class ArcadeGame {
   tapUI(p) {
     if (this.paused) { const b = this.buttons.find((b) => inside(p, b)); if (b) this.pauseAction(b.key); return true; }
     if (inside(p, this.chips.pause)) { this.paused = true; return true; }
+    if (this.chips.toLive && inside(p, this.chips.toLive)) { this.toQueued = !this.toQueued; sfx.select?.(); if (this.toQueued) this.fx.float("TIMEOUT AT THE WHISTLE", this.cam.W / 2, this.cam.H * 0.3, "#ffd166", 1); return true; }
     if (this.chips.menu && inside(p, this.chips.menu)) { const c = this.chips.menu; this.onMenu?.({ x: c.x, y: c.y, w: c.w, h: c.h }); return true; }
     for (const [k, b] of Object.entries(this.chips.kinds || {})) if (inside(p, b)) { this.setKind(k); return true; }
     if (inside(p, this.chips.flip) && this.S?.phase === "presnap") { if (flipPlay(this.S)) sfx.select?.(); return true; }
