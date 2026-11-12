@@ -591,7 +591,7 @@ export function tick(S, dt) {
 
   // the rush: engaged with his man until he sheds him, then after the ball
   for (const k of ["DL0", "DL1", "DL2", "DL3"]) {
-    const d = ents[k]; if (!d || d.down > 0 || d === carrier || d.heldUntil > S.t) continue;
+    const d = ents[k]; if (!d || d.down > 0 || d === carrier || d.heldUntil > S.t || S.wrap?.d === d) continue; // (the man wrapped up on the runner moves with him: wrapTick)
     const o = ents[OL_VS[k]];
     if (d.mode === "rush" && !o) d.mode = "free"; // (nobody across from him: he's through)
     if (d.mode === "rush") {
@@ -611,7 +611,7 @@ export function tick(S, dt) {
   // coverage: man trails his receiver; the safeties sit deep and break on the ball; once the ball's
   // out everyone nearby goes to where it's coming down; with a runner loose, everyone pursues
   for (const k of ["LB0", "LB1", "CB0", "CB1", "CB2", "S0", "S1"]) {
-    const d = ents[k]; if (!d || d.down > 0 || d === carrier || d.heldUntil > S.t) continue;
+    const d = ents[k]; if (!d || d.down > 0 || d === carrier || d.heldUntil > S.t || S.wrap?.d === d) continue; // (the man wrapped up on the runner moves with him: wrapTick)
     const mine = Object.keys(S.cover).find((r) => S.cover[r] === k);
     if (over) { brake(d, dt); continue; }
     if (k === S.userDef && S.uIn) { userSteer(S, d, dt); continue; } // (the man you're playing: where you send him; let go and he plays his assignment)
@@ -788,7 +788,7 @@ function breakMove(S, c, d) {
   const el = K.elusive(c.p), pw = K.power(c.p), bal = clamp(1 - K.edge(K.balance(c.p)) * 0.012, 0.5, 1.4);
   const spin = el > pw, side = Math.sign(c.y - d.y) || (rnd(S) < 0.5 ? -1 : 1);
   S.move = { kind: spin ? "spin" : "stiff", at: S.t };
-  if (spin) { S.stagger = S.t + 0.22 * bal; c.vx *= 1 - 0.25 * bal; c.vy = side * Math.max(Math.abs(c.vy), 2.5); c.y += side * 0.5; S.log.push(`${c.p.name} spins away from ${d.p.name}`); }
+  if (spin) { S.stagger = S.t + 0.22 * bal; c.vx *= 1 - 0.25 * bal; c.vy = side * Math.max(Math.abs(c.vy), 3.6); S.log.push(`${c.p.name} spins away from ${d.p.name}`); }
   else { S.stagger = S.t + 0.18 * bal; c.vx *= 1 - 0.15 * bal; c.vy *= 0.8; d.down = Math.max(d.down, 0.9); d.vx = (d.x - c.x) * 2; d.vy = (d.y - c.y) * 2; S.log.push(`${c.p.name} stiff-arms ${d.p.name}`); }
 }
 
@@ -862,7 +862,10 @@ export function throwTo(S, P, why = null, kind = "auto", want = null) { // want:
   // (a bullet fired a long way is hard to put on a man: past BULLET_MAX it sprays)
   const accu = K.qbAccuracy(qb.p, !bullet), wild = bullet && dist > BULLET_MAX ? 1 + (dist - BULLET_MAX) / 10 : 1;
   const sig = (0.25 + Math.max(0, 95 - accu) * 0.05) * (0.5 + dist / 18) * wild * (bullet ? 1 : 1 + Math.max(0, dist - 22) / 30) * (1 + 0.08 * ((wxField(S.g).rain || 0) + (wxField(S.g).snow || 0))), /* a long lob is the hardest ball to drop in a bucket */ g1 = () => (rnd(S) + rnd(S) + rnd(S) - 1.5) * 1.6;
-  land = { x: clamp(land.x + g1() * sig, S.los - 12, 109), y: clamp(land.y + g1() * sig, -HALF - 3, HALF + 3) };
+  // (by the sideline a passer misses inside, where his man can still come back for it: most of the miss that
+  // would carry it out of bounds stays in the field)
+  let dy = g1() * sig; { const edge = HALF - Math.abs(land.y); if (edge < 4 && Math.sign(dy) === Math.sign(land.y)) dy *= 0.3 + Math.max(0, edge) * 0.15; }
+  land = { x: clamp(land.x + g1() * sig, S.los - 12, 109), y: clamp(land.y + dy, -HALF - 3, HALF + 3) };
   let best = null, bestD = 99;
   for (const r of ELIGIBLE) {
     const e = ents[r]; if (!e || e.mode === "block" || e.mode === "back" || (e.delay && S.t < e.delay)) continue;
@@ -995,7 +998,11 @@ function endTackle(S, c, d, { head, hitSp, edge, mom }, extra = 0) {
 // the drag, every frame: he churns forward with the tackler on him; a second man in on it ends it (a gang tackle)
 function wrapTick(S, c, dt) {
   const w = S.wrap, d = w.d;
-  c.vx = w.push; c.vy *= 0.8; c.x += c.vx * dt; c.y += c.vy * dt; d.x = c.x - 0.7 * Math.sign(c.x - d.x || -1); d.y += (c.y - d.y) * Math.min(1, dt * 6); d.vx = c.vx; d.vy = 0;
+  c.vx = w.push; c.vy *= 0.8; c.x += c.vx * dt; c.y += c.vy * dt;
+  // the tackler stays wrapped on him: he closes onto him (not a jump) and is carried along
+  { const tx = c.x - 0.7 * Math.sign(c.x - d.x || -1), px = d.x, py = d.y, step = (d.top || 7) * 0.9 * dt;
+    const lim = step * 1.33, mx = clamp(tx - d.x, -lim, lim), my = clamp(c.y - d.y, -lim, lim), m = Math.hypot(mx, my), f = m > lim ? lim / m : 1; d.x += mx * f; d.y += my * f;
+    d.vx = (d.x - px) / Math.max(dt, 1e-3); d.vy = (d.y - py) / Math.max(dt, 1e-3); }
   if (c.x >= 100) { S.wrap = null; score(S); return; }
   let help = null; for (const o of Object.values(S.ents)) if (o.side === "def" && o !== d && o.down <= 0 && !(o.heldUntil > S.t) && hyp(o.x - c.x, o.y - c.y) < 1.6) { help = o; break; }
   if (help) { S.assist = help; S.log.push(`${help.p.name} helps bring him down`); endTackle(S, c, d, { ...w, mom: w.mom * 0.4 }); return; }

@@ -45,7 +45,9 @@ const pct = (t) => ((t.w || 0) + 0.5 * (t.t || 0)) / Math.max(1, (t.w || 0) + (t
 // coachTeams: the clubs whose coaches change (this off-season's copies); perf: last season's
 // standings (w/l/pf/pa) by the same index. pool: coaches on the market. Returns { moves, pool };
 // mutates coachTeams[i].coach for AI clubs.
-export function coachingCarousel(coachTeams, perf, ui, { pool = [], rand = Math.random, yr = 2026 } = {}) {
+// fillUser (Easy Mode, where the staff run the front office): your open jobs are filled from the
+// market as an AI club's are (nobody on your staff is ever fired for you).
+export function coachingCarousel(coachTeams, perf, ui, { pool = [], rand = Math.random, yr = 2026, fillUser = false } = {}) {
   const moves = [];
   const n = perf.length;
   const rank = (key, low) => perf.map((t, i) => [i, t[key] || 0]).sort((a, b) => (low ? a[1] - b[1] : b[1] - a[1])).map(([i]) => i);
@@ -77,9 +79,9 @@ export function coachingCarousel(coachTeams, perf, ui, { pool = [], rand = Math.
     // the head coach who now knows his deal is his last says so
     // (once: the season he's said is stamped on him)
     if (coach.hc) { const end = hcRetiring(coach.hc, yr + 1); if (end != null && coach.hc.lastSeason !== end) { coach.hc = { ...coach.hc, lastSeason: end }; moves.push({ ti: i, role: "hc", kind: "lastDeal", name: coach.hc.name, end, age: coachAge(coach.hc, yr + 1) }); } }
-    if (i === ui) { t.coach = coach; return; }
+    if (i === ui && !fillUser) { t.coach = coach; return; }
     const p = pct(perf[i]);
-    const fire = (role, why) => { const c = coach[role]; if (!c) return; moves.push({ ti: i, role, kind: "fired", name: c.name, why }); market.push({ ...c, contract: 2, fired: true, from: t.ab }); coach[role] = null; };
+    const fire = (role, why) => { if (i === ui) return; const c = coach[role]; if (!c) return; moves.push({ ti: i, role, kind: "fired", name: c.name, why }); market.push({ ...c, contract: 2, fired: true, from: t.ab }); coach[role] = null; };
     // a losing season can cost the head coach his job too (rarely a great one)
     if (p < 0.3 && coach.hc && rand() < (coach.hc.rating >= 88 ? 0.08 : 0.35)) fire("hc", `a ${perf[i].w}-${perf[i].l} season`);
     if (p < 0.4 && bottom(offRank, i) && rand() < 0.65) fire("oc", `a bottom-ten offense in a ${perf[i].w}-${perf[i].l} season`);

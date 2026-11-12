@@ -89,7 +89,7 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
   const Team = ({ t }) => (
     <div style={{ minWidth: 0, textAlign: "center" }}>
       <div style={{ display: "inline-flex" }}><TeamLogo t={t} sz={84} glow /></div>
-      <div style={{ fontSize: 20, fontWeight: 900, marginTop: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+      <div style={{ fontSize: (t.name || "").length > 9 ? 16 : (t.name || "").length > 8 ? 18 : 20, fontWeight: 900, marginTop: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>{/* (a long nickname, Commanders or Buccaneers, in a smaller size: the whole name, never cut off) */}
       <div style={{ fontSize: 14, color: "#ffffffb3" }}>{rec(t)}</div>
     </div>
   );
@@ -100,7 +100,7 @@ function PhoneHome({ me, teams, ui, sp, yr, wk, pb, game, away, home, ra, rh, fo
     plan && { k: "build", icon: "roster", c: plan.open ? C.gd : C.gn, label: "Build your 53", value: `${plan.count} of ${plan.target}` },
     { k: "hurt", icon: "hurt", c: hurt ? C.rd : C.gn, label: "Injuries", value: hurt ? `${hurt} out` : "All healthy" },
     // a focused player only grows in regular-season weeks
-    side && (sp === "preseason" || sp === "regular") && { k: "dev", icon: "dev", c: "#38bdf8", label: "Development", value: focused === 2 ? "Both set" : focused ? "1 of 2 set" : "Not set", tour: "devfocus" },
+    side && (sp === "preseason" || sp === "regular") && { k: "dev", icon: "dev", c: "#38bdf8", label: "Development", value: focused === 2 ? "Both set" : focused ? "1 of 2 set" : "Staff's picks", tour: "devfocus" },
     // in season and at the combine Standings is already a tab in the bottom bar
     sp !== "regular" && sp !== "combine" && { k: "table", icon: "table", c: "#94a3b8", label: "Standings", value: `${ORD[rank] || rank} in ${me.c} ${me.d}`, tour: "strip" },
   ].filter(Boolean);

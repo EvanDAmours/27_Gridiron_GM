@@ -2729,4 +2729,12 @@ export const PATCH_NOTES = [
     "The other free agents are real ones, released this October: Najee Harris (Giants), Xavier Woods (Bears), Darius Slayton (Colts), Harrison Mevis (Rams), Jack Jones (49ers), Riley Patterson and Robert Beal Jr. (Dolphins), Jordan Elliott (Titans), David Long Jr. (Saints) and others.",
     "A franchise already under way this season gets the same moves once (unless one of these players has already signed somewhere in your league, or the move involves your club, which is left to you). Real 2026 stats now carry over for these players when a franchise starts mid-season.",
   ] },
+  { v: "7.0", date: "2026-11-12", title: "7.0: the playtest release", notes: [
+    "Version 7.0 comes out of a full playtest sweep: seasons of franchise play run start to finish in both modes, thousands of arcade plays, a check that no player is ever lost or duplicated across years, and a pass over every phone screen. These are the fixes it turned up.",
+    "Easy Mode, your coaching staff: when a coordinator retired, left or his contract ran out, the seat stayed empty for good, and your coordinators never got the off-season development work that AI staffs get. By the third season your staff were well behind the league's. Now the staff fill any open job from the coaching market each off-season (nobody on your staff is fired for you), and your coordinators get the same off-season work as everyone else's.",
+    "Development focus: every AI club works with two focus players each week, but your club gained nothing in the weeks you hadn't picked anyone. Now, until you pick, the staff work with a player of their choosing, and your own picks always come first. Home shows \"Staff's picks\" instead of \"Not set\".",
+    "Arcade passing by the sideline: an out, a bench route or a flat to the boundary sailed out of bounds far too often (as much as one throw in seven). A passer who misses by the sideline now misses inside, where his man can still come back for it. Quick outs complete about two thirds of the time now, more against off coverage.",
+    "Arcade tackling: a defender wrapping up a ball carrier was being moved twice a frame, so he could jump across the field for a moment, and a spin move shoved the runner sideways in one frame. Both move smoothly now (the playtest counted 318 jumps before and 24 after, all small).",
+    "Phone: a long nickname (Commanders, Buccaneers) on Home's game card was cut off. It's set a little smaller now so the whole name shows.",
+  ] },
 ];

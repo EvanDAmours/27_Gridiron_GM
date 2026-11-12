@@ -21,6 +21,17 @@ test("struggling clubs fire the coordinator whose side let them down; every job 
   assert.ok(fired > 10, `firings happen (${fired})`);
 });
 
+test("Easy Mode (fillUser): your open jobs are filled for you, and nobody on your staff is fired", () => {
+  for (let s = 1; s < 30; s++) {
+    let x = s; const rand = () => ((x = (x * 16807) % 2147483647) / 2147483647);
+    const teams = league(), ui = 11; teams[ui].coach.oc = null; // your coordinator left
+    const r = coachingCarousel(teams, perf(), ui, { rand, fillUser: true });
+    assert.ok(teams[ui].coach.oc, "your open seat is filled");
+    assert.ok(r.moves.some((m) => m.ti === ui && m.role === "oc" && m.kind === "hired"));
+    assert.ok(!r.moves.some((m) => m.ti === ui && m.kind === "fired"), "the worst club in the league, but your staff stay");
+  }
+});
+
 test("owner patience: winning builds it, losing seasons drain it to an ultimatum and a firing", () => {
   assert.equal(ownerReview(70, { w: 13, l: 4 }, { madePlayoffs: true }).verdict, "fine");
   assert.ok(ownerReview(70, { w: 13, l: 4 }, { madePlayoffs: true, champion: true }).patience > 95);
