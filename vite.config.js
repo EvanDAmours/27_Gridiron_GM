@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { readdirSync, statSync, writeFileSync } from "fs";
+import { readdirSync, readFileSync, statSync, writeFileSync } from "fs";
 import { join, relative } from "path";
 
 // Offline play: after a build, list every file the game needs (code, data, logos, icons) in
@@ -28,8 +28,14 @@ function offlineList() {
   };
 }
 
+// the game's version (package.json) and the day it was built, for the title page: you can tell at a
+// glance whether you're on the latest update
+const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
+const built = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+
 export default defineConfig({
   plugins: [react(), offlineList()],
+  define: { "import.meta.env.VITE_APP_VERSION": JSON.stringify(pkg.version.replace(/\.0$/, "")), "import.meta.env.VITE_APP_BUILT": JSON.stringify(built) },
   base: process.env.VITE_APP_BASE_PATH || "/gridiron-gm/",
   build: {
     outDir: "dist",

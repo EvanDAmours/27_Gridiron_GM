@@ -51,7 +51,7 @@ const LINE = ["LT", "LG", "C", "RG", "RT"];
 // route mirrors on either side). `stop` ends in a settle; otherwise he keeps running the last leg.
 // `more`: how far he keeps running his last leg before he eases up and looks back for the ball
 const ROUTES = {
-  slant: { legs: [[1.5, 0], [4.5, 4.5]], more: 3 }, hitch: { legs: [[5, 0], [-1, 0.5]], stop: true }, out: { legs: [[6, 0], [0.5, -7]], more: 3 },
+  slant: { legs: [[1.5, 0], [4.5, 4.5]], more: 16, flat: true }, hitch: { legs: [[5, 0], [-1, 0.5]], stop: true }, out: { legs: [[6, 0], [0.5, -7]], more: 3 },
   dig: { legs: [[12, 0], [0, 10]], more: 6 }, deepout: { legs: [[11, 0], [-0.5, -7]], more: 2 }, curl: { legs: [[9, 0], [-1.5, 1]], stop: true }, comeback: { legs: [[14, 0], [-2.5, -2]], stop: true }, corner: { legs: [[10, 0], [8, -7]], more: 8 },
   post: { legs: [[10, 0], [14, 8]], more: 12 }, go: { legs: [[45, 0]], more: 40 }, seam: { legs: [[4, 0], [30, 1.5]], more: 15 }, drag: { legs: [[2, 0], [2, 16]], more: 5 },
   stick: { legs: [[6, 0], [0, 1]], stop: true }, spot: { legs: [[6, 0], [-1, 2.5]], stop: true }, qin: { legs: [[6, 0], [0, 8]], more: 4 },
@@ -180,7 +180,7 @@ function layRoute(e, name) {
   const Rt = ROUTES[name]; if (!Rt) return;
   const inward = e.y < 0 ? 1 : -1; let x = e.x, y = e.y; const pts = [];
   for (const [up, side] of Rt.legs) { x = Math.min(107, x + up); y = clamp(y + side * inward, -HALF + 2.5, HALF - 2.5); pts.push({ x, y }); }
-  e.path = pts; e.stop = !!Rt.stop; e.delay = Rt.delay || 0; e.more = Rt.more || 0;
+  e.path = pts; e.stop = !!Rt.stop; e.delay = Rt.delay || 0; e.more = Rt.more || 0; e.flatten = !!Rt.flat;
 }
 
 // ---------- at the line: hot routes and flipping the play ----------
@@ -221,7 +221,7 @@ export function flipPlay(S) {
 export const DEF_SCHEMES = {
   cover1: { name: "COVER 1", dcall: "base", desc: "MAN, ONE DEEP" },
   cover2: { name: "COVER 2", dcall: "cover", desc: "ZONE, TWO DEEP", zone: { S0: { y: -11, d: 15, w: 13, deep: true }, S1: { y: 11, d: 15, w: 13, deep: true }, CB0: { y: -19, d: 3, w: 6 }, CB1: { y: 19, d: 3, w: 6 }, CB2: { y: -11, d: 9, w: 5 }, LB1: { y: -4, d: 9, w: 5 }, LB0: { y: 5, d: 9, w: 5 } } },
-  cover3: { name: "COVER 3", dcall: "base", desc: "ZONE, THREE DEEP", zone: { CB0: { y: -17, d: 13, w: 9, deep: true }, CB1: { y: 17, d: 13, w: 9, deep: true }, S0: { y: 0, d: 14, w: 8, deep: true }, CB2: { y: -15, d: 6, w: 7 }, S1: { y: 14, d: 6, w: 7 }, LB1: { y: -5, d: 9, w: 6 }, LB0: { y: 5, d: 9, w: 6 } } },
+  cover3: { name: "COVER 3", dcall: "base", desc: "ZONE, THREE DEEP", zone: { CB0: { y: -17, d: 13, w: 9, deep: true }, CB1: { y: 17, d: 13, w: 9, deep: true }, S0: { y: 0, d: 14, w: 8, deep: true }, CB2: { y: -15, d: 6, w: 7 }, S1: { y: 14, d: 6, w: 7 }, LB1: { y: -5, d: 7.5, w: 6 }, LB0: { y: 5, d: 7.5, w: 6 } } },
   man2: { name: "2-MAN", dcall: "cover", desc: "MAN UNDER, TWO DEEP" },
   blitz: { name: "BLITZ", dcall: "blitz", desc: "A LINEBACKER COMES" },
   allout: { name: "ALL-OUT BLITZ", dcall: "blitz", allOut: true, desc: "BOTH LINEBACKERS COME" },
@@ -268,8 +268,11 @@ export function applyScheme(S, scheme) {
   const at = (k, x, y) => { const e = ents[k]; if (e) { e.x = Math.min(106.5, x); if (y != null) e.y = y * sg; } };
   if (sc.zone) {
     // zone: nobody has a man; everyone in the scheme drops to an area
-    S.zone = sc.zone;
-    for (const r of Object.keys(S.cover)) if (sc.zone[S.cover[r]]) delete S.cover[r];
+    S.zone = { ...sc.zone };
+    // a pair of mirrored underneath zones goes to the men already on those sides (not across the formation:
+    // a linebacker lined up right takes the right hook)
+    for (const [a_, b_] of [["LB0", "LB1"], ["CB2", "S1"]]) { const za = S.zone[a_], zb = S.zone[b_], ea = ents[a_], eb = ents[b_]; if (za && zb && !za.deep && !zb.deep && ea && eb && (za.y * sg - zb.y * sg) * (ea.y - eb.y) < 0) { S.zone[a_] = zb; S.zone[b_] = za; } }
+    for (const r of Object.keys(S.cover)) if (S.zone[S.cover[r]]) delete S.cover[r];
     if (scheme === "cover2") { for (const k of ["CB0", "CB1"]) { const e = ents[k]; if (e) e.x = los + 2.2; } at("S0", los + 14, -11); at("S1", los + 14, 11); } // (the corners up, rolled to the flats; two deep)
     if (scheme === "cover3") { for (const k of ["CB0", "CB1"]) { const e = ents[k]; if (e) e.x = los + 9; } at("S0", los + 14, 0); at("S1", los + 6, 9); } // (the corners off, bailing to the deep thirds; the strong safety down)
   }
@@ -368,7 +371,8 @@ function manCover(S, d, r, dt) {
   // he reads the receiver's moves a beat late (later for a lesser cover man): what he mirrors is a smoothed
   // copy of the receiver's velocity, so a sharp cut opens a window before he reacts. Leverage: shaded inside,
   // he's already there for a break inside (a slant, a dig) and a step late on one outside (an out, a corner)
-  const lever = r.vy * in_ > 1 ? 0.55 : r.vy * in_ < -1 ? 1.25 : 1;
+  // (a sharp route runner still wins the inside break against a lesser cover man: the slant against man)
+  const lever = r.vy * in_ > 1 ? clamp(0.55 + (K.routeSkill(r.p) - cov) * 0.025, 0.5, 1.2) : r.vy * in_ < -1 ? 1.25 : 1;
   const under = r.x - S.los < 9 ? 0.75 : 1; // (underneath he's squatting on the short stuff: he reacts quicker)
   const lag = (0.36 + Math.max(0, 90 - cov) * 0.012) * lever * CAL.lag * under * dOff(S, "lag"), k = Math.min(1, dt / lag);
   if (d.rvFor !== r.key) { d.rv = { vx: d.vx, vy: d.vy }; d.rvFor = r.key; } // (a new man: he starts from his own feet)
@@ -406,9 +410,27 @@ function zoneDrop(S, d, z, dt) {
   // the man to take: the most urgent one in his area (the shorter threat first: a man in the flat before one going
   // deep), checked all the time; he switches only to a clearly more urgent man
   // (a curl/flat man plays inside-out: a man breaking inside, away from his sideline, is the hook man's; he widens to the flat)
-  { const flatZone = z.d <= 6, out = Math.sign(zy) || 1, score = (e) => Math.abs(e.y - zy) + Math.max(0, e.x - zx) * 1.2 + Math.max(0, zx - e.x) * 0.4 + (flatZone && e.vy * out < -1.5 ? 6 : 0);
+  // (a curl/flat man reads the inside receiver: with a man in the flat he widens to it and gives the inside break
+  // to the hook man; with nobody there he walls the slant off, carrying it inside)
+  { const flatZone = z.d <= 6, out = Math.sign(zy) || 1, inFlat = (o) => Math.abs(o.y - zy) < z.w && o.x - S.los < 6 && o.vy * out > -1;
+    const score = (e) => Math.abs(e.y - zy) + Math.max(0, e.x - zx) * 1.2 + Math.max(0, zx - e.x) * 0.4 + (flatZone && e.vy * out < -1.5 && recv.some((o) => o !== e && inFlat(o)) ? 6 : 0);
     let best = null, bs = 1e9; for (const e of recv) { const dy = Math.abs(e.y - zy), dx = e.x - zx; if (dy > reach || dx > sink || dx < -8) continue; if (Object.values(ents).some((o) => o !== d && o.zm === e.key)) continue; const sc = score(e); if (sc < bs) { bs = sc; best = e; } }
     if (best && (!m || score(best) < score(m) - 5)) m = best; d.zm = m?.key || null; }
+  // a hook man (not the curl/flat man) with a man breaking inside toward him, short: he gets into the throwing lane
+  // between the quarterback and where the receiver's going (robbing the slant), the sooner the better he reads it
+  const qb = ents.QB;
+  if (!m && qb && z.d > 6) {
+    for (const e of recv) {
+      if (Object.values(ents).some((o) => o !== d && o.zm === e.key)) continue;
+      const inward = e.vy * -Math.sign(e.y || 1);
+      if (inward > 1.5 && e.x - S.los < 10 && Math.abs(e.y - zy) < z.w + 7 && Math.abs(e.y) > Math.abs(zy) - 1) { m = e; d.zm = e.key; break; }
+    }
+  }
+  if (m && qb && z.d > 6 && m.x - S.los < 10 && m.vy * -Math.sign(m.y || 1) > 1.5) {
+    const look = 0.3 + clamp((zs - 60) * 0.006, 0, 0.25), lx = m.x + m.vx * look, ly = m.y + m.vy * look, k = 0.72;
+    steer(d, qb.x + (lx - qb.x) * k, qb.y + (ly - qb.y) * k, dt, pace);
+    return;
+  }
   if (m) manCover(S, d, m, dt);
   else steer(d, zx, zy, dt, 0.9);
 }
@@ -510,7 +532,8 @@ export function tick(S, dt) {
       }
     } else if (e.mode === "stride") {
       const l = e.last || { x: e.x - 1, y: e.y }, dx = e.x - l.x || 1, dy = e.y - l.y, d = hyp(dx, dy);
-      steer(e, Math.min(107, e.x + (dx / d) * 6), clamp(e.y + (dy / d) * 6, -HALF + 1.5, HALF - 1.5), dt, e.deepTop && e.x - S.los > 10 ? e.deepTop / e.top : 1);
+      const fl = e.flatten ? 0.6 : 1; // (a slant flattens out as it crosses the field, underneath the safeties)
+      steer(e, Math.min(107, e.x + (dx / d) * 6 * fl), clamp(e.y + (dy / d) * 6, -HALF + 1.5, HALF - 1.5), dt, e.deepTop && e.x - S.los > 10 ? e.deepTop / e.top : 1);
       if (e.x > 105 || hyp(e.x - e.strideFrom.x, e.y - e.strideFrom.y) > e.more) e.mode = "settle";
     } else if (e.mode === "settle") { brake(e, dt); if (Math.abs(e.vx) < 0.5) e.face = 1; }
     else if (e.mode === "adjust") {
@@ -607,6 +630,9 @@ export function tick(S, dt) {
         // (a loose grip on him now: if he slows for the ball, his man is carried past him)
         mirror(d, r, r.x - 0.8, r.y + (r.y > 0 ? -0.6 : 0.6), dt, 1, 0.45, d.rv); continue;
       }
+      // an underneath zone man is facing the quarterback: a quick throw into his area (a slant into the hook
+      // and curl defenders), he sees it out of the hand and drives on it
+      if (S.zone?.[k] && !S.zone[k].deep && f.T < 1.15 && near < 7.5 && S.t - f.t0 > clamp(0.2 - K.edge(K.ballRead(d.p)) * 0.004, 0.06, 0.35)) { const a0 = d.acc; d.acc *= 1.35; steer(d, f.to.x, f.to.y, dt, 1.03, true); d.acc = a0; continue; }
       if (S.t - f.t0 < clamp(0.6 - K.edge(K.ballRead(d.p)) * 0.01, 0.2, 0.85) * (S.zone?.[k] ? 0.6 : 1)) { if (S.zone?.[k]) zoneDrop(S, d, S.zone[k], dt); else brake(d, dt); continue; } // seeing it (his play recognition / instincts; a zone man keeps working his area while he does)
       if (left <= 0.3 || near < left * d.top * 0.9 + 1.0) steer(d, f.to.x, f.to.y, dt, 1);
       else if (tgt) steer(d, tgt.x + tgt.vx * 0.25, tgt.y + tgt.vy * 0.25, dt, 0.9);
@@ -662,7 +688,10 @@ export function tick(S, dt) {
         if (d.side !== "def" || d.down > 0 || d.heldUntil > S.t || d.mode === "rush") continue;
         // (in between, not on the man: a cover man on the catch point plays it there)
         // (one chance each to get a hand on it: a rope gets by most of the time)
-        if (ball.h < 1.0 && S.t - f.t0 < f.T * 0.8 && hyp(d.x - f.to.x, d.y - f.to.y) > 1.8 && hyp(d.x - ball.x, d.y - ball.y) < 0.55 + (K.ballSkills(d.p) - 70) * 0.006 && !(f.tried ||= {})[d.key] && (f.tried[d.key] = true) && rnd(S) < clamp(0.3 + (K.ballSkills(d.p) - 70) * 0.01, 0.12, 0.55)) { f.tipped = true; f.to = { x: ball.x, y: ball.y }; f.T = S.t - f.t0; S.log.push("in the lane"); break; }
+        // (an underneath zone man is reading the quarterback, facing the throw: a ball through his area, like a slant
+        // into the hooks, he gets a hand on far more often than a cover man turned to run)
+        const zu = S.zone?.[d.key] && !S.zone[d.key].deep;
+        if (ball.h < 1.0 && S.t - f.t0 < f.T * 0.8 && hyp(d.x - f.to.x, d.y - f.to.y) > 1.8 && hyp(d.x - ball.x, d.y - ball.y) < (zu ? 1.05 : 0.55) + (K.ballSkills(d.p) - 70) * 0.006 && !(f.tried ||= {})[d.key] && (f.tried[d.key] = true) && rnd(S) < clamp((zu ? 0.42 : 0.3) + (K.ballSkills(d.p) - 70) * 0.01, 0.12, 0.6)) { f.tipped = true; f.to = { x: ball.x, y: ball.y }; f.T = S.t - f.t0; S.log.push("in the lane"); break; }
       }
     }
     const u = clamp((S.t - f.t0) / f.T, 0, 1);

@@ -2705,4 +2705,11 @@ export const PATCH_NOTES = [
   { v: "6.45", date: "2026-11-12", title: "A clear field in franchise games", notes: [
     "The three buttons that sat on the arcade field during a franchise game (your defense's call, Sim to end and Full screen) are now one small MENU button in the score strip along the top, beside the other team's score. On a phone held upright it sits just under the strip, and on a computer in the corner over the stands, so it never covers the field. Tap it for the same three options; tap anywhere else to close it.",
   ] },
+  { v: "6.46", date: "2026-11-12", title: "Real slants, and the version on the title page", notes: [
+    "Slants are real slants now: after the break the receiver keeps running across the field, flattening out underneath the safeties, instead of stopping a few yards after his cut.",
+    "Against man coverage the slant is a weapon: a sharp route runner wins the inside break against a lesser cover man, and a slant caught in man goes for big yards after the catch (about 8 to 9 yards a throw in testing, 6 to 8 after the catch).",
+    "Against zone it gets punished: the underneath defenders read the quarterback, step into the throwing lane and jump a quick throw into their area, and the outside defender walls off the slant when nobody threatens the flat. In testing a slant into Cover 2 or Cover 3 gains about 6 yards a throw with little after the catch, and gets picked off more often.",
+    "Fixed: in Cover 2 and Cover 3 a linebacker could be sent to the hook zone on the far side of the formation, leaving the middle open while he crossed the field. Each now takes the hook on his own side.",
+    "The title page shows the game's version and the day it was updated, so you can tell you're on the latest.",
+  ] },
 ];
