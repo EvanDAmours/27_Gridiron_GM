@@ -2685,4 +2685,11 @@ export const PATCH_NOTES = [
     "Home: a line under this week's game says where you stand in the playoff race (your seed, or how many games out you are). Tap it for the full picture.",
     "Player cards open for any player in the league, in his club's colours, and show his career totals.",
   ] },
+  { v: "6.42", date: "2026-11-12", title: "Play the moments", notes: [
+    "A new way to play your franchise games on the arcade field: Play the moments. You play a few drives a quarter, on offense or on defense, and the rest of the game is simmed in an instant. Start one from the Play the moments button (next to Play in Arcade, or Watch the game in Easy Mode), or switch to it during a live game (Watch, Play your snaps, Play the moments).",
+    "At each change of possession, the game decides whether the next drive is yours. You always get the opening drive, the last minutes of a one-score fourth quarter, and overtime. You get the two-minute drill before half-time in a close game. Otherwise you get about two drives a quarter, more often in a close game or when a turnover gives you a short field. Your drives switch between offense and defense, and every quarter gets at least one. A typical game gives you 7 to 10 drives.",
+    "Each drive you play starts with a card saying why it's yours (\"Down late: time to answer\", \"The two-minute drill\", \"Short field for them: hold them\") and the score and clock. The drives in between come up as a short summary (While you were away), one line each: who had it, how many plays and yards, how it ended, then the score. Tap to skip it.",
+    "Everything simmed counts just as if you'd watched it: the score, the box score, the stats and the season.",
+    "The drive summary panel on the field now wraps long lines instead of cutting them off on a phone.",
+  ] },
 ];

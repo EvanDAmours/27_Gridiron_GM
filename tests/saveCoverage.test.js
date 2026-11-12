@@ -13,6 +13,7 @@ const SESSION_ONLY = new Set([
   "flyIntro", // the stadium flyover before a live game (only while it plays)
   "ezOffers", // Easy Mode deadline-day offers (made fresh for the day; a reload deals a new set)
   "ezShop", // Easy Mode trade block: the offers for the player you shopped (shop again after a reload)
+  "liveMoments", // play the moments on or off: a device preference (localStorage gm_live_moments), not the save
   "newEasy", // the new-career screen's Easy Mode pick (copied into easy, which is saved, when the career starts)
   "easyBusy", // Easy Mode's Continue button while a step runs
   "outro", // the retirement send-off: the franchise is over by then

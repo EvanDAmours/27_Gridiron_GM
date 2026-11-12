@@ -19,6 +19,7 @@ import { setupKick, setupKickoff, kickFlick, tickKick, kickPlan, POSTS_X, kickMe
 import { sbName, sbNumber } from "../data/superbowls.js";
 const sbTitle = () => { const d = new Date(), season = d.getMonth() < 2 ? d.getFullYear() - 1 : d.getFullYear(); return sbName(sbNumber(season)); };
 import { sfx, unlock, toggleMute, isMuted } from "./sfx.js";
+import { pickMoment, driveLine, driveEnd } from "./moments.js";
 import { FX } from "./fx.js";
 import * as K from "./ratings.js";
 import { rollWeather, WX, wxOf } from "../weather.js";
@@ -240,6 +241,13 @@ export class ArcadeGame {
     // runs the hurry-up when you've switched it on
     g.userClock = L.watch ? null : L.userSide || "h"; g.hurryUp = this.hurry && !L.watch ? L.userSide || "h" : null;
     if (this.simAfter) { this.simAfter = false; if (this.runOppDrive()) return; } // (SIM DRIVE, asked for during their last play)
+    // PLAY THE MOMENTS: the engine sims to the next drive the director gives you, then you play it
+    if (L.moments && !L.watch) {
+      const m = this.momentNow(g);
+      if ((m.fresh || !this.mom?.play) && this.simToMoment()) return;
+      if (g.done) { this.liveNext(); return; }
+      if (this.momIntro) { const b = this.momIntro; this.momIntro = null; this.S = null; this.banner = { ...b, at: performance.now() }; this.mode = "result"; this.refresh(); return; }
+    }
     if (g.koNext) { // the kickoff: the engine kicks it, the field plays it out (the kick, the catch, the return and the tackle)
       const off = g.poss; this.offReal = off; if (off !== "h") this.flip();
       const L0 = lineups(g), ev = runPlay(g);
@@ -265,6 +273,50 @@ export class ArcadeGame {
     if (userD) P.userDef = !this.playD || this.defPick === "none" ? null : [this.defPick, "LB1", "LB0", "S0"].find((k_) => k_ && P.ents[k_]) || null; // the man you play on defense: the one you picked, every snap, until you let him go
     this.auto = { call: CONCEPTS[c]?.cat || c, state: autoState(), snapAt: this.time + (userD ? 2.4 : 1.5) / this.speed, userD };
     if (userD && this.playD) { this.mode = "dpick"; this.auto.snapAt = Infinity; } // (your call first: the defense's play cards)
+  }
+  // ---- play the moments ----
+  // the possession about to start (or going on): whose it is, and whether it's a new one to decide on.
+  // A kickoff starts the receiving team's drive; a moment runs until the ball changes hands.
+  momentNow(g) {
+    const owner = g.koNext ? (g.poss === "h" ? "a" : "h") : g.poss;
+    return { owner, fresh: !this.mom || this.mom.owner !== owner || (g.koNext && this.mom.at !== g.plays) };
+  }
+  setMoments(on) {
+    if (!this.live) return; const was = !!this.live.moments; this.live.moments = !!on;
+    if (on && !was && this.g) { const { owner } = this.momentNow(this.g); this.mom = { owner, at: this.g.plays, play: true }; this.momLog ||= []; this.momLog.push({ q: this.g.qtr, play: true, mine: owner === (this.live.userSide || "h") }); } // (switched on mid-drive: this one's yours; the director takes over at the next)
+  }
+  // the engine plays on until a possession the director picks for you; the drives it played read out
+  // one line each. True when it played any (the read-out is up, and the moment follows it).
+  simToMoment() {
+    const g = this.g, L = this.live, me = L.userSide || "h", them = me === "h" ? "a" : "h";
+    this.unflip(); this.S = null; this.auto = null; this.autoKick = null; this.meter = null; this.banner = null;
+    this.momLog ||= [];
+    const drives = []; let cur = null, n = 0, simmed = 0;
+    while (!g.done && n++ < 700) {
+      if (g.patPending) break;
+      const { owner, fresh } = this.momentNow(g);
+      if (fresh) {
+        const sc = g.score, pk = pickMoment({ qtr: g.qtr, clock: g.clock, qLen: g.qLen, ot: g.ot, me: sc[me], them: sc[them], mine: owner === me, yard: g.koNext ? null : g.yard }, this.momLog);
+        this.momLog.push({ q: g.qtr, play: pk.play, mine: owner === me });
+        this.mom = { owner, at: g.plays, play: pk.play };
+        if (pk.play) {
+          const t = L.teams || {}, clock = `${Math.floor(g.clock / 60)}:${String(g.clock % 60).padStart(2, "0")}`;
+          this.momIntro = { engine: true, wait: false, title: owner === me ? "YOUR BALL" : "YOUR DEFENSE", text: pk.why, sub: `${g.ot ? "OT" : `Q${g.qtr}`} ${clock} - ${t[me]?.ab || "YOU"} ${sc[me]}, ${t[them]?.ab || "THEM"} ${sc[them]}`.toUpperCase(), accent: "#ffd166" };
+          break;
+        }
+      } else if (this.mom?.play) break;
+      const off = g.poss, ev = runPlay(g); if (!ev) break; simmed++; this.emit(ev, off);
+      // the read-out: a line a drive (the kickoff that starts one is part of it)
+      if (!cur || cur.owner !== owner) { cur = { owner, plays: 0, yds: 0, end: null }; drives.push(cur); }
+      if (ev.type !== "kickoff") { cur.plays++; if (!["punt", "fg", "fg_miss"].includes(ev.type)) cur.yds += +ev.yards || 0; }
+      cur.end = driveEnd(ev) || cur.end || (/half/i.test(ev.note || "") ? "end of the half" : null);
+    }
+    if (!simmed) return false;
+    const t = L.teams || {}, sc = g.score;
+    const list = drives.filter((d) => d.plays > 0 || d.end).map((d) => ({ text: driveLine({ ...d, end: d.end || "still going" }, `${t[d.owner]?.name || (d.owner === me ? "You" : "Them")}`).toUpperCase(), td: d.end === "TOUCHDOWN" }));
+    list.push({ text: `${g.done ? "FINAL" : g.ot ? "OT" : `Q${g.qtr}`}: ${t[me]?.ab || "YOU"} ${sc[me]}, ${t[them]?.ab || "THEM"} ${sc[them]}`, note: true });
+    this.feed = { list, shown: 0, at: performance.now(), title: "WHILE YOU WERE AWAY", team: t[me] };
+    this.mode = "opp"; this.refresh(); return true;
   }
   // a play the engine ran without the field (a kickoff, a punt, a field goal, a kneel): its result
   showEngine(ev) { this.S = null; this.banner = ev ? withFlag({ engine: true, wait: false, title: resultTitle(ev), text: ev.text || "", sub: [whyNote(ev), ev.note ? String(ev.note).toUpperCase() : null].filter(Boolean).join(" - ") || null, at: performance.now(), accent: ev.td || ev.type === "fg" ? "#ffd166" : "#fff" }, ev) : null; this.mode = "result"; this.refresh(); }
@@ -643,13 +695,17 @@ export class ArcadeGame {
   kickPower() { if (!this.kick?.charging) return 0; const u = (this.kick.t / KICK_CYCLE) % 2; return u < 1 ? u : 2 - u; }
   // the other team's drive: a panel in their colours, the plays as they come in
   drawDrive(ctx) {
-    const cam = this.cam, f = this.feed, t = f.team || this.teams.opp, px = uiPx(cam), rows = 5, rh = px * 9;
-    const h = rows * rh + px * 16, y = cam.H - h;
+    const cam = this.cam, f = this.feed, t = f.team || this.teams.opp, px = uiPx(cam), rh = px * 9, maxc = Math.max(10, Math.floor((cam.W - px * 6) / (6 * px)));
+    // the lines so far, wrapped to the width (never cut off), the newest at the bottom; a read-out of
+    // several drives (play the moments) gets a taller panel
+    const wrapT = (text, n) => { const out = []; let line = ""; for (const w of String(text).split(" ")) { if ((line + " " + w).trim().length > n && line.trim()) { out.push(line.trim()); line = w; } else line += " " + w; } if (line.trim()) out.push(line.trim()); return out; };
+    const segs = f.list.slice(0, f.shown).flatMap((e, k) => wrapT(e.text, maxc).map((w) => ({ e, w, k })));
+    const rows = f.title ? Math.max(5, Math.min(9, Math.floor((cam.H * 0.62 - px * 16) / rh))) : 5, h = rows * rh + px * 16, y = cam.H - h;
     ctx.fillStyle = "rgba(8,10,16,.92)"; ctx.fillRect(0, y, cam.W, h); ctx.fillStyle = t.clr; ctx.fillRect(0, y, cam.W, px * 11); ctx.fillStyle = t.ac; ctx.fillRect(0, y + px * 11, cam.W, px);
-    pixText(ctx, `${t.city} ${t.name} - ON OFFENSE`, px * 3, y + px * 2.5, px, "#fff");
-    pixText(ctx, this.mobile ? "TAP TO SKIP" : "SPACE TO SKIP", cam.W - px * 3, y + px * 2.5, px, "rgba(255,255,255,.75)", "right");
-    const lines = f.list.slice(Math.max(0, f.shown - rows), f.shown), maxc = Math.floor((cam.W - px * 6) / (6 * px));
-    lines.forEach((e, i) => { const last = i === lines.length - 1; pixText(ctx, e.text.slice(0, maxc), px * 3, y + px * 15 + i * rh, px, e.td ? "#ffd166" : e.turnover ? "#7fe3ff" : e.note ? "#9aa7b2" : last ? "#fff" : "rgba(255,255,255,.6)"); });
+    const title = f.title || `${t.city} ${t.name} - ON OFFENSE`, hint = this.mobile ? "TAP TO SKIP" : "SPACE TO SKIP";
+    pixText(ctx, title, px * 3, y + px * 2.5, px, "#fff");
+    if (pixWidth(title, px) + pixWidth(hint, px) + px * 12 <= cam.W) pixText(ctx, hint, cam.W - px * 3, y + px * 2.5, px, "rgba(255,255,255,.75)", "right");
+    segs.slice(-rows).forEach(({ e, w, k }, i) => { const last = k === f.shown - 1; pixText(ctx, w, px * 3, y + px * 15 + i * rh, px, e.td ? "#ffd166" : e.turnover ? "#7fe3ff" : e.note ? "#9aa7b2" : last ? "#fff" : "rgba(255,255,255,.6)"); });
   }
 
   // ---- input ----

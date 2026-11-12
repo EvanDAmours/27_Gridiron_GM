@@ -263,6 +263,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
           {step && !myCall && <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
             <Btn big onClick={step.run} disabled={busy} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>{busy ? <span style={{ animation: "ezBlink .6s steps(2) infinite" }}>Working…</span> : <>▶ {step.label}</>}</Btn>
             {step.watch && <Btn kind="blue" onClick={step.watch} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>Watch the game</Btn>}
+            {step.moments && <Btn kind="blue" onClick={step.moments} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>Play the moments</Btn>}
             {step.simAll && <Btn kind="dark" onClick={step.simAll} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>Sim the season</Btn>}
           </div>}
           {msg && <div style={{ ...SERIF, fontSize: 16, marginTop: 12, fontStyle: "italic" }}>{msg}</div>}
@@ -702,7 +703,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
 // cells, each club's logo on its colour), and the plays on a white page beside it.
 const clockOf = (s) => `${Math.floor((s || 0) / 60)}:${String((s || 0) % 60).padStart(2, "0")}`;
 const ORD = ["", "1st", "2nd", "3rd", "4th"];
-export function EasyLive({ TEAMS, ui, live, log, field, paused, onPause, speed, onSpeed, onFinish, onBack, onDone, callMode = false, onCallMode, onSimQuarter, box = null, fullLog = null }) {
+export function EasyLive({ TEAMS, ui, live, log, field, paused, onPause, speed, onSpeed, onFinish, onBack, onDone, callMode = "watch", onCallMode, onSimQuarter, box = null, fullLog = null }) {
   const [tab, setTab] = useState("plays"), [boxOpen, setBoxOpen] = useState(false);
   const narrow = MOBILE, INK = "#151515";
   const H2 = { h: TEAMS[live.h], a: TEAMS[live.a] };
@@ -749,7 +750,7 @@ export function EasyLive({ TEAMS, ui, live, log, field, paused, onPause, speed, 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {live.done ? <Btn big onClick={onDone} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>▶ Continue</Btn> : <>
                 {/* watch it, or call and play your own snaps on the field */}
-                <div style={{ display: "flex", border: "3px solid #111", background: "#0b2a8f" }}>{[[false, "Watch"], [true, "Play your snaps"]].map(([k, l]) => <button key={String(k)} className="ez-btn" onClick={() => onCallMode?.(k)} aria-pressed={callMode === k} style={{ fontSize: narrow ? 14 : 15, padding: narrow ? "8px 10px" : "9px 14px", background: callMode === k ? "#ffb300" : "transparent", color: callMode === k ? "#1a1000" : "#dbe6ff" }}>{l}</button>)}</div>
+                <div style={{ display: "flex", border: "3px solid #111", background: "#0b2a8f" }}>{[["watch", "Watch"], ["snaps", "Play your snaps"], ["moments", "Play the moments"]].map(([k, l]) => <button key={k} className="ez-btn" onClick={() => onCallMode?.(k)} aria-pressed={callMode === k} style={{ fontSize: narrow ? 14 : 15, padding: narrow ? "8px 10px" : "9px 14px", background: callMode === k ? "#ffb300" : "transparent", color: callMode === k ? "#1a1000" : "#dbe6ff" }}>{l}</button>)}</div>
                 {B(paused ? "Resume" : "Pause", onPause, "gold")}
                 {B(`Speed: ${speed}`, () => onSpeed(speeds[(speeds.indexOf(speed) + 1) % speeds.length] || "Normal"), "blue")}
                 {live.q < 4 && onSimQuarter && B(`Sim to end of Q${live.q}`, onSimQuarter)}
