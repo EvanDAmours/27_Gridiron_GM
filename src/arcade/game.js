@@ -91,7 +91,7 @@ export class ArcadeGame {
     this.last = 0; this.raf = requestAnimationFrame((t) => this.loop(t));
   }
   destroy() {
-    cancelAnimationFrame(this.raf);
+    cancelAnimationFrame(this.raf); this.dead = true; // (a fit still queued from a rotation or full screen does nothing now)
     this.ro?.disconnect(); window.removeEventListener("orientationchange", this.onTurn); window.visualViewport?.removeEventListener("resize", this.fit);
     window.removeEventListener("resize", this.fit); document.removeEventListener("fullscreenchange", this.fit); document.removeEventListener("webkitfullscreenchange", this.fit); window.removeEventListener("keydown", this.onKey); window.removeEventListener("keyup", this.onKeyUp);
     for (const [n, f] of [["pointerdown", this.onDown], ["pointermove", this.onMove], ["pointerup", this.onUp], ["pointercancel", this.onUp], ["contextmenu", this.noMenu]]) this.cv.removeEventListener(n, f);
@@ -117,7 +117,13 @@ export class ArcadeGame {
   get mobile() { return this.input === "touch"; }
 
   fit() {
-    const cv = this.cv, wrap = cv.parentElement, dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (this.dead) return;
+    const cv = this.cv, wrap = cv.parentElement; if (!wrap) return;
+    // the page may be scaled (the app's display size sets a CSS zoom on the whole page: 0.92 on a
+    // laptop window, 1.15 on a big monitor): the field is laid out in the page's units but shown at the
+    // scaled size, so the picture is drawn for the size it's really shown at (sharp, not resampled)
+    const zr = wrap.getBoundingClientRect(), z = wrap.offsetWidth > 0 && zr.width > 0 ? zr.width / wrap.offsetWidth : 1;
+    const dpr = Math.min(2.5, Math.min(2, window.devicePixelRatio || 1) * (Math.abs(z - 1) < 0.01 ? 1 : z));
     // the box the game may use: its parent, less any padding (the arcade page pads round the iPhone's
     // notch and rounded corners in landscape, so nothing the game draws ends up under them)
     const cs = getComputedStyle(wrap), px = (k) => parseFloat(cs[k]) || 0;
@@ -487,6 +493,9 @@ export class ArcadeGame {
   // ---- the loop ----
   loop(now) {
     const dt = Math.min(0.05, (now - (this.last || now)) / 1000); this.last = now;
+    // the screen's pixel density changed without a resize (the window dragged to another monitor, the
+    // browser zoomed): fit again, so the picture is redrawn sharp for it
+    { const d = window.devicePixelRatio || 1; if (d !== this.dprSeen) { this.dprSeen = d; this.fit(); } }
     const t0 = performance.now();
     const held = this.intro && performance.now() < this.intro; // (under the drone shot: nothing moves, nothing shows)
     try { if (!held) this.advanceTime(dt, now); this.draw(); } catch (e) { this.recover(e); } // (one bad frame never freezes the field)
@@ -773,7 +782,14 @@ export class ArcadeGame {
   }
 
   // ---- input ----
-  pt(e) { const r = this.cv.getBoundingClientRect(); return { px: e.clientX - r.left, py: e.clientY - r.top }; }
+  // a pointer on the canvas, in the game's own units: the canvas can be shown bigger or smaller than it's
+  // laid out (a page zoom), so the spot is scaled by the size it's really shown at, and a click lands
+  // where it looks like it does at any window size or display setting
+  pt(e) {
+    const r = this.cv.getBoundingClientRect(), cam = this.cam;
+    const sx = cam && r.width > 0 ? cam.W / r.width : 1, sy = cam && r.height > 0 ? cam.H / r.height : 1;
+    return { px: (e.clientX - r.left) * sx, py: (e.clientY - r.top) * sy };
+  }
   // a tap or click on a menu, a card, the banner or a button: true when it was used
   tapUI(p) {
     if (this.paused) { const b = this.buttons.find((b) => inside(p, b)); if (b) this.pauseAction(b.key); return true; }

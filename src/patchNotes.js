@@ -2737,4 +2737,9 @@ export const PATCH_NOTES = [
     "Arcade tackling: a defender wrapping up a ball carrier was being moved twice a frame, so he could jump across the field for a moment, and a spin move shoved the runner sideways in one frame. Both move smoothly now (the playtest counted 318 jumps before and 24 after, all small).",
     "Phone: a long nickname (Commanders, Buccaneers) on Home's game card was cut off. It's set a little smaller now so the whole name shows.",
   ] },
+  { v: "7.1", date: "2026-11-12", title: "The arcade field lines up with your mouse at any window size", notes: [
+    "On a computer, the game scales the whole page to fit your window (a little smaller on a laptop-sized window, a little larger on a big monitor, or the size you picked under Display). The arcade field didn't account for that: it worked out where you clicked as if the page weren't scaled, so on most window sizes a click landed a little off from where the pointer was, more the further right and lower you clicked (the MENU chip and the right-hand play cards could miss entirely). Clicks now land exactly where the pointer is, at every window size and display setting.",
+    "Resizing the window, or changing the display size, redraws the field sharp at the size it's shown at (it used to be stretched or squeezed from the old size, a little blurry).",
+    "Dragging the window to a screen with a different pixel density (a laptop screen to a monitor), or zooming the browser, redraws the field sharp for that screen too.",
+  ] },
 ];
