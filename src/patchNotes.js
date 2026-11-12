@@ -2692,4 +2692,11 @@ export const PATCH_NOTES = [
     "Everything simmed counts just as if you'd watched it: the score, the box score, the stats and the season.",
     "The drive summary panel on the field now wraps long lines instead of cutting them off on a phone.",
   ] },
+  { v: "6.43", date: "2026-11-12", title: "Easy Mode: game plans, development and your staff", notes: [
+    "Game plan (Home): before each game, the staff's plan for this opponent on offense (run heavy, balanced or pass heavy) and on defense (stack the box, balanced, blitz or coverage), marked with a star, with the reason (\"Your run game (83) against their run defense (78)\"). Pick another for this week if you like, or let the staff pick again.",
+    "Development (Team): one player on each side of the ball gets extra coaching every week, the way it works in full mode. The staff pick the two who'd gain the most, and you can change either one. The list shows how much each player is likely to gain over a season.",
+    "Staff (Team): your head coach and coordinators, with their ratings, schemes and specialties.",
+    "Power rankings (League): all 32 clubs, best to worst, with each week's movement.",
+    "The owner's goal for the season (his target for wins) shows under the playoff race on Home.",
+  ] },
 ];

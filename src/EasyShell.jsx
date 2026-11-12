@@ -12,6 +12,8 @@ import { capSpace } from "./league.js";
 import { yearlyAsk, maxYears } from "./negotiation.js";
 import { nflSeeds, ROUND_NAMES } from "./playoffs.js";
 import { awardRaces } from "./awards.js";
+import { OFF_PLANS, DEF_PLANS } from "./gamePlan.js";
+import { perSeason, OFFENSE as DEV_OFF, DEFENSE as DEV_DEF } from "./development.js";
 
 const BASE = import.meta.env?.BASE_URL ?? "/";
 const FONTS = `
@@ -115,11 +117,12 @@ const SLOTS = { offense: [["QB", "QB", 0], ["RB", "RB", 0], ["WR1", "WR", 0], ["
 const rec = (t) => `${t.w || 0}-${t.l || 0}${t.t ? `-${t.t}` : ""}`;
 const pct = (t) => ((t.w || 0) + (t.t || 0) * 0.5) / Math.max(1, (t.w || 0) + (t.l || 0) + (t.t || 0));
 
-export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log, msg, step, busy, onFull, onSave, phaseLabel, depthOrder, setDepthOrder, awards, onResign, draft, onPick, trades, champs = [], seasonHistory = [], fa = [], faOpen = false, onSignFA, shop = null }) {
+export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log, msg, step, busy, onFull, onSave, phaseLabel, depthOrder, setDepthOrder, awards, onResign, draft, onPick, trades, champs = [], seasonHistory = [], fa = [], faOpen = false, onSignFA, shop = null, devFocus = null, onDevFocus, powerRankings = [], ownerGoal = null, plan = null }) {
   const [view, setView] = useState("home");
   const [sub, setSub] = useState(() => ({ team: "roster", stats: "pass", lineup: "offense", draft: "All", league: "leaders", lead: "pass", scope: "league", conf: teams[ui]?.c || "AFC", moves: sp === "draft" ? "draft" : sp === "freeagency" ? "fa" : "trade", fa: "All", scoreWk: null, board: "All" }));
   const [card, setCard] = useState(null);       // the player card open: { id, ti, p }
   const [slot, setSlot] = useState(null);       // the lineup spot being chosen
+  const [devPick, setDevPick] = useState(null); // the development focus side being chosen
   const [walked, setWalked] = useState(() => new Set());
   const [gameBox, setGameBox] = useState(null); // a played game's box score, opened from its row
   const ut = teams[ui], T = TEAMS[ui];
@@ -235,6 +238,23 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
     </div>);
   };
 
+  // ---- this week's game plan: the staff's pick, or yours (it lasts the week) ----
+  const SHORT_PLAN = { run_stop: "Stack the box", coverage: "Coverage" };
+  const planCard = () => {
+    const row = (side, list) => { const cur = plan.cur?.[side], why = plan.opts?.[side]?.[cur]?.why; return (
+      <div style={{ marginTop: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ ...PH, fontSize: 13, width: 62, color: "#555" }}>{side === "off" ? "Offense" : "Defense"}</span>
+          {list.map((o) => { const on = cur === o.key, best = plan.best?.[side] === o.key; return <button key={o.key} className="ez-btn" onClick={() => plan.pick(side, o.key)} style={{ fontSize: 13, padding: "5px 10px", background: on ? "#1d4ed8" : "#e8ecf5", color: on ? "#fff" : INK, boxShadow: on ? "0 3px 0 #0b2a8f" : "0 3px 0 #c5ccdc" }}>{SHORT_PLAN[o.key] || o.label}{best ? " ★" : ""}</button>; })}
+        </div>
+        {why && <div style={{ ...SERIF, fontSize: 13, color: "#555", margin: "4px 0 0 70px" }}>{why.replace(/^\w/, (c) => c.toUpperCase())}.</div>}
+      </div>); };
+    return (<div style={{ marginTop: 12, padding: narrow ? "8px 8px 10px" : "10px 12px 12px", background: "#f6f8fd", boxShadow: "inset 0 0 0 2px #dbe3f5" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}><Mark>Game plan</Mark><span style={{ ...SERIF, fontSize: 14, color: "#555" }}>{plan.auto ? "The staff's pick for this opponent (★). Change it for this week if you like." : "Your call for this week."}</span>
+        {!plan.auto && <button className="ez-btn" onClick={plan.staff} style={{ fontSize: 13, padding: "4px 10px", background: "#e8ecf5", color: INK, boxShadow: "0 3px 0 #c5ccdc" }}>Let the staff pick</button>}</div>
+      {row("off", OFF_PLANS)}{row("def", DEF_PLANS)}
+    </div>);
+  };
   const home = () => {
     const opp = next ? TEAMS[next.h === ui ? next.a : next.h] : null, oppT = next ? teams[next.h === ui ? next.a : next.h] : null;
     const offseason = sp === "resign" || sp === "draft";
@@ -253,13 +273,6 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
               <div style={{ textAlign: "center" }}><Logo ab={opp.ab} size={narrow ? 52 : 62} /><div style={{ ...NUM, fontSize: 16, marginTop: 4 }}>{oppT ? rec(oppT) : ""}</div></div>
             </div>
           )}
-          {(() => { // the playoff picture, in a line
-            if (sp !== "regular" || !playedAny) return null;
-            const seeds = seedsOf(ut.c), at = seeds.indexOf(ui), s7 = teams[seeds[6]];
-            const back = s7 ? ((s7.w || 0) - (ut.w || 0) + (ut.l || 0) - (s7.l || 0)) / 2 : 0;
-            const txt = at >= 0 ? `If the season ended today, you'd be the ${ut.c}'s #${at + 1} seed${at === 0 ? " (and the bye)" : ""}.` : back > 0 ? `${back} game${back === 1 ? "" : "s"} out of the last playoff spot in the ${ut.c}.` : `Tied for the last playoff spot in the ${ut.c}.`;
-            return <div className="ez-click" onClick={() => { setView("league"); setS("league", "playoffs"); setS("conf", ut.c); }} style={{ ...SERIF, fontSize: 15, marginTop: 12, padding: "6px 8px", background: at >= 0 ? "#e7f6ea" : "#f3f4f6", boxShadow: `inset 3px 0 0 ${at >= 0 ? "#22a447" : "#9ca3af"}` }}>{txt} <span style={{ ...PH, fontSize: 13, color: LINK }}>Playoff picture</span></div>;
-          })()}
           {step && !myCall && <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
             <Btn big onClick={step.run} disabled={busy} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>{busy ? <span style={{ animation: "ezBlink .6s steps(2) infinite" }}>Working…</span> : <>▶ {step.label}</>}</Btn>
             {step.watch && <Btn kind="blue" onClick={step.watch} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>Watch the game</Btn>}
@@ -267,6 +280,14 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
             {step.simAll && <Btn kind="dark" onClick={step.simAll} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>Sim the season</Btn>}
           </div>}
           {msg && <div style={{ ...SERIF, fontSize: 16, marginTop: 12, fontStyle: "italic" }}>{msg}</div>}
+          {(() => { // the playoff picture, in a line
+            if (sp !== "regular" || !playedAny) return null;
+            const seeds = seedsOf(ut.c), at = seeds.indexOf(ui), s7 = teams[seeds[6]];
+            const back = s7 ? ((s7.w || 0) - (ut.w || 0) + (ut.l || 0) - (s7.l || 0)) / 2 : 0;
+            const txt = at >= 0 ? `If the season ended today, you'd be the ${ut.c}'s #${at + 1} seed${at === 0 ? " (and the bye)" : ""}.` : back > 0 ? `${back} game${back === 1 ? "" : "s"} out of the last playoff spot in the ${ut.c}.` : `Tied for the last playoff spot in the ${ut.c}.`;
+            return <div className="ez-click" title={ownerGoal ? `The owner wants ${ownerGoal} wins` : undefined} onClick={() => { setView("league"); setS("league", "playoffs"); setS("conf", ut.c); }} style={{ ...SERIF, fontSize: 15, marginTop: 12, padding: "6px 8px", background: at >= 0 ? "#e7f6ea" : "#f3f4f6", boxShadow: `inset 3px 0 0 ${at >= 0 ? "#22a447" : "#9ca3af"}` }}>{txt}{ownerGoal ? ` The owner wants ${ownerGoal} wins (you have ${ut.w || 0}).` : ""} <span style={{ ...PH, fontSize: 13, color: LINK }}>Playoff picture</span></div>;
+          })()}
+          {plan && planCard()}
           {trades && tradePanel()}
           {sp === "resign" && resignPanel()}
           {sp === "draft" && draftPanel()}
@@ -534,9 +555,24 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
         </Row>); })}
     </>);
   };
+  // ---- League > Power rankings: the whole league, best to worst, with the week's movement ----
+  const powerView = () => {
+    const list = (powerRankings || []).length ? powerRankings : [...teams.map((t, i) => ({ ab: TEAMS[i]?.ab, rank: 0, trend: "", i }))].sort((a, b) => pct(teams[b.i]) - pct(teams[a.i])).map((x, k) => ({ ...x, rank: k + 1 }));
+    const byAb = new Map(TEAMS.map((t, i) => [t.ab, i]));
+    return (<>
+      <div style={{ ...SERIF, fontSize: 15, color: "#444", marginBottom: 8 }}>Updated every week: record first, then how good each roster is.</div>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,1fr) minmax(0,1fr)", columnGap: 30 }}>
+        {list.map((x) => { const i = byAb.get(x.ab), up = x.trend === "▲", down = x.trend === "▽"; return <Row key={x.ab} style={{ gap: 10, padding: "5px 4px", background: i === ui ? "#fff9c4" : undefined }}>
+          <span style={{ ...NUM, fontSize: 16, width: 28, textAlign: "right" }}>{x.rank}</span>
+          <span style={{ width: 16, display: "inline-flex", justifyContent: "center" }}>{up ? <Arrow up size={12} /> : down ? <Arrow size={12} /> : <span style={{ color: "#bbb" }}>-</span>}</span>
+          <Logo ab={x.ab} size={28} /><span style={{ flex: 1, minWidth: 0 }}><Name size={15} me={i === ui}>{TEAMS[i]?.city} {TEAMS[i]?.name}</Name></span>
+          <span style={{ ...NUM, fontSize: 15 }}>{i != null ? rec(teams[i]) : ""}</span></Row>; })}
+      </div>
+    </>);
+  };
   const leagueView = () => (<>
-    <Chips items={[["leaders", "Leaders"], ["standings", "Standings"], ["playoffs", "Playoffs"], ["scores", "Scores"], ["history", "History"]]} on={sub.league} set={(v) => setS("league", v)} />
-    {{ leaders: leadersView, standings: standingsView, playoffs: playoffsView, scores: scoresView, history: leagueHistoryView }[sub.league]()}
+    <Chips items={[["leaders", "Leaders"], ["standings", "Standings"], ["power", "Power rankings"], ["playoffs", "Playoffs"], ["scores", "Scores"], ["history", "History"]]} on={sub.league} set={(v) => setS("league", v)} />
+    {{ leaders: leadersView, standings: standingsView, power: powerView, playoffs: playoffsView, scores: scoresView, history: leagueHistoryView }[sub.league]()}
   </>);
 
   // ---- Team > Stats: your players, and where your club ranks ----
@@ -597,9 +633,40 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
       </div>
     </>);
   };
+  // ---- Team > Development: the one player on each side who gets extra coaching every week ----
+  const devView = () => {
+    const sides = [["off", "Offense", DEV_OFF], ["def", "Defense", DEV_DEF]];
+    const gain = (p) => `+${perSeason(p).toFixed(1)} a season`;
+    return (<div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,1.1fr) minmax(0,1fr)", gap: narrow ? 16 : 30, alignItems: "start" }}>
+      <div>
+        <div style={{ ...SERIF, fontSize: 16, lineHeight: 1.5, marginBottom: 10 }}><Mark>Development focus:</Mark> one player on each side of the ball gets extra coaching every week, and the young ones with high potential grow fastest. The staff pick for you unless you choose.</div>
+        {sides.map(([k, label]) => { const p = roster.find((x) => String(x.id) === String(devFocus?.[k])), on = devPick === k; return (
+          <Row key={k} onClick={() => setDevPick(on ? null : k)} style={{ gap: 12, background: on ? "#fff6c2" : undefined }}>
+            <span style={{ ...NUM, fontSize: 15, width: 70, color: "#1d4ed8" }}>{label}</span>
+            {p ? <><Face p={p} size={38} /><span style={{ flex: 1, minWidth: 0 }}><Name size={16}>{p.name}</Name><span style={{ ...SERIF, fontSize: 13, color: "#666" }}>{p.pos}, age {p.age} · {p.ovr} now · {gain(p)}</span></span></> : <span style={{ ...SERIF, flex: 1, color: "#888" }}>Nobody</span>}
+            <span style={{ ...PH, fontSize: 13, color: "#1d4ed8", width: 54, textAlign: "right" }}>{on ? "Close" : "Change"}</span>
+          </Row>); })}
+      </div>
+      <div>{devPick ? (() => { const pos = sides.find((x) => x[0] === devPick)[2], list = roster.filter((p) => pos.includes(p.pos) && p.ovr < 99).sort((a, b) => perSeason(b) - perSeason(a)).slice(0, 15); return <>
+        <div style={{ marginBottom: 6, fontSize: 16 }}><Mark>Who grows the most</Mark></div>
+        {list.map((p) => playerRow(p, <><span style={{ ...SERIF, fontSize: 13, width: narrow ? 64 : 90, textAlign: "right" }}>{gain(p)}</span><Stars v={p.pot} size={narrow ? 11 : 13} color="#1d4ed8" /></>, () => { onDevFocus?.(devPick, p.id); setDevPick(null); }))}</>; })()
+        : <div style={{ ...SERIF, fontSize: 16, lineHeight: 1.55, color: "#333" }}>Tap a side to choose who gets the extra coaching. The list shows how much each player is likely to gain over a season with it.</div>}</div>
+    </div>);
+  };
+  // ---- Team > Staff: your coaches ----
+  const staffView = () => {
+    const c = ut.coach || {}, roles = [["hc", "Head coach"], ["oc", "Offensive coordinator"], ["dc", "Defensive coordinator"], ["st", "Special teams coordinator"]];
+    return (<div>
+      <div style={{ ...SERIF, fontSize: 16, lineHeight: 1.5, marginBottom: 10 }}><Mark>Your coaching staff:</Mark> the better they are, the better your players play and grow. In Easy Mode the front office hires them for you.</div>
+      {roles.map(([k, label]) => { const x = c[k]; return x ? <Row key={k} style={{ gap: 12 }}>
+        <span style={{ flex: 1, minWidth: 0 }}><span style={{ ...PH, fontSize: 13, color: "#555", display: "block" }}>{label}</span><Name size={17}>{x.name}</Name><span style={{ ...SERIF, fontSize: 13, color: "#666" }}>{[x.scheme, x.trait, x.age ? `age ${x.age}` : null].filter(Boolean).join(" · ")}</span></span>
+        <span style={{ textAlign: "right" }}><Stars v={x.rating} size={narrow ? 13 : 16} /><span style={{ ...NUM, fontSize: 15, display: "block" }}>{x.rating}</span></span>
+      </Row> : null; })}
+    </div>);
+  };
   const teamView = () => (<>
-    <Chips items={[["roster", "Roster"], ["lineup", "Lineup"], ["stats", "Stats"], ["money", "Contracts"], ["history", "History"]]} on={sub.team} set={(v) => { setS("team", v); setSlot(null); }} />
-    {{ roster: rosterView, lineup: lineupView, stats: teamStatsView, money: contractsView, history: franchiseView }[sub.team]()}
+    <Chips items={[["roster", "Roster"], ["lineup", "Lineup"], ["stats", "Stats"], ["dev", "Development"], ["money", "Contracts"], ["staff", "Staff"], ["history", "History"]]} on={sub.team} set={(v) => { setS("team", v); setSlot(null); setDevPick(null); }} />
+    {{ roster: rosterView, lineup: lineupView, stats: teamStatsView, dev: devView, money: contractsView, staff: staffView, history: franchiseView }[sub.team]()}
   </>);
 
   // ---- Moves > Trade block: shop a player, answer the offers ----
