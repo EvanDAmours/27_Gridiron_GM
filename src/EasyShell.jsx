@@ -12,7 +12,7 @@ import { capSpace } from "./league.js";
 import { yearlyAsk, maxYears } from "./negotiation.js";
 import { nflSeeds, makeBracket, ROUND_NAMES } from "./playoffs.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
-import { drawLombardi } from "./arcade/lombardi.js";
+import lombardiArt from "./assets/lombardi.webp";
 import { pixText, pixWidth } from "./arcade/pixfont.js";
 import { awardRaces } from "./awards.js";
 import { OFF_PLANS, DEF_PLANS } from "./gamePlan.js";
@@ -117,44 +117,59 @@ const statBits = (p) => { const s = p.ss || {}; const b = [];
 const AWARD = [["mvp", "MVP"], ["opoy", "Offensive Player of the Year"], ["dpoy", "Defensive Player of the Year"], ["oroy", "Offensive Rookie of the Year"], ["droy", "Defensive Rookie of the Year"], ["cpoy", "Comeback Player of the Year"]];
 // the lineup you set in Easy Mode: the skill spots and the defense's key men; the staff fill the rest
 const SLOTS = { offense: [["QB", "QB", 0], ["RB", "RB", 0], ["WR1", "WR", 0], ["WR2", "WR", 1], ["TE", "TE", 0]], defense: [["LE", "DL", 0], ["RE", "DL", 3], ["MIKE", "LB", 1], ["CB1", "CB", 0], ["CB2", "CB", 1], ["S", "S", 0]] };
-// The Super Bowl in 8-bit, at the heart of the playoff tree: the arcade's pixel Lombardi (the one handed
-// over in its trophy ceremony) on a little stage under a spotlight, stars twinkling, the game's numeral
-// in gold. Drawn at 72x84 and blown up with no smoothing, like a 16-bit sprite.
-const SB_W = 72, SB_H = 84;
-function PixelSB({ yr, scale = 3 }) {
+// The Super Bowl in 8-bit, at the heart of the playoff tree: the Lombardi Trophy art the full game's
+// bracket stands over its Super Bowl, put through an 8-bit filter (shrunk to 56 pixels tall, held to a
+// five-step silver ramp spread over the trophy's own shades, hard edges, a dark outline) and blown back
+// up with no smoothing, the game's numeral under it in the arcade's pixel font. Made once and kept.
+const SB_TROPHY_H = 56, SB_RAMP = [[52, 58, 72], [98, 108, 124], [150, 159, 173], [198, 205, 215], [236, 240, 246], [255, 255, 255]];
+let sbSprite = null;
+function trophySprite() {
+  return (sbSprite ||= new Promise((ok) => {
+    const im = new Image();
+    im.onerror = () => ok(null);
+    im.onload = () => { try {
+      // the art's own box (its transparent margins trimmed)
+      const fw = im.naturalWidth, fh = im.naturalHeight, f = document.createElement("canvas"); f.width = fw; f.height = fh;
+      const fc = f.getContext("2d"); fc.drawImage(im, 0, 0); const fd = fc.getImageData(0, 0, fw, fh).data;
+      let x0 = fw, y0 = fh, x1 = 0, y1 = 0;
+      for (let y = 0; y < fh; y++) for (let x = 0; x < fw; x++) if (fd[(y * fw + x) * 4 + 3] > 20) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      if (x1 < x0) return ok(null);
+      const H = SB_TROPHY_H, W = Math.max(8, Math.round(((x1 - x0 + 1) * H) / (y1 - y0 + 1)));
+      const cv = document.createElement("canvas"); cv.width = W + 2; cv.height = H + 2; const c = cv.getContext("2d");
+      c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high"; c.drawImage(im, x0, y0, x1 - x0 + 1, y1 - y0 + 1, 1, 1, W, H);
+      const d = c.getImageData(0, 0, W + 2, H + 2), a = d.data, n = (W + 2) * (H + 2), solid = new Uint8Array(n), lum = (o) => 0.3 * a[o] + 0.59 * a[o + 1] + 0.11 * a[o + 2];
+      // the ramp's steps fall at the trophy's own shades (it's mostly bright: fixed steps would wash it out)
+      const ls = []; for (let i = 0; i < n; i++) if (a[i * 4 + 3] > 120) ls.push(lum(i * 4)); ls.sort((p, q) => p - q);
+      const cut = [0.12, 0.3, 0.52, 0.75, 0.93].map((q) => ls[Math.floor(q * (ls.length - 1))]);
+      for (let i = 0; i < n; i++) { const o = i * 4; if (a[o + 3] > 120) { const L = lum(o), k = cut.filter((v) => L > v).length, [r, g, b] = SB_RAMP[k]; a[o] = r; a[o + 1] = g; a[o + 2] = b; a[o + 3] = 255; solid[i] = 1; } else a[o + 3] = 0; }
+      // a one-pixel dark outline, like a sprite
+      const w2 = W + 2;
+      for (let i = 0; i < n; i++) { if (solid[i]) continue; const x = i % w2; if ((x > 0 && solid[i - 1]) || (x < w2 - 1 && solid[i + 1]) || solid[i - w2] || solid[i + w2]) { const o = i * 4; a[o] = 10; a[o + 1] = 16; a[o + 2] = 40; a[o + 3] = 255; } }
+      c.putImageData(d, 0, 0); ok(cv);
+    } catch { ok(null); } };
+    im.src = lombardiArt;
+  }));
+}
+function PixelSB({ yr, scale = 3.5 }) {
   const ref = useRef(null);
+  const num = yr ? sbName(sbNumber(yr)).replace("Super Bowl ", "") : "";
+  const px = num.length > 5 ? 1 : 2, numW = num ? pixWidth(num, px) + 2 : 0, numH = num ? 7 * px + 2 : 0;
+  const W = Math.max(26, numW + 2), H = SB_TROPHY_H + 2 + (num ? 3 + numH : 0);
   useEffect(() => {
-    const cv = ref.current, c = cv?.getContext("2d"); if (!c) return;
-    const num = yr ? sbName(sbNumber(yr)).replace("Super Bowl ", "") : "";
-    // the backdrop, once: deep blue, a spotlight in a lighter blue (dithered at its edge), the stage
-    const bg = document.createElement("canvas"); bg.width = SB_W; bg.height = SB_H; const b = bg.getContext("2d");
-    b.fillStyle = "#0b2a8f"; b.fillRect(0, 0, SB_W, SB_H);
-    for (let y = 0; y < SB_H; y++) for (let x = 0; x < SB_W; x++) {
-      const d = Math.hypot((x - SB_W / 2) / 26, (y - 40) / 30);
-      if (d < 0.62 || (d < 0.86 && (x + y) % 2 === 0)) { b.fillStyle = d < 0.62 ? "#1d4ed8" : "#1640b8"; b.fillRect(x, y, 1, 1); }
-    }
-    b.fillStyle = "#082067"; b.fillRect(0, 62, SB_W, SB_H - 62); b.fillStyle = "#ffb300"; b.fillRect(14, 62, SB_W - 28, 1); // the stage, its gold edge
-    const stars = [[5, 14], [65, 10], [9, 44], [62, 48], [17, 26], [57, 30], [28, 4], [46, 15], [4, 56], [68, 58]];
-    const tr = document.createElement("canvas"); tr.width = SB_W; tr.height = SB_H; const t = tr.getContext("2d");
-    const still = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const draw = () => {
-      const now = performance.now();
-      c.drawImage(bg, 0, 0);
-      stars.forEach(([x, y], i) => { const k = ((now / 450 + i * 1.7) % 4); if (still || k < 3) { c.fillStyle = k < 0.5 && !still ? "#fff" : "#ffd166"; c.fillRect(x, y, 1, 1); } });
-      // the trophy: drawn, then cut to hard pixels with a dark outline, like the field's sprites
-      t.clearRect(0, 0, SB_W, SB_H); drawLombardi(t, SB_W / 2, 62, 2.6);
-      const d = t.getImageData(0, 0, SB_W, SB_H), a = d.data, solid = new Uint8Array(SB_W * SB_H);
-      for (let i = 0; i < SB_W * SB_H; i++) { if (a[i * 4 + 3] > 100) { solid[i] = 1; a[i * 4 + 3] = 255; } else a[i * 4 + 3] = 0; }
-      for (let y = 0; y < SB_H; y++) for (let x = 0; x < SB_W; x++) { const i = y * SB_W + x; if (solid[i]) continue;
-        if ((x > 0 && solid[i - 1]) || (x < SB_W - 1 && solid[i + 1]) || (y > 0 && solid[i - SB_W]) || (y < SB_H - 1 && solid[i + SB_W])) { const o = i * 4; a[o] = 10; a[o + 1] = 16; a[o + 2] = 40; a[o + 3] = 255; } }
-      t.putImageData(d, 0, 0); c.drawImage(tr, 0, 0);
-      pixText(c, "SUPER BOWL", SB_W / 2 + 1, 5, 1, "#0a1f6b", "center"); pixText(c, "SUPER BOWL", SB_W / 2, 4, 1, "#fff", "center");
-      if (num) { const px = pixWidth(num, 2) <= SB_W - 6 ? 2 : 1, y = px === 2 ? 67 : 71; pixText(c, num, SB_W / 2 + 1, y + 1, px, "#3a2200", "center"); pixText(c, num, SB_W / 2, y, px, "#ffb300", "center"); }
-    };
-    draw(); if (still) return undefined;
-    const iv = setInterval(draw, 120); return () => clearInterval(iv);
-  }, [yr]);
-  return <canvas ref={ref} width={SB_W} height={SB_H} role="img" aria-label={yr ? sbName(sbNumber(yr)) : "Super Bowl"} style={{ width: SB_W * scale, height: SB_H * scale, imageRendering: "pixelated", display: "block", border: "3px solid #111", boxShadow: "5px 5px 0 #0a1f6b" }} />;
+    let live = true;
+    trophySprite().then((sp) => {
+      const c = ref.current?.getContext("2d"); if (!live || !c) return;
+      c.clearRect(0, 0, W, H);
+      if (sp) c.drawImage(sp, Math.round((W - sp.width) / 2), 0);
+      if (num) { // the numeral in silver, outlined in the trophy's dark blue
+        const y = SB_TROPHY_H + 2 + 3 + 1, x = W / 2;
+        for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]]) pixText(c, num, x + dx, y + dy, px, "#0a1028", "center");
+        pixText(c, num, x, y, px, "#e6eaf0", "center");
+      }
+    });
+    return () => { live = false; };
+  }, [W, H, num, px]);
+  return <canvas ref={ref} width={W} height={H} role="img" aria-label={yr ? sbName(sbNumber(yr)) : "Super Bowl"} style={{ width: W * scale, height: H * scale, imageRendering: "pixelated", display: "block", filter: "drop-shadow(4px 4px 0 #0a1f6b33)" }} />;
 }
 
 const rec = (t) => `${t.w || 0}-${t.l || 0}${t.t ? `-${t.t}` : ""}`;
@@ -631,7 +646,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
     const tree = narrow ? (<>
       {/* phone: the Super Bowl up top, then one conference's three rounds at a time (yours first) */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <PixelSB yr={yr} scale={2} />
+        <PixelSB yr={yr} scale={2.5} />
         <div style={{ width: "min(230px, 100%)" }}>{card(sbGame, { sb: true })}</div>
       </div>
       <Chips items={[["AFC", "AFC"], ["NFC", "NFC"]]} on={sub.conf} set={(v) => setS("conf", v)} />
@@ -649,7 +664,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
             <div aria-hidden style={{ position: "absolute", top: "50%", marginTop: -1.5, left: -GAP / 2, width: GAP / 2, height: 3, background: LINE }} />
             <div aria-hidden style={{ position: "absolute", top: "50%", marginTop: -1.5, right: -GAP / 2, width: GAP / 2, height: 3, background: LINE }} />
             <div style={{ position: "relative", width: "100%" }}>
-              <div style={{ position: "absolute", bottom: "100%", left: 0, right: 0, display: "flex", justifyContent: "center", paddingBottom: 12 }}><PixelSB yr={yr} scale={2.5} /></div>
+              <div style={{ position: "absolute", bottom: "100%", left: 0, right: 0, display: "flex", justifyContent: "center", paddingBottom: 10 }}><PixelSB yr={yr} scale={3} /></div>
               {card(sbGame, { sb: true })}
             </div>
           </div>

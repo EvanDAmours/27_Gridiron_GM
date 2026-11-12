@@ -2750,4 +2750,7 @@ export const PATCH_NOTES = [
     "On a phone: the Super Bowl up top, then one conference's three rounds at a time (yours first), then its seeds.",
     "The playoff line on Home takes you straight to the new tab. (It used to be a page under League.)",
   ] },
+  { v: "7.3", date: "2026-11-12", title: "Easy Mode: the real Lombardi on the playoff tree", notes: [
+    "The Super Bowl at the heart of Easy Mode's playoff tree is the game's own Lombardi Trophy now, the same one that stands over the Super Bowl in full mode's bracket, put through an 8-bit filter: shrunk to a few dozen pixels, held to five shades of silver, hard pixel edges and a dark outline, then blown back up with no smoothing. The game's numeral sits under it in pixel lettering, and the Super Bowl itself right below. (It replaces the little drawn trophy on a blue stage.)",
+  ] },
 ];
