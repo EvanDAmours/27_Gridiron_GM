@@ -6,8 +6,11 @@ import { createGame, playGame, defStyle } from "../src/playsim.js";
 const seeded = (a) => () => { a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 Math.random = seeded(2026); // everything else that rolls dice (roster setup, injuries) the same every run
 // Play n games with your club (home) on a given defensive plan; totals for its defense.
+// one league for every plan: each plan plays the same clubs in the same games (a league built per run
+// compared different rosters, and the result rode on the dice)
+const LEAGUE = initTeams();
 function run(def, n = 120, dcPatch = {}) {
-  const teams = initTeams();
+  const teams = LEAGUE;
   const me = { ...teams[2], isUser: true, coach: { ...teams[2].coach, dc: { ...(teams[2].coach?.dc || {}), ...dcPatch } } };
   const t = { blitz: 0, box: 0, cover: 0, dropbacks: 0, plays: 0, sacks: 0, rushYds: 0, rushAtt: 0, passYds: 0, comp: 0, att: 0 };
   for (let i = 0; i < n; i++) {

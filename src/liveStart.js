@@ -9,7 +9,8 @@ export const normName = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]
   .replace(/[.'’]/g, "").replace(/-/g, " ").replace(/\b(jr|sr|ii|iii|iv|v)\b/g, "").replace(/\s+/g, " ").trim();
 // Players ESPN lists under a different first name than Madden does.
 const ALIAS = { "andy borregales": "andres borregales", "cam bynum": "camryn bynum", "jaylahn tuimoloau": "jt tuimoloau",
-  "hollywood brown": "marquise brown", "nicholas singleton": "nick singleton", "ben yurosek": "benjamin yurosek", "gabriel rubio": "gabe rubio" };
+  "hollywood brown": "marquise brown", "nicholas singleton": "nick singleton", "ben yurosek": "benjamin yurosek", "gabriel rubio": "gabe rubio",
+  "cameron heyward": "cam heyward", "joshua metellus": "josh metellus", "chig okonkwo": "chigoziem okonkwo" };
 const key = (n) => { const k = normName(n); return ALIAS[k] || k; };
 
 const qbRate = (c, a, y, td, i) => {

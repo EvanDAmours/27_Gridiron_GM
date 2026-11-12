@@ -2723,4 +2723,10 @@ export const PATCH_NOTES = [
     "A spike stops the clock where it is too.",
     "The scoreboard above the field in a franchise game follows the clock as it runs between plays.",
   ] },
+  { v: "6.49", date: "2026-11-12", title: "Free agents fixed", notes: [
+    "Free agency held players who are on NFL rosters this season: their names are spelled differently in ESPN's data (Josh and Joshua Metellus, Cam and Cameron Heyward, Chigoziem and Chig Okonkwo) or a signing never made it through. They're with their clubs now: Cam Heyward (Steelers; he's played all eight games this season, 2.5 sacks, signed through 2027), Josh Metellus (Vikings, through 2029), Joshua Uche (Dolphins), Chigoziem Okonkwo (Commanders, through 2028) and Cooper Rush (Falcons).",
+    "Mitch Wishnowsky is the Patriots' punter (he's punted all season); Bryce Baringer, released on October 26, is a free agent.",
+    "The other free agents are real ones, released this October: Najee Harris (Giants), Xavier Woods (Bears), Darius Slayton (Colts), Harrison Mevis (Rams), Jack Jones (49ers), Riley Patterson and Robert Beal Jr. (Dolphins), Jordan Elliott (Titans), David Long Jr. (Saints) and others.",
+    "A franchise already under way this season gets the same moves once (unless one of these players has already signed somewhere in your league, or the move involves your club, which is left to you). Real 2026 stats now carry over for these players when a franchise starts mid-season.",
+  ] },
 ];

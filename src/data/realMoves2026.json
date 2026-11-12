@@ -731,6 +731,69 @@
    "fill": true,
    "id": "2026-11-01-zachcarter-phi",
    "date": "2026-11-01"
+  },
+  {
+   "name": "Cam Heyward",
+   "pos": "DL",
+   "from": "FA",
+   "to": "PIT",
+   "ovr": 95,
+   "id": "2026-11-12-camheyward-pit",
+   "date": "2026-11-12"
+  },
+  {
+   "name": "Josh Metellus",
+   "pos": "S",
+   "from": "FA",
+   "to": "MIN",
+   "ovr": 83,
+   "id": "2026-11-12-joshmetellus-min",
+   "date": "2026-11-12"
+  },
+  {
+   "name": "Joshua Uche",
+   "pos": "DL",
+   "from": "FA",
+   "to": "MIA",
+   "ovr": 76,
+   "id": "2026-11-12-joshuauche-mia",
+   "date": "2026-11-12"
+  },
+  {
+   "name": "Chigoziem Okonkwo",
+   "pos": "TE",
+   "from": "FA",
+   "to": "WAS",
+   "ovr": 74,
+   "id": "2026-11-12-chigoziemokonkwo-was",
+   "date": "2026-11-12"
+  },
+  {
+   "name": "Cooper Rush",
+   "pos": "QB",
+   "from": "FA",
+   "to": "ATL",
+   "ovr": 62,
+   "id": "2026-11-12-cooperrush-atl",
+   "date": "2026-11-12"
+  },
+  {
+   "name": "Bryce Baringer",
+   "pos": "P",
+   "from": "NE",
+   "to": "FA",
+   "ovr": 78,
+   "id": "2026-11-12-brycebaringer-fa",
+   "date": "2026-11-12"
+  },
+  {
+   "name": "Mitch Wishnowsky",
+   "pos": "P",
+   "from": "FA",
+   "to": "NE",
+   "ovr": 76,
+   "id": "2026-11-12-mitchwishnowsky-ne",
+   "date": "2026-11-12"
   }
  ]
 }

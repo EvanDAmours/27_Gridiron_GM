@@ -47,7 +47,7 @@ test("every club starts with its real punter, rosters stay at 53", () => {
   assert.equal(teams.find((t) => t.ab === "SEA").roster.find((p) => p.pos === "P").name, "Michael Dickson");
   const fa = initialFA();
   assert.ok(fa.some((p) => p.pos === "P"));
-  assert.ok(fa.length > 51);
+  assert.ok(fa.length > 45); // (the starting pool: Madden's free agents, the men cut to make room for a punter, the spare punters)
 });
 
 test("older saves get their punters", () => {
