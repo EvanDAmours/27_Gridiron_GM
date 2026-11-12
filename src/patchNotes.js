@@ -2702,4 +2702,7 @@ export const PATCH_NOTES = [
   { v: "6.44", date: "2026-11-12", title: "Easy Mode: contract extensions", notes: [
     "Contracts (Team): extend a player whose deal is ending during the season, at his asking price, if you'll have the cap room next season. The new deal starts in the new league year, he's off the re-sign list, and a player holding out comes back. Anyone you don't extend you can still re-sign in re-sign week, as before.",
   ] },
+  { v: "6.45", date: "2026-11-12", title: "A clear field in franchise games", notes: [
+    "The three buttons that sat on the arcade field during a franchise game (your defense's call, Sim to end and Full screen) are now one small MENU button in the score strip along the top, beside the other team's score. On a phone held upright it sits just under the strip, and on a computer in the corner over the stands, so it never covers the field. Tap it for the same three options; tap anywhere else to close it.",
+  ] },
 ];

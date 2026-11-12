@@ -1107,7 +1107,8 @@ export const uiPx = (cam) => Math.max(2, Math.round(Math.min(cam.W / 380, cam.H 
 const hudPx = uiPx;
 // The score strip across the top (the standalone arcade; in a live game the app shows the score and
 // the stadium scoreboard at the 50 does the rest).
-export function drawHud(ctx, cam, sit, teams, { ot, to } = {}) {
+// out (optional): filled in with where the strip's pieces end, so a button can sit in a gap in it
+export function drawHud(ctx, cam, sit, teams, { ot, to, out = null } = {}) {
   const { W } = cam, px = hudPx(cam), h = px * 7, pad = px * 2, px2 = Math.max(1, Math.round(px * 0.7)), tip = px * 4;
   // two rows: the clubs, scores and clock; under the clock the down and distance (whoever has the ball)
   const bar = h + pad * 2 + px2 * 7 + px * 2;
@@ -1121,6 +1122,7 @@ export function drawHud(ctx, cam, sit, teams, { ot, to } = {}) {
     // possession: a little football beside the score
     const nw = pixWidth(n, px), fx = right ? sx - nw - pad * 2.5 : sx + nw + pad;
     if (poss) { ctx.fillStyle = "#a0552a"; ctx.fillRect(fx, pad + px * 2, px * 3, px * 3); ctx.fillStyle = "#fff"; ctx.fillRect(fx + px, pad + px * 2, px, px * 3); }
+    if (out) { const ball = pad + px * 3 + pad; if (right) out.r = Math.min(bx, sx - nw - ball); else out.l = Math.max(bx + w, sx + nw + ball); }
     // timeouts: three bars under the club's name, on a dark strip so they read on any colour (gold: left, dark: used)
     const ty = pad + h + px, tw = tip * 3 + px * 2 * 2, tx = Math.round(bx + w / 2 - tw / 2);
     ctx.fillStyle = "rgba(8,10,16,.75)"; ctx.fillRect(tx - px, ty - px, tw + px * 2, px * 2 + px * 2);
@@ -1128,7 +1130,9 @@ export function drawHud(ctx, cam, sit, teams, { ot, to } = {}) {
   };
   box(pad, teams.user, sit.score.h, false, sit.poss === "h" && !sit.done, to?.h); box(W - pad, teams.opp, sit.score.a, true, sit.poss === "a" && !sit.done, to?.a);
   const clock = `${Math.floor(sit.clock / 60)}:${String(sit.clock % 60).padStart(2, "0")}`;
-  pixShadow(ctx, `${sit.ot || ot ? "OT" : "Q" + sit.qtr}  ${clock}`, W / 2, pad, px, "#ffd166", "center");
+  const qc = `${sit.ot || ot ? "OT" : "Q" + sit.qtr}  ${clock}`;
+  pixShadow(ctx, qc, W / 2, pad, px, "#ffd166", "center");
+  if (out) { out.bar = bar; out.top = px; out.h = bar - px * 3; out.c0 = W / 2 - pixWidth(qc, px) / 2; out.c1 = W / 2 + pixWidth(qc, px) / 2; }
   // the down and distance, and where the ball is
   if (!sit.done) {
     const off = sit.poss === "h" ? teams.user : teams.opp, def = sit.poss === "h" ? teams.opp : teams.user, yd = sit.yard;
@@ -1136,6 +1140,7 @@ export function drawHud(ctx, cam, sit, teams, { ot, to } = {}) {
     const spot = yd === 50 ? "THE 50" : yd > 50 ? `${def.ab} ${100 - yd}` : `${off.ab} ${yd}`;
     const txt = sit.koNext ? `${off.ab} KICKOFF` : `${off.ab}  ${ORD[sit.down] || sit.down} & ${toGo}  ON ${spot}`;
     pixShadow(ctx, txt, W / 2, pad + h + px, px2, "#fff", "center");
+    if (out) { const tw = pixWidth(txt, px2); out.c0 = Math.min(out.c0, W / 2 - tw / 2); out.c1 = Math.max(out.c1, W / 2 + tw / 2); }
   }
   return bar;
 }

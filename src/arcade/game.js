@@ -603,11 +603,29 @@ export class ArcadeGame {
     if (cer) { const t = this.time - cer.t0; drawLowerThird(ctx, cam, `${String(cer.name || "SUPER BOWL").toUpperCase()} CHAMPIONS`, t < 8.2 ? "HERE COMES THE LOMBARDI TROPHY" : `THE ${String(cer.team.name || "").toUpperCase()} ARE WORLD CHAMPIONS`, cer.team.clr, { age: t, accent: "#ffd166", center: true }); }
     drawWeather(ctx, cam, { wx: this.g?.wxE, time: this.time, wind: windNow(this.g) });
     this.fx.draw(ctx, cam.W, cam.H, pixText);
+    let hudOut = null;
     if (!this.live || (full && !fr)) { // (the scorebug stays put too: your club on the left all game, whoever has the ball)
       // (a kickoff in the air or being run back: the board says KICKOFF, not where the engine has it ending up)
       const sb = P?.kind === "ko" && m === "play" && P.arrived == null && st ? { ...st, koNext: true, poss: P.ev?.ko?.side || "h" } : st;
       const F = this.flipped && sb, fl = (v) => (v === "h" ? "a" : v === "a" ? "h" : v), to = this.g?.to;
-      drawHud(ctx, cam, F ? { ...sb, score: { h: sb.score.a, a: sb.score.h }, poss: fl(sb.poss), yard: sb.yard } : sb, F ? { user: teams.opp, opp: teams.user } : teams, { to: F && to ? { h: to.a, a: to.h } : to });
+      drawHud(ctx, cam, F ? { ...sb, score: { h: sb.score.a, a: sb.score.h }, poss: fl(sb.poss), yard: sb.yard } : sb, F ? { user: teams.opp, opp: teams.user } : teams, { to: F && to ? { h: to.a, a: to.h } : to, out: (hudOut = {}) });
+    }
+    // the franchise game's menu (your defense's call, sim to the end, full screen): one small button in a
+    // gap in the score strip, or over the stands in a corner when there's no strip; never on the field
+    this.chips.menu = null;
+    if (this.live && !this.live.solo && this.onMenu && m !== "ceremony") {
+      const px2 = uiPx(cam), label = "MENU", w = pixWidth(label, px2) + px2 * 6;
+      let x = null, y = px2 * 2, h = px2 * 9;
+      if (hudOut?.bar) {
+        y = hudOut.top; h = hudOut.h;
+        const lg = [hudOut.l + px2 * 2, hudOut.c0 - px2 * 2], rg = [hudOut.c1 + px2 * 2, hudOut.r - px2 * 2];
+        if (rg[1] - rg[0] >= w) x = Math.round(rg[1] - w); else if (lg[1] - lg[0] >= w) x = Math.round(lg[0]);
+        else { y = hudOut.bar + px2; h = Math.max(px2 * 9, 28); x = cam.W - w - px2 * 2; } // (no room in the strip: just under it, in the corner, over the stands)
+      } else { h = Math.max(px2 * 9, 28); x = cam.W - w - px2 * 3; y = px2 * 2; } // (no strip: the top corner, over the stands)
+      ctx.fillStyle = this.menuOpen ? "rgba(26,34,52,.95)" : "rgba(8,10,16,.82)"; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = "#ffd166"; ctx.fillRect(x, y + h - px2, w, px2);
+      pixText(ctx, label, x + w / 2, Math.round(y + (h - px2 * 7) / 2), px2, "#fff", "center");
+      this.chips.menu = { x, y, w, h };
     } // (a live game: the app's scoreboard, and the stadium's at the 50; in full screen, this strip) // (a live game: the app's scoreboard, and the stadium's at the 50)
     if (this.g && m !== "final") drawWxChip(ctx, cam, this.g.wxE, windNow(this.g));
     const px = uiPx(cam), hintY = cam.H - px * 9;
@@ -714,6 +732,7 @@ export class ArcadeGame {
   tapUI(p) {
     if (this.paused) { const b = this.buttons.find((b) => inside(p, b)); if (b) this.pauseAction(b.key); return true; }
     if (inside(p, this.chips.pause)) { this.paused = true; return true; }
+    if (this.chips.menu && inside(p, this.chips.menu)) { const c = this.chips.menu; this.onMenu?.({ x: c.x, y: c.y, w: c.w, h: c.h }); return true; }
     for (const [k, b] of Object.entries(this.chips.kinds || {})) if (inside(p, b)) { this.setKind(k); return true; }
     if (inside(p, this.chips.flip) && this.S?.phase === "presnap") { if (flipPlay(this.S)) sfx.select?.(); return true; }
     if (inside(p, this.chips.timeout)) { this.timeout(); return true; }

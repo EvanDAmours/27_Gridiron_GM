@@ -16,6 +16,7 @@ export default function LiveArcade({ g, userSide, watch, moments = false, speed,
   useEffect(() => {
     const a = new ArcadeGame(ref.current, { skipMenu: true, live: { g, userSide, watch, moments, teams, night, fill, onEvent: (ev, off) => cb.current?.(ev, off) } });
     a.speed = SPEED[speed] || 1; a.paused = !!paused;
+    a.onMenu = (rect) => setMenu((m) => (m ? null : rect)); // (the MENU chip in the score strip: open or close)
     game.current = a; if (apiRef) apiRef.current = a;
     if (typeof window !== "undefined") window.arcadeGame = a; // (for playtesting)
     return () => { a.release(); a.destroy(); game.current = null; if (apiRef && apiRef.current === a) apiRef.current = null; };
@@ -33,6 +34,8 @@ export default function LiveArcade({ g, userSide, watch, moments = false, speed,
   const [natFs, setFs] = useState(false), [pinned, setPinned] = useState(false), fs = natFs || pinned;
   // the sim button asks once more before it ends the game (a stray tap shouldn't); the ask lapses after a few seconds
   const [simArm, setSimArm] = useState(false), [defCall, setDefCall] = useState("balanced");
+  const [menu, setMenu] = useState(null); // the menu open under the MENU chip: the chip's box on the canvas
+  useEffect(() => { if (game.current) game.current.menuOpen = !!menu; if (!menu) setSimArm(false); }, [menu]);
   useEffect(() => { if (game.current?.defCall) setDefCall(game.current.defCall); }, [g]);
   useEffect(() => { if (!simArm) return; const t = setTimeout(() => setSimArm(false), 3500); return () => clearTimeout(t); }, [simArm]);
   useEffect(() => {
@@ -53,16 +56,24 @@ export default function LiveArcade({ g, userSide, watch, moments = false, speed,
   return (
     <div role="application" aria-label="Arcade field" style={pinned ? { position: "fixed", inset: 0, zIndex: 9500, boxSizing: "border-box", padding: "env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)", background: "#0b0e14", overflow: "hidden" } : fill ? { position: "absolute", inset: 0, background: "#0b0e14", overflow: "hidden" } : { position: "relative", width: "100%", aspectRatio: aspect, ...(maxH ? { maxHeight: maxH } : {}), background: "#0b0e14", borderRadius: 10, overflow: "hidden" }}>
       <canvas ref={ref} tabIndex={0} style={{ display: "block", touchAction: "none", imageRendering: "pixelated", outline: "none" }} />
-      {/* the corner buttons: sim the rest of the game out (a second tap to be sure), and full screen */}
-      <div style={{ position: "absolute", ...(fs ? { top: "calc(env(safe-area-inset-top) + 74px)", left: "calc(env(safe-area-inset-left) + 8px)" } /* (under the score strip and the weather, clear of the play cards along the bottom) */ : fill ? { top: "calc(env(safe-area-inset-top) + 46px)", left: 8 } /* (a phone: up top, clear of the app's controls along the bottom) */ : { top: 8, right: 8 }), zIndex: 2, display: "flex", gap: 6, opacity: fs ? 0.85 : 1 }}>
-        {!ceremony && <button type="button" onClick={() => { const c = game.current?.cycleDef(); if (c) setDefCall(c); ref.current?.focus(); }} aria-label="Your defense's call" title="Your defense: balanced, blitz heavy, coverage or stop the run" style={cornerBtn}>D: {DEF_NAME[defCall] || "BALANCED"}</button>}
-        {onSim && !ceremony && <button type="button" onClick={() => { if (simArm) { setSimArm(false); setPinned(false); if (natFs) game.current?.fullscreen(false); onSim(); } else setSimArm(true); }} aria-label="Sim to the end of the game" title="Sim the rest of the game" style={{ ...cornerBtn, ...(simArm ? { background: "#b45309", borderColor: "#fbbf24" } : {}) }}>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M1 2l6 5-6 5zM7 2l6 5-6 5z" /></svg>{simArm ? "Tap again to sim" : "Sim to end"}
-        </button>}
-        <button type="button" onClick={() => { if (canFs) game.current?.fullscreen(!natFs); else setPinned((v) => !v); ref.current?.focus(); }} aria-label={fs ? "Exit full screen" : "Full screen"} title={fs ? "Exit full screen (F or Esc)" : "Full screen (F)"} style={cornerBtn}>
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">{fs ? <path d="M5 1v4H1M9 1v4h4M5 13V9H1M9 13V9h4" /> : <path d="M1 5V1h4M13 5V1H9M1 9v4h4M13 9v4H9" />}</svg>{fs ? "Exit full screen" : "Full screen"}
-        </button>
-      </div>
+      {/* the menu (from the MENU chip the game draws in its score strip, so nothing sits on the field):
+          your defense's call, sim the rest of the game out (a second tap to be sure), full screen */}
+      {menu && !ceremony && (() => {
+        const cv = ref.current, ox = cv?.offsetLeft || 0, oy = cv?.offsetTop || 0, close = () => setMenu(null);
+        const item = { ...cornerBtn, width: "100%", justifyContent: "flex-start", minHeight: 40, fontSize: 14, borderRadius: 8 };
+        return (<>
+          <div onPointerDown={close} style={{ position: "absolute", inset: 0, zIndex: 3 }} />
+          <div role="menu" style={{ position: "absolute", zIndex: 4, top: oy + menu.y + menu.h + 4, right: Math.max(4, (cv?.parentElement?.clientWidth || cv?.clientWidth || 0) - (ox + menu.x + menu.w)), minWidth: 190, display: "flex", flexDirection: "column", gap: 6, padding: 8, borderRadius: 10, background: "#0b0e14f2", border: "1px solid #ffffff33", boxShadow: "0 10px 30px #000a" }}>
+            <button type="button" role="menuitem" onClick={() => { const c = game.current?.cycleDef(); if (c) setDefCall(c); }} title="Your defense: balanced, blitz heavy, coverage or stop the run" style={item}>Defense: {DEF_NAME[defCall] || "BALANCED"}</button>
+            {onSim && <button type="button" role="menuitem" onClick={() => { if (simArm) { setSimArm(false); close(); setPinned(false); if (natFs) game.current?.fullscreen(false); onSim(); } else setSimArm(true); }} style={{ ...item, ...(simArm ? { background: "#b45309", borderColor: "#fbbf24" } : {}) }}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M1 2l6 5-6 5zM7 2l6 5-6 5z" /></svg>{simArm ? "Tap again to sim to the end" : "Sim to the end"}
+            </button>}
+            <button type="button" role="menuitem" onClick={() => { close(); if (canFs) game.current?.fullscreen(!natFs); else setPinned((v) => !v); ref.current?.focus(); }} style={item}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">{fs ? <path d="M5 1v4H1M9 1v4h4M5 13V9H1M9 13V9h4" /> : <path d="M1 5V1h4M13 5V1H9M1 9v4h4M13 9v4H9" />}</svg>{fs ? "Exit full screen" : "Full screen"}
+            </button>
+          </div>
+        </>);
+      })()}
     </div>
   );
 }
