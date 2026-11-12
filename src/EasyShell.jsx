@@ -616,7 +616,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
       <span style={{ ...CLUB, flex: 1, minWidth: 0, fontSize: narrow ? 13.5 : 15, color: me ? INK : LINK, whiteSpace: "nowrap" }}>{TEAMS[id]?.ab}</span>
       <span style={{ ...PH, fontSize: 10, color: "#7a5600", background: "#ffe08a", padding: "1px 3px", flexShrink: 0 }}>BYE</span></div>; };
     // ---- the tree: a column per round, joined by lines; AFC feeds right, NFC feeds left ----
-    const GAP = narrow ? 12 : 16, LINE = "#111", SLOT = narrow ? 96 : 104;
+    const GAP = narrow ? 8 : 16, LINE = "#111", SLOT = narrow ? 68 : 104;
     const colHead = (txt) => <div style={{ ...PH, fontSize: narrow ? 11.5 : 13, color: "#555", textAlign: "center", textTransform: "uppercase", letterSpacing: 0.5, height: 22, whiteSpace: "nowrap" }}>{txt}</div>;
     const column = (title, slots, feeds, { into = false, out = true } = {}) => {
       const toward = feeds === "right" ? "right" : "left", from = feeds === "right" ? "left" : "right";
@@ -632,30 +632,37 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
         </div>
       </div>;
     };
+    // a phone: the whole tree at once, a logo for each club (no switching conferences): the winner as
+    // bright as ever, the loser faded, your club on yellow; a played game still opens its box score
+    const mini = (g, { sb = false } = {}) => {
+      const wrap = { background: "#fff", border: `${sb ? 3 : 2}px solid ${sb ? "#ffb300" : "#111"}`, boxShadow: sb ? "3px 3px 0 #8a5a00" : "2px 2px 0 #0a1f6b" };
+      if (!g) return <div style={{ ...wrap, border: "2px dashed #9ca3af", boxShadow: "none", background: "#f6f6f1", height: 56 }} />;
+      const played = g.hs != null && g.as != null, open = played && (g.boxH || g.boxA);
+      const row = (id) => <div style={{ display: "flex", justifyContent: "center", padding: "2px 0", background: id === ui ? "#fff9c4" : undefined, opacity: played && g.w !== id ? 0.3 : 1 }}><Logo ab={TEAMS[id]?.ab} size={22} /></div>;
+      return <div className={open ? "ez-click" : undefined} onClick={open ? () => setGameBox({ ...g, wk: ROUND_NAMES[g.rd || 4] }) : undefined} aria-label={`${TEAMS[g.a]?.name}${played ? ` ${g.as}` : ""} at ${TEAMS[g.h]?.name}${played ? ` ${g.hs}` : ""}`} style={wrap}>
+        {row(g.a)}<div style={{ height: 2, background: "#e4e4dc" }} />{row(g.h)}
+      </div>;
+    };
+    const miniBye = (c) => { const id = B.seeds[c][0]; return <div style={{ background: id === ui ? "#fff9c4" : "#f6f6f1", border: "2px solid #111", boxShadow: "2px 2px 0 #0a1f6b", display: "flex", flexDirection: "column", alignItems: "center", padding: "2px 0 1px" }}>
+      <Logo ab={TEAMS[id]?.ab} size={22} /><span style={{ ...PH, fontSize: 9, color: "#7a5600", lineHeight: 1.2 }}>BYE</span></div>; };
     const confRounds = (c, feeds) => {
-      const wc = games(1, c), dv = games(2, c), cf = games(3, c);
+      const wc = games(1, c), dv = games(2, c), cf = games(3, c), cd = narrow ? mini : card;
       const cols = [
-        column("Wild card", [bye(c), card(wc[0]), card(wc[1]), card(wc[2])], feeds),
-        column("Divisional", [card(dv[0]), card(dv[1])], feeds, { into: true }),
-        column("Conference", [card(cf[0])], feeds, { into: true, out: !narrow }),
+        column(narrow ? "WC" : "Wild card", [narrow ? miniBye(c) : bye(c), cd(wc[0]), cd(wc[1]), cd(wc[2])], feeds),
+        column(narrow ? "Div" : "Divisional", [cd(dv[0]), cd(dv[1])], feeds, { into: true }),
+        column(narrow ? "Conf" : "Conference", [cd(cf[0])], feeds, { into: true }),
       ];
       return feeds === "right" ? cols : cols.reverse();
     };
     const sbGame = games(4)[0];
-    const confTitle = (c) => <div style={{ ...CLUB, color: INK, fontSize: narrow ? 17 : 20, textAlign: "center", borderBottom: "3px solid #111", paddingBottom: 4, marginBottom: 8 }}>{c}</div>;
-    const tree = narrow ? (<>
-      {/* phone: the Super Bowl up top, then one conference's three rounds at a time (yours first) */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <PixelSB yr={yr} scale={2.5} />
-        <div style={{ width: "min(230px, 100%)" }}>{card(sbGame, { sb: true })}</div>
-      </div>
-      <Chips items={[["AFC", "AFC"], ["NFC", "NFC"]]} on={sub.conf} set={(v) => setS("conf", v)} />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", columnGap: GAP }}>{confRounds(sub.conf, "right")}</div>
-    </>) : (<div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr)) minmax(184px,1.15fr) repeat(3,minmax(0,1fr))", columnGap: GAP }}>
+    const confTitle = (c) => <div style={{ ...CLUB, color: INK, fontSize: narrow ? 16 : 20, textAlign: "center", borderBottom: "3px solid #111", paddingBottom: 4, marginBottom: 8 }}>{c}</div>;
+    // AFC left to right, the Super Bowl in the middle under the Lombardi, NFC right to left (a phone too)
+    const cols7 = narrow ? "repeat(3,minmax(0,1fr)) minmax(0,1.35fr) repeat(3,minmax(0,1fr))" : "repeat(3,minmax(0,1fr)) minmax(184px,1.15fr) repeat(3,minmax(0,1fr))";
+    const tree = (<div>
+      <div style={{ display: "grid", gridTemplateColumns: cols7, columnGap: GAP }}>
         <div style={{ gridColumn: "1 / 4" }}>{confTitle("AFC")}</div><div /><div style={{ gridColumn: "5 / 8" }}>{confTitle("NFC")}</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr)) minmax(184px,1.15fr) repeat(3,minmax(0,1fr))", columnGap: GAP, alignItems: "stretch" }}>
+      <div style={{ display: "grid", gridTemplateColumns: cols7, columnGap: GAP, alignItems: "stretch" }}>
         {confRounds("AFC", "right")}
         {/* the Super Bowl: the 8-bit Lombardi over the game, the game level with the conference finals */}
         <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
@@ -664,8 +671,8 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
             <div aria-hidden style={{ position: "absolute", top: "50%", marginTop: -1.5, left: -GAP / 2, width: GAP / 2, height: 3, background: LINE }} />
             <div aria-hidden style={{ position: "absolute", top: "50%", marginTop: -1.5, right: -GAP / 2, width: GAP / 2, height: 3, background: LINE }} />
             <div style={{ position: "relative", width: "100%" }}>
-              <div style={{ position: "absolute", bottom: "100%", left: 0, right: 0, display: "flex", justifyContent: "center", paddingBottom: 10 }}><PixelSB yr={yr} scale={3} /></div>
-              {card(sbGame, { sb: true })}
+              <div style={{ position: "absolute", bottom: "100%", left: -20, right: -20, display: "flex", justifyContent: "center", paddingBottom: narrow ? 6 : 10 }}><PixelSB yr={yr} scale={narrow ? 1.9 : 3} /></div>
+              {narrow ? mini(sbGame, { sb: true }) : card(sbGame, { sb: true })}
             </div>
           </div>
         </div>
@@ -696,7 +703,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
       <div style={{ ...SERIF, fontSize: 14, color: "#555", marginBottom: 10 }}>{live ? "Tap a played game for its box score." : "The bracket these seeds would make. Seeds 1-4 win their divisions, 5-7 are wild cards; only the #1 seed gets a bye, and the bracket is reseeded after the Wild Card round."}</div>
       {tree}
       <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,1fr) minmax(0,1fr)", gap: narrow ? 16 : 30, marginTop: 24, alignItems: "start" }}>
-        {narrow ? seedsBlock(sub.conf) : <>{seedsBlock("AFC")}{seedsBlock("NFC")}</>}
+        {seedsBlock("AFC")}{seedsBlock("NFC")}
       </div>
     </>);
   };

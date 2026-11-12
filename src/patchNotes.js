@@ -2753,4 +2753,8 @@ export const PATCH_NOTES = [
   { v: "7.3", date: "2026-11-12", title: "Easy Mode: the real Lombardi on the playoff tree", notes: [
     "The Super Bowl at the heart of Easy Mode's playoff tree is the game's own Lombardi Trophy now, the same one that stands over the Super Bowl in full mode's bracket, put through an 8-bit filter: shrunk to a few dozen pixels, held to five shades of silver, hard pixel edges and a dark outline, then blown back up with no smoothing. The game's numeral sits under it in pixel lettering, and the Super Bowl itself right below. (It replaces the little drawn trophy on a blue stage.)",
   ] },
+  { v: "7.4", date: "2026-11-12", title: "Easy Mode on a phone: the whole playoff tree at once", notes: [
+    "On a phone, the Playoffs tab shows the whole tree on one screen now, with no AFC/NFC switch to tap: a team logo for every club, the AFC's rounds leading in from the left and the NFC's from the right, joined by lines up to the Super Bowl in the middle under the 8-bit Lombardi. Winners stay bright, losers fade, your club sits on yellow, and a played game still opens its box score.",
+    "Both conferences' seeds (and the clubs in the hunt) are listed under the tree, one after the other, so nothing needs a tap.",
+  ] },
 ];
