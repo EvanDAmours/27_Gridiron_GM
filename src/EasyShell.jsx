@@ -117,7 +117,7 @@ const SLOTS = { offense: [["QB", "QB", 0], ["RB", "RB", 0], ["WR1", "WR", 0], ["
 const rec = (t) => `${t.w || 0}-${t.l || 0}${t.t ? `-${t.t}` : ""}`;
 const pct = (t) => ((t.w || 0) + (t.t || 0) * 0.5) / Math.max(1, (t.w || 0) + (t.l || 0) + (t.t || 0));
 
-export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log, msg, step, busy, onFull, onSave, phaseLabel, depthOrder, setDepthOrder, awards, onResign, draft, onPick, trades, champs = [], seasonHistory = [], fa = [], faOpen = false, onSignFA, shop = null, devFocus = null, onDevFocus, powerRankings = [], ownerGoal = null, plan = null }) {
+export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log, msg, step, busy, onFull, onSave, phaseLabel, depthOrder, setDepthOrder, awards, onResign, draft, onPick, trades, champs = [], seasonHistory = [], fa = [], faOpen = false, onSignFA, shop = null, canExt = null, extRoomFor = null, onExtend = null, devFocus = null, onDevFocus, powerRankings = [], ownerGoal = null, plan = null }) {
   const [view, setView] = useState("home");
   const [sub, setSub] = useState(() => ({ team: "roster", stats: "pass", lineup: "offense", draft: "All", league: "leaders", lead: "pass", scope: "league", conf: teams[ui]?.c || "AFC", moves: sp === "draft" ? "draft" : sp === "freeagency" ? "fa" : "trade", fa: "All", scoreWk: null, board: "All" }));
   const [card, setCard] = useState(null);       // the player card open: { id, ti, p }
@@ -606,8 +606,13 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
       <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,1fr) minmax(0,1fr)", gap: narrow ? 16 : 30, alignItems: "start" }}>
         <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>Biggest contracts</Mark></div>{big.map((p) => playerRow(p, money(p)))}</div>
         <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>Contracts ending this year</Mark></div>
-          <div style={{ ...SERIF, fontSize: 14, color: "#555", margin: "2px 0 6px" }}>You choose who stays in re-sign week, after the season.</div>
-          {ending.length ? ending.map((p) => playerRow(p, <><span style={{ ...NUM, fontSize: 16, width: 30, textAlign: "right" }}>{p.ovr}</span>{money(p)}</>)) : <div style={{ ...SERIF, fontSize: 16, padding: 6 }}>Nobody's contract is up this year.</div>}</div>
+          <div style={{ ...SERIF, fontSize: 14, color: "#555", margin: "2px 0 6px" }}>Extend a player now at his asking price (it starts next season), or decide in re-sign week, after the season.</div>
+          {ending.length ? ending.map((p) => { const d = dealOf(p), ok = canExt?.(p), afford = ok && d.sal <= (extRoomFor?.(p) ?? 0); return <Row key={p.id} onClick={() => openCard(p)} style={{ gap: narrow ? 8 : 12 }}>
+            <span style={{ ...PH, fontSize: 13, width: 30, color: "#555", flexShrink: 0 }}>{p.pos}</span>
+            <Face p={p} size={narrow ? 34 : 36} />
+            <span style={{ flex: 1, minWidth: 0 }}><Name size={narrow ? 15 : 16}>{p.name}</Name><span style={{ ...SERIF, fontSize: 13, color: "#666" }}>{p.ext ? `Extended: ${p.ext.yrs} yr, $${p.ext.apy ?? p.ext.sal}M` : `${p.ovr} · age ${p.age} · asks ${d.yrs} yr, $${d.sal}M`}</span></span>
+            {!p.ext && ok && <button className="ez-btn" disabled={!afford} title={afford ? "" : "Not enough cap room next season"} onClick={(e) => { e.stopPropagation(); onExtend?.(p, d.sal, d.yrs); }} style={{ flexShrink: 0, fontSize: 13, padding: "6px 10px", background: afford ? "#22a447" : "#b9c2b9", color: "#fff", boxShadow: "0 3px 0 #146b2c" }}>Extend</button>}
+          </Row>; }) : <div style={{ ...SERIF, fontSize: 16, padding: 6 }}>Nobody's contract is up this year.</div>}</div>
       </div>
     </>);
   };

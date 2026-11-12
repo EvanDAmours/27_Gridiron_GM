@@ -2699,4 +2699,7 @@ export const PATCH_NOTES = [
     "Power rankings (League): all 32 clubs, best to worst, with each week's movement.",
     "The owner's goal for the season (his target for wins) shows under the playoff race on Home.",
   ] },
+  { v: "6.44", date: "2026-11-12", title: "Easy Mode: contract extensions", notes: [
+    "Contracts (Team): extend a player whose deal is ending during the season, at his asking price, if you'll have the cap room next season. The new deal starts in the new league year, he's off the re-sign list, and a player holding out comes back. Anyone you don't extend you can still re-sign in re-sign week, as before.",
+  ] },
 ];
