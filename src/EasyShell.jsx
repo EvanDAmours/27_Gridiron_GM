@@ -116,7 +116,8 @@ const statBits = (p) => { const s = p.ss || {}; const b = [];
   return b; };
 const AWARD = [["mvp", "MVP"], ["opoy", "Offensive Player of the Year"], ["dpoy", "Defensive Player of the Year"], ["oroy", "Offensive Rookie of the Year"], ["droy", "Defensive Rookie of the Year"], ["cpoy", "Comeback Player of the Year"]];
 // the lineup you set in Easy Mode: the skill spots and the defense's key men; the staff fill the rest
-const SLOTS = { offense: [["QB", "QB", 0], ["RB", "RB", 0], ["WR1", "WR", 0], ["WR2", "WR", 1], ["TE", "TE", 0]], defense: [["LE", "DL", 0], ["RE", "DL", 3], ["MIKE", "LB", 1], ["CB1", "CB", 0], ["CB2", "CB", 1], ["S", "S", 0]] };
+// (receivers X, Z and the slot; corners 1 and 2 outside and CB3, the nickel corner inside)
+const SLOTS = { offense: [["QB", "QB", 0], ["RB", "RB", 0], ["WR1", "WR", 0], ["WR2", "WR", 1], ["SLOT", "WR", 2], ["TE", "TE", 0]], defense: [["LE", "DL", 0], ["RE", "DL", 3], ["MIKE", "LB", 1], ["CB1", "CB", 0], ["CB2", "CB", 1], ["CB3", "CB", 2], ["S", "S", 0]] };
 // The Super Bowl in 8-bit, at the heart of the playoff tree: the Lombardi Trophy art the full game's
 // bracket stands over its Super Bowl, put through an 8-bit filter (shrunk to 56 pixels tall, held to a
 // five-step silver ramp spread over the trophy's own shades, hard edges, a dark outline) and blown back
@@ -175,7 +176,7 @@ function PixelSB({ yr, scale = 3.5 }) {
 const rec = (t) => `${t.w || 0}-${t.l || 0}${t.t ? `-${t.t}` : ""}`;
 const pct = (t) => ((t.w || 0) + (t.t || 0) * 0.5) / Math.max(1, (t.w || 0) + (t.l || 0) + (t.t || 0));
 
-export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log, msg, step, busy, onFull, onSave, phaseLabel, depthOrder, setDepthOrder, awards, onResign, draft, onPick, trades, champs = [], seasonHistory = [], fa = [], faOpen = false, onSignFA, shop = null, canExt = null, extRoomFor = null, onExtend = null, devFocus = null, onDevFocus, powerRankings = [], ownerGoal = null, plan = null }) {
+export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log, msg, step, busy, onFull, onSave, phaseLabel, depthOrder, ezPicks = {}, setEzPicks, awards, onResign, draft, onPick, trades, champs = [], seasonHistory = [], fa = [], faOpen = false, onSignFA, shop = null, canExt = null, extRoomFor = null, onExtend = null, devFocus = null, onDevFocus, powerRankings = [], ownerGoal = null, plan = null }) {
   const [view, setView] = useState("home");
   const [sub, setSub] = useState(() => ({ team: "roster", stats: "pass", lineup: "offense", draft: "All", league: "leaders", lead: "pass", scope: "league", conf: teams[ui]?.c || "AFC", moves: sp === "draft" ? "draft" : sp === "freeagency" ? "fa" : "trade", fa: "All", scoreWk: null, board: "All" }));
   const [card, setCard] = useState(null);       // the player card open: { id, ti, p }
@@ -385,13 +386,13 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
   // ---- Lineup: your picks at the spots that matter; the staff set the rest by rating ----
   const able = roster.filter((p) => !p.injured && !p.holdout && !p.suspended);
   const starterAt = (pos, i) => depthOrderFor(able, depthOrder || {}, pos, null)[i];
-  const choose = (pos, i, id) => { const n = { ...(depthOrder || {}) }; const arr = [...(n[pos] || [])].map((x) => (x === id ? null : x)); while (arr.length <= i) arr.push(null); arr[i] = id; n[pos] = arr; setDepthOrder(n); setSlot(null); };
+  const choose = (pos, i, id) => { const n = { ...(ezPicks || {}) }; const arr = [...(n[pos] || [])].map((x) => (x === id ? null : x)); while (arr.length <= i) arr.push(null); arr[i] = id; n[pos] = arr; setEzPicks(n); setSlot(null); }; // (saved with the franchise; the staff fill around it)
   const lineupView = () => {
     const side = sub.lineup, list = SLOTS[side];
-    const auto = side === "offense" ? [["Offensive line", ["LT", "LG", "C", "RG", "RT"]]] : [["Defensive tackles", ["DL"], [1, 2]], ["Other linebackers", ["LB"], [0, 2]], ["Nickel and second safety", ["CB", "S"], [2, 1]]];
+    const auto = side === "offense" ? [["Offensive line", ["LT", "LG", "C", "RG", "RT"]]] : [["Defensive tackles", ["DL"], [1, 2]], ["Other linebackers", ["LB"], [0, 2]], ["Second safety", ["S"], [1]]];
     return (<>
       <Chips items={[["offense", "Offense"], ["defense", "Defense"]]} on={side} set={(v) => { setS("lineup", v); setSlot(null); }} />
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "minmax(0,1.2fr) minmax(0,1fr)", gap: narrow ? 16 : 30, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,1.2fr) minmax(0,1fr)", gap: narrow ? 16 : 30, alignItems: "start" }}>
         <div>
           <div style={{ marginBottom: 6, fontSize: 16 }}><Mark>Your starters</Mark> <span style={{ ...SERIF, fontSize: 14, color: "#555" }}>tap a spot to change it</span></div>
           {list.map(([label, pos, i]) => { const p = starterAt(pos, i); const on = slot && slot[0] === label; return (
@@ -403,13 +404,13 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
           <div style={{ marginTop: 14, marginBottom: 6, fontSize: 16 }}><Mark>Set by the staff</Mark> <span style={{ ...SERIF, fontSize: 14, color: "#555" }}>best rating at each spot</span></div>
           {auto.map(([label, poses, idx]) => { const ps = idx ? poses.flatMap((pos, k) => (poses.length > 1 ? [starterAt(pos, idx[k])] : idx.map((j) => starterAt(pos, j)))).filter(Boolean) : poses.map((pos) => starterAt(pos, 0)).filter(Boolean); return (
             <div key={label} style={{ ...SERIF, fontSize: 15, padding: "6px 4px", borderBottom: "2px solid #e4e4dc" }}><b>{label}:</b> {ps.map((p) => `${p.name} (${p.ovr})`).join(", ")}</div>); })}
-          <div style={{ marginTop: 12 }}><button className="ez-btn" onClick={() => { setDepthOrder({}); setSlot(null); }} style={{ fontSize: 14, padding: "7px 12px", background: "#e8ecf5", color: INK, boxShadow: "0 3px 0 #c5ccdc" }}>Let the staff pick everyone</button></div>
+          <div style={{ marginTop: 12 }}><button className="ez-btn" onClick={() => { setEzPicks({}); setSlot(null); }} style={{ fontSize: 14, padding: "7px 12px", background: "#e8ecf5", color: INK, boxShadow: "0 3px 0 #c5ccdc" }}>Let the staff pick everyone</button></div>
         </div>
         <div>
           {slot ? <>
             <div style={{ marginBottom: 6, fontSize: 16 }}><Mark>Pick your {slot[0]}</Mark></div>
             {roster.filter((p) => p.pos === slot[1]).sort((a, b) => b.ovr - a.ovr).map((p) => { const now = starterAt(slot[1], slot[2])?.id === p.id; return playerRow(p, <><span style={{ ...NUM, fontSize: 16 }}>{p.ovr}</span>{now && <span style={{ ...PH, fontSize: 12, color: "#22a447" }}>Starting</span>}</>, () => choose(slot[1], slot[2], p.id)); })}
-          </> : <div style={{ ...SERIF, fontSize: 16, lineHeight: 1.55, color: "#333" }}>{side === "offense" ? "Choose your quarterback, running back, top two receivers and tight end. The line is set for you: the best player at each spot." : "Choose your two ends, your middle linebacker, your top two corners and a safety. The tackles and everyone else are set for you by rating."}</div>}
+          </> : <div style={{ ...SERIF, fontSize: 16, lineHeight: 1.55, color: "#333" }}>{side === "offense" ? "Choose your quarterback, running back, your two outside receivers, the slot receiver and the tight end. The line is set for you: the five best linemen, wherever they're listed, each moved to the spot where he helps most." : "Choose your two ends, your middle linebacker, your three corners (CB3 is the nickel corner, inside in passing downs) and a safety. The tackles and everyone else are set for you by rating."}</div>}
         </div>
       </div>
     </>);

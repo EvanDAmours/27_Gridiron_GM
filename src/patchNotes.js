@@ -2757,4 +2757,13 @@ export const PATCH_NOTES = [
     "On a phone, the Playoffs tab shows the whole tree on one screen now, with no AFC/NFC switch to tap: a team logo for every club, the AFC's rounds leading in from the left and the NFC's from the right, joined by lines up to the Super Bowl in the middle under the 8-bit Lombardi. Winners stay bright, losers fade, your club sits on yellow, and a played game still opens its box score.",
     "Both conferences' seeds (and the clubs in the hunt) are listed under the tree, one after the other, so nothing needs a tap.",
   ] },
+  { v: "7.5", date: "2026-11-12", title: "Easy Mode: lineups that stick, the best line, a slot receiver and CB3", notes: [
+    "Your lineup stays yours. A starter you picked in Easy Mode (say Jaxson Dart, or J.J. McCarthy, over Jameis Winston) went back to the default every time you reloaded the franchise: loading an Easy save cleared the depth chart. Your picks are now saved with the franchise and come back exactly as you left them. (Only switching to Easy Mode from full mode starts a fresh lineup.)",
+    "The staff start the best players. Every spot you haven't picked goes to the highest-rated player there, not the real club's depth chart order, so a 78 starts over a 72 the real team happens to list first.",
+    "The best offensive line, wherever they're listed: the staff try every way of lining up your healthy linemen and start the five who add up best, moving a backup to the spot that needs him. Two good right guards never sit one behind the other while a poor left guard starts; the better backup moves to left guard. Only the moves clubs really make: side to side, a tackle inside to guard or a guard out to tackle when it's a real gain, a center out to guard, and nobody new at center. When a starter is hurt, the best backup slides in, and the line settles back when he returns. Each move shows in your news.",
+    "The defensive line already lines up its best four by their rating at each spot (two edges, two tackles).",
+    "A slot receiver to pick: the Lineup page has WR1, WR2 and SLOT. And three corners: CB1, CB2 and CB3, your nickel corner (inside on passing downs).",
+    "Receivers, corners, linebackers and safeties are fitted to their spots as a group now, for every club: the game used to fill the spot with the single best fit first, which could strand the rest (a star a hair better in the slot took it, and a 73 started outside while a 76 sat). Now the combination with the most rating at the spots wins.",
+    "On a phone, the Lineup page's Change buttons no longer run off the edge.",
+  ] },
 ];

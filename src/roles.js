@@ -149,22 +149,30 @@ export function roleOvr(p, slot) {
 }
 
 // The best arrangement of these players into the position's slots, as
-// [slot 0, slot 1, slot 2, ...everyone else in the order given]. Greedy by rating at each slot,
-// the way arrangeDL fills edges and tackles. For corners, CB1 is the better outside corner.
+// [slot 0, slot 1, slot 2, ...everyone else in the order given]: the combination with the most rating
+// at the slots. For corners, CB1 is the better outside corner.
 export function arrangeRoles(pos, players) {
   const slots = ROLE_SLOTS[pos];
   if (!slots) return players;
-  const left = [...players], out = new Array(slots.length).fill(null);
-  for (let n = 0; n < slots.length && left.length; n++) {
-    let best = null;
-    for (const p of left) for (let i = 0; i < slots.length; i++) {
-      if (out[i]) continue;
-      const v = roleOvr(p, slots[i]) + (pos === "CB" && i === 0 ? 0.01 : 0);
-      if (!best || v > best.v) best = { p, i, v };
-    }
-    out[best.i] = best.p;
-    left.splice(left.indexOf(best.p), 1);
-  }
+  // the best combination, not one spot at a time: taking the single best fit first can strand the
+  // rest (a receiver a hair better in the slot than outside takes the slot, and the X goes to a 73
+  // while a 76 slot man sits). Every way of filling the spots from the best few is tried; the most
+  // rating at the spots wins (ties: the order given, which is the depth order).
+  const n = Math.min(slots.length, players.length);
+  // the eight best by their best spot are the only ones who could start (kept in the order given)
+  const top = (p) => Math.max(...slots.map((sl) => roleOvr(p, sl)));
+  const cand = players.map((p, i) => ({ p, i, t: top(p) })).sort((a, b) => b.t - a.t || a.i - b.i).slice(0, 8).sort((a, b) => a.i - b.i).map((x) => x.p);
+  const at = cand.map((p) => slots.map((sl, i) => roleOvr(p, sl) + (pos === "CB" && i === 0 ? 0.01 : 0)));
+  let best = -Infinity, pick = null; const used = new Array(cand.length).fill(false), cur = new Array(slots.length).fill(-1);
+  const go = (i, sum) => {
+    if (i === slots.length || cur.filter((x) => x >= 0).length === n) { if (sum > best + 1e-9) { best = sum; pick = [...cur]; } return; }
+    for (let k = 0; k < cand.length; k++) { if (used[k]) continue; used[k] = true; cur[i] = k; go(i + 1, sum + at[k][i]); used[k] = false; cur[i] = -1; }
+    if (cand.length - cur.filter((x) => x >= 0).length < slots.length - i) go(i + 1, sum); // (fewer players than spots: a spot can stay empty)
+  };
+  go(0, 0);
+  const out = new Array(slots.length).fill(null);
+  (pick || []).forEach((k, i) => { if (k >= 0) out[i] = cand[k]; });
+  const left = players.filter((p) => !out.includes(p));
   // two outside corners: the better one is CB1
   if (pos === "CB" && out[0] && out[1] && roleOvr(out[1], "CB1") > roleOvr(out[0], "CB1")) [out[0], out[1]] = [out[1], out[0]];
   return [...out.filter(Boolean), ...left];
