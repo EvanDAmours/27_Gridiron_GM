@@ -2742,4 +2742,12 @@ export const PATCH_NOTES = [
     "Resizing the window, or changing the display size, redraws the field sharp at the size it's shown at (it used to be stretched or squeezed from the old size, a little blurry).",
     "Dragging the window to a screen with a different pixel density (a laptop screen to a monitor), or zooming the browser, redraws the field sharp for that screen too.",
   ] },
+  { v: "7.2", date: "2026-11-12", title: "Easy Mode: a Playoffs tab, with the Super Bowl in 8-bit", notes: [
+    "Easy Mode has a Playoffs tab of its own now, next to League. At the top it tells you where you stand: if the season ended today, your seed and who you'd play in the Wild Card round (or the bye), or how many games you are out of the last spot and who holds it. In the playoffs it says who you play next, or how your season ended.",
+    "Under that, the whole playoff tree, the way full mode draws it: the AFC's Wild Card, Divisional and Conference rounds on the left, the NFC's on the right, every round joined by lines, the #1 seeds on their byes. During the season it's the bracket today's seeds would make; once the playoffs start it's the real one, with every score (tap a game for its box score), winners in bold and the bracket reseeded after the Wild Card round as the NFL does it.",
+    "In the middle of the tree, the Super Bowl in 8-bit: the arcade's pixel Lombardi Trophy (the one handed over in its trophy ceremony) under a spotlight on a little stage, the stars twinkling, the game's numeral in gold, with the Super Bowl itself right under it.",
+    "Below the tree, both conferences' seven seeds (division leaders, wild cards and the bye) and, during the season, the clubs in the hunt with how far back they are.",
+    "On a phone: the Super Bowl up top, then one conference's three rounds at a time (yours first), then its seeds.",
+    "The playoff line on Home takes you straight to the new tab. (It used to be a page under League.)",
+  ] },
 ];

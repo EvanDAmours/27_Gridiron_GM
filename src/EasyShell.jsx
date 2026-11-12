@@ -10,7 +10,10 @@ import { portraitSrc } from "./portraits.js";
 import { depthOrderFor } from "./depth.js";
 import { capSpace } from "./league.js";
 import { yearlyAsk, maxYears } from "./negotiation.js";
-import { nflSeeds, ROUND_NAMES } from "./playoffs.js";
+import { nflSeeds, makeBracket, ROUND_NAMES } from "./playoffs.js";
+import { sbName, sbNumber } from "./data/superbowls.js";
+import { drawLombardi } from "./arcade/lombardi.js";
+import { pixText, pixWidth } from "./arcade/pixfont.js";
 import { awardRaces } from "./awards.js";
 import { OFF_PLANS, DEF_PLANS } from "./gamePlan.js";
 import { perSeason, OFFENSE as DEV_OFF, DEFENSE as DEV_DEF } from "./development.js";
@@ -114,6 +117,46 @@ const statBits = (p) => { const s = p.ss || {}; const b = [];
 const AWARD = [["mvp", "MVP"], ["opoy", "Offensive Player of the Year"], ["dpoy", "Defensive Player of the Year"], ["oroy", "Offensive Rookie of the Year"], ["droy", "Defensive Rookie of the Year"], ["cpoy", "Comeback Player of the Year"]];
 // the lineup you set in Easy Mode: the skill spots and the defense's key men; the staff fill the rest
 const SLOTS = { offense: [["QB", "QB", 0], ["RB", "RB", 0], ["WR1", "WR", 0], ["WR2", "WR", 1], ["TE", "TE", 0]], defense: [["LE", "DL", 0], ["RE", "DL", 3], ["MIKE", "LB", 1], ["CB1", "CB", 0], ["CB2", "CB", 1], ["S", "S", 0]] };
+// The Super Bowl in 8-bit, at the heart of the playoff tree: the arcade's pixel Lombardi (the one handed
+// over in its trophy ceremony) on a little stage under a spotlight, stars twinkling, the game's numeral
+// in gold. Drawn at 72x84 and blown up with no smoothing, like a 16-bit sprite.
+const SB_W = 72, SB_H = 84;
+function PixelSB({ yr, scale = 3 }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const cv = ref.current, c = cv?.getContext("2d"); if (!c) return;
+    const num = yr ? sbName(sbNumber(yr)).replace("Super Bowl ", "") : "";
+    // the backdrop, once: deep blue, a spotlight in a lighter blue (dithered at its edge), the stage
+    const bg = document.createElement("canvas"); bg.width = SB_W; bg.height = SB_H; const b = bg.getContext("2d");
+    b.fillStyle = "#0b2a8f"; b.fillRect(0, 0, SB_W, SB_H);
+    for (let y = 0; y < SB_H; y++) for (let x = 0; x < SB_W; x++) {
+      const d = Math.hypot((x - SB_W / 2) / 26, (y - 40) / 30);
+      if (d < 0.62 || (d < 0.86 && (x + y) % 2 === 0)) { b.fillStyle = d < 0.62 ? "#1d4ed8" : "#1640b8"; b.fillRect(x, y, 1, 1); }
+    }
+    b.fillStyle = "#082067"; b.fillRect(0, 62, SB_W, SB_H - 62); b.fillStyle = "#ffb300"; b.fillRect(14, 62, SB_W - 28, 1); // the stage, its gold edge
+    const stars = [[5, 14], [65, 10], [9, 44], [62, 48], [17, 26], [57, 30], [28, 4], [46, 15], [4, 56], [68, 58]];
+    const tr = document.createElement("canvas"); tr.width = SB_W; tr.height = SB_H; const t = tr.getContext("2d");
+    const still = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const draw = () => {
+      const now = performance.now();
+      c.drawImage(bg, 0, 0);
+      stars.forEach(([x, y], i) => { const k = ((now / 450 + i * 1.7) % 4); if (still || k < 3) { c.fillStyle = k < 0.5 && !still ? "#fff" : "#ffd166"; c.fillRect(x, y, 1, 1); } });
+      // the trophy: drawn, then cut to hard pixels with a dark outline, like the field's sprites
+      t.clearRect(0, 0, SB_W, SB_H); drawLombardi(t, SB_W / 2, 62, 2.6);
+      const d = t.getImageData(0, 0, SB_W, SB_H), a = d.data, solid = new Uint8Array(SB_W * SB_H);
+      for (let i = 0; i < SB_W * SB_H; i++) { if (a[i * 4 + 3] > 100) { solid[i] = 1; a[i * 4 + 3] = 255; } else a[i * 4 + 3] = 0; }
+      for (let y = 0; y < SB_H; y++) for (let x = 0; x < SB_W; x++) { const i = y * SB_W + x; if (solid[i]) continue;
+        if ((x > 0 && solid[i - 1]) || (x < SB_W - 1 && solid[i + 1]) || (y > 0 && solid[i - SB_W]) || (y < SB_H - 1 && solid[i + SB_W])) { const o = i * 4; a[o] = 10; a[o + 1] = 16; a[o + 2] = 40; a[o + 3] = 255; } }
+      t.putImageData(d, 0, 0); c.drawImage(tr, 0, 0);
+      pixText(c, "SUPER BOWL", SB_W / 2 + 1, 5, 1, "#0a1f6b", "center"); pixText(c, "SUPER BOWL", SB_W / 2, 4, 1, "#fff", "center");
+      if (num) { const px = pixWidth(num, 2) <= SB_W - 6 ? 2 : 1, y = px === 2 ? 67 : 71; pixText(c, num, SB_W / 2 + 1, y + 1, px, "#3a2200", "center"); pixText(c, num, SB_W / 2, y, px, "#ffb300", "center"); }
+    };
+    draw(); if (still) return undefined;
+    const iv = setInterval(draw, 120); return () => clearInterval(iv);
+  }, [yr]);
+  return <canvas ref={ref} width={SB_W} height={SB_H} role="img" aria-label={yr ? sbName(sbNumber(yr)) : "Super Bowl"} style={{ width: SB_W * scale, height: SB_H * scale, imageRendering: "pixelated", display: "block", border: "3px solid #111", boxShadow: "5px 5px 0 #0a1f6b" }} />;
+}
+
 const rec = (t) => `${t.w || 0}-${t.l || 0}${t.t ? `-${t.t}` : ""}`;
 const pct = (t) => ((t.w || 0) + (t.t || 0) * 0.5) / Math.max(1, (t.w || 0) + (t.l || 0) + (t.t || 0));
 
@@ -130,7 +173,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
   const games = (sched || []).filter((g) => g.played && (g.h === ui || g.a === ui)).sort((a, b) => (+b.wk || 0) - (+a.wk || 0));
   const next = sp === "regular" ? (sched || []).find((g) => g.wk === wk + 1 && !g.played && (g.h === ui || g.a === ui)) : null;
   const res = (g) => { const home = g.h === ui, us = home ? g.hs : g.as, them = home ? g.as : g.hs; return { opp: home ? g.a : g.h, home, us, them, win: us > them, tie: us === them }; };
-  const tabs = [["home", "Home"], ["team", "Team"], ["schedule", "Schedule"], ["league", "League"], ["moves", "Moves"]];
+  const tabs = [["home", "Home"], ["team", "Team"], ["schedule", "Schedule"], ["league", "League"], ["playoffs", "Playoffs"], ["moves", "Moves"]];
   const openCard = (p, ti = ui) => setCard({ id: p.id, ti, p });
   const setS = (k, v) => setSub((x) => ({ ...x, [k]: v }));
 
@@ -288,7 +331,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
             const seeds = seedsOf(ut.c), at = seeds.indexOf(ui), s7 = teams[seeds[6]];
             const back = s7 ? ((s7.w || 0) - (ut.w || 0) + (ut.l || 0) - (s7.l || 0)) / 2 : 0;
             const txt = at >= 0 ? `If the season ended today, you'd be the ${ut.c}'s #${at + 1} seed${at === 0 ? " (and the bye)" : ""}.` : back > 0 ? `${back} game${back === 1 ? "" : "s"} out of the last playoff spot in the ${ut.c}.` : `Tied for the last playoff spot in the ${ut.c}.`;
-            return <div className="ez-click" title={ownerGoal ? `The owner wants ${ownerGoal} wins` : undefined} onClick={() => { setView("league"); setS("league", "playoffs"); setS("conf", ut.c); }} style={{ ...SERIF, fontSize: 15, marginTop: 12, padding: "6px 8px", background: at >= 0 ? "#e7f6ea" : "#f3f4f6", boxShadow: `inset 3px 0 0 ${at >= 0 ? "#22a447" : "#9ca3af"}` }}>{txt}{ownerGoal ? ` The owner wants ${ownerGoal} wins (you have ${ut.w || 0}).` : ""} <span style={{ ...PH, fontSize: 13, color: LINK }}>Playoff picture</span></div>;
+            return <div className="ez-click" title={ownerGoal ? `The owner wants ${ownerGoal} wins` : undefined} onClick={() => { setView("playoffs"); setS("conf", ut.c); }} style={{ ...SERIF, fontSize: 15, marginTop: 12, padding: "6px 8px", background: at >= 0 ? "#e7f6ea" : "#f3f4f6", boxShadow: `inset 3px 0 0 ${at >= 0 ? "#22a447" : "#9ca3af"}` }}>{txt}{ownerGoal ? ` The owner wants ${ownerGoal} wins (you have ${ut.w || 0}).` : ""} <span style={{ ...PH, fontSize: 13, color: LINK }}>Playoff picture</span></div>;
           })()}
           {plan && planCard()}
           {trades && tradePanel()}
@@ -493,37 +536,152 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
     </Row>);
   };
 
-  // ---- League > Playoffs: the picture during the season, the bracket once it starts ----
-  const playoffsView = () => {
-    const bracket = pb && (sp === "playoffs" || (sp !== "regular" && sp !== "preseason"));
-    if (bracket) {
-      const champ = pb.ch;
-      return (<div>
-        {champ != null && <div style={{ display: "flex", alignItems: "center", gap: 14, padding: narrow ? "10px 8px" : "14px 18px", background: "#fff6c2", boxShadow: "inset 0 0 0 3px #ffb300", marginBottom: 16 }}><Logo ab={TEAMS[champ]?.ab} size={narrow ? 48 : 60} /><div><div style={{ ...PH, fontSize: 14, color: "#7a5600" }}>Super Bowl champions</div><div style={{ ...CLUB, fontSize: narrow ? 20 : 24, color: INK }}>{TEAMS[champ]?.city} {TEAMS[champ]?.name}</div></div></div>}
-        {[1, 2, 3, 4].map((rd) => {
-          const done = (pb.res || []).filter((r) => r.rd === rd), next = rd === pb.rd && champ == null ? pb.m || [] : [];
-          if (!done.length && !next.length) return null;
-          return (<div key={rd} style={{ marginBottom: 16 }}>
-            <div style={{ marginBottom: 4, fontSize: 16 }}><Mark>{ROUND_NAMES[rd]}</Mark>{rd === 1 && pb.seeds && <span style={{ ...SERIF, fontSize: 14, color: "#555" }}> Byes: the {TEAMS[pb.seeds.AFC?.[0]]?.name} and the {TEAMS[pb.seeds.NFC?.[0]]?.name}</span>}</div>
-            {done.map((r, i) => scoreRow({ ...r, played: true }, `d${i}`, r.boxH || r.boxA ? () => setGameBox({ ...r, wk: ROUND_NAMES[rd] }) : undefined))}
-            {next.map(([h, a], i) => scoreRow({ h, a }, `n${i}`))}
-          </div>);
-        })}
-      </div>);
-    }
-    const conf = sub.conf, seeds = playedAny ? seedsOf(conf) : [];
-    if (!seeds.length) return <div style={{ ...SERIF, fontSize: 17 }}>The playoff picture fills in once the season's first games are played.</div>;
-    const s7 = teams[seeds[6]], gb = (t) => ((s7.w || 0) - (t.w || 0) + (t.l || 0) - (s7.l || 0)) / 2;
-    const hunt = teams.map((t, i) => ({ t, i })).filter((x) => x.t.c === conf && !seeds.includes(x.i)).sort((a, b) => pct(b.t) - pct(a.t)).slice(0, 5);
-    const line = (i, label, extra) => <Row key={i} style={{ gap: 10, padding: "6px 4px", background: i === ui ? "#fff9c4" : undefined }}>
-      <span style={{ ...NUM, fontSize: 15, width: 34, textAlign: "center", background: label ? "#ffb300" : "#e8ecf5", padding: "3px 0" }}>{label || "-"}</span>
-      <Logo ab={TEAMS[i]?.ab} size={narrow ? 28 : 30} /><span style={{ flex: 1, minWidth: 0 }}><Name size={15} me={i === ui}>{TEAMS[i]?.city} {TEAMS[i]?.name}</Name></span>
-      <span style={{ ...SERIF, fontSize: 13, color: "#555", textAlign: "right" }}>{extra}</span><span style={{ ...NUM, fontSize: 16, width: 54, textAlign: "right" }}>{rec(teams[i])}</span></Row>;
+  // ---- Playoffs: where you'd be if the season ended today, the seeds, and the playoff tree (the real
+  // one once the playoffs start), the Super Bowl in 8-bit at its heart ----
+  const playoffsTab = () => {
+    const live = !!pb && sp !== "regular" && sp !== "preseason"; // the real bracket (and last season's, through the off-season)
+    if (!live && !playedAny) return <div style={{ ...SERIF, fontSize: 17 }}>The playoff picture fills in once the season's first games are played: who'd be in if the season ended today, and the bracket they'd make.</div>;
+    const B = live ? pb : makeBracket(seedsOf("AFC"), seedsOf("NFC"));
+    const confOf = (id) => (B.seeds.AFC.includes(id) ? "AFC" : B.seeds.NFC.includes(id) ? "NFC" : TEAMS[id]?.c || teams[id]?.c);
+    const seedNo = (id) => { const c = confOf(id), k = B.seeds[c]?.indexOf(id) ?? -1; return k >= 0 ? k + 1 : null; };
+    // a round's games: played ones with their scores, the next round's matchups, later rounds empty
+    const games = (rd, c) => {
+      const done = (B.res || []).filter((r) => r.rd === rd && (!c || confOf(r.h) === c));
+      if (done.length || B.rd !== rd || B.ch != null) return done;
+      return (B.m || []).filter(([h]) => !c || confOf(h) === c).map(([h, a]) => ({ h, a }));
+    };
+    const nm = (id) => TEAMS[id]?.name, mineIn = [...B.seeds.AFC, ...B.seeds.NFC].includes(ui);
+    // ---- the line at the top: where you stand ----
+    const status = (() => {
+      const me = T.name, c = ut.c;
+      if (!live) {
+        const k = B.seeds[c].indexOf(ui);
+        if (k === 0) return { in: true, big: `#1 seed in the ${c}`, txt: `If the season ended today, the ${me} would be the ${c}'s top seed: the only bye, and home field all the way to the Super Bowl.` };
+        if (k > 0) { const m = B.m.find(([h, a]) => h === ui || a === ui), opp = m && (m[0] === ui ? m[1] : m[0]), home = m && m[0] === ui;
+          return { in: true, big: `#${k + 1} seed in the ${c}`, txt: `If the season ended today, the ${me} would be the ${c}'s #${k + 1} seed (${k < 4 ? "a division champion" : "a wild card"}): a Wild Card game ${home ? "at home against" : "at"} the #${seedNo(opp)} ${nm(opp)}.` }; }
+        const s7 = teams[B.seeds[c][6]], gb = s7 ? ((s7.w || 0) - (ut.w || 0) + (ut.l || 0) - (s7.l || 0)) / 2 : 0;
+        return { in: false, big: gb > 0 ? `${gb} game${gb === 1 ? "" : "s"} out` : "On the bubble", txt: gb > 0 ? `If the season ended today, the ${me} would miss the playoffs: ${gb} game${gb === 1 ? "" : "s"} behind the ${nm(B.seeds[c][6])}, the ${c}'s #7 seed, for the last spot.` : `The ${me} are level with the ${nm(B.seeds[c][6])} for the ${c}'s last playoff spot, but lose the tiebreak right now.` };
+      }
+      if (B.ch === ui) return { in: true, gold: true, big: "Super Bowl champions", txt: `The ${me} won ${yr ? sbName(sbNumber(yr)) : "the Super Bowl"}!` };
+      if (!mineIn) return { in: false, big: "Missed the playoffs", txt: B.ch != null ? `The ${me} missed the playoffs. The ${nm(B.ch)} won the Super Bowl.` : `The ${me} missed the playoffs this year. Here's how the bracket is playing out.` };
+      const out = (B.res || []).find((r) => (r.h === ui || r.a === ui) && r.w !== ui);
+      if (out) { const opp = out.h === ui ? out.a : out.h, us = out.h === ui ? out.hs : out.as, them = out.h === ui ? out.as : out.hs;
+        return { in: false, big: `Out in the ${ROUND_NAMES[out.rd]}`, txt: `The ${me}' season ended in the ${ROUND_NAMES[out.rd]}: ${them}-${us} ${out.h === ui ? "against" : "at"} the ${nm(opp)}.${B.ch != null ? ` The ${nm(B.ch)} won the Super Bowl.` : ""}` }; }
+      const m = (B.m || []).find(([h, a]) => h === ui || a === ui);
+      if (m) { const opp = m[0] === ui ? m[1] : m[0]; return { in: true, big: `${ROUND_NAMES[B.rd]} next`, txt: `${ROUND_NAMES[B.rd]}: the ${me} ${B.rd === 4 ? "play" : m[0] === ui ? "host" : "visit"} the ${nm(opp)}.` }; }
+      return { in: true, big: "On the bye", txt: `The ${me} have the bye: they wait at home for the lowest seed left after the Wild Card round.` };
+    })();
+    const banner = <div style={{ display: "flex", alignItems: "center", gap: narrow ? 10 : 16, padding: narrow ? "10px 10px" : "12px 18px", marginBottom: 16, background: status.gold ? "#fff6c2" : status.in ? "#e7f6ea" : "#f3f4f6", boxShadow: `inset 0 0 0 3px ${status.gold ? "#ffb300" : status.in ? "#22a447" : "#9ca3af"}` }}>
+      <Logo ab={T.ab} size={narrow ? 42 : 54} />
+      <div style={{ minWidth: 0 }}>
+        <div style={{ ...PH, fontSize: narrow ? 12 : 13, color: "#555", textTransform: "uppercase", letterSpacing: 0.6 }}>{live ? (B.ch != null && sp !== "playoffs" ? "Last season's playoffs" : "The playoffs") : `If the season ended today${wk ? ` (after week ${wk})` : ""}`}</div>
+        <div style={{ ...CLUB, color: INK, fontSize: narrow ? 19 : 23, lineHeight: 1.15 }}>{status.big}</div>
+        <div style={{ ...SERIF, fontSize: narrow ? 14 : 15, marginTop: 2 }}>{status.txt}</div>
+      </div>
+    </div>;
+
+    // ---- a game in the tree ----
+    const card = (g, { sb = false, key } = {}) => {
+      const wrap = { background: "#fff", border: `${sb ? 3 : 2}px solid ${sb ? "#ffb300" : "#111"}`, boxShadow: sb ? "4px 4px 0 #8a5a00" : "3px 3px 0 #0a1f6b" };
+      if (!g) return <div key={key} style={{ ...wrap, border: "2px dashed #9ca3af", boxShadow: "none", background: "#f6f6f1", ...PH, fontSize: 13, color: "#888", textAlign: "center", padding: narrow ? "16px 4px" : "17px 4px" }}>TBD</div>;
+      const played = g.hs != null && g.as != null, open = played && (g.boxH || g.boxA);
+      const row = (id, pts) => { const won = played && g.w === id, lost = played && g.w !== id, me = id === ui;
+        return <div style={{ display: "flex", alignItems: "center", gap: narrow ? 4 : 5, padding: narrow ? "4px 5px" : "5px 6px", background: me ? "#fff9c4" : undefined, opacity: lost ? 0.55 : 1 }}>
+          <span style={{ ...NUM, fontSize: 11, color: "#888", width: 9, textAlign: "right", flexShrink: 0 }}>{seedNo(id) || ""}</span>
+          <Logo ab={TEAMS[id]?.ab} size={narrow ? 20 : 22} />
+          <span style={{ ...CLUB, flex: 1, minWidth: 0, fontSize: narrow ? 13.5 : 14.5, color: me ? INK : LINK, fontWeight: won ? 800 : 700, whiteSpace: "nowrap" }}>{TEAMS[id]?.ab}</span>
+          {played && <span style={{ ...NUM, fontSize: narrow ? 15 : 16, color: won ? INK : "#888", minWidth: 20, textAlign: "right", flexShrink: 0, marginLeft: 3 }}>{pts}</span>}
+        </div>; };
+      return <div key={key} className={open ? "ez-click" : undefined} onClick={open ? () => setGameBox({ ...g, wk: ROUND_NAMES[g.rd || 4] }) : undefined} title={open ? "Box score" : undefined} style={wrap}>
+        {row(g.a, g.as)}<div style={{ height: 2, background: "#e4e4dc" }} />{row(g.h, g.hs)}
+      </div>;
+    };
+    const bye = (c) => { const id = B.seeds[c][0], me = id === ui; return <div style={{ display: "flex", alignItems: "center", gap: narrow ? 4 : 6, padding: narrow ? "5px 5px" : "6px 7px", background: me ? "#fff9c4" : "#f6f6f1", border: "2px solid #111", boxShadow: "3px 3px 0 #0a1f6b" }}>
+      {!narrow && <span style={{ ...NUM, fontSize: 11, color: "#888", width: 11, textAlign: "right" }}>1</span>}<Logo ab={TEAMS[id]?.ab} size={narrow ? 20 : 24} />
+      <span style={{ ...CLUB, flex: 1, minWidth: 0, fontSize: narrow ? 13.5 : 15, color: me ? INK : LINK, whiteSpace: "nowrap" }}>{TEAMS[id]?.ab}</span>
+      <span style={{ ...PH, fontSize: 10, color: "#7a5600", background: "#ffe08a", padding: "1px 3px", flexShrink: 0 }}>BYE</span></div>; };
+    // ---- the tree: a column per round, joined by lines; AFC feeds right, NFC feeds left ----
+    const GAP = narrow ? 12 : 16, LINE = "#111", SLOT = narrow ? 96 : 104;
+    const colHead = (txt) => <div style={{ ...PH, fontSize: narrow ? 11.5 : 13, color: "#555", textAlign: "center", textTransform: "uppercase", letterSpacing: 0.5, height: 22, whiteSpace: "nowrap" }}>{txt}</div>;
+    const column = (title, slots, feeds, { into = false, out = true } = {}) => {
+      const toward = feeds === "right" ? "right" : "left", from = feeds === "right" ? "left" : "right";
+      return <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+        {colHead(title)}
+        <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column" }}>
+          {out && slots.length > 1 && <div aria-hidden style={{ position: "absolute", [toward]: -GAP / 2 - 1.5, top: `${50 / slots.length}%`, bottom: `${50 / slots.length}%`, width: 3, background: LINE }} />}
+          {slots.map((x, i) => <div key={i} style={{ flex: 1, minHeight: SLOT, position: "relative", display: "flex", alignItems: "center" }}>
+            {out && <div aria-hidden style={{ position: "absolute", top: "50%", marginTop: -1.5, [toward]: -GAP / 2, width: GAP / 2, height: 3, background: LINE }} />}
+            {into && <div aria-hidden style={{ position: "absolute", top: "50%", marginTop: -1.5, [from]: -GAP / 2, width: GAP / 2, height: 3, background: LINE }} />}
+            <div style={{ position: "relative", width: "100%" }}>{x}</div>
+          </div>)}
+        </div>
+      </div>;
+    };
+    const confRounds = (c, feeds) => {
+      const wc = games(1, c), dv = games(2, c), cf = games(3, c);
+      const cols = [
+        column("Wild card", [bye(c), card(wc[0]), card(wc[1]), card(wc[2])], feeds),
+        column("Divisional", [card(dv[0]), card(dv[1])], feeds, { into: true }),
+        column("Conference", [card(cf[0])], feeds, { into: true, out: !narrow }),
+      ];
+      return feeds === "right" ? cols : cols.reverse();
+    };
+    const sbGame = games(4)[0];
+    const confTitle = (c) => <div style={{ ...CLUB, color: INK, fontSize: narrow ? 17 : 20, textAlign: "center", borderBottom: "3px solid #111", paddingBottom: 4, marginBottom: 8 }}>{c}</div>;
+    const tree = narrow ? (<>
+      {/* phone: the Super Bowl up top, then one conference's three rounds at a time (yours first) */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginBottom: 16 }}>
+        <PixelSB yr={yr} scale={2} />
+        <div style={{ width: "min(230px, 100%)" }}>{card(sbGame, { sb: true })}</div>
+      </div>
+      <Chips items={[["AFC", "AFC"], ["NFC", "NFC"]]} on={sub.conf} set={(v) => setS("conf", v)} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0,1fr))", columnGap: GAP }}>{confRounds(sub.conf, "right")}</div>
+    </>) : (<div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr)) minmax(184px,1.15fr) repeat(3,minmax(0,1fr))", columnGap: GAP }}>
+        <div style={{ gridColumn: "1 / 4" }}>{confTitle("AFC")}</div><div /><div style={{ gridColumn: "5 / 8" }}>{confTitle("NFC")}</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr)) minmax(184px,1.15fr) repeat(3,minmax(0,1fr))", columnGap: GAP, alignItems: "stretch" }}>
+        {confRounds("AFC", "right")}
+        {/* the Super Bowl: the 8-bit Lombardi over the game, the game level with the conference finals */}
+        <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+          {colHead("")}
+          <div style={{ position: "relative", flex: 1, display: "flex", alignItems: "center" }}>
+            <div aria-hidden style={{ position: "absolute", top: "50%", marginTop: -1.5, left: -GAP / 2, width: GAP / 2, height: 3, background: LINE }} />
+            <div aria-hidden style={{ position: "absolute", top: "50%", marginTop: -1.5, right: -GAP / 2, width: GAP / 2, height: 3, background: LINE }} />
+            <div style={{ position: "relative", width: "100%" }}>
+              <div style={{ position: "absolute", bottom: "100%", left: 0, right: 0, display: "flex", justifyContent: "center", paddingBottom: 12 }}><PixelSB yr={yr} scale={2.5} /></div>
+              {card(sbGame, { sb: true })}
+            </div>
+          </div>
+        </div>
+        {confRounds("NFC", "left")}
+      </div>
+    </div>);
+
+    // ---- the seeds, and who's chasing the last spot ----
+    const seedLine = (i, label, tag, extra) => <Row key={i} style={{ gap: narrow ? 8 : 10, padding: "5px 4px", background: i === ui ? "#fff9c4" : undefined }}>
+      <span style={{ ...NUM, fontSize: 14, width: 32, textAlign: "center", background: label ? (label === "#1" ? "#ffb300" : "#ffd166") : "#e8ecf5", padding: "3px 0", flexShrink: 0 }}>{label || "-"}</span>
+      <Logo ab={TEAMS[i]?.ab} size={narrow ? 26 : 28} />
+      <span style={{ flex: 1, minWidth: 0 }}><Name size={15} me={i === ui}>{narrow ? TEAMS[i]?.name : `${TEAMS[i]?.city} ${TEAMS[i]?.name}`}</Name></span>
+      {tag && <span style={{ ...PH, fontSize: 11, padding: "2px 5px", flexShrink: 0, background: tag === "BYE" ? "#ffe08a" : tag === "DIV" ? "#d6e4ff" : "#ece3ff", color: tag === "BYE" ? "#7a5600" : tag === "DIV" ? "#1a3fc4" : "#5b21b6" }}>{tag}</span>}
+      {extra && <span style={{ ...SERIF, fontSize: 13, color: "#555", flexShrink: 0 }}>{extra}</span>}
+      <span style={{ ...NUM, fontSize: 15, minWidth: 46, textAlign: "right", flexShrink: 0, whiteSpace: "nowrap" }}>{rec(teams[i])}</span>
+    </Row>;
+    const seedsBlock = (c) => {
+      const sd = B.seeds[c], s7 = teams[sd[6]], gb = (t) => ((s7.w || 0) - (t.w || 0) + (t.l || 0) - (s7.l || 0)) / 2;
+      const hunt = live ? [] : teams.map((t, i) => ({ t, i })).filter((x) => x.t.c === c && !sd.includes(x.i)).sort((a, b) => pct(b.t) - pct(a.t)).slice(0, 4);
+      return <div style={{ minWidth: 0 }}>
+        <div style={{ marginBottom: 4, fontSize: 16 }}><Mark>{c} seeds</Mark></div>
+        {sd.map((i, k) => seedLine(i, `#${k + 1}`, k === 0 ? "BYE" : k < 4 ? "DIV" : "WC"))}
+        {hunt.length > 0 && <><div style={{ margin: "12px 0 4px", fontSize: 16 }}><Mark>In the hunt</Mark></div>{hunt.map((x) => seedLine(x.i, null, null, gb(x.t) > 0 ? `${gb(x.t)} back` : "tied"))}</>}
+      </div>;
+    };
     return (<>
-      <Chips items={[["AFC", "AFC"], ["NFC", "NFC"]]} on={conf} set={(v) => setS("conf", v)} />
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "minmax(0,1fr) minmax(0,1fr)", gap: narrow ? 16 : 30, alignItems: "start" }}>
-        <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>If the season ended today</Mark></div>{seeds.map((i, k) => line(i, `#${k + 1}`, k < 4 ? "Division leader" : "Wild card"))}</div>
-        <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>In the hunt</Mark></div>{hunt.map((x) => line(x.i, null, gb(x.t) > 0 ? `${gb(x.t)} back` : "tied"))}</div>
+      {banner}
+      <div style={{ ...SERIF, fontSize: 14, color: "#555", marginBottom: 10 }}>{live ? "Tap a played game for its box score." : "The bracket these seeds would make. Seeds 1-4 win their divisions, 5-7 are wild cards; only the #1 seed gets a bye, and the bracket is reseeded after the Wild Card round."}</div>
+      {tree}
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,1fr) minmax(0,1fr)", gap: narrow ? 16 : 30, marginTop: 24, alignItems: "start" }}>
+        {narrow ? seedsBlock(sub.conf) : <>{seedsBlock("AFC")}{seedsBlock("NFC")}</>}
       </div>
     </>);
   };
@@ -574,8 +732,8 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
     </>);
   };
   const leagueView = () => (<>
-    <Chips items={[["leaders", "Leaders"], ["standings", "Standings"], ["power", "Power rankings"], ["playoffs", "Playoffs"], ["scores", "Scores"], ["history", "History"]]} on={sub.league} set={(v) => setS("league", v)} />
-    {{ leaders: leadersView, standings: standingsView, power: powerView, playoffs: playoffsView, scores: scoresView, history: leagueHistoryView }[sub.league]()}
+    <Chips items={[["leaders", "Leaders"], ["standings", "Standings"], ["power", "Power rankings"], ["scores", "Scores"], ["history", "History"]]} on={sub.league} set={(v) => setS("league", v)} />
+    {{ leaders: leadersView, standings: standingsView, power: powerView, scores: scoresView, history: leagueHistoryView }[sub.league]()}
   </>);
 
   // ---- Team > Stats: your players, and where your club ranks ----
@@ -737,7 +895,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
     {{ trade: tradeBlockView, fa: faView, draft: draftBoardView }[sub.moves]()}
   </>);
 
-  const views = { home, team: teamView, schedule: () => schedule(), league: leagueView, moves: movesView };
+  const views = { home, team: teamView, schedule: () => schedule(), league: leagueView, playoffs: playoffsTab, moves: movesView };
   return (
     <div className="ez" style={{ position: "fixed", inset: 0, overflow: "hidden", display: "flex", flexDirection: "column", background: `linear-gradient(180deg, #2457e6, ${BLUE} 40%, #1a44c4)` }}>
       <style>{FONTS}</style>
@@ -753,7 +911,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
       </div>
       <div style={{ position: "relative", zIndex: 3, flex: 1, minHeight: 0, width: "100%", maxWidth: 1120, margin: "0 auto", padding: narrow ? "0 8px" : "0 24px", display: "flex", flexDirection: "column" }}>
         <nav style={{ display: "flex", alignItems: "flex-end" }}>
-          {tabs.map(([k, l], i) => { const on = view === k, dot = k === "moves" && (sp === "freeagency" || myCall || (shop?.cur?.list?.length > 0)); return <button key={k} onClick={() => { setView(k); setCard(null); if (k === "moves") setS("moves", sp === "draft" ? "draft" : sp === "freeagency" ? "fa" : sub.moves); }} aria-current={on ? "page" : undefined} style={{ flex: narrow ? "1 1 0" : "0 0 auto", minWidth: 0, cursor: "pointer", fontFamily: SANS, fontWeight: 800, fontSize: narrow ? 13 : 18, color: INK, padding: narrow ? "9px 2px 7px" : "10px 26px 8px", background: on ? "#fbfbf8" : "linear-gradient(180deg,#6fa0cf,#4a7fb0)", border: "3px solid #111", borderBottom: on ? "3px solid #fbfbf8" : "3px solid #111", marginLeft: i ? -3 : 0, marginBottom: -3, position: "relative", zIndex: on ? 2 : 1, boxShadow: on ? "none" : "inset 0 2px 0 #ffffff55, inset 0 -3px 0 #0000002a" }}>{l}{dot && <span aria-label="needs you" style={{ display: "inline-block", width: 9, height: 9, background: "#ffb300", boxShadow: "0 0 0 2px #111", marginLeft: 6, verticalAlign: "middle" }} />}</button>; })}
+          {tabs.map(([k, l], i) => { const on = view === k, dot = k === "moves" && (sp === "freeagency" || myCall || (shop?.cur?.list?.length > 0)); return <button key={k} onClick={() => { setView(k); setCard(null); if (k === "moves") setS("moves", sp === "draft" ? "draft" : sp === "freeagency" ? "fa" : sub.moves); }} aria-current={on ? "page" : undefined} style={{ flex: narrow ? "1 1 auto" : "0 0 auto", minWidth: 0, whiteSpace: "nowrap", cursor: "pointer", fontFamily: SANS, fontWeight: 800, fontSize: narrow ? 13 : 18, color: INK, padding: narrow ? "9px 3px 7px" : "10px 22px 8px", background: on ? "#fbfbf8" : "linear-gradient(180deg,#6fa0cf,#4a7fb0)", border: "3px solid #111", borderBottom: on ? "3px solid #fbfbf8" : "3px solid #111", marginLeft: i ? -3 : 0, marginBottom: -3, position: "relative", zIndex: on ? 2 : 1, boxShadow: on ? "none" : "inset 0 2px 0 #ffffff55, inset 0 -3px 0 #0000002a" }}>{l}{dot && <span aria-label="needs you" style={{ display: "inline-block", width: 9, height: 9, background: "#ffb300", boxShadow: "0 0 0 2px #111", marginLeft: 6, verticalAlign: "middle" }} />}</button>; })}
         </nav>
         <main style={{ flex: 1, minHeight: 0, overflowY: "auto", background: "#fbfbf8", border: "3px solid #111", boxShadow: "6px 6px 0 #0a1f6b, inset 0 0 40px #0000000d", padding: narrow ? "14px 12px 16px" : "20px 28px 20px" }}>
           {views[view]()}

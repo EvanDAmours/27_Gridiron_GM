@@ -18,7 +18,7 @@ test("with g.koDefer, the kicking side's kickoff after a field goal waits as the
     assert.equal(ev.ko, undefined, "the field goal's own play holds no kickoff");
     assert.equal(g.koNext, true); assert.equal(g.poss, "h"); assert.equal(g.yard, 35);
     const ko = step(g, "run_inside");
-    assert.equal(ko.type, "kickoff"); assert.equal(ko.poss, "h"); if (!ko.retTD) assert.equal(g.poss, "a", "the other team has it after the kick"); // (a return all the way: they kick it back)
+    assert.equal(ko.type, "kickoff"); assert.equal(ko.poss, "h"); if (!ko.retTD && !(ko.muff || ko.ko?.muff)) assert.equal(g.poss, "a", "the other team has it after the kick"); // (a return all the way: they kick it back; a muff the kickers recover: theirs)
   }
   assert.ok(made >= 4, `only ${made} field goals made`);
 });
@@ -30,7 +30,7 @@ test("without g.koDefer (or for the other side) the kickoff is booked inside the
       const g = fresh(i); g.koDefer = defer;
       const ev = resolvePlay(g, "fg", { types: ["fg"] }).ev;
       if (ev?.type !== "fg") continue;
-      made++; assert.ok(ev.ko); assert.equal(g.koNext, false); if (!ev.retTD) assert.equal(g.poss, "a"); // (a return all the way: they kick it back)
+      made++; assert.ok(ev.ko); assert.equal(g.koNext, false); if (!ev.retTD && !ev.ko.muff) assert.equal(g.poss, "a"); // (a return all the way: they kick it back; a muffed return the kickers recover: theirs again)
     }
     assert.ok(made >= 3);
   }
