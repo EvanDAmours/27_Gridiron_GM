@@ -951,7 +951,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     if (!screen) ev._ol = { pass: true, sackP };
     gk = { qb, dropback: !screen, sackP0: sackAt(gx.rushE0) };
     if (!screen && rand() < sackP) {
-      const loss = Math.round(5 + rand() * 5);
+      const loss = Number.isFinite(pick?.sackLoss) ? Math.max(0, Math.round(pick.sackLoss)) : Math.round(5 + rand() * 5); // (the arcade: where he went down on the field)
       // Multi-sack games happen, but each sack a rusher already has makes the next one harder (he gets
       // chipped and doubled).
       const rusher = pickW(rand, dP.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, w * 0.45 ** n * hotRusher(p)]; }));
@@ -1027,6 +1027,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
         if (!deep && rand() < clamp(0.02 + Math.max(0, (target?.spd || 85) - 88) * 0.0015 + passE * 0.008 + (B ? 0.045 : X ? 0.02 : V ? -0.012 : 0), 0.004, 0.1)) { const b = Math.round(12 + expo(rand, 16)); yards += b; ev.yac = b; }
         if (V && yards > 6) yards = Math.round(yards * 0.85); // tackled in space by a deep safety
         if (screen && rand() < 0.15) yards = -Math.round(rand() * 3);
+        if (Number.isFinite(pick?.yards)) { yards = pick.yards; if (ev.yac > yards) ev.yac = Math.max(0, yards); } // (the arcade: where the catch was brought down on the field)
         completed = true; carrier = target; type = "pass"; gk.comp = true;
         add(qbl, "comp", 1); add(tl, "rec", 1); st.comp++;
         desc = `${qb?.name || "QB"} finds ${target?.name || "his receiver"} for ${yards}${matchupNote(cm, role, mm, yards, pkg)}.`;
@@ -1076,6 +1077,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     const breakaway = rand() < clamp(0.047 + ((carrier?.spd || 80) - 82) * 0.0018 - load * 0.003 + runE * 0.005 + (outside ? 0.025 : 0) + (B ? 0.025 : X ? -0.015 : 0), 0.01, 0.14);
     yards = breakaway ? Math.round(mean + 5 + expo(rand, 11)) : Math.round(clamp(mean - 0.6 + gauss(rand) * (outside ? 3.3 : 2.5), -4, 14));
     if (yards > 0) yards = Math.round(yards * (bonus || 1));
+    if (Number.isFinite(pick?.yards)) yards = pick.yards; // (the arcade: where the runner went down on the field)
     const cl = line(g, off, carrier);
     add(cl, "rushAtt", 1); st.rushAtt++;
     type = "run";

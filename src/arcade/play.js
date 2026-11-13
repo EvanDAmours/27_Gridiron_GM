@@ -961,7 +961,7 @@ function arrive(S) {
 function handoff(S) { S.handAt = S.t; const rb = S.ents.RB; rb.acc *= clamp(1 + K.edge(K.burst(rb.p)) * 0.008, 0.8, 1.25); S.ball.holder = "RB"; rb.mode = "carry"; S.ents.QB.mode = "watch"; S.phase = "carry"; S.steer = S.steer ?? null; }
 function sack(S, d) {
   const { ents } = S, qb = ents.QB, loss = Math.round(S.los - qb.x);
-  const r = resolvePlay(S.g, S.call, { types: ["sack", "fumble"], fallback: ["inc"], yards: -loss, tol: 3 }, null, 16);
+  const r = resolvePlay(S.g, S.call, { types: ["sack", "fumble"], fallback: ["inc"], yards: -loss, tol: 0 }, { sackLoss: loss }, 16); // (the loss the field shows)
   S.ev = r.ev; S.booked = true; S.mismatch = r.ev && !["sack", "fumble", "inc", "penalty"].includes(r.ev.type);
   if (r.ev && r.ev.type === "inc") {
     // the engine has him getting rid of it: a wobbler thrown away as he's hit, falling incomplete
@@ -1132,7 +1132,7 @@ function book(S, yards, how, hold = 1.0) {
   const types = td ? ["td"] : isPass ? ["pass"] : ["run"];
   if (!td) yards = Math.min(yards, 99 - S.los);
   const tol = td ? 0 : Math.max(1, Math.round(Math.abs(yards) * 0.1));
-  const r = resolvePlay(S.g, S.call, { types, yards, tol, fallback: isPass && S.catchAt == null ? ["inc"] : [] }, { ...(isPass ? { target: S.pick?.target, open: !!S.pick?.open } : { carrier: S.ents.RB?.p?.id }), oob: !!S.oob, inBounds: !S.oob }, isPass && S.catchAt != null ? 40 : td ? 30 : 12); // (out of bounds or down in the field of play: as it happened here, so the clock does what it should) // (a ball that was caught gets the rolls it needs to be booked a catch)
+  const r = resolvePlay(S.g, S.call, { types, yards, tol, fallback: isPass && S.catchAt == null ? ["inc"] : [] }, { ...(isPass ? { target: S.pick?.target, open: !!S.pick?.open } : { carrier: S.ents.RB?.p?.id }), oob: !!S.oob, inBounds: !S.oob, yards: td ? 100 - S.los : yards }, isPass && S.catchAt != null ? 40 : td ? 30 : 12); // (yards: the engine books the spot the field shows, so the ball is spotted where he went down) // (out of bounds or down in the field of play: as it happened here, so the clock does what it should) // (a ball that was caught gets the rolls it needs to be booked a catch)
   S.ev = r.ev; S.exact = r.exact; S.mismatch = r.ev && !types.includes(r.ev.type) && r.ev.type !== "penalty";
   // the field follows the engine's number when it differs (a yard or two): the spot moves with it
   if (r.ev && (r.ev.type === "pass" || r.ev.type === "run" || r.ev.type === "td") && r.ev.yards !== yards && Math.abs(r.ev.yards - yards) <= 3) S.slideTo = S.los + r.ev.yards;

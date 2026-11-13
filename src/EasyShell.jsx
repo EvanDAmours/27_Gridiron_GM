@@ -10,6 +10,7 @@ import { portraitSrc } from "./portraits.js";
 import { depthOrderFor } from "./depth.js";
 import { capSpace } from "./league.js";
 import { yearlyAsk, maxYears } from "./negotiation.js";
+import { FA_DAYS, MARKET_MIN, OVERPAY, bidsFor, committed, decideDay, standing } from "./faMarket.js";
 import { nflSeeds, makeBracket, ROUND_NAMES } from "./playoffs.js";
 import { sbName, sbNumber } from "./data/superbowls.js";
 import lombardiArt from "./assets/lombardi.webp";
@@ -177,7 +178,7 @@ function PixelSB({ yr, scale = 3.5 }) {
 const rec = (t) => `${t.w || 0}-${t.l || 0}${t.t ? `-${t.t}` : ""}`;
 const pct = (t) => ((t.w || 0) + (t.t || 0) * 0.5) / Math.max(1, (t.w || 0) + (t.l || 0) + (t.t || 0));
 
-export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log, msg, step, busy, onFull, onSave, phaseLabel, depthOrder, ezPicks = {}, setEzPicks, awards, onResign, draft, onPick, trades, champs = [], seasonHistory = [], fa = [], faOpen = false, onSignFA, shop = null, canExt = null, extRoomFor = null, onExtend = null, devFocus = null, onDevFocus, powerRankings = [], ownerGoal = null, plan = null }) {
+export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log, msg, step, busy, onFull, onSave, phaseLabel, depthOrder, ezPicks = {}, setEzPicks, awards, onResign, draft, onPick, trades, champs = [], seasonHistory = [], fa = [], faOpen = false, onSignFA, faMarket = null, onOffer = null, shop = null, canExt = null, extRoomFor = null, onExtend = null, devFocus = null, onDevFocus, powerRankings = [], ownerGoal = null, plan = null }) {
   const [view, setView] = useState("home");
   const [sub, setSub] = useState(() => ({ team: "roster", stats: "pass", lineup: "offense", draft: "All", league: "leaders", lead: "pass", scope: "league", conf: teams[ui]?.c || "AFC", moves: sp === "draft" ? "draft" : sp === "freeagency" ? "fa" : "trade", fa: "All", scoreWk: null, board: "All" }));
   const [card, setCard] = useState(null);       // the player card open: { id, ti, p }
@@ -375,6 +376,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
               <Btn kind="blue" onClick={step.run} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>{busy ? <span style={{ animation: "ezBlink .6s steps(2) infinite" }}>Working…</span> : "Sim"}</Btn>
             </> : <Btn big onClick={step.run} disabled={busy} style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>{busy ? <span style={{ animation: "ezBlink .6s steps(2) infinite" }}>Working…</span> : <>▶ {step.label}</>}</Btn>}
             {step.simAll && <Btn kind="dark" onClick={step.simAll} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>Sim the season</Btn>}
+            {step.alt && <Btn kind="dark" onClick={step.alt.run} disabled={busy} style={narrow ? { flex: "1 1 0" } : undefined}>{step.alt.label}</Btn>}
           </div>}
           {msg && <div style={{ ...SERIF, fontSize: 16, marginTop: 12, fontStyle: "italic" }}>{msg}</div>}
           {(() => { // the playoff picture, in a line
@@ -388,6 +390,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
           {plan && planCard()}
           {trades && tradePanel()}
           {sp === "resign" && resignPanel()}
+          {sp === "freeagency" && faPanel()}
           {sp === "draft" && draftPanel()}
           {!narrow && !offseason && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22, marginTop: 20 }}>
             <div><div style={{ marginBottom: 4, fontSize: 16 }}><Mark>{ut.c} {ut.d}</Mark></div>{divRows(ut.c, ut.d)}</div>
@@ -912,25 +915,70 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
     </div>);
   };
 
-  // ---- Moves > Free agents: sign anyone at his asking price ----
+  // ---- Moves > Free agents ----
+  // In season: sign anyone at his asking price. In the off-season's free agency, the market: clubs make
+  // offers over a few days and each player takes the one he likes best on his day. Make him an offer at
+  // his asking price and see where you stand, or pay 20% over it and he signs on the spot. (Depth
+  // players, under 70, sign the first fair deal, as ever.)
   const faDeal = (p) => { const yrs = Math.max(1, Math.min(maxYears(p), p.age <= 27 ? 3 : p.age <= 31 ? 2 : 1)); return { yrs, sal: yearlyAsk(p, yrs, "fa") }; };
+  const mkt = sp === "freeagency" && faMarket ? faMarket : null;
+  const promised = mkt ? committed(mkt, ui) : 0;
+  const marketOf = (p) => {
+    if (!mkt || p.ovr < MARKET_MIN) return null;
+    const list = bidsFor(mkt, p.id), mine = list.find((b) => b.team === ui) || null;
+    return { mine, others: list.filter((b) => b.team !== ui).length, st: mine ? standing(p, mkt, teams, ui) : null, day: Math.max(mkt.day, decideDay(p, yr)) };
+  };
+  const faBtn = (label, on, can, color, title) => <button className="ez-btn" disabled={!can} title={title} onClick={(e) => { e.stopPropagation(); on(); }} style={{ flexShrink: 0, fontSize: 13, padding: "6px 10px", background: can ? color[0] : "#b9c2b9", color: color[2] || "#fff", boxShadow: `0 3px 0 ${color[1]}`, whiteSpace: "nowrap" }}>{label}</button>;
+  const GREEN = ["#22a447", "#146b2c"], GOLDB = ["#ffb300", "#8a5a00", "#1a1000"], GREY = ["#e8ecf5", "#c5ccdc", INK];
   const faView = () => {
     const f = sub.fa, list = (fa || []).filter((p) => f === "All" || grp(p.pos) === f).sort((a, b) => b.ovr - a.ovr).slice(0, 40), full = sp === "regular" && roster.length >= 53;
-    const note = !faOpen ? (sp === "resign" ? "Free agency opens after re-sign week. Here's who's out there so far." : "Free agency is closed until the off-season.") : full ? "Your roster is full (53 players): signing someone releases your lowest-rated player at his position (shown on each row)." : "Sign anyone you like at his asking price, if you have the cap space. The staff fill the rest of the roster.";
+    const free = room - promised; // (money you've promised in open offers can't be spent twice)
+    const note = mkt ? `Free agency, day ${mkt.day} of ${FA_DAYS}. Offer a player his asking price and he weighs it against the other clubs' on the day he decides; offer 20% more and he signs on the spot. Players under 70 sign the first fair deal.`
+      : !faOpen ? (sp === "resign" ? "Free agency opens after re-sign week. Here's who's out there so far." : "Free agency is closed until the off-season.") : full ? "Your roster is full (53 players): signing someone releases your lowest-rated player at his position (shown on each row)." : "Sign anyone you like at his asking price, if you have the cap space. The staff fill the rest of the roster.";
     return (<div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 8 }}><Mark>Free agents</Mark><span style={{ ...SERIF, fontSize: 15 }}>Cap space: <b style={NUM}>${room.toFixed(1)}M</b></span></div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 8 }}><Mark>Free agents</Mark><span style={{ ...SERIF, fontSize: 15 }}>Cap space: <b style={NUM}>${room.toFixed(1)}M</b>{promised > 0 && <> (${promised.toFixed(1)}M of it in open offers)</>}</span></div>
       <div style={{ ...SERIF, fontSize: 15, color: "#444", marginBottom: 10 }}>{note}</div>
       <Chips items={["All", "QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S", "K", "P"].map((k) => [k, k])} on={f} set={(v) => setS("fa", v)} />
       {list.length ? list.map((p) => {
-        const d = faDeal(p), cut = full ? roster.filter((x) => grp(x.pos) === grp(p.pos) && x.ovr < p.ovr).sort((a, b) => a.ovr - b.ovr)[0] : null;
-        const can = faOpen && (!full || cut) && d.sal <= room + (cut ? +cut.salary || 0 : 0);
-        return <Row key={p.id} onClick={() => openCard(p, -1)} style={{ gap: narrow ? 8 : 12 }}>
+        const d = faDeal(p), cut = full ? roster.filter((x) => grp(x.pos) === grp(p.pos) && x.ovr < p.ovr).sort((a, b) => a.ovr - b.ovr)[0] : null, m = marketOf(p);
+        const nowSal = Math.ceil(d.sal * OVERPAY * 10) / 10, mineSal = m?.mine?.sal || 0;
+        const can = faOpen && (!full || cut) && d.sal <= free + (cut ? +cut.salary || 0 : 0);
+        const sub2 = m ? [`age ${p.age}`, m.others ? `${m.others} club${m.others === 1 ? "" : "s"} after him` : "no other offers yet", `decides day ${m.day}`].join(" · ") : `age ${p.age} · ${d.yrs} yr, $${d.sal}M${cut ? ` · cuts ${cut.name} (${cut.ovr})` : ""}`;
+        return <Row key={p.id} onClick={() => openCard(p, -1)} style={{ gap: narrow ? 8 : 12, flexWrap: narrow && m ? "wrap" : "nowrap", background: m?.mine ? (m.st === "lead" ? "#e7f6ea" : "#fff3e0") : undefined }}>
           <span style={{ ...PH, fontSize: 13, width: 30, color: "#555", flexShrink: 0 }}>{p.pos}</span>
           <Face p={p} size={narrow ? 34 : 36} ti={-1} />
-          <span style={{ flex: 1, minWidth: 0 }}><Name size={narrow ? 15 : 16}>{p.name}</Name><span style={{ ...SERIF, fontSize: 13, color: "#666" }}>age {p.age} · {d.yrs} yr, ${d.sal}M{cut ? ` · cuts ${cut.name} (${cut.ovr})` : ""}</span></span>
+          <span style={{ flex: 1, minWidth: narrow ? "50%" : 0 }}><Name size={narrow ? 15 : 16}>{p.name}</Name><span style={{ ...SERIF, fontSize: 13, color: "#666" }}>{sub2}</span>
+            {m?.mine && <span style={{ ...PH, fontSize: 12, display: "block", color: m.st === "lead" ? "#146b2c" : "#9a4a00" }}>Your offer: ${m.mine.sal}M for {m.mine.yrs} yr{m.mine.yrs === 1 ? "" : "s"}: {m.st === "lead" ? "he likes yours best so far" : "another club is ahead of you"}</span>}</span>
           <span style={{ ...NUM, fontSize: 16, width: 30, textAlign: "right", flexShrink: 0 }}>{p.ovr}</span>
-          <button className="ez-btn" disabled={!can} title={can ? "" : !faOpen ? "Free agency is closed" : full && !cut ? "Roster full: nobody at his position rated below him" : "Not enough cap space"} onClick={(e) => { e.stopPropagation(); onSignFA?.(p, d.sal, d.yrs, cut?.id); }} style={{ flexShrink: 0, fontSize: 13, padding: "6px 12px", background: can ? "#22a447" : "#b9c2b9", color: "#fff", boxShadow: "0 3px 0 #146b2c" }}>Sign</button>
+          {m ? <span style={{ display: "flex", gap: 6, flexShrink: 0, marginLeft: narrow ? "auto" : 0 }}>
+            {m.mine ? faBtn("Withdraw", () => onOffer?.(p, null), true, GREY) : faBtn(`Offer $${d.sal}M`, () => onOffer?.(p, d.sal, d.yrs), d.sal <= free, GREEN, d.sal <= free ? `${d.yrs} years at his asking price` : "Not enough cap space")}
+            {faBtn(`Sign now $${nowSal}M`, () => onSignFA?.(p, nowSal, d.yrs), nowSal <= free + mineSal, GOLDB, nowSal <= free + mineSal ? `${d.yrs} years, 20% over his ask: he signs today` : "Not enough cap space")}
+          </span> : faBtn("Sign", () => onSignFA?.(p, d.sal, d.yrs, cut?.id), can, GREEN, can ? "" : !faOpen ? "Free agency is closed" : full && !cut ? "Roster full: nobody at his position rated below him" : "Not enough cap space")}
         </Row>; }) : <div style={{ ...SERIF, fontSize: 16, padding: 6 }}>Nobody available{f !== "All" ? ` at ${f}` : ""}.</div>}
+    </div>);
+  };
+  // ---- Home, in free agency: the day, your money, where the team is thinnest, your offers ----
+  const NEED = { QB: 1, RB: 1, WR: 3, TE: 1, OL: 5, DL: 4, LB: 3, CB: 3, S: 2 };
+  const needs = useMemo(() => {
+    if (sp !== "freeagency") return [];
+    const nth = (t, g) => (t.roster || []).filter((x) => grp(x.pos) === g && !x.injured).map((x) => x.ovr).sort((a, b) => b - a)[NEED[g] - 1] ?? 50;
+    return Object.keys(NEED).map((g) => { const lg = teams.reduce((a, t) => a + nth(t, g), 0) / teams.length, me = nth(ut, g); return { g, me, lg: Math.round(lg), gap: lg - me }; }).sort((a, b) => b.gap - a.gap).slice(0, 3);
+  }, [sp, teams, ut]); // eslint-disable-line react-hooks/exhaustive-deps
+  const faPanel = () => {
+    if (!mkt) return null;
+    const mine = (fa || []).map((p) => ({ p, m: marketOf(p) })).filter((x) => x.m?.mine);
+    const go = (g) => { setView("moves"); setS("moves", "fa"); setS("fa", g || "All"); };
+    return (<div style={{ marginTop: 16, padding: narrow ? "10px 10px" : "12px 16px", background: "#eef3ff", boxShadow: "inset 0 0 0 3px #c9d6f5" }}>
+      <div style={{ fontSize: 16, marginBottom: 6 }}><Mark>Free agency, day {mkt.day} of {FA_DAYS}</Mark></div>
+      <div style={{ ...SERIF, fontSize: 15, marginBottom: 8 }}>Cap space ${room.toFixed(1)}M{promised > 0 ? `, $${promised.toFixed(1)}M of it promised in your offers` : ""}. The players decide over the next few days: offer a player his asking price and see if he picks you, or pay 20% more to sign him today.</div>
+      {needs.length > 0 && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
+        <span style={{ ...PH, fontSize: 13, color: "#555" }}>Where you're thinnest:</span>
+        {needs.map((n) => <button key={n.g} className="ez-btn" onClick={() => go(n.g)} title={`Your starters at ${n.g} run down to ${n.me}; the league's to ${n.lg}`} style={{ fontSize: 13, padding: "5px 10px", background: n.gap > 3 ? "#ffd6d6" : "#fff", color: INK, boxShadow: "0 3px 0 #c5ccdc" }}>{n.g} <span style={{ color: "#666" }}>({n.me} vs {n.lg})</span></button>)}
+      </div>}
+      {mine.length > 0 && <div style={{ marginBottom: 6 }}>{mine.map(({ p, m }) => <Row key={p.id} onClick={() => go(grp(p.pos))} style={{ gap: 10, padding: "5px 4px" }}>
+        <Face p={p} size={30} ti={-1} /><span style={{ flex: 1, minWidth: 0 }}><Name size={14}>{p.name}</Name><span style={{ ...SERIF, fontSize: 13, color: "#555" }}>{p.pos} {p.ovr} · ${m.mine.sal}M for {m.mine.yrs} · decides day {m.day}</span></span>
+        <span style={{ ...PH, fontSize: 12, color: m.st === "lead" ? "#146b2c" : "#9a4a00", textAlign: "right" }}>{m.st === "lead" ? "Leading" : "Behind"}</span></Row>)}</div>}
+      <Btn kind="blue" onClick={() => go(needs[0]?.g)}>Shop free agents</Btn>
     </div>);
   };
 
