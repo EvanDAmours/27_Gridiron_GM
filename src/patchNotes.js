@@ -2787,4 +2787,8 @@ export const PATCH_NOTES = [
     "Now every one of them goes to the man you saw make the play: the sack to the man who brought the quarterback down (all of it, no half sack for a helper who wasn't there), the tackle to the man who made it (and an assist to a second man who helped bring him down), a tackle for loss and a forced fumble to the man who hit him, the interception and the pass breakup to the defender who played the ball. A pass that just fell incomplete with nobody on it no longer hands someone a breakup.",
     "Games you sim (and the computer's drives) are unchanged.",
   ] },
+  { v: "7.10", date: "2026-11-13", title: "Spirals and end-over-end kicks", notes: [
+    "A pass spirals now: the laces come round the ball as it flies (over the top, down the side, underneath and round the back), about six turns a second, and the nose follows the ball's arc, up as it leaves the quarterback's hand and down as it drops into the receiver's. A hurried throw wobbles.",
+    "Kickoffs, punts and field goals tumble end over end, the nose tipping forward about twice a second all the way down the field.",
+  ] },
 ];

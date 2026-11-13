@@ -52,6 +52,16 @@ export { pixText, pixWidth, pixShadow };
 // the football, 13x7: o outline, b leather, h highlight, w stripes and laces
 const BALL = ["....ooooo....", "..oobhhhboo..", ".obwhwbwhwbo.", "obbwbbbbbwbbo", ".obwbbbbbwbo.", "..oobbbbboo..", "....ooooo...."];
 const BALL_C = { o: "#2a1206", b: "#8a4a22", h: "#b06a36", w: "#f4efe4" };
+// A pass in the air spirals: the laces come round the ball (over the top, down the near side, underneath,
+// then round the back out of sight) while the stripes at the ends, rings round the ball, stay put. These
+// are the ball's frames through one turn; the laces are the two stitches in the middle of the top row.
+const LACE_ROWS = [1, 2, 3, 4, 5, -1, -1, -1];
+const BALL_SPIN = LACE_ROWS.map((lr) => BALL.map((row, r) => row.split("").map((ch, c) => {
+  if (r === 2 && (c === 5 || c === 7)) ch = "b"; // (the laces off the top row: they move)
+  if (r === lr && (c === 5 || c === 7) && ch !== "." && ch !== "o") ch = "w";
+  return ch;
+}).join("")));
+const TURNS = { pass: 6, kick: 2.2 }; // (turns a second: a tight spiral; a kick tumbling end over end)
 
 // ---- the camera ----
 // The field runs left to right. s: pixels per yard along the field. The field's near sideline sits
@@ -1065,10 +1075,23 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     shadow(ctx, cam, b.x, b.y, 0.4);
     // a pixel football: pointed ends, two-tone leather, white stripes and laces, nose along its flight
     const px = Math.max(1, Math.round(s * 0.07));
-    let ang = 0.35;
-    if (b.flight) { const f = b.flight, [fx, fy] = cam.toScreen(f.from.x, f.from.y), [tx, ty] = cam.toScreen(f.to.x, f.to.y); ang = Math.atan2(ty - fy, tx - fx); }
+    let ang = 0.35, grid = BALL;
+    if (b.flight) {
+      // the nose follows the ball's path on screen, up the arc and down it (from where it was drawn last;
+      // standing still, a pause, it keeps the way it was pointing)
+      const f = b.flight, sx = bx, sy = by - lift;
+      if (S._bFlight !== f) { const [fx, fy] = cam.toScreen(f.from.x, f.from.y), [tx, ty] = cam.toScreen(f.to.x, f.to.y); S._bFlight = f; S._bPrev = null; S._bAng = Math.atan2(ty - fy, tx - fx); }
+      const pv = S._bPrev; if (pv && Math.hypot(sx - pv[0], sy - pv[1]) > 0.4) { const a = Math.atan2(sy - pv[1], sx - pv[0]); S._bAng += Math.atan2(Math.sin(a - S._bAng), Math.cos(a - S._bAng)) * 0.5; }
+      S._bPrev = [sx, sy];
+      const t = Math.max(0, S.t - (f.t0 || 0)), fwd = Math.cos(S._bAng) >= 0 ? 1 : -1;
+      if (f.kick) ang = S._bAng + fwd * t * TURNS.kick * Math.PI * 2; // a kick: end over end, nose tipping forward
+      else {
+        ang = S._bAng + (f.hurried ? Math.sin(t * 17) * 0.32 : 0); // a pass: a spiral (a hurried one wobbles)
+        grid = BALL_SPIN[Math.floor(t * TURNS.pass * BALL_SPIN.length) % BALL_SPIN.length];
+      }
+    }
     ctx.save(); ctx.translate(Math.round(bx), Math.round(by - lift)); ctx.rotate(ang);
-    for (let r = 0; r < BALL.length; r++) for (let c = 0; c < BALL[r].length; c++) { const k = BALL[r][c]; if (k === ".") continue; ctx.fillStyle = BALL_C[k]; ctx.fillRect((c - BALL[r].length / 2) * px, (r - BALL.length / 2) * px, px, px); }
+    for (let r = 0; r < grid.length; r++) for (let c = 0; c < grid[r].length; c++) { const k = grid[r][c]; if (k === ".") continue; ctx.fillStyle = BALL_C[k]; ctx.fillRect((c - grid[r].length / 2) * px, (r - grid.length / 2) * px, px, px); }
     ctx.restore();
   }
 }
