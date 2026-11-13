@@ -663,11 +663,13 @@ export class ArcadeGame {
       pixText(ctx, label, x + w / 2, Math.round(y + (h - px2 * 7) / 2), px2, "#fff", "center");
       this.chips.menu = { x, y, w, h };
     }
-    // a timeout during the play, late in a half: it's taken the moment the play ends (the clock stops at the whistle)
+    // a timeout during the play, late in a half: it's taken the moment the play ends (the clock stops at the whistle);
+    // and once the play is over with the clock running down (the result on the screen): TIMEOUT, and it stops right there
     this.chips.toLive = null;
-    { const g = this.g, side = this.mySide(), n = g?.to?.[side] ?? 0, lateHalf = g && (g.ot || ((g.qtr === 2 || g.qtr === 4) && g.clock <= 180));
-      if (m === "play" && P && !P.kind && P.phase !== "presnap" && P.phase !== "done" && n > 0 && lateHalf && !this.two) {
-        const px3 = uiPx(cam), label = this.toQueued ? "TIMEOUT CALLED" : `TIMEOUT AT WHISTLE (${n})`, short = this.toQueued ? "TO CALLED" : `TIMEOUT (${n})`;
+    { const g = this.g, side = this.mySide(), n = g?.to?.[side] ?? 0, lateHalf = g && (g.ot || ((g.qtr === 2 || g.qtr === 4) && g.clock <= 300));
+      const running = !!(this.runoff && this.runoff.cur > this.runoff.to) && m !== "play" && m !== "pick" && m !== "dpick" && !this.two; // (the cards have their own TIMEOUT)
+      if (n > 0 && !this.two && (running || (m === "play" && P && !P.kind && P.phase !== "presnap" && P.phase !== "done" && lateHalf))) {
+        const px3 = uiPx(cam), label = running ? `TIMEOUT (${n})` : this.toQueued ? "TIMEOUT CALLED" : `TIMEOUT AT WHISTLE (${n})`, short = running ? `TO (${n})` : this.toQueued ? "TO CALLED" : `TIMEOUT (${n})`;
         // in the score strip's other gap (between your score and the clock) when it fits, off the field; else under the strip
         const lg = hudOut?.bar ? [hudOut.l + px3 * 2, hudOut.c0 - px3 * 2] : null, fit = (t) => pixWidth(t, px3) + px3 * 6;
         const lab = lg && lg[1] - lg[0] >= fit(label) ? label : lg && lg[1] - lg[0] >= fit(short) ? short : null;
@@ -675,10 +677,10 @@ export class ArcadeGame {
           const w = fit(lab), x = Math.round(lg[0]), y = hudOut.top, h = hudOut.h;
           ctx.fillStyle = this.toQueued ? "rgba(90,70,10,.95)" : "rgba(8,10,16,.82)"; ctx.fillRect(x, y, w, h); ctx.fillStyle = "#ffd166"; ctx.fillRect(x, y + h - px3, w, px3);
           pixText(ctx, lab, x + w / 2, Math.round(y + (h - px3 * 7) / 2), px3, this.toQueued ? "#ffd166" : "#fff", "center");
-          this.chips.toLive = { x, y, w, h };
+          this.chips.toLive = { x, y, w, h, now: running };
         } else {
           const y = (this.chips.menu ? this.chips.menu.y + this.chips.menu.h : hudOut?.bar || px3 * 2) + px3 * 2;
-          this.chips.toLive = drawChip(ctx, cam, cam.W - px3 * 3, y, label, { align: "right", big: this.mobile, color: "#ffd166", active: !!this.toQueued });
+          this.chips.toLive = { ...drawChip(ctx, cam, cam.W - px3 * 3, y, label, { align: "right", big: this.mobile, color: "#ffd166", active: !running && !!this.toQueued }), now: running };
         }
       } } // (a live game: the app's scoreboard, and the stadium's at the 50; in full screen, this strip) // (a live game: the app's scoreboard, and the stadium's at the 50)
     if (this.g && m !== "final") drawWxChip(ctx, cam, this.g.wxE, windNow(this.g));
@@ -794,6 +796,7 @@ export class ArcadeGame {
   tapUI(p) {
     if (this.paused) { const b = this.buttons.find((b) => inside(p, b)); if (b) this.pauseAction(b.key); return true; }
     if (inside(p, this.chips.pause)) { this.paused = true; return true; }
+    if (this.chips.toLive && inside(p, this.chips.toLive) && this.chips.toLive.now) { this.timeout(); return true; } // (the clock running down after the play: stopped where it is)
     if (this.chips.toLive && inside(p, this.chips.toLive)) { this.toQueued = !this.toQueued; sfx.select?.(); if (this.toQueued) this.fx.float("TIMEOUT AT THE WHISTLE", this.cam.W / 2, this.cam.H * 0.3, "#ffd166", 1); return true; }
     if (this.chips.menu && inside(p, this.chips.menu)) { const c = this.chips.menu; this.onMenu?.({ x: c.x, y: c.y, w: c.w, h: c.h }); return true; }
     for (const [k, b] of Object.entries(this.chips.kinds || {})) if (inside(p, b)) { this.setKind(k); return true; }
@@ -1036,9 +1039,11 @@ export class ArcadeGame {
     if (m === "dpick") { const n = +k; if (n >= 1 && n <= this.buttons.length) this.callDef(this.buttons[n - 1].key); else if (k === "n") this.simDrive(); else if (k === "t") this.timeout(); return; }
     if (m === "pick") { const cards = this.buttons.filter((b) => !b.clock), n = +k; if (n >= 1 && n <= cards.length) this.call(cards[n - 1].key); else if (k === "t") this.call("timeout"); else if (k === "h") this.call("hurry"); return; }
     if (m === "pat") { const n = +k; if (n >= 1 && n <= this.buttons.length) this.patChoice(this.buttons[n - 1].key); return; }
+    if (k === "t" && this.chips.toLive?.now) { this.timeout(); return; } // (T: the clock running down after the play, stopped)
     if (m === "result" || m === "opp" || m === "ceremony") { if (k === " " || k === "enter") this.tapUI({ px: -1, py: -1 }); return; }
     if (m === "final") { if (k === " " || k === "enter") this.leaveFinal(); return; }
     if (m !== "play" || !P) return;
+    if (k === "t" && this.chips.toLive && !this.chips.toLive.now) { this.toQueued = !this.toQueued; sfx.select?.(); return; } // (T during the play, late in a half: the timeout at the whistle)
     if (k === "q" && !P.kind) { this.cycleKind(); return; }
     if (k === "n" && this.auto?.userD) { this.simDrive(); return; }
     if (this.auto?.userD && !P.kind && !this.playD) return; // (PLAY D off: nothing to steer)

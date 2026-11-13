@@ -13,7 +13,7 @@ test("a run and a catch are booked at the field's yards, long or short", () => {
       const g = fresh(i), start = g.yard;
       const r = resolvePlay(g, call, { types: [type], yards, tol: 0 }, { yards, inBounds: true }, 40);
       if (r.ev?.type !== type) continue;
-      hit++; assert.equal(r.ev.yards, yards, `${call}: ${r.ev.yards}`); assert.equal(g.yard, start + yards);
+      hit++; assert.equal(r.ev.yards, yards, `${call}: ${r.ev.yards}`); if (!r.ev.pen) assert.equal(g.yard, start + yards); else assert.ok(g.yard >= start + yards); // (a flag after the play, roughness or a face mask, tacks yards on: the spot is still where he went down)
     }
     assert.ok(hit >= 1, `${call}: no ${type} came up`);
   }

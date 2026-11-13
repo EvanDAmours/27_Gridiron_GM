@@ -2791,4 +2791,8 @@ export const PATCH_NOTES = [
     "A pass spirals now: the laces come round the ball as it flies (over the top, down the side, underneath and round the back), about six turns a second, and the nose follows the ball's arc, up as it leaves the quarterback's hand and down as it drops into the receiver's. A hurried throw wobbles.",
     "Kickoffs, punts and field goals tumble end over end, the nose tipping forward about twice a second all the way down the field.",
   ] },
+  { v: "7.11", date: "2026-11-13", title: "A timeout the second the play ends", notes: [
+    "When a play ends with the clock running, a TIMEOUT button now shows in the score strip right away, while the result is on the screen (and through an instant replay): tap it and the clock stops at the second it shows. You no longer have to watch it run down to the play cards before you can stop it. On a keyboard, T does the same.",
+    "The TIMEOUT AT WHISTLE button during the play (taken the moment the play ends) now shows from five minutes left in each half, not three. T calls it from the keyboard too.",
+  ] },
 ];
