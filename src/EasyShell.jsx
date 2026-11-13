@@ -15,6 +15,7 @@ import { sbName, sbNumber } from "./data/superbowls.js";
 import lombardiArt from "./assets/lombardi.webp";
 import { pixText, pixWidth } from "./arcade/pixfont.js";
 import { awardRaces } from "./awards.js";
+import { weekRecap } from "./weekRecap.js";
 import { OFF_PLANS, DEF_PLANS } from "./gamePlan.js";
 import { perSeason, OFFENSE as DEV_OFF, DEFENSE as DEV_DEF } from "./development.js";
 
@@ -314,6 +315,40 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
       {row("off", OFF_PLANS)}{row("def", DEF_PLANS)}
     </div>);
   };
+  // ---- the week in review (Home): your game and your best in it, the league's players of the week, the
+  // upset, the game of the week, the milestones (weekRecap.js). The last week played, or the last round. ----
+  const recapCard = () => {
+    let wkGames = null, title = "";
+    const rounds = (pb?.res || []).filter((r) => r.hs != null);
+    if (sp === "playoffs" && rounds.length) { const rd = Math.max(...rounds.map((r) => r.rd || 0)); wkGames = rounds.filter((r) => r.rd === rd); title = `${ROUND_NAMES[rd]} recap`; }
+    else if (sp === "regular") {
+      const reg = (sched || []).filter((g) => g.played && !/^P/.test(String(g.wk)) && g.hs != null);
+      const last = reg.length ? Math.max(...reg.map((g) => +g.wk || 0)) : 0;
+      if (last) { wkGames = reg.filter((g) => +g.wk === last); title = `Week ${last} recap`; }
+    }
+    const po = sp === "playoffs", r = wkGames && weekRecap(wkGames, teams, ui, { playoff: po });
+    const offLine = () => { if (!po) return `The ${T.name} were off this week.`; const seeded = [...(pb?.seeds?.AFC || []), ...(pb?.seeds?.NFC || [])].includes(ui); if (!seeded) return `The ${T.name} aren't in the playoffs.`; return (pb?.res || []).some((x) => (x.h === ui || x.a === ui) && x.w !== ui) ? `The ${T.name}' season is over.` : `The ${T.name} had the bye.`; };
+    if (!r) return null;
+    const who = (x, label) => { if (!x) return null; const p = teams[x.ti]?.roster?.find((q) => String(q.id) === String(x.id));
+      return <Row key={`${label}-${x.id}`} onClick={p ? () => openCard(p, x.ti) : undefined} style={{ gap: narrow ? 8 : 10, padding: "6px 4px", alignItems: "center" }}>
+        {label && <span style={{ ...PH, fontSize: 11, color: "#7a5600", background: "#ffe08a", padding: "2px 5px", flexShrink: 0 }}>{label}</span>}
+        {p ? <Face p={p} size={narrow ? 34 : 38} ti={x.ti} /> : <Logo ab={TEAMS[x.ti]?.ab} size={30} />}
+        <span style={{ flex: 1, minWidth: 0 }}><Name size={15} me={x.ti === ui}>{x.name}</Name><span style={{ ...SERIF, fontSize: 13, color: "#555", display: "block", lineHeight: 1.3 }}>{x.pos}{x.ti !== ui ? `, ${TEAMS[x.ti]?.name}` : ""}{x.line ? `: ${x.line}` : ""}</span></span>
+        {x.ti !== ui && <Logo ab={TEAMS[x.ti]?.ab} size={24} />}
+      </Row>; };
+    const nm = (i) => TEAMS[i]?.name, line = (g) => (g.as > g.hs ? `${nm(g.a)} ${g.as}, ${nm(g.h)} ${g.hs}` : `${nm(g.h)} ${g.hs}, ${nm(g.a)} ${g.as}`), /* (the winner first) */ box = (g) => (g.boxH || g.boxA ? () => setGameBox({ ...g, wk: g.rd ? ROUND_NAMES[g.rd] : g.wk }) : undefined);
+    const item = (key, tag, txt, onClick) => <div key={key} className={onClick ? "ez-click" : undefined} onClick={onClick} style={{ ...SERIF, fontSize: 15, lineHeight: 1.4, padding: "6px 4px", borderBottom: "2px solid #e4e4dc" }}><b style={{ ...PH, fontSize: 12, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: 0.4, marginRight: 6 }}>{tag}</b>{txt}</div>;
+    return (<div style={{ marginBottom: 18 }}>
+      <div style={{ marginBottom: 6, fontSize: 16 }}><Mark>{title}</Mark></div>
+      {r.mine ? gameRow(r.mine.wk == null ? { ...r.mine, wk: `P${r.mine.rd || ""}` } : r.mine, "recap-mine") : <div style={{ ...SERIF, fontSize: 15, padding: "6px 4px" }}>{offLine()}</div>}
+      {r.stars.length > 0 && <><div style={{ ...PH, fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 0.5, margin: "8px 4px 0" }}>Your best</div>{r.stars.map((x) => who(x))}</>}
+      {(r.potw.off || r.potw.def) && <><div style={{ ...PH, fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 0.5, margin: "10px 4px 0" }}>Players of the week</div>{who(r.potw.off, "OFF")}{who(r.potw.def, "DEF")}</>}
+      {(r.upset || r.gotw || r.milestones.length > 0) && <div style={{ ...PH, fontSize: 12, color: "#555", textTransform: "uppercase", letterSpacing: 0.5, margin: "10px 4px 0" }}>Around the league</div>}
+      {r.upset && item("upset", "Upset", `The ${nm(r.upset.w)} (${rec(teams[r.upset.w])}) beat the ${nm(r.upset.l)} (${rec(teams[r.upset.l])}): ${line(r.upset.g)}.`, box(r.upset.g))}
+      {r.gotw && item("gotw", "Game of the week", `${line(r.gotw)}${Math.abs(r.gotw.hs - r.gotw.as) <= 3 ? ", down to the wire" : ""}.`, box(r.gotw))}
+      {r.milestones.map((m, i) => item(`m${i}`, "Milestone", `${m.text}.`, (() => { const p = teams[m.ti]?.roster?.find((q) => String(q.id) === String(m.id)); return p ? () => openCard(p, m.ti) : undefined; })()))}
+    </div>);
+  };
   const home = () => {
     const opp = next ? TEAMS[next.h === ui ? next.a : next.h] : null, oppT = next ? teams[next.h === ui ? next.a : next.h] : null;
     const offseason = sp === "resign" || sp === "draft";
@@ -349,6 +384,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
             const txt = at >= 0 ? `If the season ended today, you'd be the ${ut.c}'s #${at + 1} seed${at === 0 ? " (and the bye)" : ""}.` : back > 0 ? `${back} game${back === 1 ? "" : "s"} out of the last playoff spot in the ${ut.c}.` : `Tied for the last playoff spot in the ${ut.c}.`;
             return <div className="ez-click" title={ownerGoal ? `The owner wants ${ownerGoal} wins` : undefined} onClick={() => { setView("playoffs"); setS("conf", ut.c); }} style={{ ...SERIF, fontSize: 15, marginTop: 12, padding: "6px 8px", background: at >= 0 ? "#e7f6ea" : "#f3f4f6", boxShadow: `inset 3px 0 0 ${at >= 0 ? "#22a447" : "#9ca3af"}` }}>{txt}{ownerGoal ? ` The owner wants ${ownerGoal} wins (you have ${ut.w || 0}).` : ""} <span style={{ ...PH, fontSize: 13, color: LINK }}>Playoff picture</span></div>;
           })()}
+          {narrow && <div style={{ marginTop: 16 }}>{recapCard()}</div>}
           {plan && planCard()}
           {trades && tradePanel()}
           {sp === "resign" && resignPanel()}
@@ -360,6 +396,7 @@ export default function EasyShell({ teams, TEAMS, ui, yr, wk, sp, sched, pb, log
           </div>}
         </div>
         <div>
+          {!narrow && recapCard()}
           <div style={{ marginBottom: 6, fontSize: 16 }}><Mark>Recent games</Mark></div>
           {games.length ? games.slice(0, narrow ? 3 : 4).map(gameRow) : <div style={{ ...SERIF, fontSize: 16, padding: "6px 2px" }}>No games played yet.</div>}
           <div style={{ margin: "16px 0 6px", fontSize: 16 }}><Mark>News</Mark></div>

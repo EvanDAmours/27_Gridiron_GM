@@ -2766,4 +2766,10 @@ export const PATCH_NOTES = [
     "Receivers, corners, linebackers and safeties are fitted to their spots as a group now, for every club: the game used to fill the spot with the single best fit first, which could strand the rest (a star a hair better in the slot took it, and a 73 started outside while a 76 sat). Now the combination with the most rating at the spots wins.",
     "On a phone, the Lineup page's Change buttons no longer run off the edge.",
   ] },
+  { v: "7.6", date: "2026-11-13", title: "Easy Mode: the week in review on Home", notes: [
+    "After every week, Easy Mode's Home has a recap of it (on a computer at the top of the right-hand column, on a phone right under the play buttons): your result, and your three best players in the game with their stat lines.",
+    "Players of the week across the league: the best offensive and defensive performance of the week, with the stat line and the club.",
+    "Around the league: the upset of the week (a club well under .500 for the season so far beating a winning one), the game of the week (the closest finish) and the season milestones passed that week, like a back going over 1,000 rushing yards or a pass rusher reaching 10 sacks (yours first, one line per kind of mark).",
+    "Tap any player for his card and any game for its box score. In the playoffs the recap covers the round just played.",
+  ] },
 ];
