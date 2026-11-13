@@ -2772,4 +2772,9 @@ export const PATCH_NOTES = [
     "Around the league: the upset of the week (a club well under .500 for the season so far beating a winning one), the game of the week (the closest finish) and the season milestones passed that week, like a back going over 1,000 rushing yards or a pass rusher reaching 10 sacks (yours first, one line per kind of mark).",
     "Tap any player for his card and any game for its box score. In the playoffs the recap covers the round just played.",
   ] },
+  { v: "7.7", date: "2026-11-13", title: "Every club runs like a real player on the arcade field", notes: [
+    "Defenders chasing a deep ball (and anyone else running without the ball) slid across the field frozen in one stride with a knee up when they played for the Cowboys, Chiefs, Raiders, Chargers, Broncos, Steelers, Ravens, Browns or Bengals, or for the Commanders in their road whites. Those clubs only had the older sprite set, whose run is two near-identical frames, so the legs never seemed to move.",
+    "Those nine clubs now have the full action set every other club has, home and road (76 frames each: the six-frame run, running across the field, backpedals, tackles, dives, catches, throws, celebrations), and the Commanders have their road whites. Everyone's legs turn over as they run, with or without the ball.",
+    "The new sets were made from the existing ones: every club's set is the same drawing in different colours, so each part of the drawing (helmet, jersey, sleeves, pants and their stripes, socks) is matched across the clubs and repainted in each club's own colours, with the shading kept.",
+  ] },
 ];
