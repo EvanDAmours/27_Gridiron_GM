@@ -925,6 +925,11 @@ function stepPlay(g, call, bonus = 1, pick = null) {
   const dPass = passDown && d.defPass?.[pkg];
   subBook(g, off, def, oSub ? [[oSub, o.spec.rb1]] : [], dPass ? dPass.subs : []);
   const dP = dPass || d.defBy?.[pkg] || d; // the defenders on the field this snap
+  // the arcade: who the field says made the play (the sack, the tackle, the pick, the breakup), by id. Given
+  // as null: nobody did (a pass that just fell, a runner who stepped out). Not given: the engine's own pick.
+  const told = (k) => pick != null && Object.prototype.hasOwnProperty.call(pick, k);
+  const fieldDef = (id) => (id == null ? null : [...(dP.tackleW || []), ...(d.defs || [])].map(([p]) => p).find((p) => p?.id === id) || (d.team?.roster || []).find((p) => p.id === id) || null);
+  const credit = (k, roll) => (told(k) ? fieldDef(pick[k]) : roll());
   const qb = o.qb;
   let yards = 0, desc = "", type = "", carrier = null, completed = false, clockStops = false;
   // The defense's call this snap (defStyle): more blitzes on third and long.
@@ -954,11 +959,11 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       const loss = Number.isFinite(pick?.sackLoss) ? Math.max(0, Math.round(pick.sackLoss)) : Math.round(5 + rand() * 5); // (the arcade: where he went down on the field)
       // Multi-sack games happen, but each sack a rusher already has makes the next one harder (he gets
       // chipped and doubled).
-      const rusher = pickW(rand, dP.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, w * 0.45 ** n * hotRusher(p)]; }));
+      const rusher = credit("sackBy", () => pickW(rand, dP.rushW.map(([p, w]) => { const n = g.box[def][p.id]?.sacks || 0; return [p, w * 0.45 ** n * hotRusher(p)]; })));
       ev._ol.sacked = true; ev._ol.rusher = rusher; gk.sacked = true; gk.rusher = rusher; ev.rusher = rusher;
       add(qbl, "sk", 1); add(qbl, "skYds", loss); st.sacks++;
       // About one sack in five is shared by two rushers: half a sack each.
-      const helper = rusher && rand() < 0.22 ? pickW(rand, dP.rushW.filter(([p]) => p !== rusher)) : null;
+      const helper = told("sackBy") ? null : rusher && rand() < 0.22 ? pickW(rand, dP.rushW.filter(([p]) => p !== rusher)) : null;
       if (rusher) { const rl = line(g, def, rusher); add(rl, "sacks", helper ? 0.5 : 1); add(rl, "qbH", 1); add(rl, "tkl", 1); }
       if (helper) { const hl = line(g, def, helper); add(hl, "sacks", 0.5); add(hl, "qbH", 1); gk.helper = helper; }
       yards = -loss; type = "sack"; desc = `${qb?.name || "QB"} is SACKED${rusher ? ` by ${rusher.name}` : ""} for a loss of ${loss}.`;
@@ -1006,7 +1011,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       ev.read = placed > 0 ? "open" : placed < 0 ? "forced" : null;
       const intP = clamp(plI + intShift(iq) + 0.024 - passE * 0.004 - mm * 0.0004 + (deep ? 0.012 : quick ? -0.006 : 0) + (screen ? -0.015 : 0) + (B ? 0.006 : V ? (deep ? 0.012 : 0.004) : 0) + (g.wxE?.int || 0), 0.006, 0.08);
       if (rand() < intP) {
-        const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW);
+        const db = credit("defBy", () => (cm && rand() < 0.5 ? cm : pickW(rand, dP.covW)));
         add(qbl, "passInt", 1); st.ints++;
         if (db) { add(line(g, def, db), "ints", 1); add(line(g, def, db), "pd", 1); }
         gk.int = true; gk.db = db; gradeBook(g, off, def, dP, gk, 0);
@@ -1033,7 +1038,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
         desc = `${qb?.name || "QB"} finds ${target?.name || "his receiver"} for ${yards}${matchupNote(cm, role, mm, yards, pkg)}.`;
       } else {
         type = "inc"; clockStops = true;
-        if (rand() < 0.3) { const db = cm && rand() < 0.5 ? cm : pickW(rand, dP.covW); if (db) add(line(g, def, db), "pd", 1); gk.pdBy = db; ev.db = db; desc = `${qb?.name || "QB"}'s pass for ${last(target)} is broken up${db ? ` by ${db.name}` : ""}.`; }
+        if (told("defBy") ? pick.defBy != null && fieldDef(pick.defBy) : rand() < 0.3) { const db = credit("defBy", () => (cm && rand() < 0.5 ? cm : pickW(rand, dP.covW))); if (db) add(line(g, def, db), "pd", 1); gk.pdBy = db; ev.db = db; desc = `${qb?.name || "QB"}'s pass for ${last(target)} is broken up${db ? ` by ${db.name}` : ""}.`; }
         else {
           // not broken up: dropped (hands decide it; about a fifth of incompletions, like the real
           // league's drop rate) or simply off target
@@ -1083,7 +1088,7 @@ function stepPlay(g, call, bonus = 1, pick = null) {
     type = "run";
     ev._ol = { run: true };
     desc = `${carrier?.name || "Runner"} ${keeper ? "keeps it" : outside ? "bounces outside" : edgeRun ? ["off left tackle", "off right tackle", "around left end", "around right end"][Math.floor(rand() * 4)] : ["up the middle", "inside", "up the middle"][Math.floor(rand() * 3)]} for ${yards}${edgeRun && !keeper && yards >= 9 && !sam && nb ? `, getting outside the nickel, ${last(nb)}` : edgeRun && !keeper && yards <= 0 && sam ? `, the SAM ${last(sam)} sets the edge` : !edgeRun && !keeper && yards <= 0 && mike ? `, ${last(mike)} fills the hole` : ""}.`;
-    if (yards < 0) { const t = pickW(rand, dP.tackleW); if (t) add(line(g, def, t), "tfl", 1); ev.tkl = t; }
+    if (yards < 0) { const t = credit("tackleBy", () => pickW(rand, dP.tackleW)); if (t) add(line(g, def, t), "tfl", 1); ev.tkl = t; }
   }
 
   ev.k = type === "fumble" ? "sack" : type; // what the play was before a fumble or a score renamed it
@@ -1108,12 +1113,14 @@ function stepPlay(g, call, bonus = 1, pick = null) {
       desc = type === "run" ? `${carrier?.name || "Runner"} runs it in from ${room} — TOUCHDOWN!` : `${qb?.name || "QB"} hits ${carrier?.name || "his receiver"} for a ${room}-yard TOUCHDOWN!`;
     } else if (pick?.fumble || rand() < ((type === "run" ? 0.0055 : 0.004) - Math.max(-0.002, Math.min(0.002, (type === "run" ? runE : passE) * 0.0006))) * (g.wxE?.fum || 1)) {
       add(cl, "fum", 1); st.fumLost++;
-      const t = pickW(rand, dP.tackleW); if (t) add(line(g, def, t), "ff", 1); ev.tkl = t;
+      const t = credit("tackleBy", () => pickW(rand, dP.tackleW)); if (t) add(line(g, def, t), "ff", 1); ev.tkl = t;
       if (gk) gk.fum = true;
       ev.turnover = true; type = "fumble"; desc += ` FUMBLE — the defense recovers!`;
     } else {
-      const t = pickW(rand, dP.tackleW);
-      if (t) { ev.tkl ||= t; add(line(g, def, t), "tkl", 1); if (rand() < 0.3) { const t2 = pickW(rand, dP.tackleW); if (t2 && t2 !== t) { add(line(g, def, t2), "ast", 1); if (ev.tkl === t) ev.ast = t2; } } }
+      // (the arcade: the man who brought him down, and a second man in on it if there was one; a runner who
+      // stepped out with nobody on him: no tackle)
+      const t = told("tackleBy") ? fieldDef(pick.tackleBy) : pickW(rand, dP.tackleW); // (a tackle for loss is a tackle too)
+      if (t) { ev.tkl ||= t; add(line(g, def, t), "tkl", 1); const t2 = told("tackleBy") ? fieldDef(pick.astBy) : rand() < 0.3 ? pickW(rand, dP.tackleW) : null; if (t2 && t2 !== t) { add(line(g, def, t2), "ast", 1); if (ev.tkl === t) ev.ast = t2; } }
       if (pick?.oob || (!pick?.inBounds && rand() < 0.14)) { clockStops = true; ev.oob = true; } // out of bounds (the arcade's runner: where he really went down)
     }
   }

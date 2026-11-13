@@ -2782,4 +2782,9 @@ export const PATCH_NOTES = [
     "Easy Mode has a real free agency. In the off-season's free agency the market runs a day at a time (four days): Home shows the day, your cap space, the three positions where your starters are thinnest against the league (tap one to shop it) and the offers you've made, leading or behind. Continue moves to the next day; Skip to the draft ends it.",
     "On the Free agents page each player shows how many clubs are after him and the day he decides. Offer him his asking price and he weighs it against the other clubs' on that day (you see whether yours is leading), or pay 20% over it and he signs on the spot. Players rated under 70 sign the first fair deal, and during the season you sign anyone at his asking price as before.",
   ] },
+  { v: "7.9", date: "2026-11-13", title: "Sacks, tackles, picks and breakups go to the man who made them", notes: [
+    "On the arcade field, the box score's defensive credits came from the game engine's own dice, not from what happened on the field: sack Arvell Reese's way to the quarterback with your linebacker and Shelby Harris could get the sack. Measured over about 1,500 plays, the man who made the tackle got the credit for it 8% of the time, and about one sack, pick or breakup in ten went to the right man.",
+    "Now every one of them goes to the man you saw make the play: the sack to the man who brought the quarterback down (all of it, no half sack for a helper who wasn't there), the tackle to the man who made it (and an assist to a second man who helped bring him down), a tackle for loss and a forced fumble to the man who hit him, the interception and the pass breakup to the defender who played the ball. A pass that just fell incomplete with nobody on it no longer hands someone a breakup.",
+    "Games you sim (and the computer's drives) are unchanged.",
+  ] },
 ];

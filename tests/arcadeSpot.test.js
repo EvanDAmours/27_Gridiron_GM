@@ -29,3 +29,39 @@ test("a sack is booked at the loss the field shows", () => {
   }
   assert.ok(hit >= 1, "no sack came up");
 });
+
+// ...and who made the play: the sack, the tackle (and the man who helped), the pick and the breakup go to
+// the defenders who made them on the field, not to whoever the engine's own dice picked
+import { lineups } from "../src/arcade/bridge.js";
+const defMan = (g, pos, k = 0) => lineups(g).def[pos][k];
+
+test("the sack, the tackle, the assist, the pick and the breakup are credited to the field's men", () => {
+  // the tackle (and an assist) on a run
+  { let hit = 0;
+    for (let i = 0; i < 20 && hit < 3; i++) {
+      const g = fresh(i), lb = defMan(g, "LB", 1), cb = defMan(g, "CB", 0);
+      const r = resolvePlay(g, "run_inside", { types: ["run"], yards: 4, tol: 0 }, { yards: 4, inBounds: true, tackleBy: lb.id, astBy: cb.id }, 30);
+      if (r.ev?.type !== "run") continue;
+      hit++; assert.equal(r.ev.tkl?.id, lb.id); assert.equal(r.ev.ast?.id, cb.id);
+    }
+    assert.ok(hit >= 1); }
+  // the sack (all his: no half sack for a helper the field didn't show)
+  { let hit = 0;
+    for (let i = 0; i < 40 && hit < 3; i++) {
+      const g = fresh(i), lb = defMan(g, "LB", 0);
+      const r = resolvePlay(g, "pass_deep", { types: ["sack"], yards: -6, tol: 0 }, { sackLoss: 6, sackBy: lb.id, defBy: null }, 60);
+      if (r.ev?.type !== "sack") continue;
+      hit++; assert.equal(r.ev.rusher?.id, lb.id);
+    }
+    assert.ok(hit >= 1); }
+  // the pick and the breakup: the man on the ball; a ball nobody touched: no breakup at all
+  { let ints = 0, pds = 0, none = 0;
+    for (let i = 0; i < 60 && (ints < 1 || pds < 2 || none < 2); i++) {
+      const g = fresh(i), s = defMan(g, "S", 1);
+      const r = resolvePlay(g, "pass_medium", { types: [i % 3 === 0 ? "int" : "inc"] }, { open: false, defBy: i % 3 === 2 ? null : s.id }, 60);
+      if (r.ev?.type === "int") { ints++; assert.equal(r.ev.db?.id, s.id); }
+      else if (r.ev?.type === "inc" && i % 3 === 2) { none++; assert.equal(r.ev.db ?? null, null); }
+      else if (r.ev?.type === "inc") { pds++; assert.equal(r.ev.db?.id, s.id); }
+    }
+    assert.ok(ints >= 1 && pds >= 1 && none >= 1, `${ints} ${pds} ${none}`); }
+});

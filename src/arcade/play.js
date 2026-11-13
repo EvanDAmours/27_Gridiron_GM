@@ -905,7 +905,7 @@ function arrive(S) {
   if (S.booked) { endAt(S, S.ev, "fall", 0.8); S.log.push("thrown away"); return; }
   // it came down past the sideline (the wind took it, or it sailed): nobody can catch it in bounds
   if (Math.abs(ball.y) > HALF + 0.2) {
-    const r = resolvePlay(S.g, S.call, { types: ["inc"], fallback: [] }, { target: S.pick?.target, open: false }, 10);
+    const r = resolvePlay(S.g, S.call, { types: ["inc"], fallback: [] }, { target: S.pick?.target, open: false, defBy: null }, 10);
     S.ev = r.ev; S.pick.oob = true; endAt(S, r.ev, "fall", 0.8); S.log.push("out of bounds"); return;
   }
   S.pick = { ...S.pick, err: +dR.toFixed(1), def: +dD.toFixed(1), defKey: d?.key, defCover: d && tgt ? S.cover[f.target] === d.key : null };
@@ -940,7 +940,7 @@ function arrive(S) {
     // a lofted ball hangs for him; one he beat the receiver to is his to lose
     const pInt = clamp(0.03 + (ballSk - 70) * 0.006 + (f.bullet ? 0 : 0.07) + (deepLob ? 0.07 : 0) + (f.tipped ? 0.08 : 0) + (dD < dR ? 0.07 : 0) - (dD > 1 ? 0.04 : 0) - dOff(S, "catch") * 0.4, 0.02, 0.55);
     want = { types: rnd(S) < pInt ? ["int"] : ["inc"], fallback: ["inc"] }; S.pick.open = false;
-    const r = resolvePlay(S.g, S.call, want, { target: S.pick.target, open: false }, want.types[0] === "int" ? 60 : 10); // a pick is rare in the engine: give it the rolls to find one
+    const r = resolvePlay(S.g, S.call, want, { target: S.pick.target, open: false, defBy: d.p?.id ?? null }, want.types[0] === "int" ? 60 : 10); // a pick is rare in the engine: give it the rolls to find one // (the pick, or the breakup, to the man who made it)
     S.ev = r.ev; S.mismatch = r.ev && !["int", "inc", "penalty"].includes(r.ev.type);
     if (r.ev?.type === "int") {
       ball.x = d.x; ball.y = d.y; ball.holder = d.key; d.mode = "carry"; S.pickAt = S.t; S.phase = "carry"; S.log.push("picked");
@@ -953,7 +953,7 @@ function arrive(S) {
   }
   // it falls incomplete (the engine's call stays "inc"; a flag is accepted)
   S.pick.open = tgt ? open : false;
-  const r = resolvePlay(S.g, S.call, { types: ["inc"] }, { target: S.pick.target, open: false }, 16);
+  const r = resolvePlay(S.g, S.call, { types: ["inc"] }, { target: S.pick.target, open: false, defBy: null }, 16); // (nobody touched it: no breakup to credit)
   S.ev = r.ev; S.mismatch = r.ev && !["inc", "penalty"].includes(r.ev.type); endAt(S, r.ev, "fall", 0.8); S.log.push("incomplete");
 }
 
@@ -961,7 +961,7 @@ function arrive(S) {
 function handoff(S) { S.handAt = S.t; const rb = S.ents.RB; rb.acc *= clamp(1 + K.edge(K.burst(rb.p)) * 0.008, 0.8, 1.25); S.ball.holder = "RB"; rb.mode = "carry"; S.ents.QB.mode = "watch"; S.phase = "carry"; S.steer = S.steer ?? null; }
 function sack(S, d) {
   const { ents } = S, qb = ents.QB, loss = Math.round(S.los - qb.x);
-  const r = resolvePlay(S.g, S.call, { types: ["sack", "fumble"], fallback: ["inc"], yards: -loss, tol: 0 }, { sackLoss: loss }, 16); // (the loss the field shows)
+  const r = resolvePlay(S.g, S.call, { types: ["sack", "fumble"], fallback: ["inc"], yards: -loss, tol: 0 }, { sackLoss: loss, defBy: null, ...(d?.side === "def" && d.p ? { sackBy: d.p.id } : {}) }, 16); // (the loss the field shows; the sack to the man who got him)
   S.ev = r.ev; S.booked = true; S.mismatch = r.ev && !["sack", "fumble", "inc", "penalty"].includes(r.ev.type);
   if (r.ev && r.ev.type === "inc") {
     // the engine has him getting rid of it: a wobbler thrown away as he's hit, falling incomplete
@@ -1059,7 +1059,7 @@ function recover(S, e, oob = false) {
   if (e.side === "def" && !oob) {
     // the defense has it: the engine books the fumble, lost where it was recovered
     S.log.push(`${e.p.name} recovers`); S.fumNote = `RECOVERED BY ${String(e.p.name || "").toUpperCase()}`;
-    const r = resolvePlay(S.g, S.call, { types: ["fumble"], fallback: [] }, { fumble: true, fumYards: spot, ...(S.call.startsWith("pass") ? { target: S.pick?.target, open: true } : { carrier: S.ents.RB?.p?.id }), inBounds: true }, 60);
+    const r = resolvePlay(S.g, S.call, { types: ["fumble"], fallback: [] }, { fumble: true, fumYards: spot, ...(S.call.startsWith("pass") ? { target: S.pick?.target, open: true } : { carrier: S.ents.RB?.p?.id }), inBounds: true, tackleBy: S.tackler?.side === "def" ? S.tackler.p?.id ?? null : null }, 60); // (forced by the man who hit him)
     S.ev = r.ev; S.mismatch = r.ev && r.ev.type !== "fumble";
     S.tackler = null; endAt(S, r.ev, "fall", 1.6); return;
   }
@@ -1124,6 +1124,16 @@ export function lunge(S) {
 }
 function outOfBounds(S) { const c = S.ents[S.ball.holder]; S.oob = true; S.log.push("out of bounds"); book(S, Math.round(c.x - S.los), "fall"); }
 function score(S) { book(S, 100 - S.los, "fall", 1.5); }
+// Who brought him down, for the box score: the man who made the tackle; a runner who dove, slid or was
+// pushed out with nobody wrapped up on him, the nearest defender if one was right there; nobody, if he
+// went down untouched (the engine used to roll its own tackler, so the credit could go to anyone).
+function tackledBy(S, c) {
+  if (S.tackler?.side === "def") return S.tackler.p?.id ?? null;
+  if (!c) return null;
+  let best = null, bd = 2.2;
+  for (const e of Object.values(S.ents)) if (e.side === "def" && e.p) { const dd = hyp(e.x - c.x, e.y - c.y); if (dd < bd) { bd = dd; best = e; } }
+  return best?.p?.id ?? null;
+}
 function book(S, yards, how, hold = 1.0) {
   // (a catch or run into the end zone is a completion or run of `room` yards: the engine caps it there and calls it the touchdown)
   const isPass = S.call.startsWith("pass"), td = S.los + yards >= 100;
@@ -1132,7 +1142,7 @@ function book(S, yards, how, hold = 1.0) {
   const types = td ? ["td"] : isPass ? ["pass"] : ["run"];
   if (!td) yards = Math.min(yards, 99 - S.los);
   const tol = td ? 0 : Math.max(1, Math.round(Math.abs(yards) * 0.1));
-  const r = resolvePlay(S.g, S.call, { types, yards, tol, fallback: isPass && S.catchAt == null ? ["inc"] : [] }, { ...(isPass ? { target: S.pick?.target, open: !!S.pick?.open } : { carrier: S.ents.RB?.p?.id }), oob: !!S.oob, inBounds: !S.oob, yards: td ? 100 - S.los : yards }, isPass && S.catchAt != null ? 40 : td ? 30 : 12); // (yards: the engine books the spot the field shows, so the ball is spotted where he went down) // (out of bounds or down in the field of play: as it happened here, so the clock does what it should) // (a ball that was caught gets the rolls it needs to be booked a catch)
+  const r = resolvePlay(S.g, S.call, { types, yards, tol, fallback: isPass && S.catchAt == null ? ["inc"] : [] }, { ...(isPass ? { target: S.pick?.target, open: !!S.pick?.open } : { carrier: S.ents.RB?.p?.id }), oob: !!S.oob, inBounds: !S.oob, yards: td ? 100 - S.los : yards, tackleBy: td ? null : tackledBy(S, S.ents[S.ball.holder]), astBy: !td && S.assist?.side === "def" ? S.assist.p?.id ?? null : null }, isPass && S.catchAt != null ? 40 : td ? 30 : 12); // (yards: the engine books the spot the field shows, so the ball is spotted where he went down) // (out of bounds or down in the field of play: as it happened here, so the clock does what it should) // (a ball that was caught gets the rolls it needs to be booked a catch)
   S.ev = r.ev; S.exact = r.exact; S.mismatch = r.ev && !types.includes(r.ev.type) && r.ev.type !== "penalty";
   // the field follows the engine's number when it differs (a yard or two): the spot moves with it
   if (r.ev && (r.ev.type === "pass" || r.ev.type === "run" || r.ev.type === "td") && r.ev.yards !== yards && Math.abs(r.ev.yards - yards) <= 3) S.slideTo = S.los + r.ev.yards;
