@@ -14,7 +14,8 @@ function offlineList() {
     configResolved(c) { outDir = c.build.outDir; },
     closeBundle() {
       const root = join(process.cwd(), outDir);
-      const skip = /^(players|sprites|rosters)\//;
+      // retro/ (the Retro Bowl build, about 6 MB) is saved as it is played instead
+      const skip = /^(players|sprites|rosters|retro)\//;
       const files = [];
       const walk = (dir) => { for (const f of readdirSync(dir)) { const p = join(dir, f); if (statSync(p).isDirectory()) walk(p); else files.push(relative(root, p).split("\\").join("/")); } };
       walk(root);
