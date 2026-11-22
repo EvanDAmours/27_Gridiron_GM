@@ -72,11 +72,15 @@ const TURNS = { pass: 6, kick: 2.2 }; // (turns a second: a tight spiral; a kick
 export function makeCamera(W, H, { span = 66, mirror = false } = {}) {
   // the whole width of the field fits under the scoreboard, and no more than ~40 yards show across
   const hud = Math.max(2, Math.round(Math.min(W / 380, H / 215))) * 11;
-  const s = Math.min(H > W ? W / 34 : W / span, (H - hud - 8) / (53.3 * SQUASH + 1.4)); // ~66 yards across a wide screen, ~34 upright (a phone held upright: closer in, so the players fill it)
+  // A phone held upright looks down on the field more steeply (sq: a yard across the field is more of the screen),
+  // so the field fills the screen instead of the stands, and shows more of it: ~46 yards across, where it used to
+  // be 34 (the receivers downfield are on the screen). A wide screen: ~66 yards across, the usual tilt.
+  const tall = H > W, sq = tall ? 0.62 : SQUASH;
+  const s = Math.min(tall ? W / 46 : W / span, (H - hud - 8) / (53.3 * sq + 1.4));
   // the field sits low on a wide screen (stands above it) and in the middle of a tall one
-  const depth = 53.3 * SQUASH * s, room = H - hud - depth - s * 1.2, top = hud + (H > W ? room * 0.5 : Math.min(room, s * 4.5)) + s * 0.2;
+  const depth = 53.3 * sq * s, room = H - hud - depth - s * 1.2, top = hud + (H > W ? room * 0.5 : Math.min(room, s * 4.5)) + s * 0.2;
   const fx = mirror ? -1 : 1;
-  return { W, H, s, depth, top, camX: 50, lead: 5, fx, toScreen(x, y) { const u = W * 0.42 + (x - this.camX) * s; return [fx > 0 ? u : W - u, top + (y + HALF) * SQUASH * s]; }, toField(px, py) { const u = fx > 0 ? px : W - px; return { x: this.camX + (u - W * 0.42) / s, y: (py - top) / (SQUASH * s) - HALF }; } };
+  return { W, H, s, sq, depth, top, camX: 50, lead: 5, fx, toScreen(x, y) { const u = W * 0.42 + (x - this.camX) * s; return [fx > 0 ? u : W - u, top + (y + HALF) * sq * s]; }, toField(px, py) { const u = fx > 0 ? px : W - px; return { x: this.camX + (u - W * 0.42) / s, y: (py - top) / (sq * s) - HALF }; } };
 }
 
 // ---- drawing ----
@@ -186,19 +190,19 @@ function pixLogo(ab, res = 30, worn = true) { // (worn: scuffed like paint on gr
 }
 function paintField(ctx, cam, teams, yardAt, sb = null) {
   const { W, s, top, depth } = cam, cy = top + depth / 2;
-  const flat = (x, y, fn) => { ctx.save(); ctx.translate(x, y); ctx.scale(1, SQUASH); fn(); ctx.restore(); };
+  const flat = (x, y, fn) => { ctx.save(); ctx.translate(x, y); ctx.scale(1, cam.sq ?? SQUASH); fn(); ctx.restore(); };
   const A = ctx.globalAlpha; // (a second, faint coat over the snow comes through here at a lower alpha)
   const logoAt = (ab, x, y, size, alpha, rot = 0) => { const pl = pixLogo(ab); if (!pl) return; flat(x, y, () => { ctx.rotate(rot); ctx.globalAlpha = A * alpha; const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; ctx.drawImage(pl, -size / 2, -size / 2, size, size); ctx.imageSmoothingEnabled = sm; ctx.globalAlpha = A; }); };
   // midfield: the home club's logo
   const home = HOME_OF(teams), mx = yardAt(50);
-  if (sb && mx > -s * 14 && mx < W + s * 14) { const num = String(sb).replace(/^SUPER BOWL\s*/i, "") || "SB", wm = wordmark(num, "#d4a72c", "#7a5a10"); if (wm) { ctx.save(); ctx.translate(mx, cy); ctx.scale(1, SQUASH); const sc = (s * 6) / WM_SIZE; ctx.scale(sc, sc); ctx.globalAlpha = A * 0.85; const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; ctx.drawImage(wm.cv, -wm.cv.width / 2, -wm.cv.height / 2); ctx.imageSmoothingEnabled = sm; ctx.restore(); } }
+  if (sb && mx > -s * 14 && mx < W + s * 14) { const num = String(sb).replace(/^SUPER BOWL\s*/i, "") || "SB", wm = wordmark(num, "#d4a72c", "#7a5a10"); if (wm) { ctx.save(); ctx.translate(mx, cy); ctx.scale(1, cam.sq ?? SQUASH); const sc = (s * 6) / WM_SIZE; ctx.scale(sc, sc); ctx.globalAlpha = A * 0.85; const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; ctx.drawImage(wm.cv, -wm.cv.width / 2, -wm.cv.height / 2); ctx.imageSmoothingEnabled = sm; ctx.restore(); } }
   else if (home?.ab && mx > -s * 12 && mx < W + s * 12) logoAt(home.ab, mx, cy, s * 11, 0.28);
   for (const [yd, t, rot] of [[-5, teams.user, -Math.PI / 2], [105, teams.opp, Math.PI / 2]]) {
     const x = yardAt(yd); if (x < -s * 8 || x > W + s * 8 || !t) continue;
     // the wordmark: the club's name across the width of the field, heavy italic in its colour with a
     // white outline, drawn small and blown up so it comes out in chunky pixels like the rest of the field
     const name = String(t.name || t.ab || "").toUpperCase(), len = 53.3 * 0.7 * s, fs = s * 4.6, wm = wordmark(name, t.clr, t.ac);
-    if (wm) flat(x, cy / SQUASH * SQUASH, () => {
+    if (wm) flat(x, cy, () => {
       ctx.rotate(rot); const sc = fs / WM_SIZE, k = Math.min(1.6, len / (wm.w * sc));
       ctx.scale(k * sc, sc); const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; ctx.globalAlpha = A * 0.9;
       ctx.drawImage(wm.cv, -wm.cv.width / 2, -wm.cv.height / 2); ctx.imageSmoothingEnabled = sm; ctx.globalAlpha = A;
@@ -544,7 +548,10 @@ export function drawWxChip(ctx, cam, wx, wind) {
   const ax = Math.abs(wind?.x || 0), ay = Math.abs(wind?.y || 0), wh = (wind?.x || 0) * (cam.fx || 1) > 0 ? ">" : "<", wv = wind?.y < 0 ? "^" : "V";
   const arrow = !wind?.mph ? "" : ax > ay * 2.2 ? ` ${wh}` : ay > ax * 2.2 ? ` ${wv}` : ` ${wv}${wh}`;
   const text = [sky, wind?.mph ? `WIND ${wind.mph}${arrow}` : ""].filter(Boolean).join(" - "); if (!text) return;
-  const w = pixWidth(text, px) + px * 6, h = px * 10, x = px * 3, y = Math.round(uiPx(cam) * 20.5); // (under the scorebug's two rows)
+  // under the scorebug's two rows; on a narrow screen (a phone held upright) the down-and-distance banner under the
+  // scorebug runs nearly edge to edge, so the chip goes just below it instead of under it
+  const hp = hudPx(cam), downBottom = (hp * 7 + hp * 2 * 2 + Math.max(1, Math.round(hp * 0.7)) * 7 + hp * 2) + hp * 7 + hp * 2 + hp;
+  const w = pixWidth(text, px) + px * 6, h = px * 10, x = px * 3, y = cam.W < 700 ? Math.round(downBottom + hp * 2) : Math.round(uiPx(cam) * 20.5);
   ctx.fillStyle = "rgba(8,10,16,.75)"; ctx.fillRect(x, y, w, h); pixText(ctx, text, x + px * 3, y + px * 2, px, "#cfe8ff");
 }
 
@@ -943,7 +950,7 @@ function paintGround(ctx, cam, teams, opts, { apron, apronTop, nearEdge, wallTop
   { const pn = Math.max(2, Math.round(s * 0.34)), col = "rgba(236,238,220,.9)";
     for (let i = 0; i < 9; i++) { const yd = 10 + i * 10, x = yardAt(yd); if (x < -60 || x > W + 60) continue; const n = String(yd > 50 ? 100 - yd : yd), dir = yd < 50 ? -1 : yd > 50 ? 1 : 0, w = pixWidth(n, pn);
       for (const [yy, flip] of [[-HALF + 7.5, true], [HALF - 7.5, false]]) { const [, y] = cam.toScreen(0, yy);
-        ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(1, SQUASH * 1.5); if (flip) ctx.rotate(Math.PI);
+        ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(1, (cam.sq ?? SQUASH) * 1.5); if (flip) ctx.rotate(Math.PI);
         pixText(ctx, n, 0, -Math.round(3.5 * pn), pn, col, "center", FIELD_GL);
         if (dir) { const d = (flip ? -dir : dir) * (cam.fx || 1), ax = Math.round(d * (w / 2 + pn * 2.2)); ctx.fillStyle = col; for (let c = 0; c < 3; c++) { const h = (3 - c) * 2 - 1; ctx.fillRect(ax + d * c * pn - (d < 0 ? 0 : 0), Math.round(-h * pn / 2), pn, h * pn); } }
         ctx.restore(); } } }
@@ -953,7 +960,7 @@ function groundLayer(ctx, cam, teams, opts, geo, yardAt) {
   const y0 = Math.floor(geo.wallTop - 2), y1 = Math.ceil(geo.nearEdge + s * 0.5 + 2), Wc = Math.ceil(GROUND_YDS * s);
   const ready = (ab) => { const im = ab && logo(ab); return im && im.complete && im.naturalWidth ? 1 : 0; };
   const gk = WX.snow ? (WX.snow === 2 ? "heavySnow" : "lightSnow") : WX.rain ? (WX.rain === 2 ? "heavyRain" : "lightRain") : null, gimg = gk && groundImg(gk);
-  const key = [cam.W, H, s, top, dpr, cam.fx || 1, teams.user?.ab, teams.user?.clr, teams.opp?.ab, teams.opp?.clr, HOME_OF(teams)?.ab, opts.sb || "", WX.rain || 0, WX.snow || 0, ready(teams.user?.ab), ready(teams.opp?.ab), ready(HOME_OF(teams)?.ab), gimg ? (gimg.complete && gimg.naturalWidth ? 1 : 0) : 2].join("|");
+  const key = [cam.W, H, s, cam.sq, top, dpr, cam.fx || 1, teams.user?.ab, teams.user?.clr, teams.opp?.ab, teams.opp?.clr, HOME_OF(teams)?.ab, opts.sb || "", WX.rain || 0, WX.snow || 0, ready(teams.user?.ab), ready(teams.opp?.ab), ready(HOME_OF(teams)?.ab), gimg ? (gimg.complete && gimg.naturalWidth ? 1 : 0) : 2].join("|");
   const mk = (w, h) => (typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(w, h) : typeof document !== "undefined" && document.createElement ? Object.assign(document.createElement("canvas"), { width: w, height: h }) : null);
   let gc = groundCache.get(key);
   if (!gc) {
@@ -962,7 +969,7 @@ function groundLayer(ctx, cam, teams, opts, geo, yardAt) {
     c.setTransform(dpr, 0, 0, dpr, 0, -y0 * dpr); c.imageSmoothingEnabled = false;
     const c0 = GROUND_X0 + (Wc * 0.42) / s;
     // (painted the same way round as the field it's laid on, so its words and logos still read the right way)
-    const fc = { ...cam, W: Wc, camX: c0, toScreen(x, y) { const u = Wc * 0.42 + (x - c0) * s; return [(cam.fx || 1) > 0 ? u : Wc - u, top + (y + HALF) * SQUASH * s]; } };
+    const fc = { ...cam, W: Wc, camX: c0, toScreen(x, y) { const u = Wc * 0.42 + (x - c0) * s; return [(cam.fx || 1) > 0 ? u : Wc - u, top + (y + HALF) * (cam.sq ?? SQUASH) * s]; } };
     paintGround(c, fc, teams, opts, geo); perfStats.groundBuilds++;
     gc = { cv, y0, y1, Wc }; groundCache.set(key, gc); if (groundCache.size > 4) groundCache.delete(groundCache.keys().next().value);
   }
@@ -975,7 +982,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
   // the stands: tiers of fans above the far sideline (and below the near one on a tall screen)
   ctx.fillStyle = "#121620"; ctx.fillRect(0, 0, W, H);
   // the team areas: a strip of turf along each sideline (about three yards), then the wall, then the stands
-  const apron = 3 * SQUASH * s, apronTop = top - apron, px = Math.max(2, Math.round(s * 0.18)), nearEdge = top + depth + apron + s * 0.1, wallTop = apronTop - s * 0.45;
+  const apron = 3 * (cam.sq ?? SQUASH) * s, apronTop = top - apron, px = Math.max(2, Math.round(s * 0.18)), nearEdge = top + depth + apron + s * 0.1, wallTop = apronTop - s * 0.45;
   const time = opts.time || 0, hype = opts.hype || 0;
   // calm until something happens; then the crowd is up, arms in the air, bouncing
   const cheer = hype > 0.15 ? 1 + (Math.floor(time * 8) % 2) : 0;
@@ -1035,9 +1042,9 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
     { const fx_ = on2 ? p2.face : face1; if (fx_ != null && fx_ !== e._face) { e._face = fx_; e._turn = 0; } } // (a frame drawn with its own facing, a backpedal or a throw, is the way he's facing from then on)
     if (poseProbe.cb) poseProbe.cb(S, e, { pose, act, p2: on2 ? p2.n : null, facing: on2 ? p2.face ?? facing : f1, team: t, ok });
     if (!ok) { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.fillStyle = t.clr; ctx.fillRect(sx - s * 0.5, sy - s * 2.2, s, s * 2.2); }
-    if (S.userDef === e.key && S.phase !== "done") { const [sx, sy] = cam.toScreen(e.x, e.y), lw = Math.max(2, Math.round(s * 0.14)); ctx.strokeStyle = "#ffd166"; ctx.lineWidth = lw; ctx.beginPath(); ctx.ellipse(sx, sy, s * 1.25, s * 1.25 * SQUASH, 0, 0, Math.PI * 2); ctx.stroke(); // the man you're playing on defense: a gold ring, and a marker over his head
+    if (S.userDef === e.key && S.phase !== "done") { const [sx, sy] = cam.toScreen(e.x, e.y), lw = Math.max(2, Math.round(s * 0.14)); ctx.strokeStyle = "#ffd166"; ctx.lineWidth = lw; ctx.beginPath(); ctx.ellipse(sx, sy, s * 1.25, s * 1.25 * (cam.sq ?? SQUASH), 0, 0, Math.PI * 2); ctx.stroke(); // the man you're playing on defense: a gold ring, and a marker over his head
       const ay = Math.round(sy - PLAYER_H * s * 0.95 - s * 0.6), u = Math.max(2, Math.round(s * 0.22)); ctx.fillStyle = "#ffd166"; ctx.fillRect(Math.round(sx - u * 1.5), ay, u * 3, u); ctx.fillRect(Math.round(sx - u / 2), ay + u, u, u); }
-    if (opts.ring && S.ball.holder === e.key && S.phase !== "presnap") { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, s * 0.08); ctx.beginPath(); ctx.ellipse(sx, sy, s * 1.1, s * 1.1 * SQUASH, 0, 0, Math.PI * 2); ctx.stroke(); }
+    if (opts.ring && S.ball.holder === e.key && S.phase !== "presnap") { const [sx, sy] = cam.toScreen(e.x, e.y); ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(1, s * 0.08); ctx.beginPath(); ctx.ellipse(sx, sy, s * 1.1, s * 1.1 * (cam.sq ?? SQUASH), 0, 0, Math.PI * 2); ctx.stroke(); }
   }
   if (!refDrawn) sceneSprite(ctx, cam, null, false, ref.pose, ref.x, ref.y, ref.face, 0.95);
   drawSidelines(ctx, cam, teams, { ...sideOpts, side: "near" });
@@ -1097,7 +1104,7 @@ export function drawRetro(ctx, cam, S, teams, g, opts = {}) {
 }
 
 // ---- the aim ----
-export const KIND_COLOR = { bullet: "#7fe3ff", lob: "#ffd166" };
+export const KIND_COLOR = { auto: "#9be29b", bullet: "#7fe3ff", lob: "#ffd166" };
 function drawAim(ctx, cam, S, kind) {
   const { s } = cam, qb = S.ents.QB, plan = passPlan(S, S.aim, kind), col = KIND_COLOR[plan.kind];
   const [qx, qy] = cam.toScreen(qb.x, qb.y), [ax, ay] = cam.toScreen(plan.land.x, plan.land.y), hand = PLAYER_H * s * 0.62;
@@ -1112,7 +1119,7 @@ function drawAim(ctx, cam, S, kind) {
   }
   // the landing spot: a ring sized to how far a throw like this tends to drift
   const r = s * (plan.bullet ? 0.9 : 1.3) * (0.7 + plan.dist / 40);
-  ctx.strokeStyle = col; ctx.lineWidth = Math.max(2, s * 0.12); ctx.beginPath(); ctx.ellipse(ax, ay, r, r * 0.42, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = col; ctx.lineWidth = Math.max(2, s * 0.12); ctx.beginPath(); ctx.ellipse(ax, ay, r, r * (cam.sq ?? SQUASH), 0, 0, Math.PI * 2); ctx.stroke();
   ctx.globalAlpha = 0.25; ctx.fillStyle = col; ctx.fill(); ctx.globalAlpha = 1;
   ctx.fillStyle = col; ctx.fillRect(Math.round(ax - 2), Math.round(ay - 2), 4, 4);
   // the label: BULLET or LOB (AUTO when the game picked it), and a warning when he can't reach it
@@ -1171,7 +1178,12 @@ export function drawHud(ctx, cam, sit, teams, { ot, to, out = null } = {}) {
 const shade = (hex, k) => { const n = parseInt(String(hex).replace("#", "").padEnd(6, "0").slice(0, 6), 16); const f = (c) => Math.max(0, Math.min(255, Math.round(c + (k < 0 ? c * k : (255 - c) * k)))); return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`; };
 
 export function drawDownBox(ctx, cam, text, color = "#fff", { left = false } = {}) {
-  const px = hudPx(cam), h = px * 7, pad = px * 2, bar = left ? pad : h + pad * 2 + Math.max(1, Math.round(px * 0.7)) * 7 + px * 2; // (under the scorebug)
+  const P0 = hudPx(cam), bar0 = left ? P0 * 2 : P0 * 7 + P0 * 4 + Math.max(1, Math.round(P0 * 0.7)) * 7 + P0 * 2; // (under the scorebug)
+  // a long call on a narrow screen (a phone held upright): smaller letters, so it all fits, never cut off at the edges
+  // (on a narrow screen it keeps clear of the pause button in the top right corner, and stays centred)
+  const room = cam.W < 700 && !left ? cam.W - 2 * 60 : cam.W - 8;
+  let px = P0; while (px > 1 && pixWidth(text, px) + px * 6 > room) px--;
+  const h = px * 7, pad = px * 2, bar = bar0 + Math.round((P0 - px) * 3.5);
   const w = pixWidth(text, px) + pad * 3, W = left ? w + pad * 4 : cam.W; // (at the left: its box starts a little in from the edge)
   ctx.fillStyle = "#0b0e14"; ctx.fillRect(Math.round(W / 2 - w / 2), bar - px, Math.round(w), h + pad + px);
   ctx.fillStyle = "#1c2433"; ctx.fillRect(Math.round(W / 2 - w / 2), bar + h + pad - px, Math.round(w), px);

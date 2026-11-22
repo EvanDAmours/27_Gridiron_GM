@@ -2795,4 +2795,9 @@ export const PATCH_NOTES = [
     "When a play ends with the clock running, a TIMEOUT button now shows in the score strip right away, while the result is on the screen (and through an instant replay): tap it and the clock stops at the second it shows. You no longer have to watch it run down to the play cards before you can stop it. On a keyboard, T does the same.",
     "The TIMEOUT AT WHISTLE button during the play (taken the moment the play ends) now shows from five minutes left in each half, not three. T calls it from the keyboard too.",
   ] },
+  { v: "7.12", date: "2026-11-22", title: "Retro Bowl-style throws, and a wider view on a phone held upright", notes: [
+    "Throws fly the way they do in Retro Bowl: a NORMAL pass is the default now, and it floats on an arc you can see (a quick throw underneath lofts a little over the line, a throw downfield is a touch pass that climbs and drops in), BULLET is the low, fast rope, and LOB climbs high and hangs (on a long throw it rises well over the players' heads, about six and a half yards up, where it used to top out at four). The switch over the field is NORMAL / BULLET / LOB (Q cycles it on a keyboard), and everyone starts on NORMAL. How often a pass is caught, tipped or picked hasn't changed: only the flight you see.",
+    "On a phone held upright the field is zoomed out: about 46 yards across where it was 34, so the receivers downfield are on the screen, and the camera looks down on it more steeply, so the field fills the screen instead of the stands. Turned sideways it's as before (about 66 yards across). Your swipes and taps follow the new view.",
+    "On a phone held upright, the down-and-distance banner under the scoreboard is never cut off at the screen's edges or hidden behind the pause button (a long call is set in smaller letters), and the weather line sits just below it instead of underneath it.",
+  ] },
 ];

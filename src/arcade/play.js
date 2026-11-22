@@ -691,7 +691,8 @@ export function tick(S, dt) {
         // (an underneath zone man is reading the quarterback, facing the throw: a ball through his area, like a slant
         // into the hooks, he gets a hand on far more often than a cover man turned to run)
         const zu = S.zone?.[d.key] && !S.zone[d.key].deep;
-        if (ball.h < 1.0 && S.t - f.t0 < f.T * 0.8 && hyp(d.x - f.to.x, d.y - f.to.y) > 1.8 && hyp(d.x - ball.x, d.y - ball.y) < (zu ? 1.05 : 0.55) + (K.ballSkills(d.p) - 70) * 0.006 && !(f.tried ||= {})[d.key] && (f.tried[d.key] = true) && rnd(S) < clamp((zu ? 0.42 : 0.3) + (K.ballSkills(d.p) - 70) * 0.01, 0.12, 0.6)) { f.tipped = true; f.to = { x: ball.x, y: ball.y }; f.T = S.t - f.t0; S.log.push("in the lane"); break; }
+        const uu = clamp((S.t - f.t0) / f.T, 0, 1), inLane = (f.lane ?? f.arc) * 4 * uu * (1 - uu); // (its height for a man in its path)
+        if (inLane < 1.0 && S.t - f.t0 < f.T * 0.8 && hyp(d.x - f.to.x, d.y - f.to.y) > 1.8 && hyp(d.x - ball.x, d.y - ball.y) < (zu ? 1.05 : 0.55) + (K.ballSkills(d.p) - 70) * 0.006 && !(f.tried ||= {})[d.key] && (f.tried[d.key] = true) && rnd(S) < clamp((zu ? 0.42 : 0.3) + (K.ballSkills(d.p) - 70) * 0.01, 0.12, 0.6)) { f.tipped = true; f.to = { x: ball.x, y: ball.y }; f.T = S.t - f.t0; S.log.push("in the lane"); break; }
       }
     }
     const u = clamp((S.t - f.t0) / f.T, 0, 1);
@@ -845,12 +846,17 @@ export function passPlan(S, P, kind = "auto") {
   const bullet = kind === "bullet" || (kind === "auto" && land.x - S.los < BULLET_RANGE && dist < BULLET_MAX); // AUTO: a rope underneath, touch over the top
   const vel = bullet ? 27 + (arm - 70) * 0.2 : 22 + (arm - 70) * 0.15 - (dist < 12 ? 3 : 0); // yards a second (a short lob floats)
   const T = clamp(dist / vel, 0.22, 2.0);
-  const arc = bullet ? clamp(10.7 * T * T / 8, 0.15, 3) : clamp(dist / 12, 1.4, 4); // a bullet still has to climb over the middle (g*T^2/8, in yards)
+  // how high it flies (in yards), like Retro Bowl's throws: every pass climbs and comes down on an arc you can see.
+  // A bullet you chose stays low and flat; AUTO's quick throw underneath floats a little over the line (the
+  // way a normal throw does there); a lob climbs high and hangs. lane: how high it really is for a defender
+  // in its path (the rope a short throw is, so it's tipped as often as it ever was; the arc is the picture)
+  const lane = bullet ? clamp(10.7 * T * T / 8, 0.15, 3) : clamp(dist / 12, 1.4, 4); // (g*T^2/8, in yards)
+  const arc = kind === "bullet" ? lane : bullet ? clamp(0.6 + dist * 0.09, 0.9, 2.4) : clamp(dist / 8, 1.8, 6.5);
   // the wind carries it, a lob (up in it longer) far more than a rope; the aim shows where it'll come down
   // (a crosswind can carry it right over the sideline: out of bounds, incomplete)
   const wd = windNow(S.g), carry = (bullet ? 0.07 : 0.3) * T;
   if (wd.mph) land = { x: clamp(land.x + wd.x * carry, S.los - 12, 109), y: clamp(land.y + wd.y * carry, -HALF - 3, HALF + 3) };
-  return { land, dist, bullet, T, arc, short, reach, kind: bullet ? "bullet" : "lob", auto: kind === "auto" };
+  return { land, dist, bullet, T, arc, lane, short, reach, kind: bullet ? "bullet" : "lob", auto: kind === "auto" };
 }
 export function throwTo(S, P, why = null, kind = "auto", want = null) { // want: the man you meant it for (a tap on him)
   if (S.phase !== "live" || S.ball.holder !== "QB" || !S.call?.startsWith("pass")) return null; // (on a run he's handing it off: a tap or a flick then isn't a throw)
@@ -879,7 +885,7 @@ export function throwTo(S, P, why = null, kind = "auto", want = null) { // want:
   const [rusher, near] = nearestDef(S, qb.x, qb.y);
   const hurried = why || (rusher && near < 1.5 ? "hurried" : null); // a man in his face as he lets it go
   S.ball.holder = null; S.thrownAt = S.t; qb.mode = "watch";
-  S.ball.flight = { from: { x: qb.x, y: qb.y }, to: land, t0: S.t, T, arc: plan.arc, target: best, hurried, bullet };
+  S.ball.flight = { from: { x: qb.x, y: qb.y }, to: land, t0: S.t, T, arc: plan.arc, lane: plan.lane, target: best, hurried, bullet };
   // a hurried or wild throw sails: the spot drifts
   // (how much it sails depends on his poise in the pocket)
   if (hurried) { const k = (why === "late" ? 3 : 2) * clamp(1 + (80 - K.qbPoise(qb.p)) * 0.025, 0.45, 1.8); S.ball.flight.to = { x: land.x + (rnd(S) - 0.5) * k, y: clamp(land.y + (rnd(S) - 0.5) * k * 2, -HALF + 0.3, HALF - 0.3) }; }

@@ -63,7 +63,7 @@ export class ArcadeGame {
     this.franchise = game; this.locked = locked || !!game || !!live; this.onPlay = onPlay; this.onFinish = onFinish; this.onSimRest = onSimRest;
     this.userTi = userTi; this.oppTi = oppTi; this.teams = teams || { user: TEAMS[userTi], opp: TEAMS[oppTi] };
     this.fx = new FX(); this.time = 0; this.hype = 0; this.fade = 1;
-    this.sbMode = false; try { this.sbMode = localStorage.getItem("arcade_sb") === "1"; } catch { /* storage unavailable */ } this.wxPick = "auto"; try { const w = localStorage.getItem("arcade_wx"); if (WXPICKS.includes(w)) this.wxPick = w; } catch { /* storage unavailable */ } this.qMin = 5; try { const q = +localStorage.getItem("arcade_qmin"); if (QMINS.includes(q)) this.qMin = q; } catch { /* storage unavailable */ } this.passKind = "bullet"; try { const k = localStorage.getItem("arcade_pass"); if (k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
+    this.sbMode = false; try { this.sbMode = localStorage.getItem("arcade_sb") === "1"; } catch { /* storage unavailable */ } this.wxPick = "auto"; try { const w = localStorage.getItem("arcade_wx"); if (WXPICKS.includes(w)) this.wxPick = w; } catch { /* storage unavailable */ } this.qMin = 5; try { const q = +localStorage.getItem("arcade_qmin"); if (QMINS.includes(q)) this.qMin = q; } catch { /* storage unavailable */ } this.passKind = "auto"; try { const k = localStorage.getItem("arcade_pass2"); if (k === "auto" || k === "bullet" || k === "lob") this.passKind = k; } catch { /* storage unavailable */ } this.input = matchMedia?.("(pointer: coarse)").matches ? "touch" : "mouse";
     // which way your offense drives across the screen: right to left on a phone (an easy swipe for a right
     // thumb), left to right with a mouse; the pause menu turns it round, and it's remembered
     this.defCall = "balanced"; try { const d = localStorage.getItem("arcade_def"); if (DEF_CALLS.includes(d)) this.defCall = d; } catch { /* storage unavailable */ }
@@ -701,7 +701,11 @@ export class ArcadeGame {
       // the pass type button: always there on a pass play, until the ball is thrown
       if (isPass && !this.auto && (P.phase === "presnap" || throwing)) { // (not on the computer's snaps)
         const big = this.mobile, ch = big ? Math.max(px * 19, 48) : px * 11;
-        this.chips.kinds = drawSwitch(ctx, cam, px * 3, hintY - px * 4 - ch, [{ key: "bullet", label: "BULLET", color: KIND_COLOR.bullet }, { key: "lob", label: "LOB", color: KIND_COLOR.lob }], this.passKind, { big });
+        // NORMAL (the default: it floats over the line, a touch pass downfield), BULLET (low and fast), LOB (high, hanging)
+        const items = [{ key: "auto", label: "NORMAL", color: KIND_COLOR.auto }, { key: "bullet", label: "BULLET", color: KIND_COLOR.bullet }, { key: "lob", label: "LOB", color: KIND_COLOR.lob }];
+        // (a narrow phone: up a row, clear of the FLIP button on the right)
+        const up = uiPx(cam), sw = (pixWidth("NORMAL", up) + (big ? Math.max(up * 6, Math.round((48 - up * 7) / 2)) : up * 3) * 2) * items.length, roomy = sw + px * 3 + (big ? 110 : 90) < cam.W;
+        this.chips.kinds = drawSwitch(ctx, cam, px * 3, hintY - px * 4 - ch - (roomy || P.phase !== "presnap" ? 0 : ch + px * 3), items, this.passKind, { big });
       }
       // before the snap: flip the play (and, on a pass, tap a receiver for a hot route)
       if (P.phase === "presnap" && !this.two) { const ch = this.mobile ? Math.max(px * 19, 48) : px * 11; this.chips.flip = drawChip(ctx, cam, cam.W - px * 3, hintY - px * 4 - ch, this.mobile ? "FLIP" : "FLIP (R)", { align: "right", big: this.mobile, color: P.flipped ? "#ffd166" : "#fff", active: !!P.flipped }); }
@@ -816,8 +820,8 @@ export class ArcadeGame {
     if (m === "opp") { this.feed.shown = this.feed.list.length; this.feed.at = 0; return true; }
     return false;
   }
-  setKind(k) { if (this.passKind !== k) sfx.select?.(); this.passKind = k; try { localStorage.setItem("arcade_pass", k); } catch { /* ignore */ } }
-  cycleKind() { this.setKind(this.passKind === "bullet" ? "lob" : "bullet"); }
+  setKind(k) { if (this.passKind !== k) sfx.select?.(); this.passKind = k; try { localStorage.setItem("arcade_pass2", k); } catch { /* ignore */ } }
+  cycleKind() { this.setKind(this.passKind === "auto" ? "bullet" : this.passKind === "bullet" ? "lob" : "auto"); }
   menuAction(k) {
     if (k === "fs") { this.fullscreen(this.fsState !== "on"); return; }
     if (k === "wx") { this.cycleWx(); return; }
@@ -881,7 +885,7 @@ export class ArcadeGame {
       // drag up or down anywhere to move him up or down the field from his line, as far as the finger
       // moves; he runs forward on his own
       if (t.ry == null) this.grabRunner(P);
-      const yd = (p.py - t.ay) / (SQUASH_ * cam.s); /* (one for one with the finger, on the screen) */ P.steer = Math.max(-28.5, Math.min(28.5, t.ry + yd));
+      const yd = (p.py - t.ay) / ((cam.sq ?? SQUASH_) * cam.s); /* (one for one with the finger, on the screen) */ P.steer = Math.max(-28.5, Math.min(28.5, t.ry + yd));
       // a quick flick across the field is a juke; a quick flick up the field (toward the goal) is a dive
       const now = performance.now(); t.hist = (t.hist || []).filter((h) => now - h.t < 140); t.hist.push({ t: now, px: p.px, py: p.py });
       const fx_ = (p.px - t.hist[0].px) * (cam.fx || 1), fy_ = p.py - t.hist[0].py; // (along the field: up it is forward, whichever way it runs on screen)
@@ -952,7 +956,7 @@ export class ArcadeGame {
     // (k: how hard he goes; a thumbstick: a short drag jogs, a longer one sprints)
     const dirTo = (dx, dy, k = 1) => { const a = cam.toField(sx, sy), b = cam.toField(sx + dx, sy + dy), fx = b.x - a.x, fy = b.y - a.y, n = Math.hypot(fx, fy) || 1; return { x: d.x + (fx / n) * 10, y: clamp(d.y + (fy / n) * 10, -27, 27), k }; };
     const kx = (K_.has("d") || K_.has("arrowright") ? 1 : 0) - (K_.has("a") || K_.has("arrowleft") ? 1 : 0), ky = (K_.has("s") || K_.has("arrowdown") ? 1 : 0) - (K_.has("w") || K_.has("arrowup") ? 1 : 0);
-    if (kx || ky) { P.uIn = dirTo(kx * 40, ky * 40 * SQUASH_); return; }
+    if (kx || ky) { P.uIn = dirTo(kx * 40, ky * 40 * (this.cam?.sq ?? SQUASH_)); return; }
     const t = this.touch;
     if (t?.def && t.cx != null) { const dx = t.cx - t.px, dy = t.cy - t.py, L = Math.hypot(dx, dy), dead = Math.max(9, Math.min(cam.W, cam.H) * 0.02); if (L > dead) P.uIn = dirTo(dx, dy, clamp((L - dead) / Math.max(30, Math.min(cam.W, cam.H) * 0.12), 0.35, 1)); else P.uIn = { x: d.x, y: d.y, k: 1 }; return; } // (finger down but still: he stands)
     if (this.mouseHeld && this.mouse) { const f = cam.toField(this.mouse.px, this.mouse.py); P.uIn = { x: f.x, y: clamp(f.y, -27, 27), k: 1 }; }
@@ -1013,7 +1017,7 @@ export class ArcadeGame {
     if (L < 10) return null;
     // direction: the drag's true angle on the field (the field's depth is squashed on screen);
     // strength: its length on the screen
-    const fx = dx, fy = dy / 0.42, fl = Math.hypot(fx, fy) || 1, len = 11 * Math.min(1.15, L / full);
+    const fx = dx, fy = dy / (cam.sq ?? SQUASH_), fl = Math.hypot(fx, fy) || 1, len = 11 * Math.min(1.15, L / full);
     return [(fx / fl) * len, (fy / fl) * len];
   }
   releaseKick(P, d) { const v = this.kickVec(d); if (v && v[0] > 0) kickFlick(P, v[0], v[1]); }
