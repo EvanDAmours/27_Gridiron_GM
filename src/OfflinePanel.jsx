@@ -1,11 +1,10 @@
 // Offline play: the game saves itself on this device (see public/sw.js) so it runs with no
 // connection, like on a plane. This panel shows whether it's ready, saves it on demand (plus your
 // team's field sprites), and explains how to install it as an app.
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { C, Btn } from "./ui.jsx";
 
 const BASE = import.meta.env.BASE_URL;
-const CACHE = `gridiron-gm-v3 ${BASE}`;
 
 // The browser's "install this app" offer (Chrome, Edge, Android) is caught early in main.jsx.
 const installPrompt = () => window.__installPrompt || null;
@@ -32,7 +31,9 @@ export function OfflineChip() {
 async function readyInfo() {
   try {
     if (!("caches" in window)) return null;
-    const hit = await caches.match(`${BASE}__offline-ready`, { cacheName: CACHE });
+    // (any of the game's stores: the worker names its store by version, and this page mustn't have to match it.
+    // The phone build and the desktop one keep their marks under their own address.)
+    const hit = await caches.match(`${BASE}__offline-ready`);
     return hit ? await hit.json() : null;
   } catch { return null; }
 }
@@ -44,12 +45,15 @@ export default function OfflinePanel({ teamAb, mobile }) {
   const [latest, setLatest] = useState(null); // the version on the site now
   const [prog, setProg] = useState(null); // { done, total } while saving
   const [canInstall, setCanInstall] = useState(!!installPrompt());
+  const lastMsg = useRef(0), startedAt = useRef(0); // (when the worker last reported, and when this save began)
 
   useEffect(() => {
     readyInfo().then(setReady);
+    lastMsg.current = Date.now();
     if (navigator.onLine) fetch(`${BASE}offline.json`, { cache: "no-store" }).then((r) => r.ok && r.json()).then((d) => d && setLatest(d.version)).catch(() => {});
     const onMsg = (e) => {
       if (e.data?.type !== "offline") return;
+      lastMsg.current = Date.now();
       setProg(e.data.ready ? null : { done: e.data.done, total: e.data.total });
       if (e.data.ready) readyInfo().then(setReady);
     };
@@ -59,8 +63,22 @@ export default function OfflinePanel({ teamAb, mobile }) {
     return () => { navigator.serviceWorker?.removeEventListener("message", onMsg); window.removeEventListener("gm-install-ready", onPrompt); };
   }, []);
 
+  // While it saves, look for the finished mark too: a phone can put the worker to sleep, or drop its
+  // last message, and the page would wait on it forever. Once nothing has come for a while, stop waiting.
+  const saving = !!prog;
+  useEffect(() => {
+    if (!saving) return undefined;
+    const t = setInterval(async () => {
+      const r = await readyInfo();
+      if (r && r.at >= startedAt.current) { setReady(r); setProg(null); return; }
+      if (Date.now() - lastMsg.current > 45000) { setReady(r); setProg(null); }
+    }, 1500);
+    return () => clearInterval(t);
+  }, [saving]);
+
   const saveNow = async () => {
     if (!supported) return;
+    startedAt.current = Date.now(); lastMsg.current = Date.now();
     setProg({ done: 0, total: 1 });
     const reg = await navigator.serviceWorker.register(`${BASE}sw.js`).catch(() => null);
     const sw = (await navigator.serviceWorker.ready.catch(() => reg))?.active;

@@ -2800,4 +2800,8 @@ export const PATCH_NOTES = [
     "On a phone held upright the field is zoomed out: about 46 yards across where it was 34, so the receivers downfield are on the screen, and the camera looks down on it more steeply, so the field fills the screen instead of the stands. Turned sideways it's as before (about 66 yards across). Your swipes and taps follow the new view.",
     "On a phone held upright, the down-and-distance banner under the scoreboard is never cut off at the screen's edges or hidden behind the pause button (a long call is set in smaller letters), and the weather line sits just below it instead of underneath it.",
   ] },
+  { v: "7.13", date: "2026-11-27", title: "Get ready for offline says when it's ready", notes: [
+    "Pressing Get ready for offline (on the title screen or the Saves tab) saved the game, but the panel never said so: it kept showing the button and \"Not saved for offline yet\". It was looking for the finished mark in the wrong place, left over from an older version. It now says \"Ready to play with no connection\" once the save is done, on a phone and on a computer. Games already saved this way were saved properly; the panel shows them as ready when you open it.",
+    "While it saves, the panel checks for itself whether it's done, so a phone that pauses the save in the background can't leave it stuck on the progress bar.",
+  ] },
 ];
